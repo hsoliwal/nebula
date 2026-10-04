@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.grid.Grid.GridVisibleRange;
@@ -118,6 +119,8 @@ public class GridVisibleRangeSupport_Test {
 		assertNotSame("horizontal viewport must advance from its initial first column",
 				firstVisibleBefore, horizontal.getColumns()[0]);
 		assertTrue("paint-driven support must publish a column-range delta", hasColumnDelta(events));
+		assertTrue("range delta must report the column that actually left the viewport",
+				hasRemovedColumn(events, firstVisibleBefore));
 		snapshot("03-horizontal");
 
 		int rowsBeforeResize = horizontal.getItems().length;
@@ -150,6 +153,34 @@ public class GridVisibleRangeSupport_Test {
 			if (event.addedColumns.length != 0 || event.removedColumns.length != 0) return true;
 		}
 		return false;
+	}
+
+	private boolean hasRemovedColumn(List<RangeChangedEvent> changes, GridColumn target) {
+		for (RangeChangedEvent event : changes) {
+			if (containsIdentity(event.removedColumns, target)) return true;
+		}
+		return false;
+	}
+
+	@Test
+	public void testAtomizedViewportProjectionAndSelectionPatterns() {
+		List<GridColumn> orderedColumns = Arrays.asList(columns);
+		GridColumn[] projected = GridViewportProjection.visibleColumns(
+				orderedColumns, 0, columns.length - 1);
+		assertTrue("projection atom must retain visible columns",
+				projected.length == columns.length);
+		assertSame(columns[0], GridViewportProjection.columnAt(
+				orderedColumns, 1, false, 0, false, 0));
+
+		List<GridItem> atomItems = List.of(grid.getItem(0), grid.getItem(1), grid.getItem(2));
+		List<GridItem> selected = new ArrayList<>();
+		GridSelectionAtom.selectRange(atomItems, selected, 0, 2);
+		assertTrue(selected.size() == 3);
+		GridSelectionAtom.selectIndices(atomItems, selected, new int[] { 0, 2, 2 });
+		assertTrue("selection atom must remain duplicate-stable", selected.size() == 3);
+		GridSelectionAtom.deselectRange(atomItems, selected, 1, 2);
+		assertTrue(selected.size() == 1);
+		assertSame(atomItems.get(0), selected.get(0));
 	}
 
 	private static boolean containsIdentity(GridColumn[] values, GridColumn target) {
