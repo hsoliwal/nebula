@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: EPL-2.0
-"""Read-only exact-byte custody for the five previously admitted owner paths."""
+"""Read-only exact-byte custody for the reviewed admitted owner paths."""
 from hashlib import sha256
 from pathlib import Path
 import subprocess
@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 
 
 def blob(revision, path):
-    return subprocess.check_output(["git", "show", revision + ":" + path])
+    return subprocess.check_output(["git", "show", revision + ":" + path, "--"])
 
 
 def require(condition, reason):
@@ -61,6 +61,19 @@ def verify(base):
     require(sha256(pre).hexdigest() in {"255bd1e72e6e6368fdfbd76c6cdcf392d28857a97678290acb8ebbefd2766103", expected, profile_hash},
             "parent aggregation preimage drift")
     print(parent + "\tPASS\t" + sha256(pre).hexdigest() + "\t" + post_hash)
+
+    css = "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css/src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler.java"
+    css_pre, css_post = blob(base, css), blob("HEAD", css)
+    css_hash = "9b95b52df265443f996fc67e0316025bce167281d175478b0070edf56c54d87d"
+    require(sha256(css_post).hexdigest() == css_hash, "CDateTime reviewed postimage drift")
+    require(sha256(css_pre).hexdigest() in {
+        "8b0542080ffeab65e94dc0e05182866559718e5b2c7187bce4835e717f40556a",
+        "04f07a9bc03ab54dd4635b7dd24548fa2d39035c51f5923181d5c5cd62785fa6",
+        css_hash}, "CDateTime reviewed preimage drift")
+    css_attrs = "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css/.gitattributes"
+    require(sha256(blob("HEAD", css_attrs)).hexdigest() == "ba79ee72cb77bf047e87fb268de12ccedd33773d7175d9bebe6bb2b9617cf9ec",
+            "CDateTime exact source checkout attributes drift")
+    print(css + "\tPASS\t" + sha256(css_pre).hexdigest() + "\t" + css_hash)
 
 
 if __name__ == "__main__":

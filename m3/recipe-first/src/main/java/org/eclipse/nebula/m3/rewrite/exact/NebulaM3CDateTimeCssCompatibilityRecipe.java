@@ -20,9 +20,9 @@ public final class NebulaM3CDateTimeCssCompatibilityRecipe
     public static final String MODULE_PATH =
             "src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler.java";
     public static final String BEFORE =
-            "362526ff2fe0f9d877b258bcce631f5993f8a55fd8a4bc41e7edd6b87facdaf5";
+            "8b0542080ffeab65e94dc0e05182866559718e5b2c7187bce4835e717f40556a";
     public static final String AFTER =
-            "e9be2a0a729e0e198c86e33ffa7fbab4879bbd9c5ca627e34120e7ce565c1e0e";
+            "9b95b52df265443f996fc67e0316025bce167281d175478b0070edf56c54d87d";
     private static final String RESOURCE =
             "/org/eclipse/nebula/m3/rewrite/exact/cdatetime-css/"
                     + "CDateTimePropertyHandler.after.java.txt";

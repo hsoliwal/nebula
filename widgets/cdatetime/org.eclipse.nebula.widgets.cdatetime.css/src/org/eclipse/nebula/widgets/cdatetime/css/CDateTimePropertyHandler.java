@@ -161,25 +161,27 @@ public class CDateTimePropertyHandler implements ICSSPropertyHandler {
 	 * CSS behavior does not change as part of this compatibility migration.</p>
 	 */
 	private static String legacyFontProperty(final CSSPrimitiveValue value) {
-		final short type = value.getPrimitiveType();
+		short type = value.getPrimitiveType();
 		switch (type) {
 		case CSSPrimitiveValue.CSS_STRING:
 		case CSSPrimitiveValue.CSS_IDENT:
-			final String text = value.getStringValue();
-			if ("italic".equals(text) || "oblique".equals(text)) {
+			switch (value.getStringValue()) {
+			case "italic":
+			case "oblique":
 				return "font-style";
-			}
-			if ("normal".equals(text) || "bold".equals(text) || "bolder".equals(text)) {
+			case "normal":
+			case "bold":
+			case "bolder":
 				return "font-weight";
+			default:
+				return "font-family";
 			}
-			return "font-family";
 		case CSSPrimitiveValue.CSS_PT:
 		case CSSPrimitiveValue.CSS_NUMBER:
 		case CSSPrimitiveValue.CSS_PX:
 			return "font-size";
-		default:
-			return null;
 		}
+		return null;
 	}
 
 	// CSS Font

@@ -78,3 +78,7 @@ recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3Rec
 recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3RecipeDagManifestTest.java -text
 recipe-first/src/test/resources/org/eclipse/nebula/m3/rewrite/exact/svg-loader-length/SvgLoader.before.java.txt -text
 recipe-first/src/test/resources/org/eclipse/nebula/m3/rewrite/exact/svg-loader-length/SvgLoaderLengthTests.java.txt -text
+recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3CDateTimeCssCompatibilityRecipe.java -text
+recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3CDateTimeCssCompatibilityRecipeTest.java -text
+recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/exact/cdatetime-css/CDateTimePropertyHandler.after.java.txt -text
+recipe-first/src/main/resources/META-INF/rewrite/nebula-m3-cdatetime-css.yml -text
