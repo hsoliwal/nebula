@@ -20,7 +20,7 @@ Capture exact command vectors, exit codes, stdout/stderr, source pre/post hashes
 
 Launcher tests may use a process double to test routing, failure order and source-custody checks. They must be labelled as such and never counted as real OpenRewrite, Java, Tycho, SWT, JNI or whole-repository proof. The existing narrow Nebula convergence recipe is not relabelled as general cross-file method extraction. Full structural atomization, API/ABI invariance and platform/runtime promotion remain separate required evidence.
 
-Pinned integration baseline: `hsoliwal/nebula@887cf8256ab471425bc631334d9e23d24726d34e`.
+Pinned integration baseline: `hsoliwal/nebula@62ef3a8135e5d8b57fdd5f5c3c6c5f6c95871e07`.
 Original launcher Git blob: `9b811f683de78b318d9968e63b211134e7f8ff06`.
 Original root POM Git blob: `756ee5408447cc2143be47099b1a1443dbe2e360`.
 Plugin version already selected by Nebula: `6.46.1`; no plugin version upgrade is authorized here.
