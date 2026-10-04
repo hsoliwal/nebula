@@ -24,6 +24,15 @@ git -C "$ROOT" diff --check
 bash "$RECIPE_ROOT/verify.sh" --jni
 mvn -B -ntp -f "$RECIPE_ROOT/pom.xml" install
 
+# Install the canonical OpenRewrite recipe pack and execute the live Nebula
+# Maven/Tycho source-model catalogue. The active recipe is read-only.
+mvn -B -ntp -f "$SYNEXIA_ROOT/pom.xml" \
+  -pl synexia-openrewrite-recipes -am \
+  install -DskipTests
+mvn -B -ntp -f "$ROOT/pom.xml" \
+  -Pm3-atomize-patternize \
+  rewrite:dryRunNoFork
+
 mvn -B -ntp -f "$ROOT/m3/recipe-first/pom.xml" verify
 INV_OUT="$(mktemp -d "${TMPDIR:-/tmp}/nebula-m3-inventory.XXXXXX")"
 mvn -B -ntp -f "$ROOT/m3/recipe-first/pom.xml" -Pinventory \

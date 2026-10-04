@@ -7,3 +7,13 @@ description: >
   fast-search signals. The recipe emits evidence and never mutates widget sources.
 recipeList:
   - org.eclipse.nebula.m3.NebulaM3InventoryRecipe
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.eclipse.nebula.m3.ConvergeFileAtoms
+displayName: Converge admitted Nebula FILE-local atoms
+description: >-
+  Inventory, atomize, patternize/IOP-type and document only mechanically admitted
+  private FILE-local leaves, then require fixed-point verification.
+recipeList:
+  - org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe

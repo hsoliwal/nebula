@@ -46,3 +46,80 @@ recipe-owned, JUnit-proven, fixed-point, and serially promoted through the requi
 JNI is not introduced into Nebula merely because the shared recipe has a JNI acceleration helper.
 Nebula currently has no native implementation owner in the pinned baseline; Java remains the oracle
 until a specific hot primitive has parity, lifecycle/fallback and setup-inclusive benchmark proof.
+
+
+## Live Maven/OpenRewrite source-model pass
+
+Both the root aggregator `pom.xml` and the actual widget parent
+`releng/org.eclipse.nebula.nebula-parent/pom.xml` expose the opt-in profile.
+The widget parent does not inherit from the root aggregator, so both entry points
+need the configuration. Widget modules inherit it from the actual parent.
+
+```bash
+mvn -Pm3-atomize-patternize rewrite:dryRunNoFork
+
+# The parent POM is also a supported entry point:
+mvn -f releng/org.eclipse.nebula.nebula-parent/pom.xml \
+  -Pm3-atomize-patternize rewrite:dryRunNoFork
+```
+
+The profile loads the canonical `com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`
+from `com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT`.
+Install the real canonical recipe artifact first; the profile does not manufacture
+a local replacement implementation or silently fall back to another inventory.
+
+The executable recipe source is
+[`M3NebulaAtomizePatternizeRecipe.java`](https://github.com/hsoliwal/com.synexia/blob/develop/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3NebulaAtomizePatternizeRecipe.java).
+The exact parent-POM wiring repair is the canonical declarative recipe
+`com.synexia.rewrite.M3NebulaParentRewriteProfile`, backed by the existing
+`M3HashPinnedPomSnapshotRecipe`. Its source/postimage manifest and verification
+project remain in `com.synexia`.
+
+The recipe composes the existing canonical SWT distillation inventory, repository
+atom/pattern catalogue and Mavenized absorption inventory. It is read-only:
+mutation, source-copy, absorption and promotion authority are all false.
+
+This is deliberately a stage in the existing Nebula/Tycho build, not a replacement
+reactor. A bounded source-changing recipe may be admitted only after the catalogue
+selects a concrete atom/pattern cohort and the original Nebula build remains the
+behavioral oracle.
+
+## Donor and screenshot evidence
+
+See `m3/convergence/VIEWPORT_VISUAL_GATES.md`.
+
+The evidence set includes:
+
+- SWT snippets/examples and the retained viewport screenshot suite;
+- Java2s SWT/SWT Graphics/Swing behavioral example categories;
+- Nebula Grid/CompositeTable/CWT/XViewer mechanics;
+- the supplied historical JFace viewport/deferred viewer sources;
+- the supplied Virtual TreeView 8.4.1 demos/help images;
+- external viewport/immediate-mode libraries as architecture/mechanics evidence only.
+
+These inputs grant no source-copy authority. They are used to compare behavior after
+both donor and target shapes have been atomized/patternized.
+
+
+## Nebula-local source-changing seed grammar
+
+The broad hierarchy and Synexia source-model passes remain read-only evidence lanes. A separate local
+recipe crate now proves the first source-changing FILE grammar inside Nebula itself.
+
+The mutation order is strictly:
+
+```text
+inventory
+ -> atomization
+ -> patternization / IOP
+ -> semantic documentation
+ -> second-pass fixed point
+ -> transformed Tycho verify
+```
+
+Each mutating leaf is one-cycle and shares one eligibility predicate with the inventory pass.
+The current grammar admits only private static pure-`int` expression leaves. Non-admitted shapes
+are explicit residue and are not generalized by intuition.
+
+GitHub Actions stores `candidate.patch`, `first.patch`, `second.patch` and the changed-file
+ledger as evidence. No workflow commits those changes or promotes them automatically.
