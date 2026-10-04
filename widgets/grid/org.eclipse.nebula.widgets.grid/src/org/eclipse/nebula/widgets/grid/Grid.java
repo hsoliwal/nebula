@@ -3637,7 +3637,7 @@ public class Grid extends Canvas {
 		hScroll.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				onScrollSelection();
+				onScrollSelection(true);
 			}
 
 			@Override
@@ -3674,7 +3674,7 @@ public class Grid extends Canvas {
 		vScroll.addSelectionListener(new SelectionListener() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				onScrollSelection();
+				onScrollSelection(false);
 			}
 
 			@Override
@@ -5274,12 +5274,13 @@ public class Grid extends Canvas {
 
 		int y = 0;
 		final int extraFill = getExtraFill(controlSize);
+		final Rectangle clientArea = getClientArea();
 		if (columnHeadersVisible) {
-			paintHeader(gc, extraFill);
+			if (GridViewportDamage.intersectsHeader(originalClipping, clientArea, headerHeight)) {
+				paintHeader(gc, extraFill);
+			}
 			y += headerHeight;
 		}
-
-		final Rectangle clientArea = getClientArea();
 		final int availableHeight = clientArea.height - y;
 		int visibleRows = availableHeight / itemHeight + 1;
 		if (items.size() > 0 && availableHeight > 0) {
@@ -5384,7 +5385,8 @@ public class Grid extends Canvas {
 					new Rectangle(insertMark.posX1, insertMark.posY, insertMark.posX2 - insertMark.posX1, 0));
 		}
 
-		if (columnFootersVisible) {
+		if (columnFootersVisible
+				&& GridViewportDamage.intersectsFooter(originalClipping, clientArea, footerHeight)) {
 			paintFooter(gc);
 		}
 	}
@@ -6532,11 +6534,11 @@ public class Grid extends Canvas {
 		addListener(SWT.Resize, e -> onResize());
 
 		if (getVerticalBar() != null) {
-			getVerticalBar().addListener(SWT.Selection, e -> onScrollSelection());
+			getVerticalBar().addListener(SWT.Selection, e -> onScrollSelection(false));
 		}
 
 		if (getHorizontalBar() != null) {
-			getHorizontalBar().addListener(SWT.Selection, e -> onScrollSelection());
+			getHorizontalBar().addListener(SWT.Selection, e -> onScrollSelection(true));
 		}
 
 		defaultKeyListener = this::onKeyDown;
@@ -7649,11 +7651,19 @@ public class Grid extends Canvas {
 	/**
 	 * Scrollbar selection event handler.
 	 */
-	private void onScrollSelection() {
+	private void onScrollSelection(final boolean horizontal) {
 		topIndex = -1;
 		bottomIndex = -1;
 		refreshHoverState();
-		redraw(getClientArea().x, getClientArea().y, getClientArea().width, getClientArea().height, false);
+		final Rectangle clientArea = getClientArea();
+		final Rectangle damage = GridViewportDamage.scrollDamage(
+				clientArea,
+				columnHeadersVisible ? headerHeight : 0,
+				columnFootersVisible ? footerHeight : 0,
+				horizontal);
+		if (damage.width > 0 && damage.height > 0) {
+			redraw(damage.x, damage.y, damage.width, damage.height, false);
+		}
 	}
 
 	/**

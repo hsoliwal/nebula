@@ -27,6 +27,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Shell;
@@ -160,6 +161,24 @@ public class GridVisibleRangeSupport_Test {
 			if (containsIdentity(event.removedColumns, target)) return true;
 		}
 		return false;
+	}
+
+	@Test
+	public void testViewportDamageSeparatesVerticalBodyFromChrome() {
+		Rectangle client = new Rectangle(0, 0, 360, 220);
+		Rectangle vertical = GridViewportDamage.scrollDamage(client, 28, 24, false);
+		assertTrue("vertical damage must start below the header", vertical.y == 28);
+		assertTrue("vertical damage must stop above the footer", vertical.height == 168);
+		assertTrue("vertical damage retains full body width", vertical.width == 360);
+
+		Rectangle horizontal = GridViewportDamage.scrollDamage(client, 28, 24, true);
+		assertTrue("horizontal scroll must invalidate the full viewport plane",
+				horizontal.equals(client));
+
+		assertTrue(GridViewportDamage.intersectsHeader(new Rectangle(0, 0, 100, 10), client, 28));
+		assertTrue(!GridViewportDamage.intersectsHeader(new Rectangle(0, 40, 100, 10), client, 28));
+		assertTrue(GridViewportDamage.intersectsFooter(new Rectangle(0, 210, 100, 10), client, 24));
+		assertTrue(!GridViewportDamage.intersectsFooter(new Rectangle(0, 100, 100, 10), client, 24));
 	}
 
 	@Test
