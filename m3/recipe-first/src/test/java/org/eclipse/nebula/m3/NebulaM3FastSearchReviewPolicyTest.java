@@ -36,7 +36,7 @@ final class NebulaM3FastSearchReviewPolicyTest {
                             .map(NebulaM3FastSearchReviewPolicy.ReviewPass::source)
                             .toList());
             assertEquals(List.of(1, 2, 3, 4), passes.stream()
-                    .map(NebulaM3FastSearchReviewPolicy.ReviewPass::ordinal)
+                    .map(NebulaM3FastSearchReviewPolicy.ReviewPass::passOrder)
                     .toList());
 
             for (int index = 0; index < 3; index++) {
