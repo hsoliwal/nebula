@@ -14,11 +14,13 @@ import static org.junit.Assert.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.LineAttributes;
 import org.eclipse.swt.graphics.Pattern;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Display;
 import org.junit.Test;
@@ -30,7 +32,11 @@ public class GridGcProxy_Test {
 		Display display = Display.getDefault();
 		Image image = new Image(display, 64, 64);
 		GC gc = new GC(image);
-		Pattern temporaryPattern = null;
+		Pattern initialForegroundPattern = null;
+		Pattern initialBackgroundPattern = null;
+		Pattern temporaryForegroundPattern = null;
+		Pattern temporaryBackgroundPattern = null;
+		Font changedFont = null;
 		Transform initialTransform = null;
 		Transform changedTransform = null;
 		try {
@@ -49,6 +55,16 @@ public class GridGcProxy_Test {
 			Color background = display.getSystemColor(SWT.COLOR_WHITE);
 			gc.setForeground(foreground);
 			gc.setBackground(background);
+			initialForegroundPattern = new Pattern(
+					display, 0, 0, 16, 16,
+					display.getSystemColor(SWT.COLOR_BLUE),
+					display.getSystemColor(SWT.COLOR_CYAN));
+			initialBackgroundPattern = new Pattern(
+					display, 0, 0, 16, 16,
+					display.getSystemColor(SWT.COLOR_WHITE),
+					display.getSystemColor(SWT.COLOR_GRAY));
+			gc.setForegroundPattern(initialForegroundPattern);
+			gc.setBackgroundPattern(initialBackgroundPattern);
 			initialTransform = new Transform(display, 1, 0, 0, 1, 3, 4);
 			gc.setTransform(initialTransform);
 
@@ -60,11 +76,16 @@ public class GridGcProxy_Test {
 			int expectedInterpolation = gc.getInterpolation();
 			int expectedFillRule = gc.getFillRule();
 			boolean expectedXor = gc.getXORMode();
+			boolean expectedAdvanced = gc.getAdvanced();
 			Color expectedForeground = gc.getForeground();
 			Color expectedBackground = gc.getBackground();
+			Pattern expectedForegroundPattern = gc.getForegroundPattern();
+			Pattern expectedBackgroundPattern = gc.getBackgroundPattern();
+			Font expectedFont = gc.getFont();
 			float[] expectedTransform = elements(gc);
 
 			try (GridGcProxy ignored = GridGcProxy.wrap(gc)) {
+				gc.setAdvanced(false);
 				gc.setClipping(new Rectangle(20, 20, 5, 5));
 				gc.setLineAttributes(new LineAttributes(
 						11f, SWT.CAP_SQUARE, SWT.JOIN_MITER, SWT.LINE_DOT,
@@ -77,11 +98,22 @@ public class GridGcProxy_Test {
 				gc.setXORMode(true);
 				gc.setForeground(display.getSystemColor(SWT.COLOR_RED));
 				gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-				temporaryPattern = new Pattern(
+				temporaryForegroundPattern = new Pattern(
 						display, 0, 0, 16, 16,
 						display.getSystemColor(SWT.COLOR_RED),
 						display.getSystemColor(SWT.COLOR_GREEN));
-				gc.setForegroundPattern(temporaryPattern);
+				temporaryBackgroundPattern = new Pattern(
+						display, 0, 0, 16, 16,
+						display.getSystemColor(SWT.COLOR_BLACK),
+						display.getSystemColor(SWT.COLOR_YELLOW));
+				gc.setForegroundPattern(temporaryForegroundPattern);
+				gc.setBackgroundPattern(temporaryBackgroundPattern);
+				changedFont = new Font(
+						display,
+						expectedFont.getFontData()[0].getName(),
+						Math.max(1, expectedFont.getFontData()[0].getHeight() + 1),
+						SWT.BOLD);
+				gc.setFont(changedFont);
 				changedTransform = new Transform(display, 2, 0, 0, 2, 30, 40);
 				gc.setTransform(changedTransform);
 			}
@@ -94,14 +126,49 @@ public class GridGcProxy_Test {
 			assertEquals(expectedInterpolation, gc.getInterpolation());
 			assertEquals(expectedFillRule, gc.getFillRule());
 			assertEquals(expectedXor, gc.getXORMode());
+			assertEquals(expectedAdvanced, gc.getAdvanced());
 			assertEquals(expectedForeground, gc.getForeground());
 			assertEquals(expectedBackground, gc.getBackground());
-			assertNull(gc.getForegroundPattern());
+			assertSame(expectedForegroundPattern, gc.getForegroundPattern());
+			assertSame(expectedBackgroundPattern, gc.getBackgroundPattern());
+			assertEquals(expectedFont, gc.getFont());
 			assertArrayEquals(expectedTransform, elements(gc), 0.0001f);
 		} finally {
 			if (changedTransform != null) changedTransform.dispose();
 			if (initialTransform != null) initialTransform.dispose();
-			if (temporaryPattern != null) temporaryPattern.dispose();
+			gc.dispose();
+			if (changedFont != null) changedFont.dispose();
+			if (temporaryForegroundPattern != null) temporaryForegroundPattern.dispose();
+			if (temporaryBackgroundPattern != null) temporaryBackgroundPattern.dispose();
+			if (initialForegroundPattern != null) initialForegroundPattern.dispose();
+			if (initialBackgroundPattern != null) initialBackgroundPattern.dispose();
+			image.dispose();
+		}
+	}
+
+	@Test
+	public void restoresExactNonRectangularClippingRegion() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 64, 64);
+		GC gc = new GC(image);
+		Region original = new Region(display);
+		Region restored = new Region(display);
+		try {
+			original.add(new Rectangle(2, 2, 8, 8));
+			original.add(new Rectangle(30, 30, 8, 8));
+			gc.setClipping(original);
+
+			try (GridGcProxy ignored = GridGcProxy.wrap(gc)) {
+				gc.setClipping(new Rectangle(0, 0, 64, 64));
+			}
+
+			gc.getClipping(restored);
+			assertTrue(restored.contains(4, 4));
+			assertTrue(restored.contains(32, 32));
+			assertFalse(restored.contains(20, 20));
+		} finally {
+			restored.dispose();
+			original.dispose();
 			gc.dispose();
 			image.dispose();
 		}
