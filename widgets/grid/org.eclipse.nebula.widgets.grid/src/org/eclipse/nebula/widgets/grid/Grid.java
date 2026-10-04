@@ -5278,12 +5278,18 @@ public class Grid extends Canvas {
 		final int hscroll = getHScrollSelectionInPixels();
 		final FixedGridColumns fixed = getFixedGridColumns();
 		final boolean fixedOverlayActive = fixed.hasColumns() && hscroll > fixed.offset();
+		final int header = columnHeadersVisible ? headerHeight : 0;
+		final int footer = columnFootersVisible ? footerHeight : 0;
 		final int paintPlan = GridPaintDag.plan(
 				originalClipping, clientArea, headerHeight, footerHeight,
 				columnHeadersVisible, columnFootersVisible, fixedOverlayActive, draggingColumn);
 		if (columnHeadersVisible) {
 			if (GridPaintDag.includes(paintPlan, GridPaintDag.HEADER)) {
-				paintHeader(gc, extraFill);
+				final Rectangle headerRect = new Rectangle(
+						clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight, clientArea.height));
+				try (GridGcProxy headerGc = GridGcProxy.wrap(gc).clip(originalClipping.intersection(headerRect))) {
+					paintHeader(headerGc.gc(), extraFill);
+				}
 			}
 			y += headerHeight;
 		}
@@ -5337,8 +5343,12 @@ public class Grid extends Canvas {
 			}
 		}
 		if (GridPaintDag.includes(paintPlan, GridPaintDag.BODY)) {
-			paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager, gc, originalClipping, y,
-					clientArea, firstVisibleIndex, insertMark, extraFill);
+			final Rectangle bodyRect = GridViewportDamage.scrollDamage(clientArea, header, footer, false);
+			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
+			try (GridGcProxy bodyGc = GridGcProxy.wrap(gc).clip(bodyClipping)) {
+				paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager,
+						bodyGc.gc(), bodyClipping, y, clientArea, firstVisibleIndex, insertMark, extraFill);
+			}
 		}
 
 		// draw drop point
@@ -5346,20 +5356,23 @@ public class Grid extends Canvas {
 			if ((dragDropAfterColumn != null || dragDropBeforeColumn != null)
 					&& dragDropAfterColumn != columnBeingPushed && dragDropBeforeColumn != columnBeingPushed
 					&& dragDropPointValid) {
-				int x;
-				if (dragDropBeforeColumn != null) {
-					x = getColumnHeaderXPosition(dragDropBeforeColumn);
-				} else {
-					x = getColumnHeaderXPosition(dragDropAfterColumn) + dragDropAfterColumn.getWidth();
-				}
+				try (GridGcProxy overlayGc = GridGcProxy.wrap(gc)) {
+					final GC overlay = overlayGc.gc();
+					int x;
+					if (dragDropBeforeColumn != null) {
+						x = getColumnHeaderXPosition(dragDropBeforeColumn);
+					} else {
+						x = getColumnHeaderXPosition(dragDropAfterColumn) + dragDropAfterColumn.getWidth();
+					}
 
-				final Point size = dropPointRenderer.computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, null);
-				x -= size.x / 2;
-				if (x < 0) {
-					x = 0;
+					final Point size = dropPointRenderer.computeSize(overlay, SWT.DEFAULT, SWT.DEFAULT, null);
+					x -= size.x / 2;
+					if (x < 0) {
+						x = 0;
+					}
+					dropPointRenderer.setBounds(x - 1, headerHeight + DROP_POINT_LOWER_OFFSET, size.x, size.y);
+					dropPointRenderer.paint(overlay, null);
 				}
-				dropPointRenderer.setBounds(x - 1, headerHeight + DROP_POINT_LOWER_OFFSET, size.x, size.y);
-				dropPointRenderer.paint(gc, null);
 			}
 		}
 		if (fixedOverlayActive && GridPaintDag.includes(paintPlan, GridPaintDag.FIXED)) {
@@ -5390,7 +5403,12 @@ public class Grid extends Canvas {
 
 		if (columnFootersVisible
 				&& GridPaintDag.includes(paintPlan, GridPaintDag.FOOTER)) {
-			paintFooter(gc);
+			final int footerY = Math.max(clientArea.y, clientArea.y + clientArea.height - footerHeight);
+			final Rectangle footerRect = new Rectangle(
+					clientArea.x, footerY, clientArea.width, Math.min(footerHeight, clientArea.height));
+			try (GridGcProxy footerGc = GridGcProxy.wrap(gc).clip(originalClipping.intersection(footerRect))) {
+				paintFooter(footerGc.gc());
+			}
 		}
 	}
 
