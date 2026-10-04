@@ -76,6 +76,30 @@ def verify(base):
     print(css + "\tPASS\t" + sha256(css_pre).hexdigest() + "\t" + css_hash)
 
 
+    provider_test = "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/css/BaseCSSThemingTest.java"
+    provider_test_pre, provider_test_post = blob(base, provider_test), blob("HEAD", provider_test)
+    require(sha256(provider_test_post).hexdigest() == "cba91a328b94861c5c1d5b31c097825b1eeecefbf1716235fc918770024da859",
+            "CDateTime test provider initializer postimage drift")
+    require(sha256(provider_test_pre).hexdigest() in {
+        "79a0f8e1a6c46e87b6f49ece1389867da540a626c1d4fa43138df0e181158462",
+        "d8eed0c9bb58fe73c2782499693fede24513c0c3f2b6caec7fcd4531114c8e2b",
+        "4cc46cffd07c97efd11780afd11aea6c422458f183ebcc72627a8c27d9756493",
+        "cba91a328b94861c5c1d5b31c097825b1eeecefbf1716235fc918770024da859"}, "CDateTime test provider initializer preimage drift")
+    provider = "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl.java"
+    provider_rows = subprocess.check_output(["git", "ls-tree", "-z", base, "--", provider])
+    require(not provider_rows or sha256(blob(base, provider)).hexdigest() == "234eff7ce055796a8ea7f1d266dc69a63a280e0d4eb36ade24563e18b784fa48",
+            "CDateTime retained provider preimage drift")
+    require(sha256(blob("HEAD", provider)).hexdigest() == "234eff7ce055796a8ea7f1d266dc69a63a280e0d4eb36ade24563e18b784fa48",
+            "CDateTime retained provider postimage drift")
+    attributes_rows = subprocess.check_output(["git", "ls-tree", "-z", base, "--", ".gitattributes"])
+    require(not attributes_rows or sha256(blob(base, ".gitattributes")).hexdigest() in {
+        "131a858ec9b08390eb732a50bfeeab3a9a2a98b74b4da0b6580996977b8071d2", "270049a324217550a8efac809c73faa3db04846463c4fc4314d8b2063c48a8f3"}, "CDateTime exact root attribute preimage drift")
+    require(sha256(blob("HEAD", ".gitattributes")).hexdigest() == "270049a324217550a8efac809c73faa3db04846463c4fc4314d8b2063c48a8f3",
+            "CDateTime exact root attribute postimage drift")
+    print(provider_test + "\tPASS\t" + sha256(provider_test_pre).hexdigest() + "\tcba91a328b94861c5c1d5b31c097825b1eeecefbf1716235fc918770024da859")
+    print(provider + "\tPASS\t" + (sha256(blob(base, provider)).hexdigest() if provider_rows else "ABSENT") + "\t234eff7ce055796a8ea7f1d266dc69a63a280e0d4eb36ade24563e18b784fa48")
+
+
 if __name__ == "__main__":
     require(len(sys.argv) == 2, "BASE_REVISION required")
     verify(sys.argv[1])

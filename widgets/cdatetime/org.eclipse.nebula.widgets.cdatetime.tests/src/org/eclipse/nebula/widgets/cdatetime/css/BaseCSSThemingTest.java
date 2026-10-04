@@ -2,7 +2,6 @@ package org.eclipse.nebula.widgets.cdatetime.css;
 
 import java.io.StringReader;
 
-import org.eclipse.e4.ui.css.core.dom.properties.providers.CSSPropertyHandlerSimpleProviderImpl;
 import org.eclipse.e4.ui.css.core.engine.CSSErrorHandler;
 import org.eclipse.e4.ui.css.swt.dom.SWTElementProvider;
 import org.eclipse.e4.ui.css.swt.engine.CSSSWTEngineImpl;
@@ -10,6 +9,7 @@ import org.eclipse.nebula.cwt.test.AbstractVTestCase;
 import org.eclipse.nebula.widgets.cdatetime.CDateTime;
 import org.eclipse.nebula.widgets.cdatetime.CdtTester;
 import org.eclipse.nebula.widgets.cdatetime.css.CDateTimePropertyHandler;
+import org.eclipse.nebula.widgets.cdatetime.tests.css.CSSPropertyHandlerSimpleProviderImpl;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -38,6 +38,11 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 		super.setUp();
 
 		engine = new CSSSWTEngineImpl(getShell().getDisplay()) {
+			{
+				propertyHandlerProviders.clear();
+				initializeCSSPropertyHandlers();
+			}
+
 			protected void initializeCSSPropertyHandlers() {
 				CSSPropertyHandlerSimpleProviderImpl handlerProvider = new CSSPropertyHandlerSimpleProviderImpl();
 				handlerProvider.registerCSSPropertyHandler(CDateTimePropertyHandler.class, new CDateTimePropertyHandler());
@@ -49,7 +54,7 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 				for (String prop : props) {
 					handlerProvider.registerCSSProperty(prop, CDateTimePropertyHandler.class);
 				}
-				propertyHandlerProviders.add(handlerProvider);
+				registerCSSPropertyHandlerProvider(handlerProvider);
 			}
 		};
 		engine.setElementProvider(new SWTElementProvider());
