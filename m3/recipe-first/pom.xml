@@ -13,7 +13,7 @@
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <rewrite.version>8.89.0</rewrite.version>
+    <rewrite.version>8.90.4</rewrite.version>
     <rewrite.maven.plugin.version>6.46.1</rewrite.maven.plugin.version>
     <junit.version>5.10.1</junit.version>
     <m3.nebula.root>${project.basedir}/../..</m3.nebula.root>
@@ -22,6 +22,12 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.synexia.recipe</groupId>
+      <artifactId>openrewrite-line-terminators</artifactId>
+      <version>8.90.4-m3-f3e4bfe19654</version>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>org.openrewrite</groupId>
       <artifactId>rewrite-core</artifactId>

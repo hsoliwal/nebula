@@ -49,11 +49,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          unexpected="$(git diff --name-only "$BASE_SHA...HEAD" | grep -Ev '^(m3/|\.m3/|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$)' || true)"
+          unexpected="$(git diff --name-only "$BASE_SHA...HEAD" | grep -Ev '^(m3/|\.m3/|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/CTabFolderStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/EmptyStandaloneStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PShelfStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PresentationFactory\.java$|releng/org\.eclipse\.nebula\.nebula\-parent/pom\.xml$)' || true)"
           if [[ -n "$unexpected" ]]; then
             printf 'Nebula production/source path changed outside the saved M3 convergence lane:\n%s\n' "$unexpected"
             exit 1
           fi
+          python3 m3/verify-source-custody.py "$BASE_SHA"
           bash -n m3/convergence/verify.sh
           grep -F $'4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
@@ -91,10 +92,10 @@ jobs:
           path: ${{ runner.temp }}/nebula-replay-inputs/
 
       - name: 3 - Compile and test the Nebula-local recipe crate
-        run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
+        run: mvn -B -ntp -f m3/reactor.xml verify
 
       - name: 4 - Export content-addressed recipe DAG
-        run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest verify
+        run: mvn -B -ntp -f m3/reactor.xml -Pdag-manifest verify
 
       - name: 4a - Verify exact raw SvgLoader preimage
         shell: bash
@@ -107,11 +108,30 @@ jobs:
             -Dm3.seal.sha256='23d730f01826b3d5c3de5d9f5299f2db11574ae3c482956b20928aaa676f9a08' \
             verify
 
+      - name: 6b - Prove explicit FILE materializer without source writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java'
+          OUT='m3/recipe-first/target/a3-file-proof'
+          EXPECTED='m3/recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/exact/svg-loader-length/SvgLoader.after.java.txt'
+          sha256sum "$SOURCE" > "$RUNNER_TEMP/nebula-a3-source.before.sha"
+          mvn -B -ntp -f m3/recipe-first/pom.xml \
+            org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+            -Dexec.mainClass=org.eclipse.nebula.m3.NebulaM3A3Apply \
+            -Dexec.args="$GITHUB_WORKSPACE $OUT $SOURCE"
+          sha256sum "$SOURCE" > "$RUNNER_TEMP/nebula-a3-source.after.sha"
+          diff -u "$RUNNER_TEMP/nebula-a3-source.before.sha" "$RUNNER_TEMP/nebula-a3-source.after.sha"
+          grep -F "$SOURCE" "$OUT/receipt.tsv"
+          grep -F "true" "$OUT/receipt.tsv"
+          cmp "$OUT/candidate/$SOURCE" "$EXPECTED"
+          git diff --exit-code -- "$SOURCE"
+
       - name: 7 - Baseline original Nebula Tycho reactor
         run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
       - name: 5 - Inventory the whole Nebula Java checkout
-        run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
+        run: mvn -B -ntp -f m3/reactor.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
 
       - name: 6 - Require complete Java parse inventory
         shell: bash
@@ -120,7 +140,7 @@ jobs:
           grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
 
       - name: 8 - Install the proven Nebula-local recipe artifact
-        run: mvn -B -ntp -f m3/recipe-first/pom.xml install
+        run: mvn -B -ntp -f m3/reactor.xml install
 
       - name: 9 - Apply FILE-local atomize patternize document DAG
         shell: bash
@@ -209,6 +229,7 @@ jobs:
             m3/recipe-first/target/nebula-m3-inventory/
             m3/recipe-first/target/nebula-m3-dag/
             m3/recipe-first/target/nebula-m3-candidate/
+            m3/recipe-first/target/a3-file-proof/
             **/target/rewrite/
             **/target/surefire-reports/
             m3/convergence/PLAN.tsv

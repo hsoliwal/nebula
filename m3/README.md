@@ -30,7 +30,7 @@ changing Eclipse Nebula public widget contracts by default.
 
 ## First pass
 
-The standalone crate at `m3/recipe-first` is intentionally outside the Nebula Tycho reactor.
+The source-first reactor at `m3/reactor.xml` builds the Nebula-owned qualified parser module before `m3/recipe-first` and remains outside the Nebula Tycho reactor.
 It compiles on Java 21 and inventories Java sources with OpenRewrite without modifying them.
 
 The inventory records, per compilation unit:
@@ -49,8 +49,8 @@ The inventory records, per compilation unit:
 The CLI can inventory the whole checkout:
 
 ```bash
-mvn -f m3/recipe-first/pom.xml verify
-mvn -f m3/recipe-first/pom.xml -Pinventory \
+mvn -f m3/reactor.xml verify
+mvn -f m3/reactor.xml -Pinventory \
   -Dm3.nebula.root="$(pwd)" \
   -Dm3.nebula.out="$(pwd)/m3/recipe-first/target/nebula-inventory" verify
 ```
@@ -110,7 +110,7 @@ kept separate rather than mixing OpenRewrite generations in one classloader.
 Run:
 
 ```bash
-mvn -B -ntp -f m3/recipe-first/pom.xml install
+mvn -B -ntp -f m3/reactor.xml install
 mvn -B -ntp -Pm3-local-file-convergence rewrite:dryRunNoFork
 ```
 
@@ -137,16 +137,16 @@ The Nebula proving crate now exports the same recipe graph as a content-addresse
 manifest:
 
 ```bash
-mvn -f m3/recipe-first/pom.xml -Pdag-manifest verify
+mvn -f m3/reactor.xml -Pdag-manifest verify
 ```
 
 Outputs:
 
 ```text
 m3/recipe-first/target/nebula-m3-dag/
-├── recipe-dag.tsv
-├── recipe-dag.sha256
-└── orchestrators.tsv
+â”œâ”€â”€ recipe-dag.tsv
+â”œâ”€â”€ recipe-dag.sha256
+â””â”€â”€ orchestrators.tsv
 ```
 
 The graph is derived from `NebulaM3FileConvergenceRecipeDag`; it is not a second hand-maintained

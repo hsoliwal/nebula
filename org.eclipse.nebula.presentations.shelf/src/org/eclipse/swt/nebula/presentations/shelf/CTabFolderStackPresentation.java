@@ -3,7 +3,7 @@
 // ==================================================================
 // IBM Confidential
 // OCO Source Materials
-// © Copyright IBM Corp. 2005
+// Â© Copyright IBM Corp. 2005
 // ==================================================================
 
 package org.eclipse.swt.nebula.presentations.shelf;

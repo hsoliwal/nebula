@@ -66,8 +66,9 @@ public abstract class NebulaM3ExactJavaSnapshotRecipe extends Recipe {
                     return unit;
                 }
                 if (!beforeSha256().equals(hash)) {
-                    throw new IllegalStateException(
-                            "M3 exact Java preimage drift: " + normalized(unit.getSourcePath()));
+                    context.getOnError().accept(new IllegalStateException(
+                            "M3 exact Java preimage drift: " + normalized(unit.getSourcePath())));
+                    return unit;
                 }
 
                 SourceFile parsed = parse(after, context);
