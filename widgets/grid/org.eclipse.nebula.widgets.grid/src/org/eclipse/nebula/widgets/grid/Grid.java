@@ -4275,7 +4275,7 @@ public class Grid extends Canvas {
 			}
 		}
 
-		redraw();
+		onScrollSelection(true);
 	}
 
 	/**
@@ -6162,6 +6162,7 @@ public class Grid extends Canvas {
 				hScroll.setValues(selection, 0, max, 1, 1, 1);
 			}
 		}
+		invalidateVisibleColumnCache();
 
 	}
 
@@ -7646,6 +7647,12 @@ public class Grid extends Canvas {
 		scrollValuesObsolete = true;
 		topIndex = -1;
 		bottomIndex = -1;
+		invalidateVisibleColumnCache();
+	}
+
+	private void invalidateVisibleColumnCache() {
+		startColumnIndex = -1;
+		endColumnIndex = -1;
 	}
 
 	/**
@@ -7654,6 +7661,9 @@ public class Grid extends Canvas {
 	private void onScrollSelection(final boolean horizontal) {
 		topIndex = -1;
 		bottomIndex = -1;
+		if (horizontal) {
+			invalidateVisibleColumnCache();
+		}
 		refreshHoverState();
 		final Rectangle clientArea = getClientArea();
 		final Rectangle damage = GridViewportDamage.scrollDamage(
