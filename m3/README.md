@@ -165,3 +165,5 @@ Their manifest receipts explicitly set mutation and promotion authority to `fals
 This lets larger systems compose small, already-proven recipe atoms into DAGs without changing the
 semantic authority model. A scheduler can order/shard work; only the recipe and the compiler/test
 proof can establish a candidate, and only serial review can promote it.
+
+- [Method-signal evidence](docs/method-signal-evidence.md) — method-coordinate search/JNI review over the existing M3 policies.
