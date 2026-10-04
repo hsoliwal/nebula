@@ -3,6 +3,8 @@ name: M3 Grid baseline verification
 on:
   push:
     branches: [ m3/nebula-grid-baseline-verify-20261004 ]
+  pull_request:
+    branches: [ master ]
 
 permissions:
   contents: read
