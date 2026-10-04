@@ -94,6 +94,17 @@ jobs:
       - name: 3 - Compile and test the Nebula-local recipe crate
         run: mvn -B -ntp -f m3/reactor.xml verify
 
+      - name: 3a - Install the proven Nebula-local recipe artifact for review
+        run: mvn -B -ntp -f m3/reactor.xml install
+
+      - name: 3b - Run read-only challenge donor and Java-before-JNI review
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          mvn -B -ntp -Pm3-local-repository-review rewrite:dryRunNoFork
+          git diff --exit-code
+
       - name: 4 - Export content-addressed recipe DAG
         run: mvn -B -ntp -f m3/reactor.xml -Pdag-manifest verify
 
