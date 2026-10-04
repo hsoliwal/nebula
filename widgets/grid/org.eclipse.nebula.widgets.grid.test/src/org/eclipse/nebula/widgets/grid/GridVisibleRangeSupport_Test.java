@@ -9,6 +9,7 @@
  ******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -179,6 +180,62 @@ public class GridVisibleRangeSupport_Test {
 		assertTrue(!GridViewportDamage.intersectsHeader(new Rectangle(0, 40, 100, 10), client, 28));
 		assertTrue(GridViewportDamage.intersectsFooter(new Rectangle(0, 210, 100, 10), client, 24));
 		assertTrue(!GridViewportDamage.intersectsFooter(new Rectangle(0, 100, 100, 10), client, 24));
+	}
+
+	@Test
+	public void testPaintDagSeparatesHeaderBodyFooterAndFixedPlanes() {
+		Rectangle client = new Rectangle(0, 0, 360, 220);
+
+		int header = GridPaintDag.plan(
+				new Rectangle(0, 0, 360, 20), client, 28, 24, true, true, true, false);
+		assertTrue(GridPaintDag.includes(header, GridPaintDag.BACKGROUND));
+		assertTrue(GridPaintDag.includes(header, GridPaintDag.HEADER));
+		assertTrue(!GridPaintDag.includes(header, GridPaintDag.BODY));
+		assertTrue(!GridPaintDag.includes(header, GridPaintDag.FIXED));
+		assertTrue(!GridPaintDag.includes(header, GridPaintDag.FOOTER));
+
+		int body = GridPaintDag.plan(
+				new Rectangle(0, 60, 360, 80), client, 28, 24, true, true, true, false);
+		assertTrue(GridPaintDag.includes(body, GridPaintDag.BODY));
+		assertTrue(GridPaintDag.includes(body, GridPaintDag.FIXED));
+		assertTrue(!GridPaintDag.includes(body, GridPaintDag.HEADER));
+		assertTrue(!GridPaintDag.includes(body, GridPaintDag.FOOTER));
+
+		int footer = GridPaintDag.plan(
+				new Rectangle(0, 205, 360, 15), client, 28, 24, true, true, true, false);
+		assertTrue(GridPaintDag.includes(footer, GridPaintDag.FOOTER));
+		assertTrue(!GridPaintDag.includes(footer, GridPaintDag.BODY));
+
+		assertTrue(GridPaintDag.dependsOn(GridPaintDag.FIXED, GridPaintDag.BODY));
+		assertTrue(GridPaintDag.dependsOn(GridPaintDag.HEADER, GridPaintDag.BACKGROUND));
+	}
+
+	@Test
+	public void testAffinePaintAtomComposesWithoutNativeResources() {
+		GridAffineTransform transform = GridAffineTransform.translation(10, 20)
+				.then(GridAffineTransform.scale(2, 3));
+		Rectangle mapped = transform.mapBounds(new Rectangle(1, 2, 3, 4));
+		assertEquals(new Rectangle(22, 66, 6, 12), mapped);
+		assertEquals(new Rectangle(1, 2, 3, 4),
+				GridAffineTransform.IDENTITY.mapBounds(new Rectangle(1, 2, 3, 4)));
+	}
+
+	@Test
+	public void testGcProxyRestoresClippingAfterPlanePaint() {
+		GC gc = new GC(grid);
+		try {
+			Rectangle original = gc.getClipping();
+			Rectangle requested = new Rectangle(
+					original.x + 2, original.y + 3,
+					Math.max(1, original.width / 2), Math.max(1, original.height / 2));
+			Rectangle expected = original.intersection(requested);
+			try (GridGcProxy proxy = GridGcProxy.wrap(gc).clip(requested)) {
+				assertEquals(expected, proxy.gc().getClipping());
+			}
+			assertEquals(original, gc.getClipping());
+		} finally {
+			gc.dispose();
+		}
 	}
 
 	@Test
