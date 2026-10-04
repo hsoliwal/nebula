@@ -15,7 +15,7 @@ permissions:
 jobs:
   recipe:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
         with:
@@ -54,7 +54,12 @@ jobs:
           grep -F $'4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
           grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
-          grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe'             .m3/atom-pattern/policy.properties
+          grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' \
+            .m3/atom-pattern/policy.properties
+          grep -F 'java.localCandidateRecipe=org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' \
+            .m3/atom-pattern/policy.properties
+          grep -F 'java.localCandidateScope=FILE' .m3/atom-pattern/policy.properties
+          grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
       - name: 3 - Compile and test the Nebula-local recipe crate
         run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
@@ -72,23 +77,58 @@ jobs:
           set -euo pipefail
           grep -F $'failureRows\t0'             m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
 
-      - name: 6 - Original Nebula Tycho reactor
+      - name: 6 - Baseline original Nebula Tycho reactor
         run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 
-      - name: 7 - Require candidate-only repository state
+      - name: 7 - Install the proven Nebula-local recipe artifact
+        run: mvn -B -ntp -f m3/recipe-first/pom.xml install
+
+      - name: 8 - Apply FILE-local atomize patternize document DAG
         shell: bash
         run: |
           set -euo pipefail
-          git diff --exit-code
-          git diff --cached --exit-code
+          mkdir -p m3/recipe-first/target/nebula-m3-candidate
+          mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
 
-      - name: Upload Nebula M3 inventory evidence
+          git diff --check
+          git diff --name-only | sort >             m3/recipe-first/target/nebula-m3-candidate/changed-files.txt
+          unexpected="$(grep -Ev '\\.java             m3/recipe-first/target/nebula-m3-candidate/changed-files.txt || true)"
+          if [[ -n "$unexpected" ]]; then
+            printf 'FILE recipe escaped Java source scope:\n%s\n' "$unexpected"
+            exit 1
+          fi
+
+          git diff --binary >             m3/recipe-first/target/nebula-m3-candidate/candidate.patch
+          cp m3/recipe-first/target/nebula-m3-candidate/candidate.patch             m3/recipe-first/target/nebula-m3-candidate/first.patch
+
+      - name: 9 - Prove complete recipe DAG fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          git diff --binary >             m3/recipe-first/target/nebula-m3-candidate/second.patch
+          diff -u             m3/recipe-first/target/nebula-m3-candidate/first.patch             m3/recipe-first/target/nebula-m3-candidate/second.patch
+
+      - name: 10 - Original Nebula Tycho reactor on transformed candidates
+        run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+
+      - name: 11 - Preserve candidate-only authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only --cached)"
+          grep -F 4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F 'java.localCandidatePromotion=false'             .m3/atom-pattern/policy.properties
+
+      - name: Upload Nebula M3 inventory and candidate evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nebula-m3-inventory
+          name: nebula-m3-convergence
           if-no-files-found: warn
           path: |
             m3/recipe-first/target/nebula-m3-inventory/
+            m3/recipe-first/target/nebula-m3-candidate/
+            **/target/rewrite/
             m3/convergence/PLAN.tsv
             .m3/atom-pattern/policy.properties
