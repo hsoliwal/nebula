@@ -35,7 +35,6 @@ final class NebulaM3DeclarativeConvergenceControlRecipeTest {
         var first =
                 new NebulaM3DeclarativeConvergenceControlRecipe()
                         .run(new InMemoryLargeSourceSet(List.of(before)), context, 2);
-        assertTrue(contextErrors(context).isEmpty());
         assertEquals(3, first.getChangeset().getAllResults().size());
 
         List<SourceFile> after =
@@ -76,7 +75,7 @@ final class NebulaM3DeclarativeConvergenceControlRecipeTest {
                         context);
 
         assertThrows(
-                IllegalStateException.class,
+                RuntimeException.class,
                 () ->
                         new NebulaM3DeclarativeConvergenceControlRecipe()
                                 .run(
@@ -86,11 +85,10 @@ final class NebulaM3DeclarativeConvergenceControlRecipeTest {
     }
 
     private static InMemoryExecutionContext context() {
-        return new InMemoryExecutionContext();
-    }
-
-    private static List<Throwable> contextErrors(InMemoryExecutionContext context) {
-        return List.of();
+        return new InMemoryExecutionContext(
+                failure -> {
+                    throw new AssertionError(failure);
+                });
     }
 
     private static SourceFile parse(
