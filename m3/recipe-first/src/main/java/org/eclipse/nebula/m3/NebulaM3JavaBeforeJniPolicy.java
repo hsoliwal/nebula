@@ -33,6 +33,41 @@ public final class NebulaM3JavaBeforeJniPolicy {
         }
     }
 
+    public record NativeEvidence(
+            String javaOracleSha256,
+            String differentialCorpusSha256,
+            String lifecycleFallbackSha256,
+            String setupIncludedBenchmarkSha256) {
+        public NativeEvidence {
+            javaOracleSha256 = digest(javaOracleSha256, "javaOracleSha256");
+            differentialCorpusSha256 =
+                    digest(differentialCorpusSha256, "differentialCorpusSha256");
+            lifecycleFallbackSha256 =
+                    digest(lifecycleFallbackSha256, "lifecycleFallbackSha256");
+            setupIncludedBenchmarkSha256 =
+                    digest(setupIncludedBenchmarkSha256, "setupIncludedBenchmarkSha256");
+        }
+    }
+
+    public record NativeAdmission(
+            Decision decision,
+            NativeEvidence evidence,
+            boolean candidateOnly,
+            boolean nativeExecutionAuthority,
+            boolean promotionAuthority) {
+        public NativeAdmission {
+            decision = Objects.requireNonNull(decision, "decision");
+            evidence = Objects.requireNonNull(evidence, "evidence");
+            if (decision == Decision.NO_NATIVE_ACTION) {
+                throw new IllegalArgumentException("NO_NATIVE_ACTION cannot create a native candidate");
+            }
+            if (!candidateOnly || nativeExecutionAuthority || promotionAuthority) {
+                throw new IllegalArgumentException(
+                        "native admission is candidate-only and grants no authority");
+            }
+        }
+    }
+
     private NebulaM3JavaBeforeJniPolicy() {
         throw new AssertionError("No instances");
     }
@@ -60,6 +95,27 @@ public final class NebulaM3JavaBeforeJniPolicy {
                 false);
     }
 
+    public static NativeAdmission admitNativeCandidate(
+            Review review, NativeEvidence evidence) {
+        Review checked = Objects.requireNonNull(review, "review");
+        NativeEvidence checkedEvidence = Objects.requireNonNull(evidence, "evidence");
+        if (checked.decision() == Decision.NO_NATIVE_ACTION) {
+            throw new IllegalStateException("no proven native candidate");
+        }
+        if (!checked.javaOracleRequired()
+                || !checked.differentialCorpusRequired()
+                || !checked.lifecycleFallbackRequired()
+                || !checked.setupIncludedBenchmarkRequired()) {
+            throw new IllegalStateException("native candidate evidence requirements incomplete");
+        }
+        return new NativeAdmission(
+                checked.decision(),
+                checkedEvidence,
+                true,
+                false,
+                false);
+    }
+
     private static Review candidate(Decision decision, String reason) {
         return new Review(
                 decision,
@@ -71,4 +127,11 @@ public final class NebulaM3JavaBeforeJniPolicy {
                 false,
                 false);
     }
+    private static String digest(String value, String field) {
+        if (value == null || !value.matches("[0-9a-f]{64}")) {
+            throw new IllegalArgumentException(field + " must be lowercase SHA-256");
+        }
+        return value;
+    }
+
 }
