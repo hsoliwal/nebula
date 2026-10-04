@@ -83,6 +83,39 @@ Native Transform use is optional because SWT documents advanced graphics as
 platform-dependent. The pure affine value remains usable even when native transform
 application is not admitted.
 
+
+## CodeSplitJava atomization donor
+
+Additional donor:
+- https://github.com/tushartushar/CodeSplitJava
+
+CodeSplitJava is Apache-2.0 and uses Eclipse JDT AST visitors rather than textual
+splitting. Its useful M3 contribution is discovery, not mutation:
+
+- MethodVisitor enumerates method declarations.
+- MethodInvVisitor records invocation edges.
+- LocalVarVisitor records local-variable declarations.
+- MethodControlFlowVisitor inventories if/switch/loop/try control-flow nodes.
+- Resolver resolves type/method relationships, with conservative fallbacks when
+  JDT bindings are unavailable.
+- Graph computes connected components and directed strongly connected components.
+
+For M3 atomization, the distilled rule is:
+
+1. build a method/type dependency graph;
+2. form strongly connected components as indivisible behavior groups;
+3. score statement/control-flow regions inside an SCC as candidate extraction
+   boundaries;
+4. reject extraction that changes public signatures, captured-variable semantics,
+   exception boundaries, synchronization boundaries, event ordering, or resource
+   lifetime;
+5. execute accepted extraction through OpenRewrite/Eclipse refactoring recipes;
+6. compile/test and compare behavior/hashes before promoting the recipe.
+
+The CodeSplitJava emitter itself is not used as the production transformation engine.
+It writes classes/methods as standalone .code artifacts, whereas M3 must preserve a
+compilable project and its public contract after every promoted recipe.
+
 ## Algorithm donor catalogue
 
 For viewport/range algorithms, review donor solutions by problem family rather than
