@@ -210,10 +210,22 @@ public class GridVisibleRangeSupport_Test {
 	}
 
 	private void flushPaint() {
-		grid.redraw();
-		grid.update();
-		while (display.readAndDispatch()) {
-			// drain real SWT paint/scroll work
+		// GTK may defer invalidation until its next frame-clock tick. Wait for an
+		// actual Paint event before asserting the paint-driven range publication.
+		boolean[] painted = { false };
+		org.eclipse.swt.widgets.Listener observed = event -> painted[0] = true;
+		grid.addListener(SWT.Paint, observed);
+		try {
+			grid.redraw();
+			long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+			do {
+				grid.update();
+				while (display.readAndDispatch()) { /* drain real native events */ }
+				if (!painted[0]) java.util.concurrent.locks.LockSupport.parkNanos(1_000_000L);
+			} while (!painted[0] && System.nanoTime() < deadline && !Thread.currentThread().isInterrupted());
+			assertTrue("actual SWT Paint must complete before range assertions", painted[0]);
+		} finally {
+			grid.removeListener(SWT.Paint, observed);
 		}
 	}
 
