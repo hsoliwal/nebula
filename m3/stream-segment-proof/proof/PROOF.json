@@ -1,0 +1,75 @@
+{
+  "status": "PASS_BOUNDED_CANDIDATE",
+  "base": "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+  "source": {
+    "repository": "https://github.com/hsoliwal/nebula",
+    "base": "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+    "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/src/org/eclipse/nebula/widgets/opal/roundedtoolbar/RoundedToolbar.java",
+    "before": "fd00029ccb595dfedd0ec1c0604856359e065c9d2ca3fcbbe86382b15bbc0c59",
+    "after": "c02686f975553876c50392f013759d95bf44b792b2b77bc7bba5cb9eddb10407",
+    "segments": [
+      "Collection.stream",
+      "Stream.filter(bounds.contains(event.x,event.y) && item.isEnabled)",
+      "Stream.findFirst"
+    ],
+    "suggested_name": "findFirstEnabledItemContainingEvent",
+    "occurrences": 3,
+    "exact_source_recipe": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3RoundedToolbarStreamRecipe",
+    "zero_allocation_authority": false
+  },
+  "focused_suites": [
+    {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3RoundedToolbarStreamRecipeTest"
+    },
+    {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suite": "org.eclipse.nebula.m3.rewrite.stream.NebulaM3StreamSegmentNamesTest"
+    },
+    {
+      "tests": 32,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suite": "org.eclipse.nebula.m3.stream.RoundedToolbarRuntimeContractTest"
+    }
+  ],
+  "junit_tests": 41,
+  "callback_differentials": 28,
+  "recorded_callback_observations": 62,
+  "nonprimary_guard_invocations": 4,
+  "detected_mutants": 3,
+  "observable_api_signatures": 20,
+  "current_sdk21_strict_widget_compile": "FAIL_FOUR_INHERITED_THIS_ESCAPE_WARNINGS",
+  "proof_widget_compile": "PASS_JAVAC17_17_0_19_RELEASE17_XLINT_ALL_WERROR",
+  "recipe_test_compile": "PASS_JDK21_RELEASE21_XLINT_ALL_WERROR",
+  "exact_recipe_fixedpoint": true,
+  "broader_reactor_status": "FAIL_FOUR_TESTS",
+  "canonical_promotion": false,
+  "allocation_performance_authority": false,
+  "structured_review": {
+    "status": "UNAVAILABLE_HTTP401",
+    "engine": "default codex/gpt-5.6-sol/high",
+    "source_partition": "Complete changed source, tests, recipes and sealed candidates plus summary evidence",
+    "proof_partition": "Not model-reviewed: full evidence bundle exceeds 180000-byte limit",
+    "clean_review": false,
+    "binary_log_preflight": "Resolved by lossless UTF-8 publication with original hash custody",
+    "receipts": [
+      "REVIEW_RECEIPT.json",
+      "SOURCE_REVIEW_PARTITION.json",
+      "REVIEW_BINARY_PREFLIGHT.json",
+      "REVIEW_SIZE_PREFLIGHT.json"
+    ]
+  },
+  "remaining": [
+    "Full Tycho/SWT rendering/current SDK21 strict/platform/performance gates",
+    "Broader reactor CSS source custody and refusal exception expectations",
+    "Generic segment vocabularies and Patternizer deferred"
+  ]
+}

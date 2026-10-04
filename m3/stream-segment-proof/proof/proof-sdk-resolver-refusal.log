@@ -1,0 +1,24 @@
+python.exe : Traceback (most recent call last):
+At line:2 char:483
++ ... artifact'); & python $tool --output $bad *> "$r\proof-sdk-resolver-re ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\tools\resolve_sdk.py", line 
+119, in <module>
+    main()
+  File "K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\tools\resolve_sdk.py", line 
+115, in main
+    resolve(arguments.output, arguments.download)
+  File "K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\tools\resolve_sdk.py", line 96, 
+in resolve
+    jar, jar_record = intake(output, artifact, version, "jar", jar_hash, download)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\tools\resolve_sdk.py", line 52, 
+in intake
+    require(digest(data) == expected, "Cached SDK artifact custody mismatch: " + name)
+  File "K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\tools\resolve_sdk.py", line 32, 
+in require
+    raise ValueError(reason)
+ValueError: Cached SDK artifact custody mismatch: org.eclipse.swt.win32.win32.x86_64-3.126.0.jar

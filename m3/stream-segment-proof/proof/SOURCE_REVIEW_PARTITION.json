@@ -1,0 +1,35 @@
+{
+  "kind": "COMPLETE_SOURCE_PARTITION_PLUS_SUMMARY_EVIDENCE",
+  "base": "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+  "sources": [
+    "m3/recipe-first/pom.xml",
+    "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3DeclarativeConvergenceControlRecipe.java",
+    "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3RoundedToolbarStreamRecipe.java",
+    "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/stream/NebulaM3StreamSegmentNames.java",
+    "m3/recipe-first/src/main/resources/META-INF/rewrite/nebula-m3-rounded-toolbar-stream.yml",
+    "m3/recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/exact/rounded-toolbar-stream/RoundedToolbar.after.java.txt",
+    "m3/recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/exact/rounded-toolbar-stream/RoundedToolbar.before.java.txt",
+    "m3/recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3RoundedToolbarStreamRecipeTest.java",
+    "m3/recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/stream/NebulaM3StreamSegmentNamesTest.java",
+    "m3/stream-segment-proof/.gitignore",
+    "m3/stream-segment-proof/FOSS_REUSE_DECISION.tsv",
+    "m3/stream-segment-proof/README.md",
+    "m3/stream-segment-proof/THIRD_PARTY_NOTICES.md",
+    "m3/stream-segment-proof/pom.xml",
+    "m3/stream-segment-proof/src/test/java/org/eclipse/nebula/m3/stream/RoundedToolbarRuntimeContractTest.java",
+    "m3/stream-segment-proof/tools/resolve_sdk.py",
+    "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/src/org/eclipse/nebula/widgets/opal/roundedtoolbar/RoundedToolbar.java"
+  ],
+  "summary_evidence": [
+    "PROOF.json",
+    "BROADER_GATE.json",
+    "RUNTIME_RESULT.json",
+    "SOURCE_APPLY_RECEIPT.json",
+    "segment-name-evidence.tsv",
+    "runtime/mutations.tsv",
+    "runtime/api-census.tsv"
+  ],
+  "full_scope_files": 113,
+  "excluded_partition": "Large verbatim donor inventory, licenses, SDK metadata and raw command receipts",
+  "excludes_no_production_test_recipe_or_sealed_candidate_source": true
+}

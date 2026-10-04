@@ -1,0 +1,84 @@
+{
+  "artifacts": [
+    {
+      "artifact": "org.eclipse.swt.win32.win32.x86_64",
+      "evidence": {
+        "class_count": 787,
+        "class_major": 61,
+        "licenses": [
+          "Eclipse Public License - v 2.0"
+        ],
+        "notices": [
+          {
+            "path": "org.eclipse.swt.win32.win32.x86_64-3.126.0-metadata/META-INF/MANIFEST.MF",
+            "sha256": "39a63521477fb732ac16ffa7614dd69005b99878e60d0afa43a14e2bcfffb3c8"
+          },
+          {
+            "path": "org.eclipse.swt.win32.win32.x86_64-3.126.0-metadata/about_files/IJG_README",
+            "sha256": "4cf9c190f184019b61c36bcc49d4a24ffeb2a838c6f1690d6c4db14cfb2d0478"
+          },
+          {
+            "path": "org.eclipse.swt.win32.win32.x86_64-3.126.0-metadata/about_files/WebView2_LICENSE.txt",
+            "sha256": "9995174528dba139ca753d02d8667dbec49f65ab17e65c643a914f2b58cfb4a2"
+          },
+          {
+            "path": "org.eclipse.swt.win32.win32.x86_64-3.126.0-metadata/about_files/mpl-v11.txt",
+            "sha256": "53692a2ed6c6a2c6ec9b32dd0b820dfae91e0a1fcdf625ca9ed0bdf8705fcc4f"
+          },
+          {
+            "path": "org.eclipse.swt.win32.win32.x86_64-3.126.0-metadata/about.html",
+            "sha256": "2860e1fa6736c08bb7ce8728fe68d46ad0fed739141f7d862571042bc8c8dcde"
+          }
+        ]
+      },
+      "jar": {
+        "bytes": 2718084,
+        "path": "org.eclipse.swt.win32.win32.x86_64-3.126.0.jar",
+        "sha256": "72039b5a1552923783770f714f5ff982486ecbb48c95b0325881bce3691d5655",
+        "url": "https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.126.0/org.eclipse.swt.win32.win32.x86_64-3.126.0.jar"
+      },
+      "pom": {
+        "bytes": 1651,
+        "path": "org.eclipse.swt.win32.win32.x86_64-3.126.0.pom",
+        "sha256": "69f996a91ad8a2c0dc599d94c4f6b6fbd6d343fc66efbb4cbc9e66fd27aeb565",
+        "url": "https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.126.0/org.eclipse.swt.win32.win32.x86_64-3.126.0.pom"
+      },
+      "version": "3.126.0"
+    },
+    {
+      "artifact": "org.eclipse.jface",
+      "evidence": {
+        "class_count": 613,
+        "class_major": 61,
+        "licenses": [
+          "Eclipse Public License - v 2.0"
+        ],
+        "notices": [
+          {
+            "path": "org.eclipse.jface-3.33.0-metadata/META-INF/MANIFEST.MF",
+            "sha256": "69dd1253cfed874e9172a51e7d00d628bbfb486f433c5ca58807b099c758fd5b"
+          },
+          {
+            "path": "org.eclipse.jface-3.33.0-metadata/about.html",
+            "sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0"
+          }
+        ]
+      },
+      "jar": {
+        "bytes": 1191194,
+        "path": "org.eclipse.jface-3.33.0.jar",
+        "sha256": "ed854ce69edb931e954ba5a155fe0e8dd61ee5f65b99f33a1c767210e1ee2fb2",
+        "url": "https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.jface/3.33.0/org.eclipse.jface-3.33.0.jar"
+      },
+      "pom": {
+        "bytes": 2351,
+        "path": "org.eclipse.jface-3.33.0.pom",
+        "sha256": "6112debbe59dd8732c432ed3e28c9511bfd8776e10790a09aa3d6ee95edcc79c",
+        "url": "https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.jface/3.33.0/org.eclipse.jface-3.33.0.pom"
+      },
+      "version": "3.33.0"
+    }
+  ],
+  "schema": 1,
+  "scope": "test-only JavaSE-17 real-source runtime proof SDK"
+}

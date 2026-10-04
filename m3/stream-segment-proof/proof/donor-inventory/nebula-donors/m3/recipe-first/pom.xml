@@ -15,7 +15,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <rewrite.version>8.90.4</rewrite.version>
     <rewrite.maven.plugin.version>6.46.1</rewrite.maven.plugin.version>
-    <junit.version>5.14.4</junit.version>
+    <junit.version>5.10.1</junit.version>
     <m3.nebula.root>${project.basedir}/../..</m3.nebula.root>
     <m3.nebula.out>${project.build.directory}/nebula-m3-inventory</m3.nebula.out>
     <m3.nebula.dag.out>${project.build.directory}/nebula-m3-dag</m3.nebula.dag.out>
