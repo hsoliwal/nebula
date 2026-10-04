@@ -1,0 +1,48 @@
+name: M3 real upstream pagination atom extraction
+on:
+  pull_request:
+    paths:
+      - '.m3/upstream-page-atoms/**'
+      - '.github/workflows/m3-upstream-page-atoms.yml'
+      - 'widgets/pagination/org.eclipse.nebula.widgets.pagination/src/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upstream-and-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          sparse-checkout: |
+            .m3/upstream-page-atoms
+            widgets/pagination
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Run upstream recipe, compile real owners, test, and apply in isolated checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          lane=.m3/upstream-page-atoms
+          mkdir -p "$lane/target"
+          java -version 2>&1 | tee "$lane/target/toolchain.log"
+          mvn -version 2>&1 | tee -a "$lane/target/toolchain.log"
+          mvn -B -ntp -f "$lane/pom.xml" -Papply verify 2>&1 | tee "$lane/target/execution.log"
+          git diff --binary -- widgets/pagination > "$lane/target/evidence/applied.patch"
+          cat "$lane/target/evidence/applied.patch"
+          echo 'M3_UPSTREAM_EXECUTED_AND_VERIFIED'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upstream-page-atoms-evidence
+          path: |
+            .m3/upstream-page-atoms/target/evidence/*.java
+            .m3/upstream-page-atoms/target/evidence/*.tsv
+            .m3/upstream-page-atoms/target/evidence/*.txt
+            .m3/upstream-page-atoms/target/evidence/*.patch
+            .m3/upstream-page-atoms/target/*.log
