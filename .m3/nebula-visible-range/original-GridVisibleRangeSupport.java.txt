@@ -1,6 +1,7 @@
 package org.eclipse.nebula.widgets.grid;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EventObject;
 import java.util.Iterator;
@@ -119,15 +120,31 @@ public class GridVisibleRangeSupport {
 		}
 		GridVisibleRange range = grid.getVisibleRange();
 
-		GridVisibleRangeDiff.Difference<GridItem> items = GridVisibleRangeDiff.between(
-				oldRange.getItems(), range.getItems());
-		java.util.List<GridItem> lOrigItems = items.removed();
-		java.util.List<GridItem> lNewItems = items.added();
+		ArrayList<GridItem> lOrigItems = new ArrayList<>();
+		lOrigItems.addAll(Arrays.asList(oldRange.getItems()));
 
-		GridVisibleRangeDiff.Difference<GridColumn> columns = GridVisibleRangeDiff.between(
-				oldRange.getColumns(), range.getColumns());
-		java.util.List<GridColumn> lOrigColumns = columns.removed();
-		java.util.List<GridColumn> lNewColumns = columns.added();
+		ArrayList<GridItem> lNewItems = new ArrayList<>();
+		lNewItems.addAll(Arrays.asList(range.getItems()));
+
+		Iterator<GridItem> newItemsIterator = lNewItems.iterator();
+		while (newItemsIterator.hasNext()) {
+			if (lOrigItems.remove(newItemsIterator.next())) {
+				newItemsIterator.remove();
+			}
+		}
+
+		ArrayList<GridColumn> lOrigColumns = new ArrayList<>();
+		lOrigColumns.addAll(Arrays.asList(oldRange.getColumns()));
+
+		ArrayList<GridColumn> lNewColumns = new ArrayList<>();
+		lNewColumns.addAll(Arrays.asList(range.getColumns()));
+
+		Iterator<GridColumn> newColumnsIterator = lNewColumns.iterator();
+		while (newColumnsIterator.hasNext()) {
+			if (lOrigColumns.remove(newColumnsIterator.next())) {
+				newColumnsIterator.remove();
+			}
+		}
 
 		if (lOrigItems.size() != 0 || lNewItems.size() != 0 || lOrigColumns.size() != 0 || lNewColumns.size() != 0) {
 			RangeChangedEvent evt = new RangeChangedEvent(grid, range);
