@@ -36,6 +36,7 @@ public final class NebulaM3InventoryRecipe extends Recipe {
                 "m3",
                 "inventory-first",
                 "recipe-first",
+                "read-only",
                 "fast-search",
                 "contract-lock");
     }
