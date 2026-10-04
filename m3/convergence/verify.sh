@@ -3,6 +3,15 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Explicit application is separate from the unchanged default analysis lane.
+if [[ "${1:-}" == "--apply-catalogue" ]]; then
+  if [[ "$#" -ne 3 ]]; then
+    printf 'usage: %s --apply-catalogue PLAN_JSON OUTPUT_DIRECTORY\n' "$0" >&2
+    exit 2
+  fi
+  exec python3 "$ROOT/m3/convergence/apply_catalogue.py" \
+    --root "$ROOT" --plan "$2" --out "$3"
+fi
 SYNEXIA_ROOT="${SYNEXIA_ROOT:?set SYNEXIA_ROOT to the hsoliwal/com.synexia checkout}"
 RECIPE_COMMIT="78d1c67fbc97bb4831f0176f2a8b034ecc994eee"
 RECIPE_ROOT="$SYNEXIA_ROOT/synexia-maven-plugin/recipes/hierarchical-atom-pattern"
