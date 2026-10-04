@@ -25,7 +25,7 @@ jobs:
     permissions:
       contents: write
     env:
-      RECIPE_SHA: 6d5164334ce8d160fbbad63d363dc01e8fadd6df
+      RECIPE_SHA: 8ef199967074194789794a67e2c042d5e907d08f
       EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
       TARGET_BRANCH: m3/statement-block-atoms-20261004
     steps:
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: hsoliwal/com.synexia
-          ref: 6d5164334ce8d160fbbad63d363dc01e8fadd6df
+          ref: 8ef199967074194789794a67e2c042d5e907d08f
           path: recipes
           persist-credentials: false
       - uses: actions/setup-java@v5
