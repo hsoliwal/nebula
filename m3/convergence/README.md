@@ -46,3 +46,40 @@ recipe-owned, JUnit-proven, fixed-point, and serially promoted through the requi
 JNI is not introduced into Nebula merely because the shared recipe has a JNI acceleration helper.
 Nebula currently has no native implementation owner in the pinned baseline; Java remains the oracle
 until a specific hot primitive has parity, lifecycle/fallback and setup-inclusive benchmark proof.
+
+
+## Live Maven/OpenRewrite source-model pass
+
+The root reactor now exposes an opt-in profile:
+
+```bash
+mvn -Pm3-atomize-patternize rewrite:dryRunNoFork
+```
+
+The profile loads the canonical `com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`
+from `com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT`.
+
+The recipe composes the existing canonical SWT distillation inventory, repository
+atom/pattern catalogue and Mavenized absorption inventory. It is read-only:
+mutation, source-copy, absorption and promotion authority are all false.
+
+This is deliberately a stage in the existing Nebula/Tycho build, not a replacement
+reactor. A bounded source-changing recipe may be admitted only after the catalogue
+selects a concrete atom/pattern cohort and the original Nebula build remains the
+behavioral oracle.
+
+## Donor and screenshot evidence
+
+See `m3/convergence/VIEWPORT_VISUAL_GATES.md`.
+
+The evidence set includes:
+
+- SWT snippets/examples and the retained viewport screenshot suite;
+- Java2s SWT/SWT Graphics/Swing behavioral example categories;
+- Nebula Grid/CompositeTable/CWT/XViewer mechanics;
+- the supplied historical JFace viewport/deferred viewer sources;
+- the supplied Virtual TreeView 8.4.1 demos/help images;
+- external viewport/immediate-mode libraries as architecture/mechanics evidence only.
+
+These inputs grant no source-copy authority. They are used to compare behavior after
+both donor and target shapes have been atomized/patternized.
