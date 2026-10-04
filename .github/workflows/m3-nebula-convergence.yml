@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: EPL-1.0
+name: Nebula M3 recipe-first convergence
+
+on:
+  push:
+    branches:
+      - "m3/**"
+    paths:
+      - "m3/**"
+      - "**/*.java"
+      - ".github/workflows/m3-nebula-convergence.yml"
+  pull_request:
+    paths:
+      - "m3/**"
+      - "**/*.java"
+      - ".github/workflows/m3-nebula-convergence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  m3-control-plane:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Diff hygiene
+        run: git diff --check
+
+      - name: Compile and test reusable M3 recipes
+        run: >
+          mvn -B -ntp -f m3/pom.xml
+          clean verify
+
+      - name: Inventory atomize patternize and converge Nebula Java
+        run: >
+          mvn -B -ntp -f m3/pom.xml
+          -Pm3-nebula-source-convergence
+          -Dm3.convergence.threads=4
+          verify
+
+      - name: Require deterministic convergence evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="m3/tooling/migration-recipes/target/m3-nebula-source-convergence"
+          test -s "$evidence/SOURCE_CONVERGENCE.tsv"
+          test -s "$evidence/SOURCE_CONVERGENCE.summary.tsv"
+          cat "$evidence/SOURCE_CONVERGENCE.summary.tsv"
+
+      - name: Preserve original Nebula Tycho build as oracle
+        run: mvn -B -ntp verify
+
+      - name: Upload M3 candidate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-convergence-${{ github.run_id }}
+          path: m3/tooling/migration-recipes/target/m3-nebula-source-convergence/
+          if-no-files-found: error
+          retention-days: 30

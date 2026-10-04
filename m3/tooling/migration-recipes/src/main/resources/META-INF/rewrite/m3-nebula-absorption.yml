@@ -1,0 +1,9 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: com.m3.rewrite.M3NebulaAbsorptionFirst
+displayName: Normalize Nebula Java before broad absorption
+description: >-
+  Runs the trusted FILE-local Java 21 inventory, atomization, patternization/IOP and
+  documentation convergence recipe before donor or repository-wide absorption.
+recipeList:
+  - com.m3.rewrite.M3Java21ConvergenceRecipe
