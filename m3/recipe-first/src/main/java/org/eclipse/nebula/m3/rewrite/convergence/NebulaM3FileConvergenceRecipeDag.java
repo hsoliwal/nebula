@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: EPL-2.0
 package org.eclipse.nebula.m3.rewrite.convergence;
 
-import org.eclipse.nebula.m3.rewrite.NebulaNebulaM3Java21ConvergenceRecipe;
-import org.eclipse.nebula.m3.rewrite.atom.NebulaNebulaM3AtomizePureIntReturnRecipe;
-import org.eclipse.nebula.m3.rewrite.atom.NebulaNebulaM3DocumentPureIntAtomRecipe;
-import org.eclipse.nebula.m3.rewrite.atom.NebulaNebulaM3InventoryPureIntAtomCandidates;
-import org.eclipse.nebula.m3.rewrite.atom.NebulaNebulaM3PatternizePureIntAtomRecipe;
+import org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe;
+import org.eclipse.nebula.m3.rewrite.atom.NebulaM3AtomizePureIntReturnRecipe;
+import org.eclipse.nebula.m3.rewrite.atom.NebulaM3DocumentPureIntAtomRecipe;
+import org.eclipse.nebula.m3.rewrite.atom.NebulaM3InventoryPureIntAtomCandidates;
+import org.eclipse.nebula.m3.rewrite.atom.NebulaM3PatternizePureIntAtomRecipe;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
