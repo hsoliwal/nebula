@@ -435,6 +435,45 @@ Contributors:
 			</build>
 		</profile>
 
+
+		<profile>
+			<!--
+				M3 recipe-first source-model pass for this parent reactor.
+
+				Install com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT first,
+				then run from this parent module:
+				  mvn -Pm3-atomize-patternize rewrite:dryRunNoFork
+
+				This is the same canonical recipe used by the repository-root profile;
+				no parallel Nebula rewrite engine is introduced here.
+			-->
+			<id>m3-atomize-patternize</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.openrewrite.maven</groupId>
+						<artifactId>rewrite-maven-plugin</artifactId>
+						<version>5.23.1</version>
+						<configuration>
+							<failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+							<failOnDryRunResults>false</failOnDryRunResults>
+							<exportDatatables>true</exportDatatables>
+							<activeRecipes>
+								<recipe>com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe</recipe>
+							</activeRecipes>
+						</configuration>
+						<dependencies>
+							<dependency>
+								<groupId>com.synexia</groupId>
+								<artifactId>synexia-openrewrite-recipes</artifactId>
+								<version>1.0.0-SNAPSHOT</version>
+							</dependency>
+						</dependencies>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
 		<profile>
 			<id>build-server</id>
 			<build>
