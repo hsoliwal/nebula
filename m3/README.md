@@ -165,3 +165,37 @@ Their manifest receipts explicitly set mutation and promotion authority to `fals
 This lets larger systems compose small, already-proven recipe atoms into DAGs without changing the
 semantic authority model. A scheduler can order/shard work; only the recipe and the compiler/test
 proof can establish a candidate, and only serial review can promote it.
+
+## Second-pass signal-chain reuse
+
+Nebula does not duplicate the Synexia second-pass detector. The existing root profile
+`m3-atomize-patternize` consumes `com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`;
+the pinned upstream recipe branch includes the read-only second-pass signal DAG before any
+source-changing lane.
+
+Exact reviewed binding:
+
+```text
+repository  hsoliwal/com.synexia
+branch      feat/m3-second-pass-signal-chain-20261004
+commit      630d3529f42f3ff6bde92da02b505153fdb35efb
+PR          8891
+recipe      com.synexia.rewrite.M3SecondPassAtomPatternRecipe
+budget      2
+authority   read-only; no mutation/replacement/promotion
+```
+
+Install that exact Synexia recipe artifact first, then run:
+
+```bash
+mvn -B -ntp -Pm3-atomize-patternize rewrite:dryRunNoFork
+```
+
+The machine binding is `catalogue/second-pass-recipe-binding.tsv`; the Java owner is
+`NebulaM3SecondPassBinding`. The convergence plan records the signal chain as a read-only
+pre-mutation gate. Lexically masked regex may nominate a candidate but never certify a transform;
+AST/LST structural/control/contract facts remain authoritative.
+
+Hosted Maven/JUnit success is not claimed while the upstream dedicated workflow fails before
+GitHub creates any job. That startup condition is distinct from a recipe test failure.
+
