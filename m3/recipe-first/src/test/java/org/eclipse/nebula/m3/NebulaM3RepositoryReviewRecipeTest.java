@@ -49,7 +49,10 @@ class NebulaM3RepositoryReviewRecipeTest {
                 public class Candidate {
                     private native int nativeCall();
                     public int find(String text) {
-                        return text.indexOf("x");
+                        for (int i = 0; i < text.length(); i++) {
+                            if (text.indexOf("x", i) >= 0) return i;
+                        }
+                        return -1;
                     }
                 }
                 """;
@@ -82,5 +85,39 @@ class NebulaM3RepositoryReviewRecipeTest {
         assertTrue(nativeReview.getFirst().isLifecycleFallbackRequired());
         assertFalse(nativeReview.getFirst().isNativeExecutionAuthority());
         assertFalse(nativeReview.getFirst().isPromotionAuthority());
+
+        List<NebulaM3MethodInventoryTable.Row> methods =
+                run.getDataTableRows(NebulaM3MethodInventoryTable.class);
+        assertEquals(2, methods.size());
+        assertEquals(
+                1,
+                methods.stream().filter(NebulaM3MethodInventoryTable.Row::isNativeMethod).count());
+
+        List<NebulaM3MethodFastSearchReviewTable.Row> methodSearch =
+                run.getDataTableRows(NebulaM3MethodFastSearchReviewTable.class);
+        assertEquals(List.of(1, 2, 3, 4),
+                methodSearch.stream()
+                        .map(NebulaM3MethodFastSearchReviewTable.Row::getPassOrder)
+                        .toList());
+        assertTrue(methodSearch.stream()
+                .allMatch(row -> row.getMethodKey().contains("find")
+                        && "READ_ONLY_EVIDENCE".equals(row.getAuthority())));
+
+        List<NebulaM3MethodJavaBeforeJniReviewTable.Row> methodNative =
+                run.getDataTableRows(NebulaM3MethodJavaBeforeJniReviewTable.class);
+        assertEquals(2, methodNative.size());
+        assertEquals(
+                1,
+                methodNative.stream()
+                        .filter(row -> "REVIEW_EXISTING_NATIVE_DECLARATION".equals(row.getDecision()))
+                        .count());
+        assertEquals(
+                1,
+                methodNative.stream()
+                        .filter(row -> "PROFILE_JAVA_HOT_PATH_BEFORE_JNI".equals(row.getDecision()))
+                        .count());
+        assertTrue(methodNative.stream().allMatch(NebulaM3MethodJavaBeforeJniReviewTable.Row::isJavaOracleRequired));
+        assertTrue(methodNative.stream().noneMatch(NebulaM3MethodJavaBeforeJniReviewTable.Row::isNativeExecutionAuthority));
+        assertTrue(methodNative.stream().noneMatch(NebulaM3MethodJavaBeforeJniReviewTable.Row::isPromotionAuthority));
     }
 }
