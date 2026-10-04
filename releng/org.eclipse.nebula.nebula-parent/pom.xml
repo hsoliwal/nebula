@@ -31,6 +31,8 @@ Contributors:
 		<junit-version>4.13.2</junit-version>
 		<jacoco-version>0.8.9</jacoco-version>
 		<easymock-version>5.2.0</easymock-version>
+		<m3.rewrite.plugin.version>5.23.1</m3.rewrite.plugin.version>
+		<m3.synexia.recipe.version>1.0.0-SNAPSHOT</m3.synexia.recipe.version>
 
 		<target-platform-platform>https://download.eclipse.org/eclipse/updates/latest</target-platform-platform>
 		<target-platform-gef>https://download.eclipse.org/tools/gef/classic/releases/latest</target-platform-gef>
@@ -470,6 +472,43 @@ Contributors:
 			</pluginRepositories>
 
 		</profile>
+
+		<profile>
+			<!--
+				Opt-in canonical M3/OpenRewrite source-model distillation inherited by
+				all Nebula widget modules. The Tycho reactor remains authoritative.
+
+				Install com.synexia:synexia-openrewrite-recipes:${m3.synexia.recipe.version}
+				first, then run from this reactor (or any child inheriting this parent):
+				  mvn -Pm3-atomize-patternize rewrite:dryRunNoFork
+			-->
+			<id>m3-atomize-patternize</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.openrewrite.maven</groupId>
+						<artifactId>rewrite-maven-plugin</artifactId>
+						<version>${m3.rewrite.plugin.version}</version>
+						<configuration>
+							<failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+							<failOnDryRunResults>false</failOnDryRunResults>
+							<exportDatatables>true</exportDatatables>
+							<activeRecipes>
+								<recipe>com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe</recipe>
+							</activeRecipes>
+						</configuration>
+						<dependencies>
+							<dependency>
+								<groupId>com.synexia</groupId>
+								<artifactId>synexia-openrewrite-recipes</artifactId>
+								<version>${m3.synexia.recipe.version}</version>
+							</dependency>
+						</dependencies>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
 	</profiles>
 
 </project>
