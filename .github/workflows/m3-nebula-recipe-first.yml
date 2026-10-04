@@ -81,7 +81,15 @@ jobs:
       - name: 7 - Install the proven Nebula-local recipe artifact
         run: mvn -B -ntp -f m3/recipe-first/pom.xml install
 
-      - name: 8 - Apply FILE-local atomize patternize document DAG
+      - name: 8 - Run read-only repository review DAG
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -Pm3-local-repository-review rewrite:dryRunNoFork
+          git diff --exit-code
+          test -z "$(git diff --name-only --cached)"
+
+      - name: 9 - Apply FILE-local atomize patternize document DAG
         shell: bash
         run: |
           set -euo pipefail
@@ -104,7 +112,7 @@ jobs:
             cp "$changed" "$CANDIDATE_DIR/postimage/$changed"
           done < "$CANDIDATE_DIR/changed-files.txt"
 
-      - name: 9 - Prove complete recipe DAG fixed point
+      - name: 10 - Prove complete recipe DAG fixed point
         shell: bash
         run: |
           set -euo pipefail
@@ -113,7 +121,7 @@ jobs:
           git diff --binary > "$CANDIDATE_DIR/second.patch"
           diff -u "$CANDIDATE_DIR/first.patch" "$CANDIDATE_DIR/second.patch"
 
-      - name: 10 - Verify SvgLoader length behavior on real SWT
+      - name: 11 - Verify SvgLoader length behavior on real SWT
         shell: bash
         run: |
           set -euo pipefail
@@ -123,10 +131,10 @@ jobs:
           xvfb-run -a mvn -B -ntp -f widgets/cwt/pom.xml -pl org.eclipse.nebula.cwt.tests -am -DskipTests=false -Dtest=SvgLoaderLengthTests verify
           rm -f "$VERIFY_TARGET"
 
-      - name: 11 - Original Nebula Tycho reactor on transformed candidates
+      - name: 12 - Original Nebula Tycho reactor on transformed candidates
         run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 
-      - name: 12 - Preserve candidate-only authority
+      - name: 13 - Preserve candidate-only authority
         shell: bash
         run: |
           set -euo pipefail
