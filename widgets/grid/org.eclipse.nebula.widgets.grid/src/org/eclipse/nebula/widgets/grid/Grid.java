@@ -10424,13 +10424,12 @@ public class Grid extends Canvas {
 		// FIXME I think we should remember the topIndex in the onPaint-method
 		final int topIndex = getTopIndex();
 		final int bottomIndex = getBottomIndex();
-		final int startColumnIndex = getStartColumnIndex();
-		final int endColumnIndex = getEndColumnIndex();
-
 		final GridVisibleRange range = new GridVisibleRange();
 		range.items = GridViewportProjection.visibleItems(items, topIndex, bottomIndex);
 		range.columns = GridViewportProjection.visibleColumns(
-				displayOrderedColumns, startColumnIndex, endColumnIndex);
+				displayOrderedColumns, getHScrollSelectionInPixels(),
+				rowHeaderVisible ? rowHeaderWidth : 0, getClientArea().width,
+				isFixedOverlayActive());
 		return range;
 	}
 
@@ -10441,11 +10440,8 @@ public class Grid extends Canvas {
 			return startColumnIndex;
 		}
 
-		if (!hScroll.getVisible()) {
-			startColumnIndex = 0;
-		}
-
-		startColumnIndex = hScroll.getSelection();
+		startColumnIndex = GridViewportProjection.startColumnIndex(
+				displayOrderedColumns, hScroll.getVisible() ? getHScrollSelectionInPixels() : 0);
 
 		return startColumnIndex;
 	}

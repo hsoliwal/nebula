@@ -48,19 +48,60 @@ final class GridViewportProjection {
 		return visible.toArray(new GridColumn[visible.size()]);
 	}
 
-	static int endColumnIndex(List<GridColumn> columns, int startIndex, int x, int clientWidth) {
-		int endIndex = -1;
-		for (int index = startIndex; index < columns.size(); index++) {
-			endIndex = index;
+	/** First positive-width visible column whose right edge is after the offset. */
+	static int startColumnIndex(List<GridColumn> columns, int horizontalSelectionPixels) {
+		long right = 0;
+		for (int index = 0; index < columns.size(); index++) {
 			GridColumn column = columns.get(index);
-			if (column.isVisible()) {
-				x += column.getWidth();
-			}
-			if (x > clientWidth) {
-				break;
+			if (!column.isVisible() || column.getWidth() <= 0) continue;
+			right += column.getWidth();
+			if (right > horizontalSelectionPixels) return index;
+		}
+		return columns.size();
+	}
+
+	static int endColumnIndex(List<GridColumn> columns, int startIndex, int x, int clientWidth) {
+		long right = x;
+		int endIndex = startIndex - 1;
+		for (int index = 0; index < columns.size(); index++) {
+			GridColumn column = columns.get(index);
+			if (!column.isVisible() || column.getWidth() <= 0) continue;
+			long left = right;
+			right += column.getWidth();
+			if (index >= startIndex && left < clientWidth && right > 0) endIndex = index;
+			if (right >= clientWidth) break;
+		}
+		return endIndex;
+	}
+
+	/**
+	 * Project the actual scrolled and fixed planes into the horizontal viewport.
+	 * Values are display-order references; no model or native state is retained.
+	 */
+	static GridColumn[] visibleColumns(List<GridColumn> columns, int horizontalSelectionPixels,
+			int viewportLeft, int viewportRight, boolean fixedOverlayActive) {
+		if (viewportRight <= viewportLeft || columns.isEmpty()) return new GridColumn[0];
+		long fixedWidth = 0;
+		if (fixedOverlayActive) {
+			for (GridColumn column : columns) {
+				if (column.isVisible() && column.isFixed()) fixedWidth += column.getWidth();
 			}
 		}
-		return Math.max(0, endIndex);
+		long scrolledX = (long) viewportLeft - horizontalSelectionPixels;
+		long fixedX = viewportLeft;
+		long bodyLeft = (long) viewportLeft + fixedWidth;
+		List<GridColumn> visible = new ArrayList<>();
+		for (GridColumn column : columns) {
+			if (!column.isVisible()) continue;
+			int width = column.getWidth();
+			boolean pinned = fixedOverlayActive && column.isFixed();
+			long left = pinned ? fixedX : scrolledX;
+			long clipLeft = pinned ? viewportLeft : bodyLeft;
+			if (width > 0 && left < viewportRight && left + width > clipLeft) visible.add(column);
+			if (pinned) fixedX += width;
+			scrolledX += width;
+		}
+		return visible.toArray(new GridColumn[visible.size()]);
 	}
 
 	static GridColumn columnAt(
