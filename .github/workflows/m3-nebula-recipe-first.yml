@@ -56,8 +56,7 @@ jobs:
           fi
           python3 m3/verify-source-custody.py "$BASE_SHA"
           bash -n m3/convergence/verify.sh
-          grep -F  m3/convergence/PLAN.tsv
-          grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
+          grep -F           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
           grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
           grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassRecipe=com.synexia.rewrite.M3SecondPassAtomPatternRecipe' .m3/atom-pattern/policy.properties
@@ -251,5 +250,3 @@ jobs:
             **/target/surefire-reports/
             m3/convergence/PLAN.tsv
             .m3/atom-pattern/policy.properties
-7\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
-          grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
