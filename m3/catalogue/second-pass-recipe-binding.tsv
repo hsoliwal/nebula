@@ -1,0 +1,2 @@
+upstream_repository	upstream_branch	upstream_commit	upstream_pr	recipe_entrypoint	pass_budget	source_mutation	replacement	promotion	hosted_proof
+hsoliwal/com.synexia	feat/m3-second-pass-signal-chain-20261004	630d3529f42f3ff6bde92da02b505153fdb35efb	8891	com.synexia.rewrite.M3SecondPassAtomPatternRecipe	2	false	false	false	WORKFLOW_STARTUP_FAILURE_NO_JOBS
