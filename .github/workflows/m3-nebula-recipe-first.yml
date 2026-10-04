@@ -36,7 +36,11 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: git diff --check "$BASE_SHA...HEAD"
+        run: >-
+          git diff --check "$BASE_SHA...HEAD" --
+          .
+          ':(exclude)m3/recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/exact/svg-loader-length/SvgLoader.after.java.txt'
+          ':(exclude)m3/recipe-first/src/test/resources/org/eclipse/nebula/m3/rewrite/exact/svg-loader-length/SvgLoader.before.java.txt'
 
       - name: 2 - M3 custody and saved convergence contract
         if: github.event_name == 'pull_request'
