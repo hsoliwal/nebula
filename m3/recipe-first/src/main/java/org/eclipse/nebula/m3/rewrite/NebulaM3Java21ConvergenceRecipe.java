@@ -37,6 +37,11 @@ public final class NebulaM3Java21ConvergenceRecipe extends Recipe {
     }
 
     @Override
+    public int maxCycles() {
+        return 1;
+    }
+
+    @Override
     public List<Recipe> getRecipeList() {
         return NebulaM3FileConvergenceRecipeDag.atoms().stream()
                 .map(NebulaM3FileConvergenceRecipeDag.Atom::recipe)
