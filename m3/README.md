@@ -129,3 +129,31 @@ oracle.
 Once this Nebula branch is green, the recipe/DAG shape can be replayed mechanically into
 `hsoliwal/M3jdk21` and `hsoliwal/com.synexia`; repository-specific eligibility recipes are added
 as new atoms rather than hand-editing target files.
+
+
+## Recipe DAG orchestration manifest
+
+The Nebula proving crate now exports the same recipe graph as a content-addressed scheduler-neutral
+manifest:
+
+```bash
+mvn -f m3/recipe-first/pom.xml -Pdag-manifest verify
+```
+
+Outputs:
+
+```text
+m3/recipe-first/target/nebula-m3-dag/
+├── recipe-dag.tsv
+├── recipe-dag.sha256
+└── orchestrators.tsv
+```
+
+The graph is derived from `NebulaM3FileConvergenceRecipeDag`; it is not a second hand-maintained
+workflow. OpenRewrite recipe leaves remain the source-changing atoms and Maven remains the build/proof
+root. Apache Camel, Airflow, and Drools/KIE are admitted as scheduler/rule-selection targets only.
+Their manifest receipts explicitly set mutation and promotion authority to `false`.
+
+This lets larger systems compose small, already-proven recipe atoms into DAGs without changing the
+semantic authority model. A scheduler can order/shard work; only the recipe and the compiler/test
+proof can establish a candidate, and only serial review can promote it.
