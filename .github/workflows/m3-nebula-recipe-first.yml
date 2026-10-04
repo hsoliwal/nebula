@@ -96,6 +96,17 @@ jobs:
       - name: 4 - Export content-addressed recipe DAG
         run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest verify
 
+      - name: 4a - Verify exact raw SvgLoader preimage
+        shell: bash
+        run: |
+          set -euo pipefail
+          SVG_PATH='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java'
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+            -Dm3.seal.root="$GITHUB_WORKSPACE" \
+            -Dm3.seal.path="$SVG_PATH" \
+            -Dm3.seal.sha256='23d730f01826b3d5c3de5d9f5299f2db11574ae3c482956b20928aaa676f9a08' \
+            verify
+
       - name: 7 - Baseline original Nebula Tycho reactor
         run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
@@ -118,6 +129,11 @@ jobs:
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mkdir -p "$CANDIDATE_DIR/postimage"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+            -Dm3.seal.root="$GITHUB_WORKSPACE" \
+            -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
+            -Dm3.seal.sha256='d56e584eb16981496046c7dbb67be8a18ff68aa01953084a441329bacc2c78eb' \
+            verify
           git diff --check
           git diff --name-only | sort > "$CANDIDATE_DIR/changed-files.txt"
           unexpected="$(grep -Ev '\.java$' "$CANDIDATE_DIR/changed-files.txt" || true)"
@@ -140,6 +156,12 @@ jobs:
           set -euo pipefail
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+            -Dm3.seal.root="$GITHUB_WORKSPACE" \
+            -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
+            -Dm3.seal.sha256='d56e584eb16981496046c7dbb67be8a18ff68aa01953084a441329bacc2c78eb' \
+            verify
+          echo 'SOURCE_SEAL_FIXED_POINT=true'
           git diff --binary > "$CANDIDATE_DIR/second.patch"
           diff -u "$CANDIDATE_DIR/first.patch" "$CANDIDATE_DIR/second.patch"
 
