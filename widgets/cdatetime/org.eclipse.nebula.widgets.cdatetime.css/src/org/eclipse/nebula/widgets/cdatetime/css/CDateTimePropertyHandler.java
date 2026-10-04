@@ -14,7 +14,8 @@ package org.eclipse.nebula.widgets.cdatetime.css;
 import org.eclipse.e4.ui.css.core.css2.CSS2FontHelper;
 import org.eclipse.e4.ui.css.core.dom.properties.ICSSPropertyHandler;
 import org.eclipse.e4.ui.css.core.engine.CSSEngine;
-import org.eclipse.e4.ui.css.core.impl.dom.Measure;
+import org.eclipse.e4.ui.css.core.impl.dom.CssValues.CssNumeric;
+import org.eclipse.e4.ui.css.core.impl.dom.CssValues.CssPrimitive;
 import org.eclipse.e4.ui.css.swt.dom.ControlElement;
 import org.eclipse.nebula.widgets.cdatetime.CDateTime;
 import org.eclipse.swt.SWT;
@@ -22,7 +23,6 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Control;
-import org.w3c.dom.css.CSSPrimitiveValue;
 import org.w3c.dom.css.CSSValue;
 import org.w3c.dom.css.CSSValueList;
 
@@ -162,8 +162,8 @@ public class CDateTimePropertyHandler implements ICSSPropertyHandler {
 			final int length = valueList.getLength();
 			for (int i = 0; i < length; i++) {
 				final CSSValue value2 = valueList.item(i);
-				if (value2.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-					final String cssProp = CSS2FontHelper.getCSSFontPropertyName((CSSPrimitiveValue) value2);
+				if (value2 instanceof CssPrimitive primitive) {
+					final String cssProp = CSS2FontHelper.getCSSFontPropertyName(primitive);
 					if (cssProp.equals("font-family")) {
 						applyCSSPropertyFamily(widget, value2, picker);
 					} else if (cssProp.equals("font-size")) {
@@ -231,11 +231,10 @@ public class CDateTimePropertyHandler implements ICSSPropertyHandler {
 	}
 
 	private void applyCSSPropertySize(final Control widget, final CSSValue value, final boolean picker) throws Exception {
-		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
+		if (value instanceof CssNumeric numeric) {
 			final FontData fd = CSSEngineHelper.getFontData(widget, picker);
-			final Measure m = (Measure) value;
 
-			final int newSize = Math.round(m.getFloatValue((short) 0));
+			final int newSize = Math.round((float) numeric.value());
 			final boolean modified = fd.getHeight() != newSize;
 			if (modified) {
 				fd.setHeight(newSize);
