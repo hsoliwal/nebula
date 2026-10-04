@@ -6,6 +6,7 @@ import org.eclipse.nebula.m3.rewrite.atom.NebulaM3AtomizePureIntReturnRecipe;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3DocumentPureIntAtomRecipe;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3InventoryPureIntAtomCandidates;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3PatternizePureIntAtomRecipe;
+import org.eclipse.nebula.m3.rewrite.exact.NebulaM3SvgLoaderLengthConvergenceRecipe;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +19,8 @@ public final class NebulaM3FileConvergenceRecipeDag {
         INVENTORY(false),
         ATOMIZATION(true),
         PATTERNIZATION(true),
-        DOCUMENTATION(true);
+        DOCUMENTATION(true),
+        PROVEN_FILE_CONVERGENCE(true);
 
         private final boolean mutating;
 
@@ -62,7 +64,11 @@ public final class NebulaM3FileConvergenceRecipeDag {
                             new Atom(
                                     "pure-int-documentation",
                                     Phase.DOCUMENTATION,
-                                    new NebulaM3DocumentPureIntAtomRecipe())));
+                                    new NebulaM3DocumentPureIntAtomRecipe()),
+                            new Atom(
+                                    "svgloader-length-convergence",
+                                    Phase.PROVEN_FILE_CONVERGENCE,
+                                    new NebulaM3SvgLoaderLengthConvergenceRecipe())));
 
     private NebulaM3FileConvergenceRecipeDag() {}
 
