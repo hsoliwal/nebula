@@ -28,7 +28,7 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 	protected interface ColorGetter {
 		Color getColor(CDateTime cdt);
 	}
-	
+
 	@FunctionalInterface
 	protected interface FontGetter {
 		Font getFont(CDateTime cdt);
@@ -85,7 +85,7 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 		});
 		assertTrue(result[0]);
 	}
-	
+
 	protected void checkFont(final String property, final FontGetter getter) {
 		final boolean[] result = new boolean[1];
 		result[0] = false;
@@ -133,7 +133,7 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 		});
 		assertTrue(result[0]);
 	}
-	
+
 	protected void checkFontSize(final String property, final FontGetter getter) {
 		final boolean[] result = new boolean[1];
 		result[0] = false;
@@ -155,7 +155,7 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 		});
 		assertTrue(result[0]);
 	}
-	
+
 	protected void checkFontWeight(final String property, final FontGetter getter) {
 		final boolean[] result = new boolean[1];
 		result[0] = false;
@@ -177,7 +177,7 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 		});
 		assertTrue(result[0]);
 	}
-	
+
 	protected void checkFontFamily(final String property, final FontGetter getter) {
 		final boolean[] result = new boolean[1];
 		result[0] = false;
@@ -199,7 +199,7 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 		});
 		assertTrue(result[0]);
 	}
-	
+
 	private void applyCSS(String css) throws Exception {
 		engine.parseStyleSheet(new StringReader("CDateTime {" + css + "}"));
 		engine.applyStyles(getShell(), true);

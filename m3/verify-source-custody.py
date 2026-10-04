@@ -54,11 +54,12 @@ def verify(base):
     pre, post = blob(base, parent), blob("HEAD", parent)
     expected = "1b30a4af10a3a3b5731e45ae36afa7c07faaf7d721c4b7bf15f88c3a481fc6f4"
     profile_hash = "7bd62f0f528e3955a14aaa79fa693f758d6e2f779ec569d837aa410cec9ab408"
+    ci_hash = "7598a2672ff8ccdf31589d1528daca3fe22ef5881fc98ea17daff23d5d444d00"
     post_hash = sha256(post).hexdigest()
-    require(post_hash in {expected, profile_hash}, "admitted parent postimage drift")
-    if post_hash == profile_hash:
+    require(post_hash in {expected, profile_hash, ci_hash}, "admitted parent postimage drift")
+    if post_hash in {profile_hash, ci_hash}:
         profile_shape(post)
-    require(sha256(pre).hexdigest() in {"255bd1e72e6e6368fdfbd76c6cdcf392d28857a97678290acb8ebbefd2766103", expected, profile_hash},
+    require(sha256(pre).hexdigest() in {"255bd1e72e6e6368fdfbd76c6cdcf392d28857a97678290acb8ebbefd2766103", expected, profile_hash, ci_hash},
             "parent aggregation preimage drift")
     print(parent + "\tPASS\t" + sha256(pre).hexdigest() + "\t" + post_hash)
 
@@ -78,13 +79,13 @@ def verify(base):
 
     provider_test = "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/css/BaseCSSThemingTest.java"
     provider_test_pre, provider_test_post = blob(base, provider_test), blob("HEAD", provider_test)
-    require(sha256(provider_test_post).hexdigest() == "cba91a328b94861c5c1d5b31c097825b1eeecefbf1716235fc918770024da859",
+    require(sha256(provider_test_post).hexdigest() == "44dd7b7a3f606a5b72d1d2ba2c194d03fc4303795394cd59adc12b4cc87b275f",
             "CDateTime test provider initializer postimage drift")
     require(sha256(provider_test_pre).hexdigest() in {
         "79a0f8e1a6c46e87b6f49ece1389867da540a626c1d4fa43138df0e181158462",
         "d8eed0c9bb58fe73c2782499693fede24513c0c3f2b6caec7fcd4531114c8e2b",
         "4cc46cffd07c97efd11780afd11aea6c422458f183ebcc72627a8c27d9756493",
-        "cba91a328b94861c5c1d5b31c097825b1eeecefbf1716235fc918770024da859"}, "CDateTime test provider initializer preimage drift")
+        "cba91a328b94861c5c1d5b31c097825b1eeecefbf1716235fc918770024da859", "44dd7b7a3f606a5b72d1d2ba2c194d03fc4303795394cd59adc12b4cc87b275f"}, "CDateTime test provider initializer preimage drift")
     provider = "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl.java"
     provider_rows = subprocess.check_output(["git", "ls-tree", "-z", base, "--", provider])
     require(not provider_rows or sha256(blob(base, provider)).hexdigest() == "234eff7ce055796a8ea7f1d266dc69a63a280e0d4eb36ade24563e18b784fa48",
@@ -93,22 +94,22 @@ def verify(base):
             "CDateTime retained provider postimage drift")
     attributes_rows = subprocess.check_output(["git", "ls-tree", "-z", base, "--", ".gitattributes"])
     require(not attributes_rows or sha256(blob(base, ".gitattributes")).hexdigest() in {
-        "131a858ec9b08390eb732a50bfeeab3a9a2a98b74b4da0b6580996977b8071d2", "270049a324217550a8efac809c73faa3db04846463c4fc4314d8b2063c48a8f3"}, "CDateTime exact root attribute preimage drift")
-    require(sha256(blob("HEAD", ".gitattributes")).hexdigest() == "270049a324217550a8efac809c73faa3db04846463c4fc4314d8b2063c48a8f3",
+        "131a858ec9b08390eb732a50bfeeab3a9a2a98b74b4da0b6580996977b8071d2", "270049a324217550a8efac809c73faa3db04846463c4fc4314d8b2063c48a8f3", "3cc00b7e012e3a9f991b246db558dd6591952620a807aca5352e5be9b29f31e6"}, "CDateTime exact root attribute preimage drift")
+    require(sha256(blob("HEAD", ".gitattributes")).hexdigest() == "3cc00b7e012e3a9f991b246db558dd6591952620a807aca5352e5be9b29f31e6",
             "CDateTime exact root attribute postimage drift")
-    print(provider_test + "\tPASS\t" + sha256(provider_test_pre).hexdigest() + "\tcba91a328b94861c5c1d5b31c097825b1eeecefbf1716235fc918770024da859")
+    print(provider_test + "\tPASS\t" + sha256(provider_test_pre).hexdigest() + "\t44dd7b7a3f606a5b72d1d2ba2c194d03fc4303795394cd59adc12b4cc87b275f")
     print(provider + "\tPASS\t" + (sha256(blob(base, provider)).hexdigest() if provider_rows else "ABSENT") + "\t234eff7ce055796a8ea7f1d266dc69a63a280e0d4eb36ade24563e18b784fa48")
 
 
     e4_annotation_rows = [
-        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart.java', '88553ed64c0dfb7c08a5d7c64380886e65ef855b72774bcb3a8b5e52273a299b', '58d9bc6330c8670147254693dcb395cd50e88b7d3e780aacb4806494f05a6c29', '471072428aa3cc6ff0e19567fab7199ca7f31333a58905a1c86489cc3b5e3007'),
-        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart.java', 'a0b890d25d9c7cdd433f00e49cecd87083ec12b1244a96f2ebc4903d826acc16', '7cd7179eb49e606fca108dba962e1a0fb4c201f8d2517dc77032786424da95ef', 'f7cf28894b872ed09dc009ae59632b3faa777b502a0fd73168ca85e46c62543c'),
-        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/META-INF/MANIFEST.MF', '1bd3b08226fbc0ad9f0586c60cc71debe027992fc55f75fd0f4eff57664369cf', 'd7a11ebfd717b59c10860315e2b0a1f5954428ab5500f59c968b552cc3d48893', '99ec161a425ef2a974b02a1986eb4185b44c515d26642f58a9c962a656841323'),
-        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/org.eclipse.nebula.widgets.cdatetime.example.e4.product', '4ff3163f0a625e1adab50bf3e216026bd0fbb0353aa84012c6d8092cc61956c1', '10fdec2a327f17c60d817c4e675382505695c0d6a8945a9e1e78c3c550ad7d3c', 'ef4669a264a851ad0e3eeb767f4846a08940621b205e959872e030f2811333fe'),
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart.java', '88553ed64c0dfb7c08a5d7c64380886e65ef855b72774bcb3a8b5e52273a299b', '58d9bc6330c8670147254693dcb395cd50e88b7d3e780aacb4806494f05a6c29', '471072428aa3cc6ff0e19567fab7199ca7f31333a58905a1c86489cc3b5e3007', '08d0d45568b0d895607b8ebe74be1c9975dd1321f63f27e76b75170ae2404a99'),
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart.java', 'a0b890d25d9c7cdd433f00e49cecd87083ec12b1244a96f2ebc4903d826acc16', '7cd7179eb49e606fca108dba962e1a0fb4c201f8d2517dc77032786424da95ef', 'f7cf28894b872ed09dc009ae59632b3faa777b502a0fd73168ca85e46c62543c', 'f7cf28894b872ed09dc009ae59632b3faa777b502a0fd73168ca85e46c62543c'),
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/META-INF/MANIFEST.MF', '1bd3b08226fbc0ad9f0586c60cc71debe027992fc55f75fd0f4eff57664369cf', 'd7a11ebfd717b59c10860315e2b0a1f5954428ab5500f59c968b552cc3d48893', '99ec161a425ef2a974b02a1986eb4185b44c515d26642f58a9c962a656841323', '99ec161a425ef2a974b02a1986eb4185b44c515d26642f58a9c962a656841323'),
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/org.eclipse.nebula.widgets.cdatetime.example.e4.product', '4ff3163f0a625e1adab50bf3e216026bd0fbb0353aa84012c6d8092cc61956c1', '10fdec2a327f17c60d817c4e675382505695c0d6a8945a9e1e78c3c550ad7d3c', 'ef4669a264a851ad0e3eeb767f4846a08940621b205e959872e030f2811333fe', 'ef4669a264a851ad0e3eeb767f4846a08940621b205e959872e030f2811333fe'),
     ]
-    for path, git_before, raw_before, exact_after in e4_annotation_rows:
+    for path, git_before, raw_before, previous_after, exact_after in e4_annotation_rows:
         before, after = blob(base, path), blob("HEAD", path)
-        require(sha256(before).hexdigest() in {git_before, raw_before, exact_after},
+        require(sha256(before).hexdigest() in {git_before, raw_before, previous_after, exact_after},
                 "E4 annotation exact preimage drift: " + path)
         require(sha256(after).hexdigest() == exact_after, "E4 annotation exact postimage drift: " + path)
         print(path + "\tPASS\t" + sha256(before).hexdigest() + "\t" + exact_after)

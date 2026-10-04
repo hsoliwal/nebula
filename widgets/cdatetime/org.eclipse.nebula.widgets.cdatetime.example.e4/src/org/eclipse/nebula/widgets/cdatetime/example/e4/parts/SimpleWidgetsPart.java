@@ -114,7 +114,7 @@ public class SimpleWidgetsPart {
 		cdt6.setLayoutData(gd6);
 		cdt6.setSelection(new Date());
 		cdt6.setData(CSS_ID, "okcancelclear");
-		
+
 	}
 
 	@Focus
