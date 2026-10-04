@@ -18,8 +18,8 @@ import org.openrewrite.java.tree.J;
  * parentheses, unary + / - / ~, and non-throwing primitive int binary operators. It introduces no
  * member, visibility, dependency, allocation, I/O, synchronization, exception path or API change.
  *
- * <p>The source-only M3-IOP marker patternizes the extracted local leaf without adding a product
- * dependency. Discovery and mutation share {@link NebulaM3PureIntAtomEligibility}; more complex methods
+ * <p>Pattern/IOP marking is deliberately a separate recipe atom so extraction can be verified
+ * independently. Discovery and mutation share {@link NebulaM3PureIntAtomEligibility}; more complex methods
  * are left unchanged for a broader-scope or partial-AST pass.
  */
 public final class NebulaM3AtomizePureIntReturnRecipe extends Recipe {
@@ -46,11 +46,15 @@ public final class NebulaM3AtomizePureIntReturnRecipe extends Recipe {
     }
 
     @Override
+    public int maxCycles() {
+        return 1;
+    }
+
+    @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return new JavaIsoVisitor<ExecutionContext>() {
             private final JavaTemplate atomize = JavaTemplate.builder(
-                            "/* M3-IOP: " + NebulaM3PureIntAtomEligibility.PATTERN_ROLE + " */ "
-                                    + "int " + NebulaM3PureIntAtomEligibility.ATOM_NAME + " = #{any(int)}; "
+                            "int " + NebulaM3PureIntAtomEligibility.ATOM_NAME + " = #{any(int)}; "
                                     + "return " + NebulaM3PureIntAtomEligibility.ATOM_NAME + ";")
                     .contextSensitive()
                     .build();
