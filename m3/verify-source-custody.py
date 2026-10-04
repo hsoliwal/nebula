@@ -100,6 +100,27 @@ def verify(base):
     print(provider + "\tPASS\t" + (sha256(blob(base, provider)).hexdigest() if provider_rows else "ABSENT") + "\t234eff7ce055796a8ea7f1d266dc69a63a280e0d4eb36ade24563e18b784fa48")
 
 
+    e4_annotation_rows = [
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart.java', '88553ed64c0dfb7c08a5d7c64380886e65ef855b72774bcb3a8b5e52273a299b', '58d9bc6330c8670147254693dcb395cd50e88b7d3e780aacb4806494f05a6c29', '471072428aa3cc6ff0e19567fab7199ca7f31333a58905a1c86489cc3b5e3007'),
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart.java', 'a0b890d25d9c7cdd433f00e49cecd87083ec12b1244a96f2ebc4903d826acc16', '7cd7179eb49e606fca108dba962e1a0fb4c201f8d2517dc77032786424da95ef', 'f7cf28894b872ed09dc009ae59632b3faa777b502a0fd73168ca85e46c62543c'),
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/META-INF/MANIFEST.MF', '1bd3b08226fbc0ad9f0586c60cc71debe027992fc55f75fd0f4eff57664369cf', 'd7a11ebfd717b59c10860315e2b0a1f5954428ab5500f59c968b552cc3d48893', '99ec161a425ef2a974b02a1986eb4185b44c515d26642f58a9c962a656841323'),
+        ('widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/org.eclipse.nebula.widgets.cdatetime.example.e4.product', '4ff3163f0a625e1adab50bf3e216026bd0fbb0353aa84012c6d8092cc61956c1', '10fdec2a327f17c60d817c4e675382505695c0d6a8945a9e1e78c3c550ad7d3c', 'ef4669a264a851ad0e3eeb767f4846a08940621b205e959872e030f2811333fe'),
+    ]
+    for path, git_before, raw_before, exact_after in e4_annotation_rows:
+        before, after = blob(base, path), blob("HEAD", path)
+        require(sha256(before).hexdigest() in {git_before, raw_before, exact_after},
+                "E4 annotation exact preimage drift: " + path)
+        require(sha256(after).hexdigest() == exact_after, "E4 annotation exact postimage drift: " + path)
+        print(path + "\tPASS\t" + sha256(before).hexdigest() + "\t" + exact_after)
+    e4_attrs = 'widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/.gitattributes'
+    e4_attr_rows = subprocess.check_output(["git", "ls-tree", "-z", base, "--", e4_attrs])
+    require(not e4_attr_rows or sha256(blob(base, e4_attrs)).hexdigest() == "f5808c25747545be15ebbbbdc23d24355fe66f3b4ee17dabf64cf239466ea7ab",
+            "E4 exact attributes preimage drift")
+    require(sha256(blob("HEAD", e4_attrs)).hexdigest() == "f5808c25747545be15ebbbbdc23d24355fe66f3b4ee17dabf64cf239466ea7ab",
+            "E4 exact attributes postimage drift")
+    print(e4_attrs + "\tPASS\t" + (sha256(blob(base, e4_attrs)).hexdigest() if e4_attr_rows else "ABSENT") + "\tf5808c25747545be15ebbbbdc23d24355fe66f3b4ee17dabf64cf239466ea7ab")
+
+
 if __name__ == "__main__":
     require(len(sys.argv) == 2, "BASE_REVISION required")
     verify(sys.argv[1])
