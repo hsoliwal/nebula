@@ -1,8 +1,8 @@
 # Executable statement, block and loop composition
 
-The reusable source-changing recipe is owned by Synexia PR #8837:
-https://github.com/hsoliwal/com.synexia/pull/8837
-Pinned recipe revision: 6d5164334ce8d160fbbad63d363dc01e8fadd6df
+The reusable source-changing recipe is owned by Synexia and retained on current develop:
+https://github.com/hsoliwal/com.synexia/tree/develop/synexia-openrewrite-recipes/recipes/statement-atoms
+Pinned recipe revision: 8ef199967074194789794a67e2c042d5e907d08f
 Crate: synexia-openrewrite-recipes/recipes/statement-atoms
 Named composition: com.synexia.m3.StatementBlockComposition
 
