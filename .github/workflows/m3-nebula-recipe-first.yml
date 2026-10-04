@@ -63,7 +63,7 @@ jobs:
           grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassRecipe=com.synexia.rewrite.M3SecondPassAtomPatternRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassPassBudget=2' .m3/atom-pattern/policy.properties
-          grep -F 'java.secondPassUpstreamCommit=9d33ce5229bee70872110b7a03e4ee99bf0e0878' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassUpstreamCommit=5a369dc9dc84db32489c732cf05ee6c054d67db2' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassMutation=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReplacement=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassPromotion=false' .m3/atom-pattern/policy.properties
@@ -115,7 +115,7 @@ jobs:
       - name: 3c - Run exact pinned Synexia second-pass recipe when authorized
         env:
           GH_TOKEN: ${{ secrets.M3_SYNEXIA_TOKEN }}
-          SYNEXIA_COMMIT: 9d33ce5229bee70872110b7a03e4ee99bf0e0878
+          SYNEXIA_COMMIT: 5a369dc9dc84db32489c732cf05ee6c054d67db2
         shell: bash
         run: |
           set -euo pipefail
