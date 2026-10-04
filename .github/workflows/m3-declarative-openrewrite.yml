@@ -1,0 +1,63 @@
+name: Nebula M3 declarative OpenRewrite convergence
+
+on:
+  push:
+    branches:
+      - "m3/openrewrite-declarative-convergence-20261004"
+    paths:
+      - "m3/recipe-first/**"
+      - "m3/docs/openrewrite-declarative-convergence.md"
+      - "m3/README.md"
+      - "pom.xml"
+      - ".github/workflows/m3-declarative-openrewrite.yml"
+  pull_request:
+    paths:
+      - "m3/recipe-first/**"
+      - "m3/docs/openrewrite-declarative-convergence.md"
+      - "m3/README.md"
+      - "pom.xml"
+      - ".github/workflows/m3-declarative-openrewrite.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recipe-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: 1 diff hygiene
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "$BASE_SHA...HEAD"
+
+      - name: 2 compile source-first M3 reactor
+        run: >
+          mvn -B -ntp -f m3/reactor.xml
+          -DskipTests compile
+
+      - name: 3 declarative resource and source-sealed recipe proof
+        run: >
+          mvn -B -ntp -f m3/recipe-first/pom.xml
+          -Dtest=NebulaM3DeclarativeConvergenceTest,NebulaM3DeclarativeConvergenceControlRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest
+          -Dsurefire.failIfNoSpecifiedTests=false test
+
+      - name: 4 full recipe-first module verification
+        run: >
+          mvn -B -ntp -f m3/reactor.xml
+          -pl recipe-first -am verify
