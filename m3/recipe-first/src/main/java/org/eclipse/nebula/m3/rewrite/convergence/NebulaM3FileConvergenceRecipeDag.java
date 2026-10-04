@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EPL-2.0
 package org.eclipse.nebula.m3.rewrite.convergence;
 
-import org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe;
+import org.eclipse.nebula.m3.rewrite.NebulaM3ConvergenceCatalog;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3AtomizePureIntReturnRecipe;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3DocumentPureIntAtomRecipe;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3InventoryPureIntAtomCandidates;
@@ -77,7 +77,7 @@ public final class NebulaM3FileConvergenceRecipeDag {
     }
 
     public static Recipe fixedPointRecipe() {
-        return new NebulaM3Java21ConvergenceRecipe();
+        return NebulaM3ConvergenceCatalog.activate();
     }
 
     private static List<Atom> validate(List<Atom> input) {

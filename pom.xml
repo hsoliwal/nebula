@@ -76,7 +76,7 @@ http://www.eclipse.org/legal/epl-v10.html -->
 							<failOnDryRunResults>false</failOnDryRunResults>
 							<exportDatatables>true</exportDatatables>
 							<activeRecipes>
-								<recipe>org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe</recipe>
+								<recipe>org.eclipse.nebula.m3.ConvergeFileAtoms</recipe>
 							</activeRecipes>
 						</configuration>
 						<dependencies>
