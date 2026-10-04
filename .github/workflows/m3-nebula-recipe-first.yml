@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          unexpected="$(git diff --name-only "$BASE_SHA...HEAD"             | grep -Ev '^(m3/|\.m3/|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$)' || true)"
+          unexpected="$(git diff --name-only "$BASE_SHA...HEAD" | grep -Ev '^(m3/|\.m3/|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$)' || true)"
           if [[ -n "$unexpected" ]]; then
             printf 'Nebula production/source path changed outside the saved M3 convergence lane:\n%s\n' "$unexpected"
             exit 1
@@ -54,10 +54,8 @@ jobs:
           grep -F $'4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
           grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
-          grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' \
-            .m3/atom-pattern/policy.properties
-          grep -F 'java.localCandidateRecipe=org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' \
-            .m3/atom-pattern/policy.properties
+          grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' .m3/atom-pattern/policy.properties
+          grep -F 'java.localCandidateRecipe=org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidateScope=FILE' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
@@ -65,17 +63,14 @@ jobs:
         run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
 
       - name: 4 - Inventory the whole Nebula Java checkout
-        run: >
-          mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory
-          -Dm3.nebula.root="$GITHUB_WORKSPACE"
-          -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory"
-          verify
+        run: |
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
 
       - name: 5 - Require complete Java parse inventory
         shell: bash
         run: |
           set -euo pipefail
-          grep -F $'failureRows\t0'             m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
+          grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
 
       - name: 6 - Baseline original Nebula Tycho reactor
         run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
@@ -87,27 +82,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p m3/recipe-first/target/nebula-m3-candidate
+          CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
+          mkdir -p "$CANDIDATE_DIR/postimage"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
 
           git diff --check
-          git diff --name-only | sort >             m3/recipe-first/target/nebula-m3-candidate/changed-files.txt
-          unexpected="$(grep -Ev '\\.java             m3/recipe-first/target/nebula-m3-candidate/changed-files.txt || true)"
+          git diff --name-only | sort > "$CANDIDATE_DIR/changed-files.txt"
+          unexpected="$(grep -Ev '\.java$' "$CANDIDATE_DIR/changed-files.txt" || true)"
           if [[ -n "$unexpected" ]]; then
             printf 'FILE recipe escaped Java source scope:\n%s\n' "$unexpected"
             exit 1
           fi
 
-          git diff --binary >             m3/recipe-first/target/nebula-m3-candidate/candidate.patch
-          cp m3/recipe-first/target/nebula-m3-candidate/candidate.patch             m3/recipe-first/target/nebula-m3-candidate/first.patch
+          git diff --binary > "$CANDIDATE_DIR/candidate.patch"
+          cp "$CANDIDATE_DIR/candidate.patch" "$CANDIDATE_DIR/first.patch"
+          while IFS= read -r changed; do
+            [[ -z "$changed" ]] && continue
+            mkdir -p "$CANDIDATE_DIR/postimage/$(dirname "$changed")"
+            cp "$changed" "$CANDIDATE_DIR/postimage/$changed"
+          done < "$CANDIDATE_DIR/changed-files.txt"
 
       - name: 9 - Prove complete recipe DAG fixed point
         shell: bash
         run: |
           set -euo pipefail
+          CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
-          git diff --binary >             m3/recipe-first/target/nebula-m3-candidate/second.patch
-          diff -u             m3/recipe-first/target/nebula-m3-candidate/first.patch             m3/recipe-first/target/nebula-m3-candidate/second.patch
+          git diff --binary > "$CANDIDATE_DIR/second.patch"
+          diff -u "$CANDIDATE_DIR/first.patch" "$CANDIDATE_DIR/second.patch"
 
       - name: 10 - Original Nebula Tycho reactor on transformed candidates
         run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
@@ -117,8 +119,8 @@ jobs:
         run: |
           set -euo pipefail
           test -z "$(git diff --name-only --cached)"
-          grep -F 4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
-          grep -F 'java.localCandidatePromotion=false'             .m3/atom-pattern/policy.properties
+          grep -F $'4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
       - name: Upload Nebula M3 inventory and candidate evidence
         if: always()
