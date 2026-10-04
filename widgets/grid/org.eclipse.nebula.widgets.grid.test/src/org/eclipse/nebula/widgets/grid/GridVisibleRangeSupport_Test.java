@@ -18,6 +18,9 @@ import static org.junit.Assert.fail;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -27,6 +30,10 @@ import org.eclipse.nebula.widgets.grid.Grid.GridVisibleRange;
 import org.eclipse.nebula.widgets.grid.GridVisibleRangeSupport.RangeChangedEvent;
 import org.eclipse.nebula.widgets.grid.GridVisibleRangeSupport.VisibleRangeChangedListener;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ScrollBar;
@@ -193,6 +200,65 @@ public class GridVisibleRangeSupport_Test {
         assertEvent(previous, events.get(1));
     }
 
+
+    @Test
+    public void testVisualViewportScenesProduceScreenshots() throws Exception {
+        grid.setHeaderVisible(true);
+        grid.setLinesVisible(true);
+        for (int column = 0; column < grid.getColumnCount(); column++) {
+            GridColumn gridColumn = grid.getColumn(column);
+            gridColumn.setText("column " + column);
+            gridColumn.setWidth(110);
+        }
+        for (int row = 0; row < grid.getItemCount(); row++) {
+            GridItem item = grid.getItem(row);
+            for (int column = 0; column < grid.getColumnCount(); column++) {
+                item.setText(column, "r" + row + " c" + column);
+            }
+        }
+
+        grid.setSize(360, 220);
+        shell.setSize(390, 270);
+        flushPaint();
+
+        GridVisibleRange top = grid.getVisibleRange();
+        assertTrue("top screenshot must show a bounded row viewport",
+                top.getItems().length > 0 && top.getItems().length < grid.getItemCount());
+        assertTrue("top screenshot must show a bounded column viewport",
+                top.getColumns().length > 0 && top.getColumns().length < grid.getColumnCount());
+        assertSame(grid.getItem(grid.getTopIndex()), top.getItems()[0]);
+        snapshot("01-top");
+
+        grid.setTopIndex(30);
+        flushPaint();
+        GridVisibleRange middle = grid.getVisibleRange();
+        assertTrue("vertical screenshot must advance the logical viewport", grid.getTopIndex() > 0);
+        assertSame(grid.getItem(grid.getTopIndex()), middle.getItems()[0]);
+        snapshot("02-middle");
+
+        ScrollBar horizontal = grid.getHorizontalBar();
+        assertNotNull(horizontal);
+        horizontal.setSelection(180);
+        horizontal.notifyListeners(SWT.Selection, new Event());
+        flushPaint();
+        GridVisibleRange shifted = grid.getVisibleRange();
+        assertTrue("horizontal screenshot must retain visible columns", shifted.getColumns().length > 0);
+        assertTrue("horizontal scrollbar must move", horizontal.getSelection() > 0);
+        snapshot("03-horizontal");
+
+        int rowsBeforeResize = shifted.getItems().length;
+        int columnsBeforeResize = shifted.getColumns().length;
+        grid.setSize(620, 340);
+        shell.setSize(650, 390);
+        flushPaint();
+        GridVisibleRange resized = grid.getVisibleRange();
+        assertTrue("larger screenshot viewport must not expose fewer rows",
+                resized.getItems().length >= rowsBeforeResize);
+        assertTrue("larger screenshot viewport must not expose fewer columns",
+                resized.getColumns().length >= columnsBeforeResize);
+        snapshot("04-resized");
+    }
+
     @Test
     public void testPaintDrivesVisibleRange() throws Exception {
         List<RangeChangedEvent> events = new ArrayList<>();
@@ -209,6 +275,25 @@ public class GridVisibleRangeSupport_Test {
         grid.redraw();
         flushPaint();
         assertEquals("Stationary repaint must not emit a difference", count, events.size());
+    }
+
+
+    private void snapshot(String name) throws IOException {
+        int width = Math.max(1, grid.getSize().x);
+        int height = Math.max(1, grid.getSize().y);
+        Image image = new Image(display, width, height);
+        GC gc = new GC(grid);
+        try {
+            gc.copyArea(image, 0, 0);
+            ImageLoader loader = new ImageLoader();
+            loader.data = new ImageData[] { image.getImageData() };
+            Path directory = Path.of("target", "m3-visible-range-screenshots");
+            Files.createDirectories(directory);
+            loader.save(directory.resolve(name + ".png").toString(), SWT.IMAGE_PNG);
+        } finally {
+            gc.dispose();
+            image.dispose();
+        }
     }
 
     private void flushPaint() {
