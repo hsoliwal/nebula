@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EPL-2.0
 package org.eclipse.nebula.m3.rewrite;
 
-import org.eclipse.nebula.m3.rewrite.convergence.NebulaNebulaM3FileConvergenceRecipeDag;
+import org.eclipse.nebula.m3.rewrite.convergence.NebulaM3FileConvergenceRecipeDag;
 import java.util.List;
 import java.util.Set;
 import org.openrewrite.Recipe;
