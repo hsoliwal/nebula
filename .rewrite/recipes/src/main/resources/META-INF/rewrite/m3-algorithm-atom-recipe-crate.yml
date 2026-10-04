@@ -1,0 +1,12 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.M3AlgorithmAtomRecipeCrate
+displayName: M3 algorithm atom recipe-crate binding
+description: >-
+  Inventory exact Java method preimages, classify algorithm shapes, compare balanced
+  LeetCode/HackerRank/GeeksforGeeks metadata, bind pinned GitHub donor provenance and the admitted
+  Maven/OpenRewrite recipe crate, and route each candidate into the canonical Java/JNI serial atom
+  review lane without changing Java source.
+recipeList:
+  - com.synexia.rewrite.M3AlgorithmAtomRecipeCrateRecipe:
+      evidenceLimit: 20

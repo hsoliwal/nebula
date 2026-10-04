@@ -1,0 +1,14 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.fleet.AtomizeAndPatternize
+displayName: Atomize and patternize repository source
+description: Export the existing source-preserving Java atom, hierarchy, documentation and framework pattern inventories.
+recipeList:
+  - com.synexia.rewrite.M3DonorMavenizedAtomPatternRecipe:
+      repository: ${synexia.rewrite.repository}
+      project: ${synexia.rewrite.project}
+      module: ${synexia.rewrite.module}
+      libraries: ""
+      evidenceLimit: 20
+  - com.synexia.rewrite.M3HierarchicalAtomPatternRecipe:
+      sourceFilePattern: "**"
+      problemTerm: "mindex minex jni filesystem precompute search regex index persistence lifecycle"

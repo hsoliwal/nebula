@@ -1,0 +1,113 @@
+platform	repository	commit	path
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Arrays/2dArrays.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Arrays/ArrayManipulation.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Arrays/LeftRotation.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Arrays/NewYearChaos.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Arrays/minimumswaps2.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dictionaries and Hashmaps/FrequencyQueries.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dictionaries and Hashmaps/Ransom_Note.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dictionaries and Hashmaps/SherlockAndAnagrams.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dictionaries and Hashmaps/Sherlock_and_Anagrams.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dictionaries and Hashmaps/Two_Strings.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dictionaries and Hashmaps/count_triplets.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dynamic Programming/Abbreviation.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dynamic Programming/Candies.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dynamic Programming/DecibinaryNumbers.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Dynamic Programming/MaxSumArray.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Graphs/Connected_Cell_in_a_Grid.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Graphs/Find_the_nearest_clone.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Graphs/Matrix.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Graphs/Road_ and_Libraries.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Graphs/Shortest_Reach_in_a_Graph.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Greedy Algorithm/GreedyFlorist.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Greedy Algorithm/LuckBalance.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Greedy Algorithm/MaxMin.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Greedy Algorithm/MinimumAbsoluteDifferenceArray.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Greedy Algorithm/ReverseShuffleMerge.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/10-regular-expression-matching.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/11-container-most-water.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/12-integer-to-roman.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/13-roman-to-integer.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/14-longest-common-prefix.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/15-3sum.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/16-3sum-closest.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/17-letter-combinations-of-a-phone-number.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/18-4sum.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/19-remove-nth-node-from-end-of-list.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/20-valid-parentheses.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/2011-final-value-of-variable-after-performing-operations.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/21-merge-two-sorted-lists.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/22-generate-parentheses.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/23-merge-k-sorted-lists.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/24-swap-nodes-in-pairs.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/25-reverse-nodes-in-k-group.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/26-remove-duplicates-from-sorted-array.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/27-remove-element.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/28-find-the-index-of-the-first-occurrence-in-a-string.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/29-divide-two-integers.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/30-substring-with-concatenation-of-all-words.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/31-next-permutation.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/32-longest-valid-parentheses.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/33-search-in-rotated-sorted-array.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/34-find-first-last-position-of-element-in-sorted-array.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/35-search-insert-position.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/36-valid-sudoku.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/37-sudoku-solver.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/38-count-and-say.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/39-combination-sum.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/40-combination-sum-ii.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/41-first-missing-positive.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/42-trapping-rain-water.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/43-multiply-strings.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/44-wildcard-matching.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/45-jump-game-ii.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/46-permutations.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/47-permutations-ii.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/48-rotate-image.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/49-group-anagrams.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Leetcode/java/9-palindrome-number.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Linked-List/DetectCycle.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Linked-List/DoublyLinkedList.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Linked-List/InsertNodeAtSpecificPosition.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Linked-List/InsertNodeIntoSortedDLL.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Linked-List/MergePoint.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Linked-List/ReverseDLL.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Miscellaneous/FriendCircleQueries.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Miscellaneous/MaximumXor.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Miscellaneous/Primality.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Miscellaneous/flippingBits.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Recursion and Backtracking/CrosswordPuzzle.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Recursion and Backtracking/Davis'Staircase.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Recursion and Backtracking/Fibonacci_numbers.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Recursion and Backtracking/RecursiveDigitSum.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Search/IceCreamParlor.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Search/MakingCandies.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Search/MaximumSubarraySum.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Search/MinimumTimeRequired.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Search/Pairs.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Search/SwapNodes.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Search/TripleSum.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Sorting/BubbleSort.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Sorting/Comparator.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Sorting/Fraudulent.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Sorting/MarkandToys.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Sorting/MergeSort.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Stack and Queues/BalancedBrackets.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Stack and Queues/CastleOnTheGrid.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Stack and Queues/LargestRectangle.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Stack and Queues/MinMaxRiddle.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Stack and Queues/PoisonousPlants.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Stack and Queues/aTaleOfTwoStacks.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	String Manipulation/CommonChild.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	String Manipulation/MakingAnagrams.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	String Manipulation/SherlockAndValidString.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	String Manipulation/SpecialStringAgain.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	String Manipulation/alternating_characters.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Trees/Balanced_Forest.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Trees/Huffman_Decoding.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Trees/LCA.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Trees/heightOfBT.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Warm-Up Challenges/countingValleys.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Warm-Up Challenges/jumpingOnTheClouds.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Warm-Up Challenges/repeatedString.java
+HACKERRANK	maze-runnar/interview-preparation-kit	1971cadd8c88b768be0fa394af1efa89039b6f4c	Warm-Up Challenges/sockMerchant.java

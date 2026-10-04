@@ -1,0 +1,9 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.M3HierarchicalAtomPatternLattice
+displayName: M3 hierarchical Mavenized atom-pattern lattice
+description: >-
+  Inventory and patternize Mavenized sources by source specificity, including a separate
+  documentation lane, then emit mandatory FILE -> PACKAGE -> MODULE -> PROJECT -> REPOSITORY
+  promotion evidence before any source-sealed absorption recipe may run.
+recipeList:
+  - com.synexia.rewrite.M3HierarchicalAtomPatternRecipe

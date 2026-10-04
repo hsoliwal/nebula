@@ -1,0 +1,195 @@
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/m3-fast-search/src/main/java/com/synexia/m3/search/CompetitiveProblemReview.java
++++ .rewrite/recipes/src/main/java/com/synexia/m3/search/CompetitiveProblemReview.java
+@@ -272,12 +272,14 @@
+             }
+             List<ProblemAdapter> indexed =
+                     ProblemAdapterCatalog.byPlatformCategory(platform.name(), canonicalCategory);
++            final ChallengePlatform validatedPlatform = platform;
++            final CompetitiveProblemCategory validatedCategory = canonicalCategory;
+             if (adapterCount != indexed.size()
+                     || indexed.stream().anyMatch(adapter ->
+                             !adapter.executable()
+-                                    || !adapter.source().platform().equalsIgnoreCase(platform.name())
++                                    || !adapter.source().platform().equalsIgnoreCase(validatedPlatform.name())
+                                     || CompetitiveProblemCategory.fromShape(
+-                                            adapter.classification().shape()) != canonicalCategory)) {
++                                            adapter.classification().shape()) != validatedCategory)) {
+                 throw new IllegalArgumentException("COMPETITIVE_PROBLEM_ADAPTER_POSTING_DRIFT");
+             }
+             String expected = digest(
+@@ -328,10 +330,12 @@
+                         "COMPETITIVE_PROBLEM_ADAPTER_INDEX_ROOT_DRIFT");
+             }
+             lanes = List.copyOf(Objects.requireNonNull(lanes, "lanes"));
++            final CompetitiveProblemCategory validatedCategory = canonicalCategory;
++            final String validatedAdapterIndexRoot = adapterIndexRoot;
+             if (!lanes.stream().map(ProblemAdapterLane::platform).toList().equals(REVIEW_ORDER)
+                     || lanes.stream().anyMatch(lane ->
+-                            lane.canonicalCategory() != canonicalCategory
+-                                    || !lane.adapterIndexRoot().equals(adapterIndexRoot))) {
++                            lane.canonicalCategory() != validatedCategory
++                                    || !lane.adapterIndexRoot().equals(validatedAdapterIndexRoot))) {
+                 throw new IllegalArgumentException("COMPETITIVE_PROBLEM_ADAPTER_REVIEW_DRIFT");
+             }
+             String expected = digest(
+@@ -766,7 +770,7 @@
+ 
+         /** Precomputed 128-bit intersection of the three canonical category capability masks. */
+         public AlgorithmShapeMask commonCapabilityMask() {
+-            return commonCapabilityMask(lanes);
++            return CompetitiveProblemReview.commonCapabilityMask(lanes);
+         }
+ 
+         /** Content root of the canonical tri-platform category capability index used by this review. */
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/ChallengeDonorPassLedger.java
++++ .rewrite/recipes/src/main/java/com/synexia/algorithms/corpus/ChallengeDonorPassLedger.java
+@@ -79,7 +79,7 @@
+             String root) {
+ 
+         public DonorOrigin {
+-            repository = repository(repository);
++            repository = ChallengeDonorPassLedger.repository(repository);
+             revision = sha1(revision, "revision");
+             path = token(path, "path");
+             declaredLicense = Objects.requireNonNullElse(declaredLicense, "").strip();
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/ChallengeSupersetCatalog.java
++++ .rewrite/recipes/src/main/java/com/synexia/algorithms/corpus/ChallengeSupersetCatalog.java
+@@ -308,7 +308,7 @@
+                                     NEETCODE_COMMIT,
+                                     "java/1143-longest-common-subsequence.java",
+                                     "d079fb422a1ed003fb2714039b9f961d11804075",
+-                                    "MIT")));
++                                    "MIT"))));
+ 
+     private static final Map<String, ProblemSuperset> BY_ID = index();
+     private static final String ROOT = root(ALL);
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/CompetitiveCapabilityPlanIndex.java
++++ .rewrite/recipes/src/main/java/com/synexia/algorithms/corpus/CompetitiveCapabilityPlanIndex.java
+@@ -92,7 +92,7 @@
+                 throw new IllegalArgumentException("represented platform drift");
+             }
+ 
+-            String expectedRoot = root(
++            String expectedRoot = CompetitiveCapabilityPlanIndex.root(
+                     shape,
+                     capabilityMask,
+                     category,
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/ProblemTemplateCatalog.java
++++ .rewrite/recipes/src/main/java/com/synexia/algorithms/corpus/ProblemTemplateCatalog.java
+@@ -12,7 +12,8 @@
+     public static TemplateStyle style(AlgorithmShape shape) {
+         Objects.requireNonNull(shape, "shape");
+         return switch (shape) {
+-            case BINARY_SEARCH, EXPONENTIAL_SEARCH, GALLOPING_SEARCH, INTERPOLATION_SEARCH, QUICKSELECT ->
++            case BINARY_SEARCH, EXPONENTIAL_SEARCH, GALLOPING_SEARCH, INTERPOLATION_SEARCH,
++                    JUMP_SEARCH, FIBONACCI_SEARCH, TERNARY_SEARCH, QUICKSELECT ->
+                     s(EnterpriseTemplateKind.SEARCH, "find", "locate", "threshold");
+             case HEAP_SELECT, BOYER_MOORE_MAJORITY ->
+                     s(EnterpriseTemplateKind.RANK, "rank", "top", "select");
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3MechanicalDonorShapeReview.java
++++ .rewrite/recipes/src/main/java/com/synexia/rewrite/M3MechanicalDonorShapeReview.java
+@@ -161,10 +161,10 @@
+         public DonorEvidence {
+             if (ordinal <= 0) throw new IllegalArgumentException("ordinal must be > 0");
+             repository = requireText(repository, "repository");
+-            revision = requireSha(revision, "revision");
++            revision = requireGitId(revision, "revision");
+             license = requireText(license, "license");
+             licensePath = requireText(licensePath, "licensePath");
+-            licenseBlob = requireSha(licenseBlob, "licenseBlob");
++            licenseBlob = requireGitId(licenseBlob, "licenseBlob");
+             sourceClass = requireText(sourceClass, "sourceClass");
+             family = requireText(family, "family");
+             decision = requireText(decision, "decision");
+@@ -176,6 +176,14 @@
+         }
+     }
+ 
++    private static String requireGitId(String value, String field) {
++        String checked = requireText(value, field);
++        if (!checked.matches("[0-9a-f]{40}")) {
++            throw new IllegalArgumentException(field + " must be a pinned lowercase Git object ID");
++        }
++        return checked;
++    }
++
+     private static String requireSha(String value, String field) {
+         String checked = requireText(value, field);
+         if (!checked.matches("[0-9a-f]{64}")) {
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3MechanicalJavaRecipe.java
++++ .rewrite/recipes/src/main/java/com/synexia/rewrite/M3MechanicalJavaRecipe.java
+@@ -107,7 +107,7 @@
+                     doAfterVisit(new OrderImports(false).getVisitor());
+                 }
+                 if (autoFormat) {
+-                    doAfterVisit(new AutoFormat().getVisitor());
++                    doAfterVisit(new AutoFormat(null, null).getVisitor());
+                 }
+                 return visited;
+             }
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3RecipeCrateSerialAtomReview.java
++++ .rewrite/recipes/src/main/java/com/synexia/rewrite/M3RecipeCrateSerialAtomReview.java
+@@ -219,14 +219,15 @@
+                 throw new IllegalArgumentException(
+                         "source-bound review belongs to another algorithm atom");
+             }
++            final M3AlgorithmAtomRecipeCrateBinding validatedAtomBinding = atomBinding;
+             mechanicalBinding.ifPresent(
+                     binding -> {
+                         M3RecipeFirstInvariant
+                                 .requireAlgorithmAtomMechanicalDonorBinding(binding);
+-                        if (binding.shape() != atomBinding.shape()
+-                                || !binding.algorithmAtomBindingRoot().equals(atomBinding.root())
+-                                || !binding.atomRoot().equals(atomBinding.atom().root())
+-                                || !binding.crateRoot().equals(atomBinding.crateRoot())) {
++                        if (binding.shape() != validatedAtomBinding.shape()
++                                || !binding.algorithmAtomBindingRoot().equals(validatedAtomBinding.root())
++                                || !binding.atomRoot().equals(validatedAtomBinding.atom().root())
++                                || !binding.crateRoot().equals(validatedAtomBinding.crateRoot())) {
+                             throw new IllegalArgumentException(
+                                     "mechanical donor binding belongs to another algorithm atom");
+                         }
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/jdk/M3BoundedJdkRecipe.java
++++ .rewrite/recipes/src/main/java/com/synexia/rewrite/jdk/M3BoundedJdkRecipe.java
+@@ -77,7 +77,7 @@
+                 new OptionDescriptor("maxChangesPerFile", "int", "Maximum changes per file",
+                         "Expression replacements per file in one cycle. The default is one.",
+                         "1", null, false, maxChangesPerFile));
+-        return new RecipeDescriptor(descriptor.getName(), descriptor.getDisplayName(), descriptor.getDescription(),
++        return new RecipeDescriptor(descriptor.getName(), descriptor.getDisplayName(), descriptor.getInstanceName(), descriptor.getDescription(),
+                 descriptor.getTags(), descriptor.getEstimatedEffortPerOccurrence(), options, descriptor.getRecipeList(),
+                 descriptor.getDataTables(), descriptor.getMaintainers(), descriptor.getContributors(),
+                 descriptor.getExamples(), descriptor.getSource());
+--- original-f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/test/java/com/synexia/rewrite/M3AlgorithmAtomRecipeCrateRecipeTest.java
++++ .rewrite/recipes/src/test/java/com/synexia/rewrite/M3AlgorithmAtomRecipeCrateRecipeTest.java
+@@ -73,7 +73,7 @@
+         String text = manifest.printAll();
+         assertTrue(
+                 text.contains(
+-                        "#M3_ALGORITHM_ATOM_RECIPE_CRATE_PLAN_V1"));
++                        "#M3_ALGORITHM_ATOM_RECIPE_CRATE_PLAN_V2"));
+         assertTrue(text.contains("BINDING"));
+         assertTrue(text.contains("BINARY_SEARCH"));
+         assertTrue(text.contains("nativeDeclarations"));
+@@ -131,8 +131,8 @@
+                         .text("stale\n")
+                         .build();
+ 
+-        assertThrows(
+-                IllegalStateException.class,
++        AssertionError failure = assertThrows(
++                AssertionError.class,
+                 () ->
+                         new M3AlgorithmAtomRecipeCrateRecipe(
+                                         5,
+@@ -144,6 +144,10 @@
+                                                         drifted)),
+                                         context(),
+                                         1));
++        assertEquals(IllegalStateException.class, failure.getCause().getClass());
++        assertEquals("algorithm atom recipe-crate manifest drift: m3-algorithm-atom-recipe-crates.tsv",
++                failure.getCause().getMessage());
++        assertEquals("stale\n", drifted.getText());
+     }
+ 
+     @Test

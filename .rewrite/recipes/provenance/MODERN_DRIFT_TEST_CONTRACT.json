@@ -1,0 +1,20 @@
+{
+  "classification": "ADAPT_TEST_PROTOCOL",
+  "upstream_repository": "https://github.com/openrewrite/rewrite",
+  "upstream_commit": "bf0f0f67f99031983bb61fc426d90213c8f74505",
+  "upstream_path": "rewrite-core/src/main/java/org/openrewrite/scheduling/RecipeRunCycle.java",
+  "upstream_url": "https://raw.githubusercontent.com/openrewrite/rewrite/bf0f0f67f99031983bb61fc426d90213c8f74505/rewrite-core/src/main/java/org/openrewrite/scheduling/RecipeRunCycle.java",
+  "upstream_sha256": "35e37a904b02b303dca385e0cd80da8cf2ff4dfe6f4bcc9583642781112bcec5",
+  "before_sha256": "04a34ca3b53540ef2536cd729dc6f63ae86c05774159113894600830323c48bb",
+  "after_sha256": "f25a01143130cda655eede6181adf0525810830d0578f90424c1f2468a1146f2",
+  "test_source": "src/test/java/com/synexia/rewrite/M3AlgorithmAtomRecipeCrateRecipeTest.java",
+  "runtime_owner_change": false,
+  "original_13_tests": {
+    "pass": 12,
+    "fail": 1,
+    "error": 0,
+    "skip": 0
+  },
+  "retained_negative_discriminator": "Exact original manifest drift IllegalStateException cause + exact message + unchanged stale manifest text",
+  "generic_Throwable_acceptance": false
+}

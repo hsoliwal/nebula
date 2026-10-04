@@ -1,0 +1,10 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.M3DonorMavenizedAtomPattern
+displayName: M3 Mavenized donor atom and pattern inventory
+description: >-
+  Candidate-only donor analysis bundle. Reuses the canonical structural atom inventory and
+  algorithm atom recipe-crate inventory over a Mavenized absorbed donor tree without mutating donor
+  source or granting promotion authority.
+recipeList:
+  - com.synexia.rewrite.M3DonorMavenizedAtomPatternRecipe

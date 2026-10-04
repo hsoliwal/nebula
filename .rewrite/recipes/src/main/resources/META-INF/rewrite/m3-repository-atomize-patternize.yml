@@ -1,0 +1,7 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.rewrite.M3RepositoryAtomizePatternize
+displayName: M3 live repository atomize and patternize
+description: Read-only Maven-reactor atom and pattern catalogue before bounded absorption recipes.
+recipeList:
+  - com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe

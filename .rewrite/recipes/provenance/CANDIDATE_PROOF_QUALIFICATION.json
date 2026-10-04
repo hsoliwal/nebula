@@ -1,0 +1,491 @@
+{
+  "coordinate": "com.synexia.recipe:synexia-atom-pattern-recipes-candidate:20261004-source871",
+  "engine": "8.71.0",
+  "plugin": "6.27.0",
+  "JDK": "21",
+  "selected_sources": 348,
+  "direct_import_runtime_owners": 339,
+  "candidate_adapted_runtime_owners": 9,
+  "runtime_source_edits_after_passed_tests_and_consumer": 0,
+  "test_edits_after_passed_tests_and_consumer": 0,
+  "native_source_first_compile": true,
+  "native_contract_tests": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 13
+  },
+  "test_protocol_adaptations_disclosed": [
+    "prior sealed V1-to-V2 header",
+    "modern scheduler exact error cause/message"
+  ],
+  "tested_artifact_sha256": "02a9a24a8aad244f02474b7a85c18f1ad17567719c426e6754bb8da3b66a3274",
+  "tested_artifact_preserved": true,
+  "tested_artifact_attribution_metadata_precedes_final_notice_update": true,
+  "final_checked_in_path_bootstrap_required_and_not_inferred": true,
+  "actual_consumer_goal": "org.openrewrite.maven:rewrite-maven-plugin:6.27.0:run",
+  "active_recipe": "com.synexia.fleet.AtomizeAndPatternize",
+  "actual_fresh_CSV_count": 26,
+  "exact_raw_hash_and_exported_module_ancestry_joins": 3,
+  "distinct_child_module_symbols": [
+    "atom-child-a",
+    "atom-child-b"
+  ],
+  "FileTable_schema": "Source path/File preimage; no Module column. Module identity is joined through exported StructureTable FILE parent ancestry to MODULE Symbol.",
+  "source_occurrences": {
+    "atom-child-a/src/main/java/com/msq/daybook/domain/Denominations.java": {
+      "owner": "atom-child-a",
+      "module": "atom-child-a",
+      "raw_sha256": "fb2ddae3de421d9b1ee4ab8db887e77a7f09b6e6041c338f59b851d292d210ba"
+    },
+    "atom-child-b/src/main/java/com/msq/daybook/domain/Denominations.java": {
+      "owner": "atom-child-b",
+      "module": "atom-child-b",
+      "raw_sha256": "fb2ddae3de421d9b1ee4ab8db887e77a7f09b6e6041c338f59b851d292d210ba"
+    },
+    "atom-child-b/src/main/java/com/msq/daybook/domain/Staff.java": {
+      "owner": "atom-child-b",
+      "module": "atom-child-b",
+      "raw_sha256": "72049f11543d780fa5d7ab692d460246bbf7a95638b0070ef324739c4696052e"
+    }
+  },
+  "canary_count": 12,
+  "canary_export_occurrences": 0,
+  "source_POM_YAML_canary_preservation": true,
+  "native_and_consumer_raw_command_receipt_sha256": [
+    "0c306b5cec9a81980c3a76df7f70a742fb51a5dcf2bde3c5170414b9dd01bf64",
+    "f54324b8b3e8acab7bfbe42fb13a2604ee234e6966a5aa5ccc22e8314077695d"
+  ],
+  "exact_join_receipt_sha256": "378695ed256c9563757f8da44a0c239aad746552f9241012216e0d48301e3994",
+  "exported_tables": [
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-13-797/com.synexia.rewrite.M3FrameworkRecipePatternReviewRecipe$PatternTable.csv",
+      "sha256": "4bebb4246d0a8c0e86c5e5b6f06b9a65f8809d7100174bb7dcd4ecd725bdb974",
+      "columns": [
+        "Pattern id",
+        "Repository",
+        "Revision",
+        "Path",
+        "Blob SHA",
+        "License",
+        "Mechanics",
+        "Evidence mode",
+        "Source-copy authority",
+        "Mutation authority",
+        "Scanned sources",
+        "Scanned Java sources",
+        "Scan cues"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-13-797/com.synexia.rewrite.M3HierarchicalAtomPatternPlanRecipe$ScopePlanTable.csv",
+      "sha256": "9d9b004381a69f50d37ad58223fbb1f66fc8d4ae68c2db48fa94b8861a7ed940",
+      "columns": [
+        "Source path",
+        "Source specificity",
+        "Parser lane",
+        "Atom granularity",
+        "Code",
+        "Documentation",
+        "Patternizable",
+        "Scope",
+        "Scope key",
+        "Requires scope",
+        "Disposition",
+        "Mutation authority",
+        "Promotion authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-13-797/com.synexia.rewrite.M3MechanicalDonorShapeReviewRecipe$DonorTable.csv",
+      "sha256": "f03e569f8d6b72f9f39181e4ef982677b936ed6b5360fb3661173cc4a3369801",
+      "columns": [
+        "Shape",
+        "Ordinal",
+        "Repository",
+        "Revision",
+        "License",
+        "License path",
+        "License blob",
+        "Source class",
+        "Family",
+        "Decision",
+        "Note",
+        "Row root",
+        "Source copy authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-13-797/com.synexia.rewrite.M3MechanicalDonorShapeReviewRecipe$SummaryTable.csv",
+      "sha256": "b2c89bf971aebbed6d7a3119a674b63e68b5a5fe1772e3fa3a43b0149bbd039c",
+      "columns": [
+        "Shape",
+        "Donor count",
+        "Catalogue root",
+        "Review root",
+        "Source copy authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-13-797/com.synexia.rewrite.M3RecipeFirstSourceCoverageTable.csv",
+      "sha256": "12cd9b9a309b4e53a5b557d6b716c9757d8908a27870e53c1c8019b87251a887",
+      "columns": [
+        "Source path",
+        "Rendered source SHA-256",
+        "Source kind",
+        "Parser representation",
+        "Class declarations",
+        "Method declarations",
+        "Unresolved declarations",
+        "Unmapped behavioral boundaries",
+        "Disposition"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-13-797/org.openrewrite.table.RecipeRunStats.csv",
+      "sha256": "169d397aef95e67b53ae513c267c8c810b75ef78f5e19d2c66f958af03108cee",
+      "columns": [
+        "The recipe",
+        "Source file count",
+        "Source file changed count",
+        "Cumulative scanning time (ns)",
+        "Max scanning time (ns)",
+        "Cumulative edit time (ns)",
+        "Max edit time (ns)"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3AlgorithmAtomRecipeCrateRecipe$FileTable.csv",
+      "sha256": "c2cc84d6d67d8e9dcca055ce25e2c439be6247e551dd4b344e4bae552209fe5a",
+      "columns": [
+        "File ordinal",
+        "Source path",
+        "File preimage",
+        "Method bodies",
+        "Classified methods",
+        "Candidate bindings",
+        "Unresolved method bodies",
+        "Native declarations",
+        "Coverage root"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3AtomStructureInventoryRecipe$AtomTable.csv",
+      "sha256": "b66588229c4a2e90391c40cc0fd8d0d1d275e2cef63e6ec4820c2c590b45dc1b",
+      "columns": [
+        "Source path",
+        "Atom ID",
+        "Owner node ID",
+        "Atom kind",
+        "Symbol",
+        "Normalized composition",
+        "Composition SHA-256",
+        "Atom SHA-256",
+        "Similarity SHA-256",
+        "SimHash-64",
+        "Logic SHA-256",
+        "Authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3AtomStructureInventoryRecipe$StructureTable.csv",
+      "sha256": "89077d15842cedb7f82f6d2cdc92b38e8c6018b65b70217873f1c895bab15497",
+      "columns": [
+        "Source path",
+        "Node ID",
+        "Parent ID",
+        "Node kind",
+        "Symbol",
+        "Atom ID",
+        "Child references",
+        "Composition SHA-256",
+        "Structure SHA-256",
+        "Depth",
+        "Authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3FrameworkRecipePatternReviewRecipe$PatternTable.csv",
+      "sha256": "c73a47a65f757d85ed0e2506a7bc4e00dd37ddf00a17c8f497d999616e21ec07",
+      "columns": [
+        "Pattern id",
+        "Repository",
+        "Revision",
+        "Path",
+        "Blob SHA",
+        "License",
+        "Mechanics",
+        "Evidence mode",
+        "Source-copy authority",
+        "Mutation authority",
+        "Scanned sources",
+        "Scanned Java sources",
+        "Scan cues"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3HierarchicalAtomPatternPlanRecipe$ScopePlanTable.csv",
+      "sha256": "16d7438f2f99887068ae9d3ace54ea00997978c9956676474f1bfea896ae2ebb",
+      "columns": [
+        "Source path",
+        "Source specificity",
+        "Parser lane",
+        "Atom granularity",
+        "Code",
+        "Documentation",
+        "Patternizable",
+        "Scope",
+        "Scope key",
+        "Requires scope",
+        "Disposition",
+        "Mutation authority",
+        "Promotion authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3MechanicalDonorShapeReviewRecipe$DonorTable.csv",
+      "sha256": "f03e569f8d6b72f9f39181e4ef982677b936ed6b5360fb3661173cc4a3369801",
+      "columns": [
+        "Shape",
+        "Ordinal",
+        "Repository",
+        "Revision",
+        "License",
+        "License path",
+        "License blob",
+        "Source class",
+        "Family",
+        "Decision",
+        "Note",
+        "Row root",
+        "Source copy authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3MechanicalDonorShapeReviewRecipe$SummaryTable.csv",
+      "sha256": "b2c89bf971aebbed6d7a3119a674b63e68b5a5fe1772e3fa3a43b0149bbd039c",
+      "columns": [
+        "Shape",
+        "Donor count",
+        "Catalogue root",
+        "Review root",
+        "Source copy authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3RecipeFirstJavaAtomInventoryTable.csv",
+      "sha256": "b2f9662e1a19f80d4f7f5a76e0b2c9478a1ee76364408738f814bddc88bc5e6e",
+      "columns": [
+        "Source path",
+        "Owner type",
+        "Atom kind",
+        "Atom name",
+        "Contract surface",
+        "Native",
+        "Recipe action",
+        "Authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/com.synexia.rewrite.M3RecipeFirstSourceCoverageTable.csv",
+      "sha256": "89ac54d31e4d55a921471780064fa5347580dc5880639abb749bf12c45c69e6d",
+      "columns": [
+        "Source path",
+        "Rendered source SHA-256",
+        "Source kind",
+        "Parser representation",
+        "Class declarations",
+        "Method declarations",
+        "Unresolved declarations",
+        "Unmapped behavioral boundaries",
+        "Disposition"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-27-654/org.openrewrite.table.RecipeRunStats.csv",
+      "sha256": "39df9136922077d75445453c0d28af0c865e025725eb749ff50057d7e11c6310",
+      "columns": [
+        "The recipe",
+        "Source file count",
+        "Source file changed count",
+        "Cumulative scanning time (ns)",
+        "Max scanning time (ns)",
+        "Cumulative edit time (ns)",
+        "Max edit time (ns)"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3AlgorithmAtomRecipeCrateRecipe$FileTable.csv",
+      "sha256": "44b4cc053c6f6c046acfd41201c2b594ea75f5aa3b9180ffd7480f296aa2d005",
+      "columns": [
+        "File ordinal",
+        "Source path",
+        "File preimage",
+        "Method bodies",
+        "Classified methods",
+        "Candidate bindings",
+        "Unresolved method bodies",
+        "Native declarations",
+        "Coverage root"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3AtomStructureInventoryRecipe$AtomTable.csv",
+      "sha256": "df0234e2ee735736158d8258172e8529803e553855252214089bb7c1deb7583c",
+      "columns": [
+        "Source path",
+        "Atom ID",
+        "Owner node ID",
+        "Atom kind",
+        "Symbol",
+        "Normalized composition",
+        "Composition SHA-256",
+        "Atom SHA-256",
+        "Similarity SHA-256",
+        "SimHash-64",
+        "Logic SHA-256",
+        "Authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3AtomStructureInventoryRecipe$StructureTable.csv",
+      "sha256": "c6d6e39ca7db1b68ab390ab498c1ae07dd6575dce2b454fe49a88e254da70f50",
+      "columns": [
+        "Source path",
+        "Node ID",
+        "Parent ID",
+        "Node kind",
+        "Symbol",
+        "Atom ID",
+        "Child references",
+        "Composition SHA-256",
+        "Structure SHA-256",
+        "Depth",
+        "Authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3FrameworkRecipePatternReviewRecipe$PatternTable.csv",
+      "sha256": "4bc24bcb9279ccb841910f4e5d7e5b1249c08104771119de1c39f9eb08b2cbb3",
+      "columns": [
+        "Pattern id",
+        "Repository",
+        "Revision",
+        "Path",
+        "Blob SHA",
+        "License",
+        "Mechanics",
+        "Evidence mode",
+        "Source-copy authority",
+        "Mutation authority",
+        "Scanned sources",
+        "Scanned Java sources",
+        "Scan cues"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3HierarchicalAtomPatternPlanRecipe$ScopePlanTable.csv",
+      "sha256": "624007895b0a886b88fcbd41c6d0ea77bc33f9aae914040277ef65c8349c1e35",
+      "columns": [
+        "Source path",
+        "Source specificity",
+        "Parser lane",
+        "Atom granularity",
+        "Code",
+        "Documentation",
+        "Patternizable",
+        "Scope",
+        "Scope key",
+        "Requires scope",
+        "Disposition",
+        "Mutation authority",
+        "Promotion authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3MechanicalDonorShapeReviewRecipe$DonorTable.csv",
+      "sha256": "f03e569f8d6b72f9f39181e4ef982677b936ed6b5360fb3661173cc4a3369801",
+      "columns": [
+        "Shape",
+        "Ordinal",
+        "Repository",
+        "Revision",
+        "License",
+        "License path",
+        "License blob",
+        "Source class",
+        "Family",
+        "Decision",
+        "Note",
+        "Row root",
+        "Source copy authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3MechanicalDonorShapeReviewRecipe$SummaryTable.csv",
+      "sha256": "b2c89bf971aebbed6d7a3119a674b63e68b5a5fe1772e3fa3a43b0149bbd039c",
+      "columns": [
+        "Shape",
+        "Donor count",
+        "Catalogue root",
+        "Review root",
+        "Source copy authority",
+        "Replacement authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3RecipeFirstJavaAtomInventoryTable.csv",
+      "sha256": "5a6b0e68d0ef7dfa64791305844d31478cca8585c1c204a80e5894e8d0ef2f93",
+      "columns": [
+        "Source path",
+        "Owner type",
+        "Atom kind",
+        "Atom name",
+        "Contract surface",
+        "Native",
+        "Recipe action",
+        "Authority"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/com.synexia.rewrite.M3RecipeFirstSourceCoverageTable.csv",
+      "sha256": "1fc79f6020cb67fc36d9c1ecf01dab8d245069d1d8c0f4a5e97fff8f0c7a9389",
+      "columns": [
+        "Source path",
+        "Rendered source SHA-256",
+        "Source kind",
+        "Parser representation",
+        "Class declarations",
+        "Method declarations",
+        "Unresolved declarations",
+        "Unmapped behavioral boundaries",
+        "Disposition"
+      ]
+    },
+    {
+      "path": "target/rewrite/datatables/2026-10-04_13-08-38-421/org.openrewrite.table.RecipeRunStats.csv",
+      "sha256": "a5366f90d435cdf8750855bf2829621018d3b70e0e1f2f70ef09b4c7f94fe431",
+      "columns": [
+        "The recipe",
+        "Source file count",
+        "Source file changed count",
+        "Cumulative scanning time (ns)",
+        "Max scanning time (ns)",
+        "Cumulative edit time (ns)",
+        "Max edit time (ns)"
+      ]
+    }
+  ],
+  "full_fleet_or_Nebula_native_completion": false,
+  "original_main_strict_admission": false,
+  "promotion_admission": false
+}

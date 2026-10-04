@@ -1,0 +1,68 @@
+{
+  "actual_nebula_path_supplier_build": {
+    "all_protected_raw_inputs_preserved": true,
+    "compiled_class_count": 1015,
+    "compiled_class_sha256_mismatches_to_previous_proved_supplier": 0,
+    "compiled_sources": 348,
+    "disclosed_candidate_runtime_owner_deltas": 9,
+    "disclosed_test_protocol_adaptations": 1,
+    "documented_goal": "mvn -B -ntp -f .rewrite/recipes/pom.xml clean install",
+    "jar_sha256": "45b17d7e5de9409f82ebb084ad65f254e02d16a916d61534be7ee15177018070",
+    "native_receipt_sha256": "55000e73aecd73992a51c664b38853546856266cc3f70a9a62f8d47b55759340",
+    "passed": true,
+    "protected_original_source_pom_paths": 2068,
+    "protected_total_raw_paths": 2478,
+    "scoped_git_byte_preservation_config_files": 1,
+    "selected_reused_public_files": 404,
+    "tests": {
+      "errors": 0,
+      "executed": 13,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 13
+    }
+  },
+  "actual_nebula_root_recipe_goal": {
+    "JVM_started": false,
+    "documented_goal": "mvn -B -ntp -N rewrite:dryRunNoFork",
+    "execution_status": "NOT_STARTED_RESOURCE_GUARD",
+    "measurement_unix_ns": 1791100658471290000,
+    "minimum_available_ram_bytes": 2147483648,
+    "minimum_scratch_disk_free_bytes": 21474836480,
+    "native_recipe_command_failure_claimed": false,
+    "observed_available_ram_bytes": 913899520,
+    "observed_scratch_disk_free_bytes": 33025654784,
+    "reason": "Observed available physical RAM is below the required 2 GiB launch floor",
+    "resource_guard_receipt_sha256": "5f4bdeaec5ca4eda0573411c53b90df8b2ce28ab912c80e67a6c2bb35a14c742",
+    "returncode": null,
+    "scope_if_executed": "root-project-only (-N)"
+  },
+  "base_commit": "b7dd5097f62ba5ea2515b98311ea20e900642384",
+  "base_tree": "4c19bf3fdc9115cc0d976c585441809ff5595e7a",
+  "complete_nebula_module_coverage": "NOT_INFERRED",
+  "executed_two_module_consumer_control": {
+    "canary_export_rows": 0,
+    "distinct_child_modules": [
+      "atom-child-a",
+      "atom-child-b"
+    ],
+    "fresh_csv_files": 26,
+    "original_fixture_sources_poms_yaml_canaries_preserved": true,
+    "passed": true,
+    "raw_sha256_source_to_file_structure_module_joins": 3,
+    "receipt_sha256": "378695ed256c9563757f8da44a0c239aad746552f9241012216e0d48301e3994",
+    "root_and_nested_vendor_target_canaries": 12,
+    "scope": "bounded fixture; production-wide coverage not inferred"
+  },
+  "native_nebula_reactor_ui_behavior": "NOT_INFERRED",
+  "repository": "hsoliwal/nebula",
+  "schema": "portable-nebula-source871-qualification-v1",
+  "strict_or_promotion_admission": false,
+  "supplier_coordinate": "com.synexia.recipe:synexia-atom-pattern-recipes-candidate:20261004-source871",
+  "toolchain": {
+    "java_major": 21,
+    "maven_version": "3.9.14",
+    "rewrite_engine": "8.71.0",
+    "rewrite_plugin": "6.27.0"
+  }
+}

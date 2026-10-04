@@ -1,0 +1,16 @@
+{
+  "classification": "ADAPT_DESCRIPTOR_SCOPE",
+  "evidence": "Three selected owners import SLF4J; first Maven compile refused runtime-only API dependency. Public coordinate and version unchanged; no Java source edit.",
+  "changes": [
+    {
+      "path": "pom.xml",
+      "before_sha256": "603ae0050cb4af0c318bbbc5ec89829d0185da11b3520a5cd89874c93087fcef",
+      "after_sha256": "8b0f028b5205ee1002c6e6ca04d5bb0580e62fac797312c05a7e2446e1975ba3"
+    },
+    {
+      "path": "native817/pom.xml",
+      "before_sha256": "091b46af273c34684f9a173bf6305fd1293371cd564aa88375acbdc50125be70",
+      "after_sha256": "520229c5955ab68ef8c4d7baea946da75fc3c54e1eccfe161aef760302d4d1c7"
+    }
+  ]
+}

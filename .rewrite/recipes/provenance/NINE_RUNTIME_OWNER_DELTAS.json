@@ -1,0 +1,70 @@
+{
+  "runtime_owners": [
+    {
+      "path": "src/main/java/com/synexia/m3/search/CompetitiveProblemReview.java",
+      "original_sha256": "b81f82761d10de7742da5ac155e4c4a60de4cbe1820cf9a4aeb96bf567122448",
+      "final_sha256": "004d682cbe3f3e4d9a78ed518300dd496ac5702a1e9fccb80dac75dc9b5dc673",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/m3-fast-search/src/main/java/com/synexia/m3/search/CompetitiveProblemReview.java",
+      "published_verbatim_substitution": false
+    },
+    {
+      "path": "src/main/java/com/synexia/algorithms/corpus/ChallengeDonorPassLedger.java",
+      "original_sha256": "3c9b1c00836f9eb97c741482d252aa581dabb0643cf181cd4eb880409b37455f",
+      "final_sha256": "460ac381ab86ad926d1253b012032a1ea2b0b53a02ea3169436958ec35c45ade",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/ChallengeDonorPassLedger.java",
+      "published_verbatim_substitution": false
+    },
+    {
+      "path": "src/main/java/com/synexia/algorithms/corpus/ChallengeSupersetCatalog.java",
+      "original_sha256": "c8b2571beb4ba78d134007b0db6aad00546eccc9bfca1e6f92a7d67af4d0b053",
+      "final_sha256": "d5083202a87abffdabfe902a9703b095b4b8cdf20fda19cff48cc97b12fe1b06",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/ChallengeSupersetCatalog.java",
+      "published_verbatim_substitution": false
+    },
+    {
+      "path": "src/main/java/com/synexia/algorithms/corpus/CompetitiveCapabilityPlanIndex.java",
+      "original_sha256": "718d541f102f6c4286f23d077462d2bd28b922e3da48437d3bcbd1e12aa23696",
+      "final_sha256": "59742f333ab2a04c3cd5b12061bff182e9a2114549117ce323928d391c10fafa",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/CompetitiveCapabilityPlanIndex.java",
+      "published_verbatim_substitution": false
+    },
+    {
+      "path": "src/main/java/com/synexia/algorithms/corpus/ProblemTemplateCatalog.java",
+      "original_sha256": "7b350e7f30bbbb1f0b4e64394e6017c91f2b4a30c219c1480c15206e22b3b2be",
+      "final_sha256": "0a96bdca753aea7b3360d2e34274dee59e83e8492ee48f7f78853342089e2556",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-algo/src/main/java/com/synexia/algorithms/corpus/ProblemTemplateCatalog.java",
+      "published_verbatim_substitution": false
+    },
+    {
+      "path": "src/main/java/com/synexia/rewrite/M3MechanicalDonorShapeReview.java",
+      "original_sha256": "4fa6b259200e7758609a2bf8e13bf951b961006db6a9deec9b026679c6820429",
+      "final_sha256": "98d9422759b55ed48aaf94a3c9c6baef7c4ef7838d71d803fba682c488ccf183",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3MechanicalDonorShapeReview.java",
+      "published_verbatim_substitution": true
+    },
+    {
+      "path": "src/main/java/com/synexia/rewrite/M3MechanicalJavaRecipe.java",
+      "original_sha256": "f304ef219adccd8c7b3a3e13ebdf930fe4ed0e04e5465e64a0cc6930185059f9",
+      "final_sha256": "a901e608294b739533376fdeb550f3fae6b85825b79befb0c1ef50900267a88c",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3MechanicalJavaRecipe.java",
+      "published_verbatim_substitution": false
+    },
+    {
+      "path": "src/main/java/com/synexia/rewrite/M3RecipeCrateSerialAtomReview.java",
+      "original_sha256": "5b240e9c5d2c6da5b70ab045a7756f72de47bd8eeac4c3cc3d410e2e9db4bb4a",
+      "final_sha256": "f29323d4b196f82ce120c5915b89c30dd60ebdebb2406cb6abe873df22b66863",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3RecipeCrateSerialAtomReview.java",
+      "published_verbatim_substitution": false
+    },
+    {
+      "path": "src/main/java/com/synexia/rewrite/jdk/M3BoundedJdkRecipe.java",
+      "original_sha256": "c12d3f2ebdff53bc4d1dd021b4494dae6512bd3a0e5f9f6d810f26322e412c97",
+      "final_sha256": "25ed552575b6f424a81f9398f90cd176dd15fd29409f5c9dca6fffbf0d2dbbb1",
+      "source_url": "https://github.com/hsoliwal/com.synexia/blob/f1ee6a407bfda5ae2d2120ace0bd6baad6a4a3ca/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/jdk/M3BoundedJdkRecipe.java",
+      "published_verbatim_substitution": false
+    }
+  ],
+  "runtime_delta_count": 9,
+  "direct_import_runtime_owners": 339,
+  "modern_test_error_bridge_is_runtime_change": false
+}

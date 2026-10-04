@@ -1,0 +1,10 @@
+{
+  "blob": "36eedb93906a346cf59d2f50950b605bd7e66f0f",
+  "classification": "ADAPT",
+  "commit": "a700d5ddf64f2c4fe28ae042e0a29474bff9f9dd",
+  "gap": "Portable selected source layout and matched public modern Maven dependency declaration; no new visitor/parser logic. Two constructor API adaptations are separately attributed.",
+  "path": "synexia-openrewrite-recipes/verification/donor-assimilation/pom.xml",
+  "repo": "hsoliwal/com.synexia",
+  "sha256": "73cb34fec76c807b7dd7a59e3d2a35e49ba16bcc275a51ee38da745e45c82394",
+  "source_url": "https://github.com/hsoliwal/com.synexia/blob/a700d5ddf64f2c4fe28ae042e0a29474bff9f9dd/synexia-openrewrite-recipes/verification/donor-assimilation/pom.xml"
+}

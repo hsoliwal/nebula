@@ -1,0 +1,83 @@
+// SPDX-License-Identifier: Apache-2.0
+package com.synexia.algorithms.corpus;
+
+import com.synexia.algorithms.shapes.AlgorithmShape;
+
+/**
+ * Stable cross-site category projection for one classified computational shape.
+ *
+ * <p>This is a comparison vocabulary, not a claim that source sites use identical taxonomies.
+ */
+public enum CompetitiveProblemCategory {
+    ARRAYS,
+    STRINGS,
+    SEARCH,
+    SORTING,
+    TWO_POINTERS,
+    SLIDING_WINDOW,
+    HASHING,
+    LINKED_LIST,
+    STACK_QUEUE,
+    TREES,
+    GRAPHS,
+    HEAPS,
+    INTERVALS,
+    RANGE_QUERIES,
+    GREEDY,
+    BACKTRACKING,
+    DYNAMIC_PROGRAMMING,
+    TRIES,
+    BIT_MANIPULATION,
+    MATHEMATICS,
+    CONCURRENCY,
+    SIMULATION,
+    OTHER;
+
+    public static CompetitiveProblemCategory fromShape(AlgorithmShape shape) {
+        if (shape == null) return OTHER;
+        return switch (shape) {
+            case LINEAR_SCAN, PARTITION_WALK, PREFIX_SCAN, DIFFERENCE_SCAN, KADANE,
+                    SUBSEQUENCE, MATRIX_SCAN, DUTCH_FLAG, BOYER_MOORE_MAJORITY -> ARRAYS;
+            case KMP, BOYER_MOORE_HORSPOOL, RABIN_KARP, Z_ALGORITHM, MANACHER,
+                    AHO_CORASICK, STRING_TRANSFORM
+                    -> STRINGS;
+            case BINARY_SEARCH, EXPONENTIAL_SEARCH, GALLOPING_SEARCH, INTERPOLATION_SEARCH,
+                    JUMP_SEARCH, FIBONACCI_SEARCH, TERNARY_SEARCH -> SEARCH;
+            case INSERTION_SORT, MERGE_SORT, QUICK_SORT, HEAP_SORT, COUNTING_SORT,
+                    RADIX_SORT, BUBBLE_SORT, SELECTION_SORT, SHELL_SORT, BUCKET_SORT,
+                    QUICKSELECT, SORTED_INSERT, SORT_UNIQUE, ORDERED_MERGE, MERGE_WALK,
+                    MULTIWAY_MERGE -> SORTING;
+            case TWO_POINTER -> TWO_POINTERS;
+            case SLIDING_WINDOW, MONOTONIC_QUEUE -> SLIDING_WINDOW;
+            case MONOTONIC_STACK -> STACK_QUEUE;
+            case HASH_MEMBERSHIP, PAIR_SUM_HASH, FREQUENCY_COUNT, FREQUENCY_L1_DISTANCE,
+                    LRU, RENDEZVOUS_HASH -> HASHING;
+            case LINKED_LIST_REWRITE, FAST_SLOW_POINTER -> LINKED_LIST;
+            case STACK_MACHINE, QUEUE_MACHINE -> STACK_QUEUE;
+            case TREE_TRAVERSAL, LOWEST_COMMON_ANCESTOR, BINARY_LIFTING, EULER_TOUR
+                    -> TREES;
+            case BFS, DFS, BIDIRECTIONAL_SEARCH, BEST_FIRST, DIJKSTRA, TOPOLOGICAL_SORT,
+                    UNION_FIND, CONNECTED_COMPONENTS, GRID_CONNECTED_COMPONENTS, MAX_FLOW,
+                    BIPARTITE_MATCHING, ASSIGNMENT, STABLE_MATCHING, RANKED_MATCHING,
+                    A_STAR, BELLMAN_FORD, FLOYD_WARSHALL, ZERO_ONE_BFS, PRIM_MST,
+                    KRUSKAL_MST, STRONGLY_CONNECTED_COMPONENTS, BRIDGES_ARTICULATION,
+                    EULERIAN_PATH, MIN_COST_MAX_FLOW -> GRAPHS;
+            case HEAP_SELECT, PRIORITY_QUEUE -> HEAPS;
+            case INTERVAL_MERGE, INTERVAL_JOIN, SWEEP_LINE, INTERVAL_INDEX, COVERAGE
+                    -> INTERVALS;
+            case FENWICK_TREE, SEGMENT_TREE, SPARSE_TABLE -> RANGE_QUERIES;
+            case GREEDY -> GREEDY;
+            case BACKTRACKING, BRANCH_AND_BOUND, CONSTRAINT_SEARCH -> BACKTRACKING;
+            case DYNAMIC_PROGRAMMING, MEMOIZATION, LONGEST_INCREASING_SUBSEQUENCE,
+                    LONGEST_COMMON_SUBSEQUENCE, COIN_CHANGE, KNAPSACK_01, INTERVAL_DP,
+                    BITMASK_DP, DIGIT_DP, BITSET_DP -> DYNAMIC_PROGRAMMING;
+            case TRIE -> TRIES;
+            case BIT_MANIPULATION, XOR_BASIS -> BIT_MANIPULATION;
+            case ARITHMETIC, GCD_EUCLID, SIEVE, MODULAR_EXPONENTIATION, EXTENDED_GCD,
+                    CHINESE_REMAINDER, MILLER_RABIN, ORIENTATION, CONVEX_HULL -> MATHEMATICS;
+            case CONCURRENCY_COORDINATION -> CONCURRENCY;
+            case SIMULATION, STATE_TABLE -> SIMULATION;
+            case BOUNDED_RETRY, TOKEN_BUCKET, MAP, PARTITION, REDUCE -> OTHER;
+        };
+    }
+}

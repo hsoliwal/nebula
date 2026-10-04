@@ -1,0 +1,9 @@
+{
+  "gap": "Public test runtime dependency alignment",
+  "before_sha256": "8b0f028b5205ee1002c6e6ca04d5bb0580e62fac797312c05a7e2446e1975ba3",
+  "after_sha256": "d1c9fc4fece3b11ef07e1c00dca30607093f5439a6273eb7f39f95cb5fa28747",
+  "junit": "5.14.0",
+  "official_rewrite_test_pom_sha256": "44f49cf820de4f8fdd4eefffcd7656ea92abeac680672d835f8a0cd77a22f134",
+  "source_or_expectation_changes": 0,
+  "previous_fork_failure": "OutputDirectoryCreator missing with mixed JUnit5.10/5.14"
+}

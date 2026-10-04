@@ -1,0 +1,59 @@
+{
+  "classification": "ADAPT_EXISTING_PUBLIC_API",
+  "upstream": [
+    {
+      "repository": "https://github.com/openrewrite/rewrite",
+      "commit": "bf0f0f67f99031983bb61fc426d90213c8f74505",
+      "tag": "v8.71.0",
+      "path": "rewrite-java/src/main/java/org/openrewrite/java/format/AutoFormat.java",
+      "url": "https://raw.githubusercontent.com/openrewrite/rewrite/bf0f0f67f99031983bb61fc426d90213c8f74505/rewrite-java/src/main/java/org/openrewrite/java/format/AutoFormat.java",
+      "retained_path": "provenance/upstream-api871/AutoFormat.java",
+      "sha256": "3c1b65cb70470982e982b4dca3aa4ad9e3eb663f5dca212e2e95708aadd8873d",
+      "bytes": 3052,
+      "license": "Apache-2.0"
+    },
+    {
+      "repository": "https://github.com/openrewrite/rewrite",
+      "commit": "bf0f0f67f99031983bb61fc426d90213c8f74505",
+      "tag": "v8.71.0",
+      "path": "rewrite-core/src/main/java/org/openrewrite/config/RecipeDescriptor.java",
+      "url": "https://raw.githubusercontent.com/openrewrite/rewrite/bf0f0f67f99031983bb61fc426d90213c8f74505/rewrite-core/src/main/java/org/openrewrite/config/RecipeDescriptor.java",
+      "retained_path": "provenance/upstream-api871/RecipeDescriptor.java",
+      "sha256": "780221fc916fbe4b6e9273f6fae166166a5ebe839eb89093aef89b05773f7418",
+      "bytes": 3797,
+      "license": "Apache-2.0"
+    },
+    {
+      "repository": "https://github.com/openrewrite/rewrite",
+      "commit": "bf0f0f67f99031983bb61fc426d90213c8f74505",
+      "tag": "v8.71.0",
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/openrewrite/rewrite/bf0f0f67f99031983bb61fc426d90213c8f74505/LICENSE",
+      "retained_path": "provenance/upstream-api871/LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357,
+      "license": "Apache-2.0"
+    }
+  ],
+  "changes": [
+    {
+      "path": "src/main/java/com/synexia/rewrite/M3MechanicalJavaRecipe.java",
+      "before_sha256": "f304ef219adccd8c7b3a3e13ebdf930fe4ed0e04e5465e64a0cc6930185059f9",
+      "after_sha256": "a901e608294b739533376fdeb550f3fae6b85825b79befb0c1ef50900267a88c",
+      "replaced_fragment": "new AutoFormat().getVisitor()",
+      "replacement_fragment": "new AutoFormat(null, null).getVisitor()"
+    },
+    {
+      "path": "src/main/java/com/synexia/rewrite/jdk/M3BoundedJdkRecipe.java",
+      "before_sha256": "c12d3f2ebdff53bc4d1dd021b4494dae6512bd3a0e5f9f6d810f26322e412c97",
+      "after_sha256": "25ed552575b6f424a81f9398f90cd176dd15fd29409f5c9dca6fffbf0d2dbbb1",
+      "replaced_fragment": "descriptor.getName(), descriptor.getDisplayName(), descriptor.getDescription(),",
+      "replacement_fragment": "descriptor.getName(), descriptor.getDisplayName(), descriptor.getInstanceName(), descriptor.getDescription(),"
+    }
+  ],
+  "new_visitor_or_engine": false,
+  "unchanged_under_modern_engine_claim": false,
+  "candidate_runtime_owner_changes": 9,
+  "native817_sources_preserved_separately": true,
+  "tests_and_consumer_export_pending": true
+}

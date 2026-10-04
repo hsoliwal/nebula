@@ -57,10 +57,41 @@ Contributors:
 		<maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
 		<org.eclipse.justj.p2.manager.build.url>http://www.example.com/</org.eclipse.justj.p2.manager.build.url>
 		<build.type>nightly</build.type>
+		<synexia.rewrite.repository>hsoliwal/nebula</synexia.rewrite.repository>
+		<synexia.rewrite.project>nebula</synexia.rewrite.project>
+		<synexia.rewrite.module>${project.artifactId}</synexia.rewrite.module>
 	</properties>
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.openrewrite.maven</groupId>
+				<artifactId>rewrite-maven-plugin</artifactId>
+				<version>6.27.0</version>
+				<configuration>
+					<activeRecipes>
+						<recipe>com.synexia.fleet.AtomizeAndPatternize</recipe>
+					</activeRecipes>
+					<configLocation>${maven.multiModuleProjectDirectory}/rewrite.yml</configLocation>
+					<resolvePropertiesInYaml>true</resolvePropertiesInYaml>
+					<exportDatatables>true</exportDatatables>
+					<runPerSubmodule>true</runPerSubmodule>
+					<failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+					<exclusions>
+						<exclusion>.rewrite/**</exclusion>
+						<exclusion>**/.rewrite/**</exclusion>
+						<exclusion>target/**</exclusion>
+						<exclusion>**/target/**</exclusion>
+					</exclusions>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>com.synexia.recipe</groupId>
+						<artifactId>synexia-atom-pattern-recipes-candidate</artifactId>
+						<version>20261004-source871</version>
+					</dependency>
+				</dependencies>
+			</plugin>
 
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>

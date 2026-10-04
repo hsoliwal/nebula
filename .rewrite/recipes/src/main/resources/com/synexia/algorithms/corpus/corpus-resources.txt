@@ -1,0 +1,21 @@
+# Pinned direct Java problem corpus resources
+leetcode-fluency03.tsv
+leetcode-qiyuangong.tsv
+leetcode-blankj.tsv
+leetcode-gouthampradhan.tsv
+leetcode-fishercoder.tsv
+leetcode-doocs.tsv
+hackerrank-java-aid.tsv
+hackerrank-rodneyshag.tsv
+hackerrank-ryanfehr.tsv
+leetcode-varunu28.tsv
+leetcode-liweiwei1419.tsv
+leetcode-leetcoders.tsv
+hackerrank-rajatgoyal.tsv
+hackerrank-blakebrown.tsv
+hackerrank-maze-runnar.tsv
+gfg-kishanrajput23.tsv
+gfg-cvalingam.tsv
+
+leetcode-javadev.tsv
+hackerrank-pavith19.tsv
