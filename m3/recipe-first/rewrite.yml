@@ -1,0 +1,9 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.eclipse.nebula.m3.Inventory
+displayName: Inventory Eclipse Nebula for M3 recipe-first work
+description: >
+  Read-only Java inventory of public surface, loops, native declarations and bounded
+  fast-search signals. The recipe emits evidence and never mutates widget sources.
+recipeList:
+  - org.eclipse.nebula.m3.NebulaM3InventoryRecipe
