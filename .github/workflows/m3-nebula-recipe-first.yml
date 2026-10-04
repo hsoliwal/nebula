@@ -63,20 +63,49 @@ jobs:
           grep -F 'java.localCandidateScope=FILE' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
+      - name: Execute tested exact compilation bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f m3/recipe-first/pom-compile-bootstrap.xml -Papply -Dm3.bootstrap.root="$GITHUB_WORKSPACE" verify
+          mvn -B -ntp -f m3/recipe-first/pom-compile-bootstrap.xml -Papply -Dm3.bootstrap.root="$GITHUB_WORKSPACE" verify
+          python3 - <<'PYTEST'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          report = Path('m3/recipe-first/target/compile-bootstrap/surefire-reports/TEST-org.eclipse.nebula.m3.rewrite.exact.NebulaM3CompileBootstrapRecipeTest.xml')
+          suite = ET.parse(report).getroot()
+          assert int(suite.get('tests', '0')) >= 6
+          assert all(int(suite.get(key, '0')) == 0 for key in ('failures', 'errors', 'skipped'))
+          PYTEST
+
+      - name: Capture exact checkout and actual recipe SDK for local replay
+        if: always()
+        run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-replay-inputs"
+
+      - name: Preserve source and SDK replay inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-replay-inputs
+          if-no-files-found: error
+          path: ${{ runner.temp }}/nebula-replay-inputs/
+
       - name: 3 - Compile and test the Nebula-local recipe crate
         run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
 
       - name: 4 - Export content-addressed recipe DAG
         run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest verify
 
-      - name: 5 - Inventory the whole Nebula Java checkout
-        run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
-
-      - name: 6 - Require complete Java parse inventory
+      - name: 4a - Verify exact raw SvgLoader preimage
         shell: bash
         run: |
           set -euo pipefail
-          grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
+          SVG_PATH='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java'
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+            -Dm3.seal.root="$GITHUB_WORKSPACE" \
+            -Dm3.seal.path="$SVG_PATH" \
+            -Dm3.seal.sha256='23d730f01826b3d5c3de5d9f5299f2db11574ae3c482956b20928aaa676f9a08' \
+            verify
 
       - name: 6b - Prove explicit FILE materializer without source writes
         shell: bash
@@ -98,7 +127,16 @@ jobs:
           git diff --exit-code -- "$SOURCE"
 
       - name: 7 - Baseline original Nebula Tycho reactor
-        run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+        run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
+
+      - name: 5 - Inventory the whole Nebula Java checkout
+        run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
+
+      - name: 6 - Require complete Java parse inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
 
       - name: 8 - Install the proven Nebula-local recipe artifact
         run: mvn -B -ntp -f m3/recipe-first/pom.xml install
@@ -110,6 +148,11 @@ jobs:
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mkdir -p "$CANDIDATE_DIR/postimage"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+            -Dm3.seal.root="$GITHUB_WORKSPACE" \
+            -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
+            -Dm3.seal.sha256='d56e584eb16981496046c7dbb67be8a18ff68aa01953084a441329bacc2c78eb' \
+            verify
           git diff --check
           git diff --name-only | sort > "$CANDIDATE_DIR/changed-files.txt"
           unexpected="$(grep -Ev '\.java$' "$CANDIDATE_DIR/changed-files.txt" || true)"
@@ -132,6 +175,12 @@ jobs:
           set -euo pipefail
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+            -Dm3.seal.root="$GITHUB_WORKSPACE" \
+            -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
+            -Dm3.seal.sha256='d56e584eb16981496046c7dbb67be8a18ff68aa01953084a441329bacc2c78eb' \
+            verify
+          echo 'SOURCE_SEAL_FIXED_POINT=true'
           git diff --binary > "$CANDIDATE_DIR/second.patch"
           diff -u "$CANDIDATE_DIR/first.patch" "$CANDIDATE_DIR/second.patch"
 
@@ -146,7 +195,7 @@ jobs:
           rm -f "$VERIFY_TARGET"
 
       - name: 12 - Original Nebula Tycho reactor on transformed candidates
-        run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+        run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
       - name: 13 - Preserve candidate-only authority
         shell: bash
@@ -156,6 +205,18 @@ jobs:
           test ! -e widgets/cwt/org.eclipse.nebula.cwt.tests/src/org/eclipse/nebula/cwt/svg/SvgLoaderLengthTests.java
           grep -F $'4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
+
+      - name: Capture original build dependency and classpath evidence
+        if: always()
+        run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-full-build-inputs"
+
+      - name: Preserve complete execution dependency inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-full-build-inputs
+          if-no-files-found: error
+          path: ${{ runner.temp }}/nebula-full-build-inputs/
 
       - name: Upload Nebula M3 inventory and candidate evidence
         if: always()
@@ -169,5 +230,6 @@ jobs:
             m3/recipe-first/target/nebula-m3-candidate/
             m3/recipe-first/target/a3-file-proof/
             **/target/rewrite/
+            **/target/surefire-reports/
             m3/convergence/PLAN.tsv
             .m3/atom-pattern/policy.properties
