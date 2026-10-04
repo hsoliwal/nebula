@@ -66,22 +66,25 @@ jobs:
       - name: 3 - Compile and test the Nebula-local recipe crate
         run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
 
-      - name: 4 - Inventory the whole Nebula Java checkout
+      - name: 4 - Export content-addressed recipe DAG
+        run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest verify
+
+      - name: 5 - Inventory the whole Nebula Java checkout
         run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
 
-      - name: 5 - Require complete Java parse inventory
+      - name: 6 - Require complete Java parse inventory
         shell: bash
         run: |
           set -euo pipefail
           grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
 
-      - name: 6 - Baseline original Nebula Tycho reactor
+      - name: 7 - Baseline original Nebula Tycho reactor
         run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 
-      - name: 7 - Install the proven Nebula-local recipe artifact
+      - name: 8 - Install the proven Nebula-local recipe artifact
         run: mvn -B -ntp -f m3/recipe-first/pom.xml install
 
-      - name: 8 - Apply FILE-local atomize patternize document DAG
+      - name: 9 - Apply FILE-local atomize patternize document DAG
         shell: bash
         run: |
           set -euo pipefail
@@ -104,7 +107,7 @@ jobs:
             cp "$changed" "$CANDIDATE_DIR/postimage/$changed"
           done < "$CANDIDATE_DIR/changed-files.txt"
 
-      - name: 9 - Prove complete recipe DAG fixed point
+      - name: 10 - Prove complete recipe DAG fixed point
         shell: bash
         run: |
           set -euo pipefail
@@ -113,7 +116,7 @@ jobs:
           git diff --binary > "$CANDIDATE_DIR/second.patch"
           diff -u "$CANDIDATE_DIR/first.patch" "$CANDIDATE_DIR/second.patch"
 
-      - name: 10 - Verify SvgLoader length behavior on real SWT
+      - name: 11 - Verify SvgLoader length behavior on real SWT
         shell: bash
         run: |
           set -euo pipefail
@@ -123,10 +126,10 @@ jobs:
           xvfb-run -a mvn -B -ntp -f widgets/cwt/pom.xml -pl org.eclipse.nebula.cwt.tests -am -DskipTests=false -Dtest=SvgLoaderLengthTests verify
           rm -f "$VERIFY_TARGET"
 
-      - name: 11 - Original Nebula Tycho reactor on transformed candidates
+      - name: 12 - Original Nebula Tycho reactor on transformed candidates
         run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 
-      - name: 12 - Preserve candidate-only authority
+      - name: 13 - Preserve candidate-only authority
         shell: bash
         run: |
           set -euo pipefail
@@ -143,6 +146,7 @@ jobs:
           if-no-files-found: warn
           path: |
             m3/recipe-first/target/nebula-m3-inventory/
+            m3/recipe-first/target/nebula-m3-dag/
             m3/recipe-first/target/nebula-m3-candidate/
             **/target/rewrite/
             m3/convergence/PLAN.tsv
