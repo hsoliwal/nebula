@@ -11,8 +11,10 @@
  ******************************************************************************/
 package org.eclipse.nebula.widgets.cdatetime.css;
 
+import org.eclipse.e4.ui.css.core.css2.CSS2FontHelper;
 import org.eclipse.e4.ui.css.core.dom.properties.ICSSPropertyHandler;
 import org.eclipse.e4.ui.css.core.engine.CSSEngine;
+import org.eclipse.e4.ui.css.core.impl.dom.Measure;
 import org.eclipse.e4.ui.css.swt.dom.ControlElement;
 import org.eclipse.nebula.widgets.cdatetime.CDateTime;
 import org.eclipse.swt.SWT;
@@ -153,35 +155,6 @@ public class CDateTimePropertyHandler implements ICSSPropertyHandler {
 		return true;
 	}
 
-	/**
-	 * Preserve the historical Eclipse CSS2FontHelper W3C classification contract.
-	 *
-	 * <p>Newer Eclipse releases replaced the old CSSPrimitiveValue overload with an internal
-	 * CssPrimitive overload. Nebula keeps the public W3C facade and the old classifications so the
-	 * CSS behavior does not change as part of this compatibility migration.</p>
-	 */
-	private static String legacyFontProperty(final CSSPrimitiveValue value) {
-		final short type = value.getPrimitiveType();
-		switch (type) {
-		case CSSPrimitiveValue.CSS_STRING:
-		case CSSPrimitiveValue.CSS_IDENT:
-			final String text = value.getStringValue();
-			if ("italic".equals(text) || "oblique".equals(text)) {
-				return "font-style";
-			}
-			if ("normal".equals(text) || "bold".equals(text) || "bolder".equals(text)) {
-				return "font-weight";
-			}
-			return "font-family";
-		case CSSPrimitiveValue.CSS_PT:
-		case CSSPrimitiveValue.CSS_NUMBER:
-		case CSSPrimitiveValue.CSS_PX:
-			return "font-size";
-		default:
-			return null;
-		}
-	}
-
 	// CSS Font
 	private void applyCSSPropertyFont(final Control widget, final CSSValue value, final boolean picker) throws Exception {
 		if (value.getCssValueType() == CSSValue.CSS_VALUE_LIST) {
@@ -190,7 +163,7 @@ public class CDateTimePropertyHandler implements ICSSPropertyHandler {
 			for (int i = 0; i < length; i++) {
 				final CSSValue value2 = valueList.item(i);
 				if (value2.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-					final String cssProp = legacyFontProperty((CSSPrimitiveValue) value2);
+					final String cssProp = CSS2FontHelper.getCSSFontPropertyName((CSSPrimitiveValue) value2);
 					if (cssProp.equals("font-family")) {
 						applyCSSPropertyFamily(widget, value2, picker);
 					} else if (cssProp.equals("font-size")) {
@@ -260,9 +233,9 @@ public class CDateTimePropertyHandler implements ICSSPropertyHandler {
 	private void applyCSSPropertySize(final Control widget, final CSSValue value, final boolean picker) throws Exception {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			final FontData fd = CSSEngineHelper.getFontData(widget, picker);
-			final CSSPrimitiveValue primitive = (CSSPrimitiveValue) value;
+			final Measure m = (Measure) value;
 
-			final int newSize = Math.round(primitive.getFloatValue((short) 0));
+			final int newSize = Math.round(m.getFloatValue((short) 0));
 			final boolean modified = fd.getHeight() != newSize;
 			if (modified) {
 				fd.setHeight(newSize);
