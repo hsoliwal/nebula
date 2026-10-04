@@ -16,6 +16,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.LineAttributes;
 import org.eclipse.swt.graphics.Pattern;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.Transform;
 
 /**
@@ -30,7 +31,8 @@ import org.eclipse.swt.graphics.Transform;
 final class GridGcProxy implements AutoCloseable {
 
 	private final GC gc;
-	private final Rectangle originalClipping;
+	private final Region originalClipping;
+	private final boolean originalAdvanced;
 	private final Transform originalTransform;
 	private final LineAttributes originalLineAttributes;
 	private final int originalAlpha;
@@ -49,7 +51,9 @@ final class GridGcProxy implements AutoCloseable {
 	private GridGcProxy(GC gc) {
 		if (gc == null) throw new IllegalArgumentException("gc");
 		this.gc = gc;
-		this.originalClipping = gc.getClipping();
+		this.originalAdvanced = gc.getAdvanced();
+		this.originalClipping = new Region(gc.getDevice());
+		gc.getClipping(originalClipping);
 		this.originalTransform = new Transform(gc.getDevice());
 		gc.getTransform(originalTransform);
 		this.originalLineAttributes = copy(gc.getLineAttributes());
@@ -76,7 +80,14 @@ final class GridGcProxy implements AutoCloseable {
 
 	GridGcProxy clip(Rectangle clipping) {
 		if (clipping == null) throw new IllegalArgumentException("clipping");
-		gc.setClipping(originalClipping.intersection(clipping));
+		Region next = new Region(gc.getDevice());
+		try {
+			next.add(clipping);
+			next.intersect(originalClipping);
+			gc.setClipping(next);
+		} finally {
+			next.dispose();
+		}
 		return this;
 	}
 
@@ -118,22 +129,33 @@ final class GridGcProxy implements AutoCloseable {
 		if (closed) return;
 		closed = true;
 		try {
-			gc.setTransform(originalTransform);
 			gc.setLineAttributes(originalLineAttributes);
-			gc.setAlpha(originalAlpha);
-			gc.setAntialias(originalAntialias);
-			gc.setTextAntialias(originalTextAntialias);
-			gc.setInterpolation(originalInterpolation);
-			gc.setFillRule(originalFillRule);
+			if (originalAdvanced) {
+				gc.setTransform(originalTransform);
+				gc.setAlpha(originalAlpha);
+				gc.setAntialias(originalAntialias);
+				gc.setTextAntialias(originalTextAntialias);
+				gc.setInterpolation(originalInterpolation);
+				gc.setFillRule(originalFillRule);
+			} else {
+				/*
+				 * Turning advanced mode off resets transform/pattern/alpha/AA state.
+				 * Do it before restoring the basic state and exact clip below.
+				 */
+				gc.setAdvanced(false);
+			}
 			gc.setXORMode(originalXorMode);
 			gc.setForeground(originalForeground);
 			gc.setBackground(originalBackground);
-			gc.setForegroundPattern(originalForegroundPattern);
-			gc.setBackgroundPattern(originalBackgroundPattern);
+			if (originalAdvanced) {
+				gc.setForegroundPattern(originalForegroundPattern);
+				gc.setBackgroundPattern(originalBackgroundPattern);
+			}
 			gc.setFont(originalFont);
 			gc.setClipping(originalClipping);
 		} finally {
 			originalTransform.dispose();
+			originalClipping.dispose();
 		}
 	}
 
