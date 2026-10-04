@@ -3,7 +3,6 @@ package org.eclipse.nebula.m3;
 
 import java.util.List;
 import java.util.Set;
-import org.eclipse.nebula.m3.review.NebulaM3RepositoryReviewRecipeDag;
 import org.openrewrite.Recipe;
 
 /** Read-only entry point for inventory, donor review, and Java-before-JNI evidence. */
@@ -39,8 +38,9 @@ public final class NebulaM3RepositoryReviewRecipe extends Recipe {
 
     @Override
     public List<Recipe> getRecipeList() {
-        return NebulaM3RepositoryReviewRecipeDag.atoms().stream()
-                .map(NebulaM3RepositoryReviewRecipeDag.Atom::recipe)
-                .toList();
+        return List.of(
+                new NebulaM3InventoryRecipe(),
+                new NebulaM3FastSearchReviewRecipe(),
+                new NebulaM3JavaBeforeJniReviewRecipe());
     }
 }
