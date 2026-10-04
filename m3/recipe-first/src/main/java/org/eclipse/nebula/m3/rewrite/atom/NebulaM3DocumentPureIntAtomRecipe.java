@@ -36,6 +36,11 @@ public final class NebulaM3DocumentPureIntAtomRecipe extends Recipe {
     }
 
     @Override
+    public int maxCycles() {
+        return 1;
+    }
+
+    @Override
     public TreeVisitor<?, ExecutionContext> getVisitor() {
         return new JavaIsoVisitor<ExecutionContext>() {
             @Override
