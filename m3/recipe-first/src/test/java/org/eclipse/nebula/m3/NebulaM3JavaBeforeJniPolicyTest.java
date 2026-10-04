@@ -4,6 +4,7 @@ package org.eclipse.nebula.m3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -92,6 +93,72 @@ final class NebulaM3JavaBeforeJniPolicyTest {
         assertFalse(review.nativeExecutionAuthority());
         assertFalse(review.promotionAuthority());
     }
+
+    @Test
+    void nativeCandidateAdmissionRequiresAllContentAddressedProofs() {
+        String source =
+                """
+                package p;
+                final class Candidate {
+                    static int find(java.util.List<String> values, String value) {
+                        for (String candidate : values) {
+                            if (values.contains(value)) return candidate.length();
+                        }
+                        return -1;
+                    }
+                }
+                """;
+        var review = NebulaM3JavaBeforeJniPolicy.review(
+                facts("widgets/demo/src/p/Candidate.java", source));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new NebulaM3JavaBeforeJniPolicy.NativeEvidence(
+                                "bad",
+                                "1".repeat(64),
+                                "2".repeat(64),
+                                "3".repeat(64)));
+
+        var evidence =
+                new NebulaM3JavaBeforeJniPolicy.NativeEvidence(
+                        "0".repeat(64),
+                        "1".repeat(64),
+                        "2".repeat(64),
+                        "3".repeat(64));
+        var admission =
+                NebulaM3JavaBeforeJniPolicy.admitNativeCandidate(review, evidence);
+
+        assertTrue(admission.candidateOnly());
+        assertFalse(admission.nativeExecutionAuthority());
+        assertFalse(admission.promotionAuthority());
+        assertEquals(review.decision(), admission.decision());
+        assertEquals(evidence, admission.evidence());
+    }
+
+    @Test
+    void noNativeActionCannotBeConvertedIntoNativeCandidate() {
+        String source =
+                """
+                package p;
+                final class Candidate {
+                    static int answer() { return 42; }
+                }
+                """;
+        var review = NebulaM3JavaBeforeJniPolicy.review(
+                facts("widgets/demo/src/p/Candidate.java", source));
+        var evidence =
+                new NebulaM3JavaBeforeJniPolicy.NativeEvidence(
+                        "0".repeat(64),
+                        "1".repeat(64),
+                        "2".repeat(64),
+                        "3".repeat(64));
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> NebulaM3JavaBeforeJniPolicy.admitNativeCandidate(review, evidence));
+    }
+
 
     private static NebulaM3InventoryRecipe.SourceFacts facts(String path, String source) {
         return NebulaM3InventoryRecipe.analyze(parse(Path.of(path), source));
