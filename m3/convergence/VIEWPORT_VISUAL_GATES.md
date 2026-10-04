@@ -83,3 +83,27 @@ inventory
 -> original build + behavior + screenshot proof
 -> serial promotion
 ```
+
+
+### Concrete external mechanics retained as donor shapes
+
+- `grimandgreedy/viewport-lib`
+  - grouped frame state keeps viewport/render state explicit instead of hidden in widget objects;
+  - shared geometry slabs and indexed per-object draw data reduce per-draw rebinding;
+  - scissor-rect blit/overlay composition maps naturally to SWT viewport z-planes;
+  - GPU resources are reusable residency, not semantic model ownership.
+- Dear ImGui
+  - `ImGuiListClipper` performs coarse clipping for large evenly spaced lists and advances the
+    cursor across skipped items;
+  - multi-selection can remain in caller-owned/external storage while only visible items are
+    submitted.
+
+These are architecture/algorithm donors only. They reinforce the existing target rules:
+
+```
+logical extent / state
+  -> visible range + overscan
+  -> retained commands / indexed draw data
+  -> clipped body pass
+  -> independently invalidated chrome/overlay planes
+```
