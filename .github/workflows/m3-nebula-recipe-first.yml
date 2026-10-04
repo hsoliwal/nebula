@@ -112,6 +112,37 @@ jobs:
           mvn -B -ntp -Pm3-local-repository-review rewrite:dryRunNoFork
           git diff --exit-code
 
+      - name: 3c - Run exact pinned Synexia second-pass recipe when authorized
+        env:
+          GH_TOKEN: ${{ secrets.M3_SYNEXIA_TOKEN }}
+          SYNEXIA_COMMIT: 630d3529f42f3ff6bde92da02b505153fdb35efb
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "SECOND_PASS_EXECUTION=SKIPPED_NO_M3_SYNEXIA_TOKEN"
+            exit 0
+          fi
+          SYNEXIA_DIR="$RUNNER_TEMP/com.synexia-second-pass"
+          rm -rf "$SYNEXIA_DIR"
+          gh repo clone hsoliwal/com.synexia "$SYNEXIA_DIR"
+          git -C "$SYNEXIA_DIR" checkout --detach "$SYNEXIA_COMMIT"
+          test "$(git -C "$SYNEXIA_DIR" rev-parse HEAD)" = "$SYNEXIA_COMMIT"
+          (
+            cd "$SYNEXIA_DIR"
+            ./mvnw -B -ntp -pl synexia-openrewrite-recipes -am -DskipTests install
+          )
+          git diff --exit-code
+          mvn -B -ntp -Pm3-atomize-patternize \
+            -Drewrite.activeRecipes=com.synexia.rewrite.M3SecondPassAtomPattern \
+            rewrite:dryRunNoFork
+          git diff --exit-code
+          mvn -B -ntp -Pm3-atomize-patternize \
+            -Drewrite.activeRecipes=com.synexia.rewrite.M3SecondPassAtomPattern \
+            rewrite:dryRunNoFork
+          git diff --exit-code
+          echo "SECOND_PASS_EXECUTION=READ_ONLY_TWO_RUNS_COMPLETE"
+
       - name: 4 - Export content-addressed recipe DAG
         run: mvn -B -ntp -f m3/reactor.xml -Pdag-manifest verify
 
