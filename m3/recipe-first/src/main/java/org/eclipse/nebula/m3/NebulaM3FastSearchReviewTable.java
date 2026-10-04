@@ -55,7 +55,7 @@ public final class NebulaM3FastSearchReviewTable
                 NebulaM3FastSearchReviewPolicy.ReviewPass pass) {
             this.sourcePath = sourcePath;
             this.category = pass.category().name();
-            this.passOrder = pass.ordinal();
+            this.passOrder = pass.passOrder();
             this.evidenceSource = pass.source().name();
             this.reference = pass.reference();
             this.githubDonor = pass.donorRepository();

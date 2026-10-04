@@ -3,6 +3,7 @@ package org.eclipse.nebula.m3.rewrite.exact;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -88,6 +89,45 @@ final class NebulaM3SvgLoaderLengthConvergenceRecipeTest {
 
         assertFalse(replay.errors().isEmpty());
         assertTrue(replay.results().isEmpty());
+    }
+
+    @Test
+    void staleVisitorPreservesIdentityAndReportsBothPreimageAndPostimageDrift() throws Exception {
+        for (String resource : List.of(PREIMAGE, POSTIMAGE)) {
+            String drift = resource(resource) + "\n// drift\n";
+            var errors = new ArrayList<Throwable>();
+            var context = new InMemoryExecutionContext(errors::add);
+            List<SourceFile> parsed = JavaParser.fromJavaVersion().build().parseInputs(
+                    List.of(Parser.Input.fromString(
+                            Path.of(NebulaM3SvgLoaderLengthConvergenceRecipe.REPOSITORY_PATH), drift)),
+                    null, context).toList();
+            assertEquals(1, parsed.size());
+            assertTrue(errors.isEmpty(), errors.toString());
+            SourceFile original = parsed.getFirst();
+            assertEquals(drift, original.printAll());
+            var result = new NebulaM3SvgLoaderLengthConvergenceRecipe().getVisitor()
+                    .visit(original, context);
+            assertSame(original, result);
+            assertEquals(drift, original.printAll());
+            assertEquals(1, errors.size());
+            assertTrue(errors.getFirst() instanceof IllegalStateException);
+            assertTrue(errors.getFirst().getMessage().contains("M3 exact Java preimage drift:"));
+        }
+    }
+
+    @Test
+    void differentPathRemainsUntouchedWithoutRefusal() throws Exception {
+        var errors = new ArrayList<Throwable>();
+        var context = new InMemoryExecutionContext(errors::add);
+        List<SourceFile> parsed = JavaParser.fromJavaVersion().build().parseInputs(
+                List.of(Parser.Input.fromString(Path.of("src/example/SvgLoader.java"), resource(PREIMAGE))),
+                null, context).toList();
+        assertEquals(1, parsed.size());
+        SourceFile original = parsed.getFirst();
+        var result = new NebulaM3SvgLoaderLengthConvergenceRecipe().getVisitor()
+                .visit(original, context);
+        assertSame(original, result);
+        assertTrue(errors.isEmpty(), errors.toString());
     }
 
     private static Replay run(
