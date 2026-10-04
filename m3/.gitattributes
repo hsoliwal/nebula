@@ -89,3 +89,4 @@ recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3A3F
 recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/convergence/a3-file-materializer/NebulaM3A3Apply.java.txt -text
 recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/convergence/a3-file-materializer/NebulaM3A3ApplyTest.java.txt -text
 recipe-first/src/main/resources/META-INF/rewrite/nebula-m3-a3-file-materializer.yml -text
+recipe-first/rewrite.yml -text
