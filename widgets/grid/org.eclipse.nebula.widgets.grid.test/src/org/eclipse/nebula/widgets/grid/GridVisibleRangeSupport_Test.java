@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2026 Eclipse Nebula contributors.
+ * Copyright (c) 2026 Synexia contributors.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which accompanies this distribution,
@@ -9,24 +9,26 @@
  ******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
-import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.grid.Grid.GridVisibleRange;
 import org.eclipse.nebula.widgets.grid.GridVisibleRangeSupport.RangeChangedEvent;
+import org.eclipse.nebula.widgets.grid.GridVisibleRangeSupport.VisibleRangeChangedListener;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
@@ -34,154 +36,257 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * UI/runtime proof for GridVisibleRangeSupport.
- *
- * <p>The PNG files are diagnostic evidence only. Assertions are based on the
- * logical visible range and range-change events so theme/font rasterization
- * differences do not make the test pixel-fragile.</p>
+ * Actual SWT/OSGi integration, not substituted Grid/SWT implementations.
+ * Private method access makes callback/exception tests deterministic; the paint
+ * test separately exercises the real SWT Paint registration. This suite pins
+ * historical event semantics, not the separate opt-in removed-column repair.
  */
 public class GridVisibleRangeSupport_Test {
+    private Display display;
+    private Shell shell;
+    private Grid grid;
+    private GridVisibleRangeSupport support;
+    private Method calculate;
+    private Field published;
 
-	private Display display;
-	private Shell shell;
-	private Grid grid;
-	private GridColumn[] columns;
-	private final List<RangeChangedEvent> events = new ArrayList<>();
+    @Before
+    public void setUp() throws Exception {
+        display = Display.getDefault();
+        shell = new Shell(display);
+        grid = new Grid(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+        grid.setBounds(0, 0, 250, 160);
+        for (int i = 0; i < 6; i++) {
+            GridColumn column = new GridColumn(grid, SWT.NONE);
+            column.setWidth(100);
+        }
+        for (int i = 0; i < 60; i++) {
+            GridItem item = new GridItem(grid, SWT.NONE);
+            item.setText(0, "row-" + i);
+        }
+        shell.setSize(280, 210);
+        shell.open();
+        flushPaint();
+        assertTrue("The fixture must contain visible rows", grid.getVisibleRange().getItems().length > 0);
+        assertTrue("The fixture must be scrollable", grid.getVisibleRange().getItems().length < 60);
+        support = GridVisibleRangeSupport.createFor(grid);
+        calculate = GridVisibleRangeSupport.class.getDeclaredMethod("calculateChange");
+        calculate.setAccessible(true);
+        published = GridVisibleRangeSupport.class.getDeclaredField("oldRange");
+        published.setAccessible(true);
+    }
 
-	@Before
-	public void setUp() {
-		display = Display.getDefault();
-		shell = new Shell(display);
-		grid = new Grid(shell, SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
-		grid.setHeaderVisible(true);
-		grid.setLinesVisible(true);
-		grid.setSize(360, 220);
+    @After
+    public void tearDown() {
+        if (shell != null && !shell.isDisposed()) {
+            shell.dispose();
+        }
+        // Display.getDefault() is shared with the existing Nebula test bundle.
+    }
 
-		columns = new GridColumn[8];
-		for (int column = 0; column < columns.length; column++) {
-			GridColumn gridColumn = columns[column] = new GridColumn(grid, SWT.NONE);
-			gridColumn.setText("column " + column);
-			gridColumn.setWidth(120);
-		}
+    @Test
+    public void testInitialRangeAndNoop() throws Exception {
+        List<RangeChangedEvent> events = new ArrayList<>();
+        support.addRangeChangeListener(events::add);
+        GridVisibleRange previous = snapshot();
+        calculate();
+        assertEquals(1, events.size());
+        assertEvent(previous, events.get(0));
+        assertSame(events.get(0).visibleRange, snapshot());
+        calculate();
+        assertEquals("An unchanged range must not emit another event", 1, events.size());
+    }
 
-		for (int row = 0; row < 240; row++) {
-			GridItem item = new GridItem(grid, SWT.NONE);
-			for (int column = 0; column < columns.length; column++) {
-				item.setText(column, "r" + row + " c" + column);
-			}
-		}
+    @Test
+    public void testVerticalScrollDeltas() throws Exception {
+        List<RangeChangedEvent> events = new ArrayList<>();
+        support.addRangeChangeListener(events::add);
+        calculate();
+        GridVisibleRange previous = snapshot();
+        events.clear();
+        grid.setTopIndex(15);
+        assertTrue("The test must actually scroll", grid.getTopIndex() > 0);
+        calculate();
+        assertEquals(1, events.size());
+        assertEvent(previous, events.get(0));
+        assertTrue(events.get(0).removedRows.length > 0);
+        assertTrue(events.get(0).addedRows.length > 0);
+    }
 
-		GridVisibleRangeSupport support = GridVisibleRangeSupport.createFor(grid);
-		support.addRangeChangeListener(events::add);
+    @Test
+    public void testHorizontalScrollDeltas() throws Exception {
+        List<RangeChangedEvent> events = new ArrayList<>();
+        support.addRangeChangeListener(events::add);
+        calculate();
+        GridVisibleRange previous = snapshot();
+        events.clear();
+        ScrollBar bar = grid.getHorizontalBar();
+        assertNotNull(bar);
+        bar.setSelection(120);
+        bar.notifyListeners(SWT.Selection, new Event());
+        assertTrue("The test must actually scroll", bar.getSelection() > 0);
+        calculate();
+        assertEquals(1, events.size());
+        assertEvent(previous, events.get(0));
+        assertTrue(events.get(0).addedColumns.length > 0);
+        assertTrue(events.get(0).removedColumns.length > 0);
+    }
 
-		shell.setSize(380, 260);
-		shell.open();
-		flushPaint();
-	}
+    @Test
+    public void testListenerOrderAndSharedEvent() throws Exception {
+        List<Integer> order = new ArrayList<>();
+        List<RangeChangedEvent> events = new ArrayList<>();
+        GridVisibleRange previous = snapshot();
+        support.addRangeChangeListener(event -> {
+            order.add(1);
+            events.add(event);
+            assertSame("Publish occurs after all listeners", previous, snapshotUnchecked());
+        });
+        support.addRangeChangeListener(event -> {
+            order.add(2);
+            events.add(event);
+            assertSame(previous, snapshotUnchecked());
+        });
+        calculate();
+        assertEquals(Arrays.asList(1, 2), order);
+        assertSame(events.get(0), events.get(1));
+        assertSame(grid, events.get(0).getSource());
+        assertSame(events.get(0).visibleRange, snapshot());
+    }
 
-	@After
-	public void tearDown() {
-		if (shell != null && !shell.isDisposed()) {
-			shell.dispose();
-		}
-	}
+    @Test
+    public void testListenerFailureRetainsSnapshot() throws Exception {
+        GridVisibleRange previous = snapshot();
+        IllegalStateException expected = new IllegalStateException("listener-sentinel");
+        VisibleRangeChangedListener throwing = event -> { throw expected; };
+        List<RangeChangedEvent> later = new ArrayList<>();
+        support.addRangeChangeListener(throwing);
+        support.addRangeChangeListener(later::add);
+        try {
+            calculate();
+            fail("The listener failure must propagate");
+        } catch (IllegalStateException actual) {
+            assertSame(expected, actual);
+        }
+        assertTrue(later.isEmpty());
+        assertSame(previous, snapshot());
+        support.removeRangeChangeListener(throwing);
+        calculate();
+        assertEquals(1, later.size());
+        assertEvent(previous, later.get(0));
+    }
 
-	@Test
-	public void testVisibleRangeTracksRenderedViewportAndProducesScreenshots() throws Exception {
-		GridVisibleRange top = grid.getVisibleRange();
-		assertTrue("top scene must expose rows", top.getItems().length > 0);
-		assertTrue("top scene must be a viewport, not the whole model",
-				top.getItems().length < grid.getItemCount());
-		assertTrue("top scene must expose columns", top.getColumns().length > 0);
-		assertTrue("top scene must be horizontally bounded",
-				top.getColumns().length < grid.getColumnCount());
-		assertSame(grid.getItem(grid.getTopIndex()), top.getItems()[0]);
-		snapshot("01-top");
+    @Test
+    public void testRemovingLastListenerRetainsSnapshot() throws Exception {
+        List<RangeChangedEvent> events = new ArrayList<>();
+        VisibleRangeChangedListener listener = events::add;
+        support.addRangeChangeListener(listener);
+        calculate();
+        GridVisibleRange previous = snapshot();
+        support.removeRangeChangeListener(listener);
+        grid.setTopIndex(15);
+        calculate();
+        assertEquals(1, events.size());
+        assertSame(previous, snapshot());
+        support.addRangeChangeListener(listener);
+        calculate();
+        assertEquals(2, events.size());
+        assertEvent(previous, events.get(1));
+    }
 
-		events.clear();
-		grid.setTopIndex(120);
-		flushPaint();
-		GridVisibleRange middle = grid.getVisibleRange();
-		assertTrue("vertical scroll must advance the logical viewport", grid.getTopIndex() >= 100);
-		assertSame(grid.getItem(grid.getTopIndex()), middle.getItems()[0]);
-		assertNotSame(top.getItems()[0], middle.getItems()[0]);
-		assertTrue("paint-driven support must publish a row-range delta", hasRowDelta(events));
-		snapshot("02-middle");
+    @Test
+    public void testPaintDrivesVisibleRange() throws Exception {
+        List<RangeChangedEvent> events = new ArrayList<>();
+        GridVisibleRange[] previous = { snapshot() };
+        support.addRangeChangeListener(event -> {
+            assertEvent(previous[0], event);
+            previous[0] = event.visibleRange;
+            events.add(event);
+        });
+        grid.redraw();
+        flushPaint();
+        assertTrue("Real SWT Paint must invoke the registered support", !events.isEmpty());
+        int count = events.size();
+        grid.redraw();
+        flushPaint();
+        assertEquals("Stationary repaint must not emit a difference", count, events.size());
+    }
 
-		events.clear();
-		GridColumn firstVisibleBefore = middle.getColumns()[0];
-		grid.showColumn(columns[7]);
-		flushPaint();
-		GridVisibleRange horizontal = grid.getVisibleRange();
-		assertTrue("rightmost column must be visible after showColumn",
-				containsIdentity(horizontal.getColumns(), columns[7]));
-		assertNotSame("horizontal viewport must advance from its initial first column",
-				firstVisibleBefore, horizontal.getColumns()[0]);
-		assertTrue("paint-driven support must publish a column-range delta", hasColumnDelta(events));
-		snapshot("03-horizontal");
+    private void flushPaint() {
+        grid.update();
+        for (int i = 0; i < 10000; i++) {
+            if (!display.readAndDispatch()) {
+                return;
+            }
+        }
+        fail("SWT event queue did not quiesce within the fixture budget");
+    }
 
-		int rowsBeforeResize = horizontal.getItems().length;
-		int columnsBeforeResize = horizontal.getColumns().length;
-		grid.setSize(760, 420);
-		shell.setSize(780, 460);
-		flushPaint();
-		GridVisibleRange resized = grid.getVisibleRange();
-		assertTrue("larger viewport should not expose fewer rows",
-				resized.getItems().length >= rowsBeforeResize);
-		assertTrue("larger viewport should not expose fewer columns",
-				resized.getColumns().length >= columnsBeforeResize);
-		snapshot("04-resized");
+    private GridVisibleRange snapshot() throws IllegalAccessException {
+        return (GridVisibleRange) published.get(support);
+    }
 
-		ScrollBar vertical = grid.getVerticalBar();
-		ScrollBar horizontalBar = grid.getHorizontalBar();
-		assertTrue("large model must require vertical scrolling", vertical != null && vertical.getVisible());
-		assertTrue("wide model must require horizontal scrolling", horizontalBar != null && horizontalBar.getVisible());
-	}
+    private GridVisibleRange snapshotUnchecked() {
+        try {
+            return snapshot();
+        } catch (IllegalAccessException failure) {
+            throw new AssertionError(failure);
+        }
+    }
 
-	private boolean hasRowDelta(List<RangeChangedEvent> changes) {
-		for (RangeChangedEvent event : changes) {
-			if (event.addedRows.length != 0 || event.removedRows.length != 0) return true;
-		}
-		return false;
-	}
+    private void calculate() throws Exception {
+        try {
+            calculate.invoke(support);
+        } catch (InvocationTargetException failure) {
+            Throwable cause = failure.getCause();
+            if (cause instanceof Error) {
+                throw (Error) cause;
+            }
+            if (cause instanceof Exception) {
+                throw (Exception) cause;
+            }
+            throw new AssertionError(cause);
+        }
+    }
 
-	private boolean hasColumnDelta(List<RangeChangedEvent> changes) {
-		for (RangeChangedEvent event : changes) {
-			if (event.addedColumns.length != 0 || event.removedColumns.length != 0) return true;
-		}
-		return false;
-	}
+    private void assertEvent(GridVisibleRange previous, RangeChangedEvent event) {
+        assertSame(grid, event.getSource());
+        Delta<GridItem> rows = legacy(previous.getItems(), event.visibleRange.getItems());
+        Delta<GridColumn> columns = legacy(previous.getColumns(), event.visibleRange.getColumns());
+        assertReferences(rows.added.toArray(), event.addedRows);
+        assertReferences(rows.removed.toArray(), event.removedRows);
+        assertReferences(columns.added.toArray(), event.addedColumns);
+        // Preserve the historical ignored-return toArray behavior exactly. The
+        // documented removed-column repair is deliberately a different recipe.
+        GridColumn[] legacyRemoved = new GridColumn[columns.removed.size()];
+        columns.added.toArray(legacyRemoved);
+        assertReferences(legacyRemoved, event.removedColumns);
+    }
 
-	private static boolean containsIdentity(GridColumn[] values, GridColumn target) {
-		for (GridColumn value : values) {
-			if (value == target) return true;
-		}
-		return false;
-	}
+    private static <T> Delta<T> legacy(T[] before, T[] after) {
+        List<T> removed = new ArrayList<>(Arrays.asList(before));
+        List<T> added = new ArrayList<>(Arrays.asList(after));
+        Iterator<T> iterator = added.iterator();
+        while (iterator.hasNext()) {
+            if (removed.remove(iterator.next())) {
+                iterator.remove();
+            }
+        }
+        return new Delta<>(removed, added);
+    }
 
-	private void flushPaint() {
-		grid.redraw();
-		grid.update();
-		while (display.readAndDispatch()) {
-			// drain real SWT paint/scroll work
-		}
-	}
+    private static void assertReferences(Object[] expected, Object[] actual) {
+        assertEquals(expected.length, actual.length);
+        for (int i = 0; i < expected.length; i++) {
+            assertSame("Reference/order at " + i, expected[i], actual[i]);
+        }
+    }
 
-	private void snapshot(String name) throws IOException {
-		int width = Math.max(1, grid.getSize().x);
-		int height = Math.max(1, grid.getSize().y);
-		Image image = new Image(display, width, height);
-		GC gc = new GC(grid);
-		try {
-			gc.copyArea(image, 0, 0);
-			ImageLoader loader = new ImageLoader();
-			loader.data = new ImageData[] { image.getImageData() };
-			Path directory = Path.of("target", "m3-visible-range-screenshots");
-			Files.createDirectories(directory);
-			loader.save(directory.resolve(name + ".png").toString(), SWT.IMAGE_PNG);
-		} finally {
-			gc.dispose();
-			image.dispose();
-		}
-	}
+    private static final class Delta<T> {
+        final List<T> removed;
+        final List<T> added;
+        Delta(List<T> removed, List<T> added) {
+            this.removed = removed;
+            this.added = added;
+        }
+    }
 }
