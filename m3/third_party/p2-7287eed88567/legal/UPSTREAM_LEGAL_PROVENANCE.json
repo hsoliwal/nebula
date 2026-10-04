@@ -1,0 +1,29 @@
+[
+  {
+    "file": "hamcrest3-LICENSE",
+    "url": "https://raw.githubusercontent.com/hamcrest/JavaHamcrest/68984b85e869df6a888fffcad87e4b676a8fc0ac/LICENSE",
+    "sha256": "1710cf0fc79043bb1ea1e6b3af96a3e8def96c4239794a17b0b95966e75929b8"
+  },
+  {
+    "file": "hamcrest2-LICENSE",
+    "url": "https://raw.githubusercontent.com/hamcrest/JavaHamcrest/60454d3c3e2eac8f3049dfbef2900a989a8b8624/LICENSE.txt",
+    "sha256": "f264e2e8b3dbace383eadaf26f7261b9955b264de4fbe1c9be74e86ebd2ea276"
+  },
+  {
+    "file": "xz1.12-COPYING",
+    "url": "https://raw.githubusercontent.com/tukaani-project/xz-java/107a519fac1e6789101ad9c234afe3dc407be7f5/COPYING",
+    "sha256": "1e77ef26cee5216d6531e49cbf2f6111a0270dc7b322fc65477063c5aff88766"
+  },
+  {
+    "file": "Apache-2.0.txt",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "file": "ASM9.10.1-BSD-source-header",
+    "archive": "S:\\codex-work\\m3-nebula-20261004\\p2-intake-inventory\\mirror-pass4\\plugins\\org.objectweb.asm.source_9.10.1.jar",
+    "entry": "org/objectweb/asm/AnnotationVisitor.java",
+    "archive_sha256": "a5d72b31974546ecc6dd7fd26cb3fbda475005734e6c6de777054e89c6977f9e",
+    "sha256": "34b8dd2e1b4b5f822ba633602676297fa82328d9438ba4d7336ec7393d212e06"
+  }
+]

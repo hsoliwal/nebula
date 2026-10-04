@@ -4,6 +4,7 @@ from hashlib import sha256
 from pathlib import Path
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 
 def blob(revision, path):
@@ -13,6 +14,23 @@ def blob(revision, path):
 def require(condition, reason):
     if not condition:
         raise SystemExit(reason)
+
+
+def profile_shape(raw):
+    ns = "{http://maven.apache.org/POM/4.0.0}"
+    root = ET.fromstring(raw)
+    profiles = [p for p in root.findall(ns + "profiles/" + ns + "profile")
+                if p.findtext(ns + "id") == "m3-offline-p2"]
+    require(len(profiles) == 1, "exactly one admitted p2 profile required")
+    profile = profiles[0]
+    require(not profile.attrib and [c.tag for c in profile] == [ns + "id", ns + "properties"],
+            "p2 profile must retain exact opt-in shape")
+    properties = profile[1]
+    names = ["target-platform-platform", "target-platform-gef", "target-platform-swtbot"]
+    require(not properties.attrib and [c.tag for c in properties] == [ns + x for x in names],
+            "p2 profile property shape drift")
+    require(all(not c.attrib and len(c) == 0 and c.text == "${m3.p2.mirror.url}" for c in properties),
+            "p2 mirror properties drift")
 
 
 def verify(base):
@@ -35,10 +53,14 @@ def verify(base):
     parent = "releng/org.eclipse.nebula.nebula-parent/pom.xml"
     pre, post = blob(base, parent), blob("HEAD", parent)
     expected = "1b30a4af10a3a3b5731e45ae36afa7c07faaf7d721c4b7bf15f88c3a481fc6f4"
-    require(sha256(post).hexdigest() == expected, "admitted parent aggregation postimage drift")
-    require(sha256(pre).hexdigest() in {"255bd1e72e6e6368fdfbd76c6cdcf392d28857a97678290acb8ebbefd2766103", expected},
+    profile_hash = "7bd62f0f528e3955a14aaa79fa693f758d6e2f779ec569d837aa410cec9ab408"
+    post_hash = sha256(post).hexdigest()
+    require(post_hash in {expected, profile_hash}, "admitted parent postimage drift")
+    if post_hash == profile_hash:
+        profile_shape(post)
+    require(sha256(pre).hexdigest() in {"255bd1e72e6e6368fdfbd76c6cdcf392d28857a97678290acb8ebbefd2766103", expected, profile_hash},
             "parent aggregation preimage drift")
-    print(parent + "\tPASS\t" + sha256(pre).hexdigest() + "\t" + expected)
+    print(parent + "\tPASS\t" + sha256(pre).hexdigest() + "\t" + post_hash)
 
 
 if __name__ == "__main__":
