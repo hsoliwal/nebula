@@ -17,3 +17,13 @@ description: >-
   private FILE-local leaves, then require fixed-point verification.
 recipeList:
   - org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.eclipse.nebula.m3.RepositoryReview
+displayName: Review Nebula repository with ordered M3 evidence atoms
+description: >-
+  Read-only repository review DAG: inventory, serial LeetCode/HackerRank/GeeksforGeeks
+  and pinned GitHub donor comparison, then Java-before-JNI admission evidence.
+recipeList:
+  - org.eclipse.nebula.m3.NebulaM3RepositoryReviewRecipe
