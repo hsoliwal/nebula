@@ -36,13 +36,18 @@ public final class NebulaM3CompileBootstrapApply {
                     || !file.toRealPath().startsWith(checkedRoot)) {
                 throw new IllegalStateException("regular checkout source required: " + name);
             }
-            String text = Files.readString(file, StandardCharsets.UTF_8);
-            String hash = NebulaM3ExactJavaSnapshotRecipe.sha256(text);
-            if (!hash.equals(snapshot.expectedBeforeSha256())
-                    && !hash.equals(snapshot.expectedAfterSha256())) {
+            String hash = NebulaM3VerbatimSourceSeal.sha256(file);
+            String admittedHash;
+            if (hash.equals(snapshot.expectedBeforeSha256())) {
+                admittedHash = snapshot.expectedBeforeSha256();
+            } else if (hash.equals(snapshot.expectedAfterSha256())) {
+                admittedHash = snapshot.expectedAfterSha256();
+            } else {
                 throw new IllegalStateException("bootstrap source drift: " + name);
             }
-            expected.put(name, hash);
+            NebulaM3VerbatimSourceSeal.verify(checkedRoot, name, admittedHash);
+            String text = Files.readString(file, StandardCharsets.UTF_8);
+            expected.put(name, admittedHash);
             inputs.add(Parser.Input.fromString(Path.of(name), text));
         }
         var errors = new ArrayList<Throwable>();
@@ -71,14 +76,21 @@ public final class NebulaM3CompileBootstrapApply {
         // Validate every postimage and source before any write. The isolated worktree is not promoted here.
         for (Map.Entry<String, String> entry : expected.entrySet()) {
             checkpoint(canceled);
-            if (!entry.getValue().equals(NebulaM3ExactJavaSnapshotRecipe.sha256(
-                    Files.readString(checkedRoot.resolve(entry.getKey()), StandardCharsets.UTF_8)))) {
-                throw new IllegalStateException("source changed during bootstrap: " + entry.getKey());
-            }
+            NebulaM3VerbatimSourceSeal.verify(
+                    checkedRoot, entry.getKey(), entry.getValue());
         }
         for (Map.Entry<String, String> entry : candidates.entrySet()) {
             checkpoint(canceled);
-            Files.writeString(checkedRoot.resolve(entry.getKey()), entry.getValue(), StandardCharsets.UTF_8);
+            Files.writeString(
+                    checkedRoot.resolve(entry.getKey()),
+                    entry.getValue(),
+                    StandardCharsets.UTF_8);
+            var snapshot = NebulaM3CompileBootstrapRecipe.snapshots().stream()
+                    .filter(candidate -> candidate.repositoryPath().equals(entry.getKey()))
+                    .findFirst()
+                    .orElseThrow();
+            NebulaM3VerbatimSourceSeal.verify(
+                    checkedRoot, entry.getKey(), snapshot.expectedAfterSha256());
             if (worked != null) worked.accept(1);
         }
         return candidates.size();
