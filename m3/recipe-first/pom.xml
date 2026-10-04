@@ -74,6 +74,35 @@
 
   <profiles>
     <profile>
+      <id>source-seal</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.5.1</version>
+            <executions>
+              <execution>
+                <id>nebula-m3-verbatim-source-seal</id>
+                <phase>verify</phase>
+                <goals><goal>java</goal></goals>
+                <configuration>
+                  <mainClass>org.eclipse.nebula.m3.rewrite.exact.NebulaM3VerbatimSourceSeal</mainClass>
+                  <arguments>
+                    <argument>${m3.seal.root}</argument>
+                    <argument>${m3.seal.path}</argument>
+                    <argument>${m3.seal.sha256}</argument>
+                  </arguments>
+                  <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
       <id>inventory</id>
       <build>
         <plugins>
