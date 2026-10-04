@@ -27,14 +27,14 @@ public final class NebulaM3FastSearchReviewPolicy {
         GEEKSFORGEEKS(3),
         GITHUB_DONOR(4);
 
-        private final int ordinal;
+        private final int passOrder;
 
-        EvidenceSource(int ordinal) {
-            this.ordinal = ordinal;
+        EvidenceSource(int passOrder) {
+            this.passOrder = passOrder;
         }
 
-        public int ordinal() {
-            return ordinal;
+        public int passOrder() {
+            return passOrder;
         }
     }
 
@@ -68,8 +68,8 @@ public final class NebulaM3FastSearchReviewPolicy {
             }
         }
 
-        public int ordinal() {
-            return source.ordinal();
+        public int passOrder() {
+            return source.passOrder();
         }
     }
 
@@ -106,7 +106,11 @@ public final class NebulaM3FastSearchReviewPolicy {
     }
 
     public static List<ReviewPass> allPasses() {
-        return PASSES.values().stream().flatMap(List::stream).toList();
+        ArrayList<ReviewPass> result = new ArrayList<>();
+        for (Category category : Category.values()) {
+            result.addAll(passes(category));
+        }
+        return List.copyOf(result);
     }
 
     public static String renderTsv() {
@@ -117,7 +121,7 @@ public final class NebulaM3FastSearchReviewPolicy {
             cells(
                     out,
                     pass.category().name(),
-                    Integer.toString(pass.ordinal()),
+                    Integer.toString(pass.passOrder()),
                     pass.source().name(),
                     pass.reference(),
                     pass.donorRepository(),
@@ -263,7 +267,7 @@ public final class NebulaM3FastSearchReviewPolicy {
                         license,
                         donorDisposition,
                         nextAction));
-        passes.sort(Comparator.comparingInt(ReviewPass::ordinal));
+        passes.sort(Comparator.comparingInt(ReviewPass::passOrder));
         target.put(category, List.copyOf(passes));
     }
 
