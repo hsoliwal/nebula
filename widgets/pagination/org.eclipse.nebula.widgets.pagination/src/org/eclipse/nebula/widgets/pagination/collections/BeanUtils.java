@@ -39,23 +39,7 @@ public class BeanUtils {
 	 * @return the value of the given property for the given bean.
 	 */
 	public static Object getValue(Object source, String property) {
-		if (property == null) {
-			return source;
-		}
-		if (property.indexOf('.') == -1) {
-			if (source == null) {
-				return null;
-			}
-			PropertyDescriptor propertyDescriptor = getPropertyDescriptor(
-					source.getClass(), property);
-			return getValue(source, propertyDescriptor);
-		}
-
-		String[] properies = property.split("[.]");
-		for (int i = 0; i < properies.length; i++) {
-			source = getValue(source, properies[i]);
-		}
-		return source;
+		return PropertyPathAtom.getValue(source, property);
 	}
 
 	/**
@@ -69,25 +53,7 @@ public class BeanUtils {
 	 */
 	private static Object getValue(Object source,
 			PropertyDescriptor propertyDescriptor) {
-		try {
-			Method readMethod = propertyDescriptor.getReadMethod();
-			if (readMethod == null) {
-				throw new IllegalArgumentException(propertyDescriptor.getName()
-						+ " property does not have a read method."); //$NON-NLS-1$
-			}
-			if (!readMethod.isAccessible()) {
-				readMethod.setAccessible(true);
-			}
-			return readMethod.invoke(source, (Object[])null);
-		} catch (InvocationTargetException e) {
-			/*
-			 * InvocationTargetException wraps any exception thrown by the
-			 * invoked method.
-			 */
-			throw new RuntimeException(e.getCause());
-		} catch (Exception e) {
-			return null;
-		}
+		return PropertyReadAtom.getValue(source, propertyDescriptor);
 	}
 
 	/**
@@ -101,44 +67,7 @@ public class BeanUtils {
 	 */
 	private static PropertyDescriptor getPropertyDescriptor(Class<? extends Object> beanClass,
 			String propertyName) {
-		if (!beanClass.isInterface()) {
-			BeanInfo beanInfo;
-			try {
-				beanInfo = Introspector.getBeanInfo(beanClass);
-			} catch (IntrospectionException e) {
-				// cannot introspect, give up
-				return null;
-			}
-			PropertyDescriptor[] propertyDescriptors = beanInfo
-					.getPropertyDescriptors();
-			for (int i = 0; i < propertyDescriptors.length; i++) {
-				PropertyDescriptor descriptor = propertyDescriptors[i];
-				if (descriptor.getName().equals(propertyName)) {
-					return descriptor;
-				}
-			}
-		} else {
-			try {
-				PropertyDescriptor propertyDescriptors[];
-				List<PropertyDescriptor> pds = new ArrayList<>();
-				getInterfacePropertyDescriptors(pds, beanClass);
-				if (pds.size() > 0) {
-					propertyDescriptors = pds
-							.toArray(new PropertyDescriptor[pds.size()]);
-					PropertyDescriptor descriptor;
-					for (int i = 0; i < propertyDescriptors.length; i++) {
-						descriptor = propertyDescriptors[i];
-						if (descriptor.getName().equals(propertyName))
-							return descriptor;
-					}
-				}
-			} catch (IntrospectionException e) {
-				// cannot introspect, give up
-				return null;
-			}
-		}
-		throw new IllegalArgumentException(
-				"Could not find property with name " + propertyName + " in class " + beanClass); //$NON-NLS-1$ //$NON-NLS-2$
+		return PropertyDescriptorAtom.getPropertyDescriptor(beanClass, propertyName);
 	}
 
 	/**
@@ -155,16 +84,7 @@ public class BeanUtils {
 	private static void getInterfacePropertyDescriptors(
 			List<PropertyDescriptor> propertyDescriptors, Class<? extends Object> iface)
 			throws IntrospectionException {
-		BeanInfo beanInfo = Introspector.getBeanInfo(iface);
-		PropertyDescriptor[] pds = beanInfo.getPropertyDescriptors();
-		for (int i = 0; i < pds.length; i++) {
-			PropertyDescriptor pd = pds[i];
-			propertyDescriptors.add(pd);
-		}
-		Class<?>[] subIntfs = iface.getInterfaces();
-		for (int j = 0; j < subIntfs.length; j++) {
-			getInterfacePropertyDescriptors(propertyDescriptors, subIntfs[j]);
-		}
+		InterfacePropertiesAtom.getInterfacePropertyDescriptors(propertyDescriptors, iface);
 	}
 
 }
