@@ -12,7 +12,6 @@ package org.eclipse.nebula.widgets.grid;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -116,35 +115,22 @@ final class GridVisibleRangeDiff {
 
     private static <T> Difference<T> identityDifference(T[] previous, T[] current,
             Runnable checkpoint, boolean cancellable) {
-        // [0] remaining old occurrences; [1] first old occurrences consumed.
-        IdentityHashMap<T, int[]> counts = new IdentityHashMap<>();
+        GridIdentityOccurrenceCounter<T> counts = new GridIdentityOccurrenceTable<>();
         for (T value : previous) {
             check(checkpoint, cancellable);
-            int[] count = counts.get(value);
-            if (count == null) {
-                counts.put(value, new int[] { 1, 0 });
-            } else {
-                count[0]++;
-            }
+            counts.addPrevious(value);
         }
         List<T> added = new ArrayList<>();
         for (T value : current) {
             check(checkpoint, cancellable);
-            int[] count = counts.get(value);
-            if (count != null && count[0] != 0) {
-                count[0]--;
-                count[1]++;
-            } else {
+            if (!counts.matchCurrent(value)) {
                 added.add(value);
             }
         }
         List<T> removed = new ArrayList<>();
         for (T value : previous) {
             check(checkpoint, cancellable);
-            int[] count = counts.get(value);
-            if (count[1] != 0) {
-                count[1]--;
-            } else {
+            if (!counts.skipMatchedPrevious(value)) {
                 removed.add(value);
             }
         }
