@@ -22,7 +22,7 @@
 		behaviour that has changed multiple times upstream. Restoring them
 		is a worthy effort but orthogonal to the frozen-first-column work
 		this bundle was wired into Maven for. Until that stabilisation
-		happens, only the freeze tests are run from the build so the
+		happens, the freeze and visible-range tests are run by default so the
 		feature gets real CI protection without lighting up unrelated rot.
 	-->
 	<build>
@@ -32,12 +32,34 @@
 				<artifactId>tycho-surefire-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
+					<failIfNoTests>true</failIfNoTests>
 					<includes>
 						<include>**/GridFixedColumn_Test.java</include>
+						<include>**/GridVisibleRangeSupport_Test.java</include>
 					</includes>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>full-grid-contracts</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.tycho</groupId>
+						<artifactId>tycho-surefire-plugin</artifactId>
+						<configuration>
+							<includes combine.self="override">
+								<include>**/*_Test.java</include>
+							</includes>
+							<failIfNoTests>true</failIfNoTests>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
