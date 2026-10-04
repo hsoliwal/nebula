@@ -5275,8 +5275,14 @@ public class Grid extends Canvas {
 		int y = 0;
 		final int extraFill = getExtraFill(controlSize);
 		final Rectangle clientArea = getClientArea();
+		final int hscroll = getHScrollSelectionInPixels();
+		final FixedGridColumns fixed = getFixedGridColumns();
+		final boolean fixedOverlayActive = fixed.hasColumns() && hscroll > fixed.offset();
+		final int paintPlan = GridPaintDag.plan(
+				originalClipping, clientArea, headerHeight, footerHeight,
+				columnHeadersVisible, columnFootersVisible, fixedOverlayActive, draggingColumn);
 		if (columnHeadersVisible) {
-			if (GridViewportDamage.intersectsHeader(originalClipping, clientArea, headerHeight)) {
+			if (GridPaintDag.includes(paintPlan, GridPaintDag.HEADER)) {
 				paintHeader(gc, extraFill);
 			}
 			y += headerHeight;
@@ -5330,12 +5336,13 @@ public class Grid extends Canvas {
 				}
 			}
 		}
-		final int hscroll = getHScrollSelectionInPixels();
-		paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager, gc, originalClipping, y,
-				clientArea, firstVisibleIndex, insertMark, extraFill);
+		if (GridPaintDag.includes(paintPlan, GridPaintDag.BODY)) {
+			paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager, gc, originalClipping, y,
+					clientArea, firstVisibleIndex, insertMark, extraFill);
+		}
 
 		// draw drop point
-		if (draggingColumn) {
+		if (draggingColumn && GridPaintDag.includes(paintPlan, GridPaintDag.OVERLAY)) {
 			if ((dragDropAfterColumn != null || dragDropBeforeColumn != null)
 					&& dragDropAfterColumn != columnBeingPushed && dragDropBeforeColumn != columnBeingPushed
 					&& dragDropPointValid) {
@@ -5355,8 +5362,7 @@ public class Grid extends Canvas {
 				dropPointRenderer.paint(gc, null);
 			}
 		}
-		final FixedGridColumns fixed = getFixedGridColumns();
-		if (fixed.hasColumns() && hscroll > fixed.offset()) {
+		if (fixedOverlayActive && GridPaintDag.includes(paintPlan, GridPaintDag.FIXED)) {
 			// Clip the entire fixed-overlay pass to the on-screen rectangle of
 			// the frozen columns so cell rendering can never bleed into the
 			// scrolled area, even if a renderer paints outside its bounds.
@@ -5366,27 +5372,24 @@ public class Grid extends Canvas {
 			final Rectangle fixedRect = new Rectangle(fixedX, fixedTop, getFixedColumnsWidth(),
 					Math.max(0, clientArea.height - fixedTop - fixedBottom));
 			final Rectangle fixedClipping = originalClipping.intersection(fixedRect);
-			final Rectangle priorClipping = gc.getClipping();
-			gc.setClipping(fixedClipping);
-			try {
-				paintRows(fixed.columns(), true, firstItemToDraw, visibleRows, 0, cellSpanManager, gc, fixedClipping, y,
-						clientArea, firstVisibleIndex, insertMark, extraFill);
-			} finally {
-				gc.setClipping(priorClipping);
+			try (GridGcProxy fixedGc = GridGcProxy.wrap(gc).clip(fixedClipping)) {
+				paintRows(fixed.columns(), true, firstItemToDraw, visibleRows, 0, cellSpanManager, fixedGc.gc(),
+						fixedClipping, y, clientArea, firstVisibleIndex, insertMark, extraFill);
 			}
 		}
 
 		// draw insertion mark
-		if (insertMark.posFound) {
+		if (insertMark.posFound && GridPaintDag.includes(paintPlan, GridPaintDag.BODY)) {
 			final Rectangle rect = new Rectangle(rowHeaderVisible ? rowHeaderWidth : 0,
 					columnHeadersVisible ? headerHeight : 0, clientArea.width, clientArea.height);
-			gc.setClipping(originalClipping.intersection(rect));
-			insertMarkRenderer.paint(gc,
-					new Rectangle(insertMark.posX1, insertMark.posY, insertMark.posX2 - insertMark.posX1, 0));
+			try (GridGcProxy insertGc = GridGcProxy.wrap(gc).clip(originalClipping.intersection(rect))) {
+				insertMarkRenderer.paint(insertGc.gc(),
+						new Rectangle(insertMark.posX1, insertMark.posY, insertMark.posX2 - insertMark.posX1, 0));
+			}
 		}
 
 		if (columnFootersVisible
-				&& GridViewportDamage.intersectsFooter(originalClipping, clientArea, footerHeight)) {
+				&& GridPaintDag.includes(paintPlan, GridPaintDag.FOOTER)) {
 			paintFooter(gc);
 		}
 	}

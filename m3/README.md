@@ -86,6 +86,14 @@ Java oracle
 ```
 
 
+## Official OpenRewrite declarative composition
+
+The framework/composition contract is documented in
+[`docs/openrewrite-declarative-convergence.md`](docs/openrewrite-declarative-convergence.md).
+Semantic LST changes remain imperative leaf recipes; the admitted FILE DAG is distributed as a
+declarative `META-INF/rewrite` recipe and activated explicitly through OpenRewrite's managed
+Environment.
+
 ## Local atomize/patternize convergence recipe
 
 Nebula now carries a self-contained Java 21 FILE-scope recipe DAG in `m3/recipe-first`:
@@ -103,7 +111,7 @@ return expression composed only from `int` parameters/literals, parentheses, una
 `+/-/~`, and non-throwing primitive arithmetic/bit operators. Division, modulo, field reads,
 calls, instance methods, wider signatures and broader scopes remain residue.
 
-The local crate is compiled against OpenRewrite 8.89.0, matching the dedicated
+The local crate is compiled against OpenRewrite 8.90.4, matching the dedicated
 `rewrite-maven-plugin 6.46.1` execution lane. The older Synexia read-only distillation profile is
 kept separate rather than mixing OpenRewrite generations in one classloader.
 
