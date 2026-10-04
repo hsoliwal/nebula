@@ -62,6 +62,12 @@ jobs:
           grep -F 'java.localCandidateRecipe=org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidateScope=FILE' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.localReviewRecipe=org.eclipse.nebula.m3.NebulaM3RepositoryReviewRecipe' .m3/atom-pattern/policy.properties
+          grep -F 'donor.reviewOrder=LEETCODE,HACKERRANK,GEEKSFORGEEKS,GITHUB_DONOR' .m3/atom-pattern/policy.properties
+          grep -F 'donor.githubPinRequired=true' .m3/atom-pattern/policy.properties
+          grep -F 'native.javaOracleRequired=true' .m3/atom-pattern/policy.properties
+          grep -F 'native.executionAuthority=false' .m3/atom-pattern/policy.properties
+          grep -F 'native.promotionAuthority=false' .m3/atom-pattern/policy.properties
 
       - name: 3 - Compile and test the Nebula-local recipe crate
         run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
