@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -91,6 +92,15 @@ final class NebulaM3FastSearchReviewPolicyTest {
                                 "BINARY_SEARCH\t4\tGITHUB_DONOR\t"
                                         + "https://github.com/vigna/fastutil/commit/"));
     }
+
+    @Test
+    void checkedInLedgerMatchesExecutablePolicy() throws Exception {
+        Path ledger = Path.of(System.getProperty("m3.catalogue.file"));
+        assertEquals(
+                NebulaM3FastSearchReviewPolicy.renderTsv(),
+                Files.readString(ledger));
+    }
+
 
     private static J.CompilationUnit parse(Path path, String source) {
         try (var parsed =
