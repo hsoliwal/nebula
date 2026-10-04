@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'm3/**'
+      - '.m3/**'
       - '.github/workflows/m3-nebula-recipe-first.yml'
   workflow_dispatch:
 
@@ -32,6 +33,39 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: git diff --check "$BASE_SHA...HEAD"
+      - name: Convergence custody and saved-recipe identity
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA...HEAD" \
+            | grep -Ev '^(m3/|\.m3/|\.github/workflows/m3-nebula-recipe-first\.yml$)' \
+            && { echo "Nebula production/source path changed outside M3 convergence overlay"; exit 1; } \
+            || true
+          bash -n m3/convergence/verify.sh
+          grep -F '78d1c67fbc97bb4831f0176f2a8b034ecc994eee' .m3/atom-pattern/verification.json
+          grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
+          grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' \
+            .m3/atom-pattern/policy.properties
+          grep -F       - name: Inventory the whole Nebula Java checkout
+        run: >
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory
+          -Dm3.nebula.root="$GITHUB_WORKSPACE"
+          -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory"
+          verify
+      - name: Require complete Java parse inventory
+        run: |
+          set -euo pipefail
+          grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
+      - name: Upload inventory evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-inventory
+          path: m3/recipe-first/target/nebula-m3-inventory/
+4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+
       - name: Compile and test M3 recipe crate
         run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
       - name: Inventory the whole Nebula Java checkout
