@@ -833,6 +833,21 @@ class SvgLoader {
 		return end;
 	}
 
+	/**
+	 * M3 atom / Adapter role: resolve the horizontal display DPI without exposing SWT
+	 * environment lookup to the length-unit dispatch.
+	 */
+	private static int getHorizontalDpi() {
+		final Point dpi = new Point(0, 0);
+		Display.getDefault().syncExec(new Runnable() {
+			@Override
+			public void run() {
+				dpi.x = Display.getDefault().getDPI().x;
+			}
+		});
+		return dpi.x;
+	}
+
 	// cm, em, ex, in, mm, pc, pt, px 
 	private static float parseLength(String s, String defaultString) {
 		if(s == null) {
@@ -841,33 +856,15 @@ class SvgLoader {
 		if(s.endsWith("%")) { //$NON-NLS-1$
 			throw new UnsupportedOperationException("TODO parseLength: %"); //$NON-NLS-1$
 		} else if(s.endsWith("cm")) { //$NON-NLS-1$
-			final Point dpi = new Point(0, 0);
-			Display.getDefault().syncExec(new Runnable() {
-				public void run() {
-					dpi.x = Display.getDefault().getDPI().x;
-				}
-			});
-			return Float.parseFloat(s.substring(0, s.length() - 2)) * dpi.x * 0.393700787f;
+			return Float.parseFloat(s.substring(0, s.length() - 2)) * getHorizontalDpi() * 0.393700787f;
 		} else if(s.endsWith("em")) { //$NON-NLS-1$
 			throw new UnsupportedOperationException("TODO parseLength: em"); //$NON-NLS-1$
 		} else if(s.endsWith("ex")) { //$NON-NLS-1$
 			throw new UnsupportedOperationException("TODO parseLength: ex"); //$NON-NLS-1$
 		} else if(s.endsWith("in")) { //$NON-NLS-1$
-			final Point dpi = new Point(0, 0);
-			Display.getDefault().syncExec(new Runnable() {
-				public void run() {
-					dpi.x = Display.getDefault().getDPI().x;
-				}
-			});
-			return Float.parseFloat(s.substring(0, s.length() - 2)) * dpi.x;
+			return Float.parseFloat(s.substring(0, s.length() - 2)) * getHorizontalDpi();
 		} else if(s.endsWith("mm")) { //$NON-NLS-1$
-			final Point dpi = new Point(0, 0);
-			Display.getDefault().syncExec(new Runnable() {
-				public void run() {
-					dpi.x = Display.getDefault().getDPI().x;
-				}
-			});
-			return Float.parseFloat(s.substring(0, s.length() - 2)) * dpi.x * 0.0393700787f;
+			return Float.parseFloat(s.substring(0, s.length() - 2)) * getHorizontalDpi() * 0.0393700787f;
 		} else if(s.endsWith("pc")) { //$NON-NLS-1$
 			throw new UnsupportedOperationException("TODO parseLength: pc"); //$NON-NLS-1$
 		} else if(s.endsWith("pt")) { //$NON-NLS-1$
