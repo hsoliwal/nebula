@@ -69,4 +69,29 @@ final class NebulaM3SecondPassBindingTest {
         }
         throw new IllegalStateException("Nebula repository root not found");
     }
+    @Test
+    void policyAndConvergencePlanCarryTheExactReadOnlyGate() throws Exception {
+        Path repository = repositoryRoot();
+        String policy =
+                Files.readString(repository.resolve(".m3/atom-pattern/policy.properties"));
+        String plan = Files.readString(repository.resolve("m3/convergence/PLAN.tsv"));
+
+        assertTrue(policy.contains(
+                "java.secondPassRecipe=" + NebulaM3SecondPassBinding.RECIPE));
+        assertTrue(policy.contains(
+                "java.secondPassPassBudget=" + NebulaM3SecondPassBinding.PASS_BUDGET));
+        assertTrue(policy.contains(
+                "java.secondPassUpstreamCommit=" + NebulaM3SecondPassBinding.UPSTREAM_COMMIT));
+        assertTrue(policy.contains("java.secondPassMutation=false"));
+        assertTrue(policy.contains("java.secondPassReplacement=false"));
+        assertTrue(policy.contains("java.secondPassPromotion=false"));
+
+        assertTrue(plan.contains(
+                "3\tSECOND_PASS_SIGNAL_CHAIN\t"
+                        + "com.synexia:"
+                        + NebulaM3SecondPassBinding.RECIPE
+                        + "\tFILE\tREAD_ONLY\t"));
+        assertTrue(plan.contains("7\tFILE_FIXED_POINT\t"));
+    }
+
 }
