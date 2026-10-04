@@ -63,6 +63,33 @@ jobs:
           grep -F 'java.localCandidateScope=FILE' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
+      - name: Execute tested exact compilation bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f m3/recipe-first/pom-compile-bootstrap.xml -Papply -Dm3.bootstrap.root="$GITHUB_WORKSPACE" verify
+          mvn -B -ntp -f m3/recipe-first/pom-compile-bootstrap.xml -Papply -Dm3.bootstrap.root="$GITHUB_WORKSPACE" verify
+          python3 - <<'PYTEST'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          report = Path('m3/recipe-first/target/compile-bootstrap/surefire-reports/TEST-org.eclipse.nebula.m3.rewrite.exact.NebulaM3CompileBootstrapRecipeTest.xml')
+          suite = ET.parse(report).getroot()
+          assert int(suite.get('tests', '0')) >= 6
+          assert all(int(suite.get(key, '0')) == 0 for key in ('failures', 'errors', 'skipped'))
+          PYTEST
+
+      - name: Capture exact checkout and actual recipe SDK for local replay
+        if: always()
+        run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-replay-inputs"
+
+      - name: Preserve source and SDK replay inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-replay-inputs
+          if-no-files-found: error
+          path: ${{ runner.temp }}/nebula-replay-inputs/
+
       - name: 3 - Compile and test the Nebula-local recipe crate
         run: mvn -B -ntp -f m3/recipe-first/pom.xml verify
 
