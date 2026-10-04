@@ -107,3 +107,17 @@ are explicit residue and are not generalized by intuition.
 
 GitHub Actions stores `candidate.patch`, `first.patch`, `second.patch` and the changed-file
 ledger as evidence. No workflow commits those changes or promotes them automatically.
+
+## Repository-review prerequisite
+
+Source mutation is now preceded by the local read-only repository-review recipe DAG:
+
+1. whole-checkout Java inventory;
+2. serial LeetCode -> HackerRank -> GeeksforGeeks review by candidate category;
+3. pinned GitHub donor/mechanics review with license/disposition;
+4. Java-before-JNI admission review;
+5. only then FILE-local candidate recipe execution.
+
+The executable catalogue is `m3/catalogue/fast-search-pass-ledger.tsv`. JUnit requires it to match
+the Java review policy exactly. The review DAG is run with
+`-Pm3-local-repository-review rewrite:dryRunNoFork` and CI requires a zero source diff.
