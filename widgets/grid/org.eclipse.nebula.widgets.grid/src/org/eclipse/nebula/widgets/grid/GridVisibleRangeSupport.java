@@ -3,7 +3,6 @@ package org.eclipse.nebula.widgets.grid;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventObject;
-import java.util.Iterator;
 
 import org.eclipse.nebula.widgets.grid.Grid.GridVisibleRange;
 import org.eclipse.swt.SWT;
@@ -118,34 +117,15 @@ public class GridVisibleRangeSupport {
 			return;
 		}
 		GridVisibleRange range = grid.getVisibleRange();
-
 		GridVisibleRangeDiff.Difference<GridItem> items = GridVisibleRangeDiff.between(
 				oldRange.getItems(), range.getItems());
-		java.util.List<GridItem> lOrigItems = items.removed();
-		java.util.List<GridItem> lNewItems = items.added();
-
 		GridVisibleRangeDiff.Difference<GridColumn> columns = GridVisibleRangeDiff.between(
 				oldRange.getColumns(), range.getColumns());
-		java.util.List<GridColumn> lOrigColumns = columns.removed();
-		java.util.List<GridColumn> lNewColumns = columns.added();
 
-		if (lOrigItems.size() != 0 || lNewItems.size() != 0 || lOrigColumns.size() != 0 || lNewColumns.size() != 0) {
-			RangeChangedEvent evt = new RangeChangedEvent(grid, range);
-			evt.addedRows = new GridItem[lNewItems.size()];
-			lNewItems.toArray(evt.addedRows);
-
-			evt.removedRows = new GridItem[lOrigItems.size()];
-			lOrigItems.toArray(evt.removedRows);
-
-			evt.addedColumns = new GridColumn[lNewColumns.size()];
-			lNewColumns.toArray(evt.addedColumns);
-
-			evt.removedColumns = new GridColumn[lOrigColumns.size()];
-			lNewColumns.toArray(evt.removedColumns);
-			Iterator<VisibleRangeChangedListener> rangeChangeIterator = rangeChangeListener.iterator();
-
-			while (rangeChangeIterator.hasNext()) {
-				rangeChangeIterator.next().rangeChanged(evt);
+		if (GridVisibleRangeEventAtom.changed(items, columns)) {
+			RangeChangedEvent event = GridVisibleRangeEventAtom.event(grid, range, items, columns);
+			for (VisibleRangeChangedListener listener : rangeChangeListener) {
+				listener.rangeChanged(event);
 			}
 		}
 
