@@ -83,7 +83,11 @@ final class NebulaM3SvgLoaderLengthConvergenceRecipeTest {
 
     @Test
     void stalePreimageFailsClosed() throws Exception {
-        String drift = resource(PREIMAGE) + "\n// drift\n";
+        String drift =
+                resource(PREIMAGE)
+                        .replace(
+                                "class SvgLoader {",
+                                "class SvgLoader {\n\tprivate static final int M3_DRIFT = 1;");
         Replay replay = run(new NebulaM3SvgLoaderLengthConvergenceRecipe(), drift);
 
         assertFalse(replay.errors().isEmpty());
