@@ -36,6 +36,11 @@ public final class NebulaM3PureIntConvergenceRecipe extends Recipe {
     }
 
     @Override
+    public int maxCycles() {
+        return 1;
+    }
+
+    @Override
     public List<Recipe> getRecipeList() {
         return List.of(
                 new NebulaM3AtomizePureIntReturnRecipe(),
