@@ -90,6 +90,42 @@ http://www.eclipse.org/legal/epl-v10.html -->
 				</plugins>
 			</build>
 		</profile>
+
+		<profile>
+			<!--
+				FILE-local compatibility migration for the current Eclipse CSS value
+				model. This is intentionally separate from the generic atomize/patternize
+				DAG. Build/install m3/recipe-first first, then run:
+				  mvn -Pm3-cdatetime-css-compat rewrite:runNoFork
+
+				OpenRewrite ChangeType is the reviewed stock donor for the mechanical
+				Measure type migration; the source-sealed recipe additionally preserves
+				Nebula's historical font-shorthand classification behavior.
+			-->
+			<id>m3-cdatetime-css-compat</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.openrewrite.maven</groupId>
+						<artifactId>rewrite-maven-plugin</artifactId>
+						<version>6.46.1</version>
+						<configuration>
+							<failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+							<activeRecipes>
+								<recipe>org.eclipse.nebula.m3.CDateTimeCssCompatibility</recipe>
+							</activeRecipes>
+						</configuration>
+						<dependencies>
+							<dependency>
+								<groupId>org.eclipse.nebula.m3</groupId>
+								<artifactId>nebula-m3-recipe-first</artifactId>
+								<version>1.0.0-SNAPSHOT</version>
+							</dependency>
+						</dependencies>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 
 </project>
