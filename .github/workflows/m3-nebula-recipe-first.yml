@@ -56,7 +56,9 @@ jobs:
           fi
           python3 m3/verify-source-custody.py "$BASE_SHA"
           bash -n m3/convergence/verify.sh
-          grep -F           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
+          grep -F $'3\tSECOND_PASS_SIGNAL_CHAIN' m3/convergence/PLAN.tsv
+          grep -F $'7\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
           grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
           grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassRecipe=com.synexia.rewrite.M3SecondPassAtomPatternRecipe' .m3/atom-pattern/policy.properties
@@ -65,7 +67,7 @@ jobs:
           grep -F 'java.secondPassMutation=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReplacement=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassPromotion=false' .m3/atom-pattern/policy.properties
-          grep -F           grep -F 'java.localCandidateRecipe=org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' .m3/atom-pattern/policy.properties
+          grep -F 'java.localCandidateRecipe=org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidateScope=FILE' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
@@ -220,7 +222,8 @@ jobs:
           set -euo pipefail
           test -z "$(git diff --name-only --cached)"
           test ! -e widgets/cwt/org.eclipse.nebula.cwt.tests/src/org/eclipse/nebula/cwt/svg/SvgLoaderLengthTests.java
-          grep -F 
+          grep -F $'7\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F 'java.secondPassPromotion=false' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
       - name: Capture original build dependency and classpath evidence
