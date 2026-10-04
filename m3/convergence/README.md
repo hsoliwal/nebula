@@ -50,14 +50,30 @@ until a specific hot primitive has parity, lifecycle/fallback and setup-inclusiv
 
 ## Live Maven/OpenRewrite source-model pass
 
-The root reactor now exposes an opt-in profile:
+Both the root aggregator `pom.xml` and the actual widget parent
+`releng/org.eclipse.nebula.nebula-parent/pom.xml` expose the opt-in profile.
+The widget parent does not inherit from the root aggregator, so both entry points
+need the configuration. Widget modules inherit it from the actual parent.
 
 ```bash
 mvn -Pm3-atomize-patternize rewrite:dryRunNoFork
+
+# The parent POM is also a supported entry point:
+mvn -f releng/org.eclipse.nebula.nebula-parent/pom.xml \
+  -Pm3-atomize-patternize rewrite:dryRunNoFork
 ```
 
 The profile loads the canonical `com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`
 from `com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT`.
+Install the real canonical recipe artifact first; the profile does not manufacture
+a local replacement implementation or silently fall back to another inventory.
+
+The executable recipe source is
+[`M3NebulaAtomizePatternizeRecipe.java`](https://github.com/hsoliwal/com.synexia/blob/develop/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3NebulaAtomizePatternizeRecipe.java).
+The exact parent-POM wiring repair is the canonical declarative recipe
+`com.synexia.rewrite.M3NebulaParentRewriteProfile`, backed by the existing
+`M3HashPinnedPomSnapshotRecipe`. Its source/postimage manifest and verification
+project remain in `com.synexia`.
 
 The recipe composes the existing canonical SWT distillation inventory, repository
 atom/pattern catalogue and Mavenized absorption inventory. It is read-only:
