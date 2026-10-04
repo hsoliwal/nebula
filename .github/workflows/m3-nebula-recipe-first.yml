@@ -49,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          unexpected="$(git diff --name-only "$BASE_SHA...HEAD" | grep -Ev '^(m3/|\.m3/|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/CTabFolderStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/EmptyStandaloneStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PShelfStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PresentationFactory\.java$|releng/org\.eclipse\.nebula\.nebula\-parent/pom\.xml$)' || true)"
+          unexpected="$(git diff --name-only "$BASE_SHA...HEAD" | grep -Ev '^(m3/|\.m3/|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/CTabFolderStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/EmptyStandaloneStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PShelfStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PresentationFactory\.java$|releng/org\.eclipse\.nebula\.nebula\-parent/pom\.xml$|releng/org\.eclipse\.nebula\.nebula\-parent/\.gitattributes$|\.github/workflows/\.gitattributes$)' || true)"
           if [[ -n "$unexpected" ]]; then
             printf 'Nebula production/source path changed outside the saved M3 convergence lane:\n%s\n' "$unexpected"
             exit 1
@@ -102,7 +102,7 @@ jobs:
         run: |
           set -euo pipefail
           SVG_PATH='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java'
-          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+          mvn -B -ntp -f m3/reactor.xml -Psource-seal -DskipTests \
             -Dm3.seal.root="$GITHUB_WORKSPACE" \
             -Dm3.seal.path="$SVG_PATH" \
             -Dm3.seal.sha256='23d730f01826b3d5c3de5d9f5299f2db11574ae3c482956b20928aaa676f9a08' \
@@ -130,7 +130,7 @@ jobs:
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mkdir -p "$CANDIDATE_DIR/postimage"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
-          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+          mvn -B -ntp -f m3/reactor.xml -Psource-seal -DskipTests \
             -Dm3.seal.root="$GITHUB_WORKSPACE" \
             -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
             -Dm3.seal.sha256='d56e584eb16981496046c7dbb67be8a18ff68aa01953084a441329bacc2c78eb' \
@@ -157,7 +157,7 @@ jobs:
           set -euo pipefail
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
-          mvn -B -ntp -f m3/recipe-first/pom.xml -Psource-seal -DskipTests \
+          mvn -B -ntp -f m3/reactor.xml -Psource-seal -DskipTests \
             -Dm3.seal.root="$GITHUB_WORKSPACE" \
             -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
             -Dm3.seal.sha256='d56e584eb16981496046c7dbb67be8a18ff68aa01953084a441329bacc2c78eb' \

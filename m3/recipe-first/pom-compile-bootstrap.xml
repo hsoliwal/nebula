@@ -30,6 +30,7 @@
             <include>org/eclipse/nebula/m3/rewrite/exact/NebulaM3ExactJavaSnapshotRecipe.java</include>
             <include>org/eclipse/nebula/m3/rewrite/exact/NebulaM3CompileBootstrapRecipe.java</include>
             <include>org/eclipse/nebula/m3/rewrite/exact/NebulaM3CompileBootstrapApply.java</include>
+            <include>org/eclipse/nebula/m3/rewrite/exact/NebulaM3VerbatimSourceSeal.java</include>
           </includes>
           <testIncludes><testInclude>org/eclipse/nebula/m3/rewrite/exact/NebulaM3CompileBootstrapRecipeTest.java</testInclude></testIncludes>
         </configuration>

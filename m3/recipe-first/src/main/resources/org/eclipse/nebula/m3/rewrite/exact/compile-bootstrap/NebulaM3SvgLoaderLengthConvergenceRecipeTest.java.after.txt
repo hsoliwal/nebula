@@ -3,6 +3,7 @@ package org.eclipse.nebula.m3.rewrite.exact;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -83,27 +84,56 @@ final class NebulaM3SvgLoaderLengthConvergenceRecipeTest {
 
     @Test
     void stalePreimageFailsClosed() throws Exception {
-        String drift =
-                resource(PREIMAGE)
-                        .replace(
-                                "class SvgLoader {",
-                                "class SvgLoader {\n\tprivate static final int M3_DRIFT = 1;");
+        String drift = resource(PREIMAGE) + "\n// drift\n";
         Replay replay = run(new NebulaM3SvgLoaderLengthConvergenceRecipe(), drift);
 
         assertFalse(replay.errors().isEmpty());
         assertTrue(replay.results().isEmpty());
     }
 
+    @Test
+    void staleVisitorPreservesIdentityAndReportsBothPreimageAndPostimageDrift() throws Exception {
+        for (String resource : List.of(PREIMAGE, POSTIMAGE)) {
+            String drift = resource(resource) + "\n// drift\n";
+            var errors = new ArrayList<Throwable>();
+            var context = new InMemoryExecutionContext(errors::add);
+            List<SourceFile> parsed = JavaParser.fromJavaVersion().build().parseInputs(
+                    List.of(Parser.Input.fromString(
+                            Path.of(NebulaM3SvgLoaderLengthConvergenceRecipe.REPOSITORY_PATH), drift)),
+                    null, context).toList();
+            assertEquals(1, parsed.size());
+            assertTrue(errors.isEmpty(), errors.toString());
+            SourceFile original = parsed.getFirst();
+            assertEquals(drift, original.printAll());
+            var result = new NebulaM3SvgLoaderLengthConvergenceRecipe().getVisitor()
+                    .visit(original, context);
+            assertSame(original, result);
+            assertEquals(drift, original.printAll());
+            assertEquals(1, errors.size());
+            assertTrue(errors.getFirst() instanceof IllegalStateException);
+            assertTrue(errors.getFirst().getMessage().contains("M3 exact Java preimage drift:"));
+        }
+    }
+
+    @Test
+    void differentPathRemainsUntouchedWithoutRefusal() throws Exception {
+        var errors = new ArrayList<Throwable>();
+        var context = new InMemoryExecutionContext(errors::add);
+        List<SourceFile> parsed = JavaParser.fromJavaVersion().build().parseInputs(
+                List.of(Parser.Input.fromString(Path.of("src/example/SvgLoader.java"), resource(PREIMAGE))),
+                null, context).toList();
+        assertEquals(1, parsed.size());
+        SourceFile original = parsed.getFirst();
+        var result = new NebulaM3SvgLoaderLengthConvergenceRecipe().getVisitor()
+                .visit(original, context);
+        assertSame(original, result);
+        assertTrue(errors.isEmpty(), errors.toString());
+    }
+
     private static Replay run(
             NebulaM3SvgLoaderLengthConvergenceRecipe recipe, String source) {
         var errors = new ArrayList<Throwable>();
-        // Failure markers are diagnostic results, never admitted source candidates.
-        // Abort this verification run at its actual error boundary rather than
-        // return a diagnostic-marked changeset as a successful transformation.
-        var context = new InMemoryExecutionContext(error -> {
-            errors.add(error);
-            throw new AssertionError("OpenRewrite recipe failed", error);
-        });
+        var context = new InMemoryExecutionContext(errors::add);
         List<SourceFile> parsed =
                 JavaParser.fromJavaVersion()
                         .build()

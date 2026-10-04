@@ -56,7 +56,7 @@ public final class NebulaM3CompileBootstrapRecipe extends Recipe {
         @Override protected String repositoryPath() { return "m3/recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3SvgLoaderLengthConvergenceRecipeTest.java"; }
         @Override protected String moduleRelativePath() { return "src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3SvgLoaderLengthConvergenceRecipeTest.java"; }
         @Override protected String beforeSha256() { return "7dfb38bd50cfedef2ec3e5084afa4c4c7a0a97a423f6fe82f918e391c185a6fd"; }
-        @Override protected String afterSha256() { return "60fc92ed74945ab0d32bbd891d9a06a52f28e152cdb73e5a4527665296812c98"; }
+        @Override protected String afterSha256() { return "9c6521e155d89b5f6c20e66355d59a5af3c6f00e1b7564f3d4558bbcb6dff08a"; }
         @Override protected String afterResource() { return RESOURCE + "NebulaM3SvgLoaderLengthConvergenceRecipeTest.java.after.txt"; }
         @Override public String getDisplayName() { return "Reject failed recipe diagnostic results"; }
         @Override public String getDescription() {

@@ -484,6 +484,15 @@ Contributors:
 			</pluginRepositories>
 
 		</profile>
+		<!-- Explicit mirror URI required; acquisition and owner build are separate proofs. -->
+		<profile>
+			<id>m3-offline-p2</id>
+			<properties>
+				<target-platform-platform>${m3.p2.mirror.url}</target-platform-platform>
+				<target-platform-gef>${m3.p2.mirror.url}</target-platform-gef>
+				<target-platform-swtbot>${m3.p2.mirror.url}</target-platform-swtbot>
+			</properties>
+		</profile>
 	</profiles>
 
 </project>
