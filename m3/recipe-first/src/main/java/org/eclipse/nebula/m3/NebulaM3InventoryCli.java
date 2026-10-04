@@ -148,6 +148,7 @@ public final class NebulaM3InventoryCli {
         String relative = relative(root, path);
         return !relative.startsWith(".git/")
                 && !relative.startsWith("m3/")
+                && !relative.startsWith("target/")
                 && !relative.contains("/target/");
     }
 
