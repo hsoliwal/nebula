@@ -70,6 +70,14 @@ def capture(root: Path, output: Path) -> None:
     with tarfile.open(output / 'recipe-toolchain.tar.gz', 'w:gz') as archive:
         archive.add(maven, arcname='maven', filter=plain_only)
         archive.add(repository, arcname='repository', filter=plain_only)
+    with tarfile.open(output / 'compiled-inputs.tar.gz', 'w:gz') as archive:
+        for target in sorted(root.rglob('target')):
+            if not target.is_dir() or target.is_symlink():
+                continue
+            for part in ('classes', 'test-classes', 'compilelogs', 'surefire-reports'):
+                directory = target / part
+                if directory.is_dir() and not directory.is_symlink():
+                    archive.add(directory, arcname=str(directory.relative_to(root)), filter=plain_only)
     proof = root / 'm3/recipe-first/target/compile-bootstrap/surefire-reports'
     if proof.is_dir():
         shutil.copytree(proof, output / 'bootstrap-surefire')

@@ -96,6 +96,9 @@ jobs:
       - name: 4 - Export content-addressed recipe DAG
         run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest verify
 
+      - name: 7 - Baseline original Nebula Tycho reactor
+        run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
+
       - name: 5 - Inventory the whole Nebula Java checkout
         run: mvn -B -ntp -f m3/recipe-first/pom.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
 
@@ -104,9 +107,6 @@ jobs:
         run: |
           set -euo pipefail
           grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
-
-      - name: 7 - Baseline original Nebula Tycho reactor
-        run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 
       - name: 8 - Install the proven Nebula-local recipe artifact
         run: mvn -B -ntp -f m3/recipe-first/pom.xml install
@@ -154,7 +154,7 @@ jobs:
           rm -f "$VERIFY_TARGET"
 
       - name: 12 - Original Nebula Tycho reactor on transformed candidates
-        run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+        run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
       - name: 13 - Preserve candidate-only authority
         shell: bash
@@ -164,6 +164,18 @@ jobs:
           test ! -e widgets/cwt/org.eclipse.nebula.cwt.tests/src/org/eclipse/nebula/cwt/svg/SvgLoaderLengthTests.java
           grep -F $'4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
+
+      - name: Capture original build dependency and classpath evidence
+        if: always()
+        run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-full-build-inputs"
+
+      - name: Preserve complete execution dependency inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-full-build-inputs
+          if-no-files-found: error
+          path: ${{ runner.temp }}/nebula-full-build-inputs/
 
       - name: Upload Nebula M3 inventory and candidate evidence
         if: always()
@@ -176,5 +188,6 @@ jobs:
             m3/recipe-first/target/nebula-m3-dag/
             m3/recipe-first/target/nebula-m3-candidate/
             **/target/rewrite/
+            **/target/surefire-reports/
             m3/convergence/PLAN.tsv
             .m3/atom-pattern/policy.properties

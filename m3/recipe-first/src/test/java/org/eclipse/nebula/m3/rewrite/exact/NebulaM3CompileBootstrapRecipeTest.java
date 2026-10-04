@@ -20,8 +20,8 @@ final class NebulaM3CompileBootstrapRecipeTest {
     @Test void exactReplayAndSecondRunFixedPoint() throws Exception {
         populate("before");
         AtomicLong progress = new AtomicLong();
-        assertEquals(2, NebulaM3CompileBootstrapApply.apply(root, () -> false, progress::addAndGet));
-        assertEquals(2, progress.get());
+        assertEquals(3, NebulaM3CompileBootstrapApply.apply(root, () -> false, progress::addAndGet));
+        assertEquals(3, progress.get());
         for (var snapshot : NebulaM3CompileBootstrapRecipe.snapshots()) {
             assertEquals(resource(snapshot, "after"), Files.readString(root.resolve(snapshot.repositoryPath())));
         }
@@ -32,7 +32,7 @@ final class NebulaM3CompileBootstrapRecipeTest {
         populate("before");
         var first = NebulaM3CompileBootstrapRecipe.snapshots().getFirst();
         Files.writeString(root.resolve(first.repositoryPath()), resource(first, "after"));
-        assertEquals(1, NebulaM3CompileBootstrapApply.apply(root, null, null));
+        assertEquals(2, NebulaM3CompileBootstrapApply.apply(root, null, null));
         assertEquals(0, NebulaM3CompileBootstrapApply.apply(root, null, null));
     }
 
@@ -64,7 +64,7 @@ final class NebulaM3CompileBootstrapRecipeTest {
     @Test void contractAndExistingReviewOrderArePreserved() throws Exception {
         var snapshots = NebulaM3CompileBootstrapRecipe.snapshots();
         String table = resource(snapshots.getFirst(), "after");
-        String composition = resource(snapshots.getLast(), "after");
+        String composition = resource(snapshots.get(1), "after");
         assertTrue(table.contains("this.passOrder = pass.passOrder();"));
         assertTrue(table.contains("this.authority = \"READ_ONLY_EVIDENCE\";"));
         int inventory = composition.indexOf("new NebulaM3InventoryRecipe()");

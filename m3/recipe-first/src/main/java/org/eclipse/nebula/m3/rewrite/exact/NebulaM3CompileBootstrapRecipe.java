@@ -6,7 +6,7 @@ import java.util.Set;
 import org.openrewrite.Recipe;
 
 /**
- * Repairs the two actual compilation blockers before running the existing full recipe crate.
+ * Repairs the actual compilation and failed-result admission blockers before running the existing full recipe crate.
  * This composes the existing exact-Java engine; it is not another parser or rewrite engine.
  * Each leaf remains source-pinned and one-cycle. Repository-wide atomization is a later gate.
  */
@@ -14,7 +14,7 @@ public final class NebulaM3CompileBootstrapRecipe extends Recipe {
     static final String RESOURCE = "/org/eclipse/nebula/m3/rewrite/exact/compile-bootstrap/";
 
     static List<NebulaM3ExactJavaSnapshotRecipe> snapshots() {
-        return List.of(new ReviewTable(), new ReviewComposition());
+        return List.of(new ReviewTable(), new ReviewComposition(), new FailedResultAdmission());
     }
 
     @Override public String getDisplayName() { return "Restore Nebula recipe-crate compilation"; }
@@ -49,6 +49,19 @@ public final class NebulaM3CompileBootstrapRecipe extends Recipe {
         @Override public String getDisplayName() { return "Restore compiled Nebula ReviewComposition"; }
         @Override public String getDescription() {
             return "Replays one exact reviewed compile repair, preserving existing public signatures.";
+        }
+    }
+
+    public static final class FailedResultAdmission extends NebulaM3ExactJavaSnapshotRecipe {
+        @Override protected String repositoryPath() { return "m3/recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3SvgLoaderLengthConvergenceRecipeTest.java"; }
+        @Override protected String moduleRelativePath() { return "src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3SvgLoaderLengthConvergenceRecipeTest.java"; }
+        @Override protected String beforeSha256() { return "7dfb38bd50cfedef2ec3e5084afa4c4c7a0a97a423f6fe82f918e391c185a6fd"; }
+        @Override protected String afterSha256() { return "0665384f26aaab4c9b8c0b8fba30d8f6cebcac76e31544fb50569ce03b23fc79"; }
+        @Override protected String afterResource() { return RESOURCE + "NebulaM3SvgLoaderLengthConvergenceRecipeTest.java.after.txt"; }
+        @Override public String getDisplayName() { return "Reject failed recipe diagnostic results"; }
+        @Override public String getDescription() {
+            return "Makes the existing replay test host fail immediately on execution errors, "
+                    + "retaining the no-candidate-on-source-drift contract.";
         }
     }
 }
