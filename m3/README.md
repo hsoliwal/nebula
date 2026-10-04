@@ -129,3 +129,29 @@ oracle.
 Once this Nebula branch is green, the recipe/DAG shape can be replayed mechanically into
 `hsoliwal/M3jdk21` and `hsoliwal/com.synexia`; repository-specific eligibility recipes are added
 as new atoms rather than hand-editing target files.
+
+## Read-only repository review DAG
+
+Before the FILE-local mutation DAG, Nebula now runs a separate evidence DAG:
+
+```text
+NebulaM3InventoryRecipe
+  -> NebulaM3FastSearchReviewRecipe
+       LeetCode -> HackerRank -> GeeksforGeeks -> pinned GitHub donor
+  -> NebulaM3JavaBeforeJniReviewRecipe
+  -> candidate recipe authoring / explicit residue
+```
+
+The stable named recipe is `org.eclipse.nebula.m3.RepositoryReview`; the root profile is
+`m3-local-repository-review`.
+
+The challenge sites are taxonomy evidence only. The GitHub donor pass uses exact 40-character
+commit SHAs and reviewed license/disposition. The Java-before-JNI pass records whether a source
+contains an existing native declaration or only a Java hot-path candidate. JNI remains prohibited
+until Java-oracle differential corpus, lifecycle/fallback, and setup-inclusive benchmark evidence
+exist. Review rows have no native execution or promotion authority.
+
+The convergence ledger therefore orders inventory, donor review, Java-before-JNI review,
+atomization, patternization, documentation, fixed point, fan-in, original Tycho verification, and
+manual serial promotion. No review or scheduler can skip directly from a source signal to a
+canonical edit.
