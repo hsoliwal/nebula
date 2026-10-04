@@ -82,3 +82,10 @@ recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3CDateTime
 recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3CDateTimeCssCompatibilityRecipeTest.java -text
 recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/exact/cdatetime-css/CDateTimePropertyHandler.after.java.txt -text
 recipe-first/src/main/resources/META-INF/rewrite/nebula-m3-cdatetime-css.yml -text
+recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3A3Apply.java -text
+recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3A3ApplyTest.java -text
+recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3A3FileMaterializerRecipe.java -text
+recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3A3FileMaterializerRecipeTest.java -text
+recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/convergence/a3-file-materializer/NebulaM3A3Apply.java.txt -text
+recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/convergence/a3-file-materializer/NebulaM3A3ApplyTest.java.txt -text
+recipe-first/src/main/resources/META-INF/rewrite/nebula-m3-a3-file-materializer.yml -text

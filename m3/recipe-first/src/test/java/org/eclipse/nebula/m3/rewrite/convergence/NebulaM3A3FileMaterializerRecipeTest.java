@@ -3,7 +3,6 @@ package org.eclipse.nebula.m3.rewrite.convergence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -109,16 +108,23 @@ final class NebulaM3A3FileMaterializerRecipeTest {
                         public final class NebulaM3A3Apply {}
                         """);
 
-        assertThrows(
-                RuntimeException.class,
-                () ->
-                        recipe.run(
-                                        new InMemoryLargeSourceSet(
-                                                List.of(anchor, drift)),
-                                        context(),
-                                        1)
-                                .getChangeset()
-                                .getAllResults());
+        String originalAnchor = anchor.printAll();
+        String originalDrift = drift.printAll();
+        Path originalPath = drift.getSourcePath();
+        var errors = new java.util.ArrayList<Throwable>();
+        var run = recipe.run(
+                new InMemoryLargeSourceSet(List.of(anchor, drift)),
+                new InMemoryExecutionContext(errors::add),
+                1);
+        assertTrue(run.getChangeset().getAllResults().isEmpty());
+        assertEquals(1, errors.size());
+        assertTrue(errors.getFirst() instanceof IllegalStateException);
+        assertEquals("occupied target drift: " + APPLY, errors.getFirst().getMessage());
+        assertEquals(originalAnchor, anchor.printAll());
+        assertEquals(originalDrift, drift.printAll());
+        assertEquals(originalPath, drift.getSourcePath());
+        assertFalse(recipe.sourceMutationAuthority());
+        assertFalse(recipe.promotionAuthority());
     }
 
     private static SourceFile java(String path, String source) {
