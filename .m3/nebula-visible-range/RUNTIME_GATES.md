@@ -2,7 +2,7 @@
 
 The existing Grid test bundle now includes GridVisibleRangeSupport_Test alongside
 GridFixedColumn_Test. No original test, parent, dependency or widget source is removed.
-Seven new JUnit4 tests instantiate the actual SWT Grid, test visible row/column deltas,
+Eight new JUnit4 tests instantiate the actual SWT Grid, test visible row/column deltas,
 shared event identity, listener order, failure propagation, last-listener removal and
 real Paint callbacks. Reflection is used only to invoke the existing private calculation
 and inspect its publication order deterministically. The paint test separately exercises
@@ -26,7 +26,7 @@ remains an acceptance blocker, not permission to suppress that test.
 
 After a successful clean build, the canonical Synexia M3NebulaRuntimeEvidence verifier
 checks actual TEST-*.xml files in this bundle's target/surefire-reports directory.
-The runtime-tests.tsv requires every one of the seven new method names, plus nonempty
+The runtime-tests.tsv requires every one of the eight new method names, plus nonempty
 reports from each of the five existing Grid test classes. This manifest is not a claim
 of method-by-method coverage of all legacy tests. The full profile, actual build and
 broader existing repository gates remain necessary.
@@ -42,3 +42,20 @@ in this constrained authoring environment. The real Java report verifier is comp
 and tested against explicitly synthetic XML fixtures. Maven and GUI integration remain
 separate, unpassed gates. The previous Java/JNI production checks are not relabelled as
 SWT runtime success. Keep the PR draft until actual original-runtime checks pass.
+
+
+## Screenshot evidence
+
+The runtime class also captures four diagnostic PNG scenes under
+`target/m3-visible-range-screenshots`:
+
+- `01-top.png`;
+- `02-middle.png`;
+- `03-horizontal.png`;
+- `04-resized.png`.
+
+These are not pixel-golden assertions. The test asserts logical viewport behavior and
+the screenshots make header, clipping, scrollbar and repaint regressions inspectable.
+The paired Synexia acceptance job requires all four files from the same fresh reactor
+run, validates PNG signature/IHDR/dimensions and records canonical SHA-256 evidence.
+Missing, stale, symlinked, malformed, oversized or extra PNG evidence is rejected.
