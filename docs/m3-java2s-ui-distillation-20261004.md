@@ -84,6 +84,37 @@ platform-dependent. The pure affine value remains usable even when native transf
 application is not admitted.
 
 
+
+## jSparrow deterministic-refactoring donor
+
+Additional donor:
+- https://github.com/Jsparrow/jSparrow-sample
+- https://github.com/Jsparrow/jsparrow.github.io
+
+jSparrow is used here as a rule-catalogue donor, not as the M3 mutation engine.
+Its public sample configuration demonstrates a broad deterministic rule taxonomy,
+including:
+
+- try-with-resources and multi-catch;
+- guard-condition and collapsed-if simplification;
+- collection/map simplifications such as putIfAbsent and getOrDefault;
+- optional/lambda/stream transformations;
+- StringBuilder/StringJoiner/string construction improvements;
+- loop-to-stream/foreach transformations;
+- final-variable and modifier cleanup;
+- Java NIO file/charset migrations;
+- parameterized SQL/JPA/LDAP query hardening;
+- logging and formatting profiles;
+- per-module/package/class source exclusions.
+
+For M3, each jSparrow rule family is first mapped against an existing OpenRewrite
+recipe or Synexia recipe. Existing deterministic owners win. Only uncovered behavior
+may become a new M3 recipe, and it must be proven against exact pre/post source,
+compiler/tests and fixed-point replay.
+
+jSparrow therefore contributes a mature transformation catalogue and sequencing
+vocabulary; OpenRewrite remains the single production mutation engine.
+
 ## CodeSplitJava atomization donor
 
 Additional donor:
