@@ -199,3 +199,14 @@ AST/LST structural/control/contract facts remain authoritative.
 Hosted Maven/JUnit success is not claimed while the upstream dedicated workflow fails before
 GitHub creates any job. That startup condition is distinct from a recipe test failure.
 
+### Orchestration locality
+
+The current Synexia second-pass recognizers share one JVM-local signal store. They are logical DAG
+leaves inside the OpenRewrite composite, but they are not yet independent process-level tasks.
+
+Camel, Airflow, or another external scheduler may schedule the **second-pass composite as one
+recipe atom**. Independent cross-process fan-out of structural/control/contract/regex/repetition
+leaves is forbidden until a content-addressed signal artifact handoff and reducer-input contract
+are implemented. Drools/KIE remains admission evidence only and gains no mutation or promotion
+authority.
+
