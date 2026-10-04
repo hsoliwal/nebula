@@ -99,3 +99,27 @@ The evidence set includes:
 
 These inputs grant no source-copy authority. They are used to compare behavior after
 both donor and target shapes have been atomized/patternized.
+
+
+## Nebula-local source-changing seed grammar
+
+The broad hierarchy and Synexia source-model passes remain read-only evidence lanes. A separate local
+recipe crate now proves the first source-changing FILE grammar inside Nebula itself.
+
+The mutation order is strictly:
+
+```text
+inventory
+ -> atomization
+ -> patternization / IOP
+ -> semantic documentation
+ -> second-pass fixed point
+ -> transformed Tycho verify
+```
+
+Each mutating leaf is one-cycle and shares one eligibility predicate with the inventory pass.
+The current grammar admits only private static pure-`int` expression leaves. Non-admitted shapes
+are explicit residue and are not generalized by intuition.
+
+GitHub Actions stores `candidate.patch`, `first.patch`, `second.patch` and the changed-file
+ledger as evidence. No workflow commits those changes or promotes them automatically.
