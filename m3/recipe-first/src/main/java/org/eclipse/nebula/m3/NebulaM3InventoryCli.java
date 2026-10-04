@@ -53,7 +53,13 @@ public final class NebulaM3InventoryCli {
             String relative = relative(root, file);
             List<Throwable> errors = new ArrayList<>();
             InMemoryExecutionContext context = new InMemoryExecutionContext(errors::add);
-            String source = Files.readString(file, StandardCharsets.UTF_8);
+            String source;
+            try {
+                source = Files.readString(file, StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                failures.add(new Failure(relative, failure.getClass().getSimpleName()));
+                continue;
+            }
             try (Stream<SourceFile> parsed =
                     parser.parseInputs(
                             List.of(Parser.Input.fromString(Path.of(relative), source)),
