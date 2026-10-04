@@ -88,11 +88,126 @@ jobs:
 
           git diff --check
           git diff --name-only | sort > "$CANDIDATE_DIR/changed-files.txt"
-          unexpected="$(grep -Ev '\.java$' "$CANDIDATE_DIR/changed-files.txt" || true)"
+          unexpected="$(grep -Ev '\.java          cp "$CANDIDATE_DIR/candidate.patch" "$CANDIDATE_DIR/first.patch"
+          while IFS= read -r changed; do
+            [[ -z "$changed" ]] && continue
+            mkdir -p "$CANDIDATE_DIR/postimage/$(dirname "$changed")"
+            cp "$changed" "$CANDIDATE_DIR/postimage/$changed"
+          done < "$CANDIDATE_DIR/changed-files.txt"
+
+      - name: 9 - Prove complete recipe DAG fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
+          mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          git diff --binary > "$CANDIDATE_DIR/second.patch"
+          diff -u "$CANDIDATE_DIR/first.patch" "$CANDIDATE_DIR/second.patch"
+
+      - name: 10 - Verify SvgLoader length behavior on real SWT
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERIFY_SOURCE='m3/recipe-first/src/test/resources/org/eclipse/nebula/m3/rewrite/exact/svg-loader-length/SvgLoaderLengthTests.java.txt'
+          VERIFY_TARGET='widgets/cwt/org.eclipse.nebula.cwt.tests/src/org/eclipse/nebula/cwt/svg/SvgLoaderLengthTests.java'
+          cp "$VERIFY_SOURCE" "$VERIFY_TARGET"
+          xvfb-run -a mvn -B -ntp -f widgets/cwt/pom.xml \
+            -pl org.eclipse.nebula.cwt.tests -am \
+            -DskipTests=false -Dtest=SvgLoaderLengthTests verify
+          rm -f "$VERIFY_TARGET"
+
+      - name: 11 - Original Nebula Tycho reactor on transformed candidates
+        run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+
+      - name: 12 - Preserve candidate-only authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only --cached)"
+          test ! -e widgets/cwt/org.eclipse.nebula.cwt.tests/src/org/eclipse/nebula/cwt/svg/SvgLoaderLengthTests.java
+          grep -F 
+      - name: Upload Nebula M3 inventory and candidate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-convergence
+          if-no-files-found: warn
+          path: |
+            m3/recipe-first/target/nebula-m3-inventory/
+            m3/recipe-first/target/nebula-m3-candidate/
+            **/target/rewrite/
+            m3/convergence/PLAN.tsv
+            .m3/atom-pattern/policy.properties
+ "$CANDIDATE_DIR/changed-files.txt" || true)"
           if [[ -n "$unexpected" ]]; then
             printf 'FILE recipe escaped Java source scope:\n%s\n' "$unexpected"
             exit 1
           fi
+          grep -Fx 'widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
+            "$CANDIDATE_DIR/changed-files.txt"
+
+          git diff --binary > "$CANDIDATE_DIR/candidate.patch"
+          cp "$CANDIDATE_DIR/candidate.patch" "$CANDIDATE_DIR/first.patch"
+          while IFS= read -r changed; do
+            [[ -z "$changed" ]] && continue
+            mkdir -p "$CANDIDATE_DIR/postimage/$(dirname "$changed")"
+            cp "$changed" "$CANDIDATE_DIR/postimage/$changed"
+          done < "$CANDIDATE_DIR/changed-files.txt"
+
+      - name: 9 - Prove complete recipe DAG fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
+          mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          git diff --binary > "$CANDIDATE_DIR/second.patch"
+          diff -u "$CANDIDATE_DIR/first.patch" "$CANDIDATE_DIR/second.patch"
+
+      - name: 10 - Original Nebula Tycho reactor on transformed candidates
+        run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+
+      - name: 11 - Preserve candidate-only authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only --cached)"
+          grep -F $'4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
+
+      - name: Upload Nebula M3 inventory and candidate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-convergence
+          if-no-files-found: warn
+          path: |
+            m3/recipe-first/target/nebula-m3-inventory/
+            m3/recipe-first/target/nebula-m3-candidate/
+            **/target/rewrite/
+            m3/convergence/PLAN.tsv
+            .m3/atom-pattern/policy.properties
+4\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
+
+      - name: Upload Nebula M3 inventory and candidate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-convergence
+          if-no-files-found: warn
+          path: |
+            m3/recipe-first/target/nebula-m3-inventory/
+            m3/recipe-first/target/nebula-m3-candidate/
+            **/target/rewrite/
+            m3/convergence/PLAN.tsv
+            .m3/atom-pattern/policy.properties
+ "$CANDIDATE_DIR/changed-files.txt" || true)"
+          if [[ -n "$unexpected" ]]; then
+            printf 'FILE recipe escaped Java source scope:\n%s\n' "$unexpected"
+            exit 1
+          fi
+          grep -Fx 'widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
+            "$CANDIDATE_DIR/changed-files.txt"
 
           git diff --binary > "$CANDIDATE_DIR/candidate.patch"
           cp "$CANDIDATE_DIR/candidate.patch" "$CANDIDATE_DIR/first.patch"
