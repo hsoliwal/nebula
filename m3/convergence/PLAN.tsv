@@ -1,0 +1,12 @@
+ordinal	stage	owner	scope	authority	gate
+0	INVENTORY	m3/recipe-first	FILE	READ_ONLY	whole Java checkout parsed; failureRows=0
+1	ATOMIZE	com.synexia:M3HierarchyRecipe	FILE	CANDIDATE_ONLY	existing callable/function leaves reused; no wrapper-only implementation
+2	PATTERNIZE	com.synexia:M3RepositoryAtomizePatternizeRecipe	FILE	CANDIDATE_ONLY	pattern/IOP roles recorded; contract locked
+3	DOCUMENT	com.synexia:M3DocumentAtomizer	FILE	CANDIDATE_ONLY	lossless document blocks; no prose rewrite
+4	FILE_FIXED_POINT	m3/convergence/verify.sh	FILE	VERIFY_ONLY	second hierarchy run byte-identical
+5	PACKAGE_FAN_IN	com.synexia:M3HierarchyRecipe	PACKAGE	VERIFY_ONLY	child receipts only; no implicit promotion
+6	MODULE_FAN_IN	com.synexia:M3BuildTopology	MODULE	VERIFY_ONLY	local Maven modules only; missing/external explicit
+7	PROJECT_FAN_IN	com.synexia:M3HierarchyRecipe	PROJECT	VERIFY_ONLY	child identities/counts/residue retained
+8	REPOSITORY_FAN_IN	com.synexia:M3HierarchyRecipe	REPOSITORY	VERIFY_ONLY	one content-addressed receipt root
+9	ORIGINAL_BUILD	Nebula Tycho	REPOSITORY	VERIFY_ONLY	mvn clean verify
+10	PROMOTION	manual serial review	REPOSITORY	NO_AUTOMATIC_AUTHORITY	all gates pass; source diff independently reviewed
