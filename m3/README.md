@@ -178,7 +178,7 @@ Exact reviewed binding:
 ```text
 repository  hsoliwal/com.synexia
 branch      feat/m3-second-pass-signal-chain-20261004
-commit      630d3529f42f3ff6bde92da02b505153fdb35efb
+commit      9d33ce5229bee70872110b7a03e4ee99bf0e0878
 PR          8891
 recipe      com.synexia.rewrite.M3SecondPassAtomPatternRecipe
 budget      2
