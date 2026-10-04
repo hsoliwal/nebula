@@ -38,7 +38,7 @@ public final class NebulaM3VerbatimSourceSeal {
                 throw new IllegalArgumentException("verbatim source seal is authority-free");
             }
             String expected =
-                    sha256(
+                    NebulaM3VerbatimSourceSeal.sha256(
                             ("schema=nebula-m3-verbatim-source-seal/v1\n"
                                             + "path="
                                             + logicalPath
