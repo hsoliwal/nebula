@@ -18,6 +18,7 @@
     <junit.version>5.10.1</junit.version>
     <m3.nebula.root>${project.basedir}/../..</m3.nebula.root>
     <m3.nebula.out>${project.build.directory}/nebula-m3-inventory</m3.nebula.out>
+    <m3.nebula.dag.out>${project.build.directory}/nebula-m3-dag</m3.nebula.dag.out>
   </properties>
 
   <dependencies>
@@ -90,6 +91,33 @@
                   <arguments>
                     <argument>${m3.nebula.root}</argument>
                     <argument>${m3.nebula.out}</argument>
+                  </arguments>
+                  <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>dag-manifest</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.5.1</version>
+            <executions>
+              <execution>
+                <id>nebula-m3-dag-manifest</id>
+                <phase>verify</phase>
+                <goals><goal>java</goal></goals>
+                <configuration>
+                  <mainClass>org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifestCli</mainClass>
+                  <arguments>
+                    <argument>${m3.nebula.dag.out}</argument>
                   </arguments>
                   <cleanupDaemonThreads>false</cleanupDaemonThreads>
                 </configuration>
