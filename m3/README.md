@@ -177,9 +177,11 @@ Exact reviewed binding:
 
 ```text
 repository  hsoliwal/com.synexia
-branch      feat/m3-second-pass-signal-chain-20261004
-commit      f140771ad2ce772cee21671d8d7f340e35f0d407
-PR          8891
+branch      develop
+commit      daaab09a1b91fe8344c1ea97359342b52739bf38
+PR          8925
+PR head     5f63a7a6a4541d055df5071de22d5edf9ee23c7a
+components  8891,8897,8915
 recipe      com.synexia.rewrite.M3SecondPassAtomPatternRecipe
 catalog     com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog
 state       SHARED_JVM_COMPOSITE; external leaf fan-out=false
@@ -198,9 +200,9 @@ The machine binding is `catalogue/second-pass-recipe-binding.tsv`; the Java owne
 pre-mutation gate. Lexically masked regex may nominate a candidate but never certify a transform;
 AST/LST structural/control/contract facts remain authoritative.
 
-Hosted Maven/JUnit success is not claimed until the refreshed upstream dedicated workflow
-completes successfully for the exact pinned commit. The binding remains read-only/candidate-only
-while that proof is pending.
+Hosted Maven/JUnit success is not claimed merely because the integration is merged. Exact
+integration-head workflows were observed queued/pending during this review; the binding remains
+read-only/candidate-only until focused proof finishes successfully.
 
 ### Orchestration locality
 
