@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -228,16 +229,43 @@ final class NebulaM3StreamSegmentNamesTest {
         if (includeToolbar) {
             dependencies.add(resource("before"));
         }
-        String classpath = System.getProperty("m3.stream.classpath", "");
-        assertFalse(classpath.isBlank(), "Real SWT and JFace classpath is required");
+        List<Path> classpath = realSdkClasspath();
+        assertFalse(classpath.isEmpty(), "Real SWT and JFace classpath is required");
         var errors = new ArrayList<Throwable>();
-        var parser = JavaParser.fromJavaVersion().classpath(
-                List.of(classpath.split(Pattern.quote(File.pathSeparator))).stream().map(Path::of).toList())
+        var parser = JavaParser.fromJavaVersion().classpath(classpath)
                 .dependsOn(dependencies.toArray(String[]::new)).build();
         var parsed = parser.parse(new InMemoryExecutionContext(errors::add), source).findFirst().orElseThrow();
         assertTrue(parsed instanceof J.CompilationUnit, parsed.getClass().getName());
         assertTrue(errors.isEmpty(), errors.toString());
         return (J.CompilationUnit) parsed;
+    }
+
+    private static List<Path> realSdkClasspath() {
+        String configured = System.getProperty("m3.stream.classpath", "").strip();
+        if (!configured.isEmpty()) {
+            return List.of(configured.split(Pattern.quote(File.pathSeparator))).stream()
+                    .map(Path::of)
+                    .toList();
+        }
+        return List.of(
+                        "org.eclipse.swt.widgets.Event",
+                        "org.eclipse.jface.viewers.Viewer")
+                .stream()
+                .map(NebulaM3StreamSegmentNamesTest::codeSource)
+                .distinct()
+                .toList();
+    }
+
+    private static Path codeSource(String className) {
+        try {
+            Class<?> type = Class.forName(className, false,
+                    NebulaM3StreamSegmentNamesTest.class.getClassLoader());
+            return Path.of(type.getProtectionDomain().getCodeSource().getLocation().toURI());
+        } catch (ClassNotFoundException | URISyntaxException failure) {
+            throw new IllegalStateException(
+                    "required reviewed SWT/JFace test artifact unavailable: " + className,
+                    failure);
+        }
     }
 
     private static List<J.MethodInvocation> terminals(J.CompilationUnit unit) {
