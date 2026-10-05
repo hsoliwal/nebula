@@ -58,3 +58,7 @@ If you choose any of these options, just open an issue.
 ## New Widgets
 If you want to contribute a widget, just open an issue and state your intention. We will then guide you through the process.
 
+
+## Fork development guide
+
+See the [development guide](docs/DEVELOPMENT_GUIDE.md) for source layout, reproducible build and test lanes, fork-specific boundaries and review handover.
