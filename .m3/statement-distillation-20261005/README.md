@@ -1,12 +1,12 @@
 # Executed Nebula statement distillation
 
 The canonical Synexia OpenRewrite recipes processed all 1,768 application Java files and all
-72 owned Java tooling files: **1,840 files, 167,615 statement/block/control atoms**. The other
+74 owned Java tooling files: **1,842 files, 167,670 statement/block/control atoms**. The other
 43 Java files are immutable donor and parser reference fixtures, catalogued separately.
 `all-files.tsv` seals every delivered source and its original canonical composition packet.
 `statement-atoms.tsv.gz` retains ordered occurrence, parent, pattern and source-range data;
 the canonical task crate's `RestoreAtoms` reconstructs every original JSON packet byte for byte.
-All 1,840 packets passed restoration. No executable body was replaced by an inventory row.
+All 1,842 packets passed restoration. No executable body was replaced by an inventory row.
 
 ## Source custody and compatibility
 
@@ -34,7 +34,7 @@ existing hash-pinned POM recipe, with replay and refusal verified.
   separately sealed CSS/GC compatibility repairs. Independent atom census: 157,208; zero mismatches.
 - Full **314-module Maven compile and native Linux GTK verify: BUILD SUCCESS**.
 - Native reactor: **211 tests, zero failures, errors or skips** in its aggregate module summaries.
-- Source-owned parser and recipe reactor: **86 tests, zero failures/errors**.
+- Source-owned parser and recipe reactor: **90 tests, zero failures/errors**.
 - Before/after executable class equivalence for 25 baseline-complete modules; the original Grid
   CSS build failure prevented a complete baseline class inventory. This is explicitly partial.
 - All 497 catalogued image assets, including 344 PNGs, remain byte exact.
@@ -61,3 +61,10 @@ Finite corpus convergence does not establish arbitrary semantic equivalence or a
 Original parser fixtures intentionally retain upstream whitespace and original line endings;
 those exact test inputs can trigger `git diff --check`. New code and proof summaries are checked
 separately; no fixture bytes, source hash or CI setting were changed to hide that distinction.
+
+The final additive reconciliation retains master `9abea7e0933859553533d2652f4e53e7921e671c`,
+including the two new review-DAG sources and all CI gates. Both new sources have exact packets.
+The new test referenced a nonexistent `mutationAuthority()` method on the runtime binding; the
+`nebula-dag-test-contract` snapshot recipe restores the existing `sourceMutationAuthority()` call
+while retaining the false-authority assertion. Replay, fixed point and drift refusal pass.
+Canonical recipe delivery: https://github.com/hsoliwal/com.synexia/pull/9023 .
