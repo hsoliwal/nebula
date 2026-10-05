@@ -1,0 +1,2 @@
+.gitattributes -text
+src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler.java -text

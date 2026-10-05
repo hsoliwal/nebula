@@ -283,6 +283,11 @@ Contributors:
 			<layout>p2</layout>
 			<url>${target-platform-swtbot}</url>
 		</repository>
+		<repository>
+			<id>m3-owned-batik</id>
+			<layout>p2</layout>
+			<url>file:///${maven.multiModuleProjectDirectory}/m3/third_party/p2-batik-20240313/mirror</url>
+		</repository>
 	</repositories>
 
 	<!-- Metadata -->
@@ -483,6 +488,15 @@ Contributors:
 				</pluginRepository>
 			</pluginRepositories>
 
+		</profile>
+		<!-- Explicit mirror URI required; acquisition and owner build are separate proofs. -->
+		<profile>
+			<id>m3-offline-p2</id>
+			<properties>
+				<target-platform-platform>${m3.p2.mirror.url}</target-platform-platform>
+				<target-platform-gef>${m3.p2.mirror.url}</target-platform-gef>
+				<target-platform-swtbot>${m3.p2.mirror.url}</target-platform-swtbot>
+			</properties>
 		</profile>
 	</profiles>
 

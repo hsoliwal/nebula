@@ -15,9 +15,8 @@ package org.eclipse.nebula.widgets.cdatetime.example.e4.parts;
 
 import java.util.Date;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.nebula.widgets.cdatetime.CDT;
 import org.eclipse.nebula.widgets.cdatetime.CDateTime;
@@ -115,7 +114,7 @@ public class SimpleWidgetsPart {
 		cdt6.setLayoutData(gd6);
 		cdt6.setSelection(new Date());
 		cdt6.setData(CSS_ID, "okcancelclear");
-		
+
 	}
 
 	@Focus

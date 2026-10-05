@@ -78,8 +78,7 @@ final class NebulaM3VerbatimSourceSealTest {
     }
 
     @Test
-    void symlinkedParentIsRejected() throws Exception {
-        Path outside = Files.createDirectory(root.resolveSibling("outside"));
+    void symlinkedParentIsRejected(@TempDir Path outside) throws Exception {
         Path outsideFile = outside.resolve("A.java");
         Files.writeString(outsideFile, "class A {}\n", StandardCharsets.UTF_8);
         try {

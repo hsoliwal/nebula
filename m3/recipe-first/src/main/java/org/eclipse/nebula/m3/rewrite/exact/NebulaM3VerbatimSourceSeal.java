@@ -130,6 +130,11 @@ public final class NebulaM3VerbatimSourceSeal {
                     "repository root must be a non-symbolic-link directory");
         }
 
+        Path checkedRoot = root.toRealPath();
+        if (!checkedRoot.equals(root.toRealPath(LinkOption.NOFOLLOW_LINKS))) {
+            throw new IllegalArgumentException("repository root may not be a redirected path");
+        }
+
         Path target = root.resolve(logicalPath).normalize();
         if (!target.startsWith(root)) {
             throw new IllegalArgumentException("source target escapes repository root");
@@ -144,6 +149,12 @@ public final class NebulaM3VerbatimSourceSeal {
             }
             if (!Files.exists(cursor, LinkOption.NOFOLLOW_LINKS)) {
                 break;
+            }
+            Path checkedComponent = cursor.toRealPath();
+            if (!checkedComponent.startsWith(checkedRoot)
+                    || !checkedComponent.equals(cursor.toRealPath(LinkOption.NOFOLLOW_LINKS))) {
+                throw new IllegalArgumentException(
+                        "source path component may not be redirected: " + part);
             }
         }
         return target;

@@ -4,6 +4,7 @@ package org.eclipse.nebula.m3.rewrite.exact;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -94,6 +95,56 @@ final class NebulaM3CDateTimeCssCompatibilityRecipeTest {
 
         assertFalse(replay.errors().isEmpty());
         assertTrue(replay.results().isEmpty());
+    }
+
+    @Test
+    void reviewedHelperRetainsNullTextExceptionsAndLegacyClassification(
+            @org.junit.jupiter.api.io.TempDir Path root) throws Exception {
+        String after = resource(POSTIMAGE);
+        int begin = after.indexOf("private static String legacyFontProperty");
+        int end = after.indexOf("\n\t// CSS Font", begin);
+        assertTrue(begin >= 0 && end > begin);
+        String helper = after.substring(begin, end).replace("private static", "public static");
+        Path source = root.resolve("ReviewedCssHelper.java");
+        java.nio.file.Files.writeString(source,
+                "import org.w3c.dom.css.CSSPrimitiveValue; public class ReviewedCssHelper {"
+                        + helper + "}", StandardCharsets.UTF_8);
+        var compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        assertFalse(compiler == null, "full JDK required");
+        try (var manager = compiler.getStandardFileManager(null, null, null)) {
+            assertTrue(compiler.getTask(null, manager, null,
+                    List.of("--release", "21", "-d", root.toString()), null,
+                    manager.getJavaFileObjectsFromPaths(List.of(source))).call());
+        }
+        try (var loader = new java.net.URLClassLoader(
+                new java.net.URL[] {root.toUri().toURL()}, getClass().getClassLoader())) {
+            var method = Class.forName("ReviewedCssHelper", true, loader)
+                    .getMethod("legacyFontProperty", org.w3c.dom.css.CSSPrimitiveValue.class);
+            for (short type : new short[] {
+                    org.w3c.dom.css.CSSPrimitiveValue.CSS_IDENT,
+                    org.w3c.dom.css.CSSPrimitiveValue.CSS_STRING}) {
+                var failure = assertThrows(java.lang.reflect.InvocationTargetException.class,
+                        () -> method.invoke(null, primitive(type, null)));
+                assertEquals(NullPointerException.class, failure.getCause().getClass());
+                assertEquals("font-style", method.invoke(null, primitive(type, "italic")));
+                assertEquals("font-weight", method.invoke(null, primitive(type, "normal")));
+                assertEquals("font-family", method.invoke(null, primitive(type, "ITALIC")));
+                assertEquals("font-family", method.invoke(null, primitive(type, "")));
+            }
+            assertEquals(null, method.invoke(null, primitive(
+                    org.w3c.dom.css.CSSPrimitiveValue.CSS_PERCENTAGE, "25%")));
+        }
+    }
+
+    private static org.w3c.dom.css.CSSPrimitiveValue primitive(short type, String text) {
+        return (org.w3c.dom.css.CSSPrimitiveValue) java.lang.reflect.Proxy.newProxyInstance(
+                NebulaM3CDateTimeCssCompatibilityRecipeTest.class.getClassLoader(),
+                new Class<?>[] {org.w3c.dom.css.CSSPrimitiveValue.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getPrimitiveType" -> type;
+                    case "getStringValue", "getCssText" -> text;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
     }
 
     private static Replay run(

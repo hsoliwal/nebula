@@ -13,9 +13,8 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.cdatetime.example.e4.parts;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.eclipse.e4.ui.di.Focus;
 import org.eclipse.nebula.widgets.cdatetime.CDT;
 import org.eclipse.nebula.widgets.cdatetime.CDateTime;

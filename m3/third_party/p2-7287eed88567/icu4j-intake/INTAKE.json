@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://repo.maven.apache.org/maven2/com/ibm/icu/icu4j/78.3/icu4j-78.3.pom",
+    "file": "icu4j-78.3.pom",
+    "sha256": "3b5940df133c35ab1d511a4b34e271d152e1a51609bc5cad2ee22829fae6adca",
+    "bytes": 1472
+  },
+  {
+    "url": "https://repo.maven.apache.org/maven2/com/ibm/icu/icu4j/78.3/icu4j-78.3-sources.jar",
+    "file": "icu4j-78.3-sources.jar",
+    "sha256": "b8458be1c296aec6c52ea8f195f27e833c5d6030fa15a4b361a0e83030c3c3fe",
+    "bytes": 2645358
+  }
+]

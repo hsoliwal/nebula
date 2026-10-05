@@ -1,0 +1,2022 @@
+{
+  "schema": "synexia-published-ui-runtime-closure-intake-v1",
+  "classification": "WRAP_NATIVE_SOLVER_AND_20PAIR_LEGAL_QUALIFIED_INTAKE_PENDING",
+  "capability": "nebula-complete-ui-runtime-closure-native-p2",
+  "rule22_gate": "../../../../catalogues/openrewrite-official-recipes-20261004/FOSS_REUSE_DECISION.tsv",
+  "rule22_gate_row": "nebula-complete-ui-runtime-closure-native-p2\tEclipse Equinox P2 + Tycho native ProjectorResolutionStrategy; cached CPU SDK only\tp2 f6b3f145f848d3538288fb23c105a090d0064d7f; metadata parser5364d5d5596ec479b9b9dd0089fd0bc5646acc49; Tycho ff2f4fabcea3c5f18cae5a32146bf5defab95d6e/4.0.12\tIUDeserializer979a570a;PermissiveSlicer3fb9145c;Projector3700cdee;JREAction2c9771ac;ProjectorResolutionStrategy304624f6;directorBinary32f938c2;publisherBinarya32957d6;TychoConnect47JARs1821095b;existing cpu_dep_closure Python-import-only NO_FIT\tEPL-2.0 native SDK and20bundleabout;SAP sourcefile originalEPL-1.0 header retained;fullownedEPL1SHA3a4a6fe55f67f02b92be0ec9907e347de8ab5c8edf9214c5c8019e5820517884;fullownedEPL2SHA721c2da257578bace3332b14d8ea06643d7d26753e7ef25a837b4e904edc0bf5;SDK support execution only\tWRAP_NATIVE_SOLVER_AND_20PAIR_LEGAL_QUALIFIED_INTAKE_PENDING\tInventoryBeforeProofComposition;exactTychoNativeSDKOnly;publishedEEprofiles18excludedbydonorpredicate;realJavaSE21Capabilities260;mandatoryWindowsUIHarnessRoots;nativeSlicer104SAT103IUs102runtime;solutionFixedPointPASS;missingJava21EEandMandatoryNavigatorUNSAT;0sameIDVersionReplacements;20publishedBinarySourceArtifacts7368054bytesSHAandSizePASS;SourceBundleAndManifestAnd20legalIndependentReviewPASS;proofSHA582c3b056261103675efb57f8a2ac95c1a90239b1dd1cbb6658179265a473086;logSHA28735f7aa05a6672321faa69b5508274a9cffbbb740fc0d08fe1eb567dba486f;oneExistingMavenAntIntakeAndActualUIExecutionStillRequired",
+  "upstream_repository": "https://download.eclipse.org/eclipse/updates/4.41/R-4.41-202608281142",
+  "metadata_inputs": [
+    {
+      "url": "https://download.eclipse.org/eclipse/updates/4.41/R-4.41-202608281142/content.xml.xz",
+      "cache": "S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository/.cache/tycho/https/download.eclipse.org/eclipse/updates/4.41/R-4.41-202608281142/content.xml.xz",
+      "sha256": "b650cd99832fc66feb3c8432943cb0b3a69bfc0e3d696efe99f52fa6e2034ecc"
+    },
+    {
+      "url": "https://download.eclipse.org/eclipse/updates/4.41/R-4.41-202608281142/artifacts.xml.xz",
+      "cache": "S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository/.cache/tycho/https/download.eclipse.org/eclipse/updates/4.41/R-4.41-202608281142/artifacts.xml.xz",
+      "sha256": "54f587cad6990e60b3b87a443f0e090c01421db55f99f292073ff3b5bb533393"
+    }
+  ],
+  "published_subtrees": {
+    "content": {
+      "count": 20,
+      "subtree_sha256": {
+        "org.eclipse.compare.source": "d8342dca52f2f9a8d0f0d94569c729c835a21c2b763b68e78e1677699e2d9150",
+        "org.eclipse.compare": "8118d781117b672f31dd2e3564be1fba53e78f9c4bb7f43537bfc61039008e5a",
+        "org.eclipse.core.net.source": "25af32a042938376ca71f325ddbe8b7982f57538bb8006c1c7de6340050970f7",
+        "org.eclipse.core.net": "c18985ce222f826272cc1349ad81ae888428da6f8a133b055089b94eb6e77a3f",
+        "org.eclipse.ltk.core.refactoring.source": "493a4d67d26bb03ca1736f2d108f54dee041e7911401034b4b9d546706a24c8b",
+        "org.eclipse.ltk.core.refactoring": "744389ce4ff0aea11b5d3c113b0cd08c86203d0d1595761f9978893baa61ccf2",
+        "org.eclipse.ltk.ui.refactoring.source": "236c3ec1e00d876c053767e14e4048923d5b314b8928a38e4ead24486f619f56",
+        "org.eclipse.ltk.ui.refactoring": "da53482a0cb2b131fa0db8d130b45e81e9840036a8036f129d82d93d8bf23751",
+        "org.eclipse.team.core.source": "7e2b02b8222c9c8670495ab5a93aa596c8a98e4503b338dd8aace19c60e801dd",
+        "org.eclipse.team.core": "635091a1b232d91a2ad9c358118c7383e3376754d8ad43752f1466ba03654938",
+        "org.eclipse.team.ui.source": "e294bd138a2c1c058fb150fdbca8985e0b1f2c8a62b55cb3e05a7f401373ff4e",
+        "org.eclipse.team.ui": "02cc7acc6905a2420ac97743194975f6bd51528ae017cdfaaced80ad4c1e665b",
+        "org.eclipse.ui.ide.application.source": "35f24957c1c26d7fa83f55f0e1510f5b3cdc3282ed84017324bb138569035bf0",
+        "org.eclipse.ui.ide.application": "4c4afd949d3d1dbea0cff32225bd4c2431fc79a05ee1ab860f4c5be567724663",
+        "org.eclipse.ui.navigator.resources.source": "6678ecaa8f4c8d1828446ba0c118a4280de1350a5bf3bad0152158ae1d44a9a8",
+        "org.eclipse.ui.navigator.resources": "5a69b2c37b72c72a1f731557b852fc0b61e1553f19f23aa46fe0c2277147fb4c",
+        "org.eclipse.ui.views.properties.tabbed.source": "1bb7ac068f73b4a195ecec3402b9bbca2ae4bba0b7d5e58c40621c56da3c29af",
+        "org.eclipse.ui.views.properties.tabbed": "d2bbd77543df2d800e954b341aba4bfb970b0b383dae22366455226836b33ab4",
+        "org.eclipse.ui.views.source": "6669272c6c5035f387d8563382d9794d43c46351fa4750db7c9b68747138f357",
+        "org.eclipse.ui.views": "9f26425636f73ded336bc2beff5d68291089d08787007ca254790b12f5a1ac8e"
+      },
+      "hash_algorithm": "SHA256(ElementTree.tostring(original_element,encoding=utf-8)); default parser/short_empty_elements; includes original outer tail; no indent/canonicalize",
+      "removed_repository_properties": []
+    },
+    "artifacts": {
+      "count": 20,
+      "subtree_sha256": {
+        "org.eclipse.compare.source": "974c5d7faa74ce1d3eae87c4791ae8b517a95d13db7f5814bd3a23a7cc6edb11",
+        "org.eclipse.compare": "944cb00bebb6e6b8923ba55baeae0baa90d5898cc6eb5745a510c77c4c966055",
+        "org.eclipse.core.net.source": "ead91f906a43e03d613f4accf6b4d8939340e29546a4ffc18e375a10013fc03a",
+        "org.eclipse.core.net": "e89413f722848bf38eefc9bbad9846b29ba71282444fa06fda810fb413a379b8",
+        "org.eclipse.ltk.core.refactoring.source": "0382674a3c83814a7f3419eaad5d554d7a1b0d72b1b435dbe78afc12ad7233ce",
+        "org.eclipse.ltk.core.refactoring": "75bf579f44cd717c5da0e0e057c72a053a4e23bebd917f6e187024ea930d580f",
+        "org.eclipse.ltk.ui.refactoring.source": "ec019ca79a62a154b4634550ba0cd508b1556ca1a7b3c7648fd7068b33f8bb03",
+        "org.eclipse.ltk.ui.refactoring": "4425a02588d31f972f58e13cab5affe24a2016ea75434f58da9ce153eee2d461",
+        "org.eclipse.team.core.source": "a1615a9abcb6eba16650def130699acd2ce3488d0363bb38197259e8356e7745",
+        "org.eclipse.team.core": "b6c579d55d5173f1d3b8a01c15c21ffab47af2afd5f4735b84448150177cb3a8",
+        "org.eclipse.team.ui.source": "1dc9ebd51c85c3d741810cb1b0782c64f18fc1b8932fbf69a4062e52ea3b1626",
+        "org.eclipse.team.ui": "29bff3f507a7c19c051da26efaff182c5ea99fc0c2b32f752963555ff00a3d24",
+        "org.eclipse.ui.ide.application.source": "2696084aa4825e5fd11e184873f4367dcfcfd8fef0912d3e7119d0e694e71089",
+        "org.eclipse.ui.ide.application": "e7a636980432b2faa8acf430613a9f9a8264da045814e8923a699e9db7675d47",
+        "org.eclipse.ui.navigator.resources.source": "703d338043097e12cc43f40c87a8b91a05d3412dffda87bee38f8527fc5d1b6c",
+        "org.eclipse.ui.navigator.resources": "b5edee28305423b968d2f1634881aad2eb1b4851a585d1071d3c654dc5f1a678",
+        "org.eclipse.ui.views.properties.tabbed.source": "1843252316fec5439f112e494961e5a4a1984a5af910c6cb351388018af2feb6",
+        "org.eclipse.ui.views.properties.tabbed": "6131b45df1543d73b3be31dd9f9f59a0f4d77bb2b18cf9b86c13c651ec7eda21",
+        "org.eclipse.ui.views.source": "f80e6be7ba9baabe3bd85e4d347449a2e28aec6bcaa1ed6e2fc865afa592adcc",
+        "org.eclipse.ui.views": "5917d9b6a5b1a9e8dee8d944695ba38a2b985ffbb803beb043be57d4db0f4b93"
+      },
+      "hash_algorithm": "SHA256(ElementTree.tostring(original_element,encoding=utf-8)); default parser/short_empty_elements; includes original outer tail; no indent/canonicalize",
+      "removed_repository_properties": [
+        {
+          "name": "p2.mirrorsURL",
+          "value": "https://www.eclipse.org/downloads/download.php?file=/eclipse/updates/4.41/R-4.41-202608281142"
+        }
+      ],
+      "mappings_sha256": "87bc6d72f6190fd9beaf9c4f5937a76df9a67d645f4a9fdab35faf273129a2ef"
+    }
+  },
+  "selection": {
+    "runtime_count": 10,
+    "source_count": 10,
+    "bytes": 7368054,
+    "records": [
+      {
+        "id": "org.eclipse.compare.source",
+        "version": "3.12.200.v20260814-1536",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.compare.source_3.12.200.v20260814-1536.jar",
+        "bytes": 483968,
+        "sha256": "b146e7ca3da7b428790cc8c40c3896e478056ca03f4d7c36640b3c0bda69846a",
+        "bundle_symbolic_name": "org.eclipse.compare.source",
+        "bundle_version": "3.12.200.v20260814-1536",
+        "source_bundle": "org.eclipse.compare;version=\"3.12.200.v20260814-1536\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "d8342dca52f2f9a8d0f0d94569c729c835a21c2b763b68e78e1677699e2d9150",
+        "artifact_subtree_sha256": "974c5d7faa74ce1d3eae87c4791ae8b517a95d13db7f5814bd3a23a7cc6edb11"
+      },
+      {
+        "id": "org.eclipse.compare",
+        "version": "3.12.200.v20260814-1536",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.compare_3.12.200.v20260814-1536.jar",
+        "bytes": 1048379,
+        "sha256": "5b5e9fb1018b714091c11440e61cb943e047399213beaf061ba137e7b3c5e3f6",
+        "bundle_symbolic_name": "org.eclipse.compare; singleton:=true",
+        "bundle_version": "3.12.200.v20260814-1536",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.git;path=\"team/bundles/org.eclipse.compare\";tag=\"I20260814-2300\";commitId=be20307899cde44802f19686f4e85dcfa8b50fe0",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "8118d781117b672f31dd2e3564be1fba53e78f9c4bb7f43537bfc61039008e5a",
+        "artifact_subtree_sha256": "944cb00bebb6e6b8923ba55baeae0baa90d5898cc6eb5745a510c77c4c966055"
+      },
+      {
+        "id": "org.eclipse.core.net.source",
+        "version": "1.5.900.v20260507-0401",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.core.net.source_1.5.900.v20260507-0401.jar",
+        "bytes": 58427,
+        "sha256": "3b3f7d914e806d0d5c0133e276554755dfb9ca0dfa9b8098cedf7e5c46df93c5",
+        "bundle_symbolic_name": "org.eclipse.core.net.source",
+        "bundle_version": "1.5.900.v20260507-0401",
+        "source_bundle": "org.eclipse.core.net;version=\"1.5.900.v20260507-0401\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "25af32a042938376ca71f325ddbe8b7982f57538bb8006c1c7de6340050970f7",
+        "artifact_subtree_sha256": "ead91f906a43e03d613f4accf6b4d8939340e29546a4ffc18e375a10013fc03a"
+      },
+      {
+        "id": "org.eclipse.core.net",
+        "version": "1.5.900.v20260507-0401",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.core.net_1.5.900.v20260507-0401.jar",
+        "bytes": 77837,
+        "sha256": "6e7a8db7d87a44bb35924bb345ddf0d9372413e3fee2edd842b50ed630ec254f",
+        "bundle_symbolic_name": "org.eclipse.core.net;singleton:=true",
+        "bundle_version": "1.5.900.v20260507-0401",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.git;path=\"team/bundles/org.eclipse.core.net\";tag=\"I20260507-0157\";commitId=327e3b84914e10ff68707954ee8ef057b2bf1c6c",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "c18985ce222f826272cc1349ad81ae888428da6f8a133b055089b94eb6e77a3f",
+        "artifact_subtree_sha256": "e89413f722848bf38eefc9bbad9846b29ba71282444fa06fda810fb413a379b8"
+      },
+      {
+        "id": "org.eclipse.ltk.core.refactoring.source",
+        "version": "3.16.0.v20260702-0744",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ltk.core.refactoring.source_3.16.0.v20260702-0744.jar",
+        "bytes": 324233,
+        "sha256": "c42e494958f7603c4f66d6563a6c8d1120a5f89f034b11018dab9fe1c30f71ce",
+        "bundle_symbolic_name": "org.eclipse.ltk.core.refactoring.source",
+        "bundle_version": "3.16.0.v20260702-0744",
+        "source_bundle": "org.eclipse.ltk.core.refactoring;version=\"3.16.0.v20260702-0744\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "493a4d67d26bb03ca1736f2d108f54dee041e7911401034b4b9d546706a24c8b",
+        "artifact_subtree_sha256": "0382674a3c83814a7f3419eaad5d554d7a1b0d72b1b435dbe78afc12ad7233ce"
+      },
+      {
+        "id": "org.eclipse.ltk.core.refactoring",
+        "version": "3.16.0.v20260702-0744",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ltk.core.refactoring_3.16.0.v20260702-0744.jar",
+        "bytes": 381852,
+        "sha256": "fc185dee6c34e594297471ab72f25c1e76deef6dbf674d3c2f0deee3b73e5b7f",
+        "bundle_symbolic_name": "org.eclipse.ltk.core.refactoring; singleton:=true",
+        "bundle_version": "3.16.0.v20260702-0744",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.ui.git;path=\"bundles/org.eclipse.ltk.core.refactoring\";tag=\"I20260702-1113\";commitId=0aaee1a5c92bdde1541b648273f0a52664df284c",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "744389ce4ff0aea11b5d3c113b0cd08c86203d0d1595761f9978893baa61ccf2",
+        "artifact_subtree_sha256": "75bf579f44cd717c5da0e0e057c72a053a4e23bebd917f6e187024ea930d580f"
+      },
+      {
+        "id": "org.eclipse.ltk.ui.refactoring.source",
+        "version": "3.14.200.v20260702-0744",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ltk.ui.refactoring.source_3.14.200.v20260702-0744.jar",
+        "bytes": 264061,
+        "sha256": "00a4c6116343e09bbb6d80a0a2654da01204311279870b7a82d55495c0f96195",
+        "bundle_symbolic_name": "org.eclipse.ltk.ui.refactoring.source",
+        "bundle_version": "3.14.200.v20260702-0744",
+        "source_bundle": "org.eclipse.ltk.ui.refactoring;version=\"3.14.200.v20260702-0744\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "236c3ec1e00d876c053767e14e4048923d5b314b8928a38e4ead24486f619f56",
+        "artifact_subtree_sha256": "ec019ca79a62a154b4634550ba0cd508b1556ca1a7b3c7648fd7068b33f8bb03"
+      },
+      {
+        "id": "org.eclipse.ltk.ui.refactoring",
+        "version": "3.14.200.v20260702-0744",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ltk.ui.refactoring_3.14.200.v20260702-0744.jar",
+        "bytes": 551069,
+        "sha256": "98ddbad933126edee515d1d6392d807db60841db90124e552aa8594478a6f93b",
+        "bundle_symbolic_name": "org.eclipse.ltk.ui.refactoring; singleton:=true",
+        "bundle_version": "3.14.200.v20260702-0744",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.ui.git;path=\"bundles/org.eclipse.ltk.ui.refactoring\";tag=\"I20260702-1113\";commitId=0aaee1a5c92bdde1541b648273f0a52664df284c",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "da53482a0cb2b131fa0db8d130b45e81e9840036a8036f129d82d93d8bf23751",
+        "artifact_subtree_sha256": "4425a02588d31f972f58e13cab5affe24a2016ea75434f58da9ce153eee2d461"
+      },
+      {
+        "id": "org.eclipse.team.core.source",
+        "version": "3.10.1100.v20260612-1500",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.team.core.source_3.10.1100.v20260612-1500.jar",
+        "bytes": 378170,
+        "sha256": "9437e3000e53a208d62ad2ce8e4af2382064bf3af798a35febc347d889515b4f",
+        "bundle_symbolic_name": "org.eclipse.team.core.source",
+        "bundle_version": "3.10.1100.v20260612-1500",
+        "source_bundle": "org.eclipse.team.core;version=\"3.10.1100.v20260612-1500\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "7e2b02b8222c9c8670495ab5a93aa596c8a98e4503b338dd8aace19c60e801dd",
+        "artifact_subtree_sha256": "a1615a9abcb6eba16650def130699acd2ce3488d0363bb38197259e8356e7745"
+      },
+      {
+        "id": "org.eclipse.team.core",
+        "version": "3.10.1100.v20260612-1500",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.team.core_3.10.1100.v20260612-1500.jar",
+        "bytes": 416922,
+        "sha256": "4f4d2f9c62c7cca50c1ee07e803858c2f817b2f647449ef4f0549f35d90366ec",
+        "bundle_symbolic_name": "org.eclipse.team.core; singleton:=true",
+        "bundle_version": "3.10.1100.v20260612-1500",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.git;path=\"team/bundles/org.eclipse.team.core\";tag=\"I20260612-1800\";commitId=e3ca8be26005d45f61259872efff5fef5f6ccebe",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "635091a1b232d91a2ad9c358118c7383e3376754d8ad43752f1466ba03654938",
+        "artifact_subtree_sha256": "b6c579d55d5173f1d3b8a01c15c21ffab47af2afd5f4735b84448150177cb3a8"
+      },
+      {
+        "id": "org.eclipse.team.ui.source",
+        "version": "3.12.200.v20260608-1918",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.team.ui.source_3.12.200.v20260608-1918.jar",
+        "bytes": 785226,
+        "sha256": "1cea4863091e528ed77d6df14218a24b7860e7dd44b1b6ab4705bfa4c4ad0d26",
+        "bundle_symbolic_name": "org.eclipse.team.ui.source",
+        "bundle_version": "3.12.200.v20260608-1918",
+        "source_bundle": "org.eclipse.team.ui;version=\"3.12.200.v20260608-1918\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "e294bd138a2c1c058fb150fdbca8985e0b1f2c8a62b55cb3e05a7f401373ff4e",
+        "artifact_subtree_sha256": "1dc9ebd51c85c3d741810cb1b0782c64f18fc1b8932fbf69a4062e52ea3b1626"
+      },
+      {
+        "id": "org.eclipse.team.ui",
+        "version": "3.12.200.v20260608-1918",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.team.ui_3.12.200.v20260608-1918.jar",
+        "bytes": 1656600,
+        "sha256": "1e5f5e8e89979f568342c9daeecd8481e80ddf9931f635e593644d22a9b5f7b5",
+        "bundle_symbolic_name": "org.eclipse.team.ui; singleton:=true",
+        "bundle_version": "3.12.200.v20260608-1918",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.git;path=\"team/bundles/org.eclipse.team.ui\";tag=\"I20260608-1800\";commitId=487366a1247e7e1419f7bc749591ca9062ccd19e",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "02cc7acc6905a2420ac97743194975f6bd51528ae017cdfaaced80ad4c1e665b",
+        "artifact_subtree_sha256": "29bff3f507a7c19c051da26efaff182c5ea99fc0c2b32f752963555ff00a3d24"
+      },
+      {
+        "id": "org.eclipse.ui.ide.application.source",
+        "version": "1.6.200.v20260704-1759",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.ide.application.source_1.6.200.v20260704-1759.jar",
+        "bytes": 59122,
+        "sha256": "7f8ac0cef96923026352e52a99af4ca7d8e76a160505513a22b2af92ab51a871",
+        "bundle_symbolic_name": "org.eclipse.ui.ide.application.source",
+        "bundle_version": "1.6.200.v20260704-1759",
+        "source_bundle": "org.eclipse.ui.ide.application;version=\"1.6.200.v20260704-1759\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "35f24957c1c26d7fa83f55f0e1510f5b3cdc3282ed84017324bb138569035bf0",
+        "artifact_subtree_sha256": "2696084aa4825e5fd11e184873f4367dcfcfd8fef0912d3e7119d0e694e71089",
+        "preserved_epl1_java_entry_sha256": "7a9edef0078b13d62eacfdd4b6a201b4a23d17e5f3622123c88c6105aaafb238"
+      },
+      {
+        "id": "org.eclipse.ui.ide.application",
+        "version": "1.6.200.v20260704-1759",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.ide.application_1.6.200.v20260704-1759.jar",
+        "bytes": 153798,
+        "sha256": "15c68952c05f26b7e422f939ec6bc259e4806047e3e159565217aa6a88cac077",
+        "bundle_symbolic_name": "org.eclipse.ui.ide.application;singleton:=true",
+        "bundle_version": "1.6.200.v20260704-1759",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.ui.git;path=\"bundles/org.eclipse.ui.ide.application\";tag=\"I20260704-2300\";commitId=68e20f653ea0ca1fda81e70a81f3cf6be6d1a513",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "4c4afd949d3d1dbea0cff32225bd4c2431fc79a05ee1ab860f4c5be567724663",
+        "artifact_subtree_sha256": "e7a636980432b2faa8acf430613a9f9a8264da045814e8923a699e9db7675d47"
+      },
+      {
+        "id": "org.eclipse.ui.navigator.resources.source",
+        "version": "3.10.100.v20260421-0620",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.navigator.resources.source_3.10.100.v20260421-0620.jar",
+        "bytes": 109787,
+        "sha256": "578ce1339945c61b77e7d76a5f2849a01fa4763abb04229f606278a06700eca6",
+        "bundle_symbolic_name": "org.eclipse.ui.navigator.resources.source",
+        "bundle_version": "3.10.100.v20260421-0620",
+        "source_bundle": "org.eclipse.ui.navigator.resources;version=\"3.10.100.v20260421-0620\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "6678ecaa8f4c8d1828446ba0c118a4280de1350a5bf3bad0152158ae1d44a9a8",
+        "artifact_subtree_sha256": "703d338043097e12cc43f40c87a8b91a05d3412dffda87bee38f8527fc5d1b6c"
+      },
+      {
+        "id": "org.eclipse.ui.navigator.resources",
+        "version": "3.10.100.v20260421-0620",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.navigator.resources_3.10.100.v20260421-0620.jar",
+        "bytes": 207423,
+        "sha256": "0d0db3094bbbd891b74c6536db9998044dc68de4fdf55906f1a12759ad564ed9",
+        "bundle_symbolic_name": "org.eclipse.ui.navigator.resources; singleton:=true",
+        "bundle_version": "3.10.100.v20260421-0620",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.ui.git;path=\"bundles/org.eclipse.ui.navigator.resources\";tag=\"I20260421-1800\";commitId=b7b54fc6481aa525efeb4abdf3d9994f904e5e12",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "5a69b2c37b72c72a1f731557b852fc0b61e1553f19f23aa46fe0c2277147fb4c",
+        "artifact_subtree_sha256": "b5edee28305423b968d2f1634881aad2eb1b4851a585d1071d3c654dc5f1a678"
+      },
+      {
+        "id": "org.eclipse.ui.views.properties.tabbed.source",
+        "version": "3.11.0.v20251217-0909",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.views.properties.tabbed.source_3.11.0.v20251217-0909.jar",
+        "bytes": 88026,
+        "sha256": "34984c4722893b05ea1d76c5c51c43d4578f8ffdc8efa36b456dae8dc52b15b4",
+        "bundle_symbolic_name": "org.eclipse.ui.views.properties.tabbed.source",
+        "bundle_version": "3.11.0.v20251217-0909",
+        "source_bundle": "org.eclipse.ui.views.properties.tabbed;version=\"3.11.0.v20251217-0909\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "1bb7ac068f73b4a195ecec3402b9bbca2ae4bba0b7d5e58c40621c56da3c29af",
+        "artifact_subtree_sha256": "1843252316fec5439f112e494961e5a4a1984a5af910c6cb351388018af2feb6"
+      },
+      {
+        "id": "org.eclipse.ui.views.properties.tabbed",
+        "version": "3.11.0.v20251217-0909",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.views.properties.tabbed_3.11.0.v20251217-0909.jar",
+        "bytes": 114970,
+        "sha256": "23d3780c940327977798e10d553806db495832583339e6ca9bd8653da25f86a5",
+        "bundle_symbolic_name": "org.eclipse.ui.views.properties.tabbed;singleton:=true",
+        "bundle_version": "3.11.0.v20251217-0909",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.ui.git;path=\"bundles/org.eclipse.ui.views.properties.tabbed\";tag=\"I20251217-1800\";commitId=60a8a9c40293e359d7d303a14c354e3e0b95fc19",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "d2bbd77543df2d800e954b341aba4bfb970b0b383dae22366455226836b33ab4",
+        "artifact_subtree_sha256": "6131b45df1543d73b3be31dd9f9f59a0f4d77bb2b18cf9b86c13c651ec7eda21"
+      },
+      {
+        "id": "org.eclipse.ui.views.source",
+        "version": "3.13.200.v20260703-1200",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.views.source_3.13.200.v20260703-1200.jar",
+        "bytes": 85267,
+        "sha256": "dd92cfa155f42bca720e14b96190b1044c2545f84cd924cc70dd5a917f5dff2b",
+        "bundle_symbolic_name": "org.eclipse.ui.views.source",
+        "bundle_version": "3.13.200.v20260703-1200",
+        "source_bundle": "org.eclipse.ui.views;version=\"3.13.200.v20260703-1200\";roots:=\".\"",
+        "source_references": null,
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "6669272c6c5035f387d8563382d9794d43c46351fa4750db7c9b68747138f357",
+        "artifact_subtree_sha256": "f80e6be7ba9baabe3bd85e4d347449a2e28aec6bcaa1ed6e2fc865afa592adcc"
+      },
+      {
+        "id": "org.eclipse.ui.views",
+        "version": "3.13.200.v20260703-1200",
+        "path": "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-closure-inspection-v1\\plugins\\org.eclipse.ui.views_3.13.200.v20260703-1200.jar",
+        "bytes": 122917,
+        "sha256": "3d53aead6a31ef9506e8643254177fb2130dcaa5296148718e7df5c3420e68f2",
+        "bundle_symbolic_name": "org.eclipse.ui.views; singleton:=true",
+        "bundle_version": "3.13.200.v20260703-1200",
+        "source_bundle": null,
+        "source_references": "scm:git:https://github.com/eclipse-platform/eclipse.platform.ui.git;path=\"bundles/org.eclipse.ui.views\";tag=\"I20260703-1319\";commitId=fa1a384afa031f2b9dee885257d58347d8c10152",
+        "about_sha256": "ee66d2fb3b4c0d2ed2e7f698bc9ed4e3d6cf77fa5caf40ad03296125db1ac5f0",
+        "iu_subtree_sha256": "9f26425636f73ded336bc2beff5d68291089d08787007ca254790b12f5a1ac8e",
+        "artifact_subtree_sha256": "5917d9b6a5b1a9e8dee8d944695ba38a2b985ffbb803beb043be57d4db0f4b93"
+      }
+    ]
+  },
+  "legal": {
+    "primary_license": "EPL-2.0; original source headers retained; one source file also retains EPL-1.0",
+    "about_html": "All20 original runtime/source JARs retain their EPL2 about.html entries; entry hashes recorded per sealed member.",
+    "source_header_inventory": "1240 Java files retain EPL2 headers; one SAP2018/2021 UIide.application dialogs/UriSchemeHandlerPreferencePage.java retains EPL1. Full unchanged signed JARs/source archives copied. Do not claim blanket all-source-EPL2.",
+    "EPL2_owner_path": "LICENSE",
+    "EPL2_sha256": "721c2da257578bace3332b14d8ea06643d7d26753e7ef25a837b4e904edc0bf5",
+    "EPL1_payload": "legal/LICENSE-EPL-1.0",
+    "EPL1_sha256": "3a4a6fe55f67f02b92be0ec9907e347de8ab5c8edf9214c5c8019e5820517884",
+    "EPL1_bytes": 11231,
+    "EPL1_law_donor": "Existing owned org.eclipse.swtbot.swt.finder.source_4.3.0.202506021445.jar!LICENSE.EPL",
+    "EPL1_law_donor_jar_sha256": "b4e4236afb6696c298e60e97e3fa2e5c92622c79969d076e764dc96eb599d64d",
+    "EPL1_source_url": "https://raw.githubusercontent.com/eclipse-swtbot/org.eclipse.swtbot/41045e16e61b04a0663c6cdc285d5972c370b21c/org.eclipse.swtbot.swt.finder/LICENSE.EPL",
+    "notices": "Original contributor/copyright/source-reference notices retained verbatim within20 unchanged runtime/source JARs; original Eclipse-SourceBundle identities and exact versions recorded. Embedded intake identifies repo/commit/source references per member and preserves the additional SAP EPL1 notice.",
+    "EPL1_original_source_entry": {
+      "source_jar": "mirror/plugins/org.eclipse.ui.ide.application.source_1.6.200.v20260704-1759.jar",
+      "entry": "org/eclipse/ui/internal/ide/application/dialogs/UriSchemeHandlerPreferencePage.java",
+      "entry_sha256": "7a9edef0078b13d62eacfdd4b6a201b4a23d17e5f3622123c88c6105aaafb238",
+      "notice": "Original SAP SE 2018,2021 copyright/contributor and explicit Eclipse Public License v1.0 header/link retained verbatim in unchanged published source JAR."
+    }
+  },
+  "native_fit": {
+    "source": "../../../../catalogues/openrewrite-official-recipes-20261004/evidence/M3UiRuntimeClosureProbe.java",
+    "source_sha256": "582c3b056261103675efb57f8a2ac95c1a90239b1dd1cbb6658179265a473086",
+    "proof_log": "../../../../catalogues/openrewrite-official-recipes-20261004/evidence/ui-runtime-closure-native-proof.log",
+    "proof_log_sha256": "28735f7aa05a6672321faa69b5508274a9cffbbb740fc0d08fe1eb567dba486f",
+    "mechanism": "Pinned Tycho/native Equinox PermissiveSlicer + Projector/SAT4J + native JREAction; no custom dependency resolver. Exact Tycho EE predicate excludes18 published synthetic JRE candidates, real Java21 EE inserted.",
+    "context": {
+      "osgi.os": "win32",
+      "osgi.ws": "win32",
+      "osgi.arch": "x86_64",
+      "org.eclipse.update.install.features": "true",
+      "org.eclipse.update.install.sources": "true"
+    },
+    "proof": "104 candidate IUs to 103 solution IUs:102runtime (92owned+10missing), plus1realJava21EE. Projector excludes its synthetic entrypoint before solution extraction. Exact native fixedpoint; missing mandatory navigator UNSAT; missing EE UNSAT;0same-IDversion replacements. Initial failed EEnegative retained truthfully in immutable proofhistory.",
+    "limits": "Closure matches current original Windows Java21 UI-test harness requirements. Actual original SWT/UI test fork, GUI lifecycle/product launch and full reactor/platform gates remain root execution gates; no claim from compilation/native solve alone."
+  },
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "bb72984c47eb6ea5faa895af22c1214279e73125df8a91456939d3c648e1a392",
+      "bytes": 20
+    },
+    {
+      "path": "combined/compositeArtifacts.xml",
+      "sha256": "1b762aaa4b03c94347964f5ee84186442b78bdc7af2e15ebd687016261de5854",
+      "bytes": 479
+    },
+    {
+      "path": "combined/compositeContent.xml",
+      "sha256": "2db4780f1a039bdfd2c092ae922bf60b7faa23fa1a69e84071e3b08d76cd8bf6",
+      "bytes": 479
+    },
+    {
+      "path": "combined/p2.index",
+      "sha256": "e5bd45b8d6223611783bf683a912215661b6813110b218292adb7871e1f04263",
+      "bytes": 128
+    },
+    {
+      "path": "legal/LICENSE-EPL-1.0",
+      "sha256": "3a4a6fe55f67f02b92be0ec9907e347de8ab5c8edf9214c5c8019e5820517884",
+      "bytes": 11231
+    },
+    {
+      "path": "mirror/artifacts.xml",
+      "sha256": "33f65f29e2e637a6c3765fc5bad4ec5dcb9afc7026e8407c7ebdbb3c21cf9a85",
+      "bytes": 23602
+    },
+    {
+      "path": "mirror/content.xml",
+      "sha256": "72e68a09328e2582f272123e1cfb2be75f0a7bac87f26ef330fa577c8faef6ab",
+      "bytes": 77748
+    },
+    {
+      "path": "mirror/p2.index",
+      "sha256": "f7dbc96a53ab8873e1e71805df3f7964eb9f9b0956e44db27648c1330d054b49",
+      "bytes": 113
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.compare.source_3.12.200.v20260814-1536.jar",
+      "sha256": "b146e7ca3da7b428790cc8c40c3896e478056ca03f4d7c36640b3c0bda69846a",
+      "bytes": 483968
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.compare_3.12.200.v20260814-1536.jar",
+      "sha256": "5b5e9fb1018b714091c11440e61cb943e047399213beaf061ba137e7b3c5e3f6",
+      "bytes": 1048379
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.core.net.source_1.5.900.v20260507-0401.jar",
+      "sha256": "3b3f7d914e806d0d5c0133e276554755dfb9ca0dfa9b8098cedf7e5c46df93c5",
+      "bytes": 58427
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.core.net_1.5.900.v20260507-0401.jar",
+      "sha256": "6e7a8db7d87a44bb35924bb345ddf0d9372413e3fee2edd842b50ed630ec254f",
+      "bytes": 77837
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ltk.core.refactoring.source_3.16.0.v20260702-0744.jar",
+      "sha256": "c42e494958f7603c4f66d6563a6c8d1120a5f89f034b11018dab9fe1c30f71ce",
+      "bytes": 324233
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ltk.core.refactoring_3.16.0.v20260702-0744.jar",
+      "sha256": "fc185dee6c34e594297471ab72f25c1e76deef6dbf674d3c2f0deee3b73e5b7f",
+      "bytes": 381852
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ltk.ui.refactoring.source_3.14.200.v20260702-0744.jar",
+      "sha256": "00a4c6116343e09bbb6d80a0a2654da01204311279870b7a82d55495c0f96195",
+      "bytes": 264061
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ltk.ui.refactoring_3.14.200.v20260702-0744.jar",
+      "sha256": "98ddbad933126edee515d1d6392d807db60841db90124e552aa8594478a6f93b",
+      "bytes": 551069
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.team.core.source_3.10.1100.v20260612-1500.jar",
+      "sha256": "9437e3000e53a208d62ad2ce8e4af2382064bf3af798a35febc347d889515b4f",
+      "bytes": 378170
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.team.core_3.10.1100.v20260612-1500.jar",
+      "sha256": "4f4d2f9c62c7cca50c1ee07e803858c2f817b2f647449ef4f0549f35d90366ec",
+      "bytes": 416922
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.team.ui.source_3.12.200.v20260608-1918.jar",
+      "sha256": "1cea4863091e528ed77d6df14218a24b7860e7dd44b1b6ab4705bfa4c4ad0d26",
+      "bytes": 785226
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.team.ui_3.12.200.v20260608-1918.jar",
+      "sha256": "1e5f5e8e89979f568342c9daeecd8481e80ddf9931f635e593644d22a9b5f7b5",
+      "bytes": 1656600
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.ide.application.source_1.6.200.v20260704-1759.jar",
+      "sha256": "7f8ac0cef96923026352e52a99af4ca7d8e76a160505513a22b2af92ab51a871",
+      "bytes": 59122
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.ide.application_1.6.200.v20260704-1759.jar",
+      "sha256": "15c68952c05f26b7e422f939ec6bc259e4806047e3e159565217aa6a88cac077",
+      "bytes": 153798
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.navigator.resources.source_3.10.100.v20260421-0620.jar",
+      "sha256": "578ce1339945c61b77e7d76a5f2849a01fa4763abb04229f606278a06700eca6",
+      "bytes": 109787
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.navigator.resources_3.10.100.v20260421-0620.jar",
+      "sha256": "0d0db3094bbbd891b74c6536db9998044dc68de4fdf55906f1a12759ad564ed9",
+      "bytes": 207423
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.views.properties.tabbed.source_3.11.0.v20251217-0909.jar",
+      "sha256": "34984c4722893b05ea1d76c5c51c43d4578f8ffdc8efa36b456dae8dc52b15b4",
+      "bytes": 88026
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.views.properties.tabbed_3.11.0.v20251217-0909.jar",
+      "sha256": "23d3780c940327977798e10d553806db495832583339e6ca9bd8653da25f86a5",
+      "bytes": 114970
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.views.source_3.13.200.v20260703-1200.jar",
+      "sha256": "dd92cfa155f42bca720e14b96190b1044c2545f84cd924cc70dd5a917f5dff2b",
+      "bytes": 85267
+    },
+    {
+      "path": "mirror/plugins/org.eclipse.ui.views_3.13.200.v20260703-1200.jar",
+      "sha256": "3d53aead6a31ef9506e8643254177fb2130dcaa5296148718e7df5c3420e68f2",
+      "bytes": 122917
+    }
+  ],
+  "owner_context": [
+    {
+      "path": "m3/third_party/p2-7287eed88567/evidence/mirror-pass4.log",
+      "sha256": "0a168b1cbd6275d47b72b120b5b934bb64b8bcc5b9791b7494c8dd5941118904"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/evidence/pass4-artifact-source-license-audit-qualified.json",
+      "sha256": "c33340d2bab488e650d43c12b154f7857cc73429089bdc69c12920d833322044"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/evidence/pass4-artifact-source-license-audit.json",
+      "sha256": "dca8cd6cd93166bd2372f6699fc699058e1f04055ae34e9129aa275e89abe4e2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/evidence/pass4-metadata-source-coverage.json",
+      "sha256": "e220f6cb3287aab98d5261c45a6e1a0cca71dabf881216deec628cf2ab66f68d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/icu4j-intake/INTAKE.json",
+      "sha256": "8e507c3067bdc5540bd49b30ba0d0a32e114195ed2c652d09290d2de5ba91f4b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/icu4j-intake/LICENSE",
+      "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/icu4j-intake/SHA256SUMS",
+      "sha256": "6c6708d012dbe8c2f0509c43d73f57deb6e9c34c556b58e25d2be624e56cbd00"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/icu4j-intake/icu4j-78.3-sources.jar",
+      "sha256": "b8458be1c296aec6c52ea8f195f27e833c5d6030fa15a4b361a0e83030c3c3fe"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/icu4j-intake/icu4j-78.3.pom",
+      "sha256": "3b5940df133c35ab1d511a4b34e271d152e1a51609bc5cad2ee22829fae6adca"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/ASM9.10.1-BSD-source-header",
+      "sha256": "34b8dd2e1b4b5f822ba633602676297fa82328d9438ba4d7336ec7393d212e06"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/Apache-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/UPSTREAM_LEGAL_PROVENANCE.json",
+      "sha256": "621422dd14f1230d304edae114ff0259848dfb4ca3ec784a2c4b034c1a763810"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/com.sun.jna.platform.source.paired-runtime-LICENSE",
+      "sha256": "07c938b23950ab7d47a24ef35f9f5da3a05ae164278dc959ad6994135ed59ff1"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/com.sun.jna.platform.source.source-header",
+      "sha256": "870d7d5ae360992fc29f1be28d5ce727379d38e09427a487cf2fccb15dbf1474"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/com.sun.jna.source.paired-runtime-LICENSE",
+      "sha256": "07c938b23950ab7d47a24ef35f9f5da3a05ae164278dc959ad6994135ed59ff1"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/com.sun.jna.source.source-header",
+      "sha256": "5e12a732ac75fbbacab2bdee8bdc11f390dce0b58db26e82ca1f8fb96c5ff802"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/hamcrest2-LICENSE",
+      "sha256": "f264e2e8b3dbace383eadaf26f7261b9955b264de4fbe1c9be74e86ebd2ea276"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/hamcrest3-LICENSE",
+      "sha256": "1710cf0fc79043bb1ea1e6b3af96a3e8def96c4239794a17b0b95966e75929b8"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/legal/xz1.12-COPYING",
+      "sha256": "1e77ef26cee5216d6531e49cbf2f6111a0270dc7b322fc65477063c5aff88766"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/SHA256SUMS",
+      "sha256": "7287eed885673d80eb8925bfa90be612a115cb089afc5b72b71b45254612619c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/artifacts.jar",
+      "sha256": "dad0ff819ed072f2d8bc7763a340ed7989614ea3e4a397ace59e2b8163bc5de5"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/artifacts.xml",
+      "sha256": "66ffacd0ad1ef5d4c39500256d748caf6a4045703fd17073d5c7d654ec9903bd"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/artifacts.xml.xz",
+      "sha256": "d3af78a935fce319fec8b6f4b73a5f5a95f53e5bdb8078d5dea6bc9278ca9685"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/content.jar",
+      "sha256": "725fc6460286a541a49302fa230794a8187d2cc76d8cb4f19fa57ca0ed10dd8d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/content.xml",
+      "sha256": "ab8107087f5116aeb5bcca6e91d794c17bbc00f73d9a6a2e11c1a0874717ec8d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/content.xml.xz",
+      "sha256": "0c1a910ffa9211189b6d1b4375123ab44f37ed838551786dd25455b5e848acbe"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/p2.index",
+      "sha256": "88d0df060aa9ca392975daed30fd6fbc58291b3f1c103c3e280b867aa19ccecb"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/bcpg.source_1.85.0.jar",
+      "sha256": "bf85ef24debaea55017032c928a900abf969217f6ade6818d41be83b908ce6e0"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/bcpg_1.85.0.jar",
+      "sha256": "39426367dc247dfaae9b1253457a39298b6b9a6c28a39b908bca829e315323dd"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/bcprov.source_1.85.2.jar",
+      "sha256": "9b15d2ccb83c76f9f393cb8cb97d0cb971d04dee667cc3f9d7f4ac28f582cb91"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/bcprov_1.85.2.jar",
+      "sha256": "986b0fb92ec10e0c66b43e036ce0077e6150cfaecd1db9fb92b56672e157afe5"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/bcutil.source_1.85.0.jar",
+      "sha256": "512689f319bc8015916d16b09d18ecd135b476847e7a376439fe7cc4cfc373bf"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/bcutil_1.85.0.jar",
+      "sha256": "590f55ed5d68529239898a4a5c4f730b6e37f45d1cfa3fbe51f8485abe32c42d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/com.github.weisj.jsvg.source_2.1.0.jar",
+      "sha256": "c1d834a26d81c00cace0e660529caa0b5478c288f1d418986c186ded1a1bf00b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/com.github.weisj.jsvg_2.1.0.jar",
+      "sha256": "a538142d27c57c55066da02a535cc8eee3afd0d37b3daff8eba6344bd0ffc1b6"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/com.ibm.icu_78.3.0.jar",
+      "sha256": "e962c1758d9659ea1e1fbab99c58683f654d304e1126ace19aaabfe39e0edb25"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna.platform.source_5.19.1.jar",
+      "sha256": "1decc743c487cae9e4af03b35dcc64175e72be462c680fd1150581b16783d3a5"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna.platform_5.19.1.jar",
+      "sha256": "3b3864f5b449e9c3c24b16861524b622b086563f44e0cd8384c8efc5a6052f82"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna.source_5.19.1.v20260612-1000.jar",
+      "sha256": "f583f2bfbebce03d0c62bc4e94117ce3d807cc0c310cfcece18d0bfaf65deaf4"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna_5.19.1.v20260612-1000.jar",
+      "sha256": "467b2990d4f406e7d41f7a989f89df257767ca11d566f844560e2ab8d09f6433"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.annotation-api.source_3.0.0.jar",
+      "sha256": "142dfd2343429df2aac3e1cfacfacc21c8393112c0e0280d3628648d9b612470"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.annotation-api_3.0.0.jar",
+      "sha256": "b01f55552284cfb149411e64eabca75e942d26d2e1786b32914250e4330afaa2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.inject.jakarta.inject-api.source_2.0.1.jar",
+      "sha256": "44f4c73fda69f8b7d87136f0f789f042f54e8ff506d40aa126199baf3752d1c9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.inject.jakarta.inject-api_2.0.1.jar",
+      "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.aries.spifly.dynamic.bundle.source_1.3.7.jar",
+      "sha256": "09a6ecec1d26d3117c7e5f220468c153e64fcbfdb378c2886c19c0b78bce2ca2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.aries.spifly.dynamic.bundle_1.3.7.jar",
+      "sha256": "50446b18eaaa135d1927e283639a63e452c94111c28c2a54419b1b3fa0339afc"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.felix.scr.source_2.2.18.jar",
+      "sha256": "408d89e6e16b088bb2cdadccaf224e4360d8d04b8d82ca663bae8f6b19f088f7"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.felix.scr_2.2.18.jar",
+      "sha256": "c5bd887c8fd5ec4cd563249e7552bb1a1a1ca57e05a1f1ef8425a7b7b7bd2fbe"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.compare.core.source_3.8.900.v20260731-0809.jar",
+      "sha256": "94c558930811b818277eb5aa579dc6ed12958ee304f937ce477097aa5bd9721b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.compare.core_3.8.900.v20260731-0809.jar",
+      "sha256": "e75b07863128a076989d15e815d63a49cab772a338f1f0444d007bef3fa94601"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.commands.source_3.13.0.v20260605-1749.jar",
+      "sha256": "97691a91b483f43c47406d8c8974a528a39e0c48483ad04380a3a5e2b8105c3b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.commands_3.13.0.v20260605-1749.jar",
+      "sha256": "fe916979793d364fcd0a71c15c3fa803d60a8566cff8c64b0eef04918b5b6a65"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.contenttype.source_3.9.900.v20260617-0626.jar",
+      "sha256": "505f4a05db88811c0c06ef90b37ffae5c1109c69794dcb540b27611e2ee075f3"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.contenttype_3.9.900.v20260617-0626.jar",
+      "sha256": "6c57132740523b5c5de125c0041ca43c1606da6563214c1bae3999fa21ead893"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.beans.source_1.10.500.v20250916-0941.jar",
+      "sha256": "d4ccd0ea566a43faaa16c94b0cb0666dcaa5ee9a837791a5a585e4a700622034"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.beans_1.10.500.v20250916-0941.jar",
+      "sha256": "11eb65dc27ed02c32e3e4d6c9af3a8e11e5eda2848903a74a573543e17cd2490"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.observable.source_1.13.500.v20251103-0735.jar",
+      "sha256": "4699e0a602be9e99eb459e4b2a79d9b436e26afbbbe11b6a702d66f97d42a603"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.observable_1.13.500.v20251103-0735.jar",
+      "sha256": "2a801e18f4a4ebcf28b4376ab13c04205cfaf5c085f436c8bde89ba09da50950"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.property.source_1.10.500.v20250916-0931.jar",
+      "sha256": "d7721c5348c63c221cbfe2a514101aecf6e1d4cc4f4a8196dea52c6d2e35ccdb"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.property_1.10.500.v20250916-0931.jar",
+      "sha256": "3e2e4fbea4e4fc7c8842812a7ffc89fb03d95bfcdb858fcff5ffb7cb1f517e07"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.source_1.13.800.v20260531-1157.jar",
+      "sha256": "e78f00db6242555d394ad8fed9a0a0009c960960c610b44d7ad4beec269db0c3"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding_1.13.800.v20260531-1157.jar",
+      "sha256": "dcedb897c771517f449cd01c04fed83bd45306b7b019dfaf6870419b6bdd9f43"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.expressions.source_3.9.700.v20260710-0925.jar",
+      "sha256": "ed9b83c00f5dcbbd2ca01117f67373157614d108210dffc88b3f310f0e6e06ba"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.expressions_3.9.700.v20260710-0925.jar",
+      "sha256": "06a18236ae181659e1e5499d912d68de527720686f1f51dab632d3e298e32b78"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filebuffers.source_3.8.600.v20260426-1223.jar",
+      "sha256": "15e7b543b320eb6425b38e1d54c9fe4bba7ef2bd039773656c8b368e2a19b474"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filebuffers_3.8.600.v20260426-1223.jar",
+      "sha256": "1537b244abd74626b9627395c8562e910f68b6526330a7556f32d2a624b6e198"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filesystem.source_1.11.500.v20260721-1509.jar",
+      "sha256": "4b1ae09b66478bb9fcec7c1392b12dd24b4867a89686031b98491e4da57c4566"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filesystem_1.11.500.v20260721-1509.jar",
+      "sha256": "bf9ad56f6bee0044829bcbbe0ac5b9df28bb354beb0a4bdf0fe9a489ded12d36"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.jobs.source_3.15.900.v20260604-0622.jar",
+      "sha256": "afe53db881df39d8928b2b5a029391bd9c163222297128a37b25e2ed51c79a83"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.jobs_3.15.900.v20260604-0622.jar",
+      "sha256": "941b3c5feeba4ec0a949a8a94ff10283b2505813fa736c9e6345f146ae1b7e8a"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.resources.source_3.24.100.v20260812-0827.jar",
+      "sha256": "9caac696715ad74c836d0b181d96cc9ac584620c0ca1b85f4996e92e96aba418"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.resources_3.24.100.v20260812-0827.jar",
+      "sha256": "946851cf5902cd3b002920063a30b169e5710088b6c1ad7dd05bdd3be4fbfff4"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.runtime.source_3.35.0.v20260623-1631.jar",
+      "sha256": "7e17258fa310db401c612d258a96749637ffa9ac271da1eb2abe22b390a9420f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.runtime_3.35.0.v20260623-1631.jar",
+      "sha256": "5b0c2794e9fe1785360dec920cc802f3388a0eb72ee25b89054b79ff3e2f07c9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.draw2d.source_3.14.100.202311222042.jar",
+      "sha256": "1d9aec086340cd4ee1734db928c1d60f30ea27b45595a75f00035acc80dd2f09"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.draw2d_3.14.100.202311222042.jar",
+      "sha256": "c966a3fed68347b52d3be321c0b9d9139c58de2bb47b12d59fb61a1cf930df51"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.commands.source_1.1.800.v20260430-1313.jar",
+      "sha256": "7f14995110bcf35e1aa77f759c03fd7a4368762c3e7a4001b9b6caa1cb3f5689"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.commands_1.1.800.v20260430-1313.jar",
+      "sha256": "3d45c10a6ade4ebfb744831d1e6733a43d7ec5c81bbb766bff205a5a7f114f74"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.contexts.source_1.13.300.v20260605-0605.jar",
+      "sha256": "c685b3bfcbeeb0eeca63e7401773fc1420fcf6f612511dd693fce7dea0f1966d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.contexts_1.13.300.v20260605-0605.jar",
+      "sha256": "713f96b026b655688ec750074a62f8b1c3a1bed5986b776b348296ededaa8ff4"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.annotations.source_1.8.500.v20260307-0017.jar",
+      "sha256": "895f73178b98c734d91518dcb2526db2919a5bc70d222e7518aeae2dbc5b1ad0"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.annotations_1.8.500.v20260307-0017.jar",
+      "sha256": "c3cba64f776fcd89c233e52a205bb84fb50f1d609e7371eaa8e25b0985c0884c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions.source_0.18.300.v20240413-1529.jar",
+      "sha256": "d00c4e10574a4288ef4ed01ce49ed37ca6d9a5ef5d46960ee2d481d91202dc87"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions.supplier.source_0.17.1200.v20260605-0608.jar",
+      "sha256": "0a0d9f9fe35fddecbdfab498cb8e103d948432b22babb95c19d575a3a932a338"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions.supplier_0.17.1200.v20260605-0608.jar",
+      "sha256": "1c467d6a781640dd33850cec6ceb5cbcac771f39b0fc4788858b2bf2e3192c45"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions_0.18.300.v20240413-1529.jar",
+      "sha256": "aeed59c938c1593cb7ec0e76f077ab34c84c75378158a7ad17be48370938503d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.source_1.9.900.v20260731-1431.jar",
+      "sha256": "d72bf7d2e614b54b308a0b53893e9d55824e1eca283e03a89ef3d8d39f95d550"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di_1.9.900.v20260731-1431.jar",
+      "sha256": "59ef5a695fb451366adf84753feae16be78f34e8fab9b37a89c10e57eb5f0442"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.services.source_2.5.400.v20260430-1313.jar",
+      "sha256": "6eae73b3396560b6aa09962d081f0c3fefac39c39254a953bf25daf61f44644a"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.services_2.5.400.v20260430-1313.jar",
+      "sha256": "bb5691c9e536112fab1cb6bdffe6d40ec0f059626723776da12c187977f06250"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.emf.xpath.source_0.6.100.v20251103-0738.jar",
+      "sha256": "b02d1bd9be0cb8668e3306cf0b92b519c931ca5b78b824eb57cc0cc64b5cfea6"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.emf.xpath_0.6.100.v20251103-0738.jar",
+      "sha256": "24fdd65815c10731c4fab75f1ba4c19a9e414b9d4f6fa24796dc68a997e42ad8"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.bindings.source_0.15.200.v20260616-1114.jar",
+      "sha256": "3b37b0a198faa36df945841f344074d43466168dd4c3929966734a15d21eac7e"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.bindings_0.15.200.v20260616-1114.jar",
+      "sha256": "5ebfd1872822bec65b5790fe1feb999ac7a3feff5c75e2ef3dd972ae0844bd78"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.css.core.source_0.14.800.v20260730-1500.jar",
+      "sha256": "b90a342522f3ae36db9f2c0419df52d23e3fd42ca3936a476acfceac8440df91"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.css.core_0.14.800.v20260730-1500.jar",
+      "sha256": "a1c646759f62f786f41b33596be7978cb50eb7e83136f8b362bc046281168292"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.css.swt.source_0.17.100.v20260730-1116.jar",
+      "sha256": "ee75b76fc0e60e815287c96604d98d6754bcb23ecd08b32b5432899f6d55186e"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.css.swt.theme.source_0.15.200.v20260806-0515.jar",
+      "sha256": "a2a88bc950532785aec195a06d997f63789be5301e06b54a54d338a97b6591c9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.css.swt.theme_0.15.200.v20260806-0515.jar",
+      "sha256": "95d992f4f9c0f08274f3fac6c53b4939e46a04da40eb471bd28cb99f8533b522"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.css.swt_0.17.100.v20260730-1116.jar",
+      "sha256": "0aed7fe44e434361320bfdfcc4049170c801858012f7c6f72d50761971e4482f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.di.source_1.5.700.v20250917-0901.jar",
+      "sha256": "e2f3be6fc7f2d87de02edd4395ca8d9f20112fca7412b80f5238698c7780d102"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.di_1.5.700.v20250917-0901.jar",
+      "sha256": "9e093b6e93aae448abc4eb2fb4454a36440ebfc0a51c7231655c31a3dd927e68"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.dialogs.source_1.7.200.v20260612-1449.jar",
+      "sha256": "2e71c95dd90af51b3a89f44c8d06d8e0cbb669c4ad69d5f708142d40bc3df4c3"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.dialogs_1.7.200.v20260612-1449.jar",
+      "sha256": "5916d8078e460115e4119809c9301fde93d6912b5a11282ae7f9343daea666eb"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.ide.source_3.18.0.v20251217-1052.jar",
+      "sha256": "103545d1c2df8541ec5c2e0e1da6331f9bfdb18a57c9206ae4cabc4ad537004c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.ide_3.18.0.v20251217-1052.jar",
+      "sha256": "a56b3b87705a1d307a1047360945732b284e892f5008d16c8440a1759955d3a2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.model.workbench.source_2.4.900.v20260604-1631.jar",
+      "sha256": "16f7c0d923c5c0a60e5ff24a557084fb1d73d0dd1d149e277ae5145651e525c3"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.model.workbench_2.4.900.v20260604-1631.jar",
+      "sha256": "90a57c6125d3b3fad535259a4043abd42e4ffa537feae18c927746ded7c71f47"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.services.source_1.6.700.v20260430-1313.jar",
+      "sha256": "d3b7122cb36580b0692e77d2d2590204f5085f9f5a6e23b5788146504aa7bd52"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.services_1.6.700.v20260430-1313.jar",
+      "sha256": "e4f5aa7637d3bdd3781a10addd4be07038d8d2ef4b20e2c40b7e7932960a8073"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.widgets.source_1.5.0.v20251217-1052.jar",
+      "sha256": "11749775df60f0228e965a8988521bd48d5227342983b88a659e9ace16712dd0"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.widgets_1.5.0.v20251217-1052.jar",
+      "sha256": "46ce8ac317aa8dc31594a28be005c3e1d22b4b103d275f5fab481bddbb513f5a"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.addons.swt.source_1.6.100.v20260430-1313.jar",
+      "sha256": "a477bf2cefe3c5029ec0672c70910da084398b80209737a414583041b14ad944"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.addons.swt_1.6.100.v20260430-1313.jar",
+      "sha256": "d9fe711ca9ce958f0fec9e385257d2f938969d8f63902231fb01421613137bc7"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.renderers.swt.source_0.18.100.v20260622-1026.jar",
+      "sha256": "d3f6d102665bb17095ad77507fcfd598a795ce3578e7524bf8de954fac8214f7"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.renderers.swt_0.18.100.v20260622-1026.jar",
+      "sha256": "5d1c0241cc8949e23f5b2474251c5033e07722209ce3caa7e167d9d6650c1d29"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.source_1.18.300.v20260430-1313.jar",
+      "sha256": "9ce383c74443920c3d7d240ece2e997d0346aed217b5af23120bcfaa1c9b4f89"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.swt.source_0.18.200.v20260707-1437.jar",
+      "sha256": "d7444cdbb1771709e1226615f79eac7aa7058ce52e099db4f783e94eef1aff9c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.swt_0.18.200.v20260707-1437.jar",
+      "sha256": "f5bafe5a5f3a6da331f053cc47f42ba70746d28f6c948afa82f8102664a63865"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench3.source_0.18.0.v20251216-1230.jar",
+      "sha256": "42c1eafcd623272ae77fdb0df82bff5ae76fa5444724865a3dfc89ac480dc378"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench3_0.18.0.v20251216-1230.jar",
+      "sha256": "7801af6e30f71121d3f15f638ebb5e30d83d0add73b3798d53f75aa3c95f031b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench_1.18.300.v20260430-1313.jar",
+      "sha256": "372a298898ea9adf4ffab461ed06d36c7c2fa476fb218c9d7abecc1ee2012229"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.common.source_2.46.0.v20260704-1256.jar",
+      "sha256": "2fcc11426cd3367fcc4e047c628292e7086bd843997173730d20d203e76b78ed"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.common_2.46.0.v20260704-1256.jar",
+      "sha256": "8329ca6f84a27a46517e6351697fc44060ed413ad231b4bbc0d813dd7ac87264"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.change.source_2.18.0.v20260704-1256.jar",
+      "sha256": "f8669dffa14ccd08a7aae07b79eb00b9b6f9ebdf5ffeba8a461d066d46781cf2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.change_2.18.0.v20260704-1256.jar",
+      "sha256": "e9198b0fe481aa10e04b57f0c7cc672fe097a01f858152a05ee73c0a5fe648d5"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.source_2.43.0.v20260704-1256.jar",
+      "sha256": "1afbc45f42d37c8b6e69873582fed21ee3f4604f2d91ba5db0ae51472683fcb2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.xmi.source_2.41.0.v20260704-1256.jar",
+      "sha256": "830c40058fed500265c76f14e821ef84623f314a89e5e254d72f02fd8008ad44"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.xmi_2.41.0.v20260704-1256.jar",
+      "sha256": "f9671c2b926c5d5ad7c2410eed50e9a6d2510a360b12fe4be8228944df93abfb"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore_2.43.0.v20260704-1256.jar",
+      "sha256": "62bf3805669c56efbb280b6f212767c089093a7c330f9da1c901fbf242564286"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.app.source_1.7.600.v20251211-1038.jar",
+      "sha256": "64a7ee0ea38d93dc2e13c091ba6915deee91592cf238ac5a24e393f1d48ee7d9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.app_1.7.600.v20251211-1038.jar",
+      "sha256": "fd353398835107608f554779a6e91891725efb94e0f57559d0ab3cea4b6156c7"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.bidi.source_1.5.400.v20250715-0436.jar",
+      "sha256": "8fe7c8d8c7412d45b68c3e3edf54c4de3f6a14999ba5921f4253b3e0a68d6642"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.bidi_1.5.400.v20250715-0436.jar",
+      "sha256": "78599009dc5a0f02881406798d7e07e25ac222930a985757bca61632867c7abe"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.common.source_3.21.0.v20260604-1221.jar",
+      "sha256": "65685bcb3fdab96770403759ac48624bc928adc989be050eb2b4d696fed06c70"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.common_3.21.0.v20260604-1221.jar",
+      "sha256": "2545ed27d408f19882695703097e5998bf25652bd0dac76a8e6d1391ec228ab7"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.event.source_1.7.300.v20250518-0609.jar",
+      "sha256": "c97ca316524dc80707c2826cbd9e491e5d400b27680a91379cdc46d7fac19850"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.event_1.7.300.v20250518-0609.jar",
+      "sha256": "a95ed37b7f1c340b4bef599bdc011a3c51b0489a4e1fc11abd62856e49c22fd9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.artifact.repository.source_1.5.1000.v20260713-1500.jar",
+      "sha256": "df8e25d8430965e87a89a05fdcbb6bf21624e6f823ba68836bd6ae4d6083c0ae"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.artifact.repository_1.5.1000.v20260713-1500.jar",
+      "sha256": "0b069bccc7b171ab710d6bfe8b0081cb6618084b9458558150c7f73720784c18"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.core.source_2.13.300.v20260108-1444.jar",
+      "sha256": "b56adc2f9a797d9a845db1828afde554157d2b0e70e7ba609d3e38039b7e8313"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.core_2.13.300.v20260108-1444.jar",
+      "sha256": "a3835e2db79d1db39eb8d74e84f5a1b45528eb79d31d529cffe772c64ba0dcb5"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.engine.source_2.11.200.v20260710-0940.jar",
+      "sha256": "34adc0b7506413d3add6255e100409a15f5fd4ba0e02ddc193e6dccd0b15ecc9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.engine_2.11.200.v20260710-0940.jar",
+      "sha256": "f52c37c0dc580b54f6e6b738e5fa3ab53b9011f3db77692febb2d063a1c9c4d6"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata.repository.source_1.5.800.v20260304-1232.jar",
+      "sha256": "41446972ce20017a5e4665aa420ca07d0daa90c383ad97d8685196f104a19b77"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata.repository_1.5.800.v20260304-1232.jar",
+      "sha256": "4ed4d2adac35c739098d724196761797babf7e1676d7081a3b6625d2a4bf1b12"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata.source_2.9.800.v20260727-1351.jar",
+      "sha256": "c8b1ff8e5f6b4efa75a357e7904d308864783e4bf87fae47b155b654a66d0ea9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata_2.9.800.v20260727-1351.jar",
+      "sha256": "49490e21ad3974e154db833c49e6051ef52f6b852c30900a9d3cbec75e027287"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.repository.source_2.9.800.v20260730-1413.jar",
+      "sha256": "ccb46824ef97eae5937debbaa78f4432093b745e73c985fbc55c65d34c8a2956"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.repository_2.9.800.v20260730-1413.jar",
+      "sha256": "a30aa2d34fc2a5061d0d48dc95dd1b161bdcda25365f3c115764dea9a7019a42"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.preferences.source_3.12.100.v20251111-0704.jar",
+      "sha256": "7488421cb2ca889373d8b6d2ebe25987d9b010f921e0062de8934ae69267392c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.preferences_3.12.100.v20251111-0704.jar",
+      "sha256": "fd04e81a28ab32b6bb073286eb293c44b760176fcf1e35ef15614d62df820f86"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.registry.source_3.12.600.v20250906-0651.jar",
+      "sha256": "89a66885d7439e030bbcf1b13de941f64796e2bcd639260f1fad57ca9e44bdfc"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.registry_3.12.600.v20250906-0651.jar",
+      "sha256": "4f8cd72681446b598390a8c24ee9b9996f6e4c5fabed022b50bd26f6f5a0bf6c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.security.source_1.4.700.v20250622-1644.jar",
+      "sha256": "14ffa555debb7fc36e8439edb5ab06ef2ef8e49618cccb5e31cd1270a66b5420"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.security_1.4.700.v20250622-1644.jar",
+      "sha256": "91b74719f9c1a130193407808fe5daab3b92431efbf30b8f886f1ff5e97f468f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.help.source_3.11.200.v20260710-0925.jar",
+      "sha256": "06b69775782c97958defe6d8a3672876d24ec4a18674e4d6afff15c82b7fe5cc"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.help_3.11.200.v20260710-0925.jar",
+      "sha256": "c47edcf54c5d5dcdaf3bd72d49277daee4762a07b7b91f7620fdcc857af8f7c8"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jdt.junit.runtime.source_3.8.100.v20260507-0922.jar",
+      "sha256": "b3ddff463e7b7a2e2e617b65396e56fade5b6fdb2654f24ade595f51175f45f6"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jdt.junit.runtime_3.8.100.v20260507-0922.jar",
+      "sha256": "40f42db018f283e8e799333c1870d8a6ee14691a591927c77419373a1dd0d3a9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.databinding.source_1.16.0.v20251216-1230.jar",
+      "sha256": "9ef8eea087d16d6f31053be1cb59947711c1d1812a87119309087acb74e66f3a"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.databinding_1.16.0.v20251216-1230.jar",
+      "sha256": "f2fe7b68cc56992f9df80c355586dc6b391e99fa1b1160a14b5dd5e029c65d21"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.notifications.source_0.8.100.v20260326-1607.jar",
+      "sha256": "b8221eb17517dcf0ec801ce0216878a3cf314071e84a55e126f2908daa13b3ae"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.notifications_0.8.100.v20260326-1607.jar",
+      "sha256": "4f5cd3a883ba45a665663642ed0c304bdc78a1ee8f514265d84dd39906e73d12"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.source_3.40.0.v20260710-0650.jar",
+      "sha256": "d56b6006ff33f3da5d59f724c69f1e6d8a326b25cde0ed8b0f1002f181404e74"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.text.source_3.31.100.v20260814-0956.jar",
+      "sha256": "559742faf51d8e6f66573a7537268803118cc529f317eed45560c6d083b3e9ac"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.text_3.31.100.v20260814-0956.jar",
+      "sha256": "20f885d22fa9370437cac3e6eff3bc482989720da403a2a0b0d131d9c83bc524"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface_3.40.0.v20260710-0650.jar",
+      "sha256": "618096177f82c1dd54ac5ee7c22bef793588f19dd6c7ce2830935e2223b37fb4"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.osgi.source_3.24.300.v20260721-1251.jar",
+      "sha256": "5ec5b96e7e996c02839a8819ec27fec0c235594d3dd305612dd61f9451e815af"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.osgi_3.24.300.v20260721-1251.jar",
+      "sha256": "4a770aa4a78df653af871073c8b4ddd56884895f5fc71d10c40b4289ac7c8b9f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.pde.junit.runtime.source_3.8.300.v20251120-2029.jar",
+      "sha256": "15d8839fb0f1d4086dd027862ed9c2d66ced3edd3953d103ea2088c86b29a7d2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.pde.junit.runtime_3.8.300.v20251120-2029.jar",
+      "sha256": "43a7c6ea5c97446748d849bc05509fc5b4b1b3576d83782895081eb08e098a4f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.cocoa.macosx.x86_64.source_3.135.0.v20260819-1952.jar",
+      "sha256": "226d57c042bab202c01ac5864f0285a04c1a1d245eaf9d00255cc6f8ed0f8361"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.cocoa.macosx.x86_64_3.135.0.v20260819-1952.jar",
+      "sha256": "781129ad16b54915eba24d4162ce356568e745001374325514a37000f228c83c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.gtk.linux.x86_64.source_3.135.0.v20260819-1952.jar",
+      "sha256": "8f96c6e714b55ecd0868bfd42cfcd4eeb8a19c4bbee34d6bbb17cb6e593f7f19"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.gtk.linux.x86_64_3.135.0.v20260819-1952.jar",
+      "sha256": "0799e4475b8937e05a0f13c6cbeadbf066ca56dd3622bfd8c7a4ba133b2db2e2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.svg.source_3.133.100.v20260702-1546.jar",
+      "sha256": "d02a12a380213e479249e1da1efaa13d5a94296f1744971df5832b4d565cd320"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.svg_3.133.100.v20260702-1546.jar",
+      "sha256": "8530aa8ad2552510141ea4dfeff44fa21dfe46849fe3871be1bde59eb1446c29"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.win32.win32.x86_64.source_3.135.0.v20260819-1952.jar",
+      "sha256": "4d0a05301374ca039e883190117dd09dfa1746571c6794818dbb7e5d3df87068"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.win32.win32.x86_64_3.135.0.v20260819-1952.jar",
+      "sha256": "625165af55eb5f553b28a74455038bb01343e4acf00d0857ff78c31d0b9c75be"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt_3.135.0.v20260819-1952.jar",
+      "sha256": "f096342961c16043c072550cf0428f7126b0e9796fe10f2d1d8529a5e3ac8db3"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.core.source_4.3.0.202506021445.jar",
+      "sha256": "60aa7ecb3e344eabe15e5f1f239410d2e7aa1ca83855e7e17057343d46bac5b8"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.core_4.3.0.202506021445.jar",
+      "sha256": "941668f4e5787928e2dcee27f7f96e4c81fdd077c3a2c25ea60b7fbdf44fe5c2"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.finder.source_4.3.0.202506021445.jar",
+      "sha256": "6b38dd674e5526a6f8828420411006f4a491bdacbec34e6c56a29686282e6659"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.finder_4.3.0.202506021445.jar",
+      "sha256": "fbcd1f5f677e896aa18af9d9ed0b87fae1fe6e44653d6186385fe44107451572"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.go.source_4.3.0.202506021445.jar",
+      "sha256": "a0950efdea169663e974c367265d7133f157b810f2acac0ec8512306fd0fadf9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.go_4.3.0.202506021445.jar",
+      "sha256": "c871c314e1944207b3af2fedf1a6410566e45c336e3859ddbb0a8fa286f8a6b0"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.junit4_x.source_4.3.0.202506021445.jar",
+      "sha256": "a5f4aab59585bd213a3f2b03f4177c3e35787fdf5f3b79f90d7874061ff1d92f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.junit4_x_4.3.0.202506021445.jar",
+      "sha256": "49700c927b2cd146f16551c0f145d441765766c185f0aea87b3a8b29dfe607a9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.swt.finder.source_4.3.0.202506021445.jar",
+      "sha256": "b4e4236afb6696c298e60e97e3fa2e5c92622c79969d076e764dc96eb599d64d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.swt.finder_4.3.0.202506021445.jar",
+      "sha256": "8d5c41eb949f66fd4732087e7a4cb383b6aaa6e810f5c73489a30fbe700a4e0f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.text.source_3.14.800.v20260815-0849.jar",
+      "sha256": "03b66a06cea09d1c073cba091ae4662b09d0b41e1eff341715aacc87ab17c48d"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.text_3.14.800.v20260815-0849.jar",
+      "sha256": "14814c1f1a737fde0a2d56c47a2f02cf4c8c5dee748756c4763e674cae214250"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.editors.source_3.22.100.v20260707-0708.jar",
+      "sha256": "58e24c106d00c4d7e939a31e6cc14752c151ddbdc09abe49f89ed63947718eed"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.editors_3.22.100.v20260707-0708.jar",
+      "sha256": "06ecffe23256faf7e91a42b62ef924340254010728c798c3f717eaf2ec59307a"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.forms.source_3.14.200.v20260625-1839.jar",
+      "sha256": "ccb90cc9d0daf0cfae48244f8f71ad6e286d15939d9f9a9a8eea9a700a9b5b24"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.forms_3.14.200.v20260625-1839.jar",
+      "sha256": "4a4a2eb0ace73d0f0ed1a7bc337c52c67852f4259ac3d5006768a8a4c3b637e3"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.ide.source_3.23.200.v20260822-1631.jar",
+      "sha256": "83c5ecf8d33dec12e10926661c459369503fcbfbc66f1590767b2bc508c4a1a3"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.ide_3.23.200.v20260822-1631.jar",
+      "sha256": "286cc2e99b9793ae3fc5d7f7eaa16e0ac9b07b606dc6d3308d79c7813e562b2b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.navigator.source_3.14.200.v20260731-0659.jar",
+      "sha256": "b53ae48ebd81dbbef9096e2bb597e2a29f9d81820af8104a8686e58dda6ed0b9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.navigator_3.14.200.v20260731-0659.jar",
+      "sha256": "99d95f87042bd370bcd1b81af83ef1c8fb072ddeed3ec90bd58fed77161e8f60"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.source_3.209.100.v20260703-0856.jar",
+      "sha256": "75080b3dcd7411da7c3c906bdbd2b9f1d9ce543644311ed4fbdf46e7f7bec0a4"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench.source_3.140.0.v20260810-1402.jar",
+      "sha256": "bd587acd970a651a99f131cec55d27e357cee419889935d22d4e6ccc888fc901"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench.texteditor.source_3.20.200.v20260728-1331.jar",
+      "sha256": "3bcb42ed121ad1aff0577936ffeb6c6f94afffc76aa33062f497ffa5a8a6d40e"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench.texteditor_3.20.200.v20260728-1331.jar",
+      "sha256": "c2c58bd9cf3c46f85dc6a6777061ad007b72d14c3fca6ab2fd4a5539e096ca79"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench_3.140.0.v20260810-1402.jar",
+      "sha256": "e3ed243b8331165a1e43592d9aede7fc34cc3027b321f9bad0d494e630583d77"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui_3.209.100.v20260703-0856.jar",
+      "sha256": "cc52dc9a3c679fec4db48a31110f0c71f3caef31692b6c9c3dc8ecfca70a3106"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.urischeme.source_1.3.600.v20251023-1158.jar",
+      "sha256": "83730707d594ab108de45af1caa8dd764f795a03ebdafbe19bc9df17699eb5e8"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.urischeme_1.3.600.v20251023-1158.jar",
+      "sha256": "ad7c2eaab28f9424a471085c51b38d6971176fab1def11eb60e99cd1ad178f84"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.core.source_2.2.0.v20230809-1000.jar",
+      "sha256": "1ee2ce2b1be9d865e756c53406e87c560c69d7678a404405297bc19396785494"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.core_2.2.0.v20230809-1000.jar",
+      "sha256": "9be2aeac81fedef7ce73dd26d93e53644b1f9cd7cb1c8f62216f5adb36517d7b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.library.source_2.2.0.v20230809-1000.jar",
+      "sha256": "0cc8a0baebc597afd1cfc4fb878f336a32d0667166711f0853b330cf40bf2ab6"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.library_2.2.0.v20230809-1000.jar",
+      "sha256": "d075830992f07c41e10a220ff91aa5d51dda4166a6ad61b5f234cc8f245b4cbc"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.source_3.0.0.jar",
+      "sha256": "426facffa0e906e2461b89616d7f46ba32dc6900b59153cbf6ab40b851411d0f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest_3.0.0.jar",
+      "sha256": "5d66b6a4a680755cb6ed7cb104fa7835ef644667586ff0737adeb977c39ecdbc"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.junit.source_4.13.2.v20240929-1000.jar",
+      "sha256": "efdaafecbe235ef130dfee0781a853f119f56f710161f7d6934ca62f7031166a"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.junit_4.13.2.v20240929-1000.jar",
+      "sha256": "3efac657139b0b8024748e937e3e1dba71fbdf69fb526c60f504a3fb5490381b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.commons.source_9.10.1.jar",
+      "sha256": "3b999cc2a7238b96b21ab37c0b4a67c713b96aceaed60325fabf31393fedebdd"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.commons_9.10.1.jar",
+      "sha256": "6d0abefb7cbf972ea16edb37ec14835372505063a45f976ab7ea889ed9497895"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.source_9.10.1.jar",
+      "sha256": "a5d72b31974546ecc6dd7fd26cb3fbda475005734e6c6de777054e89c6977f9e"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree.analysis.source_9.10.1.jar",
+      "sha256": "b13e1330eb4e75918c867ea2a9ad9201c7df1a8d674a5d2480d7771f8acba78a"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree.analysis_9.10.1.jar",
+      "sha256": "dede75a21306b65974ecd8f87114ff6970f09fb794157a4ca09ab25c888c2bfc"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree.source_9.10.1.jar",
+      "sha256": "6cf0c3a2683fd758cba8dd010efed05c57d9476715627b91d84c535c51c1c444"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree_9.10.1.jar",
+      "sha256": "3dfb0d5b6a106cd40b5b250e39935fbf2f927f4477546a5369a3ac609cf0506b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.util.source_9.10.1.jar",
+      "sha256": "f098f5bdb9c2c6fee5de76032124d2a2560465329e56ae8fff274473b9b5a1ad"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.util_9.10.1.jar",
+      "sha256": "1bb99d091fba2597dc6d51193e9bbcf0d8447e7ed96bd8f0198b18152f09655c"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm_9.10.1.jar",
+      "sha256": "ed825d10ab1399c8c0cb669e688cf0c8c82629b4c8399b58352b68e92ca10fcb"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.component.source_1.5.1.202212101352.jar",
+      "sha256": "1bc866985d5b9937b4ef97e6ed5874acf02fc123bd84ee9c83b45bd2c29cd53f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.component_1.5.1.202212101352.jar",
+      "sha256": "0653852deab5c6f6e9c84e3aa8f72e72b9ce7dfaf7a6431f3d80f6f9d7a433ad"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.event.source_1.4.1.202109301733.jar",
+      "sha256": "077fc604225b3720da15452738e91d843bd851ba45cba5ade275e5e988f1844f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.event_1.4.1.202109301733.jar",
+      "sha256": "9f11c68980dbd931850f3f27fc7c35e1d710ecc728fe872bd6d786cd7e4b7b5e"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.prefs.source_1.1.2.202109301733.jar",
+      "sha256": "53b22587dc722c9575aba521a82c10debcaec59e39ad28d4eb719017458a7721"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.prefs_1.1.2.202109301733.jar",
+      "sha256": "43c7c870710e363405d422da653cce0d798a4537f76e4930f79bceadd3a55345"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.function.source_1.2.0.202109301733.jar",
+      "sha256": "cc1bbef6427a76289d5a73a4ca387c2bdebe03217f3a06f716a6559513c9418b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.function_1.2.0.202109301733.jar",
+      "sha256": "208819c7c71690c15a6bb8b187474e7f9d0147946b680182a62b9f222ae014ec"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.promise.source_1.3.0.202212101352.jar",
+      "sha256": "1da0a850b3d2b15344a61878e494c6e08bd682f482ade677360f981bc1b8984b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.promise_1.3.0.202212101352.jar",
+      "sha256": "7053c57e7d7d88fec6b90979a3af125e1d2bb847268a328a2f1ed65ad0a4c185"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.slf4j.api.source_1.7.30.v20221112-0806.jar",
+      "sha256": "be9cbb80a2d1fade5bf1a59e197a94ad49203e26f83b194699ad5ea448fe20eb"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.slf4j.api_1.7.30.v20221112-0806.jar",
+      "sha256": "6f4e3297ccb401443a75a7c1ed7a9f6da48831534c35dc5831cb886c37b9fcde"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.tukaani.xz.source_1.12.0.jar",
+      "sha256": "c5c6f70a61ff4dee2169b72007f9068c6dab695d258ed1f2721229861c239e84"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/mirror/plugins/org.tukaani.xz_1.12.0.jar",
+      "sha256": "3e158a87bd73d8afb4b6e8239c013b7d049c48563f45860ce99cd2e448cf4a6b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/PROVENANCE.json",
+      "sha256": "223fd7daa5c1c85ded8d2414b47e2ea44b57c20d862ddd5fdc48c8ab735d8137"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/jakarta.annotation-api-3.0.0-sources.jar",
+      "sha256": "142dfd2343429df2aac3e1cfacfacc21c8393112c0e0280d3628648d9b612470"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/jakarta.inject-api-2.0.1-sources.jar",
+      "sha256": "44f4c73fda69f8b7d87136f0f789f042f54e8ff506d40aa126199baf3752d1c9"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/org.apache.felix.scr-2.2.18-sources.jar",
+      "sha256": "408d89e6e16b088bb2cdadccaf224e4360d8d04b8d82ca663bae8f6b19f088f7"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/org.osgi.service.component-1.5.1-sources.jar",
+      "sha256": "1bc866985d5b9937b4ef97e6ed5874acf02fc123bd84ee9c83b45bd2c29cd53f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/org.osgi.service.event-1.4.1-sources.jar",
+      "sha256": "077fc604225b3720da15452738e91d843bd851ba45cba5ade275e5e988f1844f"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/org.osgi.service.prefs-1.1.2-sources.jar",
+      "sha256": "53b22587dc722c9575aba521a82c10debcaec59e39ad28d4eb719017458a7721"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/org.osgi.util.function-1.2.0-sources.jar",
+      "sha256": "cc1bbef6427a76289d5a73a4ca387c2bdebe03217f3a06f716a6559513c9418b"
+    },
+    {
+      "path": "m3/third_party/p2-7287eed88567/raw-maven-source-provenance/org.osgi.util.promise-1.3.0-sources.jar",
+      "sha256": "1da0a850b3d2b15344a61878e494c6e08bd682f482ade677360f981bc1b8984b"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.nebula-parent/pom.xml",
+      "sha256": "7bd62f0f528e3955a14aaa79fa693f758d6e2f779ec569d837aa410cec9ab408"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css/src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler.java",
+      "sha256": "7d9782268fe1a2adbc5e9e549a1f3774b54c48676c8ebdb8ce0d410a28fb1588"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/.gitattributes",
+      "sha256": "bb72984c47eb6ea5faa895af22c1214279e73125df8a91456939d3c648e1a392"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/combined/compositeArtifacts.xml",
+      "sha256": "c969b9bfc1c0774d82e12c92fc8d604ab9a58a2c3fc4006c55838ace88bbe061"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/combined/compositeContent.xml",
+      "sha256": "1b638821c70c87188b3f117483445e468b40cf558a1415a5f1862f602fdb1579"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/combined/p2.index",
+      "sha256": "e5bd45b8d6223611783bf683a912215661b6813110b218292adb7871e1f04263"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/artifacts.xml",
+      "sha256": "9295088e5ec15ad41fbd33bd954ae6bf978b8768dc4331bcde1cf4caf21680b1"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/content.xml",
+      "sha256": "76b56fbe67d3c48d77d09f931c82219b331e69a9cae2e861e6663078771fd60f"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/p2.index",
+      "sha256": "f7dbc96a53ab8873e1e71805df3f7964eb9f9b0956e44db27648c1330d054b49"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.constants.source_1.17.0.v20231215-1130.jar",
+      "sha256": "b4b1705daa51ed31738c731f5e8191bd126045833836696fa528f5b10e62e848"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.constants_1.17.0.v20231215-1130.jar",
+      "sha256": "e5fba323efd349de6ba83b181e9ccc78f74928e53e22172ba928f0cc43d333b8"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.css.source_1.17.0.v20231215-1130.jar",
+      "sha256": "7ba6ec71e9994695580dbba9db8e49bfa699d5ce04b79e99afc251a7478766fb"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.css_1.17.0.v20231215-1130.jar",
+      "sha256": "4fcb5e61e1d8c869e5cdc281ac516c36611edc8178d0075d6d14574370fb8d17"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.i18n.source_1.17.0.v20231215-1130.jar",
+      "sha256": "c8ce57454c0ea2715eace319bd5a90bf935d23ef7ba9e7d4f349224fa00a17a0"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.i18n_1.17.0.v20231215-1130.jar",
+      "sha256": "ff47c3eb4b5971ae7fff67383d15318b4b31958b59c7787b63be03aba588bb32"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.util.source_1.17.0.v20231215-1130.jar",
+      "sha256": "f5573ae715acc87a07a6fc4eb52295291bbb1517fac18053b405678c34cb23f0"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.batik.util_1.17.0.v20231215-1130.jar",
+      "sha256": "c9bcc81ee112f856ed9d6bc1c523427355bb81248a89d5310a93663c36bcacfc"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.commons-io.source_2.15.1.jar",
+      "sha256": "92318c7cb576cc0be7db2c2f159d8b7570ecda8cc8e86f3992cc5512161815ca"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.commons-io_2.15.1.jar",
+      "sha256": "a58af12ee1b68cfd2ebb0c27caef164f084381a00ec81a48cc275fd7ea54e154"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.logging.source_1.2.0.v20180409-1502.jar",
+      "sha256": "8cc7db67131d441aa832dfe2967a9b602c940f907a656987367985e2e004f7b0"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.logging_1.2.0.v20180409-1502.jar",
+      "sha256": "62efdae1766f89278400ac26132af0f750cc8200c220ed602d527c564677faa2"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.xmlgraphics.source_2.9.0.v20230916-1600.jar",
+      "sha256": "eef6602cb0b98437f3dbd9d11bede07e39c405d0ce4c7ce077125b4e16b82e38"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.xmlgraphics_2.9.0.v20230916-1600.jar",
+      "sha256": "d363b9b79214e745b3082c4e2fb6935554e1e045d9f2246eed416ed45da44f4e"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.eclipse.orbit.xml-apis-ext.source_1.0.0.v20230923-0644.jar",
+      "sha256": "0388f40c13318072ccd9e36d2161b4a0119fdee56e92a129dd09e1a9bbd7fb1b"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/mirror/plugins/org.eclipse.orbit.xml-apis-ext_1.0.0.v20230923-0644.jar",
+      "sha256": "ea4eb8e705ce3278fcf38d61fdb412dfab73bc938f06cbb9483a9c8e5dc4bd5d"
+    },
+    {
+      "path": "m3/third_party/p2-batik-20240313/INTAKE.json",
+      "sha256": "a0f46077deda215f44e923169f6001af95b9959d1543e72227f03dd832b7f346"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/css/BaseCSSThemingTest.java",
+      "sha256": "4cc46cffd07c97efd11780afd11aea6c422458f183ebcc72627a8c27d9756493"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "721c2da257578bace3332b14d8ea06643d7d26753e7ef25a837b4e904edc0bf5"
+    },
+    {
+      "path": "m3/third_party/eclipse-css-simple-provider-71f4d11/CSSPropertyHandlerSimpleProviderImpl.java",
+      "sha256": "82268601410fe3a80858d5d6845e2de2cd81a5a377dc76814dc7db7b6791d992"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl.java",
+      "sha256": "234eff7ce055796a8ea7f1d266dc69a63a280e0d4eb36ade24563e18b784fa48"
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "caea0489b86e42bd61b40c38dfad9cf88d7c83489aeeeff84ef13ccb0ed3d4f9"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart.java",
+      "sha256": "471072428aa3cc6ff0e19567fab7199ca7f31333a58905a1c86489cc3b5e3007"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart.java",
+      "sha256": "f7cf28894b872ed09dc009ae59632b3faa777b502a0fd73168ca85e46c62543c"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/META-INF/MANIFEST.MF",
+      "sha256": "99ec161a425ef2a974b02a1986eb4185b44c515d26642f58a9c962a656841323"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/org.eclipse.nebula.widgets.cdatetime.example.e4.product",
+      "sha256": "ef4669a264a851ad0e3eeb767f4846a08940621b205e959872e030f2811333fe"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/.gitattributes",
+      "sha256": "f5808c25747545be15ebbbbdc23d24355fe66f3b4ee17dabf64cf239466ea7ab"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/.gitattributes",
+      "sha256": "bb72984c47eb6ea5faa895af22c1214279e73125df8a91456939d3c648e1a392"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/combined/compositeArtifacts.xml",
+      "sha256": "8ebf7d52b8d56a0a2d20fbc9a4b4236f4e191852a695c8a86a17dae851194b86"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/combined/compositeContent.xml",
+      "sha256": "7d38ec1740a59f34b5d39d06e01a58ed51296dad8fb4dc4b85cfd45a311ce0e5"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/combined/p2.index",
+      "sha256": "e5bd45b8d6223611783bf683a912215661b6813110b218292adb7871e1f04263"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/mirror/artifacts.xml",
+      "sha256": "ebde377308b09a16bcf9b35703966689f4e34b76a92230cee0da38f082c2e564"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/mirror/content.xml",
+      "sha256": "12bd465a59f8a341eed69ece35d31032c1bf0f700967777da8acde302377d86e"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/mirror/p2.index",
+      "sha256": "f7dbc96a53ab8873e1e71805df3f7964eb9f9b0956e44db27648c1330d054b49"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/mirror/plugins/org.eclipse.equinox.launcher.source_1.8.0.v20260804-1928.jar",
+      "sha256": "52ccefbc287ee364f026b274a6011faa0105a04bfcdd0a19a62f7f74d521378e"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/mirror/plugins/org.eclipse.equinox.launcher_1.8.0.v20260804-1928.jar",
+      "sha256": "9b3b1da60813ac5fa09dd5c198f1884be7076d0a5daec54faa3f351a787e34b7"
+    },
+    {
+      "path": "m3/third_party/p2-equinox-java-launcher-1.8.0/INTAKE.json",
+      "sha256": "8324dc14b99da60b09f1bcd175aaf4deee6ec3fc8644569379f07d219a59942a"
+    }
+  ],
+  "planned_destination": "S:/codex-work/m3-nebula-20261004/nebula/m3/third_party/p2-ui-runtime-closure-4.41",
+  "composite": {
+    "children": [
+      "../mirror",
+      "../../p2-equinox-java-launcher-1.8.0/combined"
+    ],
+    "URI_resolution_scope": "Owner destination and disposable owner fixture; recipe version directory is not an installation root.",
+    "all_children_local": true,
+    "existing_child_context_sealed": true
+  },
+  "forbidden_descriptor_paths": [
+    "mirror/content.jar",
+    "mirror/artifacts.jar",
+    "combined/compositeContent.jar",
+    "combined/compositeArtifacts.jar"
+  ],
+  "constraints": [
+    "29exact targetpayloads; no owner/index/source writes by preparing agent; root alone performs admission.",
+    "All296previous context hashes sealed, including250originalmirror/Batik24/launcher10/provider3/rootLICENSE/parentCSSBase andfiveE4postimages.",
+    "Source+target native .NET WindowsReparsePoint/ancestor guard before payload/context checksum guards and copy, repeated during verify; POM?Ant?INTAKE checksum reads precede nativeguard.",
+    "Allsource hashes+alltargetsABSENT-or-exact+allcontexts+four JAR descriptorabsence preflight beforeanycopy; copyonlyabsent, preserveexactexisting mtime, nooverwrite/delete.",
+    "All20 original IU/artifact subtrees includingrequirements/filter/versions/licensing/PGP/artifactSHA512+SHA256/size remain unchanged; original mappings retained; only remote artifact mirrorsURL removed at repository level.",
+    "Local p2 indices select reviewed XML factories with terminal !. Sourcepairs/attribution/originalheaderlicenses retained; freshcheckout * -text coversallpayloads."
+  ],
+  "copy_owner": {
+    "mechanism": "Existing qualified Batik Maven AntRun3.1.0 + Ant checksum/copy/fileset present selector",
+    "donor_pom": "../equinox-java-launcher-1.8.0/pom.xml",
+    "donor_pom_sha256": "2594e165f470b823055a6cb366838718b0563b7d6eddba7daf53023acff732b8",
+    "donor_ant": "../equinox-java-launcher-1.8.0/payload-intake.xml",
+    "donor_ant_sha256": "767d803249f8513e16c5a4c5905367643ef9457c4d2d990a9247ae38ab7afdf9",
+    "reparse_donor": "../windows-checkout-context-v2/windows-reparse-preflight.ps1",
+    "reparse_donor_sha256": "6239d087f2d0a599eb0483016521df46b1d4d4b583a46c30367737a0e3cea944",
+    "root_literal": "S:/codex-work/m3-nebula-20261004/nebula",
+    "source_literal": "S:\\codex-work\\m3-nebula-20261004\\repo\\synexia-m3-recipe\\recipes\\nebula-owned-p2-target\\versions\\ui-runtime-closure-4.41",
+    "operation_default": "check",
+    "operations": [
+      "check",
+      "apply",
+      "verify"
+    ],
+    "copy_semantics": "All source, context, target and descriptor-shadow preflight before mutation. Only absent files copied; exact existing files preserve mtime. No overwrite or delete.",
+    "planned_target_count": 29,
+    "owner_context_count": 296,
+    "gitattributes": "New prefix * -text and *.jar -diff only; no root attributes payload.",
+    "reparse_adaptation": "Reuse qualified inline helper: original .NET ReparsePoint predicate, ancestor walk and seen-set, with prior documented throw concat."
+  },
+  "fixture_controls": {
+    "status": "PASS",
+    "fixture": "S:/codex-work/m3-nebula-20261004/tmp/ui-runtime-intake-controls-v1",
+    "count": 20,
+    "checks": [
+      {
+        "name": "default_check_read_only",
+        "exit_code": 0,
+        "stdout_sha256": "1068bcfc4006827c966f1fa9c82928f253218dead271ce9eef1241d4d4d48ead",
+        "elapsed_seconds": 2.56,
+        "result": "PASS"
+      },
+      {
+        "name": "verify_refuses_absent_postimage",
+        "exit_code": 1,
+        "stdout_sha256": "5d3e7e5fd1fab186269ee5c61b659533b4d1a0a1c96049ee066590c7d01b93a1",
+        "elapsed_seconds": 2.41,
+        "result": "PASS"
+      },
+      {
+        "name": "wrong_root_refusal",
+        "exit_code": 1,
+        "stdout_sha256": "b3875d36de661bfd30ee7aff5835ed20dfe6bd2b01e9e24ab39f7b60177943ec",
+        "elapsed_seconds": 1.78,
+        "result": "PASS"
+      },
+      {
+        "name": "wrong_source_refusal",
+        "exit_code": 1,
+        "stdout_sha256": "32b74867138d9c94cc48ba9ba577cb8ee57bf7bc0ae47556754a06c30670049f",
+        "elapsed_seconds": 1.75,
+        "result": "PASS"
+      },
+      {
+        "name": "wrong_destination_refusal",
+        "exit_code": 1,
+        "stdout_sha256": "d0fcc391c7483cb9dc95e041ebd30195da4edac91a602906985672952bbbbca4",
+        "elapsed_seconds": 1.77,
+        "result": "PASS"
+      },
+      {
+        "name": "invalid_internal_operation_refusal",
+        "exit_code": 1,
+        "stdout_sha256": "7f98ecfa630753b003218ee3886ccdba823903c8d785e21a40516fe34512f963",
+        "elapsed_seconds": 1.62,
+        "result": "PASS"
+      },
+      {
+        "name": "unknown_target_operation_refusal",
+        "exit_code": 1,
+        "stdout_sha256": "ab1c4452041b4f879280cce9e5bf0cee337c3218bcee95057ec830d45a857229",
+        "elapsed_seconds": 1.73,
+        "result": "PASS"
+      },
+      {
+        "name": "last_source_hash_drift_before_any_copy",
+        "exit_code": 1,
+        "stdout_sha256": "e8b9b5c680d6174f169fd9b4ab56ae10b3999983a98e6052aab3f58e0b2ed00f",
+        "elapsed_seconds": 2.34,
+        "result": "PASS"
+      },
+      {
+        "name": "last_context_hash_drift_before_any_copy",
+        "exit_code": 1,
+        "stdout_sha256": "96040fb9ac489e10aa98edbb95a58bd000909b2ffdd7d692f5238abe81e70b41",
+        "elapsed_seconds": 2.53,
+        "result": "PASS"
+      },
+      {
+        "name": "existing_target_wronghash_before_any_copy",
+        "exit_code": 1,
+        "stdout_sha256": "1d75103fe239884d38d6a22531f57c76e92287afc0ff359d06120588b37a0420",
+        "elapsed_seconds": 2.48,
+        "result": "PASS"
+      },
+      {
+        "name": "shadow_descriptor_refuses_mirror_content.jar",
+        "exit_code": 1,
+        "stdout_sha256": "63aa319eeb3855e1d563df08592b738a27007f9a8726627086d363361606df99",
+        "elapsed_seconds": 2.55,
+        "result": "PASS"
+      },
+      {
+        "name": "shadow_descriptor_refuses_mirror_artifacts.jar",
+        "exit_code": 1,
+        "stdout_sha256": "a47bf2a6ce38a6f753c1a12d7dd043755c3a6ad627a41d200aed9d31b7ea95fa",
+        "elapsed_seconds": 2.64,
+        "result": "PASS"
+      },
+      {
+        "name": "shadow_descriptor_refuses_combined_compositeContent.jar",
+        "exit_code": 1,
+        "stdout_sha256": "377c6dd8b13ee472afcee14c74f8a82ed604c28a2eebeef389e932eec624e378",
+        "elapsed_seconds": 2.41,
+        "result": "PASS"
+      },
+      {
+        "name": "shadow_descriptor_refuses_combined_compositeArtifacts.jar",
+        "exit_code": 1,
+        "stdout_sha256": "484196b873e381cb08fc8d1642b1ae7a52f7781be7f862ab4146b85efd55dea1",
+        "elapsed_seconds": 2.61,
+        "result": "PASS"
+      },
+      {
+        "name": "positive_apply_29_absent_targets",
+        "exit_code": 0,
+        "stdout_sha256": "83afeec5804c4396bbd21582669539d815baff1e6d9bda75f579ca1ddddc25eb",
+        "elapsed_seconds": 4.41,
+        "result": "PASS"
+      },
+      {
+        "name": "verify_29_exact_postimages",
+        "exit_code": 0,
+        "stdout_sha256": "a8bebba653f4a0c851444c09f2480b0a58a223ca2e079c26c1dbdf327ec8870b",
+        "elapsed_seconds": 3.22,
+        "result": "PASS"
+      },
+      {
+        "name": "second_apply_preserves_29_hashes_and_mtimes",
+        "exit_code": 0,
+        "stdout_sha256": "a2ea84a479e3b6468f6315c7c9e190753b29be659009472ac3df4e97e45f2b8c",
+        "elapsed_seconds": 3.97,
+        "result": "PASS"
+      },
+      {
+        "name": "source_ancestor_junction",
+        "exit_code": 1,
+        "stdout_sha256": "2618411e6173dbfd214419f447f15001254bd039e35c31f3ce0df25d76cfd44d",
+        "elapsed_seconds": 2.27,
+        "result": "PASS"
+      },
+      {
+        "name": "target_ancestor_junction",
+        "exit_code": 1,
+        "stdout_sha256": "8cca5dbc37eaeaed4eb5783c306826264265a2a06030907e91f8f3d3b2505321",
+        "elapsed_seconds": 2.28,
+        "result": "PASS"
+      },
+      {
+        "name": "git_fresh_checkout_29_exact_bytes_core_autocrlf_true",
+        "exit_code": 0,
+        "result": "PASS"
+      }
+    ],
+    "commands": {
+      "maven_base": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-f",
+        "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-intake-controls-v1\\source\\pom.xml",
+        "-Dmaven.repo.local=S:\\codex-work\\m3-nebula-20261004\\nebula-offline-mirror\\repository"
+      ],
+      "operations": "defaultreadonly check; explicitm3.payload.operation apply/verify; wrongroot/source/destination/internalop andunknownop refused",
+      "git_roundtrip": [
+        [
+          "git",
+          "-c",
+          "core.autocrlf=true",
+          "-c",
+          "core.safecrlf=false",
+          "-c",
+          "init.defaultBranch=ui-payload-byte-custody",
+          "-C",
+          "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-intake-controls-v1\\29-file-git-roundtrip",
+          "init"
+        ],
+        [
+          "git",
+          "-c",
+          "core.autocrlf=true",
+          "-c",
+          "core.safecrlf=false",
+          "-c",
+          "init.defaultBranch=ui-payload-byte-custody",
+          "-C",
+          "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-intake-controls-v1\\29-file-git-roundtrip",
+          "add",
+          "--",
+          ".gitattributes",
+          "combined/compositeArtifacts.xml",
+          "combined/compositeContent.xml",
+          "combined/p2.index",
+          "legal/LICENSE-EPL-1.0",
+          "mirror/artifacts.xml",
+          "mirror/content.xml",
+          "mirror/p2.index",
+          "mirror/plugins/org.eclipse.compare.source_3.12.200.v20260814-1536.jar",
+          "mirror/plugins/org.eclipse.compare_3.12.200.v20260814-1536.jar",
+          "mirror/plugins/org.eclipse.core.net.source_1.5.900.v20260507-0401.jar",
+          "mirror/plugins/org.eclipse.core.net_1.5.900.v20260507-0401.jar",
+          "mirror/plugins/org.eclipse.ltk.core.refactoring.source_3.16.0.v20260702-0744.jar",
+          "mirror/plugins/org.eclipse.ltk.core.refactoring_3.16.0.v20260702-0744.jar",
+          "mirror/plugins/org.eclipse.ltk.ui.refactoring.source_3.14.200.v20260702-0744.jar",
+          "mirror/plugins/org.eclipse.ltk.ui.refactoring_3.14.200.v20260702-0744.jar",
+          "mirror/plugins/org.eclipse.team.core.source_3.10.1100.v20260612-1500.jar",
+          "mirror/plugins/org.eclipse.team.core_3.10.1100.v20260612-1500.jar",
+          "mirror/plugins/org.eclipse.team.ui.source_3.12.200.v20260608-1918.jar",
+          "mirror/plugins/org.eclipse.team.ui_3.12.200.v20260608-1918.jar",
+          "mirror/plugins/org.eclipse.ui.ide.application.source_1.6.200.v20260704-1759.jar",
+          "mirror/plugins/org.eclipse.ui.ide.application_1.6.200.v20260704-1759.jar",
+          "mirror/plugins/org.eclipse.ui.navigator.resources.source_3.10.100.v20260421-0620.jar",
+          "mirror/plugins/org.eclipse.ui.navigator.resources_3.10.100.v20260421-0620.jar",
+          "mirror/plugins/org.eclipse.ui.views.properties.tabbed.source_3.11.0.v20251217-0909.jar",
+          "mirror/plugins/org.eclipse.ui.views.properties.tabbed_3.11.0.v20251217-0909.jar",
+          "mirror/plugins/org.eclipse.ui.views.source_3.13.200.v20260703-1200.jar",
+          "mirror/plugins/org.eclipse.ui.views_3.13.200.v20260703-1200.jar",
+          "INTAKE.json"
+        ],
+        [
+          "git",
+          "-c",
+          "core.autocrlf=true",
+          "-c",
+          "core.safecrlf=false",
+          "-c",
+          "init.defaultBranch=ui-payload-byte-custody",
+          "-C",
+          "S:\\codex-work\\m3-nebula-20261004\\tmp\\ui-runtime-intake-controls-v1\\29-file-git-roundtrip",
+          "checkout-index",
+          "--all",
+          "--prefix=S:/codex-work/m3-nebula-20261004/tmp/ui-runtime-intake-controls-v1/29-file-fresh-checkout/"
+        ]
+      ]
+    },
+    "invariants": "All296existing fixture andactualowner context hashes+mtimes unchanged; no planned target copied for refusalcontrols;29exactpayload hashes/mtimes fixed on secondapply. Source/targetjunction paths reconstructed fromwrappedAnt execoutput; original nativepredicate/ancestorwalk unchanged. All29freshGitcheckout bytes exact withper-commandcore.autocrlf=true; actualownerGitindex untouched.",
+    "qualification_history": [
+      "First in-memorywrapper composition expected a nativeexec directly inside launcherverify; donor instead repeats fullpreflight via verifydependency. Adapted template and copiedsame qualified nativeexec afterpayloadpostchecks; no Maven/owneroperation precededcorrection.",
+      "Native solution count corrected beforesavingwrapper to102runtime+1EE; syntheticentrypoint removed byProjector.extractSolution; immutableproof/log unchanged.",
+      "Initial unknownoperation test expected OPERATION_REFUSAL, but Ant properly refused absent unsupported target beforepreflight. Control expectation corrected; both internalpreflight invalidoperation andunsupportedtarget repeatedPASS; no executable changes."
+    ],
+    "remaining_gates": [
+      "Exactfinal actualownerreadonlycheck",
+      "Exactfinal freshfixtureapply/verify/fixedpoint afterreceiptsealing",
+      "Independent finalreadonlyreview",
+      "Root saved Mavenactualadmission+original SWT/UI/fullreactor gates"
+    ]
+  },
+  "independent_review": {
+    "status": "PENDING"
+  }
+}
