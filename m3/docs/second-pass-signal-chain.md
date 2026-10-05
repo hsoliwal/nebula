@@ -6,7 +6,7 @@ Pinned upstream evidence:
 
 - repository: `hsoliwal/com.synexia`
 - branch: `feat/m3-second-pass-signal-chain-20261004`
-- commit: `48c2caacd21ebaf234cc17b5ad6b74651e5f890d`
+- commit: `f140771ad2ce772cee21671d8d7f340e35f0d407`
 - PR: `#8891`
 - recipe: `com.synexia.rewrite.M3SecondPassAtomPatternRecipe`
 - canonical scheduler catalog: `com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog`
