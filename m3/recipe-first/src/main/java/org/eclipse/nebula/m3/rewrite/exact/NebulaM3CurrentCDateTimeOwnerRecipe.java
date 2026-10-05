@@ -61,26 +61,115 @@ public final class NebulaM3CurrentCDateTimeOwnerRecipe extends Recipe {
                 new SimpleProviderMaterializer());
     }
 
-    private abstract static class JavaTarget extends NebulaM3ExactJavaSnapshotRecipe {
+    private abstract static class JavaTarget extends Recipe {
         private final String repositoryPath;
         private final String modulePath;
-        private final String before;
-        private final String after;
-        private final String resource;
+        private final String beforeRawSha256;
+        private final String afterRawSha256;
+        private final String beforeResource;
+        private final String afterResource;
 
-        JavaTarget(String repositoryPath, String modulePath, String before, String after, String resource) {
+        JavaTarget(
+                String repositoryPath,
+                String modulePath,
+                String beforeRawSha256,
+                String afterRawSha256,
+                String beforeResource,
+                String afterResource) {
             this.repositoryPath = repositoryPath;
             this.modulePath = modulePath;
-            this.before = before;
-            this.after = after;
-            this.resource = ROOT + resource;
+            this.beforeRawSha256 = beforeRawSha256;
+            this.afterRawSha256 = afterRawSha256;
+            this.beforeResource = ROOT + beforeResource;
+            this.afterResource = ROOT + afterResource;
         }
 
-        @Override protected final String repositoryPath() { return repositoryPath; }
-        @Override protected final String moduleRelativePath() { return modulePath; }
-        @Override protected final String beforeSha256() { return before; }
-        @Override protected final String afterSha256() { return after; }
-        @Override protected final String afterResource() { return resource; }
+        @Override public int maxCycles() {
+            return 1;
+        }
+
+        @Override public TreeVisitor<?, ExecutionContext> getVisitor() {
+            String beforeRaw = resource(beforeResource);
+            String afterRaw = resource(afterResource);
+            if (!beforeRawSha256.equals(NebulaM3ExactJavaSnapshotRecipe.sha256(beforeRaw))) {
+                throw new IllegalStateException(
+                        "M3 current-owner Java preimage resource drift: " + repositoryPath);
+            }
+            if (!afterRawSha256.equals(NebulaM3ExactJavaSnapshotRecipe.sha256(afterRaw))) {
+                throw new IllegalStateException(
+                        "M3 current-owner Java postimage resource drift: " + repositoryPath);
+            }
+
+            return new TreeVisitor<Tree, ExecutionContext>() {
+                @Override public Tree preVisit(Tree tree, ExecutionContext context) {
+                    if (!(tree instanceof J.CompilationUnit unit) || !matches(unit.getSourcePath())) {
+                        return tree;
+                    }
+                    stopAfterPreVisit();
+
+                    J.CompilationUnit before = parse(beforeRaw, unit.getSourcePath(), context);
+                    J.CompilationUnit after = parse(afterRaw, unit.getSourcePath(), context);
+                    String current = unit.printAll();
+                    if (after.printAll().equals(current)) {
+                        return unit;
+                    }
+                    if (!before.printAll().equals(current)) {
+                        context.getOnError().accept(
+                                new IllegalStateException(
+                                        "M3 current-owner Java preimage drift: "
+                                                + normalized(unit.getSourcePath())));
+                        return unit;
+                    }
+
+                    SourceFile replacement = after.withId(unit.getId());
+                    replacement = replacement.withSourcePath(unit.getSourcePath());
+                    replacement = replacement.withMarkers(unit.getMarkers());
+                    replacement = replacement.withFileAttributes(unit.getFileAttributes());
+                    replacement = replacement.withCharset(unit.getCharset());
+                    replacement = replacement.withCharsetBomMarked(unit.isCharsetBomMarked());
+                    return replacement.withChecksum(null);
+                }
+            };
+        }
+
+        private boolean matches(Path sourcePath) {
+            String path = normalized(sourcePath);
+            return path.equals(repositoryPath) || path.equals(modulePath);
+        }
+
+        private J.CompilationUnit parse(
+                String body, Path sourcePath, ExecutionContext context) {
+            List<SourceFile> parsed = JavaParser.fromJavaVersion()
+                    .build()
+                    .parseInputs(
+                            List.of(Parser.Input.fromString(sourcePath, body)),
+                            null,
+                            context)
+                    .toList();
+            if (parsed.size() != 1 || !(parsed.getFirst() instanceof J.CompilationUnit unit)) {
+                throw new IllegalStateException(
+                        "M3 current-owner Java parse failed: " + repositoryPath);
+            }
+            return unit;
+        }
+
+        private static String resource(String name) {
+            try (InputStream input =
+                    NebulaM3CurrentCDateTimeOwnerRecipe.class.getResourceAsStream(name)) {
+                if (input == null) {
+                    throw new IllegalStateException(
+                            "missing current-owner Java resource: " + name);
+                }
+                return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException failure) {
+                throw new IllegalStateException(
+                        "cannot read current-owner Java resource", failure);
+            }
+        }
+
+        private static String normalized(Path path) {
+            return path.normalize().toString().replace('\\', '/');
+        }
     }
 
     private abstract static class TextTarget extends NebulaM3ExactTextSnapshotRecipe {
@@ -123,6 +212,7 @@ public final class NebulaM3CurrentCDateTimeOwnerRecipe extends Recipe {
                     "src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler.java",
                     "04f07a9bc03ab54dd4635b7dd24548fa2d39035c51f5923181d5c5cd62785fa6",
                     "9b95b52df265443f996fc67e0316025bce167281d175478b0070edf56c54d87d",
+                    "pre-01-CDateTimePropertyHandler.java.txt",
                     "01-CDateTimePropertyHandler.java.txt");
         }
         @Override public String getDisplayName() { return "Preserve legacy CDateTime font classification"; }
@@ -159,6 +249,7 @@ public final class NebulaM3CurrentCDateTimeOwnerRecipe extends Recipe {
                     "src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart.java",
                     "a0b890d25d9c7cdd433f00e49cecd87083ec12b1244a96f2ebc4903d826acc16",
                     "f7cf28894b872ed09dc009ae59632b3faa777b502a0fd73168ca85e46c62543c",
+                    "pre-04-BigWidgetsPart.java.txt",
                     "04-BigWidgetsPart.java.txt");
         }
         @Override public String getDisplayName() { return "Migrate BigWidgets E4 annotations"; }
@@ -171,6 +262,7 @@ public final class NebulaM3CurrentCDateTimeOwnerRecipe extends Recipe {
                     "src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart.java",
                     "88553ed64c0dfb7c08a5d7c64380886e65ef855b72774bcb3a8b5e52273a299b",
                     "08d0d45568b0d895607b8ebe74be1c9975dd1321f63f27e76b75170ae2404a99",
+                    "pre-05-SimpleWidgetsPart.java.txt",
                     "05-SimpleWidgetsPart.java.txt");
         }
         @Override public String getDisplayName() { return "Migrate SimpleWidgets E4 annotations"; }
@@ -183,6 +275,7 @@ public final class NebulaM3CurrentCDateTimeOwnerRecipe extends Recipe {
                     "src/org/eclipse/nebula/widgets/cdatetime/css/BaseCSSThemingTest.java",
                     "79a0f8e1a6c46e87b6f49ece1389867da540a626c1d4fa43138df0e181158462",
                     "44dd7b7a3f606a5b72d1d2ba2c194d03fc4303795394cd59adc12b4cc87b275f",
+                    "pre-06-BaseCSSThemingTest.java.txt",
                     "06-BaseCSSThemingTest.java.txt");
         }
         @Override public String getDisplayName() { return "Restore CDateTime CSS test provider registration"; }
