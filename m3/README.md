@@ -220,3 +220,35 @@ leaves is forbidden until a content-addressed signal artifact handoff and reduce
 are implemented. Drools/KIE remains admission evidence only and gains no mutation or promotion
 authority.
 
+## Full second-pass review DAG candidate
+
+Nebula now has a separate opt-in read-only wrapper for the saved Synexia full second-pass review DAG:
+
+`org.eclipse.nebula.m3.SecondPassReviewDag`.
+
+It is pinned in `catalogue/second-pass-review-dag-binding.tsv` to Synexia PR #8973 candidate
+`5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f` and composes, in order:
+
+```text
+M3CodeSignalTriggerRecipe
+  -> M3AtomPatternSignalChain
+  -> M3ProblemRecipePlanner
+  -> M3JniContractInventoryRecipe
+```
+
+All four external atoms are FILE-scoped and DRY_RUN-only. The signal-chain atom keeps its internal
+recognizer fan-out inside one OpenRewrite/JVM execution boundary. The canonical upstream plan also
+derives Camel, Airflow and Drools/KIE projections from one content-addressed DAG root; those
+projections receive no mutation, semantic-equivalence, replacement, native-execution or promotion
+authority.
+
+Run only after installing the exact pinned Synexia artifact plus the local Nebula recipe artifact:
+
+```bash
+mvn -B -ntp -f m3/reactor.xml install
+mvn -B -ntp -Pm3-second-pass-review-dag rewrite:dryRunNoFork
+```
+
+The upstream PR is still draft, so this binding remains `PENDING_HOSTED_PROOF`. Existing Nebula
+widget source and the normal Tycho reactor are unchanged by this integration.
+
