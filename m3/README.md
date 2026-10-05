@@ -212,4 +212,3 @@ recipe atom**. Independent cross-process fan-out of structural/control/contract/
 leaves is forbidden until a content-addressed signal artifact handoff and reducer-input contract
 are implemented. Drools/KIE remains admission evidence only and gains no mutation or promotion
 authority.
-
