@@ -23,6 +23,12 @@ final class NebulaM3SecondPassBindingTest {
                 "com.synexia.rewrite.M3SecondPassAtomPatternRecipe",
                 NebulaM3SecondPassBinding.RECIPE);
         assertEquals(2, NebulaM3SecondPassBinding.PASS_BUDGET);
+        assertEquals(
+                "com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog",
+                NebulaM3SecondPassBinding.CANONICAL_CATALOG);
+        assertEquals("SHARED_JVM_COMPOSITE", NebulaM3SecondPassBinding.STATE_MODE);
+        assertFalse(NebulaM3SecondPassBinding.EXTERNAL_LEAF_FAN_OUT);
+        assertEquals("PENDING_HOSTED_PROOF", NebulaM3SecondPassBinding.HOSTED_PROOF);
         assertFalse(NebulaM3SecondPassBinding.sourceMutationAuthority());
         assertFalse(NebulaM3SecondPassBinding.replacementAuthority());
         assertFalse(NebulaM3SecondPassBinding.promotionAuthority());
@@ -82,6 +88,11 @@ final class NebulaM3SecondPassBindingTest {
                 "java.secondPassPassBudget=" + NebulaM3SecondPassBinding.PASS_BUDGET));
         assertTrue(policy.contains(
                 "java.secondPassUpstreamCommit=" + NebulaM3SecondPassBinding.UPSTREAM_COMMIT));
+        assertTrue(policy.contains(
+                "java.secondPassCanonicalCatalog=" + NebulaM3SecondPassBinding.CANONICAL_CATALOG));
+        assertTrue(policy.contains(
+                "java.secondPassStateMode=" + NebulaM3SecondPassBinding.STATE_MODE));
+        assertTrue(policy.contains("java.secondPassExternalLeafFanOut=false"));
         assertTrue(policy.contains("java.secondPassMutation=false"));
         assertTrue(policy.contains("java.secondPassReplacement=false"));
         assertTrue(policy.contains("java.secondPassPromotion=false"));
