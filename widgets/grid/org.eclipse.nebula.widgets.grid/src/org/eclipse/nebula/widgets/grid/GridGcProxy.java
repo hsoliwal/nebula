@@ -99,15 +99,16 @@ final class GridGcProxy implements AutoCloseable {
         if (affine == null) {
             throw new IllegalArgumentException("affine");
         }
-        if (affine == GridAffineTransform.IDENTITY) {
+        if (affine.isIdentity()) {
             return this;
         }
 		Transform next = new Transform(gc.getDevice());
 		Transform delta = null;
 		try {
 			gc.getTransform(next);
-			float[] e = affine.elements();
-			delta = new Transform(gc.getDevice(), e);
+			delta = new Transform(
+					gc.getDevice(),
+					affine.m11, affine.m12, affine.m21, affine.m22, affine.dx, affine.dy);
 			next.multiply(delta);
 			gc.setTransform(next);
 		} finally {
