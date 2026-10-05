@@ -224,6 +224,20 @@ public class GridVisibleRangeSupport_Test {
 		assertEquals(new Rectangle(22, 66, 6, 12), mapped);
 		assertEquals(new Rectangle(1, 2, 3, 4),
 				GridAffineTransform.IDENTITY.mapBounds(new Rectangle(1, 2, 3, 4)));
+
+		GridAffineTransform quarterTurn = GridAffineTransform.rotation((float)(Math.PI / 2d));
+		assertEquals(new Rectangle(-6, 1, 4, 3),
+				quarterTurn.mapBounds(new Rectangle(1, 2, 3, 4)));
+		assertEquals(1f, quarterTurn.determinant(), 0.0001f);
+		assertTrue(GridAffineTransform.translation(3, 4).isTranslationOnly());
+		assertTrue(!GridAffineTransform.shear(1, 0).isTranslationOnly());
+
+		GridAffineTransform composite = GridAffineTransform.translation(40, -10)
+				.then(GridAffineTransform.scale(2, 4));
+		GridAffineTransform restored = composite.then(composite.inverse());
+		assertTrue(restored.isIdentity());
+		assertSame(GridAffineTransform.IDENTITY, GridAffineTransform.translation(0, 0));
+		assertSame(GridAffineTransform.IDENTITY, GridAffineTransform.scale(1, 1));
 	}
 
 	@Test
