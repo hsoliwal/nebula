@@ -15,10 +15,14 @@ final class NebulaM3SecondPassBindingTest {
     void exactBindingIsAuthorityFreeAndContentIsPinned() {
         assertEquals("hsoliwal/com.synexia", NebulaM3SecondPassBinding.UPSTREAM_REPOSITORY);
         assertEquals(
-                "feat/m3-second-pass-signal-chain-20261004",
+                "develop",
                 NebulaM3SecondPassBinding.UPSTREAM_BRANCH);
         assertTrue(NebulaM3SecondPassBinding.UPSTREAM_COMMIT.matches("[0-9a-f]{40}"));
-        assertEquals(8891, NebulaM3SecondPassBinding.UPSTREAM_PR);
+        assertEquals(8925, NebulaM3SecondPassBinding.UPSTREAM_PR);
+        assertEquals(
+                "5f63a7a6a4541d055df5071de22d5edf9ee23c7a",
+                NebulaM3SecondPassBinding.UPSTREAM_PR_HEAD);
+        assertEquals("8891,8897,8915", NebulaM3SecondPassBinding.INTEGRATED_PRS);
         assertEquals(
                 "com.synexia.rewrite.M3SecondPassAtomPatternRecipe",
                 NebulaM3SecondPassBinding.RECIPE);
@@ -28,7 +32,9 @@ final class NebulaM3SecondPassBindingTest {
                 NebulaM3SecondPassBinding.CANONICAL_CATALOG);
         assertEquals("SHARED_JVM_COMPOSITE", NebulaM3SecondPassBinding.STATE_MODE);
         assertFalse(NebulaM3SecondPassBinding.EXTERNAL_LEAF_FAN_OUT);
-        assertEquals("PENDING_HOSTED_PROOF", NebulaM3SecondPassBinding.HOSTED_PROOF);
+        assertEquals(
+                "MERGED_PR_HEAD_RUNS_QUEUED",
+                NebulaM3SecondPassBinding.HOSTED_PROOF);
         assertFalse(NebulaM3SecondPassBinding.sourceMutationAuthority());
         assertFalse(NebulaM3SecondPassBinding.replacementAuthority());
         assertFalse(NebulaM3SecondPassBinding.promotionAuthority());
@@ -88,6 +94,16 @@ final class NebulaM3SecondPassBindingTest {
                 "java.secondPassPassBudget=" + NebulaM3SecondPassBinding.PASS_BUDGET));
         assertTrue(policy.contains(
                 "java.secondPassUpstreamCommit=" + NebulaM3SecondPassBinding.UPSTREAM_COMMIT));
+        assertTrue(policy.contains(
+                "java.secondPassUpstreamBranch=" + NebulaM3SecondPassBinding.UPSTREAM_BRANCH));
+        assertTrue(policy.contains(
+                "java.secondPassUpstreamPr=" + NebulaM3SecondPassBinding.UPSTREAM_PR));
+        assertTrue(policy.contains(
+                "java.secondPassUpstreamPrHead=" + NebulaM3SecondPassBinding.UPSTREAM_PR_HEAD));
+        assertTrue(policy.contains(
+                "java.secondPassIntegratedPrs=" + NebulaM3SecondPassBinding.INTEGRATED_PRS));
+        assertTrue(policy.contains(
+                "java.secondPassHostedProof=" + NebulaM3SecondPassBinding.HOSTED_PROOF));
         assertTrue(policy.contains(
                 "java.secondPassCanonicalCatalog=" + NebulaM3SecondPassBinding.CANONICAL_CATALOG));
         assertTrue(policy.contains(
