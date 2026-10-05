@@ -1,0 +1,162 @@
+# SPDX-License-Identifier: EPL-2.0
+name: M3 Nebula full second-pass review DAG
+
+on:
+  pull_request:
+    paths:
+      - 'pom.xml'
+      - '.m3/atom-pattern/policy.properties'
+      - 'm3/catalogue/second-pass-review-dag-binding.tsv'
+      - 'm3/convergence/PLAN.tsv'
+      - 'm3/docs/second-pass-review-dag.md'
+      - 'm3/README.md'
+      - 'm3/recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3SecondPassReviewDagBinding.java'
+      - 'm3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3SecondPassReviewDagBindingTest.java'
+      - 'm3/recipe-first/src/main/resources/META-INF/rewrite/nebula-m3-second-pass-review-dag.yml'
+      - '.github/workflows/m3-second-pass-review-dag.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  binding:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Set up Maven 3.9.6
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.6
+
+      - name: Diff hygiene
+        run: git diff --check
+
+      - name: Prove Nebula binding and declarative wrapper
+        run: >-
+          mvn -B -ntp
+          -f m3/reactor.xml
+          -Dtest=NebulaM3SecondPassReviewDagBindingTest,NebulaM3SecondPassBindingTest
+          -Dsurefire.failIfNoSpecifiedTests=false
+          test
+
+  upstream:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Clone exact Synexia candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/hsoliwal/com.synexia.git "$RUNNER_TEMP/com.synexia"
+          git -C "$RUNNER_TEMP/com.synexia" checkout --detach             5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f
+          test "$(git -C "$RUNNER_TEMP/com.synexia" rev-parse HEAD)" =             5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f
+
+      - name: Prove saved second-pass review DAG
+        working-directory: ${{ runner.temp }}/com.synexia
+        run: >-
+          ./mvnw -B -ntp
+          -pl synexia-m3-recipe
+          -Dtest=M3SecondPassReviewDagPlanTest
+          test
+
+      - name: Prove hostile signal-chain fixture
+        working-directory: ${{ runner.temp }}/com.synexia
+        run: >-
+          ./mvnw -B -ntp
+          -f synexia-openrewrite-recipes/verification/m3-atom-pattern-signal-chain-20261004/pom.xml
+          verify
+
+      - name: Prove repository atom-pattern orchestration
+        working-directory: ${{ runner.temp }}/com.synexia
+        run: >-
+          ./mvnw -B -ntp
+          -pl synexia-openrewrite-recipes -am
+          -Dtest=M3RepositoryAtomizePatternizeRecipeTest
+          -Dsurefire.failIfNoSpecifiedTests=false
+          test
+
+  nebula-read-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    needs: [binding, upstream]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Set up Maven 3.9.6
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.6
+
+      - name: Install Nebula local declarative recipe
+        run: mvn -B -ntp -f m3/reactor.xml install
+
+      - name: Install exact Synexia recipe pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone https://github.com/hsoliwal/com.synexia.git "$RUNNER_TEMP/com.synexia"
+          git -C "$RUNNER_TEMP/com.synexia" checkout --detach             5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f
+          (
+            cd "$RUNNER_TEMP/com.synexia"
+            ./mvnw -B -ntp -pl synexia-openrewrite-recipes -am -DskipTests install
+          )
+
+      - name: Run full review DAG twice without source mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          mvn -B -ntp -Pm3-second-pass-review-dag rewrite:dryRunNoFork
+          git diff --exit-code
+          mvn -B -ntp -Pm3-second-pass-review-dag rewrite:dryRunNoFork
+          git diff --exit-code
+
+      - name: Preserve candidate-only authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F $'4\tSECOND_PASS_REVIEW_DAG' m3/convergence/PLAN.tsv
+          grep -F $'8\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F 'java.secondPassReviewDagMutation=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassReviewDagSemanticEquivalence=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassReviewDagReplacement=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassReviewDagNativeExecution=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassReviewDagPromotion=false' .m3/atom-pattern/policy.properties
+
+      - name: Upload OpenRewrite evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-full-second-pass-review-dag
+          if-no-files-found: warn
+          path: |
+            **/target/rewrite/
+            **/target/surefire-reports/
+            m3/catalogue/second-pass-review-dag-binding.tsv
+            m3/convergence/PLAN.tsv
+            .m3/atom-pattern/policy.properties
