@@ -125,8 +125,8 @@ public class GridGcProxy_Test {
 			assertEquals(expectedTextAntialias, gc.getTextAntialias());
 			assertEquals(expectedInterpolation, gc.getInterpolation());
 			assertEquals(expectedFillRule, gc.getFillRule());
-			assertEquals(expectedXor, gc.getXORMode());
-			assertEquals(expectedAdvanced, gc.getAdvanced());
+			assertTrue(expectedXor == gc.getXORMode());
+			assertTrue(expectedAdvanced == gc.getAdvanced());
 			assertEquals(expectedForeground, gc.getForeground());
 			assertEquals(expectedBackground, gc.getBackground());
 			assertSame(expectedForegroundPattern, gc.getForegroundPattern());
