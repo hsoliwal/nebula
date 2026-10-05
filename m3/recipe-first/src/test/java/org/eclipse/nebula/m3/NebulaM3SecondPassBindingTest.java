@@ -110,4 +110,13 @@ final class NebulaM3SecondPassBindingTest {
         assertTrue(plan.contains("7\tFILE_FIXED_POINT\t"));
     }
 
+    @Test
+    void rootPomUsesSavedCanonicalSecondPassRecipe() throws Exception {
+        Path repository = repositoryRoot();
+        String pom = Files.readString(repository.resolve("pom.xml"));
+
+        assertTrue(pom.contains(
+                "<recipe>" + NebulaM3SecondPassBinding.RECIPE + "</recipe>"));
+    }
+
 }
