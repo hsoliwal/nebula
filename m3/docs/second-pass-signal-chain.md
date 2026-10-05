@@ -5,9 +5,11 @@ Nebula reuses the Synexia second-pass OpenRewrite recipe; it does not fork or co
 Pinned upstream evidence:
 
 - repository: `hsoliwal/com.synexia`
-- branch: `feat/m3-second-pass-signal-chain-20261004`
-- commit: `f140771ad2ce772cee21671d8d7f340e35f0d407`
-- PR: `#8891`
+- branch: `develop`
+- canonical merge commit: `daaab09a1b91fe8344c1ea97359342b52739bf38`
+- integration PR: `#8925`
+- integration PR head: `5f63a7a6a4541d055df5071de22d5edf9ee23c7a`
+- integrated component PRs: `#8891`, `#8897`, `#8915`
 - recipe: `com.synexia.rewrite.M3SecondPassAtomPatternRecipe`
 - canonical scheduler catalog: `com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog`
 - canonical catalog file: `synexia-m3-recipe/recipes/second-pass-atom-pattern.yaml`
@@ -16,7 +18,7 @@ Pinned upstream evidence:
 - pass budget: `2`
 
 The existing Nebula root profile `m3-atomize-patternize` activates
-`com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`. On the pinned Synexia branch that recipe
+`com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`. At the pinned merged Synexia integration that recipe
 delegates to `M3RepositoryAtomizePatternizeRecipe`, whose evidence chain includes the second-pass
 signal DAG.
 
@@ -44,9 +46,10 @@ authority. Nebula's existing local FILE convergence recipe remains the only cand
 Before running the Nebula `m3-atomize-patternize` profile, install the exact pinned Synexia recipe
 artifact from the commit above as `com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT`.
 
-Hosted proof is not claimed yet. The refreshed dedicated Synexia second-pass workflow is pending
-for the pinned commit above. Until its focused Maven/JUnit jobs complete successfully, this binding
-remains candidate/read-only evidence and cannot authorize source mutation or promotion.
+Hosted green proof is not claimed yet. The integration is merged, and PR-head workflow runs were
+observed queued/pending for the exact integration head during this review. Until focused Maven/JUnit
+jobs complete successfully, this binding remains candidate/read-only evidence and cannot authorize
+source mutation or promotion.
 
 The binding is machine-readable in `m3/catalogue/second-pass-recipe-binding.tsv`.
 
