@@ -27,7 +27,9 @@ http://www.eclipse.org/legal/epl-v10.html -->
 				remains authoritative. This profile only runs the canonical Synexia
 				read-only Nebula atomize/patternize recipe and exports evidence.
 
-				Install com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT first,
+				Install com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT first.
+				For second-pass proof, that SNAPSHOT must come from the exact binding recorded in
+				m3/catalogue/second-pass-recipe-binding.tsv; an arbitrary SNAPSHOT is not equivalent.
 				then run:
 				  mvn -Pm3-atomize-patternize rewrite:dryRunNoFork
 			-->

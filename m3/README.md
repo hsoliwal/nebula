@@ -165,3 +165,51 @@ Their manifest receipts explicitly set mutation and promotion authority to `fals
 This lets larger systems compose small, already-proven recipe atoms into DAGs without changing the
 semantic authority model. A scheduler can order/shard work; only the recipe and the compiler/test
 proof can establish a candidate, and only serial review can promote it.
+
+## Second-pass signal-chain reuse
+
+Nebula does not duplicate the Synexia second-pass detector. The existing root profile
+`m3-atomize-patternize` consumes `com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`;
+the pinned upstream recipe branch includes the read-only second-pass signal DAG before any
+source-changing lane.
+
+Exact reviewed binding:
+
+```text
+repository  hsoliwal/com.synexia
+branch      feat/m3-second-pass-signal-chain-20261004
+commit      f140771ad2ce772cee21671d8d7f340e35f0d407
+PR          8891
+recipe      com.synexia.rewrite.M3SecondPassAtomPatternRecipe
+catalog     com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog
+state       SHARED_JVM_COMPOSITE; external leaf fan-out=false
+budget      2
+authority   read-only; no mutation/replacement/promotion
+```
+
+Install that exact Synexia recipe artifact first, then run:
+
+```bash
+mvn -B -ntp -Pm3-atomize-patternize rewrite:dryRunNoFork
+```
+
+The machine binding is `catalogue/second-pass-recipe-binding.tsv`; the Java owner is
+`NebulaM3SecondPassBinding`. The convergence plan records the signal chain as a read-only
+pre-mutation gate. Lexically masked regex may nominate a candidate but never certify a transform;
+AST/LST structural/control/contract facts remain authoritative.
+
+Hosted Maven/JUnit success is not claimed until the refreshed upstream dedicated workflow
+completes successfully for the exact pinned commit. The binding remains read-only/candidate-only
+while that proof is pending.
+
+### Orchestration locality
+
+The current Synexia second-pass recognizers share one JVM-local signal store. They are logical DAG
+leaves inside the OpenRewrite composite, but they are not yet independent process-level tasks.
+
+Camel, Airflow, or another external scheduler may schedule the **second-pass composite as one
+recipe atom**. Independent cross-process fan-out of structural/control/contract/regex/repetition
+leaves is forbidden until a content-addressed signal artifact handoff and reducer-input contract
+are implemented. Drools/KIE remains admission evidence only and gains no mutation or promotion
+authority.
+
