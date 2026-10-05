@@ -1,13 +1,12 @@
 # Nebula M3 full second-pass review DAG binding
 
-Nebula now carries an additive, read-only binding to the saved Synexia full second-pass review DAG
-candidate from PR #8973. It does not copy the Synexia implementation and it does not change Nebula
+Nebula now carries an additive, read-only binding to the merged Synexia full second-pass review DAG from PR #8973. It does not copy the Synexia implementation and it does not change Nebula
 widget source.
 
 Pinned upstream candidate:
 
 - repository: `hsoliwal/com.synexia`
-- branch: `feat/m3-second-pass-review-dag-20261005`
+- branch: `develop`
 - commit: `5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f`
 - PR: `#8973`
 - plan: `com.synexia.m3.recipe.M3SecondPassReviewDagPlan`
@@ -76,5 +75,6 @@ mvn -B -ntp -f m3/reactor.xml install
 mvn -B -ntp -Pm3-second-pass-review-dag rewrite:dryRunNoFork
 ```
 
-This profile is not lifecycle-bound and is read-only. The current upstream PR is still draft, so the
-binding remains `PENDING_HOSTED_PROOF`. No merge/promotion authority is implied by this branch.
+This profile is not lifecycle-bound and is read-only. The upstream PR is merged. Its GitHub Actions DAG run was created but produced no jobs, so the
+binding records `UPSTREAM_MERGED_ACTIONS_STARTUP_BLOCKED_NO_JOBS`. No mutation or promotion
+authority is implied by this branch.
