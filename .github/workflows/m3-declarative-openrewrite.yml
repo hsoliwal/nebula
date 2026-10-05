@@ -53,7 +53,8 @@ jobs:
 
       - name: 3 declarative resource and source-sealed recipe proof
         run: >
-          mvn -B -ntp -f m3/recipe-first/pom.xml
+          mvn -B -ntp -f m3/reactor.xml
+          -pl recipe-first -am
           -Dtest=NebulaM3DeclarativeConvergenceTest,NebulaM3DeclarativeConvergenceControlRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest
           -Dsurefire.failIfNoSpecifiedTests=false test
 
