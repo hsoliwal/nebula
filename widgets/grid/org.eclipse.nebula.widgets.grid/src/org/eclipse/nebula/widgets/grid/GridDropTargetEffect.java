@@ -95,9 +95,13 @@ public class GridDropTargetEffect extends DropTargetEffect {
 	
 	
 	int checkEffect(int effect) {
-		// Some effects are mutually exclusive.  Make sure that only one of the mutually exclusive effects has been specified.
-		if ((effect & DND.FEEDBACK_SELECT) != 0) effect = effect & ~DND.FEEDBACK_INSERT_AFTER & ~DND.FEEDBACK_INSERT_BEFORE;
-		if ((effect & DND.FEEDBACK_INSERT_BEFORE) != 0) effect = effect & ~DND.FEEDBACK_INSERT_AFTER;
+        // Some effects are mutually exclusive.  Make sure that only one of the mutually exclusive effects has been specified.
+        if ((effect & DND.FEEDBACK_SELECT) != 0) {
+            effect = effect & ~DND.FEEDBACK_INSERT_AFTER & ~DND.FEEDBACK_INSERT_BEFORE;
+        }
+        if ((effect & DND.FEEDBACK_INSERT_BEFORE) != 0) {
+            effect = effect & ~DND.FEEDBACK_INSERT_AFTER;
+        }
 		return effect;
 	}
 	
@@ -266,8 +270,9 @@ public class GridDropTargetEffect extends DropTargetEffect {
 		{
 			if (!hoverCell.equals(selectedCell))
 			{
-				if (selectedCell != null)
-					deselect(selectedCell);
+                if (selectedCell != null) {
+                    deselect(selectedCell);
+                }
 				select(hoverCell);
 				selectedCell = new Point(hoverCell.x,hoverCell.y);
 			}
@@ -311,26 +316,29 @@ public class GridDropTargetEffect extends DropTargetEffect {
 	}
 	
 	private void select(Point cell) {
-		if(grid.getCellSelectionEnabled() && !ignoreCellSelection)
-			grid.selectCell(cell);
-		else
-			grid.select(cell.y);
+        if (grid.getCellSelectionEnabled() && !ignoreCellSelection) {
+            grid.selectCell(cell);
+        } else {
+            grid.select(cell.y);
+        }
 		
 	}
 	private void deselect(Point cell) {
-		if(grid.getCellSelectionEnabled() && !ignoreCellSelection)
-			grid.deselectCell(cell);
-		else
-			grid.deselect(cell.y);
+        if (grid.getCellSelectionEnabled() && !ignoreCellSelection) {
+            grid.deselectCell(cell);
+        } else {
+            grid.deselect(cell.y);
+        }
 		
 	}
 	private void setInsertMark(Point cell, boolean before) {
 		if(cell!=null)
 		{
-			if(grid.getCellSelectionEnabled() && !ignoreCellSelection)
-				grid.setInsertMark(grid.getItem(cell.y), grid.getColumn(cell.x), before);
-			else
-				grid.setInsertMark(grid.getItem(cell.y), null, before);
+            if (grid.getCellSelectionEnabled() && !ignoreCellSelection) {
+                grid.setInsertMark(grid.getItem(cell.y), grid.getColumn(cell.x), before);
+            } else {
+                grid.setInsertMark(grid.getItem(cell.y), null, before);
+            }
 		}
 		else
 		{

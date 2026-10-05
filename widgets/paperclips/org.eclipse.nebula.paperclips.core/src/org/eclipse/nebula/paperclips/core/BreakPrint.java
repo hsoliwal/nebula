@@ -73,8 +73,9 @@ class BreakIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext)
-			PaperClips.error("No more content"); //$NON-NLS-1$
+        if (!hasNext) {
+            PaperClips.error("No more content"); //$NON-NLS-1$
+        }
 
 		hasNext = false;
 		return new EmptyPiece(new Point(width, height));

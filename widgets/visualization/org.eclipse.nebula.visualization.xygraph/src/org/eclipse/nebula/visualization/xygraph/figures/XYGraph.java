@@ -268,8 +268,9 @@ public class XYGraph extends Figure implements IXYGraph {
 					Dimension legendSize = legend.getPreferredSize(clientArea.width, clientArea.height);
 					legendSizeList.add(legendSize);
 					if ((hPos + legendSize.width + GAP) > clientArea.width) {
-						if (rowLegendNum == 0)
-							break;
+                        if (rowLegendNum == 0) {
+                            break;
+                        }
 						rowHPosList.add(clientArea.x + (clientArea.width - hPos) / 2);
 						rowLegendNumList.add(rowLegendNum);
 						rowLegendNum = 1;
@@ -311,14 +312,16 @@ public class XYGraph extends Figure implements IXYGraph {
 			Axis xAxis = xAxisList.get(i);
 			Dimension xAxisSize = xAxis.getPreferredSize(clientArea.width, clientArea.height);
 			if (xAxis.getTickLabelSide() == LabelSide.Primary) {
-				if (xAxis.isVisible())
-					hasBottomXAxis = true;
+                if (xAxis.isVisible()) {
+                    hasBottomXAxis = true;
+                }
 				xAxis.setBounds(new Rectangle(clientArea.x, clientArea.y + clientArea.height - xAxisSize.height,
 						xAxisSize.width, xAxisSize.height));
 				clientArea.height -= xAxisSize.height;
 			} else {
-				if (xAxis.isVisible())
-					hasTopXAxis = true;
+                if (xAxis.isVisible()) {
+                    hasTopXAxis = true;
+                }
 				xAxis.setBounds(new Rectangle(clientArea.x, clientArea.y + 1, xAxisSize.width, xAxisSize.height));
 				clientArea.y += xAxisSize.height;
 				clientArea.height -= xAxisSize.height;
@@ -329,19 +332,22 @@ public class XYGraph extends Figure implements IXYGraph {
 			Axis yAxis = yAxisList.get(i);
 			int hintHeight = clientArea.height + (hasTopXAxis ? yAxis.getMargin() : 0)
 					+ (hasBottomXAxis ? yAxis.getMargin() : 0);
-			if (hintHeight > getClientArea().height)
-				hintHeight = clientArea.height;
+            if (hintHeight > getClientArea().height) {
+                hintHeight = clientArea.height;
+            }
 			Dimension yAxisSize = yAxis.getPreferredSize(clientArea.width, hintHeight);
 			if (yAxis.getTickLabelSide() == LabelSide.Primary) { // on the left
-				if (yAxis.isVisible())
-					hasLeftYAxis = true;
+                if (yAxis.isVisible()) {
+                    hasLeftYAxis = true;
+                }
 				yAxis.setBounds(new Rectangle(clientArea.x, clientArea.y - (hasTopXAxis ? yAxis.getMargin() : 0),
 						yAxisSize.width, yAxisSize.height));
 				clientArea.x += yAxisSize.width;
 				clientArea.width -= yAxisSize.width;
 			} else { // on the right
-				if (yAxis.isVisible())
-					hasRightYAxis = true;
+                if (yAxis.isVisible()) {
+                    hasRightYAxis = true;
+                }
 				yAxis.setBounds(new Rectangle(clientArea.x + clientArea.width - yAxisSize.width - 1,
 						clientArea.y - (hasTopXAxis ? yAxis.getMargin() : 0), yAxisSize.width, yAxisSize.height));
 				clientArea.width -= yAxisSize.width;
@@ -352,8 +358,9 @@ public class XYGraph extends Figure implements IXYGraph {
 		for (int i = xAxisList.size() - 1; i >= 0; i--) {
 			Axis xAxis = xAxisList.get(i);
 			Rectangle r = xAxis.getBounds().getCopy();
-			if (hasLeftYAxis)
-				r.x = clientArea.x - xAxis.getMargin() - 1;
+            if (hasLeftYAxis) {
+                r.x = clientArea.x - xAxis.getMargin() - 1;
+            }
 			r.width = clientArea.width + (hasLeftYAxis ? xAxis.getMargin() : -1)
 					+ (hasRightYAxis ? xAxis.getMargin() : 0);
 			xAxis.setBounds(r);
@@ -380,10 +387,12 @@ public class XYGraph extends Figure implements IXYGraph {
 			return;
 		}
 		plotArea.setZoomType(zoomType);
-		for (Axis axis : xAxisList)
-			axis.setZoomType(zoomType);
-		for (Axis axis : yAxisList)
-			axis.setZoomType(zoomType);
+        for (Axis axis : xAxisList) {
+            axis.setZoomType(zoomType);
+        }
+        for (Axis axis : yAxisList) {
+            axis.setZoomType(zoomType);
+        }
 		changeSupport.firePropertyChange(PROPERTY_ZOOMTYPE, this.zoomType, this.zoomType = zoomType);
 	}
 
@@ -445,10 +454,11 @@ public class XYGraph extends Figure implements IXYGraph {
 	 * @param axis
 	 */
 	public void addAxis(Axis axis) {
-		if (axis.isHorizontal())
-			xAxisList.add(axis);
-		else
-			yAxisList.add(axis);
+        if (axis.isHorizontal()) {
+            xAxisList.add(axis);
+        } else {
+            yAxisList.add(axis);
+        }
 		plotArea.addGrid(new Grid(axis));
 		add(axis);
 		axis.setXYGraph(this);
@@ -465,10 +475,11 @@ public class XYGraph extends Figure implements IXYGraph {
 		remove(axis);
 		plotArea.removeGrid(axis.getGrid());
 		revalidate();
-		if (axis.isHorizontal())
-			return xAxisList.remove(axis);
-		else
-			return yAxisList.remove(axis);
+        if (axis.isHorizontal()) {
+            return xAxisList.remove(axis);
+        } else {
+            return yAxisList.remove(axis);
+        }
 	}
 
 	/**
@@ -481,13 +492,13 @@ public class XYGraph extends Figure implements IXYGraph {
 			trace.setTraceColor(XYGraphMediaFactory.getInstance().getColor(
 					DEFAULT_TRACES_COLOR[plotArea.getTraceList().size() % DEFAULT_TRACES_COLOR.length]));
 		}
-		if (legendMap.containsKey(trace.getYAxis()))
-			legendMap.get(trace.getYAxis()).addTrace(trace);
-		else {
-			legendMap.put(trace.getYAxis(), new Legend(this));
-			legendMap.get(trace.getYAxis()).addTrace(trace);
-			add(legendMap.get(trace.getYAxis()));
-		}
+        if (legendMap.containsKey(trace.getYAxis())) {
+            legendMap.get(trace.getYAxis()).addTrace(trace);
+        } else {
+            legendMap.put(trace.getYAxis(), new Legend(this));
+            legendMap.get(trace.getYAxis()).addTrace(trace);
+            add(legendMap.get(trace.getYAxis()));
+        }
 		plotArea.addTrace(trace);
 		trace.setXYGraph(this);
 		trace.dataChanged(null);
@@ -611,8 +622,9 @@ public class XYGraph extends Figure implements IXYGraph {
 	 * @return the titleColor
 	 */
 	public Color getTitleColor() {
-		if (titleColor == null)
-			return getForegroundColor();
+        if (titleColor == null) {
+            return getForegroundColor();
+        }
 		return titleColor;
 	}
 
@@ -680,13 +692,15 @@ public class XYGraph extends Figure implements IXYGraph {
 	public void performAutoScale() {
 		final ZoomCommand command = new ZoomCommand("Auto Scale", xAxisList, yAxisList);
 		for (Axis axis : xAxisList) {
-			if (!axis.isVisible())
-				continue;
+            if (!axis.isVisible()) {
+                continue;
+            }
 			axis.performAutoScale(true);
 		}
 		for (Axis axis : yAxisList) {
-			if (!axis.isVisible())
-				continue;
+            if (!axis.isVisible()) {
+                continue;
+            }
 			axis.performAutoScale(true);
 		}
 		command.saveState();
@@ -707,15 +721,17 @@ public class XYGraph extends Figure implements IXYGraph {
 		final int N = yAxisList.size();
 		for (int i = 0; i < N; ++i) {
 			final Axis yaxis = yAxisList.get(i);
-			// Does axis handle itself in another way?
-			if (yaxis.isAutoScale())
-				continue;
+            // Does axis handle itself in another way?
+            if (yaxis.isAutoScale()) {
+                continue;
+            }
 
 			// Determine range of values on this axis
 			final Range axis_range = yaxis.getTraceDataRange();
-			// Skip axis which for some reason cannot determine its range
-			if (axis_range == null)
-				continue;
+            // Skip axis which for some reason cannot determine its range
+            if (axis_range == null) {
+                continue;
+            }
 
 			double low = axis_range.getLower();
 			double high = axis_range.getUpper();
@@ -747,9 +763,10 @@ public class XYGraph extends Figure implements IXYGraph {
 				high = Log10.pow10(high);
 			}
 
-			// Sanity check for empty traces
-			if (low < high && !Double.isInfinite(low) && !Double.isInfinite(high))
-				yaxis.setRange(low, high);
+            // Sanity check for empty traces
+            if (low < high && !Double.isInfinite(low) && !Double.isInfinite(high)) {
+                yaxis.setRange(low, high);
+            }
 		}
 
 		command.saveState();

@@ -49,7 +49,9 @@ final class GridGcProxy implements AutoCloseable {
 	private boolean closed;
 
 	private GridGcProxy(GC gc) {
-		if (gc == null) throw new IllegalArgumentException("gc");
+        if (gc == null) {
+            throw new IllegalArgumentException("gc");
+        }
 		this.gc = gc;
 		this.originalAdvanced = gc.getAdvanced();
 		this.originalClipping = new Region(gc.getDevice());
@@ -79,7 +81,9 @@ final class GridGcProxy implements AutoCloseable {
 	}
 
 	GridGcProxy clip(Rectangle clipping) {
-		if (clipping == null) throw new IllegalArgumentException("clipping");
+        if (clipping == null) {
+            throw new IllegalArgumentException("clipping");
+        }
 		Region next = new Region(gc.getDevice());
 		try {
 			next.add(clipping);
@@ -92,8 +96,12 @@ final class GridGcProxy implements AutoCloseable {
 	}
 
 	GridGcProxy transform(GridAffineTransform affine) {
-		if (affine == null) throw new IllegalArgumentException("affine");
-		if (affine == GridAffineTransform.IDENTITY) return this;
+        if (affine == null) {
+            throw new IllegalArgumentException("affine");
+        }
+        if (affine == GridAffineTransform.IDENTITY) {
+            return this;
+        }
 		Transform next = new Transform(gc.getDevice());
 		Transform delta = null;
 		try {
@@ -103,7 +111,9 @@ final class GridGcProxy implements AutoCloseable {
 			next.multiply(delta);
 			gc.setTransform(next);
 		} finally {
-			if (delta != null) delta.dispose();
+            if (delta != null) {
+                delta.dispose();
+            }
 			next.dispose();
 		}
 		return this;
@@ -114,7 +124,9 @@ final class GridGcProxy implements AutoCloseable {
 	}
 
 	GridGcProxy lineAttributes(LineAttributes attributes) {
-		if (attributes == null) throw new IllegalArgumentException("attributes");
+        if (attributes == null) {
+            throw new IllegalArgumentException("attributes");
+        }
 		gc.setLineAttributes(copy(attributes));
 		return this;
 	}
@@ -126,7 +138,9 @@ final class GridGcProxy implements AutoCloseable {
 
 	@Override
 	public void close() {
-		if (closed) return;
+        if (closed) {
+            return;
+        }
 		closed = true;
 		try {
 			gc.setLineAttributes(originalLineAttributes);

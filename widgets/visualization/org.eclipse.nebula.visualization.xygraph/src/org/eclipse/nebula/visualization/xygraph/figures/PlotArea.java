@@ -251,19 +251,22 @@ public class PlotArea extends Figure {
 	protected void layout() {
 		final Rectangle clientArea = getClientArea();
 		for (Trace trace : traceList) {
-			if (trace != null && trace.isVisible())
-				// Shrink will make the trace has no intersection with axes,
-				// which will make it only repaints the trace area.
-				trace.setBounds(clientArea);// .getCopy().shrink(1, 1));
+            if (trace != null && trace.isVisible()) {
+                // Shrink will make the trace has no intersection with axes,
+                // which will make it only repaints the trace area.
+                trace.setBounds(clientArea);
+            }// .getCopy().shrink(1, 1));
 		}
 		for (Grid grid : gridList) {
-			if (grid != null && grid.isVisible())
-				grid.setBounds(clientArea);
+            if (grid != null && grid.isVisible()) {
+                grid.setBounds(clientArea);
+            }
 		}
 
 		for (Annotation annotation : annotationList) {
-			if (annotation != null && annotation.isVisible())
-				annotation.setBounds(clientArea);// .getCopy().shrink(1, 1));
+            if (annotation != null && annotation.isVisible()) {
+                annotation.setBounds(clientArea);
+            }// .getCopy().shrink(1, 1));
 		}
 		super.layout();
 	}
@@ -350,16 +353,18 @@ public class PlotArea extends Figure {
 	 */
 	public void zoomInOut(final boolean horizontally, final boolean vertically, final int mouseX, final int mouseY,
 			final double factor) {
-		if (horizontally)
-			for (Axis axis : xyGraph.getXAxisList()) {
-				final double center = axis.getPositionValue(mouseX, false);
-				axis.zoomInOut(center, factor);
-			}
-		if (vertically)
-			for (Axis axis : xyGraph.getYAxisList()) {
-				final double center = axis.getPositionValue(mouseY, false);
-				axis.zoomInOut(center, factor);
-			}
+        if (horizontally) {
+            for (Axis axis : xyGraph.getXAxisList()) {
+                final double center = axis.getPositionValue(mouseX, false);
+                axis.zoomInOut(center, factor);
+            }
+        }
+        if (vertically) {
+            for (Axis axis : xyGraph.getYAxisList()) {
+                final double center = axis.getPositionValue(mouseY, false);
+                axis.zoomInOut(center, factor);
+            }
+        }
 	}
 
 	/**
@@ -415,9 +420,10 @@ public class PlotArea extends Figure {
 		public void mousePressed(final MouseEvent me) {
 			fireMousePressed(me);
 
-			// Only react to 'main' mouse button, only react to 'real' zoom
-			if ((me.button != BUTTON1 || zoomType == ZoomType.NONE) && me.button != BUTTON2)
-				return;
+            // Only react to 'main' mouse button, only react to 'real' zoom
+            if ((me.button != BUTTON1 || zoomType == ZoomType.NONE) && me.button != BUTTON2) {
+                return;
+            }
 			// Remember last used zoomtype
 			previousZoomType = zoomType;
 			// if the mousewheel is pressed
@@ -456,10 +462,12 @@ public class PlotArea extends Figure {
 				end = null;
 				xAxisStartRangeList.clear();
 				yAxisStartRangeList.clear();
-				for (Axis axis : xyGraph.getXAxisList())
-					xAxisStartRangeList.add(axis.getRange());
-				for (Axis axis : xyGraph.getYAxisList())
-					yAxisStartRangeList.add(axis.getRange());
+                for (Axis axis : xyGraph.getXAxisList()) {
+                    xAxisStartRangeList.add(axis.getRange());
+                }
+                for (Axis axis : xyGraph.getYAxisList()) {
+                    yAxisStartRangeList.add(axis.getRange());
+                }
 				break;
 			case ZOOM_IN:
 			case ZOOM_IN_HORIZONTALLY:
@@ -473,8 +481,9 @@ public class PlotArea extends Figure {
 				Display.getCurrent().timerExec(Axis.ZOOM_SPEED, new Runnable() {
 					@Override
 					public void run() {
-						if (!armed)
-							return;
+                        if (!armed) {
+                            return;
+                        }
 						performInOutZoom();
 						Display.getCurrent().timerExec(Axis.ZOOM_SPEED, this);
 					}
@@ -498,10 +507,12 @@ public class PlotArea extends Figure {
 		public void mouseDragged(final MouseEvent me) {
 			fireMouseDragged(me);
 
-			if (!armed)
-				return;
-			if (dynamicZoomMode)
-				zoomType = ZoomType.DYNAMIC_ZOOM;
+            if (!armed) {
+                return;
+            }
+            if (dynamicZoomMode) {
+                zoomType = ZoomType.DYNAMIC_ZOOM;
+            }
 			switch (zoomType) {
 			case DYNAMIC_ZOOM:
 				dynamicZoomMode = true;
@@ -571,72 +582,78 @@ public class PlotArea extends Figure {
 		@Override
 		public void mouseReleased(final MouseEvent me) {
 			fireMouseReleased(me);
-			if (!armed)
-				return;
+            if (!armed) {
+                return;
+            }
 			armed = false;
-			if (zoomType == ZoomType.PANNING)
-				setCursor(zoomType.getCursor());
-			if (end == null || start == null)
-				return;
+            if (zoomType == ZoomType.PANNING) {
+                setCursor(zoomType.getCursor());
+            }
+            if (end == null || start == null) {
+                return;
+            }
 
 			// If we are in dynamicZoom mode we will zoom like this, for other
 			// zooms is everything like before
 			if (dynamicZoomMode) {
-				if (zoomType != ZoomType.VERTICAL_ZOOM)
-					for (Axis axis : xyGraph.getXAxisList()) {
-						final double t1 = axis.getPositionValue(start.x, false);
-						final double t2 = axis.getPositionValue(end.x, false);
-						axis.setRange(t1, t2, true);
-					}
-				if (zoomType != ZoomType.HORIZONTAL_ZOOM)
-					for (Axis axis : xyGraph.getYAxisList()) {
-						final double t1 = axis.getPositionValue(start.y, false);
-						final double t2 = axis.getPositionValue(end.y, false);
-						axis.setRange(t1, t2, true);
-					}
+                if (zoomType != ZoomType.VERTICAL_ZOOM) {
+                    for (Axis axis : xyGraph.getXAxisList()) {
+                        final double t1 = axis.getPositionValue(start.x, false);
+                        final double t2 = axis.getPositionValue(end.x, false);
+                        axis.setRange(t1, t2, true);
+                    }
+                }
+                if (zoomType != ZoomType.HORIZONTAL_ZOOM) {
+                    for (Axis axis : xyGraph.getYAxisList()) {
+                        final double t1 = axis.getPositionValue(start.y, false);
+                        final double t2 = axis.getPositionValue(end.y, false);
+                        axis.setRange(t1, t2, true);
+                    }
+                }
 				setZoomType(ZoomType.DYNAMIC_ZOOM);
-			} else
-				switch (zoomType) {
-				case RUBBERBAND_ZOOM:
-					for (Axis axis : xyGraph.getXAxisList()) {
-						final double t1 = axis.getPositionValue(start.x, false);
-						final double t2 = axis.getPositionValue(end.x, false);
-						axis.setRange(t1, t2, true);
-					}
-					for (Axis axis : xyGraph.getYAxisList()) {
-						final double t1 = axis.getPositionValue(start.y, false);
-						final double t2 = axis.getPositionValue(end.y, false);
-						axis.setRange(t1, t2, true);
-					}
-					break;
-				case HORIZONTAL_ZOOM:
-					for (Axis axis : xyGraph.getXAxisList()) {
-						final double t1 = axis.getPositionValue(start.x, false);
-						final double t2 = axis.getPositionValue(end.x, false);
-						axis.setRange(t1, t2, true);
-					}
-					break;
-				case VERTICAL_ZOOM:
-					for (Axis axis : xyGraph.getYAxisList()) {
-						final double t1 = axis.getPositionValue(start.y, false);
-						final double t2 = axis.getPositionValue(end.y, false);
-						axis.setRange(t1, t2, true);
-					}
-					break;
-				case PANNING:
-					pan();
-					break;
-				case ZOOM_IN:
-				case ZOOM_IN_HORIZONTALLY:
-				case ZOOM_IN_VERTICALLY:
-				case ZOOM_OUT:
-				case ZOOM_OUT_HORIZONTALLY:
-				case ZOOM_OUT_VERTICALLY:
-					performInOutZoom();
-					break;
-				default:
-					break;
-				}
+			} else {
+                switch (zoomType) {
+                    case RUBBERBAND_ZOOM:
+                        for (Axis axis : xyGraph.getXAxisList()) {
+                            final double t1 = axis.getPositionValue(start.x, false);
+                            final double t2 = axis.getPositionValue(end.x, false);
+                            axis.setRange(t1, t2, true);
+                        }
+                        for (Axis axis : xyGraph.getYAxisList()) {
+                            final double t1 = axis.getPositionValue(start.y, false);
+                            final double t2 = axis.getPositionValue(end.y, false);
+                            axis.setRange(t1, t2, true);
+                        }
+                        break;
+                    case HORIZONTAL_ZOOM:
+                        for (Axis axis : xyGraph.getXAxisList()) {
+                            final double t1 = axis.getPositionValue(start.x, false);
+                            final double t2 = axis.getPositionValue(end.x, false);
+                            axis.setRange(t1, t2, true);
+                        }
+                        break;
+                    case VERTICAL_ZOOM:
+                        for (Axis axis : xyGraph.getYAxisList()) {
+                            final double t1 = axis.getPositionValue(start.y, false);
+                            final double t2 = axis.getPositionValue(end.y, false);
+                            axis.setRange(t1, t2, true);
+                        }
+                        break;
+                    case PANNING:
+                        pan();
+                        break;
+                    case ZOOM_IN:
+                    case ZOOM_IN_HORIZONTALLY:
+                    case ZOOM_IN_VERTICALLY:
+                    case ZOOM_OUT:
+                    case ZOOM_OUT_HORIZONTALLY:
+                    case ZOOM_OUT_VERTICALLY:
+                        performInOutZoom();
+                        break;
+                    default:
+                        break;
+                }
+            }
 
 			// mousewheel is pressed and last zoom type was not panning, we set
 			// the zoomtype to the previous state.
@@ -721,83 +738,103 @@ public class PlotArea extends Figure {
 	}
 
 	public void addAuxilliaryMotionListener(MouseMotionListener auxilliaryMotionListener) {
-		if (this.auxilliaryMotionListeners == null)
-			auxilliaryMotionListeners = new HashSet<MouseMotionListener>();
+        if (this.auxilliaryMotionListeners == null) {
+            auxilliaryMotionListeners = new HashSet<MouseMotionListener>();
+        }
 		auxilliaryMotionListeners.add(auxilliaryMotionListener);
 	}
 
 	public void removeAuxilliaryClickListener(MouseListener auxilliaryClickListener) {
-		if (this.auxilliaryClickListeners == null)
-			return;
+        if (this.auxilliaryClickListeners == null) {
+            return;
+        }
 		auxilliaryClickListeners.remove(auxilliaryClickListener);
 	}
 
 	public void removeAuxilliaryMotionListener(MouseMotionListener auxilliaryMotionListener) {
-		if (this.auxilliaryMotionListeners == null)
-			return;
+        if (this.auxilliaryMotionListeners == null) {
+            return;
+        }
 		auxilliaryMotionListeners.remove(auxilliaryMotionListener);
 	}
 
 	public void addAuxilliaryClickListener(MouseListener auxilliaryClickListener) {
-		if (this.auxilliaryClickListeners == null)
-			auxilliaryClickListeners = new HashSet<MouseListener>();
+        if (this.auxilliaryClickListeners == null) {
+            auxilliaryClickListeners = new HashSet<MouseListener>();
+        }
 		auxilliaryClickListeners.add(auxilliaryClickListener);
 	}
 
 	public void fireMouseReleased(MouseEvent me) {
-		if (this.auxilliaryClickListeners == null)
-			return;
-		for (MouseListener l : auxilliaryClickListeners)
-			l.mouseReleased(me);
+        if (this.auxilliaryClickListeners == null) {
+            return;
+        }
+        for (MouseListener l : auxilliaryClickListeners) {
+            l.mouseReleased(me);
+        }
 	}
 
 	public void fireMouseDoubleClicked(MouseEvent me) {
-		if (this.auxilliaryClickListeners == null)
-			return;
-		for (MouseListener l : auxilliaryClickListeners)
-			l.mouseDoubleClicked(me);
+        if (this.auxilliaryClickListeners == null) {
+            return;
+        }
+        for (MouseListener l : auxilliaryClickListeners) {
+            l.mouseDoubleClicked(me);
+        }
 	}
 
 	public void fireMousePressed(MouseEvent me) {
-		if (this.auxilliaryClickListeners == null)
-			return;
-		for (MouseListener l : auxilliaryClickListeners)
-			l.mousePressed(me);
+        if (this.auxilliaryClickListeners == null) {
+            return;
+        }
+        for (MouseListener l : auxilliaryClickListeners) {
+            l.mousePressed(me);
+        }
 	}
 
 	public void fireMouseMoved(MouseEvent me) {
-		if (this.auxilliaryMotionListeners == null)
-			return;
-		for (MouseMotionListener l : auxilliaryMotionListeners)
-			l.mouseMoved(me);
+        if (this.auxilliaryMotionListeners == null) {
+            return;
+        }
+        for (MouseMotionListener l : auxilliaryMotionListeners) {
+            l.mouseMoved(me);
+        }
 	}
 
 	public void fireMouseHover(MouseEvent me) {
-		if (this.auxilliaryMotionListeners == null)
-			return;
-		for (MouseMotionListener l : auxilliaryMotionListeners)
-			l.mouseHover(me);
+        if (this.auxilliaryMotionListeners == null) {
+            return;
+        }
+        for (MouseMotionListener l : auxilliaryMotionListeners) {
+            l.mouseHover(me);
+        }
 	}
 
 	public void fireMouseEntered(MouseEvent me) {
-		if (this.auxilliaryMotionListeners == null)
-			return;
-		for (MouseMotionListener l : auxilliaryMotionListeners)
-			l.mouseEntered(me);
+        if (this.auxilliaryMotionListeners == null) {
+            return;
+        }
+        for (MouseMotionListener l : auxilliaryMotionListeners) {
+            l.mouseEntered(me);
+        }
 	}
 
 	public void fireMouseExited(MouseEvent me) {
-		if (this.auxilliaryMotionListeners == null)
-			return;
-		for (MouseMotionListener l : auxilliaryMotionListeners)
-			l.mouseExited(me);
+        if (this.auxilliaryMotionListeners == null) {
+            return;
+        }
+        for (MouseMotionListener l : auxilliaryMotionListeners) {
+            l.mouseExited(me);
+        }
 	}
 
 	public void fireMouseDragged(MouseEvent me) {
-		if (this.auxilliaryMotionListeners == null)
-			return;
-		for (MouseMotionListener l : auxilliaryMotionListeners)
-			l.mouseDragged(me);
+        if (this.auxilliaryMotionListeners == null) {
+            return;
+        }
+        for (MouseMotionListener l : auxilliaryMotionListeners) {
+            l.mouseDragged(me);
+        }
 	}
 
 }

@@ -132,8 +132,9 @@ public class GaugeFigure extends AbstractRoundRampedFigure {
 		Pattern pattern = null;
 		graphics.pushState();
 		graphics.setBackgroundColor(GRAY_COLOR);
-		if(support3D == null)
-			support3D = GraphicsUtil.testPatternSupported(graphics);
+        if (support3D == null) {
+            support3D = GraphicsUtil.testPatternSupported(graphics);
+        }
 		if(effect3D && support3D) {		
 			//add this to eliminate the repaint bug on Mac
 			//Who added this? this will cause problem in zoom.
@@ -146,8 +147,9 @@ public class GaugeFigure extends AbstractRoundRampedFigure {
 		if(effect3D && support3D){	
 			pattern.dispose();
 			area.shrink(BORDER_WIDTH, BORDER_WIDTH);
-		}else
-			area.shrink(1, 1);
+		} else {
+            area.shrink(1, 1);
+        }
 		graphics.popState();
 		
 		graphics.fillOval(area);
@@ -210,8 +212,9 @@ public class GaugeFigure extends AbstractRoundRampedFigure {
 	 * @param effect3D the effect3D to set
 	 */
 	public void setEffect3D(boolean effect3D) {
-		if(this.effect3D == effect3D)
-			return;
+        if (this.effect3D == effect3D) {
+            return;
+        }
 		this.effect3D = effect3D;
 		repaint();
 	}
@@ -275,16 +278,18 @@ public class GaugeFigure extends AbstractRoundRampedFigure {
 			graphics.setAntialias(SWT.ON);
 			Pattern pattern = null;
 			graphics.setBackgroundColor(GRAY_COLOR);
-			if(support3D == null)
-				support3D = GraphicsUtil.testPatternSupported(graphics);
+            if (support3D == null) {
+                support3D = GraphicsUtil.testPatternSupported(graphics);
+            }
 			if(effect3D && support3D){		
 					pattern = GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(), bounds.x, bounds.y,
 							bounds.x + bounds.width, bounds.y + bounds.height, WHITE_COLOR, BORDER_COLOR);
 					graphics.setBackgroundPattern(pattern);							
 			}			
 			super.fillShape(graphics);
-			if(effect3D && support3D)
-				pattern.dispose();			
+            if (effect3D && support3D) {
+                pattern.dispose();
+            }			
 		}		
 	}
 	
@@ -320,20 +325,21 @@ public class GaugeFigure extends AbstractRoundRampedFigure {
 		
 		@Override
 		public void setConstraint(IFigure child, Object constraint) {
-			if(constraint.equals(SCALE))
-				scale = (RoundScale)child;
-			else if (constraint.equals(RAMP))
-				ramp = (RoundScaledRamp) child;
-			else if (constraint.equals(NEEDLE))
-				needle = (Polygon) child;
-			else if (constraint.equals(NEEDLE_CENTER))
-				needleCenter = (NeedleCenter) child;
-			else if (constraint.equals(VALUE_LABEL))
-				valueLabel = (Label)child;
-			else if (constraint.equals(TITLE_LABEL))
-				titleLabel = (Label)child;
-			else if (constraint.equals(UNIT_LABEL))
-				unitLabel = (Label)child;
+            if (constraint.equals(SCALE)) {
+                scale = (RoundScale) child;
+            } else if (constraint.equals(RAMP)) {
+                ramp = (RoundScaledRamp) child;
+            } else if (constraint.equals(NEEDLE)) {
+                needle = (Polygon) child;
+            } else if (constraint.equals(NEEDLE_CENTER)) {
+                needleCenter = (NeedleCenter) child;
+            } else if (constraint.equals(VALUE_LABEL)) {
+                valueLabel = (Label) child;
+            } else if (constraint.equals(TITLE_LABEL)) {
+                titleLabel = (Label) child;
+            } else if (constraint.equals(UNIT_LABEL)) {
+                unitLabel = (Label) child;
+            }
 			
 		}
 
@@ -401,15 +407,17 @@ public class GaugeFigure extends AbstractRoundRampedFigure {
 	
 				double valuePosition = 360 - scale.getValuePosition(getCoercedValue(), false);
 				if(maximum > minimum){
-					if(value > maximum)
-						valuePosition += 10;
-					else if(value < minimum)
-						valuePosition -=10;
+                    if (value > maximum) {
+                        valuePosition += 10;
+                    } else if (value < minimum) {
+                        valuePosition -= 10;
+                    }
 				}else{
-					if(value > minimum)
-						valuePosition -= 10;
-					else if(value < maximum)
-						valuePosition +=10;
+                    if (value > minimum) {
+                        valuePosition -= 10;
+                    } else if (value < maximum) {
+                        valuePosition += 10;
+                    }
 				}
 				needlePoints.setPoint(
 						PointsUtil.rotate(needlePoints.getPoint(0),	valuePosition, center), 0);

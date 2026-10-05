@@ -74,10 +74,12 @@ class GridLookPainterPiece implements PrintPiece {
 
 		int height = calculateBodyHeight(margins, topOpen, bodyRows,
 				bottomOpen, headerPresent, footerPresent);
-		if (headerPresent)
-			height += calculateHeaderHeight(margins, headerRows);
-		if (footerPresent)
-			height += calculateFooterHeight(margins, footerRows);
+        if (headerPresent) {
+            height += calculateHeaderHeight(margins, headerRows);
+        }
+        if (footerPresent) {
+            height += calculateFooterHeight(margins, footerRows);
+        }
 
 		return new Point(width, height);
 	}

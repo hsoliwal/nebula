@@ -69,18 +69,23 @@ public class PolarPoint {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		PolarPoint other = (PolarPoint) obj;
-		if (r != other.r)
-			return false;
-		if (Double.doubleToLongBits(theta) != Double
-				.doubleToLongBits(other.theta))
-			return false;
+        if (r != other.r) {
+            return false;
+        }
+        if (Double.doubleToLongBits(theta) != Double
+                .doubleToLongBits(other.theta)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -137,8 +142,9 @@ public class PolarPoint {
 		double r = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
 		
 		double theta = Math.acos((double)x/r);
-		if(y >0)
-			theta = 2*Math.PI - theta;
+        if (y > 0) {
+            theta = 2 * Math.PI - theta;
+        }
 		return new PolarPoint((int) r, theta);
 	}
 	
@@ -147,11 +153,13 @@ public class PolarPoint {
 	 * @param inRadians true if the axisDirection is in radians, false if in degrees.
 	 */
 	public void rotateAxis(double axisDirection, boolean inRadians) {
-		if(!inRadians)
-			axisDirection = axisDirection * Math.PI/180.0;
+        if (!inRadians) {
+            axisDirection = axisDirection * Math.PI / 180.0;
+        }
 		theta -= axisDirection;
-		if(theta < 0) 
-			theta += 2*Math.PI;
+        if (theta < 0) {
+            theta += 2 * Math.PI;
+        }
 	}
 	
 	@Override

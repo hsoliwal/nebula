@@ -65,10 +65,11 @@ public class GridPrintCellClippingAllowClipFirstRow {
 
 		Listener listener = event -> {
 			int newIndex = preview.getPageIndex();
-			if (event.widget == prev)
-				newIndex--;
-			else
-				newIndex++;
+            if (event.widget == prev) {
+                newIndex--;
+            } else {
+                newIndex++;
+            }
 			preview.setPageIndex(newIndex);
 			prev.setEnabled(newIndex > 0);
 			next.setEnabled(newIndex < preview.getPageCount() - 1);
@@ -85,9 +86,11 @@ public class GridPrintCellClippingAllowClipFirstRow {
 
 		shell.open();
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 	}
 
 	public static Print createPrint() {
@@ -108,12 +111,14 @@ public class GridPrintCellClippingAllowClipFirstRow {
 		grid.setCellClippingEnabled(cellClippingEnabled);
 
 		String longText = "The quick brown fox jumps over the lazy dog.";
-		for (int i = 0; i < 5; i++)
-			// double 7 times -> repeated 128 times
-			longText += "  " + longText;
+        for (int i = 0; i < 5; i++) {
+            // double 7 times -> repeated 128 times
+            longText += "  " + longText;
+        }
 
-		for (int i = 0; i < 5; i++)
-			grid.add(new TextPrint(longText));
+        for (int i = 0; i < 5; i++) {
+            grid.add(new TextPrint(longText));
+        }
 		return grid;
 	}
 }

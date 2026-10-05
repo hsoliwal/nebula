@@ -184,8 +184,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 	public void setMenu(final Menu menu) {
 		checkWidget();
 		Display.getCurrent().asyncExec(() -> {
-			if (isDisposed())
-				return;
+            if (isDisposed()) {
+                return;
+            }
 			DayEditor.super.setMenu(menu);
 			DayEditor.this.menu = menu;
 			compositeTable.setMenu(menu);
@@ -227,8 +228,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 			for (Iterator<KeyListener> i = keyListeners.iterator(); i.hasNext();) {
 				KeyListener keyListener = i.next();
 				keyListener.keyReleased(e);
-				if (!e.doit)
-					return;
+                if (!e.doit) {
+                    return;
+                }
 			}
 		}
 
@@ -236,8 +238,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 			for (Iterator<KeyListener> i = keyListeners.iterator(); i.hasNext();) {
 				KeyListener keyListener = i.next();
 				keyListener.keyPressed(e);
-				if (!e.doit)
-					return;
+                if (!e.doit) {
+                    return;
+                }
 			}
 			CalendarableItem selection = selectedCalendarable;
 			int selectedRow;
@@ -392,8 +395,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 
 	private void setSelectionByDayAndRow(int day, int row, CalendarableItem aboutToSelect) {
 		int dayRow = convertViewportRowToDayRow(row);
-		if (aboutToSelect == null && dayRow >= 0)
-			aboutToSelect = getFirstCalendarableAt(day, dayRow);
+        if (aboutToSelect == null && dayRow >= 0) {
+            aboutToSelect = getFirstCalendarableAt(day, dayRow);
+        }
 		if (aboutToSelect == null || dayRow < 0) {
 			aboutToSelect = getAllDayCalendarableAt(day, row + compositeTable.getTopRow());
 		}
@@ -917,8 +921,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 		updateVisibleRows();
 		Display.getCurrent().asyncExec(new Runnable() {
 			public void run() {
-				if (isDisposed())
-					return;
+                if (isDisposed()) {
+                    return;
+                }
 				layoutEventControls();
 			}
 		});
@@ -938,8 +943,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 		updateVisibleRows();
 		Display.getCurrent().asyncExec(new Runnable() {
 			public void run() {
-				if (isDisposed())
-					return;
+                if (isDisposed()) {
+                    return;
+                }
 				layoutEventControls();
 			}
 		});
@@ -998,8 +1004,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 		if (!refreshing) {
 			refreshing = true;
 			Display.getCurrent().asyncExec(() -> {
-				if (isDisposed())
-					return;
+                if (isDisposed()) {
+                    return;
+                }
 				Date dateToRefresh = getStartDate();
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.setTime(dateToRefresh);
@@ -1213,8 +1220,9 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 
 	@SuppressWarnings("unchecked")
 	private Runnable refreshEventControlPositions = () -> {
-		if (isDisposed())
-			return;
+        if (isDisposed()) {
+            return;
+        }
 
 		Control[] gridRows = compositeTable.getRowControls();
 
@@ -1403,11 +1411,13 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 	}
 
 	private boolean timedEventIsVisible(int firstVisibleRow, int lastVisibleRow, int startRow, int endRow) {
-		if (startRow < firstVisibleRow && endRow < firstVisibleRow)
-			return false;
+        if (startRow < firstVisibleRow && endRow < firstVisibleRow) {
+            return false;
+        }
 
-		if (startRow > lastVisibleRow && endRow > lastVisibleRow)
-			return false;
+        if (startRow > lastVisibleRow && endRow > lastVisibleRow) {
+            return false;
+        }
 
 		return true;
 	}

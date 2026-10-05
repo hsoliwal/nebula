@@ -49,11 +49,13 @@ public class PShelfExampleTab extends AbstractExampleTab {
 	public Control createControl(Composite parent) {
 		int style = SWT.NONE;
 
-		if (border.getSelection())
-			style |= SWT.BORDER;
+        if (border.getSelection()) {
+            style |= SWT.BORDER;
+        }
 
-		if (simple.getSelection())
-			style |= SWT.SIMPLE;
+        if (simple.getSelection()) {
+            style |= SWT.SIMPLE;
+        }
 
 		AbstractRenderer renderer = null;
 		Image i = null;
@@ -127,8 +129,9 @@ public class PShelfExampleTab extends AbstractExampleTab {
 			if (event.widget instanceof Button) {
 				Button b = (Button) event.widget;
 				if ((b.getStyle() & SWT.RADIO) != 0) {
-					if (!b.getSelection())
-						return;
+                    if (!b.getSelection()) {
+                        return;
+                    }
 				}
 			}
 			recreateExample();

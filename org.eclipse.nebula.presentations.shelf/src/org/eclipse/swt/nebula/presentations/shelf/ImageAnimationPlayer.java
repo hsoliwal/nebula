@@ -20,18 +20,23 @@ public abstract class ImageAnimationPlayer
     public void start()
     {
         stopped = false;
-        if (images == null || images.length == 0) return;       
+        if (images == null || images.length == 0) {
+            return;
+        }       
         
         updateImage(images[0]);
         Runnable run = new Runnable()
         {        
             public void run()
             {
-                if (stopped) return;
+                if (stopped) {
+                    return;
+                }
                 
                 currentImage ++;
-                if (currentImage == images.length)
+                if (currentImage == images.length) {
                     currentImage = 0;
+                }
                 updateImage(images[currentImage]);
                 
                 display.timerExec(delay, this);

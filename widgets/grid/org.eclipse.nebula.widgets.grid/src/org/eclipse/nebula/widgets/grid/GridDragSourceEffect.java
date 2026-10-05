@@ -54,7 +54,9 @@ public class GridDragSourceEffect extends DragSourceEffect {
 	 */
 	@Override
 	public void dragFinished(DragSourceEvent event) {
-		if (dragSourceImage != null) dragSourceImage.dispose();
+        if (dragSourceImage != null) {
+            dragSourceImage.dispose();
+        }
 		dragSourceImage = null;
 	}
 
@@ -75,7 +77,9 @@ public class GridDragSourceEffect extends DragSourceEffect {
 	}
 
 	Image getDragSourceImage(DragSourceEvent event) {
-		if (dragSourceImage != null) dragSourceImage.dispose();
+        if (dragSourceImage != null) {
+            dragSourceImage.dispose();
+        }
 		dragSourceImage = null;
 		Grid grid = (Grid) getControl();
 		Display display = grid.getDisplay();
@@ -97,7 +101,9 @@ public class GridDragSourceEffect extends DragSourceEffect {
 			}
 			selection = l.toArray(new Point[l.size()]);
 		}
-		if (selection.length == 0) return null;
+        if (selection.length == 0) {
+            return null;
+        }
 
 		Rectangle bounds=null;
 		for (int i = 0; i < selection.length; i++) {
@@ -114,13 +120,19 @@ public class GridDragSourceEffect extends DragSourceEffect {
 				}
 			}
 		}
-		if(bounds==null) return null;
-		if (bounds.width <= 0 || bounds.height <= 0) return null;
+        if (bounds == null) {
+            return null;
+        }
+        if (bounds.width <= 0 || bounds.height <= 0) {
+            return null;
+        }
 
 		dragSourceImage = new Image(display,bounds.width,bounds.height);
 		GC gc = new GC(dragSourceImage);
 		for (int i = 0; i < selection.length; i++) {
-			if(selection[i]==null) continue;
+            if (selection[i] == null) {
+                continue;
+            }
 			GridItem item = grid.getItem(selection[i].y);
 			GridColumn column = grid.getColumn(selection[i].x);
 			Rectangle currBounds = item.getBounds(selection[i].x);

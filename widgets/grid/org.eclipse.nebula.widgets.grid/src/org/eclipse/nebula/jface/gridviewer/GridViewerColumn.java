@@ -204,16 +204,19 @@ public final class GridViewerColumn extends ViewerColumn
                 public void handleEvent(Event event)
                 {
                     boolean autoPreferredSize=false;
-                    if(viewer instanceof GridTableViewer)
-                    	autoPreferredSize = ((GridTableViewer)viewer).getAutoPreferredHeight();
-                    if(viewer instanceof GridTreeViewer)
-                        autoPreferredSize = ((GridTreeViewer)viewer).getAutoPreferredHeight();
+                    if (viewer instanceof GridTableViewer) {
+                        autoPreferredSize = ((GridTableViewer) viewer).getAutoPreferredHeight();
+                    }
+                    if (viewer instanceof GridTreeViewer) {
+                        autoPreferredSize = ((GridTreeViewer) viewer).getAutoPreferredHeight();
+                    }
 
                     if(autoPreferredSize && column.getWordWrap())
                     {
                         Grid grid = column.getParent();
-                        for(int cnt=0;cnt<grid.getItemCount();cnt++)
+                        for (int cnt = 0; cnt < grid.getItemCount(); cnt++) {
                             grid.getItem(cnt).pack();
+                        }
                         grid.redraw();
                     }
                 }

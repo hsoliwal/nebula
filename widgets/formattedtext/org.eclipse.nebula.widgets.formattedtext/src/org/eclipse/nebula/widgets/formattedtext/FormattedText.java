@@ -235,7 +235,9 @@ public class FormattedText {
    * @param formatter formatter
    */
   public void setFormatter(ITextFormatter formatter) {
-  	if ( formatter == null ) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+      if (formatter == null) {
+          SWT.error(SWT.ERROR_NULL_ARGUMENT);
+      }
   	if ( this.formatter != null ) {
   		text.removeVerifyListener(this.formatter);
   		this.formatter.detach();

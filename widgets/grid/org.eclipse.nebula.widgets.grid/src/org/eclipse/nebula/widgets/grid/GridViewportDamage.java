@@ -19,7 +19,9 @@ final class GridViewportDamage {
 
 	static Rectangle scrollDamage(
 			Rectangle clientArea, int headerHeight, int footerHeight, boolean horizontal) {
-		if (clientArea == null) throw new IllegalArgumentException("clientArea");
+        if (clientArea == null) {
+            throw new IllegalArgumentException("clientArea");
+        }
 		if (horizontal) {
 			return new Rectangle(clientArea.x, clientArea.y, clientArea.width, clientArea.height);
 		}
@@ -29,14 +31,18 @@ final class GridViewportDamage {
 	}
 
 	static boolean intersectsHeader(Rectangle clip, Rectangle clientArea, int headerHeight) {
-		if (headerHeight <= 0) return false;
+        if (headerHeight <= 0) {
+            return false;
+        }
 		Rectangle header = new Rectangle(
 				clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight, clientArea.height));
 		return clip.intersects(header);
 	}
 
 	static boolean intersectsFooter(Rectangle clip, Rectangle clientArea, int footerHeight) {
-		if (footerHeight <= 0) return false;
+        if (footerHeight <= 0) {
+            return false;
+        }
 		int height = Math.min(footerHeight, clientArea.height);
 		Rectangle footer = new Rectangle(
 				clientArea.x, clientArea.y + clientArea.height - height, clientArea.width, height);

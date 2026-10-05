@@ -338,12 +338,15 @@ public class XYGraphConfigDialog extends Dialog {
 	protected void applyChanges() {
 		changed = true;
 		graphConfigPage.applyChanges();
-		for (AxisConfigPage axisConfigPage : axisConfigPageList)
-			axisConfigPage.applyChanges();
-		for (ITraceConfigPage traceConfigPage : traceConfigPageList)
-			traceConfigPage.applyChanges();
-		for (AnnotationConfigPage annotationConfigPage : annotationConfigPageList)
-			annotationConfigPage.applyChanges();
+        for (AxisConfigPage axisConfigPage : axisConfigPageList) {
+            axisConfigPage.applyChanges();
+        }
+        for (ITraceConfigPage traceConfigPage : traceConfigPageList) {
+            traceConfigPage.applyChanges();
+        }
+        for (AnnotationConfigPage annotationConfigPage : annotationConfigPageList) {
+            annotationConfigPage.applyChanges();
+        }
 
 		// Add L.PHILIPPE
 		xyGraph.fireConfigChanged();

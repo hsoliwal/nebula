@@ -49,11 +49,14 @@ public class ZoomCommand extends SaveStateCommand {
 	}
 
 	private void saveOriginalState() {
-		if (xAxisList != null)
-			for (Axis axis : xAxisList)
-				beforeXRangeList.add(axis.getRange());
-		for (Axis axis : yAxisList)
-			beforeYRangeList.add(axis.getRange());
+        if (xAxisList != null) {
+            for (Axis axis : xAxisList) {
+                beforeXRangeList.add(axis.getRange());
+            }
+        }
+        for (Axis axis : yAxisList) {
+            beforeYRangeList.add(axis.getRange());
+        }
 	}
 
 	public void redo() {
@@ -88,10 +91,13 @@ public class ZoomCommand extends SaveStateCommand {
 
 	@Override
 	public void saveState() {
-		if (xAxisList != null)
-			for (Axis axis : xAxisList)
-				afterXRangeList.add(axis.getRange());
-		for (Axis axis : yAxisList)
-			afterYRangeList.add(axis.getRange());
+        if (xAxisList != null) {
+            for (Axis axis : xAxisList) {
+                afterXRangeList.add(axis.getRange());
+            }
+        }
+        for (Axis axis : yAxisList) {
+            afterYRangeList.add(axis.getRange());
+        }
 	}
 }

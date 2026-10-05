@@ -42,8 +42,9 @@ public class SizeLimitedStack<T> {
 	 *            the item to be pushed onto this stack.
 	 */
 	public void push(T e) {
-		if (list.size() >= sizeLimit)
-			list.removeFirst();
+        if (list.size() >= sizeLimit) {
+            list.removeFirst();
+        }
 		list.addLast(e);
 	}
 

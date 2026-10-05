@@ -66,9 +66,10 @@ public class LinearScaleTickMarks2 extends LinearScaleTickMarks {
 				int tickLength = ticks.isVisible(i) ? MAJOR_TICK_LENGTH : MINOR_TICK_LENGTH;
 				y = tickLabelSide == LabelSide.Primary ? 0 : height - 1 - LINE_WIDTH - tickLength;
 
-				// draw minor ticks for log scale
-				if (ticks.isVisible(i) || getScaleProvider().isMinorTicksVisible())
-					gc.drawLine(x, y, x, y + tickLength);
+                // draw minor ticks for log scale
+                if (ticks.isVisible(i) || getScaleProvider().isMinorTicksVisible()) {
+                    gc.drawLine(x, y, x, y + tickLength);
+                }
 			}
 
 			// draw minor ticks for log scale
@@ -78,8 +79,9 @@ public class LinearScaleTickMarks2 extends LinearScaleTickMarks {
 				int jmax = ticks.getMinorCount();
 				for (int j = 0; j < jmax; j++) {
 					int x = ticks.getMinorPosition(j);
-					if (x >= start && x < width)
-						gc.drawLine(x, y, x, y + MINOR_TICK_LENGTH);
+                    if (x >= start && x < width) {
+                        gc.drawLine(x, y, x, y + MINOR_TICK_LENGTH);
+                    }
 				}
 			}
 		} else {
@@ -98,8 +100,9 @@ public class LinearScaleTickMarks2 extends LinearScaleTickMarks {
 				int jmax = ticks.getMinorCount();
 				for (int j = 0; j < jmax; j++) {
 					int x = ticks.getMinorPosition(j);
-					if (x >= start && x < width)
-						gc.drawLine(x, y, x, y + MINOR_TICK_LENGTH);
+                    if (x >= start && x < width) {
+                        gc.drawLine(x, y, x, y + MINOR_TICK_LENGTH);
+                    }
 				}
 			}
 		}
@@ -174,8 +177,9 @@ public class LinearScaleTickMarks2 extends LinearScaleTickMarks {
 				int tickLength = ticks.isVisible(i) ? MAJOR_TICK_LENGTH : MINOR_TICK_LENGTH;
 				x = tickLabelSide == LabelSide.Primary ? width - 1 - LINE_WIDTH - tickLength : LINE_WIDTH;
 				y = height - ticks.getPosition(i);
-				if (ticks.isVisible(i) || getScaleProvider().isMinorTicksVisible())
-					gc.drawLine(x, y, x + tickLength, y);
+                if (ticks.isVisible(i) || getScaleProvider().isMinorTicksVisible()) {
+                    gc.drawLine(x, y, x + tickLength, y);
+                }
 			}
 		} else {
 			x = tickLabelSide == LabelSide.Primary ? width - LINE_WIDTH - MAJOR_TICK_LENGTH : LINE_WIDTH;
@@ -202,8 +206,9 @@ public class LinearScaleTickMarks2 extends LinearScaleTickMarks {
 		final int jmax = ticks.getMinorCount();
 		for (int j = 0; j < jmax; j++) {
 			y = height - ticks.getMinorPosition(j);
-			if (y >= 0 && y < end)
-				gc.drawLine(x, y, x + MINOR_TICK_LENGTH, y);
+            if (y >= 0 && y < end) {
+                gc.drawLine(x, y, x + MINOR_TICK_LENGTH, y);
+            }
 		}
 	}
 }

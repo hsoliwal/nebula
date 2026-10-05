@@ -35,8 +35,9 @@ public class PaperClipsUtil {
 	 *            the print piece to dispose.
 	 */
 	public static void dispose(final PrintPiece piece) {
-		if (piece != null)
-			piece.dispose();
+        if (piece != null) {
+            piece.dispose();
+        }
 	}
 
 	/**
@@ -59,9 +60,11 @@ public class PaperClipsUtil {
 	 *            array of print pieces to dispose.
 	 */
 	public static void dispose(final PrintPiece[] pieces) {
-		if (pieces != null)
-			for (int i = 0; i < pieces.length; i++)
-				dispose(pieces[i]);
+        if (pieces != null) {
+            for (int i = 0; i < pieces.length; i++) {
+                dispose(pieces[i]);
+            }
+        }
 	}
 
 	/**
@@ -76,8 +79,9 @@ public class PaperClipsUtil {
 	 *            the end index.
 	 */
 	public static void dispose(PrintPiece[] pages, int start, int end) {
-		for (int i = start; i < end; i++)
-			pages[i].dispose();
+        for (int i = start; i < end; i++) {
+            pages[i].dispose();
+        }
 	}
 
 	/**
@@ -87,8 +91,9 @@ public class PaperClipsUtil {
 	 *            list of print pieces to dispose.
 	 */
 	public static void dispose(List<PrintPiece> pages) {
-		for (Iterator<PrintPiece> it = pages.iterator(); it.hasNext();)
-			it.next().dispose();
+        for (Iterator<PrintPiece> it = pages.iterator(); it.hasNext(); ) {
+            it.next().dispose();
+        }
 		pages.clear();
 	}
 
@@ -127,8 +132,9 @@ public class PaperClipsUtil {
 	public static int[][] copy(int[][] array) {
 		Util.notNull(array);
 		int[][] result = array.clone();
-		for (int i = 0; i < result.length; i++)
-			result[i] = copy(result[i]);
+        for (int i = 0; i < result.length; i++) {
+            result[i] = copy(result[i]);
+        }
 		return result;
 	}
 
@@ -159,8 +165,9 @@ public class PaperClipsUtil {
 		Util.notNull(array);
 		int result = 0;
 		final int end = start + count;
-		for (int i = start; i < end; i++)
-			result += array[i];
+        for (int i = start; i < end; i++) {
+            result += array[i];
+        }
 		return result;
 	}
 
@@ -176,8 +183,9 @@ public class PaperClipsUtil {
 	public static int sumByIndex(final int[] array, final int[] indices) {
 		Util.notNull(array);
 		int result = 0;
-		for (int i = 0; i < indices.length; i++)
-			result += array[indices[i]];
+        for (int i = 0; i < indices.length; i++) {
+            result += array[indices[i]];
+        }
 		return result;
 	}
 
@@ -190,8 +198,9 @@ public class PaperClipsUtil {
 	 */
 	public static int[] toIntArray(List<Integer> list) {
 		final int[] array = new int[list.size()];
-		for (int i = 0; i < array.length; i++)
-			array[i] = list.get(i).intValue();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = list.get(i).intValue();
+        }
 		return array;
 	}
 
@@ -204,8 +213,9 @@ public class PaperClipsUtil {
 	 */
 	public static int[][] toIntIntArray(List<int[]> list) {
 		final int[][] array = new int[list.size()][];
-		for (int i = 0; i < array.length; i++)
-			array[i] = list.get(i);
+        for (int i = 0; i < array.length; i++) {
+            array[i] = list.get(i);
+        }
 		return array;
 	}
 
@@ -226,8 +236,9 @@ public class PaperClipsUtil {
 		Util.notNull(masks);
 		for (int i = 0; i < masks.length; i++) {
 			int mask = masks[i];
-			if ((value & mask) == mask)
-				return mask;
+            if ((value & mask) == mask) {
+                return mask;
+            }
 		}
 		return defaultMask;
 	}

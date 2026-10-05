@@ -2545,7 +2545,9 @@ public class CDateTime extends BaseCombo {
 	public void setOkButtonColor(Color okButtonColor) {
 		checkWidget();
 		this.okButtonColor = okButtonColor;
-		if (okButton != null) okButton.setForeground(okButtonColor);
+        if (okButton != null) {
+            okButton.setForeground(okButtonColor);
+        }
 	}
 
 	/**
@@ -2562,7 +2564,9 @@ public class CDateTime extends BaseCombo {
 	public void setCancelButtonColor(Color cancelButtonColor) {
 		checkWidget();
 		this.cancelButtonColor = cancelButtonColor;
-		if (cancelButton != null) cancelButton.setForeground(cancelButtonColor);
+        if (cancelButton != null) {
+            cancelButton.setForeground(cancelButtonColor);
+        }
 	}
 
 	/**
@@ -2580,7 +2584,9 @@ public class CDateTime extends BaseCombo {
 			Color clearButtonForegroundColor) {
 		checkWidget();
 		this.clearButtonForegroundColor = clearButtonForegroundColor;
-		if (clearButton != null) clearButton.setForeground(clearButtonForegroundColor);
+        if (clearButton != null) {
+            clearButton.setForeground(clearButtonForegroundColor);
+        }
 	}
 
 	/**
@@ -2597,7 +2603,9 @@ public class CDateTime extends BaseCombo {
 	public void setClearButtonFont(Font clearButtonFont) {
 		checkWidget();
 		this.clearButtonFont = clearButtonFont;
-		if (clearButton != null) clearButton.setFont(clearButtonFont);
+        if (clearButton != null) {
+            clearButton.setFont(clearButtonFont);
+        }
 	}
 
 }

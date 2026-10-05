@@ -44,20 +44,26 @@ public class LayerEntryImpl implements LayerEntry {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		LayerEntry other = (LayerEntry) obj;
-		if (align != other.getHorizontalAlignment())
-			return false;
+        if (align != other.getHorizontalAlignment()) {
+            return false;
+        }
 		if (target == null) {
-			if (other.getTarget() != null)
-				return false;
-		} else if (!target.equals(other.getTarget()))
-			return false;
+            if (other.getTarget() != null) {
+                return false;
+            }
+		} else if (!target.equals(other.getTarget())) {
+            return false;
+        }
 		return true;
 	}
 

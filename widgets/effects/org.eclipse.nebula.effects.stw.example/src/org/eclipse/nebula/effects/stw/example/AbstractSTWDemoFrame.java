@@ -78,8 +78,9 @@ public abstract class AbstractSTWDemoFrame {
     }
     
     public void selectDirection(int direction) {
-        if(direction >= 0 && direction < DIRECTIONS_NAMES.length)
+        if (direction >= 0 && direction < DIRECTIONS_NAMES.length) {
             _selectedDirection = direction;
+        }
     }
     
     protected double getSelectedDirection(int toIndex, int fromIndex) {
@@ -102,10 +103,11 @@ public abstract class AbstractSTWDemoFrame {
             return Math.random() > 0.5 ? Transition.DIR_DOWN : Transition.DIR_UP;
         default:
         case DIR_RANDOM:
-            if(Math.random() > 0.5)
+            if (Math.random() > 0.5) {
                 return Math.random() > 0.5 ? Transition.DIR_RIGHT : Transition.DIR_LEFT;
-            else
+            } else {
                 return Math.random() > 0.5 ? Transition.DIR_DOWN : Transition.DIR_UP;
+            }
         }
     }
 

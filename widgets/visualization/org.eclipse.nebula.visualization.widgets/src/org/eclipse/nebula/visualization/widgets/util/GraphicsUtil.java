@@ -25,13 +25,16 @@ import org.eclipse.swt.graphics.RGB;
 public class GraphicsUtil {
 
 	public static synchronized boolean testPatternSupported(Graphics graphics){
-		if(SWT.getPlatform().startsWith("rap")) //$NON-NLS-1$
-			return false;
-		if(!Preferences.useAdvancedGraphics())
-			return false;
+        if (SWT.getPlatform().startsWith("rap")) { //$NON-NLS-1$
+            return false;
+        }
+        if (!Preferences.useAdvancedGraphics()) {
+            return false;
+        }
 		String value = System.getProperty(Preferences.PROHIBIT_ADVANCED_GRAPHICS); //$NON-NLS-1$
-		if(value != null && value.equals("true")) //$NON-NLS-1$
-			return false;
+        if (value != null && value.equals("true")) { //$NON-NLS-1$
+            return false;
+        }
 		
 		boolean support3D = true;
 		//just test if pattern is supported on the platform.		

@@ -77,8 +77,9 @@ class ViewPortHandler implements IViewPortHandler2 {
 
 			// year scrolls so fast that the events actually lose position, this is no good, so we need to break the speed
 			if (mCurrentView == ISettings.VIEW_YEAR) {
-				if (diff > 7)
-					diff = 7;
+                if (diff > 7) {
+                    diff = 7;
+                }
 			}
 
 			for (int i = 0; i < diff; i++) {
@@ -153,8 +154,9 @@ class ViewPortHandler implements IViewPortHandler2 {
 			// year scrolls so fast that the events actually lose position, this is no good, so we need to break the speed
 			// TODO: look into this a bit more, as it's quite odd (same for scrollingLeft)
 			if (mCurrentView == ISettings.VIEW_YEAR) {
-				if (diff > 7)
-					diff = 7;
+                if (diff > 7) {
+                    diff = 7;
+                }
 			}
 
 			for (int i = 0; i < diff; i++) {

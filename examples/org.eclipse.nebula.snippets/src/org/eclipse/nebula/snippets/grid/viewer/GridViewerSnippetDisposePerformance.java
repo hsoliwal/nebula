@@ -208,8 +208,9 @@ public class GridViewerSnippetDisposePerformance
 
 			public Object getValue(Object element, String property)
 			{
-				if (element == null)
-					return "Element is null";
+                if (element == null) {
+                    return "Element is null";
+                }
 				return "Column " + property + " => " + element.toString();
 			}
 
@@ -355,8 +356,9 @@ public class GridViewerSnippetDisposePerformance
 					int[] selected = grid.getSelectionIndices();
 					grid.deselect(selected);
 					grid.remove(selected);
-					while (focus.y >= grid.getItemCount())
-						--focus.y;
+                    while (focus.y >= grid.getItemCount()) {
+                        --focus.y;
+                    }
 					if (focus.y >= 0 && focus.x >=0)
 					{
 						grid.setFocusItem(grid.getItem(focus.y));
@@ -409,8 +411,9 @@ public class GridViewerSnippetDisposePerformance
 				{
 					try
 					{
-						if (v.getGrid().isDisposed())
-							return;
+                        if (v.getGrid().isDisposed()) {
+                            return;
+                        }
 						FileDialog fileDialog = new FileDialog(shell);
 						fileDialog.setFilterExtensions(new String[] { "*.xml" });
 						String open = fileDialog.open();
@@ -550,8 +553,9 @@ public class GridViewerSnippetDisposePerformance
 
 		while (!shell.isDisposed())
 		{
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
 		display.dispose();

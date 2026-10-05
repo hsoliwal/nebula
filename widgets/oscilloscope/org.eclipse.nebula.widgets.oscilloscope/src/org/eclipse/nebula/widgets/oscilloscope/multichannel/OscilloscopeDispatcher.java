@@ -85,8 +85,9 @@ public class OscilloscopeDispatcher {
 		 */
 		public void playClip(File file, int loopCount) {
 
-			if (file == null)
-				return;
+            if (file == null) {
+                return;
+            }
 
 			try {
 
@@ -95,8 +96,9 @@ public class OscilloscopeDispatcher {
 					this.clip = AudioSystem.getClip();
 					this.clip.open(AudioSystem.getAudioInputStream(file));
 				}
-				if (this.clip.isActive())
-					return;
+                if (this.clip.isActive()) {
+                    return;
+                }
 				// clip.stop(); << Alternative
 
 				this.clip.setFramePosition(0);
@@ -247,8 +249,9 @@ public class OscilloscopeDispatcher {
 			private int pulse;
 
 			public void run() {
-				if (getOscilloscope().isDisposed())
-					return;
+                if (getOscilloscope().isDisposed()) {
+                    return;
+                }
 
 				hookBeforeDraw(getOscilloscope(), this.pulse);
 				getOscilloscope().redraw();
@@ -262,15 +265,15 @@ public class OscilloscopeDispatcher {
 					this.pulse = 0;
 				}
 
-				if (!stop)
-					if (getDelayLoop() > 1) {
-						getOscilloscope().getDisplay().timerExec(getDelayLoop(), this);
-					} else {
-						getOscilloscope().getDisplay().asyncExec(this);
-					}
-				else {
-					isRunning = false;
-				}
+                if (!stop) {
+                    if (getDelayLoop() > 1) {
+                        getOscilloscope().getDisplay().timerExec(getDelayLoop(), this);
+                    } else {
+                        getOscilloscope().getDisplay().asyncExec(this);
+                    }
+                } else {
+                    isRunning = false;
+                }
 			}
 		};
 

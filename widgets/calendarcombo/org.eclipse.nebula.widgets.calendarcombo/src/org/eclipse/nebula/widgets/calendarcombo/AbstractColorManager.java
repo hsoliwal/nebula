@@ -29,9 +29,10 @@ public abstract class AbstractColorManager implements IColorManager {
 	
 	public AbstractColorManager(int theme) {
 		mTheme = theme;
-		
-		if (mTheme == SKIN_AUTO_DETECT)
-			autoDetect();
+
+        if (mTheme == SKIN_AUTO_DETECT) {
+            autoDetect();
+        }
 	}
 
 	public Color getCalendarHeaderColor() {

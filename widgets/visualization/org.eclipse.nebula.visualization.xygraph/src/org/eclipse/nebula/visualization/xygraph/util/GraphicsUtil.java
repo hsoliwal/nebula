@@ -46,8 +46,9 @@ public final class GraphicsUtil {
 	 */
 	public static final void drawVerticalText(Graphics graphics, String text, int x, int y, boolean upToDown) {
 		try {
-			if (SWT.getPlatform().startsWith("rap")) //$NON-NLS-1$
-				throw new Exception();
+            if (SWT.getPlatform().startsWith("rap")) { //$NON-NLS-1$
+                throw new Exception();
+            }
 			try {
 				graphics.pushState();
 				graphics.translate(x, y);
@@ -74,8 +75,9 @@ public final class GraphicsUtil {
 				graphics.drawImage(image, x, y);
 
 			} finally {
-				if (image != null)
-					image.dispose();
+                if (image != null) {
+                    image.dispose();
+                }
 			}
 		}
 	}

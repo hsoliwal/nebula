@@ -53,9 +53,13 @@ final class GridViewportProjection {
 		long right = 0;
 		for (int index = 0; index < columns.size(); index++) {
 			GridColumn column = columns.get(index);
-			if (!column.isVisible() || column.getWidth() <= 0) continue;
+            if (!column.isVisible() || column.getWidth() <= 0) {
+                continue;
+            }
 			right += column.getWidth();
-			if (right > horizontalSelectionPixels) return index;
+            if (right > horizontalSelectionPixels) {
+                return index;
+            }
 		}
 		return columns.size();
 	}
@@ -65,11 +69,17 @@ final class GridViewportProjection {
 		int endIndex = startIndex - 1;
 		for (int index = 0; index < columns.size(); index++) {
 			GridColumn column = columns.get(index);
-			if (!column.isVisible() || column.getWidth() <= 0) continue;
+            if (!column.isVisible() || column.getWidth() <= 0) {
+                continue;
+            }
 			long left = right;
 			right += column.getWidth();
-			if (index >= startIndex && left < clientWidth && right > 0) endIndex = index;
-			if (right >= clientWidth) break;
+            if (index >= startIndex && left < clientWidth && right > 0) {
+                endIndex = index;
+            }
+            if (right >= clientWidth) {
+                break;
+            }
 		}
 		return endIndex;
 	}
@@ -80,11 +90,15 @@ final class GridViewportProjection {
 	 */
 	static GridColumn[] visibleColumns(List<GridColumn> columns, int horizontalSelectionPixels,
 			int viewportLeft, int viewportRight, boolean fixedOverlayActive) {
-		if (viewportRight <= viewportLeft || columns.isEmpty()) return new GridColumn[0];
+        if (viewportRight <= viewportLeft || columns.isEmpty()) {
+            return new GridColumn[0];
+        }
 		long fixedWidth = 0;
 		if (fixedOverlayActive) {
 			for (GridColumn column : columns) {
-				if (column.isVisible() && column.isFixed()) fixedWidth += column.getWidth();
+                if (column.isVisible() && column.isFixed()) {
+                    fixedWidth += column.getWidth();
+                }
 			}
 		}
 		long scrolledX = (long) viewportLeft - horizontalSelectionPixels;
@@ -92,13 +106,19 @@ final class GridViewportProjection {
 		long bodyLeft = (long) viewportLeft + fixedWidth;
 		List<GridColumn> visible = new ArrayList<>();
 		for (GridColumn column : columns) {
-			if (!column.isVisible()) continue;
+            if (!column.isVisible()) {
+                continue;
+            }
 			int width = column.getWidth();
 			boolean pinned = fixedOverlayActive && column.isFixed();
 			long left = pinned ? fixedX : scrolledX;
 			long clipLeft = pinned ? viewportLeft : bodyLeft;
-			if (width > 0 && left < viewportRight && left + width > clipLeft) visible.add(column);
-			if (pinned) fixedX += width;
+            if (width > 0 && left < viewportRight && left + width > clipLeft) {
+                visible.add(column);
+            }
+            if (pinned) {
+                fixedX += width;
+            }
 			scrolledX += width;
 		}
 		return visible.toArray(new GridColumn[visible.size()]);

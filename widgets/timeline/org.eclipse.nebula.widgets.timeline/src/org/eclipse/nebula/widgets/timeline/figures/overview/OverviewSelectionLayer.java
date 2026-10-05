@@ -51,8 +51,9 @@ public class OverviewSelectionLayer extends FreeformLayer {
 
 			final Timing coordinates = timeConverter.toOverviewScreenCoordinates(timeConverter.getVisibleEventArea());
 			final Rectangle bounds = new PrecisionRectangle(coordinates.left(), 0, coordinates.getDuration(), getBounds().height());
-			if (bounds.width() < MINIMUM_WIDTH)
-				bounds.setWidth(MINIMUM_WIDTH);
+            if (bounds.width() < MINIMUM_WIDTH) {
+                bounds.setWidth(MINIMUM_WIDTH);
+            }
 
 			return bounds;
 		}

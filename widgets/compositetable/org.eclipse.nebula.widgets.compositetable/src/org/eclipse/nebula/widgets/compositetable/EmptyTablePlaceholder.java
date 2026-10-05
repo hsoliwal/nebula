@@ -193,8 +193,9 @@ class EmptyTablePlaceholder extends Canvas {
 	 */
 	private KeyListener keyListener = new KeyListener() {
 		public void keyPressed(KeyEvent e) {
-			if (e.keyCode == SWT.INSERT)
-				parentTable.keyPressed(null, e);
+            if (e.keyCode == SWT.INSERT) {
+                parentTable.keyPressed(null, e);
+            }
 		}
 		public void keyReleased(KeyEvent e) {
 		}

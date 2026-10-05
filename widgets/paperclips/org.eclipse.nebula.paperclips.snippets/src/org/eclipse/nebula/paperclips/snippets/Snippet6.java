@@ -62,9 +62,11 @@ public class Snippet6 {
 
 		// create a grid 50 rows tall by 5 columns wide with dummy data.
 		GridPrint grid = new GridPrint("d, d, d, d, d", look);
-		for (int i = 0; i < 50; i++)
-			for (int j = 0; j < 5; j++)
-				grid.add(new TextPrint("row " + i + ", col " + j));
+        for (int i = 0; i < 50; i++) {
+            for (int j = 0; j < 5; j++) {
+                grid.add(new TextPrint("row " + i + ", col " + j));
+            }
+        }
 
 		// Page footer showing a horizontal rule with a copyright statement and
 		// page
@@ -124,17 +126,20 @@ public class Snippet6 {
 		button.addListener(SWT.Selection, event -> {
 			PrintDialog dialog = new PrintDialog(shell, SWT.NONE);
 			PrinterData printerData = dialog.open();
-			if (printerData != null)
-				PaperClips.print(
-						new PrintJob("Snippet6.java", print).setMargins(72),
-						printerData);
+            if (printerData != null) {
+                PaperClips.print(
+                        new PrintJob("Snippet6.java", print).setMargins(72),
+                        printerData);
+            }
 		});
 
 		shell.setVisible(true);
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		display.dispose();
 	}

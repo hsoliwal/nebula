@@ -62,8 +62,9 @@ public class OverviewSelectionMover extends MouseMotionListener.Stub implements 
 			final Dimension offset = targetLocation.getDifference(fLocation);
 			if (offset.width() != 0) {
 				final TimeBaseConverter timeDetails = RootFigure.getRootFigure(fFigure).getTimeViewDetails();
-				if (timeDetails.translateOverviewAreaOffset(offset.width()))
-					fLocation = targetLocation;
+                if (timeDetails.translateOverviewAreaOffset(offset.width())) {
+                    fLocation = targetLocation;
+                }
 
 				me.consume();
 			}

@@ -138,7 +138,9 @@ public class TimelinePackage extends EPackageImpl implements ITimelinePackage {
 	 * @generated
 	 */
 	public static ITimelinePackage init() {
-		if (isInited) return (ITimelinePackage)EPackage.Registry.INSTANCE.getEPackage(ITimelinePackage.eNS_URI);
+        if (isInited) {
+            return (ITimelinePackage) EPackage.Registry.INSTANCE.getEPackage(ITimelinePackage.eNS_URI);
+        }
 
 		// Obtain or create and register package
 		Object registeredTimelinePackage = EPackage.Registry.INSTANCE.get(eNS_URI);
@@ -575,7 +577,9 @@ public class TimelinePackage extends EPackageImpl implements ITimelinePackage {
 	 * @generated
 	 */
 	public void createPackageContents() {
-		if (isCreated) return;
+        if (isCreated) {
+            return;
+        }
 		isCreated = true;
 
 		// Create classes and their features
@@ -643,7 +647,9 @@ public class TimelinePackage extends EPackageImpl implements ITimelinePackage {
 	 * @generated
 	 */
 	public void initializePackageContents() {
-		if (isInitialized) return;
+        if (isInitialized) {
+            return;
+        }
 		isInitialized = true;
 
 		// Initialize package

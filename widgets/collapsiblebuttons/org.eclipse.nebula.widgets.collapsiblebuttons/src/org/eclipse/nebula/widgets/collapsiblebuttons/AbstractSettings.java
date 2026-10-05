@@ -66,8 +66,9 @@ public class AbstractSettings implements ISettings {
 	}
 
 	public IButtonPainter getButtonPainter() {
-		if (mButtonPainter == null) 
-			mButtonPainter = new AbstractButtonPainter();
+        if (mButtonPainter == null) {
+            mButtonPainter = new AbstractButtonPainter();
+        }
 		
 		return mButtonPainter;
 	}

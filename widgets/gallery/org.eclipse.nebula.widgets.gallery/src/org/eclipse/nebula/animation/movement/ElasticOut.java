@@ -87,20 +87,21 @@ public class ElasticOut extends AbstractMovement {
 		}
 
 		step = step / duration;
-		if ((step) == 1d)
-			return min + c;
+        if ((step) == 1d) {
+            return min + c;
+        }
 
-		if (p == null)
-			p = new Double(duration * .3);
+        if (p == null) {
+            p = new Double(duration * .3);
+        }
 
 		if (a == null || a.doubleValue() < Math.abs(c)) {
 			a = new Double(c);
 			s = p.doubleValue() / 4d;
-		}
-
-		else
-			s = p.doubleValue() / (2d * Math.PI)
-					* Math.asin(c / a.doubleValue());
+		} else {
+            s = p.doubleValue() / (2d * Math.PI)
+                    * Math.asin(c / a.doubleValue());
+        }
 
 		return (a.doubleValue()
 				* Math.pow(2d, -10d * step)

@@ -66,16 +66,18 @@ public abstract class AbstractDataProvider implements IDataProvider {
 
 	@Override
 	synchronized public Range getXDataMinMax(boolean positiveOnly) {
-		if (getSize() <= 0)
-			return null;
+        if (getSize() <= 0) {
+            return null;
+        }
 		xDataMinMax = getDataRange(positiveOnly, true);
 		return xDataMinMax;
 	}
 
 	@Override
 	synchronized public Range getYDataMinMax(boolean positiveOnly) {
-		if (getSize() <= 0)
-			return null;
+        if (getSize() <= 0) {
+            return null;
+        }
 		yDataMinMax = getDataRange(positiveOnly, false);
 		return yDataMinMax;
 	}
@@ -157,8 +159,9 @@ public abstract class AbstractDataProvider implements IDataProvider {
 	 * @param listener
 	 */
 	public void addDataProviderListener(final IDataProviderListener listener) {
-		if (listeners.contains(listener))
-			return;
+        if (listeners.contains(listener)) {
+            return;
+        }
 		listeners.add(listener);
 	}
 

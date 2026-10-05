@@ -72,8 +72,9 @@ public class AnimationRunner {
 	}
 
 	private void startEffect() {
-		if (running)
-			return;
+        if (running) {
+            return;
+        }
 
 		running = true;
 		Display.getCurrent().syncExec(new Runnable() {

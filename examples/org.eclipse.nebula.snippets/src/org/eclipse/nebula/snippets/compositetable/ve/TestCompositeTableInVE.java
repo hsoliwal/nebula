@@ -53,8 +53,9 @@ public class TestCompositeTableInVE {
         thisClass.sShell.layout();
         thisClass.sShell.open();
         while (!thisClass.sShell.isDisposed()) {
-            if (!display.readAndDispatch())
+            if (!display.readAndDispatch()) {
                 display.sleep();
+            }
         }
         display.dispose();
     }

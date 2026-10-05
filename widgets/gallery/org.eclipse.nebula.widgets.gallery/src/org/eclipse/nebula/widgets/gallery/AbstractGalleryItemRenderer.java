@@ -240,8 +240,9 @@ public abstract class AbstractGalleryItemRenderer {
 	 */
 	protected void drawOverlayImages(GC gc, int x, int y, double ratio,
 			Image[] images) {
-		if (images == null)
-			return;
+        if (images == null) {
+            return;
+        }
 
 		int position = 0;
 		for (int i = 0; i < images.length; i++) {
@@ -263,8 +264,9 @@ public abstract class AbstractGalleryItemRenderer {
 	 */
 	protected Point getOverlaySize(Image[] images) {
 
-		if (images == null)
-			return new Point(0, 0);
+        if (images == null) {
+            return new Point(0, 0);
+        }
 
 		Point result = new Point(0, 0);
 		for (int i = 0; i < images.length; i++) {

@@ -13,7 +13,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.outputTimestamp>2026-10-04T00:00:00Z</project.build.outputTimestamp>
     <rewrite.version>8.90.4</rewrite.version>
-    <m3.nebula.root>${project.basedir}/../..</m3.nebula.root>
+    <m3.nebula.root>${project.basedir}/src/test/resources/original-nebula</m3.nebula.root>
+    <m3.nebula.currentRoot>${project.basedir}/../..</m3.nebula.currentRoot>
   </properties>
   <dependencies>
     <dependency><groupId>org.openrewrite</groupId><artifactId>rewrite-java-21</artifactId><version>${rewrite.version}</version></dependency>
@@ -69,7 +70,10 @@
         <groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.6</version>
         <configuration>
           <useModulePath>false</useModulePath>
-          <systemPropertyVariables><m3.nebula.root>${m3.nebula.root}</m3.nebula.root></systemPropertyVariables>
+          <systemPropertyVariables>
+            <m3.nebula.root>${m3.nebula.root}</m3.nebula.root>
+            <m3.nebula.currentRoot>${m3.nebula.currentRoot}</m3.nebula.currentRoot>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

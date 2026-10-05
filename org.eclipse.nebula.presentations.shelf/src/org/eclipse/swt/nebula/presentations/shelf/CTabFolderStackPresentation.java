@@ -72,10 +72,13 @@ public class CTabFolderStackPresentation extends StackPresentation
         {        
             public void handleEvent(Event event)
             {
-                if (event.item == null) return;
-                
-                if (!ignoreSelection)
-                    getSite().selectPart((IPresentablePart)event.item.getData(DATAKEY_PART));
+                if (event.item == null) {
+                    return;
+                }
+
+                if (!ignoreSelection) {
+                    getSite().selectPart((IPresentablePart) event.item.getData(DATAKEY_PART));
+                }
             }        
         });
         
@@ -111,7 +114,9 @@ public class CTabFolderStackPresentation extends StackPresentation
         {        
             public void handleEvent(Event event)
             {
-                if (event.y > tabFolder.getTabHeight()) return;
+                if (event.y > tabFolder.getTabHeight()) {
+                    return;
+                }
                 
                 if (getSite().getState() == IStackPresentationSite.STATE_MAXIMIZED)
                 {
@@ -132,7 +137,9 @@ public class CTabFolderStackPresentation extends StackPresentation
             public void handleEvent(Event event)
             {
                 IPresentablePart part = getSite().getSelectedPart();
-                if (part == null) return;
+                if (part == null) {
+                    return;
+                }
                 getSite().close(new IPresentablePart[]{part});
             }
         });
@@ -143,10 +150,14 @@ public class CTabFolderStackPresentation extends StackPresentation
             public void handleEvent(Event event)
             {
                 IPresentablePart part = getSite().getSelectedPart();
-                if (part == null) return;
+                if (part == null) {
+                    return;
+                }
                 
                 IPresentablePart[] parts = getSite().getPartList();
-                if (parts.length < 2) return;
+                if (parts.length < 2) {
+                    return;
+                }
                 
                 IPresentablePart[] closeParts = new IPresentablePart[parts.length - 1];
                 
@@ -170,7 +181,9 @@ public class CTabFolderStackPresentation extends StackPresentation
             public void handleEvent(Event event)
             {
                 IPresentablePart[] parts = getSite().getPartList();
-                if (parts == null) return;
+                if (parts == null) {
+                    return;
+                }
                 getSite().close(parts);
             }        
         });
@@ -213,8 +226,9 @@ public class CTabFolderStackPresentation extends StackPresentation
         CTabItem item = getItem(part);
         
         String dirty = "";
-        if (part.isDirty())
+        if (part.isDirty()) {
             dirty = "*";
+        }
         
         item.setText(dirty + part.getName());
         item.setImage(part.getTitleImage());
@@ -339,12 +353,16 @@ public class CTabFolderStackPresentation extends StackPresentation
     private void resizeSelectedPart()
     {
         IPresentablePart part = getSite().getSelectedPart();
-        
-        if (part == null) return;
+
+        if (part == null) {
+            return;
+        }
         
         CTabItem item = getItem(part);
-        
-        if (item == null) return;
+
+        if (item == null) {
+            return;
+        }
         
         Rectangle bounds = tabFolder.getClientArea();
         
@@ -360,15 +378,17 @@ public class CTabFolderStackPresentation extends StackPresentation
     @Override
     public void setState(int state)
     {
-        if (state == IStackPresentationSite.STATE_MAXIMIZED)
+        if (state == IStackPresentationSite.STATE_MAXIMIZED) {
             tabFolder.setMaximized(true);
+        }
         if (state == IStackPresentationSite.STATE_RESTORED)
         {
             tabFolder.setMaximized(false);
             tabFolder.setMinimized(false);
         }
-        if (state == IStackPresentationSite.STATE_MINIMIZED)
+        if (state == IStackPresentationSite.STATE_MINIMIZED) {
             tabFolder.setMinimized(true);
+        }
     }
 
     /** 
@@ -378,10 +398,13 @@ public class CTabFolderStackPresentation extends StackPresentation
     public void setVisible(boolean isVisible)
     {
         tabFolder.setVisible(isVisible);
-        if (getSite().getSelectedPart() == null) return;
+        if (getSite().getSelectedPart() == null) {
+            return;
+        }
         getSite().getSelectedPart().setVisible(isVisible);
-        if (getSite().getSelectedPart().getToolBar() != null)
+        if (getSite().getSelectedPart().getToolBar() != null) {
             getSite().getSelectedPart().getToolBar().setVisible(isVisible);
+        }
     }
 
     /** 

@@ -67,16 +67,18 @@ public abstract class BasicGridLookPainter implements GridLookPainter {
 
 		x += margins.getLeft();
 
-		if (headerPresent)
-			y = paintHeader(gc, x, y, columns, headerRows, headerColSpans);
+        if (headerPresent) {
+            y = paintHeader(gc, x, y, columns, headerRows, headerColSpans);
+        }
 
 		y += margins.getBodyTop(headerPresent, topOpen);
 		y = paintBody(gc, x, y, columns, bodyRows, bodyColSpans, firstRowIndex,
 				topOpen, bottomOpen);
 		y += margins.getBodyBottom(footerPresent, bottomOpen);
 
-		if (footerPresent)
-			paintFooter(gc, x, y, columns, footerRows, footerColSpans);
+        if (footerPresent) {
+            paintFooter(gc, x, y, columns, footerRows, footerColSpans);
+        }
 	}
 
 	private int paintHeader(GC gc, int x, int y, int[] columns, int[] rows,
@@ -91,8 +93,9 @@ public abstract class BasicGridLookPainter implements GridLookPainter {
 			paintHeaderRow(gc, x, y, columns, h, i, colSpans[i]);
 
 			y += h;
-			if (i < rows.length - 1)
-				y += margins.getHeaderVerticalSpacing();
+            if (i < rows.length - 1) {
+                y += margins.getHeaderVerticalSpacing();
+            }
 		}
 
 		return y;
@@ -110,8 +113,9 @@ public abstract class BasicGridLookPainter implements GridLookPainter {
 					i == 0 && topOpen, i == rows.length - 1 && bottomOpen);
 
 			y += h;
-			if (i < rows.length - 1)
-				y += margins.getBodyVerticalSpacing();
+            if (i < rows.length - 1) {
+                y += margins.getBodyVerticalSpacing();
+            }
 		}
 		return y;
 	}
@@ -187,8 +191,9 @@ public abstract class BasicGridLookPainter implements GridLookPainter {
 
 	private int sum(int[] elements, int start, int length) {
 		int sum = 0;
-		for (int j = 0; j < length; j++)
-			sum += elements[start + j];
+        for (int j = 0; j < length; j++) {
+            sum += elements[start + j];
+        }
 		return sum;
 	}
 

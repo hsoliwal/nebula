@@ -193,16 +193,19 @@ public class SimpleGroupStrategy extends AbstractGroupStrategy
      */
     public boolean isToggleLocation(int x, int y)
     {
-        if (super.isToggleLocation(x, y))
+        if (super.isToggleLocation(x, y)) {
             return true;
+        }
 
-        if (getGroup().getToggleRenderer() == null)
+        if (getGroup().getToggleRenderer() == null) {
             return false;
+        }
 
         Rectangle textBounds = getTextBounds();
         textBounds.width = Math.min(textWidth,textBounds.width);
-        if (textBounds.contains(x, y))
+        if (textBounds.contains(x, y)) {
             return true;
+        }
 
         return false;
     }
@@ -296,8 +299,9 @@ public class SimpleGroupStrategy extends AbstractGroupStrategy
         titleHeight = 0;
         int imageHeight = 0;
 
-        if (getGroup().getImage() != null)
+        if (getGroup().getImage() != null) {
             imageHeight = getGroup().getImage().getBounds().height;
+        }
         titleHeight = Math.max(gc.getFontMetrics().getHeight() + (2 * titleTextMargin)
                                + (2 * vMargin), imageHeight + (2 * vMargin));
         if (getGroup().getToggleRenderer() != null)

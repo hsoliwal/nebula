@@ -101,8 +101,9 @@ public class RoundedSwitch extends Canvas {
 			setCursor(getDisplay().getSystemCursor(SWT.CURSOR_HAND));
 		});
 		addListener(SWT.MouseExit, e -> {
-			if (!isEnabled())
-				return;
+            if (!isEnabled()) {
+                return;
+            }
 			setCursor(getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
 		});
 	}

@@ -158,8 +158,9 @@ public class SnippetGalleryViewerTester {
 
 		// Run the event loop
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

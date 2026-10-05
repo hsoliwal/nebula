@@ -95,8 +95,9 @@ public class CSSShelfRenderer extends AbstractRenderer {
 
 		h += 2 * margin;
 
-		if (h % 2 != 0)
-			h++;
+        if (h % 2 != 0) {
+            h++;
+        }
 
 		return new Point(wHint, h);
 	}
@@ -150,8 +151,9 @@ public class CSSShelfRenderer extends AbstractRenderer {
 		int x = 6;
 		if (item.getImage() != null && imageLeft) {
 			int y2 = (getBounds().height - item.getImage().getBounds().height) / 2;
-			if ((getBounds().height - item.getImage().getBounds().height) % 2 != 0)
-				y2++;
+            if ((getBounds().height - item.getImage().getBounds().height) % 2 != 0) {
+                y2++;
+            }
 
 			gc.drawImage(item.getImage(), x, getBounds().y + y2);
 
@@ -170,8 +172,9 @@ public class CSSShelfRenderer extends AbstractRenderer {
 		}
 
 		int y2 = (getBounds().height - gc.getFontMetrics().getHeight()) / 2;
-		if ((getBounds().height - gc.getFontMetrics().getHeight()) % 2 != 0)
-			y2++;
+        if ((getBounds().height - gc.getFontMetrics().getHeight()) % 2 != 0) {
+            y2++;
+        }
 
 		int textWidth = getBounds().width - 12;
 		if (item.getImage() != null) {
@@ -183,8 +186,9 @@ public class CSSShelfRenderer extends AbstractRenderer {
 
 		if (item.getImage() != null && !imageLeft) {
 			int y3 = (getBounds().height - item.getImage().getBounds().height) / 2;
-			if ((getBounds().height - item.getImage().getBounds().height) % 2 != 0)
-				y3++;
+            if ((getBounds().height - item.getImage().getBounds().height) % 2 != 0) {
+                y3++;
+            }
 
 			gc.drawImage(item.getImage(), getBounds().width - 6 - item.getImage().getBounds().width, getBounds().y + y3);
 		}
@@ -276,12 +280,12 @@ public class CSSShelfRenderer extends AbstractRenderer {
 			inverseColor = parent.getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT);
 		}
 
-		if ((parent.getStyle() & SWT.SIMPLE) != 0)
-			selectedForeground = inverseColor;
-		else {
-			foreground = inverseColor;
-			selectedForeground = csshelper.getSelectedForegroundColor();
-		}
+        if ((parent.getStyle() & SWT.SIMPLE) != 0) {
+            selectedForeground = inverseColor;
+        } else {
+            foreground = inverseColor;
+            selectedForeground = csshelper.getSelectedForegroundColor();
+        }
 
 		// the other color left null, foreground color of the parent will be
 		// used for it

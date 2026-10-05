@@ -70,7 +70,9 @@ public class Cursor extends MinimalEObjectImpl.Container implements ICursor {
 	 */
 	@Override
 	public ITimeline getTimeline() {
-		if (eContainerFeatureID() != ITimelinePackage.CURSOR__TIMELINE) return null;
+        if (eContainerFeatureID() != ITimelinePackage.CURSOR__TIMELINE) {
+            return null;
+        }
 		return (ITimeline)eInternalContainer();
 	}
 
@@ -90,18 +92,24 @@ public class Cursor extends MinimalEObjectImpl.Container implements ICursor {
 	@Override
 	public void setTimeline(ITimeline newTimeline) {
 		if (newTimeline != eInternalContainer() || (eContainerFeatureID() != ITimelinePackage.CURSOR__TIMELINE && newTimeline != null)) {
-			if (EcoreUtil.isAncestor(this, newTimeline))
-				throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            if (EcoreUtil.isAncestor(this, newTimeline)) {
+                throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            }
 			NotificationChain msgs = null;
-			if (eInternalContainer() != null)
-				msgs = eBasicRemoveFromContainer(msgs);
-			if (newTimeline != null)
-				msgs = ((InternalEObject)newTimeline).eInverseAdd(this, ITimelinePackage.TIMELINE__CURSORS, ITimeline.class, msgs);
+            if (eInternalContainer() != null) {
+                msgs = eBasicRemoveFromContainer(msgs);
+            }
+            if (newTimeline != null) {
+                msgs = ((InternalEObject) newTimeline).eInverseAdd(this, ITimelinePackage.TIMELINE__CURSORS, ITimeline.class, msgs);
+            }
 			msgs = basicSetTimeline(newTimeline, msgs);
-			if (msgs != null) msgs.dispatch();
+            if (msgs != null) {
+                msgs.dispatch();
+            }
 		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.CURSOR__TIMELINE, newTimeline, newTimeline));
+		else if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.CURSOR__TIMELINE, newTimeline, newTimeline));
+        }
 	}
 
 	/**
@@ -121,8 +129,9 @@ public class Cursor extends MinimalEObjectImpl.Container implements ICursor {
 	public void setTimestamp(long newTimestamp) {
 		long oldTimestamp = timestamp;
 		timestamp = newTimestamp;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.CURSOR__TIMESTAMP, oldTimestamp, timestamp));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.CURSOR__TIMESTAMP, oldTimestamp, timestamp));
+        }
 	}
 
 	/**
@@ -143,8 +152,9 @@ public class Cursor extends MinimalEObjectImpl.Container implements ICursor {
 	public NotificationChain eInverseAdd(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case ITimelinePackage.CURSOR__TIMELINE:
-				if (eInternalContainer() != null)
-					msgs = eBasicRemoveFromContainer(msgs);
+                if (eInternalContainer() != null) {
+                    msgs = eBasicRemoveFromContainer(msgs);
+                }
 				return basicSetTimeline((ITimeline)otherEnd, msgs);
 		}
 		return super.eInverseAdd(otherEnd, featureID, msgs);
@@ -259,7 +269,9 @@ public class Cursor extends MinimalEObjectImpl.Container implements ICursor {
 	 */
 	@Override
 	public String toString() {
-		if (eIsProxy()) return super.toString();
+        if (eIsProxy()) {
+            return super.toString();
+        }
 
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (timestamp: ");

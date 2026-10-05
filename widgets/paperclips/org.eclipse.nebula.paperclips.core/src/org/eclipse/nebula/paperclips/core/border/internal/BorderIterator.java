@@ -61,16 +61,19 @@ public class BorderIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext())
-			PaperClips.error("No more content"); //$NON-NLS-1$
+        if (!hasNext()) {
+            PaperClips.error("No more content"); //$NON-NLS-1$
+        }
 
 		PrintPiece piece = next(width, height, false /* closed bottom border */);
 
-		if (piece == null)
-			piece = next(width, height, true /* open bottom border */);
+        if (piece == null) {
+            piece = next(width, height, true /* open bottom border */);
+        }
 
-		if (piece != null)
-			opened = true;
+        if (piece != null) {
+            opened = true;
+        }
 
 		return piece;
 	}
@@ -79,13 +82,15 @@ public class BorderIterator implements PrintIterator {
 		// Adjust iteration area for border dimensions.
 		width -= border.getWidth();
 		height -= border.getHeight(opened, bottomBorderOpen);
-		if (width < 0 || height < 0)
-			return null;
+        if (width < 0 || height < 0) {
+            return null;
+        }
 
 		PrintIterator iter = target.copy();
 		PrintPiece piece = PaperClips.next(iter, width, height);
-		if (piece == null)
-			return null;
+        if (piece == null) {
+            return null;
+        }
 
 		if (bottomBorderOpen && !iter.hasNext()) {
 			// The target content was consumed, but the bottom border is open
@@ -95,8 +100,9 @@ public class BorderIterator implements PrintIterator {
 			// an open bottom border.
 			piece.dispose();
 			piece = getTallestPieceNotCompletelyConsumingTarget(width, height);
-			if (piece == null)
-				return null;
+            if (piece == null) {
+                return null;
+            }
 		} else if (!bottomBorderOpen && iter.hasNext()) {
 			// Bottom border is closed but the target has more content: fail so
 			// calling method can try again with
@@ -132,8 +138,9 @@ public class BorderIterator implements PrintIterator {
 			} else if (testIterator.hasNext()) {
 				low = testHeight;
 
-				if (bestPiece != null)
-					bestPiece.dispose();
+                if (bestPiece != null) {
+                    bestPiece.dispose();
+                }
 				bestIterator = testIterator;
 				bestPiece = testPiece;
 			} else { // !testIterator.hasNext()
@@ -141,8 +148,9 @@ public class BorderIterator implements PrintIterator {
 			}
 		}
 
-		if (bestPiece != null)
-			this.target = bestIterator;
+        if (bestPiece != null) {
+            this.target = bestIterator;
+        }
 		return bestPiece;
 	}
 

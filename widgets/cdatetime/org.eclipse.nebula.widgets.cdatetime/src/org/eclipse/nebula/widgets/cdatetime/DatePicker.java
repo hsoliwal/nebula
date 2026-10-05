@@ -1529,21 +1529,39 @@ class DatePicker extends VPanel {
     public void updateColorsAndFont() {
         if (cdt.pickerBackgroundColor != null) {
             picker.setBackground(cdt.pickerBackgroundColor);
-            if (dayPanel != null) dayPanel.setBackground(cdt.pickerBackgroundColor);
-            if (monthPanel != null) dayPanel.setBackground(cdt.pickerBackgroundColor);
-            if (yearPanel != null) dayPanel.setBackground(cdt.pickerBackgroundColor);
+            if (dayPanel != null) {
+                dayPanel.setBackground(cdt.pickerBackgroundColor);
+            }
+            if (monthPanel != null) {
+                dayPanel.setBackground(cdt.pickerBackgroundColor);
+            }
+            if (yearPanel != null) {
+                dayPanel.setBackground(cdt.pickerBackgroundColor);
+            }
         }
         if (cdt.pickerForegroundColor != null) {
             picker.setForeground(cdt.pickerForegroundColor);
-            if (dayPanel != null) dayPanel.setForeground(cdt.pickerForegroundColor);
-            if (monthPanel != null) dayPanel.setForeground(cdt.pickerForegroundColor);
-            if (yearPanel != null) dayPanel.setForeground(cdt.pickerForegroundColor);
+            if (dayPanel != null) {
+                dayPanel.setForeground(cdt.pickerForegroundColor);
+            }
+            if (monthPanel != null) {
+                dayPanel.setForeground(cdt.pickerForegroundColor);
+            }
+            if (yearPanel != null) {
+                dayPanel.setForeground(cdt.pickerForegroundColor);
+            }
         }
         if (cdt.pickerFont != null) {
             picker.setFont(cdt.pickerFont);
-            if (dayPanel != null) dayPanel.setFont(cdt.pickerFont);
-            if (monthPanel != null) dayPanel.setFont(cdt.pickerFont);
-            if (yearPanel != null) dayPanel.setFont(cdt.pickerFont);
+            if (dayPanel != null) {
+                dayPanel.setFont(cdt.pickerFont);
+            }
+            if (monthPanel != null) {
+                dayPanel.setFont(cdt.pickerFont);
+            }
+            if (yearPanel != null) {
+                dayPanel.setFont(cdt.pickerFont);
+            }
         }
         cdt.getPainter().update(picker);
         cdt.getPainter().update(body);

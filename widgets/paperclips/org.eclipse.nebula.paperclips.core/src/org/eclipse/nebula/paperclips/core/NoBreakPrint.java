@@ -53,18 +53,23 @@ public class NoBreakPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		NoBreakPrint other = (NoBreakPrint) obj;
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -111,11 +116,13 @@ class NoBreakIterator implements PrintIterator {
 		PrintIterator iter = target.copy();
 
 		PrintPiece result = PaperClips.next(iter, width, height);
-		if (result == null)
-			return result;
+        if (result == null) {
+            return result;
+        }
 
-		if (iter.hasNext()) // Failed to layout the whole target in one piece
-			return null;
+        if (iter.hasNext()) { // Failed to layout the whole target in one piece
+            return null;
+        }
 
 		this.target = iter;
 		return result;

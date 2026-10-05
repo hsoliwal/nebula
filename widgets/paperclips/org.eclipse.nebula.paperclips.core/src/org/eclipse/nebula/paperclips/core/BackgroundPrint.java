@@ -53,23 +53,30 @@ public class BackgroundPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		BackgroundPrint other = (BackgroundPrint) obj;
 		if (background == null) {
-			if (other.background != null)
-				return false;
-		} else if (!background.equals(other.background))
-			return false;
+            if (other.background != null) {
+                return false;
+            }
+		} else if (!background.equals(other.background)) {
+            return false;
+        }
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -139,8 +146,9 @@ class BackgroundIterator implements PrintIterator {
 
 	public PrintPiece next(int width, int height) {
 		PrintPiece targetPiece = PaperClips.next(target, width, height);
-		if (targetPiece == null)
-			return null;
+        if (targetPiece == null) {
+            return null;
+        }
 		return new BackgroundPiece(targetPiece, background, device);
 	}
 

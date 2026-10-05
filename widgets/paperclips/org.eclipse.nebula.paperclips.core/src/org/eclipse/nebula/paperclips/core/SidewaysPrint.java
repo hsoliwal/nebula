@@ -75,34 +75,43 @@ public final class SidewaysPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		SidewaysPrint other = (SidewaysPrint) obj;
-		if (angle != other.angle)
-			return false;
+        if (angle != other.angle) {
+            return false;
+        }
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
 		return true;
 	}
 
 	private static int checkAngle(int angle) {
-		// Make sure angle is a multiple of 90.
-		if (Math.abs(angle) % 90 != 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"Angle must be a multiple of 90 degrees"); //$NON-NLS-1$
+        // Make sure angle is a multiple of 90.
+        if (Math.abs(angle) % 90 != 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "Angle must be a multiple of 90 degrees"); //$NON-NLS-1$
+        }
 
-		// Bring angle within the range [0, 360)
-		if (angle < 0)
-			angle = 360 - (-angle % 360);
-		if (angle >= 360)
-			angle = angle % 360;
+        // Bring angle within the range [0, 360)
+        if (angle < 0) {
+            angle = 360 - (-angle % 360);
+        }
+        if (angle >= 360) {
+            angle = angle % 360;
+        }
 
 		return angle;
 	}
@@ -127,8 +136,9 @@ public final class SidewaysPrint implements Print {
 	}
 
 	public PrintIterator iterator(Device device, GC gc) {
-		if (angle == 0)
-			return target.iterator(device, gc);
+        if (angle == 0) {
+            return target.iterator(device, gc);
+        }
 		return new SidewaysIterator(target, angle, device, gc);
 	}
 }
@@ -195,18 +205,21 @@ final class SidewaysIterator implements PrintIterator {
 
 	public PrintPiece next(int width, int height) {
 		PrintPiece target;
-		if (angle == 180)
-			target = PaperClips.next(this.target, width, height);
-		else
-			// flip width and height if rotating by 90 or 270
-			target = PaperClips.next(this.target, height, width);
+        if (angle == 180) {
+            target = PaperClips.next(this.target, width, height);
+        } else {
+            // flip width and height if rotating by 90 or 270
+            target = PaperClips.next(this.target, height, width);
+        }
 
-		if (target == null)
-			return null;
+        if (target == null) {
+            return null;
+        }
 
 		Point size = target.getSize();
-		if (angle == 90 || angle == 270)
-			size = new Point(size.y, size.x);
+        if (angle == 90 || angle == 270) {
+            size = new Point(size.y, size.x);
+        }
 
 		return new RotatePiece(device, target, angle, size);
 	}

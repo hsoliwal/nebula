@@ -508,8 +508,9 @@ public class CompositeTable extends Canvas {
 	 * @return the actual number of rows that are currently visible.
 	 */
 	public int getNumRowsVisible() {
-		if (contentPane != null)
-			return contentPane.getNumRowsVisible();
+        if (contentPane != null) {
+            return contentPane.getNumRowsVisible();
+        }
 
 		return -1;
 	}

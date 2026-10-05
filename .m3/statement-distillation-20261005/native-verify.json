@@ -1,0 +1,77 @@
+{
+  "command": "mvn verify",
+  "result": "BUILD SUCCESS",
+  "source_binding": "all-files.tsv SHA-256",
+  "source_manifest_sha256": "9df361e6a3457836c260768873c49f8caf127a559e284f371f444bcdcff77cd7",
+  "raw_log_sha256": "107951df7cae19096bfcead0485b1581f20f01fb46375bbd0a74b7250a13f2ef",
+  "test_module_totals": [
+    [
+      24,
+      0,
+      0,
+      0
+    ],
+    [
+      13,
+      0,
+      0,
+      0
+    ],
+    [
+      5,
+      0,
+      0,
+      0
+    ],
+    [
+      73,
+      0,
+      0,
+      0
+    ],
+    [
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      6,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      11,
+      0,
+      0,
+      0
+    ],
+    [
+      60,
+      0,
+      0,
+      0
+    ]
+  ],
+  "aggregate_tests": {
+    "tests": 211,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "platform": "Linux x86_64, GTK3, Xvfb, OpenJDK 21.0.12.1",
+  "raw_log_not_published": "Selected test and reactor summaries avoid environment/system-property dumps."
+}

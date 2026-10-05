@@ -57,8 +57,9 @@ public class XYGraphStyledStringExampleView extends ViewPart {
 		traceDataProvider.setCurrentXDataArray(new double[] { 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6 });
 		traceDataProvider.setCurrentYDataArray(new double[] { 1, 1, 1, 1, 1, 1, 1 });
 
-		if (traceDataProvider.getSample(2) instanceof IMetaData)
-			((IMetaData) traceDataProvider.getSample(2)).setData("f25r");
+        if (traceDataProvider.getSample(2) instanceof IMetaData) {
+            ((IMetaData) traceDataProvider.getSample(2)).setData("f25r");
+        }
 
 		// create the trace
 		Trace trace = new Trace("Trace-Styled XY Plot", xyGraph.getPrimaryXAxis(), xyGraph.getPrimaryYAxis(),

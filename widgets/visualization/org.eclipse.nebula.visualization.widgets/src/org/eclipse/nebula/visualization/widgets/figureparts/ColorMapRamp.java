@@ -74,15 +74,20 @@ public class ColorMapRamp extends Figure {
 	}
 
 	private void updateMapData() {
-		for(int j=0; j<256; j++)
-			mapData[j] = max-j*(max-min)/255.0;
+        for (int j = 0; j < 256; j++) {
+            mapData[j] = max - j * (max - min) / 255.0;
+        }
 	}
 	
 	
 	@Override
 	protected void layout() {
-		if (scale.getFont()==null) return;
-		if (getChildren()==null || getChildren().isEmpty()) return;
+        if (scale.getFont() == null) {
+            return;
+        }
+        if (getChildren() == null || getChildren().isEmpty()) {
+            return;
+        }
 
 		Rectangle clientArea = getClientArea();
 		Dimension scaleSize = scale.getPreferredSize(clientArea.width, clientArea.height);		
@@ -107,8 +112,12 @@ public class ColorMapRamp extends Figure {
 	 * @param min the min to set
 	 */
 	public final void setMin(double min) {
-		if (Double.isInfinite(min)) return;
-		if (Double.isNaN(min))      return;
+        if (Double.isInfinite(min)) {
+            return;
+        }
+        if (Double.isNaN(min)) {
+            return;
+        }
 		this.min = min;
 		scale.setRange(min, max);
 		updateMapData();
@@ -119,8 +128,12 @@ public class ColorMapRamp extends Figure {
 	 * @param max the max to set
 	 */
 	public final void setMax(double max) {
-		if (Double.isInfinite(max)) return;
-		if (Double.isNaN(max))      return;
+        if (Double.isInfinite(max)) {
+            return;
+        }
+        if (Double.isNaN(max)) {
+            return;
+        }
 		this.max = max;
 		scale.setRange(min, max);
 		updateMapData();

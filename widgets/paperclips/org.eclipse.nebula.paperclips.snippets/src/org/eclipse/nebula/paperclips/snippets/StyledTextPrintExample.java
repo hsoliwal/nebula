@@ -82,8 +82,9 @@ public class StyledTextPrintExample {
 		print.addListener(SWT.Selection, event -> {
 			PrintDialog dialog = new PrintDialog(shell);
 			PrinterData printerData = dialog.open();
-			if (printerData != null)
-				PaperClips.print(job, printerData);
+            if (printerData != null) {
+                PaperClips.print(job, printerData);
+            }
 		});
 
 		preview.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -93,9 +94,11 @@ public class StyledTextPrintExample {
 
 		shell.open();
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		display.dispose();
 	}

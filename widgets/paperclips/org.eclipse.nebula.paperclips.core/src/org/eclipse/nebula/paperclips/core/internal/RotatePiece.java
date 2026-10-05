@@ -45,14 +45,16 @@ public final class RotatePiece implements PrintPiece {
 	}
 
 	private Transform getOldTransform() {
-		if (oldTransform == null)
-			oldTransform = new Transform(device);
+        if (oldTransform == null) {
+            oldTransform = new Transform(device);
+        }
 		return oldTransform;
 	}
 
 	private Transform getTransform() {
-		if (transform == null)
-			transform = new Transform(device);
+        if (transform == null) {
+            transform = new Transform(device);
+        }
 		return transform;
 	}
 

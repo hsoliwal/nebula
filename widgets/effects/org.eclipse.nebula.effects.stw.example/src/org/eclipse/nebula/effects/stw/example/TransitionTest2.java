@@ -52,8 +52,9 @@ public class TransitionTest2 extends AbstractSTWDemoFrame {
         //_containerComposite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
         
         imgs = new Image[6];
-        for(int i = 0; i < imgs.length; i++)
-            imgs[i] = new Image(_containerComposite.getDisplay(), getClass().getResourceAsStream(new Formatter().format("%02d.jpg", i+1).toString()));
+        for (int i = 0; i < imgs.length; i++) {
+            imgs[i] = new Image(_containerComposite.getDisplay(), getClass().getResourceAsStream(new Formatter().format("%02d.jpg", i + 1).toString()));
+        }
         
         final Canvas cnvs = new Canvas(_containerComposite, SWT.DOUBLE_BUFFERED);
         cnvs.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));

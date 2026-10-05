@@ -214,7 +214,9 @@ public abstract class Transition {
             
             ttemp = System.currentTimeMillis() - t0;
             dt = ttemp - _t;
-            if(flag) _t = ttemp;
+            if (flag) {
+                _t = ttemp;
+            }
             
             //this condition is to make sure that the
             //required fps (or less) is satisfied and

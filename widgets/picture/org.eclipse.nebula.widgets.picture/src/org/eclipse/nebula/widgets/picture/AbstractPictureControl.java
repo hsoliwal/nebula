@@ -530,8 +530,9 @@ public abstract class AbstractPictureControl<T extends Control> extends
 	 */
 	public void setLocale(Locale locale) {
 		checkWidget();
-		if (locale == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (locale == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 
 		// Loads the resources
 		resources = ResourceBundle.getBundle(BUNDLE_NAME, locale);

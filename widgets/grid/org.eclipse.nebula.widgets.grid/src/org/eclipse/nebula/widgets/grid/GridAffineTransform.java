@@ -40,18 +40,26 @@ final class GridAffineTransform {
 	}
 
 	static GridAffineTransform translation(float x, float y) {
-		if (x == 0 && y == 0) return IDENTITY;
+        if (x == 0 && y == 0) {
+            return IDENTITY;
+        }
 		return new GridAffineTransform(1, 0, 0, 1, x, y);
 	}
 
 	static GridAffineTransform scale(float x, float y) {
-		if (x == 1 && y == 1) return IDENTITY;
+        if (x == 1 && y == 1) {
+            return IDENTITY;
+        }
 		return new GridAffineTransform(x, 0, 0, y, 0, 0);
 	}
 
 	GridAffineTransform then(GridAffineTransform next) {
-		if (next == IDENTITY) return this;
-		if (this == IDENTITY) return next;
+        if (next == IDENTITY) {
+            return this;
+        }
+        if (this == IDENTITY) {
+            return next;
+        }
 		return new GridAffineTransform(
 				next.m11 * m11 + next.m21 * m12,
 				next.m12 * m11 + next.m22 * m12,
@@ -66,7 +74,9 @@ final class GridAffineTransform {
 	}
 
 	Rectangle mapBounds(Rectangle rectangle) {
-		if (rectangle == null) throw new IllegalArgumentException("rectangle");
+        if (rectangle == null) {
+            throw new IllegalArgumentException("rectangle");
+        }
 		float x1 = mapX(rectangle.x, rectangle.y);
 		float y1 = mapY(rectangle.x, rectangle.y);
 		float x2 = mapX(rectangle.x + rectangle.width, rectangle.y);

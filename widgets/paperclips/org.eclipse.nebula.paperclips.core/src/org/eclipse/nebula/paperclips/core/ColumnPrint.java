@@ -74,12 +74,14 @@ public class ColumnPrint implements Print {
 	public ColumnPrint(Print target, int columns, int spacing,
 			boolean compressed) {
 		Util.notNull(target);
-		if (spacing < 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"spacing must be >= 0"); //$NON-NLS-1$
-		if (columns < 2)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"columns must be >= 2"); //$NON-NLS-1$
+        if (spacing < 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "spacing must be >= 0"); //$NON-NLS-1$
+        }
+        if (columns < 2) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "columns must be >= 2"); //$NON-NLS-1$
+        }
 
 		this.target = target;
 		this.spacing = spacing;
@@ -100,24 +102,32 @@ public class ColumnPrint implements Print {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		ColumnPrint other = (ColumnPrint) obj;
-		if (columns != other.columns)
-			return false;
-		if (compressed != other.compressed)
-			return false;
-		if (spacing != other.spacing)
-			return false;
+        if (columns != other.columns) {
+            return false;
+        }
+        if (compressed != other.compressed) {
+            return false;
+        }
+        if (spacing != other.spacing) {
+            return false;
+        }
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -251,8 +261,9 @@ class ColumnIterator implements PrintIterator {
 		for (int i = 0; i < columns && iterator.hasNext(); i++) {
 			PrintPiece piece = PaperClips.next(iterator, colSizes[i], height);
 
-			if (piece == null)
-				return disposePieces(pieces);
+            if (piece == null) {
+                return disposePieces(pieces);
+            }
 
 			pieces.add(piece);
 		}
@@ -272,8 +283,9 @@ class ColumnIterator implements PrintIterator {
 		CompositeEntry[] entries = new CompositeEntry[pieces.length];
 
 		Point[] offsets = computeColOffsets(colSizes);
-		for (int i = 0; i < pieces.length; i++)
-			entries[i] = new CompositeEntry(pieces[i], offsets[i]);
+        for (int i = 0; i < pieces.length; i++) {
+            entries[i] = new CompositeEntry(pieces[i], offsets[i]);
+        }
 
 		return new CompositePiece(entries);
 	}
@@ -284,14 +296,16 @@ class ColumnIterator implements PrintIterator {
 		// Iterate on a copy in case any column fails to layout.
 		PrintIterator iter = target.copy();
 		PrintPiece[] columns = nextColumns(iter, colSizes, height);
-		if (columns == null)
-			return null;
+        if (columns == null) {
+            return null;
+        }
 
-		// The target was completely consumed. If compressed property is true,
-		// close the gap until we find the
-		// smallest height that completely consumes the target's contents.
-		if (!iter.hasNext() && compressed)
-			return nextCompressed(colSizes, iter, columns);
+        // The target was completely consumed. If compressed property is true,
+        // close the gap until we find the
+        // smallest height that completely consumes the target's contents.
+        if (!iter.hasNext() && compressed) {
+            return nextCompressed(colSizes, iter, columns);
+        }
 
 		this.target = iter;
 		return createResult(columns, colSizes);
@@ -335,14 +349,16 @@ class ColumnIterator implements PrintIterator {
 
 	private int getMaxHeight(PrintPiece[] pieces) {
 		int result = 0;
-		for (int i = 0; i < pieces.length; i++)
-			result = Math.max(result, pieces[i].getSize().y);
+        for (int i = 0; i < pieces.length; i++) {
+            result = Math.max(result, pieces[i].getSize().y);
+        }
 		return result;
 	}
 
 	private void disposePieces(PrintPiece[] pieces) {
-		for (int i = 0; i < pieces.length; i++)
-			pieces[i].dispose();
+        for (int i = 0; i < pieces.length; i++) {
+            pieces[i].dispose();
+        }
 	}
 
 	public PrintIterator copy() {

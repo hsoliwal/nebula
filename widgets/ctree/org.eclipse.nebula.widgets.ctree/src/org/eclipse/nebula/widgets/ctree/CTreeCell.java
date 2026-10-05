@@ -94,12 +94,16 @@ public class CTreeCell {
 		int[] getEventTypes() {
 			int count = 0;
 			for(int i = 0; i < handlers.length; i++) {
-				if(handlers[i] != null && !handlers[i].isEmpty()) count++;
+                if (handlers[i] != null && !handlers[i].isEmpty()) {
+                    count++;
+                }
 			}
 			int[] types = new int[count];
 			count = 0;
 			for(int i = 0; i < handlers.length; i++) {
-				if(handlers[i] != null && !handlers[i].isEmpty()) types[count++] = i;
+                if (handlers[i] != null && !handlers[i].isEmpty()) {
+                    types[count++] = i;
+                }
 			}
 			return types;
 		}
@@ -507,10 +511,14 @@ public class CTreeCell {
 	 * @return a Point representing the preferred size of the cell
 	 */
 	public Point computeSize(int wHint, int hHint) {
-		if(wHint == 0 || hHint == 0) return new Point(0,0);
+        if (wHint == 0 || hHint == 0) {
+            return new Point(0, 0);
+        }
 		
 		Point size = new Point(marginLeft+marginWidth+marginWidth+marginRight, marginTop+marginHeight+marginHeight+marginBottom);
-		if(toggleVisible || ghostToggle) size.x += toggleWidth;
+        if (toggleVisible || ghostToggle) {
+            size.x += toggleWidth;
+        }
 
 		if(isCheck) {
 // TODO: check is null unless cell is painted - request from ctree's painted list
@@ -578,7 +586,9 @@ public class CTreeCell {
 		b.setSelection(isChecked);
 		b.addListener(SWT.FocusIn, new Listener() {
 			public void handleEvent(Event event) {
-				if(SWT.FocusIn == event.type) ctree.setFocus();
+                if (SWT.FocusIn == event.type) {
+                    ctree.setFocus();
+                }
 			}
 		});
 		b.addListener(SWT.Selection, new Listener() {
@@ -615,15 +625,21 @@ public class CTreeCell {
 
 	void dispose() {
 		if(check != null) {
-			if(!check.isDisposed()) check.dispose();
+            if (!check.isDisposed()) {
+                check.dispose();
+            }
 			check = null;
 		}
 		if(control != null) {
-			if(!control.isDisposed()) control.dispose();
+            if (!control.isDisposed()) {
+                control.dispose();
+            }
 			control = null;
 		}
 		if(childControl != null) {
-			if(!childControl.isDisposed()) childControl.dispose();
+            if (!childControl.isDisposed()) {
+                childControl.dispose();
+            }
 			childControl = null;
 		}
 	}
@@ -721,7 +737,9 @@ public class CTreeCell {
 	protected List getColorManagedControls() {
 		// TODO add child controls
 		List l = new ArrayList(getControls(control, colorExclusions));
-		if(check != null) l.add(check);
+        if (check != null) {
+            l.add(check);
+        }
 		return l;
 	}
 
@@ -733,7 +751,9 @@ public class CTreeCell {
 	protected List getEventManagedControls() {
 		// TODO add child controls
 		List l = new ArrayList(getControls(control, eventExclusions));
-		if(check != null) l.add(check);
+        if (check != null) {
+            l.add(check);
+        }
 		return l;
 	}
 
@@ -757,7 +777,9 @@ public class CTreeCell {
 	}
 
 	public Image getImage() {
-		if(images.length > 0) return images[0];
+        if (images.length > 0) {
+            return images[0];
+        }
 		return null;
 	}
 
@@ -860,7 +882,9 @@ public class CTreeCell {
 		if((style & SWT.TOGGLE) != 0) {
 			setToggleVisible(true, true);
 		}
-		if(isCheckCell()) setCheck(true);
+        if (isCheckCell()) {
+            setCheck(true);
+        }
 		if(isTreeCell()) {
 			if(((CTreeItem) item).hasParentItem()) {
 				setIndent(((CTreeItem) item).getParentIndent() + ctree.getTreeIndent());
@@ -992,8 +1016,11 @@ public class CTreeCell {
 		Rectangle area = getClientArea();
 		Point loc = new Point(area.x, item.getTop());
 		Point size = control.getSize();
-		if(hAlign == SWT.RIGHT) loc.x += (area.width-size.x);
-		else if(hAlign == SWT.CENTER) loc.x += ((area.width-size.x)/2);
+        if (hAlign == SWT.RIGHT) {
+            loc.x += (area.width - size.x);
+        } else if (hAlign == SWT.CENTER) {
+            loc.x += ((area.width - size.x) / 2);
+        }
 //		if(vAlign == SWT.BOTTOM) loc.y += (area.height-size.y);
 //		else if(vAlign == SWT.CENTER) loc.y += ((area.height-size.y)/2);
 		control.setLocation(loc);
@@ -1033,7 +1060,9 @@ public class CTreeCell {
 			layoutCell();
 			layout();
 		} else {
-			if(control != null) layout(control);
+            if (control != null) {
+                layout(control);
+            }
 		}
 
 		if(gtk) {
@@ -1044,8 +1073,12 @@ public class CTreeCell {
 	}
 
 	void paintCell(GC gc, Point offset) {
-		if(activeBackground != null) gc.setBackground(activeBackground);
-		if(activeForeground != null) gc.setForeground(activeForeground);
+        if (activeBackground != null) {
+            gc.setBackground(activeBackground);
+        }
+        if (activeForeground != null) {
+            gc.setForeground(activeForeground);
+        }
 
 		// background
 		gc.fillRectangle(
@@ -1065,9 +1098,13 @@ public class CTreeCell {
 		// text
 		if(getText().length() > 0) {
 			Font bf = gc.getFont();
-			if(getFont() != null) gc.setFont(getFont());
+            if (getFont() != null) {
+                gc.setFont(getFont());
+            }
 			gc.drawText(getText(), offset.x+tBounds.x, offset.y+tBounds.y);
-			if(getFont() != null) gc.setFont(bf);
+            if (getFont() != null) {
+                gc.setFont(bf);
+            }
 		}
 		
 		if(((CTreeItem) item).getTreeCell() == this) {
@@ -1126,8 +1163,12 @@ public class CTreeCell {
 			y1 = y;
 			y2 = y;
 			if(gline % 2 == 0) {
-				if(y1 % 2 == 1) y1 -= 1;
-				if(y2 % 2 == 1) y2 -= 1;
+                if (y1 % 2 == 1) {
+                    y1 -= 1;
+                }
+                if (y2 % 2 == 1) {
+                    y2 -= 1;
+                }
 			}
 			gc.drawLine(x1, y1, x2, y2);
 			CTreeItem it = (CTreeItem) item;
@@ -1145,8 +1186,12 @@ public class CTreeCell {
 				y1 = ibounds.y - offset.y;
 				y2 = y;
 				if(gline % 2 == 0) {
-					if(y1 % 2 == 1) y1 -= 1;
-					if(y2 % 2 == 1) y2 -= 1;
+                    if (y1 % 2 == 1) {
+                        y1 -= 1;
+                    }
+                    if (y2 % 2 == 1) {
+                        y2 -= 1;
+                    }
 				}
 				gc.drawLine(x1, y1, x2, y2);
 			}
@@ -1159,8 +1204,12 @@ public class CTreeCell {
 							ctree.getItem(index+1).getCellBounds()[0].y)
 							- offset.y;
 				if(gline % 2 == 0) {
-					if(y1 % 2 == 1) y1 -= 1;
-					if(y2 % 2 == 1) y2 -= 1;
+                    if (y1 % 2 == 1) {
+                        y1 -= 1;
+                    }
+                    if (y2 % 2 == 1) {
+                        y2 -= 1;
+                    }
 				}
 				gc.drawLine(x1, y1, x2, y2);
 			}
@@ -1169,8 +1218,12 @@ public class CTreeCell {
 			y1 = ibounds.y - offset.y;
 			y2 = ibounds.y+ibounds.height - offset.y;
 			if(gline % 2 == 0) {
-				if(y1 % 2 == 1) y1 -= 1;
-				if(y2 % 2 == 1) y2 -= 1;
+                if (y1 % 2 == 1) {
+                    y1 -= 1;
+                }
+                if (y2 % 2 == 1) {
+                    y2 -= 1;
+                }
 			}
 			while(it.hasParentItem()) {
 				x1 = x2 -= ((CTree) ctree).getTreeIndent();
@@ -1192,8 +1245,12 @@ public class CTreeCell {
 				y1 = tbounds.y + tbounds.height - offset.y;
 				y2 = ibounds.y + ibounds.height - offset.y;
 				if(gline % 2 == 0) {
-					if(y1 % 2 == 1) y1 -= 1;
-					if(y2 % 2 == 1) y2 -= 1;
+                    if (y1 % 2 == 1) {
+                        y1 -= 1;
+                    }
+                    if (y2 % 2 == 1) {
+                        y2 -= 1;
+                    }
 				}
 				gc.drawLine(x1, y1, x2, y2);
 			}
@@ -1276,7 +1333,9 @@ public class CTreeCell {
 	}
 
 	public void redraw() {
-		if(painted) ctree.redraw(this);
+        if (painted) {
+            ctree.redraw(this);
+        }
 	}
 
 	public void removeListener(int eventType, Listener handler) {
@@ -1348,7 +1407,9 @@ public class CTreeCell {
 	}
 
 	public void setChecked(boolean checked) {
-		if(isCheck) isChecked = checked;
+        if (isCheck) {
+            isChecked = checked;
+        }
 	}
 
 	/**
@@ -1417,8 +1478,11 @@ public class CTreeCell {
 	}
 
 	public void setImage(Image image) {
-		if(image == null) images = new Image[0];
-		else images = new Image[] { image };
+        if (image == null) {
+            images = new Image[0];
+        } else {
+            images = new Image[]{image};
+        }
 	}
 
 //	private boolean isClear() {
@@ -1432,9 +1496,13 @@ public class CTreeCell {
 		else {
 			boolean doit = true;
 			for(int i = 0; i < images.length; i++) {
-				if(images[i] == null || images[i].isDisposed()) doit = false;
+                if (images[i] == null || images[i].isDisposed()) {
+                    doit = false;
+                }
 			}
-			if(doit) this.images = images;
+            if (doit) {
+                this.images = images;
+            }
 		}
 		redraw();
 	}
@@ -1458,7 +1526,9 @@ public class CTreeCell {
 				// TODO: setOpen - childArea
 				updateVisibility();
 			}
-			if(!isTreeCell()) layout(open ? SWT.Expand : SWT.Collapse);
+            if (!isTreeCell()) {
+                layout(open ? SWT.Expand : SWT.Collapse);
+            }
 		}
 	}
 
@@ -1469,7 +1539,9 @@ public class CTreeCell {
 				if(!inited) {
 					initialize();
 				}
-				if(isCheck && check == null) check = createCheck();
+                if (isCheck && check == null) {
+                    check = createCheck();
+                }
 				if(control == null) {
 					control = createControl(ctree.body);
 				} else {

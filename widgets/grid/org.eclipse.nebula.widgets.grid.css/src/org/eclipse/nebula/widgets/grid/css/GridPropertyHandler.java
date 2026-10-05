@@ -136,10 +136,11 @@ public class GridPropertyHandler implements ICSSPropertyHandler {
 			} else {
 				alignment = SWT.NONE;
 			}
-			if (alignment == SWT.LEFT || alignment == SWT.CENTER || alignment == SWT.RIGHT)
-				for (GridColumn col : grid.getColumns()) {
-					col.setAlignment(alignment);
-				}
+            if (alignment == SWT.LEFT || alignment == SWT.CENTER || alignment == SWT.RIGHT) {
+                for (GridColumn col : grid.getColumns()) {
+                    col.setAlignment(alignment);
+                }
+            }
 		}
 
 		if ("grid-columns-header-font".equals(property) && grid.getColumns() != null) {

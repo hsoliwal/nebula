@@ -51,8 +51,9 @@ public class PrintViewer {
 		sc.setExpandHorizontal(true);
 		sc.setExpandVertical(true);
 		sc.addListener(SWT.Resize, event -> {
-			if (sc.getClientArea().width != canvasWidth)
-				updateCanvas();
+            if (sc.getClientArea().width != canvasWidth) {
+                updateCanvas();
+            }
 		});
 		canvas = new PrintPieceCanvas(sc, SWT.DOUBLE_BUFFERED);
 		sc.setContent(canvas);
@@ -103,8 +104,9 @@ public class PrintViewer {
 
 			int canvasWidth = Math.max(iterator.minimumSize().x,
 					sc.getClientArea().width);
-			if (this.canvasWidth == canvasWidth)
-				return;
+            if (this.canvasWidth == canvasWidth) {
+                return;
+            }
 			this.canvasWidth = canvasWidth;
 
 			if (backgroundUpdater != null) {
@@ -117,19 +119,22 @@ public class PrintViewer {
 
 			boolean printIsVerticallyGreedy = piece != null
 					&& piece.getSize().y == Integer.MAX_VALUE;
-			if (printIsVerticallyGreedy)
-				sc.getDisplay().timerExec(50,
-						backgroundUpdater = new BackgroundUpdater());
+            if (printIsVerticallyGreedy) {
+                sc.getDisplay().timerExec(50,
+                        backgroundUpdater = new BackgroundUpdater());
+            }
 			setPrintPiece(piece, !printIsVerticallyGreedy);
 		} finally {
-			if (gc != null)
-				gc.dispose();
+            if (gc != null) {
+                gc.dispose();
+            }
 		}
 	}
 
 	private void setPrintPiece(PrintPiece piece, boolean updateMinHeight) {
-		if (updateMinHeight)
-			sc.setMinHeight(piece == null ? 0 : piece.getSize().y);
+        if (updateMinHeight) {
+            sc.setMinHeight(piece == null ? 0 : piece.getSize().y);
+        }
 		canvas.setPrintPiece(piece);
 	}
 
@@ -141,8 +146,9 @@ public class PrintViewer {
 		private PrintPiece piece;
 
 		public void run() {
-			if (cancelled || print == null)
-				return;
+            if (cancelled || print == null) {
+                return;
+            }
 
 			GC gc = null;
 			try {
@@ -156,8 +162,9 @@ public class PrintViewer {
 
 				setPrintPiece(piece, true);
 			} finally {
-				if (gc != null)
-					gc.dispose();
+                if (gc != null) {
+                    gc.dispose();
+                }
 			}
 		}
 

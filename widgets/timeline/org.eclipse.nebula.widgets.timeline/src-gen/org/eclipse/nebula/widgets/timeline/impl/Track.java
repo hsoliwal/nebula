@@ -85,7 +85,9 @@ public class Track extends MinimalEObjectImpl.Container implements ITrack {
 	 */
 	@Override
 	public ITimeline getTimeline() {
-		if (eContainerFeatureID() != ITimelinePackage.TRACK__TIMELINE) return null;
+        if (eContainerFeatureID() != ITimelinePackage.TRACK__TIMELINE) {
+            return null;
+        }
 		return (ITimeline)eInternalContainer();
 	}
 
@@ -105,18 +107,24 @@ public class Track extends MinimalEObjectImpl.Container implements ITrack {
 	@Override
 	public void setTimeline(ITimeline newTimeline) {
 		if (newTimeline != eInternalContainer() || (eContainerFeatureID() != ITimelinePackage.TRACK__TIMELINE && newTimeline != null)) {
-			if (EcoreUtil.isAncestor(this, newTimeline))
-				throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            if (EcoreUtil.isAncestor(this, newTimeline)) {
+                throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            }
 			NotificationChain msgs = null;
-			if (eInternalContainer() != null)
-				msgs = eBasicRemoveFromContainer(msgs);
-			if (newTimeline != null)
-				msgs = ((InternalEObject)newTimeline).eInverseAdd(this, ITimelinePackage.TIMELINE__TRACKS, ITimeline.class, msgs);
+            if (eInternalContainer() != null) {
+                msgs = eBasicRemoveFromContainer(msgs);
+            }
+            if (newTimeline != null) {
+                msgs = ((InternalEObject) newTimeline).eInverseAdd(this, ITimelinePackage.TIMELINE__TRACKS, ITimeline.class, msgs);
+            }
 			msgs = basicSetTimeline(newTimeline, msgs);
-			if (msgs != null) msgs.dispatch();
+            if (msgs != null) {
+                msgs.dispatch();
+            }
 		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TRACK__TIMELINE, newTimeline, newTimeline));
+		else if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TRACK__TIMELINE, newTimeline, newTimeline));
+        }
 	}
 
 	/**
@@ -148,8 +156,9 @@ public class Track extends MinimalEObjectImpl.Container implements ITrack {
 	public void setTitle(String newTitle) {
 		String oldTitle = title;
 		title = newTitle;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TRACK__TITLE, oldTitle, title));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TRACK__TITLE, oldTitle, title));
+        }
 	}
 
 	/**
@@ -175,8 +184,9 @@ public class Track extends MinimalEObjectImpl.Container implements ITrack {
 	public NotificationChain eInverseAdd(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case ITimelinePackage.TRACK__TIMELINE:
-				if (eInternalContainer() != null)
-					msgs = eBasicRemoveFromContainer(msgs);
+                if (eInternalContainer() != null) {
+                    msgs = eBasicRemoveFromContainer(msgs);
+                }
 				return basicSetTimeline((ITimeline)otherEnd, msgs);
 			case ITimelinePackage.TRACK__LANES:
 				return ((InternalEList<InternalEObject>)(InternalEList<?>)getLanes()).basicAdd(otherEnd, msgs);

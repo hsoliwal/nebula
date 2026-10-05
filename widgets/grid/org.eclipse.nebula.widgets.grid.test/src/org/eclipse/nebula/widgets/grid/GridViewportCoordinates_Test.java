@@ -40,13 +40,18 @@ public class GridViewportCoordinates_Test {
             columns[i] = new GridColumn(grid, SWT.NONE);
             columns[i].setWidth(80 + 17 * i);
         }
-        for (int i = 0; i < 40; i++) new GridItem(grid, SWT.NONE).setText("row " + i);
+        for (int i = 0; i < 40; i++) {
+            new GridItem(grid, SWT.NONE).setText("row " + i);
+        }
         shell.setSize(400, 260);
         shell.open();
         flush();
     }
 
-    @After public void tearDown() { if (shell != null && !shell.isDisposed()) shell.dispose(); }
+    @After public void tearDown() {
+        if (shell != null && !shell.isDisposed()) {
+            shell.dispose();
+        } }
 
     @Test public void pixelScrollingMatchesEveryHitTestedColumn() {
         for (int offset : new int[] {0, 1, 79, 80, 81, 177, 400, 700, 2000}) {
@@ -88,7 +93,9 @@ public class GridViewportCoordinates_Test {
     }
 
     @Test public void projectionHandlesExactEdgesEmptyWindowsAndFixedNonPrefixColumns() {
-        for (GridColumn column : columns) column.setWidth(100);
+        for (GridColumn column : columns) {
+            column.setWidth(100);
+        }
         List<GridColumn> list = Arrays.asList(columns);
         assertArrayEquals(new GridColumn[] {columns[1], columns[2]},
                 GridViewportProjection.visibleColumns(list, 100, 0, 200, false));
@@ -128,10 +135,16 @@ public class GridViewportCoordinates_Test {
         Set<GridColumn> hits = Collections.newSetFromMap(new IdentityHashMap<>());
         for (int x = 0; x < grid.getClientArea().width; x++) {
             GridColumn hit = grid.getColumn(new Point(x, 1));
-            if (hit != null) hits.add(hit);
+            if (hit != null) {
+                hits.add(hit);
+            }
         }
         List<GridColumn> expected = new ArrayList<>();
-        for (int index : grid.getColumnOrder()) if (hits.contains(columns[index])) expected.add(columns[index]);
+        for (int index : grid.getColumnOrder()) {
+            if (hits.contains(columns[index])) {
+                expected.add(columns[index]);
+            }
+        }
         assertArrayEquals("range must match actual pixel hit tests in display order",
                 expected.toArray(new GridColumn[0]), grid.getVisibleRange().getColumns());
     }

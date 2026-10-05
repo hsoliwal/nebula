@@ -184,8 +184,9 @@ public class GridColumnGroup extends Item
     void removeColumn(GridColumn col)
     {
 
-    	if (columns.length == 0)
-    		return; // widget is disposing
+        if (columns.length == 0) {
+            return;
+        } // widget is disposing
 
         GridColumn[] newAllColumns = new GridColumn[columns.length - 1];
         int x = 0;
@@ -230,8 +231,9 @@ public class GridColumnGroup extends Item
     {
         super.dispose();
 
-        if (parent.isDisposing())
+        if (parent.isDisposing()) {
             return;
+        }
 
         GridColumn[] oldColumns = columns;
         columns = new GridColumn[0];
@@ -276,8 +278,9 @@ public class GridColumnGroup extends Item
      */
     public void setHeaderRenderer(GridHeaderRenderer headerRenderer)
     {
-        if (headerRenderer == null)
+        if (headerRenderer == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         this.headerRenderer = headerRenderer;
         headerRenderer.setDisplay(getDisplay());
     }
@@ -343,10 +346,11 @@ public class GridColumnGroup extends Item
             parent.updateColumnSelection();
         }
 
-        if (parent.getCellSelectionEnabled())
+        if (parent.getCellSelectionEnabled()) {
 
 
-        parent.refreshHoverState();
+            parent.refreshHoverState();
+        }
         parent.setScrollValuesObsolete();
         parent.redraw();
     }
