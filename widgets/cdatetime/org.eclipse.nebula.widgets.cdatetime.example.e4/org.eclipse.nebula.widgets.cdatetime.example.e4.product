@@ -17,8 +17,8 @@
 
    <plugins>
       <plugin id="com.ibm.icu"/>
-      <plugin id="javax.annotation"/>
-      <plugin id="javax.inject"/>
+      <plugin id="jakarta.annotation-api"/>
+      <plugin id="jakarta.inject.jakarta.inject-api"/>
       <plugin id="org.apache.batik.css"/>
       <plugin id="org.apache.batik.util"/>
       <plugin id="org.apache.batik.util.gui"/>
