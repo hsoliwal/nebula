@@ -11,10 +11,8 @@
  ******************************************************************************/
 package org.eclipse.nebula.widgets.grid.css;
 
-import org.eclipse.e4.ui.css.core.css2.CSS2FontHelper;
 import org.eclipse.e4.ui.css.core.dom.properties.ICSSPropertyHandler;
 import org.eclipse.e4.ui.css.core.engine.CSSEngine;
-import org.eclipse.e4.ui.css.core.impl.dom.Measure;
 import org.eclipse.nebula.widgets.grid.Grid;
 import org.eclipse.nebula.widgets.grid.GridColumn;
 import org.eclipse.nebula.widgets.grid.Win7RendererSupport;
@@ -30,6 +28,37 @@ import org.w3c.dom.css.CSSValueList;
 public class GridPropertyHandler implements ICSSPropertyHandler {
 	private static final String FOOTER = "footer";
 	private static final String HEADER = "header";
+
+	/**
+	 * Preserve the historical Eclipse CSS2FontHelper W3C classification contract.
+	 *
+	 * <p>Newer Eclipse releases replaced the old CSSPrimitiveValue overload with an internal
+	 * CssPrimitive overload. Nebula keeps the public W3C facade and the old classifications so the
+	 * CSS behavior does not change as part of this compatibility migration.</p>
+	 */
+	private static String legacyFontProperty(final CSSPrimitiveValue value) {
+		short type = value.getPrimitiveType();
+		switch (type) {
+		case CSSPrimitiveValue.CSS_STRING:
+		case CSSPrimitiveValue.CSS_IDENT:
+			switch (value.getStringValue()) {
+			case "italic":
+			case "oblique":
+				return "font-style";
+			case "normal":
+			case "bold":
+			case "bolder":
+				return "font-weight";
+			default:
+				return "font-family";
+			}
+		case CSSPrimitiveValue.CSS_PT:
+		case CSSPrimitiveValue.CSS_NUMBER:
+		case CSSPrimitiveValue.CSS_PX:
+			return "font-size";
+		}
+		return null;
+	}
 
 	/**
 	 * @see org.eclipse.e4.ui.css.core.dom.properties.ICSSPropertyHandler#applyCSSProperty(java.lang.Object, java.lang.String, org.w3c.dom.css.CSSValue, java.lang.String, org.eclipse.e4.ui.css.core.engine.CSSEngine)
@@ -65,16 +94,16 @@ public class GridPropertyHandler implements ICSSPropertyHandler {
 		// Items
 		if ("grid-item-height".equals(property)) {
 			if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-				final Measure m = (Measure) value;
-				final int width = Math.round(m.getFloatValue((short) 0));
+				final CSSPrimitiveValue primitive = (CSSPrimitiveValue) value;
+				final int width = Math.round(primitive.getFloatValue((short) 0));
 				grid.setItemHeight(width);
 			}
 		}
 
 		if ("grid-item-header-width".equals(property)) {
 			if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-				final Measure m = (Measure) value;
-				final int width = Math.round(m.getFloatValue((short) 0));
+				final CSSPrimitiveValue primitive = (CSSPrimitiveValue) value;
+				final int width = Math.round(primitive.getFloatValue((short) 0));
 				grid.setItemHeaderWidth(width);
 			}
 		}
@@ -155,7 +184,7 @@ public class GridPropertyHandler implements ICSSPropertyHandler {
 			for (int i = 0; i < length; i++) {
 				final CSSValue value2 = valueList.item(i);
 				if (value2.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
-					final String cssProp = CSS2FontHelper.getCSSFontPropertyName((CSSPrimitiveValue) value2);
+					final String cssProp = legacyFontProperty((CSSPrimitiveValue) value2);
 					if (cssProp.equals("font-family")) {
 						applyCSSPropertyFamily(element, grid, value2, target);
 					} else if (cssProp.equals("font-size")) {
@@ -226,9 +255,9 @@ public class GridPropertyHandler implements ICSSPropertyHandler {
 	private boolean applyCSSPropertySize(final Object element, final Grid grid, final CSSValue value, String target) throws Exception {
 		if (value.getCssValueType() == CSSValue.CSS_PRIMITIVE_VALUE) {
 			final FontData fd = CSSEngineHelper.getFontData(grid);
-			final Measure m = (Measure) value;
+			final CSSPrimitiveValue primitive = (CSSPrimitiveValue) value;
 
-			final int newSize = Math.round(m.getFloatValue((short) 0));
+			final int newSize = Math.round(primitive.getFloatValue((short) 0));
 			final boolean modified = fd.getHeight() != newSize;
 			if (modified) {
 				fd.setHeight(newSize);
