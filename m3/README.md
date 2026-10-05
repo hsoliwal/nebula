@@ -178,9 +178,11 @@ Exact reviewed binding:
 ```text
 repository  hsoliwal/com.synexia
 branch      feat/m3-second-pass-signal-chain-20261004
-commit      5a369dc9dc84db32489c732cf05ee6c054d67db2
+commit      48c2caacd21ebaf234cc17b5ad6b74651e5f890d
 PR          8891
 recipe      com.synexia.rewrite.M3SecondPassAtomPatternRecipe
+catalog     com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog
+state       SHARED_JVM_COMPOSITE; external leaf fan-out=false
 budget      2
 authority   read-only; no mutation/replacement/promotion
 ```
@@ -196,8 +198,9 @@ The machine binding is `catalogue/second-pass-recipe-binding.tsv`; the Java owne
 pre-mutation gate. Lexically masked regex may nominate a candidate but never certify a transform;
 AST/LST structural/control/contract facts remain authoritative.
 
-Hosted Maven/JUnit success is not claimed while the upstream dedicated workflow fails before
-GitHub creates any job. That startup condition is distinct from a recipe test failure.
+Hosted Maven/JUnit success is not claimed until the refreshed upstream dedicated workflow
+completes successfully for the exact pinned commit. The binding remains read-only/candidate-only
+while that proof is pending.
 
 ### Orchestration locality
 
