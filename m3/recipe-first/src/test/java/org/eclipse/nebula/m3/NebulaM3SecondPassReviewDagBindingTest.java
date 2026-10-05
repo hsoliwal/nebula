@@ -18,7 +18,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
                 "hsoliwal/com.synexia",
                 NebulaM3SecondPassReviewDagBinding.UPSTREAM_REPOSITORY);
         assertEquals(
-                "feat/m3-second-pass-review-dag-20261005",
+                "develop",
                 NebulaM3SecondPassReviewDagBinding.UPSTREAM_BRANCH);
         assertEquals(
                 "5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f",
@@ -44,7 +44,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
         assertFalse(NebulaM3SecondPassReviewDagBinding.nativeExecutionAuthority());
         assertFalse(NebulaM3SecondPassReviewDagBinding.promotionAuthority());
         assertEquals(
-                "UPSTREAM_MERGED_WORKFLOW_STARTUP_BLOCKED_NO_JOBS",
+                "UPSTREAM_MERGED_ACTIONS_STARTUP_BLOCKED_NO_JOBS",
                 NebulaM3SecondPassReviewDagBinding.HOSTED_PROOF);
     }
 
