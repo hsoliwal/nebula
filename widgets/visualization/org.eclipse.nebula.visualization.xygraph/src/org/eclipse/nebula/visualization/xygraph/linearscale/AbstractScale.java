@@ -185,8 +185,9 @@ public abstract class AbstractScale extends Figure {
 				autoFormat = true;
 			}
 			if (minOrMaxDate && autoFormat) {
-				if (Math.abs(max - min) < 5000)
-					return new SimpleDateFormat("yyyy-MM-dd\nHH:mm:ss.SSS").format(obj); //$NON-NLS-1$
+                if (Math.abs(max - min) < 5000) {
+                    return new SimpleDateFormat("yyyy-MM-dd\nHH:mm:ss.SSS").format(obj); //$NON-NLS-1$
+                }
 				return getFormat(DEFAULT_DATE_FORMAT, true).format(obj);
 			}
 			return getFormat(formatPattern, true).format(obj);
@@ -203,10 +204,11 @@ public abstract class AbstractScale extends Figure {
 	private Format getFormat(String pattern, boolean isDateFormat) {
 		Format result = formatCache.get(pattern);
 		if (result == null) {
-			if (isDateFormat)
-				result = new SimpleDateFormat(pattern);
-			else
-				result = new DecimalFormat(pattern);
+            if (isDateFormat) {
+                result = new SimpleDateFormat(pattern);
+            } else {
+                result = new DecimalFormat(pattern);
+            }
 			formatCache.put(pattern, result);
 		}
 		return result;
@@ -338,11 +340,13 @@ public abstract class AbstractScale extends Figure {
 	}
 
 	protected void internalSetFormatPattern(String formatPattern) {
-		if (Objects.equals(this.formatPattern, formatPattern))
-			return;
+        if (Objects.equals(this.formatPattern, formatPattern)) {
+            return;
+        }
 		this.formatPattern = formatPattern;
-		if (formatPattern != null && isDateEnabled())
-			formatPatternSize = TextUtilities.INSTANCE.getTextExtents(formatPattern, getFont()).width;
+        if (formatPattern != null && isDateEnabled()) {
+            formatPatternSize = TextUtilities.INSTANCE.getTextExtents(formatPattern, getFont()).width;
+        }
 	}
 
 	/**
@@ -440,10 +444,12 @@ public abstract class AbstractScale extends Figure {
 		if (honorOriginDirection) {
 			if (getRange().isMinBigger()) {
 				setRange(t1 > t2 ? t1 : t2, t1 > t2 ? t2 : t1);
-			} else
-				setRange(t1 > t2 ? t2 : t1, t1 > t2 ? t1 : t2);
-		} else
-			setRange(t1, t2);
+			} else {
+                setRange(t1 > t2 ? t2 : t1, t1 > t2 ? t1 : t2);
+            }
+		} else {
+            setRange(t1, t2);
+        }
 	}
 
 	/**
@@ -464,8 +470,9 @@ public abstract class AbstractScale extends Figure {
 
 		if (lower == upper) {
 			upper = lower + 1;
-			if (Double.isInfinite(upper))
-				throw new IllegalArgumentException("Illegal range: lower=" + lower + ", upper=" + upper);
+            if (Double.isInfinite(upper)) {
+                throw new IllegalArgumentException("Illegal range: lower=" + lower + ", upper=" + upper);
+            }
 		}
 
 		if (logScaleEnabled && lower <= 0) {
@@ -483,11 +490,12 @@ public abstract class AbstractScale extends Figure {
 		}
 
 		if (formatPattern.equals(default_decimal_format) || formatPattern.equals(DEFAULT_ENGINEERING_FORMAT)) {
-			if ((max != 0 && Math.abs(Math.log10(Math.abs(max))) >= ENGINEERING_LIMIT)
-					|| (min != 0 && Math.abs(Math.log10(Math.abs(min))) >= ENGINEERING_LIMIT))
-				formatPattern = DEFAULT_ENGINEERING_FORMAT;
-			else
-				formatPattern = default_decimal_format;
+            if ((max != 0 && Math.abs(Math.log10(Math.abs(max))) >= ENGINEERING_LIMIT)
+                    || (min != 0 && Math.abs(Math.log10(Math.abs(min))) >= ENGINEERING_LIMIT)) {
+                formatPattern = DEFAULT_ENGINEERING_FORMAT;
+            } else {
+                formatPattern = default_decimal_format;
+            }
 			autoFormat = true;
 		}
 		range = new Range(min, max);

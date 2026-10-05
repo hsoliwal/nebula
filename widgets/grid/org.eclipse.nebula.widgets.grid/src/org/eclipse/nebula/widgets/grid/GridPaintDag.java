@@ -33,9 +33,15 @@ final class GridPaintDag {
 	static int plan(Rectangle clip, Rectangle clientArea, int headerHeight, int footerHeight,
 			boolean headerVisible, boolean footerVisible, boolean fixedOverlayActive,
 			boolean transientOverlayActive) {
-		if (clip == null) throw new IllegalArgumentException("clip");
-		if (clientArea == null) throw new IllegalArgumentException("clientArea");
-		if (!clip.intersects(clientArea)) return 0;
+        if (clip == null) {
+            throw new IllegalArgumentException("clip");
+        }
+        if (clientArea == null) {
+            throw new IllegalArgumentException("clientArea");
+        }
+        if (!clip.intersects(clientArea)) {
+            return 0;
+        }
 
 		int plan = BACKGROUND;
 		int header = headerVisible ? Math.max(0, headerHeight) : 0;
@@ -43,7 +49,9 @@ final class GridPaintDag {
 		Rectangle body = GridViewportDamage.scrollDamage(clientArea, header, footer, false);
 		if (body.width > 0 && body.height > 0 && clip.intersects(body)) {
 			plan |= BODY;
-			if (fixedOverlayActive) plan |= FIXED;
+            if (fixedOverlayActive) {
+                plan |= FIXED;
+            }
 		}
 		if (headerVisible && GridViewportDamage.intersectsHeader(clip, clientArea, header)) {
 			plan |= HEADER;
@@ -51,7 +59,9 @@ final class GridPaintDag {
 		if (footerVisible && GridViewportDamage.intersectsFooter(clip, clientArea, footer)) {
 			plan |= FOOTER;
 		}
-		if (transientOverlayActive) plan |= OVERLAY;
+        if (transientOverlayActive) {
+            plan |= OVERLAY;
+        }
 		return plan;
 	}
 
@@ -60,10 +70,18 @@ final class GridPaintDag {
 	}
 
 	static boolean dependsOn(int plane, int dependency) {
-		if (plane == BODY) return dependency == BACKGROUND;
-		if (plane == FIXED) return dependency == BODY || dependency == BACKGROUND;
-		if (plane == HEADER || plane == FOOTER) return dependency == BACKGROUND;
-		if (plane == OVERLAY) return dependency == BACKGROUND;
+        if (plane == BODY) {
+            return dependency == BACKGROUND;
+        }
+        if (plane == FIXED) {
+            return dependency == BODY || dependency == BACKGROUND;
+        }
+        if (plane == HEADER || plane == FOOTER) {
+            return dependency == BACKGROUND;
+        }
+        if (plane == OVERLAY) {
+            return dependency == BACKGROUND;
+        }
 		return false;
 	}
 }

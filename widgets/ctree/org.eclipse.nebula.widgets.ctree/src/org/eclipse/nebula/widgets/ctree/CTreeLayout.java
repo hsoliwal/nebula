@@ -204,8 +204,12 @@ class CTreeLayout extends Layout {
 	}
 
 	int getItemHeight() {
-		if(itemHeightSet) return itemHeight;
-		if(ctree.isEmpty()) return itemHeight;
+        if (itemHeightSet) {
+            return itemHeight;
+        }
+        if (ctree.isEmpty()) {
+            return itemHeight;
+        }
 		itemHeight = ((CTreeItem) ctree.itemList.get(0)).computeHeight();
 		itemHeightSet = true;
 		return itemHeight;
@@ -213,9 +217,13 @@ class CTreeLayout extends Layout {
 	
 	protected void layout(Composite composite, boolean flushCache) {
 		Rectangle area = composite.getClientArea();
-		if(area.isEmpty()) return;
-		
-		if(flushCache) computeSize(composite, -1, -1, flushCache);
+        if (area.isEmpty()) {
+            return;
+        }
+
+        if (flushCache) {
+            computeSize(composite, -1, -1, flushCache);
+        }
 
 		ctree.getHeader().setBounds(
 				area.x,
@@ -422,8 +430,12 @@ class CTreeLayout extends Layout {
 			int headerWidth = ctree.getHeader().getSize().x;
 			int fillerWidth0 = (headerWidth - xconsumed) / num_fillers;
 			int fillerWidth1 = headerWidth - xconsumed - (fillerWidth0 * (num_fillers - 1));
-			if(fillerWidth0 == 0) fillerWidth0 = 1;
-			if(fillerWidth1 == 0) fillerWidth1 = 1;
+            if (fillerWidth0 == 0) {
+                fillerWidth0 = 1;
+            }
+            if (fillerWidth1 == 0) {
+                fillerWidth1 = 1;
+            }
 
 			for(int i = 0; i < num_fillers; i++) {
 				if(i == num_fillers-1) {
@@ -445,7 +457,9 @@ class CTreeLayout extends Layout {
 	 */
 	private void updateScrollBars() {
 		Rectangle area = ctree.getClientArea();
-		if(area.isEmpty()) return;
+        if (area.isEmpty()) {
+            return;
+        }
 		
 		if(ctree.hBar != null) {
 			if(area.width < size.x) {

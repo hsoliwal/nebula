@@ -79,9 +79,10 @@ public class PGroupExampleTab extends AbstractExampleTab
         
         
         int style = SWT.NONE;
-        
-        if (smooth.getSelection())
+
+        if (smooth.getSelection()) {
             style |= SWT.SMOOTH;
+        }
         
         group = new PGroup(parent, style);
         AbstractGroupStrategy strat;
@@ -109,9 +110,10 @@ public class PGroupExampleTab extends AbstractExampleTab
         {
             imagePos = SWT.TRAIL;
         }
-        
-        if (imageOnTop.getSelection())
+
+        if (imageOnTop.getSelection()) {
             imagePos |= SWT.TOP;
+        }
         
         group.setImagePosition(imagePos);
         
@@ -162,7 +164,9 @@ public class PGroupExampleTab extends AbstractExampleTab
                     Button b = (Button)event.widget;
                     if ((b.getStyle() & SWT.RADIO) != 0)
                     {
-                        if (!b.getSelection()) return;
+                        if (!b.getSelection()) {
+                            return;
+                        }
                     }
                 }
                 recreateExample();

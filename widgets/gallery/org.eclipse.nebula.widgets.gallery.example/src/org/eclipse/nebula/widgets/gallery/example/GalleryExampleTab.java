@@ -124,14 +124,17 @@ public class GalleryExampleTab extends AbstractExampleTab {
 	public Control createControl(Composite parent) {
 		int style = SWT.NONE;
 
-		if (bMulti.getSelection())
-			style |= SWT.MULTI;
+        if (bMulti.getSelection()) {
+            style |= SWT.MULTI;
+        }
 
-		if (bHScroll.getSelection())
-			style |= SWT.H_SCROLL;
+        if (bHScroll.getSelection()) {
+            style |= SWT.H_SCROLL;
+        }
 
-		if (bVScroll.getSelection())
-			style |= SWT.V_SCROLL;
+        if (bVScroll.getSelection()) {
+            style |= SWT.V_SCROLL;
+        }
 
 		g = new Gallery(parent, style);
 		scrollingSmoother = new ScrollingSmoother(g, new ExpoOut());

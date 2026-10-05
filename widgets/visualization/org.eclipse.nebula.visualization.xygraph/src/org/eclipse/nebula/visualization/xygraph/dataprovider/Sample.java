@@ -148,30 +148,41 @@ public class Sample implements ISample, IMetaData {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		Sample other = (Sample) obj;
 		if (info == null) {
-			if (other.info != null)
-				return false;
-		} else if (!info.equals(other.info))
-			return false;
-		if (Double.doubleToLongBits(xMinusError) != Double.doubleToLongBits(other.xMinusError))
-			return false;
-		if (Double.doubleToLongBits(xPlusError) != Double.doubleToLongBits(other.xPlusError))
-			return false;
-		if (Double.doubleToLongBits(xValue) != Double.doubleToLongBits(other.xValue))
-			return false;
-		if (Double.doubleToLongBits(yMinusError) != Double.doubleToLongBits(other.yMinusError))
-			return false;
-		if (Double.doubleToLongBits(yPlusError) != Double.doubleToLongBits(other.yPlusError))
-			return false;
-		if (Double.doubleToLongBits(yValue) != Double.doubleToLongBits(other.yValue))
-			return false;
+            if (other.info != null) {
+                return false;
+            }
+		} else if (!info.equals(other.info)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(xMinusError) != Double.doubleToLongBits(other.xMinusError)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(xPlusError) != Double.doubleToLongBits(other.xPlusError)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(xValue) != Double.doubleToLongBits(other.xValue)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(yMinusError) != Double.doubleToLongBits(other.yMinusError)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(yPlusError) != Double.doubleToLongBits(other.yPlusError)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(yValue) != Double.doubleToLongBits(other.yValue)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -182,14 +193,17 @@ public class Sample implements ISample, IMetaData {
 		final StringBuilder buf = new StringBuilder();
 		buf.append("(");
 		buf.append(xValue);
-		if (xMinusError != 0 || xPlusError != 0)
-			buf.append(" [-" + xMinusError + " ... +" + xPlusError + "]");
+        if (xMinusError != 0 || xPlusError != 0) {
+            buf.append(" [-" + xMinusError + " ... +" + xPlusError + "]");
+        }
 		buf.append(", ");
 		buf.append(yValue);
-		if (yMinusError != 0 || yPlusError != 0)
-			buf.append(" [-" + yMinusError + " ... +" + yPlusError + "]");
-		if (info != null && info.length() > 0)
-			buf.append(", '" + info + "'");
+        if (yMinusError != 0 || yPlusError != 0) {
+            buf.append(" [-" + yMinusError + " ... +" + yPlusError + "]");
+        }
+        if (info != null && info.length() > 0) {
+            buf.append(", '" + info + "'");
+        }
 		buf.append(")");
 		return buf.toString();
 	}
@@ -206,20 +220,23 @@ public class Sample implements ISample, IMetaData {
 
 	@Override
 	public Object getData(String key) {
-		if (key == null)
-			throw new IllegalArgumentException("Key must not be null.");
+        if (key == null) {
+            throw new IllegalArgumentException("Key must not be null.");
+        }
 		return fMetaDataMap.get(key);
 	}
 
 	@Override
 	public void setData(String key, Object data) {
-		if (key == null)
-			throw new IllegalArgumentException("Key must not be null.");
+        if (key == null) {
+            throw new IllegalArgumentException("Key must not be null.");
+        }
 
-		if ((data == null) && (fMetaDataMap.containsKey(key)))
-			fMetaDataMap.remove(key);
-		else
-			fMetaDataMap.put(key, data);
+        if ((data == null) && (fMetaDataMap.containsKey(key))) {
+            fMetaDataMap.remove(key);
+        } else {
+            fMetaDataMap.put(key, data);
+        }
 	}
 
 	@Override

@@ -25,9 +25,10 @@ public class TimelineScaler implements MouseWheelListener {
 
 	@Override
 	public void mouseScrolled(MouseEvent e) {
-		if (e.count > 0)
-			fTimelineComposite.getRootFigure().zoomIn(e.x);
-		else
-			fTimelineComposite.getRootFigure().zoomOut(e.x);
+        if (e.count > 0) {
+            fTimelineComposite.getRootFigure().zoomIn(e.x);
+        } else {
+            fTimelineComposite.getRootFigure().zoomOut(e.x);
+        }
 	}
 }

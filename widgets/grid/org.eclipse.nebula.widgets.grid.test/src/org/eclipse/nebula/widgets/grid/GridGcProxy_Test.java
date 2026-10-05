@@ -125,8 +125,8 @@ public class GridGcProxy_Test {
 			assertEquals(expectedTextAntialias, gc.getTextAntialias());
 			assertEquals(expectedInterpolation, gc.getInterpolation());
 			assertEquals(expectedFillRule, gc.getFillRule());
-			assertEquals(expectedXor, gc.getXORMode());
-			assertEquals(expectedAdvanced, gc.getAdvanced());
+			assertTrue(expectedXor == gc.getXORMode());
+			assertTrue(expectedAdvanced == gc.getAdvanced());
 			assertEquals(expectedForeground, gc.getForeground());
 			assertEquals(expectedBackground, gc.getBackground());
 			assertSame(expectedForegroundPattern, gc.getForegroundPattern());
@@ -134,14 +134,28 @@ public class GridGcProxy_Test {
 			assertEquals(expectedFont, gc.getFont());
 			assertArrayEquals(expectedTransform, elements(gc), 0.0001f);
 		} finally {
-			if (changedTransform != null) changedTransform.dispose();
-			if (initialTransform != null) initialTransform.dispose();
+            if (changedTransform != null) {
+                changedTransform.dispose();
+            }
+            if (initialTransform != null) {
+                initialTransform.dispose();
+            }
 			gc.dispose();
-			if (changedFont != null) changedFont.dispose();
-			if (temporaryForegroundPattern != null) temporaryForegroundPattern.dispose();
-			if (temporaryBackgroundPattern != null) temporaryBackgroundPattern.dispose();
-			if (initialForegroundPattern != null) initialForegroundPattern.dispose();
-			if (initialBackgroundPattern != null) initialBackgroundPattern.dispose();
+            if (changedFont != null) {
+                changedFont.dispose();
+            }
+            if (temporaryForegroundPattern != null) {
+                temporaryForegroundPattern.dispose();
+            }
+            if (temporaryBackgroundPattern != null) {
+                temporaryBackgroundPattern.dispose();
+            }
+            if (initialForegroundPattern != null) {
+                initialForegroundPattern.dispose();
+            }
+            if (initialBackgroundPattern != null) {
+                initialBackgroundPattern.dispose();
+            }
 			image.dispose();
 		}
 	}

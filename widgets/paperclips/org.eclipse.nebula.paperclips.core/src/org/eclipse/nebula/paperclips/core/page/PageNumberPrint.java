@@ -139,31 +139,40 @@ public class PageNumberPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		PageNumberPrint other = (PageNumberPrint) obj;
 
 		if (pageNumber == null) {
-			if (other.pageNumber != null)
-				return false;
-		} else if (!pageNumber.equals(other.pageNumber))
-			return false;
+            if (other.pageNumber != null) {
+                return false;
+            }
+		} else if (!pageNumber.equals(other.pageNumber)) {
+            return false;
+        }
 
 		if (textStyle == null) {
-			if (other.textStyle != null)
-				return false;
-		} else if (!textStyle.equals(other.textStyle))
-			return false;
+            if (other.textStyle != null) {
+                return false;
+            }
+		} else if (!textStyle.equals(other.textStyle)) {
+            return false;
+        }
 
 		if (format == null) {
-			if (other.format != null)
-				return false;
-		} else if (!format.equals(other.format))
-			return false;
+            if (other.format != null) {
+                return false;
+            }
+		} else if (!format.equals(other.format)) {
+            return false;
+        }
 
 		return true;
 	}
@@ -368,13 +377,15 @@ class PageNumberIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (width < size.x || height < size.y)
-			return null;
+        if (width < size.x || height < size.y) {
+            return null;
+        }
 
 		Point size = new Point(this.size.x, this.size.y);
 		int align = textStyle.getAlignment();
-		if (align == SWT.CENTER || align == SWT.RIGHT)
-			size.x = width;
+        if (align == SWT.CENTER || align == SWT.RIGHT) {
+            size.x = width;
+        }
 
 		PageNumberPiece piece = new PageNumberPiece(this, device, size);
 		hasNext = false;

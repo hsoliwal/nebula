@@ -173,8 +173,9 @@ public class FadeTransition extends Transition {
      * @param percentage is a percentage of the transition total time.
      */
     public void setFadeOutStart(double percentage) {
-        if( percentage >= 0 && percentage <= 100 )
+        if (percentage >= 0 && percentage <= 100) {
             _fadeOutStart = percentage;
+        }
     }
     
     /**
@@ -189,8 +190,9 @@ public class FadeTransition extends Transition {
      * @param percentage is a percentage of the transition total time.
      */
     public void setFadeOutStop(double percentage) {
-        if( percentage >= 0 && percentage <= 100 )
+        if (percentage >= 0 && percentage <= 100) {
             _fadeOutStop = percentage;
+        }
     }
     
     /**
@@ -205,8 +207,9 @@ public class FadeTransition extends Transition {
      * @param percentage is a percentage of the transition total time.
      */
     public void setFadeInStart(double percentage) {
-        if( percentage >= 0 && percentage <= 100 )
+        if (percentage >= 0 && percentage <= 100) {
             _fadeInStart = percentage;
+        }
     }
     
     /**
@@ -221,8 +224,9 @@ public class FadeTransition extends Transition {
      * @param percentage is a percentage of the transition total time.
      */
     public void setFadeInStop(double percentage) {
-        if( percentage >= 0 && percentage <= 100 )
+        if (percentage >= 0 && percentage <= 100) {
             _fadeInStop = percentage;
+        }
     }
 
 }

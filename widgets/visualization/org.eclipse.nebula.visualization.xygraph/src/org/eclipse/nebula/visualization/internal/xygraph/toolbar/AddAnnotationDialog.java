@@ -54,10 +54,11 @@ public class AddAnnotationDialog extends Dialog {
 		// If there are traces, default to 'snapping' to the first trace
 		final Annotation annotation;
 		final List<Trace> traces = xyGraph.getPlotArea().getTraceList();
-		if (traces.size() > 0)
-			annotation = new Annotation(name, traces.get(0));
-		else
-			annotation = new Annotation(name, xyGraph.getPrimaryXAxis(), xyGraph.getPrimaryYAxis());
+        if (traces.size() > 0) {
+            annotation = new Annotation(name, traces.get(0));
+        } else {
+            annotation = new Annotation(name, xyGraph.getPrimaryXAxis(), xyGraph.getPrimaryYAxis());
+        }
 
 		// Allow user to tweak the settings
 		configPage = new AnnotationConfigPage(xyGraph, annotation);

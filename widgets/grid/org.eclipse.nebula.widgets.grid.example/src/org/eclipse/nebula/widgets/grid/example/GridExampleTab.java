@@ -93,7 +93,9 @@ public class GridExampleTab extends AbstractExampleTab
                     Button b = (Button)event.widget;
                     if ((b.getStyle() & SWT.RADIO) != 0)
                     {
-                        if (!b.getSelection()) return;
+                        if (!b.getSelection()) {
+                            return;
+                        }
                     }
                 }
                 recreateExample();
@@ -155,8 +157,9 @@ public class GridExampleTab extends AbstractExampleTab
             {
                 grid.setRowHeaderVisible(showRowHeader.getSelection());
                 columnScrolling.setEnabled(!showRowHeader.getSelection());
-                if (showRowHeader.getSelection())
+                if (showRowHeader.getSelection()) {
                     columnScrolling.setSelection(true);
+                }
             }
         });
         
@@ -263,24 +266,30 @@ public class GridExampleTab extends AbstractExampleTab
     public Control createControl(Composite parent)
     {
         int style = SWT.NONE;
-        
-        if (vScroll.getSelection())
+
+        if (vScroll.getSelection()) {
             style |= SWT.V_SCROLL;
-        
-        if (hScroll.getSelection())
+        }
+
+        if (hScroll.getSelection()) {
             style |= SWT.H_SCROLL;
-        
-        if (border.getSelection())
+        }
+
+        if (border.getSelection()) {
             style |= SWT.BORDER;
-            
-        if (single.getSelection())
+        }
+
+        if (single.getSelection()) {
             style |= SWT.SINGLE;
-        
-        if (multi.getSelection())
+        }
+
+        if (multi.getSelection()) {
             style |= SWT.MULTI;
-        
-        if (check.getSelection())
+        }
+
+        if (check.getSelection()) {
             style |= SWT.CHECK;
+        }
         
         grid = new Grid(parent, style);
         grid.setHeaderVisible(true);
@@ -294,23 +303,28 @@ public class GridExampleTab extends AbstractExampleTab
 //            col.setImage(ExamplesPlugin.getImage("icons/eclipse.png"));
         
         int groupStyle = SWT.NONE;
-        if (toggle.getSelection())
+        if (toggle.getSelection()) {
             groupStyle |= SWT.TOGGLE;
+        }
         
         GridColumnGroup group = new GridColumnGroup(grid,groupStyle);
         group.setText("Column Grouping");
         
         
         int colStyle = SWT.NONE;
-        
-        if (left.getSelection())
+
+        if (left.getSelection()) {
             colStyle |= SWT.LEFT;
-        if (center.getSelection())
+        }
+        if (center.getSelection()) {
             colStyle |= SWT.CENTER;
-        if (right.getSelection())
+        }
+        if (right.getSelection()) {
             colStyle |= SWT.RIGHT;
-        if (columnCheck.getSelection())
+        }
+        if (columnCheck.getSelection()) {
             colStyle |= SWT.CHECK;
+        }
         
         GridColumn col2 = new GridColumn(group,colStyle);
         col2.setText("The Column #2");

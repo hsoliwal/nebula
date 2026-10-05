@@ -143,9 +143,10 @@ public class GanttChartPrintJob implements Runnable {
 									verticalPageNumber * printBounds.height, 
 									imgWidthClipping, imgHeightClipping,
 									printBounds.x, printBounds.y, imgWidthClipping, imgHeightClipping);
-							
-							if (ganttChart.getSettings().printFooter())
-								printFooter(gc, ganttChart, currentPage, printBounds);
+
+                            if (ganttChart.getSettings().printFooter()) {
+                                printFooter(gc, ganttChart, currentPage, printBounds);
+                            }
 
 							printer.endPage();
 							printerTransform.dispose();
@@ -160,11 +161,12 @@ public class GanttChartPrintJob implements Runnable {
 			
 			printer.endJob();
 			gc.dispose();
-			
-			//only dispose the printer after the print job is done if it is configured to do so
-			//this configuration enables the possibility to reuse a printer for several jobs
-			if (disposePrinter)
-				printer.dispose();
+
+            //only dispose the printer after the print job is done if it is configured to do so
+            //this configuration enables the possibility to reuse a printer for several jobs
+            if (disposePrinter) {
+                printer.dispose();
+            }
 		}
 	}
 

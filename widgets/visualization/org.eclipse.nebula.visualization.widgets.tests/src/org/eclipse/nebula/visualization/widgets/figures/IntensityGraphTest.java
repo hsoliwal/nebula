@@ -99,17 +99,18 @@ public class IntensityGraphTest extends AbstractWidgetTest {
 			}
 			return simuData;
 		} else if (pd.getName().equals("dataWidth")
-				|| pd.getName().equals("dataHeight"))
-			return 256;
-		else if (pd.getName().equals("max"))
-			return 1;
-		else if (pd.getName().equals("min"))
-			return -1;
-		else if (pd.getName().equals("colorMap") && seed != null
-				&& seed instanceof Integer)
-			return new ColorMap(
-					PredefinedColorMap.values()[(Integer) seed % 6 + 1], true,
-					true);
+                || pd.getName().equals("dataHeight")) {
+            return 256;
+        } else if (pd.getName().equals("max")) {
+            return 1;
+        } else if (pd.getName().equals("min")) {
+            return -1;
+        } else if (pd.getName().equals("colorMap") && seed != null
+                && seed instanceof Integer) {
+            return new ColorMap(
+                    PredefinedColorMap.values()[(Integer) seed % 6 + 1], true,
+                    true);
+        }
 		return super.generateTestData(pd, seed);
 	}
 

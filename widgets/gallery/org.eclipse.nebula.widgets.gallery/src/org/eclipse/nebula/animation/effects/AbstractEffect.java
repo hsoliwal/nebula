@@ -75,8 +75,9 @@ public abstract class AbstractEffect implements IEffect {
 	 * Run the onCancel runnable if any.
 	 */
 	protected void doCancel() {
-		if (runnableOnCancel != null)
-			runnableOnCancel.run();
+        if (runnableOnCancel != null) {
+            runnableOnCancel.run();
+        }
 	}
 
 	/**
@@ -101,8 +102,9 @@ public abstract class AbstractEffect implements IEffect {
 	 * Run the onStop runnable if any.
 	 */
 	protected void doStop() {
-		if (runnableOnStop != null)
-			runnableOnStop.run();
+        if (runnableOnStop != null) {
+            runnableOnStop.run();
+        }
 	}
 
 	/**
@@ -123,8 +125,9 @@ public abstract class AbstractEffect implements IEffect {
 	 * Check if the effect has ended. In that case, start the onStop runnable.
 	 */
 	public void processEnd(long time) {
-		if (done)
-			return;
+        if (done) {
+            return;
+        }
 
 		if (time == length) {
 			done = true;

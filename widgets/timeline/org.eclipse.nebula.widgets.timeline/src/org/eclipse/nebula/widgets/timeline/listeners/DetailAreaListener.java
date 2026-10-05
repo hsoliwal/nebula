@@ -88,8 +88,9 @@ public class DetailAreaListener extends MouseMotionListener.Stub implements Mous
 			final Dimension offset = fLocation.getDifference(targetLocation);
 			if (offset.width() != 0) {
 				final TimeBaseConverter timeDetails = RootFigure.getRootFigure(fFigure).getTimeViewDetails();
-				if (timeDetails.translateDetailAreaOffset(offset.width()))
-					fLocation = targetLocation;
+                if (timeDetails.translateDetailAreaOffset(offset.width())) {
+                    fLocation = targetLocation;
+                }
 
 				me.consume();
 			}

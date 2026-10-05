@@ -219,38 +219,41 @@ public class LinearScaleTicks implements ITicksProvider {
 		}
 		boolean minBigger = false;
 		if (min >= max) {
-			if (max == min)
-				max++;
-			else {
-				minBigger = true;
-				double swap = min;
-				min = max;
-				max = swap;
-			}
+            if (max == min) {
+                max++;
+            } else {
+                minBigger = true;
+                double swap = min;
+                min = max;
+                max = swap;
+            }
 		}
 
 		double length = LargeNumberUtils.requireFinite(Math.abs(max - min));
 
 		double majorTickMarkStepHint = scale.getMajorTickMarkStepHint();
-		if (majorTickMarkStepHint > lengthInPixels)
-			majorTickMarkStepHint = lengthInPixels;
+        if (majorTickMarkStepHint > lengthInPixels) {
+            majorTickMarkStepHint = lengthInPixels;
+        }
 		double gridStepHint = length / lengthInPixels * majorTickMarkStepHint;
 
 		if (scale.isDateEnabled()) {
 			double temp = getTimeGridStep(min, max, gridStepHint);
-			if (minBigger)
-				temp = -temp;
+            if (minBigger) {
+                temp = -temp;
+            }
 			return temp;
 		}
 
 		double mantissa = gridStepHint;
 		int exp = 0;
 		if (mantissa < 1) {
-			if (mantissa != 0)
-				while (mantissa < 1) {
-					mantissa *= 10.0;
-					exp--;
-				}
+            if (mantissa != 0) {
+                while (mantissa < 1) {
+                    mantissa *= 10.0;
+                    exp--;
+                }
+            }
 		} else {
 			while (mantissa >= 10) {
 				mantissa /= 10.0;
@@ -285,8 +288,9 @@ public class LinearScaleTicks implements ITicksProvider {
 			}
 		}
 
-		if (minBigger)
-			gridStep = -gridStep;
+        if (minBigger) {
+            gridStep = -gridStep;
+        }
 
 		return gridStep;
 	}
@@ -305,22 +309,23 @@ public class LinearScaleTicks implements ITicksProvider {
 	private double getTimeGridStep(double min, double max, double gridStepHint) {
 		// by default, make the least step to be minutes
 		long timeStep;
-		if (max - min < 1000) // <1 sec, step = 10 ms
-			timeStep = 10l;
-		else if (max - min < 60000) // < 1 min, step = 1 sec
-			timeStep = 1000l;
-		else if (max - min < 600000) // < 10 min, step = 10 sec
-			timeStep = 10000l;
-		else if (max - min < 6400000) // < 2 hour, step = 1 min
-			timeStep = 60000l;
-		else if (max - min < 43200000) // < 12 hour, step = 10 min
-			timeStep = 600000l;
-		else if (max - min < 86400000) // < 24 hour, step = 30 min
-			timeStep = 1800000l;
-		else if (max - min < 604800000) // < 7 days, step = 1 hour
-			timeStep = 3600000l;
-		else
-			timeStep = 86400000l;
+        if (max - min < 1000) { // <1 sec, step = 10 ms
+            timeStep = 10l;
+        } else if (max - min < 60000) { // < 1 min, step = 1 sec
+            timeStep = 1000l;
+        } else if (max - min < 600000) { // < 10 min, step = 10 sec
+            timeStep = 10000l;
+        } else if (max - min < 6400000) { // < 2 hour, step = 1 min
+            timeStep = 60000l;
+        } else if (max - min < 43200000) { // < 12 hour, step = 10 min
+            timeStep = 600000l;
+        } else if (max - min < 86400000) { // < 24 hour, step = 30 min
+            timeStep = 1800000l;
+        } else if (max - min < 604800000) { // < 7 days, step = 1 hour
+            timeStep = 3600000l;
+        } else {
+            timeStep = 86400000l;
+        }
 
 		if (scale.getTimeUnit() == Calendar.SECOND) {
 			timeStep = 1000l;
@@ -388,15 +393,15 @@ public class LinearScaleTicks implements ITicksProvider {
 
 		// calculate the default decimal format
 		double mantissa = Math.abs(max - min);
-		if (Math.abs(mantissa) > 0.1)
-			format = "############.##";
-		else {
-			format = "##.##";
-			while (mantissa < 1) {
-				mantissa *= 10.0;
-				format += "#";
-			}
-		}
+        if (Math.abs(mantissa) > 0.1) {
+            format = "############.##";
+        } else {
+            format = "##.##";
+            while (mantissa < 1) {
+                mantissa *= 10.0;
+                format += "#";
+            }
+        }
 
 		return format;
 	}
@@ -460,8 +465,9 @@ public class LinearScaleTicks implements ITicksProvider {
 				} else {
 					lblStr = scale.format(min);
 				}
-			} else
-				lblStr = "";
+			} else {
+                lblStr = "";
+            }
 			tickLabels.add(lblStr);
 			tickLabelPositions.add(scale.getMargin());
 		}
@@ -501,8 +507,9 @@ public class LinearScaleTicks implements ITicksProvider {
 			} else {
 				lblStr = scale.format(max);
 			}
-		} else
-			lblStr = "";
+		} else {
+            lblStr = "";
+        }
 		tickLabels.add(lblStr);
 		tickLabelPositions.add(scale.getMargin() + length);
 	}
@@ -515,8 +522,9 @@ public class LinearScaleTicks implements ITicksProvider {
 	 *            the length of scale
 	 */
 	private void updateTickLabelForLogScale(double min, double max,  int length) {
-		if (min <= 0 || max <= 0)
-			throw new IllegalArgumentException("the range for log scale must be in positive range");
+        if (min <= 0 || max <= 0) {
+            throw new IllegalArgumentException("the range for log scale must be in positive range");
+        }
 		boolean minBigger = max < min;
 
 		double logMin = Math.log10(min);
@@ -530,10 +538,11 @@ public class LinearScaleTicks implements ITicksProvider {
 		if (minDec.remainder(tickStep).doubleValue() <= 0) {
 			firstPosition = minDec.subtract(minDec.remainder(tickStep));
 		} else {
-			if (minBigger)
-				firstPosition = minDec.subtract(minDec.remainder(tickStep));
-			else
-				firstPosition = minDec.subtract(minDec.remainder(tickStep)).add(tickStep);
+            if (minBigger) {
+                firstPosition = minDec.subtract(minDec.remainder(tickStep));
+            } else {
+                firstPosition = minDec.subtract(minDec.remainder(tickStep)).add(tickStep);
+            }
 		}
 
 		// add min
@@ -546,8 +555,9 @@ public class LinearScaleTicks implements ITicksProvider {
 			// if the range is too big skip minor ticks
 			if (Math.abs(maxLogDigit - minLogDigit) > 20) {
 				BigDecimal v = pow(10, i);
-				if (v.doubleValue() > max)
-					break;
+                if (v.doubleValue() > max) {
+                    break;
+                }
 				addTickInfo(v, max, logMin, length, i == minLogDigit, minDateAdded);
 			} else {
 				// must use BigDecimal because it involves equal comparison
@@ -688,8 +698,9 @@ public class LinearScaleTicks implements ITicksProvider {
 
 		tickLabelVisibilities.clear();
 
-		if (tickLabelPositions.isEmpty())
-			return;
+        if (tickLabelPositions.isEmpty()) {
+            return;
+        }
 
 		for (int i = 0; i < tickLabelPositions.size(); i++) {
 			tickLabelVisibilities.add(Boolean.TRUE);

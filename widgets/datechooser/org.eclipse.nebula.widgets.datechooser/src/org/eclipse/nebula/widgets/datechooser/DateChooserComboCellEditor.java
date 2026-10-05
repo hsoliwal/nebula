@@ -114,7 +114,9 @@ public class DateChooserComboCellEditor extends CellEditor {
    * @param value a date value
    */
 	protected void doSetValue(Object value) {
-		if ( combo == null || combo.isDisposed() ) SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+        if (combo == null || combo.isDisposed()) {
+            SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+        }
 		if ( value instanceof Date ) {
 			combo.setValue((Date) value);
 		}

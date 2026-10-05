@@ -148,10 +148,12 @@ public class BranchRenderer extends AbstractRenderer {
 		// Adjust ascender and descender
 		yToggleBottom += dy;
 
-		if ((yToggleTop - yTop + 1) % 2 == 0)
-			yToggleTop -= 1;
-		if ((yToggleBottom - yBottom + 1) % 2 == 0)
-			yToggleBottom += dy == 1 ? -1 : 1;
+        if ((yToggleTop - yTop + 1) % 2 == 0) {
+            yToggleTop -= 1;
+        }
+        if ((yToggleBottom - yBottom + 1) % 2 == 0) {
+            yToggleBottom += dy == 1 ? -1 : 1;
+        }
 		
 		for (int i = 0; i < branches.length; i++) {
 			// Calculate offsets for this branch
@@ -173,24 +175,32 @@ public class BranchRenderer extends AbstractRenderer {
 				xLeft += dx;
 				xRight -= dx;
 			}
-			
-			// Render line segments
-			if ((branches[i] & H_FULL) == H_FULL)
-				gc.drawLine(xLeft, yMiddle, xRight, yMiddle);
-			if ((branches[i] & H_RIGHT) == H_RIGHT)
-				gc.drawLine(xMiddleBranch, yMiddle, xRight, yMiddle);
-			if ((branches[i] & H_CENTRE_TOGGLE) == H_CENTRE_TOGGLE)
-				gc.drawLine(xMiddleBranch, yMiddle, xToggleRight, yMiddle);
-			if ((branches[i] & H_LEFT_TOGGLE) == H_LEFT_TOGGLE)
-				gc.drawLine(xLeft, yMiddle, xToggleRight, yMiddle);
-			if ((branches[i] & V_FULL) == V_FULL)
-				gc.drawLine(xMiddle, yTop, xMiddle, yBottom);
-			if ((branches[i] & V_TOP) == V_TOP)
-				gc.drawLine(xMiddle, yTop, xMiddle, yMiddle);
-			if ((branches[i] & ASCENDER) == ASCENDER)
-				gc.drawLine(xMiddle, yTop, xMiddle, yToggleTop);
-			if ((branches[i] & DESCENDER) == DESCENDER)
-				gc.drawLine(xMiddle, yToggleBottom, xMiddle, yBottom);
+
+            // Render line segments
+            if ((branches[i] & H_FULL) == H_FULL) {
+                gc.drawLine(xLeft, yMiddle, xRight, yMiddle);
+            }
+            if ((branches[i] & H_RIGHT) == H_RIGHT) {
+                gc.drawLine(xMiddleBranch, yMiddle, xRight, yMiddle);
+            }
+            if ((branches[i] & H_CENTRE_TOGGLE) == H_CENTRE_TOGGLE) {
+                gc.drawLine(xMiddleBranch, yMiddle, xToggleRight, yMiddle);
+            }
+            if ((branches[i] & H_LEFT_TOGGLE) == H_LEFT_TOGGLE) {
+                gc.drawLine(xLeft, yMiddle, xToggleRight, yMiddle);
+            }
+            if ((branches[i] & V_FULL) == V_FULL) {
+                gc.drawLine(xMiddle, yTop, xMiddle, yBottom);
+            }
+            if ((branches[i] & V_TOP) == V_TOP) {
+                gc.drawLine(xMiddle, yTop, xMiddle, yMiddle);
+            }
+            if ((branches[i] & ASCENDER) == ASCENDER) {
+                gc.drawLine(xMiddle, yTop, xMiddle, yToggleTop);
+            }
+            if ((branches[i] & DESCENDER) == DESCENDER) {
+                gc.drawLine(xMiddle, yToggleBottom, xMiddle, yBottom);
+            }
 			
 			xLeft += indent - dx;
 		}

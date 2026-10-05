@@ -80,23 +80,30 @@ public class LinePrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		LinePrint other = (LinePrint) obj;
-		if (orientation != other.orientation)
-			return false;
+        if (orientation != other.orientation) {
+            return false;
+        }
 		if (rgb == null) {
-			if (other.rgb != null)
-				return false;
-		} else if (!rgb.equals(other.rgb))
-			return false;
-		if (Double.doubleToLongBits(thickness) != Double
-				.doubleToLongBits(other.thickness))
-			return false;
+            if (other.rgb != null) {
+                return false;
+            }
+		} else if (!rgb.equals(other.rgb)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(thickness) != Double
+                .doubleToLongBits(other.thickness)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -111,17 +118,19 @@ public class LinePrint implements Print {
 	}
 
 	private int checkOrientation(int orientation) {
-		if ((orientation & SWT.HORIZONTAL) == SWT.HORIZONTAL)
-			return SWT.HORIZONTAL;
-		else if ((orientation & SWT.VERTICAL) == SWT.VERTICAL)
-			return SWT.VERTICAL;
-		else
-			return SWT.HORIZONTAL;
+        if ((orientation & SWT.HORIZONTAL) == SWT.HORIZONTAL) {
+            return SWT.HORIZONTAL;
+        } else if ((orientation & SWT.VERTICAL) == SWT.VERTICAL) {
+            return SWT.VERTICAL;
+        } else {
+            return SWT.HORIZONTAL;
+        }
 	}
 
 	private double checkThickness(double thickness) {
-		if (thickness < 0)
-			return 0;
+        if (thickness < 0) {
+            return 0;
+        }
 		return thickness;
 	}
 
@@ -213,13 +222,15 @@ class LineIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext())
-			PaperClips.error("No more content"); //$NON-NLS-1$
+        if (!hasNext()) {
+            PaperClips.error("No more content"); //$NON-NLS-1$
+        }
 
 		// Make sure the line fits :)
 		Point size = getSize(width, height);
-		if (size.x > width || size.y > height)
-			return null;
+        if (size.x > width || size.y > height) {
+            return null;
+        }
 
 		PrintPiece result = new LinePiece(device, size, rgb);
 		hasNext = false;

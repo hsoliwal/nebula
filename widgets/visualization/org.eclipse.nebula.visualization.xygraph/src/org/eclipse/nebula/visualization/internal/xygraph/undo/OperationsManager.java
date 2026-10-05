@@ -86,8 +86,9 @@ public class OperationsManager {
 	 * undo the last command. Do nothing if there is no last command.
 	 */
 	public void undo() {
-		if (undoStack.size() > 0)
-			undoCommand(undoStack.peek());
+        if (undoStack.size() > 0) {
+            undoCommand(undoStack.peek());
+        }
 	}
 
 	/**
@@ -95,8 +96,9 @@ public class OperationsManager {
 	 * command.
 	 */
 	public void redo() {
-		if (redoStack.size() > 0)
-			redoCommand(redoStack.peek());
+        if (redoStack.size() > 0) {
+            redoCommand(redoStack.peek());
+        }
 	}
 
 	/**
@@ -124,8 +126,9 @@ public class OperationsManager {
 	}
 
 	private void fireOperationsHistoryChanged() {
-		for (IOperationsManagerListener listener : listeners)
-			listener.operationsHistoryChanged(this);
+        for (IOperationsManagerListener listener : listeners) {
+            listener.operationsHistoryChanged(this);
+        }
 	}
 
 	public int getUndoCommandsSize() {

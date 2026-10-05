@@ -145,8 +145,9 @@ public class CalendarableModel {
 			// Calculate the overlap
 			for (int day=0; day < numberOfDays; ++day) {
 				Date candidate = calculateDate(startDate, day);
-				if (candidate.equals(this.startDate))
-					overlap = day;
+                if (candidate.equals(this.startDate)) {
+                    overlap = day;
+                }
 			}
 			for (int day=numberOfDays-1; day >= 0; --day) {
 				if (numberOfDays - day <= overlap) {
@@ -171,8 +172,9 @@ public class CalendarableModel {
 			// We're scrolling the viewport to the right
 			for (int day=0; day < numberOfDays; ++day) {
 				Date candidate = calculateDate(this.startDate, day);
-				if (candidate.equals(startDate))
-					overlap = day;
+                if (candidate.equals(startDate)) {
+                    overlap = day;
+                }
 			}
 			for (int day=0; day < numberOfDays; ++day) {
 				if (day < overlap) {
@@ -614,11 +616,13 @@ public class CalendarableModel {
 		CalendarableItem result = null;
 		if (isAllDayEventRow) {
 			result = findAllDayCalendarable(selectedDay, true, selection);
-			if (result != null)
-				return result;
+            if (result != null) {
+                return result;
+            }
 			result = findTimedCalendarable(selectedDay, 0, -1, true, null);
-			if (result != null)
-				return result;
+            if (result != null) {
+                return result;
+            }
 		} else {
 			result = findTimedCalendarable(selectedDay, selectedRow, -1, true, selection);
 			if (result != null) {
@@ -688,17 +692,20 @@ public class CalendarableModel {
 		if (!isAllDayEventRow) {
 			// search timed events to the beginning of the day
 			result = findTimedCalendarable(selectedDay, selectedRow, -1, false, selection);
-			if (result != null)
-				return result;
+            if (result != null) {
+                return result;
+            }
 			
 			// Search all-day events
 			result = findAllDayCalendarable(selectedDay, false, null);
-			if (result != null)
-				return result;
+            if (result != null) {
+                return result;
+            }
 		} else {
 			result = findAllDayCalendarable(selectedDay, false, selection);
-			if (result != null)
-				return result;
+            if (result != null) {
+                return result;
+            }
 		}
 		
 		// Search all days other than selectedDay

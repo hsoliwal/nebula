@@ -49,8 +49,9 @@ public class Bulb extends Figure{
 	public void setBounds(Rectangle rect) {
     	//get the square in the rect
     	rect.width = Math.min(rect.width, rect.height);
-    	if(rect.width < 3)
-    		rect.width =3;
+        if (rect.width < 3) {
+            rect.width = 3;
+        }
     	rect.height = rect.width;
     	super.setBounds(rect);  
 
@@ -88,8 +89,9 @@ public class Bulb extends Figure{
 	 * @param bulbColor the bulbColor to set
 	 */
 	public void setBulbColor(Color color) {
-		if(this.bulbColor != null && this.bulbColor.equals(color))
-			return;
+        if (this.bulbColor != null && this.bulbColor.equals(color)) {
+            return;
+        }
 		this.bulbColor = color;
 		repaint();
 	}
@@ -106,8 +108,9 @@ public class Bulb extends Figure{
 	 * @param effect3D the effect3D to set
 	 */
 	public void setEffect3D(boolean effect3D) {
-		if(this.effect3D == effect3D)
-			return;
+        if (this.effect3D == effect3D) {
+            return;
+        }
 		this.effect3D = effect3D;
 		repaint();
 	}

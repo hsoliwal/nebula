@@ -141,25 +141,33 @@ public class TextPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		TextPrint other = (TextPrint) obj;
 		if (style == null) {
-			if (other.style != null)
-				return false;
-		} else if (!style.equals(other.style))
-			return false;
+            if (other.style != null) {
+                return false;
+            }
+		} else if (!style.equals(other.style)) {
+            return false;
+        }
 		if (text == null) {
-			if (other.text != null)
-				return false;
-		} else if (!text.equals(other.text))
-			return false;
-		if (wordSplitting != other.wordSplitting)
-			return false;
+            if (other.text != null) {
+                return false;
+            }
+		} else if (!text.equals(other.text)) {
+            return false;
+        }
+        if (wordSplitting != other.wordSplitting) {
+            return false;
+        }
 		return true;
 	}
 
@@ -396,8 +404,9 @@ class TextIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext())
-			PaperClips.error("No more content."); //$NON-NLS-1$
+        if (!hasNext()) {
+            PaperClips.error("No more content."); //$NON-NLS-1$
+        }
 
 		Font oldFont = initGC();
 		PrintPiece result = internalNext(width, height);
@@ -410,13 +419,15 @@ class TextIterator implements PrintIterator {
 		FontMetrics fm = gc.getFontMetrics();
 
 		final int lineHeight = fm.getHeight();
-		if (height < lineHeight)
-			return null;
+        if (height < lineHeight) {
+            return null;
+        }
 
 		final int maxLines = height / lineHeight;
 		String[] nextLines = nextLines(width, maxLines);
-		if (nextLines.length == 0)
-			return null;
+        if (nextLines.length == 0) {
+            return null;
+        }
 
 		int maxWidth = maxExtent(nextLines).x;
 		Point size = new Point(maxWidth, nextLines.length * lineHeight);
@@ -428,8 +439,9 @@ class TextIterator implements PrintIterator {
 	private Font initGC() {
 		Font oldFont = gc.getFont();
 		FontData fontData = style.getFontData();
-		if (fontData != null)
-			gc.setFont(ResourcePool.forDevice(device).getFont(fontData));
+        if (fontData != null) {
+            gc.setFont(ResourcePool.forDevice(device).getFont(fontData));
+        }
 		return oldFont;
 	}
 
@@ -446,10 +458,11 @@ class TextIterator implements PrintIterator {
 			// Find out how much text will fit on one line.
 			int charCount = findLineBreak(gc, line, width);
 
-			// If none of the text could fit in the current line, terminate this
-			// iteration.
-			if (line.length() > 0 && charCount == 0)
-				break;
+            // If none of the text could fit in the current line, terminate this
+            // iteration.
+            if (line.length() > 0 && charCount == 0) {
+                break;
+            }
 
 			// Get the text that fits on this line.
 			String thisLine = line.substring(0, charCount);
@@ -467,9 +480,10 @@ class TextIterator implements PrintIterator {
 	}
 
 	private void skipWhitespace() {
-		while (col < lines[row].length()
-				&& Character.isWhitespace(lines[row].charAt(col)))
-			col++;
+        while (col < lines[row].length()
+                && Character.isWhitespace(lines[row].charAt(col))) {
+            col++;
+        }
 	}
 
 	private void advanceToNextRowIfCurrentRowCompleted() {
@@ -514,10 +528,11 @@ class TextIterator implements PrintIterator {
 		// Pixel width of entire string
 		int pixelWidth = gc.stringExtent(text).x;
 
-		// Does the whole string fit?
-		if (pixelWidth <= width)
-			// I'll take it
-			return hiIndex;
+        // Does the whole string fit?
+        if (pixelWidth <= width) {
+            // I'll take it
+            return hiIndex;
+        }
 
 		// Do a binary search to find the maximum characters that will fit
 		// within the given width.
@@ -525,36 +540,40 @@ class TextIterator implements PrintIterator {
 			int midIndex = (loIndex + hiIndex + 1) / 2;
 			int midWidth = gc.stringExtent(text.substring(0, midIndex)).x;
 
-			if (midWidth < width)
-				// don't add 1, the next character could make it too big
-				loIndex = midIndex;
-			else if (midWidth > width)
-				// subtract 1, we already know midIndex makes it too big
-				hiIndex = midIndex - 1;
-			else {
-				// perfect fit
-				loIndex = hiIndex = midIndex;
-			}
+            if (midWidth < width) {
+                // don't add 1, the next character could make it too big
+                loIndex = midIndex;
+            } else if (midWidth > width) {
+                // subtract 1, we already know midIndex makes it too big
+                hiIndex = midIndex - 1;
+            } else {
+                // perfect fit
+                loIndex = hiIndex = midIndex;
+            }
 		}
 
 		return findWordBreak(text, loIndex);
 	}
 
 	int findWordBreak(String text, int maxLength) {
-		// If the max length is the string length, no break
-		// (we mainly check this to avoid an exception in for-loop)
-		if (maxLength == text.length())
-			return maxLength;
+        // If the max length is the string length, no break
+        // (we mainly check this to avoid an exception in for-loop)
+        if (maxLength == text.length()) {
+            return maxLength;
+        }
 
-		// Otherwise, break string at the last whitespace at or before
-		// maxLength.
-		for (int i = maxLength; i >= 0; i--)
-			if (Character.isWhitespace(text.charAt(i)))
-				return i;
+        // Otherwise, break string at the last whitespace at or before
+        // maxLength.
+        for (int i = maxLength; i >= 0; i--) {
+            if (Character.isWhitespace(text.charAt(i))) {
+                return i;
+            }
+        }
 
-		// No whitespace? Break at max length (if word breaking is allowed)
-		if (wordSplitting)
-			return maxLength;
+        // No whitespace? Break at max length (if word breaking is allowed)
+        if (wordSplitting) {
+            return maxLength;
+        }
 
 		return 0;
 	}

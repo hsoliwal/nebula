@@ -215,8 +215,9 @@ public class Gallery extends Canvas {
 	public int getItemCount() {
 		checkWidget();
 
-		if (items == null)
-			return 0;
+        if (items == null) {
+            return 0;
+        }
 
 		return items.length;
 	}
@@ -230,8 +231,9 @@ public class Gallery extends Canvas {
 	public void setItemCount(int count) {
 		checkWidget();
 
-		if (DEBUG)
-			System.out.println("setCount" + count); //$NON-NLS-1$
+        if (DEBUG) {
+            System.out.println("setCount" + count); //$NON-NLS-1$
+        }
 
 		if (count == 0) {
 			// No items
@@ -273,8 +275,9 @@ public class Gallery extends Canvas {
 		checkWidget();
 		this.itemRenderer = itemRenderer;
 
-		if (this.itemRenderer != null)
-			this.itemRenderer.setGallery(this);
+        if (this.itemRenderer != null) {
+            this.itemRenderer.setGallery(this);
+        }
 
 		redraw();
 	}
@@ -604,8 +607,9 @@ public class Gallery extends Canvas {
 		ScrollBar verticalBar = getVerticalBar();
 		if (verticalBar != null) {
 			verticalBar.addListener(SWT.Selection, event -> {
-				if (vertical)
-					scrollVertical();
+                if (vertical) {
+                    scrollVertical();
+                }
 			});
 		}
 
@@ -614,8 +618,9 @@ public class Gallery extends Canvas {
 		ScrollBar horizontalBar = getHorizontalBar();
 		if (horizontalBar != null) {
 			horizontalBar.addListener(SWT.Selection, event -> {
-				if (!vertical)
-					scrollHorizontal();
+                if (!vertical) {
+                    scrollHorizontal();
+                }
 			});
 		}
 
@@ -753,8 +758,9 @@ public class Gallery extends Canvas {
 
 	private boolean getOrder(GalleryItem before, GalleryItem after) {
 
-		if (before == null || after == null)
-			return true;
+        if (before == null || after == null) {
+            return true;
+        }
 
 		GalleryItem newParent = before.getParentItem();
 		GalleryItem oldParent = after.getParentItem();
@@ -831,11 +837,13 @@ public class Gallery extends Canvas {
 
 	protected void _addSelection(GalleryItem item) {
 
-		if (item == null)
-			return;
+        if (item == null) {
+            return;
+        }
 
-		if (this.isSelected(item))
-			return;
+        if (this.isSelected(item)) {
+            return;
+        }
 
 		// Deselect all items is multi selection is disabled
 		if (!multi) {
@@ -884,12 +892,14 @@ public class Gallery extends Canvas {
 		if (item.getParentItem() == null) {
 			int index = _indexOf(item);
 			selectionFlags[index >> 5] &= ~(1 << (index & 0x1f));
-		} else
-			_removeSelection(item.getParentItem(), item);
+		} else {
+            _removeSelection(item.getParentItem(), item);
+        }
 
 		int index = _arrayIndexOf(selection, item);
-		if (index == -1)
-			return;
+        if (index == -1) {
+            return;
+        }
 
 		selection = (GalleryItem[]) _arrayRemoveItem(selection, index);
 
@@ -902,20 +912,23 @@ public class Gallery extends Canvas {
 
 	protected boolean isSelected(GalleryItem item) {
 
-		if (item == null)
-			return false;
+        if (item == null) {
+            return false;
+        }
 
 		if (item.getParentItem() != null) {
 			return item.getParentItem().isSelected(item);
 		}
 
-		if (selectionFlags == null)
-			return false;
+        if (selectionFlags == null) {
+            return false;
+        }
 
 		int index = indexOf(item);
 		int n = index >> 5;
-		if (n >= selectionFlags.length)
-			return false;
+        if (n >= selectionFlags.length) {
+            return false;
+        }
 		int flags = selectionFlags[n];
 		return flags != 0 && (flags & 1 << (index & 0x1f)) != 0;
 
@@ -940,33 +953,40 @@ public class Gallery extends Canvas {
 	 */
 	protected void _deselectAll(boolean notifyListeners) {
 
-		if (DEBUG)
-			System.out.println("clear"); //$NON-NLS-1$
+        if (DEBUG) {
+            System.out.println("clear"); //$NON-NLS-1$
+        }
 
 		this.selection = null;
-		// Deselect groups
-		// We could set selectionFlags to null, but we rather set all values to
-		// 0 to redure garbage collection. On each iteration, we deselect 32
-		// items.
-		if (selectionFlags != null)
-			for (int i = 0; i < selectionFlags.length; i++)
-				selectionFlags[i] = 0;
+        // Deselect groups
+        // We could set selectionFlags to null, but we rather set all values to
+        // 0 to redure garbage collection. On each iteration, we deselect 32
+        // items.
+        if (selectionFlags != null) {
+            for (int i = 0; i < selectionFlags.length; i++) {
+                selectionFlags[i] = 0;
+            }
+        }
 
-		if (items == null)
-			return;
+        if (items == null) {
+            return;
+        }
 		for (int i = 0; i < items.length; i++) {
-			if (items[i] != null)
-				items[i]._deselectAll();
+            if (items[i] != null) {
+                items[i]._deselectAll();
+            }
 		}
 
-		// Notify listeners if necessary.
-		if (notifyListeners)
-			notifySelectionListeners(null, -1, false);
+        // Notify listeners if necessary.
+        if (notifyListeners) {
+            notifySelectionListeners(null, -1, false);
+        }
 	}
 
 	void onMouseDoubleClick(Event e) {
-		if (DEBUG)
-			System.out.println("Mouse Double Click"); //$NON-NLS-1$
+        if (DEBUG) {
+            System.out.println("Mouse Double Click"); //$NON-NLS-1$
+        }
 
 		GalleryItem item = getItem(new Point(e.x, e.y));
 		if (item != null) {
@@ -976,8 +996,9 @@ public class Gallery extends Canvas {
 	}
 
 	void onMouseUp(Event e) {
-		if (DEBUG)
-			System.out.println("onMouseUp"); //$NON-NLS-1$
+        if (DEBUG) {
+            System.out.println("onMouseUp"); //$NON-NLS-1$
+        }
 
 		if (mouseClickHandled) {
 			if (DEBUG) {
@@ -988,8 +1009,9 @@ public class Gallery extends Canvas {
 
 		if (e.button == 1) {
 			GalleryItem item = getItem(new Point(e.x, e.y));
-			if (item == null)
-				return;
+            if (item == null) {
+                return;
+            }
 
 			if ((e.stateMask & SWT.MOD1) > 0) {
 				onMouseHandleLeftMod1(e, item, false, true);
@@ -1005,22 +1027,26 @@ public class Gallery extends Canvas {
 	 * Clean up the Gallery and renderers on dispose.
 	 */
 	void onDispose() {
-		// Remove items if not Virtual.
-		if (!virtual)
-			removeAll();
+        // Remove items if not Virtual.
+        if (!virtual) {
+            removeAll();
+        }
 
-		// Dispose renderers
-		if (itemRenderer != null)
-			itemRenderer.dispose();
+        // Dispose renderers
+        if (itemRenderer != null) {
+            itemRenderer.dispose();
+        }
 
-		if (groupRenderer != null)
-			groupRenderer.dispose();
+        if (groupRenderer != null) {
+            groupRenderer.dispose();
+        }
 
 	}
 
 	void onMouseDown(Event e) {
-		if (DEBUG)
-			System.out.println("Mouse down "); //$NON-NLS-1$
+        if (DEBUG) {
+            System.out.println("Mouse down "); //$NON-NLS-1$
+        }
 
 		mouseClickHandled = false;
 
@@ -1058,8 +1084,9 @@ public class Gallery extends Canvas {
 		if (up) {
 			// if (lastSingleClick != null) {
 			if (item != null) {
-				if (DEBUG)
-					System.out.println("setSelected : inverse"); //$NON-NLS-1$
+                if (DEBUG) {
+                    System.out.println("setSelected : inverse"); //$NON-NLS-1$
+                }
 				setSelected(item, !isSelected(item), true);
 				lastSingleClick = item;
 				redraw();
@@ -1074,10 +1101,11 @@ public class Gallery extends Canvas {
 			if (lastSingleClick != null) {
 				_deselectAll(false);
 
-				if (getOrder(item, lastSingleClick))
-					select(item, lastSingleClick);
-				else
-					select(lastSingleClick, item);
+                if (getOrder(item, lastSingleClick)) {
+                    select(item, lastSingleClick);
+                } else {
+                    select(lastSingleClick, item);
+                }
 			}
 		}
 	}
@@ -1088,8 +1116,9 @@ public class Gallery extends Canvas {
 			if (!isSelected(item)) {
 				_deselectAll(false);
 
-				if (DEBUG)
-					System.out.println("setSelected"); //$NON-NLS-1$
+                if (DEBUG) {
+                    System.out.println("setSelected"); //$NON-NLS-1$
+                }
 				setSelected(item, true, true);
 
 				lastSingleClick = item;
@@ -1100,8 +1129,9 @@ public class Gallery extends Canvas {
 			if (item == null) {
 				_deselectAll(true);
 			} else {
-				if (DEBUG)
-					System.out.println("setSelected"); //$NON-NLS-1$
+                if (DEBUG) {
+                    System.out.println("setSelected"); //$NON-NLS-1$
+                }
 
 				_deselectAll(false);
 				setSelected(item, true, lastSingleClick != item);
@@ -1123,8 +1153,9 @@ public class Gallery extends Canvas {
 	void onMouseHandleRight(Event e, GalleryItem item, boolean down,
 			boolean up) {
 		if (down) {
-			if (DEBUG)
-				System.out.println("right click"); //$NON-NLS-1$
+            if (DEBUG) {
+                System.out.println("right click"); //$NON-NLS-1$
+            }
 
 			if (item != null && !isSelected(item)) {
 				_deselectAll(false);
@@ -1137,8 +1168,9 @@ public class Gallery extends Canvas {
 	}
 
 	void onPaint(GC gc) {
-		if (DEBUG)
-			System.out.println("paint"); //$NON-NLS-1$
+        if (DEBUG) {
+            System.out.println("paint"); //$NON-NLS-1$
+        }
 
 		boolean lowQualityPaint = lowQualityOnUserAction
 				&& (translate != lastTranslateValue
@@ -1173,24 +1205,29 @@ public class Gallery extends Canvas {
 
 			if (indexes != null && indexes.length > 0) {
 
-				// Call preDraw for optimization
-				if (groupRenderer != null)
-					groupRenderer.preDraw(gc);
-				if (itemRenderer != null)
-					itemRenderer.preDraw(gc);
+                // Call preDraw for optimization
+                if (groupRenderer != null) {
+                    groupRenderer.preDraw(gc);
+                }
+                if (itemRenderer != null) {
+                    itemRenderer.preDraw(gc);
+                }
 
 				for (int i = indexes.length - 1; i >= 0; i--) {
-					if (DEBUG)
-						System.out.println("Drawing group " + indexes[i]); //$NON-NLS-1$
+                    if (DEBUG) {
+                        System.out.println("Drawing group " + indexes[i]); //$NON-NLS-1$
+                    }
 
 					_drawGroup(gc, indexes[i]);
 				}
 
-				// Call postDraw for optimization / cleanup
-				if (groupRenderer != null)
-					groupRenderer.postDraw(gc);
-				if (itemRenderer != null)
-					itemRenderer.postDraw(gc);
+                // Call postDraw for optimization / cleanup
+                if (groupRenderer != null) {
+                    groupRenderer.postDraw(gc);
+                }
+                if (itemRenderer != null) {
+                    itemRenderer.postDraw(gc);
+                }
 			}
 		} catch (Exception e) {
 			// We can't let onPaint throw an exception because unexpected
@@ -1223,8 +1260,9 @@ public class Gallery extends Canvas {
 
 	private int[] getVisibleItems(Rectangle clipping) {
 
-		if (items == null)
-			return null;
+        if (items == null) {
+            return null;
+        }
 
 		int start = vertical ? (clipping.y + translate)
 				: (clipping.x + translate);
@@ -1241,20 +1279,23 @@ public class Gallery extends Canvas {
 			} else {
 				item = _getItem(index);
 			}
-			if ((vertical ? item.y : item.x) > end)
-				break;
+            if ((vertical ? item.y : item.x) > end) {
+                break;
+            }
 
-			if ((vertical ? (item.y + item.height)
-					: (item.x + item.width)) >= start)
-				al.add(new Integer(index));
+            if ((vertical ? (item.y + item.height)
+                    : (item.x + item.width)) >= start) {
+                al.add(new Integer(index));
+            }
 
 			index++;
 		}
 
 		int[] result = new int[al.size()];
 
-		for (int i = 0; i < al.size(); i++)
-			result[i] = ((Integer) al.get(i)).intValue();
+        for (int i = 0; i < al.size(); i++) {
+            result[i] = ((Integer) al.get(i)).intValue();
+        }
 
 		return result;
 	}
@@ -1335,8 +1376,9 @@ public class Gallery extends Canvas {
 			item = getItem(index);
 		}
 
-		if (item == null)
-			return;
+        if (item == null) {
+            return;
+        }
 
 		// update item attributes
 		this.groupRenderer.setExpanded(item.isExpanded());
@@ -1464,24 +1506,28 @@ public class Gallery extends Canvas {
 		float pos = 0;
 
 		if (vertical) {
-			if (gHeight > 0 && keepLocation)
-				pos = (float) (translate + 0.5 * area.height) / gHeight;
+            if (gHeight > 0 && keepLocation) {
+                pos = (float) (translate + 0.5 * area.height) / gHeight;
+            }
 
 			gWidth = area.width;
 			gHeight = calculateSize(changedGroup);
 
-			if (keepLocation)
-				translate = (int) (gHeight * pos - 0.5 * area.height);
+            if (keepLocation) {
+                translate = (int) (gHeight * pos - 0.5 * area.height);
+            }
 
 		} else {
-			if (gWidth > 0 && keepLocation)
-				pos = (float) (translate + 0.5 * area.width) / gWidth;
+            if (gWidth > 0 && keepLocation) {
+                pos = (float) (translate + 0.5 * area.width) / gWidth;
+            }
 
 			gWidth = calculateSize(changedGroup);
 			gHeight = area.height;
 
-			if (keepLocation)
-				translate = (int) (gWidth * pos - 0.5 * area.width);
+            if (keepLocation) {
+                translate = (int) (gWidth * pos - 0.5 * area.width);
+            }
 		}
 
 		validateTranslation();
@@ -1500,8 +1546,9 @@ public class Gallery extends Canvas {
 	 */
 	private int calculateSize(GalleryItem onlyUpdateGroup) {
 
-		if (groupRenderer == null)
-			return 0;
+        if (groupRenderer == null) {
+            return 0;
+        }
 
 		groupRenderer.preLayout(null);
 
@@ -1586,21 +1633,24 @@ public class Gallery extends Canvas {
 	 */
 	private void updateScrollBarProperties(ScrollBar bar, int clientSize,
 			int totalSize) {
-		if (bar == null)
-			return;
+        if (bar == null) {
+            return;
+        }
 
 		bar.setMinimum(0);
 		bar.setPageIncrement(clientSize);
 		bar.setMaximum(totalSize);
 		bar.setThumb(clientSize);
 
-		// Let the group renderer use a custom increment value.
-		if (groupRenderer != null)
-			bar.setIncrement(groupRenderer.getScrollBarIncrement());
+        // Let the group renderer use a custom increment value.
+        if (groupRenderer != null) {
+            bar.setIncrement(groupRenderer.getScrollBarIncrement());
+        }
 
 		if (totalSize > clientSize) {
-			if (DEBUG)
-				System.out.println("Enabling scrollbar"); //$NON-NLS-1$
+            if (DEBUG) {
+                System.out.println("Enabling scrollbar"); //$NON-NLS-1$
+            }
 
 			bar.setEnabled(true);
 			bar.setVisible(true);
@@ -1609,8 +1659,9 @@ public class Gallery extends Canvas {
 			// Ensure that translate has a valid value.
 			validateTranslation();
 		} else {
-			if (DEBUG)
-				System.out.println("Disabling scrollbar"); //$NON-NLS-1$
+            if (DEBUG) {
+                System.out.println("Disabling scrollbar"); //$NON-NLS-1$
+            }
 
 			bar.setEnabled(false);
 			bar.setVisible(false);
@@ -1631,9 +1682,10 @@ public class Gallery extends Canvas {
 		int totalSize = 0;
 		int clientSize = 0;
 
-		// Fix negative values
-		if (translate < 0)
-			translate = 0;
+        // Fix negative values
+        if (translate < 0) {
+            translate = 0;
+        }
 
 		// Get size depending on vertical setting.
 		if (vertical) {
@@ -1784,8 +1836,9 @@ public class Gallery extends Canvas {
 	 */
 	protected boolean _mouseDown(Event event) {
 
-		if (DEBUG)
-			System.out.println("getitem " + event.x + " " + event.y); //$NON-NLS-1$//$NON-NLS-2$
+        if (DEBUG) {
+            System.out.println("getitem " + event.x + " " + event.y); //$NON-NLS-1$//$NON-NLS-2$
+        }
 
 		GalleryItem group = this._getGroup(new Point(event.x, event.y));
 		if (group != null) {
@@ -1813,15 +1866,17 @@ public class Gallery extends Canvas {
 	public GalleryItem getItem(Point coords) {
 		checkWidget();
 
-		if (DEBUG)
-			System.out.println("getitem " + coords.x + " " + coords.y); //$NON-NLS-1$ //$NON-NLS-2$
+        if (DEBUG) {
+            System.out.println("getitem " + coords.x + " " + coords.y); //$NON-NLS-1$ //$NON-NLS-2$
+        }
 
 		int pos = vertical ? (coords.y + translate) : (coords.x + translate);
 
 		GalleryItem group = this._getGroup(coords);
-		if (group != null)
-			return groupRenderer.getItem(group, new Point(
-					vertical ? coords.x : pos, vertical ? pos : coords.y));
+        if (group != null) {
+            return groupRenderer.getItem(group, new Point(
+                    vertical ? coords.x : pos, vertical ? pos : coords.y));
+        }
 
 		return null;
 	}
@@ -1833,9 +1888,10 @@ public class Gallery extends Canvas {
 	 * @return GalleryItem or null
 	 */
 	private GalleryItem _getGroup(Point coords) {
-		// If there is no item in the gallery, return asap
-		if (items == null)
-			return null;
+        // If there is no item in the gallery, return asap
+        if (items == null) {
+            return null;
+        }
 
 		int pos = vertical ? (coords.y + translate) : (coords.x + translate);
 
@@ -1844,12 +1900,14 @@ public class Gallery extends Canvas {
 		while (index < items.length) {
 			item = getItem(index);
 
-			if ((vertical ? item.y : item.x) > pos)
-				break;
+            if ((vertical ? item.y : item.x) > pos) {
+                break;
+            }
 
-			if ((vertical ? (item.y + item.height)
-					: (item.x + item.width)) >= pos)
-				return item;
+            if ((vertical ? (item.y + item.height)
+                    : (item.x + item.width)) >= pos) {
+                return item;
+            }
 
 			index++;
 		}
@@ -1888,8 +1946,9 @@ public class Gallery extends Canvas {
 	public void clearAll(boolean all) {
 		checkWidget();
 
-		if (items == null)
-			return;
+        if (items == null) {
+            return;
+        }
 
 		if (virtual) {
 			items = new GalleryItem[items.length];
@@ -1940,9 +1999,10 @@ public class Gallery extends Canvas {
 	public void clear(int index, boolean all) {
 		checkWidget();
 
-		// Item is already cleared, return immediately.
-		if (items[index] == null)
-			return;
+        // Item is already cleared, return immediately.
+        if (items[index] == null) {
+            return;
+        }
 
 		if (virtual) {
 			// Clear item
@@ -1993,25 +2053,31 @@ public class Gallery extends Canvas {
 	 */
 	protected int _indexOf(GalleryItem item) {
 		int itemCount = getItemCount();
-		if (item == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (item == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
-			if (items[lastIndexOf] == item)
-				return lastIndexOf;
-			if (items[lastIndexOf + 1] == item)
-				return ++lastIndexOf;
-			if (items[lastIndexOf - 1] == item)
-				return --lastIndexOf;
+            if (items[lastIndexOf] == item) {
+                return lastIndexOf;
+            }
+            if (items[lastIndexOf + 1] == item) {
+                return ++lastIndexOf;
+            }
+            if (items[lastIndexOf - 1] == item) {
+                return --lastIndexOf;
+            }
 		}
 		if (lastIndexOf < itemCount / 2) {
 			for (int i = 0; i < itemCount; i++) {
-				if (items[i] == item)
-					return lastIndexOf = i;
+                if (items[i] == item) {
+                    return lastIndexOf = i;
+                }
 			}
 		} else {
 			for (int i = itemCount - 1; i >= 0; --i) {
-				if (items[i] == item)
-					return lastIndexOf = i;
+                if (items[i] == item) {
+                    return lastIndexOf = i;
+                }
 			}
 		}
 		return -1;
@@ -2026,26 +2092,32 @@ public class Gallery extends Canvas {
 	 */
 	protected int _indexOf(GalleryItem parentItem, GalleryItem item) {
 		int itemCount = parentItem.getItemCount();
-		if (item == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (item == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		if (1 <= parentItem.lastIndexOf
 				&& parentItem.lastIndexOf < itemCount - 1) {
-			if (parentItem.items[parentItem.lastIndexOf] == item)
-				return parentItem.lastIndexOf;
-			if (parentItem.items[parentItem.lastIndexOf + 1] == item)
-				return ++parentItem.lastIndexOf;
-			if (parentItem.items[parentItem.lastIndexOf - 1] == item)
-				return --parentItem.lastIndexOf;
+            if (parentItem.items[parentItem.lastIndexOf] == item) {
+                return parentItem.lastIndexOf;
+            }
+            if (parentItem.items[parentItem.lastIndexOf + 1] == item) {
+                return ++parentItem.lastIndexOf;
+            }
+            if (parentItem.items[parentItem.lastIndexOf - 1] == item) {
+                return --parentItem.lastIndexOf;
+            }
 		}
 		if (parentItem.lastIndexOf < itemCount / 2) {
 			for (int i = 0; i < itemCount; i++) {
-				if (parentItem.items[i] == item)
-					return parentItem.lastIndexOf = i;
+                if (parentItem.items[i] == item) {
+                    return parentItem.lastIndexOf = i;
+                }
 			}
 		} else {
 			for (int i = itemCount - 1; i >= 0; --i) {
-				if (parentItem.items[i] == item)
-					return parentItem.lastIndexOf = i;
+                if (parentItem.items[i] == item) {
+                    return parentItem.lastIndexOf = i;
+                }
 			}
 		}
 		return -1;
@@ -2053,8 +2125,9 @@ public class Gallery extends Canvas {
 
 	public GalleryItem[] getItems() {
 		checkWidget();
-		if (items == null)
-			return new GalleryItem[0];
+        if (items == null) {
+            return new GalleryItem[0];
+        }
 
 		GalleryItem[] itemsLocal = new GalleryItem[this.items.length];
 		System.arraycopy(items, 0, itemsLocal, 0, this.items.length);
@@ -2247,8 +2320,9 @@ public class Gallery extends Canvas {
 	}
 
 	public int getSelectionCount() {
-		if (selection == null)
-			return 0;
+        if (selection == null) {
+            return 0;
+        }
 
 		return selection.length;
 	}
@@ -2338,21 +2412,25 @@ public class Gallery extends Canvas {
 
 	protected Object[] _arrayRemoveItem(Object[] array, int index) {
 
-		if (array == null)
-			return null;
+        if (array == null) {
+            return null;
+        }
 
-		if (array.length == 1 && index == 0)
-			return null;
+        if (array.length == 1 && index == 0) {
+            return null;
+        }
 
 		Object[] newArray = (Object[]) Array.newInstance(
 				array.getClass().getComponentType(), array.length - 1);
 
-		if (index > 0)
-			System.arraycopy(array, 0, newArray, 0, index);
+        if (index > 0) {
+            System.arraycopy(array, 0, newArray, 0, index);
+        }
 
-		if (index + 1 < array.length)
-			System.arraycopy(array, index + 1, newArray, index,
-					newArray.length - index);
+        if (index + 1 < array.length) {
+            System.arraycopy(array, index + 1, newArray, index,
+                    newArray.length - index);
+        }
 
 		return newArray;
 	}
@@ -2370,15 +2448,17 @@ public class Gallery extends Canvas {
 
 		// Get current array length
 		int length = 0;
-		if (array != null)
-			length = array.length;
+        if (array != null) {
+            length = array.length;
+        }
 
 		// Create new array
 		Object[] newArray = (Object[]) Array.newInstance(object.getClass(),
 				length + 1);
 
-		if (array != null)
-			System.arraycopy(array, 0, newArray, 0, length);
+        if (array != null) {
+            System.arraycopy(array, 0, newArray, 0, length);
+        }
 
 		if (index != -1) {
 			// Move all items
@@ -2400,8 +2480,9 @@ public class Gallery extends Canvas {
 	}
 
 	protected int _arrayIndexOf(int[] array, int value) {
-		if (array == null)
-			return -1;
+        if (array == null) {
+            return -1;
+        }
 
 		for (int i = array.length - 1; i >= 0; --i) {
 			if (array[i] == value) {
@@ -2413,8 +2494,9 @@ public class Gallery extends Canvas {
 	}
 
 	protected int _arrayIndexOf(Object[] array, Object value) {
-		if (array == null)
-			return -1;
+        if (array == null) {
+            return -1;
+        }
 
 		for (int i = array.length - 1; i >= 0; --i) {
 			if (array[i] == value) {
@@ -2427,20 +2509,24 @@ public class Gallery extends Canvas {
 
 	protected int[] _arrayRemoveItem(int[] array, int index) {
 
-		if (array == null)
-			return null;
+        if (array == null) {
+            return null;
+        }
 
-		if (array.length == 1 && index == 0)
-			return null;
+        if (array.length == 1 && index == 0) {
+            return null;
+        }
 
 		int[] newArray = new int[array.length - 1];
 
-		if (index > 0)
-			System.arraycopy(array, 0, newArray, 0, index);
+        if (index > 0) {
+            System.arraycopy(array, 0, newArray, 0, index);
+        }
 
-		if (index + 1 < array.length)
-			System.arraycopy(array, index + 1, newArray, index,
-					newArray.length - index);
+        if (index + 1 < array.length) {
+            System.arraycopy(array, index + 1, newArray, index,
+                    newArray.length - index);
+        }
 
 		return newArray;
 	}

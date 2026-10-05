@@ -42,8 +42,9 @@ public class BreakPrintExample {
 
 		LineBorder border = new LineBorder();
 		for (int i = 0; i < 15; i++, printText += "  " + text) {
-			if (i > 0 && i % 5 == 0)
-				grid.add(new BreakPrint());
+            if (i > 0 && i % 5 == 0) {
+                grid.add(new BreakPrint());
+            }
 
 			grid.add(new BorderPrint(new TextPrint(printText), border));
 		}

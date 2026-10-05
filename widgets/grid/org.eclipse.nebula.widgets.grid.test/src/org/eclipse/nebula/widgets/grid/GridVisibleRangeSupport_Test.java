@@ -145,21 +145,27 @@ public class GridVisibleRangeSupport_Test {
 
 	private boolean hasRowDelta(List<RangeChangedEvent> changes) {
 		for (RangeChangedEvent event : changes) {
-			if (event.addedRows.length != 0 || event.removedRows.length != 0) return true;
+            if (event.addedRows.length != 0 || event.removedRows.length != 0) {
+                return true;
+            }
 		}
 		return false;
 	}
 
 	private boolean hasColumnDelta(List<RangeChangedEvent> changes) {
 		for (RangeChangedEvent event : changes) {
-			if (event.addedColumns.length != 0 || event.removedColumns.length != 0) return true;
+            if (event.addedColumns.length != 0 || event.removedColumns.length != 0) {
+                return true;
+            }
 		}
 		return false;
 	}
 
 	private boolean hasRemovedColumn(List<RangeChangedEvent> changes, GridColumn target) {
 		for (RangeChangedEvent event : changes) {
-			if (containsIdentity(event.removedColumns, target)) return true;
+            if (containsIdentity(event.removedColumns, target)) {
+                return true;
+            }
 		}
 		return false;
 	}
@@ -261,7 +267,9 @@ public class GridVisibleRangeSupport_Test {
 
 	private static boolean containsIdentity(GridColumn[] values, GridColumn target) {
 		for (GridColumn value : values) {
-			if (value == target) return true;
+            if (value == target) {
+                return true;
+            }
 		}
 		return false;
 	}
@@ -278,7 +286,9 @@ public class GridVisibleRangeSupport_Test {
 			do {
 				grid.update();
 				while (display.readAndDispatch()) { /* drain real native events */ }
-				if (!painted[0]) java.util.concurrent.locks.LockSupport.parkNanos(1_000_000L);
+                if (!painted[0]) {
+                    java.util.concurrent.locks.LockSupport.parkNanos(1_000_000L);
+                }
 			} while (!painted[0] && System.nanoTime() < deadline && !Thread.currentThread().isInterrupted());
 			assertTrue("actual SWT Paint must complete before range assertions", painted[0]);
 		} finally {

@@ -46,8 +46,9 @@ public class WrappableToolbarLayout extends AbstractLayout {
 				}
 			}
 			h += maxH;
-			if (height < 0)
-				height = h;
+            if (height < 0) {
+                height = h;
+            }
 			return new Dimension(width, height);
 		} else {
 			// int w =0;
@@ -60,8 +61,9 @@ public class WrappableToolbarLayout extends AbstractLayout {
 					maxH = preferSize.height;
 				}
 			}
-			if (height < 0)
-				height = maxH;
+            if (height < 0) {
+                height = maxH;
+            }
 			return new Dimension(width, height);
 		}
 	}

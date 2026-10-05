@@ -48,11 +48,13 @@ public class CrossAnnotation extends Annotation {
 
 	@Override
 	protected void paintFigure(Graphics graphics) {
-		if (trace != null && currentSnappedSample == null && !pointerDragged)
-			updateToDefaultPosition();
+        if (trace != null && currentSnappedSample == null && !pointerDragged) {
+            updateToDefaultPosition();
+        }
 
-		if (Preferences.useAdvancedGraphics())
-			graphics.setAntialias(SWT.ON);
+        if (Preferences.useAdvancedGraphics()) {
+            graphics.setAntialias(SWT.ON);
+        }
 
 		graphics.setForegroundColor(getForegroundColor());
 		xValue = currentSnappedSample.getXValue();

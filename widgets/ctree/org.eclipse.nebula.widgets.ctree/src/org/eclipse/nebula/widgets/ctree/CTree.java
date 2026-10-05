@@ -298,7 +298,9 @@ public class CTree extends Composite implements Listener {
 			}
 		});
 
-		if((style & SWT.CHECK) != 0) checkColumn = 0;
+        if ((style & SWT.CHECK) != 0) {
+            checkColumn = 0;
+        }
 		setLayout(layout = new CTreeLayout(this));
 	}
 
@@ -439,8 +441,9 @@ public class CTree extends Composite implements Listener {
 	protected void fireSelectionEvent(boolean defaultSelection) {
 		Event event = new Event();
 		event.type = defaultSelection ? SWT.DefaultSelection : SWT.Selection;
-		if (selection.size() == 1)
-			event.item = (CTreeItem) selection.get(0);
+        if (selection.size() == 1) {
+            event.item = (CTreeItem) selection.get(0);
+        }
 		notifyListeners(event.type, event);
 	}
 
@@ -560,7 +563,9 @@ public class CTree extends Composite implements Listener {
 	}
 
 	public CTreeItem getItem(int index) {
-		if(isEmpty() || index < 0 || index > itemList.size()-1) return null;
+        if (isEmpty() || index < 0 || index > itemList.size() - 1) {
+            return null;
+        }
 		return (CTreeItem) itemList.get(index);
 	}
 
@@ -590,7 +595,9 @@ public class CTree extends Composite implements Listener {
 	 * </ul>
 	 */
 	public CTreeItem[] getItems() {
-		if(isEmpty()) return new CTreeItem[0];
+        if (isEmpty()) {
+            return new CTreeItem[0];
+        }
 		return (CTreeItem[]) itemList.toArray(new CTreeItem[itemList.size()]);
 	}
 
@@ -799,12 +806,14 @@ public class CTree extends Composite implements Listener {
 	}
 
 	private void handleFocus(int type) {
-		if (isDisposed())
-			return;
+        if (isDisposed()) {
+            return;
+        }
 		switch (type) {
 		case SWT.FocusIn: {
-			if (hasFocus)
-				return;
+            if (hasFocus) {
+                return;
+            }
 			hasFocus = true;
 			updateFocus();
 			Display display = getDisplay();
@@ -815,13 +824,17 @@ public class CTree extends Composite implements Listener {
 			break;
 		}
 		case SWT.FocusOut: {
-			if (!hasFocus)
-				return;
+            if (!hasFocus) {
+                return;
+            }
 			Control focusControl = getDisplay().getFocusControl();
-			if (focusControl == this)
-				return;
+            if (focusControl == this) {
+                return;
+            }
 			for(Iterator i = items(false).iterator(); i.hasNext(); ) {
-				if(((CTreeItem) i.next()).contains(focusControl)) return;
+                if (((CTreeItem) i.next()).contains(focusControl)) {
+                    return;
+                }
 			}
 			hasFocus = false;
 			updateFocus();
@@ -848,7 +861,9 @@ public class CTree extends Composite implements Listener {
 			}
 			break;
 		case SWT.MouseDown:
-			if(!hasFocus) setFocus();
+            if (!hasFocus) {
+                setFocus();
+            }
 			if(item == null) {
 				if(event.widget == body) {
 					item = getItem(event.x, event.y);
@@ -868,7 +883,9 @@ public class CTree extends Composite implements Listener {
 					if(selectOnTreeToggle || !item.isTreeToggle(event.x,event.y)) {
 						if((event.stateMask & SWT.SHIFT) != 0) {
 							if(shiftSel == null) {
-								if(selection.isEmpty()) selection.add(item);
+                                if (selection.isEmpty()) {
+                                    selection.add(item);
+                                }
 								shiftSel = (CTreeItem) selection.get(selection.size() - 1);
 							}
 							setSelection(shiftSel, item);
@@ -959,7 +976,9 @@ public class CTree extends Composite implements Listener {
 		// must iterate in reverse drawing order in case items overlap each other
 		for(ListIterator i = paintedItems.listIterator(paintedItems.size()); i.hasPrevious();) {
 			CTreeItem item = (CTreeItem) i.previous();
-			if(item.contains(x,y)) return item;
+            if (item.contains(x, y)) {
+                return item;
+            }
 		}
 		return null;
 	}
@@ -989,8 +1008,12 @@ public class CTree extends Composite implements Listener {
 	public boolean isVisible(CTreeItem item) {
 		if(item.getVisible()) {
 			CTreeItem parentItem = item.getParentItem();
-			if(parentItem == null) return true;
-			if(parentItem.getExpanded()) return isVisible(parentItem);
+            if (parentItem == null) {
+                return true;
+            }
+            if (parentItem.getExpanded()) {
+                return isVisible(parentItem);
+            }
 		}
 		return false;
 	}
@@ -1093,8 +1116,12 @@ public class CTree extends Composite implements Listener {
 	protected void paintBackground(GC gc, Rectangle ebounds) {}
 
 	protected void paintBody(Event e) {
-		if(!addedItems.isEmpty()) addItems();
-		if(!removedItems.isEmpty()) removeItems();
+        if (!addedItems.isEmpty()) {
+            addItems();
+        }
+        if (!removedItems.isEmpty()) {
+            removeItems();
+        }
 		
 		int top = ((vBar == null || vBar.isDisposed()) ? -1 : vBar.getSelection());
 		int height = getClientArea().height;
@@ -1110,12 +1137,16 @@ public class CTree extends Composite implements Listener {
 		GC gc = new GC(image);
 
 		paintBackground(gc, ebounds);
-		if(paintGridAsBackground) paintGridLines(gc, ebounds);
+        if (paintGridAsBackground) {
+            paintGridLines(gc, ebounds);
+        }
 		paintItemBackgrounds(gc, ebounds);
 		paintSelectionIndicators(gc, ebounds);
 		paintColumns(gc, ebounds);
 		paintItems(gc, ebounds);
-		if(!paintGridAsBackground) paintGridLines(gc, ebounds);
+        if (!paintGridAsBackground) {
+            paintGridLines(gc, ebounds);
+        }
 		paintViewport(gc, ebounds);
 		paintFocus(gc, ebounds);
 
@@ -1133,8 +1164,9 @@ public class CTree extends Composite implements Listener {
 
 	protected void paintFocus(GC gc, Rectangle ebounds) {
 		if (hasFocus) {
-			if (win32 || (gtk && !paintedItems.isEmpty()))
-				return;
+            if (win32 || (gtk && !paintedItems.isEmpty())) {
+                return;
+            }
 
 			gc.setAlpha(255);
 			gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_DARK_GRAY));
@@ -1279,16 +1311,20 @@ public class CTree extends Composite implements Listener {
 			gc.setAlpha(255);
 			gc.setForeground(colors.getBorder());
 			Rectangle r = getClientArea();
-			if (drawViewportNorth)
-				gc.drawLine(r.x, r.y, r.x + r.width, r.y);
-			if (drawViewportEast)
-				gc.drawLine(r.x + r.width - 1, r.y, r.x + r.width - 1, r.y
-						+ r.height);
-			if (drawViewportSouth)
-				gc.drawLine(r.x, r.y + r.height - 1, r.x + r.width, r.y
-						+ r.height - 1);
-			if (drawViewportWest)
-				gc.drawLine(r.x, r.y, r.x, r.y + r.height);
+            if (drawViewportNorth) {
+                gc.drawLine(r.x, r.y, r.x + r.width, r.y);
+            }
+            if (drawViewportEast) {
+                gc.drawLine(r.x + r.width - 1, r.y, r.x + r.width - 1, r.y
+                        + r.height);
+            }
+            if (drawViewportSouth) {
+                gc.drawLine(r.x, r.y + r.height - 1, r.x + r.width, r.y
+                        + r.height - 1);
+            }
+            if (drawViewportWest) {
+                gc.drawLine(r.x, r.y, r.x, r.y + r.height);
+            }
 		}
 	}
 
@@ -1321,7 +1357,9 @@ public class CTree extends Composite implements Listener {
 			}
 			itemList = new ArrayList();
 
-			if(selChange) fireSelectionEvent(false);
+            if (selChange) {
+                fireSelectionEvent(false);
+            }
 		}
 	}
 
@@ -1341,7 +1379,9 @@ public class CTree extends Composite implements Listener {
 		if(!removedItems.contains(item)) {
 			removedItems.add(item);
 			boolean selChange = selection.remove(item);
-			if(selChange) fireSelectionEvent(false);
+            if (selChange) {
+                fireSelectionEvent(false);
+            }
 			redraw();
 		}
 	}
@@ -1423,7 +1463,9 @@ public class CTree extends Composite implements Listener {
 	}
 	
 	public void setColumnOrder(int[] order) {
-		if(internalTable != null) internalTable.setColumnOrder(order);
+        if (internalTable != null) {
+            internalTable.setColumnOrder(order);
+        }
 	}
 	
 	/**
@@ -1510,8 +1552,9 @@ public class CTree extends Composite implements Listener {
 	public void setLinesVisible(boolean visible, boolean lastLine) {
 		if (linesVisible != visible) {
 			linesVisible = visible;
-			if (internalTable != null)
-				internalTable.setLinesVisible(linesVisible);
+            if (internalTable != null) {
+                internalTable.setLinesVisible(linesVisible);
+            }
 			redraw();
 		}
 		this.lastLine = lastLine;
@@ -1522,8 +1565,12 @@ public class CTree extends Composite implements Listener {
 	}
 	
 	void setOrigin(int x, int y) {
-		if(hBar != null && !hBar.isDisposed()) hBar.setSelection(x);
-		if(vBar != null && !vBar.isDisposed()) vBar.setSelection(y);
+        if (hBar != null && !hBar.isDisposed()) {
+            hBar.setSelection(x);
+        }
+        if (vBar != null && !vBar.isDisposed()) {
+            vBar.setSelection(y);
+        }
 		redraw();
 	}
 	

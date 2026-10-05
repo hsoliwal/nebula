@@ -128,8 +128,9 @@ public class PShelfViewer extends StructuredViewer {
 	 */
 	protected void labelProviderChanged() {
 		Assert.isNotNull(getLabelProvider());
-		if (!(getLabelProvider() instanceof ILabelProvider))
-			throw new IllegalArgumentException("Label provider must implement ILabelProvider" + ", got " + getLabelProvider() == null ? "null" : getLabelProvider().getClass().toString());
+        if (!(getLabelProvider() instanceof ILabelProvider)) {
+            throw new IllegalArgumentException("Label provider must implement ILabelProvider" + ", got " + getLabelProvider() == null ? "null" : getLabelProvider().getClass().toString());
+        }
 
 		if (pshelf != null) {
 			PShelfItem[] shelfItems = pshelf.getItems();
@@ -145,8 +146,9 @@ public class PShelfViewer extends StructuredViewer {
 				// change provider for sub-viewers
 				Viewer viewer = getViewerForItem(item);
 				ContentViewer contentViewer = (ContentViewer) viewer;
-				if (contentViewer != null)
-					contentViewer.setLabelProvider(lp);
+                if (contentViewer != null) {
+                    contentViewer.setLabelProvider(lp);
+                }
 			}
 		}
 
@@ -182,9 +184,10 @@ public class PShelfViewer extends StructuredViewer {
 	}
 
 	protected void internalInitializeWidget() {
-		// create items, assuming there are no items yet
-		if (pshelf.getItems().length > 0)
-			throw new IllegalStateException("Cannot initialize nonempty pshelf widget.");
+        // create items, assuming there are no items yet
+        if (pshelf.getItems().length > 0) {
+            throw new IllegalStateException("Cannot initialize nonempty pshelf widget.");
+        }
 
 		ITreeContentProvider cp = (ITreeContentProvider) getContentProvider();
 		Object[] elements = cp.getElements(getInput());
@@ -241,8 +244,9 @@ public class PShelfViewer extends StructuredViewer {
 
 	protected void fireSelectionChanged(SelectionChangedEvent event) {
 		List<?> selectionList = ((IStructuredSelection) event.getSelection()).toList();
-		if (selectionList.equals(lastFiredSelection))
-			return; // don't fire the same selection again
+        if (selectionList.equals(lastFiredSelection)) {
+            return;
+        } // don't fire the same selection again
 
 		super.fireSelectionChanged(event);
 		lastFiredSelection = selectionList;
@@ -294,15 +298,18 @@ public class PShelfViewer extends StructuredViewer {
 		List retList = EMPTY_SELECTION_LIST;
 
 		Viewer viewer = getViewerForItem(item);
-		if (viewer == null)
-			return retList;
+        if (viewer == null) {
+            return retList;
+        }
 
 		// cannot get a list of items when viewer doesn't return structured selection
 		IStructuredSelection selection = null;
-		if (viewer.getSelection() instanceof IStructuredSelection)
-			selection = (IStructuredSelection) viewer.getSelection();
-		if (selection != null)
-			retList = selection.toList();
+        if (viewer.getSelection() instanceof IStructuredSelection) {
+            selection = (IStructuredSelection) viewer.getSelection();
+        }
+        if (selection != null) {
+            retList = selection.toList();
+        }
 		return retList;
 	}
 
@@ -328,19 +335,22 @@ public class PShelfViewer extends StructuredViewer {
 	 */
 	@SuppressWarnings("rawtypes")
 	protected void setSelectionToWidget(List l, boolean reveal) {
-		if (l == null) // fail-fast
-			throw new NullPointerException();
+        if (l == null) { // fail-fast
+            throw new NullPointerException();
+        }
 		Viewer viewer = getViewerForItem(pshelf.getSelection());
-		if (viewer != null)
-			viewer.setSelection(new StructuredSelection(l), reveal);
+        if (viewer != null) {
+            viewer.setSelection(new StructuredSelection(l), reveal);
+        }
 	}
 
 	/**
 	 * @see org.eclipse.jface.viewers.StructuredViewer#assertContentProviderType(org.eclipse.jface.viewers.IContentProvider)
 	 */
 	protected void assertContentProviderType(IContentProvider provider) {
-		if (!(provider instanceof ITreeContentProvider))
-			throw new IllegalArgumentException("Content provider for PShelf must implement ITreeContentProvider!");
+        if (!(provider instanceof ITreeContentProvider)) {
+            throw new IllegalArgumentException("Content provider for PShelf must implement ITreeContentProvider!");
+        }
 		super.assertContentProviderType(provider);
 	}
 }

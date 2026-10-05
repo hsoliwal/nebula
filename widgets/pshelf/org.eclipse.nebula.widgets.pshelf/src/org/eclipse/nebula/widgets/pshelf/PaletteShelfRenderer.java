@@ -44,13 +44,15 @@ public class PaletteShelfRenderer extends AbstractRenderer {
     {
         PShelfItem item = (PShelfItem)value;
 
-		if (item.getImage() == null)
-			return new Point(wHint,gc.getFontMetrics().getHeight() + (2*(margin+textMargin)));
+        if (item.getImage() == null) {
+            return new Point(wHint, gc.getFontMetrics().getHeight() + (2 * (margin + textMargin)));
+        }
 
 		int h = Math.max(item.getImage().getBounds().height,gc.getFontMetrics().getHeight() + (2*textMargin)) + (2*margin);
 
-		if (h % 2 != 0)
-			h ++;
+        if (h % 2 != 0) {
+            h++;
+        }
 
 		return new Point(wHint,h);
 	}
@@ -83,8 +85,9 @@ public class PaletteShelfRenderer extends AbstractRenderer {
 		int x = 6;
 		if (item.getImage() != null){
 			int y2 = (getBounds().height - item.getImage().getBounds().height)/2;
-			if ((getBounds().height - item.getImage().getBounds().height) % 2 != 0)
-				y2 ++;
+            if ((getBounds().height - item.getImage().getBounds().height) % 2 != 0) {
+                y2++;
+            }
 
 			gc.drawImage(item.getImage(),x,getBounds().y + y2);
 
@@ -93,11 +96,13 @@ public class PaletteShelfRenderer extends AbstractRenderer {
 		gc.setForeground(fore);
 
 		int y2 = (getBounds().height - fontHeight)/2;
-		if ((getBounds().height - fontHeight) % 2 != 0)
-			y2 ++;
+        if ((getBounds().height - fontHeight) % 2 != 0) {
+            y2++;
+        }
 
-        if (isHover() && !isSelected())
+        if (isHover() && !isSelected()) {
             gc.setForeground(gc.getDevice().getSystemColor(SWT.COLOR_LIST_SELECTION));
+        }
 
         String text = getShortString(gc, item.getText(), getBounds().width - x - 4);
 		gc.drawString(text,x,getBounds().y +y2,true);

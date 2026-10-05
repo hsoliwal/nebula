@@ -63,8 +63,9 @@ public class BounceOut extends AbstractMovement {
 		double c = max - min;
 		step = step / duration;
 
-		if (step == 1)
-			return max;
+        if (step == 1) {
+            return max;
+        }
 
 		if (step < (1 / 2.75)) {
 

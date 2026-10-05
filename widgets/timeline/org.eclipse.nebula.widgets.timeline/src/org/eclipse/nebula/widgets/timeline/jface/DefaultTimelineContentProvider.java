@@ -27,8 +27,9 @@ public class DefaultTimelineContentProvider implements ITimelineContentProvider 
 
 	@Override
 	public Object[] getTracks(Object input) {
-		if (input instanceof ITimeline)
-			return ((ITimeline) input).getTracks().toArray();
+        if (input instanceof ITimeline) {
+            return ((ITimeline) input).getTracks().toArray();
+        }
 
 		return new Object[0];
 	}
@@ -45,8 +46,9 @@ public class DefaultTimelineContentProvider implements ITimelineContentProvider 
 
 	@Override
 	public Object[] getCursors(Object input) {
-		if (input instanceof ITimeline)
-			return ((ITimeline) input).getCursors().toArray();
+        if (input instanceof ITimeline) {
+            return ((ITimeline) input).getCursors().toArray();
+        }
 
 		return new Object[0];
 	}

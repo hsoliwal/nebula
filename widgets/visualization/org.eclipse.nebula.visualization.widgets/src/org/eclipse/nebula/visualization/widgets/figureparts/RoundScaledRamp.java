@@ -68,9 +68,10 @@ public class RoundScaledRamp extends Figure {
 	}
 	
     @Override
-    public void setBounds(Rectangle rect) {    
-    	if(!bounds.equals(rect))
-    		setDirty(true);    	
+    public void setBounds(Rectangle rect) {
+        if (!bounds.equals(rect)) {
+            setDirty(true);
+        }    	
     	//get the square in the rect
     	rect.width = Math.min(rect.width, rect.height);
     	rect.height = rect.width;    	
@@ -93,19 +94,21 @@ public class RoundScaledRamp extends Figure {
     		//get normal value
     		double lowLimit;
     		double upLimit;
-    		if(lo.visible)
-    			lowLimit = lo.value;
-    		else if(lolo.visible)
-    			lowLimit = lolo.value;
-    		else
-    			lowLimit = scale.getRange().getLower();
-    		
-    		if(hi.visible)
-    			upLimit = hi.value;
-    		else if(hihi.visible)
-    			upLimit = hihi.value;
-    		else
-    			upLimit = scale.getRange().getUpper();
+            if (lo.visible) {
+                lowLimit = lo.value;
+            } else if (lolo.visible) {
+                lowLimit = lolo.value;
+            } else {
+                lowLimit = scale.getRange().getLower();
+            }
+
+            if (hi.visible) {
+                upLimit = hi.value;
+            } else if (hihi.visible) {
+                upLimit = hihi.value;
+            } else {
+                upLimit = scale.getRange().getUpper();
+            }
     		
     		//update normal
     		normal.value = (lowLimit + upLimit)/2;   	
@@ -201,14 +204,16 @@ public class RoundScaledRamp extends Figure {
     			graphics.setBackgroundColor(lo.color);
     			overlap = 0;
     		}
-    		
-    		if(lolo.visible)
-    			graphics.fillArc(bounds, lo.absolutePosition, 
-    					lolo.relativePosition - lo.relativePosition + overlap);
-    		else
-    			graphics.fillArc(bounds, lo.absolutePosition, min.relativePosition - lo.relativePosition);
-    		if(gradient && lolo.visible && support3D)
-    			pattern.dispose();    		
+
+            if (lolo.visible) {
+                graphics.fillArc(bounds, lo.absolutePosition,
+                        lolo.relativePosition - lo.relativePosition + overlap);
+            } else {
+                graphics.fillArc(bounds, lo.absolutePosition, min.relativePosition - lo.relativePosition);
+            }
+            if (gradient && lolo.visible && support3D) {
+                pattern.dispose();
+            }    		
     	}
     	
     	//draw left normal part
@@ -221,8 +226,9 @@ public class RoundScaledRamp extends Figure {
     	} else if (lolo.visible){
     		leftMarkerVisible =true;
     		leftMarker = lolo;    		
-    	} else 
-    		leftMarkerVisible = false;
+    	} else {
+            leftMarkerVisible = false;
+        }
     	
     	if(gradient && leftMarkerVisible && support3D){
     		pattern = new Pattern(Display.getCurrent(), leftMarker.leftPoint.x, leftMarker.leftPoint.y, 
@@ -233,15 +239,17 @@ public class RoundScaledRamp extends Figure {
     		graphics.setBackgroundColor(normal.color);
     		overlap = 0;
     	}
-    		
-    	if(leftMarkerVisible)
-    		graphics.fillArc(bounds, normal.absolutePosition, 
-    				leftMarker.relativePosition - normal.relativePosition + overlap);
-    	else
-    		graphics.fillArc(bounds, normal.absolutePosition, min.relativePosition - normal.relativePosition);
-    	
-    	if(gradient && leftMarkerVisible && support3D)
-    		pattern.dispose();   		
+
+        if (leftMarkerVisible) {
+            graphics.fillArc(bounds, normal.absolutePosition,
+                    leftMarker.relativePosition - normal.relativePosition + overlap);
+        } else {
+            graphics.fillArc(bounds, normal.absolutePosition, min.relativePosition - normal.relativePosition);
+        }
+
+        if (gradient && leftMarkerVisible && support3D) {
+            pattern.dispose();
+        }   		
     	
     	//draw right normal part
     	//get the right marker
@@ -253,8 +261,9 @@ public class RoundScaledRamp extends Figure {
     	} else if (hihi.visible){
     		rightMarkerVisible =true;
     		rightMarker = hihi;    		
-    	} else 
-    		rightMarkerVisible = false;
+    	} else {
+            rightMarkerVisible = false;
+        }
     	
     	if(gradient && rightMarkerVisible && support3D){
     		pattern = new Pattern(Display.getCurrent(), rightMarker.rightPoint.x, rightMarker.rightPoint.y, 
@@ -265,16 +274,18 @@ public class RoundScaledRamp extends Figure {
     		graphics.setBackgroundColor(normal.color);
     		overlap = 0;
     	}
-    		
-    	if(rightMarkerVisible)
-    		graphics.fillArc(bounds, rightMarker.absolutePosition, 
-    				normal.relativePosition - rightMarker.relativePosition + overlap + 1);
-    	else
-    		graphics.fillArc(bounds, max.absolutePosition, 
-    				normal.relativePosition - max.relativePosition +1);
-    	
-    	if(gradient && rightMarkerVisible && support3D)
-    		pattern.dispose();
+
+        if (rightMarkerVisible) {
+            graphics.fillArc(bounds, rightMarker.absolutePosition,
+                    normal.relativePosition - rightMarker.relativePosition + overlap + 1);
+        } else {
+            graphics.fillArc(bounds, max.absolutePosition,
+                    normal.relativePosition - max.relativePosition + 1);
+        }
+
+        if (gradient && rightMarkerVisible && support3D) {
+            pattern.dispose();
+        }
     	
     	
     	//draw hi part
@@ -282,8 +293,9 @@ public class RoundScaledRamp extends Figure {
     		if(hihi.visible){
 	    		rightMarkerVisible = true;
 	    		rightMarker = hihi;   	
-	    	} else 
-	    		rightMarkerVisible = false;
+	    	} else {
+                rightMarkerVisible = false;
+            }
 	    	
 	    	if(gradient && rightMarkerVisible && support3D){
 	    		pattern = new Pattern(Display.getCurrent(), rightMarker.rightPoint.x, rightMarker.rightPoint.y, 
@@ -294,25 +306,28 @@ public class RoundScaledRamp extends Figure {
 	    		graphics.setBackgroundColor(hi.color);
 	    		overlap = 0;
 	    	}
-	    		
-	    	if(rightMarkerVisible)
-	    		graphics.fillArc(bounds, rightMarker.absolutePosition, 
-	    				hi.relativePosition - rightMarker.relativePosition + overlap);
-	    	else
-	    		graphics.fillArc(bounds, max.absolutePosition, 
-	    				hi.relativePosition - max.relativePosition);
-	    	
-	    	if(gradient && rightMarkerVisible && support3D)
-	    		pattern.dispose();
+
+            if (rightMarkerVisible) {
+                graphics.fillArc(bounds, rightMarker.absolutePosition,
+                        hi.relativePosition - rightMarker.relativePosition + overlap);
+            } else {
+                graphics.fillArc(bounds, max.absolutePosition,
+                        hi.relativePosition - max.relativePosition);
+            }
+
+            if (gradient && rightMarkerVisible && support3D) {
+                pattern.dispose();
+            }
     	}
     	
     	
     	//draw hihi part
     	if(hihi.visible){
-    		if(gradient && support3D)
-    			overlap = OVERLAP_DEGREE/2;
-    		else
-    			overlap = 0;
+            if (gradient && support3D) {
+                overlap = OVERLAP_DEGREE / 2;
+            } else {
+                overlap = 0;
+            }
     		graphics.setBackgroundColor(hihi.color);
     		graphics.fillArc(bounds, max.absolutePosition, 
     				hihi.relativePosition - max.relativePosition + overlap);
@@ -475,8 +490,9 @@ public class RoundScaledRamp extends Figure {
 		 */
 		public ThresholdMarker(double value, RGB color, boolean visible) {
 			this.value = value;
-			if(color != null)
-				this.color = XYGraphMediaFactory.getInstance().getColor(color);
+            if (color != null) {
+                this.color = XYGraphMediaFactory.getInstance().getColor(color);
+            }
 			this.visible = visible;
 		}
 

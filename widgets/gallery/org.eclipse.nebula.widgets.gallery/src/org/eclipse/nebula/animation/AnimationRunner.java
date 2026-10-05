@@ -103,15 +103,17 @@ public class AnimationRunner {
 	private long getCurrentTime() {
 		long time = System.currentTimeMillis();
 
-		if (startTime == -1)
-			startTime = time;
+        if (startTime == -1) {
+            startTime = time;
+        }
 
 		return time - startTime;
 	}
 
 	private void startEffect() {
-		if (running)
-			return;
+        if (running) {
+            return;
+        }
 
 		running = true;
 		Display.getCurrent().syncExec(new Runnable() {

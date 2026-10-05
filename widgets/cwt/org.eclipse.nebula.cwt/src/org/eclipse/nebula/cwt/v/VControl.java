@@ -177,10 +177,14 @@ public abstract class VControl {
 
 		if ((style & SWT.OK) != 0) {
 			setPolygon(Points_OK);
-			if (foreground == null) setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN));
+            if (foreground == null) {
+                setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN));
+            }
 		} else if ((style & SWT.CANCEL) != 0) {
 			setPolygon(Points_Cancel);
-			if (foreground == null) setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_RED));
+            if (foreground == null) {
+                setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_RED));
+            }
 		} else if ((style & SWT.ARROW) != 0) {
 			if ((style & SWT.DOWN) != 0) {
 				setPolygon(Points_Down);
@@ -407,8 +411,9 @@ public abstract class VControl {
 		}
 		VPanel p = parent;
 		while (p != null) {
-			if (p.background != null)
-				return p.background;
+            if (p.background != null) {
+                return p.background;
+            }
 			p = p.parent;
 		}
 		return composite.getBackground();

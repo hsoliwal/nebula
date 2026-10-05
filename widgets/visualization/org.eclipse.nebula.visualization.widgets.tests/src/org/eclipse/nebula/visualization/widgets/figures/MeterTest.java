@@ -32,8 +32,9 @@ public class MeterTest extends AbstractRoundRampedWidgetTest{
 		String[] superProps =  super.getPropertyNames();
 		List<String> superPropList = new ArrayList<String>();
 		for(String p : superProps){
-			if(!p.equals("transparent"))
-				superPropList.add(p);
+            if (!p.equals("transparent")) {
+                superPropList.add(p);
+            }
 		}
 		String[] myProps = new String[]{
 				"needleColor"

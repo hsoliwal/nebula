@@ -120,17 +120,20 @@ public class AnnotationConfigPage {
 
 				xAxisOrTraceCombo.removeAll();
 				if (snapToTrace.getSelection()) {
-					for (Trace trace : xyGraph.getPlotArea().getTraceList())
-						xAxisOrTraceCombo.add(trace.getName());
+                    for (Trace trace : xyGraph.getPlotArea().getTraceList()) {
+                        xAxisOrTraceCombo.add(trace.getName());
+                    }
 				} else {
-					for (Axis axis : xyGraph.getXAxisList())
-						xAxisOrTraceCombo.add(axis.getTitle());
+                    for (Axis axis : xyGraph.getXAxisList()) {
+                        xAxisOrTraceCombo.add(axis.getTitle());
+                    }
 				}
 				xAxisOrTraceCombo.select(0);
-				if (annotation.isFree() && !snapToTrace.getSelection())
-					xAxisOrTraceCombo.select(xyGraph.getXAxisList().indexOf(annotation.getXAxis()));
-				else if (!annotation.isFree() && snapToTrace.getSelection())
-					xAxisOrTraceCombo.select(xyGraph.getPlotArea().getTraceList().indexOf(annotation.getTrace()));
+                if (annotation.isFree() && !snapToTrace.getSelection()) {
+                    xAxisOrTraceCombo.select(xyGraph.getXAxisList().indexOf(annotation.getXAxis()));
+                } else if (!annotation.isFree() && snapToTrace.getSelection()) {
+                    xAxisOrTraceCombo.select(xyGraph.getPlotArea().getTraceList().indexOf(annotation.getTrace()));
+                }
 
 				yAxisLabel.setVisible(!snapToTrace.getSelection());
 				yAxisCombo.setVisible(!snapToTrace.getSelection());
@@ -167,8 +170,9 @@ public class AnnotationConfigPage {
 			public void widgetSelected(SelectionEvent e) {
 				FontDialog fontDialog = new FontDialog(composite.getShell());
 				fontDialog.setEffectsVisible(false);
-				if (font != null)
-					fontDialog.setFontList(font.getFontData());
+                if (font != null) {
+                    fontDialog.setFontList(font.getFontData());
+                }
 				FontData fontData = fontDialog.open();
 				if (fontData != null) {
 					font = XYGraphMediaFactory.getInstance().getFont(fontData);
@@ -210,16 +214,18 @@ public class AnnotationConfigPage {
 
 	public void applyChanges() {
 		annotation.setName(nameText.getText());
-		if (snapToTrace.getSelection())
-			annotation.setTrace(xyGraph.getPlotArea().getTraceList().get(xAxisOrTraceCombo.getSelectionIndex()));
-		else
-			annotation.setFree(xyGraph.getXAxisList().get(xAxisOrTraceCombo.getSelectionIndex()),
-					xyGraph.getYAxisList().get(yAxisCombo.getSelectionIndex()));
+        if (snapToTrace.getSelection()) {
+            annotation.setTrace(xyGraph.getPlotArea().getTraceList().get(xAxisOrTraceCombo.getSelectionIndex()));
+        } else {
+            annotation.setFree(xyGraph.getXAxisList().get(xAxisOrTraceCombo.getSelectionIndex()),
+                    xyGraph.getYAxisList().get(yAxisCombo.getSelectionIndex()));
+        }
 
-		if (!useDefaultColorButton.getSelection())
-			annotation.setAnnotationColor(XYGraphMediaFactory.getInstance().getColor(colorSelector.getColorValue()));
-		else
-			annotation.setAnnotationColor(null);
+        if (!useDefaultColorButton.getSelection()) {
+            annotation.setAnnotationColor(XYGraphMediaFactory.getInstance().getColor(colorSelector.getColorValue()));
+        } else {
+            annotation.setAnnotationColor(null);
+        }
 
 		annotation.setFont(font);
 		annotation.setCursorLineStyle(CursorLineStyle.values()[cursorLineCombo.getSelectionIndex()]);
@@ -250,16 +256,19 @@ public class AnnotationConfigPage {
 		xAxisLabel.setText(snapToTrace.getSelection() ? Messages.Annotation_Trace : Messages.Annotation_XAxis);
 		xAxisOrTraceCombo.removeAll();
 		if (!annotation.isFree()) {
-			for (Trace trace : xyGraph.getPlotArea().getTraceList())
-				xAxisOrTraceCombo.add(trace.getName());
+            for (Trace trace : xyGraph.getPlotArea().getTraceList()) {
+                xAxisOrTraceCombo.add(trace.getName());
+            }
 			xAxisOrTraceCombo.select(xyGraph.getPlotArea().getTraceList().indexOf(annotation.getTrace()));
 		} else {
-			for (Axis axis : xyGraph.getXAxisList())
-				xAxisOrTraceCombo.add(axis.getTitle());
+            for (Axis axis : xyGraph.getXAxisList()) {
+                xAxisOrTraceCombo.add(axis.getTitle());
+            }
 			xAxisOrTraceCombo.select(xyGraph.getXAxisList().indexOf(annotation.getXAxis()));
 		}
-		for (Axis axis : xyGraph.getYAxisList())
-			yAxisCombo.add(axis.getTitle());
+        for (Axis axis : xyGraph.getYAxisList()) {
+            yAxisCombo.add(axis.getTitle());
+        }
 		yAxisCombo.select(xyGraph.getYAxisList().indexOf(annotation.getYAxis()));
 		yAxisLabel.setVisible(!snapToTrace.getSelection());
 		yAxisCombo.setVisible(!snapToTrace.getSelection());

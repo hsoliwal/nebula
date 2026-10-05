@@ -48,8 +48,9 @@ public class AlignPrintExample {
 		PrinterData printerData = dialog.open();
 		shell.dispose();
 		display.dispose();
-		if (printerData != null)
-			PaperClips.print(new PrintJob("AlignPrintExample.java",
-					createPrint()), printerData);
+        if (printerData != null) {
+            PaperClips.print(new PrintJob("AlignPrintExample.java",
+                    createPrint()), printerData);
+        }
 	}
 }

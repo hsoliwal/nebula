@@ -114,8 +114,9 @@ public class Timeline extends MinimalEObjectImpl.Container implements ITimeline 
 			InternalEObject oldSelectedEvent = (InternalEObject)selectedEvent;
 			selectedEvent = (ITimelineEvent)eResolveProxy(oldSelectedEvent);
 			if (selectedEvent != oldSelectedEvent) {
-				if (eNotificationRequired())
-					eNotify(new ENotificationImpl(this, Notification.RESOLVE, ITimelinePackage.TIMELINE__SELECTED_EVENT, oldSelectedEvent, selectedEvent));
+                if (eNotificationRequired()) {
+                    eNotify(new ENotificationImpl(this, Notification.RESOLVE, ITimelinePackage.TIMELINE__SELECTED_EVENT, oldSelectedEvent, selectedEvent));
+                }
 			}
 		}
 		return selectedEvent;
@@ -137,8 +138,9 @@ public class Timeline extends MinimalEObjectImpl.Container implements ITimeline 
 	public void setSelectedEvent(ITimelineEvent newSelectedEvent) {
 		ITimelineEvent oldSelectedEvent = selectedEvent;
 		selectedEvent = newSelectedEvent;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE__SELECTED_EVENT, oldSelectedEvent, selectedEvent));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE__SELECTED_EVENT, oldSelectedEvent, selectedEvent));
+        }
 	}
 
 	/**
@@ -224,7 +226,9 @@ public class Timeline extends MinimalEObjectImpl.Container implements ITimeline 
 			case ITimelinePackage.TIMELINE__CURSORS:
 				return getCursors();
 			case ITimelinePackage.TIMELINE__SELECTED_EVENT:
-				if (resolve) return getSelectedEvent();
+                if (resolve) {
+                    return getSelectedEvent();
+                }
 				return basicGetSelectedEvent();
 		}
 		return super.eGet(featureID, resolve, coreType);

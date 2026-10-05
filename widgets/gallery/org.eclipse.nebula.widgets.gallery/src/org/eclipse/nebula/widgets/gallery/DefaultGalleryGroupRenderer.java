@@ -234,9 +234,10 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 
 	protected void drawGroup(GC gc, GalleryItem group, int x, int y, int clipX,
 			int clipY, int clipWidth, int clipHeight) {
-		// Do not paint group if on single column and filling on.
-		if (fill)
-			return;
+        // Do not paint group if on single column and filling on.
+        if (fill) {
+            return;
+        }
 
 		imageSize = null;
 		if (group.getImage() != null) {
@@ -342,8 +343,9 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 
 	private int drawGroupImage(GC gc, GalleryItem group, int x, int y,
 			Point imageSize2) {
-		if (imageSize2 == null)
-			return 0;
+        if (imageSize2 == null) {
+            return 0;
+        }
 
 		Image img = group.getImage();
 		Rectangle imgSize = img.getBounds();
@@ -455,8 +457,9 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 					margin = calculateMargins(sizeX, hCount, itemWidth);
 					marginCalculated = true;
 
-					if (Gallery.DEBUG)
-						System.out.println("margin " + margin); //$NON-NLS-1$
+                    if (Gallery.DEBUG) {
+                        System.out.println("margin " + margin); //$NON-NLS-1$
+                    }
 				}
 			}
 
@@ -466,13 +469,15 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 						minMargin, margin);
 				group.height += s.y * animationRatio;
 
-				if (Gallery.DEBUG)
-					System.out.println("group.height " + group.height); //$NON-NLS-1$
+                if (Gallery.DEBUG) {
+                    System.out.println("group.height " + group.height); //$NON-NLS-1$
+                }
 
 				group.setData(H_COUNT, new Integer(hCount));
 				group.setData(V_COUNT, new Integer(vCount));
-				if (Gallery.DEBUG)
-					System.out.println("Hnb" + hCount + "Vnb" + vCount); //$NON-NLS-1$//$NON-NLS-2$
+                if (Gallery.DEBUG) {
+                    System.out.println("Hnb" + hCount + "Vnb" + vCount); //$NON-NLS-1$//$NON-NLS-2$
+                }
 
 				fill = (fillIfSingleColumn && hCount == 1);
 			}
@@ -490,8 +495,9 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 				margin = calculateMargins(sizeY, vCount, itemHeight);
 				marginCalculated = true;
 
-				if (Gallery.DEBUG)
-					System.out.println("margin " + margin); //$NON-NLS-1$
+                if (Gallery.DEBUG) {
+                    System.out.println("margin " + margin); //$NON-NLS-1$
+                }
 			}
 
 			if (isGroupExpanded(group)) {
@@ -545,8 +551,9 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 		// Compute title height & grid offset
 		titleHeight = fontHeight + 5;
 
-		if (gcCreated)
-			gc.dispose();
+        if (gcCreated) {
+            gc.dispose();
+        }
 	}
 
 	/**
@@ -555,9 +562,10 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 	 *      org.eclipse.swt.graphics.Point)
 	 */
 	public GalleryItem getItem(GalleryItem group, Point coords) {
-		// Cannot select an item if the group is not expanded
-		if (!isGroupExpanded(group))
-			return null;
+        // Cannot select an item if the group is not expanded
+        if (!isGroupExpanded(group)) {
+            return null;
+        }
 
 		return super.getItem(group, coords, getGroupOffset(group));
 	}
@@ -801,8 +809,9 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 	public void setFont(Font font) {
 		if (this.font != font) {
 			this.font = font;
-			if (getGallery() != null)
-				getGallery().redraw();
+            if (getGallery() != null) {
+                getGallery().redraw();
+            }
 		}
 	}
 
@@ -817,9 +826,10 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 		if (fill) {
 			Item item = parent.getItem(index);
 
-			// No item ? return
-			if (item == null)
-				return;
+            // No item ? return
+            if (item == null) {
+                return;
+            }
 
 			GalleryItem gItem = (GalleryItem) item;
 
@@ -1021,9 +1031,10 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 	protected boolean isGroupExpanded(GalleryItem item) {
 
 		if (animation) {
-			if (item.getData(
-					DefaultGalleryGroupRenderer.DATA_ANIMATION) != null)
-				return true;
+            if (item.getData(
+                    DefaultGalleryGroupRenderer.DATA_ANIMATION) != null) {
+                return true;
+            }
 		}
 		return super.isGroupExpanded(item);
 	}

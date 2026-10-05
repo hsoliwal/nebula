@@ -1,0 +1,26 @@
+EXECUTABLE_CLASS_IDENTICAL=11 PLATFORM=examples/org.eclipse.nebula.examples
+EXECUTABLE_CLASS_IDENTICAL=6 PLATFORM=m3/openrewrite-line-terminators
+EXECUTABLE_CLASS_IDENTICAL=29 PLATFORM=widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime
+EXECUTABLE_CLASS_IDENTICAL=36 PLATFORM=widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.snippets
+EXECUTABLE_CLASS_IDENTICAL=60 PLATFORM=widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests
+EXECUTABLE_CLASS_IDENTICAL=4 PLATFORM=widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css
+EXECUTABLE_CLASS_IDENTICAL=5 PLATFORM=widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4
+EXECUTABLE_CLASS_IDENTICAL=8 PLATFORM=widgets/cdatetime/org.eclipse.nebula.jface.cdatetime
+EXECUTABLE_CLASS_IDENTICAL=13 PLATFORM=widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example
+EXECUTABLE_CLASS_IDENTICAL=11 PLATFORM=widgets/geomap/org.eclipse.nebula.widgets.geomap.example
+EXECUTABLE_CLASS_IDENTICAL=70 PLATFORM=widgets/geomap/org.eclipse.nebula.widgets.geomap
+EXECUTABLE_CLASS_IDENTICAL=1 PLATFORM=widgets/geomap/org.eclipse.nebula.widgets.geomap.snippets
+EXECUTABLE_CLASS_IDENTICAL=1 PLATFORM=widgets/chips/org.eclipse.nebula.widgets.chips.snippets
+EXECUTABLE_CLASS_IDENTICAL=3 PLATFORM=widgets/chips/org.eclipse.nebula.widgets.chips
+EXECUTABLE_CLASS_IDENTICAL=4 PLATFORM=widgets/carousel/org.eclipse.nebula.widgets.carousel
+EXECUTABLE_CLASS_IDENTICAL=1 PLATFORM=widgets/carousel/org.eclipse.nebula.widgets.carousel.snippets
+EXECUTABLE_CLASS_IDENTICAL=13 PLATFORM=widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons
+EXECUTABLE_CLASS_IDENTICAL=1 PLATFORM=widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel
+EXECUTABLE_CLASS_IDENTICAL=1 PLATFORM=widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel.snippets
+EXECUTABLE_CLASS_IDENTICAL=24 PLATFORM=widgets/effects/org.eclipse.nebula.effects.stw.example
+EXECUTABLE_CLASS_IDENTICAL=13 PLATFORM=widgets/effects/org.eclipse.nebula.effects.stw
+EXECUTABLE_CLASS_IDENTICAL=3 PLATFORM=widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext
+EXECUTABLE_CLASS_IDENTICAL=3 PLATFORM=widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext.snippets
+EXECUTABLE_CLASS_IDENTICAL=3 PLATFORM=widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome.snippets
+EXECUTABLE_CLASS_IDENTICAL=1 PLATFORM=widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome
+COVERAGE=Only 25 modules compiled by the original baseline before its Grid CSS compilation failure. Grid baseline inventory was incomplete and was refused; no whole-reactor class equivalence is claimed.

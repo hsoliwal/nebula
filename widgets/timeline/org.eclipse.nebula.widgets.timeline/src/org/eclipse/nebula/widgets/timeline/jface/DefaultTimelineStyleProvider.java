@@ -169,8 +169,9 @@ public class DefaultTimelineStyleProvider implements ITimelineStyleProvider {
 	 * @return bold font
 	 */
 	private Font getSelectedFont(IFigure figure) {
-		if (fDefaultFont == null)
-			fDefaultFont = figure.getFont();
+        if (fDefaultFont == null) {
+            fDefaultFont = figure.getFont();
+        }
 
 		if (fSelectedFont == null) {
 			FontDescriptor fontDescriptor = FontDescriptor.createFrom(fDefaultFont).setStyle(SWT.BOLD);
@@ -210,38 +211,44 @@ public class DefaultTimelineStyleProvider implements ITimelineStyleProvider {
 	public String getTimeLabel(double timestamp, TimeUnit unit) {
 		switch (unit) {
 		case NANOSECONDS:
-			if (timestamp >= 1000)
-				return getTimeLabel(timestamp / 1000, TimeUnit.MICROSECONDS);
+            if (timestamp >= 1000) {
+                return getTimeLabel(timestamp / 1000, TimeUnit.MICROSECONDS);
+            }
 
 			return Double.toString(Math.round(timestamp * 100) / 100D) + " ns";
 
 		case MICROSECONDS:
-			if (timestamp >= 1000)
-				return getTimeLabel(timestamp / 1000, TimeUnit.MILLISECONDS);
+            if (timestamp >= 1000) {
+                return getTimeLabel(timestamp / 1000, TimeUnit.MILLISECONDS);
+            }
 
 			return Double.toString(Math.round(timestamp * 100) / 100D) + " µs";
 
 		case MILLISECONDS:
-			if (timestamp >= 1000)
-				return getTimeLabel(timestamp / 1000, TimeUnit.SECONDS);
+            if (timestamp >= 1000) {
+                return getTimeLabel(timestamp / 1000, TimeUnit.SECONDS);
+            }
 
 			return Double.toString(Math.round(timestamp * 100) / 100D) + " ms";
 
 		case SECONDS:
-			if (timestamp >= 60)
-				return getTimeLabel(timestamp / 60, TimeUnit.MINUTES);
+            if (timestamp >= 60) {
+                return getTimeLabel(timestamp / 60, TimeUnit.MINUTES);
+            }
 
 			return Double.toString(Math.round(timestamp * 100) / 100D) + " s";
 
 		case MINUTES:
-			if (timestamp >= 60)
-				return getTimeLabel(timestamp / 60, TimeUnit.HOURS);
+            if (timestamp >= 60) {
+                return getTimeLabel(timestamp / 60, TimeUnit.HOURS);
+            }
 
 			return Double.toString(Math.round(timestamp * 100) / 100D) + " min";
 
 		case HOURS:
-			if (timestamp >= 24)
-				return getTimeLabel(timestamp / 24, TimeUnit.DAYS);
+            if (timestamp >= 24) {
+                return getTimeLabel(timestamp / 24, TimeUnit.DAYS);
+            }
 
 			return Double.toString(Math.round(timestamp * 100) / 100D) + " h";
 

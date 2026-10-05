@@ -29,8 +29,9 @@ public class CircularBuffer<T> extends AbstractCollection<T> {
 	private int count;
 
 	public CircularBuffer(int bufferSize) {
-		if (bufferSize <= 0)
-			throw new IllegalArgumentException("Buffer size must be greater than zero.");
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("Buffer size must be greater than zero.");
+        }
 		this.setBufferSize(bufferSize, true);
 	}
 
@@ -61,10 +62,11 @@ public class CircularBuffer<T> extends AbstractCollection<T> {
 	 * @return the element. null if the data at the index doesn't exist.
 	 */
 	public synchronized T getElement(int index) {
-		if (index < count)
-			return buffer[(head + index) % bufferSize];
-		else
-			return null;
+        if (index < count) {
+            return buffer[(head + index) % bufferSize];
+        } else {
+            return null;
+        }
 	}
 
 	/**
@@ -73,10 +75,11 @@ public class CircularBuffer<T> extends AbstractCollection<T> {
 	 * @return the head element. null if the buffer is empty.
 	 */
 	public synchronized T getHead() {
-		if (count > 0)
-			return buffer[head];
-		else
-			return null;
+        if (count > 0) {
+            return buffer[head];
+        } else {
+            return null;
+        }
 	}
 
 	/**
@@ -85,10 +88,11 @@ public class CircularBuffer<T> extends AbstractCollection<T> {
 	 * @return the tail element. null if the buffer is empty.
 	 */
 	public synchronized T getTail() {
-		if (count > 0)
-			return buffer[(head + count - 1) % bufferSize];
-		else
-			return null;
+        if (count > 0) {
+            return buffer[(head + count - 1) % bufferSize];
+        } else {
+            return null;
+        }
 	}
 
 	/**
@@ -152,8 +156,9 @@ public class CircularBuffer<T> extends AbstractCollection<T> {
 			}
 
 			public T next() {
-				if (!hasNext())
-					throw new NoSuchElementException();
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
 				return buffer[(head + index++) % bufferSize];
 			}
 

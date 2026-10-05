@@ -83,7 +83,9 @@ public class Grid_Test {
     eventLog = new ArrayList<Event>();
     shell.pack();
     shell.open();
-    while(display.readAndDispatch());
+      while (display.readAndDispatch()) {
+          ;
+      }
   }
 
   @After

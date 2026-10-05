@@ -330,8 +330,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 	 */
 	public void addButtonListener(IButtonListener listener) {
 		checkWidget();
-		if (!mButtonListeners.contains(listener))
-			mButtonListeners.add(listener);
+        if (!mButtonListeners.contains(listener)) {
+            mButtonListeners.add(listener);
+        }
 	}
 
 	/**
@@ -345,22 +346,26 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 	}
 
 	private void init() {
-		// we need one, or *crash*
-		if (mColorManager == null)
-			mColorManager = new DefaultColorManager(mColorTheme);
+        // we need one, or *crash*
+        if (mColorManager == null) {
+            mColorManager = new DefaultColorManager(mColorTheme);
+        }
 
-		// same here
-		if (mSettings == null)
-			mSettings = new DefaultSettings();
+        // same here
+        if (mSettings == null) {
+            mSettings = new DefaultSettings();
+        }
 
-		if (mLanguage == null)
-			mLanguage = new DefaultLanguageManager();
+        if (mLanguage == null) {
+            mLanguage = new DefaultLanguageManager();
+        }
 
-		// outlook 2007 specific
-		if (mColorTheme == IColorManager.SKIN_OFFICE_2007)
-			mResizeBarSize = mSettings.getOutlook2007ResizeBarSize();
-		else
-			mResizeBarSize = mSettings.getOutlook2005ResizeBarSize();
+        // outlook 2007 specific
+        if (mColorTheme == IColorManager.SKIN_OFFICE_2007) {
+            mResizeBarSize = mSettings.getOutlook2007ResizeBarSize();
+        } else {
+            mResizeBarSize = mSettings.getOutlook2005ResizeBarSize();
+        }
 
 		mButtonHeight = mSettings.getButtonHeight();
 
@@ -518,18 +523,20 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 
 	private void drawMarkers(GC gc) {
 		int numMarkers;
-		if (mColorManager.getTheme() == IColorManager.SKIN_OFFICE_2007)
-			numMarkers = mSettings.getOutlook2007ResizeDotNumber();
-		else
-			numMarkers = mSettings.getOutlook2005ResizeDotNumber();
+        if (mColorManager.getTheme() == IColorManager.SKIN_OFFICE_2007) {
+            numMarkers = mSettings.getOutlook2007ResizeDotNumber();
+        } else {
+            numMarkers = mSettings.getOutlook2005ResizeDotNumber();
+        }
 
 		int start = (mBounds.width / 2) - numMarkers * 2;
 		int extra = 0;
 
 		// -1 is to align
 		int y = (mResizeBarSize / 2) - 1;
-		if (y < 0)
-			y = 0;
+        if (y < 0) {
+            y = 0;
+        }
 
 		for (int i = 0; i < numMarkers; i++) {
 			drawMarker(gc, start + extra, y);
@@ -560,8 +567,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 		int num = 0;
 		for (int i = 0; i < mButtons.size(); i++) {
 			CustomButton b = mButtons.get(i);
-			if (b.isVisible())
-				num++;
+            if (b.isVisible()) {
+                num++;
+            }
 		}
 		return num;
 	}
@@ -573,8 +581,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 	 */
 	public void permanentlyHideButton(CustomButton button) {
 		checkWidget();
-		if (mHidden.contains(button))
-			return;
+        if (mHidden.contains(button)) {
+            return;
+        }
 
 		mHidden.add(button);
 
@@ -720,8 +729,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 		for (int i = (mButtons.size() - 1); i >= 0; i--) {
 			CustomButton b = mButtons.get(i);
 
-			if (mHidden.contains(b))
-				continue;
+            if (mHidden.contains(b)) {
+                continue;
+            }
 
 			if (b.isVisible()) {
 				mHiddenButtons++;
@@ -762,8 +772,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 		for (int i = 0; i < mButtons.size(); i++) {
 			CustomButton b = mButtons.get(i);
 
-			if (mHidden.contains(b))
-				continue;
+            if (mHidden.contains(b)) {
+                continue;
+            }
 
 			if (!b.isVisible()) {
 				mHiddenButtons--;
@@ -785,8 +796,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 
 	// rectangle intersection, the easier way
 	private boolean isInside(int x, int y, Rectangle rect) {
-		if (rect == null)
-			return false;
+        if (rect == null) {
+            return false;
+        }
 
 		return x >= rect.x && y >= rect.y && x <= (rect.x + rect.width) && y <= (rect.y + rect.height);
 	}
@@ -819,8 +831,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 
 		mButtons.add(cb);
 
-		if (mToolBarComposite == null)
-			mToolBarComposite = new ToolbarComposite(this, SWT.NONE);
+        if (mToolBarComposite == null) {
+            mToolBarComposite = new ToolbarComposite(this, SWT.NONE);
+        }
 
 		mParent.redraw();
 		mParent.layout();
@@ -849,8 +862,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 		if (event.widget instanceof CustomButton) {
 			CustomButton cb = (CustomButton) event.widget;
 			if (event.button == 1) {
-				if (mSelectedButton != null && cb.equals(mSelectedButton))
-					return;
+                if (mSelectedButton != null && cb.equals(mSelectedButton)) {
+                    return;
+                }
 
 				for (int i = 0; i < mButtonListeners.size(); i++) {
 					IButtonListener inav = mButtonListeners.get(i);
@@ -969,8 +983,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 	// selects a button
 	private void selectButton(CustomButton button) {
 		if (mSelectedButton != null) {
-			if (mSelectedButton.equals(button))
-				return;
+            if (mSelectedButton.equals(button)) {
+                return;
+            }
 
 			// clear old selection
 			mSelectedButton.updateSelection(false);
@@ -1058,8 +1073,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 	 * @param listener Listener to add
 	 */
 	public void addMenuListener(IMenuListener listener) {
-		if (!mMenuListeners.contains(listener))
-			mMenuListeners.add(listener);
+        if (!mMenuListeners.contains(listener)) {
+            mMenuListeners.add(listener);
+        }
 	}
 
 	/**
@@ -1082,8 +1098,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 			mButtons.get(i).dispose();
 		}
 
-		if (mToolBarComposite != null)
-			mToolBarComposite.removeAll();
+        if (mToolBarComposite != null) {
+            mToolBarComposite.removeAll();
+        }
 
 		mButtonListeners.clear();
 		mButtons.clear();
@@ -1108,14 +1125,16 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 
 		mButtons.remove(cb);
 
-		if (mToolBarComposite != null)
-			mToolBarComposite.removeItem(cb);
+        if (mToolBarComposite != null) {
+            mToolBarComposite.removeItem(cb);
+        }
 
 		mParent.redraw();
 		mParent.layout();
 
-		if (callDispose)
-			cb.dispose();
+        if (callDispose) {
+            cb.dispose();
+        }
 
 		reindexButtons();
 	}
@@ -1152,8 +1171,9 @@ public class CollapsibleButtons extends Composite implements MouseListener, Mous
 					toolTop += mButtonHeight + 1;
 				}
 
-				if (mToolBarComposite != null)
-					mToolBarComposite.setBounds(left, toolTop, aComposite.getBounds().width - (mSettings.drawBorder() ? 2 : 0), mButtonHeight);
+                if (mToolBarComposite != null) {
+                    mToolBarComposite.setBounds(left, toolTop, aComposite.getBounds().width - (mSettings.drawBorder() ? 2 : 0), mButtonHeight);
+                }
 			}
 
 			// now set the toolbars

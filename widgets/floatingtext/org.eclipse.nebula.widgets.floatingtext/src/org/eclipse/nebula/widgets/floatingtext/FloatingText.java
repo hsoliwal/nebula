@@ -125,8 +125,9 @@ public class FloatingText extends Composite {
 		setLayout(createLayout(pStyle));
 		fLabel = createLabel(pStyle);
 		fLabel.addDisposeListener(e -> {
-			if (fLabelFont != null)
-				fLabelFont.dispose();
+            if (fLabelFont != null) {
+                fLabelFont.dispose();
+            }
 		});
 		fText = new Text(this, removeStyles(pStyle, SWT.BORDER, SWT.SEPARATOR));
 		fText.setLayoutData(getTextLayoutData());

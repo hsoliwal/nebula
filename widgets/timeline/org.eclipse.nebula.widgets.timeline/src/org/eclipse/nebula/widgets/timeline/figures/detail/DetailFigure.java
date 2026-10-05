@@ -55,8 +55,9 @@ public class DetailFigure extends Figure {
 		final TimeBaseConverter timeViewDetails = RootFigure.getTimeViewDetails(this);
 
 		final Map<Double, Integer> markerPositions = new HashMap<>();
-		for (final Double eventTime : getEventTimeMarkerPositions())
-			markerPositions.put(eventTime, (int) Math.round(timeViewDetails.toDetailCoordinates(new Timing(eventTime)).getTimestamp()));
+        for (final Double eventTime : getEventTimeMarkerPositions()) {
+            markerPositions.put(eventTime, (int) Math.round(timeViewDetails.toDetailCoordinates(new Timing(eventTime)).getTimestamp()));
+        }
 
 		return markerPositions;
 	}
@@ -75,8 +76,9 @@ public class DetailFigure extends Figure {
 		final double stepSize = getStepSize();
 		final long startValue = (long) ((Math.floor((visibleEventArea.left()) / stepSize) + 1) * stepSize);
 
-		for (long pos = startValue; pos < visibleEventArea.right(); pos += stepSize)
-			positions.add((double) pos);
+        for (long pos = startValue; pos < visibleEventArea.right(); pos += stepSize) {
+            positions.add((double) pos);
+        }
 
 		return positions;
 	}

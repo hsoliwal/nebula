@@ -65,12 +65,15 @@ public class ImagePrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (obj == this)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 
 		ImagePrint that = (ImagePrint) obj;
 		return Util.equal(this.dpi, that.dpi)
@@ -197,11 +200,13 @@ class ImageIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext())
-			PaperClips.error("No more content."); //$NON-NLS-1$
+        if (!hasNext()) {
+            PaperClips.error("No more content."); //$NON-NLS-1$
+        }
 
-		if (width < size.x || height < size.y)
-			return null;
+        if (width < size.x || height < size.y) {
+            return null;
+        }
 
 		hasNext = false;
 
@@ -240,8 +245,9 @@ class ImagePiece implements PrintPiece {
 	}
 
 	private Image getImage() {
-		if (image == null)
-			image = new Image(device, imageData);
+        if (image == null) {
+            image = new Image(device, imageData);
+        }
 		return image;
 	}
 

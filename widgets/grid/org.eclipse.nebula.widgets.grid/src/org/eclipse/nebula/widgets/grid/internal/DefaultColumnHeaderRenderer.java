@@ -78,10 +78,11 @@ public class DefaultColumnHeaderRenderer extends GridHeaderRenderer
         else
         {
           int plainTextWidth;
-          if (wHint == SWT.DEFAULT)
-            plainTextWidth = getBounds().width - x - rightMargin;
-          else
-            plainTextWidth = wHint - x - rightMargin;
+            if (wHint == SWT.DEFAULT) {
+                plainTextWidth = getBounds().width - x - rightMargin;
+            } else {
+                plainTextWidth = wHint - x - rightMargin;
+            }
 
           getTextLayout(gc, column);
             textLayout.setText(column.getText());

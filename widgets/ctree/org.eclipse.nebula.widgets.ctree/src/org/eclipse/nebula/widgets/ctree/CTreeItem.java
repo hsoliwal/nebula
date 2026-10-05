@@ -145,7 +145,9 @@ public class CTreeItem extends Item {
 	
 	boolean contains(Control control) {
 		for(int i = 0; i < cells.length; i++) {
-			if(cells[i].contains(control)) return true;
+            if (cells[i].contains(control)) {
+                return true;
+            }
 		}
 		return false;
 	}
@@ -165,7 +167,9 @@ public class CTreeItem extends Item {
 	public boolean contains(int x, int y) {
 		Rectangle[] ba = getCellBounds();
 		for(int i = 0; i < ba.length; i++) {
-			if(ba[i].contains(x,y)) return true;
+            if (ba[i].contains(x, y)) {
+                return true;
+            }
 		}
 		return false;
 	}
@@ -186,10 +190,14 @@ public class CTreeItem extends Item {
 	
 	
 	public void createCell(int index, int style, Class clazz) {
-		if(!hasCell(index)) return;
+        if (!hasCell(index)) {
+            return;
+        }
 		
 		Map memento = null;
-		if(cells[index] != null) memento = cells[index].saveState();
+        if (cells[index] != null) {
+            memento = cells[index].saveState();
+        }
 		if(clazz != null) {
 			boolean failed = true;
 			try {
@@ -208,11 +216,15 @@ public class CTreeItem extends Item {
 				}
 			} catch (Exception e) {
 			}
-			if(failed) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            if (failed) {
+                SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+            }
 		} else {
 			createCell(index, style);
 		}
-		if(memento != null) cells[index].restoreState(memento);
+        if (memento != null) {
+            cells[index].restoreState(memento);
+        }
 	}
 
 	protected void createCells(Object parent) {
@@ -226,7 +238,9 @@ public class CTreeItem extends Item {
 	}
 	
 	public void dispose() {
-		if((parentItem != null) && (!parentItem.isDisposed())) parentItem.removeItem(this);
+        if ((parentItem != null) && (!parentItem.isDisposed())) {
+            parentItem.removeItem(this);
+        }
 		
 		List l = new ArrayList(items);
 		for(Iterator i = l.iterator(); i.hasNext(); ) {
@@ -249,7 +263,9 @@ public class CTreeItem extends Item {
 	}
 	
 	public Color getBackground(int index) {
-		if(hasCell(index)) return cells[index].getBackground();
+        if (hasCell(index)) {
+            return cells[index].getBackground();
+        }
 		return null;
 	}
 	
@@ -452,7 +468,9 @@ public class CTreeItem extends Item {
 	 * @return Font
 	 */
 	public Font getFont(int index) {
-		if(hasCell(index)) return cells[index].getFont();
+        if (hasCell(index)) {
+            return cells[index].getFont();
+        }
 		return null;
 	}
 	
@@ -472,7 +490,9 @@ public class CTreeItem extends Item {
 //	}
 
 	public Color getForeground(int index) {
-		if(hasCell(index)) return cells[index].getForeground();
+        if (hasCell(index)) {
+            return cells[index].getForeground();
+        }
 		return null;
 	}
 	
@@ -518,20 +538,28 @@ public class CTreeItem extends Item {
 			CTreeItem parent = getParentItem();
 			int ix = parent.indexOf(this);
 			if(up) {
-				if(ix == 0) return parent;
+                if (ix == 0) {
+                    return parent;
+                }
 				return parent.getItem(ix - 1);
 			} else {
-				if(ix > parent.getItemCount() - 1) return parent.getItem(false);
+                if (ix > parent.getItemCount() - 1) {
+                    return parent.getItem(false);
+                }
 				return parent.getItem(ix + 1);
 			}
 		} else {
 			CTree parent = getParent();
 			int ix = parent.indexOf(this);
 			if(up) {
-				if(ix == 0) return null;
+                if (ix == 0) {
+                    return null;
+                }
 				return parent.getItem(ix - 1);
 			} else {
-				if(ix > parent.getItemCount() - 1) return null;
+                if (ix > parent.getItemCount() - 1) {
+                    return null;
+                }
 				return parent.getItem(ix + 1);
 			}
 		}
@@ -560,7 +588,9 @@ public class CTreeItem extends Item {
 	}
 	
 	public CTreeItem[] getItems() {
-		if(items == null) return new CTreeItem[0];
+        if (items == null) {
+            return new CTreeItem[0];
+        }
 		return (CTreeItem[]) items.toArray(new CTreeItem[items.size()]);
 	}
 
@@ -724,21 +754,27 @@ public class CTreeItem extends Item {
 	
 	public boolean isOpen(int x, int y) {
 		for(int i = 0; i < cells.length; i++) {
-			if(cells[i].getBounds().contains(x,y)) return cells[i].isOpen();
+            if (cells[i].getBounds().contains(x, y)) {
+                return cells[i].isOpen();
+            }
 		}
 		return false;
 	}
 
 	public boolean isSelected() {
 		for(int i = 0; i < cells.length; i++) {
-			if(cells[i].isSelected()) return true;
+            if (cells[i].isSelected()) {
+                return true;
+            }
 		}
 		return false;
 	}
 	
 	public boolean isToggle(int x, int y) {
 		for(int i = 0; i < cells.length; i++) {
-			if(cells[i].isToggle(x, y)) return true;
+            if (cells[i].isToggle(x, y)) {
+                return true;
+            }
 		}
 		return false;
 	}
@@ -766,7 +802,9 @@ public class CTreeItem extends Item {
 	CTreeItem nextVisible() {
 		for(CTreeItem i = this; i.hasNext(); ) {
 			CTreeItem item = i.next();
-			if(item.getVisible()) return item;
+            if (item.getVisible()) {
+                return item;
+            }
 		}
 		return null;
 	}
@@ -793,13 +831,17 @@ public class CTreeItem extends Item {
 	CTreeItem previousVisible() {
 		for(CTreeItem i = this; i.hasPrevious(); ) {
 			CTreeItem item = i.previous();
-			if(item.getVisible()) return item;
+            if (item.getVisible()) {
+                return item;
+            }
 		}
 		return null;
 	}
 	
 	public void redraw() {
-		if(painted) ctree.redraw(this);
+        if (painted) {
+            ctree.redraw(this);
+        }
 	}
 	
 	void removeItem(CTreeItem item) {
@@ -807,7 +849,9 @@ public class CTreeItem extends Item {
 		if(!ctree.removedItems.contains(item)) {
 			ctree.removedItems.add(item);
 			boolean selChange = ctree.selection.remove(item);
-			if(selChange) ctree.fireSelectionEvent(false);
+            if (selChange) {
+                ctree.fireSelectionEvent(false);
+            }
 			redraw();
 		}
 		if(items.isEmpty() && hasTreeCell()) {
@@ -832,7 +876,9 @@ public class CTreeItem extends Item {
 //	}
 	
 	public void setBackground(int index, Color color) {
-		if(hasCell(index)) cells[index].setBackground(color);
+        if (hasCell(index)) {
+            cells[index].setBackground(color);
+        }
 	}
 
 	public void setEnabled(boolean enabled) {
@@ -857,7 +903,9 @@ public class CTreeItem extends Item {
 	
 	public boolean setFocus() {
 		for(int i = 0; i < cells.length; i++) {
-			if(cells[i].setFocus()) return true;
+            if (cells[i].setFocus()) {
+                return true;
+            }
 		}
 		return false;
 	}
@@ -869,7 +917,9 @@ public class CTreeItem extends Item {
 	}
 	
 	public void setFont(int index, Font font) {
-		if(hasCell(index)) cells[index].setFont(font);
+        if (hasCell(index)) {
+            cells[index].setFont(font);
+        }
 	}
 	
 	public void setForeground(Color color) {
@@ -879,7 +929,9 @@ public class CTreeItem extends Item {
 	}
 	
 	public void setForeground(int index, Color color) {
-		if(hasCell(index)) cells[index].setForeground(color);
+        if (hasCell(index)) {
+            cells[index].setForeground(color);
+        }
 	}
 
 	public void setGridLine(boolean gridLine) {

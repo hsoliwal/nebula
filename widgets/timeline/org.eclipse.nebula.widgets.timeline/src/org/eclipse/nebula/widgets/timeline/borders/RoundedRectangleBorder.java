@@ -41,8 +41,9 @@ public class RoundedRectangleBorder extends LineBorder {
 
 		graphics.setLineWidth(getWidth());
 		graphics.setLineStyle(getStyle());
-		if (getColor() != null)
-			graphics.setForegroundColor(getColor());
+        if (getColor() != null) {
+            graphics.setForegroundColor(getColor());
+        }
 
 		graphics.drawRoundRectangle(tempRect, fArcWidth, fArcHeight);
 	}

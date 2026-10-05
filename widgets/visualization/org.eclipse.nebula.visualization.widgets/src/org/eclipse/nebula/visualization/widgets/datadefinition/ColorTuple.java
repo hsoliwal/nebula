@@ -24,12 +24,13 @@ public class ColorTuple implements Comparable<ColorTuple>{
 		this.rgb = rgb;
 	}
 	public int compareTo(ColorTuple o) {
-		if(value < o.value)
-			return -1;
-		else if(this.equals(o))
-			return 0;
-		else			
-			return 1;
+        if (value < o.value) {
+            return -1;
+        } else if (this.equals(o)) {
+            return 0;
+        } else {
+            return 1;
+        }
 	}
 	
 	@Override
@@ -44,21 +45,27 @@ public class ColorTuple implements Comparable<ColorTuple>{
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		ColorTuple other = (ColorTuple) obj;
 		if (rgb == null) {
-			if (other.rgb != null)
-				return false;
-		} else if (!rgb.equals(other.rgb))
-			return false;
-		if (Double.doubleToLongBits(value) != Double
-				.doubleToLongBits(other.value))
-			return false;
+            if (other.rgb != null) {
+                return false;
+            }
+		} else if (!rgb.equals(other.rgb)) {
+            return false;
+        }
+        if (Double.doubleToLongBits(value) != Double
+                .doubleToLongBits(other.value)) {
+            return false;
+        }
 		return true;
 	}		
 	

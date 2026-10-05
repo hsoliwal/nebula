@@ -46,15 +46,17 @@ public class Range {
 	 */
 	public boolean inRange(final double value, final boolean includeBoundary) {
 		if (lower <= upper) {
-			if (includeBoundary)
-				return (value >= lower && value <= upper);
-			else
-				return (value > lower && value < upper);
+            if (includeBoundary) {
+                return (value >= lower && value <= upper);
+            } else {
+                return (value > lower && value < upper);
+            }
 		} else {
-			if (includeBoundary)
-				return (value >= upper && value <= lower);
-			else
-				return (value > upper && value < lower);
+            if (includeBoundary) {
+                return (value >= upper && value <= lower);
+            } else {
+                return (value > upper && value < lower);
+            }
 		}
 
 	}
@@ -66,10 +68,11 @@ public class Range {
 	 * @return true if the value is in the range. Otherwise false.
 	 */
 	public boolean inRange(final double value) {
-		if (lower <= upper)
-			return value >= lower && value <= upper;
-		else
-			return value >= upper && value <= lower;
+        if (lower <= upper) {
+            return value >= lower && value <= upper;
+        } else {
+            return value >= upper && value <= lower;
+        }
 	}
 
 	public boolean isMinBigger() {
@@ -93,10 +96,12 @@ public class Range {
 	/** {@inheritDoc} */
 	@Override
 	public boolean equals(final Object obj) { // See "Effective Java" Item 7
-		if (this == obj)
-			return true;
-		if (!(obj instanceof Range))
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Range)) {
+            return false;
+        }
 		final Range other = (Range) obj;
 		return other.lower == lower && other.upper == upper;
 	}

@@ -32,10 +32,11 @@ public class TrackBorder extends AbstractLabeledBorder {
 
 	@Override
 	protected Insets calculateInsets(IFigure figure) {
-		if (getLabel().isEmpty())
-			return new Insets(0);
-		else
-			return new Insets(getTextExtents(figure).height + fTextPadding.getHeight(), 0, 0, 0);
+        if (getLabel().isEmpty()) {
+            return new Insets(0);
+        } else {
+            return new Insets(getTextExtents(figure).height + fTextPadding.getHeight(), 0, 0, 0);
+        }
 	}
 
 	@Override

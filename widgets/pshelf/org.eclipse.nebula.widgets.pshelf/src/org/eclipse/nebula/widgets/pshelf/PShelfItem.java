@@ -75,8 +75,9 @@ public class PShelfItem extends Item {
 	public PShelfItem(PShelf parent, int style,int index) {
 		super(parent,style,index);
 
-        if (index < 0 || index > parent.getItems().length)
+        if (index < 0 || index > parent.getItems().length) {
             SWT.error(SWT.ERROR_INVALID_RANGE);
+        }
 
 		construct(parent,index);
 	}

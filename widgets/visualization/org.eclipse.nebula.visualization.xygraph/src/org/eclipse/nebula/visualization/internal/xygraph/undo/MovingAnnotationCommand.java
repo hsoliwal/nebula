@@ -34,18 +34,20 @@ public class MovingAnnotationCommand implements IUndoableCommand {
 	}
 
 	public void redo() {
-		if (annotation.isFree())
-			annotation.setCurrentPosition(afterMovePosition, false);
-		else
-			annotation.setCurrentSnappedSample(afterMoveSnappedSample, false);
+        if (annotation.isFree()) {
+            annotation.setCurrentPosition(afterMovePosition, false);
+        } else {
+            annotation.setCurrentSnappedSample(afterMoveSnappedSample, false);
+        }
 		annotation.setdxdy(afterDx, afterDy);
 	}
 
 	public void undo() {
-		if (annotation.isFree())
-			annotation.setCurrentPosition(beforeMovePosition, false);
-		else
-			annotation.setCurrentSnappedSample(beforeMoveSnappedSample, false);
+        if (annotation.isFree()) {
+            annotation.setCurrentPosition(beforeMovePosition, false);
+        } else {
+            annotation.setCurrentSnappedSample(beforeMoveSnappedSample, false);
+        }
 		annotation.setdxdy(beforeDx, beforeDy);
 	}
 

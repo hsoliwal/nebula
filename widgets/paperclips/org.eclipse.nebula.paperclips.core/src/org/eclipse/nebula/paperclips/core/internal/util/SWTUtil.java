@@ -81,10 +81,12 @@ public class SWTUtil {
 	 * @return whether the PaletteData arguments are equivalent.
 	 */
 	public static boolean equal(PaletteData left, PaletteData right) {
-		if (left == right)
-			return true;
-		if (left == null || right == null)
-			return false;
+        if (left == right) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
 		return left.isDirect == right.isDirect
 				&& left.blueMask == right.blueMask
 				&& left.blueShift == right.blueShift
@@ -118,8 +120,9 @@ public class SWTUtil {
 
 	private static int hashCode(Object[] array) {
 		int prime = 31;
-		if (array == null)
-			return 0;
+        if (array == null) {
+            return 0;
+        }
 		int result = 1;
 		for (int index = 0; index < array.length; index++) {
 			result = prime * result
@@ -138,14 +141,18 @@ public class SWTUtil {
 	 * @return whether the ImageData arguments are equivalent.
 	 */
 	public static boolean equal(ImageData left, ImageData right) {
-		if (left == right)
-			return true;
-		if (left == null || right == null)
-			return false;
-		if (left.width != right.width || left.height != right.height)
-			return false;
-		if (!equal(left.palette, right.palette))
-			return false;
+        if (left == right) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        if (left.width != right.width || left.height != right.height) {
+            return false;
+        }
+        if (!equal(left.palette, right.palette)) {
+            return false;
+        }
 
 		final int width = left.width;
 		int[] leftPixels = new int[width];
@@ -155,15 +162,17 @@ public class SWTUtil {
 		for (int y = 0; y < left.height; y++) {
 			left.getAlphas(0, y, width, leftAlphas, 0);
 			right.getAlphas(0, y, width, rightAlphas, 0);
-			if (!Util.equal(leftAlphas, rightAlphas))
-				return false;
+            if (!Util.equal(leftAlphas, rightAlphas)) {
+                return false;
+            }
 
 			left.getPixels(0, y, width, leftPixels, 0);
 			right.getPixels(0, y, width, rightPixels, 0);
 			if (!Util.equal(leftPixels, rightPixels)) {
 				for (int x = 0; x < width; x++) {
-					if (leftAlphas[x] != 0 && leftPixels[x] != rightPixels[x])
-						return false;
+                    if (leftAlphas[x] != 0 && leftPixels[x] != rightPixels[x]) {
+                        return false;
+                    }
 				}
 			}
 		}

@@ -52,8 +52,9 @@ public class RendererHelper {
 	 */
 	public static String createLabel(String text, GC gc, int width) {
 
-		if (text == null)
-			return null;
+        if (text == null) {
+            return null;
+        }
 
 		final int extent = gc.textExtent(text).x;
 
@@ -145,8 +146,9 @@ public class RendererHelper {
 	 */
 	public static int getShift(int totalSize, int size) {
 		int xShift = totalSize - size;
-		if (xShift < 0)
-			xShift = 0;
+        if (xShift < 0) {
+            xShift = 0;
+        }
 		xShift = xShift >> 1;
 		return xShift;
 	}

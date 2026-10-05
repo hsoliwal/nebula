@@ -83,15 +83,18 @@ public class XYGraphMementoUtil {
 		memento.setShowPlotAreaBorder(xyGraph.getPlotArea().isShowBorder());
 		memento.setTransparent(xyGraph.isTransparent());
 		int i = 0;
-		for (Annotation sourceAnno : xyGraph.getPlotArea().getAnnotationList())
-			saveAnnotationPropsToMemento(sourceAnno, memento.getAnnotationMementoList().get(i++));
+        for (Annotation sourceAnno : xyGraph.getPlotArea().getAnnotationList()) {
+            saveAnnotationPropsToMemento(sourceAnno, memento.getAnnotationMementoList().get(i++));
+        }
 
 		i = 0;
-		for (Axis axis : xyGraph.getAxisList())
-			saveAxisPropsToMemento(axis, memento.getAxisMementoList().get(i++));
+        for (Axis axis : xyGraph.getAxisList()) {
+            saveAxisPropsToMemento(axis, memento.getAxisMementoList().get(i++));
+        }
 		i = 0;
-		for (Trace trace : xyGraph.getPlotArea().getTraceList())
-			saveTracePropsToMemento(trace, memento.getTraceMementoList().get(i++));
+        for (Trace trace : xyGraph.getPlotArea().getTraceList()) {
+            saveTracePropsToMemento(trace, memento.getTraceMementoList().get(i++));
+        }
 	}
 
 	/**
@@ -104,29 +107,34 @@ public class XYGraphMementoUtil {
 	 */
 	public static void restoreXYGraphPropsFromMemento(IXYGraph xyGraph, XYGraphMemento memento) {
 
-		if (memento.getTitle() != null)
-			xyGraph.setTitle(memento.getTitle());
+        if (memento.getTitle() != null) {
+            xyGraph.setTitle(memento.getTitle());
+        }
 
 		xyGraph.setTitleFont(memento.getTitleFont());
 
 		xyGraph.setTitleColor(memento.getTitleColor());
 
-		if (memento.getPlotAreaBackColor() != null)
-			xyGraph.getPlotArea().setBackgroundColor(memento.getPlotAreaBackColor());
+        if (memento.getPlotAreaBackColor() != null) {
+            xyGraph.getPlotArea().setBackgroundColor(memento.getPlotAreaBackColor());
+        }
 
 		xyGraph.setShowTitle(memento.isShowTitle());
 		xyGraph.setShowLegend(memento.isShowLegend());
 		xyGraph.getPlotArea().setShowBorder(memento.isShowPlotAreaBorder());
 		xyGraph.setTransparent(memento.isTransparent());
 		int i = 0;
-		for (AnnotationMemento annotationMemento : memento.getAnnotationMementoList())
-			restoreAnnotationPropsFromMemento(xyGraph.getPlotArea().getAnnotationList().get(i++), annotationMemento);
+        for (AnnotationMemento annotationMemento : memento.getAnnotationMementoList()) {
+            restoreAnnotationPropsFromMemento(xyGraph.getPlotArea().getAnnotationList().get(i++), annotationMemento);
+        }
 		i = 0;
-		for (AxisMemento axisMemento : memento.getAxisMementoList())
-			restoreAxisPropsFromMemento(xyGraph.getAxisList().get(i++), axisMemento);
+        for (AxisMemento axisMemento : memento.getAxisMementoList()) {
+            restoreAxisPropsFromMemento(xyGraph.getAxisList().get(i++), axisMemento);
+        }
 		i = 0;
-		for (TraceMemento traceMemento : memento.getTraceMementoList())
-			restoreTracePropsFromMemento(xyGraph.getPlotArea().getTraceList().get(i++), traceMemento);
+        for (TraceMemento traceMemento : memento.getTraceMementoList()) {
+            restoreTracePropsFromMemento(xyGraph.getPlotArea().getTraceList().get(i++), traceMemento);
+        }
 	}
 
 	private static void saveAnnotationPropsToMemento(Annotation annotation, AnnotationMemento memento) {
@@ -149,10 +157,11 @@ public class XYGraphMementoUtil {
 
 	private static void restoreAnnotationPropsFromMemento(Annotation annotation, AnnotationMemento memento) {
 		annotation.setName(memento.getName());
-		if (memento.isFree())
-			annotation.setFree(memento.getXAxis(), memento.getYAxis());
-		else
-			annotation.setTrace(memento.getTrace());
+        if (memento.isFree()) {
+            annotation.setFree(memento.getXAxis(), memento.getYAxis());
+        } else {
+            annotation.setTrace(memento.getTrace());
+        }
 		annotation.setAnnotationColor(memento.getAnnotationColor());
 		annotation.setFont(memento.getFont());
 		annotation.setCursorLineStyle(memento.getCursorLineStyle());
@@ -181,8 +190,9 @@ public class XYGraphMementoUtil {
 	private static void restoreAxisPropsFromMemento(Axis axis, AxisMemento memento) {
 		axis.setTitle(memento.getTitle());
 		axis.setTitleFont(memento.getTitleFont());
-		if (memento.getForegroundColor() != null)
-			axis.setForegroundColor(memento.getForegroundColor());
+        if (memento.getForegroundColor() != null) {
+            axis.setForegroundColor(memento.getForegroundColor());
+        }
 		axis.setPrimarySide(memento.isOnPrimarySide());
 		axis.setLogScale(memento.isLogScaleEnabled());
 		axis.setAutoScale(memento.isAutoScale());

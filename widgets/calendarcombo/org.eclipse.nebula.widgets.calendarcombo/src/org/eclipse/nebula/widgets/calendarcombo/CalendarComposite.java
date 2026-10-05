@@ -152,10 +152,12 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		mDFS = new DateFormatSymbols(mSettings.getLocale());
 		mMonths = mDFS.getMonths();
 
-		if (mCalendar == null)
-			mCalendar = Calendar.getInstance(mSettings.getLocale());
-		if (mToday == null)
-			mToday = Calendar.getInstance(mSettings.getLocale());
+        if (mCalendar == null) {
+            mCalendar = Calendar.getInstance(mSettings.getLocale());
+        }
+        if (mToday == null) {
+            mToday = Calendar.getInstance(mSettings.getLocale());
+        }
 
 		String[] weekdays = mDFS.getWeekdays();		
 		// hebrew needs short weekdays
@@ -249,8 +251,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		Font used = null;
 		if (CalendarCombo.OS_CARBON) {
 			used = mSettings.getCarbonDrawFont();
-			if (used != null)
-				gc.setFont(used);
+            if (used != null) {
+                gc.setFont(used);
+            }
 		}
 
 		// header
@@ -263,8 +266,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		drawBorder(gc);
 
 		gc.dispose();
-		if (used != null)
-			used.dispose();
+        if (used != null) {
+            used.dispose();
+        }
 	}
 
 	public void setDate(Calendar date) {
@@ -376,8 +380,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 
 		int firstDayOfWeek = temp.getFirstDayOfWeek();
 		int firstDay = temp.get(Calendar.DAY_OF_WEEK) - firstDayOfWeek;
-		if (firstDay < 0)
-			firstDay += 7;
+        if (firstDay < 0) {
+            firstDay += 7;
+        }
 
 		temp.add(Calendar.DATE, -firstDay);
 		int col = 0;
@@ -393,9 +398,10 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		List betweenDays = null;
 		if (mDateRange && mMouseDownDay != null) {
 			Calendar end = mMouseUpDay == null ? mSelectedDay : mMouseUpDay;
-			// end can be null when month is switching to next
-			if (end != null)
-				betweenDays = getCalendarsBetween(mMouseDownDay, end);
+            // end can be null when month is switching to next
+            if (end != null) {
+                betweenDays = getCalendarsBetween(mMouseDownDay, end);
+            }
 		}
 
 		for (int y = 0; y < 42; y++) {
@@ -522,22 +528,26 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 	}
 
 	private boolean isInside(int x, int y, Rectangle rect) {
-		if (rect == null)
-			return false;
+        if (rect == null) {
+            return false;
+        }
 
-		if (x >= rect.x && y >= rect.y && x <= (rect.x + rect.width) && y <= (rect.y + rect.height))
-			return true;
+        if (x >= rect.x && y >= rect.y && x <= (rect.x + rect.width) && y <= (rect.y + rect.height)) {
+            return true;
+        }
 
 		return false;
 	}
 
 	public void mouseMove(MouseEvent e) {
-		if (mMonthSelectorOpen)
-			return;
+        if (mMonthSelectorOpen) {
+            return;
+        }
 
-		// "dragging" the day, just paint it
-		if (e.stateMask != 0)
-			doDaySelection(e.x, e.y);
+        // "dragging" the day, just paint it
+        if (e.stateMask != 0) {
+            doDaySelection(e.x, e.y);
+        }
 
 		if (mArrowRun && mArrowThread != null) {
 			if (!isInside(e.x, e.y, mLeftArrowBounds) && !isInside(e.x, e.y, mRightArrowBounds)) {
@@ -546,10 +556,11 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 				mArrowIterations = 0;
 				mArrowSleepTime = ARROW_SLOW_TIME;
 			} else {
-				if (isInside(e.x, e.y, mLeftArrowBounds))
-					mArrowThreadDirection = ARROW_LEFT;
-				else
-					mArrowThreadDirection = ARROW_RIGHT;
+                if (isInside(e.x, e.y, mLeftArrowBounds)) {
+                    mArrowThreadDirection = ARROW_LEFT;
+                } else {
+                    mArrowThreadDirection = ARROW_RIGHT;
+                }
 
 				mArrowPause = false;
 			}
@@ -563,8 +574,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 	// to the user
 	public void mouseDown(MouseEvent event) {
 		mMouseIsDown = true;
-		if (mDateRange)
-			mMouseUpDay = null;
+        if (mDateRange) {
+            mMouseUpDay = null;
+        }
 
 		if (isInside(event.x, event.y, mLeftArrowBounds)) {
 			prevMonth();
@@ -603,8 +615,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 
 		doDaySelection(event.x, event.y);
 
-		if (mDateRange)
-			mMouseDownDay = mSelectedDay;
+        if (mDateRange) {
+            mMouseDownDay = mSelectedDay;
+        }
 	}
 
 	private void killArrowThread() {
@@ -628,11 +641,13 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 					try {
 						sleep(mArrowSleepTime);
 
-						if (!mArrowPause)
-							mArrowIterations++;
+                        if (!mArrowPause) {
+                            mArrowIterations++;
+                        }
 
-						if (mArrowIterations > ARROW_SPEED_SWITCH_COUNT && mArrowSleepTime != ARROW_FAST_TIME)
-							mArrowSleepTime = ARROW_FAST_TIME;
+                        if (mArrowIterations > ARROW_SPEED_SWITCH_COUNT && mArrowSleepTime != ARROW_FAST_TIME) {
+                            mArrowSleepTime = ARROW_FAST_TIME;
+                        }
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -643,10 +658,11 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 									mArrowRun = false;
 									mArrowThread = null;
 								} else {
-									if (mArrowThreadDirection == ARROW_LEFT)
-										prevMonth();
-									else if (mArrowThreadDirection == ARROW_RIGHT)
-										nextMonth();
+                                    if (mArrowThreadDirection == ARROW_LEFT) {
+                                        prevMonth();
+                                    } else if (mArrowThreadDirection == ARROW_RIGHT) {
+                                        nextMonth();
+                                    }
 								}
 							}
 						});
@@ -668,9 +684,10 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		for (int i = 0; i < mDays.length; i++) {
 			if (isInside(x, y, mDays[i].getBounds())) {
 
-				// disabled date? ignore click completely
-				if (mDays[i].isDisabled())
-					return;
+                // disabled date? ignore click completely
+                if (mDays[i].isDisabled()) {
+                    return;
+                }
 
 				int dayYear = mDays[i].getDate().get(Calendar.YEAR);
 				int dayMonth = mDays[i].getDate().get(Calendar.MONTH);
@@ -745,18 +762,20 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
             mSelectedDay = mMouseDownDay;
         }
 
-		if (mDateRange)
-			mMainListener.dateRangeChanged(mMouseDownDay, mMouseUpDay);
-		else
-			mMainListener.dateChanged(date);
+        if (mDateRange) {
+            mMainListener.dateRangeChanged(mMouseDownDay, mMouseUpDay);
+        } else {
+            mMainListener.dateChanged(date);
+        }
 
 		for (int i = 0; i < mListeners.size(); i++) {
 			ICalendarListener l = (ICalendarListener) mListeners.get(i);
 
-			if (mDateRange)
-				l.dateRangeChanged(mMouseDownDay, mMouseUpDay);
-			else
-				l.dateChanged(date);
+            if (mDateRange) {
+                l.dateRangeChanged(mMouseDownDay, mMouseUpDay);
+            } else {
+                l.dateChanged(date);
+            }
 		}
 	}
 
@@ -795,8 +814,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		height = mButtonNone.getSize().y;
 		area = new Rectangle(loc.x, loc.y, width, height);
 
-		if (isInside(p.x, p.y, area))
-			clickedNoneButton();
+        if (isInside(p.x, p.y, area)) {
+            clickedNoneButton();
+        }
 
 		return true;
 	}
@@ -822,8 +842,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 				}
 				redraw();
 			} else if (keyCode == SWT.ARROW_LEFT) {
-				if (mSelectedDay.get(Calendar.DATE) == 1)
-					mCalendar.add(Calendar.MONTH, -1);
+                if (mSelectedDay.get(Calendar.DATE) == 1) {
+                    mCalendar.add(Calendar.MONTH, -1);
+                }
 				
 				mSelectedDay.add(Calendar.DATE, -1);
 

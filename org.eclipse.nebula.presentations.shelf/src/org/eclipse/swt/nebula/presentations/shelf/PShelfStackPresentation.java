@@ -79,10 +79,13 @@ public class PShelfStackPresentation extends StackPresentation
         {        
             public void handleEvent(Event event)
             {
-                if (event.item == null) return;
-                
-                if (!ignoreSelection)
-                    getSite().selectPart((IPresentablePart)event.item.getData(DATAKEY_PART));
+                if (event.item == null) {
+                    return;
+                }
+
+                if (!ignoreSelection) {
+                    getSite().selectPart((IPresentablePart) event.item.getData(DATAKEY_PART));
+                }
             }        
         });
         
@@ -107,7 +110,9 @@ public class PShelfStackPresentation extends StackPresentation
             public void handleEvent(Event event)
             {
                PShelfItem item = shelf.getItem(new Point(event.x,event.y));
-               if (item == null) return;
+                if (item == null) {
+                    return;
+                }
                
                IPresentablePart part = (IPresentablePart)item.getData(DATAKEY_PART);
                
@@ -158,7 +163,9 @@ public class PShelfStackPresentation extends StackPresentation
             public void handleEvent(Event e)
             {
                 Integer separatorY = (Integer)item.getBody().getData(DATAKEY_SEPHEIGHT);
-                if (separatorY == null) return;
+                if (separatorY == null) {
+                    return;
+                }
                 e.gc.setForeground(border);
                 e.gc.drawLine(0,separatorY.intValue(),item.getBody().getSize().x,separatorY.intValue());
             }        
@@ -190,8 +197,9 @@ public class PShelfStackPresentation extends StackPresentation
         PShelfItem item = getItem(part);
         
         String dirty = "";
-        if (part.isDirty())
+        if (part.isDirty()) {
             dirty = "*";
+        }
         
         item.setText(dirty + part.getName());
         item.setImage(part.getTitleImage());
@@ -313,8 +321,9 @@ public class PShelfStackPresentation extends StackPresentation
         resizeSelectedPart();
         
         oldPart.setVisible(false);
-        if (oldPart.getToolBar() != null)
+        if (oldPart.getToolBar() != null) {
             oldPart.getToolBar().setVisible(false);
+        }
     }
     
     private PShelfItem getItem(IPresentablePart part)
@@ -379,23 +388,29 @@ public class PShelfStackPresentation extends StackPresentation
     private void resizeSelectedPart()
     {
         IPresentablePart part = getSite().getSelectedPart();
-        
-        if (part == null) return;
+
+        if (part == null) {
+            return;
+        }
         
         PShelfItem item = getItem(part);
-        
-        if (item == null) return;
+
+        if (item == null) {
+            return;
+        }
         
         CLabel descLabel = (CLabel)item.getData(DATAKEY_DESCLABEL);
         ToolBar menuTB = (ToolBar)item.getData(DATAKEY_MENUTOOL);
         Control partTB = part.getToolBar();
         
         Point partTBSize = new Point(0,0);
-        if (partTB != null)
-            partTBSize = partTB.computeSize(SWT.DEFAULT,SWT.DEFAULT);
+        if (partTB != null) {
+            partTBSize = partTB.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+        }
         Point menuTBSize = menuTB.computeSize(SWT.DEFAULT,SWT.DEFAULT);
-        if (menuTB.getItemCount() == 0)
-            menuTBSize = new Point(0,0);
+        if (menuTB.getItemCount() == 0) {
+            menuTBSize = new Point(0, 0);
+        }
        
         Rectangle bounds = item.getBody().getBounds();
         
@@ -472,10 +487,13 @@ public class PShelfStackPresentation extends StackPresentation
     public void setVisible(boolean isVisible)
     {
         shelf.setVisible(isVisible);
-        if (getSite().getSelectedPart() == null) return;
+        if (getSite().getSelectedPart() == null) {
+            return;
+        }
         getSite().getSelectedPart().setVisible(isVisible);
-        if (getSite().getSelectedPart().getToolBar() != null)
+        if (getSite().getSelectedPart().getToolBar() != null) {
             getSite().getSelectedPart().getToolBar().setVisible(isVisible);
+        }
     }
 
     /** 

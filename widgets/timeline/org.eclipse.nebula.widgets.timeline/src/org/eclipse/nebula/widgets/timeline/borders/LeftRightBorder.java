@@ -49,8 +49,9 @@ public class LeftRightBorder extends LineBorder {
 		tempRect.shrink(getWidth() / 2, getWidth() / 2);
 		graphics.setLineWidth(getWidth());
 		graphics.setLineStyle(getStyle());
-		if (getColor() != null)
-			graphics.setForegroundColor(getColor());
+        if (getColor() != null) {
+            graphics.setForegroundColor(getColor());
+        }
 
 		graphics.drawLine(tempRect.getTopLeft(), tempRect.getBottomLeft());
 		graphics.drawLine(tempRect.getTopRight(), tempRect.getBottomRight());

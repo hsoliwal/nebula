@@ -101,17 +101,20 @@ public abstract class AbstractCombo extends Composite {
 
 		// Creates the Text widget
 		int textStyle = SWT.SINGLE;
-		if ((style & SWT.READ_ONLY) != 0)
-			textStyle |= SWT.READ_ONLY;
-		if ((style & SWT.FLAT) != 0)
-			textStyle |= SWT.FLAT;
+        if ((style & SWT.READ_ONLY) != 0) {
+            textStyle |= SWT.READ_ONLY;
+        }
+        if ((style & SWT.FLAT) != 0) {
+            textStyle |= SWT.FLAT;
+        }
 		text = createTextControl(textStyle);
 		GridData data = new GridData(GridData.FILL_BOTH);
 		text.setLayoutData(data);
 
 		int buttonStyle = SWT.ARROW | SWT.DOWN;
-		if ((style & SWT.FLAT) != 0)
-			buttonStyle |= SWT.FLAT;
+        if ((style & SWT.FLAT) != 0) {
+            buttonStyle |= SWT.FLAT;
+        }
 		button = createButtonControl(buttonStyle);
 		button.setLayoutData(new GridData(GridData.FILL_VERTICAL));
 
@@ -140,8 +143,9 @@ public abstract class AbstractCombo extends Composite {
 				if (getShell() == event.widget) {
 					getDisplay().asyncExec(new Runnable() {
 						public void run() {
-							if (isDisposed())
-								return;
+                            if (isDisposed()) {
+                                return;
+                            }
 							handleFocus(SWT.FocusOut);
 						}
 					});
@@ -150,8 +154,9 @@ public abstract class AbstractCombo extends Composite {
 		};
 		filter = new Listener() {
 			public void handleEvent(Event event) {
-				if (isDisposed())
-					return;
+                if (isDisposed()) {
+                    return;
+                }
 				Shell shell = ((Control) event.widget).getShell();
 				if (shell == AbstractCombo.this.getShell()) {
 					handleFocus(SWT.FocusOut);
@@ -332,8 +337,9 @@ public abstract class AbstractCombo extends Composite {
 			}
 			case SWT.FocusIn: {
 				Control focusControl = getDisplay().getFocusControl();
-				if (focusControl == button || focusControl == popupContent)
-					return;
+                if (focusControl == button || focusControl == popupContent) {
+                    return;
+                }
 				if (isDropped()) {
 					popupContent.setFocus();
 				} else {
@@ -480,8 +486,9 @@ public abstract class AbstractCombo extends Composite {
 	 * @param drop <code>true</code> to drop the popup, <code>false</code> to close
 	 */
 	protected void dropDown(boolean drop) {
-		if (drop == isDropped())
-			return;
+        if (drop == isDropped()) {
+            return;
+        }
 
 		if (!drop) {
 			if (popup != null) {
@@ -497,8 +504,9 @@ public abstract class AbstractCombo extends Composite {
 			}
 			return;
 		}
-		if (!isVisible())
-			return;
+        if (!isVisible()) {
+            return;
+        }
 		if (popup == null || getShell() != popup.getParent()) {
 			if (popup != null) {
 				popup.dispose();
@@ -510,8 +518,9 @@ public abstract class AbstractCombo extends Composite {
 		setPopupLocation();
 		beforeDrop();
 		popup.setVisible(true);
-		if (isFocusControl())
-			popupContent.setFocus();
+        if (isFocusControl()) {
+            popupContent.setFocus();
+        }
 	}
 
 	/**
@@ -595,8 +604,9 @@ public abstract class AbstractCombo extends Composite {
 	public int getStyle() {
 		int style = super.getStyle();
 		style &= ~SWT.READ_ONLY;
-		if (!text.getEditable())
-			style |= SWT.READ_ONLY;
+        if (!text.getEditable()) {
+            style |= SWT.READ_ONLY;
+        }
 		return style;
 	}
 
@@ -650,12 +660,14 @@ public abstract class AbstractCombo extends Composite {
 	 * @param type SWT.FocusIn or SWT.FocusOut
 	 */
 	protected void handleFocus(int type) {
-		if (isDisposed())
-			return;
+        if (isDisposed()) {
+            return;
+        }
 		switch (type) {
 			case SWT.FocusIn: {
-				if (hasFocus)
-					return;
+                if (hasFocus) {
+                    return;
+                }
 				hasFocus = true;
 				updateButtonDisplay();
 				Shell shell = getShell();
@@ -668,11 +680,13 @@ public abstract class AbstractCombo extends Composite {
 				break;
 			}
 			case SWT.FocusOut: {
-				if (!hasFocus)
-					return;
+                if (!hasFocus) {
+                    return;
+                }
 				Control focusControl = getDisplay().getFocusControl();
-				if (focusControl == button || (popupContent != null && popupContent.isFocusControl()) || focusControl == text)
-					return;
+                if (focusControl == button || (popupContent != null && popupContent.isFocusControl()) || focusControl == text) {
+                    return;
+                }
 				hasFocus = false;
 				updateButtonDisplay();
 				Shell shell = getShell();
@@ -760,8 +774,9 @@ public abstract class AbstractCombo extends Composite {
 					Point point = button.toControl(getDisplay().getCursorLocation());
 					Point size = button.getSize();
 					Rectangle rect = new Rectangle(0, 0, size.x, size.y);
-					if (!rect.contains(point))
-						dropDown(false);
+                    if (!rect.contains(point)) {
+                        dropDown(false);
+                    }
 				} else {
 					dropDown(false);
 				}
@@ -778,8 +793,9 @@ public abstract class AbstractCombo extends Composite {
 		super.redraw();
 		text.redraw();
 		button.redraw();
-		if (popup.isVisible())
-			popupContent.redraw();
+        if (popup.isVisible()) {
+            popupContent.redraw();
+        }
 	}
 
 	/**
@@ -887,12 +903,15 @@ public abstract class AbstractCombo extends Composite {
 	 */
 	public void setBackground(Color color) {
 		super.setBackground(color);
-		if (text != null)
-			text.setBackground(color);
-		if (button != null)
-			button.setBackground(color);
-		if (popupContent != null)
-			popupContent.setBackground(color);
+        if (text != null) {
+            text.setBackground(color);
+        }
+        if (button != null) {
+            button.setBackground(color);
+        }
+        if (popupContent != null) {
+            popupContent.setBackground(color);
+        }
 	}
 
 	/**
@@ -926,12 +945,15 @@ public abstract class AbstractCombo extends Composite {
 	 */
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
-		if (isDropped())
-			dropDown(false);
-		if (text != null)
-			text.setEnabled(enabled);
-		if (button != null)
-			button.setEnabled(enabled);
+        if (isDropped()) {
+            dropDown(false);
+        }
+        if (text != null) {
+            text.setEnabled(enabled);
+        }
+        if (button != null) {
+            button.setEnabled(enabled);
+        }
 	}
 
 	/**
@@ -942,10 +964,12 @@ public abstract class AbstractCombo extends Composite {
 	 */
 	public boolean setFocus() {
 		checkWidget();
-		if (!isEnabled() || !isVisible())
-			return false;
-		if (isFocusControl())
-			return true;
+        if (!isEnabled() || !isVisible()) {
+            return false;
+        }
+        if (isFocusControl()) {
+            return true;
+        }
 		return text.setFocus();
 	}
 
@@ -974,12 +998,15 @@ public abstract class AbstractCombo extends Composite {
 	 */
 	public void setForeground(Color color) {
 		super.setForeground(color);
-		if (text != null)
-			text.setForeground(color);
-		if (button != null)
-			button.setForeground(color);
-		if (popupContent != null)
-			popupContent.setForeground(color);
+        if (text != null) {
+            text.setForeground(color);
+        }
+        if (button != null) {
+            button.setForeground(color);
+        }
+        if (popupContent != null) {
+            popupContent.setForeground(color);
+        }
 	}
 
 	/**
@@ -1045,8 +1072,9 @@ public abstract class AbstractCombo extends Composite {
 	 */
 	public void setSelection(Point selection) {
 		checkWidget();
-		if (selection == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (selection == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		text.setSelection(selection.x, selection.y);
 	}
 
@@ -1102,10 +1130,12 @@ public abstract class AbstractCombo extends Composite {
 	 */
 	public void setVisible(boolean visible) {
 		super.setVisible(visible);
-		if (isDisposed())
-			return;
-		if (popup == null || popup.isDisposed())
-			return;
+        if (isDisposed()) {
+            return;
+        }
+        if (popup == null || popup.isDisposed()) {
+            return;
+        }
 		if (!visible) {
 			popup.setVisible(false);
 		}

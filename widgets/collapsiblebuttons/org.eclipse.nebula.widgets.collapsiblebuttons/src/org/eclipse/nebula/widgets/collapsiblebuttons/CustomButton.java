@@ -75,14 +75,17 @@ public class CustomButton extends Composite {
 	 * @param hover true for hover, false for off
 	 */
 	public void updateHover(boolean hover) {
-		if (isDisposed())
-			return;
+        if (isDisposed()) {
+            return;
+        }
 
-		if (hover && mHover)
-			return;
+        if (hover && mHover) {
+            return;
+        }
 
-		if (!hover && !mHover)
-			return;
+        if (!hover && !mHover) {
+            return;
+        }
 
 		mHover = hover;
 		redraw();
@@ -94,14 +97,17 @@ public class CustomButton extends Composite {
 	 * @param selected true for selected, false for not
 	 */
 	public void updateSelection(boolean selected) {
-		if (isDisposed())
-			return;
+        if (isDisposed()) {
+            return;
+        }
 
-		if (selected && mSelected)
-			return;
+        if (selected && mSelected) {
+            return;
+        }
 
-		if (!selected && !mSelected)
-			return;
+        if (!selected && !mSelected) {
+            return;
+        }
 
 		mSelected = selected;
 		redraw();

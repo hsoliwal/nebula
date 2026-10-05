@@ -49,8 +49,9 @@ public class LinearScaleTickLabels2 extends LinearScaleTickLabels {
 		// draw tick labels
 		ITicksProvider ticks = getTicksProvider();
 		final int imax = ticks.getMajorCount();
-		if (imax < 1)
-			return;
+        if (imax < 1) {
+            return;
+        }
 		final boolean hasNegative = ticks.getLabel(0).startsWith(MINUS);
 		final int minus = getScale().getDimension(MINUS).width;
 		for (int i = 0; i < imax; i++) {

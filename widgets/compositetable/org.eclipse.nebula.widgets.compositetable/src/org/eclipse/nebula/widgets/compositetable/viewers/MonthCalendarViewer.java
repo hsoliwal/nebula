@@ -159,8 +159,9 @@ public class MonthCalendarViewer extends ContentViewer {
 					.getElements(day, getInput());
 			int count = Math.min(elements.length, controls.length);
 			for (int i = 0; i < count; i++) {
-				if (controls[i] == null)
-					continue;
+                if (controls[i] == null) {
+                    continue;
+                }
 				controls[i].setText(((ILabelProvider) getLabelProvider())
 						.getText(elements[i]));
 				controls[i].setImage(((ILabelProvider) getLabelProvider())

@@ -54,20 +54,26 @@ public class Model {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		Model other = (Model) obj;
 		if (description == null) {
-			if (other.description != null)
-				return false;
-		} else if (!description.equals(other.description))
-			return false;
-		if (id != other.id)
-			return false;
+            if (other.description != null) {
+                return false;
+            }
+		} else if (!description.equals(other.description)) {
+            return false;
+        }
+        if (id != other.id) {
+            return false;
+        }
 		return true;
 	}
 

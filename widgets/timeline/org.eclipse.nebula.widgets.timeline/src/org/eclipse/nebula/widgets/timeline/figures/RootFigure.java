@@ -51,8 +51,9 @@ import org.eclipse.swt.graphics.Color;
 public class RootFigure extends Figure implements IStyledFigure {
 
 	public static RootFigure getRootFigure(IFigure figure) {
-		if ((figure instanceof RootFigure) || (figure == null))
-			return (RootFigure) figure;
+        if ((figure instanceof RootFigure) || (figure == null)) {
+            return (RootFigure) figure;
+        }
 
 		return getRootFigure(figure.getParent());
 	}
@@ -68,22 +69,27 @@ public class RootFigure extends Figure implements IStyledFigure {
 	}
 
 	private static <T> T findFigure(IFigure figure, Class<T> clazz) {
-		if (clazz.isAssignableFrom(figure.getClass()))
-			return (T) figure;
+        if (clazz.isAssignableFrom(figure.getClass())) {
+            return (T) figure;
+        }
 
-		if (figure instanceof TracksLayer)
-			return null;
+        if (figure instanceof TracksLayer) {
+            return null;
+        }
 
-		if (figure instanceof OverviewEventLayer)
-			return null;
+        if (figure instanceof OverviewEventLayer) {
+            return null;
+        }
 
-		if (figure instanceof OverviewCursorLayer)
-			return null;
+        if (figure instanceof OverviewCursorLayer) {
+            return null;
+        }
 
 		for (final Object child : figure.getChildren()) {
 			final Object candidate = findFigure((IFigure) child, clazz);
-			if (candidate != null)
-				return (T) candidate;
+            if (candidate != null) {
+                return (T) candidate;
+            }
 		}
 
 		return null;
@@ -94,8 +100,9 @@ public class RootFigure extends Figure implements IStyledFigure {
 
 		final TracksLayer tracksLayer = getFigure(figure, TracksLayer.class);
 
-		for (final Object trackFigure : tracksLayer.getChildren())
-			lanes.addAll((List) ((IFigure) trackFigure).getChildren());
+        for (final Object trackFigure : tracksLayer.getChildren()) {
+            lanes.addAll((List) ((IFigure) trackFigure).getChildren());
+        }
 
 		return lanes;
 	}
@@ -202,8 +209,9 @@ public class RootFigure extends Figure implements IStyledFigure {
 			children.remove(child);
 			children.addAll(((IFigure) child).getChildren());
 
-			if (child instanceof IStyledFigure)
-				((IStyledFigure) child).updateStyle(getStyleProvider());
+            if (child instanceof IStyledFigure) {
+                ((IStyledFigure) child).updateStyle(getStyleProvider());
+            }
 		}
 	}
 
@@ -231,9 +239,10 @@ public class RootFigure extends Figure implements IStyledFigure {
 	 */
 	public void fireTimebaseChanged() {
 
-		// fresh layout for the detail area
-		for (final LaneFigure lane : getLanes(this))
-			lane.revalidate();
+        // fresh layout for the detail area
+        for (final LaneFigure lane : getLanes(this)) {
+            lane.revalidate();
+        }
 
 		getFigure(this, CursorLayer.class).revalidate();
 
@@ -331,13 +340,15 @@ public class RootFigure extends Figure implements IStyledFigure {
 	 *            event figure to select
 	 */
 	public void setSelection(EventFigure eventFigure) {
-		if (fSelection != null)
-			getStyleProvider().unselectEvent(fSelection);
+        if (fSelection != null) {
+            getStyleProvider().unselectEvent(fSelection);
+        }
 
 		fSelection = eventFigure;
 
-		if (fSelection != null)
-			getStyleProvider().selectEvent(fSelection);
+        if (fSelection != null) {
+            getStyleProvider().selectEvent(fSelection);
+        }
 	}
 
 	/**
@@ -364,8 +375,9 @@ public class RootFigure extends Figure implements IStyledFigure {
 		parent.add(eventFigure, event);
 
 		Color eventColor = parent.getForegroundColor();
-		if (event.getColorCode() != null)
-			eventColor = getStyleProvider().getColor(event.getRgb());
+        if (event.getColorCode() != null) {
+            eventColor = getStyleProvider().getColor(event.getRgb());
+        }
 
 		eventFigure.setEventColor(eventColor);
 
@@ -389,8 +401,9 @@ public class RootFigure extends Figure implements IStyledFigure {
 		removeFigure(eventFigure);
 
 		final IFigure overvievFigure = fDetailToOverviewMap.remove(eventFigure);
-		if (overvievFigure != null)
-			removeFigure(overvievFigure);
+        if (overvievFigure != null) {
+            removeFigure(overvievFigure);
+        }
 
 		final Timing eventTiming = eventFigure.getEvent().getTiming();
 		final Timing eventArea = getTimeViewDetails().getEventArea();
@@ -401,18 +414,21 @@ public class RootFigure extends Figure implements IStyledFigure {
 			for (final LaneFigure lane : getLanes(this)) {
 				// event figures are sorted, so we only need to get the first and last event
 				final List children = lane.getChildren();
-				if (children.size() >= 2)
-					getTimeViewDetails().addEvent(((EventFigure) children.get(children.size() - 1)).getEvent());
+                if (children.size() >= 2) {
+                    getTimeViewDetails().addEvent(((EventFigure) children.get(children.size() - 1)).getEvent());
+                }
 
-				if (children.size() >= 1)
-					getTimeViewDetails().addEvent(((EventFigure) children.get(0)).getEvent());
+                if (children.size() >= 1) {
+                    getTimeViewDetails().addEvent(((EventFigure) children.get(0)).getEvent());
+                }
 			}
 
 			final CursorLayer cursorLayer = getFigure(this, CursorLayer.class);
 			for (final Object cursorFigure : cursorLayer.getChildren()) {
 				final Object cursor = cursorLayer.getLayoutManager().getConstraint((IFigure) cursorFigure);
-				if (cursor instanceof ITimed)
-					getTimeViewDetails().addEvent((ITimed) cursor);
+                if (cursor instanceof ITimed) {
+                    getTimeViewDetails().addEvent((ITimed) cursor);
+                }
 			}
 		}
 	}
@@ -458,8 +474,9 @@ public class RootFigure extends Figure implements IStyledFigure {
 		removeFigure(cursorFigure);
 
 		final IFigure overviewCursorFigure = fDetailToOverviewMap.remove(cursorFigure);
-		if (overviewCursorFigure != null)
-			removeFigure(overviewCursorFigure);
+        if (overviewCursorFigure != null) {
+            removeFigure(overviewCursorFigure);
+        }
 	}
 
 	/**

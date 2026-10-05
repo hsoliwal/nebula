@@ -52,8 +52,9 @@ public class PictureControlWithDefaultImage {
 		shell.setSize(200, 150);
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		defaultImage.dispose();
 		display.dispose();

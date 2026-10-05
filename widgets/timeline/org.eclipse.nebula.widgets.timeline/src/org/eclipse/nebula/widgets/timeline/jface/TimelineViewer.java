@@ -130,8 +130,9 @@ public class TimelineViewer extends StructuredViewer {
 		registerFigure(input, getControl().getRootFigure());
 
 		final ITimelineContentProvider contentProvider = getContentProvider();
-		if (contentProvider != null)
-			contentProvider.inputChanged(this, oldInput, input);
+        if (contentProvider != null) {
+            contentProvider.inputChanged(this, oldInput, input);
+        }
 
 		super.inputChanged(input, oldInput);
 	}
@@ -144,8 +145,9 @@ public class TimelineViewer extends StructuredViewer {
 	 */
 	@Override
 	public void setContentProvider(IContentProvider provider) {
-		if (!(provider instanceof ITimelineContentProvider))
-			throw new IllegalArgumentException("Content provider needs to implement ITimelineContentProvider");
+        if (!(provider instanceof ITimelineContentProvider)) {
+            throw new IllegalArgumentException("Content provider needs to implement ITimelineContentProvider");
+        }
 
 		super.setContentProvider(provider);
 	}
@@ -163,8 +165,9 @@ public class TimelineViewer extends StructuredViewer {
 	 */
 	@Override
 	public void setLabelProvider(IBaseLabelProvider labelProvider) {
-		if (!(labelProvider instanceof ITimelineLabelProvider))
-			throw new IllegalArgumentException("Label provider needs to implement ITimelineLabelProvider");
+        if (!(labelProvider instanceof ITimelineLabelProvider)) {
+            throw new IllegalArgumentException("Label provider needs to implement ITimelineLabelProvider");
+        }
 
 		super.setLabelProvider(labelProvider);
 	}
@@ -214,16 +217,18 @@ public class TimelineViewer extends StructuredViewer {
 
 	private Collection<Object> getLaneElements() {
 		final Collection<Object> lanes = new HashSet<>();
-		for (final Object track : getTrackElements())
-			lanes.addAll(Arrays.asList(getContentProvider().getLanes(track)));
+        for (final Object track : getTrackElements()) {
+            lanes.addAll(Arrays.asList(getContentProvider().getLanes(track)));
+        }
 
 		return lanes;
 	}
 
 	private Collection<Object> geEventElements() {
 		final Collection<Object> events = new HashSet<>();
-		for (final Object track : getLaneElements())
-			events.addAll(Arrays.asList(getContentProvider().getEvents(track)));
+        for (final Object track : getLaneElements()) {
+            events.addAll(Arrays.asList(getContentProvider().getEvents(track)));
+        }
 
 		return events;
 	}
@@ -233,33 +238,32 @@ public class TimelineViewer extends StructuredViewer {
 		final IFigure figure = fElementToFigureMap.get(element);
 		if (figure != null) {
 
-			if (isCursorElement(element))
-				getControl().getRootFigure().updateCursorFigure(figure, toCursor(element));
+            if (isCursorElement(element)) {
+                getControl().getRootFigure().updateCursorFigure(figure, toCursor(element));
+            } else if (isTrackElement(element)) {
+                getControl().getRootFigure().updateTrackFigure(figure, getLabelProvider().getText(element));
+            } else if (isEventElement(element)) {
+                getControl().getRootFigure().updateEventFigure(figure, toEvent(element));
+            } else if (isLaneElement(element)) {
+                if (getLabelProvider() instanceof IColorProvider) {
+                    // color update for all elements
+                    Color foreground = ((IColorProvider) getLabelProvider()).getForeground(element);
+                    if (foreground == null) {
+                        foreground = getStyleProvider().getLaneColor();
+                    }
 
-			else if (isTrackElement(element))
-				getControl().getRootFigure().updateTrackFigure(figure, getLabelProvider().getText(element));
+                    figure.setForegroundColor(foreground);
 
-			else if (isEventElement(element))
-				getControl().getRootFigure().updateEventFigure(figure, toEvent(element));
-
-			else if (isLaneElement(element)) {
-				if (getLabelProvider() instanceof IColorProvider) {
-					// color update for all elements
-					Color foreground = ((IColorProvider) getLabelProvider()).getForeground(element);
-					if (foreground == null)
-						foreground = getStyleProvider().getLaneColor();
-
-					figure.setForegroundColor(foreground);
-
-					internalRefresh(element);
-				}
-			}
+                    internalRefresh(element);
+                }
+            }
 		}
 	}
 
 	private ICursor toCursor(Object element) {
-		if (element instanceof ICursor)
-			return (ICursor) element;
+        if (element instanceof ICursor) {
+            return (ICursor) element;
+        }
 
 		final Timing timings = getLabelProvider().getTimings(element);
 		if (timings != null) {
@@ -273,8 +277,9 @@ public class TimelineViewer extends StructuredViewer {
 	}
 
 	private ITimelineEvent toEvent(Object element) {
-		if (element instanceof ITimelineEvent)
-			return (ITimelineEvent) element;
+        if (element instanceof ITimelineEvent) {
+            return (ITimelineEvent) element;
+        }
 
 		final Timing timings = getLabelProvider().getTimings(element);
 		if (timings != null) {
@@ -285,13 +290,15 @@ public class TimelineViewer extends StructuredViewer {
 			final ITimelineLabelProvider labelProvider = getLabelProvider();
 			event.setTitle(labelProvider.getText(element));
 
-			if (labelProvider instanceof IToolTipProvider)
-				event.setMessage(((IToolTipProvider) labelProvider).getToolTipText(element));
+            if (labelProvider instanceof IToolTipProvider) {
+                event.setMessage(((IToolTipProvider) labelProvider).getToolTipText(element));
+            }
 
 			if (labelProvider instanceof IColorProvider) {
 				final Color color = ((IColorProvider) labelProvider).getForeground(element);
-				if (color != null)
-					event.setColorCode(toColorCode(color));
+                if (color != null) {
+                    event.setColorCode(toColorCode(color));
+                }
 			}
 
 			return event;
@@ -341,8 +348,9 @@ public class TimelineViewer extends StructuredViewer {
 
 			} else if (figure instanceof LaneFigure) {
 				unregisterFigures(figure.getChildren());
-				for (final EventFigure eventFigure : ((LaneFigure) figure).getEventFigures())
-					getControl().getRootFigure().deleteEventFigure(eventFigure);
+                for (final EventFigure eventFigure : ((LaneFigure) figure).getEventFigures()) {
+                    getControl().getRootFigure().deleteEventFigure(eventFigure);
+                }
 
 				final Object lane = getModelElementFor(figure);
 				for (final Object event : getContentProvider().getEvents(lane)) {
@@ -381,8 +389,9 @@ public class TimelineViewer extends StructuredViewer {
 	}
 
 	private void unregisterModelElements(Collection<?> modelElements) {
-		for (final Object element : modelElements)
-			unregisterModelElement(element);
+        for (final Object element : modelElements) {
+            unregisterModelElement(element);
+        }
 	}
 
 	private void unregisterModelElement(Object modelElement) {
@@ -390,8 +399,9 @@ public class TimelineViewer extends StructuredViewer {
 	}
 
 	private void unregisterFigures(Collection<?> figures) {
-		for (final Object element : figures)
-			fElementToFigureMap.removeValue(element);
+        for (final Object element : figures) {
+            fElementToFigureMap.removeValue(element);
+        }
 	}
 
 	private void registerFigure(Object modelElement, IFigure figure) {
@@ -409,8 +419,9 @@ public class TimelineViewer extends StructuredViewer {
 	@Override
 	public void reveal(Object element) {
 		element = toEvent(element);
-		if (element == null)
-			element = toCursor(element);
+        if (element == null) {
+            element = toCursor(element);
+        }
 
 		if (element instanceof ITimelineEvent) {
 			final TimeBaseConverter timeViewDetails = RootFigure.getTimeViewDetails(getControl().getRootFigure());
@@ -427,8 +438,9 @@ public class TimelineViewer extends StructuredViewer {
 		final EventFigure selectedFigure = getControl().getRootFigure().getSelection();
 		if (selectedFigure != null) {
 			final Object modelElement = fElementToFigureMap.getKey(selectedFigure);
-			if (modelElement != null)
-				return Arrays.asList(modelElement);
+            if (modelElement != null) {
+                return Arrays.asList(modelElement);
+            }
 		}
 
 		return Collections.emptyList();
@@ -440,12 +452,14 @@ public class TimelineViewer extends StructuredViewer {
 			final ITimelineEvent event = toEvent(l.get(0));
 			if (event != null) {
 				final IFigure eventFigure = fElementToFigureMap.get(event);
-				if (eventFigure instanceof EventFigure)
-					getControl().getRootFigure().setSelection((EventFigure) eventFigure);
+                if (eventFigure instanceof EventFigure) {
+                    getControl().getRootFigure().setSelection((EventFigure) eventFigure);
+                }
 			}
 
-		} else
-			getControl().getRootFigure().setSelection(null);
+		} else {
+            getControl().getRootFigure().setSelection(null);
+        }
 	}
 
 	@Override

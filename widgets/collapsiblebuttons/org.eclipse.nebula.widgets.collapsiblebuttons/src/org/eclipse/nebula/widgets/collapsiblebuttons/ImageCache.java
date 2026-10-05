@@ -82,7 +82,8 @@ public class ImageCache {
      */
     public static void dispose() {
         Iterator<Image> e = mImageMap.values().iterator();
-        while (e.hasNext())
-        	e.next().dispose();
+        while (e.hasNext()) {
+            e.next().dispose();
+        }
     }
 }

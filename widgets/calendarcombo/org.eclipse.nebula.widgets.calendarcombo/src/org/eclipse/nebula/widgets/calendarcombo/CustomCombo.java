@@ -107,14 +107,17 @@ public class CustomCombo extends Composite {
 		super(parent, style = checkStyle(style));
 
 		int textStyle = SWT.SINGLE;
-		if ((style & SWT.READ_ONLY) != 0)
-			textStyle |= SWT.READ_ONLY;
-		if ((style & SWT.FLAT) != 0)
-			textStyle |= SWT.FLAT;
+        if ((style & SWT.READ_ONLY) != 0) {
+            textStyle |= SWT.READ_ONLY;
+        }
+        if ((style & SWT.FLAT) != 0) {
+            textStyle |= SWT.FLAT;
+        }
 		text = new Text(this, textStyle);
 		int arrowStyle = SWT.ARROW | SWT.DOWN;
-		if ((style & SWT.FLAT) != 0)
-			arrowStyle |= SWT.FLAT;
+        if ((style & SWT.FLAT) != 0) {
+            arrowStyle |= SWT.FLAT;
+        }
 		arrow = new Button(this, arrowStyle);
 
 		listener = new Listener() {
@@ -142,8 +145,9 @@ public class CustomCombo extends Composite {
 				if (getShell() == event.widget) {
 					getDisplay().asyncExec(new Runnable() {
 						public void run() {
-							if (isDisposed())
-								return;
+                            if (isDisposed()) {
+                                return;
+                            }
 							handleFocus(SWT.FocusOut);
 						}
 					});
@@ -160,17 +164,20 @@ public class CustomCombo extends Composite {
 		};
 
 		int[] comboEvents = { SWT.Dispose, SWT.FocusIn, SWT.Move, SWT.Resize };
-		for (int i = 0; i < comboEvents.length; i++)
-			this.addListener(comboEvents[i], listener);
+        for (int i = 0; i < comboEvents.length; i++) {
+            this.addListener(comboEvents[i], listener);
+        }
 
 		int[] textEvents = { SWT.DefaultSelection, SWT.KeyDown, SWT.KeyUp, SWT.MenuDetect, SWT.Modify, SWT.MouseDown, SWT.MouseUp, SWT.MouseDoubleClick, SWT.MouseWheel,
 				SWT.Traverse, SWT.FocusIn, SWT.Verify };
-		for (int i = 0; i < textEvents.length; i++)
-			text.addListener(textEvents[i], listener);
+        for (int i = 0; i < textEvents.length; i++) {
+            text.addListener(textEvents[i], listener);
+        }
 
 		int[] arrowEvents = { SWT.MouseDown, SWT.MouseUp, SWT.Selection, SWT.FocusIn };
-		for (int i = 0; i < arrowEvents.length; i++)
-			arrow.addListener(arrowEvents[i], listener);
+        for (int i = 0; i < arrowEvents.length; i++) {
+            arrow.addListener(arrowEvents[i], listener);
+        }
 
 		createPopup(null, -1);
 		initAccessible();
@@ -200,8 +207,9 @@ public class CustomCombo extends Composite {
 	 */
 	public void add(String string) {
 		checkWidget();
-		if (string == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		list.add(string);
 	}
 
@@ -232,8 +240,9 @@ public class CustomCombo extends Composite {
 	 */
 	public void add(String string, int index) {
 		checkWidget();
-		if (string == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		list.add(string, index);
 	}
 
@@ -398,8 +407,9 @@ public class CustomCombo extends Composite {
 			break;
 		case SWT.FocusIn:
 			Control focusControl = getDisplay().getFocusControl();
-			if (focusControl == arrow || focusControl == list)
-				return;
+            if (focusControl == arrow || focusControl == list) {
+                return;
+            }
 			if (isDropped()) {
 				list.setFocus();
 			} else {
@@ -433,10 +443,12 @@ public class CustomCombo extends Composite {
 
 		height = Math.max(textSize.y, arrowSize.y);
 		width = Math.max(textWidth + 2 * spacer + arrowSize.x + 2 * borderWidth, listSize.x);
-		if (wHint != SWT.DEFAULT)
-			width = wHint;
-		if (hHint != SWT.DEFAULT)
-			height = hHint;
+        if (wHint != SWT.DEFAULT) {
+            width = wHint;
+        }
+        if (hHint != SWT.DEFAULT) {
+            height = hHint;
+        }
 		return new Point(width + 2 * borderWidth, height + 2 * borderWidth);
 	}
 
@@ -465,31 +477,41 @@ public class CustomCombo extends Composite {
 		popup = new Shell(getShell(), SWT.NO_TRIM | SWT.ON_TOP);
 		int style = getStyle();
 		int listStyle = SWT.SINGLE | SWT.V_SCROLL;
-		if ((style & SWT.FLAT) != 0)
-			listStyle |= SWT.FLAT;
-		if ((style & SWT.RIGHT_TO_LEFT) != 0)
-			listStyle |= SWT.RIGHT_TO_LEFT;
-		if ((style & SWT.LEFT_TO_RIGHT) != 0)
-			listStyle |= SWT.LEFT_TO_RIGHT;
+        if ((style & SWT.FLAT) != 0) {
+            listStyle |= SWT.FLAT;
+        }
+        if ((style & SWT.RIGHT_TO_LEFT) != 0) {
+            listStyle |= SWT.RIGHT_TO_LEFT;
+        }
+        if ((style & SWT.LEFT_TO_RIGHT) != 0) {
+            listStyle |= SWT.LEFT_TO_RIGHT;
+        }
 		list = new List(popup, listStyle);
-		if (font != null)
-			list.setFont(font);
-		if (foreground != null)
-			list.setForeground(foreground);
-		if (background != null)
-			list.setBackground(background);
+        if (font != null) {
+            list.setFont(font);
+        }
+        if (foreground != null) {
+            list.setForeground(foreground);
+        }
+        if (background != null) {
+            list.setBackground(background);
+        }
 
 		int[] popupEvents = { SWT.Close, SWT.Paint, SWT.Deactivate };
-		for (int i = 0; i < popupEvents.length; i++)
-			popup.addListener(popupEvents[i], listener);
+        for (int i = 0; i < popupEvents.length; i++) {
+            popup.addListener(popupEvents[i], listener);
+        }
 		int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.Dispose };
-		for (int i = 0; i < listEvents.length; i++)
-			list.addListener(listEvents[i], listener);
+        for (int i = 0; i < listEvents.length; i++) {
+            list.addListener(listEvents[i], listener);
+        }
 
-		if (items != null)
-			list.setItems(items);
-		if (selectionIndex != -1)
-			list.setSelection(selectionIndex);
+        if (items != null) {
+            list.setItems(items);
+        }
+        if (selectionIndex != -1) {
+            list.setSelection(selectionIndex);
+        }
 	}
 
 	/**
@@ -558,8 +580,9 @@ public class CustomCombo extends Composite {
 	}
 
 	protected void dropDown(boolean drop) {
-		if (drop == isDropped() || !isVisible())
-			return;
+        if (drop == isDropped() || !isVisible()) {
+            return;
+        }
 		if (!drop) {
 			popup.setVisible(false);
 			if (!isDisposed() && isFocusControl()) {
@@ -586,8 +609,9 @@ public class CustomCombo extends Composite {
 		list.setBounds(1, 1, Math.max(size.x - 2, listSize.x), listSize.y);
 
 		int index = list.getSelectionIndex();
-		if (index != -1)
-			list.setTopIndex(index);
+        if (index != -1) {
+            list.setTopIndex(index);
+        }
 		Display display = getDisplay();
 		Rectangle listRect = list.getBounds();
 		Rectangle parentRect = display.map(getParent(), null, getBounds());
@@ -597,14 +621,17 @@ public class CustomCombo extends Composite {
 		int height = listRect.height + 2;
 		int x = parentRect.x;
 		int y = parentRect.y + comboSize.y;
-		if (y + height > displayRect.y + displayRect.height)
-			y = parentRect.y - height;
-		if (x + width > displayRect.x + displayRect.width)
-			x = displayRect.x + displayRect.width - listRect.width;
+        if (y + height > displayRect.y + displayRect.height) {
+            y = parentRect.y - height;
+        }
+        if (x + width > displayRect.x + displayRect.width) {
+            x = displayRect.x + displayRect.width - listRect.width;
+        }
 		popup.setBounds(x, y, width, height);
 		popup.setVisible(true);
-		if (isFocusControl())
-			list.setFocus();
+        if (isFocusControl()) {
+            list.setFocus();
+        }
 	}
 
 	/*
@@ -613,17 +640,21 @@ public class CustomCombo extends Composite {
 	 * given string, return '\0'.
 	 */
 	char _findMnemonic(String string) {
-		if (string == null)
-			return '\0';
+        if (string == null) {
+            return '\0';
+        }
 		int index = 0;
 		int length = string.length();
 		do {
-			while (index < length && string.charAt(index) != '&')
-				index++;
-			if (++index >= length)
-				return '\0';
-			if (string.charAt(index) != '&')
-				return Character.toLowerCase(string.charAt(index));
+            while (index < length && string.charAt(index) != '&') {
+                index++;
+            }
+            if (++index >= length) {
+                return '\0';
+            }
+            if (string.charAt(index) != '&') {
+                return Character.toLowerCase(string.charAt(index));
+            }
 			index++;
 		} while (index < length);
 		return '\0';
@@ -821,8 +852,9 @@ public class CustomCombo extends Composite {
 	public int getStyle() {
 		int style = super.getStyle();
 		style &= ~SWT.READ_ONLY;
-		if (!text.getEditable())
-			style |= SWT.READ_ONLY;
+        if (!text.getEditable()) {
+            style |= SWT.READ_ONLY;
+        }
 		return style;
 	}
 
@@ -902,14 +934,17 @@ public class CustomCombo extends Composite {
 	}
 
 	void handleFocus(int type) {
-		if (isDisposed())
-			return;
+        if (isDisposed()) {
+            return;
+        }
 		switch (type) {
 		case SWT.FocusIn: {
-			if (hasFocus)
-				return;
-			if (getEditable())
-				text.selectAll();
+            if (hasFocus) {
+                return;
+            }
+            if (getEditable()) {
+                text.selectAll();
+            }
 			hasFocus = true;
 			Shell shell = getShell();
 			shell.removeListener(SWT.Deactivate, listener);
@@ -922,11 +957,13 @@ public class CustomCombo extends Composite {
 			break;
 		}
 		case SWT.FocusOut: {
-			if (!hasFocus)
-				return;
+            if (!hasFocus) {
+                return;
+            }
 			Control focusControl = getDisplay().getFocusControl();
-			if (focusControl == arrow || focusControl == list || focusControl == text)
-				return;
+            if (focusControl == arrow || focusControl == list || focusControl == text) {
+                return;
+            }
 			hasFocus = false;
 			Shell shell = getShell();
 			shell.removeListener(SWT.Deactivate, listener);
@@ -959,8 +996,9 @@ public class CustomCombo extends Composite {
 	 */
 	public int indexOf(String string) {
 		checkWidget();
-		if (string == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		return list.indexOf(string);
 	}
 
@@ -986,8 +1024,9 @@ public class CustomCombo extends Composite {
 	 */
 	public int indexOf(String string, int start) {
 		checkWidget();
-		if (string == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		return list.indexOf(string, start);
 	}
 
@@ -1111,8 +1150,9 @@ public class CustomCombo extends Composite {
 	}
 
 	void internalLayout(boolean changed) {
-		if (isDropped())
-			dropDown(false);
+        if (isDropped()) {
+            dropDown(false);
+        }
 		Rectangle rect = getClientArea();
 		int width = rect.width;
 		int height = rect.height;
@@ -1137,15 +1177,17 @@ public class CustomCombo extends Composite {
 			break;
 		}
 		case SWT.MouseUp: {
-			if (event.button != 1)
-				return;
+            if (event.button != 1) {
+                return;
+            }
 			dropDown(false);
 			break;
 		}
 		case SWT.Selection: {
 			int index = list.getSelectionIndex();
-			if (index == -1)
-				return;
+            if (index == -1) {
+                return;
+            }
 			text.setText(list.getItem(index));
 			text.selectAll();
 			list.setSelection(index);
@@ -1169,8 +1211,9 @@ public class CustomCombo extends Composite {
 			case SWT.TRAVERSE_TAB_PREVIOUS:
 				event.doit = text.traverse(event.detail);
 				event.detail = SWT.TRAVERSE_NONE;
-				if (event.doit)
-					dropDown(false);
+                if (event.doit) {
+                    dropDown(false);
+                }
 				return;
 			}
 			Event e = new Event();
@@ -1209,10 +1252,11 @@ public class CustomCombo extends Composite {
 				e.stateMask = event.stateMask;
 				notifyListeners(SWT.DefaultSelection, e);
 			}
-			// At this point the widget may have been disposed.
-			// If so, do not continue.
-			if (isDisposed())
-				break;
+            // At this point the widget may have been disposed.
+            // If so, do not continue.
+            if (isDisposed()) {
+                break;
+            }
 			Event e = new Event();
 			e.time = event.time;
 			e.character = event.character;
@@ -1274,8 +1318,9 @@ public class CustomCombo extends Composite {
 				Point point = arrow.toControl(getDisplay().getCursorLocation());
 				Point size = arrow.getSize();
 				Rectangle rect = new Rectangle(0, 0, size.x, size.y);
-				if (!rect.contains(point))
-					dropDown(false);
+                if (!rect.contains(point)) {
+                    dropDown(false);
+                }
 			} else {
 				dropDown(false);
 			}
@@ -1287,8 +1332,9 @@ public class CustomCombo extends Composite {
 		super.redraw();
 		text.redraw();
 		arrow.redraw();
-		if (popup.isVisible())
-			list.redraw();
+        if (popup.isVisible()) {
+            list.redraw();
+        }
 	}
 
 	public void redraw(int x, int y, int width, int height, boolean all) {
@@ -1362,8 +1408,9 @@ public class CustomCombo extends Composite {
 	 */
 	public void remove(String string) {
 		checkWidget();
-		if (string == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		list.remove(string);
 	}
 
@@ -1486,12 +1533,15 @@ public class CustomCombo extends Composite {
 	public void setBackground(Color color) {
 		super.setBackground(color);
 		background = color;
-		if (text != null)
-			text.setBackground(color);
-		if (list != null)
-			list.setBackground(color);
-		if (arrow != null)
-			arrow.setBackground(color);
+        if (text != null) {
+            text.setBackground(color);
+        }
+        if (list != null) {
+            list.setBackground(color);
+        }
+        if (arrow != null) {
+            arrow.setBackground(color);
+        }
 	}
 
 	/**
@@ -1514,20 +1564,25 @@ public class CustomCombo extends Composite {
 
 	public void setEnabled(boolean enabled) {
 		super.setEnabled(enabled);
-		if (popup != null)
-			popup.setVisible(false);
-		if (text != null)
-			text.setEnabled(enabled);
-		if (arrow != null)
-			arrow.setEnabled(enabled);
+        if (popup != null) {
+            popup.setVisible(false);
+        }
+        if (text != null) {
+            text.setEnabled(enabled);
+        }
+        if (arrow != null) {
+            arrow.setEnabled(enabled);
+        }
 	}
 
 	public boolean setFocus() {
 		checkWidget();
-		if (!isEnabled() || !isVisible())
-			return false;
-		if (isFocusControl())
-			return true;
+        if (!isEnabled() || !isVisible()) {
+            return false;
+        }
+        if (isFocusControl()) {
+            return true;
+        }
 		return text.setFocus();
 	}
 
@@ -1542,12 +1597,15 @@ public class CustomCombo extends Composite {
 	public void setForeground(Color color) {
 		super.setForeground(color);
 		foreground = color;
-		if (text != null)
-			text.setForeground(color);
-		if (list != null)
-			list.setForeground(color);
-		if (arrow != null)
-			arrow.setForeground(color);
+        if (text != null) {
+            text.setForeground(color);
+        }
+        if (list != null) {
+            list.setForeground(color);
+        }
+        if (arrow != null) {
+            arrow.setForeground(color);
+        }
 	}
 
 	/**
@@ -1594,8 +1652,9 @@ public class CustomCombo extends Composite {
 	public void setItems(String[] items) {
 		checkWidget();
 		list.setItems(items);
-		if (!text.getEditable())
-			text.setText(""); //$NON-NLS-1$
+        if (!text.getEditable()) {
+            text.setText(""); //$NON-NLS-1$
+        }
 	}
 
 	/**
@@ -1668,8 +1727,9 @@ public class CustomCombo extends Composite {
 	 */
 	public void setSelection(Point selection) {
 		checkWidget();
-		if (selection == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (selection == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		text.setSelection(selection.x, selection.y);
 	}
 
@@ -1696,8 +1756,9 @@ public class CustomCombo extends Composite {
 	 */
 	public void setText(String string) {
 		checkWidget();
-		if (string == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		int index = list.indexOf(string);
 		if (index == -1) {
 			list.deselectAll();
@@ -1740,17 +1801,20 @@ public class CustomCombo extends Composite {
 
 	public void setVisible(boolean visible) {
 		super.setVisible(visible);
-		/*
-		 * At this point the widget may have been disposed in a FocusOut event.
-		 * If so then do not continue.
-		 */
-		if (isDisposed())
-			return;
-		// TEMPORARY CODE
-		if (popup == null || popup.isDisposed())
-			return;
-		if (!visible)
-			popup.setVisible(false);
+        /*
+         * At this point the widget may have been disposed in a FocusOut event.
+         * If so then do not continue.
+         */
+        if (isDisposed()) {
+            return;
+        }
+        // TEMPORARY CODE
+        if (popup == null || popup.isDisposed()) {
+            return;
+        }
+        if (!visible) {
+            popup.setVisible(false);
+        }
 	}
 
 	/**
@@ -1770,8 +1834,9 @@ public class CustomCombo extends Composite {
 	 */
 	public void setVisibleItemCount(int count) {
 		checkWidget();
-		if (count < 0)
-			return;
+        if (count < 0) {
+            return;
+        }
 		visibleItemCount = count;
 	}
 
@@ -1779,10 +1844,12 @@ public class CustomCombo extends Composite {
 		int index = 0;
 		int length = string.length();
 		do {
-			while ((index < length) && (string.charAt(index) != '&'))
-				index++;
-			if (++index >= length)
-				return string;
+            while ((index < length) && (string.charAt(index) != '&')) {
+                index++;
+            }
+            if (++index >= length) {
+                return string;
+            }
 			if (string.charAt(index) != '&') {
 				return string.substring(0, index - 1) + string.substring(index, length);
 			}
@@ -1812,18 +1879,21 @@ public class CustomCombo extends Composite {
 			keyEvent.keyCode = event.keyCode;
 			keyEvent.stateMask = event.stateMask;
 			notifyListeners(SWT.KeyDown, keyEvent);
-			if (isDisposed())
-				break;
+            if (isDisposed()) {
+                break;
+            }
 			event.doit = keyEvent.doit;
-			if (!event.doit)
-				break;
+            if (!event.doit) {
+                break;
+            }
 			if (event.keyCode == SWT.ARROW_UP || event.keyCode == SWT.ARROW_DOWN) {
 				event.doit = false;
 				if ((event.stateMask & SWT.ALT) != 0) {
 					boolean dropped = isDropped();
 					text.selectAll();
-					if (!dropped)
-						setFocus();
+                    if (!dropped) {
+                        setFocus();
+                    }
 					dropDown(!dropped);
 					break;
 				}
@@ -1840,8 +1910,9 @@ public class CustomCombo extends Composite {
 					e.stateMask = event.stateMask;
 					notifyListeners(SWT.Selection, e);
 				}
-				if (isDisposed())
-					break;
+                if (isDisposed()) {
+                    break;
+                }
 			}
 
 			// Further work : Need to add support for incremental search in
@@ -1880,19 +1951,24 @@ public class CustomCombo extends Composite {
 			mouseEvent.x = event.x;
 			mouseEvent.y = event.y;
 			notifyListeners(SWT.MouseDown, mouseEvent);
-			if (isDisposed())
-				break;
+            if (isDisposed()) {
+                break;
+            }
 			event.doit = mouseEvent.doit;
-			if (!event.doit)
-				break;
-			if (event.button != 1)
-				return;
-			if (text.getEditable())
-				return;
+            if (!event.doit) {
+                break;
+            }
+            if (event.button != 1) {
+                return;
+            }
+            if (text.getEditable()) {
+                return;
+            }
 			boolean dropped = isDropped();
 			text.selectAll();
-			if (!dropped)
-				setFocus();
+            if (!dropped) {
+                setFocus();
+            }
 			dropDown(!dropped);
 			break;
 		}
@@ -1905,15 +1981,19 @@ public class CustomCombo extends Composite {
 			mouseEvent.x = event.x;
 			mouseEvent.y = event.y;
 			notifyListeners(SWT.MouseUp, mouseEvent);
-			if (isDisposed())
-				break;
+            if (isDisposed()) {
+                break;
+            }
 			event.doit = mouseEvent.doit;
-			if (!event.doit)
-				break;
-			if (event.button != 1)
-				return;
-			if (text.getEditable())
-				return;
+            if (!event.doit) {
+                break;
+            }
+            if (event.button != 1) {
+                return;
+            }
+            if (text.getEditable()) {
+                return;
+            }
 			text.selectAll();
 			break;
 		}
@@ -1934,11 +2014,13 @@ public class CustomCombo extends Composite {
 			keyEvent.keyCode = event.count > 0 ? SWT.ARROW_UP : SWT.ARROW_DOWN;
 			keyEvent.stateMask = event.stateMask;
 			notifyListeners(SWT.KeyDown, keyEvent);
-			if (isDisposed())
-				break;
+            if (isDisposed()) {
+                break;
+            }
 			event.doit = keyEvent.doit;
-			if (!event.doit)
-				break;
+            if (!event.doit) {
+                break;
+            }
 			if (event.count != 0) {
 				event.doit = false;
 				int oldIndex = getSelectionIndex();
@@ -1953,8 +2035,9 @@ public class CustomCombo extends Composite {
 					e.stateMask = event.stateMask;
 					notifyListeners(SWT.Selection, e);
 				}
-				if (isDisposed())
-					break;
+                if (isDisposed()) {
+                    break;
+                }
 			}
 			break;
 		}
