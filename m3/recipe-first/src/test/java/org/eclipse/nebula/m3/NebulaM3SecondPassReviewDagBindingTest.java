@@ -66,7 +66,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
                 "com.synexia.rewrite.M3RepositoryAtomPatternSecondPass",
                 NebulaM3SecondPassBinding.RECIPE);
         assertEquals(4, NebulaM3SecondPassBinding.PASS_BUDGET);
-        assertFalse(NebulaM3SecondPassBinding.mutationAuthority());
+        assertFalse(NebulaM3SecondPassBinding.sourceMutationAuthority());
         assertFalse(NebulaM3SecondPassBinding.promotionAuthority());
     }
 
