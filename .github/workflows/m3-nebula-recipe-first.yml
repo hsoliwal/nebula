@@ -57,7 +57,7 @@ jobs:
           python3 m3/verify-source-custody.py "$BASE_SHA"
           bash -n m3/convergence/verify.sh
           grep -F $'3\tSECOND_PASS_SIGNAL_CHAIN' m3/convergence/PLAN.tsv
-          grep -F $'7\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F $'8\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
           grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
           grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' .m3/atom-pattern/policy.properties
@@ -262,7 +262,7 @@ jobs:
           set -euo pipefail
           test -z "$(git diff --name-only --cached)"
           test ! -e widgets/cwt/org.eclipse.nebula.cwt.tests/src/org/eclipse/nebula/cwt/svg/SvgLoaderLengthTests.java
-          grep -F $'7\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F $'8\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'java.secondPassPromotion=false' .m3/atom-pattern/policy.properties
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
