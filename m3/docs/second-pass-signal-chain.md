@@ -6,9 +6,13 @@ Pinned upstream evidence:
 
 - repository: `hsoliwal/com.synexia`
 - branch: `feat/m3-second-pass-signal-chain-20261004`
-- commit: `5a369dc9dc84db32489c732cf05ee6c054d67db2`
+- commit: `48c2caacd21ebaf234cc17b5ad6b74651e5f890d`
 - PR: `#8891`
 - recipe: `com.synexia.rewrite.M3SecondPassAtomPatternRecipe`
+- canonical scheduler catalog: `com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog`
+- canonical catalog file: `synexia-m3-recipe/recipes/second-pass-atom-pattern.yaml`
+- state mode: `SHARED_JVM_COMPOSITE`
+- external leaf fan-out: `false`
 - pass budget: `2`
 
 The existing Nebula root profile `m3-atomize-patternize` activates
@@ -40,9 +44,9 @@ authority. Nebula's existing local FILE convergence recipe remains the only cand
 Before running the Nebula `m3-atomize-patternize` profile, install the exact pinned Synexia recipe
 artifact from the commit above as `com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT`.
 
-Hosted proof is not claimed yet. The dedicated Synexia workflow currently fails before GitHub
-creates a job, in the same repository-wide startup-failure pattern as unrelated workflows. That is
-not a Maven/JUnit pass or failure.
+Hosted proof is not claimed yet. The refreshed dedicated Synexia second-pass workflow is pending
+for the pinned commit above. Until its focused Maven/JUnit jobs complete successfully, this binding
+remains candidate/read-only evidence and cannot authorize source mutation or promotion.
 
 The binding is machine-readable in `m3/catalogue/second-pass-recipe-binding.tsv`.
 
