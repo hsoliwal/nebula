@@ -53,11 +53,30 @@ final class GridAffineTransform {
 		return new GridAffineTransform(x, 0, 0, y, 0, 0);
 	}
 
+	static GridAffineTransform rotation(float radians) {
+		if (radians == 0f) {
+			return IDENTITY;
+		}
+		float sin = (float)Math.sin(radians);
+		float cos = (float)Math.cos(radians);
+		return new GridAffineTransform(cos, sin, -sin, cos, 0, 0);
+	}
+
+	static GridAffineTransform shear(float x, float y) {
+		if (x == 0f && y == 0f) {
+			return IDENTITY;
+		}
+		return new GridAffineTransform(1, y, x, 1, 0, 0);
+	}
+
 	GridAffineTransform then(GridAffineTransform next) {
-        if (next == IDENTITY) {
+        if (next == null) {
+            throw new IllegalArgumentException("next");
+        }
+        if (next.isIdentity()) {
             return this;
         }
-        if (this == IDENTITY) {
+        if (isIdentity()) {
             return next;
         }
 		return new GridAffineTransform(
@@ -67,6 +86,34 @@ final class GridAffineTransform {
 				next.m12 * m21 + next.m22 * m22,
 				next.m11 * dx + next.m21 * dy + next.dx,
 				next.m12 * dx + next.m22 * dy + next.dy);
+	}
+
+	float determinant() {
+		return m11 * m22 - m21 * m12;
+	}
+
+	GridAffineTransform inverse() {
+		float determinant = determinant();
+		if (!Float.isFinite(determinant) || determinant == 0f) {
+			throw new IllegalStateException("non-invertible affine transform");
+		}
+		float inverseDeterminant = 1f / determinant;
+		float i11 = m22 * inverseDeterminant;
+		float i12 = -m12 * inverseDeterminant;
+		float i21 = -m21 * inverseDeterminant;
+		float i22 = m11 * inverseDeterminant;
+		float idx = -(i11 * dx + i21 * dy);
+		float idy = -(i12 * dx + i22 * dy);
+		return new GridAffineTransform(i11, i12, i21, i22, idx, idy);
+	}
+
+	boolean isIdentity() {
+		return this == IDENTITY
+				|| (m11 == 1f && m12 == 0f && m21 == 0f && m22 == 1f && dx == 0f && dy == 0f);
+	}
+
+	boolean isTranslationOnly() {
+		return m11 == 1f && m12 == 0f && m21 == 0f && m22 == 1f;
 	}
 
 	float[] elements() {
