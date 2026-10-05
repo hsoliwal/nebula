@@ -169,38 +169,45 @@ proof can establish a candidate, and only serial review can promote it.
 ## Second-pass signal-chain reuse
 
 Nebula does not duplicate the Synexia second-pass detector. The existing root profile
-`m3-atomize-patternize` consumes `com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`;
-the pinned upstream recipe branch includes the read-only second-pass signal DAG before any
-source-changing lane.
+`m3-atomize-patternize` consumes an exact merged Synexia recipe artifact. CI overrides the
+profile's broad compatibility entry point with the canonical named repository second-pass:
+
+`com.synexia.rewrite.M3RepositoryAtomPatternSecondPass`
 
 Exact reviewed binding:
 
 ```text
 repository  hsoliwal/com.synexia
-branch      feat/m3-second-pass-signal-chain-20261004
-commit      f140771ad2ce772cee21671d8d7f340e35f0d407
-PR          8891
-recipe      com.synexia.rewrite.M3SecondPassAtomPatternRecipe
-catalog     com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog
+branch      develop
+commit      daaab09a1b91fe8344c1ea97359342b52739bf38
+PR          8925 (integrates 8891)
+recipe      com.synexia.rewrite.M3RepositoryAtomPatternSecondPass
+signal      com.synexia.rewrite.M3AtomPatternSignalChainRecipe
+DAG         com.synexia.m3.recipe.OpenRewriteRecipeDagPlan
 state       SHARED_JVM_COMPOSITE; external leaf fan-out=false
-budget      2
+budget      4
 authority   read-only; no mutation/replacement/promotion
 ```
 
-Install that exact Synexia recipe artifact first, then run:
+Install that exact Synexia commit first, then run:
 
 ```bash
-mvn -B -ntp -Pm3-atomize-patternize rewrite:dryRunNoFork
+mvn -B -ntp -Pm3-atomize-patternize \
+  -Drewrite.activeRecipes=com.synexia.rewrite.M3RepositoryAtomPatternSecondPass \
+  rewrite:dryRunNoFork
 ```
 
 The machine binding is `catalogue/second-pass-recipe-binding.tsv`; the Java owner is
 `NebulaM3SecondPassBinding`. The convergence plan records the signal chain as a read-only
 pre-mutation gate. Lexically masked regex may nominate a candidate but never certify a transform;
-AST/LST structural/control/contract facts remain authoritative.
+AST/LST structural/control/contract facts remain authoritative. The merged signal recipe uses three
+internal fixed-point passes and the saved application budget is 4; budget 2 is intentionally
+insufficient.
 
-Hosted Maven/JUnit success is not claimed until the refreshed upstream dedicated workflow
-completes successfully for the exact pinned commit. The binding remains read-only/candidate-only
-while that proof is pending.
+Hosted Nebula execution remains evidence, not promotion authority. The workflow checks out the exact
+Synexia merge commit, installs the recipe artifact, runs the named repository second-pass twice, and
+requires the Nebula source tree to remain unchanged.
+
 
 ### Orchestration locality
 
