@@ -15,16 +15,19 @@ final class NebulaM3SecondPassBindingTest {
     void exactBindingIsAuthorityFreeAndContentIsPinned() {
         assertEquals("hsoliwal/com.synexia", NebulaM3SecondPassBinding.UPSTREAM_REPOSITORY);
         assertEquals(
-                "feat/m3-second-pass-signal-chain-20261004",
+                "develop",
                 NebulaM3SecondPassBinding.UPSTREAM_BRANCH);
         assertTrue(NebulaM3SecondPassBinding.UPSTREAM_COMMIT.matches("[0-9a-f]{40}"));
-        assertEquals(8891, NebulaM3SecondPassBinding.UPSTREAM_PR);
+        assertEquals(8925, NebulaM3SecondPassBinding.UPSTREAM_PR);
         assertEquals(
-                "com.synexia.rewrite.M3SecondPassAtomPatternRecipe",
+                "com.synexia.rewrite.M3RepositoryAtomPatternSecondPass",
                 NebulaM3SecondPassBinding.RECIPE);
-        assertEquals(2, NebulaM3SecondPassBinding.PASS_BUDGET);
+        assertEquals(4, NebulaM3SecondPassBinding.PASS_BUDGET);
         assertEquals(
-                "com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog",
+                "com.synexia.rewrite.M3AtomPatternSignalChainRecipe",
+                NebulaM3SecondPassBinding.SIGNAL_CHAIN_CLASS);
+        assertEquals(
+                "com.synexia.m3.recipe.OpenRewriteRecipeDagPlan",
                 NebulaM3SecondPassBinding.CANONICAL_CATALOG);
         assertEquals("SHARED_JVM_COMPOSITE", NebulaM3SecondPassBinding.STATE_MODE);
         assertFalse(NebulaM3SecondPassBinding.EXTERNAL_LEAF_FAN_OUT);
@@ -89,6 +92,8 @@ final class NebulaM3SecondPassBindingTest {
         assertTrue(policy.contains(
                 "java.secondPassUpstreamCommit=" + NebulaM3SecondPassBinding.UPSTREAM_COMMIT));
         assertTrue(policy.contains(
+                "java.secondPassSignalChainClass=" + NebulaM3SecondPassBinding.SIGNAL_CHAIN_CLASS));
+        assertTrue(policy.contains(
                 "java.secondPassCanonicalCatalog=" + NebulaM3SecondPassBinding.CANONICAL_CATALOG));
         assertTrue(policy.contains(
                 "java.secondPassStateMode=" + NebulaM3SecondPassBinding.STATE_MODE));
@@ -99,10 +104,18 @@ final class NebulaM3SecondPassBindingTest {
 
         assertTrue(plan.contains(
                 "3\tSECOND_PASS_SIGNAL_CHAIN\t"
-                        + "com.synexia:"
                         + NebulaM3SecondPassBinding.RECIPE
                         + "\tFILE\tREAD_ONLY\t"));
         assertTrue(plan.contains("7\tFILE_FIXED_POINT\t"));
+    }
+
+    @Test
+    void rootPomUsesSavedCanonicalSecondPassRecipe() throws Exception {
+        Path repository = repositoryRoot();
+        String pom = Files.readString(repository.resolve("pom.xml"));
+
+        assertTrue(pom.contains(
+                "<recipe>" + NebulaM3SecondPassBinding.RECIPE + "</recipe>"));
     }
 
 }

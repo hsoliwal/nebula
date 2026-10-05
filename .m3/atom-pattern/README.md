@@ -39,3 +39,30 @@ verify, resolved classpath, UI parity, contract/effect checks and fixed point re
 Provenance, namespace ownership, exact bytes and unresolved residue travel upward with every receipt.
 Hash/shape similarity is only a comparison candidate. Never rebase `develop`, force-push, replace an
 existing local policy automatically, or treat a receipt as semantic-equivalence proof.
+
+## Canonical second-pass binding
+
+Nebula consumes the merged, read-only Synexia second-pass through an exact source pin:
+
+```text
+repository       hsoliwal/com.synexia
+branch           develop
+commit           daaab09a1b91fe8344c1ea97359342b52739bf38
+integration PR   #8925 (includes #8891)
+named recipe     com.synexia.rewrite.M3RepositoryAtomPatternSecondPass
+signal class     com.synexia.rewrite.M3AtomPatternSignalChainRecipe
+DAG compiler     com.synexia.m3.recipe.OpenRewriteRecipeDagPlan
+pass budget      4
+state mode       SHARED_JVM_COMPOSITE
+external fanout  false
+authority        read-only; mutation=false; replacement=false; promotion=false
+```
+
+The signal chain masks comments/strings/chars/text blocks before regex nomination. Regex is evidence
+only; OpenRewrite LST/AST structure remains semantic authority. The merged implementation requires
+three internal fixed-point passes, therefore budget 2 is deliberately invalid and is not used by
+this repository.
+
+The exact machine binding lives in `m3/catalogue/second-pass-recipe-binding.tsv` and is enforced by
+`NebulaM3SecondPassBindingTest`. CI installs exactly the pinned Synexia commit and runs the named
+repository second-pass twice with source diffs forbidden.

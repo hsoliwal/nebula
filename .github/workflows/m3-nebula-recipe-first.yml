@@ -61,10 +61,13 @@ jobs:
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
           grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
           grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' .m3/atom-pattern/policy.properties
-          grep -F 'java.secondPassRecipe=com.synexia.rewrite.M3SecondPassAtomPatternRecipe' .m3/atom-pattern/policy.properties
-          grep -F 'java.secondPassPassBudget=2' .m3/atom-pattern/policy.properties
-          grep -F 'java.secondPassUpstreamCommit=f140771ad2ce772cee21671d8d7f340e35f0d407' .m3/atom-pattern/policy.properties
-          grep -F 'java.secondPassCanonicalCatalog=com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog' .m3/atom-pattern/policy.properties
+          grep -F '<recipe>com.synexia.rewrite.M3RepositoryAtomPatternSecondPass</recipe>' pom.xml
+          grep -F 'java.secondPassRecipe=com.synexia.rewrite.M3RepositoryAtomPatternSecondPass' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassPassBudget=4' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassUpstreamBranch=develop' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassUpstreamCommit=daaab09a1b91fe8344c1ea97359342b52739bf38' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassSignalChainClass=com.synexia.rewrite.M3AtomPatternSignalChainRecipe' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassCanonicalCatalog=com.synexia.m3.recipe.OpenRewriteRecipeDagPlan' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassStateMode=SHARED_JVM_COMPOSITE' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassExternalLeafFanOut=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassMutation=false' .m3/atom-pattern/policy.properties
@@ -115,10 +118,10 @@ jobs:
           mvn -B -ntp -Pm3-local-repository-review rewrite:dryRunNoFork
           git diff --exit-code
 
-      - name: 3c - Run exact pinned Synexia second-pass recipe when authorized
+      - name: 3c - Run exact merged Synexia repository second-pass recipe when authorized
         env:
           GH_TOKEN: ${{ secrets.M3_SYNEXIA_TOKEN }}
-          SYNEXIA_COMMIT: f140771ad2ce772cee21671d8d7f340e35f0d407
+          SYNEXIA_COMMIT: daaab09a1b91fe8344c1ea97359342b52739bf38
         shell: bash
         run: |
           set -euo pipefail
@@ -126,6 +129,7 @@ jobs:
             echo "SECOND_PASS_EXECUTION=SKIPPED_NO_M3_SYNEXIA_TOKEN"
             exit 0
           fi
+          SECOND_PASS_RECIPE=com.synexia.rewrite.M3RepositoryAtomPatternSecondPass
           SYNEXIA_DIR="$RUNNER_TEMP/com.synexia-second-pass"
           rm -rf "$SYNEXIA_DIR"
           gh repo clone hsoliwal/com.synexia "$SYNEXIA_DIR"
@@ -137,11 +141,11 @@ jobs:
           )
           git diff --exit-code
           mvn -B -ntp -Pm3-atomize-patternize \
-            -Drewrite.activeRecipes=com.synexia.rewrite.M3SecondPassAtomPattern \
+            -Drewrite.activeRecipes="$SECOND_PASS_RECIPE" \
             rewrite:dryRunNoFork
           git diff --exit-code
           mvn -B -ntp -Pm3-atomize-patternize \
-            -Drewrite.activeRecipes=com.synexia.rewrite.M3SecondPassAtomPattern \
+            -Drewrite.activeRecipes="$SECOND_PASS_RECIPE" \
             rewrite:dryRunNoFork
           git diff --exit-code
           echo "SECOND_PASS_EXECUTION=READ_ONLY_TWO_RUNS_COMPLETE"

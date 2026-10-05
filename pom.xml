@@ -25,7 +25,7 @@ http://www.eclipse.org/legal/epl-v10.html -->
 			<!--
 				Opt-in M3 source-model distillation. The ordinary Nebula Tycho reactor
 				remains authoritative. This profile only runs the canonical Synexia
-				read-only Nebula atomize/patternize recipe and exports evidence.
+				read-only repository atom/pattern second-pass recipe and exports evidence.
 
 				Install com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT first.
 				For second-pass proof, that SNAPSHOT must come from the exact binding recorded in
@@ -45,7 +45,7 @@ http://www.eclipse.org/legal/epl-v10.html -->
 							<failOnDryRunResults>false</failOnDryRunResults>
 							<exportDatatables>true</exportDatatables>
 							<activeRecipes>
-								<recipe>com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe</recipe>
+								<recipe>com.synexia.rewrite.M3RepositoryAtomPatternSecondPass</recipe>
 							</activeRecipes>
 						</configuration>
 						<dependencies>
