@@ -1,0 +1,12 @@
+{
+  "command": "mvn -f pom.xml verify -e",
+  "java": 21,
+  "platform": "Linux x86_64 GTK3 under Xvfb",
+  "reactor_modules": 314,
+  "tests": 211,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "build_success": true,
+  "log_sha256": "75969dbf60a6a8b6debeff523f63e1666b835c414734208ae20e3f0f4e5bbd47"
+}

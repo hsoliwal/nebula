@@ -121,29 +121,30 @@ public class ReloadableJava21JavadocVisitor extends DocTreeScanner<Tree, List<Ja
                 }
             }
 
-            if (c == '\r') {
+            if (c == '\r' && i + 1 < source.length() && source.charAt(i + 1) == '\n') {
                 continue;
             }
 
-            if (c == '\n') {
+            if (c == '\n' || c == '\r') {
                 char prev = source.charAt(i - 1);
+                String exactNewline = c == '\r' ? "\r" : prev == '\r' ? "\r\n" : "\n";
                 if (inFirstPrefix) {
                     firstPrefix = firstPrefixBuilder.toString();
                     inFirstPrefix = false;
                 } else {
                     // Handle consecutive new lines.
-                    if ((prev == '\n' ||
+                    if ((prev == '\n' || prev == '\r' && c == '\r' ||
                             prev == '\r' && source.charAt(i - 2) == '\n')) {
-                        String prevLineLine = prev == '\n' ? "\n" : "\r\n";
+                        String prevLineLine = exactNewline;
                         lineBreaks.put(javadocContent.length(), new Javadoc.LineBreak(randomId(), prevLineLine, Markers.EMPTY));
                     } else if (marginBuilder != null) { // A new line with no '*' that only contains whitespace.
-                        String newLine = prev == '\r' ? "\r\n" : "\n";
+                        String newLine = exactNewline;
                         lineBreaks.put(javadocContent.length(), new Javadoc.LineBreak(randomId(), newLine, Markers.EMPTY));
-                        javadocContent.append(marginBuilder.substring(marginBuilder.indexOf("\n") + 1));
+                        javadocContent.append(marginBuilder.substring(marginBuilder.indexOf("\n") >= 0 ? marginBuilder.indexOf("\n") + 1 : 1));
                     }
-                    javadocContent.append(c);
+                    javadocContent.append('\n');
                 }
-                String newLine = prev == '\r' ? "\r\n" : "\n";
+                String newLine = exactNewline;
                 marginBuilder = new StringBuilder(newLine);
             } else if (marginBuilder != null) {
                 if (!Character.isWhitespace(c)) {
@@ -161,11 +162,13 @@ public class ReloadableJava21JavadocVisitor extends DocTreeScanner<Tree, List<Ja
                                     marginBuilder.toString(), Markers.EMPTY));
                             javadocContent.append(c);
                         } else {
-                            String newLine = marginBuilder.charAt(0) == '\r' ? "\r\n" : "\n";
+                            String newLine = marginBuilder.charAt(0) == '\r'
+                                    ? marginBuilder.length() > 1 && marginBuilder.charAt(1) == '\n' ? "\r\n" : "\r"
+                                    : "\n";
                             lineBreaks.put(javadocContent.length(), new Javadoc.LineBreak(randomId(),
                                     newLine, Markers.EMPTY));
                             String margin = marginBuilder.toString();
-                            javadocContent.append(margin.substring(margin.indexOf("\n") + 1)).append(c);
+                            javadocContent.append(margin.substring(newLine.length())).append(c);
                         }
                         marginBuilder = null;
                     }
@@ -488,13 +491,26 @@ public class ReloadableJava21JavadocVisitor extends DocTreeScanner<Tree, List<Ja
 
         List<Javadoc> spaceBeforeRef = whitespaceBefore();
         Javadoc.Reference reference = null;
+        int referenceStart = cursor;
         J ref = visitReference(node.getReference(), body);
         //noinspection ConstantConditions
         if (ref != null) {
             reference = new Javadoc.Reference(randomId(), Markers.EMPTY, ref, lineBreaksInMultilineJReference());
         }
 
-        List<Javadoc> label = convertMultiline(node.getLabel());
+        // javac retains ##fragment in the signature, but the Java reference tree owns
+        // only the qualifier. Retain that typed qualifier and the exact fragment payload.
+        List<Javadoc> fragment = new ArrayList<>();
+        String signature = node.getReference().getSignature();
+        int fragmentStart = signature.indexOf("##");
+        if (fragmentStart >= 0) {
+            String suffix = signature.substring(fragmentStart);
+            if (cursor != referenceStart + fragmentStart || !source.startsWith(suffix, cursor)) {
+                throw new IllegalStateException("Javadoc fragment cursor drift");
+            }
+            fragment.addAll(visitText(suffix));
+        }
+        List<Javadoc> label = ListUtils.concatAll(fragment, convertMultiline(node.getLabel()));
 
         return new Javadoc.Link(
                 randomId(),
@@ -1050,8 +1066,8 @@ public class ReloadableJava21JavadocVisitor extends DocTreeScanner<Tree, List<Ja
 
     @Override
     public Tree visitThrows(ThrowsTree node, List<Javadoc> body) {
-        boolean throwsKeyword = source.startsWith("@throws", cursor);
-        sourceBefore(throwsKeyword ? "@throws" : "@exception");
+        boolean throwsKeyword = "throws".equals(node.getTagName());
+        body.addAll(sourceBefore(throwsKeyword ? "@throws" : "@exception"));
         List<Javadoc> spaceBeforeExceptionName = whitespaceBefore();
         return new Javadoc.Throws(
                 randomId(),

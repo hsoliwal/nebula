@@ -17,7 +17,7 @@
     <dependency><groupId>org.openrewrite</groupId><artifactId>rewrite-core</artifactId><version>${rewrite.version}</version></dependency>
     <dependency><groupId>org.openrewrite</groupId><artifactId>rewrite-java</artifactId><version>${rewrite.version}</version></dependency>
     <dependency><groupId>org.openrewrite</groupId><artifactId>rewrite-java-21</artifactId><version>${rewrite.version}</version><scope>runtime</scope></dependency>
-    <dependency><groupId>com.synexia.recipe</groupId><artifactId>openrewrite-line-terminators</artifactId><version>8.90.4-m3-f3e4bfe19654</version><scope>runtime</scope></dependency>
+    <dependency><groupId>com.synexia.recipe</groupId><artifactId>openrewrite-line-terminators</artifactId><version>8.90.4-m3-javadoc-e898332e8f88</version><scope>runtime</scope></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>${junit.version}</version><scope>test</scope></dependency>
     <dependency><groupId>org.mockito</groupId><artifactId>mockito-core</artifactId><version>5.14.2</version><scope>test</scope></dependency>
   </dependencies>

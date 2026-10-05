@@ -7,3 +7,16 @@ Qualified coordinate: com.synexia.recipe:openrewrite-line-terminators:8.90.4-m3-
 `third_party/LICENSE` retains OpenRewrite Apache-2.0; `third_party/LICENSE-SLF4J.txt` retains the SLF4J MIT notice. Pinned binary and source artifacts are repo-owned, verified by `third_party/SHA256SUMS`. Upstream dependencies remain official Maven coordinates; no upstream jar is overwritten. Build using `mvn -f m3/reactor.xml verify`.
 
 The owning RoundScale test admits exactly two unchanged source identities: canonical Git LF (9350 bytes, SHA-256 09fa50c810f66c351000b350588d36716fd02d93657f626ce0fa1498f0a109a8) and Windows checkout CRLF (9687 bytes, SHA-256 2b8574dbbde69addfe473d96a6767cdf635ac09b2ac8b8cfcba817b237ee4c32). Neither input is normalized; actual parser print and disk bytes remain identical. This packaging test adjustment is sealed in the module POM; all three patched production-source hashes remain unchanged.
+
+## Javadoc tag boundary refinement, 2026-10-05
+
+Current coordinate: `8.90.4-m3-javadoc-d5e5b33b8292`. The existing throws visitor now selects the exact
+`ThrowsTree.getTagName()` and preserves leading source fragments. The original `source.sha256`
+and `candidate.patch` remain immutable predecessor receipts; `javadoc-source-sha256.tsv`,
+updated overlay metadata and POM preflight seal this additive refinement. Original donor source,
+licenses and earlier regression fixtures remain unchanged. The new immutable Collection donor
+and 18 tag/spacing/line-ending combinations are qualified by JavadocThrowsBoundaryTest.
+
+Refinement v2: `8.90.4-m3-javadoc-e898332e8f88` preserves CR-only Javadoc line endings and
+`##fragment` reference suffixes while retaining the typed qualifier. Candidate v1 failed
+lossless printing on those domains and is retained in the canonical task crate.

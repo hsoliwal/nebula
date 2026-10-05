@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.synexia.recipe</groupId>
   <artifactId>openrewrite-line-terminators</artifactId>
-  <version>8.90.4-m3-f3e4bfe19654</version>
+  <version>8.90.4-m3-javadoc-e898332e8f88</version>
   <name>Pinned OpenRewrite Java line terminator proof</name>
   <properties>
     <maven.compiler.source>21</maven.compiler.source>
@@ -33,13 +33,14 @@
               <checksum file="${project.basedir}/original/org/openrewrite/java/isolated/ReloadableJava21JavadocVisitor.java" algorithm="SHA-256" property="97e714c2521ccc89acc57e7794f487c89e9a11948e6318facb167700492f0eea"/>
               <checksum file="${project.basedir}/original/org/openrewrite/java/isolated/ReloadableJava21ParserVisitor.java" algorithm="SHA-256" property="5f38b8f07c505e260dccd46dda76ffb21059828ea5a0da954795c8cc23f92962"/>
               <checksum file="${project.basedir}/src/main/java/org/openrewrite/internal/StringUtils.java" algorithm="SHA-256" property="c45d0995b7354a1126024de0fd8f3aa1505f26edc6d9236c0401b4313607ddfb"/>
-              <checksum file="${project.basedir}/src/main/java/org/openrewrite/java/isolated/ReloadableJava21JavadocVisitor.java" algorithm="SHA-256" property="b2f91b497783e6d7470aedc6e24a8a547acf0f0ba31763761508001aac8b992a"/>
+              <checksum file="${project.basedir}/src/main/java/org/openrewrite/java/isolated/ReloadableJava21JavadocVisitor.java" algorithm="SHA-256" property="e898332e8f884566db04cd75535b3a19456f19af9ff500436fe8a9dd3b999c63"/>
               <checksum file="${project.basedir}/src/main/java/org/openrewrite/java/isolated/ReloadableJava21ParserVisitor.java" algorithm="SHA-256" property="5d68d38bdd7afad3680cc49736795671cf2165333d92b086b3d028404ff3a6ff"/>
               <checksum file="${project.basedir}/src/test/java/com/synexia/recipe/JavaLineTerminatorsTest.java" algorithm="SHA-256" property="175a33a23d770a5481a69677054e757ea2e62cecab98c615268d159bfd17f998"/>
               <checksum file="${project.basedir}/src/test/java/org/openrewrite/Issue.java" algorithm="SHA-256" property="018a1dea9f9c1275e1f2074846f8d0b4e587d2d1e8c83e6fa07581690599ca39"/>
               <checksum file="${project.basedir}/src/test/java/org/openrewrite/internal/StringUtilsTest.java" algorithm="SHA-256" property="4b17e488facadac0d03503054c017fc6145c45af5c544d2e8057198dc94fda39"/>
               <checksum file="${project.basedir}/src/test/resources/roundscale/Checkout.java.txt" algorithm="SHA-256" property="2b8574dbbde69addfe473d96a6767cdf635ac09b2ac8b8cfcba817b237ee4c32"/>
               <checksum file="${project.basedir}/src/test/resources/roundscale/Git.java.txt" algorithm="SHA-256" property="09fa50c810f66c351000b350588d36716fd02d93657f626ce0fa1498f0a109a8"/>
+              <checksum file="${project.basedir}/src/test/java/com/synexia/recipe/JavadocThrowsBoundaryTest.java" algorithm="SHA-256" property="ff015300b5d196b17848f747babccb4d6d7ae09c3fcfacf65ee0bdee47225da6"/>
               <checksum file="${project.basedir}/candidate.patch" algorithm="SHA-256" property="434295abc5384c31f072056340ffd61bf6e3886a1bc29c0259a27c49239f30b6"/>
               <checksum file="${settings.localRepository}/org/openrewrite/rewrite-core/8.90.4/rewrite-core-8.90.4.jar" algorithm="SHA-256" property="12168e8045fb62c1b3f3ad3f3ef8895db84e2791d8c811aefda410e262266503"/>
               <checksum file="${settings.localRepository}/org/openrewrite/rewrite-java/8.90.4/rewrite-java-8.90.4.jar" algorithm="SHA-256" property="c18f5b86a2401f64d82d036460e15937dfd87d41e3b9772757cadee89b89c5bb"/>
