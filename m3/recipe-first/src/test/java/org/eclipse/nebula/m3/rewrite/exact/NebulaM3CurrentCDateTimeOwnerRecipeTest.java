@@ -4,6 +4,7 @@ package org.eclipse.nebula.m3.rewrite.exact;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -144,12 +145,134 @@ final class NebulaM3CurrentCDateTimeOwnerRecipeTest {
     }
 
     @Test
+    void reviewedFontClassifierPreservesLegacyEffectsAndNullFailure(
+            @org.junit.jupiter.api.io.TempDir Path root) throws Exception {
+        String after = resource("01-CDateTimePropertyHandler.java.txt");
+        int begin = after.indexOf("private static String legacyFontProperty");
+        int end = after.indexOf("\n\t// CSS Font", begin);
+        assertTrue(begin >= 0 && end > begin);
+        String helper = after.substring(begin, end).replace("private static", "public static");
+        Path source = root.resolve("ReviewedCssHelper.java");
+        java.nio.file.Files.writeString(
+                source,
+                "import org.w3c.dom.css.CSSPrimitiveValue; public class ReviewedCssHelper {"
+                        + helper + "}",
+                StandardCharsets.UTF_8);
+        var compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
+        assertFalse(compiler == null, "full JDK required");
+        try (var manager = compiler.getStandardFileManager(null, null, null)) {
+            assertTrue(
+                    compiler.getTask(
+                                    null,
+                                    manager,
+                                    null,
+                                    List.of("--release", "21", "-d", root.toString()),
+                                    null,
+                                    manager.getJavaFileObjectsFromPaths(List.of(source)))
+                            .call());
+        }
+        try (var loader =
+                new java.net.URLClassLoader(
+                        new java.net.URL[] {root.toUri().toURL()},
+                        getClass().getClassLoader())) {
+            var method = Class.forName("ReviewedCssHelper", true, loader)
+                    .getMethod("legacyFontProperty", org.w3c.dom.css.CSSPrimitiveValue.class);
+            for (short type : new short[] {
+                    org.w3c.dom.css.CSSPrimitiveValue.CSS_IDENT,
+                    org.w3c.dom.css.CSSPrimitiveValue.CSS_STRING}) {
+                var failure = assertThrows(
+                        java.lang.reflect.InvocationTargetException.class,
+                        () -> method.invoke(null, primitive(type, null)));
+                assertEquals(NullPointerException.class, failure.getCause().getClass());
+                assertEquals("font-style", method.invoke(null, primitive(type, "italic")));
+                assertEquals("font-style", method.invoke(null, primitive(type, "oblique")));
+                assertEquals("font-weight", method.invoke(null, primitive(type, "normal")));
+                assertEquals("font-weight", method.invoke(null, primitive(type, "bold")));
+                assertEquals("font-family", method.invoke(null, primitive(type, "ITALIC")));
+                assertEquals("font-family", method.invoke(null, primitive(type, "")));
+            }
+            assertEquals(
+                    null,
+                    method.invoke(
+                            null,
+                            primitive(
+                                    org.w3c.dom.css.CSSPrimitiveValue.CSS_PERCENTAGE,
+                                    "25%")));
+        }
+    }
+
+    @Test
+    void reviewedProviderRegistrationRetainsAllTwentyThreeCDateTimeProperties() {
+        String after = resource("06-BaseCSSThemingTest.java.txt");
+        List<String> properties = List.of(
+                "cdt-background-color",
+                "cdt-color",
+                "cdt-font",
+                "cdt-font-style",
+                "cdt-font-size",
+                "cdt-font-weight",
+                "cdt-font-family",
+                "cdt-picker-background-color",
+                "cdt-picker-color",
+                "cdt-picker-font",
+                "cdt-picker-font-style",
+                "cdt-picker-font-size",
+                "cdt-picker-font-weight",
+                "cdt-picker-font-family",
+                "cdt-picker-active-day-color",
+                "cdt-picker-inactive-day-color",
+                "cdt-picker-today-color",
+                "cdt-picker-minutes-color",
+                "cdt-picker-minutes-background-color",
+                "cdt-button-hover-border-color",
+                "cdt-button-hover-background-color",
+                "cdt-button-selected-border-color",
+                "cdt-button-selected-background-color");
+        assertEquals(23, properties.size());
+        for (String property : properties) {
+            assertTrue(after.contains("\"" + property + "\""), property);
+        }
+        assertTrue(after.contains("registerCSSPropertyHandlerProvider(handlerProvider)"));
+    }
+
+    @Test
+    void reviewedE4PostsUseJakartaAnnotationsWithoutChangingWidgetCodeShape() {
+        String manifest = resource("02-MANIFEST.MF.txt");
+        String product = resource("03-cdatetime-e4.product.txt");
+        String big = resource("04-BigWidgetsPart.java.txt");
+        String simple = resource("05-SimpleWidgetsPart.java.txt");
+
+        assertTrue(manifest.contains("jakarta.annotation;version=\"[3.0.0,4.0.0)\""));
+        assertFalse(manifest.contains("javax.annotation;"));
+        assertTrue(product.contains("<plugin id=\"jakarta.annotation-api\"/>"));
+        assertTrue(product.contains("<plugin id=\"jakarta.inject.jakarta.inject-api\"/>"));
+        assertFalse(product.contains("<plugin id=\"javax.annotation\"/>"));
+        assertFalse(product.contains("<plugin id=\"javax.inject\"/>"));
+        assertTrue(big.contains("import jakarta.annotation.PostConstruct;"));
+        assertTrue(big.contains("import jakarta.annotation.PreDestroy;"));
+        assertTrue(simple.contains("import jakarta.annotation.PostConstruct;"));
+        assertTrue(simple.contains("import jakarta.annotation.PreDestroy;"));
+    }
+
+    @Test
     void recipeRemainsAnExplicitEightStepCurrentOwnerPacket() {
         NebulaM3CurrentCDateTimeOwnerRecipe recipe =
                 new NebulaM3CurrentCDateTimeOwnerRecipe();
         assertEquals(8, recipe.getRecipeList().size());
         assertTrue(recipe.getTags().contains("recipe-first"));
         assertTrue(recipe.getTags().contains("current-master"));
+    }
+
+    private static org.w3c.dom.css.CSSPrimitiveValue primitive(short type, String text) {
+        return (org.w3c.dom.css.CSSPrimitiveValue)
+                java.lang.reflect.Proxy.newProxyInstance(
+                        NebulaM3CurrentCDateTimeOwnerRecipeTest.class.getClassLoader(),
+                        new Class<?>[] {org.w3c.dom.css.CSSPrimitiveValue.class},
+                        (proxy, method, args) -> switch (method.getName()) {
+                            case "getPrimitiveType" -> type;
+                            case "getStringValue", "getCssText" -> text;
+                            default -> throw new UnsupportedOperationException(method.getName());
+                        });
     }
 
     private static SourceFile source(Case fixture, String text, InMemoryExecutionContext context) {
