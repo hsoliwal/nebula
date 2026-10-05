@@ -330,8 +330,13 @@ public final class NebulaM3CurrentCDateTimeOwnerRecipe extends Recipe {
                             state.targetSeen = true;
                             if (!(source instanceof J.CompilationUnit)) {
                                 state.conflicts.add("provider target is not Java");
-                            } else if (!AFTER.equals(sha256(source.printAll()))) {
-                                state.conflicts.add("provider target drift");
+                            } else {
+                                String body = resource(ROOT + "07-CSSPropertyHandlerSimpleProviderImpl.java.txt");
+                                J.CompilationUnit expected = parseProvider(
+                                        body, source.getSourcePath(), context);
+                                if (!expected.printAll().equals(source.printAll())) {
+                                    state.conflicts.add("provider target drift");
+                                }
                             }
                         }
                     }
@@ -347,18 +352,26 @@ public final class NebulaM3CurrentCDateTimeOwnerRecipe extends Recipe {
                 if (state.targetSeen) return List.of();
                 String body = resource(ROOT + "07-CSSPropertyHandlerSimpleProviderImpl.java.txt");
                 String path = state.repositoryCoordinates ? REPOSITORY_TARGET : MODULE_TARGET;
-                List<SourceFile> parsed = JavaParser.fromJavaVersion().build()
-                        .parseInputs(List.of(Parser.Input.fromString(Path.of(path), body)), null, context)
-                        .toList();
-                if (parsed.size() != 1 || !(parsed.getFirst() instanceof J.CompilationUnit)
-                        || !body.equals(parsed.getFirst().printAll())) {
-                    throw new IllegalStateException("provider Java roundtrip failed");
-                }
-                return List.of(parsed.getFirst().withSourcePath(Path.of(path)));
+                J.CompilationUnit parsed = parseProvider(body, Path.of(path), context);
+                return List.of(parsed.withSourcePath(Path.of(path)));
             }
         }
         @Override public TreeVisitor<?, ExecutionContext> getVisitor(State state) {
             return new TreeVisitor<Tree, ExecutionContext>() {};
+        }
+
+        private static J.CompilationUnit parseProvider(
+                String body, Path sourcePath, ExecutionContext context) {
+            List<SourceFile> parsed = JavaParser.fromJavaVersion().build()
+                    .parseInputs(
+                            List.of(Parser.Input.fromString(sourcePath, body)),
+                            null,
+                            context)
+                    .toList();
+            if (parsed.size() != 1 || !(parsed.getFirst() instanceof J.CompilationUnit unit)) {
+                throw new IllegalStateException("provider Java parse failed");
+            }
+            return unit;
         }
 
         private static String normalized(Path path) {
