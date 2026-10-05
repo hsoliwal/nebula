@@ -1,0 +1,16 @@
+[
+  {
+    "source": "LICENSE",
+    "retained": "EPL-2.0-LICENSE.txt",
+    "sha256": "721c2da257578bace3332b14d8ea06643d7d26753e7ef25a837b4e904edc0bf5",
+    "commit": "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+    "byte_verbatim": true
+  },
+  {
+    "source": "NOTICES.MD",
+    "retained": "NEBULA-NOTICES.MD",
+    "sha256": "73aead877a8741f69765116a06984630a4654e5fc68e2a1552cecfa4bed1b3e1",
+    "commit": "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+    "byte_verbatim": true
+  }
+]

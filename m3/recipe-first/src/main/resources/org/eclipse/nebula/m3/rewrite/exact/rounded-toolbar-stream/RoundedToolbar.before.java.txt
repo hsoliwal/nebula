@@ -16,8 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.function.Consumer;
 
 import org.eclipse.jface.action.IMenuCreator;
 import org.eclipse.nebula.widgets.opal.commons.AdvancedPath;
@@ -32,7 +30,6 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Widget;
 
@@ -144,41 +141,15 @@ public class RoundedToolbar extends Canvas {
 		addListeners();
 	}
 
-	/** M3 name from stream -> filter(bounds contain event and enabled) -> findFirst. */
-	private Optional<RoundedToolItem> findFirstEnabledItemContainingEvent(final Event event) {
-		final Spliterator<RoundedToolItem> candidates = items.spliterator();
-		final EnabledItemContainingEvent match = new EnabledItemContainingEvent(event);
-		// tryAdvance retains ArrayList's check after the predicate, including a first match.
-		while (!match.result.isPresent() && candidates.tryAdvance(match)) {
-			// The ordinary callback method sets the first match; later items stay untouched.
-		}
-		return match.result;
-	}
-
-	private static final class EnabledItemContainingEvent implements Consumer<RoundedToolItem> {
-		private final Event event;
-		private Optional<RoundedToolItem> result = Optional.empty();
-
-		private EnabledItemContainingEvent(final Event event) {
-			this.event = event;
-		}
-
-		@Override
-		public void accept(final RoundedToolItem item) {
-			// Read the Event coordinates after getBounds, once per evaluated item.
-			if (item.getBounds().contains(event.x, event.y) && item.isEnabled()) {
-				result = Optional.of(item);
-			}
-		}
-	}
-
 	private void addListeners() {
 		addListener(SWT.MouseDown, event -> {
 			if (event.button != 1) {
 				return;
 			}
 
-			final Optional<RoundedToolItem> pressedItem = findFirstEnabledItemContainingEvent(event);
+			final Optional<RoundedToolItem> pressedItem = items.stream()//
+					.filter(element -> element.getBounds().contains(event.x, event.y) && element.isEnabled()) //
+					.findFirst();
 			if (!pressedItem.isPresent()) {
 				return;
 			}
@@ -232,7 +203,9 @@ public class RoundedToolbar extends Canvas {
 				return;
 			}
 
-			final Optional<RoundedToolItem> selectedItem = findFirstEnabledItemContainingEvent(event);
+			final Optional<RoundedToolItem> selectedItem = items.stream()//
+					.filter(element -> element.getBounds().contains(event.x, event.y) && element.isEnabled()) //
+					.findFirst();
 			if (!selectedItem.isPresent()) {
 				return;
 			}
@@ -265,7 +238,9 @@ public class RoundedToolbar extends Canvas {
 			repaint();
 		});
 		addListener(SWT.MouseHover, event -> {
-			final Optional<RoundedToolItem> previouslySelectedItem = findFirstEnabledItemContainingEvent(event);
+			final Optional<RoundedToolItem> previouslySelectedItem = items.stream()//
+					.filter(element -> element.getBounds().contains(event.x, event.y) && element.isEnabled()) //
+					.findFirst();
 			if (!previouslySelectedItem.isPresent()) {
 				return;
 			}

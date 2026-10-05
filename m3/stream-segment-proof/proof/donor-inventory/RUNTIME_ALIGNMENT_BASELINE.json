@@ -1,0 +1,20 @@
+{
+  "root_report": "SourceFile inference fixed; prior dependency mismatch prevents JUnit startup. Existing rewrite-test8.90.4 closure requests5.14.4; align owning module property.",
+  "logs": [
+    {
+      "path": "baseline-reactor.log",
+      "sha256": "c22608d92ae28ce4931422de55412c42b09d500117f7b55c72ea387608ceb3d6",
+      "bytes": 11206,
+      "contains_runtime_signature": false,
+      "contains_sourcefile_inference_error": true
+    },
+    {
+      "path": "baseline-repaired-reactor.log",
+      "sha256": "7fd8d69c9c3ab56dfb337e35f6302d52921bc93b50a6830d4fb4e14716a88a39",
+      "bytes": 18892,
+      "contains_runtime_signature": true,
+      "contains_sourcefile_inference_error": false
+    }
+  ],
+  "no_green_or_tests_executed_claim": true
+}

@@ -154,13 +154,13 @@ public final class NebulaM3DeclarativeConvergenceControlRecipe
                 }
 
                 SourceFile parsed = parse(path, target, context);
-                SourceFile replacement = parsed.withId(source.getId());
-                replacement = replacement.withSourcePath(source.getSourcePath());
-                replacement = replacement.withMarkers(source.getMarkers());
-                replacement = replacement.withFileAttributes(source.getFileAttributes());
-                replacement = replacement.withCharset(source.getCharset());
-                replacement = replacement.withCharsetBomMarked(source.isCharsetBomMarked());
-                return replacement.withChecksum(null);
+                return parsed.withId(source.getId())
+                        .withSourcePath(source.getSourcePath())
+                        .withMarkers(source.getMarkers())
+                        .withFileAttributes(source.getFileAttributes())
+                        .withCharset(source.getCharset())
+                        .withCharsetBomMarked(source.isCharsetBomMarked())
+                        .withChecksum(null);
             }
         };
     }
