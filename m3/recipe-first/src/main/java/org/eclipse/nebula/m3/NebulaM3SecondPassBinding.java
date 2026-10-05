@@ -70,9 +70,30 @@ public final class NebulaM3SecondPassBinding {
 
     public static void requireExact(
             String repository, String branch, String commit, String recipe, int passBudget) {
+        requireCanonicalIntegration(
+                repository,
+                branch,
+                commit,
+                UPSTREAM_PR,
+                UPSTREAM_PR_HEAD,
+                recipe,
+                passBudget);
+    }
+
+    public static void requireCanonicalIntegration(
+            String repository,
+            String branch,
+            String commit,
+            int pullRequest,
+            String pullRequestHead,
+            String recipe,
+            int passBudget) {
         if (!UPSTREAM_REPOSITORY.equals(Objects.requireNonNull(repository, "repository"))
                 || !UPSTREAM_BRANCH.equals(Objects.requireNonNull(branch, "branch"))
                 || !UPSTREAM_COMMIT.equals(Objects.requireNonNull(commit, "commit"))
+                || UPSTREAM_PR != pullRequest
+                || !UPSTREAM_PR_HEAD.equals(
+                        Objects.requireNonNull(pullRequestHead, "pullRequestHead"))
                 || !RECIPE.equals(Objects.requireNonNull(recipe, "recipe"))
                 || PASS_BUDGET != passBudget) {
             throw new IllegalArgumentException("Nebula M3 second-pass binding drift");
