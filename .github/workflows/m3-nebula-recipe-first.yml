@@ -61,8 +61,10 @@ jobs:
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
           grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
           grep -F 'java.typedRecipe=com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe' .m3/atom-pattern/policy.properties
+          grep -F '<recipe>com.synexia.rewrite.M3RepositoryAtomPatternSecondPass</recipe>' pom.xml
           grep -F 'java.secondPassRecipe=com.synexia.rewrite.M3RepositoryAtomPatternSecondPass' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassPassBudget=4' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassUpstreamBranch=develop' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassUpstreamCommit=daaab09a1b91fe8344c1ea97359342b52739bf38' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassSignalChainClass=com.synexia.rewrite.M3AtomPatternSignalChainRecipe' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassCanonicalCatalog=com.synexia.m3.recipe.OpenRewriteRecipeDagPlan' .m3/atom-pattern/policy.properties
