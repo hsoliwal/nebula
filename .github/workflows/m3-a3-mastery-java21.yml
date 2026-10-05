@@ -41,6 +41,9 @@ jobs:
           set -euo pipefail
           git diff --check "$BASE_SHA...HEAD"
 
+      - name: Build and test the repository-owned parser
+        run: mvn -B -ntp -f m3/openrewrite-line-terminators/pom.xml install
+
       - name: Compile recipe-first module
         run: >
           mvn -B -ntp

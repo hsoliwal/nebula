@@ -4,7 +4,7 @@ Base commit: `307e12a56eb323bb1e1f08b19097d7b8de59b0b8`.
 Parser: `com.synexia.recipe:openrewrite-line-terminators:8.90.4-m3-javadoc-e898332e8f88`.
 
 All **1,891 Git-tracked Java files** have statement/block/loop composition packets,
-containing **173,811 non-root atoms**. `all-files.tsv` equals the complete tracked Java
+containing **173,883 non-root atoms**. `all-files.tsv` equals the complete tracked Java
 path set. Every source hash matches; missing, stale and parse-error counts are zero.
 Reference/donor files and negative fixtures are included without changing their bytes.
 
@@ -41,3 +41,14 @@ declares ordinal 8 after the review DAG insertion. A fifth hash-pinned recipe ch
 only that expected ordinal. The initial failing full run and passing five-test focused
 rerun are retained; `recipe-qualification.json` records all 97 passing suite receipts
 and the 288-case mastery checks without representing the rerun as another full run.
+
+The final source inventory also includes merged Grid graphics PR #68. The three changed
+Grid files are freshly reparsed; 1,888 unchanged packets are reused only after exact source
+and packet hash checks. Integration base: `afb626069dd3cc029050e3088ebdfdb0b29b1c3a`.
+Two additional frozen recipe stages repair exact canonical quadrant rotation and CI parser
+build order/custody admission. Existing Grid assertions and all historical custody checks
+remain intact. The new custody branch admits only four exact unchanged postimages from
+`48846be`; independent preimage/postimage byte-drift refusals are tested. See `INTEGRATION.json`.
+
+The final fresh Linux GTK reactor passes all 314 modules and 212 tests, with zero
+failures, errors or skips. Its summary and raw-log hash are in the final verification receipt.

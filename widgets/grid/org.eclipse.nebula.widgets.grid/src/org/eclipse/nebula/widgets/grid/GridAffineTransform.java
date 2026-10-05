@@ -57,6 +57,17 @@ final class GridAffineTransform {
 		if (radians == 0f) {
 			return IDENTITY;
 		}
+		// Preserve the exact integer geometry of canonical float quadrant angles.
+		// Adjacent representable angles retain their ordinary trigonometric result.
+		double quadrant = Math.rint(radians / (Math.PI / 2d));
+		if (Math.abs(quadrant) <= 4d && radians == (float)(quadrant * (Math.PI / 2d))) {
+			return switch ((int)quadrant & 3) {
+				case 0 -> IDENTITY;
+				case 1 -> new GridAffineTransform(0, 1, -1, 0, 0, 0);
+				case 2 -> new GridAffineTransform(-1, 0, 0, -1, 0, 0);
+				default -> new GridAffineTransform(0, -1, 1, 0, 0, 0);
+			};
+		}
 		float sin = (float)Math.sin(radians);
 		float cos = (float)Math.cos(radians);
 		return new GridAffineTransform(cos, sin, -sin, cos, 0, 0);

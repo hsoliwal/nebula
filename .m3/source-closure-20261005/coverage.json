@@ -1,9 +1,9 @@
 {
   "schema": "m3-ui-source-closure/1",
-  "base_commit": "307e12a56eb323bb1e1f08b19097d7b8de59b0b8",
+  "base_commit": "afb626069dd3cc029050e3088ebdfdb0b29b1c3a",
   "parser": "8.90.4-m3-javadoc-e898332e8f88",
   "java_files": 1891,
-  "atoms": 173811,
+  "atoms": 173883,
   "missing": [],
   "stale": [],
   "parse_errors": 0,

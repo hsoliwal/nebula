@@ -34,11 +34,23 @@ def profile_shape(raw):
 
 
 def verify(base):
+    # Exact postimages of the already-reviewed statement distillation in 48846be.
+    # This branch admits preservation only; new edits still require their own recipe.
+    distilled = {
+        'org.eclipse.nebula.presentations.shelf/src/org/eclipse/swt/nebula/presentations/shelf/CTabFolderStackPresentation.java': 'd10871e9c8f9e80898e6f64bbf5dc38b9e2d0609cddbc9bace84074be30bc980',
+        'org.eclipse.nebula.presentations.shelf/src/org/eclipse/swt/nebula/presentations/shelf/EmptyStandaloneStackPresentation.java': '0533cb90fb266489732524ad7064c64f10dba881f9d7f5774dbb2b08e8ca1d5b',
+        'org.eclipse.nebula.presentations.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PShelfStackPresentation.java': '34c50c2edc234f28cfe120f289b0a33634885fd3f2ac6bc16692ce20c3378967',
+        'org.eclipse.nebula.presentations.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PresentationFactory.java': '5575fa46a6867ab57fabaf7bd5f1d9d31476c7942760abed0e51ba32943cdd7b',
+    }
     rows = Path(__file__).with_name("source-custody.tsv").read_text(encoding="utf-8").splitlines()
     require(len(rows) == 4, "exactly four copyright paths required")
     for row in rows:
         path, before_hash, after_hash = row.split("\t")
         before, after = blob(base, path), blob("HEAD", path)
+        if sha256(after).hexdigest() == distilled[path]:
+            require(before == after, "distilled copyright source changed from base: " + path)
+            print(path + "\tPASS_UNCHANGED_DISTILLED\t" + distilled[path])
+            continue
         require(sha256(after).hexdigest() == after_hash, "copyright postimage drift: " + path)
         if sha256(before).hexdigest() == after_hash:
             require(before == after, "already-admitted copyright bytes changed: " + path)

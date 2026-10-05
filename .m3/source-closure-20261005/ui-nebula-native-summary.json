@@ -1,12 +1,14 @@
 {
-  "command": "mvn -f pom.xml verify -e",
+  "command": "mvn -f pom.xml verify -e; generated target directories removed before Maven starts",
   "java": 21,
   "platform": "Linux x86_64 GTK3 under Xvfb",
+  "source_base": "afb626069dd3cc029050e3088ebdfdb0b29b1c3a",
   "reactor_modules": 314,
-  "tests": 211,
+  "tests": 212,
   "failures": 0,
   "errors": 0,
   "skipped": 0,
   "build_success": true,
-  "log_sha256": "75969dbf60a6a8b6debeff523f63e1666b835c414734208ae20e3f0f4e5bbd47"
+  "log_sha256": "1aeb32a1c892e85c1d5ed25e3ffc250fecea6f82caccf8b85dc2f8ed70675a6e",
+  "grid_packaged_class_equals_fresh_compiled_class": true
 }
