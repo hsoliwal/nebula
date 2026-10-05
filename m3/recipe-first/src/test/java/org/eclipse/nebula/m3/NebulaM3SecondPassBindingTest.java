@@ -104,7 +104,6 @@ final class NebulaM3SecondPassBindingTest {
 
         assertTrue(plan.contains(
                 "3\tSECOND_PASS_SIGNAL_CHAIN\t"
-                        + "com.synexia:"
                         + NebulaM3SecondPassBinding.RECIPE
                         + "\tFILE\tREAD_ONLY\t"));
         assertTrue(plan.contains("7\tFILE_FIXED_POINT\t"));
