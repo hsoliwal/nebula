@@ -58,12 +58,44 @@ final class NebulaM3SecondPassBindingTest {
                 NebulaM3SecondPassBinding.RECIPE,
                 NebulaM3SecondPassBinding.PASS_BUDGET);
 
+        NebulaM3SecondPassBinding.requireCanonicalIntegration(
+                NebulaM3SecondPassBinding.UPSTREAM_REPOSITORY,
+                NebulaM3SecondPassBinding.UPSTREAM_BRANCH,
+                NebulaM3SecondPassBinding.UPSTREAM_COMMIT,
+                NebulaM3SecondPassBinding.UPSTREAM_PR,
+                NebulaM3SecondPassBinding.UPSTREAM_PR_HEAD,
+                NebulaM3SecondPassBinding.RECIPE,
+                NebulaM3SecondPassBinding.PASS_BUDGET);
+
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
                         NebulaM3SecondPassBinding.requireExact(
                                 NebulaM3SecondPassBinding.UPSTREAM_REPOSITORY,
                                 NebulaM3SecondPassBinding.UPSTREAM_BRANCH,
+                                "0".repeat(40),
+                                NebulaM3SecondPassBinding.RECIPE,
+                                NebulaM3SecondPassBinding.PASS_BUDGET));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        NebulaM3SecondPassBinding.requireCanonicalIntegration(
+                                NebulaM3SecondPassBinding.UPSTREAM_REPOSITORY,
+                                NebulaM3SecondPassBinding.UPSTREAM_BRANCH,
+                                NebulaM3SecondPassBinding.UPSTREAM_COMMIT,
+                                NebulaM3SecondPassBinding.UPSTREAM_PR + 1,
+                                NebulaM3SecondPassBinding.UPSTREAM_PR_HEAD,
+                                NebulaM3SecondPassBinding.RECIPE,
+                                NebulaM3SecondPassBinding.PASS_BUDGET));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        NebulaM3SecondPassBinding.requireCanonicalIntegration(
+                                NebulaM3SecondPassBinding.UPSTREAM_REPOSITORY,
+                                NebulaM3SecondPassBinding.UPSTREAM_BRANCH,
+                                NebulaM3SecondPassBinding.UPSTREAM_COMMIT,
+                                NebulaM3SecondPassBinding.UPSTREAM_PR,
                                 "0".repeat(40),
                                 NebulaM3SecondPassBinding.RECIPE,
                                 NebulaM3SecondPassBinding.PASS_BUDGET));
