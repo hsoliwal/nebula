@@ -23,7 +23,7 @@ Reproduce from the paired canonical `ui-source-closure-20261005` Maven recipe cr
 install the source-owned parser from Nebula's `m3/reactor.xml`, build the crate and its
 runtime dependency classpath, then use `run.py` on this checkout. Use `RestoreAtoms`
 with this index and manifest to check the packed representation independently.
-The Nebula candidate is materialized by four existing hash-pinned OpenRewrite recipe
+The Nebula candidate is materialized by five existing hash-pinned OpenRewrite recipe
 stages; `replay.py` reproduces it without mutating the source checkout.
 
 The completion properties describe source composition. The ordinary Java/native reactors
@@ -35,3 +35,9 @@ This tree adds the regression test and updates the existing source-owned Javadoc
 The other two parser overlay classes and the original donor/source/license files stay sealed.
 All three parser class descriptors are unchanged. The new Maven version binds the repair
 to its source; predecessor checksum and patch receipts remain retained as prior evidence.
+
+The existing plan-binding test expected fixed point at ordinal 7 although PLAN.tsv
+declares ordinal 8 after the review DAG insertion. A fifth hash-pinned recipe changes
+only that expected ordinal. The initial failing full run and passing five-test focused
+rerun are retained; `recipe-qualification.json` records all 97 passing suite receipts
+and the 288-case mastery checks without representing the rerun as another full run.

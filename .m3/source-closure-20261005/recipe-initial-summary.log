@@ -1,0 +1,32 @@
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.394 s -- in org.openrewrite.internal.StringUtilsTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 18.13 s -- in com.synexia.recipe.JavaLineTerminatorsTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.617 s -- in com.synexia.recipe.CurrentSourceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.835 s -- in com.synexia.recipe.JavadocThrowsBoundaryTest
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.103 s -- in org.eclipse.nebula.m3.NebulaM3InventoryResidueTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.195 s -- in org.eclipse.nebula.m3.rewrite.stream.NebulaM3StreamSegmentNamesTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.712 s -- in org.eclipse.nebula.m3.rewrite.NebulaM3DeclarativeConvergenceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.144 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3CurrentCDateTimeOwnerRecipeTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.830 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3CompileBootstrapRecipeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.083 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3DeclarativeConvergenceControlRecipeTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3CatalogueBaseRefreshRecipeTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.313 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3SvgLoaderLengthConvergenceRecipeTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.819 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3RoundedToolbarStreamRecipeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3VerbatimSourceSealTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.153 s -- in org.eclipse.nebula.m3.rewrite.exact.NebulaM3CDateTimeCssCompatibilityRecipeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.938 s -- in org.eclipse.nebula.m3.rewrite.convergence.NebulaM3A3FileMaterializerRecipeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.715 s -- in org.eclipse.nebula.m3.rewrite.convergence.NebulaM3A3MasteryRecipeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifestTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifestCliTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.84 s -- in org.eclipse.nebula.m3.rewrite.atom.NebulaM3PureIntConvergenceRecipeTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.056 s -- in org.eclipse.nebula.m3.NebulaM3SecondPassReviewDagBindingTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2165 s -- in org.eclipse.nebula.m3.NebulaM3A3LabTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.378 s -- in org.eclipse.nebula.m3.NebulaM3A3ApplyTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.282 s -- in org.eclipse.nebula.m3.NebulaM3InventoryRecipeTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.131 s -- in org.eclipse.nebula.m3.NebulaM3RepositoryReviewRecipeTest
+[ERROR] Tests run: 5, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.026 s <<< FAILURE! -- in org.eclipse.nebula.m3.NebulaM3SecondPassBindingTest
+[ERROR] org.eclipse.nebula.m3.NebulaM3SecondPassBindingTest.policyAndConvergencePlanCarryTheExactReadOnlyGate -- Time elapsed: 0.014 s <<< FAILURE!
+[ERROR]   NebulaM3SecondPassBindingTest.policyAndConvergencePlanCarryTheExactReadOnlyGate:109 expected: <true> but was: <false>
+[ERROR] Tests run: 79, Failures: 1, Errors: 0, Skipped: 0
+[INFO] BUILD FAILURE
