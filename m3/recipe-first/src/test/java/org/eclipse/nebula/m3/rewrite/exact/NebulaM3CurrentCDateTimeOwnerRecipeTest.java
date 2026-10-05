@@ -75,13 +75,17 @@ final class NebulaM3CurrentCDateTimeOwnerRecipeTest {
             var firstErrors = new ArrayList<Throwable>();
             var firstContext = new InMemoryExecutionContext(firstErrors::add);
             SourceFile before = source(fixture, beforeText, firstContext);
+            String expectedAfter =
+                    fixture.java()
+                            ? javaSource(fixture.path(), afterText, firstContext).printAll()
+                            : afterText;
             var first = steps.get(index).run(
                     new InMemoryLargeSourceSet(List.of(before)), firstContext);
             assertTrue(firstErrors.isEmpty(), fixture.path() + ": " + firstErrors);
             var changes = first.getChangeset().getAllResults();
             assertEquals(1, changes.size(), fixture.path());
             SourceFile after = changes.getFirst().getAfter();
-            assertEquals(afterText, after.printAll(), fixture.path());
+            assertEquals(expectedAfter, after.printAll(), fixture.path());
 
             var secondErrors = new ArrayList<Throwable>();
             var secondContext = new InMemoryExecutionContext(secondErrors::add);
@@ -111,7 +115,11 @@ final class NebulaM3CurrentCDateTimeOwnerRecipeTest {
                 "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl.java",
                 normalized(provider.getSourcePath()));
         assertEquals(
-                resource("07-CSSPropertyHandlerSimpleProviderImpl.java.txt"),
+                javaSource(
+                                "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl.java",
+                                resource("07-CSSPropertyHandlerSimpleProviderImpl.java.txt"),
+                                context)
+                        .printAll(),
                 provider.printAll());
 
         var second = materializer.run(
@@ -127,11 +135,12 @@ final class NebulaM3CurrentCDateTimeOwnerRecipeTest {
         var context = new InMemoryExecutionContext(errors::add);
         String driftText = resource(fixture.before()) + "// drift\n";
         SourceFile drift = source(fixture, driftText, context);
+        String original = drift.printAll();
 
         var run = javaStep.run(new InMemoryLargeSourceSet(List.of(drift)), context);
         assertTrue(run.getChangeset().getAllResults().isEmpty());
         assertFalse(errors.isEmpty());
-        assertEquals(driftText, drift.printAll());
+        assertEquals(original, drift.printAll());
     }
 
     @Test
@@ -150,14 +159,18 @@ final class NebulaM3CurrentCDateTimeOwnerRecipeTest {
                     .text(text)
                     .build();
         }
+        return javaSource(fixture.path(), text, context);
+    }
+
+    private static SourceFile javaSource(
+            String path, String text, InMemoryExecutionContext context) {
         List<SourceFile> parsed = JavaParser.fromJavaVersion().build()
                 .parseInputs(
-                        List.of(Parser.Input.fromString(Path.of(fixture.path()), text)),
+                        List.of(Parser.Input.fromString(Path.of(path), text)),
                         null,
                         context)
                 .toList();
-        assertEquals(1, parsed.size(), fixture.path());
-        assertEquals(text, parsed.getFirst().printAll(), fixture.path());
+        assertEquals(1, parsed.size(), path);
         return parsed.getFirst();
     }
 
