@@ -1,66 +1,165 @@
 # Nebula M3 second-pass signal-chain binding
 
-Nebula reuses the Synexia second-pass OpenRewrite recipe; it does not fork or copy its implementation.
+Nebula reuses the canonical Synexia OpenRewrite atom/pattern signal chain. It does not fork or copy
+that implementation.
 
-Pinned upstream evidence:
+## Exact reviewed Synexia snapshot
 
-- repository: `hsoliwal/com.synexia`
-- branch: `develop`
-- canonical merge commit: `daaab09a1b91fe8344c1ea97359342b52739bf38`
-- integration PR: `#8925`
-- integration PR head: `5f63a7a6a4541d055df5071de22d5edf9ee23c7a`
-- integrated component PRs: `#8891`, `#8897`, `#8915`
-- recipe: `com.synexia.rewrite.M3SecondPassAtomPatternRecipe`
-- canonical scheduler catalog: `com.synexia.m3.recipe.M3SecondPassRecipeDagCatalog`
-- canonical catalog file: `synexia-m3-recipe/recipes/second-pass-atom-pattern.yaml`
-- state mode: `SHARED_JVM_COMPOSITE`
-- external leaf fan-out: `false`
-- pass budget: `2`
+The current Nebula binding is source-bound to this reviewed snapshot:
 
-The existing Nebula root profile `m3-atomize-patternize` activates
-`com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe`. At the pinned merged Synexia integration that recipe
-delegates to `M3RepositoryAtomizePatternizeRecipe`, whose evidence chain includes the second-pass
-signal DAG.
+| Evidence | Value |
+| --- | --- |
+| repository | `hsoliwal/com.synexia` |
+| branch | `develop` |
+| reviewed commit | `1cd108647f1eb1d5c288d917acbf7e8e635c8ce9` |
+| integration lineage | PR #8925, integrating #8891 / #8897 / #8915 |
+| integration PR head | `5f63a7a6a4541d055df5071de22d5edf9ee23c7a` |
+| recipe class | `com.synexia.rewrite.M3AtomPatternSignalChainRecipe` |
+| named recipe | `com.synexia.rewrite.M3AtomPatternSignalChain` |
+| stable repository entry point | `com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe` |
+| configured pass budget | 4 |
+| required fixed-point passes | 3 |
+| external recognizer-leaf fan-out | false |
 
-The second pass is read-only:
+The historical PR numbers are provenance. The exact current implementation is identified by the
+reviewed commit plus Git blob identities in
+`m3/catalogue/second-pass-recipe-binding.tsv`.
+
+## Source custody
+
+The binding pins these current Synexia blobs:
+
+- signal-chain recipe:
+  `975cddc7d5365c6483f56f5b9c551387c5af40eb`;
+- named OpenRewrite recipe YAML:
+  `1f06981c5b12373770df0f2bcecf0fc7b3fbdd5b`;
+- repository atomize/patternize entry point:
+  `83cf30e8243f8e4822e45909e77f3479a7b742c3`;
+- Java lexical mask:
+  `60a401e0ff6540b9d3e9f104ee5771a7a26e4683`;
+- hostile/torture fixture:
+  `5e18c97ec6d3762b1f9450d271a92e0012666d8c`;
+- focused proof workflow:
+  `8ee2012f765f077fb4d811ed053196e6ce049daa`.
+
+`NebulaM3SecondPassBinding.requireCurrentBlobs(...)` fails closed if those reviewed owners drift.
+
+## Execution path
+
+The Nebula root profile `m3-atomize-patternize` activates the current stable Synexia repository
+entry point:
+
+`com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe`
+
+The removed historical alias `M3NebulaAtomizePatternizeRecipe` is not used.
+
+The repository recipe contains the read-only second-pass chain as:
+
+`new M3AtomPatternSignalChainRecipe(sourceFilePattern, 4)`
+
+The signal chain is a single OpenRewrite `ScanningRecipe` whose internal evidence path is:
 
 ```text
 AST/LST inventory
-  -> structural signals
-  -> control-flow signals
-  -> effect/contract signals
-  -> lexically masked regex cues
-  -> repeated-body evidence
-  -> deterministic fan-in
-  -> candidate risk + typed residue + two-pass fixed-point evidence
+  -> structural recognizer
+  -> control-flow recognizer
+  -> effect/contract recognizer
+  -> length-preserving masked-regex recognizer
+       \________________ parallel internal nomination ________________/
+                              |
+                              v
+                   deterministic signal fan-in
+                              |
+                              v
+                      pattern candidates
+                              |
+                              v
+                   contract/risk typed residue
+                              |
+                              v
+                  content-addressed full root
+                              |
+                              v
+                    fixed-point recheck
 ```
 
-Regex is nomination-only after Java literal/comment masking. It never certifies equivalence or a
-transform. Contract-risk, regex-only, or exhausted-budget cases remain blocking residue.
+The configured budget is four passes. The implementation requires three passes for fixed-point
+evidence and fails closed if the configured budget is lower.
 
-This binding grants no source-mutation, replacement, JNI execution, absorption, or promotion
-authority. Nebula's existing local FILE convergence recipe remains the only candidate mutation lane.
+## Regex authority
 
-## Execution prerequisite
+Regex is a bounded nomination source only. `M3JavaLexicalMask` masks comments, strings, chars and
+text blocks without changing source length or line terminators before lexical regex cues are
+evaluated.
 
-Before running the Nebula `m3-atomize-patternize` profile, install the exact pinned Synexia recipe
-artifact from the commit above as `com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT`.
+Structural/control/effect facts come from the OpenRewrite Java tree. A regex-only cue cannot certify
+semantic equivalence or authorize a transformation. Fake code in the torture fixture remains
+masked; real code outside literals/comments remains visible.
 
-Hosted green proof is not claimed yet. The integration is merged, and PR-head workflow runs were
-observed queued/pending for the exact integration head during this review. Until focused Maven/JUnit
-jobs complete successfully, this binding remains candidate/read-only evidence and cannot authorize
-source mutation or promotion.
+## Authority
 
-The binding is machine-readable in `m3/catalogue/second-pass-recipe-binding.tsv`.
+This binding is read-only evidence:
 
-### Orchestration locality
+- source mutation authority: false;
+- semantic-equivalence authority: false;
+- replacement authority: false;
+- promotion authority: false.
 
-The current Synexia second-pass recognizers share one JVM-local signal store. They are logical DAG
-leaves inside the OpenRewrite composite, but they are not yet independent process-level tasks.
+The Nebula-local FILE convergence DAG remains a separate candidate mutation lane. It still requires
+its own source custody, compiler/tests, fixed-point replay, original Tycho verification and manual
+serial promotion.
 
-Camel, Airflow, or another external scheduler may schedule the **second-pass composite as one
-recipe atom**. Independent cross-process fan-out of structural/control/contract/regex/repetition
-leaves is forbidden until a content-addressed signal artifact handoff and reducer-input contract
-are implemented. Drools/KIE remains admission evidence only and gains no mutation or promotion
-authority.
+## External orchestration locality
 
+The recognizers are internal implementation stages of one OpenRewrite `ScanningRecipe`. Although
+the Java implementation may use parallel streams internally, those recognizers are not independent
+cross-process tasks.
+
+Camel, Airflow, or another external scheduler may schedule the **whole repository recipe / signal
+chain as one recipe atom**. External structural/control/effect/regex leaf fan-out remains forbidden
+unless a future content-addressed handoff contract is explicitly implemented and proven. Drools/KIE
+remains admission evidence only and receives no mutation or promotion authority.
+
+## Donor and JNI boundary
+
+Nebula's existing repository review remains ordered:
+
+```text
+LeetCode
+  -> HackerRank
+  -> GeeksforGeeks
+  -> pinned GitHub donor + license/disposition
+```
+
+Challenge problem/editorial/solution bodies are reference-only. JNI/native work remains gated by:
+
+```text
+Java semantic oracle
+  -> differential corpus
+  -> lifecycle/fallback proof
+  -> setup-inclusive benchmark
+  -> bounded native candidate
+  -> Java/JNI parity
+```
+
+No native implementation is admitted merely because a JNI path is possible.
+
+## Running the review
+
+Install the exact reviewed Synexia recipe artifact into the Maven repository used by Nebula, then:
+
+```bash
+mvn -B -ntp -Pm3-atomize-patternize rewrite:dryRunNoFork
+```
+
+The profile is opt-in; the ordinary Nebula Tycho reactor is unchanged when it is not selected.
+
+## Verification truth
+
+The machine binding is
+`m3/catalogue/second-pass-recipe-binding.tsv`; the Java owner is
+`NebulaM3SecondPassBinding`.
+
+Hosted green proof is not inferred from merge state. The exact reviewed Synexia commit and the exact
+Nebula PR head must still complete their focused Maven/JUnit/Tycho workflows successfully before
+promotion evidence can be claimed.
