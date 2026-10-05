@@ -46,10 +46,10 @@ jobs:
           set -euo pipefail
           git diff --check "$BASE_SHA...HEAD"
 
-      - name: 2 compile source-first M3 reactor
+      - name: 2 compile and install source-first M3 reactor dependencies
         run: >
           mvn -B -ntp -f m3/reactor.xml
-          -DskipTests compile
+          -DskipTests install
 
       - name: 3 declarative resource and source-sealed recipe proof
         run: >
