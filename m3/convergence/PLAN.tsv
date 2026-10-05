@@ -2,7 +2,7 @@ ordinal	stage	owner	scope	authority	gate
 0	INVENTORY	m3/recipe-first	FILE	READ_ONLY	whole Java checkout parsed; failureRows=0
 1	CHALLENGE_DONOR_REVIEW	m3/recipe-first:NebulaM3RepositoryReviewRecipe	FILE	READ_ONLY	serial LeetCode -> HackerRank -> GeeksforGeeks -> pinned GitHub donor evidence
 2	JAVA_BEFORE_JNI_REVIEW	m3/recipe-first:NebulaM3JavaBeforeJniReviewRecipe	FILE	READ_ONLY	Java oracle + differential corpus + lifecycle/fallback + setup-inclusive benchmark before native candidate
-3	SECOND_PASS_SIGNAL_CHAIN	com.synexia:M3SecondPassRecipeDagCatalog	FILE	READ_ONLY	merged Synexia #8925 (includes #8891/#8897/#8915); one SHARED_JVM_COMPOSITE scheduler atom; internal AST/LST structural/control/contract + masked-regex/repetition cues -> typed residue + two-pass content-addressed fan-in
+3	SECOND_PASS_SIGNAL_CHAIN	com.synexia:M3AtomPatternSignalChainRecipe	FILE	READ_ONLY	current Synexia develop@3081da68c2ef: scanning-recipe internal structural/control/effect/masked-regex fan-out; passBudget=4, fixedPointPasses=3; deterministic content-addressed fan-in; no external leaf fan-out
 4	ATOMIZE	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	tested local recipe grammar; broader shapes remain explicit residue
 5	PATTERNIZE	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate pattern/IOP pass; public contract locked
 6	DOCUMENT	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate idempotent semantic documentation pass
