@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Exact candidate-only custody binding to the saved Synexia second-pass review DAG.
+ * Exact candidate-only custody binding to the merged Synexia second-pass review DAG.
  *
  * <p>This does not replace {@link NebulaM3SecondPassBinding}. The merged runtime binding remains
- * authoritative for Nebula's read-only second-pass execution until the saved review DAG is merged
- * and independently proven. This class grants no mutation, replacement, native execution, merge,
+ * authoritative for Nebula's read-only second-pass execution until the saved review DAG is
+ * independently executed and proven. This class grants no mutation, replacement, native execution, merge,
  * or promotion authority.</p>
  */
 public final class NebulaM3SecondPassReviewDagBinding {
@@ -25,7 +25,7 @@ public final class NebulaM3SecondPassReviewDagBinding {
     public static final String TASK_CRATE =
             "synexia-m3-recipe/task-crates/m3-second-pass-review-dag-20261005.yaml";
     public static final String HOSTED_PROOF =
-            "WORKFLOW_STARTUP_BLOCKED_NO_JOBS";
+            "UPSTREAM_MERGED_WORKFLOW_STARTUP_BLOCKED_NO_JOBS";
 
     public static final List<String> PROFILES =
             List.of(
