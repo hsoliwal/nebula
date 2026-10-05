@@ -184,5 +184,26 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>a3-mastery</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.A3Mastery</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 </project>
