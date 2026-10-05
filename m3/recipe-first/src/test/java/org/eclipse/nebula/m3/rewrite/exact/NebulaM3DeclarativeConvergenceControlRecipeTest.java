@@ -87,7 +87,8 @@ final class NebulaM3DeclarativeConvergenceControlRecipeTest {
     private static InMemoryExecutionContext context() {
         return new InMemoryExecutionContext(
                 failure -> {
-                    throw new AssertionError(failure);
+                    throw new IllegalStateException(
+                            "OpenRewrite execution refused", failure);
                 });
     }
 
