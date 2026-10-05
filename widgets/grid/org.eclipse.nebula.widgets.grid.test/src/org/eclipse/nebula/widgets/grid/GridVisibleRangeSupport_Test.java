@@ -241,6 +241,24 @@ public class GridVisibleRangeSupport_Test {
 	}
 
 	@Test
+	public void testCanonicalQuadrantsDoNotSnapAdjacentAngles() {
+		for (int quadrant = -4; quadrant <= 4; quadrant++) {
+			float radians = (float)(quadrant * (Math.PI / 2d));
+			GridAffineTransform exact = GridAffineTransform.rotation(radians);
+			assertEquals(1f, exact.determinant(), 0f);
+			assertTrue(exact.then(exact.inverse()).isIdentity());
+			if ((quadrant & 3) == 0) {
+				assertSame(GridAffineTransform.IDENTITY, exact);
+			}
+			for (float adjacent : new float[] {Math.nextDown(radians), Math.nextUp(radians)}) {
+				GridAffineTransform ordinary = GridAffineTransform.rotation(adjacent);
+				assertEquals((float)Math.cos(adjacent), ordinary.m11, 0f);
+				assertEquals((float)Math.sin(adjacent), ordinary.m12, 0f);
+			}
+		}
+	}
+
+	@Test
 	public void testGcProxyRestoresClippingAfterPlanePaint() {
 		GC gc = new GC(grid);
 		try {

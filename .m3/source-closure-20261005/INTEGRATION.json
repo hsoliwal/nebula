@@ -1,0 +1,25 @@
+{
+  "source_base": "afb626069dd3cc029050e3088ebdfdb0b29b1c3a",
+  "previous_qualified_commit": "e06906ed982b4b18454a89ae8744c156bdd03036",
+  "upstream_grid_merge": "266de6091dde31afd3443a548ca34440169227ea",
+  "previous_java_atoms": 173811,
+  "java_atoms": 173883,
+  "java_files": 1891,
+  "freshly_parsed_java_files": 3,
+  "unchanged_packet_reuse_files": 1888,
+  "reuse_condition": "exact source and packet SHA-256 identities checked for every file; complete Git path set equality",
+  "recipes": [
+    "ui-nebula-grid-quadrants",
+    "ui-nebula-ci-metadata"
+  ],
+  "candidate_files": 5,
+  "protected_old_grid_assertions": "unchanged",
+  "quadrant_domain": "nine canonical float multiples of pi/2 in [-2pi,2pi]; both adjacent floats independently checked",
+  "ci_changes": "build/test source-owned parser before dependent mastery module; preserve original custody checks and accept four exact unchanged 48846be postimages; admit only newly reviewed exact workflow/source paths",
+  "custody_proof": {
+    "tests": 3,
+    "drift_subcases": 8,
+    "failures": 0
+  },
+  "strict_promotion": false
+}

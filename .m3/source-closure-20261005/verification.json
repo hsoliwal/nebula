@@ -1,0 +1,324 @@
+{
+  "native_reactor": {
+    "command": "mvn -f pom.xml verify -e; generated target directories removed before Maven starts",
+    "java": 21,
+    "platform": "Linux x86_64 GTK3 under Xvfb",
+    "source_base": "afb626069dd3cc029050e3088ebdfdb0b29b1c3a",
+    "reactor_modules": 314,
+    "tests": 212,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "build_success": true,
+    "log_sha256": "1aeb32a1c892e85c1d5ed25e3ffc250fecea6f82caccf8b85dc2f8ed70675a6e",
+    "grid_packaged_class_equals_fresh_compiled_class": true
+  },
+  "recipe_qualification": {
+    "schema": "m3-suite-qualified-replay/1",
+    "tests": 97,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "module": "openrewrite-line-terminators",
+        "suite": "com.synexia.recipe.CurrentSourceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "56f4a6d96c8e15b88c26a92158a7fd6dda4ec33c32b4dc6cf104fc175ce92b47"
+      },
+      {
+        "module": "openrewrite-line-terminators",
+        "suite": "com.synexia.recipe.JavaLineTerminatorsTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "fff599a1df7ba7716c92b5d8924a581f3a912dd687bb9506216b9e6fccdfb9dc"
+      },
+      {
+        "module": "openrewrite-line-terminators",
+        "suite": "com.synexia.recipe.JavadocThrowsBoundaryTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "4b1f795adbc483d5f0526efa95c9e63b20bd16d20821b86719d9175a605505e0"
+      },
+      {
+        "module": "openrewrite-line-terminators",
+        "suite": "org.openrewrite.internal.StringUtilsTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "d81397f9820981d0d21825ef4e5fc5996039ffee971d73990f335c8527750f57"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.NebulaM3A3ApplyTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "802ec408e59ecae898c3233ea74992901b8741c25ed71461c8e361850b609b04"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.NebulaM3A3LabTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "48efcbfc74bdc0704508a035fb4711f1dca7d0f552e540c466f6f5072fa3299d"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.NebulaM3InventoryRecipeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "aadae553aee2be5034bd7a7a24108a585fc6308cd16a030638ec4d8b4f3d5dc0"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.NebulaM3InventoryResidueTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "ad0ab4fc1630b7bf1434bf2d68a83e55e4852983e5f99ba8c2c7c8a3e053eeac"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.NebulaM3RepositoryReviewRecipeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "e00ba2125b9720de6f3d7919d03eff007366f139d34e0e22c13ec0d2cb626c17"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.NebulaM3SecondPassBindingTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "131a4bb2df92af1eabc49b2aace14f83e5ec3c06c221d20d61759d2d891faf1e"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.NebulaM3SecondPassReviewDagBindingTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "d4cd65895d2f8697fabc9391271ae8115ebbf3746f09d0461e988c8b690e4b8b"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.NebulaM3DeclarativeConvergenceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "fdb7981a80daa75859bb083608e9a1204dc0c79452b72f157a13cb148628f367"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "85b370ce88392c987f3b7b12a2fa0b0579ca48a0953e2fb6a9d9ba04ded035e4"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.atom.NebulaM3PureIntConvergenceRecipeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "c3029453a39567d1e22c3de19a5ea0115919705593f4e81141ebb30371f2db0b"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.convergence.NebulaM3A3FileMaterializerRecipeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "ad4ad54f5cf06b0403a8521583408f1edeaa38fcf6e99fba0e5ffdd5aa398e6b"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.convergence.NebulaM3A3MasteryRecipeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "81761e397dd614b3b10790af7fa6e74a718bdc34960eb765dcc1f3d7745c73c2"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifestCliTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "32d63a576fa68bda72148fa7c12358758b5da4a3a1ba5fdacb32c36b55fad925"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifestTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "378aff7bf38f70c3c45e8324563c75405a05e818db03b735c3e2fddcc3ffe719"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3CDateTimeCssCompatibilityRecipeTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "b77d7d29a4d098b7ef7c42294109f030fea755d9e7658f142e2cb602ceca313a"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3CatalogueBaseRefreshRecipeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "feb33bb8b089d99e1d4db60c902cf9b8b4bea73ad18e6e08c39c5af2179e5ec1"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3CompileBootstrapRecipeTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "e939f7f930102d981a059c876964f110d4b34455176f407a1394323c85dd801e"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3CurrentCDateTimeOwnerRecipeTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "5ed54a99c7bc7285937d5aca9c70aefb2263d6bca04c8ce4b5c635f6003e6bd8"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3DeclarativeConvergenceControlRecipeTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "f76e6cdaa383896dfb8a15ffbd5e80cd7b9ab3afd70dbd9f10b9c87a9a80e710"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3RoundedToolbarStreamRecipeTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "1040b7c7879485fddd2aedc770a909750f1894077232abc280f5cdeeca0b1def"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3SvgLoaderLengthConvergenceRecipeTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "9859f416c3dc85c5f895737f756f703fc93ac5e85e8d27ad854ece04a6b8d63f"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3VerbatimSourceSealTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "0f50748abb1cbd1d99bbd12e6fd4d451928a0dab54d5f9169927832ba3483a44"
+      },
+      {
+        "module": "recipe-first",
+        "suite": "org.eclipse.nebula.m3.rewrite.stream.NebulaM3StreamSegmentNamesTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "report_sha256": "976118138a7707a97866fddce1b205aba6e0f538fc3c391b8af9ad99b37cbc3b"
+      }
+    ],
+    "qualification": "Full recipe reactor executed all 97 tests: 96 passed and one stale PLAN ordinal assertion failed. After recipe-only correction 7 -> 8, the affected five-test class passed in a targeted Maven verify. Unchanged mastery test/fixture/production sources were not rerun.",
+    "full_maven_run_after_final_test_only_fix": false,
+    "mastery": {
+      "fixtures": 48,
+      "schedules": 6,
+      "combinations": 288,
+      "junit_methods": 3,
+      "passed": true
+    }
+  },
+  "composition_crate": {
+    "tests": 19,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "all_platform_native_execution": false,
+  "strict_canonical_promotion": false,
+  "integrated_runtime_reactor": {
+    "command": "mvn -f pom.xml verify -e; generated target directories removed before Maven starts",
+    "java": 21,
+    "platform": "Linux x86_64 GTK3 under Xvfb",
+    "source_base": "afb626069dd3cc029050e3088ebdfdb0b29b1c3a",
+    "reactor_modules": 314,
+    "tests": 212,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "build_success": true,
+    "log_sha256": "1aeb32a1c892e85c1d5ed25e3ffc250fecea6f82caccf8b85dc2f8ed70675a6e",
+    "grid_packaged_class_equals_fresh_compiled_class": true
+  },
+  "integration": {
+    "source_base": "afb626069dd3cc029050e3088ebdfdb0b29b1c3a",
+    "previous_qualified_commit": "e06906ed982b4b18454a89ae8744c156bdd03036",
+    "upstream_grid_merge": "266de6091dde31afd3443a548ca34440169227ea",
+    "previous_java_atoms": 173811,
+    "java_atoms": 173883,
+    "java_files": 1891,
+    "freshly_parsed_java_files": 3,
+    "unchanged_packet_reuse_files": 1888,
+    "reuse_condition": "exact source and packet SHA-256 identities checked for every file; complete Git path set equality",
+    "recipes": [
+      "ui-nebula-grid-quadrants",
+      "ui-nebula-ci-metadata"
+    ],
+    "candidate_files": 5,
+    "protected_old_grid_assertions": "unchanged",
+    "quadrant_domain": "nine canonical float multiples of pi/2 in [-2pi,2pi]; both adjacent floats independently checked",
+    "ci_changes": "build/test source-owned parser before dependent mastery module; preserve original custody checks and accept four exact unchanged 48846be postimages; admit only newly reviewed exact workflow/source paths",
+    "custody_proof": {
+      "tests": 3,
+      "drift_subcases": 8,
+      "failures": 0
+    },
+    "strict_promotion": false
+  }
+}
