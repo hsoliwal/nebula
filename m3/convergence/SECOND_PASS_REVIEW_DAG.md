@@ -1,10 +1,10 @@
-# Nebula candidate binding to the saved M3 second-pass review DAG
+# Nebula custody binding to the merged M3 second-pass review DAG
 
 Nebula master already owns the merged runtime second-pass binding through
 `NebulaM3SecondPassBinding`. This document does **not** replace that binding.
 
-The candidate custody owner `NebulaM3SecondPassReviewDagBinding` records the exact unmerged
-Synexia review-DAG candidate:
+The candidate-only custody owner `NebulaM3SecondPassReviewDagBinding` records the exact merged
+Synexia review-DAG source commit:
 
 - repository: `hsoliwal/com.synexia`;
 - branch: `feat/m3-second-pass-review-dag-20261005`;
@@ -24,7 +24,7 @@ structural signals
 Every step is FILE-scoped and DRY_RUN-only in the Synexia plan. This Nebula binding grants no
 source-copy, mutation, replacement, native-execution, merge, or promotion authority.
 
-The current Synexia hosted workflows fail before creating any jobs, so
-`HOSTED_PROOF=WORKFLOW_STARTUP_BLOCKED_NO_JOBS`. This binding must not replace the merged Nebula
-runtime recipe until the upstream saved DAG is merged and an execution-capable runner proves its
-focused tests.
+Synexia PR #8973 is merged. Its dedicated hosted second-pass workflow still fails before creating
+any jobs, so `HOSTED_PROOF=UPSTREAM_MERGED_WORKFLOW_STARTUP_BLOCKED_NO_JOBS`. This binding therefore
+remains candidate-only and must not replace the merged Nebula runtime recipe until an
+execution-capable runner proves the focused DAG tests.
