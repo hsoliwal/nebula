@@ -168,55 +168,81 @@ proof can establish a candidate, and only serial review can promote it.
 
 ## Second-pass signal-chain reuse
 
-Nebula does not duplicate the Synexia second-pass detector. The existing root profile
-`m3-atomize-patternize` consumes an exact merged Synexia recipe artifact. CI overrides the
-profile's broad compatibility entry point with the canonical named repository second-pass:
+Nebula does not duplicate the Synexia second-pass detector. The opt-in root profile
+`m3-atomize-patternize` now activates the current stable repository entry point:
 
-`com.synexia.rewrite.M3RepositoryAtomPatternSecondPass`
+`com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe`
 
-Exact reviewed binding:
+The reviewed Synexia snapshot is:
 
 ```text
-repository  hsoliwal/com.synexia
-branch      develop
-commit      daaab09a1b91fe8344c1ea97359342b52739bf38
-PR          8925 (integrates 8891)
-recipe      com.synexia.rewrite.M3RepositoryAtomPatternSecondPass
-signal      com.synexia.rewrite.M3AtomPatternSignalChainRecipe
-DAG         com.synexia.m3.recipe.OpenRewriteRecipeDagPlan
-state       SHARED_JVM_COMPOSITE; external leaf fan-out=false
-budget      4
-authority   read-only; no mutation/replacement/promotion
+repository       hsoliwal/com.synexia
+branch           develop
+commit           1cd108647f1eb1d5c288d917acbf7e8e635c8ce9
+integration PR   8925
+integration head 5f63a7a6a4541d055df5071de22d5edf9ee23c7a
+components       8891,8897,8915
+recipe           com.synexia.rewrite.M3AtomPatternSignalChainRecipe
+named recipe     com.synexia.rewrite.M3AtomPatternSignalChain
+repository entry com.synexia.rewrite.M3RepositoryAtomizePatternizeRecipe
+state            SCANNING_RECIPE_INTERNAL_FANOUT
+external fanout  false
+budget           4
+fixed-point      3 passes required
+authority        read-only; no equivalence/mutation/replacement/promotion
 ```
 
-Install that exact Synexia commit first, then run:
+The signal-chain recipe, named YAML, repository recipe, lexical mask, hostile fixture and proof
+workflow are each pinned by Git blob identity in
+`catalogue/second-pass-recipe-binding.tsv`. The Java owner is
+`NebulaM3SecondPassBinding`; its JUnit proof requires the checked-in TSV, policy, convergence plan
+and root Maven profile to agree exactly.
 
-```bash
-mvn -B -ntp -Pm3-atomize-patternize \
-  -Drewrite.activeRecipes=com.synexia.rewrite.M3RepositoryAtomPatternSecondPass \
-  rewrite:dryRunNoFork
+The current Synexia repository recipe includes:
+
+`new M3AtomPatternSignalChainRecipe(sourceFilePattern, 4)`
+
+The second pass is evidence-only:
+
+```text
+AST/LST inventory
+  -> structural/control/effect recognizers
+  -> masked-regex nomination cues
+  -> deterministic fan-in
+  -> pattern candidates
+  -> typed contract/risk residue
+  -> content-addressed repository root
+  -> fixed-point recheck
 ```
 
-The machine binding is `catalogue/second-pass-recipe-binding.tsv`; the Java owner is
-`NebulaM3SecondPassBinding`. The convergence plan records the signal chain as a read-only
-pre-mutation gate. Lexically masked regex may nominate a candidate but never certify a transform;
-AST/LST structural/control/contract facts remain authoritative. The merged signal recipe uses three
-internal fixed-point passes and the saved application budget is 4; budget 2 is intentionally
-insufficient.
-
-Hosted Nebula execution remains evidence, not promotion authority. The workflow checks out the exact
-Synexia merge commit, installs the recipe artifact, runs the named repository second-pass twice, and
-requires the Nebula source tree to remain unchanged.
-
+Regex runs only after length-preserving Java literal/comment/text-block masking. It can nominate a
+candidate but cannot certify semantic equivalence or a transformation. The focused Synexia torture
+fixture deliberately contains fake code inside strings/comments to prove this fail-closed boundary.
 
 ### Orchestration locality
 
-The current Synexia second-pass recognizers share one JVM-local signal store. They are logical DAG
-leaves inside the OpenRewrite composite, but they are not yet independent process-level tasks.
+The recognizers are internal stages of one OpenRewrite `ScanningRecipe`. Internal Java fan-out does
+not make them independently schedulable cross-process atoms.
 
-Camel, Airflow, or another external scheduler may schedule the **second-pass composite as one
-recipe atom**. Independent cross-process fan-out of structural/control/contract/regex/repetition
-leaves is forbidden until a content-addressed signal artifact handoff and reducer-input contract
-are implemented. Drools/KIE remains admission evidence only and gains no mutation or promotion
-authority.
+Camel or Airflow may schedule the whole reviewed repository/signal-chain recipe as one recipe atom.
+Drools/KIE may provide admission policy. None receives source-mutation, semantic-equivalence,
+replacement or promotion authority.
+
+A future cross-process recognizer fan-out would require an explicit content-addressed signal
+handoff/reducer-input contract and new proof; it is not inferred from the current implementation.
+
+### Donor and native review
+
+The existing read-only review order remains:
+
+```text
+LeetCode -> HackerRank -> GeeksforGeeks -> pinned GitHub donor/license evidence
+```
+
+Challenge/editorial/solution bodies remain reference-only. Native work still requires the Java
+oracle, differential corpus, lifecycle/fallback proof, setup-inclusive benchmark and Java/JNI
+parity before any bounded native candidate is considered.
+
+Hosted Maven/JUnit/Tycho success is not inferred from merge state. Exact-head workflows must finish
+successfully before this evidence can participate in serial promotion.
 
