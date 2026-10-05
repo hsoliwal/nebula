@@ -115,7 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           git diff --exit-code
-          mvn -B -ntp -Pm3-local-repository-review rewrite:dryRunNoFork
+          mvn -B -ntp -Pm3-local-repository-review org.openrewrite.maven:rewrite-maven-plugin:6.46.1:dryRunNoFork
           git diff --exit-code
 
       - name: 3c - Run exact merged Synexia repository second-pass recipe when authorized
@@ -142,11 +142,11 @@ jobs:
           git diff --exit-code
           mvn -B -ntp -Pm3-atomize-patternize \
             -Drewrite.activeRecipes="$SECOND_PASS_RECIPE" \
-            rewrite:dryRunNoFork
+            org.openrewrite.maven:rewrite-maven-plugin:6.46.1:dryRunNoFork
           git diff --exit-code
           mvn -B -ntp -Pm3-atomize-patternize \
             -Drewrite.activeRecipes="$SECOND_PASS_RECIPE" \
-            rewrite:dryRunNoFork
+            org.openrewrite.maven:rewrite-maven-plugin:6.46.1:dryRunNoFork
           git diff --exit-code
           echo "SECOND_PASS_EXECUTION=READ_ONLY_TWO_RUNS_COMPLETE"
 
@@ -204,7 +204,7 @@ jobs:
           set -euo pipefail
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
           mkdir -p "$CANDIDATE_DIR/postimage"
-          mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          mvn -B -ntp -Pm3-local-file-convergence org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
           mvn -B -ntp -f m3/reactor.xml -Psource-seal -DskipTests \
             -Dm3.seal.root="$GITHUB_WORKSPACE" \
             -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
@@ -231,7 +231,7 @@ jobs:
         run: |
           set -euo pipefail
           CANDIDATE_DIR="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-candidate"
-          mvn -B -ntp -Pm3-local-file-convergence rewrite:runNoFork
+          mvn -B -ntp -Pm3-local-file-convergence org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
           mvn -B -ntp -f m3/reactor.xml -Psource-seal -DskipTests \
             -Dm3.seal.root="$GITHUB_WORKSPACE" \
             -Dm3.seal.path='widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java' \
