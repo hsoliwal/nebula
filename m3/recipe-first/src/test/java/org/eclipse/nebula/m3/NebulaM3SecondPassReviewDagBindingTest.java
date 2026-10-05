@@ -44,7 +44,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
         assertFalse(NebulaM3SecondPassReviewDagBinding.nativeExecutionAuthority());
         assertFalse(NebulaM3SecondPassReviewDagBinding.promotionAuthority());
         assertEquals(
-                "WORKFLOW_STARTUP_BLOCKED_NO_JOBS",
+                "UPSTREAM_MERGED_WORKFLOW_STARTUP_BLOCKED_NO_JOBS",
                 NebulaM3SecondPassReviewDagBinding.HOSTED_PROOF);
     }
 
