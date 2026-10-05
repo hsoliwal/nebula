@@ -8,7 +8,7 @@ public final class NebulaM3SecondPassBinding {
     public static final String UPSTREAM_REPOSITORY = "hsoliwal/com.synexia";
     public static final String UPSTREAM_BRANCH = "feat/m3-second-pass-signal-chain-20261004";
     public static final String UPSTREAM_COMMIT =
-            "48c2caacd21ebaf234cc17b5ad6b74651e5f890d";
+            "f140771ad2ce772cee21671d8d7f340e35f0d407";
     public static final int UPSTREAM_PR = 8891;
     public static final String RECIPE =
             "com.synexia.rewrite.M3SecondPassAtomPatternRecipe";
