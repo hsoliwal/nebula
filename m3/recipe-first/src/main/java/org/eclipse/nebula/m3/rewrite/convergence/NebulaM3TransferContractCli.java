@@ -40,8 +40,7 @@ public final class NebulaM3TransferContractCli {
                 StandardCharsets.UTF_8);
         Files.writeString(
                 output.resolve("transfer.sha256"),
-                NebulaM3TransferContract.root() + "
-",
+                NebulaM3TransferContract.root() + "\n",
                 StandardCharsets.UTF_8);
     }
 }
