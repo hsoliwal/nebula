@@ -123,6 +123,28 @@ final class NebulaM3PureIntConvergenceRecipeTest {
     }
 
     @Test
+    void existingSemanticJavadocIsRecognizedAsFixedPoint() {
+        String path = "src/main/java/example/Documented.java";
+        String source = """
+                package example;
+                final class Documented {
+                    /** M3-ATOM: m3$pureIntAtom; Pattern/IOP: PURE_INT_EXPRESSION. */
+                    private static int compute(int a, int b) {
+                        /* M3-IOP: PURE_INT_EXPRESSION */
+                        int m3$pureIntAtom = a + b;
+                        return m3$pureIntAtom;
+                    }
+                }
+                """;
+
+        assertTrue(
+                apply(
+                                new NebulaM3DocumentPureIntAtomRecipe(),
+                                Map.of(path, source))
+                        .isEmpty());
+    }
+
+    @Test
     void oneHundredIndependentFilesCompileExecuteAndReachFixedPoint() throws Exception {
         Map<String, String> original = corpus(100);
         Map<String, String> transformed =
