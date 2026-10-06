@@ -15,7 +15,8 @@ public final class NebulaM3RepositoryReviewRecipe extends Recipe {
     @Override
     public String getDescription() {
         return "Inventories source files, performs serial LeetCode/HackerRank/GeeksforGeeks/GitHub "
-                + "donor review, and applies the Java-before-JNI gate without mutating source.";
+                + "donor review, emits Java2s SWT/Swing observable UI behavior obligations, "
+                + "and applies the Java-before-JNI gate without mutating source.";
     }
 
     @Override
@@ -41,6 +42,7 @@ public final class NebulaM3RepositoryReviewRecipe extends Recipe {
         return List.of(
                 new NebulaM3InventoryRecipe(),
                 new NebulaM3FastSearchReviewRecipe(),
+                new NebulaM3UiBehaviorReviewRecipe(),
                 new NebulaM3JavaBeforeJniReviewRecipe());
     }
 }
