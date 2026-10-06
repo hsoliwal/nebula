@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -83,6 +85,39 @@ final class NebulaM3RefactorScopeTest {
     }
 
     @Test
+    void checkedInPolicyAndPlanMatchTheAuthorityLadder() throws Exception {
+        Path root = repositoryRoot();
+        String policy =
+                Files.readString(root.resolve(".m3/atom-pattern/policy.properties"));
+        String plan = Files.readString(root.resolve("m3/convergence/PLAN.tsv"));
+
+        assertTrue(
+                policy.contains(
+                        "refactor.scope.order=FILE,VISIBILITY,PACKAGE,MODULE,MULTI_MODULE,LIBRARY_API"));
+        assertTrue(policy.contains("proof.outerScopes=PROJECT,REPOSITORY"));
+        assertTrue(policy.contains("scope.promoteOnlyOnBoundaryCrossing=true"));
+        assertTrue(policy.contains("scope.repositorySizeDoesNotPromote=true"));
+
+        int file = plan.indexOf("\tFILE_FIXED_POINT\t");
+        int visibility = plan.indexOf("\tVISIBILITY_FAN_IN\t");
+        int pkg = plan.indexOf("\tPACKAGE_FAN_IN\t");
+        int module = plan.indexOf("\tMODULE_FAN_IN\t");
+        int multi = plan.indexOf("\tMULTI_MODULE_FAN_IN\t");
+        int library = plan.indexOf("\tLIBRARY_API_FAN_IN\t");
+        int project = plan.indexOf("\tPROJECT_FAN_IN\t");
+        int repository = plan.indexOf("\tREPOSITORY_FAN_IN\t");
+
+        assertTrue(file >= 0);
+        assertTrue(file < visibility);
+        assertTrue(visibility < pkg);
+        assertTrue(pkg < module);
+        assertTrue(module < multi);
+        assertTrue(multi < library);
+        assertTrue(library < project);
+        assertTrue(project < repository);
+    }
+
+    @Test
     void canonicalFileDagNeverAcquiresBroaderAuthority() {
         assertEquals(
                 NebulaM3RefactorScope.FILE,
@@ -95,5 +130,18 @@ final class NebulaM3RefactorScopeTest {
                                                 .equals(
                                                         NebulaM3RefactorScope.FILE
                                                                 .name())));
+    }
+
+    private static Path repositoryRoot() {
+        Path current = Path.of("").toAbsolutePath().normalize();
+        while (current != null) {
+            if (Files.isRegularFile(current.resolve("pom.xml"))
+                    && Files.isDirectory(current.resolve("m3"))
+                    && Files.isDirectory(current.resolve("widgets"))) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        throw new IllegalStateException("Nebula repository root not found");
     }
 }
