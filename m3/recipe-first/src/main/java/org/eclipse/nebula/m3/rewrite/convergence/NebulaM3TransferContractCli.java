@@ -35,6 +35,10 @@ public final class NebulaM3TransferContractCli {
                 NebulaM3TransferContract.targetsTsv(),
                 StandardCharsets.UTF_8);
         Files.writeString(
+                output.resolve("ui-behavior-donors.tsv"),
+                NebulaM3UiBehaviorDonorCatalog.tsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
                 output.resolve("orchestrators.tsv"),
                 NebulaM3TransferContract.orchestratorsTsv(),
                 StandardCharsets.UTF_8);
