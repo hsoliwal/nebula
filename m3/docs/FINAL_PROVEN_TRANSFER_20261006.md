@@ -22,6 +22,24 @@ INVENTORY
 Every leaf remains a tested OpenRewrite recipe. Maven is the build/proof root. The original Nebula
 Tycho reactor remains the product authority.
 
+## Canonical reusable leaf ownership
+
+The reusable pure-int FILE recipe family is now canonically owned in `hsoliwal/com.synexia`:
+
+- `com.synexia.rewrite.M3PureIntInventoryRecipe`
+- `com.synexia.rewrite.M3PureIntAtomizeRecipe`
+- `com.synexia.rewrite.M3PureIntPatternizeRecipe`
+- `com.synexia.rewrite.M3PureIntDocumentationRecipe`
+- `com.synexia.rewrite.M3PureIntConvergenceRecipe`
+
+The exact Synexia revision/artifact/entrypoint used by Nebula is recorded in
+`m3/catalogue/pure-int-recipe-binding.tsv`. The compatibility profile
+`m3-local-file-convergence` now invokes the Synexia composite recipe directly.
+
+Nebula-local pure-int recipe classes remain historical proving fixtures and regression evidence;
+they are no longer the canonical reusable recipe owner. Target-specific exact/CSS/Grid/upstream
+recipes remain Nebula-owned where their semantics are inherently Nebula-specific.
+
 ## Refactoring authority ladder
 
 Source-changing authority follows the semantic boundary actually crossed:

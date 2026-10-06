@@ -106,9 +106,13 @@ http://www.eclipse.org/legal/epl-v10.html -->
 
 		<profile>
 			<!--
-				Nebula-local tested FILE recipe DAG. Build/install m3/recipe-first first.
-				This lane may change only mechanically admitted private implementation
-				leaves; it grants no promotion authority.
+				Canonical Synexia-owned FILE convergence recipe proven first in Nebula.
+				Install the exact bound com.synexia:synexia-openrewrite-recipes SNAPSHOT
+				from m3/catalogue/pure-int-recipe-binding.tsv, then run explicitly:
+				  mvn -Pm3-local-file-convergence rewrite:dryRunNoFork
+
+				The historical Nebula-local pure-int recipes remain proving fixtures only.
+				Source mutation stays candidate-only and promotion authority remains false.
 			-->
 			<id>m3-local-file-convergence</id>
 			<build>
@@ -122,13 +126,13 @@ http://www.eclipse.org/legal/epl-v10.html -->
 							<failOnDryRunResults>false</failOnDryRunResults>
 							<exportDatatables>true</exportDatatables>
 							<activeRecipes>
-								<recipe>org.eclipse.nebula.m3.ConvergeFileAtoms</recipe>
+								<recipe>com.synexia.rewrite.M3PureIntConvergenceRecipe</recipe>
 							</activeRecipes>
 						</configuration>
 						<dependencies>
 							<dependency>
-								<groupId>org.eclipse.nebula.m3</groupId>
-								<artifactId>nebula-m3-recipe-first</artifactId>
+								<groupId>com.synexia</groupId>
+								<artifactId>synexia-openrewrite-recipes</artifactId>
 								<version>1.0.0-SNAPSHOT</version>
 							</dependency>
 						</dependencies>
