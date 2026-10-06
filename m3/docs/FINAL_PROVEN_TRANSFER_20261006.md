@@ -22,6 +22,20 @@ INVENTORY
 Every leaf remains a tested OpenRewrite recipe. Maven is the build/proof root. The original Nebula
 Tycho reactor remains the product authority.
 
+## Refactoring authority ladder
+
+Source-changing authority follows the semantic boundary actually crossed:
+
+```text
+FILE -> VISIBILITY -> PACKAGE -> MODULE -> MULTI_MODULE -> LIBRARY_API
+```
+
+Repository size never widens authority. Independent FILE candidates may fan out horizontally.
+PROJECT and REPOSITORY are outer proof/fan-in scopes only; they are not source-mutation authority.
+
+The checked-in policy, Java scope oracle, convergence plan and transfer receipt all carry this same
+order. A target repository must preserve it when adapting the recipe DAG.
+
 ## Orchestration
 
 The same content-addressed DAG may be scheduled by:
@@ -43,6 +57,43 @@ recipe atoms and collect receipts only. The Airflow plan uses non-mutating task 
 dispatches only to the declared OpenRewrite adapter endpoint; the Drools agenda only marks
 dependency-ready atoms.
 
+## Challenge and GitHub donor review
+
+Before a native/JNI candidate is considered, Nebula uses the existing read-only
+`NebulaM3RepositoryReviewRecipe` and `NebulaM3FastSearchReviewPolicy`.
+
+For every admitted algorithm category the order is fixed:
+
+```text
+LeetCode -> HackerRank -> GeeksForGeeks -> pinned GitHub donor
+```
+
+Current categories are binary search, adaptive ordering, prefix/fuzzy search, top-K,
+primitive lookup, bounded cache, and automaton/trie mechanics. The challenge sites are
+reference-only. GitHub donors carry pinned revisions, license/disposition, and a required
+next action; architecture-only donors are explicitly marked no-copy. The review is evidence
+only and grants no source mutation, semantic-equivalence, JNI-execution or promotion authority.
+
+The rendered serial catalogue is exported as `challenge-donors.tsv` and its SHA-256 is
+bound into the portable transfer root.
+
+## UI behavior donor matrix
+
+The final distillation also carries a read-only, content-addressed behavior catalogue:
+
+- Java2s SWT — Canvas, Table/Tree, ScrolledComposite, ScrollBar, editors/renderers/events, DND,
+  SWT/AWT bridge and Win32 behavior shapes;
+- Java2s SWT 2D Graphics — GC state, clipping/paint, focus, paths, affine transform, animation and
+  image drawing;
+- Java2s Swing — JViewport/JScrollPane/JScrollBar, JLayeredPane z-order, JTable/JTree model,
+  renderer/editor/header/sort/filter/selection behavior, DND and accessibility;
+- Java2s Swing Event — EDT, focus, list selection, mouse/motion/wheel, table-model and
+  tree expand/model/selection event behavior.
+
+These are **observable-behavior test obligations only**. The catalogue grants no source-copy,
+source-mutation or promotion authority. Its deterministic root is included in the portable transfer
+receipt so downstream repositories can prove they retained the same behavioral review surface.
+
 ## Portable transfer receipt
 
 Run:
@@ -58,6 +109,8 @@ m3/recipe-first/target/nebula-m3-transfer/
 ├── transfer-metadata.tsv
 ├── transfer-dag.tsv
 ├── transfer-targets.tsv
+├── ui-behavior-donors.tsv
+├── challenge-donors.tsv
 ├── orchestrators.tsv
 ├── camel-route.yaml
 ├── airflow-dag.py

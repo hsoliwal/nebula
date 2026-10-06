@@ -24,6 +24,7 @@ class NebulaM3RepositoryReviewRecipeTest {
         assertEquals(
                 List.of(NebulaM3InventoryRecipe.class,
                         NebulaM3FastSearchReviewRecipe.class,
+                        NebulaM3UiBehaviorReviewRecipe.class,
                         NebulaM3JavaBeforeJniReviewRecipe.class),
                 recipe.getRecipeList().stream().map(Object::getClass).toList());
     }
@@ -40,6 +41,18 @@ class NebulaM3RepositoryReviewRecipeTest {
                     rows.stream().map(NebulaM3FastSearchReviewTable.Row::getEvidenceSource).toList());
             assertTrue(rows.stream().allMatch(row -> "READ_ONLY_EVIDENCE".equals(row.getAuthority())));
         }
+    }
+
+    @Test
+    void uiBehaviorRecipeCarriesNoAuthority() {
+        var recipe = new NebulaM3UiBehaviorReviewRecipe();
+        assertEquals(1, recipe.maxCycles());
+        assertFalse(recipe.sourceCopyAuthority());
+        assertFalse(recipe.sourceMutationAuthority());
+        assertFalse(recipe.nativeExecutionAuthority());
+        assertFalse(recipe.promotionAuthority());
+        assertTrue(recipe.getTags().contains("recipe-first"));
+        assertTrue(recipe.getTags().contains("no-source-copy"));
     }
 
     @Test
@@ -74,6 +87,23 @@ class NebulaM3RepositoryReviewRecipeTest {
         assertEquals(List.of(1, 2, 3, 4),
                 search.stream().map(NebulaM3FastSearchReviewTable.Row::getPassOrder).toList());
         assertTrue(search.stream().allMatch(row -> "READ_ONLY_EVIDENCE".equals(row.getAuthority())));
+        List<NebulaM3UiBehaviorReviewTable.Row> uiReview =
+                run.getDataTableRows(NebulaM3UiBehaviorReviewTable.class);
+        assertEquals(4, uiReview.size());
+        assertEquals(
+                List.of("JAVA2S_SWT", "JAVA2S_SWT_2D", "JAVA2S_SWING", "JAVA2S_SWING_EVENT"),
+                uiReview.stream().map(NebulaM3UiBehaviorReviewTable.Row::getSourceId).toList());
+        assertTrue(
+                uiReview.stream()
+                        .allMatch(
+                                row ->
+                                        "READ_ONLY_BEHAVIOR_EVIDENCE".equals(row.getAuthority())
+                                                && row.getReference().startsWith("https://www.java2s.com/")));
+        assertTrue(
+                uiReview.stream()
+                        .flatMap(row -> java.util.Arrays.stream(row.getObligations().split(",")))
+                        .anyMatch("AFFINE_TRANSFORM"::equals));
+
         List<NebulaM3JavaBeforeJniReviewTable.Row> nativeReview = run.getDataTableRows(NebulaM3JavaBeforeJniReviewTable.class);
         assertEquals(1, nativeReview.size());
         assertEquals(1, nativeReview.getFirst().getNativeMethods());

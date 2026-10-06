@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import org.eclipse.nebula.m3.NebulaM3FastSearchReviewPolicy;
 
 /** Writes the portable Nebula M3 recipe-transfer evidence bundle. */
 public final class NebulaM3TransferContractCli {
@@ -33,6 +34,14 @@ public final class NebulaM3TransferContractCli {
         Files.writeString(
                 output.resolve("transfer-targets.tsv"),
                 NebulaM3TransferContract.targetsTsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("ui-behavior-donors.tsv"),
+                NebulaM3UiBehaviorDonorCatalog.tsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("challenge-donors.tsv"),
+                NebulaM3FastSearchReviewPolicy.renderTsv(),
                 StandardCharsets.UTF_8);
         Files.writeString(
                 output.resolve("orchestrators.tsv"),
