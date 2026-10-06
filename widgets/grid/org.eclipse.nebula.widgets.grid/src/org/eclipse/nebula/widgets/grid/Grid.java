@@ -5280,14 +5280,14 @@ public class Grid extends Canvas {
 		final boolean fixedOverlayActive = fixed.hasColumns() && hscroll > fixed.offset();
 		final int header = columnHeadersVisible ? headerHeight : 0;
 		final int footer = columnFootersVisible ? footerHeight : 0;
-		final int paintPlan = GridPaintDag.plan(
+		final int paintPlan = GridPaintDAG.plan(
 				originalClipping, clientArea, headerHeight, footerHeight,
 				columnHeadersVisible, columnFootersVisible, fixedOverlayActive, draggingColumn);
 		if (columnHeadersVisible) {
-			if (GridPaintDag.includes(paintPlan, GridPaintDag.HEADER)) {
+			if (GridPaintDAG.includes(paintPlan, GridPaintDAG.HEADER)) {
 				final Rectangle headerRect = new Rectangle(
 						clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight, clientArea.height));
-				try (GridGcProxy headerGc = GridGcProxy.wrap(gc).clip(originalClipping.intersection(headerRect))) {
+				try (GridGCProxy headerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(headerRect))) {
 					paintHeader(headerGc.gc(), extraFill);
 				}
 			}
@@ -5342,21 +5342,21 @@ public class Grid extends Canvas {
 				}
 			}
 		}
-		if (GridPaintDag.includes(paintPlan, GridPaintDag.BODY)) {
+		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
 			final Rectangle bodyRect = GridViewportDamage.scrollDamage(clientArea, header, footer, false);
 			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
-			try (GridGcProxy bodyGc = GridGcProxy.wrap(gc).clip(bodyClipping)) {
+			try (GridGCProxy bodyGc = GridGCProxy.wrap(gc).clip(bodyClipping)) {
 				paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager,
 						bodyGc.gc(), bodyClipping, y, clientArea, firstVisibleIndex, insertMark, extraFill);
 			}
 		}
 
 		// draw drop point
-		if (draggingColumn && GridPaintDag.includes(paintPlan, GridPaintDag.OVERLAY)) {
+		if (draggingColumn && GridPaintDAG.includes(paintPlan, GridPaintDAG.OVERLAY)) {
 			if ((dragDropAfterColumn != null || dragDropBeforeColumn != null)
 					&& dragDropAfterColumn != columnBeingPushed && dragDropBeforeColumn != columnBeingPushed
 					&& dragDropPointValid) {
-				try (GridGcProxy overlayGc = GridGcProxy.wrap(gc)) {
+				try (GridGCProxy overlayGc = GridGCProxy.wrap(gc)) {
 					final GC overlay = overlayGc.gc();
 					int x;
 					if (dragDropBeforeColumn != null) {
@@ -5375,7 +5375,7 @@ public class Grid extends Canvas {
 				}
 			}
 		}
-		if (fixedOverlayActive && GridPaintDag.includes(paintPlan, GridPaintDag.FIXED)) {
+		if (fixedOverlayActive && GridPaintDAG.includes(paintPlan, GridPaintDAG.FIXED)) {
 			// Clip the entire fixed-overlay pass to the on-screen rectangle of
 			// the frozen columns so cell rendering can never bleed into the
 			// scrolled area, even if a renderer paints outside its bounds.
@@ -5385,28 +5385,28 @@ public class Grid extends Canvas {
 			final Rectangle fixedRect = new Rectangle(fixedX, fixedTop, getFixedColumnsWidth(),
 					Math.max(0, clientArea.height - fixedTop - fixedBottom));
 			final Rectangle fixedClipping = originalClipping.intersection(fixedRect);
-			try (GridGcProxy fixedGc = GridGcProxy.wrap(gc).clip(fixedClipping)) {
+			try (GridGCProxy fixedGc = GridGCProxy.wrap(gc).clip(fixedClipping)) {
 				paintRows(fixed.columns(), true, firstItemToDraw, visibleRows, 0, cellSpanManager, fixedGc.gc(),
 						fixedClipping, y, clientArea, firstVisibleIndex, insertMark, extraFill);
 			}
 		}
 
 		// draw insertion mark
-		if (insertMark.posFound && GridPaintDag.includes(paintPlan, GridPaintDag.BODY)) {
+		if (insertMark.posFound && GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
 			final Rectangle rect = new Rectangle(rowHeaderVisible ? rowHeaderWidth : 0,
 					columnHeadersVisible ? headerHeight : 0, clientArea.width, clientArea.height);
-			try (GridGcProxy insertGc = GridGcProxy.wrap(gc).clip(originalClipping.intersection(rect))) {
+			try (GridGCProxy insertGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(rect))) {
 				insertMarkRenderer.paint(insertGc.gc(),
 						new Rectangle(insertMark.posX1, insertMark.posY, insertMark.posX2 - insertMark.posX1, 0));
 			}
 		}
 
 		if (columnFootersVisible
-				&& GridPaintDag.includes(paintPlan, GridPaintDag.FOOTER)) {
+				&& GridPaintDAG.includes(paintPlan, GridPaintDAG.FOOTER)) {
 			final int footerY = Math.max(clientArea.y, clientArea.y + clientArea.height - footerHeight);
 			final Rectangle footerRect = new Rectangle(
 					clientArea.x, footerY, clientArea.width, Math.min(footerHeight, clientArea.height));
-			try (GridGcProxy footerGc = GridGcProxy.wrap(gc).clip(originalClipping.intersection(footerRect))) {
+			try (GridGCProxy footerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(footerRect))) {
 				paintFooter(footerGc.gc());
 			}
 		}

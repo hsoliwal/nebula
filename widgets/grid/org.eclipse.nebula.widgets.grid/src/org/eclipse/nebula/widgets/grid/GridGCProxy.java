@@ -28,7 +28,7 @@ import org.eclipse.swt.graphics.Transform;
  * Native graphics resources remain owned by SWT; only the temporary Transform
  * snapshot is allocated and disposed by this scope.</p>
  */
-final class GridGcProxy implements AutoCloseable {
+final class GridGCProxy implements AutoCloseable {
 
 	private final GC gc;
 	private final Region originalClipping;
@@ -48,7 +48,7 @@ final class GridGcProxy implements AutoCloseable {
 	private final Font originalFont;
 	private boolean closed;
 
-	private GridGcProxy(GC gc) {
+	private GridGCProxy(GC gc) {
         if (gc == null) {
             throw new IllegalArgumentException("gc");
         }
@@ -72,15 +72,15 @@ final class GridGcProxy implements AutoCloseable {
 		this.originalFont = gc.getFont();
 	}
 
-	static GridGcProxy wrap(GC gc) {
-		return new GridGcProxy(gc);
+	static GridGCProxy wrap(GC gc) {
+		return new GridGCProxy(gc);
 	}
 
 	GC gc() {
 		return gc;
 	}
 
-	GridGcProxy clip(Rectangle clipping) {
+	GridGCProxy clip(Rectangle clipping) {
         if (clipping == null) {
             throw new IllegalArgumentException("clipping");
         }
@@ -95,11 +95,11 @@ final class GridGcProxy implements AutoCloseable {
 		return this;
 	}
 
-	GridGcProxy transform(GridAffineTransform affine) {
-        if (affine == null) {
-            throw new IllegalArgumentException("affine");
+	GridGCProxy transform(GridTransform transform) {
+        if (transform == null) {
+            throw new IllegalArgumentException("transform");
         }
-        if (affine.isIdentity()) {
+        if (transform.isIdentity()) {
             return this;
         }
 		Transform next = new Transform(gc.getDevice());
@@ -108,7 +108,7 @@ final class GridGcProxy implements AutoCloseable {
 			gc.getTransform(next);
 			delta = new Transform(
 					gc.getDevice(),
-					affine.m11, affine.m12, affine.m21, affine.m22, affine.dx, affine.dy);
+					transform.m11, transform.m12, transform.m21, transform.m22, transform.dx, transform.dy);
 			next.multiply(delta);
 			gc.setTransform(next);
 		} finally {
@@ -120,11 +120,11 @@ final class GridGcProxy implements AutoCloseable {
 		return this;
 	}
 
-	GridGcProxy translate(float x, float y) {
-		return transform(GridAffineTransform.translation(x, y));
+	GridGCProxy translate(float x, float y) {
+		return transform(GridTransform.translate(x, y));
 	}
 
-	GridGcProxy lineAttributes(LineAttributes attributes) {
+	GridGCProxy lineAttributes(LineAttributes attributes) {
         if (attributes == null) {
             throw new IllegalArgumentException("attributes");
         }
@@ -132,7 +132,7 @@ final class GridGcProxy implements AutoCloseable {
 		return this;
 	}
 
-	GridGcProxy alpha(int alpha) {
+	GridGCProxy alpha(int alpha) {
 		gc.setAlpha(alpha);
 		return this;
 	}
