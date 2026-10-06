@@ -21,6 +21,19 @@ final class NebulaM3TransferContractTest {
                 "org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe",
                 NebulaM3TransferContract.ENTRYPOINT);
         assertEquals(
+                "hsoliwal/com.synexia",
+                NebulaM3TransferContract.CANONICAL_RECIPE_REPOSITORY);
+        assertEquals(
+                "com.synexia.rewrite",
+                NebulaM3TransferContract.CANONICAL_RECIPE_PACKAGE);
+        assertEquals(
+                "com.synexia.rewrite.M3NebulaRecipeDag",
+                NebulaM3TransferContract.CANONICAL_RECIPE_DAG);
+        assertEquals(
+                "com.synexia.rewrite.M3NebulaViewportDistillationRecipe",
+                NebulaM3TransferContract.CANONICAL_VIEWPORT_RECIPE);
+        assertFalse(NebulaM3TransferContract.LOCAL_RECIPE_IMPLEMENTATION_AUTHORITY);
+        assertEquals(
                 List.of("hsoliwal/M3jdk21", "hsoliwal/com.synexia"),
                 NebulaM3TransferContract.targets().stream()
                         .map(NebulaM3TransferContract.Target::repository)
@@ -44,6 +57,12 @@ final class NebulaM3TransferContractTest {
         assertTrue(
                 NebulaM3TransferContract.metadataTsv()
                         .contains("orchestratorPlansRoot\t" + NebulaM3OrchestratorPlans.root()));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains("canonicalRecipeRepository\thsoliwal/com.synexia"));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains("localRecipeImplementationAuthority\tfalse"));
     }
 
     @Test
