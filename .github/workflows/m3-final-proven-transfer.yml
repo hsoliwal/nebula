@@ -101,7 +101,6 @@ jobs:
       - name: 7 - Inventory complete Nebula Java checkout
         run: >-
           mvn -B -ntp -f m3/reactor.xml -Pinventory
-          -Dm3.nebula.root="$GITHUB_WORKSPACE"
           -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory"
           verify
 
