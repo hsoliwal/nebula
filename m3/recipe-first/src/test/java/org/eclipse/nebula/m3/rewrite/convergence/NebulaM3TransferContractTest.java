@@ -96,6 +96,9 @@ final class NebulaM3TransferContractTest {
                 NebulaM3TransferContract.targetsTsv(),
                 Files.readString(output.resolve("transfer-targets.tsv")));
         assertEquals(
+                NebulaM3UiBehaviorDonorCatalog.tsv(),
+                Files.readString(output.resolve("ui-behavior-donors.tsv")));
+        assertEquals(
                 NebulaM3TransferContract.orchestratorsTsv(),
                 Files.readString(output.resolve("orchestrators.tsv")));
         assertEquals(
