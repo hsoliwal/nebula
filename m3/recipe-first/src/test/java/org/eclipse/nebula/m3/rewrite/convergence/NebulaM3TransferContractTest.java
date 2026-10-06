@@ -89,8 +89,7 @@ final class NebulaM3TransferContractTest {
                 NebulaM3TransferContract.orchestratorsTsv(),
                 Files.readString(output.resolve("orchestrators.tsv")));
         assertEquals(
-                NebulaM3TransferContract.root() + "
-",
+                NebulaM3TransferContract.root() + "\n",
                 Files.readString(output.resolve("transfer.sha256")));
     }
 }
