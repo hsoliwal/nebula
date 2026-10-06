@@ -103,10 +103,10 @@ final class NebulaM3SecondPassBindingTest {
         assertTrue(policy.contains("java.secondPassPromotion=false"));
 
         assertTrue(plan.contains(
-                "3\tSECOND_PASS_SIGNAL_CHAIN\t"
+                "4\tSECOND_PASS_SIGNAL_CHAIN\t"
                         + NebulaM3SecondPassBinding.RECIPE
                         + "\tFILE\tREAD_ONLY\t"));
-        assertTrue(plan.contains("8\tFILE_FIXED_POINT\t"));
+        assertTrue(plan.contains("9\tFILE_FIXED_POINT\t"));
     }
 
     @Test
