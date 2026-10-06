@@ -33,6 +33,13 @@ final class NebulaM3TransferContractTest {
                                         target.directSourceMutationAuthority()
                                                 || target.promotionAuthority()));
         assertTrue(NebulaM3TransferContract.root().matches("[0-9a-f]{64}"));
+        assertEquals(
+                "FILE,VISIBILITY,PACKAGE,MODULE,MULTI_MODULE,LIBRARY_API",
+                NebulaM3TransferContract.refactorScopeOrder());
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains(
+                                "refactorScopeOrder\tFILE,VISIBILITY,PACKAGE,MODULE,MULTI_MODULE,LIBRARY_API"));
         assertTrue(
                 NebulaM3TransferContract.metadataTsv()
                         .contains("orchestratorPlansRoot\t" + NebulaM3OrchestratorPlans.root()));
