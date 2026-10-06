@@ -1,19 +1,20 @@
 ordinal	stage	owner	scope	authority	gate
 0	INVENTORY	m3/recipe-first	FILE	READ_ONLY	whole Java checkout parsed; failureRows=0
 1	CHALLENGE_DONOR_REVIEW	m3/recipe-first:NebulaM3RepositoryReviewRecipe	FILE	READ_ONLY	serial LeetCode -> HackerRank -> GeeksforGeeks -> pinned GitHub donor evidence
-2	JAVA_BEFORE_JNI_REVIEW	m3/recipe-first:NebulaM3JavaBeforeJniReviewRecipe	FILE	READ_ONLY	Java oracle + differential corpus + lifecycle/fallback + setup-inclusive benchmark before native candidate
-3	SECOND_PASS_SIGNAL_CHAIN	com.synexia.rewrite.M3RepositoryAtomPatternSecondPass	FILE	READ_ONLY	one SHARED_JVM_COMPOSITE scheduler atom; internal AST/LST structural/control/contract + masked-regex/repetition cues -> typed residue + three-pass fixed-point fan-in (budget 4)
-4	SECOND_PASS_REVIEW_DAG	org.eclipse.nebula.m3.SecondPassReviewDag	FILE	READ_ONLY	merged Synexia PR #8973 content commit; structural -> signal DAG -> LeetCode/HackerRank/GeeksforGeeks donor planner -> JNI contract inventory; Camel/Airflow projections and Drools admission retain zero mutation/promotion authority
-5	ATOMIZE	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	tested local recipe grammar; broader shapes remain explicit residue
-6	PATTERNIZE	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate pattern/IOP pass; public contract locked
-7	DOCUMENT	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate idempotent semantic documentation pass
-8	FILE_FIXED_POINT	m3/recipe-first + CI	FILE	VERIFY_ONLY	second local recipe run leaves the candidate patch byte-identical
-9	VISIBILITY_FAN_IN	m3/recipe-first:NebulaM3RefactorScope	VISIBILITY	VERIFY_ONLY	accessibility boundary changes require explicit visibility authority; repository size alone never promotes
-10	PACKAGE_FAN_IN	com.synexia:M3HierarchyRecipe	PACKAGE	VERIFY_ONLY	package/default/protected participant relationships only; child receipts retained
-11	MODULE_FAN_IN	com.synexia:M3BuildTopology	MODULE	VERIFY_ONLY	module-local symbol/type/recipe relationships only; missing/external explicit
-12	MULTI_MODULE_FAN_IN	com.synexia:M3BuildTopology	MULTI_MODULE	VERIFY_ONLY	cross-reactor dependencies require explicit multi-module authority and deterministic fan-in
-13	LIBRARY_API_FAN_IN	manual contract review	LIBRARY_API	VERIFY_ONLY	exported API/library contract changes require explicit approval; no automatic promotion
-14	PROJECT_FAN_IN	com.synexia:M3HierarchyRecipe	PROJECT	VERIFY_ONLY	outer proof aggregation only; child identities/counts/residue retained
-15	REPOSITORY_FAN_IN	com.synexia:M3HierarchyRecipe	REPOSITORY	VERIFY_ONLY	outer proof aggregation only; one content-addressed receipt root
-16	ORIGINAL_BUILD	Nebula Tycho	REPOSITORY	VERIFY_ONLY	mvn clean verify
-17	PROMOTION	manual serial review	REPOSITORY	NO_AUTOMATIC_AUTHORITY	all gates pass; source diff independently reviewed
+2	UI_BEHAVIOR_DONOR_REVIEW	m3/recipe-first:NebulaM3UiBehaviorDonorCatalog	FILE	READ_ONLY	Java2s SWT/SWT-2D/Swing/Swing-Event catalogues -> observable viewport/graphics/event obligations only; no source-copy authority
+3	JAVA_BEFORE_JNI_REVIEW	m3/recipe-first:NebulaM3JavaBeforeJniReviewRecipe	FILE	READ_ONLY	Java oracle + differential corpus + lifecycle/fallback + setup-inclusive benchmark before native candidate
+4	SECOND_PASS_SIGNAL_CHAIN	com.synexia.rewrite.M3RepositoryAtomPatternSecondPass	FILE	READ_ONLY	one SHARED_JVM_COMPOSITE scheduler atom; internal AST/LST structural/control/contract + masked-regex/repetition cues -> typed residue + three-pass fixed-point fan-in (budget 4)
+5	SECOND_PASS_REVIEW_DAG	org.eclipse.nebula.m3.SecondPassReviewDag	FILE	READ_ONLY	merged Synexia PR #8973 content commit; structural -> signal DAG -> LeetCode/HackerRank/GeeksforGeeks donor planner -> JNI contract inventory; Camel/Airflow projections and Drools admission retain zero mutation/promotion authority
+6	ATOMIZE	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	tested local recipe grammar; broader shapes remain explicit residue
+7	PATTERNIZE	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate pattern/IOP pass; public contract locked
+8	DOCUMENT	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate idempotent semantic documentation pass
+9	FILE_FIXED_POINT	m3/recipe-first + CI	FILE	VERIFY_ONLY	second local recipe run leaves the candidate patch byte-identical
+10	VISIBILITY_FAN_IN	m3/recipe-first:NebulaM3RefactorScope	VISIBILITY	VERIFY_ONLY	accessibility boundary changes require explicit visibility authority; repository size alone never promotes
+11	PACKAGE_FAN_IN	com.synexia:M3HierarchyRecipe	PACKAGE	VERIFY_ONLY	package/default/protected participant relationships only; child receipts retained
+12	MODULE_FAN_IN	com.synexia:M3BuildTopology	MODULE	VERIFY_ONLY	module-local symbol/type/recipe relationships only; missing/external explicit
+13	MULTI_MODULE_FAN_IN	com.synexia:M3BuildTopology	MULTI_MODULE	VERIFY_ONLY	cross-reactor dependencies require explicit multi-module authority and deterministic fan-in
+14	LIBRARY_API_FAN_IN	manual contract review	LIBRARY_API	VERIFY_ONLY	exported API/library contract changes require explicit approval; no automatic promotion
+15	PROJECT_FAN_IN	com.synexia:M3HierarchyRecipe	PROJECT	VERIFY_ONLY	outer proof aggregation only; child identities/counts/residue retained
+16	REPOSITORY_FAN_IN	com.synexia:M3HierarchyRecipe	REPOSITORY	VERIFY_ONLY	outer proof aggregation only; one content-addressed receipt root
+17	ORIGINAL_BUILD	Nebula Tycho	REPOSITORY	VERIFY_ONLY	mvn clean verify
+18	PROMOTION	manual serial review	REPOSITORY	NO_AUTOMATIC_AUTHORITY	all gates pass; source diff independently reviewed
