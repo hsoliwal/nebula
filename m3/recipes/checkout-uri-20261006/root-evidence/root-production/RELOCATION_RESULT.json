@@ -1,0 +1,12 @@
+{
+  "status": "EXISTING_ISOLATED_NEBULA_WORKTREE_RELOCATED_RAW_SOURCE_FIXEDPOINT_PASS",
+  "source": "S:\\gm435314v3\\owner74f",
+  "destination": "S:\\gm435314v3\\portable owner74f",
+  "source_and_two_metadata_image_byte_mtime_count": 5400,
+  "all_source_bytes_and_mtimes_preserved": true,
+  "base_commit": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "old_location_absent": true,
+  "full314_runtime": "PENDING",
+  "original_other_worktrees_untouched": true,
+  "no_full_source_or_cache_copy": true
+}

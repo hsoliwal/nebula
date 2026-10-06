@@ -1,0 +1,34 @@
+{
+  "scope": "exact Tycho4.0.12 repository URI method; no full reactor/native claim",
+  "javac": "--release 21 -Xlint:all -Werror",
+  "javac_exit": 0,
+  "oracle_source_sha256": "ff05b79fcfc12dfd64315ed645029264a7bc085c11f8eec5fa68f417b0f41e31",
+  "shared_jar_count": 230,
+  "no_binary_copy": true,
+  "trials": [
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+      "exit": 0,
+      "output": "EXACT_TYCHO_URI_PASS\tfile:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+      "log_sha256": "f9865ae563a7be237b04928192c751c562d6bb95366680c87bd3f80ad15593e4"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+      "exit": 0,
+      "output": "EXACT_TYCHO_URI_PASS\tfile:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+      "log_sha256": "82be121536a8036b47d979786283d8456f20b4040aeed0ae1101ae024775a943"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+      "exit": 0,
+      "output": "EXACT_TYCHO_URI_PASS\tfile:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+      "log_sha256": "558c2476e3472bd273ad64c80b50762e8b0cae063fd87afb2ea49e6c30b4f007"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent% unicode\u6e2c\u8a66",
+      "exit": 0,
+      "output": "EXACT_TYCHO_URI_PASS\tfile:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25%20unicode%E6%B8%AC%E8%A9%A6/m3/qualified-mixed-original435-target",
+      "log_sha256": "e724368fe12fc126f024682a3bb6ac4941acee48e3e2937eb8e2bc3526836f8d"
+    }
+  ]
+}

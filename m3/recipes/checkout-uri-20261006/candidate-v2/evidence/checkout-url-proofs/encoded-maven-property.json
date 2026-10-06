@@ -1,0 +1,486 @@
+{
+  "schema": "synexia.nebula-portable-maven-property-proof.v1",
+  "scope": "tiny Maven-only inherited projection; not full Tycho/default reactor",
+  "trials": [
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+      "variant": "root-cwd",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "releng/parent/observed.txt",
+          "values": {
+            "artifact": "parent",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\releng\\parent",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/releng/parent/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/observed.txt",
+          "values": {
+            "artifact": "grid",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/widgets/grid/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "5845f57b280313d55fbeadc245c94fb60596b26ad72565d3128baf159a75e072"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+      "variant": "unrelated-cwd-root-f",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\unrelated-cwd",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\pom.xml",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "releng/parent/observed.txt",
+          "values": {
+            "artifact": "parent",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\releng\\parent",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/releng/parent/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/observed.txt",
+          "values": {
+            "artifact": "grid",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/widgets/grid/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "0063126d41a5988971fd956181f57359aef66d5078127f108a1408775703bfc8"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+      "variant": "child-cwd",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid\\child",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "a35ee8c76fdfd5bec54e1126d27a164c74b61a8e6707e7b7a3057071055e1d28"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+      "variant": "unrelated-cwd-child-f",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\unrelated-cwd",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid\\child\\pom.xml",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\plain-root",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/plain-root/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "309a2c4d7b9d751ab7f7a5916012cab97163c3a8eda4c62c662abf6bd1183117"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+      "variant": "root-cwd",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "releng/parent/observed.txt",
+          "values": {
+            "artifact": "parent",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\releng\\parent",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/releng/parent/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/observed.txt",
+          "values": {
+            "artifact": "grid",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/widgets/grid/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "a6a80644ef0d5cecd2b975ffb8e270ebbd05d6628e4682d77c6cf7d967b00d3f"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+      "variant": "unrelated-cwd-root-f",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\unrelated-cwd",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\pom.xml",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "releng/parent/observed.txt",
+          "values": {
+            "artifact": "parent",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\releng\\parent",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/releng/parent/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/observed.txt",
+          "values": {
+            "artifact": "grid",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/widgets/grid/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "3b98ec5f2e22999e44aea91b928ae3a4b96f13bc8c2b97da1481521d00bf0788"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+      "variant": "child-cwd",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid\\child",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "349c9929e58407d1b278b0a3fc48ed685c20bd580fe1bb69bdcbcfda8ea3965f"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+      "variant": "unrelated-cwd-child-f",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\unrelated-cwd",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid\\child\\pom.xml",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root with spaces",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20with%20spaces/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "d4d22e9c5ce8db6a6b4a088b5933180ef4f64064ef1a9a222a167a594443f592"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+      "variant": "root-cwd",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "releng/parent/observed.txt",
+          "values": {
+            "artifact": "parent",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\releng\\parent",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/releng/parent/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/observed.txt",
+          "values": {
+            "artifact": "grid",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/widgets/grid/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "b9952c7a0c7f82e0c345f967565b5cb1a8f131aae710e1a44e49c97c178a4887"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+      "variant": "unrelated-cwd-root-f",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\unrelated-cwd",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\pom.xml",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "releng/parent/observed.txt",
+          "values": {
+            "artifact": "parent",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\releng\\parent",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/releng/parent/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/observed.txt",
+          "values": {
+            "artifact": "grid",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/widgets/grid/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        },
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "222ad610d3c28913d21cafe9b7792df163b3c93740697a8da28ce147d71cc441"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+      "variant": "child-cwd",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid\\child",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "9423ad96b360ef55fd2ac93d5f00d0943accf973d717e22642b8863e01966595"
+    },
+    {
+      "root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+      "variant": "unrelated-cwd-child-f",
+      "cwd": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\unrelated-cwd",
+      "command": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid\\child\\pom.xml",
+        "validate"
+      ],
+      "exit": 0,
+      "observed": [
+        {
+          "file": "widgets/grid/child/observed.txt",
+          "values": {
+            "artifact": "child",
+            "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%\\widgets\\grid\\child",
+            "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/widgets/grid/child/",
+            "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent%",
+            "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25/m3/qualified-mixed-original435-target",
+            "sessionRoot": "${session.executionRootDirectory}"
+          }
+        }
+      ],
+      "log_sha256": "e28675f2e084c25562805d721498cd8d7bc1fa763ee3dc6dd0cd5e06d66cdcb1"
+    }
+  ]
+}

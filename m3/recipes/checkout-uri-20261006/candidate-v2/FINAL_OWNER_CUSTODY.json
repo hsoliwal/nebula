@@ -1,0 +1,27 @@
+{
+  "base_commit": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "current_source_files_all_raw_verified": 5399,
+  "source_context_retained_paths": 5398,
+  "owner_targets": [
+    {
+      "path": "releng/org.eclipse.nebula.nebula-parent/pom.xml",
+      "before": "PRESENT_EXACT_QUALIFIED_OWNER",
+      "pre_sha256": "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+      "post_sha256": "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6"
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/mixed.target",
+      "before": "PRESENT_EXACT_QUALIFIED_OWNER",
+      "pre_sha256": "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+      "post_sha256": "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9"
+    }
+  ],
+  "owner_state": "ALL_PREIMAGE_UNMODIFIED_BY_WORKER",
+  "status": " M releng/org.eclipse.nebula.nebula-parent/pom.xml\n?? m3/qualified-mixed-original435-target/artifacts.xml\n?? m3/qualified-mixed-original435-target/content.xml\n?? m3/qualified-mixed-original435-target/mixed.target\n?? m3/qualified-mixed-original435-target/p2.index\n",
+  "runtime_dependency_inputs": 145,
+  "runtime_dependency_hashes": "ALL_MATCH",
+  "S_free_bytes": 45983543296,
+  "S_minimum_reserve_bytes": 8589934592,
+  "available_windows_commit_bytes": 1751916544,
+  "full314_new_replay": "PENDING_ROOT_HEADROOM_AND_EXECUTION"
+}

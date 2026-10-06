@@ -1,0 +1,47 @@
+{
+  "argv": [
+    "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+    "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+    "-V",
+    "-B",
+    "clean",
+    "verify",
+    "-Dtycho.localArtifacts=ignore"
+  ],
+  "cwd": "S:\\gm435314v3\\portable owner74f",
+  "base_commit": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "original_314_default_argv_preserved": true,
+  "encoded_checkout_uri": "file:///S:/gm435314v3/portable%20owner74f",
+  "cleared_caller_option_sources": [
+    "MAVEN_ARGS",
+    "MAVEN_BASEDIR",
+    "MAVEN_DEBUG_OPTS",
+    "_JAVA_OPTIONS",
+    "JAVA_TOOL_OPTIONS",
+    "JDK_JAVA_OPTIONS",
+    "CLASSPATH"
+  ],
+  "env": {
+    "JAVA_HOME": "C:\\Program Files\\Java\\jdk-21",
+    "TMP": "S:\\m3-nebula-portable-recipe-20261006\\full-default-relocated-v2\\tmp",
+    "TEMP": "S:\\m3-nebula-portable-recipe-20261006\\full-default-relocated-v2\\tmp",
+    "MAVEN_OPTS": "-Djava.io.tmpdir=\"S:\\m3-nebula-portable-recipe-20261006\\full-default-relocated-v2\\tmp\" -Dfile.encoding=UTF-8 -Xmx2g -Dm3.nebula.checkout.uri=file:///S:/gm435314v3/portable%20owner74f",
+    "MAVEN_SKIP_RC": "1",
+    "MAVEN_BASEDIR": "S:\\gm435314v3\\portable owner74f"
+  },
+  "source_targets": [
+    {
+      "path": "releng/org.eclipse.nebula.nebula-parent/pom.xml",
+      "before": "PRESENT_EXACT_QUALIFIED_OWNER",
+      "pre_sha256": "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+      "post_sha256": "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6"
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/mixed.target",
+      "before": "PRESENT_EXACT_QUALIFIED_OWNER",
+      "pre_sha256": "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+      "post_sha256": "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9"
+    }
+  ],
+  "full_portable_reactor_executed": false
+}

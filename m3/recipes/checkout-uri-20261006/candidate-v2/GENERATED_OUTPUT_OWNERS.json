@@ -1,0 +1,3858 @@
+{
+  "source_manifest_sha256": "807915c9d7df4abdff9d3c001664896f22b0909c4d65f908647e8054d3082389",
+  "policy": "Only frozen original Maven POM or Eclipse build.properties project owner target directories",
+  "original_reactor_projects": 314,
+  "descriptor_count": 585,
+  "descriptors": [
+    {
+      "path": ".m3/atom-pattern/pom.xml",
+      "sha256": "69836243341186e33c0539a4d19767afa2408023dcf761070e4d90dff11df812",
+      "bytes": 1412,
+      "git_blob_oid_at_74f": "50e6ab771bad7f16701d3b8015d8ac1fb9c554e8"
+    },
+    {
+      "path": ".m3/nebula-visible-range/pom.xml",
+      "sha256": "628fcc01c5955bae48dcad4223e8298007b4f7f9a3f095c4d4324bafb597a3bc",
+      "bytes": 1851,
+      "git_blob_oid_at_74f": "56d1094c38f1a2f921ba0b43747ff8bb079f0917"
+    },
+    {
+      "path": "examples/org.eclipse.nebula.examples.feature/build.properties",
+      "sha256": "06f07be68cb529d8ff4f3b2b1d97a15591c17ab707139266233304add431352d",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "6aa44fd494d1f29978ed25f8e784726189643350"
+    },
+    {
+      "path": "examples/org.eclipse.nebula.examples.feature/pom.xml",
+      "sha256": "de645b89e0501c89b9d6876f1f56d2320d32bbb7861c37b197d0d731e893dcbf",
+      "bytes": 1075,
+      "git_blob_oid_at_74f": "2e24a133016a83429e011e97986ced12b553f748"
+    },
+    {
+      "path": "examples/org.eclipse.nebula.examples/build.properties",
+      "sha256": "557d1beafca6991246dae3ac01f4ed3f5da04068b427dd7e7985fc3b91ab7079",
+      "bytes": 189,
+      "git_blob_oid_at_74f": "2398cbab9b5d10e6e433bed754e1fb8cd8cbbaae"
+    },
+    {
+      "path": "examples/org.eclipse.nebula.examples/pom.xml",
+      "sha256": "e508f4f0252715eaeb9f5a4ba5470ff48df0ff79dff4a98562d98de63a0f0999",
+      "bytes": 1025,
+      "git_blob_oid_at_74f": "dfa07565fea9a48dd6a9bab43d5c1bfb553301ed"
+    },
+    {
+      "path": "examples/org.eclipse.nebula.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "m3/openrewrite-line-terminators/pom.xml",
+      "sha256": "ebd1fa9c28a017c627e89907f61f879189b4f1828235b5c54f5f58ef69fff00d",
+      "bytes": 7043,
+      "git_blob_oid_at_74f": "f36b5c748d4dcbd5467fbf8e90e1e01863b481cc"
+    },
+    {
+      "path": "m3/recipe-first/pom.xml",
+      "sha256": "5a199517446bc68da1c37d7ebbab934e7ff16e093e129980c39f444e7c142032",
+      "bytes": 5672,
+      "git_blob_oid_at_74f": "f791f812d29ea3f7dae3c6a1f1edce09a006292b"
+    },
+    {
+      "path": "org.eclipse.nebula.nebface/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "org.eclipse.nebula.presentations.shelf/build.properties",
+      "sha256": "fb6cdbdb6f497aa75341d8233ca7232a6d859ee62350c8dda95247a8d0b25f2d",
+      "bytes": 210,
+      "git_blob_oid_at_74f": "be31fece396a33b696fd53b821d4797c6f2c4c36"
+    },
+    {
+      "path": "pom.xml",
+      "sha256": "3bd1e27703c4994a6687685f7b3546971bf307035b662986fbe6058272d9813c",
+      "bytes": 4307,
+      "git_blob_oid_at_74f": "756ee5408447cc2143be47099b1a1443dbe2e360"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.examples.incubation.feature/build.properties",
+      "sha256": "06f07be68cb529d8ff4f3b2b1d97a15591c17ab707139266233304add431352d",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "6aa44fd494d1f29978ed25f8e784726189643350"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.examples.incubation.feature/pom.xml",
+      "sha256": "4fd358746ae52f398862c81ed37401f03cc0a47caf38d7203934dac9187731c7",
+      "bytes": 1076,
+      "git_blob_oid_at_74f": "a7b543a09359d9d3feda1a2a791ec89f1f028644"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.examples.release.feature/build.properties",
+      "sha256": "06f07be68cb529d8ff4f3b2b1d97a15591c17ab707139266233304add431352d",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "6aa44fd494d1f29978ed25f8e784726189643350"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.examples.release.feature/pom.xml",
+      "sha256": "aaf75094932a895c5b9f799a8de879c938b2e8c1749c626a48687326bcdec667",
+      "bytes": 1108,
+      "git_blob_oid_at_74f": "9eaf52877caf5be521fdbeb46070c4fdc29f32d6"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.examples.webstart/build.properties",
+      "sha256": "d5629af30238cf07bf10f0461f9bf261d404b2465c03341cab3e409e38cceee7",
+      "bytes": 43,
+      "git_blob_oid_at_74f": "38517e50cb4e1255d0e3b1caaa5fd521db047d94"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.feature/build.properties",
+      "sha256": "05f7c54920da394627593b8126fc9a62b77067afac5214a95e4d706bb5c45d8a",
+      "bytes": 153,
+      "git_blob_oid_at_74f": "8c8374c591e29d5fac65925b103d35ca6995a575"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.feature/pom.xml",
+      "sha256": "53c692cd609f912df60e92b7afef7d45834191e27b29d34971f548c98c8fe114",
+      "bytes": 1053,
+      "git_blob_oid_at_74f": "1c2c81eab6c0d1c16d22a6c41661b419e97e6c1d"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.incubation.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.incubation.feature/pom.xml",
+      "sha256": "496df1473a86ca72dbf6612ff008eeff0bbcb822e43a6c98c31509c070d6e7a4",
+      "bytes": 1036,
+      "git_blob_oid_at_74f": "8f8aed9f574e6abfb837e13ac0f510b266fc5f79"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.nebula-parent/pom.xml",
+      "sha256": "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+      "bytes": 15553,
+      "git_blob_oid_at_74f": "623af083ec2eab2bcc51c59abb220121401928e1"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.site/pom.xml",
+      "sha256": "0a7cf21c1a65c4d28eaa166551c858c8835b93409180efa9775e22b945b94080",
+      "bytes": 1024,
+      "git_blob_oid_at_74f": "5f75b7f98703a2c46ba5735ccaac9fbeb6d87f09"
+    },
+    {
+      "path": "releng/org.eclipse.nebula.site/promotion/pom.xml",
+      "sha256": "1171868f6850af68015043f95e5e325e25f64bf1db11e829da12f54d3f57073e",
+      "bytes": 3942,
+      "git_blob_oid_at_74f": "001a1a708f7f507e548ea6f3641519d47354c711"
+    },
+    {
+      "path": "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel.feature/pom.xml",
+      "sha256": "585a8081ff61d1d6c5a9dc5440b0687016cf81e52fb8d404046ca80135f992f4",
+      "bytes": 979,
+      "git_blob_oid_at_74f": "c49d77198638d8c1dc78bc21746929b7ff9664d2"
+    },
+    {
+      "path": "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel.snippets/pom.xml",
+      "sha256": "f403376c40559c0cab2962432fbd001983efd1a357fc817922915d829dfe4b0d",
+      "bytes": 824,
+      "git_blob_oid_at_74f": "1f98f8b99016f09f118c4c0f0335a9d778900956"
+    },
+    {
+      "path": "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel/pom.xml",
+      "sha256": "2acae5ca79f6e1f096cec6fb5303f6f1e640cf15bf4a47a37961c76bdce276f7",
+      "bytes": 850,
+      "git_blob_oid_at_74f": "f20e656bcd348e6de04a9961916831011dc3c1e2"
+    },
+    {
+      "path": "widgets/badgedlabel/pom.xml",
+      "sha256": "5cc5aaace385274a3b2a488a47b1c29afb6c1596f813f3cdb54e0578f6594392",
+      "bytes": 826,
+      "git_blob_oid_at_74f": "e874ae13f90773c24d7b7357d13d43cd13f3758b"
+    },
+    {
+      "path": "widgets/bidilayout/org.eclipse.nebula.widgets.bidilayout/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/bidilayout/org.eclipse.nebula.widgets.bidilayout/pom.xml",
+      "sha256": "a96859c307be1b2a1503c3435961389bf2d749526aa30d731969a787fbc1b504",
+      "bytes": 1027,
+      "git_blob_oid_at_74f": "5e6890d47eacfe92a3c5b9c05461ada20b8e5c11"
+    },
+    {
+      "path": "widgets/bidilayout/pom.xml",
+      "sha256": "39eb7b99f5e778bd7cb819608d00052dd14034ffa8ea9fb4197b920c1ce0bd3d",
+      "bytes": 656,
+      "git_blob_oid_at_74f": "60a25562f4cee9c49a2333185725984316c34474"
+    },
+    {
+      "path": "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo.example/pom.xml",
+      "sha256": "065d813e6ffc777abdaa51928e02a8c68f5f1a0240afd20aa8f82f472e8e599d",
+      "bytes": 969,
+      "git_blob_oid_at_74f": "0b2ae70af88da686447b01a918f8ff4ee0b088fc"
+    },
+    {
+      "path": "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo.feature/pom.xml",
+      "sha256": "c6f0662e721e25fdc418a4e2b22d2af3e86acd53c44ba3eff1e50efacffa0986",
+      "bytes": 1012,
+      "git_blob_oid_at_74f": "de1793112bfb94783f41a7ac9357340e60072de5"
+    },
+    {
+      "path": "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo/build.properties",
+      "sha256": "afe1e6d08c071704e25ae65f999d4ae6c5ec0ce0c468a0a7b68d706e2e6d5494",
+      "bytes": 322,
+      "git_blob_oid_at_74f": "0066a0ec99f24e4fbb9bb1730882b86eb09d8c58"
+    },
+    {
+      "path": "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo/pom.xml",
+      "sha256": "b8a9271da6f3982d748e2adeea011c01f5c58704eb9f816202ffc032bd899485",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "e78f0bda377620a2674bcc6845d6863cdd6b1110"
+    },
+    {
+      "path": "widgets/calendarcombo/pom.xml",
+      "sha256": "96d40a63f2cca5122c2c5d725c98df8f918c62ba8c1a62a47af1641cf9db3711",
+      "bytes": 833,
+      "git_blob_oid_at_74f": "a988397d20225a6eaeefd140f06029864eb9ad22"
+    },
+    {
+      "path": "widgets/carousel/org.eclipse.nebula.widgets.carousel.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/carousel/org.eclipse.nebula.widgets.carousel.feature/pom.xml",
+      "sha256": "7f5886e4e9895d019a120874c254bcda13779da0480175f91169cdd5f119e4d3",
+      "bytes": 969,
+      "git_blob_oid_at_74f": "1863acf4b5f21b72350d295d66fa7615a77cda4d"
+    },
+    {
+      "path": "widgets/carousel/org.eclipse.nebula.widgets.carousel.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/carousel/org.eclipse.nebula.widgets.carousel.snippets/pom.xml",
+      "sha256": "b41ba70ef388764983af58557fc534544d1d44e1146b5cb3dc8a30bea47fc9e9",
+      "bytes": 818,
+      "git_blob_oid_at_74f": "f5430b5af44a73d2239f0b07836fa35633a2ad23"
+    },
+    {
+      "path": "widgets/carousel/org.eclipse.nebula.widgets.carousel/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/carousel/org.eclipse.nebula.widgets.carousel/pom.xml",
+      "sha256": "13cb1e695bf2b00b78f2efae71127611b4a7ea18a05370961a8304946cd21ed3",
+      "bytes": 809,
+      "git_blob_oid_at_74f": "9ae8c8020dc7272d5e3eab0373ef734de76c9b76"
+    },
+    {
+      "path": "widgets/carousel/pom.xml",
+      "sha256": "874744a9834821eacca576dad759dd35b4645d9603a880f60e992bf161cb859c",
+      "bytes": 814,
+      "git_blob_oid_at_74f": "582d637b1b0da46b228fd5f398f1f3f36e16eaeb"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.jface.cdatetime/build.properties",
+      "sha256": "3fdbae4dcd36b27c1af0e8166f6bedd8cd8d26c8e589911b065719ff87b94d07",
+      "bytes": 139,
+      "git_blob_oid_at_74f": "b67aba1a416a785135a5272c44408146545409c1"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.jface.cdatetime/pom.xml",
+      "sha256": "3186fe83affd9e7b4972a7c5c988fad5f12d60565aa15d447c4699718f0f4f06",
+      "bytes": 952,
+      "git_blob_oid_at_74f": "ed25939302f6e8bb0b7a044b25757666e28debba"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css.feature/pom.xml",
+      "sha256": "b29fcaccba263782076a9cb1b8f85af7ec8aa01c37292bc406f67bd0cf5be3c6",
+      "bytes": 995,
+      "git_blob_oid_at_74f": "9aa45c4b36ae63ee28b809c64c355c6612637235"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css/pom.xml",
+      "sha256": "4fe9635bc1daab1dc3b48a8c18364f3e24ad948fc60d07f17d94ab27fbd35649",
+      "bytes": 945,
+      "git_blob_oid_at_74f": "ea6fd8a21c4b8f3eed6ed74685157cedfb4fa2a0"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/build.properties",
+      "sha256": "145f94e0d7087a5aad09b44d69d888467a9764ff35e2f1b608226c789cac1d4a",
+      "bytes": 196,
+      "git_blob_oid_at_74f": "04ab1e9b8f3cd4339dc61f93907610aecbd48895"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/pom.xml",
+      "sha256": "86327eeb454575d3aab37772dccc7f8ccca024a2dd091e2a9b9842cbf94b6db4",
+      "bytes": 962,
+      "git_blob_oid_at_74f": "fdcc702efc91f93a9781c75713d1051cf44d2fd8"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example/build.properties",
+      "sha256": "6e9b7ca5320040974f4d7e160e5ba58540fa3c22dc021fc6de39e5d78d83ea60",
+      "bytes": 132,
+      "git_blob_oid_at_74f": "786b1df93642f533a30fad9d306457ad2f7ff588"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example/pom.xml",
+      "sha256": "f6976867d6a7af46f362b8e851f182da21b908709f1d39be55441db27a3f5267",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "1fa3b1e6b37a2e091b1623bf8789965a0bf9bd26"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.feature/build.properties",
+      "sha256": "0f8fa0d1d2d50df07ad90783aaaff8435c5e9db69e3dddf91432aaff58864274",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "c4bc86b9058065d9ab1c173ebed6381019eb35fd"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.feature/pom.xml",
+      "sha256": "f6e41b001428fef0929c8388a994920d6e22942fc5b430ced1aca756eb341a53",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "90d131e44c1be07a568d4b938e5728577d70c30d"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.snippets/build.properties",
+      "sha256": "61fe81f812405e5a41387e3adff87e7fb2e6d9841f728d1375d2d185e257f5e6",
+      "bytes": 111,
+      "git_blob_oid_at_74f": "aa1a0082691202e9c8cc650976d2b2d128cae35b"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.snippets/pom.xml",
+      "sha256": "7e47d64ebfebda5cbab4ad28ec3ea9e241a81b11c83ed57dbf20891c76f46748",
+      "bytes": 962,
+      "git_blob_oid_at_74f": "7c43ba5fe064f0edffbe236546e5f1017e6a8c60"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/pom.xml",
+      "sha256": "efc5db68a6de8352769c0360ff035d22788fce4ca55b7d4a15461a9d0ad76046",
+      "bytes": 1428,
+      "git_blob_oid_at_74f": "24243e0d7c4c3ff5371eb1ae06a72143ce7bbcad"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime/build.properties",
+      "sha256": "c79ae05d003290f73820373fc4b75e5a6c68fb304fa0e32d042d882ea9d4378d",
+      "bytes": 141,
+      "git_blob_oid_at_74f": "12db5fead30a7f95ae0f6037c4344a5d57be5fb9"
+    },
+    {
+      "path": "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime/pom.xml",
+      "sha256": "d65c2c1a509e0f7c124246f7140830ce2726bf1b562e66a46d81067b128b69a7",
+      "bytes": 953,
+      "git_blob_oid_at_74f": "cea058c0cdc3ed47d8918d8735c33361516e317c"
+    },
+    {
+      "path": "widgets/cdatetime/pom.xml",
+      "sha256": "1303de1fdecb7220ebcf2ebd334ac6bd7a4cabce19404876c5ed5cafb7a867e3",
+      "bytes": 1194,
+      "git_blob_oid_at_74f": "a114193de58884cd9e8823a59a482610dde034f0"
+    },
+    {
+      "path": "widgets/chips/org.eclipse.nebula.widgets.chips.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/chips/org.eclipse.nebula.widgets.chips.feature/pom.xml",
+      "sha256": "16341923d1b9ace14b11c2de14bddec647b904debdc7a173a2f72f4e9e7639f5",
+      "bytes": 960,
+      "git_blob_oid_at_74f": "95325b74974c41764b574a72eed7520a35d0fd92"
+    },
+    {
+      "path": "widgets/chips/org.eclipse.nebula.widgets.chips.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/chips/org.eclipse.nebula.widgets.chips/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/chips/pom.xml",
+      "sha256": "eca58824fccaa60fec2ad7399bf6f6cb89684a4dd5a9b2efc3f225b3e81748ca",
+      "bytes": 802,
+      "git_blob_oid_at_74f": "0a5e2d2c1d58371684a186f4ac2aebf096c88b48"
+    },
+    {
+      "path": "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons.example/pom.xml",
+      "sha256": "5d680301de22ed051ec3def757e6238b338b7afc35a85e776f267313e1a30c38",
+      "bytes": 557,
+      "git_blob_oid_at_74f": "8d0f14060743b6133ff7e3fed423f33e2a14176e"
+    },
+    {
+      "path": "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons.feature/build.properties",
+      "sha256": "0f8fa0d1d2d50df07ad90783aaaff8435c5e9db69e3dddf91432aaff58864274",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "c4bc86b9058065d9ab1c173ebed6381019eb35fd"
+    },
+    {
+      "path": "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons.feature/pom.xml",
+      "sha256": "aaf450ca8ac614eeedf2e78a9f1f99c3079a88e00bdb70213178b6ea68fe9012",
+      "bytes": 958,
+      "git_blob_oid_at_74f": "137196695ec47c94bdfa7b2a19627d7fe828bbb1"
+    },
+    {
+      "path": "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons/build.properties",
+      "sha256": "d3eefc79a644cb5420afa1523bef7b53deb2037fc50484611b21e5322ea04b38",
+      "bytes": 122,
+      "git_blob_oid_at_74f": "e0f6adddc326e2e83c4143b232fc68990615bd48"
+    },
+    {
+      "path": "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons/pom.xml",
+      "sha256": "7f508f140ad7bba5095ffbd4fb8d021590fc4a33781a8f7e8a5410aa36052435",
+      "bytes": 627,
+      "git_blob_oid_at_74f": "db62f2a322b5dea48e3e7ace9f9f9673d6ea6edf"
+    },
+    {
+      "path": "widgets/collapsiblebuttons/pom.xml",
+      "sha256": "3e0521dca28e77948105d380def98506937e98fd6d5266c78f96522a1c285c1f",
+      "bytes": 818,
+      "git_blob_oid_at_74f": "5f7b52dc0f3d83b04fadb9babc469a0be1e8cbb0"
+    },
+    {
+      "path": "widgets/compositetable/org.eclipse.nebula.widgets.compositetable.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/compositetable/org.eclipse.nebula.widgets.compositetable.feature/pom.xml",
+      "sha256": "9347e0e29f7f97b396e040cb7edf0e6b3f1989ed4922ca9b7d8611892f363dd2",
+      "bytes": 944,
+      "git_blob_oid_at_74f": "a5b53f148c569bb0e7d5d4f9ef382197439e6f2b"
+    },
+    {
+      "path": "widgets/compositetable/org.eclipse.nebula.widgets.compositetable.tests/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/compositetable/org.eclipse.nebula.widgets.compositetable.tests/pom.xml",
+      "sha256": "5ccf26fe68df25aac636bb4be1e1d4dac2b381f296632bf8472f469157d007d8",
+      "bytes": 1088,
+      "git_blob_oid_at_74f": "a6337d424a9232a35de11a9fa0f17e263734d5c0"
+    },
+    {
+      "path": "widgets/compositetable/org.eclipse.nebula.widgets.compositetable/build.properties",
+      "sha256": "0f30269d7fae8e22325934d323857a1e9dd99db206f24636c4643d092d122940",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "cf26211cbdd1486dc45971544c4c820f2e60204a"
+    },
+    {
+      "path": "widgets/compositetable/org.eclipse.nebula.widgets.compositetable/pom.xml",
+      "sha256": "aacdccdbd629c2fccef941f2efc869f2e79c83e9c185a8ba3ffc157166b0ad1f",
+      "bytes": 576,
+      "git_blob_oid_at_74f": "1ab91a8c314fb2e0628fee2912b57af2d83d90ed"
+    },
+    {
+      "path": "widgets/compositetable/pom.xml",
+      "sha256": "3b0e172138c4a6859df0ae802b1fb78550a347d78e3b81c64fdedcc28a95b7f5",
+      "bytes": 834,
+      "git_blob_oid_at_74f": "0183606b05eda200d6855f66e7ee7f07ffce81f4"
+    },
+    {
+      "path": "widgets/ctree/org.eclipse.nebula.widgets.ctree/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/ctree/org.eclipse.nebula.widgets.ctree/pom.xml",
+      "sha256": "3865e510b262b7d68051e1aac2dd6cd6db9ef3dda4c2b3d551acdf5a88b89a9d",
+      "bytes": 935,
+      "git_blob_oid_at_74f": "4f1d7062b4b40b383242b899a89c073fdf97aae6"
+    },
+    {
+      "path": "widgets/ctree/pom.xml",
+      "sha256": "25168a1a8b107c987e9dc01b92c44a88141064b84d6d7a2f036ae8cfb7f29198",
+      "bytes": 646,
+      "git_blob_oid_at_74f": "353f7bb10a3110d15d6297fe2356645b7e3bb1ef"
+    },
+    {
+      "path": "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.feature/pom.xml",
+      "sha256": "d2148985eaab05a91e50ab8e5d9cdde57f4c21da7fa95e7e186cb705dff2b23a",
+      "bytes": 985,
+      "git_blob_oid_at_74f": "880cbde86d022553c7793eefdb3492f39af1cd49"
+    },
+    {
+      "path": "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.snippets/pom.xml",
+      "sha256": "61e73e911a64131195c58eb328a0e7cc6d8f587b1759ddee7fea220b3cf3d418",
+      "bytes": 838,
+      "git_blob_oid_at_74f": "64c0d395deec965989bc80d046cf11ea7e4afa97"
+    },
+    {
+      "path": "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo/pom.xml",
+      "sha256": "495248b1a334fdfb540547a709c3c15b7d9762526ffc90956bf1c6d212e97b5c",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "a3f045c0949d986411dbfdfd2aa829f8917a0b4d"
+    },
+    {
+      "path": "widgets/ctreecombo/pom.xml",
+      "sha256": "1d5152bebec9c502016526f059301cf9a509beae960e7a6f9ac1d5ff39547866",
+      "bytes": 1120,
+      "git_blob_oid_at_74f": "78a363a2f5dfca6b8ec10266f542b2b0f87d76c1"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt.feature/pom.xml",
+      "sha256": "e85e58c7447ae03e465a14e0b435cbdeed886594ee08e0e78e70f86e56323a80",
+      "bytes": 941,
+      "git_blob_oid_at_74f": "13b923f330fd34c2b168589c36646fb19c2f306f"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt.snippets/build.properties",
+      "sha256": "61fe81f812405e5a41387e3adff87e7fb2e6d9841f728d1375d2d185e257f5e6",
+      "bytes": 111,
+      "git_blob_oid_at_74f": "aa1a0082691202e9c8cc650976d2b2d128cae35b"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt.snippets/pom.xml",
+      "sha256": "6a22361f1dc1f0a5c800fcc520497e784c50d96fb6fa320057a2d76782dd963e",
+      "bytes": 907,
+      "git_blob_oid_at_74f": "324df88ec2c35fed384e1b5c91cf56a6463cf124"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt.tests/build.properties",
+      "sha256": "cb3272e8bd8491973fa0d9ff7f7f0fda5838583defd7a3f0038351e69ed6efa9",
+      "bytes": 139,
+      "git_blob_oid_at_74f": "d944674ba0b2d63b3a7b1a112347309e5a659ee2"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt.tests/pom.xml",
+      "sha256": "eb2780521865c4db82d2cf21f3a116750c1d77a67c5b5372e097ab2d29d379c3",
+      "bytes": 1095,
+      "git_blob_oid_at_74f": "457cf452b41060234de165004bc759b485683891"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt/build.properties",
+      "sha256": "cb3272e8bd8491973fa0d9ff7f7f0fda5838583defd7a3f0038351e69ed6efa9",
+      "bytes": 139,
+      "git_blob_oid_at_74f": "d944674ba0b2d63b3a7b1a112347309e5a659ee2"
+    },
+    {
+      "path": "widgets/cwt/org.eclipse.nebula.cwt/pom.xml",
+      "sha256": "1a419d59fd65e71c438ff3f71f1d6f4df5ea7383c1a2f0985c8ce0e1860daf22",
+      "bytes": 933,
+      "git_blob_oid_at_74f": "0c8cfd436413015b4a6ae7f462a929172f5182d4"
+    },
+    {
+      "path": "widgets/cwt/pom.xml",
+      "sha256": "408ae0e7f943b843a75fbb489fe534f5a516f11451da5751d845084a89e10e34",
+      "bytes": 818,
+      "git_blob_oid_at_74f": "77e4704aa4e37b08f761fb07abbe5cf560b8d745"
+    },
+    {
+      "path": "widgets/datechooser/org.eclipse.nebula.widgets.datechooser.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/datechooser/org.eclipse.nebula.widgets.datechooser.example/pom.xml",
+      "sha256": "5897823aa1c3cca518ea73beb55196600c692a7551aa7fad5628b10432fea861",
+      "bytes": 930,
+      "git_blob_oid_at_74f": "8f26b05e801b67a32d29a569695e4d2015f5ae3a"
+    },
+    {
+      "path": "widgets/datechooser/org.eclipse.nebula.widgets.datechooser.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/datechooser/org.eclipse.nebula.widgets.datechooser.feature/pom.xml",
+      "sha256": "50cb7ce522442b9d67468971a6b44cafa3df82a7db397444ca6ad9e2251da1fb",
+      "bytes": 965,
+      "git_blob_oid_at_74f": "cbe9bce2990e741702411c3c3bc2cef09d716088"
+    },
+    {
+      "path": "widgets/datechooser/org.eclipse.nebula.widgets.datechooser/build.properties",
+      "sha256": "ae6d71df16af46fdb0471309abbf00a5bc9b09feeac056f4ae354a16d4c3e0ed",
+      "bytes": 530,
+      "git_blob_oid_at_74f": "9c1bb2336b4454d00a59501ecfcbbf06e8335fca"
+    },
+    {
+      "path": "widgets/datechooser/org.eclipse.nebula.widgets.datechooser/pom.xml",
+      "sha256": "87f115ecaa4a9a0c87fbf1ee0c4155b2430ac0e911764a082463b5b8817bbd80",
+      "bytes": 957,
+      "git_blob_oid_at_74f": "655a24398f855d299cd81c03ae7e3081e476f3c3"
+    },
+    {
+      "path": "widgets/datechooser/pom.xml",
+      "sha256": "e1a19b8c53787fd72d95ad5fc64cb503e30b5ef38bda7463688e56ea3b0f2dca",
+      "bytes": 791,
+      "git_blob_oid_at_74f": "c53c4995227f95eaddd0074e11c3871ab78611e8"
+    },
+    {
+      "path": "widgets/effects/org.eclipse.nebula.effects.stw.example/build.properties",
+      "sha256": "4cb2bb533d64e17118a77b66c30e74f9ab16c7c754052118a006036cb551e965",
+      "bytes": 132,
+      "git_blob_oid_at_74f": "bdcc25a28868f65a062d6288ca576e3c00a1bdeb"
+    },
+    {
+      "path": "widgets/effects/org.eclipse.nebula.effects.stw.example/pom.xml",
+      "sha256": "52ae6f38243898493d6397f35d68efe865b1c5fc5c4b5024965eb1c19162da8c",
+      "bytes": 919,
+      "git_blob_oid_at_74f": "a262d540347897fb35b39336aff6e347c239c916"
+    },
+    {
+      "path": "widgets/effects/org.eclipse.nebula.effects.stw.feature/build.properties",
+      "sha256": "eae86abfbfc52f7e42891f3d5aca3b55b7bf29e46fd65581d6fe5b635b840984",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "038ea234ee5409c066f8f1bee40cf6991c6aa7e6"
+    },
+    {
+      "path": "widgets/effects/org.eclipse.nebula.effects.stw.feature/pom.xml",
+      "sha256": "b407729211b6a530f376e28d1712edb74db201e69bdfe3afc04cef57eb802938",
+      "bytes": 963,
+      "git_blob_oid_at_74f": "4ddd0c720b9ad40657529b9277aa97fc84ebc7ce"
+    },
+    {
+      "path": "widgets/effects/org.eclipse.nebula.effects.stw/build.properties",
+      "sha256": "d1092be8b712f2445a278b4398737ea709ac76999fe790dff44a40b22d924beb",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "17daa5b49ca3fb9de9bf1aff4cca07366378fda4"
+    },
+    {
+      "path": "widgets/effects/org.eclipse.nebula.effects.stw/pom.xml",
+      "sha256": "55cbc9b59b6cf532378171dfb059570ae018edbf9b1a9b77779a869764ea44b8",
+      "bytes": 909,
+      "git_blob_oid_at_74f": "1edc03176e96700687a55e5082370aada6bdbbf6"
+    },
+    {
+      "path": "widgets/effects/pom.xml",
+      "sha256": "1b80c81344de6b92ffe096ddba86de07d149ca6fba0e5a1ab237648a89a863e5",
+      "bytes": 797,
+      "git_blob_oid_at_74f": "a0e2009997d215cb29ca5625b1f4d4dfade8fc8b"
+    },
+    {
+      "path": "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext.feature/build.properties",
+      "sha256": "167e0b19c6c70ec73151dba021973628427fadfe47238822923be7cb792fa1bf",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "04dab9dacf24f33c5be5b2cf6cc09ad6c87340eb"
+    },
+    {
+      "path": "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext.feature/pom.xml",
+      "sha256": "5082d08364cbdc8ad5108f6649eab231bbe2650746c29f89382306e5dce2c5d5",
+      "bytes": 875,
+      "git_blob_oid_at_74f": "1d86362f3029a61a978626c327942a7cb9bcb230"
+    },
+    {
+      "path": "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext.snippets/pom.xml",
+      "sha256": "06f576b1d658eff966d453a9658b9b20032db7a62a3b7845a2ffb924ab47e1f6",
+      "bytes": 875,
+      "git_blob_oid_at_74f": "96765e38cd16ccc071f38777593914a21f5f27b3"
+    },
+    {
+      "path": "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext/pom.xml",
+      "sha256": "02421987c7589b4fafb05cd97ecfe3c20542924a7f04d4277fc6aa2ec19c37e6",
+      "bytes": 866,
+      "git_blob_oid_at_74f": "7e7c46a2b59edaf9492dc7ebb91cd5e1edf4c913"
+    },
+    {
+      "path": "widgets/floatingtext/pom.xml",
+      "sha256": "2b29c4893ec007a31fc76ccdc5372290a8083d1bcd962a896d10fc9d55e03f8b",
+      "bytes": 830,
+      "git_blob_oid_at_74f": "8b80b6676ba7a6d7409408a36edbef6a38bfdf6c"
+    },
+    {
+      "path": "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome.feature/pom.xml",
+      "sha256": "567410c1b0c4430843c4407a84c1f6d96b7a9e215909c4069f896fe6d83d051a",
+      "bytes": 998,
+      "git_blob_oid_at_74f": "ec9d5902bde0785b941b4f70fce7fd995b21851d"
+    },
+    {
+      "path": "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome.snippets/pom.xml",
+      "sha256": "0495bf2304a7012b5bfd2b48ef12273999db3fa62299467a40de977e158cc371",
+      "bytes": 843,
+      "git_blob_oid_at_74f": "19354c697c3965a9b6cc8563ad0ce11583538c44"
+    },
+    {
+      "path": "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome/pom.xml",
+      "sha256": "904b023bb6ab373113eec654df63ff433ba2be8b88c1d3e0dcc2f79f3831aca9",
+      "bytes": 835,
+      "git_blob_oid_at_74f": "7fdd2c8411977432115c20061f05a8e34c022397"
+    },
+    {
+      "path": "widgets/fontawesome/pom.xml",
+      "sha256": "b9bd3d9eb75808f9bb68ab45c0dbed342938f41ee3cac4e2fe0e07d9cf0597e6",
+      "bytes": 827,
+      "git_blob_oid_at_74f": "9eafde7c1a79d6b994e9f767dfc7b6d75dc168c5"
+    },
+    {
+      "path": "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext.feature/build.properties",
+      "sha256": "0f8fa0d1d2d50df07ad90783aaaff8435c5e9db69e3dddf91432aaff58864274",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "c4bc86b9058065d9ab1c173ebed6381019eb35fd"
+    },
+    {
+      "path": "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext.feature/pom.xml",
+      "sha256": "08669cd892b32c008e4191e14bfe8b1f6b83b98a458f1f431812816053384575",
+      "bytes": 934,
+      "git_blob_oid_at_74f": "c89329b88a3b52deb5c190822e132c28cbae0469"
+    },
+    {
+      "path": "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext.tests/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext.tests/pom.xml",
+      "sha256": "dde1226cd1f4fca01745777346719e705319cba54d5e5c445c90c733405d3596",
+      "bytes": 545,
+      "git_blob_oid_at_74f": "42fc9f0ff9c26154396ba5c1a934de8893bb19f6"
+    },
+    {
+      "path": "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext/build.properties",
+      "sha256": "7ea97d4662fd0b890020dca1ee1a3e40127011c2516bb2d0cee778074818bdae",
+      "bytes": 376,
+      "git_blob_oid_at_74f": "ac37939ba0c5a1a93d3194f8545eddf9d79bc114"
+    },
+    {
+      "path": "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext/pom.xml",
+      "sha256": "325914dc1b8e1860fd958a5a6bdd4ee425ef5f08010aefa86d6fe3a63b9eaac4",
+      "bytes": 926,
+      "git_blob_oid_at_74f": "010eae433280b28d8f0721eb25c9660d8ba5ee16"
+    },
+    {
+      "path": "widgets/formattedtext/pom.xml",
+      "sha256": "1eb8277ef256305738d74cdbba9126f32ab909e693332eb3ad94468f278c90f6",
+      "bytes": 796,
+      "git_blob_oid_at_74f": "b4614f3e23aea10c84520a245314712162a5c6b6"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.example/pom.xml",
+      "sha256": "25ac768775798491579d479e5c8825c8f3732ffcf817ebfde71b61920a527903",
+      "bytes": 957,
+      "git_blob_oid_at_74f": "b8695831b8a8c269165c248dc332408316c7f4de"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.feature/build.properties",
+      "sha256": "dced24dc002058f5ee7d19abd03f847c601731cfdff1ed8c0176c8a4fb6a1b70",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "0c5e5f5c7ba0055a6da75bc23b887ddc658ca4f1"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.feature/pom.xml",
+      "sha256": "68dc698cc6155fff55b62fa16799de1e66f58d07421b5bf6814fe04065a99403",
+      "bytes": 993,
+      "git_blob_oid_at_74f": "5b1f56c653d76366262ac95d79b085203efd2bd0"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.test.feature/build.properties",
+      "sha256": "d90df074d01054b536eb2ba576bf279be8dbcef94cd438b9b24650c41de4ac6b",
+      "bytes": 121,
+      "git_blob_oid_at_74f": "3d8aa7b43ea671abab62d79f20ff7032e4b0b391"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.test.feature/pom.xml",
+      "sha256": "74ac5c0846dee7565f5b214ed57415bcc28fff96bfe042b7627f27ad3c2dce02",
+      "bytes": 989,
+      "git_blob_oid_at_74f": "3536cde623d16e6104c4ad17473e477657b9db5a"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.tests/build.properties",
+      "sha256": "4e88d6c1098d65df21001ac7d637a294a62621899c27cb12c885d11961d59de9",
+      "bytes": 235,
+      "git_blob_oid_at_74f": "dc873ffe8f0efc66c4677e823e7f3a1666d065ba"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery.tests/pom.xml",
+      "sha256": "f7bc2410f45547e5d9ad1b7a907e1ef4316017cd6d711f3ca81a1ea483d9d82e",
+      "bytes": 925,
+      "git_blob_oid_at_74f": "5213df7f6024af9aa1338f9e506ac24ba9ac6fb4"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery/build.properties",
+      "sha256": "f207dcbd75e559e390864ce897bd77048f9c1168e4b8988a4b9ce4742f9e39de",
+      "bytes": 401,
+      "git_blob_oid_at_74f": "e94385cca3218d01df339e1e89549f0eaa957aaa"
+    },
+    {
+      "path": "widgets/gallery/org.eclipse.nebula.widgets.gallery/pom.xml",
+      "sha256": "a894fe6dd11ec3db799b39fdb6ada1af4e43fc8bfdb7ab6495240b99744167aa",
+      "bytes": 949,
+      "git_blob_oid_at_74f": "9d15c1ca7dd1cd713b43ec40f1871a01bb165ce0"
+    },
+    {
+      "path": "widgets/gallery/pom.xml",
+      "sha256": "35f8bfd766d96ba869d38eccc061886c5683b974148e2201ceb44577a75f0e64",
+      "bytes": 869,
+      "git_blob_oid_at_74f": "f997d3f48f60b96fedc2b162d8fb307192209017"
+    },
+    {
+      "path": "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart.example/pom.xml",
+      "sha256": "71bccffe2f857f92759dea4bf97bd83086b878c00e25291682780dfc1efb9863",
+      "bytes": 928,
+      "git_blob_oid_at_74f": "b902015b9aa2cae7c8d326cd519e60deb5129f3b"
+    },
+    {
+      "path": "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart.feature/build.properties",
+      "sha256": "a7cc65854ce0da462191073cb2d891bf815ff7cca5dc7c79cf304400989c5902",
+      "bytes": 93,
+      "git_blob_oid_at_74f": "2cbd854200fcff2d3027c0799145cc09d847fe2b"
+    },
+    {
+      "path": "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart.feature/pom.xml",
+      "sha256": "ebe52bf6a9286eedc33dc443bfb94706b87eb05e4e91076434675b2d2e89516e",
+      "bytes": 1001,
+      "git_blob_oid_at_74f": "1db46e0e5920c1d6cf7aea759ac0eea1649bf51f"
+    },
+    {
+      "path": "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart/build.properties",
+      "sha256": "b7a159287b28982eac19168778238cee2854555e561fe6d637487485d8ed127a",
+      "bytes": 337,
+      "git_blob_oid_at_74f": "dd1dbe7c443688120218cdec10bc612bc821fbc4"
+    },
+    {
+      "path": "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart/pom.xml",
+      "sha256": "4aaa86d04d7420d3cbf20ae66585eeefd9232c20b950439c22034c236b17f12a",
+      "bytes": 955,
+      "git_blob_oid_at_74f": "1af7a3940dae6fb6d019209381656e4527ea1dee"
+    },
+    {
+      "path": "widgets/ganttchart/pom.xml",
+      "sha256": "28907a87f45fdffbe8c250903f303957b5592eedb7e632c29d410d1fb034a374",
+      "bytes": 821,
+      "git_blob_oid_at_74f": "50f02664623a8ff7e2f0b0e15630be0e3657e28d"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.example/pom.xml",
+      "sha256": "55a6a0d9a4ddb499c58aa8d71eb81dfa141efdd6e5e665b497a82f7f4553551b",
+      "bytes": 920,
+      "git_blob_oid_at_74f": "82c8b0f9087d612877d483f4ed0d132d57ec3298"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.feature/pom.xml",
+      "sha256": "1c194e0e636d87b634a8d9a081a7df6cc8f5ea1721e3dc39e2d395866cf1921c",
+      "bytes": 954,
+      "git_blob_oid_at_74f": "8194c3ddd4a5b7ea3f143f3be59d9b117dc412f6"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.snippets/build.properties",
+      "sha256": "61fe81f812405e5a41387e3adff87e7fb2e6d9841f728d1375d2d185e257f5e6",
+      "bytes": 111,
+      "git_blob_oid_at_74f": "aa1a0082691202e9c8cc650976d2b2d128cae35b"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.snippets/pom.xml",
+      "sha256": "65c7f3297d85ef39ba290789c746940044eb17d8ee8aaa1b583c4f1c242ff328",
+      "bytes": 921,
+      "git_blob_oid_at_74f": "0f14634cb024f583329097e03609c1ace4bfa2a6"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.tests/build.properties",
+      "sha256": "0e508ea0609802f588ef0c7a61d996043336e04edf263cff4dffd26205a9d39c",
+      "bytes": 60,
+      "git_blob_oid_at_74f": "b107977f4ed7c4ae7bc2725947b2e16e5b30f4b1"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap.tests/pom.xml",
+      "sha256": "0124da8253f38f1d444d7d2daa68d44ea76fb0951b73ad352520b79670135de5",
+      "bytes": 1393,
+      "git_blob_oid_at_74f": "4d1598c6c6e8f55b061870ce07268f8e8ae38bda"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap/build.properties",
+      "sha256": "c54cb45d54fdad21b145b81350999c7a8d09b243f91880c9ff628dfa0be0cfd1",
+      "bytes": 332,
+      "git_blob_oid_at_74f": "e43811fea43ab6b1d1d749fdcd6e4e643e73a3e7"
+    },
+    {
+      "path": "widgets/geomap/org.eclipse.nebula.widgets.geomap/pom.xml",
+      "sha256": "ef44457d93ad4ab84cbcc58791503dad7415d733b83988b51c0869a5392524e4",
+      "bytes": 947,
+      "git_blob_oid_at_74f": "ccc5200606e68ed386791118d836a9db3248e760"
+    },
+    {
+      "path": "widgets/geomap/pom.xml",
+      "sha256": "ee942e3e404ecdd74e079944197f9752e40a3d354a343b7460b623a9e15a2708",
+      "bytes": 867,
+      "git_blob_oid_at_74f": "4702620f908d240493962d6165067e1c15cc24a5"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.css.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.css.feature/pom.xml",
+      "sha256": "98d05a2b728051d8f2190f3cc71a2232b1d579603d9ad385128555f1cf787e33",
+      "bytes": 945,
+      "git_blob_oid_at_74f": "b61de621207003a66e1d35d698ce213e386773b7"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.css/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.css/pom.xml",
+      "sha256": "acaca3714de0e700837d54b19b038974bece0030848cf05c5e04d39abe547838",
+      "bytes": 900,
+      "git_blob_oid_at_74f": "234c821e61d35d61c05265c86ab7d8edec2b731a"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.example.e4/build.properties",
+      "sha256": "145f94e0d7087a5aad09b44d69d888467a9764ff35e2f1b608226c789cac1d4a",
+      "bytes": 196,
+      "git_blob_oid_at_74f": "04ab1e9b8f3cd4339dc61f93907610aecbd48895"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.example.e4/pom.xml",
+      "sha256": "b6181b4a48f55243e0c53ae508c3824df33c1c8168ce2a74a8538dae1df56bbf",
+      "bytes": 917,
+      "git_blob_oid_at_74f": "040586c9a8a26ed55dbea5349f383297e917cd37"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.example/build.properties",
+      "sha256": "6e9b7ca5320040974f4d7e160e5ba58540fa3c22dc021fc6de39e5d78d83ea60",
+      "bytes": 132,
+      "git_blob_oid_at_74f": "786b1df93642f533a30fad9d306457ad2f7ff588"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.example/pom.xml",
+      "sha256": "84ddc19609782e9a4f06351b9cd7cf40be243fa72dfd3e052028039ccfb65ff3",
+      "bytes": 916,
+      "git_blob_oid_at_74f": "e73e56d6b1c49ef07a1a1bb306b2e19be1d84312"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.feature/pom.xml",
+      "sha256": "be7d42d511193ea41f5ce8eae4c6620e84101a9c5cc106bb777bbc3e1c152e96",
+      "bytes": 949,
+      "git_blob_oid_at_74f": "e16751201a75336717573ef9a07acc978cdda3ab"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/build.properties",
+      "sha256": "6caaa79d7b2ca2270b34e54c2154089ea6f461f72902b466799f89ad4c97d83e",
+      "bytes": 205,
+      "git_blob_oid_at_74f": "f023248e59c6206df504493181049be450c69792"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml",
+      "sha256": "5dd9a9847a59479159e2aaea0bb284d29818ac4973b429921b4a7c74fdb41099",
+      "bytes": 1578,
+      "git_blob_oid_at_74f": "74dee7f13aa296506e88d27be7c15d4757674318"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/build.properties",
+      "sha256": "b1562eca71334572b915c9bffe50a1a84c077a5767a7f0e7882aedaf15f59d76",
+      "bytes": 438,
+      "git_blob_oid_at_74f": "c55ef89a5b40c4bf2d60922bd30774a72106350f"
+    },
+    {
+      "path": "widgets/grid/pom.xml",
+      "sha256": "1ac0ca058abeb81f3a0fe8586131fb1e2d9b6a06264f7857053cb29f398c6f9f",
+      "bytes": 1033,
+      "git_blob_oid_at_74f": "f1a3381ad1112ec0baf711585baee1407d66bec9"
+    },
+    {
+      "path": "widgets/led/org.eclipse.nebula.widgets.led.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/led/org.eclipse.nebula.widgets.led.feature/pom.xml",
+      "sha256": "0da2ffb724dd170ddb88f833e53281e3fe63457551cd3805a28eda8b848d0701",
+      "bytes": 963,
+      "git_blob_oid_at_74f": "52ee86e11e2f18909b0992d8ce3d2e90a98b904e"
+    },
+    {
+      "path": "widgets/led/org.eclipse.nebula.widgets.led.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/led/org.eclipse.nebula.widgets.led.snippets/pom.xml",
+      "sha256": "977cd6010641909c4aff76a392104ead6792fff03763732faaa6078b06c8b544",
+      "bytes": 843,
+      "git_blob_oid_at_74f": "57c93a387b94c642a0267f57d574b09cdcffdad9"
+    },
+    {
+      "path": "widgets/led/org.eclipse.nebula.widgets.led/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/led/org.eclipse.nebula.widgets.led/pom.xml",
+      "sha256": "b3bffe9c116da3d19363704dcccd4f512b1d22f5b96e8707ce945264d7a3698d",
+      "bytes": 834,
+      "git_blob_oid_at_74f": "d72a00e0f83317179a28b6cd5a0508dda331a7d9"
+    },
+    {
+      "path": "widgets/led/pom.xml",
+      "sha256": "584e9eab8f0c6d314d66a0ef3cf773d1cd27902069c4e71057deab6a79580fc8",
+      "bytes": 794,
+      "git_blob_oid_at_74f": "b658fe8826f89e2267a31c8287cccb184c87250c"
+    },
+    {
+      "path": "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider.feature/pom.xml",
+      "sha256": "1a6e627d870a9ce4482b52ad888c20f5a8fc5c050576443a378852e76d12fcb1",
+      "bytes": 975,
+      "git_blob_oid_at_74f": "cb747a6e4a1457dc2c3d73bb7ca30cb946465846"
+    },
+    {
+      "path": "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider.snippets/pom.xml",
+      "sha256": "21c65e212d968bf3070c96b1481a1fb6559a25ad222a19973c1b8ca98ca60364",
+      "bytes": 826,
+      "git_blob_oid_at_74f": "e1d21d86c1736e3b013c49acaf489f08991c6abf"
+    },
+    {
+      "path": "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider/pom.xml",
+      "sha256": "bbcfcf43a523e62dd37a11d594fda47fe9de1abc67ec63df418a84b6da76f7fa",
+      "bytes": 817,
+      "git_blob_oid_at_74f": "3dc5c057564d0a2b9117f42ba27697acd20dc012"
+    },
+    {
+      "path": "widgets/nebulaslider/pom.xml",
+      "sha256": "8df4d07637dbc17a52b12c3685d4a0f648dce10ab6771a65d9876981548ee116",
+      "bytes": 830,
+      "git_blob_oid_at_74f": "9128b5c9239e9c828ae73df0094200f724980b82"
+    },
+    {
+      "path": "widgets/nebulatoolbar/build.properties",
+      "sha256": "f01e06b64dc87fd9c6791fc31c10e429c31bbcd54800d90902dd69d09f17261d",
+      "bytes": 397,
+      "git_blob_oid_at_74f": "23d10c2aacea82366776495894325a360722aef6"
+    },
+    {
+      "path": "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb.feature/pom.xml",
+      "sha256": "3ec94e31e8cc798130a2103ba42c7d83bfbcc106ed7152f8cfa11b48d2fa7351",
+      "bytes": 938,
+      "git_blob_oid_at_74f": "2eb1b0a8f12b6766908e9d8f57aba18411f8c722"
+    },
+    {
+      "path": "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb.snippets/pom.xml",
+      "sha256": "fe317d161b7cb4d0bb89e73c0b6fd8bb42f2c8d7f7e510a8de34bdabe172facf",
+      "bytes": 827,
+      "git_blob_oid_at_74f": "68e0190dfda100cbcadc6463bd94028d33fb1e98"
+    },
+    {
+      "path": "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb/pom.xml",
+      "sha256": "2e81c8f971c49830273388691dceadf3cf33f3573524bf24663e106475ca47c0",
+      "bytes": 818,
+      "git_blob_oid_at_74f": "ce7905a0772b0121d84179019efee6096c55a450"
+    },
+    {
+      "path": "widgets/opal/breadcrumb/pom.xml",
+      "sha256": "74d154fad621b5a6f21e394ba3c399513e74c2e6ddbcaa862f8f90c81eaf592d",
+      "bytes": 751,
+      "git_blob_oid_at_74f": "937dfe0216a8a31e7d9a47bfdeeae36f59910694"
+    },
+    {
+      "path": "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator.feature/pom.xml",
+      "sha256": "0ed83114c1d6b0461ca136d953cbd84311a0915738ef9d891c43548e0e38867a",
+      "bytes": 973,
+      "git_blob_oid_at_74f": "8f5cb4825f8a499785cdc37f1fdd871c49c3fad7"
+    },
+    {
+      "path": "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator.snippets/pom.xml",
+      "sha256": "0a96e5ea49cb81aa3fd004dfa790552c2dc210df8c1a6ec526d04d2d6ffbdf5a",
+      "bytes": 827,
+      "git_blob_oid_at_74f": "344d6ca5d276e53d907c63c50c9511edb4c6cff9"
+    },
+    {
+      "path": "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator/pom.xml",
+      "sha256": "28803d006ff4a1e2a6cbf3deb24bba0aaa305f08c20972eda4c5bc3aab60c0b9",
+      "bytes": 853,
+      "git_blob_oid_at_74f": "5558e58a8a693786532d393320b08ab3126fbea7"
+    },
+    {
+      "path": "widgets/opal/calculator/pom.xml",
+      "sha256": "2d9733910fd7cc3d524da4d22c81b758d3878f718e3fb97a414c638df42a8ec0",
+      "bytes": 751,
+      "git_blob_oid_at_74f": "ab31d6e74f8eb99ed001c4a4cb78f268c0106577"
+    },
+    {
+      "path": "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup.feature/pom.xml",
+      "sha256": "395a6768632cceb3257c1ddc277498f11588b57b8bf5a16abf5ed168e18e0371",
+      "bytes": 981,
+      "git_blob_oid_at_74f": "11c153fd5cf07b5f02a9046974745a43c7566459"
+    },
+    {
+      "path": "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup.snippets/pom.xml",
+      "sha256": "26205ff7aa370a0a81b06484397f78eba90e8a9c820ed570ff7b84b61514ee15",
+      "bytes": 833,
+      "git_blob_oid_at_74f": "8402c7b540d8c8bb32c93b49a295dae593853c0f"
+    },
+    {
+      "path": "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup/pom.xml",
+      "sha256": "6e1b10ee1e4432eb72c320f6204711d85f494821c649877bef8f14945eb70ec5",
+      "bytes": 824,
+      "git_blob_oid_at_74f": "3a02872329ab00d32512df56f36048f3e1b0751d"
+    },
+    {
+      "path": "widgets/opal/checkboxgroup/pom.xml",
+      "sha256": "58481390cf4df0a87d9b84e81b6c081209f1eb5493995c415fdcbbf058810c8f",
+      "bytes": 763,
+      "git_blob_oid_at_74f": "e80b3ed37ab4976d3ca755e2933ef527fc5afecc"
+    },
+    {
+      "path": "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser.feature/pom.xml",
+      "sha256": "27a7c604a2d25bf3f97240ba3151a04ff59eba1dfd5d62598e1cddc3faa89b58",
+      "bytes": 982,
+      "git_blob_oid_at_74f": "0819152f3ff845a87687bf092b7ff4705033cfe8"
+    },
+    {
+      "path": "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser.snippets/pom.xml",
+      "sha256": "bdb62557b3dbc49f13666a1a1ac4188460178d78b28e230200f76579ed8cb597",
+      "bytes": 833,
+      "git_blob_oid_at_74f": "8a7de86b093dbcb0b03f7695aa02809044ff48cd"
+    },
+    {
+      "path": "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser/pom.xml",
+      "sha256": "de33ddeeef5ac3430dab952b78ddf9187af5f61907b077b3889afdbeb0d805bf",
+      "bytes": 824,
+      "git_blob_oid_at_74f": "05b90200571fae88f6434b2ce3f0b46561f2bc26"
+    },
+    {
+      "path": "widgets/opal/columnbrowser/pom.xml",
+      "sha256": "1d310fcc1bb79f1129bc91861478240d2f8b8cd38fba8daeb50d8922c4fa86e4",
+      "bytes": 763,
+      "git_blob_oid_at_74f": "8eba27869ea159d230f21c8cdf7ee5f37d609f41"
+    },
+    {
+      "path": "widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons.feature/pom.xml",
+      "sha256": "6e7f29656e5d8290ab18ca772857b6e2c9fc732aeb8ec8ff2db80a393ce6ab88",
+      "bytes": 896,
+      "git_blob_oid_at_74f": "08fabfe721a112de04dbe044cc8965c857538d7f"
+    },
+    {
+      "path": "widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/pom.xml",
+      "sha256": "a8cce9c155e26095d33f1420ac394ac295849c7ec4c71ac18897113e2e63a171",
+      "bytes": 812,
+      "git_blob_oid_at_74f": "55d8f615298175b4a8eae38f6c42cd750385d649"
+    },
+    {
+      "path": "widgets/opal/commons/pom.xml",
+      "sha256": "3afe23ff7bb99e4023a011935b1172a6cf9045993e353a55b621d02395b0ffc6",
+      "bytes": 671,
+      "git_blob_oid_at_74f": "f46069b5fdc8bdfe3e203a9158c875da611498c4"
+    },
+    {
+      "path": "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog.feature/pom.xml",
+      "sha256": "4f9e3096f8e2a5699edd06ec02769b893e6109ab6e22d1f78a3bac9a1ccda0c1",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "9db0b3156f6d28db1c1944196fda47f3c3b9d158"
+    },
+    {
+      "path": "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog.snippets/pom.xml",
+      "sha256": "5b72dd3f9f3db8399933a079521c64f2acc836c6d6251f24f4057446b3f62546",
+      "bytes": 819,
+      "git_blob_oid_at_74f": "ada537908d387eb930020c6d4b3a72f146890a7c"
+    },
+    {
+      "path": "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog/pom.xml",
+      "sha256": "ccb37626e7cc5af319dc4157c08ff025de7449e80daea3a76ceb022958a2e50e",
+      "bytes": 845,
+      "git_blob_oid_at_74f": "bafdaf6a00fd03ded1735669c664e1a3a1e2ff39"
+    },
+    {
+      "path": "widgets/opal/dialog/pom.xml",
+      "sha256": "d7df43e00fcaaa164e336dac3f54b3d00e858e3ac437e30990c97ec8b4022727",
+      "bytes": 735,
+      "git_blob_oid_at_74f": "d40bf285c94a7f75307fd7fa302442f3dddd1674"
+    },
+    {
+      "path": "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist.feature/pom.xml",
+      "sha256": "7ce4c07ac462c65b43fdc82b5d74bfba1aa63f3d68996cff1a792add5b672ebd",
+      "bytes": 967,
+      "git_blob_oid_at_74f": "6417ae6d472f479b4af2346638ee487be89172b0"
+    },
+    {
+      "path": "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist.snippets/pom.xml",
+      "sha256": "df7c3a1e0d405fb09d31c944d29d644cc1c0a764f57c337f10df42565483f3a6",
+      "bytes": 823,
+      "git_blob_oid_at_74f": "6600b38c71fe0cd32ead49e653c5a2cc25f44d1c"
+    },
+    {
+      "path": "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist/pom.xml",
+      "sha256": "32bb744c5f7e4faaa512dad7a692ece368fb3fa6459d66b559275a825b0d8d74",
+      "bytes": 814,
+      "git_blob_oid_at_74f": "003cbb690a861d5f043b142413f01110a7789888"
+    },
+    {
+      "path": "widgets/opal/duallist/pom.xml",
+      "sha256": "5c09c8790f6a64c2768b7c33409e1d5986c9f14f1e9a8dc737d4103a1e96a191",
+      "bytes": 743,
+      "git_blob_oid_at_74f": "3193743d6d69eae1070f0d8328655019496d5b3f"
+    },
+    {
+      "path": "widgets/opal/header/org.eclipse.nebula.widgets.opal.header.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/header/org.eclipse.nebula.widgets.opal.header.feature/pom.xml",
+      "sha256": "91b81423bd8303f6a860c725026051848db1d90f97ae438e168a0346ce1ef3b5",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "dff87812a9f6b5399493bf321eae67b49c2b844d"
+    },
+    {
+      "path": "widgets/opal/header/org.eclipse.nebula.widgets.opal.header.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/header/org.eclipse.nebula.widgets.opal.header.snippets/pom.xml",
+      "sha256": "c038d6af5d7dcf5ae4a8a625d4730dc0b550a52ff38a9cbb32bc3bbe0cf9022a",
+      "bytes": 819,
+      "git_blob_oid_at_74f": "7fcdb54d21818c2b2cf441b2ff022230f6799f13"
+    },
+    {
+      "path": "widgets/opal/header/org.eclipse.nebula.widgets.opal.header/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/header/org.eclipse.nebula.widgets.opal.header/pom.xml",
+      "sha256": "d08ff43d60302ef6087008641524da50dc4aeb704902da7a139ee5cbc6bb328a",
+      "bytes": 845,
+      "git_blob_oid_at_74f": "66058a191646e7f0f4e7814a9184f84b2aa0009b"
+    },
+    {
+      "path": "widgets/opal/header/pom.xml",
+      "sha256": "9117bffc8bbabc81a33f8f2972de2332ee4f91fadea1ca97d70738382d56b5d4",
+      "bytes": 735,
+      "git_blob_oid_at_74f": "f941c651b5ecbb15d93b5ac9312bbd6effde62e3"
+    },
+    {
+      "path": "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager.feature/pom.xml",
+      "sha256": "1aa23a576a9213b17dd12a131f1c27e3ad72f8d54419f0cb0079aef65b465e81",
+      "bytes": 974,
+      "git_blob_oid_at_74f": "07b4f4e1548c6958353adfc1b6b6030d4de69291"
+    },
+    {
+      "path": "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager.snippets/pom.xml",
+      "sha256": "df330636f3ef9f7e70ff726c53e5d15f1188a0d9f5b0e8ceb9a1e18851ed37af",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "82102051921e26d8a18f08ae80053429a5fb5456"
+    },
+    {
+      "path": "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager/pom.xml",
+      "sha256": "0af129965a02831d576a242dd0f99f5866388d46a50986d4da4e5e50b654aa47",
+      "bytes": 820,
+      "git_blob_oid_at_74f": "bc3910ed7ee3c9cf058974f26c652ac3aa941b4c"
+    },
+    {
+      "path": "widgets/opal/heapmanager/pom.xml",
+      "sha256": "3e9ea510278324d8a67f8808c57982ce875991f8f826aaa768edbfc817766660",
+      "bytes": 755,
+      "git_blob_oid_at_74f": "1602b406a21cb60f7fa5bc005fd6199f9ecf7574"
+    },
+    {
+      "path": "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner.feature/pom.xml",
+      "sha256": "76824639a1d484416d858feb701189800d349b372d595ca95c8c1c95636a486d",
+      "bytes": 994,
+      "git_blob_oid_at_74f": "d53288f00f47b1671d4f2981136fcef7f1b47314"
+    },
+    {
+      "path": "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner.snippets/pom.xml",
+      "sha256": "9dbe8d48b62eb2a1706fcb6f58cc645cd25ee68a404f16ae7f436e0f21212208",
+      "bytes": 841,
+      "git_blob_oid_at_74f": "c0d3ea8d52904b5081b2b0d71071ab7e55700f7b"
+    },
+    {
+      "path": "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner/pom.xml",
+      "sha256": "58ced12a1f34ec5c108e8947234feabbd49eaf3f002417c5e50c888246b6d8bd",
+      "bytes": 832,
+      "git_blob_oid_at_74f": "7903b9eaab557c7f883f33f074c9fbb315fc7772"
+    },
+    {
+      "path": "widgets/opal/horizontalspinner/pom.xml",
+      "sha256": "4c2da6266d809090c7e6b1c9fd4977f3545934b14925716dec97bc80e4bed376",
+      "bytes": 779,
+      "git_blob_oid_at_74f": "9688fe9db117e9c6ed6db4af0461c2d8ad809ccb"
+    },
+    {
+      "path": "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher.feature/pom.xml",
+      "sha256": "6aaf69634833c4127b1047cbfe657486440e2e2db1ffb9635f7bb1f6cfe8c090",
+      "bytes": 967,
+      "git_blob_oid_at_74f": "16f7721d2904f49bdac8e441e36ffa41c37ef793"
+    },
+    {
+      "path": "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher.snippets/pom.xml",
+      "sha256": "b94d76eca495300b7cf9626712db82faacbdbea5c169ac47a893809ccd638e02",
+      "bytes": 823,
+      "git_blob_oid_at_74f": "5731a64006e6fb46a1bd4baeb804d3d644356c68"
+    },
+    {
+      "path": "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher/pom.xml",
+      "sha256": "c05e83fc95ac03b917af929beb9c07c49ec91ccccafa6615f87c13010ffc9d5b",
+      "bytes": 814,
+      "git_blob_oid_at_74f": "060e6285371719b4faa3e62985b029d56565e77c"
+    },
+    {
+      "path": "widgets/opal/launcher/pom.xml",
+      "sha256": "423a88c7e0e6373886be73064fb8ded18e6940c552660576022a0455b5a703c1",
+      "bytes": 743,
+      "git_blob_oid_at_74f": "c69004f7d479bbb9d3e74671c9a4f6975a68e06b"
+    },
+    {
+      "path": "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog.feature/pom.xml",
+      "sha256": "137fc1b46aa43e53186d4868cb4975581f7315e33d865b60403a2dfd4e7b35ee",
+      "bytes": 978,
+      "git_blob_oid_at_74f": "2ca9765dd86dec7c127ccb92339ab93d9fbe562a"
+    },
+    {
+      "path": "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog.snippets/pom.xml",
+      "sha256": "9faff02ba67d1747f5017f80236ca05e8a42a29a54f95b48e585e5f7555c9128",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "3652dcf69d339c9e1485566464fcdc7a39b620d9"
+    },
+    {
+      "path": "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog/pom.xml",
+      "sha256": "4f100e35275723f3444f378d873e25b9bdbea3ce9c06ea24e9316e7ccf19bfed",
+      "bytes": 855,
+      "git_blob_oid_at_74f": "10567d387efb21d22e66783c1fe718f162414151"
+    },
+    {
+      "path": "widgets/opal/logindialog/pom.xml",
+      "sha256": "baf87db194ca459fc9209f3bc95d90d944c9b5b472e29fffb9f825e9c80eb4f2",
+      "bytes": 755,
+      "git_blob_oid_at_74f": "e75827eddb7db17c0a136a2558d846107d4254d2"
+    },
+    {
+      "path": "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice.feature/pom.xml",
+      "sha256": "cd07a6d941b688359b202000d35e6aa0ff342017d265395b13dbadd0bfc62c48",
+      "bytes": 941,
+      "git_blob_oid_at_74f": "a15982a3087f8573a0473e398bbe1cf8c086d784"
+    },
+    {
+      "path": "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice.snippets/pom.xml",
+      "sha256": "a72a4518ba9b995f0a5271e99abf50caa6f0f27b26e6c1aa51ef2ff27ade8505",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "d29cd32c4d8286848bb5159da4b6515628ee3d3a"
+    },
+    {
+      "path": "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice/pom.xml",
+      "sha256": "fa2e1845916baf269dc41a172056e8567be225406924ad10dde66fb140a6cdfc",
+      "bytes": 820,
+      "git_blob_oid_at_74f": "694b6f8fd091379b31d0d846104f310708254d9c"
+    },
+    {
+      "path": "widgets/opal/multichoice/pom.xml",
+      "sha256": "81f92a5d638908f361132871485e1c3af0cbf5b7171f274014f676856a0480bf",
+      "bytes": 755,
+      "git_blob_oid_at_74f": "9654b51a3cc75ef4759f10ff1465b0b6c19af5de"
+    },
+    {
+      "path": "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier.feature/pom.xml",
+      "sha256": "8c557de63a20be2fb8b6da57d73ee5cc72837476cb4cb777e862aed25ad2be14",
+      "bytes": 972,
+      "git_blob_oid_at_74f": "6d8f16a589de635bdf78d592bc2068ee85c7b309"
+    },
+    {
+      "path": "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier.snippets/pom.xml",
+      "sha256": "9a06a4a1f4c404ca55a5b93988c907cc8f0656366d5f1d9f1c9d3bb443f1b16a",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "347198f1abb9b6a251163add5874fc4ab2f54ed5"
+    },
+    {
+      "path": "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier/pom.xml",
+      "sha256": "55b0f5132a1701d1f5df78fda7fb0de2803d55f093e90af5eb7d4a100190a5ac",
+      "bytes": 855,
+      "git_blob_oid_at_74f": "b658f5c40eeb42310c1775c095e6157f07b6f860"
+    },
+    {
+      "path": "widgets/opal/notifier/pom.xml",
+      "sha256": "e0ac1b4693b7533562186e3d50e8bb6e1424bc36417f72bb2f1017c00a1e0fdd",
+      "bytes": 743,
+      "git_blob_oid_at_74f": "c509f01273ea64dadeb13e04edba34f3cb680eec"
+    },
+    {
+      "path": "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels.feature/pom.xml",
+      "sha256": "9720af6c043b4624722ab4504c771962daba081c15287f5a93153eb255ff93e6",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "64afdb14b4512c5558efea699aab49c1d7f082f8"
+    },
+    {
+      "path": "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels.snippets/pom.xml",
+      "sha256": "bb1b8549c64dac4bb38dda7cb762e1f7e5268943f330adb1b086091128073f9d",
+      "bytes": 819,
+      "git_blob_oid_at_74f": "754e565b274030f6d2f6ac98133ba18d4df04462"
+    },
+    {
+      "path": "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels/pom.xml",
+      "sha256": "cd0b854f6824a6f530317dd383a32a90343072f422a2950f124c3df509e20aad",
+      "bytes": 810,
+      "git_blob_oid_at_74f": "cf03e1e4cf1271a6825e12498cc55031ac82b26d"
+    },
+    {
+      "path": "widgets/opal/panels/pom.xml",
+      "sha256": "a06c46f0a780056f001eae618dd3639d1e0096540a3672d268e5703dc38c3a3b",
+      "bytes": 735,
+      "git_blob_oid_at_74f": "a7d5d8643ff1a9fc3a2e35f6d18edc51aaa29d40"
+    },
+    {
+      "path": "widgets/opal/pom.xml",
+      "sha256": "93dbbb35f9e3428920e3f4cade4aadd80cd8dd10fa7c3fbef9006158280fb931",
+      "bytes": 1363,
+      "git_blob_oid_at_74f": "40d5a3e803886f2c83c0d38d89a194381a97baf5"
+    },
+    {
+      "path": "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow.feature/pom.xml",
+      "sha256": "79bb6b04924cc6989549135e20725272460bd5971c8057eab45e9e8704bb3b65",
+      "bytes": 992,
+      "git_blob_oid_at_74f": "94ca843b6edec2d06b609656d634f404f0d5944d"
+    },
+    {
+      "path": "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow.snippets/pom.xml",
+      "sha256": "71286424fe1c2bed9e85d5b44d4270ac3410638a58cd7f5f9b562dff35e715ce",
+      "bytes": 839,
+      "git_blob_oid_at_74f": "0538e1da3f88f4c1d1d40736c31630021336dd3d"
+    },
+    {
+      "path": "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow/pom.xml",
+      "sha256": "ea9ee6a5bdcbdc51e3aa09381b6eb4795e91d0d3da6ff8c026aa9590360acad3",
+      "bytes": 865,
+      "git_blob_oid_at_74f": "23e243b2c4b6118da76e3693878991697c37a195"
+    },
+    {
+      "path": "widgets/opal/preferencewindow/pom.xml",
+      "sha256": "c6f4e8ec912630e1329ed52f42e5c0ef57f273374c9c497a236bb642baccf2b2",
+      "bytes": 775,
+      "git_blob_oid_at_74f": "fff2f7fafc2e3f7cc897c6317633bad471fe6040"
+    },
+    {
+      "path": "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport.feature/pom.xml",
+      "sha256": "66c0f70603a97f7213e8048772db02388c068412af309d2ca142d5ddae1c884c",
+      "bytes": 982,
+      "git_blob_oid_at_74f": "809100deb64c3201f9cdeb869e5429b0793d8892"
+    },
+    {
+      "path": "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport.snippets/pom.xml",
+      "sha256": "8d4016549144e5fc1301e6ac2ac1e34b215bdeb36bbd87abfd69a0a724ab70b4",
+      "bytes": 833,
+      "git_blob_oid_at_74f": "92d10ed0735022dc0d839809c968121a62fafee4"
+    },
+    {
+      "path": "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport/pom.xml",
+      "sha256": "2221dca71ed3a7afe7abdf1269136b0f49faa19c0e6f6c776964726e599fe2fd",
+      "bytes": 824,
+      "git_blob_oid_at_74f": "afcb4df24546811d6fcf401408c9b467c8b4b0a7"
+    },
+    {
+      "path": "widgets/opal/promptsupport/pom.xml",
+      "sha256": "1f0889d28cb13fde42479b2d57e487026ea1cc9a150ca01ed9be5fd758026875",
+      "bytes": 763,
+      "git_blob_oid_at_74f": "00fea70e8457f1174728e74246b0fcbebabc9cc0"
+    },
+    {
+      "path": "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable.feature/pom.xml",
+      "sha256": "f7c54a81e6ec71394cdd44c2734dcc461374c29c230d23e3c65aa247e225fb87",
+      "bytes": 983,
+      "git_blob_oid_at_74f": "80889292bb6ca438e43c25ec3fce33bc8e08ec4e"
+    },
+    {
+      "path": "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable.snippets/pom.xml",
+      "sha256": "7e400fcbfcdac4c15af6d6130216181c477b589cab1104295d2de232ef5a2a55",
+      "bytes": 833,
+      "git_blob_oid_at_74f": "af5883c7e250ac1f27ccd42e7f8a3a9405ea37aa"
+    },
+    {
+      "path": "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable/pom.xml",
+      "sha256": "a01010e370177276e5afc9f4115ae99a6863c8f602941a5a581edcf42b2e2991",
+      "bytes": 859,
+      "git_blob_oid_at_74f": "3597ca45e43b568bb1743ad405810f2823244844"
+    },
+    {
+      "path": "widgets/opal/propertytable/pom.xml",
+      "sha256": "1878399df3fb81073e529e11d681da7b53c5699769416f1364cd355796d08e4a",
+      "bytes": 763,
+      "git_blob_oid_at_74f": "7b07d1692e24e7fc8465bae76f9284d3b5f954d1"
+    },
+    {
+      "path": "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider.feature/pom.xml",
+      "sha256": "f4192c50a9e0063bd640944d22df79d196d152240f61391bb04ba7193b2765da",
+      "bytes": 977,
+      "git_blob_oid_at_74f": "aaf6a48890e3b7b2bace794406acc6fcdc6c87d8"
+    },
+    {
+      "path": "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider.snippets/pom.xml",
+      "sha256": "b14b6298ab6237b589072a8b455f9dcf15ffed4c966cf65955a5d9c8d45b96b6",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "79a1b8d6ee9b26fc038e7634d2d75bbfd6e26acf"
+    },
+    {
+      "path": "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider/pom.xml",
+      "sha256": "6e18e5e61a09c241d89baa2c3b7d87a3de48be78c3ad049e607ae1a6fd2fdac7",
+      "bytes": 820,
+      "git_blob_oid_at_74f": "defadb0aa3062891710c7b373f1bda17e6521415"
+    },
+    {
+      "path": "widgets/opal/rangeslider/pom.xml",
+      "sha256": "a0e4630e264b7b759ffc1eea8d7b4c1af280dbe3cc93d502e9af102929f8267a",
+      "bytes": 756,
+      "git_blob_oid_at_74f": "f5c1d98e4310f825333646472e57b2aa72ad3db2"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar.feature/pom.xml",
+      "sha256": "8baa8cf05e650cd993fa4542bae52d335335dd6dd26b462bb3c117a9a3363766",
+      "bytes": 942,
+      "git_blob_oid_at_74f": "8a3e11c7989bae1d701a2a0a23e0bef315a72028"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar.snippets/pom.xml",
+      "sha256": "c46b33160f3095e8f56e18c815f6dbddef3bb8141c18b84ad55725a63bac5661",
+      "bytes": 835,
+      "git_blob_oid_at_74f": "fd776ac827c7344340ff577baa6ca02e0c6e2a86"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/pom.xml",
+      "sha256": "933ab0fab194fb6cd8b6a668e478c409dc7df1e356c6b29e4f650202444e0cd4",
+      "bytes": 826,
+      "git_blob_oid_at_74f": "6431c20be8778241fbcd0b09b01ae617742a30cc"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/pom.xml",
+      "sha256": "b961e1992da85bf45f496e47f55eae3594a5a410eb22f8e48657fe4ec646dcfd",
+      "bytes": 767,
+      "git_blob_oid_at_74f": "ea68977faba087f41699aef5df2d649d59011884"
+    },
+    {
+      "path": "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating.feature/pom.xml",
+      "sha256": "95024cad2747a526424ab12301655430a4a068caf091a3cbb5204bc288ab01a6",
+      "bytes": 974,
+      "git_blob_oid_at_74f": "24b48bd3c4366740a1b347c60d76a76b2bd8ef13"
+    },
+    {
+      "path": "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating.snippets/pom.xml",
+      "sha256": "67d3d3ebc8f804421b97e2ef3384d039ec1d612773561fa05e5f71e43b66da8e",
+      "bytes": 827,
+      "git_blob_oid_at_74f": "89fcb39a79b76677e7a12a6f7c2fff56b28a277f"
+    },
+    {
+      "path": "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating/pom.xml",
+      "sha256": "119e906cf3b7480c7b10a262e0bec49d62e1b4ae75f9dc841acf18ec0cd4504d",
+      "bytes": 818,
+      "git_blob_oid_at_74f": "ba35a11640e89f0881a4d97a2ba0623b536acecd"
+    },
+    {
+      "path": "widgets/opal/starrating/pom.xml",
+      "sha256": "91846ae84426fff90d6f226d212586e76353f8355e821e928c53137a6ac9deed",
+      "bytes": 750,
+      "git_blob_oid_at_74f": "46c308a7b498dfd0577b3bd51516c2572a71a03c"
+    },
+    {
+      "path": "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton.feature/pom.xml",
+      "sha256": "2c6642579b7c1af6f054fb5d8699fc5e483c2efc79e9968b17db819a10ff5a17",
+      "bytes": 979,
+      "git_blob_oid_at_74f": "434f14e0d633acd570e65e84ba5bdffc8f6ea8ad"
+    },
+    {
+      "path": "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton.snippets/pom.xml",
+      "sha256": "959e3e7de9162fb9e30317f84f28e4803418aa5ba4b6dc3741eaac71682848b6",
+      "bytes": 831,
+      "git_blob_oid_at_74f": "525359c30e6130db3ee7ebd3466b27230e650392"
+    },
+    {
+      "path": "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton/pom.xml",
+      "sha256": "f11918152470280ec20507f06c75a44e2268b3433f0dd099d4c37a6f185fb4a7",
+      "bytes": 822,
+      "git_blob_oid_at_74f": "123a10cf3869ec4bdc5c89eb9bd11f59f5b102d0"
+    },
+    {
+      "path": "widgets/opal/switchbutton/pom.xml",
+      "sha256": "fb95dd391c95343e73090c62a4ac2d7b8e3734fc6057bc183d4f8a039d52ee68",
+      "bytes": 759,
+      "git_blob_oid_at_74f": "d42794cc45247c4a2467acb6a1920fd85c0d6ec6"
+    },
+    {
+      "path": "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist.feature/pom.xml",
+      "sha256": "2787dee6559da5990efdfec285b74abc4074c850f539e747f492f650ff411494",
+      "bytes": 973,
+      "git_blob_oid_at_74f": "c8eac460aa8fabf093849a7899274b2473fc2bdf"
+    },
+    {
+      "path": "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist.snippets/pom.xml",
+      "sha256": "4891510480638de80eb4eaa1167f89158d205c9c5d92e23ffc220df18aea56ef",
+      "bytes": 827,
+      "git_blob_oid_at_74f": "67aa08e83acb7554b1083c316ac98231bd578c31"
+    },
+    {
+      "path": "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist/pom.xml",
+      "sha256": "1b012bae5d58b67778bbe3a57253531ea9520b8a160fc6d22835a129d269befc",
+      "bytes": 818,
+      "git_blob_oid_at_74f": "e692de292e31daaf35a41dd01d7f8ca42cab7a53"
+    },
+    {
+      "path": "widgets/opal/textassist/pom.xml",
+      "sha256": "7b6bc92458556156a48cbb470fb89d937657fe894fa3b23a036139b9a75a2581",
+      "bytes": 751,
+      "git_blob_oid_at_74f": "cef372326f27d417545d11f8f267c0bdd15272fb"
+    },
+    {
+      "path": "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday.feature/pom.xml",
+      "sha256": "192868403090339d856670f62fa054b32eb478cb1c4d5d948bab3a337a1e8bd1",
+      "bytes": 936,
+      "git_blob_oid_at_74f": "c4d3acd30e74c59496663591424194a4238bb673"
+    },
+    {
+      "path": "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday.snippets/pom.xml",
+      "sha256": "3e63f22f128dfab07e93e23a25c9483a40d4368cfd694fdf647b462aad1137ba",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "6f4a519e8b83ce91f9bd51cc956334d106bf1d7b"
+    },
+    {
+      "path": "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday/pom.xml",
+      "sha256": "be1b96ca2a50ab2ccb6da5d03275a099a289d77daa9617d11ad6351b3c6f426e",
+      "bytes": 819,
+      "git_blob_oid_at_74f": "f26cda9a15fd1c624cf14b7a338e99476d971c14"
+    },
+    {
+      "path": "widgets/opal/tipoftheday/pom.xml",
+      "sha256": "02d4167fc9cbe7413b2b43fd98befa5100a683fd4073495b998af6754e5ac6c4",
+      "bytes": 755,
+      "git_blob_oid_at_74f": "d129e82e46ccfcf5e04925a632bccede0edfb2d3"
+    },
+    {
+      "path": "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator.feature/pom.xml",
+      "sha256": "c2a8d00461c646b9a5584ae55105f292c7622ac6df914ab935418be0c2299534",
+      "bytes": 988,
+      "git_blob_oid_at_74f": "5665a9759153f6406c200501f0d3fc6dff481794"
+    },
+    {
+      "path": "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator.snippets/pom.xml",
+      "sha256": "d85be39673d1a39b5a05f603bf41165c8706fdd547ed3b0b2e79f19cc32e62a9",
+      "bytes": 837,
+      "git_blob_oid_at_74f": "3e42d876720527310b5124e886474d1ec95b7606"
+    },
+    {
+      "path": "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator/pom.xml",
+      "sha256": "1b06e964ce4c08e7f930e9ebbbc5c3e56df78f8e581736675a1f9ea621b4fbd6",
+      "bytes": 863,
+      "git_blob_oid_at_74f": "271b92e75ec232e7fd8bf8dc1a1aa66dc26e8bc4"
+    },
+    {
+      "path": "widgets/opal/titledseparator/pom.xml",
+      "sha256": "06cf0888a1953edccf66592472f21f4dfe73f84b0d4e62dbab21f3e1e5f750cc",
+      "bytes": 771,
+      "git_blob_oid_at_74f": "025df4d9ef79f7aace18e1f20db72dd223ebe19e"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.css.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.css.feature/pom.xml",
+      "sha256": "78b79064b41a417a60545a162a6baac4437e120c940607b0587677409257f8a1",
+      "bytes": 969,
+      "git_blob_oid_at_74f": "f26542744ed92926850d9e6d729d918b12f932a7"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.css/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.css/pom.xml",
+      "sha256": "841058b68548ab603da176b21c2889defd8179c3d9f0188db752f9f5ccfdba2e",
+      "bytes": 916,
+      "git_blob_oid_at_74f": "6a13019ed286a6c67b040f90ca2219ef905817fa"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.example.e4/build.properties",
+      "sha256": "145f94e0d7087a5aad09b44d69d888467a9764ff35e2f1b608226c789cac1d4a",
+      "bytes": 196,
+      "git_blob_oid_at_74f": "04ab1e9b8f3cd4339dc61f93907610aecbd48895"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.example.e4/pom.xml",
+      "sha256": "3042ddb7ebece602ee22fd15decdaf141d65950100cc34b7adb7b7d70a1f5387",
+      "bytes": 933,
+      "git_blob_oid_at_74f": "f0ad7b6cef9688d87e55018ad764dda9cd4b0a33"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.example/build.properties",
+      "sha256": "7e3b27c2e5fdab9ca73e89114caf6e5daa103770c7bc35b93f728b1a4525b0c9",
+      "bytes": 290,
+      "git_blob_oid_at_74f": "d24cea8ed8797978db0871bf212e25ae2f7e90d1"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.example/pom.xml",
+      "sha256": "660297453213f8551ae60ea50b6ee6eabba65548471759f0f603e1b764018d9b",
+      "bytes": 967,
+      "git_blob_oid_at_74f": "40cd3b83bb176713e7e8920d1ba637d2dbb111af"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.feature/pom.xml",
+      "sha256": "77f958daf11cfd611190717d6e2b2147b07e0c9823e31d259d10eea0a0421278",
+      "bytes": 1007,
+      "git_blob_oid_at_74f": "abcc9435bef462b7dd0a60ee6b7833da9934089e"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.snippets/build.properties",
+      "sha256": "3702445842e017706c7a7244c0d32b6bb271b087babc755473d4e8089248a3e6",
+      "bytes": 107,
+      "git_blob_oid_at_74f": "9abbc5ca296fff507f1ff833318c690f05f86f3e"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.snippets/pom.xml",
+      "sha256": "812b8f72cf646ea22d5dde0b98b79d0820921f54e03a80cebe0c2503a054df3e",
+      "bytes": 933,
+      "git_blob_oid_at_74f": "2794ce05e12ef281f093e3be1f9aa2b11bbc9c8d"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.tests/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.tests/pom.xml",
+      "sha256": "bcb82b15ee8ef414459e091cdc1c400f36218817d350850b4c5eedf77dd4c3ef",
+      "bytes": 970,
+      "git_blob_oid_at_74f": "9775eda16ce8e85a6eb3c6277c24f096eba98923"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope/build.properties",
+      "sha256": "d1092be8b712f2445a278b4398737ea709ac76999fe790dff44a40b22d924beb",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "17daa5b49ca3fb9de9bf1aff4cca07366378fda4"
+    },
+    {
+      "path": "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope/pom.xml",
+      "sha256": "3186d236b1509a19eda2246a04bea7a6b0f70d446a7db3227086692d9416610a",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "5f57b3ca88f7a0a96c7ccd93b9dc6a1a2cb5696d"
+    },
+    {
+      "path": "widgets/oscilloscope/pom.xml",
+      "sha256": "37d34716a17f93b855e1ed8b0a231cd96a93f28a3135ebf1bdd5fcebd24b26a2",
+      "bytes": 1098,
+      "git_blob_oid_at_74f": "720998be50b2bb22fb358bd582ac24fb416a3ab3"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.example/build.properties",
+      "sha256": "e9615b1defe1a0d759cefdffef5b6bde395b23c12a696fdba21ea14e04d65428",
+      "bytes": 685,
+      "git_blob_oid_at_74f": "3aade1a006845a1bcdabeaa23f263e8e7ab0fdff"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.example/pom.xml",
+      "sha256": "14ddd43812eb0c54e7ac07a7222393fc6868c21417d247f350485f94e42f89f6",
+      "bytes": 928,
+      "git_blob_oid_at_74f": "7f5fd0443e5492d0029c88e5982dd9df35ed04e1"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.feature/pom.xml",
+      "sha256": "9a888fa67e8aa151fc5f3612d5b8e2f663cd3206a12fa822dc34d4bfe61b12c1",
+      "bytes": 967,
+      "git_blob_oid_at_74f": "f4698b661b859989b4d98a3bd9c7d3ecda776e76"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.snippets/build.properties",
+      "sha256": "19f8cc8b085ae9009a41cad942e58247a5921866156d252b5f5b8c9e23c7ecca",
+      "bytes": 643,
+      "git_blob_oid_at_74f": "8b700398dd34881f7e97cae37bc0529759581350"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.snippets/pom.xml",
+      "sha256": "db2741eae8d70c7accbd7308963052959d021dca3ea7cd62bed282ceb92a78ab",
+      "bytes": 929,
+      "git_blob_oid_at_74f": "397eab0ce65d072fef1d57629dde6eeadc14c03f"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.tests/build.properties",
+      "sha256": "b591773518d34fb42fab6920ef625085bc492834aa48b7cd961d3e532cbcf8f5",
+      "bytes": 625,
+      "git_blob_oid_at_74f": "a73c0ef5e250cf3f21257f56af802bf42b4829fc"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination.tests/pom.xml",
+      "sha256": "e196f423c93ccaf06db2b0b79d71d65a23b4f36cd13463baefb7977634e9ba92",
+      "bytes": 931,
+      "git_blob_oid_at_74f": "48190a0be781f96c54fd59dbf51c9d4b974b4a50"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination/build.properties",
+      "sha256": "357a5921390b269438d61a0f84373711041b040a26aa9ebd5891af456f4f07d8",
+      "bytes": 751,
+      "git_blob_oid_at_74f": "eb772eee41260e2942b3c15814377cda39c39a5c"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination/pom.xml",
+      "sha256": "6a91a89a09ee06565c3377a702ebe3c90bac70ef3bc590e807ada92a30329762",
+      "bytes": 920,
+      "git_blob_oid_at_74f": "103f425f60b78686950e179f2bc6144790f3cd1a"
+    },
+    {
+      "path": "widgets/pagination/pom.xml",
+      "sha256": "c96b8c461a2f4ca2081a244d45ec40b4141236a18a728580725ca7659620d9e7",
+      "bytes": 950,
+      "git_blob_oid_at_74f": "b380f467ca6ce556457d4de55d75f02f655c056c"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.core/build.properties",
+      "sha256": "a268b88a610579808bdc5bd7e26645e9ae3e26938912c116b62b37ad8ba54532",
+      "bytes": 88,
+      "git_blob_oid_at_74f": "08373bf14116c6900b2c091d799d1a6f255d6dcd"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.core/pom.xml",
+      "sha256": "75254fca8d5a5228512be487f2a316b8bbf2043d0064618c0e8f2565d4da5999",
+      "bytes": 952,
+      "git_blob_oid_at_74f": "387957fcda75f0b2d2a52ce68adfa5e77b7d51fc"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.snippets/build.properties",
+      "sha256": "4b22443d781d1be86ed1b9ec02fc6eeaa8375e038a21fd7f2b117a689d681795",
+      "bytes": 112,
+      "git_blob_oid_at_74f": "cf98076b348ec660f308d14072b320da2e78cac0"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.snippets/pom.xml",
+      "sha256": "0b6dd30fb70f260976cc514851c19187a7120ae1991f58832dccfdf1b8e491fd",
+      "bytes": 962,
+      "git_blob_oid_at_74f": "ee5f5ffb2546361b773d6f9b2655793d7fa0863b"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.tests/build.properties",
+      "sha256": "0e508ea0609802f588ef0c7a61d996043336e04edf263cff4dffd26205a9d39c",
+      "bytes": 60,
+      "git_blob_oid_at_74f": "b107977f4ed7c4ae7bc2725947b2e16e5b30f4b1"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.tests/pom.xml",
+      "sha256": "11b576b11057ea95499edf7e652a3a5a2f44ea2f3998ae4330bc12630720e024",
+      "bytes": 923,
+      "git_blob_oid_at_74f": "759fa21e6729a0d81e4cf5f173e68e5c0eb8396e"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.widgets/build.properties",
+      "sha256": "1c5d1276ac51bb726522d781c1501c29097070e56f5ee9b62f70f07459107f10",
+      "bytes": 107,
+      "git_blob_oid_at_74f": "f83bbad9a3988cbc6f6f009c066191942938f66d"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.paperclips.widgets/pom.xml",
+      "sha256": "901452f23d423a44ea9286c1cb8935e177d085b0930698787f205ba18a768389",
+      "bytes": 920,
+      "git_blob_oid_at_74f": "3c716b1b068a9433bfc71f78f08a012f4fc8785f"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.widgets.paperclips.example/build.properties",
+      "sha256": "de47a78097403f8e249d03bd3414ff47392fe95f5c87eebe74a576a2fbe07d2c",
+      "bytes": 139,
+      "git_blob_oid_at_74f": "30b2fc40bd8b4e8e8c0eaeac7de0c5f0e25af914"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.widgets.paperclips.example/pom.xml",
+      "sha256": "d311d7b0ff61954d6d3e9dc63f9128cbc7baa6b849f2b009da2e7f9696d14558",
+      "bytes": 582,
+      "git_blob_oid_at_74f": "aa80c66af8b917d72e40fb4e88b88ed40bfb52a8"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.widgets.paperclips.feature/build.properties",
+      "sha256": "896f73a9a728fc6b33409f8f65c7e209179c7dbb0b62d4c9dbdb8b6ed11601bd",
+      "bytes": 154,
+      "git_blob_oid_at_74f": "53d97f2eccda064d76af3569fb1f0d0336b0b851"
+    },
+    {
+      "path": "widgets/paperclips/org.eclipse.nebula.widgets.paperclips.feature/pom.xml",
+      "sha256": "16a4e9a0c79f8e6682abd2273faf0ae7050ff1be4d1ffdc35a801d2f6412ecdd",
+      "bytes": 1005,
+      "git_blob_oid_at_74f": "32dac6b3e25021aff9c846b1beab3ea47e48e046"
+    },
+    {
+      "path": "widgets/paperclips/pom.xml",
+      "sha256": "69eab6dcb648bc462149846164af4769d5db0c650226ea6d00fb653f5c99fed7",
+      "bytes": 989,
+      "git_blob_oid_at_74f": "dc1436777a83402628d122e779323f3be03dd46c"
+    },
+    {
+      "path": "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer.feature/pom.xml",
+      "sha256": "d371b5d6d4550366f98fe2152e34dc6d9a43fa45cc6796f8185aa2e4bb49c647",
+      "bytes": 987,
+      "git_blob_oid_at_74f": "c6fba16a42459eaa5f29a77fecc168de60b3ef08"
+    },
+    {
+      "path": "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer.snippets/pom.xml",
+      "sha256": "578200de71b22bc971417dd25cbf4051c216daa4155e7cd74c476f13dc6947d8",
+      "bytes": 834,
+      "git_blob_oid_at_74f": "9807007c375da4090f15ee07ca7d66bc896ffacd"
+    },
+    {
+      "path": "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer/pom.xml",
+      "sha256": "1372751303ca960e4cd526a7274ef5d8c3fbe811f32c065b1ffb7fff82146397",
+      "bytes": 860,
+      "git_blob_oid_at_74f": "ca564d14e86a0b4704f83e508454cef9985b2b0e"
+    },
+    {
+      "path": "widgets/passwordrevealer/pom.xml",
+      "sha256": "af97a664271b2b76f24dcfdba81d3c001ca6f9c84a42d8b9d65a69e09a40b3aa",
+      "bytes": 846,
+      "git_blob_oid_at_74f": "52265c3901b169b1f0dc49509264f3dec382c323"
+    },
+    {
+      "path": "widgets/pgroup/org.eclipse.nebula.widgets.pgroup.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/pgroup/org.eclipse.nebula.widgets.pgroup.example/pom.xml",
+      "sha256": "ec861f82ea55642360dce4e5dec7eba22523da4ad3450856af4e6d8a094d4d9c",
+      "bytes": 920,
+      "git_blob_oid_at_74f": "447f5f2f18b7f54debf66710fff0f64367449a0c"
+    },
+    {
+      "path": "widgets/pgroup/org.eclipse.nebula.widgets.pgroup.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/pgroup/org.eclipse.nebula.widgets.pgroup.feature/pom.xml",
+      "sha256": "bd9321931ad6021e09aeff6ea04a78cd69f174ba01d51edae1680256009b0d51",
+      "bytes": 955,
+      "git_blob_oid_at_74f": "d96d72b6125a6c126eb9443b16f1e68833f7fcb4"
+    },
+    {
+      "path": "widgets/pgroup/org.eclipse.nebula.widgets.pgroup/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/pgroup/org.eclipse.nebula.widgets.pgroup/pom.xml",
+      "sha256": "2136a3aa2d3b4866e7a6dc0d2f9be6951ab204c6669d70e999bb98968c6bcfb0",
+      "bytes": 912,
+      "git_blob_oid_at_74f": "83b2ce19cc8a573c18aba8a186c12c190201ae82"
+    },
+    {
+      "path": "widgets/pgroup/pom.xml",
+      "sha256": "1351fd7661015b69258f12033eb64dca4815e4771bbc55a5f1fae9af103d57c7",
+      "bytes": 805,
+      "git_blob_oid_at_74f": "af5764f56defab300fb5719ab06ca80653a2d274"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture.example/build.properties",
+      "sha256": "45203cf007adfffb0228a82332e9cd372cb47717606e916b39cc3970c9c5b3cb",
+      "bytes": 648,
+      "git_blob_oid_at_74f": "65a3a08dbcfa374d09d217ccae391cc7c0d9543a"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture.example/pom.xml",
+      "sha256": "f89ee5b1060d70452f195f7bce8a2cc5444c8b2d838ca2263c96c1bfc3d300e6",
+      "bytes": 922,
+      "git_blob_oid_at_74f": "b331425ba5b67bbd0fb822db0b5857cd24ecfe9c"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture.feature/pom.xml",
+      "sha256": "20eb073f0bf0b7f668613be4855fdf937ab99477bcf1385fb57b31e8711661dc",
+      "bytes": 958,
+      "git_blob_oid_at_74f": "2bb12b455a0834a1b8945c02fa1e2a55190f69fb"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture.snippets/build.properties",
+      "sha256": "c3cd98a05f734df8ff6c2b87b04c78a55ceab4a96c458b3e5f83f5bbd1300a36",
+      "bytes": 659,
+      "git_blob_oid_at_74f": "25ff86ecdbcd97ba0d85e570dd93e8acf5e5d1bc"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture.snippets/pom.xml",
+      "sha256": "7b23d2c199bcd0dd09d6db908e9cfe17f9a15a0616b02b01bc6bf9f6c913b6c6",
+      "bytes": 923,
+      "git_blob_oid_at_74f": "eb26bf0ac5cd19d2bc1f68fcfcaff7b05c1fd906"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture/build.properties",
+      "sha256": "1db9993f4865fffe63b07a584cd912a9eb7a5bcafca52cbcecc6f4cdbe01227e",
+      "bytes": 801,
+      "git_blob_oid_at_74f": "db7d79a79bc4656b334cbd680ea762eb0800a029"
+    },
+    {
+      "path": "widgets/picture/org.eclipse.nebula.widgets.picture/pom.xml",
+      "sha256": "be9bd09c421eae6af23d86dc65e7d19cacb452ceccdd79c32086d4b9a0f31c5a",
+      "bytes": 914,
+      "git_blob_oid_at_74f": "5e8fbc41e152e30391ceb6fd7a510c068806a5ff"
+    },
+    {
+      "path": "widgets/picture/pom.xml",
+      "sha256": "b8541a7209e187ea335776b2f0011da981c7c5c4cd1c92f11e6b1b14fe4ca907",
+      "bytes": 837,
+      "git_blob_oid_at_74f": "001345007eefd648987a2fcaff22acbcaeab5174"
+    },
+    {
+      "path": "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle.feature/pom.xml",
+      "sha256": "715ef6b31da7d25038a2360086142f5c8b921bc697094e5fff76dbf1ba7bf71b",
+      "bytes": 982,
+      "git_blob_oid_at_74f": "0931ac5a4c9152a143790189c21e0459d1cb02d8"
+    },
+    {
+      "path": "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle.snippets/pom.xml",
+      "sha256": "e2b28b63ada344d63c5b7242de01ad19c214cba53a8a5457abae69c9ab78db25",
+      "bytes": 865,
+      "git_blob_oid_at_74f": "e2ae04533514aaf4c5acf3396fba5f74df64f51f"
+    },
+    {
+      "path": "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle/pom.xml",
+      "sha256": "e885d552295a7505a20b6f4b8aff94faa7d7af2ce6865266b80a37a8c5dc6370",
+      "bytes": 856,
+      "git_blob_oid_at_74f": "63d62e138eabd9130ac7b61b0a5d9e497b081bb2"
+    },
+    {
+      "path": "widgets/progresscircle/pom.xml",
+      "sha256": "0b2df570b343904ccd038980097d6237ff8d7fad18b7b9edafa925ccd53e3ff7",
+      "bytes": 838,
+      "git_blob_oid_at_74f": "40dcaa4a47ac2c73f1136c07c12c251a97d50677"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.css.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.css.feature/pom.xml",
+      "sha256": "d14b67761486acd3e0e499330bad819e8cfc5db0f6bacf508c16bbb0ea329b90",
+      "bytes": 998,
+      "git_blob_oid_at_74f": "c3031c8305079afe7e214d6d72b29ebe8d48ad60"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.css/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.css/pom.xml",
+      "sha256": "fe1a4aa6f34e31dc6f0b9b52f83b30c95f9d3164c78d7bd0909001d5a9fc13f7",
+      "bytes": 951,
+      "git_blob_oid_at_74f": "982856d50c54e9aa82a2bf4fa9ae3b804784fb8a"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.example/pom.xml",
+      "sha256": "e0aa65ba9ed21ee1741d003c8d9375cddb47d457c79877ff6a7cfda2bcfb2d61",
+      "bytes": 920,
+      "git_blob_oid_at_74f": "168a814c328b47c60bc8da1f0cd405d5fbd27f17"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.feature/pom.xml",
+      "sha256": "9aedfc640706e54d7cd967314483645444a1fda8b63473e6fe05ee05c70f27c6",
+      "bytes": 990,
+      "git_blob_oid_at_74f": "d5d54970eff1e80da055c34b9a0b20278164225f"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf/build.properties",
+      "sha256": "a48f7da7ebc80cfa4aa0d85536aacb2cea3243257f0164838ec66b6b88743cf1",
+      "bytes": 301,
+      "git_blob_oid_at_74f": "b1f60a6fbad48632d69af51dcde78a91070b83bc"
+    },
+    {
+      "path": "widgets/pshelf/org.eclipse.nebula.widgets.pshelf/pom.xml",
+      "sha256": "b2fc8b8aa8eedac9c5312d6cd168f52e9e17124823189de5c8fcf38a5f31355f",
+      "bytes": 947,
+      "git_blob_oid_at_74f": "02021eb28a6c78cb43593bde5d61c9152a432ca7"
+    },
+    {
+      "path": "widgets/pshelf/pom.xml",
+      "sha256": "f3bc7c31d64be099c5fb871be1e5e6743b1011d786c886824f80e3ba9cb3609a",
+      "bytes": 927,
+      "git_blob_oid_at_74f": "6ce8bda5b46139ee9f856c383753037b978646e7"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.example/pom.xml",
+      "sha256": "886f3d690479340669f401aa5b436a41239a64f5e96c2d8b4809574d45328cb9",
+      "bytes": 963,
+      "git_blob_oid_at_74f": "d36d256c17b2f1ed6a28ec26b8012b9703dad4be"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.feature/pom.xml",
+      "sha256": "37d542d354b4043ceaa7d523d9c0af765cf04080f1391434ef4f32445872fc98",
+      "bytes": 963,
+      "git_blob_oid_at_74f": "17b8a36e93e704e06c6ac75136c1c9a06db4dce9"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.tests/build.properties",
+      "sha256": "5deefc982a6127b725c930250744d9a3aad2dd5cebe6025563b572915b9837b9",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "12b49e32154ed2b182e09e71a9abba2dc39dad66"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.tests/pom.xml",
+      "sha256": "7e821b28f7dfccddadf79a06c5fd812ebada0fe33680b27546dfe2e2e634405f",
+      "bytes": 968,
+      "git_blob_oid_at_74f": "559ac6ece3fd523ca929e1e5ffb28f84949a3605"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup/pom.xml",
+      "sha256": "0d3df16865ebc31793b93f350f1f24c6cdb562852587c3d50151dcab3f9ad070",
+      "bytes": 920,
+      "git_blob_oid_at_74f": "35198d818ad88c4cf6c50e2dd64ffa37306dcf1b"
+    },
+    {
+      "path": "widgets/radiogroup/pom.xml",
+      "sha256": "22b589469fac527e2bbf48370fd403c5e21bbe3b940bd969fbb4e191c45581ee",
+      "bytes": 885,
+      "git_blob_oid_at_74f": "7c214420770b6e7557cc4802aebf3c2533fed75a"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext.example.e4/build.properties",
+      "sha256": "276b5ad805c05775b9d3df1ce8e82431b32a7c32334821259f3260d2542f0bd5",
+      "bytes": 196,
+      "git_blob_oid_at_74f": "0d33e7bd408cc8eb09f76ee845d73f45a1dad1b5"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext.example.e4/pom.xml",
+      "sha256": "ced9e6257c6a0a0b487a3ab5f9b5357dfbe00feda76bb3a060b29425c9cd3b77",
+      "bytes": 962,
+      "git_blob_oid_at_74f": "8e74df865aca2ce448dab4c9323ac119a2414593"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext.example/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext.example/pom.xml",
+      "sha256": "2c4953df393ddae1d197f43c9f90d4490663dfa8b0743de0ece069a319d7b71a",
+      "bytes": 959,
+      "git_blob_oid_at_74f": "b4b0c0ea480fabdf84ef917cc1d2ac24b26a8826"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext.feature/build.properties",
+      "sha256": "0f8fa0d1d2d50df07ad90783aaaff8435c5e9db69e3dddf91432aaff58864274",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "c4bc86b9058065d9ab1c173ebed6381019eb35fd"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext.feature/pom.xml",
+      "sha256": "af55e3032f845b5eeed881310a99bb42c3bdf32312d5633f20b5a7c3b6f4db0d",
+      "bytes": 1311,
+      "git_blob_oid_at_74f": "012fb392517a472bfa2c73a5497492c8975d1b70"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext/build.properties",
+      "sha256": "d1092be8b712f2445a278b4398737ea709ac76999fe790dff44a40b22d924beb",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "17daa5b49ca3fb9de9bf1aff4cca07366378fda4"
+    },
+    {
+      "path": "widgets/richtext/org.eclipse.nebula.widgets.richtext/pom.xml",
+      "sha256": "14dcf6a33650ccb43dce43f42ccda8ecf26c81618a77b155f6075bb7b6912847",
+      "bytes": 951,
+      "git_blob_oid_at_74f": "d0d3cc343dcfdf7d48e70d91f3717d26fc38bac3"
+    },
+    {
+      "path": "widgets/richtext/pom.xml",
+      "sha256": "472a1372874ca189c94af14c4e004001123817ea655079167b9654da18f5314c",
+      "bytes": 879,
+      "git_blob_oid_at_74f": "e22cdd4a34f375429b06f7f9bf307c6a583338e9"
+    },
+    {
+      "path": "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.feature/pom.xml",
+      "sha256": "9145f3f7a8ecb70cf913a8f3ca821d13ab4b220f80f55698e447f59eb6c03249",
+      "bytes": 983,
+      "git_blob_oid_at_74f": "5bd8c410aaa069e51f947f1cb4c0e0c9338a30b7"
+    },
+    {
+      "path": "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.snippets/pom.xml",
+      "sha256": "3cc6a550e66d68d70a70c358c433ab0c56838b3a0490d8bdbdb84c3bc8156017",
+      "bytes": 832,
+      "git_blob_oid_at_74f": "18ef1fe5c30df21ec82393b9c5682e2710c0b4fd"
+    },
+    {
+      "path": "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/pom.xml",
+      "sha256": "a41ec600b52eb4caf473141ff76329469b5ff08822dd755e987d5aaeff07d642",
+      "bytes": 858,
+      "git_blob_oid_at_74f": "bc2dfb66b33e7a74f80314562e1bdda899f0b52c"
+    },
+    {
+      "path": "widgets/roundedcheckbox/pom.xml",
+      "sha256": "3ec2eaea609a3766c9e037914ef9be2fd00db64a3a69fcdd93a848d0d164b328",
+      "bytes": 1121,
+      "git_blob_oid_at_74f": "ed426479c443d95a8a200a8c6d9cebc8cf3d3819"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.css.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.css.feature/pom.xml",
+      "sha256": "b778be8c7f6c233c520a11a73a625c64c90130915c63719517daa2a48a1fa748",
+      "bytes": 971,
+      "git_blob_oid_at_74f": "08d9415f71f6638f2efce78cb994f04641e79b64"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.css/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.css/pom.xml",
+      "sha256": "f1736c7a33650417a3f4700fc4d3757ada504f99efd7e85720f02b3f50bb02a6",
+      "bytes": 918,
+      "git_blob_oid_at_74f": "45574c34d2fa5ee37da1731521b41be2074bc695"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.example.e4/build.properties",
+      "sha256": "145f94e0d7087a5aad09b44d69d888467a9764ff35e2f1b608226c789cac1d4a",
+      "bytes": 196,
+      "git_blob_oid_at_74f": "04ab1e9b8f3cd4339dc61f93907610aecbd48895"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.example.e4/pom.xml",
+      "sha256": "b33d365ccb2cbdc64955db8b1623a1a7e3173b87f7538973f90156e68a2c3c62",
+      "bytes": 935,
+      "git_blob_oid_at_74f": "6b09eb8890c2762eb3af2960e759542b9b8c1ec7"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.feature/pom.xml",
+      "sha256": "49ea01291586d50160e4def350ffc9d31bf5e71dc34013d899f09ca58304933b",
+      "bytes": 992,
+      "git_blob_oid_at_74f": "23a003445b92532b381574dfc0ab4e3ca13a08cd"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.snippets/pom.xml",
+      "sha256": "bde23df4b14df7953b69b8f60ec96e8fbbb171a3790ea69a4994203139239d62",
+      "bytes": 828,
+      "git_blob_oid_at_74f": "552e6ccf3d09525475fb3c1562eac86997dec13d"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch/pom.xml",
+      "sha256": "cfaa936a3c474401cd18c8183acf89e4ef850b43acc9b2c62a5be22f1f8c6f26",
+      "bytes": 854,
+      "git_blob_oid_at_74f": "d7b4611c7cb9595e183a1152e8947875f7d2508a"
+    },
+    {
+      "path": "widgets/roundedswitch/pom.xml",
+      "sha256": "cc92ca5256e17bd6fcf2a3e676e1591f235edff0c1d75d51322502f440471be6",
+      "bytes": 1042,
+      "git_blob_oid_at_74f": "ab62b60b675d11b3745c3574b5a2a98b314ce984"
+    },
+    {
+      "path": "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar.feature/pom.xml",
+      "sha256": "d846431033ff4f0ecdd547f7664861b63f8fd21423b02a7b3298b14b02b8a11a",
+      "bytes": 989,
+      "git_blob_oid_at_74f": "2047e7751017d12fb679c6785d121e446b8b40e8"
+    },
+    {
+      "path": "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar.snippets/pom.xml",
+      "sha256": "0d3efb6c8525581c26ac88dd25d72acec6253f2d7e3d58d707b666fa27cba3be",
+      "bytes": 861,
+      "git_blob_oid_at_74f": "eb858ea6cb6a88702c5c3a2bb9ddfe89ebeccedb"
+    },
+    {
+      "path": "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar/pom.xml",
+      "sha256": "c7611d52ca69c2ddac4f6bcc6e0f5ba1ab54722c0f68257adcf0c24000cfbe1b",
+      "bytes": 817,
+      "git_blob_oid_at_74f": "8762acd29a586a93600c326c0ff469f5f206fff0"
+    },
+    {
+      "path": "widgets/segmentedbar/pom.xml",
+      "sha256": "c976f8cfe7b4cda4b6eec5eb8303de15cd0a84f8175e1e38f0b83d3d828724dc",
+      "bytes": 831,
+      "git_blob_oid_at_74f": "4dcfaae2274d3cae222c55fae4903d5daf4147d5"
+    },
+    {
+      "path": "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton.feature/pom.xml",
+      "sha256": "4188ec50179d1cf7e0a9202a128c23a6110be729fbffa87c049687dc81e4cb6a",
+      "bytes": 978,
+      "git_blob_oid_at_74f": "5d9cc5a3784cc1895f0efb8fdb8859dca5c73eef"
+    },
+    {
+      "path": "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton.snippets/pom.xml",
+      "sha256": "a7ab20192cff39f707e8686bd21e92eb3542027fb2dba604fa9e3366b8c02b13",
+      "bytes": 824,
+      "git_blob_oid_at_74f": "b6dfc7641bfe8661bcd3d195df0676d4149b8a51"
+    },
+    {
+      "path": "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton/pom.xml",
+      "sha256": "c336f481d565caecaddb4b5db54ba993755c94441f557f6bf9d74a70a7e45ad5",
+      "bytes": 815,
+      "git_blob_oid_at_74f": "6b905128fdf429400597362504e9421a2e77c0e5"
+    },
+    {
+      "path": "widgets/splitbutton/pom.xml",
+      "sha256": "23ed5f274fcafd9be0a47c1d11416fc1eef45006a210126107c16fe897d1c94b",
+      "bytes": 829,
+      "git_blob_oid_at_74f": "7b38316abd61ee58053b0065103b9515c7d0c25a"
+    },
+    {
+      "path": "widgets/stepbar/org.eclipse.nebula.widgets.stepbar.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/stepbar/org.eclipse.nebula.widgets.stepbar.feature/pom.xml",
+      "sha256": "55958e3daba793504d0cff578fc23ea128d5d59653eea8c9b106435dae5b10ca",
+      "bytes": 971,
+      "git_blob_oid_at_74f": "89931b3293197481554d974ed92390c45b359d99"
+    },
+    {
+      "path": "widgets/stepbar/org.eclipse.nebula.widgets.stepbar.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/stepbar/org.eclipse.nebula.widgets.stepbar.snippets/pom.xml",
+      "sha256": "799a3cb43e472491c7d67f094fecfb5980d62f19740d49e0bff05cd462d37ed6",
+      "bytes": 818,
+      "git_blob_oid_at_74f": "1d601b682958e36caf15fe5b5048ee668605cf22"
+    },
+    {
+      "path": "widgets/stepbar/org.eclipse.nebula.widgets.stepbar/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/stepbar/org.eclipse.nebula.widgets.stepbar/pom.xml",
+      "sha256": "738bf37a82c4eea1e7175ca6a378d04be1bde020d0a0416314ef22c2e59507bf",
+      "bytes": 807,
+      "git_blob_oid_at_74f": "dc7b129bed3c7d9c366a4f4a60b5b08b7b2e9636"
+    },
+    {
+      "path": "widgets/stepbar/pom.xml",
+      "sha256": "e7fad0ad7d8520eaf49cf17f97ed1e7a94033d5d9c0cb546370d35b0a4be77ca",
+      "bytes": 811,
+      "git_blob_oid_at_74f": "0cd357fd6e7919b69dbd70979edab3523777458d"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.css.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.css.feature/pom.xml",
+      "sha256": "f8a05c34130d1d7bd45948fce8c367b0609b840c14d0f9518b244ea358b8d345",
+      "bytes": 963,
+      "git_blob_oid_at_74f": "1db34da30bf48753049c817572e9e2849ad10a96"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.css/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.css/pom.xml",
+      "sha256": "4bde3b740716484044a2e58b1e650bdce67d88ab3e4a0ed9befb2f1ee5c2d593",
+      "bytes": 912,
+      "git_blob_oid_at_74f": "66d806dd907efe53dc4700f994dce8d717fad1c8"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.example.e4/build.properties",
+      "sha256": "145f94e0d7087a5aad09b44d69d888467a9764ff35e2f1b608226c789cac1d4a",
+      "bytes": 196,
+      "git_blob_oid_at_74f": "04ab1e9b8f3cd4339dc61f93907610aecbd48895"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.example.e4/pom.xml",
+      "sha256": "087edc445b10bf501d4cfff90dd3b5ee5309bef44d8377a380bd6996f13532f1",
+      "bytes": 929,
+      "git_blob_oid_at_74f": "f738fd6079858d1d5c0b57018be25e6511e34cf5"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.example/pom.xml",
+      "sha256": "403d71c1726c96878ad579636624c77d7e9ae4c52adfe1e19551a3ac72408b25",
+      "bytes": 929,
+      "git_blob_oid_at_74f": "b6942e26ae0b798ffc7ab283f606db1c099a035f"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.feature/pom.xml",
+      "sha256": "58ce8835b2e20001230d4d498d73513cffd11733fa092460107bc9d99795dff5",
+      "bytes": 1283,
+      "git_blob_oid_at_74f": "a8e861b83e810f5af60b9d9914abb9b21cb0d547"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.snippets/build.properties",
+      "sha256": "441535181827cdb280badb403275f203a108741f93dbc93fece9c71b97e3ac13",
+      "bytes": 221,
+      "git_blob_oid_at_74f": "da305df1266ef31beae12b505a5bbd85922b27cd"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.snippets/pom.xml",
+      "sha256": "73061100263e55efee1a673f22fa8a58c6fa5f6dd451f204b3d0346bab1b1cfe",
+      "bytes": 928,
+      "git_blob_oid_at_74f": "4cacd8224cc1e84299da7c57959d6c8c8ec2f76d"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.test/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.test/pom.xml",
+      "sha256": "243a6ddfd198a63948de5019ab958b18695f47d197f64f45c1b68fe32f1a5282",
+      "bytes": 1353,
+      "git_blob_oid_at_74f": "81e66d51d4c190b818b9f3626c4f21aec1febc1d"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo/build.properties",
+      "sha256": "441535181827cdb280badb403275f203a108741f93dbc93fece9c71b97e3ac13",
+      "bytes": 221,
+      "git_blob_oid_at_74f": "da305df1266ef31beae12b505a5bbd85922b27cd"
+    },
+    {
+      "path": "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo/pom.xml",
+      "sha256": "89b71ea85ed6ae3813020ac3e50a30f70fa3e85bf64fe57d92e22534c060fb5e",
+      "bytes": 919,
+      "git_blob_oid_at_74f": "5377a83a7dcde8ae2e0b24e964eaa818a0180b76"
+    },
+    {
+      "path": "widgets/tablecombo/pom.xml",
+      "sha256": "8d15cd03c17aee95f4496d96ec28006b9c2965475ee8cafaa49a77cb50111600",
+      "bytes": 1147,
+      "git_blob_oid_at_74f": "880024fc3d813d718c53e39b0a6942e978028951"
+    },
+    {
+      "path": "widgets/tiles/org.eclipse.nebula.widgets.tiles.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/tiles/org.eclipse.nebula.widgets.tiles.feature/pom.xml",
+      "sha256": "fe7f0f82255c524e9d2ff7062fba0a7b621a918fe6d03c3676ab34e1bd9c6b82",
+      "bytes": 967,
+      "git_blob_oid_at_74f": "a678dc915508a6da0dccec178085d4ecbe096c11"
+    },
+    {
+      "path": "widgets/tiles/org.eclipse.nebula.widgets.tiles.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/tiles/org.eclipse.nebula.widgets.tiles.snippets/pom.xml",
+      "sha256": "a059b2236f32dd2527fe222215c65d17f1709bf3b6f239bff1b20489752de88c",
+      "bytes": 847,
+      "git_blob_oid_at_74f": "d5d2c3a7f8c33049eccc6ceaa15029a8c9348692"
+    },
+    {
+      "path": "widgets/tiles/org.eclipse.nebula.widgets.tiles/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/tiles/org.eclipse.nebula.widgets.tiles/pom.xml",
+      "sha256": "e7d2147b96316a9a53b3e6bb56aed59dc3007d8891100605b5de299c1548e8be",
+      "bytes": 838,
+      "git_blob_oid_at_74f": "c925de4f065e3b7a3a822f347e3d6b5bf1a42eff"
+    },
+    {
+      "path": "widgets/tiles/pom.xml",
+      "sha256": "2e1ef395526e59699ee478c048edf29f57eeb5094ef52f34c4e30e279e028261",
+      "bytes": 802,
+      "git_blob_oid_at_74f": "a271f632af745815476ce4f163acf2c323aa626f"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline.example/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline.example/pom.xml",
+      "sha256": "117fcf70d6b61b973a2a353a916619bbab51dcbe762f1b6f286fe6997414f225",
+      "bytes": 939,
+      "git_blob_oid_at_74f": "34c43bde5b62390738c4db459ff767bdd54a71a0"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline.feature/build.properties",
+      "sha256": "dced24dc002058f5ee7d19abd03f847c601731cfdff1ed8c0176c8a4fb6a1b70",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "0c5e5f5c7ba0055a6da75bc23b887ddc658ca4f1"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline.feature/pom.xml",
+      "sha256": "7e56dd31f23992967b84fdf2721d3dd6e70c1bd2fd2156390c8f07d7801fd9dc",
+      "bytes": 940,
+      "git_blob_oid_at_74f": "cad0101dc7e29fd1c9901372dd9bc78cb88d8b5a"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline.snippets/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline.tests/build.properties",
+      "sha256": "7c522b88ee9322fd88de278216d558719e30b1945401b5a439e938b51fabb953",
+      "bytes": 98,
+      "git_blob_oid_at_74f": "d4e29431a18974733ef527e99f2245399b9b9d8f"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline.tests/pom.xml",
+      "sha256": "542e9f5109bdf43b7f6112bfd09f9a06414534b3596ffd55ed468dd672005946",
+      "bytes": 942,
+      "git_blob_oid_at_74f": "b40bd811d15891c1195f4a438c2aba4e4c8d30ed"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline/build.properties",
+      "sha256": "423fb33a6eec73500b466b46b9805ab33b22d97347e598b0edee027efe425a70",
+      "bytes": 161,
+      "git_blob_oid_at_74f": "4ba05d31d77a6653916938c01c8fbed6b095afc7"
+    },
+    {
+      "path": "widgets/timeline/org.eclipse.nebula.widgets.timeline/pom.xml",
+      "sha256": "927ce20063540867e684813b987a776532fad84521073e4a9f132d774501c463",
+      "bytes": 931,
+      "git_blob_oid_at_74f": "b4a33c30f06f01f5136a75a451924a5f6ea123b6"
+    },
+    {
+      "path": "widgets/timeline/pom.xml",
+      "sha256": "ca00a17ec7caa943a92a992a92cfde98587b4108b104f8c7406cf38ac878b3c2",
+      "bytes": 874,
+      "git_blob_oid_at_74f": "477d0c9525dd62191285ec474c506f210060306e"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.examples/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.examples/pom.xml",
+      "sha256": "fa49863954d1eb78123f30a5098c7c19324e219fa2ac19ae6f5e07fe7894213b",
+      "bytes": 963,
+      "git_blob_oid_at_74f": "03f9649f375e577dd119632e7a0809b92efb9415"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.feature/build.properties",
+      "sha256": "d4d8551bcc2d2eef7c72b68e183be3098c2df1adfab431261c98a05b5c82c970",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "b40f03f723d45e80f7189b8d40aac0a3ba1bca5c"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.feature/pom.xml",
+      "sha256": "e119cef1ccba3033e9b16ce8d3e2b853309e0d55f12866f8fb7300988d9739a7",
+      "bytes": 928,
+      "git_blob_oid_at_74f": "762618099c8200b706ebe5fe081098772363fb58"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.tests/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.tests/pom.xml",
+      "sha256": "e8a802d0d2b0e6ef12d74f30f9a883b44d471fa10663f4a3948d4778b441be0f",
+      "bytes": 931,
+      "git_blob_oid_at_74f": "2c35ea649f5ee59bbc7198e2cdd33067857a90ae"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper/build.properties",
+      "sha256": "b50384413e2d685f4a7b046acbd4def42e4fb8b3009f1ca63589bee0db95f499",
+      "bytes": 113,
+      "git_blob_oid_at_74f": "6b86951c3b5d7a3a24a9f7dffc3d0b5e5054771a"
+    },
+    {
+      "path": "widgets/treemapper/org.eclipse.nebula.widgets.treemapper/pom.xml",
+      "sha256": "1d1d6ab41971dfacb6531991ae3937e29b85cdaa8b1e42a468147da7789e36ba",
+      "bytes": 919,
+      "git_blob_oid_at_74f": "1d1fdfe0ef55bedead9681915826342b0d3f29c3"
+    },
+    {
+      "path": "widgets/treemapper/pom.xml",
+      "sha256": "a9e3f42d28a027566a277eb08714ceba0bcc9acda7a5d7a415af6af8182f9d64",
+      "bytes": 885,
+      "git_blob_oid_at_74f": "aa11f6dbdf09b5bd2f528406901265318b7098ea"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.example/build.properties",
+      "sha256": "c1cc4d0e6d1977206c1e859eac8ff1aa36b03b329f0973c7ce831469353d9d6d",
+      "bytes": 88,
+      "git_blob_oid_at_74f": "cc91072ececda9eed9b500b1567c6271c353acbd"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.example/pom.xml",
+      "sha256": "478d6f54d0b72e6ad9ce954f555532d605e7f1e3342631c39e88aa147ca5d4b3",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "92735e3d08d5eec7850d958a7109464d6169444e"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.feature/build.properties",
+      "sha256": "86e8adbffbdf4ca6c656c4533ebbb16a6afd41fc27750b41e5b61281b23e9b08",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "88b009b2d15e38ab4e3ba4b48040a46663d38901"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.feature/pom.xml",
+      "sha256": "f50b169c2a3c81614a6a37b70178f79d779586bed6ea59bc0285c06fe3518cf5",
+      "bytes": 995,
+      "git_blob_oid_at_74f": "5abff916fc9e54f871273763671339cbf6a444f3"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.widgets.tests/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.widgets.tests/pom.xml",
+      "sha256": "96eb537eeac98acd03b7c41de1a1360f75d2efc39bc7e33740e927c4e7eb5cb3",
+      "bytes": 976,
+      "git_blob_oid_at_74f": "7b5b97db1ff2031fbb332ba97793b018ab4f81f8"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.widgets/build.properties",
+      "sha256": "4915505ce4131eefac4e2f104379b59781db321e625309aed4798231cea9234b",
+      "bytes": 115,
+      "git_blob_oid_at_74f": "416bb10146d12af6d7b1afa548bbc13774ea9bd7"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.widgets/pom.xml",
+      "sha256": "edc7089c655475d0c5235fa7eee991b15f4437a883f9bfc4d0ec3bf504ffe16a",
+      "bytes": 1001,
+      "git_blob_oid_at_74f": "3c5c46b7cb714b63af8f828df7cb76653b8de5db"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.xygraph.exampleview/build.properties",
+      "sha256": "731ab5fca40572f71fe4fe13b834f3133480672cbfc0274f8649fae1ee850907",
+      "bytes": 156,
+      "git_blob_oid_at_74f": "4ba0a0c298bb9a45c93ac52552ab46d67b183b0f"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.xygraph.exampleview/pom.xml",
+      "sha256": "dfdc303567814ca5bcc2dc6b1c6ccfecc85123308badb24ee4d39a6d8ed0eb27",
+      "bytes": 1023,
+      "git_blob_oid_at_74f": "1bdd746f40ab67cb499b20d6decf239a66abc48a"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.xygraph.test/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.xygraph/build.properties",
+      "sha256": "4915505ce4131eefac4e2f104379b59781db321e625309aed4798231cea9234b",
+      "bytes": 115,
+      "git_blob_oid_at_74f": "416bb10146d12af6d7b1afa548bbc13774ea9bd7"
+    },
+    {
+      "path": "widgets/visualization/org.eclipse.nebula.visualization.xygraph/pom.xml",
+      "sha256": "1840427e424412d94654092960b8b21fd02e71f59dd5951fbd29bf1729c35c28",
+      "bytes": 1004,
+      "git_blob_oid_at_74f": "2e2dd033943139df3a08148def38f55fcbe0a813"
+    },
+    {
+      "path": "widgets/visualization/pom.xml",
+      "sha256": "e39546b72bb92b0806f21274ccf57ee01aff8ec7990d05adf9a41376b13097e4",
+      "bytes": 949,
+      "git_blob_oid_at_74f": "19b6ab689cce7671ef89c1fecac90f867075483b"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.core/build.properties",
+      "sha256": "88a8fc75b342e10a16480463c378d40b462bb673fe9d03158c0ed43ed42fe46e",
+      "bytes": 140,
+      "git_blob_oid_at_74f": "14305868137cdd52b1543ffdf9e990bced3edc9d"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.core/pom.xml",
+      "sha256": "f411eeb33461e382f7260969f7f4f4eceb79705a7d7436eb41cf97d9618dcbb8",
+      "bytes": 953,
+      "git_blob_oid_at_74f": "926eb79777fa5f5941eea6130fd8c057cc151859"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.example/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.example/pom.xml",
+      "sha256": "f4b736c730bda47808a26003fbf0c849df46704b82be6766a43544d1de3a2d47",
+      "bytes": 957,
+      "git_blob_oid_at_74f": "6b642c475cb46d7c4340c9596e1f6ab51709ce6b"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.feature.test/build.properties",
+      "sha256": "aa2c1ffb497c5af5c3766447f6f554d500e748ee1522ec00cbaa3bcd5ffdefec",
+      "bytes": 245,
+      "git_blob_oid_at_74f": "cb617359a541cb76479649d4bb71e6efccdaa6f1"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.feature.test/pom.xml",
+      "sha256": "a0bd08f7f1413fe06475a5badf120c46f453246314d0f653f1fd05eb719ea80d",
+      "bytes": 998,
+      "git_blob_oid_at_74f": "042c7e9d4432cc368dc363bc66c6c2c985028144"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.feature/build.properties",
+      "sha256": "eae86abfbfc52f7e42891f3d5aca3b55b7bf29e46fd65581d6fe5b635b840984",
+      "bytes": 123,
+      "git_blob_oid_at_74f": "038ea234ee5409c066f8f1bee40cf6991c6aa7e6"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.feature/pom.xml",
+      "sha256": "6dda9f8766abe0452784b29eb3b1fb5795c86d93623fb02465d45b28990ce36a",
+      "bytes": 958,
+      "git_blob_oid_at_74f": "e508fa1a49bed86eaefb529e1dfee3d5c4c1da27"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.integration/build.properties",
+      "sha256": "636de067ba50d8a6fdbb61242ddaa773cd9974aa07e3df8b961a387021d6af3b",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "e9863e281eaccc5123e82ed75713bab3e8b87bbe"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.integration/pom.xml",
+      "sha256": "ce9c8dc0679ef07ffb8a752734cacb93d3ebb0d5ef7d457698a8e7b6524f8c14",
+      "bytes": 961,
+      "git_blob_oid_at_74f": "5416ab937f3d6a190a41c257da37390f3ed69996"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.tests/build.properties",
+      "sha256": "2577328aa27ea3154f0e0dd4b724e20d50d976b8a82c9caf2439a04ae889a3eb",
+      "bytes": 76,
+      "git_blob_oid_at_74f": "34d2e4d2dad529ceaeb953bfcdb63c51d69ffed2"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.tests/pom.xml",
+      "sha256": "7b0b585739bdf561d6d25967474a5501f8619b7081e29f6bc4a189cddd45c20a",
+      "bytes": 960,
+      "git_blob_oid_at_74f": "264b173fe77ae50fce71109850400a3438506759"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer/build.properties",
+      "sha256": "d1092be8b712f2445a278b4398737ea709ac76999fe790dff44a40b22d924beb",
+      "bytes": 104,
+      "git_blob_oid_at_74f": "17daa5b49ca3fb9de9bf1aff4cca07366378fda4"
+    },
+    {
+      "path": "widgets/xviewer/org.eclipse.nebula.widgets.xviewer/pom.xml",
+      "sha256": "55e0f9a8e5cb5e7a85942ad0f5b4df591e50e54d2d14b52b3c3b9d83a10cb75b",
+      "bytes": 913,
+      "git_blob_oid_at_74f": "946d4343d4489f2d9167873f2f850b9d8ddeb58b"
+    },
+    {
+      "path": "widgets/xviewer/pom.xml",
+      "sha256": "61e038e12e1c5781b5eacafb2277f82be7a6160f6ddfc41155b052e608b53d0a",
+      "bytes": 928,
+      "git_blob_oid_at_74f": "d44011b5f64b5e0d9655e697625dbd88d46d4eba"
+    }
+  ],
+  "generated_output_roots": [
+    ".m3/atom-pattern/target",
+    ".m3/nebula-visible-range/target",
+    "examples/org.eclipse.nebula.examples.feature/target",
+    "examples/org.eclipse.nebula.examples/target",
+    "examples/org.eclipse.nebula.snippets/target",
+    "m3/openrewrite-line-terminators/target",
+    "m3/recipe-first/target",
+    "org.eclipse.nebula.nebface/target",
+    "org.eclipse.nebula.presentations.shelf/target",
+    "releng/org.eclipse.nebula.examples.incubation.feature/target",
+    "releng/org.eclipse.nebula.examples.release.feature/target",
+    "releng/org.eclipse.nebula.examples.webstart/target",
+    "releng/org.eclipse.nebula.feature/target",
+    "releng/org.eclipse.nebula.incubation.feature/target",
+    "releng/org.eclipse.nebula.nebula-parent/target",
+    "releng/org.eclipse.nebula.site/promotion/target",
+    "releng/org.eclipse.nebula.site/target",
+    "target",
+    "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel.feature/target",
+    "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel.snippets/target",
+    "widgets/badgedlabel/org.eclipse.nebula.widgets.badgedlabel/target",
+    "widgets/badgedlabel/target",
+    "widgets/bidilayout/org.eclipse.nebula.widgets.bidilayout/target",
+    "widgets/bidilayout/target",
+    "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo.example/target",
+    "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo.feature/target",
+    "widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo/target",
+    "widgets/calendarcombo/target",
+    "widgets/carousel/org.eclipse.nebula.widgets.carousel.feature/target",
+    "widgets/carousel/org.eclipse.nebula.widgets.carousel.snippets/target",
+    "widgets/carousel/org.eclipse.nebula.widgets.carousel/target",
+    "widgets/carousel/target",
+    "widgets/cdatetime/org.eclipse.nebula.jface.cdatetime/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css.feature/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example.e4/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.example/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.feature/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.snippets/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/target",
+    "widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime/target",
+    "widgets/cdatetime/target",
+    "widgets/chips/org.eclipse.nebula.widgets.chips.feature/target",
+    "widgets/chips/org.eclipse.nebula.widgets.chips.snippets/target",
+    "widgets/chips/org.eclipse.nebula.widgets.chips/target",
+    "widgets/chips/target",
+    "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons.example/target",
+    "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons.feature/target",
+    "widgets/collapsiblebuttons/org.eclipse.nebula.widgets.collapsiblebuttons/target",
+    "widgets/collapsiblebuttons/target",
+    "widgets/compositetable/org.eclipse.nebula.widgets.compositetable.feature/target",
+    "widgets/compositetable/org.eclipse.nebula.widgets.compositetable.tests/target",
+    "widgets/compositetable/org.eclipse.nebula.widgets.compositetable/target",
+    "widgets/compositetable/target",
+    "widgets/ctree/org.eclipse.nebula.widgets.ctree/target",
+    "widgets/ctree/target",
+    "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.feature/target",
+    "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.snippets/target",
+    "widgets/ctreecombo/org.eclipse.nebula.widgets.ctreecombo/target",
+    "widgets/ctreecombo/target",
+    "widgets/cwt/org.eclipse.nebula.cwt.feature/target",
+    "widgets/cwt/org.eclipse.nebula.cwt.snippets/target",
+    "widgets/cwt/org.eclipse.nebula.cwt.tests/target",
+    "widgets/cwt/org.eclipse.nebula.cwt/target",
+    "widgets/cwt/target",
+    "widgets/datechooser/org.eclipse.nebula.widgets.datechooser.example/target",
+    "widgets/datechooser/org.eclipse.nebula.widgets.datechooser.feature/target",
+    "widgets/datechooser/org.eclipse.nebula.widgets.datechooser/target",
+    "widgets/datechooser/target",
+    "widgets/effects/org.eclipse.nebula.effects.stw.example/target",
+    "widgets/effects/org.eclipse.nebula.effects.stw.feature/target",
+    "widgets/effects/org.eclipse.nebula.effects.stw/target",
+    "widgets/effects/target",
+    "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext.feature/target",
+    "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext.snippets/target",
+    "widgets/floatingtext/org.eclipse.nebula.widgets.floatingtext/target",
+    "widgets/floatingtext/target",
+    "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome.feature/target",
+    "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome.snippets/target",
+    "widgets/fontawesome/org.eclipse.nebula.widgets.fontawesome/target",
+    "widgets/fontawesome/target",
+    "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext.feature/target",
+    "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext.tests/target",
+    "widgets/formattedtext/org.eclipse.nebula.widgets.formattedtext/target",
+    "widgets/formattedtext/target",
+    "widgets/gallery/org.eclipse.nebula.widgets.gallery.example/target",
+    "widgets/gallery/org.eclipse.nebula.widgets.gallery.feature/target",
+    "widgets/gallery/org.eclipse.nebula.widgets.gallery.test.feature/target",
+    "widgets/gallery/org.eclipse.nebula.widgets.gallery.tests/target",
+    "widgets/gallery/org.eclipse.nebula.widgets.gallery/target",
+    "widgets/gallery/target",
+    "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart.example/target",
+    "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart.feature/target",
+    "widgets/ganttchart/org.eclipse.nebula.widgets.ganttchart/target",
+    "widgets/ganttchart/target",
+    "widgets/geomap/org.eclipse.nebula.widgets.geomap.example/target",
+    "widgets/geomap/org.eclipse.nebula.widgets.geomap.feature/target",
+    "widgets/geomap/org.eclipse.nebula.widgets.geomap.snippets/target",
+    "widgets/geomap/org.eclipse.nebula.widgets.geomap.tests/target",
+    "widgets/geomap/org.eclipse.nebula.widgets.geomap/target",
+    "widgets/geomap/target",
+    "widgets/grid/org.eclipse.nebula.widgets.grid.css.feature/target",
+    "widgets/grid/org.eclipse.nebula.widgets.grid.css/target",
+    "widgets/grid/org.eclipse.nebula.widgets.grid.example.e4/target",
+    "widgets/grid/org.eclipse.nebula.widgets.grid.example/target",
+    "widgets/grid/org.eclipse.nebula.widgets.grid.feature/target",
+    "widgets/grid/org.eclipse.nebula.widgets.grid.test/target",
+    "widgets/grid/org.eclipse.nebula.widgets.grid/target",
+    "widgets/grid/target",
+    "widgets/led/org.eclipse.nebula.widgets.led.feature/target",
+    "widgets/led/org.eclipse.nebula.widgets.led.snippets/target",
+    "widgets/led/org.eclipse.nebula.widgets.led/target",
+    "widgets/led/target",
+    "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider.feature/target",
+    "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider.snippets/target",
+    "widgets/nebulaslider/org.eclipse.nebula.widgets.nebulaslider/target",
+    "widgets/nebulaslider/target",
+    "widgets/nebulatoolbar/target",
+    "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb.feature/target",
+    "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb.snippets/target",
+    "widgets/opal/breadcrumb/org.eclipse.nebula.widgets.opal.breadcrumb/target",
+    "widgets/opal/breadcrumb/target",
+    "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator.feature/target",
+    "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator.snippets/target",
+    "widgets/opal/calculator/org.eclipse.nebula.widgets.opal.calculator/target",
+    "widgets/opal/calculator/target",
+    "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup.feature/target",
+    "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup.snippets/target",
+    "widgets/opal/checkboxgroup/org.eclipse.nebula.widgets.opal.checkboxgroup/target",
+    "widgets/opal/checkboxgroup/target",
+    "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser.feature/target",
+    "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser.snippets/target",
+    "widgets/opal/columnbrowser/org.eclipse.nebula.widgets.opal.columnbrowser/target",
+    "widgets/opal/columnbrowser/target",
+    "widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons.feature/target",
+    "widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/target",
+    "widgets/opal/commons/target",
+    "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog.feature/target",
+    "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog.snippets/target",
+    "widgets/opal/dialog/org.eclipse.nebula.widgets.opal.dialog/target",
+    "widgets/opal/dialog/target",
+    "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist.feature/target",
+    "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist.snippets/target",
+    "widgets/opal/duallist/org.eclipse.nebula.widgets.opal.duallist/target",
+    "widgets/opal/duallist/target",
+    "widgets/opal/header/org.eclipse.nebula.widgets.opal.header.feature/target",
+    "widgets/opal/header/org.eclipse.nebula.widgets.opal.header.snippets/target",
+    "widgets/opal/header/org.eclipse.nebula.widgets.opal.header/target",
+    "widgets/opal/header/target",
+    "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager.feature/target",
+    "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager.snippets/target",
+    "widgets/opal/heapmanager/org.eclipse.nebula.widgets.opal.heapmanager/target",
+    "widgets/opal/heapmanager/target",
+    "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner.feature/target",
+    "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner.snippets/target",
+    "widgets/opal/horizontalspinner/org.eclipse.nebula.widgets.opal.horizontalspinner/target",
+    "widgets/opal/horizontalspinner/target",
+    "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher.feature/target",
+    "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher.snippets/target",
+    "widgets/opal/launcher/org.eclipse.nebula.widgets.opal.launcher/target",
+    "widgets/opal/launcher/target",
+    "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog.feature/target",
+    "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog.snippets/target",
+    "widgets/opal/logindialog/org.eclipse.nebula.widgets.opal.logindialog/target",
+    "widgets/opal/logindialog/target",
+    "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice.feature/target",
+    "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice.snippets/target",
+    "widgets/opal/multichoice/org.eclipse.nebula.widgets.opal.multichoice/target",
+    "widgets/opal/multichoice/target",
+    "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier.feature/target",
+    "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier.snippets/target",
+    "widgets/opal/notifier/org.eclipse.nebula.widgets.opal.notifier/target",
+    "widgets/opal/notifier/target",
+    "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels.feature/target",
+    "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels.snippets/target",
+    "widgets/opal/panels/org.eclipse.nebula.widgets.opal.panels/target",
+    "widgets/opal/panels/target",
+    "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow.feature/target",
+    "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow.snippets/target",
+    "widgets/opal/preferencewindow/org.eclipse.nebula.widgets.opal.preferencewindow/target",
+    "widgets/opal/preferencewindow/target",
+    "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport.feature/target",
+    "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport.snippets/target",
+    "widgets/opal/promptsupport/org.eclipse.nebula.widgets.opal.promptsupport/target",
+    "widgets/opal/promptsupport/target",
+    "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable.feature/target",
+    "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable.snippets/target",
+    "widgets/opal/propertytable/org.eclipse.nebula.widgets.opal.propertytable/target",
+    "widgets/opal/propertytable/target",
+    "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider.feature/target",
+    "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider.snippets/target",
+    "widgets/opal/rangeslider/org.eclipse.nebula.widgets.opal.rangeslider/target",
+    "widgets/opal/rangeslider/target",
+    "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar.feature/target",
+    "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar.snippets/target",
+    "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/target",
+    "widgets/opal/roundedtoolbar/target",
+    "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating.feature/target",
+    "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating.snippets/target",
+    "widgets/opal/starrating/org.eclipse.nebula.widgets.opal.starrating/target",
+    "widgets/opal/starrating/target",
+    "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton.feature/target",
+    "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton.snippets/target",
+    "widgets/opal/switchbutton/org.eclipse.nebula.widgets.opal.switchbutton/target",
+    "widgets/opal/switchbutton/target",
+    "widgets/opal/target",
+    "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist.feature/target",
+    "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist.snippets/target",
+    "widgets/opal/textassist/org.eclipse.nebula.widgets.opal.textassist/target",
+    "widgets/opal/textassist/target",
+    "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday.feature/target",
+    "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday.snippets/target",
+    "widgets/opal/tipoftheday/org.eclipse.nebula.widgets.opal.tipoftheday/target",
+    "widgets/opal/tipoftheday/target",
+    "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator.feature/target",
+    "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator.snippets/target",
+    "widgets/opal/titledseparator/org.eclipse.nebula.widgets.opal.titledseparator/target",
+    "widgets/opal/titledseparator/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.css.feature/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.css/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.example.e4/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.example/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.feature/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.snippets/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.tests/target",
+    "widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope/target",
+    "widgets/oscilloscope/target",
+    "widgets/pagination/org.eclipse.nebula.widgets.pagination.example/target",
+    "widgets/pagination/org.eclipse.nebula.widgets.pagination.feature/target",
+    "widgets/pagination/org.eclipse.nebula.widgets.pagination.snippets/target",
+    "widgets/pagination/org.eclipse.nebula.widgets.pagination.tests/target",
+    "widgets/pagination/org.eclipse.nebula.widgets.pagination/target",
+    "widgets/pagination/target",
+    "widgets/paperclips/org.eclipse.nebula.paperclips.core/target",
+    "widgets/paperclips/org.eclipse.nebula.paperclips.snippets/target",
+    "widgets/paperclips/org.eclipse.nebula.paperclips.tests/target",
+    "widgets/paperclips/org.eclipse.nebula.paperclips.widgets/target",
+    "widgets/paperclips/org.eclipse.nebula.widgets.paperclips.example/target",
+    "widgets/paperclips/org.eclipse.nebula.widgets.paperclips.feature/target",
+    "widgets/paperclips/target",
+    "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer.feature/target",
+    "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer.snippets/target",
+    "widgets/passwordrevealer/org.eclipse.nebula.widgets.passwordrevealer/target",
+    "widgets/passwordrevealer/target",
+    "widgets/pgroup/org.eclipse.nebula.widgets.pgroup.example/target",
+    "widgets/pgroup/org.eclipse.nebula.widgets.pgroup.feature/target",
+    "widgets/pgroup/org.eclipse.nebula.widgets.pgroup/target",
+    "widgets/pgroup/target",
+    "widgets/picture/org.eclipse.nebula.widgets.picture.example/target",
+    "widgets/picture/org.eclipse.nebula.widgets.picture.feature/target",
+    "widgets/picture/org.eclipse.nebula.widgets.picture.snippets/target",
+    "widgets/picture/org.eclipse.nebula.widgets.picture/target",
+    "widgets/picture/target",
+    "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle.feature/target",
+    "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle.snippets/target",
+    "widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle/target",
+    "widgets/progresscircle/target",
+    "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.css.feature/target",
+    "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.css/target",
+    "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.example/target",
+    "widgets/pshelf/org.eclipse.nebula.widgets.pshelf.feature/target",
+    "widgets/pshelf/org.eclipse.nebula.widgets.pshelf/target",
+    "widgets/pshelf/target",
+    "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.example/target",
+    "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.feature/target",
+    "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup.tests/target",
+    "widgets/radiogroup/org.eclipse.nebula.widgets.radiogroup/target",
+    "widgets/radiogroup/target",
+    "widgets/richtext/org.eclipse.nebula.widgets.richtext.example.e4/target",
+    "widgets/richtext/org.eclipse.nebula.widgets.richtext.example/target",
+    "widgets/richtext/org.eclipse.nebula.widgets.richtext.feature/target",
+    "widgets/richtext/org.eclipse.nebula.widgets.richtext/target",
+    "widgets/richtext/target",
+    "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.feature/target",
+    "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.snippets/target",
+    "widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/target",
+    "widgets/roundedcheckbox/target",
+    "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.css.feature/target",
+    "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.css/target",
+    "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.example.e4/target",
+    "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.feature/target",
+    "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch.snippets/target",
+    "widgets/roundedswitch/org.eclipse.nebula.widgets.roundedswitch/target",
+    "widgets/roundedswitch/target",
+    "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar.feature/target",
+    "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar.snippets/target",
+    "widgets/segmentedbar/org.eclipse.nebula.widgets.segmentedbar/target",
+    "widgets/segmentedbar/target",
+    "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton.feature/target",
+    "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton.snippets/target",
+    "widgets/splitbutton/org.eclipse.nebula.widgets.splitbutton/target",
+    "widgets/splitbutton/target",
+    "widgets/stepbar/org.eclipse.nebula.widgets.stepbar.feature/target",
+    "widgets/stepbar/org.eclipse.nebula.widgets.stepbar.snippets/target",
+    "widgets/stepbar/org.eclipse.nebula.widgets.stepbar/target",
+    "widgets/stepbar/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.css.feature/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.css/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.example.e4/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.example/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.feature/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.snippets/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.test/target",
+    "widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo/target",
+    "widgets/tablecombo/target",
+    "widgets/tiles/org.eclipse.nebula.widgets.tiles.feature/target",
+    "widgets/tiles/org.eclipse.nebula.widgets.tiles.snippets/target",
+    "widgets/tiles/org.eclipse.nebula.widgets.tiles/target",
+    "widgets/tiles/target",
+    "widgets/timeline/org.eclipse.nebula.widgets.timeline.example/target",
+    "widgets/timeline/org.eclipse.nebula.widgets.timeline.feature/target",
+    "widgets/timeline/org.eclipse.nebula.widgets.timeline.snippets/target",
+    "widgets/timeline/org.eclipse.nebula.widgets.timeline.tests/target",
+    "widgets/timeline/org.eclipse.nebula.widgets.timeline/target",
+    "widgets/timeline/target",
+    "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.examples/target",
+    "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.feature/target",
+    "widgets/treemapper/org.eclipse.nebula.widgets.treemapper.tests/target",
+    "widgets/treemapper/org.eclipse.nebula.widgets.treemapper/target",
+    "widgets/treemapper/target",
+    "widgets/visualization/org.eclipse.nebula.visualization.example/target",
+    "widgets/visualization/org.eclipse.nebula.visualization.feature/target",
+    "widgets/visualization/org.eclipse.nebula.visualization.widgets.tests/target",
+    "widgets/visualization/org.eclipse.nebula.visualization.widgets/target",
+    "widgets/visualization/org.eclipse.nebula.visualization.xygraph.exampleview/target",
+    "widgets/visualization/org.eclipse.nebula.visualization.xygraph.test/target",
+    "widgets/visualization/org.eclipse.nebula.visualization.xygraph/target",
+    "widgets/visualization/target",
+    "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.core/target",
+    "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.example/target",
+    "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.feature.test/target",
+    "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.feature/target",
+    "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.integration/target",
+    "widgets/xviewer/org.eclipse.nebula.widgets.xviewer.tests/target",
+    "widgets/xviewer/org.eclipse.nebula.widgets.xviewer/target",
+    "widgets/xviewer/target"
+  ],
+  "runtime_generated_file_bytes_owned_by_recipe": false,
+  "new_java_package_target": "REFUSED_BY_EXECUTED_DISCRIMINATOR"
+}

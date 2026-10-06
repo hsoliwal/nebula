@@ -1,0 +1,2 @@
+capability	donor	commit_or_sha256	classification	paths	proof	gap
+source-only-recipe-publication	Synexia frozen checkout-uri recipe + existing source-only publication preflight	4b34fa65028eb87acd52fd5d411020eca28f0808bd320ad6ef37be9652bce5c1	DIRECT_IMPORT	candidate-v2 and exact original production images	all raw UTF-8 bytes and Git blob hashes; actual314 and root recipe receipts retained	additive terminal metadata only; no new architecture

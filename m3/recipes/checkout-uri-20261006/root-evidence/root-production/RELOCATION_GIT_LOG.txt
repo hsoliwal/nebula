@@ -1,0 +1,1 @@
+fatal: failed to move 'S:/gm435314v3/owner74f' to 'S:/gm435314v3/portable owner74f': Permission denied

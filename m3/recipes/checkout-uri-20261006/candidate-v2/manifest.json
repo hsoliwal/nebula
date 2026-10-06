@@ -1,0 +1,25 @@
+{
+  "schema": "synexia.nebula-portable-address-images.v1",
+  "base_commit": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "targets": [
+    {
+      "path": "releng/org.eclipse.nebula.nebula-parent/pom.xml",
+      "before": "PRESENT_EXACT_QUALIFIED_OWNER",
+      "pre_sha256": "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+      "post_sha256": "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6"
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/mixed.target",
+      "before": "PRESENT_EXACT_QUALIFIED_OWNER",
+      "pre_sha256": "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+      "post_sha256": "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9"
+    }
+  ],
+  "new_owner_source_paths": [],
+  "source_file_count": 5399,
+  "early_session_property": "m3.nebula.checkout.uri",
+  "uri_authority": "actual checkout canonical root Path.as_uri(); launcher before Tycho resolution",
+  "address_values_changed": 5,
+  "all_other_source_and_lifecycle_bytes_unchanged": true,
+  "full_default_portable_replay_executed": false
+}

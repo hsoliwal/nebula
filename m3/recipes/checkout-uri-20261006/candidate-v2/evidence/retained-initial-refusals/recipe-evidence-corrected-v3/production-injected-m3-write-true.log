@@ -1,0 +1,24 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------< com.synexia.recipe:nebula-qualified-checkout-uri >----------
+[INFO] Building nebula-qualified-checkout-uri 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- antrun:3.1.0:run (sealed-checkout-uri-source-replay) @ nebula-qualified-checkout-uri ---
+[INFO] Executing tasks
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.426 s
+[INFO] Finished at: 2026-10-06T11:07:42+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-antrun-plugin:3.1.0:run (sealed-checkout-uri-source-replay) on project nebula-qualified-checkout-uri: An Ant BuildException has occured: INTERNAL_PROPERTY_INJECTION_REFUSAL
+[ERROR] around Ant part ...<fail message="INTERNAL_PROPERTY_INJECTION_REFUSAL">... @ 4:57 in S:\m3-nebula-portable-recipe-20261006\candidate\target\antrun\build-main.xml
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

@@ -1,0 +1,7 @@
+{
+  "status": "NATIVE_RENAME_PERMISSION_REFUSAL_SOURCE_RETAINED",
+  "initial_log_sha256": "0d15a79d7ff352e849c09dddae03181c866730c7695feec07f97d947c54cee39",
+  "source_still_exists": true,
+  "destination_still_absent": true,
+  "planned_retry": "Invoke same installed Git from registered main worktree outside the directory being renamed; no process termination or source copy"
+}

@@ -1,0 +1,5 @@
+{
+  "inventory_sha256": "eed03a90ac1cde188c90d349e7f49aaf93d1b8027e915c0b80435104d69bc9cf",
+  "foss_reuse_sha256": "1e5ced5977845183816327354efb124b284a2c468cc1d5244e06cf80da4225ab",
+  "admitted_gap": "Two existing address-owner files only; one early encoded URI-valued launch property; no new build/module architecture"
+}

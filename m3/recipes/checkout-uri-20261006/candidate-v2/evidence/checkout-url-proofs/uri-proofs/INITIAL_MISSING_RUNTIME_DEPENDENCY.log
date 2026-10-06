@@ -1,0 +1,16 @@
+Exception in thread "main" java.lang.NoClassDefFoundError: org/eclipse/equinox/internal/p2/updatesite/SiteXMLAction
+	at org.eclipse.tycho.p2resolver.TargetDefinitionResolver.<clinit>(TargetDefinitionResolver.java:88)
+	at java.base/jdk.internal.misc.Unsafe.ensureClassInitialized0(Native Method)
+	at java.base/jdk.internal.misc.Unsafe.ensureClassInitialized(Unsafe.java:1160)
+	at java.base/jdk.internal.reflect.MethodHandleAccessorFactory.ensureClassInitialized(MethodHandleAccessorFactory.java:300)
+	at java.base/jdk.internal.reflect.MethodHandleAccessorFactory.newConstructorAccessor(MethodHandleAccessorFactory.java:103)
+	at java.base/jdk.internal.reflect.ReflectionFactory.newConstructorAccessor(ReflectionFactory.java:200)
+	at java.base/java.lang.reflect.Constructor.acquireConstructorAccessor(Constructor.java:549)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499)
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
+	at TargetUriProbe.main(TargetUriProbe.java:31)
+Caused by: java.lang.ClassNotFoundException: org.eclipse.equinox.internal.p2.updatesite.SiteXMLAction
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	... 10 more

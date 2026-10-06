@@ -1,0 +1,11 @@
+{
+  "production_pom_sha256": "865683bf3ec3093707c41ea1ae8d09762cd9c2b0641f034d025b0cc0b71f0e65",
+  "rehearsal_pom_sha256": "380b4b56e05c21a4b19365c6e0e24e1743eb0228aea3d04bd339da5dd2970d55",
+  "delta": [
+    "artifactId label",
+    "full-source callback replaced with fixture-only helper",
+    "echo scope label"
+  ],
+  "production_context_override": false,
+  "production_apply_proof": false
+}

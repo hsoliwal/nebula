@@ -1,0 +1,13 @@
+{
+  "state": "MAVEN_ROOT_DIRECTORY_DISCRIMINATOR_REFUSAL",
+  "observed": {
+    "artifact": "parent",
+    "basedir": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent% unicode\u00e6\u00b8\u00ac\u00e8\u00a9\u00a6\\releng\\parent",
+    "baseUri": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25%20unicode%E6%B8%AC%E8%A9%A6/releng/parent/",
+    "multi": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent% unicode??",
+    "qualified": "file:///S:/m3-nebula-portable-recipe-20261006/portable-property-proofs/root%20%23percent%25%20unicode%E6%B8%AC%E8%A9%A6/m3/qualified-mixed-original435-target",
+    "sessionRoot": "${session.executionRootDirectory}"
+  },
+  "expected_root": "S:\\m3-nebula-portable-recipe-20261006\\portable-property-proofs\\root #percent% unicode\u6e2c\u8a66",
+  "candidate_source_unchanged": true
+}

@@ -1,0 +1,2 @@
+capability	donor	identity	classification	license	fit
+isolated existing worktree relocation	installed Git worktree move	37c5725818d602e951ba2563b870d62763322956b73373da4c33a0b566a80bc9	DIRECT_IMPORT	GPL-2.0 Git tool, original source licenses retained	Native linked-worktree move updates administration paths and preserves owned source bytes; exact task-contained absent destination prechecked, no new architecture or cache copy

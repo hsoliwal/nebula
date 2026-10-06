@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "S:\m3-nebula-portable-recipe-20261006\candidate-v2\source_context.py", line 123, in <module>
+    print('SOURCE_CONTEXT_EXACT paths=' + str(verify_context(sys.argv[1])), flush=True)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "S:\m3-nebula-portable-recipe-20261006\candidate-v2\source_context.py", line 85, in verify_context
+    assert path.is_file(), 'SOURCE_CONTEXT_ABSENT ' + row['path']
+           ^^^^^^^^^^^^^^
+AssertionError: SOURCE_CONTEXT_ABSENT .gitattributes

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "S:\m3-nebula-portable-recipe-20261006\candidate\run_portable_default.py", line 89, in <module>
+    main()
+  File "S:\m3-nebula-portable-recipe-20261006\candidate\run_portable_default.py", line 59, in main
+    command, env, receipt = build_command(args.root, args.output)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "S:\m3-nebula-portable-recipe-20261006\candidate\run_portable_default.py", line 24, in build_command
+    assert sha(root / row['path']) == row['post_sha256'], 'EXACT_PORTABLE_SOURCE_APPLY_REQUIRED ' + row['path']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: EXACT_PORTABLE_SOURCE_APPLY_REQUIRED releng/org.eclipse.nebula.nebula-parent/pom.xml

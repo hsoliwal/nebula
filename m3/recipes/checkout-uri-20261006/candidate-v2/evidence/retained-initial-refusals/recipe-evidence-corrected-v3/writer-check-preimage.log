@@ -1,0 +1,23 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------< com.synexia.recipe:nebula-fixture-writer-rehearsal >---------
+[INFO] Building nebula-fixture-writer-rehearsal 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- antrun:3.1.0:run (sealed-checkout-uri-source-replay) @ nebula-fixture-writer-rehearsal ---
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.339 s
+[INFO] Finished at: 2026-10-06T11:07:47+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-antrun-plugin:3.1.0:run (sealed-checkout-uri-source-replay) on project nebula-fixture-writer-rehearsal: An Ant BuildException has occured: The prefix "if" for attribute "if:true" associated with an element type "copy" is not bound.
+[ERROR] around Ant part ...<copy file="S:\m3-nebula-portable-recipe-20261006\recipe-evidence-corrected-v3\writer-rehearsal/postimages/releng/org.eclipse.nebula.nebula-parent/pom.xml" tofile="S:\m3-nebula-portable-recipe-20261006\recipe-evidence-corrected-v3\tiny-source-root/releng/org.eclipse.nebula.nebula-parent/pom.xml" overwrite="true" if:true="${m3.write}" />... @ 660:343 in S:\m3-nebula-portable-recipe-20261006\recipe-evidence-corrected-v3\writer-rehearsal\target\antrun\build-main.xml
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

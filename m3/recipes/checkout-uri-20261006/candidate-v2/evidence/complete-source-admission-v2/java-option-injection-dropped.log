@@ -1,0 +1,129 @@
+Property settings:
+    file.encoding = UTF-8
+    file.separator = \
+    java.class.path = 
+    java.class.version = 65.0
+    java.home = C:\Program Files\Java\jdk-21
+    java.io.tmpdir = S:\m3-nebula-portable-recipe-20261006\source-admission-proof-v2-final\tmp\
+    java.library.path = C:\Program Files\Java\jdk-21\bin
+        C:\WINDOWS\Sun\Java\bin
+        C:\WINDOWS\system32
+        C:\WINDOWS
+        C:\Users\hsoliwal\.codex\tmp\arg0\codex-arg0uMS2Q6
+        C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.4\bin\x64
+        C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.4\bin
+        
+        C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot\bin
+        C:\Program Files\ImageMagick-7.1.2-Q16-HDRI
+        C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin
+        C:\Program Files\Common Files\Oracle\Java\javapath
+        C:\Program Files\OpenSSH-Win64
+        C:\Program Files\Python312\Scripts\
+        C:\Program Files\Python312\
+        C:\WINDOWS\system32
+        C:\WINDOWS
+        C:\WINDOWS\System32\Wbem
+        C:\WINDOWS\System32\WindowsPowerShell\v1.0\
+        C:\WINDOWS\System32\OpenSSH\
+        C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common
+        C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR
+        C:\Program Files\rsync\bin
+        C:\Program Files\GitHub CLI\
+        C:\Program Files\kubectl
+        C:\Program Files\kubelet
+        C:\Cognix\kubernetes\bin
+        C:\Program Files\Docker\Docker\resources\bi
+        C:\spark\spark-3.5.7-bin-hadoop3\bin\
+        C:\scala\scala3-3.7.0-x86_64-pc-win32\bin\
+        C:\hadoop\bin\
+        C:\Program Files\Java\jdk-21\bin
+        C:\Program Files\TortoiseSVN\bin
+        C:\Program Files\PuTTY\
+        C:\ProgramData\chocolatey\bin
+        C:\Program Files\Git\cmd
+        C:\Program Files\Amazon\AWSCLIV2\
+        C:\Program Files (x86)\cloudflared\
+        C:\Program Files\dotnet\
+        C:\ProgramData\mingw64\mingw64\bin
+        C:\Program Files\nodejs\
+        C:\Program Files\CMake\bin
+        C:\Program Files\LLVM\bin
+        C:\Program Files (x86)\LLVM\bin
+        C:\Program Files\Go\bin
+        C:\ProgramData\chocolatey\lib\maven\apache-maven-3.9.14\bin
+        C:\Program Files\Memurai\
+        C:\Program Files (x86)\Yarn\bin\
+        C:\Program Files\Java\jdk1.8.0_211\bin
+        C:\Android\android-sdk\tools
+        C:\Android\android-sdk\platform-tools
+        C:\Android\android-sdk\tools\bin
+        C:\Program Files\Docker\Docker\resources\bin
+        C:\toolchain\home\.local\bin
+        C:\Users\hsoliwal\AppData\Local\Microsoft\WindowsApps
+        C:\Users\hsoliwal\AppData\Roaming\npm
+        C:\Users\hsoliwal\AppData\Local\Programs\Ollama
+        C:\Users\hsoliwal\go\bin
+        C:\Users\hsoliwal\AppData\Local\Yarn\bin
+        C:\ProgramData\chocolatey\lib\deno
+        C:\Users\hsoliwal\.bun\bin
+        C:\vcpkg
+        C:\tools\flutter\bin
+        C:\ProgramData\chocolatey\lib\gcloudsdk\tools\google-cloud-sdk\bin
+        C:\PostgreSQL\pgsql\bin
+        C:\tools\miniconda3
+        C:\tools\miniconda3\Scripts
+        C:\tools\miniconda3\Library\bin
+        C:\toolchain\home\.dotnet\tools
+        C:\Users\hsoliwal\AppData\Local\Programs\Microsoft VS Code\bin
+        C:\Users\hsoliwal\AppData\Local\Microsoft\WinGet\Links
+        C:\Users\hsoliwal\AppData\Local\Pandoc\
+        c:\Users\hsoliwal\.vscode\extensions\openai.chatgpt-26.930.61225-win32-x64\bin\windows-x86_64
+        .
+    java.runtime.name = Java(TM) SE Runtime Environment
+    java.runtime.version = 21.0.9+7-LTS-338
+    java.specification.name = Java Platform API Specification
+    java.specification.vendor = Oracle Corporation
+    java.specification.version = 21
+    java.vendor = Oracle Corporation
+    java.vendor.url = https://java.oracle.com/
+    java.vendor.url.bug = https://bugreport.java.com/bugreport/
+    java.version = 21.0.9
+    java.version.date = 2025-10-21
+    java.vm.compressedOopsMode = 32-bit
+    java.vm.info = mixed mode, sharing
+    java.vm.name = Java HotSpot(TM) 64-Bit Server VM
+    java.vm.specification.name = Java Virtual Machine Specification
+    java.vm.specification.vendor = Oracle Corporation
+    java.vm.specification.version = 21
+    java.vm.vendor = Oracle Corporation
+    java.vm.version = 21.0.9+7-LTS-338
+    jdk.debug = release
+    line.separator = \r \n 
+    m3.nebula.checkout.uri = file:///S:/gm435314v3/owner74f
+    native.encoding = Cp1252
+    os.arch = amd64
+    os.name = Windows 11
+    os.version = 10.0
+    path.separator = ;
+    stderr.encoding = Cp1252
+    stdout.encoding = Cp1252
+    sun.arch.data.model = 64
+    sun.boot.library.path = C:\Program Files\Java\jdk-21\bin
+    sun.cpu.endian = little
+    sun.cpu.isalist = amd64
+    sun.io.unicode.encoding = UnicodeLittle
+    sun.java.launcher = SUN_STANDARD
+    sun.jnu.encoding = Cp1252
+    sun.management.compiler = HotSpot 64-Bit Tiered Compilers
+    sun.os.patch.level = 
+    user.country = IN
+    user.dir = E:\ws2\com.synexia
+    user.home = C:\Users\hsoliwal
+    user.language = en
+    user.name = hsoliwal
+    user.script = 
+    user.variant = 
+
+java version "21.0.9" 2025-10-21 LTS
+Java(TM) SE Runtime Environment (build 21.0.9+7-LTS-338)
+Java HotSpot(TM) 64-Bit Server VM (build 21.0.9+7-LTS-338, mixed mode, sharing)

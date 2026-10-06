@@ -1,0 +1,12 @@
+{
+  "state": "PORTABLE_DEFAULT314_PASS",
+  "exit": 0,
+  "elapsed_seconds": 249.01500000000124,
+  "reactor_summary_rows": 314,
+  "success": 314,
+  "failure": 0,
+  "skipped": 0,
+  "log_sha256": "9aaef4ec059540f88c97da1be4036d44c0da6e81d579d0aaaf9ae1907f6d4053",
+  "source_bytes_unchanged_after_runtime": true,
+  "native_UI_effect_admission": false
+}

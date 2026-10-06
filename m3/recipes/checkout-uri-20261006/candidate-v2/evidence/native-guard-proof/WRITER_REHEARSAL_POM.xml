@@ -1,0 +1,314 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:if="ant:if">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.synexia.recipe</groupId>
+  <artifactId>nebula-fixture-writer-rehearsal</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <properties>
+    <m3.operation>check</m3.operation>
+  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>sealed-checkout-uri-source-replay</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target xmlns:if="ant:if">
+                <fail message="INTERNAL_PROPERTY_INJECTION_REFUSAL">
+                  <condition>
+                    <or>
+                      <isset property="m3.head" />
+                      <isset property="m3.pre" />
+                      <isset property="m3.post" />
+                      <isset property="m3.write" />
+                      <isset property="m3.context" />
+                    </or>
+                  </condition>
+                </fail>
+                <fail message="EXPLICIT_OWNER_ROOT_REQUIRED">
+                  <condition>
+                    <not>
+                      <isset property="m3.root" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="OPERATION_REFUSAL">
+                  <condition>
+                    <not>
+                      <or>
+                        <equals arg1="${m3.operation}" arg2="check" />
+                        <equals arg1="${m3.operation}" arg2="apply" />
+                        <equals arg1="${m3.operation}" arg2="verify" />
+                        <equals arg1="${m3.operation}" arg2="fixedpoint" />
+                      </or>
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL context.tsv">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/context.tsv" algorithm="SHA-256" property="c7aecd5fbea54dcaac5791680895718d82dbb2cd7deb66d33f2fccce5b8701b6" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL DEPENDENCY_MANIFEST.json">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/DEPENDENCY_MANIFEST.json" algorithm="SHA-256" property="99460a164e47737d4244d213086a3fe3f8002511da981dd881b9c93849355240" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL fixture_context.py">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/fixture_context.py" algorithm="SHA-256" property="c512168a6b8700b7a6e4c7ee627286b99e7e96fa2d720024c1598a1c93e1a62c" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL FOSS_REUSE_DECISION.tsv">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/FOSS_REUSE_DECISION.tsv" algorithm="SHA-256" property="27dd2574d3bc6d5012cd4211492e3fe6e5d550e90336afabe7904dd8efd624b3" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL GENERATED_OUTPUT_OWNERS.json">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/GENERATED_OUTPUT_OWNERS.json" algorithm="SHA-256" property="0af5df2b1de1ac46c5c6cbe5756d498a5a29497fea482f1abbe314b0854b69a8" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL INHERITED_DEFAULT_BUILD_COMMAND.json">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/INHERITED_DEFAULT_BUILD_COMMAND.json" algorithm="SHA-256" property="a2a44796aee43b109fe27184a3eb97b6480731dbb3a6ca26d85c21b8aaa1946b" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL INVENTORY.json">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/INVENTORY.json" algorithm="SHA-256" property="eed03a90ac1cde188c90d349e7f49aaf93d1b8027e915c0b80435104d69bc9cf" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL manifest.json">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/manifest.json" algorithm="SHA-256" property="d5f16b59c09014f6756eb8ac828531cae0622bff9cf7249f328021742fcdf816" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL postimages/m3/qualified-mixed-original435-target/mixed.target">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/postimages/m3/qualified-mixed-original435-target/mixed.target" algorithm="SHA-256" property="3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL postimages/releng/org.eclipse.nebula.nebula-parent/pom.xml">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/postimages/releng/org.eclipse.nebula.nebula-parent/pom.xml" algorithm="SHA-256" property="b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL preimages/m3/qualified-mixed-original435-target/mixed.target">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/preimages/m3/qualified-mixed-original435-target/mixed.target" algorithm="SHA-256" property="646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL preimages/releng/org.eclipse.nebula.nebula-parent/pom.xml">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/preimages/releng/org.eclipse.nebula.nebula-parent/pom.xml" algorithm="SHA-256" property="147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL qualified-metadata/artifacts.xml">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/qualified-metadata/artifacts.xml" algorithm="SHA-256" property="023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL qualified-metadata/content.xml">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/qualified-metadata/content.xml" algorithm="SHA-256" property="73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL qualified-metadata/p2.index">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/qualified-metadata/p2.index" algorithm="SHA-256" property="965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL run_portable_default.py">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/run_portable_default.py" algorithm="SHA-256" property="6b5ff0339b8792ff82d920d376a5851a1ed67eac79a366f6c8c406a755e24f48" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL source_context.py">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/source_context.py" algorithm="SHA-256" property="b6e7ec5177f8bbfcb31002471d34570a40773d6d24538c01e6746532332115df" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL SOURCE_MANIFEST.json">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/SOURCE_MANIFEST.json" algorithm="SHA-256" property="807915c9d7df4abdff9d3c001664896f22b0909c4d65f908647e8054d3082389" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL targets.tsv">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/targets.tsv" algorithm="SHA-256" property="47bd10a6c6db5c4d0d664a45c95b60638f74ec05aa08e186c0d584a2bfbb6082" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL THIRD_PARTY_NOTICES.md">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/THIRD_PARTY_NOTICES.md" algorithm="SHA-256" property="afae9b8e4189e5e78bd1720d8672b561e042bce7181dcbfc06201f66260e442c" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL TOOL_ORACLE_DEPENDENCIES.json">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/TOOL_ORACLE_DEPENDENCIES.json" algorithm="SHA-256" property="ce5801c5fee85d45009eded68d940e6196650f0ab2f21e6b253abf4872eb2b1b" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="RECIPE_INPUT_CUSTODY_REFUSAL windows-reparse-preflight.ps1">
+                  <condition>
+                    <not>
+                      <checksum file="${project.basedir}/windows-reparse-preflight.ps1" algorithm="SHA-256" property="1bac0dc9b0cae4748f473da8fe6c7b3d843653c92a38e1493276559e9baa203d" />
+                    </not>
+                  </condition>
+                </fail>
+                <exec executable="powershell.exe" osfamily="windows" failonerror="true">
+                  <arg value="-NoProfile" />
+                  <arg value="-NonInteractive" />
+                  <arg value="-File" />
+                  <arg value="${project.basedir}/windows-reparse-preflight.ps1" />
+                  <arg value="-Root" />
+                  <arg value="${m3.root}" />
+                  <arg value="-Source" />
+                  <arg value="${project.basedir}/postimages" />
+                  <arg value="-Manifest" />
+                  <arg value="${project.basedir}/targets.tsv" />
+                  <arg value="-Context" />
+                  <arg value="${project.basedir}/context.tsv" />
+                </exec>
+                <exec executable="C:/Program Files/Python312/python.exe" failonerror="true" outputproperty="m3.head">
+                  <arg value="-I" />
+                  <arg value="-B" />
+                  <arg value="${project.basedir}/source_context.py" />
+                  <arg value="--head" />
+                  <arg value="${m3.root}" />
+                </exec>
+                <fail message="BASE_REVISION_REFUSAL">
+                  <condition>
+                    <not>
+                      <equals arg1="${m3.head}" arg2="74f97f3e7feb29239dbc0332e9206586d31f4722" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="SOURCE_CONTEXT_DRIFT_REFUSAL m3/qualified-mixed-original435-target/content.xml">
+                  <condition>
+                    <not>
+                      <checksum file="${m3.root}/m3/qualified-mixed-original435-target/content.xml" algorithm="SHA-256" property="73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="SOURCE_CONTEXT_DRIFT_REFUSAL m3/qualified-mixed-original435-target/artifacts.xml">
+                  <condition>
+                    <not>
+                      <checksum file="${m3.root}/m3/qualified-mixed-original435-target/artifacts.xml" algorithm="SHA-256" property="023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa" />
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="SOURCE_CONTEXT_DRIFT_REFUSAL m3/qualified-mixed-original435-target/p2.index">
+                  <condition>
+                    <not>
+                      <checksum file="${m3.root}/m3/qualified-mixed-original435-target/p2.index" algorithm="SHA-256" property="965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf" />
+                    </not>
+                  </condition>
+                </fail>
+                <condition property="m3.pre" else="false">
+                  <and>
+                    <checksum file="${m3.root}/releng/org.eclipse.nebula.nebula-parent/pom.xml" algorithm="SHA-256" property="147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a" />
+                    <checksum file="${m3.root}/m3/qualified-mixed-original435-target/mixed.target" algorithm="SHA-256" property="646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02" />
+                  </and>
+                </condition>
+                <condition property="m3.post" else="false">
+                  <and>
+                    <checksum file="${m3.root}/releng/org.eclipse.nebula.nebula-parent/pom.xml" algorithm="SHA-256" property="b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6" />
+                    <checksum file="${m3.root}/m3/qualified-mixed-original435-target/mixed.target" algorithm="SHA-256" property="3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9" />
+                  </and>
+                </condition>
+                <fail message="UNKNOWN_OR_MIXED_SOURCE_STATE_REFUSAL">
+                  <condition>
+                    <not>
+                      <or>
+                        <equals arg1="${m3.pre}" arg2="true" />
+                        <equals arg1="${m3.post}" arg2="true" />
+                      </or>
+                    </not>
+                  </condition>
+                </fail>
+                <fail message="VERIFY_REQUIRES_POSTIMAGE_REFUSAL">
+                  <condition>
+                    <not>
+                      <or>
+                        <equals arg1="${m3.post}" arg2="true" />
+                        <equals arg1="${m3.operation}" arg2="check" />
+                        <equals arg1="${m3.operation}" arg2="apply" />
+                      </or>
+                    </not>
+                  </condition>
+                </fail>
+                <exec executable="C:/Program Files/Python312/python.exe" failonerror="true">
+                  <arg value="-I" />
+                  <arg value="-B" />
+                  <arg value="${project.basedir}/fixture_context.py" />
+                  <arg value="${m3.root}" />
+                </exec>
+                <condition property="m3.write" else="false">
+                  <and>
+                    <equals arg1="${m3.operation}" arg2="apply" />
+                    <equals arg1="${m3.pre}" arg2="true" />
+                  </and>
+                </condition>
+                <copy file="${project.basedir}/postimages/releng/org.eclipse.nebula.nebula-parent/pom.xml" tofile="${m3.root}/releng/org.eclipse.nebula.nebula-parent/pom.xml" overwrite="true" if:true="${m3.write}" />
+                <copy file="${project.basedir}/postimages/m3/qualified-mixed-original435-target/mixed.target" tofile="${m3.root}/m3/qualified-mixed-original435-target/mixed.target" overwrite="true" if:true="${m3.write}" />
+                <echo message="FIXTURE_WRITER_ONLY_NOT_PRODUCTION_ADMISSION operation=${m3.operation} pre=${m3.pre} post=${m3.post} write=${m3.write}; full314 relocated runtime pending" />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

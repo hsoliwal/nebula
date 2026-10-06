@@ -1,0 +1,2 @@
+Exception in thread "main" java.lang.AssertionError: Raw Windows root unexpectedly admitted as repository URI
+	at TargetUriProbe.main(TargetUriProbe.java:37)

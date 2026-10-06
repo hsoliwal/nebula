@@ -1,0 +1,6 @@
+{
+  "native": "JVM3MiB mmap Windows1455; before guard completion; not successful gate evidence",
+  "incidental_error_file": "E:/ws2/com.synexia/hs_err_pid21508.log retained by root",
+  "initial_output_boundary": "POM-only was safely too strict for inherited pomless Tycho plugins; corrected by frozen original build.properties owners",
+  "owner_writes": false
+}
