@@ -7,6 +7,7 @@ on:
       - '.m3/**'
       - 'pom.xml'
       - '.github/workflows/m3-nebula-recipe-first.yml'
+      - '.github/workflows/m3-final-proven-transfer.yml'
   workflow_dispatch:
 
 permissions:
