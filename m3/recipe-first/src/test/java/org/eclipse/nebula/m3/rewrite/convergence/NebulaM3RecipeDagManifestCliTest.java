@@ -27,5 +27,18 @@ final class NebulaM3RecipeDagManifestCliTest {
         assertTrue(orchestrators.contains("CAMEL\tfalse\tfalse"));
         assertTrue(orchestrators.contains("DROOLS\tfalse\tfalse"));
         assertTrue(orchestrators.contains("MAVEN_OPENREWRITE\tfalse\tfalse"));
+
+        assertEquals(
+                NebulaM3OrchestratorPlans.camelYaml(),
+                Files.readString(output.resolve("camel-route.yaml"), StandardCharsets.UTF_8));
+        assertEquals(
+                NebulaM3OrchestratorPlans.airflowPython(),
+                Files.readString(output.resolve("airflow-dag.py"), StandardCharsets.UTF_8));
+        assertEquals(
+                NebulaM3OrchestratorPlans.droolsDrl(),
+                Files.readString(output.resolve("drools-agenda.drl"), StandardCharsets.UTF_8));
+        assertEquals(
+                NebulaM3OrchestratorPlans.root() + "\n",
+                Files.readString(output.resolve("orchestrator-plans.sha256"), StandardCharsets.UTF_8));
     }
 }
