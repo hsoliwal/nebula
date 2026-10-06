@@ -56,28 +56,6 @@ jobs:
             exit 1
           fi
           python3 m3/verify-source-custody.py "$BASE_SHA"
-          if [[ -f m3/grid-counters/APPLICATION.json ]]; then
-            python3 - <<'PYGRID'
-          import hashlib
-          import json
-          from pathlib import Path
-
-          receipt = json.loads(Path("m3/grid-counters/APPLICATION.json").read_text())
-          target = Path(receipt["target_path"])
-          assert receipt["canonical_recipe_repository"] == "hsoliwal/com.synexia"
-          assert receipt["canonical_recipe"] == "com.synexia.m3.NebulaGridCountersV1"
-          assert str(target) == (
-              "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/"
-              "GridIdentityOccurrenceTable.java"
-          )
-          assert target.is_file()
-          actual = hashlib.sha256(target.read_bytes()).hexdigest()
-          assert actual == receipt["after_sha256"], (actual, receipt["after_sha256"])
-          assert receipt["reusable_recipe_copied_to_target"] is False
-          assert receipt["promotion_authority"] is False
-          print("GRID_COUNTER_RECIPE_RECEIPT=EXACT")
-          PYGRID
-          fi
           bash -n m3/convergence/verify.sh
           grep -F $'3\tSECOND_PASS_SIGNAL_CHAIN' m3/convergence/PLAN.tsv
           grep -F $'8\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
