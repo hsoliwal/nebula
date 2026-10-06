@@ -7,6 +7,7 @@ on:
       - '.m3/**'
       - 'pom.xml'
       - '.github/workflows/m3-nebula-recipe-first.yml'
+      - '.github/workflows/m3-final-proven-transfer.yml'
   workflow_dispatch:
 
 permissions:
@@ -49,7 +50,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          unexpected="$(git diff --name-only "$BASE_SHA...HEAD" | grep -Ev '^(m3/|\.m3/|\.github/workflows/m3-a3-mastery-java21\.yml$|widgets/grid/org\.eclipse\.nebula\.widgets\.grid/src/org/eclipse/nebula/widgets/grid/GridAffineTransform\.java$|widgets/grid/org\.eclipse\.nebula\.widgets\.grid\.test/src/org/eclipse/nebula/widgets/grid/GridVisibleRangeSupport_Test\.java$|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/CTabFolderStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/EmptyStandaloneStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PShelfStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PresentationFactory\.java$|releng/org\.eclipse\.nebula\.nebula\-parent/pom\.xml$|releng/org\.eclipse\.nebula\.nebula\-parent/\.gitattributes$|\.github/workflows/\.gitattributes$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.css/src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.css/\.gitattributes$|\.gitattributes$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.tests/src/org/eclipse/nebula/widgets/cdatetime/css/BaseCSSThemingTest\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/META\-INF/MANIFEST\.MF$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4\.product$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/\.gitattributes$)' || true)"
+          unexpected="$(git diff --name-only "$BASE_SHA...HEAD" | grep -Ev '^(m3/|\.m3/|\.github/workflows/m3-a3-mastery-java21\.yml$|widgets/grid/org\.eclipse\.nebula\.widgets\.grid/src/org/eclipse/nebula/widgets/grid/GridAffineTransform\.java$|widgets/grid/org\.eclipse\.nebula\.widgets\.grid\.test/src/org/eclipse/nebula/widgets/grid/GridVisibleRangeSupport_Test\.java$|pom\.xml$|\.github/workflows/m3-nebula-recipe-first\.yml$|\.github/workflows/m3-final-proven-transfer\.yml$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/CTabFolderStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/EmptyStandaloneStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PShelfStackPresentation\.java$|org\.eclipse\.nebula\.presentations\.shelf/src/org/eclipse/swt/nebula/presentations/shelf/PresentationFactory\.java$|releng/org\.eclipse\.nebula\.nebula\-parent/pom\.xml$|releng/org\.eclipse\.nebula\.nebula\-parent/\.gitattributes$|\.github/workflows/\.gitattributes$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.css/src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.css/\.gitattributes$|\.gitattributes$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.tests/src/org/eclipse/nebula/widgets/cdatetime/css/BaseCSSThemingTest\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart\.java$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/META\-INF/MANIFEST\.MF$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4\.product$|widgets/cdatetime/org\.eclipse\.nebula\.widgets\.cdatetime\.example\.e4/\.gitattributes$)' || true)"
           if [[ -n "$unexpected" ]]; then
             printf 'Nebula production/source path changed outside the saved M3 convergence lane:\n%s\n' "$unexpected"
             exit 1
@@ -93,11 +94,9 @@ jobs:
           PYTEST
 
       - name: Capture exact checkout and actual recipe SDK for local replay
-        if: always()
         run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-replay-inputs"
 
       - name: Preserve source and SDK replay inputs
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nebula-replay-inputs
@@ -267,11 +266,9 @@ jobs:
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
       - name: Capture original build dependency and classpath evidence
-        if: always()
         run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-full-build-inputs"
 
       - name: Preserve complete execution dependency inputs
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nebula-full-build-inputs
