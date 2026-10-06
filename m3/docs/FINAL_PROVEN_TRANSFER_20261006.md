@@ -57,6 +57,26 @@ recipe atoms and collect receipts only. The Airflow plan uses non-mutating task 
 dispatches only to the declared OpenRewrite adapter endpoint; the Drools agenda only marks
 dependency-ready atoms.
 
+## Challenge and GitHub donor review
+
+Before a native/JNI candidate is considered, Nebula uses the existing read-only
+`NebulaM3RepositoryReviewRecipe` and `NebulaM3FastSearchReviewPolicy`.
+
+For every admitted algorithm category the order is fixed:
+
+```text
+LeetCode -> HackerRank -> GeeksForGeeks -> pinned GitHub donor
+```
+
+Current categories are binary search, adaptive ordering, prefix/fuzzy search, top-K,
+primitive lookup, bounded cache, and automaton/trie mechanics. The challenge sites are
+reference-only. GitHub donors carry pinned revisions, license/disposition, and a required
+next action; architecture-only donors are explicitly marked no-copy. The review is evidence
+only and grants no source mutation, semantic-equivalence, JNI-execution or promotion authority.
+
+The rendered serial catalogue is exported as `challenge-donors.tsv` and its SHA-256 is
+bound into the portable transfer root.
+
 ## UI behavior donor matrix
 
 The final distillation also carries a read-only, content-addressed behavior catalogue:
@@ -90,6 +110,7 @@ m3/recipe-first/target/nebula-m3-transfer/
 ├── transfer-dag.tsv
 ├── transfer-targets.tsv
 ├── ui-behavior-donors.tsv
+├── challenge-donors.tsv
 ├── orchestrators.tsv
 ├── camel-route.yaml
 ├── airflow-dag.py
