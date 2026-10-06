@@ -57,6 +57,23 @@ recipe atoms and collect receipts only. The Airflow plan uses non-mutating task 
 dispatches only to the declared OpenRewrite adapter endpoint; the Drools agenda only marks
 dependency-ready atoms.
 
+## UI behavior donor matrix
+
+The final distillation also carries a read-only, content-addressed behavior catalogue:
+
+- Java2s SWT — Canvas, Table/Tree, ScrolledComposite, ScrollBar, editors/renderers/events, DND,
+  SWT/AWT bridge and Win32 behavior shapes;
+- Java2s SWT 2D Graphics — GC state, clipping/paint, focus, paths, affine transform, animation and
+  image drawing;
+- Java2s Swing — JViewport/JScrollPane/JScrollBar, JLayeredPane z-order, JTable/JTree model,
+  renderer/editor/header/sort/filter/selection behavior, DND and accessibility;
+- Java2s Swing Event — EDT, focus, list selection, mouse/motion/wheel, table-model and
+  tree expand/model/selection event behavior.
+
+These are **observable-behavior test obligations only**. The catalogue grants no source-copy,
+source-mutation or promotion authority. Its deterministic root is included in the portable transfer
+receipt so downstream repositories can prove they retained the same behavioral review surface.
+
 ## Portable transfer receipt
 
 Run:
@@ -72,6 +89,7 @@ m3/recipe-first/target/nebula-m3-transfer/
 ├── transfer-metadata.tsv
 ├── transfer-dag.tsv
 ├── transfer-targets.tsv
+├── ui-behavior-donors.tsv
 ├── orchestrators.tsv
 ├── camel-route.yaml
 ├── airflow-dag.py
