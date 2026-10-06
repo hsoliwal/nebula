@@ -94,11 +94,9 @@ jobs:
           PYTEST
 
       - name: Capture exact checkout and actual recipe SDK for local replay
-        if: always()
         run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-replay-inputs"
 
       - name: Preserve source and SDK replay inputs
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nebula-replay-inputs
@@ -268,11 +266,9 @@ jobs:
           grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
 
       - name: Capture original build dependency and classpath evidence
-        if: always()
         run: python3 m3/convergence/capture_execution_inputs.py --root "$GITHUB_WORKSPACE" --output "$RUNNER_TEMP/nebula-full-build-inputs"
 
       - name: Preserve complete execution dependency inputs
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nebula-full-build-inputs
