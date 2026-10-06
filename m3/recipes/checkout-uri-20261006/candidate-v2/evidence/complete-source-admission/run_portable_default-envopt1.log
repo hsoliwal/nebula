@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "S:\m3-nebula-portable-recipe-20261006\candidate-v2\run_portable_default.py", line 12, in <module>
+    raise RuntimeError('OPTIMIZED_PYTHON_REFUSAL')
+RuntimeError: OPTIMIZED_PYTHON_REFUSAL

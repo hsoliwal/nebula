@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+    "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+    "-V",
+    "-B",
+    "clean",
+    "verify",
+    "-Dtycho.localArtifacts=ignore"
+  ],
+  "cwd": "S:/gm435314v3/owner74f",
+  "env": {
+    "JAVA_HOME": "C:\\Program Files\\Java\\jdk-21",
+    "TMP": "S:\\gm435314v3\\runs\\first\\tmp",
+    "TEMP": "S:\\gm435314v3\\runs\\first\\tmp",
+    "MAVEN_OPTS": "-Djava.io.tmpdir=S:\\gm435314v3\\runs\\first\\tmp -Dfile.encoding=UTF-8 -Xmx2g"
+  },
+  "source_base": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "manifest_sha256": "fe60744ed3cffd76767af20d7cb9ea3c8831c8af7c99bb431ab9d52d516d97b3"
+}

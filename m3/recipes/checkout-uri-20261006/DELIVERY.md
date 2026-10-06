@@ -1,0 +1,11 @@
+# Saved Nebula checkout URL recipe and qualified source snapshot
+
+The original 314-module Maven clean verify completed with 314 SUCCESS, zero FAILURE and zero SKIPPED after the isolated owner was relocated to `S:/gm435314v3/portable owner74f`. The terminal JUnit reports contain 208 testcase entries across 64 files (162 distinct class/name keys), with zero failures/errors/skips. All 5,398 retained source paths, both exact postimages, 145 runtime inputs and 252 packet manifest rows were verified after execution.
+
+The five production source/XML images are saved alongside the unchanged frozen candidate-v2 packet and additive root evidence. The recipe itself changes two qualified preimages using five URI substitutions; the larger Git parent-to-source-snapshot delta also includes the previously qualified mixed target configuration and four p2 metadata files. These are separately inventoried. No generated binaries, Maven cache or target directories are shipped.
+
+The executed owner was detached at `74f97f3e7feb29239dbc0332e9206586d31f4722`, with the qualified two-image source overlay. The frozen recipe and launcher require that original exact HEAD/source context. Saving these files in a new Git commit creates a different context: this commit is a source/evidence archive, and is not itself claimed to have executed the reactor or to meet the frozen launcher's admission guard. Replay requires a separate original pinned owner and the sealed qualified preimages/metadata; retain the guards. The packet's immutable earlier PENDING_ROOT statements describe its pre-publication state; the additive terminal root receipt records the completed execution.
+
+This draft targets the original exact sealed-owner branch. Current master integration, independent relocation of the 129 absolute artifact mappings, Unicode Maven launching and native UI/JNI/Grid effects remain unqualified. The runtime inputs remain external and pinned. The mid-reactor context refusal correctly detected transient generated Tycho metadata; those files were removed at JVM exit, and the unchanged terminal guard passed. No v3 guard weakening was needed.
+
+All tools/ZIP/GitHub work remains active: five of 107 whole ZIP owners have been delivered; 102 remain. This Nebula source snapshot does not complete that broader goal.

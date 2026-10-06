@@ -1,0 +1,37 @@
+{
+  "schema": "synexia.nebula-terminal-root-admission.v1",
+  "recorded_utc": "2026-10-06T09:45:34.027804+00:00",
+  "state": "QUALIFIED_ISOLATED_OWNER_PORTABLE314_PASS",
+  "runtime_owner": "S:\\gm435314v3\\portable owner74f",
+  "runtime_head": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "recipe_source_context_exact": 5398,
+  "retained_source_hash_mismatches": [],
+  "postimage_hash_mismatches": [],
+  "runtime_inputs_verified": 145,
+  "runtime_input_mismatches": [],
+  "packet_manifest_rows_verified": 252,
+  "packet_hash_mismatches": [],
+  "JUnit_report_files": 64,
+  "JUnit_testcase_entries": 208,
+  "JUnit_unique_class_name_keys": 162,
+  "JUnit_totals": {
+    "tests": 208,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "JUnit_unparsed_files": [],
+  "terminal_transient_tycho_metadata": [],
+  "full_reactor": {
+    "success": 314,
+    "failure": 0,
+    "skipped": 0,
+    "exit": 0,
+    "log_sha256": "9aaef4ec059540f88c97da1be4036d44c0da6e81d579d0aaaf9ae1907f6d4053"
+  },
+  "proven_runtime_is_new_published_commit": false,
+  "native_UI_effect_admission": false,
+  "independent129_artifact_relocation_admission": false,
+  "unicode_Maven_launcher_admission": false,
+  "full_user_goal_complete": false
+}

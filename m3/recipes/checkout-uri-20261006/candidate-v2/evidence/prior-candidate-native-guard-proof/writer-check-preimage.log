@@ -1,0 +1,19 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------< com.synexia.recipe:nebula-fixture-writer-rehearsal >---------
+[INFO] Building nebula-fixture-writer-rehearsal 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- antrun:3.1.0:run (sealed-checkout-uri-source-replay) @ nebula-fixture-writer-rehearsal ---
+[INFO] Executing tasks
+[INFO]      [exec] VERIFIED Windows reparse custody: all planned source, target and ancestor paths
+[INFO]      [exec] FIXTURE_WRITER_CONTEXT_ONLY_NOT_FULL_OWNER_ADMISSION
+[WARNING]      [echo] FIXTURE_WRITER_ONLY_NOT_PRODUCTION_ADMISSION operation=check pre=true post=false write=false; full314 relocated runtime pending
+[INFO] Executed tasks
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.397 s
+[INFO] Finished at: 2026-10-06T11:08:36+05:30
+[INFO] ------------------------------------------------------------------------

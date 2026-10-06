@@ -1,0 +1,96 @@
+{
+    "schema":  "read-only-portability-audit-v1",
+    "owner":  "S:/gm435314v3/owner74f",
+    "source_head":  "74f97f3e7feb29239dbc0332e9206586d31f4722",
+    "owner_changes":  false,
+    "helper_executions":  0,
+    "copied_owner_or_cache_files":  0,
+    "source_packet_claims":  {
+                                 "tracked_paths":  5399,
+                                 "original_default_modules":  314,
+                                 "inherited_default_success":  314,
+                                 "qualification_limit":  "Inherited original-root default build; no relocated URI proof in this audit"
+                             },
+    "facts":  [
+                  {
+                      "path":  "S:/gm435314v3/owner74f/pom.xml",
+                      "bytes":  4307,
+                      "sha256":  "3bd1e27703c4994a6687685f7b3546971bf307035b662986fbe6058272d9813c"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/owner74f/releng/org.eclipse.nebula.nebula-parent/pom.xml",
+                      "bytes":  15553,
+                      "sha256":  "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/owner74f/.mvn/maven.config",
+                      "bytes":  22,
+                      "sha256":  "8146629c3273ea269187d7578082be79bf26d2b2775982bca35b849b31d77465"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/owner74f/.mvn/extensions.xml",
+                      "bytes":  169,
+                      "sha256":  "3ae36d2501f3d03e36d9e0739b544861fb950d2e5453b193fc26f011b3978765"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/mixed.target",
+                      "bytes":  9006,
+                      "sha256":  "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/content.xml",
+                      "bytes":  736636,
+                      "sha256":  "73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/artifacts.xml",
+                      "bytes":  249790,
+                      "sha256":  "023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/p2.index",
+                      "bytes":  111,
+                      "sha256":  "965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/BASE_HYPOTHESIS.json",
+                      "bytes":  1079,
+                      "sha256":  "c5d80baff26f830b6cbd561d94c0c6ff0a54f85cee908405868a6336b846db6e"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/FOSS_REUSE_DECISION.tsv",
+                      "bytes":  1628,
+                      "sha256":  "1dad8464d0808c7c3515254dbb58b38a1d5bc3d328a5a9785830bc8204c34645"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/MAVEN_COMMAND.json",
+                      "bytes":  627,
+                      "sha256":  "4dc38a4bad689a477643b900756bb982ee6d9530bcfed45d9563d62bb4cf6345"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/MAVEN_RESULT.json",
+                      "bytes":  230,
+                      "sha256":  "8eddf1fca5e6da615ed0bcb4baf94a58a018ee6eea6734e1ab386115278a36e6"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/runs/first/DEFAULT_BUILD_COMMAND.json",
+                      "bytes":  737,
+                      "sha256":  "a2a44796aee43b109fe27184a3eb97b6480731dbb3a6ca26d85c21b8aaa1946b"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/runs/first/DEFAULT_BUILD_RESULT.json",
+                      "bytes":  29200,
+                      "sha256":  "7bff53271bceb6e84bb6b4f8ae1c93ba361fd6b7d458b5b3b1e429f741e2d642"
+                  },
+                  {
+                      "path":  "S:/gm435314v3/runs/first/SOURCE_MATERIALIZATION.json",
+                      "bytes":  1880476,
+                      "sha256":  "fe60744ed3cffd76767af20d7cb9ea3c8831c8af7c99bb431ab9d52d516d97b3"
+                  },
+                  {
+                      "path":  "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+                      "bytes":  6995,
+                      "sha256":  "5f9b8eac523030cd9818daa0eb337635e06137d0da95a66a0a5425d668050e12"
+                  }
+              ]
+}

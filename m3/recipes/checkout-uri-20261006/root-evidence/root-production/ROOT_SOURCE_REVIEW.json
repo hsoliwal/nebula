@@ -1,0 +1,14 @@
+{
+  "status": "ROOT_FROZEN_SOURCE_PACKET_COMPLETE_ORIGINAL_OWNER_AND_TWO_PREIMAGES_REVIEW_PASS",
+  "utc": "2026-10-06T05:50:03.179872+00:00",
+  "source_only_seal_sha256": "4b34fa65028eb87acd52fd5d411020eca28f0808bd320ad6ef37be9652bce5c1",
+  "sealed_rows": 252,
+  "all_original_source_context_rows": 5399,
+  "exact_source_targets": 2,
+  "generated_output_roots_within_owner_no_reparse": 336,
+  "reviewed_helpers_and_recipe_source": true,
+  "remaining_actionable_source_findings": [],
+  "independent_peer_receipt_sha256": "55e3e13ee67741e6274719ded8b800246427c9f6318db25834bea4b1cd99ede8",
+  "admission_scope": "checkout URL only; actual full314 runtime and external129 frontier remain separate",
+  "no_owner_mutation": true
+}

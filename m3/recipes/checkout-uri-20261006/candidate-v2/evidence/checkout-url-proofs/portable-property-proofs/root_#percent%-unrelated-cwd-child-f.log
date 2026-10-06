@@ -1,0 +1,16 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------------< proof:child >-----------------------------
+[INFO] Building child 1
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- antrun:3.1.0:run (default) @ child ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  0.429 s
+[INFO] Finished at: 2026-10-06T10:06:55+05:30
+[INFO] ------------------------------------------------------------------------

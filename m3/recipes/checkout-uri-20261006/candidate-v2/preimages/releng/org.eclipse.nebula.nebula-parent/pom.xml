@@ -32,9 +32,9 @@ Contributors:
 		<jacoco-version>0.8.9</jacoco-version>
 		<easymock-version>5.2.0</easymock-version>
 
-		<target-platform-platform>${m3.nebula.checkout.uri}/m3/qualified-mixed-original435-target</target-platform-platform>
-		<target-platform-gef>${m3.nebula.checkout.uri}/m3/qualified-mixed-original435-target</target-platform-gef>
-		<target-platform-swtbot>${m3.nebula.checkout.uri}/m3/qualified-mixed-original435-target</target-platform-swtbot>
+		<target-platform-platform>file:///S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target</target-platform-platform>
+		<target-platform-gef>file:///S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target</target-platform-gef>
+		<target-platform-swtbot>file:///S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target</target-platform-swtbot>
 
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
@@ -287,7 +287,7 @@ Contributors:
 		<repository>
 			<id>m3-owned-batik</id>
 			<layout>p2</layout>
-			<url>${m3.nebula.checkout.uri}/m3/third_party/p2-batik-20240313/mirror</url>
+			<url>file:///${maven.multiModuleProjectDirectory}/m3/third_party/p2-batik-20240313/mirror</url>
 		</repository>
 	</repositories>
 

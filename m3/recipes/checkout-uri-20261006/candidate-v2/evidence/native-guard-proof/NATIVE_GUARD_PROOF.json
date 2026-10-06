@@ -1,0 +1,790 @@
+{
+  "production_complete_owner_readonly_check": true,
+  "production_pom_sha256": "865683bf3ec3093707c41ea1ae8d09762cd9c2b0641f034d025b0cc0b71f0e65",
+  "source_context_sha256": "b6e7ec5177f8bbfcb31002471d34570a40773d6d24538c01e6746532332115df",
+  "run_portable_default_sha256": "6b5ff0339b8792ff82d920d376a5851a1ed67eac79a366f6c8c406a755e24f48",
+  "production_apply_verify_fixedpoint": "PENDING_ROOT",
+  "fixture_positive_protocol": "SEPARATE_REHEARSAL_ONLY",
+  "owner_bytes_and_mtime_unchanged": true,
+  "fixture_second_apply_bytes_and_mtime_unchanged": true,
+  "resource_bound_vm_options": "-Xms8m -Xmx64m -XX:+UseSerialGC -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=16m -Xss256k -XX:ErrorFile=S:/m3-nebula-portable-recipe-20261006/jvm-refusals/hs_err_pid%p.log",
+  "checks": [
+    {
+      "name": "production-complete-owner-check",
+      "scope": "production",
+      "exit": 0,
+      "expected_success": true,
+      "expected_marker": "SOURCE_CONTEXT_EXACT paths=5398",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791251771733010600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791251771730005700
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791251771733010600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791251771730005700
+        ]
+      }
+    },
+    {
+      "name": "production-incomplete-mutation-root-refusal",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "SOURCE_CONTEXT_ABSENT",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-head-false",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-head-true",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-pre-false",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-pre-true",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-post-false",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-post-true",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-write-false",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-write-true",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-context-false",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-injected-m3-context-true",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "INTERNAL_PROPERTY_INJECTION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-check-preimage",
+      "scope": "fixture-writer-only",
+      "exit": 0,
+      "expected_success": true,
+      "expected_marker": "FIXTURE_WRITER_CONTEXT_ONLY_NOT_FULL_OWNER_ADMISSION",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-verify-preimage-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "VERIFY_REQUIRES_POSTIMAGE_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-fixedpoint-preimage-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "VERIFY_REQUIRES_POSTIMAGE_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-operation-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "OPERATION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265559917120100
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-source-drift-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "UNKNOWN_OR_MIXED_SOURCE_STATE_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "87c69d01ea415d28a9384931bb93ba893367ebe8ce6a64985e8c6d53e7be8abc",
+          1791265590297754600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "87c69d01ea415d28a9384931bb93ba893367ebe8ce6a64985e8c6d53e7be8abc",
+          1791265590297754600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-mixed-state-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "UNKNOWN_OR_MIXED_SOURCE_STATE_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265592452393900
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265592452393900
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-absent-source-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": null,
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": null,
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-nested-pom-image-custody-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "RECIPE_INPUT_CUSTODY_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-source-helper-custody-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "RECIPE_INPUT_CUSTODY_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-wrong-head-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "BASE_REVISION_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-metadata-drift-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "SOURCE_CONTEXT_DRIFT_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-reparse-root-refusal",
+      "scope": "fixture-writer-only",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "WINDOWS_REPARSE_CUSTODY_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "production-added-java-input-refusal",
+      "scope": "production",
+      "exit": 1,
+      "expected_success": false,
+      "expected_marker": "ADDED_SOURCE_INPUT_REFUSAL",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      }
+    },
+    {
+      "name": "writer-exact-apply",
+      "scope": "fixture-writer-only",
+      "exit": 0,
+      "expected_success": true,
+      "expected_marker": "FIXTURE_WRITER_ONLY_NOT_PRODUCTION_ADMISSION",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+          1791265596867672600
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+          1791265559917120100
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265611028506400
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+          1791265611029508000
+        ]
+      }
+    },
+    {
+      "name": "writer-postimage-verify",
+      "scope": "fixture-writer-only",
+      "exit": 0,
+      "expected_success": true,
+      "expected_marker": "",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265611028506400
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+          1791265611029508000
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265611028506400
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+          1791265611029508000
+        ]
+      }
+    },
+    {
+      "name": "writer-postimage-fixedpoint",
+      "scope": "fixture-writer-only",
+      "exit": 0,
+      "expected_success": true,
+      "expected_marker": "",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265611028506400
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+          1791265611029508000
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265611028506400
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+          1791265611029508000
+        ]
+      }
+    },
+    {
+      "name": "writer-second-apply-noop",
+      "scope": "fixture-writer-only",
+      "exit": 0,
+      "expected_success": true,
+      "expected_marker": "",
+      "before": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265611028506400
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+          1791265611029508000
+        ]
+      },
+      "after": {
+        "releng/org.eclipse.nebula.nebula-parent/pom.xml": [
+          "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+          1791265611028506400
+        ],
+        "m3/qualified-mixed-original435-target/mixed.target": [
+          "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+          1791265611029508000
+        ]
+      }
+    }
+  ]
+}

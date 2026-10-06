@@ -1,0 +1,103 @@
+{
+  "state": "INVENTORY_FROZEN_BEFORE_PORTABLE_CANDIDATE",
+  "base_commit": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "current_source_files": 5399,
+  "original_reactor_projects": 314,
+  "original_default_build": {
+    "exit": 0,
+    "success": 314,
+    "failure": 0,
+    "skipped": 0,
+    "result_sha256": "7bff53271bceb6e84bb6b4f8ae1c93ba361fd6b7d458b5b3b1e429f741e2d642",
+    "log_sha256": "51900ada5747bdec4264fc1331d2945f89fc29e7035225335ff59b3e4607cf43"
+  },
+  "current_parent": {
+    "path": "releng/org.eclipse.nebula.nebula-parent/pom.xml",
+    "sha256": "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a"
+  },
+  "parent_url_properties": {
+    "target-platform-platform": "file:///S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target",
+    "target-platform-gef": "file:///S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target",
+    "target-platform-swtbot": "file:///S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target"
+  },
+  "target_repository_locations": [
+    "file:///S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target"
+  ],
+  "target_units": 125,
+  "p2_artifact_mappings": 129,
+  "artifact_mapping_sample": [
+    "file:///S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcpg_1.85.0.jar",
+    "file:///S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcprov_1.85.2.jar"
+  ],
+  "qualified_metadata": [
+    {
+      "path": "m3/qualified-mixed-original435-target/mixed.target",
+      "sha256": "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+      "bytes": 9006
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/content.xml",
+      "sha256": "73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264",
+      "bytes": 736636
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/artifacts.xml",
+      "sha256": "023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa",
+      "bytes": 249790
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/p2.index",
+      "sha256": "965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf",
+      "bytes": 111
+    }
+  ],
+  "source_manifest_sha256": "807915c9d7df4abdff9d3c001664896f22b0909c4d65f908647e8054d3082389",
+  "dependencies_manifest_sha256": "99460a164e47737d4244d213086a3fe3f8002511da981dd881b9c93849355240",
+  "read_packets": [
+    {
+      "path": "S:/gm435314v3/FOSS_REUSE_DECISION.tsv",
+      "sha256": "1dad8464d0808c7c3515254dbb58b38a1d5bc3d328a5a9785830bc8204c34645"
+    },
+    {
+      "path": "S:/gm435314v3/BASE_HYPOTHESIS.json",
+      "sha256": "c5d80baff26f830b6cbd561d94c0c6ff0a54f85cee908405868a6336b846db6e"
+    },
+    {
+      "path": "S:/gm435314v3/materialize_and_build.py",
+      "sha256": "d80ceafc65cdec34dfb23bbfdbdf45b8de959e7303340e652a7b6aacccbd718a"
+    },
+    {
+      "path": "S:/gm435314v3/prepare_recipe.py",
+      "sha256": "dee8ceb3dde3d4704a180633f44b9202e278110abc56b2aa27cb8be42471c427"
+    },
+    {
+      "path": "S:/gm435314v3/pom.xml",
+      "sha256": "e52779dbea832645bac93bbf48be6ef360bb2671a84fd1b3a5d95c06a423a2c2"
+    },
+    {
+      "path": "S:/gm435314v3/runs/first/DEFAULT_BUILD_RESULT.json",
+      "sha256": "7bff53271bceb6e84bb6b4f8ae1c93ba361fd6b7d458b5b3b1e429f741e2d642"
+    },
+    {
+      "path": "S:/gm435314v3/runs/first/DEFAULT_BUILD_COMMAND.json",
+      "sha256": "a2a44796aee43b109fe27184a3eb97b6480731dbb3a6ca26d85c21b8aaa1946b"
+    },
+    {
+      "path": "S:/gm435314v3/runs/first/SOURCE_MATERIALIZATION.json",
+      "sha256": "fe60744ed3cffd76767af20d7cb9ea3c8831c8af7c99bb431ab9d52d516d97b3"
+    }
+  ],
+  "reserve_bytes_before_candidate": 46109765632,
+  "no_additional_AGENTS_in_owner_or_S_ancestors": true,
+  "preserve": [
+    "314 original project graph",
+    "5398 other original raw source paths",
+    "all existing test and lifecycle configuration",
+    "qualified129 target units",
+    "three environments",
+    "JavaSE-21",
+    "current Tycho4.0.12",
+    "all qualified artifact hashes"
+  ],
+  "scope_frontier": "Root-local POM/target URL portability is separate from relocatability of 129 externally pinned artifact mappings"
+}

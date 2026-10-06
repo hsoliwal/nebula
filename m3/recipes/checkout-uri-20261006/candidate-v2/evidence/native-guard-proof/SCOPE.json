@@ -1,0 +1,8 @@
+{
+  "proof": "CURRENT_SUCCESSOR_EXECUTED",
+  "production_pom_sha256": "865683bf3ec3093707c41ea1ae8d09762cd9c2b0641f034d025b0cc0b71f0e65",
+  "controls": 29,
+  "production_apply": "PENDING_ROOT",
+  "separate_writer_controls": 16,
+  "prior_native_proof": "../prior-candidate-native-guard-proof"
+}

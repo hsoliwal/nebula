@@ -1,0 +1,212 @@
+{
+  "iterations": [
+    {
+      "scope": "recipe-evidence-initial-custody-refusal",
+      "cause": "Prototype excluded nested POM source image from checksum by basename; negative candidate drift test caught copied mutation in tiny fixture only.",
+      "retained_logs": [
+        {
+          "path": "recipe-evidence-initial-custody-refusal/absent-target-refusal.log",
+          "sha256": "116eed41eb08e6fbcddd2284458667f7c77acf5c91168eb446a0ec1e80944150"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/candidate-drift-refusal.log",
+          "sha256": "64ba58665ec4479b5f24d5ba5e7ffe9a544e27d0834fac3f6de4afa0c1dfcb68"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/check-preimage.log",
+          "sha256": "fcebc812957e637a07602cffa466de825e72f9549d126e7992ab554534bb6d26"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/context-drift-refusal.log",
+          "sha256": "0c3d89dbcb7e0f6503168151b533a0c4009542435c7eceb8d6bbad234e958278"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/fixedpoint-preimage-refusal.log",
+          "sha256": "65a3650f6a927576710ed4098c3357f664538ccddd9bd8a2070f8fb711e402b8"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-head-false.log",
+          "sha256": "aa6dc946284d7cb4b47869974a60f3c0867cff31f1a23cb61dbbebbdbc5537b7"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-head-true.log",
+          "sha256": "de55122dd0422c0a28d260332a15123a9e2032962255c43f8327e0b4b12569bd"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-post-false.log",
+          "sha256": "13c67a9e553357f72459b4c416932a9105d75e1c166b11607447692fcf79d89b"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-post-true.log",
+          "sha256": "a394e180e49c74aa105cd3465d9461354b65940e0982f36535bda2fb22fdcf90"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-pre-false.log",
+          "sha256": "bb157147b749eded66ddd039c47b820fb313e3200edfcb55fcd2a75ed18db9f4"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-pre-true.log",
+          "sha256": "aaf777a241c1e09130995cd5dba3f837978a8e70b483fb22baf1a72c13bedd03"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-write-false.log",
+          "sha256": "95218f6f6e913dec30373eaae040f264415f7388ebc5ad44ba955a9c0a2e49c0"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/injected-m3-write-true.log",
+          "sha256": "52ed67678cc3ab6456327a3de550299c29eb224bbb09683920851489b9d16123"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/mixed-state-refusal.log",
+          "sha256": "caf799956d867773d2683c71913d2a5323f40c8c8d93714902af0588a7c6bb97"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/reparse-root-refusal.log",
+          "sha256": "0359576dafa64755e5b8d8720db302387b5234bc3f60ba41b61497c738d22af2"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/source-drift-refusal.log",
+          "sha256": "c546ca459e8d978d42d0d50d8732bc4045828bc1b7d48894994c19177385e49a"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/unknown-operation-refusal.log",
+          "sha256": "fa210bd08856641112db118654b4798334f2f937bbce824863095bebd068411f"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/verify-preimage-refusal.log",
+          "sha256": "ea632cea7ee49b1b434d1c88028299fd94d1b28da5d6f9e5977b4df94d802280"
+        },
+        {
+          "path": "recipe-evidence-initial-custody-refusal/wrong-revision-refusal.log",
+          "sha256": "d4a116bdf19436f40fb7e9466e69d69dcd1498ca9cecdf880ca62f3d3df209ec"
+        }
+      ],
+      "owner_modified": false
+    },
+    {
+      "scope": "recipe-evidence-corrected",
+      "cause": "Separate writer harness counted checksum path as execution callback; stopped before native writer proof.",
+      "retained_logs": [],
+      "owner_modified": false
+    },
+    {
+      "scope": "recipe-evidence-corrected-v2",
+      "cause": "Separate writer callback string replacement missed actual XML indent; production guards passed, tiny writer refused incomplete context.",
+      "retained_logs": [
+        {
+          "path": "recipe-evidence-corrected-v2/production-complete-owner-check.log",
+          "sha256": "774941655dbea7182598f41d5a7d4fc3bf96e8c126ae2f388d02b8948978ed0f"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-incomplete-mutation-root-refusal.log",
+          "sha256": "0af83b8a62b6eea4b79213b1499b21eca6d0f858d14e528e704f057242a5516c"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-context-false.log",
+          "sha256": "b5af06a6c787559155d1fb07b52b4e549f8d2a2275f369e76941367d01744005"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-context-true.log",
+          "sha256": "ac762126decead001b2d15668bb27707cf0fee5cd90839ba7f38b2d2041b6ac9"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-head-false.log",
+          "sha256": "3f0a3ef1406645588cd75037230f28521e6b3976653d0ed4a305060af1056dd0"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-head-true.log",
+          "sha256": "e78a691f7d11e3bf09b4f6947f56d074309804a463bcc3422ca71b779a1b6801"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-post-false.log",
+          "sha256": "f6787e2a2f88449b68b9d64495d4e477ab8e3decb1468511546bf4290d034030"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-post-true.log",
+          "sha256": "79d8dbea0e4da9333fa83779d160d47514576cc59ff876da82d4040989338525"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-pre-false.log",
+          "sha256": "c5ede8fe71bcda7fed22418f411b987ff2b8b86a9dfd1182c0b7a6df45223f4e"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-pre-true.log",
+          "sha256": "54211ab378a2d2bbfd55c14bd7632c19243007a850166356ddd778328f93f146"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-write-false.log",
+          "sha256": "b22b77280ce358b072c4c1bbc44d00a639e89c6c8a1e6f5df854079b711cae2d"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/production-injected-m3-write-true.log",
+          "sha256": "169e19008ddb8834b8950ece1087fc43b5b6de93f6ed452373453a81da90635f"
+        },
+        {
+          "path": "recipe-evidence-corrected-v2/writer-check-preimage.log",
+          "sha256": "c89a41b7ec338a0a736cb1d06f87c6823d2f936e7dac9e27bb41bc3dcedaba28"
+        }
+      ],
+      "owner_modified": false
+    },
+    {
+      "scope": "recipe-evidence-corrected-v3",
+      "cause": "Separate writer XML serializer moved ant:if namespace off target subtree; Maven/Ant refused writer before any copy.",
+      "retained_logs": [
+        {
+          "path": "recipe-evidence-corrected-v3/production-complete-owner-check.log",
+          "sha256": "776f177366db85d9c66c4872bb0b68db94a8c577381897c50c7d6ce16e317031"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-incomplete-mutation-root-refusal.log",
+          "sha256": "b265a4a36ef73260d489e48930e9f632967e57d5f7cd1d5c8b699e3b1b68642c"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-context-false.log",
+          "sha256": "8a12aaa72d48ae037d5455fbfbc195bcce7ff8cbecb6d868930cecff8b729430"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-context-true.log",
+          "sha256": "895fdab2ddeae93942d755b2389973a19a8bb729d5c9033a3b20055970810726"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-head-false.log",
+          "sha256": "e3be07dba8e4978c73aed9858e60f7b8a2e24086ec9661813251013f78957944"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-head-true.log",
+          "sha256": "ef87d16da6fdf08c728d960f0813636152362e1763fa375352cbd685132eff18"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-post-false.log",
+          "sha256": "a00c6e956a9f11b58b5c9981d3a4b7fb570d79d31ddfbe5462edf33cc9d4c027"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-post-true.log",
+          "sha256": "02ca17f6c6c62b80142c266c77dcdcf3dd276867abd02b42a68f0f6ca0200a46"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-pre-false.log",
+          "sha256": "815db5d5081c8224cdbabbf6fba82c8ab39b43edc3eef524e627528d66b07ef2"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-pre-true.log",
+          "sha256": "f43b2e8f8bb3fe86fe0e2d6935c3f3d915f14e886d4869fdbf819da96cc76a82"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-write-false.log",
+          "sha256": "604773aed80a97c46a7d5715c3b5bf685f3f7a7d2797c6afe71c0df7bc98fb7b"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/production-injected-m3-write-true.log",
+          "sha256": "458728cded35819da2fbcd526f70eadc1f24e220883eff587ff2dabefab0c9b1"
+        },
+        {
+          "path": "recipe-evidence-corrected-v3/writer-check-preimage.log",
+          "sha256": "0f70b0da829d646214f4e0f48f934b8de0426eb0b9513ccc78e9b00cdd942dc6"
+        }
+      ],
+      "owner_modified": false
+    }
+  ],
+  "shell_startup_refusal": "PowerShell Starting the CLR failed with HRESULT 80004005 before any Python proof; replayed via cmd.exe and Python; not guard evidence."
+}

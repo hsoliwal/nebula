@@ -1,0 +1,93 @@
+{
+  "schema": "m3-independent-frozen-source-review/v1",
+  "recorded_utc": "2026-10-06T05:48:48.606428+00:00",
+  "status": "PASS_NO_REMAINING_MATERIAL_SOURCE_REVIEW_BLOCKERS",
+  "scope": "Nebula candidate-v2 checkout-URL exact two-image recipe only",
+  "review_method": "Existing Codex read-only review + CPU integrity/execution; no metered helper or JVM execution by reviewer",
+  "inventory_and_FOSS_read_before_source": true,
+  "frozen_bindings": {
+    "publication_seal_sha256": "4b34fa65028eb87acd52fd5d411020eca28f0808bd320ad6ef37be9652bce5c1",
+    "sha256sums_sha256": "eba9549c85f96cdb6965a0a2ebf6686482b58aac3f698782fd8ebe77d9bd0676",
+    "production_pom_sha256": "865683bf3ec3093707c41ea1ae8d09762cd9c2b0641f034d025b0cc0b71f0e65",
+    "source_context_sha256": "b6e7ec5177f8bbfcb31002471d34570a40773d6d24538c01e6746532332115df",
+    "launcher_sha256": "6b5ff0339b8792ff82d920d376a5851a1ed67eac79a366f6c8c406a755e24f48",
+    "source_manifest_sha256": "807915c9d7df4abdff9d3c001664896f22b0909c4d65f908647e8054d3082389",
+    "descriptor_owners_sha256": "0af5df2b1de1ac46c5c6cbe5756d498a5a29497fea482f1abbe314b0854b69a8",
+    "dependency_manifest_sha256": "99460a164e47737d4244d213086a3fe3f8002511da981dd881b9c93849355240",
+    "native_proof_sha256": "8142db8a1f8a209054b942ada0c543ec93e65ee8125ca4f310ce1ae58afea113",
+    "CPU_proof_sha256": "34e310a2e47250e20059a5e0953d037a48f7a131f67d384888ea9ac875d45db8"
+  },
+  "independent_integrity_checks_executed": {
+    "sealed_files": 252,
+    "source_only_bytes": 3821011,
+    "all252_UTF8_manifest_rows_hash_verified": true,
+    "all5399_actual_original_owner_source_hashes_verified": true,
+    "actual_inherited_runtime_inputs_size_and_hash_verified": 145,
+    "source_effect_checksum_closure_all_actual_files_match": 22,
+    "nested_pre_post_POMs_explicitly_bound": true,
+    "immutable_descriptor_list_matches_original_manifest_subset": true,
+    "original_POM_and_build_properties_descriptors": 585,
+    "exact_generated_output_roots": 336,
+    "no_generic_target_basename_or_glob_exclusion": true,
+    "five_URI_substitutions_exactly_reverse_to_original_two_images": true,
+    "original129_external_artifact_mapping_frontier_preserved": true,
+    "whole_publishable_source_set_exactly_252_manifest_paths": true,
+    "additional_generated_file_excluded": "target/antrun/build-main.xml"
+  },
+  "reviewer_executions_reused_from_preseal_receipt": {
+    "receipt_sha256": "6c392f957aef678e05ba271932c3b14c3a308e7c62040e950c4ddd0c650922a9",
+    "actual_source_context_5398_pass": true,
+    "direct_O_OO_explicit_refusals_before_admission": true
+  },
+  "actual_worker_evidence_inspected": {
+    "successor_native_controls": 29,
+    "successor_native_POM_helper_hashes_all_current": true,
+    "actual_complete_production_owner_check_log_PASS": true,
+    "production_refusals_no_owner_writes": true,
+    "separate16_writer_rehearsal_controls_do_not_admit_production_apply": true,
+    "successor_CPU_controls": 19,
+    "added_java_target_package_negative_control_verified": true,
+    "old_native29_archived_and_scope_bound_to_old_POM_and_seal": true,
+    "retained_JVM_mmap_failure_not_counted": true,
+    "worker_native29_reexecuted_by_reviewer": false
+  },
+  "admission_order_review": {
+    "optimized_helpers_explicit_refusal_and_Maven_I_B": true,
+    "four_Git_root_index_selectors_sanitized_for_head_and_source_queries": true,
+    "m3_context_head_pre_post_write_injection_refused": true,
+    "whole_context_callback_same_m3_root_as_copy_targets": true,
+    "full_source_and_all_pre_or_all_post_guards_precede_two_writes": true,
+    "postimage_second_apply_has_no_writes": true,
+    "ignored_and_untracked_new_inputs_refused_outside_exact_generated_roots_and_four_metadata_paths": true
+  },
+  "accepted_resolved_findings": [
+    {
+      "name": "Broad target output exclusion hid added Java target package",
+      "resolution": "585 immutable original descriptor rows derive336 exact owned output roots; fresh19 CPU proof includes added target package refusal"
+    },
+    {
+      "name": "Inherited native proof could be mistaken for successor proof",
+      "resolution": "Old native29 archived with exact old POM/seal; current native29 binds exact865683bf POM and unchanged helpers"
+    },
+    {
+      "name": "Proof-output checksums could create circular POM/receipt identities",
+      "resolution": "22 complete source-effect inputs stay executable-pinned; full252-source publication seal independently binds all final outputs"
+    }
+  ],
+  "remaining_material_findings": [],
+  "source_owner_or_worker_mutations_by_reviewer": false,
+  "metered_helper_executed": false,
+  "JVM_executed_by_reviewer": false,
+  "required_root_gates_pending": [
+    "Actual reviewed production recipe check/apply/verify/fixedpoint on delivered owner",
+    "Actual original314 full clean verify using source-bound launcher",
+    "Root branch/source-only publication after runtime proof"
+  ],
+  "unproven_frontiers": [
+    "Independent runtime artifact relocation for129 absolute external mappings",
+    "Unicode Maven checkout launcher",
+    "Native UI/JNI/Grid effects",
+    "Whole tools/ZIP/GitHub task completion"
+  ],
+  "full_goal_complete": false
+}

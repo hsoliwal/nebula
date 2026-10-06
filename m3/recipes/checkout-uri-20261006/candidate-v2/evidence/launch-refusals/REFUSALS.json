@@ -1,0 +1,19 @@
+{
+  "scope": "read-only pre-runtime controls",
+  "checks": [
+    {
+      "name": "owner-preimage",
+      "expected_refusal": "EXACT_PORTABLE_SOURCE_APPLY_REQUIRED",
+      "exit": 1,
+      "maven_not_launched": true,
+      "runtime_output_not_created": true
+    },
+    {
+      "name": "unicode-frontier",
+      "expected_refusal": "UNQUALIFIED_UNICODE_MAVEN_LAUNCHER_ROOT_REFUSAL",
+      "exit": 1,
+      "maven_not_launched": true,
+      "runtime_output_not_created": true
+    }
+  ]
+}

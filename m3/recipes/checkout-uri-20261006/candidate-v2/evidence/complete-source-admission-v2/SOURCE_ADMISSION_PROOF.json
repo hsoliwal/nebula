@@ -1,0 +1,122 @@
+{
+  "checks": [
+    {
+      "name": "owner-complete5398",
+      "exit": 0,
+      "expected": "SOURCE_CONTEXT_EXACT paths=5398",
+      "expected_success": true
+    },
+    {
+      "name": "git-head-overrides-dropped",
+      "exit": 0,
+      "expected": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+      "expected_success": true
+    },
+    {
+      "name": "git-source-overrides-dropped",
+      "exit": 0,
+      "expected": "SOURCE_CONTEXT_EXACT paths=5398",
+      "expected_success": true
+    },
+    {
+      "name": "source_context-O",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "source_context-OO",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "source_context-envopt1",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "source_context-envopt2",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "run_portable_default-O",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "run_portable_default-OO",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "run_portable_default-envopt1",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "run_portable_default-envopt2",
+      "exit": 1,
+      "expected": "OPTIMIZED_PYTHON_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "isolated-context-ignores-envopt",
+      "exit": 0,
+      "expected": "SOURCE_CONTEXT_EXACT paths=5398",
+      "expected_success": true
+    },
+    {
+      "name": "preimage-launch-refusal",
+      "exit": 1,
+      "expected": "EXACT_PORTABLE_SOURCE_APPLY_REQUIRED",
+      "expected_success": false
+    },
+    {
+      "name": "new-java-input-refusal",
+      "exit": 1,
+      "expected": "ADDED_SOURCE_INPUT_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "ignored-new-java-input-refusal",
+      "exit": 1,
+      "expected": "ADDED_SOURCE_INPUT_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "new-java-target-package-refusal",
+      "exit": 1,
+      "expected": "ADDED_SOURCE_INPUT_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "new-pom-input-refusal",
+      "exit": 1,
+      "expected": "ADDED_SOURCE_INPUT_REFUSAL",
+      "expected_success": false
+    },
+    {
+      "name": "generated-output-and-four-metadata-accepted-before-absent-known-input",
+      "exit": 1,
+      "expected": "SOURCE_CONTEXT_ABSENT",
+      "expected_success": false
+    },
+    {
+      "name": "java-option-injection-dropped",
+      "exit": 0,
+      "expected": "m3.nebula.checkout.uri = file:///S:/gm435314v3/owner74f",
+      "expected_success": true
+    }
+  ],
+  "owner_images_bytes_and_mtime_unchanged": true,
+  "whole_source_original5398_readonly_pass": true,
+  "full314_executed": false,
+  "tiny_fixture_shared_git_index_only_no_source_tree_copy": true
+}

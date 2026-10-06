@@ -1,0 +1,862 @@
+{
+  "files": [
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/grid-real-value-closure-20261004/sdk-r4_35/org.eclipse.e4.ui.css.core-0.14.500.jar",
+      "sha256": "fdec437c91dde5256603b7890efcb9320a8e8b0c0b91b6bec4071a5cdd49644a",
+      "bytes": 226374
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcpg_1.85.0.jar",
+      "sha256": "39426367dc247dfaae9b1253457a39298b6b9a6c28a39b908bca829e315323dd",
+      "bytes": 716246
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcprov_1.85.2.jar",
+      "sha256": "986b0fb92ec10e0c66b43e036ce0077e6150cfaecd1db9fb92b56672e157afe5",
+      "bytes": 10280518
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcutil_1.85.0.jar",
+      "sha256": "590f55ed5d68529239898a4a5c4f730b6e37f45d1cfa3fbe51f8485abe32c42d",
+      "bytes": 718812
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.github.weisj.jsvg_2.1.0.jar",
+      "sha256": "a538142d27c57c55066da02a535cc8eee3afd0d37b3daff8eba6344bd0ffc1b6",
+      "bytes": 784004
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.ibm.icu_78.3.0.jar",
+      "sha256": "e962c1758d9659ea1e1fbab99c58683f654d304e1126ace19aaabfe39e0edb25",
+      "bytes": 15156073
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna.platform_5.19.1.jar",
+      "sha256": "3b3864f5b449e9c3c24b16861524b622b086563f44e0cd8384c8efc5a6052f82",
+      "bytes": 1416385
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna_5.19.1.v20260612-1000.jar",
+      "sha256": "467b2990d4f406e7d41f7a989f89df257767ca11d566f844560e2ab8d09f6433",
+      "bytes": 1965688
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.annotation-api_3.0.0.jar",
+      "sha256": "b01f55552284cfb149411e64eabca75e942d26d2e1786b32914250e4330afaa2",
+      "bytes": 26378
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.inject.jakarta.inject-api_2.0.1.jar",
+      "sha256": "f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c",
+      "bytes": 10681
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.aries.spifly.dynamic.bundle_1.3.7.jar",
+      "sha256": "50446b18eaaa135d1927e283639a63e452c94111c28c2a54419b1b3fa0339afc",
+      "bytes": 153960
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.felix.scr_2.2.18.jar",
+      "sha256": "c5bd887c8fd5ec4cd563249e7552bb1a1a1ca57e05a1f1ef8425a7b7b7bd2fbe",
+      "bytes": 409468
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.compare.core_3.8.900.v20260731-0809.jar",
+      "sha256": "e75b07863128a076989d15e815d63a49cab772a338f1f0444d007bef3fa94601",
+      "bytes": 72886
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.commands_3.13.0.v20260605-1749.jar",
+      "sha256": "fe916979793d364fcd0a71c15c3fa803d60a8566cff8c64b0eef04918b5b6a65",
+      "bytes": 121051
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.contenttype_3.9.900.v20260617-0626.jar",
+      "sha256": "6c57132740523b5c5de125c0041ca43c1606da6563214c1bae3999fa21ead893",
+      "bytes": 107781
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.beans_1.10.500.v20250916-0941.jar",
+      "sha256": "11eb65dc27ed02c32e3e4d6c9af3a8e11e5eda2848903a74a573543e17cd2490",
+      "bytes": 86880
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.observable_1.13.500.v20251103-0735.jar",
+      "sha256": "2a801e18f4a4ebcf28b4376ab13c04205cfaf5c085f436c8bde89ba09da50950",
+      "bytes": 324396
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.property_1.10.500.v20250916-0931.jar",
+      "sha256": "3e2e4fbea4e4fc7c8842812a7ffc89fb03d95bfcdb858fcff5ffb7cb1f517e07",
+      "bytes": 171506
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding_1.13.800.v20260531-1157.jar",
+      "sha256": "dcedb897c771517f449cd01c04fed83bd45306b7b019dfaf6870419b6bdd9f43",
+      "bytes": 294689
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.expressions_3.9.700.v20260710-0925.jar",
+      "sha256": "06a18236ae181659e1e5499d912d68de527720686f1f51dab632d3e298e32b78",
+      "bytes": 99300
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filebuffers_3.8.600.v20260426-1223.jar",
+      "sha256": "1537b244abd74626b9627395c8562e910f68b6526330a7556f32d2a624b6e198",
+      "bytes": 122324
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filesystem_1.11.500.v20260721-1509.jar",
+      "sha256": "bf9ad56f6bee0044829bcbbe0ac5b9df28bb354beb0a4bdf0fe9a489ded12d36",
+      "bytes": 87415
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.jobs_3.15.900.v20260604-0622.jar",
+      "sha256": "941b3c5feeba4ec0a949a8a94ff10283b2505813fa736c9e6345f146ae1b7e8a",
+      "bytes": 120947
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.resources_3.24.100.v20260812-0827.jar",
+      "sha256": "946851cf5902cd3b002920063a30b169e5710088b6c1ad7dd05bdd3be4fbfff4",
+      "bytes": 965528
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.runtime_3.35.0.v20260623-1631.jar",
+      "sha256": "5b0c2794e9fe1785360dec920cc802f3388a0eb72ee25b89054b79ff3e2f07c9",
+      "bytes": 90388
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.draw2d_3.14.100.202311222042.jar",
+      "sha256": "c966a3fed68347b52d3be321c0b9d9139c58de2bb47b12d59fb61a1cf930df51",
+      "bytes": 666250
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.commands_1.1.800.v20260430-1313.jar",
+      "sha256": "3d45c10a6ade4ebfb744831d1e6733a43d7ec5c81bbb766bff205a5a7f114f74",
+      "bytes": 31578
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.contexts_1.13.300.v20260605-0605.jar",
+      "sha256": "713f96b026b655688ec750074a62f8b1c3a1bed5986b776b348296ededaa8ff4",
+      "bytes": 60287
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.annotations_1.8.500.v20260307-0017.jar",
+      "sha256": "c3cba64f776fcd89c233e52a205bb84fb50f1d609e7371eaa8e25b0985c0884c",
+      "bytes": 15538
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions.supplier_0.17.1200.v20260605-0608.jar",
+      "sha256": "1c467d6a781640dd33850cec6ceb5cbcac771f39b0fc4788858b2bf2e3192c45",
+      "bytes": 43995
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions_0.18.300.v20240413-1529.jar",
+      "sha256": "aeed59c938c1593cb7ec0e76f077ab34c84c75378158a7ad17be48370938503d",
+      "bytes": 13271
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di_1.9.900.v20260731-1431.jar",
+      "sha256": "59ef5a695fb451366adf84753feae16be78f34e8fab9b37a89c10e57eb5f0442",
+      "bytes": 62598
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.services_2.5.400.v20260430-1313.jar",
+      "sha256": "bb5691c9e536112fab1cb6bdffe6d40ec0f059626723776da12c187977f06250",
+      "bytes": 76240
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.emf.xpath_0.6.100.v20251103-0738.jar",
+      "sha256": "24fdd65815c10731c4fab75f1ba4c19a9e414b9d4f6fa24796dc68a997e42ad8",
+      "bytes": 26580
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.bindings_0.15.200.v20260616-1114.jar",
+      "sha256": "5ebfd1872822bec65b5790fe1feb999ac7a3feff5c75e2ef3dd972ae0844bd78",
+      "bytes": 53268
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.di_1.5.700.v20250917-0901.jar",
+      "sha256": "9e093b6e93aae448abc4eb2fb4454a36440ebfc0a51c7231655c31a3dd927e68",
+      "bytes": 20045
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.dialogs_1.7.200.v20260612-1449.jar",
+      "sha256": "5916d8078e460115e4119809c9301fde93d6912b5a11282ae7f9343daea666eb",
+      "bytes": 70309
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.ide_3.18.0.v20251217-1052.jar",
+      "sha256": "a56b3b87705a1d307a1047360945732b284e892f5008d16c8440a1759955d3a2",
+      "bytes": 14969
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.model.workbench_2.4.900.v20260604-1631.jar",
+      "sha256": "90a57c6125d3b3fad535259a4043abd42e4ffa537feae18c927746ded7c71f47",
+      "bytes": 409747
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.services_1.6.700.v20260430-1313.jar",
+      "sha256": "e4f5aa7637d3bdd3781a10addd4be07038d8d2ef4b20e2c40b7e7932960a8073",
+      "bytes": 28637
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.widgets_1.5.0.v20251217-1052.jar",
+      "sha256": "46ce8ac317aa8dc31594a28be005c3e1d22b4b103d275f5fab481bddbb513f5a",
+      "bytes": 16976
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.addons.swt_1.6.100.v20260430-1313.jar",
+      "sha256": "d9fe711ca9ce958f0fec9e385257d2f938969d8f63902231fb01421613137bc7",
+      "bytes": 131302
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.renderers.swt_0.18.100.v20260622-1026.jar",
+      "sha256": "5d1c0241cc8949e23f5b2474251c5033e07722209ce3caa7e167d9d6650c1d29",
+      "bytes": 274419
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench3_0.18.0.v20251216-1230.jar",
+      "sha256": "7801af6e30f71121d3f15f638ebb5e30d83d0add73b3798d53f75aa3c95f031b",
+      "bytes": 25259
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench_1.18.300.v20260430-1313.jar",
+      "sha256": "372a298898ea9adf4ffab461ed06d36c7c2fa476fb218c9d7abecc1ee2012229",
+      "bytes": 281318
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.common_2.46.0.v20260704-1256.jar",
+      "sha256": "8329ca6f84a27a46517e6351697fc44060ed413ad231b4bbc0d813dd7ac87264",
+      "bytes": 403766
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.change_2.18.0.v20260704-1256.jar",
+      "sha256": "e9198b0fe481aa10e04b57f0c7cc672fe097a01f858152a05ee73c0a5fe648d5",
+      "bytes": 97911
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.xmi_2.41.0.v20260704-1256.jar",
+      "sha256": "f9671c2b926c5d5ad7c2410eed50e9a6d2510a360b12fe4be8228944df93abfb",
+      "bytes": 255122
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore_2.43.0.v20260704-1256.jar",
+      "sha256": "62bf3805669c56efbb280b6f212767c089093a7c330f9da1c901fbf242564286",
+      "bytes": 1403078
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.app_1.7.600.v20251211-1038.jar",
+      "sha256": "fd353398835107608f554779a6e91891725efb94e0f57559d0ab3cea4b6156c7",
+      "bytes": 93212
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.bidi_1.5.400.v20250715-0436.jar",
+      "sha256": "78599009dc5a0f02881406798d7e07e25ac222930a985757bca61632867c7abe",
+      "bytes": 55787
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.common_3.21.0.v20260604-1221.jar",
+      "sha256": "2545ed27d408f19882695703097e5998bf25652bd0dac76a8e6d1391ec228ab7",
+      "bytes": 161122
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.event_1.7.300.v20250518-0609.jar",
+      "sha256": "a95ed37b7f1c340b4bef599bdc011a3c51b0489a4e1fc11abd62856e49c22fd9",
+      "bytes": 38033
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.artifact.repository_1.5.1000.v20260713-1500.jar",
+      "sha256": "0b069bccc7b171ab710d6bfe8b0081cb6618084b9458558150c7f73720784c18",
+      "bytes": 182968
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.core_2.13.300.v20260108-1444.jar",
+      "sha256": "a3835e2db79d1db39eb8d74e84f5a1b45528eb79d31d529cffe772c64ba0dcb5",
+      "bytes": 86497
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.engine_2.11.200.v20260710-0940.jar",
+      "sha256": "f52c37c0dc580b54f6e6b738e5fa3ab53b9011f3db77692febb2d063a1c9c4d6",
+      "bytes": 251625
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata.repository_1.5.800.v20260304-1232.jar",
+      "sha256": "4ed4d2adac35c739098d724196761797babf7e1676d7081a3b6625d2a4bf1b12",
+      "bytes": 145159
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata_2.9.800.v20260727-1351.jar",
+      "sha256": "49490e21ad3974e154db833c49e6051ef52f6b852c30900a9d3cbec75e027287",
+      "bytes": 381694
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.repository_2.9.800.v20260730-1413.jar",
+      "sha256": "a30aa2d34fc2a5061d0d48dc95dd1b161bdcda25365f3c115764dea9a7019a42",
+      "bytes": 196716
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.preferences_3.12.100.v20251111-0704.jar",
+      "sha256": "fd04e81a28ab32b6bb073286eb293c44b760176fcf1e35ef15614d62df820f86",
+      "bytes": 130382
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.registry_3.12.600.v20250906-0651.jar",
+      "sha256": "4f8cd72681446b598390a8c24ee9b9996f6e4c5fabed022b50bd26f6f5a0bf6c",
+      "bytes": 206425
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.security_1.4.700.v20250622-1644.jar",
+      "sha256": "91b74719f9c1a130193407808fe5daab3b92431efbf30b8f886f1ff5e97f468f",
+      "bytes": 120654
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.help_3.11.200.v20260710-0925.jar",
+      "sha256": "c47edcf54c5d5dcdaf3bd72d49277daee4762a07b7b91f7620fdcc857af8f7c8",
+      "bytes": 284372
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jdt.junit.runtime_3.8.100.v20260507-0922.jar",
+      "sha256": "40f42db018f283e8e799333c1870d8a6ee14691a591927c77419373a1dd0d3a9",
+      "bytes": 64703
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.databinding_1.16.0.v20251216-1230.jar",
+      "sha256": "f2fe7b68cc56992f9df80c355586dc6b391e99fa1b1160a14b5dd5e029c65d21",
+      "bytes": 301187
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.notifications_0.8.100.v20260326-1607.jar",
+      "sha256": "4f5cd3a883ba45a665663642ed0c304bdc78a1ee8f514265d84dd39906e73d12",
+      "bytes": 36768
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.text_3.31.100.v20260814-0956.jar",
+      "sha256": "20f885d22fa9370437cac3e6eff3bc482989720da403a2a0b0d131d9c83bc524",
+      "bytes": 1097384
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface_3.40.0.v20260710-0650.jar",
+      "sha256": "618096177f82c1dd54ac5ee7c22bef793588f19dd6c7ce2830935e2223b37fb4",
+      "bytes": 1234834
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.osgi_3.24.300.v20260721-1251.jar",
+      "sha256": "4a770aa4a78df653af871073c8b4ddd56884895f5fc71d10c40b4289ac7c8b9f",
+      "bytes": 1615320
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.pde.junit.runtime_3.8.300.v20251120-2029.jar",
+      "sha256": "43a7c6ea5c97446748d849bc05509fc5b4b1b3576d83782895081eb08e098a4f",
+      "bytes": 35544
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.cocoa.macosx.x86_64_3.135.0.v20260819-1952.jar",
+      "sha256": "781129ad16b54915eba24d4162ce356568e745001374325514a37000f228c83c",
+      "bytes": 2766207
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.gtk.linux.x86_64_3.135.0.v20260819-1952.jar",
+      "sha256": "0799e4475b8937e05a0f13c6cbeadbf066ca56dd3622bfd8c7a4ba133b2db2e2",
+      "bytes": 2435909
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.svg_3.133.100.v20260702-1546.jar",
+      "sha256": "8530aa8ad2552510141ea4dfeff44fa21dfe46849fe3871be1bde59eb1446c29",
+      "bytes": 19121
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.win32.win32.x86_64_3.135.0.v20260819-1952.jar",
+      "sha256": "625165af55eb5f553b28a74455038bb01343e4acf00d0857ff78c31d0b9c75be",
+      "bytes": 3054670
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt_3.135.0.v20260819-1952.jar",
+      "sha256": "f096342961c16043c072550cf0428f7126b0e9796fe10f2d1d8529a5e3ac8db3",
+      "bytes": 20268
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.core_4.3.0.202506021445.jar",
+      "sha256": "941668f4e5787928e2dcee27f7f96e4c81fdd077c3a2c25ea60b7fbdf44fe5c2",
+      "bytes": 41552
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.finder_4.3.0.202506021445.jar",
+      "sha256": "fbcd1f5f677e896aa18af9d9ed0b87fae1fe6e44653d6186385fe44107451572",
+      "bytes": 146946
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.go_4.3.0.202506021445.jar",
+      "sha256": "c871c314e1944207b3af2fedf1a6410566e45c336e3859ddbb0a8fa286f8a6b0",
+      "bytes": 17853
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.junit4_x_4.3.0.202506021445.jar",
+      "sha256": "49700c927b2cd146f16551c0f145d441765766c185f0aea87b3a8b29dfe607a9",
+      "bytes": 39675
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.swt.finder_4.3.0.202506021445.jar",
+      "sha256": "8d5c41eb949f66fd4732087e7a4cb383b6aaa6e810f5c73489a30fbe700a4e0f",
+      "bytes": 846735
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.text_3.14.800.v20260815-0849.jar",
+      "sha256": "14814c1f1a737fde0a2d56c47a2f02cf4c8c5dee748756c4763e674cae214250",
+      "bytes": 363930
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.editors_3.22.100.v20260707-0708.jar",
+      "sha256": "06ecffe23256faf7e91a42b62ef924340254010728c798c3f717eaf2ec59307a",
+      "bytes": 692879
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.ide_3.23.200.v20260822-1631.jar",
+      "sha256": "286cc2e99b9793ae3fc5d7f7eaa16e0ac9b07b606dc6d3308d79c7813e562b2b",
+      "bytes": 2685304
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.navigator_3.14.200.v20260731-0659.jar",
+      "sha256": "99d95f87042bd370bcd1b81af83ef1c8fb072ddeed3ec90bd58fed77161e8f60",
+      "bytes": 456608
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench.texteditor_3.20.200.v20260728-1331.jar",
+      "sha256": "c2c58bd9cf3c46f85dc6a6777061ad007b72d14c3fca6ab2fd4a5539e096ca79",
+      "bytes": 865848
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench_3.140.0.v20260810-1402.jar",
+      "sha256": "e3ed243b8331165a1e43592d9aede7fc34cc3027b321f9bad0d494e630583d77",
+      "bytes": 3681401
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui_3.209.100.v20260703-0856.jar",
+      "sha256": "cc52dc9a3c679fec4db48a31110f0c71f3caef31692b6c9c3dc8ecfca70a3106",
+      "bytes": 730754
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.urischeme_1.3.600.v20251023-1158.jar",
+      "sha256": "ad7c2eaab28f9424a471085c51b38d6971176fab1def11eb60e99cd1ad178f84",
+      "bytes": 58267
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.core_2.2.0.v20230809-1000.jar",
+      "sha256": "9be2aeac81fedef7ce73dd26d93e53644b1f9cd7cb1c8f62216f5adb36517d7b",
+      "bytes": 9411
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.library_2.2.0.v20230809-1000.jar",
+      "sha256": "d075830992f07c41e10a220ff91aa5d51dda4166a6ad61b5f234cc8f245b4cbc",
+      "bytes": 9456
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest_3.0.0.jar",
+      "sha256": "5d66b6a4a680755cb6ed7cb104fa7835ef644667586ff0737adeb977c39ecdbc",
+      "bytes": 126373
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.junit_4.13.2.v20240929-1000.jar",
+      "sha256": "3efac657139b0b8024748e937e3e1dba71fbdf69fb526c60f504a3fb5490381b",
+      "bytes": 426286
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.commons_9.10.1.jar",
+      "sha256": "6d0abefb7cbf972ea16edb37ec14835372505063a45f976ab7ea889ed9497895",
+      "bytes": 74840
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree.analysis_9.10.1.jar",
+      "sha256": "dede75a21306b65974ecd8f87114ff6970f09fb794157a4ca09ab25c888c2bfc",
+      "bytes": 35140
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree_9.10.1.jar",
+      "sha256": "3dfb0d5b6a106cd40b5b250e39935fbf2f927f4477546a5369a3ac609cf0506b",
+      "bytes": 51958
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.util_9.10.1.jar",
+      "sha256": "1bb99d091fba2597dc6d51193e9bbcf0d8447e7ed96bd8f0198b18152f09655c",
+      "bytes": 95628
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm_9.10.1.jar",
+      "sha256": "ed825d10ab1399c8c0cb669e688cf0c8c82629b4c8399b58352b68e92ca10fcb",
+      "bytes": 126151
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.component_1.5.1.202212101352.jar",
+      "sha256": "0653852deab5c6f6e9c84e3aa8f72e72b9ce7dfaf7a6431f3d80f6f9d7a433ad",
+      "bytes": 66447
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.event_1.4.1.202109301733.jar",
+      "sha256": "9f11c68980dbd931850f3f27fc7c35e1d710ecc728fe872bd6d786cd7e4b7b5e",
+      "bytes": 47710
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.prefs_1.1.2.202109301733.jar",
+      "sha256": "43c7c870710e363405d422da653cce0d798a4537f76e4930f79bceadd3a55345",
+      "bytes": 20165
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.function_1.2.0.202109301733.jar",
+      "sha256": "208819c7c71690c15a6bb8b187474e7f9d0147946b680182a62b9f222ae014ec",
+      "bytes": 23641
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.promise_1.3.0.202212101352.jar",
+      "sha256": "7053c57e7d7d88fec6b90979a3af125e1d2bb847268a328a2f1ed65ad0a4c185",
+      "bytes": 85659
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.slf4j.api_1.7.30.v20221112-0806.jar",
+      "sha256": "6f4e3297ccb401443a75a7c1ed7a9f6da48831534c35dc5831cb886c37b9fcde",
+      "bytes": 55309
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.tukaani.xz_1.12.0.jar",
+      "sha256": "3e158a87bd73d8afb4b6e8239c013b7d049c48563f45860ce99cd2e448cf4a6b",
+      "bytes": 168792
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.commons-io_2.15.1.jar",
+      "sha256": "a58af12ee1b68cfd2ebb0c27caef164f084381a00ec81a48cc275fd7ea54e154",
+      "bytes": 501218
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.logging_1.2.0.v20180409-1502.jar",
+      "sha256": "62efdae1766f89278400ac26132af0f750cc8200c220ed602d527c564677faa2",
+      "bytes": 73163
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.xmlgraphics_2.9.0.v20230916-1600.jar",
+      "sha256": "d363b9b79214e745b3082c4e2fb6935554e1e045d9f2246eed416ed45da44f4e",
+      "bytes": 729268
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-equinox-java-launcher-1.8.0/mirror/plugins/org.eclipse.equinox.launcher_1.8.0.v20260804-1928.jar",
+      "sha256": "9b3b1da60813ac5fa09dd5c198f1884be7076d0a5daec54faa3f351a787e34b7",
+      "bytes": 52336
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.compare_3.12.200.v20260814-1536.jar",
+      "sha256": "5b5e9fb1018b714091c11440e61cb943e047399213beaf061ba137e7b3c5e3f6",
+      "bytes": 1048379
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.core.net_1.5.900.v20260507-0401.jar",
+      "sha256": "6e7a8db7d87a44bb35924bb345ddf0d9372413e3fee2edd842b50ed630ec254f",
+      "bytes": 77837
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ltk.core.refactoring_3.16.0.v20260702-0744.jar",
+      "sha256": "fc185dee6c34e594297471ab72f25c1e76deef6dbf674d3c2f0deee3b73e5b7f",
+      "bytes": 381852
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ltk.ui.refactoring_3.14.200.v20260702-0744.jar",
+      "sha256": "98ddbad933126edee515d1d6392d807db60841db90124e552aa8594478a6f93b",
+      "bytes": 551069
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.team.core_3.10.1100.v20260612-1500.jar",
+      "sha256": "4f4d2f9c62c7cca50c1ee07e803858c2f817b2f647449ef4f0549f35d90366ec",
+      "bytes": 416922
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.team.ui_3.12.200.v20260608-1918.jar",
+      "sha256": "1e5f5e8e89979f568342c9daeecd8481e80ddf9931f635e593644d22a9b5f7b5",
+      "bytes": 1656600
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.ide.application_1.6.200.v20260704-1759.jar",
+      "sha256": "15c68952c05f26b7e422f939ec6bc259e4806047e3e159565217aa6a88cac077",
+      "bytes": 153798
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.navigator.resources_3.10.100.v20260421-0620.jar",
+      "sha256": "0d0db3094bbbd891b74c6536db9998044dc68de4fdf55906f1a12759ad564ed9",
+      "bytes": 207423
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.views.properties.tabbed_3.11.0.v20251217-0909.jar",
+      "sha256": "23d3780c940327977798e10d553806db495832583339e6ca9bd8653da25f86a5",
+      "bytes": 114970
+    },
+    {
+      "path": "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.views_3.13.200.v20260703-1200.jar",
+      "sha256": "3d53aead6a31ef9506e8643254177fb2130dcaa5296148718e7df5c3420e68f2",
+      "bytes": 122917
+    },
+    {
+      "path": "S:/gm435314v3/BASE_HYPOTHESIS.json",
+      "sha256": "c5d80baff26f830b6cbd561d94c0c6ff0a54f85cee908405868a6336b846db6e",
+      "bytes": 1079
+    },
+    {
+      "path": "S:/gm435314v3/capture_prior.py",
+      "sha256": "6dcc80caa730abe8195acccbe386164430b2436f0d62e35cfd520fd1709cf76b",
+      "bytes": 1420
+    },
+    {
+      "path": "S:/gm435314v3/FOSS_REUSE_DECISION.tsv",
+      "sha256": "1dad8464d0808c7c3515254dbb58b38a1d5bc3d328a5a9785830bc8204c34645",
+      "bytes": 1628
+    },
+    {
+      "path": "S:/gm435314v3/INITIAL_WINDOWS_PATH_REFUSAL.json",
+      "sha256": "205d625b68dd1ed209ebf595134224ef4588fb7f957ecc9776401f8f6d3eca68",
+      "bytes": 757
+    },
+    {
+      "path": "S:/gm435314v3/materialize_and_build.py",
+      "sha256": "d80ceafc65cdec34dfb23bbfdbdf45b8de959e7303340e652a7b6aacccbd718a",
+      "bytes": 6155
+    },
+    {
+      "path": "S:/gm435314v3/prepare_carrier.py",
+      "sha256": "76cad72d8b4ac5d2b2ed40d741f0a2eed1688cad61cbe0b2c1c24d4e18455929",
+      "bytes": 2202
+    },
+    {
+      "path": "S:/gm435314v3/prepare_recipe.py",
+      "sha256": "dee8ceb3dde3d4704a180633f44b9202e278110abc56b2aa27cb8be42471c427",
+      "bytes": 4578
+    },
+    {
+      "path": "S:/gm435314v3/PRIOR_DEFAULT_REFUSAL.json",
+      "sha256": "266410e6c28acfc049e7bbf6279a9d0d11f656407efc56d748783a59bf5c1fba",
+      "bytes": 621
+    },
+    {
+      "path": "S:/gm435314v3/PRIOR_SOURCE_TREE.json",
+      "sha256": "dcb4494b09dac4a27d0633da54f1390b30669508749af351750d7d00c97e1fc4",
+      "bytes": 1340263
+    },
+    {
+      "path": "S:/grid-mixed-css-interface-stage-20261006/artifacts/org.eclipse.e4.ui.css.swt.theme_0.14.500.v20250213-1508.jar",
+      "sha256": "f2e453a7f085bfe7f7b53ee8eb1f40b7adf7e553303cfdeffd1707153ffbed3c",
+      "bytes": 32285
+    },
+    {
+      "path": "S:/grid-mixed-css-interface-stage-20261006/artifacts/org.eclipse.ui.forms_3.13.400.v20240905-1138.jar",
+      "sha256": "030cb0f20dcc5ed288a8d05b57502dac6dc5062e535071d345896022c5a2d4a3",
+      "bytes": 342945
+    },
+    {
+      "path": "S:/grid-mixed-original435-osgi-proof-20261006/versions/qualified-v3-legacy-javax/runs/first/OSGI_PROOF.json",
+      "sha256": "5ae6b02b48f1fb5c93772f74b43eeebd1e3b2c0fd8d31536f219e1c5e0dc4dd6",
+      "bytes": 2581
+    },
+    {
+      "path": "S:/grid-mixed-original435-terminal-packet-20261006/PACKET_SEAL.json",
+      "sha256": "ac7f27c55dcb767866c116897f0b9452631a65e3b20322e53d000d63266ea438",
+      "bytes": 1266
+    },
+    {
+      "path": "S:/grid-mixed-original435-tycho-route-20261006/versions/qualified-v3-legacy-javax/mixed.target",
+      "sha256": "41304bf6b342d17d3a5517e244a08aaa1c4dd5d1540d9bb26c9ea6075d4076d1",
+      "bytes": 9047
+    },
+    {
+      "path": "S:/grid-mixed-original435-tycho-route-20261006/versions/qualified-v3-legacy-javax/private-p2-metadata/artifacts.xml",
+      "sha256": "023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa",
+      "bytes": 249790
+    },
+    {
+      "path": "S:/grid-mixed-original435-tycho-route-20261006/versions/qualified-v3-legacy-javax/private-p2-metadata/content.xml",
+      "sha256": "73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264",
+      "bytes": 736636
+    },
+    {
+      "path": "S:/grid-mixed-original435-tycho-route-20261006/versions/qualified-v3-legacy-javax/private-p2-metadata/p2.index",
+      "sha256": "965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf",
+      "bytes": 111
+    },
+    {
+      "path": "S:/grid-mixed-original435-tycho-route-20261006/versions/qualified-v3-legacy-javax/runs/first/TARGET_RESULT.json",
+      "sha256": "51e3c84c8eada9c6b0b7e959357d315dcc4751bd0a6b68f536205904496fcf71",
+      "bytes": 605
+    },
+    {
+      "path": "S:/grid-original-target-provider-fit-20261004/artifacts/org.eclipse.e4.ui.css.swt_0.15.500.v20241219-0802.jar",
+      "sha256": "107c880d7a8bfe7203ef867b05a7b9590043b187f9f8b580e1b6542b00f2b76a",
+      "bytes": 211830
+    },
+    {
+      "path": "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.constants_1.18.0.v20241009-1200.jar",
+      "sha256": "4d24a129345e0fa1a1e771d2b2c2fd13900e64f73b4c9b51fe256a536f35465d",
+      "bytes": 18352
+    },
+    {
+      "path": "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.css_1.18.0.v20241009-1200.jar",
+      "sha256": "50a99453c8756a44c4be0ba39c9eac87a450da0a62a6eabb044e7c9e28e70957",
+      "bytes": 366167
+    },
+    {
+      "path": "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.i18n_1.18.0.v20241009-1200.jar",
+      "sha256": "7e42d8054c8bb4443559f12bf25060b1e7f0a5b27722b4646075d92bda6db45a",
+      "bytes": 21660
+    },
+    {
+      "path": "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.util_1.18.0.v20241009-1200.jar",
+      "sha256": "dbb3bbe08a96359d0d78ca7aca872b79fb27588a80b7258585dfd29bf2c882de",
+      "bytes": 145841
+    },
+    {
+      "path": "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.eclipse.orbit.xml-apis-ext_1.0.0.v20240917-0534.jar",
+      "sha256": "c30467f4ca0a27727cc922e437cb90f7156c6c703868e90a24d0ef0fd29cd176",
+      "bytes": 145530
+    },
+    {
+      "path": "S:/grid-original435-jakarta21-stage-20261006/artifacts/jakarta.annotation-api_2.1.1.jar",
+      "sha256": "5f65fdaf424eee2b55e1d882ba9bb376be93fb09b37b808be6e22e8851c909fe",
+      "bytes": 26141
+    },
+    {
+      "path": "S:/grid-original435-javax-annotation-stage-20261006/artifacts/jakarta.annotation-api_1.3.5.jar",
+      "sha256": "85fb03fc054cdf4efca8efd9b6712bbb418e1ab98241c4539c8585bbc23e1b8a",
+      "bytes": 25058
+    },
+    {
+      "path": "S:/grid-original435-workbench-swt-stage-20261006/artifacts/org.eclipse.e4.ui.workbench.swt_0.17.700.v20250123-0706.jar",
+      "sha256": "0a5d7bbe375810531f0bbd69f59a070de47d839f60ae5d95f5aef6a90d07fec4",
+      "bytes": 156573
+    }
+  ],
+  "candidate_runtime_jars": [
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcpg_1.85.0.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcprov_1.85.2.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/bcutil_1.85.0.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.github.weisj.jsvg_2.1.0.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.ibm.icu_78.3.0.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna.platform_5.19.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/com.sun.jna_5.19.1.v20260612-1000.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.annotation-api_3.0.0.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/jakarta.inject.jakarta.inject-api_2.0.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.aries.spifly.dynamic.bundle_1.3.7.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.apache.felix.scr_2.2.18.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.compare.core_3.8.900.v20260731-0809.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.commands_3.13.0.v20260605-1749.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.contenttype_3.9.900.v20260617-0626.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.beans_1.10.500.v20250916-0941.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.observable_1.13.500.v20251103-0735.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding.property_1.10.500.v20250916-0931.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.databinding_1.13.800.v20260531-1157.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.expressions_3.9.700.v20260710-0925.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filebuffers_3.8.600.v20260426-1223.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.filesystem_1.11.500.v20260721-1509.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.jobs_3.15.900.v20260604-0622.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.resources_3.24.100.v20260812-0827.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.core.runtime_3.35.0.v20260623-1631.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.draw2d_3.14.100.202311222042.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.commands_1.1.800.v20260430-1313.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.contexts_1.13.300.v20260605-0605.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.annotations_1.8.500.v20260307-0017.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions.supplier_0.17.1200.v20260605-0608.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di.extensions_0.18.300.v20240413-1529.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.di_1.9.900.v20260731-1431.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.core.services_2.5.400.v20260430-1313.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.emf.xpath_0.6.100.v20251103-0738.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.bindings_0.15.200.v20260616-1114.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.di_1.5.700.v20250917-0901.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.dialogs_1.7.200.v20260612-1449.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.ide_3.18.0.v20251217-1052.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.model.workbench_2.4.900.v20260604-1631.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.services_1.6.700.v20260430-1313.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.widgets_1.5.0.v20251217-1052.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.addons.swt_1.6.100.v20260430-1313.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench.renderers.swt_0.18.100.v20260622-1026.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench3_0.18.0.v20251216-1230.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.e4.ui.workbench_1.18.300.v20260430-1313.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.common_2.46.0.v20260704-1256.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.change_2.18.0.v20260704-1256.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore.xmi_2.41.0.v20260704-1256.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.emf.ecore_2.43.0.v20260704-1256.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.app_1.7.600.v20251211-1038.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.bidi_1.5.400.v20250715-0436.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.common_3.21.0.v20260604-1221.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.event_1.7.300.v20250518-0609.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.artifact.repository_1.5.1000.v20260713-1500.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.core_2.13.300.v20260108-1444.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.engine_2.11.200.v20260710-0940.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata.repository_1.5.800.v20260304-1232.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.metadata_2.9.800.v20260727-1351.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.p2.repository_2.9.800.v20260730-1413.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.preferences_3.12.100.v20251111-0704.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.registry_3.12.600.v20250906-0651.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.equinox.security_1.4.700.v20250622-1644.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.help_3.11.200.v20260710-0925.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jdt.junit.runtime_3.8.100.v20260507-0922.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.databinding_1.16.0.v20251216-1230.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.notifications_0.8.100.v20260326-1607.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface.text_3.31.100.v20260814-0956.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.jface_3.40.0.v20260710-0650.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.osgi_3.24.300.v20260721-1251.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.pde.junit.runtime_3.8.300.v20251120-2029.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.cocoa.macosx.x86_64_3.135.0.v20260819-1952.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.gtk.linux.x86_64_3.135.0.v20260819-1952.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.svg_3.133.100.v20260702-1546.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt.win32.win32.x86_64_3.135.0.v20260819-1952.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swt_3.135.0.v20260819-1952.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.core_4.3.0.202506021445.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.eclipse.finder_4.3.0.202506021445.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.go_4.3.0.202506021445.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.junit4_x_4.3.0.202506021445.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.swtbot.swt.finder_4.3.0.202506021445.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.text_3.14.800.v20260815-0849.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.editors_3.22.100.v20260707-0708.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.ide_3.23.200.v20260822-1631.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.navigator_3.14.200.v20260731-0659.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench.texteditor_3.20.200.v20260728-1331.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui.workbench_3.140.0.v20260810-1402.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.ui_3.209.100.v20260703-0856.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.eclipse.urischeme_1.3.600.v20251023-1158.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.core_2.2.0.v20230809-1000.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest.library_2.2.0.v20230809-1000.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.hamcrest_3.0.0.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.junit_4.13.2.v20240929-1000.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.commons_9.10.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree.analysis_9.10.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.tree_9.10.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm.util_9.10.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.objectweb.asm_9.10.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.component_1.5.1.202212101352.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.event_1.4.1.202109301733.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.service.prefs_1.1.2.202109301733.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.function_1.2.0.202109301733.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.osgi.util.promise_1.3.0.202212101352.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.slf4j.api_1.7.30.v20221112-0806.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-7287eed88567/mirror/plugins/org.tukaani.xz_1.12.0.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.commons-io_2.15.1.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.commons.logging_1.2.0.v20180409-1502.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-batik-20240313/mirror/plugins/org.apache.xmlgraphics_2.9.0.v20230916-1600.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-equinox-java-launcher-1.8.0/mirror/plugins/org.eclipse.equinox.launcher_1.8.0.v20260804-1928.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.compare_3.12.200.v20260814-1536.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.core.net_1.5.900.v20260507-0401.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ltk.core.refactoring_3.16.0.v20260702-0744.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ltk.ui.refactoring_3.14.200.v20260702-0744.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.team.core_3.10.1100.v20260612-1500.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.team.ui_3.12.200.v20260608-1918.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.ide.application_1.6.200.v20260704-1759.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.navigator.resources_3.10.100.v20260421-0620.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.views.properties.tabbed_3.11.0.v20251217-0909.jar",
+    "S:/codex-work/m3-nebula-20261004/nebula-qualified-owner/m3/third_party/p2-ui-runtime-closure-4.41/mirror/plugins/org.eclipse.ui.views_3.13.200.v20260703-1200.jar",
+    "S:/codex-work/m3-nebula-20261004/grid-real-value-closure-20261004/sdk-r4_35/org.eclipse.e4.ui.css.core-0.14.500.jar",
+    "S:/grid-original-target-provider-fit-20261004/artifacts/org.eclipse.e4.ui.css.swt_0.15.500.v20241219-0802.jar",
+    "S:/grid-mixed-css-interface-stage-20261006/artifacts/org.eclipse.e4.ui.css.swt.theme_0.14.500.v20250213-1508.jar",
+    "S:/grid-mixed-css-interface-stage-20261006/artifacts/org.eclipse.ui.forms_3.13.400.v20240905-1138.jar",
+    "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.constants_1.18.0.v20241009-1200.jar",
+    "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.css_1.18.0.v20241009-1200.jar",
+    "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.i18n_1.18.0.v20241009-1200.jar",
+    "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.apache.batik.util_1.18.0.v20241009-1200.jar",
+    "S:/grid-original435-batik-sac-domain-20261004/artifacts/org.eclipse.orbit.xml-apis-ext_1.0.0.v20240917-0534.jar",
+    "S:/grid-original435-workbench-swt-stage-20261006/artifacts/org.eclipse.e4.ui.workbench.swt_0.17.700.v20250123-0706.jar",
+    "S:/grid-original435-jakarta21-stage-20261006/artifacts/jakarta.annotation-api_2.1.1.jar",
+    "S:/grid-original435-javax-annotation-stage-20261006/artifacts/jakarta.annotation-api_1.3.5.jar"
+  ],
+  "existing_shared_maven_mirror": "S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+  "no_binary_or_cache_copy": true
+}

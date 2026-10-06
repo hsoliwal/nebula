@@ -1,0 +1,72 @@
+{
+  "schema": "synexia.bounded-source-only-publication-inventory.v1",
+  "source": "existing frozen v2 + actual root execution evidence",
+  "base_commit": "74f97f3e7feb29239dbc0332e9206586d31f4722",
+  "base_tree": "e4f090291d3101fe1afd5b878d1fde36af9b4598",
+  "base_branch": "m3/sealed-offline-owner-20261004",
+  "head_branch": "codex/m3-nebula-checkout-uri-20261006",
+  "production_source_paths": [
+    {
+      "path": "releng/org.eclipse.nebula.nebula-parent/pom.xml",
+      "bytes": 15519,
+      "sha256": "b37788d645f4184f2d2f7eee491bfa62b46d6ce3d8624a61e6a0ef7b586e43e6",
+      "git_head_present": true,
+      "git_head_sha256": "7598a2672ff8ccdf31589d1528daca3fe22ef5881fc98ea17daff23d5d444d00",
+      "git_status": "modified",
+      "contains_nul": false,
+      "publication_kind": "source_XML_metadata",
+      "mtime_ns": 1791265833461221900
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/artifacts.xml",
+      "bytes": 249790,
+      "sha256": "023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa",
+      "git_head_present": false,
+      "git_head_sha256": null,
+      "git_status": "untracked_qualified_metadata",
+      "contains_nul": false,
+      "publication_kind": "source_XML_metadata",
+      "mtime_ns": 1791251771728998800
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/content.xml",
+      "bytes": 736636,
+      "sha256": "73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264",
+      "git_head_present": false,
+      "git_head_sha256": null,
+      "git_status": "untracked_qualified_metadata",
+      "contains_nul": false,
+      "publication_kind": "source_XML_metadata",
+      "mtime_ns": 1791251771727998900
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/mixed.target",
+      "bytes": 9017,
+      "sha256": "3b04fca214eefb4ca815f3dae60d6cc89af45db9dabb315797ac42fe688bfcd9",
+      "git_head_present": false,
+      "git_head_sha256": null,
+      "git_status": "untracked_qualified_metadata",
+      "contains_nul": false,
+      "publication_kind": "source_XML_metadata",
+      "mtime_ns": 1791265833463251800
+    },
+    {
+      "path": "m3/qualified-mixed-original435-target/p2.index",
+      "bytes": 111,
+      "sha256": "965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf",
+      "git_head_present": false,
+      "git_head_sha256": null,
+      "git_status": "untracked_qualified_metadata",
+      "contains_nul": false,
+      "publication_kind": "p2_repository_index",
+      "mtime_ns": 1791251771728998800
+    }
+  ],
+  "frozen_packet_manifest_rows": 252,
+  "frozen_packet_extra_seal_files": 2,
+  "context_claim": "executed original isolated owner, not new archive commit",
+  "no_new_architecture": true,
+  "E_source_scratch_bound_bytes": 10485760,
+  "E_minimum_free_bytes": 3221225472,
+  "no_owner_or_local_git_writes": true
+}

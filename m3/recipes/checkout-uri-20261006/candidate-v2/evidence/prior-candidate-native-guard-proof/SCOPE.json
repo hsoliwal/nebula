@@ -1,0 +1,9 @@
+{
+  "proof_owner": "IMMUTABLE_PRIOR_CANDIDATE_ONLY",
+  "prior_native_controls": 29,
+  "prior_production_pom_sha256": "3d0d605f4aaf81a473e62111a29763bc748652f345016e9e6bb29218095877f6",
+  "prior_source_seal_sha256": "7f62b10a064adbf2ebbdc29b05a68241eed787a629a10796e7bbac4a02d0c139",
+  "successor_native_controls": "PENDING_ROOT_JVM_RELEASE_THEN_EXECUTION",
+  "successor_current_native_attempt": "JVM_NATIVE_MEMORY_REFUSAL_NOT_GATE_EVIDENCE",
+  "receipt_sha256": "e434fa32dbbaa2933fac72871505f8d186209493b21c38169272acee8c729056"
+}

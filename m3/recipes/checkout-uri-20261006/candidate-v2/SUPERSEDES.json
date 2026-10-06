@@ -1,0 +1,6 @@
+{
+  "immutable_prior_seal_sha256": "7f62b10a064adbf2ebbdc29b05a68241eed787a629a10796e7bbac4a02d0c139",
+  "source_address_images_changed": false,
+  "reason": "Known POM-owned target output directories only; added Java target package is source input.",
+  "prior_owner_apply": false
+}

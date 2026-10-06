@@ -1,0 +1,126 @@
+{
+    "schema":  "read-only-portability-assessment-receipt-v1",
+    "completed_utc":  "2026-10-06T04:29:54.3291896Z",
+    "status":  "ASSESSMENT_COMPLETE_PORTABILITY_NOT_QUALIFIED",
+    "source_head":  "74f97f3e7feb29239dbc0332e9206586d31f4722",
+    "expected_head":  "74f97f3e7feb29239dbc0332e9206586d31f4722",
+    "head_unchanged":  true,
+    "inspected_authorities_unchanged":  true,
+    "existing_owner_source_cache_writes":  0,
+    "copied_owner_cache_files":  0,
+    "proof_helper_executions":  0,
+    "inherited_default_build":  "314 SUCCESS at original owner only",
+    "required_remaining_proof":  "Parent-owned focused root/child/cwd/space URI discriminator and source/target contract preservation",
+    "artifacts":  [
+                      {
+                          "path":  "S:/m3-nebula-portable-recipe-20261006/peer/FOSS_REUSE_DECISION.tsv",
+                          "sha256":  "0fc6b4fd3c2b5c029dffbeb41fa460577caa0c8753c2042d798edab3bcea5107"
+                      },
+                      {
+                          "path":  "S:/m3-nebula-portable-recipe-20261006/peer/INVENTORY.json",
+                          "sha256":  "9c6bc015176956fb9f98a48131131762072fe43e9486f56778339823650c17d8"
+                      },
+                      {
+                          "path":  "S:/m3-nebula-portable-recipe-20261006/peer/ASSESSMENT.md",
+                          "sha256":  "9e473326b0de4a0b1b394f92a319c517024fd5b704a0b9d51526deb5caf70625"
+                      }
+                  ],
+    "checks":  [
+                   {
+                       "path":  "S:/gm435314v3/owner74f/pom.xml",
+                       "expected_sha256":  "3bd1e27703c4994a6687685f7b3546971bf307035b662986fbe6058272d9813c",
+                       "actual_sha256":  "3bd1e27703c4994a6687685f7b3546971bf307035b662986fbe6058272d9813c",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/owner74f/releng/org.eclipse.nebula.nebula-parent/pom.xml",
+                       "expected_sha256":  "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+                       "actual_sha256":  "147d547f7d16fc8c0b07f3dde34cffdda97dacd7c07ee5baee47b9b9ada4c54a",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/owner74f/.mvn/maven.config",
+                       "expected_sha256":  "8146629c3273ea269187d7578082be79bf26d2b2775982bca35b849b31d77465",
+                       "actual_sha256":  "8146629c3273ea269187d7578082be79bf26d2b2775982bca35b849b31d77465",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/owner74f/.mvn/extensions.xml",
+                       "expected_sha256":  "3ae36d2501f3d03e36d9e0739b544861fb950d2e5453b193fc26f011b3978765",
+                       "actual_sha256":  "3ae36d2501f3d03e36d9e0739b544861fb950d2e5453b193fc26f011b3978765",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/mixed.target",
+                       "expected_sha256":  "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+                       "actual_sha256":  "646e2ca561f5249c63b81f935d7246922abe18dc62f5947f48e6fd144ded8a02",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/content.xml",
+                       "expected_sha256":  "73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264",
+                       "actual_sha256":  "73dafb27463a8432fa073d1971f5617b3e3e9e5e5e96f9583596338662fb0264",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/artifacts.xml",
+                       "expected_sha256":  "023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa",
+                       "actual_sha256":  "023e33fa06f042ff6f2ebda78c1899c9936998b54c930dc8a3ccff4a3384e2aa",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/owner74f/m3/qualified-mixed-original435-target/p2.index",
+                       "expected_sha256":  "965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf",
+                       "actual_sha256":  "965bd9e0865acd0853852e5f84792ae967a1b687b3ad6de0cb5aca424c0d73cf",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/BASE_HYPOTHESIS.json",
+                       "expected_sha256":  "c5d80baff26f830b6cbd561d94c0c6ff0a54f85cee908405868a6336b846db6e",
+                       "actual_sha256":  "c5d80baff26f830b6cbd561d94c0c6ff0a54f85cee908405868a6336b846db6e",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/FOSS_REUSE_DECISION.tsv",
+                       "expected_sha256":  "1dad8464d0808c7c3515254dbb58b38a1d5bc3d328a5a9785830bc8204c34645",
+                       "actual_sha256":  "1dad8464d0808c7c3515254dbb58b38a1d5bc3d328a5a9785830bc8204c34645",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/MAVEN_COMMAND.json",
+                       "expected_sha256":  "4dc38a4bad689a477643b900756bb982ee6d9530bcfed45d9563d62bb4cf6345",
+                       "actual_sha256":  "4dc38a4bad689a477643b900756bb982ee6d9530bcfed45d9563d62bb4cf6345",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/MAVEN_RESULT.json",
+                       "expected_sha256":  "8eddf1fca5e6da615ed0bcb4baf94a58a018ee6eea6734e1ab386115278a36e6",
+                       "actual_sha256":  "8eddf1fca5e6da615ed0bcb4baf94a58a018ee6eea6734e1ab386115278a36e6",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/runs/first/DEFAULT_BUILD_COMMAND.json",
+                       "expected_sha256":  "a2a44796aee43b109fe27184a3eb97b6480731dbb3a6ca26d85c21b8aaa1946b",
+                       "actual_sha256":  "a2a44796aee43b109fe27184a3eb97b6480731dbb3a6ca26d85c21b8aaa1946b",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/runs/first/DEFAULT_BUILD_RESULT.json",
+                       "expected_sha256":  "7bff53271bceb6e84bb6b4f8ae1c93ba361fd6b7d458b5b3b1e429f741e2d642",
+                       "actual_sha256":  "7bff53271bceb6e84bb6b4f8ae1c93ba361fd6b7d458b5b3b1e429f741e2d642",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "S:/gm435314v3/runs/first/SOURCE_MATERIALIZATION.json",
+                       "expected_sha256":  "fe60744ed3cffd76767af20d7cb9ea3c8831c8af7c99bb431ab9d52d516d97b3",
+                       "actual_sha256":  "fe60744ed3cffd76767af20d7cb9ea3c8831c8af7c99bb431ab9d52d516d97b3",
+                       "unchanged":  true
+                   },
+                   {
+                       "path":  "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+                       "expected_sha256":  "5f9b8eac523030cd9818daa0eb337635e06137d0da95a66a0a5425d668050e12",
+                       "actual_sha256":  "5f9b8eac523030cd9818daa0eb337635e06137d0da95a66a0a5425d668050e12",
+                       "unchanged":  true
+                   }
+               ]
+}

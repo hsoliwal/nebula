@@ -1,0 +1,122 @@
+{
+  "classification": "ACTIVE_REACTOR_TRANSIENT_MODIFICATION_REFUSAL_CORRECT_TERMINAL_V2_PASS",
+  "existing_source_candidate_v2_publishable_on_unchanged_scope": true,
+  "candidate_v3_required": false,
+  "candidate_v3_generated": false,
+  "donor_installed_lifecycle_reference_evidence": [
+    {
+      "jar": "S:\\codex-work\\m3-nebula-20261004\\nebula-offline-mirror\\repository\\org\\eclipse\\tycho\\tycho-packaging-plugin\\4.0.12\\tycho-packaging-plugin-4.0.12.jar",
+      "jar_sha256": "add170351945b4545b3559cc7e47ee9a42622e758ec35f3e3839fb1a6c4bd8ce",
+      "class": "org/eclipse/tycho/packaging/UpdateConsumerPomMojo.class",
+      "class_sha256": "d355925ae529abf69cbb7ffff9716d34aeb172f5a3f0634941b55895b3c92a27",
+      "inspection": {
+        "literal_generated_names": [
+          ".polyglot.pom.tycho",
+          ".tycho-consumer-pom.xml"
+        ],
+        "methods_with_cleanup_or_write_references": [
+          {
+            "method": "execute",
+            "descriptor": "()V",
+            "code_sha256": "4e7acd0c91006f271f351fef45e06f869279d45909261852c13111986a196ebb",
+            "references": [
+              {
+                "reference": "java/io/File.deleteOnExit()V",
+                "invoke_sequence_offsets": [
+                  519
+                ]
+              },
+              {
+                "reference": "org/apache/maven/model/io/ModelWriter.write(Ljava/io/File;Ljava/util/Map;Lorg/apache/maven/model/Model;)V",
+                "invoke_sequence_offsets": [
+                  656
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "jar": "S:\\codex-work\\m3-nebula-20261004\\nebula-offline-mirror\\repository\\io\\takari\\polyglot\\polyglot-common\\0.8.2\\polyglot-common-0.8.2.jar",
+      "jar_sha256": "188edb3adc718455cbecaa4f5740b4f7d0c405bb5e7504ef610b0efdef8708ac",
+      "class": "org/sonatype/maven/polyglot/TeslaModelProcessor.class",
+      "class_sha256": "1f0148e28d7323eaac49b4ab759f02a1ca9e8becc901801265d78455242091b8",
+      "inspection": {
+        "literal_generated_names": [
+          ".polyglot."
+        ],
+        "methods_with_cleanup_or_write_references": [
+          {
+            "method": "locatePom",
+            "descriptor": "(Ljava/io/File;)Ljava/io/File;",
+            "code_sha256": "4b854b60ebaa8988f96d60e0deddebc4642e4e78cd609ff2e813e0c48520476a",
+            "references": [
+              {
+                "reference": "java/io/File.deleteOnExit()V",
+                "invoke_sequence_offsets": [
+                  116
+                ]
+              }
+            ]
+          },
+          {
+            "method": "read",
+            "descriptor": "(Ljava/io/Reader;Ljava/util/Map;)Lorg/apache/maven/model/Model;",
+            "code_sha256": "0f1b70a71c3308b7c2fb70990b6f49feede7666bbbcdfec132b80ec5fc1b392d",
+            "references": [
+              {
+                "reference": "org/apache/maven/model/io/xpp3/MavenXpp3Writer.<init>()V",
+                "invoke_sequence_offsets": [
+                  138
+                ]
+              },
+              {
+                "reference": "org/apache/maven/model/io/xpp3/MavenXpp3Writer.write(Ljava/io/Writer;Lorg/apache/maven/model/Model;)V",
+                "invoke_sequence_offsets": [
+                  158
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "donor_interpretation": "Installed writer/processor methods reference exact generated names plus File.deleteOnExit; terminal JVM exit removed observed transient files. Constant-pool/code reference inspection is corroborative, not a full decompilation or independent donor behavioral execution.",
+  "terminal_reactor_result": {
+    "state": "PORTABLE_DEFAULT314_PASS",
+    "exit": 0,
+    "elapsed_seconds": 249.01500000000124,
+    "reactor_summary_rows": 314,
+    "success": 314,
+    "failure": 0,
+    "skipped": 0,
+    "log_sha256": "9aaef4ec059540f88c97da1be4036d44c0da6e81d579d0aaaf9ae1907f6d4053",
+    "source_bytes_unchanged_after_runtime": true,
+    "native_UI_effect_admission": false
+  },
+  "terminal_reactor_result_sha256": "8367ad1261cfeba0f07fe7ae67d6d1ed7e5a07604068fde621e808ba1ab63fe9",
+  "terminal_generated_metadata_remaining": [],
+  "terminal_source_context": {
+    "command": [
+      "C:/Program Files/Python312/python.exe",
+      "-I",
+      "-B",
+      "S:\\m3-nebula-portable-recipe-20261006\\candidate-v2\\source_context.py",
+      "S:\\gm435314v3\\portable owner74f"
+    ],
+    "exit": 0,
+    "stdout": "SOURCE_CONTEXT_EXACT paths=5398\n",
+    "stderr": "",
+    "helper_sha256": "b6e7ec5177f8bbfcb31002471d34570a40773d6d24538c01e6746532332115df"
+  },
+  "source_candidate_v2_seal_sha256": "4b34fa65028eb87acd52fd5d411020eca28f0808bd320ad6ef37be9652bce5c1",
+  "source_sealed_files_verified": 252,
+  "mid_reactor_refusal_retained": "S:\\m3-nebula-portable-recipe-20261006\\publication-preflight\\LIVE_REACTOR_GENERATED_OUTPUT_CONTEXT_CHECK.json",
+  "mid_reactor_refusal_is_terminal_build_failure": false,
+  "writes": "THIS_E_ONLY_AUDIT_PACKET",
+  "owner_mutation": false,
+  "S_mutation": false,
+  "JVM_started": false
+}

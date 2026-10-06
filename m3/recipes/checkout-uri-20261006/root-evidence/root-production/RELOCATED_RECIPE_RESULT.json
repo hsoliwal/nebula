@@ -1,0 +1,17 @@
+{
+  "status": "RELOCATED_SPACE_PATH_REAL_NEBULA_RECIPE_CHECK_FIXEDPOINT_PASS",
+  "root": "S:\\gm435314v3\\portable owner74f",
+  "rows": [
+    {
+      "operation": "check",
+      "exit": 0,
+      "log_sha256": "e9da100d260db20f68c0cbe20f290aa703d097103f342ae4f9dc3e5a2cb405a3"
+    },
+    {
+      "operation": "fixedpoint",
+      "exit": 0,
+      "log_sha256": "de93b055dec1fe21f73ed41c4e82b8aca581619fdded0e213fb2c08eeaa5cbed"
+    }
+  ],
+  "full314_runtime": "PENDING"
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "synexia.nebula-additive-publication-source-review.v1",
+  "exact_owner_scope_review": "PASS_FIVE_SOURCE_ONLY_PATHS",
+  "frozen_packet_review": "PASS_252_SEALED_PAYLOAD_PLUS_TWO_SEAL_METADATA_FILES",
+  "transient_generated_metadata_review": "PASS_TERMINAL_CLEANUP_V2_UNCHANGED_NO_CORRECTION_REQUIRED",
+  "pinned_parent_to_preimage_delta": "Three qualified local repository URLs plus explicit target file binding; inherited owner qualification preserved",
+  "preimage_to_postimage_delta": "Three repository URL values plus Batik URL and target location, five encoded checkout URI substitutions total",
+  "proposed_branch": "codex/m3-nebula-checkout-uri-20261006",
+  "proposed_base": "m3/sealed-offline-owner-20261004",
+  "archived_packet_destination": "m3/recipes/checkout-uri-20261006/",
+  "additive_root_evidence": [
+    {
+      "path": "S:\\m3-nebula-portable-recipe-20261006\\full-default-relocated-v2\\PORTABLE_BUILD_COMMAND.json",
+      "bytes": 1942,
+      "sha256": "6e3e47840891df48d11d73eb5ceaaedcc3b66259b74c86516da6c9055c2406d5",
+      "utf8": true,
+      "contains_nul": false,
+      "known_credential_indicator_matches": 0
+    },
+    {
+      "path": "S:\\m3-nebula-portable-recipe-20261006\\full-default-relocated-v2\\PORTABLE_BUILD_RESULT.json",
+      "bytes": 360,
+      "sha256": "8367ad1261cfeba0f07fe7ae67d6d1ed7e5a07604068fde621e808ba1ab63fe9",
+      "utf8": true,
+      "contains_nul": false,
+      "known_credential_indicator_matches": 0
+    },
+    {
+      "path": "S:\\m3-nebula-portable-recipe-20261006\\full-default-relocated-v2\\portable314-maven.log",
+      "bytes": 1339713,
+      "sha256": "9aaef4ec059540f88c97da1be4036d44c0da6e81d579d0aaaf9ae1907f6d4053",
+      "utf8": true,
+      "contains_nul": false,
+      "known_credential_indicator_matches": 0
+    }
+  ],
+  "PR_body_path": "E:\\ws2\\com.synexia\\.m3-publication-audits\\nebula-checkout-uri-20261006\\PR_BODY_CANDIDATE.md",
+  "PR_body_sha256": "e65003f58c60d4e3f0c38af963a6f583001d86babdde80c29331fbe19ceaffe6",
+  "after_commit_recipe_receiving_context_admitted": false,
+  "guards_must_be_preserved": true,
+  "master_integration_admitted": false,
+  "standalone_portable_runtime_admitted": false,
+  "canonical_com_synexia_recipe_and_receipt_publication_complete": false,
+  "remote_mutations": false,
+  "local_git_or_owner_mutation": false,
+  "source_review_conclusion": "Accept pinned-source archival delivery after root names saved commit honestly, preserves exact source/blob custody and records canonical recipe followup; do not admit new receiving context or broader goal completion."
+}

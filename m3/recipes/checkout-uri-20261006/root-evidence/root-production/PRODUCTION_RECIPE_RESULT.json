@@ -1,0 +1,102 @@
+{
+  "status": "ACTUAL_NEBULA_PRODUCTION_TWO_IMAGE_RECIPE_PASS",
+  "rows": [
+    {
+      "name": "check",
+      "exit": 0,
+      "seconds": 3.2659999999996217,
+      "argv": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\candidate-v2\\pom.xml",
+        "-Dm3.root=S:\\gm435314v3\\owner74f",
+        "-Dm3.operation=check",
+        "verify"
+      ],
+      "log_sha256": "e04600e19d2d0a2512236cef0c66cd704981c058086316ad040f0b59ff2a91a9"
+    },
+    {
+      "name": "apply",
+      "exit": 0,
+      "seconds": 3.2340000000003783,
+      "argv": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\candidate-v2\\pom.xml",
+        "-Dm3.root=S:\\gm435314v3\\owner74f",
+        "-Dm3.operation=apply",
+        "verify"
+      ],
+      "log_sha256": "fa707cd415399fbd1301888de2aa4ff1b9d16ddc321212b4b0285b788c87c0f3"
+    },
+    {
+      "name": "verify",
+      "exit": 0,
+      "seconds": 2.79700000000048,
+      "argv": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\candidate-v2\\pom.xml",
+        "-Dm3.root=S:\\gm435314v3\\owner74f",
+        "-Dm3.operation=verify",
+        "verify"
+      ],
+      "log_sha256": "a64cb2b19d2fd05c28e8d86751face0737a99949c12e24be22eb05874e80c514"
+    },
+    {
+      "name": "fixedpoint",
+      "exit": 0,
+      "seconds": 2.890000000001237,
+      "argv": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\candidate-v2\\pom.xml",
+        "-Dm3.root=S:\\gm435314v3\\owner74f",
+        "-Dm3.operation=fixedpoint",
+        "verify"
+      ],
+      "log_sha256": "c164135b4f5aedc200bb80c8a8e3dcf26323515dcac8ff2b3a68e60da4ee53f8"
+    },
+    {
+      "name": "second-apply",
+      "exit": 0,
+      "seconds": 3.32799999999952,
+      "argv": [
+        "C:/ProgramData/chocolatey/lib/maven/apache-maven-3.9.14/bin/mvn.cmd",
+        "-o",
+        "-B",
+        "-ntp",
+        "-Dmaven.repo.local=S:/codex-work/m3-nebula-20261004/nebula-offline-mirror/repository",
+        "-f",
+        "S:\\m3-nebula-portable-recipe-20261006\\candidate-v2\\pom.xml",
+        "-Dm3.root=S:\\gm435314v3\\owner74f",
+        "-Dm3.operation=apply",
+        "verify"
+      ],
+      "log_sha256": "25cb3b6d07f51eb4cceb18d1f04d5f1d12e49c22c3e942652400effdbf4cee86"
+    }
+  ],
+  "original_5398_retained_paths_bytes_and_mtimes_unchanged": true,
+  "two_postimages_exact": true,
+  "verify_fixedpoint_second_apply_bytes_and_mtimes_unchanged": true,
+  "source_only_seal_sha256": "4b34fa65028eb87acd52fd5d411020eca28f0808bd320ad6ef37be9652bce5c1",
+  "full314_runtime": "PENDING",
+  "external129_artifact_mapping_frontier": true,
+  "goal": "ACTIVE"
+}

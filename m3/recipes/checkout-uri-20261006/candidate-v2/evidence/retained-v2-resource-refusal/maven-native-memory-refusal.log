@@ -1,0 +1,15 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------< com.synexia.recipe:nebula-qualified-checkout-uri >----------
+[INFO] Building nebula-qualified-checkout-uri 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- antrun:3.1.0:run (sealed-checkout-uri-source-replay) @ nebula-qualified-checkout-uri ---
+[INFO] Executing tasks
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 3145728 bytes for G1 virtual space
+# An error report file with more information is saved as:
+# E:\ws2\com.synexia\hs_err_pid21508.log
+Java HotSpot(TM) 64-Bit Server VM warning: INFO: os::commit_memory(0x00000000f9400000, 3145728, 0) failed; error='The paging file is too small for this operation to complete' (DOS error/errno=1455)

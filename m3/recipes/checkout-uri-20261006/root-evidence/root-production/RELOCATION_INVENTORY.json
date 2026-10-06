@@ -1,0 +1,14 @@
+{
+  "status": "INVENTORY_BEFORE_ISOLATED_NATIVE_GIT_WORKTREE_RELOCATION",
+  "utc": "2026-10-06T05:52:18.003217+00:00",
+  "workspace": "S:\\gm435314v3",
+  "source": "S:\\gm435314v3\\owner74f",
+  "destination": "S:\\gm435314v3\\portable owner74f",
+  "resolved_paths_verified_inside_explicit_task_workspace": true,
+  "destination_absent": true,
+  "source_paths": 5400,
+  "external_runtime_inputs": 145,
+  "runtime_inputs_inside_source": 0,
+  "git_executable_sha256": "37c5725818d602e951ba2563b870d62763322956b73373da4c33a0b566a80bc9",
+  "method": "git worktree move; same volume native rename, no full clone/cache/source copy"
+}
