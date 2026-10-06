@@ -76,6 +76,11 @@ public final class NebulaM3FileConvergenceRecipeDag {
         return ATOMS;
     }
 
+    /** The proving DAG is mechanically FILE-local regardless of repository size. */
+    public static NebulaM3RefactorScope maximumEditScope() {
+        return NebulaM3RefactorScope.FILE;
+    }
+
     public static Recipe fixedPointRecipe() {
         return NebulaM3ConvergenceCatalog.activate();
     }
