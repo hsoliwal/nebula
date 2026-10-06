@@ -13,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -238,6 +239,12 @@ public class GridVisibleRangeSupport_Test {
 		assertTrue(restored.isIdentity());
 		assertSame(GridTransform.IDENTITY, GridTransform.translate(0, 0));
 		assertSame(GridTransform.IDENTITY, GridTransform.scale(1, 1));
+		try {
+			new GridTransform(Float.NaN, 0, 0, 1, 0, 0);
+			fail("non-finite transform elements must be rejected");
+		} catch (IllegalArgumentException expected) {
+			// expected
+		}
 	}
 
 	@Test

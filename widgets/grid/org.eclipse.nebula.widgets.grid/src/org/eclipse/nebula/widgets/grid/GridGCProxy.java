@@ -25,8 +25,8 @@ import org.eclipse.swt.graphics.Transform;
  * <p>Renderers keep receiving the original GC, but every viewport plane is wrapped
  * in one of these scopes. The proxy snapshots all public mutable graphics state
  * that can leak between Grid renderers and restores it deterministically on close.
- * Native graphics resources remain owned by SWT; only the temporary Transform
- * snapshot is allocated and disposed by this scope.</p>
+ * Native graphics resources remain owned by SWT; only temporary Region and Transform
+ * snapshots are allocated and disposed by this scope.</p>
  */
 final class GridGCProxy implements AutoCloseable {
 
@@ -52,6 +52,9 @@ final class GridGCProxy implements AutoCloseable {
         if (gc == null) {
             throw new IllegalArgumentException("gc");
         }
+		if (gc.isDisposed()) {
+			throw new IllegalArgumentException("disposed GC");
+		}
 		this.gc = gc;
 		this.originalAdvanced = gc.getAdvanced();
 		this.originalClipping = new Region(gc.getDevice());
@@ -77,10 +80,12 @@ final class GridGCProxy implements AutoCloseable {
 	}
 
 	GC gc() {
+		checkOpen();
 		return gc;
 	}
 
 	GridGCProxy clip(Rectangle clipping) {
+		checkOpen();
         if (clipping == null) {
             throw new IllegalArgumentException("clipping");
         }
@@ -96,6 +101,7 @@ final class GridGCProxy implements AutoCloseable {
 	}
 
 	GridGCProxy transform(GridTransform transform) {
+		checkOpen();
         if (transform == null) {
             throw new IllegalArgumentException("transform");
         }
@@ -125,6 +131,7 @@ final class GridGCProxy implements AutoCloseable {
 	}
 
 	GridGCProxy lineAttributes(LineAttributes attributes) {
+		checkOpen();
         if (attributes == null) {
             throw new IllegalArgumentException("attributes");
         }
@@ -133,6 +140,7 @@ final class GridGCProxy implements AutoCloseable {
 	}
 
 	GridGCProxy alpha(int alpha) {
+		checkOpen();
 		gc.setAlpha(alpha);
 		return this;
 	}
@@ -143,6 +151,11 @@ final class GridGCProxy implements AutoCloseable {
             return;
         }
 		closed = true;
+		if (gc.isDisposed()) {
+			originalTransform.dispose();
+			originalClipping.dispose();
+			return;
+		}
 		try {
 			gc.setLineAttributes(originalLineAttributes);
 			if (originalAdvanced) {
@@ -171,6 +184,15 @@ final class GridGCProxy implements AutoCloseable {
 		} finally {
 			originalTransform.dispose();
 			originalClipping.dispose();
+		}
+	}
+
+	private void checkOpen() {
+		if (closed) {
+			throw new IllegalStateException("Grid GC scope closed");
+		}
+		if (gc.isDisposed()) {
+			throw new IllegalStateException("GC disposed while scope active");
 		}
 	}
 

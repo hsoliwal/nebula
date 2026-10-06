@@ -188,6 +188,61 @@ public class GridGCProxy_Test {
 		}
 	}
 
+
+	@Test
+	public void rejectsDisposedGcAndUseAfterClose() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 16, 16);
+		GC disposed = new GC(image);
+		disposed.dispose();
+		try {
+			try {
+				GridGCProxy.wrap(disposed);
+				fail("disposed GC must be rejected");
+			} catch (IllegalArgumentException expected) {
+				// expected
+			}
+
+			GC gc = new GC(image);
+			try {
+				GridGCProxy proxy = GridGCProxy.wrap(gc);
+				proxy.close();
+				proxy.close();
+				try {
+					proxy.gc();
+					fail("closed scope must reject access");
+				} catch (IllegalStateException expected) {
+					// expected
+				}
+				try {
+					proxy.alpha(17);
+					fail("closed scope must reject mutation");
+				} catch (IllegalStateException expected) {
+					// expected
+				}
+			} finally {
+				gc.dispose();
+			}
+		} finally {
+			image.dispose();
+		}
+	}
+
+	@Test
+	public void closeAfterCallerDisposesGcOnlyReleasesScopeSnapshots() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 16, 16);
+		GC gc = new GC(image);
+		GridGCProxy proxy = GridGCProxy.wrap(gc);
+		gc.dispose();
+		try {
+			proxy.close();
+			proxy.close();
+		} finally {
+			image.dispose();
+		}
+	}
+
 	private static float[] elements(GC gc) {
 		Transform transform = new Transform(gc.getDevice());
 		try {
