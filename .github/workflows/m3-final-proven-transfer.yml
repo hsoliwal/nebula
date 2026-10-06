@@ -49,14 +49,23 @@ jobs:
         run: >-
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
-          -Dtest=NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3TransferContractTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
+          -Dtest=NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
           -Dsurefire.failIfNoSpecifiedTests=false
           test
 
-      - name: 4 - Export scheduler-neutral DAG and portable transfer receipt
+      - name: 4 - Enforce 99 percent semantic recipe coverage
+        run: >-
+          mvn -B -ntp -f m3/reactor.xml
+          -pl recipe-first -am
+          -Psemantic-coverage
+          -Dtest=NebulaM3Java21ConvergenceRecipeTest,NebulaM3OrchestratorPlansTest,NebulaM3PureIntConvergenceRecipeTest
+          -Dsurefire.failIfNoSpecifiedTests=false
+          verify
+
+      - name: 5 - Export scheduler-neutral DAG and portable transfer receipt
         run: mvn -B -ntp -f m3/reactor.xml -Pdag-manifest -Ptransfer-contract verify
 
-      - name: 5 - Assert transfer and orchestration authority
+      - name: 6 - Assert transfer and orchestration authority
         shell: bash
         run: |
           set -euo pipefail
@@ -73,22 +82,21 @@ jobs:
           grep -F $'MAVEN_OPENREWRITE\tfalse\tfalse' "$OUT/orchestrators.tsv"
           grep -F $'CAMEL\tfalse\tfalse' "$OUT/orchestrators.tsv"
           grep -F $'AIRFLOW\tfalse\tfalse' "$OUT/orchestrators.tsv"
-          grep -F $'DROOLS\tfalse\tfalse' "$OUT/orchestrators.tsv"
-
-      - name: 6 - Inventory complete Nebula Java checkout
+          grep -F 
+      - name: 7 - Inventory complete Nebula Java checkout
         run: >-
           mvn -B -ntp -f m3/reactor.xml -Pinventory
           -Dm3.nebula.root="$GITHUB_WORKSPACE"
           -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory"
           verify
 
-      - name: 7 - Require zero Java parse failures
+      - name: 8 - Require zero Java parse failures
         run: grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
 
-      - name: 8 - Install the tested Nebula recipe artifact
+      - name: 9 - Install the tested Nebula recipe artifact
         run: mvn -B -ntp -f m3/reactor.xml install
 
-      - name: 9 - Apply FILE-local recipe DAG and capture first candidate
+      - name: 10 - Apply FILE-local recipe DAG and capture first candidate
         shell: bash
         run: |
           set -euo pipefail
@@ -106,7 +114,7 @@ jobs:
           fi
           git diff --binary > "$OUT/first.patch"
 
-      - name: 10 - Prove complete recipe DAG fixed point
+      - name: 11 - Prove complete recipe DAG fixed point
         shell: bash
         run: |
           set -euo pipefail
@@ -116,10 +124,161 @@ jobs:
           git diff --binary > "$OUT/second.patch"
           diff -u "$OUT/first.patch" "$OUT/second.patch"
 
-      - name: 11 - Original Nebula Tycho reactor on transformed candidate tree
+      - name: 12 - Original Nebula Tycho reactor on transformed candidate tree
         run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
-      - name: 12 - Preserve candidate-only authority
+      - name: 13 - Preserve candidate-only authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only --cached)"
+          grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
+          grep -F $'8\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+
+      - name: Upload final proof and transfer artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-final-proven-transfer
+          if-no-files-found: warn
+          path: |
+            m3/recipe-first/target/nebula-m3-transfer/
+            m3/recipe-first/target/nebula-m3-dag/
+            m3/recipe-first/target/nebula-m3-inventory/
+            m3/recipe-first/target/final-transfer-proof/
+            **/target/surefire-reports/
+            m3/convergence/PLAN.tsv
+            .m3/atom-pattern/policy.properties
+DROOLS\tfalse\tfalse' "$OUT/orchestrators.tsv"
+          test -s "$OUT/camel-route.yaml"
+          test -s "$OUT/airflow-dag.py"
+          test -s "$OUT/drools-agenda.drl"
+          test -s "$OUT/orchestrator-plans.sha256"
+          test -s "$DAG/camel-route.yaml"
+          test -s "$DAG/airflow-dag.py"
+          test -s "$DAG/drools-agenda.drl"
+          test -s "$DAG/orchestrator-plans.sha256"
+          PLAN_ROOT="$(tr -d '\r\n' < "$OUT/orchestrator-plans.sha256")"
+          grep -F 
+      - name: 7 - Inventory complete Nebula Java checkout
+        run: >-
+          mvn -B -ntp -f m3/reactor.xml -Pinventory
+          -Dm3.nebula.root="$GITHUB_WORKSPACE"
+          -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory"
+          verify
+
+      - name: 8 - Require zero Java parse failures
+        run: grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
+
+      - name: 9 - Install the tested Nebula recipe artifact
+        run: mvn -B -ntp -f m3/reactor.xml install
+
+      - name: 10 - Apply FILE-local recipe DAG and capture first candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='m3/recipe-first/target/final-transfer-proof'
+          mkdir -p "$OUT"
+          git diff --exit-code
+          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true             org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          git diff --check
+          git diff --name-only | sort > "$OUT/changed-files.txt"
+          test -s "$OUT/changed-files.txt"
+          unexpected="$(grep -Ev '\.java$' "$OUT/changed-files.txt" || true)"
+          if [[ -n "$unexpected" ]]; then
+            printf 'FILE recipe escaped Java source scope:\n%s\n' "$unexpected"
+            exit 1
+          fi
+          git diff --binary > "$OUT/first.patch"
+
+      - name: 11 - Prove complete recipe DAG fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='m3/recipe-first/target/final-transfer-proof'
+          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true             org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          git diff --check
+          git diff --binary > "$OUT/second.patch"
+          diff -u "$OUT/first.patch" "$OUT/second.patch"
+
+      - name: 12 - Original Nebula Tycho reactor on transformed candidate tree
+        run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
+
+      - name: 13 - Preserve candidate-only authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only --cached)"
+          grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
+          grep -F 'java.localCandidatePromotion=false' .m3/atom-pattern/policy.properties
+          grep -F $'8\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+
+      - name: Upload final proof and transfer artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-final-proven-transfer
+          if-no-files-found: warn
+          path: |
+            m3/recipe-first/target/nebula-m3-transfer/
+            m3/recipe-first/target/nebula-m3-dag/
+            m3/recipe-first/target/nebula-m3-inventory/
+            m3/recipe-first/target/final-transfer-proof/
+            **/target/surefire-reports/
+            m3/convergence/PLAN.tsv
+            .m3/atom-pattern/policy.properties
+orchestratorPlansRoot\t'"$PLAN_ROOT" "$OUT/transfer-metadata.tsv"
+          grep -F "$PLAN_ROOT" "$DAG/orchestrator-plans.sha256"
+          grep -F 'direct:nebula-m3-openrewrite-atom' "$OUT/camel-route.yaml"
+          grep -F 'M3RecipeNode' "$OUT/drools-agenda.drl"
+          python3 -m py_compile "$OUT/airflow-dag.py"
+
+      - name: 7 - Inventory complete Nebula Java checkout
+        run: >-
+          mvn -B -ntp -f m3/reactor.xml -Pinventory
+          -Dm3.nebula.root="$GITHUB_WORKSPACE"
+          -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory"
+          verify
+
+      - name: 8 - Require zero Java parse failures
+        run: grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
+
+      - name: 9 - Install the tested Nebula recipe artifact
+        run: mvn -B -ntp -f m3/reactor.xml install
+
+      - name: 10 - Apply FILE-local recipe DAG and capture first candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='m3/recipe-first/target/final-transfer-proof'
+          mkdir -p "$OUT"
+          git diff --exit-code
+          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true             org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          git diff --check
+          git diff --name-only | sort > "$OUT/changed-files.txt"
+          test -s "$OUT/changed-files.txt"
+          unexpected="$(grep -Ev '\.java$' "$OUT/changed-files.txt" || true)"
+          if [[ -n "$unexpected" ]]; then
+            printf 'FILE recipe escaped Java source scope:\n%s\n' "$unexpected"
+            exit 1
+          fi
+          git diff --binary > "$OUT/first.patch"
+
+      - name: 11 - Prove complete recipe DAG fixed point
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='m3/recipe-first/target/final-transfer-proof'
+          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true             org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          git diff --check
+          git diff --binary > "$OUT/second.patch"
+          diff -u "$OUT/first.patch" "$OUT/second.patch"
+
+      - name: 12 - Original Nebula Tycho reactor on transformed candidate tree
+        run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
+
+      - name: 13 - Preserve candidate-only authority
         shell: bash
         run: |
           set -euo pipefail
