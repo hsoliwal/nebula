@@ -22,6 +22,20 @@ INVENTORY
 Every leaf remains a tested OpenRewrite recipe. Maven is the build/proof root. The original Nebula
 Tycho reactor remains the product authority.
 
+## Refactoring authority ladder
+
+Source-changing authority follows the semantic boundary actually crossed:
+
+```text
+FILE -> VISIBILITY -> PACKAGE -> MODULE -> MULTI_MODULE -> LIBRARY_API
+```
+
+Repository size never widens authority. Independent FILE candidates may fan out horizontally.
+PROJECT and REPOSITORY are outer proof/fan-in scopes only; they are not source-mutation authority.
+
+The checked-in policy, Java scope oracle, convergence plan and transfer receipt all carry this same
+order. A target repository must preserve it when adapting the recipe DAG.
+
 ## Orchestration
 
 The same content-addressed DAG may be scheduled by:
