@@ -134,6 +134,42 @@ def verify(base):
     print(e4_attrs + "\tPASS\t" + (sha256(blob(base, e4_attrs)).hexdigest() if e4_attr_rows else "ABSENT") + "\tf5808c25747545be15ebbbbdc23d24355fe66f3b4ee17dabf64cf239466ea7ab")
 
 
+    grid_counter = "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridIdentityOccurrenceTable.java"
+    grid_before, grid_after = blob(base, grid_counter), blob("HEAD", grid_counter)
+    grid_before_sha = "72e66147572991b0fe135d67c406505ca4a6f3fd2831a630e79385f9290d082d"
+    grid_after_sha = "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34"
+    require(sha256(grid_before).hexdigest() in {grid_before_sha, grid_after_sha},
+            "Grid occurrence counter preimage drift")
+    require(sha256(grid_after).hexdigest() == grid_after_sha,
+            "Grid occurrence counter recipe postimage drift")
+    if sha256(grid_before).hexdigest() == grid_after_sha:
+        require(grid_before == grid_after,
+                "already-admitted Grid occurrence counter changed")
+    application = __import__("json").loads(
+        Path("m3/grid-counters/APPLICATION.json").read_text(encoding="utf-8"))
+    require(application.get("canonical_recipe_repository") == "hsoliwal/com.synexia",
+            "Grid occurrence recipe repository drift")
+    require(application.get("canonical_recipe_pr") == 9519,
+            "Grid occurrence recipe PR drift")
+    require(application.get("canonical_recipe") == "com.synexia.m3.NebulaGridCountersV1",
+            "Grid occurrence recipe identity drift")
+    require(application.get("canonical_recipe_commit") == "6ee3502cb206188d44a3325437d10f84786d5478",
+            "Grid occurrence recipe commit drift")
+    require(application.get("canonical_evidence_commit") == "8bc1958d2bf306682e1b487c307e455ac13c0754",
+            "Grid occurrence evidence commit drift")
+    require(application.get("before_blob") == "061faa01d2ff41ec954d1068cd4ebe666338a5cf"
+            and application.get("after_blob") == "35fa69c9309b6f55e8a9e37bee3da8aa15bcdf15",
+            "Grid occurrence Git blob custody drift")
+    require(application.get("before_sha256") == grid_before_sha
+            and application.get("after_sha256") == grid_after_sha,
+            "Grid occurrence SHA-256 custody drift")
+    require(application.get("reusable_recipe_copied_to_target") is False
+            and application.get("promotion_authority") is False,
+            "Grid occurrence receiver exceeded target authority")
+    print(grid_counter + "\tPASS\t" + sha256(grid_before).hexdigest()
+          + "\t" + grid_after_sha + "\tSYNEXIA_RECIPE_9519")
+
+
 if __name__ == "__main__":
     require(len(sys.argv) == 2, "BASE_REVISION required")
     verify(sys.argv[1])

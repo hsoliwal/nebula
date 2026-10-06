@@ -44,7 +44,7 @@ public final class NebulaM3CompileBootstrapRecipe extends Recipe {
         @Override protected String repositoryPath() { return "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3RepositoryReviewRecipe.java"; }
         @Override protected String moduleRelativePath() { return "src/main/java/org/eclipse/nebula/m3/NebulaM3RepositoryReviewRecipe.java"; }
         @Override protected String beforeSha256() { return "1c74e3420b318a7836da9de9f29529ce3f2daf34ea82d5bb018bdc8f6db97037"; }
-        @Override protected String afterSha256() { return "f8e27fcf0e15766ed53fcfcf9747a63d4c21e351b47c8595a2e25eff493ac077"; }
+        @Override protected String afterSha256() { return "dc4e1c354b8eeb5962971aaacbe0b5ee4ec45c3729c3488e840d74290ba5738c"; }
         @Override protected String afterResource() { return RESOURCE + "NebulaM3RepositoryReviewRecipe.java.after.txt"; }
         @Override public String getDisplayName() { return "Restore compiled Nebula ReviewComposition"; }
         @Override public String getDescription() {

@@ -69,8 +69,9 @@ final class NebulaM3CompileBootstrapRecipeTest {
         assertTrue(table.contains("this.authority = \"READ_ONLY_EVIDENCE\";"));
         int inventory = composition.indexOf("new NebulaM3InventoryRecipe()");
         int review = composition.indexOf("new NebulaM3FastSearchReviewRecipe()");
+        int ui = composition.indexOf("new NebulaM3UiBehaviorReviewRecipe()");
         int jni = composition.indexOf("new NebulaM3JavaBeforeJniReviewRecipe()");
-        assertTrue(inventory >= 0 && inventory < review && review < jni);
+        assertTrue(inventory >= 0 && inventory < review && review < ui && ui < jni);
         assertEquals(1, new NebulaM3CompileBootstrapRecipe().maxCycles());
     }
 

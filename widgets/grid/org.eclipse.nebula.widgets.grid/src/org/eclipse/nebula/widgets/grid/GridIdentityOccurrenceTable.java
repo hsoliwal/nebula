@@ -10,16 +10,18 @@
 package org.eclipse.nebula.widgets.grid;
 
 /**
- * Packed identity index: three parallel arrays, never one counter object per key.
+ * Packed identity index: two parallel arrays, never one counter object per key.
  * Hashes only nominate a slot; reference equality is the exact match test.
  * Occupied keys are not removed while counters are consumed, preserving probes.
  * Capacity follows distinct non-null identities, not duplicate occurrence count.
+ * No backing arrays are allocated until a non-null previous identity is added.
  * This table is private to one invocation and is not thread safe.
  */
 final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenceCounter<T> {
-    private Object[] keys = new Object[16];
-    private int[] remaining = new int[16];
-    private int[] matched = new int[16];
+    private Object[] keys;
+    private static final long LOW_WORD = 0xffff_ffffL;
+    // Low word: unmatched previous occurrences. High word: matched occurrences to skip.
+    private long[] counts;
     private int distinct;
     private int nullRemaining;
     private int nullMatched;
@@ -30,9 +32,12 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
             nullRemaining++;
             return;
         }
+        if (keys == null) {
+            grow();
+        }
         int slot = slot(value, keys);
         if (keys[slot] != null) {
-            remaining[slot]++;
+            counts[slot] = (counts[slot] & ~LOW_WORD) | ((counts[slot] + 1L) & LOW_WORD);
             return;
         }
         if (distinct >= keys.length - (keys.length >>> 2)) {
@@ -40,7 +45,7 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
             slot = slot(value, keys);
         }
         keys[slot] = value;
-        remaining[slot] = 1;
+        counts[slot] = 1L;
         distinct++;
     }
 
@@ -54,12 +59,15 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
             nullMatched++;
             return true;
         }
-        int slot = slot(value, keys);
-        if (keys[slot] == null || remaining[slot] == 0) {
+        if (keys == null) {
             return false;
         }
-        remaining[slot]--;
-        matched[slot]++;
+        int slot = slot(value, keys);
+        if (keys[slot] == null || (counts[slot] & LOW_WORD) == 0L) {
+            return false;
+        }
+        // Lower word is nonzero: subtract one there and add one to the high word.
+        counts[slot] += LOW_WORD;
         return true;
     }
 
@@ -72,11 +80,14 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
             nullMatched--;
             return true;
         }
-        int slot = slot(value, keys);
-        if (keys[slot] == null || matched[slot] == 0) {
+        if (keys == null) {
             return false;
         }
-        matched[slot]--;
+        int slot = slot(value, keys);
+        if (keys[slot] == null || (counts[slot] >>> 32) == 0L) {
+            return false;
+        }
+        counts[slot] -= 1L << 32;
         return true;
     }
 
@@ -91,24 +102,21 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
     }
 
     private void grow() {
-        if (keys.length >= (1 << 30)) {
+        if (keys != null && keys.length >= (1 << 30)) {
             throw new OutOfMemoryError("Visible-range identity index capacity exceeded");
         }
-        int capacity = keys.length << 1;
+        int capacity = keys == null ? 16 : keys.length << 1;
         Object[] newKeys = new Object[capacity];
-        int[] newRemaining = new int[capacity];
-        int[] newMatched = new int[capacity];
-        for (int i = 0; i < keys.length; i++) {
+        long[] newCounts = new long[capacity];
+        for (int i = 0; keys != null && i < keys.length; i++) {
             Object key = keys[i];
             if (key != null) {
                 int destination = slot(key, newKeys);
                 newKeys[destination] = key;
-                newRemaining[destination] = remaining[i];
-                newMatched[destination] = matched[i];
+                newCounts[destination] = counts[i];
             }
         }
         keys = newKeys;
-        remaining = newRemaining;
-        matched = newMatched;
+        counts = newCounts;
     }
 }
