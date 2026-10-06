@@ -31,6 +31,11 @@ final class GridTransform {
 	final float dy;
 
 	GridTransform(float m11, float m12, float m21, float m22, float dx, float dy) {
+		if (!Float.isFinite(m11) || !Float.isFinite(m12)
+				|| !Float.isFinite(m21) || !Float.isFinite(m22)
+				|| !Float.isFinite(dx) || !Float.isFinite(dy)) {
+			throw new IllegalArgumentException("non-finite transform element");
+		}
 		this.m11 = m11;
 		this.m12 = m12;
 		this.m21 = m21;
@@ -39,7 +44,7 @@ final class GridTransform {
 		this.dy = dy;
 	}
 
-	static GridTransform translation(float x, float y) {
+	static GridTransform translate(float x, float y) {
         if (x == 0 && y == 0) {
             return IDENTITY;
         }
@@ -53,7 +58,7 @@ final class GridTransform {
 		return new GridTransform(x, 0, 0, y, 0, 0);
 	}
 
-	static GridTransform rotation(float radians) {
+	static GridTransform rotate(float radians) {
 		if (radians == 0f) {
 			return IDENTITY;
 		}
@@ -120,11 +125,17 @@ final class GridTransform {
 
 	boolean isIdentity() {
 		return this == IDENTITY
-				|| (m11 == 1f && m12 == 0f && m21 == 0f && m22 == 1f && dx == 0f && dy == 0f);
+				|| (same(m11, 1f) && same(m12, 0f) && same(m21, 0f)
+				&& same(m22, 1f) && same(dx, 0f) && same(dy, 0f));
 	}
 
 	boolean isTranslationOnly() {
-		return m11 == 1f && m12 == 0f && m21 == 0f && m22 == 1f;
+		return same(m11, 1f) && same(m12, 0f)
+				&& same(m21, 0f) && same(m22, 1f);
+	}
+
+	private static boolean same(float left, float right) {
+		return Float.floatToIntBits(left) == Float.floatToIntBits(right);
 	}
 
 	float[] elements() {
