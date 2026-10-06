@@ -28,6 +28,8 @@ final class NebulaM3Java21ConvergenceRecipeTest {
         assertEquals(NebulaM3DocumentPureIntAtomRecipe.class, children.get(3).getClass());
         assertEquals(NebulaM3SvgLoaderLengthConvergenceRecipe.class, children.get(4).getClass());
         assertEquals(1, recipe.maxCycles());
+        assertTrue(!recipe.getDisplayName().isBlank());
+        assertTrue(!recipe.getDescription().isBlank());
         assertTrue(recipe.getTags().contains("file-local"));
         assertTrue(recipe.getTags().contains("behavior-contract-preserving"));
 
