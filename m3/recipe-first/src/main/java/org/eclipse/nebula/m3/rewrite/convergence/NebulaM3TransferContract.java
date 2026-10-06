@@ -14,7 +14,9 @@ import org.eclipse.nebula.m3.NebulaM3FastSearchReviewPolicy;
  *
  * <p>The contract carries no target-source mutation or promotion authority. It identifies the
  * proven Java 21/OpenRewrite entry point and the exact scheduler-neutral DAG that another
- * repository must adapt through its own inventory/scope recipes before any source change.</p>
+ * repository must adapt through its own inventory/scope recipes before any source change.
+ * Reusable recipe authority lives in hsoliwal/com.synexia; Nebula retains this local implementation
+ * only as a historical proof/application harness and product oracle.</p>
  */
 public final class NebulaM3TransferContract {
     public static final String SCHEMA = "NEBULA_M3_RECIPE_TRANSFER_V1";
@@ -22,6 +24,14 @@ public final class NebulaM3TransferContract {
     public static final String OPENREWRITE_VERSION = "8.90.4";
     public static final String ENTRYPOINT =
             "org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe";
+
+    /** Canonical reusable M3 recipe authority; this repository is a proof/application target. */
+    public static final String CANONICAL_RECIPE_REPOSITORY = "hsoliwal/com.synexia";
+    public static final String CANONICAL_RECIPE_PACKAGE = "com.synexia.rewrite";
+    public static final String CANONICAL_RECIPE_DAG = "com.synexia.rewrite.M3NebulaRecipeDag";
+    public static final String CANONICAL_VIEWPORT_RECIPE =
+            "com.synexia.rewrite.M3NebulaViewportDistillationRecipe";
+    public static final boolean LOCAL_RECIPE_IMPLEMENTATION_AUTHORITY = false;
 
     public record Target(
             String repository,
@@ -72,6 +82,11 @@ public final class NebulaM3TransferContract {
                 javaRelease	%d
                 openRewriteVersion	%s
                 entrypoint	%s
+                canonicalRecipeRepository	%s
+                canonicalRecipePackage	%s
+                canonicalRecipeDag	%s
+                canonicalViewportRecipe	%s
+                localRecipeImplementationAuthority	false
                 dagRoot	%s
                 orchestratorPlansRoot	%s
                 uiBehaviorDonorRoot	%s
@@ -85,6 +100,10 @@ public final class NebulaM3TransferContract {
                         JAVA_RELEASE,
                         OPENREWRITE_VERSION,
                         ENTRYPOINT,
+                        CANONICAL_RECIPE_REPOSITORY,
+                        CANONICAL_RECIPE_PACKAGE,
+                        CANONICAL_RECIPE_DAG,
+                        CANONICAL_VIEWPORT_RECIPE,
                         NebulaM3RecipeDagManifest.root(),
                         NebulaM3OrchestratorPlans.root(),
                         NebulaM3UiBehaviorDonorCatalog.root(),
