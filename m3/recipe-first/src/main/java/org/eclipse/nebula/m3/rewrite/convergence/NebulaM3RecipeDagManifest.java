@@ -114,7 +114,7 @@ public final class NebulaM3RecipeDagManifest {
                             atom.id(),
                             atom.phase(),
                             atom.recipe().getClass().getName(),
-                            "FILE",
+                            NebulaM3FileConvergenceRecipeDag.maximumEditScope().name(),
                             authority,
                             dependencies));
             previous = atom.id();
@@ -136,7 +136,9 @@ public final class NebulaM3RecipeDagManifest {
             } else if (!node.dependsOn().equals(List.of(nodes.get(index - 1).id()))) {
                 throw new IllegalStateException("recipe DAG dependency drift");
             }
-            if (!"FILE".equals(node.scope())) {
+            if (!NebulaM3FileConvergenceRecipeDag.maximumEditScope()
+                    .name()
+                    .equals(node.scope())) {
                 throw new IllegalStateException("Nebula proving DAG must remain FILE scoped");
             }
         }
