@@ -24,20 +24,24 @@ rendering.
 
 The examples are used as behavioral donors only. Their source is not copied.
 
+### SWT naming rule
+
+Donor vocabulary never becomes Nebula product vocabulary. Runtime and recipe-owned names follow SWT: `GC`, `Transform`, `LineAttributes`, `Path`, `Region`, `Canvas`, `Table`, `Tree`, and SWT event names. Swing/AWT names are retained only when identifying donor sources.
+
 ## Distilled patterns
 
 ### 1. Graphics state is a scope, not widget state
 
-SWT GC is final, so Grid must not depend on subclassing it. GridGcProxy wraps the real
-GC and scopes temporary clipping/affine state. Renderers continue to receive the real
+SWT GC is final, so Grid must not depend on subclassing it. GridGCProxy wraps the real
+GC and scopes temporary clipping/transform state. Renderers continue to receive the real
 GC, preserving their API and native semantics.
 
-GridAffineTransform is a resource-free matrix value. It can be retained in logical
+GridTransform is a resource-free matrix value. It can be retained in logical
 paint plans without retaining SWT Transform native resources.
 
 ### 2. Painting is a small dependency DAG
 
-GridPaintDag represents six planes with primitive mask bits:
+GridPaintDAG represents six planes with primitive mask bits:
 
 1. background
 2. scrolling body
@@ -74,13 +78,13 @@ scroll bars.
 
 ### 5. Transform and clip are orthogonal
 
-A paint node may carry an affine transform and a clip. This supports future logical
+A paint plane may carry an SWT-style transform value and a clip. This supports future logical
 origin rendering, frozen overlays, zoom/HiDPI projection and ScrolledComposite-style
 viewport illusions without requiring every renderer to perform scroll subtraction
 itself.
 
 Native Transform use is optional because SWT documents advanced graphics as
-platform-dependent. The pure affine value remains usable even when native transform
+platform-dependent. The pure transform value remains usable even when native transform
 application is not admitted.
 
 
@@ -180,12 +184,12 @@ production replacement.
 
 The first applied slice introduces:
 
-- GridAffineTransform
-- GridGcProxy
-- GridPaintDag
+- GridTransform
+- GridGCProxy
+- GridPaintDAG
 - Grid.onPaint plane admission
 - scoped clipping for fixed-column and insertion-mark passes
-- runtime/pure regression tests for plane admission, affine composition and clip restore
+- runtime/pure regression tests for plane admission, transform composition and clip restore
 
 Further slices can move logical-origin scrolling and renderer-bound projection through
 the same atoms without changing renderer signatures.

@@ -25,7 +25,7 @@ import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Display;
 import org.junit.Test;
 
-public class GridGcProxy_Test {
+public class GridGCProxy_Test {
 
 	@Test
 	public void restoresCompleteMutableGcStateAfterPlanePaint() {
@@ -84,7 +84,7 @@ public class GridGcProxy_Test {
 			Font expectedFont = gc.getFont();
 			float[] expectedTransform = elements(gc);
 
-			try (GridGcProxy ignored = GridGcProxy.wrap(gc)) {
+			try (GridGCProxy ignored = GridGCProxy.wrap(gc)) {
 				gc.setAdvanced(false);
 				gc.setClipping(new Rectangle(20, 20, 5, 5));
 				gc.setLineAttributes(new LineAttributes(
@@ -172,7 +172,7 @@ public class GridGcProxy_Test {
 			original.add(new Rectangle(30, 30, 8, 8));
 			gc.setClipping(original);
 
-			try (GridGcProxy ignored = GridGcProxy.wrap(gc)) {
+			try (GridGCProxy ignored = GridGCProxy.wrap(gc)) {
 				gc.setClipping(new Rectangle(0, 0, 64, 64));
 			}
 
