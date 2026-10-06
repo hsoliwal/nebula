@@ -12,16 +12,16 @@ package org.eclipse.nebula.widgets.grid;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
- * Allocation-free affine value used by Grid paint planning.
+ * Allocation-free SWT-style transform value used by Grid paint planning.
  *
  * <p>The matrix layout matches SWT Transform: m11, m12, m21, m22, dx, dy.
  * It owns no native resource and can therefore be retained in immutable paint
  * plans without coupling logical viewport state to a GC.</p>
  */
-final class GridAffineTransform {
+final class GridTransform {
 
-	static final GridAffineTransform IDENTITY =
-			new GridAffineTransform(1, 0, 0, 1, 0, 0);
+	static final GridTransform IDENTITY =
+			new GridTransform(1, 0, 0, 1, 0, 0);
 
 	final float m11;
 	final float m12;
@@ -30,7 +30,7 @@ final class GridAffineTransform {
 	final float dx;
 	final float dy;
 
-	GridAffineTransform(float m11, float m12, float m21, float m22, float dx, float dy) {
+	GridTransform(float m11, float m12, float m21, float m22, float dx, float dy) {
 		this.m11 = m11;
 		this.m12 = m12;
 		this.m21 = m21;
@@ -39,21 +39,21 @@ final class GridAffineTransform {
 		this.dy = dy;
 	}
 
-	static GridAffineTransform translation(float x, float y) {
+	static GridTransform translation(float x, float y) {
         if (x == 0 && y == 0) {
             return IDENTITY;
         }
-		return new GridAffineTransform(1, 0, 0, 1, x, y);
+		return new GridTransform(1, 0, 0, 1, x, y);
 	}
 
-	static GridAffineTransform scale(float x, float y) {
+	static GridTransform scale(float x, float y) {
         if (x == 1 && y == 1) {
             return IDENTITY;
         }
-		return new GridAffineTransform(x, 0, 0, y, 0, 0);
+		return new GridTransform(x, 0, 0, y, 0, 0);
 	}
 
-	static GridAffineTransform rotation(float radians) {
+	static GridTransform rotation(float radians) {
 		if (radians == 0f) {
 			return IDENTITY;
 		}
@@ -63,24 +63,24 @@ final class GridAffineTransform {
 		if (Math.abs(quadrant) <= 4d && radians == (float)(quadrant * (Math.PI / 2d))) {
 			return switch ((int)quadrant & 3) {
 				case 0 -> IDENTITY;
-				case 1 -> new GridAffineTransform(0, 1, -1, 0, 0, 0);
-				case 2 -> new GridAffineTransform(-1, 0, 0, -1, 0, 0);
-				default -> new GridAffineTransform(0, -1, 1, 0, 0, 0);
+				case 1 -> new GridTransform(0, 1, -1, 0, 0, 0);
+				case 2 -> new GridTransform(-1, 0, 0, -1, 0, 0);
+				default -> new GridTransform(0, -1, 1, 0, 0, 0);
 			};
 		}
 		float sin = (float)Math.sin(radians);
 		float cos = (float)Math.cos(radians);
-		return new GridAffineTransform(cos, sin, -sin, cos, 0, 0);
+		return new GridTransform(cos, sin, -sin, cos, 0, 0);
 	}
 
-	static GridAffineTransform shear(float x, float y) {
+	static GridTransform shear(float x, float y) {
 		if (x == 0f && y == 0f) {
 			return IDENTITY;
 		}
-		return new GridAffineTransform(1, y, x, 1, 0, 0);
+		return new GridTransform(1, y, x, 1, 0, 0);
 	}
 
-	GridAffineTransform then(GridAffineTransform next) {
+	GridTransform then(GridTransform next) {
         if (next == null) {
             throw new IllegalArgumentException("next");
         }
@@ -90,7 +90,7 @@ final class GridAffineTransform {
         if (isIdentity()) {
             return next;
         }
-		return new GridAffineTransform(
+		return new GridTransform(
 				next.m11 * m11 + next.m21 * m12,
 				next.m12 * m11 + next.m22 * m12,
 				next.m11 * m21 + next.m21 * m22,
@@ -103,10 +103,10 @@ final class GridAffineTransform {
 		return m11 * m22 - m21 * m12;
 	}
 
-	GridAffineTransform inverse() {
+	GridTransform inverse() {
 		float determinant = determinant();
 		if (!Float.isFinite(determinant) || determinant == 0f) {
-			throw new IllegalStateException("non-invertible affine transform");
+			throw new IllegalStateException("non-invertible transform");
 		}
 		float inverseDeterminant = 1f / determinant;
 		float i11 = m22 * inverseDeterminant;
@@ -115,7 +115,7 @@ final class GridAffineTransform {
 		float i22 = m11 * inverseDeterminant;
 		float idx = -(i11 * dx + i21 * dy);
 		float idy = -(i12 * dx + i22 * dy);
-		return new GridAffineTransform(i11, i12, i21, i22, idx, idy);
+		return new GridTransform(i11, i12, i21, i22, idx, idy);
 	}
 
 	boolean isIdentity() {

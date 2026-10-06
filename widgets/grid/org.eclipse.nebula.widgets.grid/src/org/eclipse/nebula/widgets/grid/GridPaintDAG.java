@@ -18,7 +18,7 @@ import org.eclipse.swt.graphics.Rectangle;
  * without allocating command objects on every SWT.Paint. The dependency order
  * is background -> body -> fixed overlay -> chrome -> transient overlay.</p>
  */
-final class GridPaintDag {
+final class GridPaintDAG {
 
 	static final int BACKGROUND = 1 << 0;
 	static final int BODY = 1 << 1;
@@ -27,7 +27,7 @@ final class GridPaintDag {
 	static final int FOOTER = 1 << 4;
 	static final int OVERLAY = 1 << 5;
 
-	private GridPaintDag() {
+	private GridPaintDAG() {
 	}
 
 	static int plan(Rectangle clip, Rectangle clientArea, int headerHeight, int footerHeight,

@@ -192,66 +192,66 @@ public class GridVisibleRangeSupport_Test {
 	public void testPaintDagSeparatesHeaderBodyFooterAndFixedPlanes() {
 		Rectangle client = new Rectangle(0, 0, 360, 220);
 
-		int header = GridPaintDag.plan(
+		int header = GridPaintDAG.plan(
 				new Rectangle(0, 0, 360, 20), client, 28, 24, true, true, true, false);
-		assertTrue(GridPaintDag.includes(header, GridPaintDag.BACKGROUND));
-		assertTrue(GridPaintDag.includes(header, GridPaintDag.HEADER));
-		assertTrue(!GridPaintDag.includes(header, GridPaintDag.BODY));
-		assertTrue(!GridPaintDag.includes(header, GridPaintDag.FIXED));
-		assertTrue(!GridPaintDag.includes(header, GridPaintDag.FOOTER));
+		assertTrue(GridPaintDAG.includes(header, GridPaintDAG.BACKGROUND));
+		assertTrue(GridPaintDAG.includes(header, GridPaintDAG.HEADER));
+		assertTrue(!GridPaintDAG.includes(header, GridPaintDAG.BODY));
+		assertTrue(!GridPaintDAG.includes(header, GridPaintDAG.FIXED));
+		assertTrue(!GridPaintDAG.includes(header, GridPaintDAG.FOOTER));
 
-		int body = GridPaintDag.plan(
+		int body = GridPaintDAG.plan(
 				new Rectangle(0, 60, 360, 80), client, 28, 24, true, true, true, false);
-		assertTrue(GridPaintDag.includes(body, GridPaintDag.BODY));
-		assertTrue(GridPaintDag.includes(body, GridPaintDag.FIXED));
-		assertTrue(!GridPaintDag.includes(body, GridPaintDag.HEADER));
-		assertTrue(!GridPaintDag.includes(body, GridPaintDag.FOOTER));
+		assertTrue(GridPaintDAG.includes(body, GridPaintDAG.BODY));
+		assertTrue(GridPaintDAG.includes(body, GridPaintDAG.FIXED));
+		assertTrue(!GridPaintDAG.includes(body, GridPaintDAG.HEADER));
+		assertTrue(!GridPaintDAG.includes(body, GridPaintDAG.FOOTER));
 
-		int footer = GridPaintDag.plan(
+		int footer = GridPaintDAG.plan(
 				new Rectangle(0, 205, 360, 15), client, 28, 24, true, true, true, false);
-		assertTrue(GridPaintDag.includes(footer, GridPaintDag.FOOTER));
-		assertTrue(!GridPaintDag.includes(footer, GridPaintDag.BODY));
+		assertTrue(GridPaintDAG.includes(footer, GridPaintDAG.FOOTER));
+		assertTrue(!GridPaintDAG.includes(footer, GridPaintDAG.BODY));
 
-		assertTrue(GridPaintDag.dependsOn(GridPaintDag.FIXED, GridPaintDag.BODY));
-		assertTrue(GridPaintDag.dependsOn(GridPaintDag.HEADER, GridPaintDag.BACKGROUND));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.FIXED, GridPaintDAG.BODY));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.HEADER, GridPaintDAG.BACKGROUND));
 	}
 
 	@Test
-	public void testAffinePaintAtomComposesWithoutNativeResources() {
-		GridAffineTransform transform = GridAffineTransform.translation(10, 20)
-				.then(GridAffineTransform.scale(2, 3));
+	public void testTransformPaintAtomComposesWithoutNativeResources() {
+		GridTransform transform = GridTransform.translate(10, 20)
+				.then(GridTransform.scale(2, 3));
 		Rectangle mapped = transform.mapBounds(new Rectangle(1, 2, 3, 4));
 		assertEquals(new Rectangle(22, 66, 6, 12), mapped);
 		assertEquals(new Rectangle(1, 2, 3, 4),
-				GridAffineTransform.IDENTITY.mapBounds(new Rectangle(1, 2, 3, 4)));
+				GridTransform.IDENTITY.mapBounds(new Rectangle(1, 2, 3, 4)));
 
-		GridAffineTransform quarterTurn = GridAffineTransform.rotation((float)(Math.PI / 2d));
+		GridTransform quarterTurn = GridTransform.rotate((float)(Math.PI / 2d));
 		assertEquals(new Rectangle(-6, 1, 4, 3),
 				quarterTurn.mapBounds(new Rectangle(1, 2, 3, 4)));
 		assertEquals(1f, quarterTurn.determinant(), 0.0001f);
-		assertTrue(GridAffineTransform.translation(3, 4).isTranslationOnly());
-		assertTrue(!GridAffineTransform.shear(1, 0).isTranslationOnly());
+		assertTrue(GridTransform.translate(3, 4).isTranslationOnly());
+		assertTrue(!GridTransform.shear(1, 0).isTranslationOnly());
 
-		GridAffineTransform composite = GridAffineTransform.translation(40, -10)
-				.then(GridAffineTransform.scale(2, 4));
-		GridAffineTransform restored = composite.then(composite.inverse());
+		GridTransform composite = GridTransform.translate(40, -10)
+				.then(GridTransform.scale(2, 4));
+		GridTransform restored = composite.then(composite.inverse());
 		assertTrue(restored.isIdentity());
-		assertSame(GridAffineTransform.IDENTITY, GridAffineTransform.translation(0, 0));
-		assertSame(GridAffineTransform.IDENTITY, GridAffineTransform.scale(1, 1));
+		assertSame(GridTransform.IDENTITY, GridTransform.translate(0, 0));
+		assertSame(GridTransform.IDENTITY, GridTransform.scale(1, 1));
 	}
 
 	@Test
 	public void testCanonicalQuadrantsDoNotSnapAdjacentAngles() {
 		for (int quadrant = -4; quadrant <= 4; quadrant++) {
 			float radians = (float)(quadrant * (Math.PI / 2d));
-			GridAffineTransform exact = GridAffineTransform.rotation(radians);
+			GridTransform exact = GridTransform.rotate(radians);
 			assertEquals(1f, exact.determinant(), 0f);
 			assertTrue(exact.then(exact.inverse()).isIdentity());
 			if ((quadrant & 3) == 0) {
-				assertSame(GridAffineTransform.IDENTITY, exact);
+				assertSame(GridTransform.IDENTITY, exact);
 			}
 			for (float adjacent : new float[] {Math.nextDown(radians), Math.nextUp(radians)}) {
-				GridAffineTransform ordinary = GridAffineTransform.rotation(adjacent);
+				GridTransform ordinary = GridTransform.rotate(adjacent);
 				assertEquals((float)Math.cos(adjacent), ordinary.m11, 0f);
 				assertEquals((float)Math.sin(adjacent), ordinary.m12, 0f);
 			}
@@ -267,7 +267,7 @@ public class GridVisibleRangeSupport_Test {
 					original.x + 2, original.y + 3,
 					Math.max(1, original.width / 2), Math.max(1, original.height / 2));
 			Rectangle expected = original.intersection(requested);
-			try (GridGcProxy proxy = GridGcProxy.wrap(gc).clip(requested)) {
+			try (GridGCProxy proxy = GridGCProxy.wrap(gc).clip(requested)) {
 				assertEquals(expected, proxy.gc().getClipping());
 			}
 			assertEquals(original, gc.getClipping());
