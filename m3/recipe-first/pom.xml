@@ -16,6 +16,7 @@
     <rewrite.version>8.90.4</rewrite.version>
     <rewrite.maven.plugin.version>6.46.1</rewrite.maven.plugin.version>
     <junit.version>5.14.4</junit.version>
+    <jacoco.version>0.8.15</jacoco.version>
     <m3.nebula.root>${project.basedir}/../..</m3.nebula.root>
     <m3.nebula.out>${project.build.directory}/nebula-m3-inventory</m3.nebula.out>
     <m3.nebula.dag.out>${project.build.directory}/nebula-m3-dag</m3.nebula.dag.out>
@@ -204,6 +205,60 @@
                     <argument>${m3.nebula.transfer.out}</argument>
                   </arguments>
                   <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>semantic-coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <configuration>
+              <includes>
+                <include>org/eclipse/nebula/m3/rewrite/NebulaM3Java21ConvergenceRecipe*</include>
+                <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3AtomizePureIntReturnRecipe*</include>
+                <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PatternizePureIntAtomRecipe*</include>
+                <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3DocumentPureIntAtomRecipe*</include>
+                <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntAtomEligibility*</include>
+                <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntConvergenceRecipe*</include>
+                <include>org/eclipse/nebula/m3/rewrite/convergence/NebulaM3OrchestratorPlans*</include>
+              </includes>
+            </configuration>
+            <executions>
+              <execution>
+                <id>m3-semantic-coverage-agent</id>
+                <goals><goal>prepare-agent</goal></goals>
+              </execution>
+              <execution>
+                <id>m3-semantic-coverage-report</id>
+                <phase>verify</phase>
+                <goals><goal>report</goal></goals>
+              </execution>
+              <execution>
+                <id>m3-semantic-coverage-check</id>
+                <phase>verify</phase>
+                <goals><goal>check</goal></goals>
+                <configuration>
+                  <rules>
+                    <rule>
+                      <element>BUNDLE</element>
+                      <limits>
+                        <limit>
+                          <counter>LINE</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>0.99</minimum>
+                        </limit>
+                      </limits>
+                    </rule>
+                  </rules>
                 </configuration>
               </execution>
             </executions>
