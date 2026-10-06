@@ -224,3 +224,166 @@ This distillation pass is complete when judged against its stated scope:
 
 Future work should extend these owners rather than create parallel viewport, paint-DAG, affine,
 selection or recipe engines.
+
+
+## Final graphics closure — 2026-10-06
+
+The later graphics passes are now part of the same completed distillation rather than separate
+experimental owners.
+
+### Proxy GC + affine + retained DAG
+
+The final rendering split is deliberately three-layered:
+
+1. **Immediate dynamic paint remains the real SWT `GC`.**
+2. **A scoped GC proxy guards mutable native GC state** so one viewport plane/renderer cannot leak
+   clipping, transform, line, alpha, antialias, interpolation, fill-rule, XOR, color, pattern or
+   font state into the next plane.
+3. **Stable paint is retained in the existing primitive paint DAG** using resource-free affine
+   values and primitive geometry/PathData. No second SWT/Nebula scene graph is introduced.
+
+A separate `StrokeDag` is therefore not duplicated inside SWT or Nebula. Synexia retains the
+canonical iterative primitive stroke-DAG/affine algorithm shapes; SWT `ViewportPaintGraph` and
+Nebula `GridPaintDAG` are the toolkit-local retained owners.
+
+This separation keeps native SWT resources callback-local while still allowing transform
+composition, z/dependency ordering, culling and retained replay.
+
+### Final SWT graphics parity
+
+Merged SWT PR #83:
+
+**Distill viewport GC scopes and affine v2 semantics**
+
+- adds `ViewportGcProxy` as a scoped mutable-GC state guard;
+- evolves `ViewportPaintGraph.Affine` with identity/no-op factories, translate/scale/rotate/shear,
+  determinant/inverse and value fast paths;
+- keeps application/widget callbacks on the real SWT GC;
+- keeps stable/frozen decoration in the existing retained viewport DAG.
+
+Merged SWT PR #87:
+
+**Finish SWT viewport affine quadrant and GC restoration proof**
+
+- canonical PI/2 rotations use exact integer matrices;
+- adjacent representable angles stay on ordinary trigonometry;
+- exact non-rectangular Region clipping is restored;
+- foreground/background Pattern and Font state are restored;
+- scope close remains safe after caller-disposed GC.
+
+The source-sealed Synexia recipe custody is:
+
+- #9396 — `swt-viewport-gc-affine-v2`;
+- #9410 — final `swt-viewport-gc-affine-v2-final` bounded-batch repair.
+
+### Final Nebula graphics parity
+
+Merged Nebula PR #68 promoted the Grid graphics atoms to v2.
+
+Merged Nebula PR #70 normalized the public/internal factory vocabulary to SWT-native
+`translate(...)` / `rotate(...)` naming.
+
+Merged Nebula PR #74:
+
+**Finish Grid GC scope and SWT-native affine parity**
+
+Final owners:
+
+- `GridTransform` — finite, resource-free affine value;
+- `GridGCProxy` — scoped mutable SWT-GC state guard;
+- `GridPaintDAG` — retained primitive paint-plane planner;
+- `GridVisibleRangeSupport` — visible-range/viewport delta owner.
+
+The final source-sealed Synexia recipe is merged in PR #9414:
+
+- crate: `nebula-grid-gc-affine-parity-v1`;
+- Maven profile: `m3-nebula-grid-gc-affine-parity`;
+- exact four-target pre/post SHA-256 custody;
+- deterministic replay;
+- fixed point;
+- source-drift refusal;
+- explicit lifecycle/affine semantic proof.
+
+Nebula renderers still receive the real SWT GC. The proxy is a scope, not a renderer replacement.
+
+## Expanded Java2s behavior matrix
+
+The supplied Java2s catalogues remain behavioral/test donors only.
+
+### SWT catalogue
+
+The reviewed SWT catalogue concentrates useful behavior cases around:
+
+- Canvas;
+- Table / TableItem / TableColumn / Table renderer / Table editor / Table events;
+- Tree / TreeItem / Tree editor / Tree events / TreeTable / TreeViewer;
+- ScrolledComposite;
+- ScrollBar and scroll events;
+- StyledText;
+- drag/drop, focus, mouse/key and generic SWT events;
+- SWT/AWT/Swing interop.
+
+These examples are valuable as small compatibility witnesses for event ordering, public item
+identity, scroll semantics, editor placement, header behavior and redraw boundaries.
+
+### SWT 2D Graphics catalogue
+
+The reviewed graphics catalogue isolates:
+
+- GC state;
+- paint callbacks;
+- line/stroke behavior;
+- rectangles/arcs/polygons;
+- Path;
+- text/font/string drawing;
+- Transform;
+- animation;
+- images.
+
+Those categories directly drive the GC-proxy restoration matrix, affine composition/inversion,
+stroke-edge culling, retained PathData, clipping and repaint tests.
+
+### Swing / Swing Event catalogues
+
+Swing is used as an independent architecture/behavior comparator for:
+
+- JTable + JTableHeader + TableModel + renderer/editor separation;
+- JTree + TreeModel + TreePath + renderer/editor + selection/expansion events;
+- JScrollPane/JViewport scrolling;
+- layered/overlay component ordering;
+- model/listener/event separation.
+
+Swing source is not transplanted into SWT/Nebula.
+
+## Challenge-site algorithm donor boundary
+
+LeetCode, HackerRank and GeeksForGeeks remain problem-family catalogues for mechanical algorithm
+review rather than source-copy sources.
+
+For this UI distillation the relevant families are:
+
+- interval merge/intersection -> dirty/visible range composition;
+- sliding window/two pointers -> visible + overscan window maintenance;
+- binary search -> pixel/logical-index lookup;
+- topological sort / DAG traversal -> paint dependency replay;
+- prefix/Fenwick/segment-tree families -> variable-height coordinate indexing only when measured
+  evidence justifies replacing the simpler index;
+- iterative DFS/BFS -> stack-safe topology traversal.
+
+Any accepted reusable algorithm belongs in Synexia's canonical owner and must be applied through
+a Maven/OpenRewrite recipe, not hand-copied into a widget.
+
+## Final saved checkpoint
+
+Qualified Nebula product baseline before this receipt update:
+
+`hsoliwal/nebula@0df4a4aa21fb29205ec0978dc43fb85f8f3c9ec9`
+
+Permanent checkpoint branch:
+
+`m3/ui-distillation-final-20261006`
+
+The final graphics recipe is preserved in Synexia via PR #9414 and its
+`nebula-grid-gc-affine-parity-v1` crate. Future work should branch from the current qualified
+owners and extend those recipes rather than create another viewport, affine, GC proxy, stroke or
+paint-DAG stack.
