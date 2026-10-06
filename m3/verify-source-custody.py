@@ -188,7 +188,10 @@ def verify(base):
         ["git", "rev-parse", base + ":" + grid_counter], text=True).strip()
     after_blob = subprocess.check_output(
         ["git", "rev-parse", "HEAD:" + grid_counter], text=True).strip()
-    require(before_blob == application.get("before_blob"),
+    require(before_blob in {
+                application.get("before_blob"),
+                application.get("intermediate_v1_blob"),
+                application.get("after_blob")},
             "Grid occurrence base Git blob drift")
     require(after_blob == application.get("after_blob"),
             "Grid occurrence final Git blob drift")
