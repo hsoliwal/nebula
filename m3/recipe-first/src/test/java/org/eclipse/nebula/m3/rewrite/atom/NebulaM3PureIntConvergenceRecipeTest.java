@@ -24,6 +24,33 @@ import org.openrewrite.java.JavaParser;
 
 final class NebulaM3PureIntConvergenceRecipeTest {
     @Test
+    void recipeMetadataAndAuthorityAreExplicit() {
+        List<Recipe> recipes =
+                List.of(
+                        new NebulaM3AtomizePureIntReturnRecipe(),
+                        new NebulaM3PatternizePureIntAtomRecipe(),
+                        new NebulaM3DocumentPureIntAtomRecipe(),
+                        new NebulaM3PureIntConvergenceRecipe());
+
+        for (Recipe recipe : recipes) {
+            assertFalse(recipe.getDisplayName().isBlank());
+            assertFalse(recipe.getDescription().isBlank());
+            assertEquals(1, recipe.maxCycles());
+            assertTrue(recipe.getTags().contains("file-local"));
+            assertTrue(recipe.getTags().contains("behavior-contract-preserving"));
+        }
+
+        assertEquals(
+                List.of(
+                        NebulaM3AtomizePureIntReturnRecipe.class,
+                        NebulaM3PatternizePureIntAtomRecipe.class,
+                        NebulaM3DocumentPureIntAtomRecipe.class),
+                new NebulaM3PureIntConvergenceRecipe().getRecipeList().stream()
+                        .map(Object::getClass)
+                        .toList());
+    }
+
+    @Test
     void phasesAreIndependentAndThenConverge() {
         String path = "src/main/java/example/Sample.java";
         String before = """
