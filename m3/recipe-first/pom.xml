@@ -229,7 +229,6 @@
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3DocumentPureIntAtomRecipe*</include>
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntConvergenceRecipe*</include>
                 <include>org/eclipse/nebula/m3/rewrite/convergence/NebulaM3OrchestratorPlans*</include>
-                <include>org/eclipse/nebula/m3/rewrite/convergence/NebulaM3RefactorScope*</include>
               </includes>
             </configuration>
             <executions>
