@@ -8,9 +8,12 @@ ordinal	stage	owner	scope	authority	gate
 6	PATTERNIZE	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate pattern/IOP pass; public contract locked
 7	DOCUMENT	m3/recipe-first:NebulaM3Java21ConvergenceRecipe	FILE	CANDIDATE_ONLY	separate idempotent semantic documentation pass
 8	FILE_FIXED_POINT	m3/recipe-first + CI	FILE	VERIFY_ONLY	second local recipe run leaves the candidate patch byte-identical
-9	PACKAGE_FAN_IN	com.synexia:M3HierarchyRecipe	PACKAGE	VERIFY_ONLY	child receipts only; no implicit promotion
-10	MODULE_FAN_IN	com.synexia:M3BuildTopology	MODULE	VERIFY_ONLY	local Maven modules only; missing/external explicit
-11	PROJECT_FAN_IN	com.synexia:M3HierarchyRecipe	PROJECT	VERIFY_ONLY	child identities/counts/residue retained
-12	REPOSITORY_FAN_IN	com.synexia:M3HierarchyRecipe	REPOSITORY	VERIFY_ONLY	one content-addressed receipt root
-13	ORIGINAL_BUILD	Nebula Tycho	REPOSITORY	VERIFY_ONLY	mvn clean verify
-14	PROMOTION	manual serial review	REPOSITORY	NO_AUTOMATIC_AUTHORITY	all gates pass; source diff independently reviewed
+9	VISIBILITY_FAN_IN	m3/recipe-first:NebulaM3RefactorScope	VISIBILITY	VERIFY_ONLY	accessibility boundary changes require explicit visibility authority; repository size alone never promotes
+10	PACKAGE_FAN_IN	com.synexia:M3HierarchyRecipe	PACKAGE	VERIFY_ONLY	package/default/protected participant relationships only; child receipts retained
+11	MODULE_FAN_IN	com.synexia:M3BuildTopology	MODULE	VERIFY_ONLY	module-local symbol/type/recipe relationships only; missing/external explicit
+12	MULTI_MODULE_FAN_IN	com.synexia:M3BuildTopology	MULTI_MODULE	VERIFY_ONLY	cross-reactor dependencies require explicit multi-module authority and deterministic fan-in
+13	LIBRARY_API_FAN_IN	manual contract review	LIBRARY_API	VERIFY_ONLY	exported API/library contract changes require explicit approval; no automatic promotion
+14	PROJECT_FAN_IN	com.synexia:M3HierarchyRecipe	PROJECT	VERIFY_ONLY	outer proof aggregation only; child identities/counts/residue retained
+15	REPOSITORY_FAN_IN	com.synexia:M3HierarchyRecipe	REPOSITORY	VERIFY_ONLY	outer proof aggregation only; one content-addressed receipt root
+16	ORIGINAL_BUILD	Nebula Tycho	REPOSITORY	VERIFY_ONLY	mvn clean verify
+17	PROMOTION	manual serial review	REPOSITORY	NO_AUTOMATIC_AUTHORITY	all gates pass; source diff independently reviewed
