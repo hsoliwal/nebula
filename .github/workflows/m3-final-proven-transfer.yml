@@ -49,14 +49,23 @@ jobs:
         run: >-
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
-          -Dtest=NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3TransferContractTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
+          -Dtest=NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
           -Dsurefire.failIfNoSpecifiedTests=false
           test
 
-      - name: 4 - Export scheduler-neutral DAG and portable transfer receipt
+      - name: 4 - Enforce 99 percent semantic recipe coverage
+        run: >-
+          mvn -B -ntp -f m3/reactor.xml
+          -pl recipe-first -am
+          -Psemantic-coverage
+          -Dtest=NebulaM3Java21ConvergenceRecipeTest,NebulaM3OrchestratorPlansTest,NebulaM3PureIntConvergenceRecipeTest
+          -Dsurefire.failIfNoSpecifiedTests=false
+          verify
+
+      - name: 5 - Export scheduler-neutral DAG and portable transfer receipt
         run: mvn -B -ntp -f m3/reactor.xml -Pdag-manifest -Ptransfer-contract verify
 
-      - name: 5 - Assert transfer and orchestration authority
+      - name: 6 - Assert transfer and orchestration authority
         shell: bash
         run: |
           set -euo pipefail
@@ -65,6 +74,14 @@ jobs:
           test -s "$OUT/transfer.sha256"
           test -s "$OUT/transfer-dag.tsv"
           test -s "$DAG/recipe-dag.sha256"
+          test -s "$OUT/camel-route.yaml"
+          test -s "$OUT/airflow-dag.py"
+          test -s "$OUT/drools-agenda.drl"
+          test -s "$OUT/orchestrator-plans.sha256"
+          test -s "$DAG/camel-route.yaml"
+          test -s "$DAG/airflow-dag.py"
+          test -s "$DAG/drools-agenda.drl"
+          test -s "$DAG/orchestrator-plans.sha256"
           grep -F $'schema\tNEBULA_M3_RECIPE_TRANSFER_V1' "$OUT/transfer-metadata.tsv"
           grep -F $'javaRelease\t21' "$OUT/transfer-metadata.tsv"
           grep -F $'entrypoint\torg.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' "$OUT/transfer-metadata.tsv"
@@ -74,28 +91,35 @@ jobs:
           grep -F $'CAMEL\tfalse\tfalse' "$OUT/orchestrators.tsv"
           grep -F $'AIRFLOW\tfalse\tfalse' "$OUT/orchestrators.tsv"
           grep -F $'DROOLS\tfalse\tfalse' "$OUT/orchestrators.tsv"
+          PLAN_ROOT="$(tr -d '\r\n' < "$OUT/orchestrator-plans.sha256")"
+          test "$PLAN_ROOT" = "$(tr -d '\r\n' < "$DAG/orchestrator-plans.sha256")"
+          grep -F $'orchestratorPlansRoot\t'"$PLAN_ROOT" "$OUT/transfer-metadata.tsv"
+          grep -F 'direct:nebula-m3-openrewrite-atom' "$OUT/camel-route.yaml"
+          grep -F 'M3RecipeNode' "$OUT/drools-agenda.drl"
+          python3 -m py_compile "$OUT/airflow-dag.py"
 
-      - name: 6 - Inventory complete Nebula Java checkout
+      - name: 7 - Inventory complete Nebula Java checkout
         run: >-
           mvn -B -ntp -f m3/reactor.xml -Pinventory
           -Dm3.nebula.root="$GITHUB_WORKSPACE"
           -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory"
           verify
 
-      - name: 7 - Require zero Java parse failures
+      - name: 8 - Require zero Java parse failures
         run: grep -F $'failureRows\t0' m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv
 
-      - name: 8 - Install the tested Nebula recipe artifact
+      - name: 9 - Install the tested Nebula recipe artifact
         run: mvn -B -ntp -f m3/reactor.xml install
 
-      - name: 9 - Apply FILE-local recipe DAG and capture first candidate
+      - name: 10 - Apply FILE-local recipe DAG and capture first candidate
         shell: bash
         run: |
           set -euo pipefail
           OUT='m3/recipe-first/target/final-transfer-proof'
           mkdir -p "$OUT"
           git diff --exit-code
-          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true             org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true \
+            org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
           git diff --check
           git diff --name-only | sort > "$OUT/changed-files.txt"
           test -s "$OUT/changed-files.txt"
@@ -106,20 +130,21 @@ jobs:
           fi
           git diff --binary > "$OUT/first.patch"
 
-      - name: 10 - Prove complete recipe DAG fixed point
+      - name: 11 - Prove complete recipe DAG fixed point
         shell: bash
         run: |
           set -euo pipefail
           OUT='m3/recipe-first/target/final-transfer-proof'
-          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true             org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          mvn -B -ntp -Pm3-local-file-convergence -DskipMavenParsing=true \
+            org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
           git diff --check
           git diff --binary > "$OUT/second.patch"
           diff -u "$OUT/first.patch" "$OUT/second.patch"
 
-      - name: 11 - Original Nebula Tycho reactor on transformed candidate tree
+      - name: 12 - Original Nebula Tycho reactor on transformed candidate tree
         run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
-      - name: 12 - Preserve candidate-only authority
+      - name: 13 - Preserve candidate-only authority
         shell: bash
         run: |
           set -euo pipefail
@@ -139,6 +164,7 @@ jobs:
             m3/recipe-first/target/nebula-m3-dag/
             m3/recipe-first/target/nebula-m3-inventory/
             m3/recipe-first/target/final-transfer-proof/
+            m3/recipe-first/target/site/jacoco/
             **/target/surefire-reports/
             m3/convergence/PLAN.tsv
             .m3/atom-pattern/policy.properties

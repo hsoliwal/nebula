@@ -40,5 +40,22 @@ public final class NebulaM3RecipeDagManifestCli {
                 output.resolve("orchestrators.tsv"),
                 orchestrators.toString(),
                 StandardCharsets.UTF_8);
+
+        Files.writeString(
+                output.resolve("camel-route.yaml"),
+                NebulaM3OrchestratorPlans.camelYaml(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("airflow-dag.py"),
+                NebulaM3OrchestratorPlans.airflowPython(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("drools-agenda.drl"),
+                NebulaM3OrchestratorPlans.droolsDrl(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("orchestrator-plans.sha256"),
+                NebulaM3OrchestratorPlans.root() + "\n",
+                StandardCharsets.UTF_8);
     }
 }
