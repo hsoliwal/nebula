@@ -33,6 +33,9 @@ final class NebulaM3TransferContractTest {
                                         target.directSourceMutationAuthority()
                                                 || target.promotionAuthority()));
         assertTrue(NebulaM3TransferContract.root().matches("[0-9a-f]{64}"));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains("orchestratorPlansRoot\t" + NebulaM3OrchestratorPlans.root()));
     }
 
     @Test
@@ -88,6 +91,18 @@ final class NebulaM3TransferContractTest {
         assertEquals(
                 NebulaM3TransferContract.orchestratorsTsv(),
                 Files.readString(output.resolve("orchestrators.tsv")));
+        assertEquals(
+                NebulaM3OrchestratorPlans.camelYaml(),
+                Files.readString(output.resolve("camel-route.yaml")));
+        assertEquals(
+                NebulaM3OrchestratorPlans.airflowPython(),
+                Files.readString(output.resolve("airflow-dag.py")));
+        assertEquals(
+                NebulaM3OrchestratorPlans.droolsDrl(),
+                Files.readString(output.resolve("drools-agenda.drl")));
+        assertEquals(
+                NebulaM3OrchestratorPlans.root() + "\n",
+                Files.readString(output.resolve("orchestrator-plans.sha256")));
         assertEquals(
                 NebulaM3TransferContract.root() + "\n",
                 Files.readString(output.resolve("transfer.sha256")));
