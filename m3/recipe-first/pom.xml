@@ -19,6 +19,7 @@
     <m3.nebula.root>${project.basedir}/../..</m3.nebula.root>
     <m3.nebula.out>${project.build.directory}/nebula-m3-inventory</m3.nebula.out>
     <m3.nebula.dag.out>${project.build.directory}/nebula-m3-dag</m3.nebula.dag.out>
+    <m3.nebula.transfer.out>${project.build.directory}/nebula-m3-transfer</m3.nebula.transfer.out>
   </properties>
 
   <dependencies>
@@ -184,6 +185,33 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>transfer-contract</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.5.1</version>
+            <executions>
+              <execution>
+                <id>nebula-m3-transfer-contract</id>
+                <phase>verify</phase>
+                <goals><goal>java</goal></goals>
+                <configuration>
+                  <mainClass>org.eclipse.nebula.m3.rewrite.convergence.NebulaM3TransferContractCli</mainClass>
+                  <arguments>
+                    <argument>${m3.nebula.transfer.out}</argument>
+                  </arguments>
+                  <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <profile>
       <id>a3-mastery</id>
       <build>
