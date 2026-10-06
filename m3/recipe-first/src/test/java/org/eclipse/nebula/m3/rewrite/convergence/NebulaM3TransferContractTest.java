@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Set;
+import org.eclipse.nebula.m3.NebulaM3FastSearchReviewPolicy;
 import org.junit.jupiter.api.Test;
 
 final class NebulaM3TransferContractTest {
@@ -99,6 +100,9 @@ final class NebulaM3TransferContractTest {
                 NebulaM3UiBehaviorDonorCatalog.tsv(),
                 Files.readString(output.resolve("ui-behavior-donors.tsv")));
         assertEquals(
+                NebulaM3FastSearchReviewPolicy.renderTsv(),
+                Files.readString(output.resolve("challenge-donors.tsv")));
+        assertEquals(
                 NebulaM3TransferContract.orchestratorsTsv(),
                 Files.readString(output.resolve("orchestrators.tsv")));
         assertEquals(
@@ -117,4 +121,15 @@ final class NebulaM3TransferContractTest {
                 NebulaM3TransferContract.root() + "\n",
                 Files.readString(output.resolve("transfer.sha256")));
     }
+    private static String sha256(String value) {
+        try {
+            return java.util.HexFormat.of()
+                    .formatHex(
+                            java.security.MessageDigest.getInstance("SHA-256")
+                                    .digest(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException impossible) {
+            throw new AssertionError(impossible);
+        }
+    }
+
 }
