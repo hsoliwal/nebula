@@ -227,7 +227,6 @@
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3AtomizePureIntReturnRecipe*</include>
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PatternizePureIntAtomRecipe*</include>
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3DocumentPureIntAtomRecipe*</include>
-                <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntAtomEligibility*</include>
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntConvergenceRecipe*</include>
                 <include>org/eclipse/nebula/m3/rewrite/convergence/NebulaM3OrchestratorPlans*</include>
               </includes>
