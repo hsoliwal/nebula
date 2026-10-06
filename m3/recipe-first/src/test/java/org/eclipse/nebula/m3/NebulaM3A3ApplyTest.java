@@ -35,7 +35,7 @@ final class NebulaM3A3ApplyTest {
                 NebulaM3A3Apply.run(
                         root,
                         Path.of("m3/recipe-first/target/a3-proof"),
-                        List.of(relative));
+                        List.of(relative), mastery());
 
         assertEquals(1, receipts.size());
         NebulaM3A3Apply.Receipt receipt = receipts.getFirst();
@@ -61,6 +61,12 @@ final class NebulaM3A3ApplyTest {
                                 "m3/recipe-first/target/a3-proof/receipt.tsv"));
         assertTrue(receiptText.contains(relative));
         assertTrue(receiptText.endsWith("\ttrue\ttrue\n"));
+        String masteryText =
+                Files.readString(
+                        root.resolve(
+                                "m3/recipe-first/target/a3-proof/mastery.tsv"));
+        assertTrue(masteryText.contains(NebulaM3MasteryFanIn.SCHEMA));
+        assertTrue(masteryText.contains(mastery().root()));
     }
 
     @Test
@@ -81,7 +87,7 @@ final class NebulaM3A3ApplyTest {
                 NebulaM3A3Apply.run(
                                 root,
                                 Path.of("m3/recipe-first/target/no-change"),
-                                List.of(relative))
+                                List.of(relative), mastery())
                         .getFirst();
 
         assertFalse(receipt.changed());
@@ -107,7 +113,7 @@ final class NebulaM3A3ApplyTest {
                 NebulaM3A3Apply.run(
                         root,
                         Path.of("m3/recipe-first/target/batch"),
-                        List.of(second, first, second));
+                        List.of(second, first, second), mastery());
 
         assertEquals(List.of(first, second), receipts.stream()
                 .map(NebulaM3A3Apply.Receipt::path)
@@ -130,35 +136,39 @@ final class NebulaM3A3ApplyTest {
                         NebulaM3A3Apply.run(
                                 root,
                                 Path.of("widgets/a"),
-                                List.of("widgets/a/src/p/A.java")));
+                                List.of("widgets/a/src/p/A.java"), mastery()));
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
                         NebulaM3A3Apply.run(
                                 root,
                                 Path.of("m3/recipe-first/target/reject-m3"),
-                                List.of("m3/internal/Tool.java")));
+                                List.of("m3/internal/Tool.java"), mastery()));
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
                         NebulaM3A3Apply.run(
                                 root,
                                 Path.of("m3/recipe-first/target/reject-target"),
-                                List.of("target/Generated.java")));
+                                List.of("target/Generated.java"), mastery()));
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
                         NebulaM3A3Apply.run(
                                 root,
                                 Path.of("m3/recipe-first/target/reject-text"),
-                                List.of("widgets/a/src/p/data.txt")));
+                                List.of("widgets/a/src/p/data.txt"), mastery()));
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
                         NebulaM3A3Apply.run(
                                 root,
                                 Path.of("m3/recipe-first/target/reject-parent"),
-                                List.of("../outside.java")));
+                                List.of("../outside.java"), mastery()));
+    }
+
+    private static NebulaM3MasteryFanIn.Receipt mastery() {
+        return NebulaM3MasteryFanInTest.receipt();
     }
 
     private void write(String relative, String content) throws Exception {

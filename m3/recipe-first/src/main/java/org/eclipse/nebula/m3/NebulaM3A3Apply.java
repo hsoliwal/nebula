@@ -57,15 +57,29 @@ public final class NebulaM3A3Apply {
     public static void main(String[] args) throws Exception {
         if (args.length < 3) {
             throw new IllegalArgumentException(
-                    "usage: NebulaM3A3Apply <nebula-root> <output> <source.java>...");
+                    "usage: NebulaM3A3Apply <nebula-root> <output> <source.java>... "
+                            + "[--mastery PATH --mastery-root SHA256]");
         }
         Path root = Path.of(args[0]);
         Path output = Path.of(args[1]);
-        List<String> sources =
-                java.util.Arrays.stream(args)
-                        .skip(2)
-                        .toList();
-        run(root, output, sources);
+        ArrayList<String> sources = new ArrayList<>();
+        Path mastery = null;
+        String masteryRoot = null;
+        for (int index = 2; index < args.length; index++) {
+            String value = args[index];
+            if ("--mastery".equals(value)) {
+                mastery = Path.of(requireArg(args, ++index, value));
+            } else if ("--mastery-root".equals(value)) {
+                masteryRoot = requireArg(args, ++index, value);
+            } else {
+                sources.add(value);
+            }
+        }
+        NebulaM3MasteryFanIn.Receipt receipt =
+                mastery == null && masteryRoot == null
+                        ? systemMastery()
+                        : explicitMastery(mastery, masteryRoot);
+        run(root, output, sources, receipt);
     }
 
     static List<Receipt> run(
@@ -73,8 +87,19 @@ public final class NebulaM3A3Apply {
             Path output,
             List<String> sources)
             throws IOException {
+        return run(repositoryRoot, output, sources, systemMastery());
+    }
+
+    static List<Receipt> run(
+            Path repositoryRoot,
+            Path output,
+            List<String> sources,
+            NebulaM3MasteryFanIn.Receipt mastery)
+            throws IOException {
         Path root = requireDirectory(repositoryRoot, "repositoryRoot");
         Path out = output(root, output);
+        NebulaM3MasteryFanIn.Receipt checkedMastery =
+                Objects.requireNonNull(mastery, "mastery");
         List<String> ordered =
                 Objects.requireNonNull(sources, "sources").stream()
                         .map(value -> text(value, "source"))
@@ -91,7 +116,43 @@ public final class NebulaM3A3Apply {
         }
         receipts.sort(Comparator.comparing(Receipt::path));
         writeReceipt(out.resolve("receipt.tsv"), receipts);
+        NebulaM3MasteryFanIn.writeBinding(out, checkedMastery);
         return List.copyOf(receipts);
+    }
+
+    private static NebulaM3MasteryFanIn.Receipt systemMastery()
+            throws IOException {
+        String receipt =
+                System.getProperty("m3.nebula.mastery.receipt", "").strip();
+        String root =
+                System.getProperty("m3.nebula.mastery.root", "").strip();
+        if (receipt.isEmpty() || root.isEmpty()) {
+            throw new IllegalStateException(
+                    "Nebula A3 mastery receipt required: provide --mastery/--mastery-root "
+                            + "or m3.nebula.mastery.receipt/m3.nebula.mastery.root");
+        }
+        return NebulaM3MasteryFanIn.read(Path.of(receipt), root);
+    }
+
+    private static NebulaM3MasteryFanIn.Receipt explicitMastery(
+            Path receipt,
+            String root)
+            throws IOException {
+        if (receipt == null || root == null || root.isBlank()) {
+            throw new IllegalArgumentException(
+                    "--mastery and --mastery-root must be supplied together");
+        }
+        return NebulaM3MasteryFanIn.read(receipt, root);
+    }
+
+    private static String requireArg(
+            String[] args,
+            int index,
+            String option) {
+        if (index >= args.length) {
+            throw new IllegalArgumentException("missing value for " + option);
+        }
+        return args[index];
     }
 
     private static Receipt applyOne(
