@@ -1,0 +1,9 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.eclipse.nebula.m3.PortableMasteryFanIn
+displayName: Gate Nebula A3 on portable M3 mastery evidence
+description: >-
+  Evolves the existing Nebula A3 materializer from exact reviewed preimages and
+  installs the strict authority-free M3_RECIPE_MASTERY_FANIN_V6 importer.
+recipeList:
+  - org.eclipse.nebula.m3.rewrite.convergence.NebulaM3PortableMasteryFanInRecipe
