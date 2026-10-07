@@ -8,10 +8,10 @@ public final class NebulaM3SecondPassBinding {
     public static final String UPSTREAM_REPOSITORY = "hsoliwal/com.synexia";
     public static final String UPSTREAM_BRANCH = "develop";
     public static final String UPSTREAM_COMMIT =
-            "daaab09a1b91fe8344c1ea97359342b52739bf38";
-    public static final int UPSTREAM_PR = 8925;
+            "1123430085af1ad886a35efb8cd5354709d5bb4f";
+    public static final int UPSTREAM_PR = 8891;
     public static final String RECIPE =
-            "com.synexia.rewrite.M3RepositoryAtomPatternSecondPass";
+            "com.synexia.rewrite.M3AtomPatternSignalChainRecipe";
     public static final String SIGNAL_CHAIN_CLASS =
             "com.synexia.rewrite.M3AtomPatternSignalChainRecipe";
     public static final String CANONICAL_CATALOG =
@@ -19,7 +19,7 @@ public final class NebulaM3SecondPassBinding {
     public static final String STATE_MODE = "SHARED_JVM_COMPOSITE";
     public static final boolean EXTERNAL_LEAF_FAN_OUT = false;
     public static final int PASS_BUDGET = 4;
-    public static final String HOSTED_PROOF = "PENDING_HOSTED_PROOF";
+    public static final String HOSTED_PROOF = "PENDING_CURRENT_NEBULA_REPROOF_20261007";
 
     private NebulaM3SecondPassBinding() {}
 

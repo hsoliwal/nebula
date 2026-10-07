@@ -16,7 +16,7 @@ public final class NebulaM3SecondPassReviewDagBinding {
     public static final String UPSTREAM_REPOSITORY = "hsoliwal/com.synexia";
     public static final String UPSTREAM_BRANCH = "develop";
     public static final String UPSTREAM_COMMIT =
-            "5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f";
+            "e2999c9ac351318b7324639b00eb71f503a7d1cd";
     public static final int UPSTREAM_PR = 8973;
     public static final String PLAN_CLASS =
             "com.synexia.m3.recipe.M3SecondPassReviewDagPlan";
@@ -24,7 +24,7 @@ public final class NebulaM3SecondPassReviewDagBinding {
     public static final String TASK_CRATE =
             "synexia-m3-recipe/task-crates/m3-second-pass-review-dag-20261005.yaml";
     public static final String HOSTED_PROOF =
-            "UPSTREAM_MERGED_ACTIONS_STARTUP_BLOCKED_NO_JOBS";
+            "PENDING_CURRENT_NEBULA_REPROOF_20261007";
 
     public static final List<String> PROFILES =
             List.of(
