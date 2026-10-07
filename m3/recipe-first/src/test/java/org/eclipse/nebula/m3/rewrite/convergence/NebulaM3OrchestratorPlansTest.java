@@ -62,6 +62,19 @@ final class NebulaM3OrchestratorPlansTest {
     }
 
     @Test
+    void digestFailureIsFailClosedWithoutChangingThePublicSchedulerRoot() {
+        ExceptionInInitializerError failure =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        ExceptionInInitializerError.class,
+                        () -> NebulaM3OrchestratorPlans.digest(
+                                "payload",
+                                "M3-NOT-A-MESSAGE-DIGEST"));
+
+        assertTrue(failure.getCause() instanceof java.security.NoSuchAlgorithmException);
+        assertTrue(NebulaM3OrchestratorPlans.root().matches("[0-9a-f]{64}"));
+    }
+
+    @Test
     void schedulerPlanRootIsStableAndBoundToCanonicalDag() {
         assertTrue(NebulaM3OrchestratorPlans.root().matches("[0-9a-f]{64}"));
         assertEquals(NebulaM3OrchestratorPlans.root(), NebulaM3OrchestratorPlans.root());
