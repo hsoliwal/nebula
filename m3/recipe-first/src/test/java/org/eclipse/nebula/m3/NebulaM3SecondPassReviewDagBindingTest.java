@@ -21,7 +21,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
                 "develop",
                 NebulaM3SecondPassReviewDagBinding.UPSTREAM_BRANCH);
         assertEquals(
-                "5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f",
+                "e2999c9ac351318b7324639b00eb71f503a7d1cd",
                 NebulaM3SecondPassReviewDagBinding.UPSTREAM_COMMIT);
         assertEquals(8973, NebulaM3SecondPassReviewDagBinding.UPSTREAM_PR);
         assertEquals(
@@ -44,7 +44,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
         assertFalse(NebulaM3SecondPassReviewDagBinding.nativeExecutionAuthority());
         assertFalse(NebulaM3SecondPassReviewDagBinding.promotionAuthority());
         assertEquals(
-                "UPSTREAM_MERGED_ACTIONS_STARTUP_BLOCKED_NO_JOBS",
+                "PENDING_CURRENT_NEBULA_REPROOF_20261007",
                 NebulaM3SecondPassReviewDagBinding.HOSTED_PROOF);
     }
 
@@ -63,7 +63,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
     @Test
     void runtimeSecondPassBindingRemainsIndependent() {
         assertEquals(
-                "com.synexia.rewrite.M3RepositoryAtomPatternSecondPass",
+                "com.synexia.rewrite.M3AtomPatternSignalChainRecipe",
                 NebulaM3SecondPassBinding.RECIPE);
         assertEquals(4, NebulaM3SecondPassBinding.PASS_BUDGET);
         assertFalse(NebulaM3SecondPassBinding.sourceMutationAuthority());
