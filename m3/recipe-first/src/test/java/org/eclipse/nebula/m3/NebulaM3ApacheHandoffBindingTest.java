@@ -19,7 +19,7 @@ final class NebulaM3ApacheHandoffBindingTest {
         assertTrue(NebulaM3ApacheHandoffBinding.MANIFEST_SHA256.matches("[0-9a-f]{64}"));
         assertEquals("Apache-2.0", NebulaM3ApacheHandoffBinding.SOURCE_LICENSE);
         assertEquals("EPL-2.0", NebulaM3ApacheHandoffBinding.NEBULA_RETAINED_LICENSE);
-        assertEquals("PENDING_SYNEXIA_MERGE", NebulaM3ApacheHandoffBinding.DELIVERY_STATE);
+        assertEquals("SOURCE_MERGED_PROOF_PENDING", NebulaM3ApacheHandoffBinding.DELIVERY_STATE);
         assertEquals("QUALIFICATION_INPUT_ONLY", NebulaM3ApacheHandoffBinding.TARGET_ROLE);
         assertFalse(NebulaM3ApacheHandoffBinding.automaticApplication());
         assertFalse(NebulaM3ApacheHandoffBinding.targetRelicenseAuthority());
