@@ -18,9 +18,9 @@ final class NebulaM3SecondPassBindingTest {
                 "develop",
                 NebulaM3SecondPassBinding.UPSTREAM_BRANCH);
         assertTrue(NebulaM3SecondPassBinding.UPSTREAM_COMMIT.matches("[0-9a-f]{40}"));
-        assertEquals(8925, NebulaM3SecondPassBinding.UPSTREAM_PR);
+        assertEquals(8891, NebulaM3SecondPassBinding.UPSTREAM_PR);
         assertEquals(
-                "com.synexia.rewrite.M3RepositoryAtomPatternSecondPass",
+                "com.synexia.rewrite.M3AtomPatternSignalChainRecipe",
                 NebulaM3SecondPassBinding.RECIPE);
         assertEquals(4, NebulaM3SecondPassBinding.PASS_BUDGET);
         assertEquals(
@@ -31,7 +31,7 @@ final class NebulaM3SecondPassBindingTest {
                 NebulaM3SecondPassBinding.CANONICAL_CATALOG);
         assertEquals("SHARED_JVM_COMPOSITE", NebulaM3SecondPassBinding.STATE_MODE);
         assertFalse(NebulaM3SecondPassBinding.EXTERNAL_LEAF_FAN_OUT);
-        assertEquals("PENDING_HOSTED_PROOF", NebulaM3SecondPassBinding.HOSTED_PROOF);
+        assertEquals("PENDING_CURRENT_NEBULA_REPROOF_20261007", NebulaM3SecondPassBinding.HOSTED_PROOF);
         assertFalse(NebulaM3SecondPassBinding.sourceMutationAuthority());
         assertFalse(NebulaM3SecondPassBinding.replacementAuthority());
         assertFalse(NebulaM3SecondPassBinding.promotionAuthority());
