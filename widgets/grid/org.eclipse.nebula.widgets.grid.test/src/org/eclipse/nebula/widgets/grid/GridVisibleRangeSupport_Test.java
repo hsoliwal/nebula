@@ -16,6 +16,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,9 +27,6 @@ import org.eclipse.nebula.widgets.grid.Grid.GridVisibleRange;
 import org.eclipse.nebula.widgets.grid.GridVisibleRangeSupport.RangeChangedEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.ScrollBar;
@@ -45,6 +43,8 @@ import org.junit.Test;
  * differences do not make the test pixel-fragile.</p>
  */
 public class GridVisibleRangeSupport_Test {
+
+	private static final String NATIVE_CAPTURE = "nebula.grid.viewport.screenshots.native";
 
 	private Display display;
 	private Shell shell;
@@ -175,6 +175,55 @@ public class GridVisibleRangeSupport_Test {
             }
 		}
 		return false;
+	}
+
+
+	@Test
+	public void testVirtualMillionRowScreenshotsStaySparseAcrossDistantViewport() throws Exception {
+		grid.dispose();
+		grid = new Grid(shell, SWT.VIRTUAL | SWT.CHECK | SWT.MULTI
+				| SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+		grid.setHeaderVisible(true);
+		grid.setLinesVisible(true);
+		grid.setSize(760, 420);
+
+		columns = new GridColumn[4];
+		for (int column = 0; column < columns.length; column++) {
+			GridColumn gridColumn = columns[column] = new GridColumn(grid, SWT.NONE);
+			gridColumn.setText("column " + column);
+			gridColumn.setWidth(220);
+		}
+
+		final int[] setDataCount = { 0 };
+		grid.addListener(SWT.SetData, event -> {
+			setDataCount[0]++;
+			GridItem item = (GridItem)event.item;
+			int row = event.index;
+			item.setText(0, "row " + row);
+			item.setText(1, "group " + (row >>> 10));
+			item.setText(2, "hex " + Integer.toHexString(row));
+			item.setText(3, "mask " + (row & 63));
+			if ((row & 31) == 0) {
+				item.setChecked(true);
+			}
+		});
+
+		grid.setItemCount(1_000_000);
+		flushPaint();
+		assertEquals(1_000_000, grid.getItemCount());
+		assertTrue("top viewport must keep million-row facade residency bounded",
+				grid.virtualMaterializedItemCount() < 256);
+		snapshot("05-virtual-million-top");
+
+		grid.setTopIndex(500_000);
+		grid.setSelection(500_000, 500_002);
+		flushPaint();
+		assertTrue("distant scroll must reach the logical midpoint", grid.getTopIndex() >= 500_000);
+		assertTrue("distant viewport must keep million-row facade residency bounded",
+				grid.virtualMaterializedItemCount() < 256);
+		assertTrue("visible data demand must stay far below logical row count",
+				setDataCount[0] < 1_000);
+		snapshot("06-virtual-million-middle");
 	}
 
 	@Test
@@ -341,21 +390,65 @@ public class GridVisibleRangeSupport_Test {
 		}
 	}
 
+
 	private void snapshot(String name) throws IOException {
-		int width = Math.max(1, grid.getSize().x);
-		int height = Math.max(1, grid.getSize().y);
-		Image image = new Image(display, width, height);
-		GC gc = new GC(grid);
-		try {
-			gc.copyArea(image, 0, 0);
-			ImageLoader loader = new ImageLoader();
-			loader.data = new ImageData[] { image.getImageData() };
-			Path directory = Path.of("target", "m3-visible-range-screenshots");
-			Files.createDirectories(directory);
-			loader.save(directory.resolve(name + ".png").toString(), SWT.IMAGE_PNG);
-		} finally {
-			gc.dispose();
-			image.dispose();
+		Path directory = Path.of("target", "m3-visible-range-screenshots");
+		Files.createDirectories(directory);
+		Path png = directory.resolve(name + ".png");
+		GridSwtScreenshotCapture.Result capture =
+				GridSwtScreenshotCapture.captureControl(grid, png);
+
+		GridVisibleRange visible = grid.getVisibleRange();
+		StringBuilder evidence = new StringBuilder(512);
+		evidence.append("scenario=").append(name).append('\n');
+		evidence.append("platform=").append(SWT.getPlatform()).append('\n');
+		evidence.append("logicalRows=").append(grid.getItemCount()).append('\n');
+		evidence.append("materializedItems=")
+				.append(grid.virtualMaterializedItemCount()).append('\n');
+		evidence.append("topIndex=").append(grid.getTopIndex()).append('\n');
+		evidence.append("visibleRows=").append(visible.getItems().length).append('\n');
+		evidence.append("visibleColumns=").append(visible.getColumns().length).append('\n');
+		evidence.append("selectionCount=").append(grid.getSelectionCount()).append('\n');
+		evidence.append("captureMethod=").append(capture.method()).append('\n');
+		evidence.append("screenshot=").append(capture.path().getFileName()).append('\n');
+		evidence.append("screenshot.sha256=").append(capture.sha256()).append('\n');
+		appendScrollBarEvidence(evidence, "h", grid.getHorizontalBar());
+		appendScrollBarEvidence(evidence, "v", grid.getVerticalBar());
+
+		if (Boolean.getBoolean(NATIVE_CAPTURE)) {
+			Path nativePng = directory.resolve(name + "-native.png");
+			try {
+				GridSwtScreenshotCapture.Result nativeCapture =
+						GridSwtScreenshotCapture.captureNativeShell(grid, nativePng);
+				evidence.append("nativeScreenshot=")
+						.append(nativeCapture.path().getFileName()).append('\n');
+				evidence.append("nativeScreenshot.captureMethod=")
+						.append(nativeCapture.method()).append('\n');
+				evidence.append("nativeScreenshot.sha256=")
+						.append(nativeCapture.sha256()).append('\n');
+			} catch (RuntimeException | IOException unavailable) {
+				evidence.append("nativeScreenshot.error=")
+						.append(unavailable.getClass().getName())
+						.append(": ").append(String.valueOf(unavailable.getMessage()))
+						.append('\n');
+			}
 		}
+
+		Files.writeString(
+				directory.resolve(name + ".txt"), evidence, StandardCharsets.UTF_8);
 	}
+
+	private static void appendScrollBarEvidence(
+			StringBuilder evidence, String prefix, ScrollBar bar) {
+		if (bar == null || bar.isDisposed()) {
+			evidence.append(prefix).append(".scrollbar=<none>\n");
+			return;
+		}
+		evidence.append(prefix).append(".selection=").append(bar.getSelection()).append('\n');
+		evidence.append(prefix).append(".minimum=").append(bar.getMinimum()).append('\n');
+		evidence.append(prefix).append(".maximum=").append(bar.getMaximum()).append('\n');
+		evidence.append(prefix).append(".thumb=").append(bar.getThumb()).append('\n');
+		evidence.append(prefix).append(".visible=").append(bar.getVisible()).append('\n');
+	}
+
 }
