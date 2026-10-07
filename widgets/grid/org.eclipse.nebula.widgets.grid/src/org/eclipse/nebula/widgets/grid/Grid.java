@@ -2061,6 +2061,13 @@ public class Grid extends Canvas {
 	 */
 	public GridItem[] getItems() {
 		checkWidget();
+		if (items instanceof GridVirtualItemList) {
+			final GridItem[] result = new GridItem[items.size()];
+			for (int i = 0; i < result.length; i++) {
+				result[i] = items.get(i);
+			}
+			return result;
+		}
 		return items.toArray(new GridItem[items.size()]);
 	}
 
@@ -2301,7 +2308,7 @@ public class Grid extends Canvas {
 	 */
 	public int getRootItemCount() {
 		checkWidget();
-		return rootItems.size();
+		return usesSparseVirtualItems() ? items.size() : rootItems.size();
 	}
 
 	/**
@@ -2324,7 +2331,9 @@ public class Grid extends Canvas {
 	 */
 	public GridItem[] getRootItems() {
 		checkWidget();
-
+		if (usesSparseVirtualItems()) {
+			return getItems();
+		}
 		return rootItems.toArray(new GridItem[rootItems.size()]);
 	}
 
@@ -2336,11 +2345,12 @@ public class Grid extends Canvas {
 	 */
 	public GridItem getRootItem(final int index) {
 		checkWidget();
-
+		if (usesSparseVirtualItems()) {
+			return getItem(index);
+		}
 		if (index < 0 || index >= rootItems.size()) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
-
 		return rootItems.get(index);
 	}
 
@@ -9658,20 +9668,43 @@ public class Grid extends Canvas {
 	 */
 	public void setItemCount(int count) {
 		checkWidget();
-		setRedraw(false);
-		if (count < 0) {
-			count = 0;
+		count = Math.max(0, count);
+
+		if (usesSparseVirtualItems()) {
+			setRedraw(false);
+			try {
+				final GridVirtualItemList sparse = sparseVirtualItems();
+				final int oldCount = sparse.size();
+				final List<GridItem> removed = sparse.setLogicalSize(count);
+				for (final GridItem removedItem : removed) {
+					selectedItems.remove(removedItem);
+					if (focusItem == removedItem) {
+						focusItem = null;
+					}
+					removedItem.disposeOnly();
+				}
+				selectedCells.removeIf(cell -> cell.y >= count);
+				selectedCellsBeforeRangeSelect.removeIf(cell -> cell.y >= count);
+				currentVisibleItems = count;
+				if (oldCount != count && !disposing) {
+					updateColumnSelection();
+				}
+				scrollValuesObsolete = true;
+				topIndex = -1;
+				bottomIndex = -1;
+			} finally {
+				setRedraw(true);
+			}
+			return;
 		}
 
+		setRedraw(false);
 		if (count < items.size()) {
-
 			selectedCells.clear();
 			for (int i = items.size() - 1; i >= count; i--) {
 				final GridItem removed = items.remove(i);
 				rootItems.remove(i);
-
 				selectedItems.remove(removed);
-
 				if (removed.isVisible()) {
 					currentVisibleItems--;
 				}
@@ -9684,7 +9717,6 @@ public class Grid extends Canvas {
 			topIndex = -1;
 			bottomIndex = -1;
 		}
-
 		while (count > items.size()) {
 			new GridItem(this, SWT.NONE);
 		}
