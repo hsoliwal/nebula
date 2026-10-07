@@ -68,8 +68,8 @@ jobs:
           set -euo pipefail
           test -n "${GH_TOKEN:-}" || { echo "M3_SYNEXIA_TOKEN is required for hosted DAG proof"; exit 1; }
           gh repo clone hsoliwal/com.synexia "$RUNNER_TEMP/com.synexia"
-          git -C "$RUNNER_TEMP/com.synexia" checkout --detach 5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f
-          test "$(git -C "$RUNNER_TEMP/com.synexia" rev-parse HEAD)" = 5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f
+          git -C "$RUNNER_TEMP/com.synexia" checkout --detach e2999c9ac351318b7324639b00eb71f503a7d1cd
+          test "$(git -C "$RUNNER_TEMP/com.synexia" rev-parse HEAD)" = e2999c9ac351318b7324639b00eb71f503a7d1cd
 
       - name: Prove saved second-pass review DAG
         working-directory: ${{ runner.temp }}/com.synexia
@@ -126,8 +126,8 @@ jobs:
           set -euo pipefail
           test -n "${GH_TOKEN:-}" || { echo "M3_SYNEXIA_TOKEN is required for hosted DAG proof"; exit 1; }
           gh repo clone hsoliwal/com.synexia "$RUNNER_TEMP/com.synexia"
-          git -C "$RUNNER_TEMP/com.synexia" checkout --detach 5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f
-          test "$(git -C "$RUNNER_TEMP/com.synexia" rev-parse HEAD)" = 5369fdc8c076b998b0dd39c7c67c85d11a4b2d8f
+          git -C "$RUNNER_TEMP/com.synexia" checkout --detach e2999c9ac351318b7324639b00eb71f503a7d1cd
+          test "$(git -C "$RUNNER_TEMP/com.synexia" rev-parse HEAD)" = e2999c9ac351318b7324639b00eb71f503a7d1cd
           (
             cd "$RUNNER_TEMP/com.synexia"
             ./mvnw -B -ntp -pl synexia-openrewrite-recipes -am -DskipTests install
@@ -147,14 +147,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F $'4\tSECOND_PASS_REVIEW_DAG' m3/convergence/PLAN.tsv
-          grep -F $'8\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
+          grep -F $'5\tSECOND_PASS_REVIEW_DAG' m3/convergence/PLAN.tsv
+          grep -F $'9\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'java.secondPassReviewDagMutation=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReviewDagSemanticEquivalence=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReviewDagReplacement=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReviewDagNativeExecution=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReviewDagPromotion=false' .m3/atom-pattern/policy.properties
-          grep -F 'java.secondPassReviewDagHostedProof=UPSTREAM_MERGED_ACTIONS_STARTUP_BLOCKED_NO_JOBS' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassReviewDagHostedProof=PENDING_CURRENT_NEBULA_REPROOF_20261007' .m3/atom-pattern/policy.properties
 
       - name: Upload OpenRewrite evidence
         if: always()
