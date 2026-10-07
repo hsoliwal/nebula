@@ -12,7 +12,7 @@ package org.eclipse.nebula.widgets.grid;
 import org.eclipse.swt.graphics.LineAttributes;
 
 /**
- * Primitive graphics-state transition planner used by {@link GridGCProxy}.
+ * Primitive graphics-state transition planner used by {@code GridGCProxy}.
  *
  * <p>The DAG is deliberately allocation-light: stroke and alpha nodes are
  * retained as semantic state, and repeated requests collapse to the same node

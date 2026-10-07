@@ -132,3 +132,12 @@ does not prove all native allocations, and this Grid lane does not qualify all N
 JFace adapters, other platforms or repository-wide M3 convergence. Preserve the original Tycho
 reactor as product authority. Recipe, seals and evidence remain canonical in
 `hsoliwal/com.synexia`, crate `nebula-screen-qualification-20261007`.
+
+### Hosted ECJ Javadoc visibility gate
+
+The ordinary Tycho build enforces the Grid bundle's existing JDT Javadoc settings.
+Package-private helper names in prose use `{@code ...}` when a protected-visibility
+link would be rejected. Keep `invalidJavadoc=error` and all visibility checks enabled.
+The first hosted run of the native qualification change failed at `GridGCStateDAG`
+before tests; retain that diagnostic in the canonical successor recipe rather than
+claiming the earlier javac-only compile qualified the entire Tycho reactor.
