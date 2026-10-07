@@ -253,7 +253,7 @@ public class Grid extends Canvas {
 	/**
 	 * All items in the table, not just root items.
 	 */
-	private final List<GridItem> items = new ArrayList<>();
+	private final List<GridItem> items;
 
 	/**
 	 * All root items.
@@ -828,6 +828,9 @@ public class Grid extends Canvas {
 	public Grid(final DataVisualizer dataVisualizer, final Composite parent, final int style) {
 		super(parent, checkStyle(style));
 
+		this.items = (getStyle() & SWT.VIRTUAL) != 0
+				? new GridVirtualItemList(this)
+				: new ArrayList<>();
 		this.dataVisualizer = dataVisualizer;
 
 		// initialize drag & drop support
@@ -8117,6 +8120,47 @@ public class Grid extends Canvas {
 	 * to the table. This method will ensure that the first column of the table
 	 * always has a checkbox when SWT.CHECK is given to the table.
 	 */
+	private boolean usesSparseVirtualItems() {
+		return items instanceof GridVirtualItemList && !isTree;
+	}
+
+	private GridVirtualItemList sparseVirtualItems() {
+		return (GridVirtualItemList) items;
+	}
+
+	GridItem materializeVirtualItem(final int index) {
+		return new GridItem(this, SWT.NONE, index, true);
+	}
+
+	void initializeVirtualItemFacade(final GridItem item) {
+		item.initializeHeight(itemHeight);
+		item.setHasSetData(false);
+	}
+
+	int virtualMaterializedItemCount() {
+		return items instanceof GridVirtualItemList
+				? ((GridVirtualItemList) items).materializedCount()
+				: items.size();
+	}
+
+	private Iterable<GridItem> materializedItems() {
+		return items instanceof GridVirtualItemList
+				? ((GridVirtualItemList) items).materializedSnapshot()
+				: items;
+	}
+
+	private void materializeVirtualTableForTree() {
+		if (!(items instanceof GridVirtualItemList)) {
+			return;
+		}
+		final GridVirtualItemList sparse = (GridVirtualItemList) items;
+		sparse.materializeAll();
+		rootItems.clear();
+		for (int i = 0; i < sparse.size(); i++) {
+			rootItems.add(sparse.get(i));
+		}
+	}
+
 	private void updatePrimaryCheckColumn() {
 		if ((getStyle() & SWT.CHECK) == SWT.CHECK) {
 			boolean firstCol = true;
