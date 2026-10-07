@@ -205,6 +205,25 @@ public class GridItem extends Item {
 	}
 
 	/**
+	 * Creates a facade for an already-existing logical SWT.VIRTUAL row.
+	 *
+	 * <p>This constructor deliberately does not insert a new logical coordinate.
+	 * It is used only by {@link GridVirtualItemList} when indexed API/paint access
+	 * first touches a cold row.</p>
+	 */
+	GridItem(Grid parent, int style, int index, boolean materializedVirtualFacade) {
+		super(parent, style, index);
+		this.parent = parent;
+		if (!materializedVirtualFacade) {
+			row = parent.newItem(this, index, true);
+			parent.newRootItem(this, index);
+		} else {
+			row = index;
+			parent.initializeVirtualItemFacade(this);
+		}
+	}
+
+	/**
 	 * @return grid row index
 	 */
 	public int getRowIndex() {

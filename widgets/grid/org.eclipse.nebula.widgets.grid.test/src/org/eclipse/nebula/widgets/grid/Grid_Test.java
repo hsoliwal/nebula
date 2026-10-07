@@ -130,6 +130,59 @@ public class Grid_Test {
   }
 
   @Test
+  public void testVirtualMillionRowsRemainSparseAndStable() {
+    grid.dispose();
+    grid = new Grid( shell, SWT.VIRTUAL );
+
+    final int[] setDataCount = { 0 };
+    final int[] lastSetDataIndex = { -1 };
+    grid.addListener( SWT.SetData, event -> {
+      setDataCount[ 0 ]++;
+      lastSetDataIndex[ 0 ] = event.index;
+      ( ( GridItem )event.item ).setText( "row " + event.index );
+    } );
+
+    grid.setItemCount( 1_000_000 );
+    assertEquals( 1_000_000, grid.getItemCount() );
+    assertEquals( 1_000_000, grid.getRootItemCount() );
+    assertEquals( 0, grid.virtualMaterializedItemCount() );
+
+    GridItem last = grid.getItem( 999_999 );
+    assertSame( last, grid.getItem( 999_999 ) );
+    assertEquals( 1, grid.virtualMaterializedItemCount() );
+    assertEquals( "facade access must not request model data", 0, setDataCount[ 0 ] );
+
+    assertEquals( "row 999999", last.getText() );
+    assertEquals( 1, setDataCount[ 0 ] );
+    assertEquals( 999_999, lastSetDataIndex[ 0 ] );
+
+    GridItem inserted = new GridItem( grid, SWT.NONE, 3 );
+    assertEquals( 1_000_001, grid.getItemCount() );
+    assertEquals( 1_000_000, last.getRowIndex() );
+    assertSame( last, grid.getItem( 1_000_000 ) );
+
+    inserted.dispose();
+    assertEquals( 1_000_000, grid.getItemCount() );
+    assertEquals( 999_999, last.getRowIndex() );
+    assertSame( last, grid.getItem( 999_999 ) );
+
+    grid.setItemCount( 10 );
+    assertEquals( 10, grid.getItemCount() );
+    assertTrue( "shrinking logical extent must dispose exposed facades outside the range", last.isDisposed() );
+    assertTrue( grid.virtualMaterializedItemCount() <= 1 );
+
+    grid.setItemCount( 1_000_000 );
+    assertEquals( 0, grid.virtualMaterializedItemCount() );
+    grid.remove( 500_000 );
+    assertEquals( 999_999, grid.getItemCount() );
+    assertEquals( 0, grid.virtualMaterializedItemCount() );
+
+    grid.removeAll();
+    assertEquals( 0, grid.getItemCount() );
+    assertEquals( 0, grid.virtualMaterializedItemCount() );
+  }
+
+  @Test
   public void testGetRootItemCount() {
     createGridItems( grid, 5, 1 );
     assertEquals( 5, grid.getRootItemCount() );

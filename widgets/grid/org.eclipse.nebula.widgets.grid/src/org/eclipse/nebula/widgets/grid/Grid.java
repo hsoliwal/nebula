@@ -253,7 +253,7 @@ public class Grid extends Canvas {
 	/**
 	 * All items in the table, not just root items.
 	 */
-	private final List<GridItem> items = new ArrayList<>();
+	private final List<GridItem> items;
 
 	/**
 	 * All root items.
@@ -828,6 +828,9 @@ public class Grid extends Canvas {
 	public Grid(final DataVisualizer dataVisualizer, final Composite parent, final int style) {
 		super(parent, checkStyle(style));
 
+		this.items = (getStyle() & SWT.VIRTUAL) != 0
+				? new GridVirtualItemList(this)
+				: new ArrayList<>();
 		this.dataVisualizer = dataVisualizer;
 
 		// initialize drag & drop support
@@ -1985,7 +1988,7 @@ public class Grid extends Canvas {
 		}
 		itemHeight = height;
 		userModifiedItemHeight = true;
-		for (final GridItem item : items) {
+		for (final GridItem item : materializedItems()) {
 			item.setHeight(height);
 		}
 		hasDifferingHeights = false;
@@ -2058,6 +2061,13 @@ public class Grid extends Canvas {
 	 */
 	public GridItem[] getItems() {
 		checkWidget();
+		if (items instanceof GridVirtualItemList) {
+			final GridItem[] result = new GridItem[items.size()];
+			for (int i = 0; i < result.length; i++) {
+				result[i] = items.get(i);
+			}
+			return result;
+		}
 		return items.toArray(new GridItem[items.size()]);
 	}
 
@@ -2298,7 +2308,7 @@ public class Grid extends Canvas {
 	 */
 	public int getRootItemCount() {
 		checkWidget();
-		return rootItems.size();
+		return usesSparseVirtualItems() ? items.size() : rootItems.size();
 	}
 
 	/**
@@ -2321,7 +2331,9 @@ public class Grid extends Canvas {
 	 */
 	public GridItem[] getRootItems() {
 		checkWidget();
-
+		if (usesSparseVirtualItems()) {
+			return getItems();
+		}
 		return rootItems.toArray(new GridItem[rootItems.size()]);
 	}
 
@@ -2333,11 +2345,12 @@ public class Grid extends Canvas {
 	 */
 	public GridItem getRootItem(final int index) {
 		checkWidget();
-
+		if (usesSparseVirtualItems()) {
+			return getItem(index);
+		}
 		if (index < 0 || index >= rootItems.size()) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
-
 		return rootItems.get(index);
 	}
 
@@ -3154,8 +3167,21 @@ public class Grid extends Canvas {
 		if (index < 0 || index > items.size() - 1) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
-		final GridItem item = items.get(index);
-		item.dispose();
+		if (usesSparseVirtualItems()) {
+			final GridVirtualItemList sparse = sparseVirtualItems();
+			final GridItem item = sparse.getMaterialized(index);
+			if (item != null) {
+				item.dispose();
+			} else {
+				sparse.remove(index);
+				currentVisibleItems--;
+				scrollValuesObsolete = true;
+				topIndex = -1;
+				bottomIndex = -1;
+			}
+		} else {
+			items.get(index).dispose();
+		}
 		redraw();
 	}
 
@@ -3183,13 +3209,11 @@ public class Grid extends Canvas {
 	 */
 	public void remove(final int start, final int end) {
 		checkWidget();
-
+		if (start < 0 || end < start || end >= items.size()) {
+			SWT.error(SWT.ERROR_INVALID_RANGE);
+		}
 		for (int i = end; i >= start; i--) {
-			if (i < 0 || i > items.size() - 1) {
-				SWT.error(SWT.ERROR_INVALID_RANGE);
-			}
-			final GridItem item = items.get(i);
-			item.dispose();
+			remove(i);
 		}
 		redraw();
 	}
@@ -3223,19 +3247,32 @@ public class Grid extends Canvas {
 		if (indices == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
-
-		final GridItem[] removeThese = new GridItem[indices.length];
-		for (int i = 0; i < indices.length; i++) {
-			final int j = indices[i];
-			if (j < items.size() && j >= 0) {
-				removeThese[i] = items.get(j);
-			} else {
+		for (final int index : indices) {
+			if (index < 0 || index >= items.size()) {
 				SWT.error(SWT.ERROR_INVALID_RANGE);
 			}
-
 		}
-		for (final GridItem item : removeThese) {
-			item.dispose();
+
+		if (usesSparseVirtualItems()) {
+			final int[] sorted = indices.clone();
+			Arrays.sort(sorted);
+			int previous = Integer.MIN_VALUE;
+			for (int i = sorted.length - 1; i >= 0; i--) {
+				final int index = sorted[i];
+				if (index == previous) {
+					continue;
+				}
+				remove(index);
+				previous = index;
+			}
+		} else {
+			final GridItem[] removeThese = new GridItem[indices.length];
+			for (int i = 0; i < indices.length; i++) {
+				removeThese[i] = items.get(indices[i]);
+			}
+			for (final GridItem item : removeThese) {
+				item.dispose();
+			}
 		}
 		redraw();
 	}
@@ -3257,9 +3294,12 @@ public class Grid extends Canvas {
 	@Deprecated
 	public void removeAll() {
 		checkWidget();
-
-		while (items.size() > 0) {
-			items.get(0).dispose();
+		if (usesSparseVirtualItems()) {
+			disposeSparseVirtualItems();
+		} else {
+			while (items.size() > 0) {
+				items.get(0).dispose();
+			}
 		}
 		deselectAll();
 		redraw();
@@ -3271,11 +3311,15 @@ public class Grid extends Canvas {
 	public void disposeAllItems() {
 		checkWidget();
 
-		final GridItem[] items = getItems();
-		for (final GridItem gridItem : items) {
-			gridItem.disposeOnly();
+		if (usesSparseVirtualItems()) {
+			disposeSparseVirtualItems();
+		} else {
+			final GridItem[] items = getItems();
+			for (final GridItem gridItem : items) {
+				gridItem.disposeOnly();
+			}
+			clearItems();
 		}
-		clearItems();
 		scrollValuesObsolete = true;
 		topIndex = -1;
 		bottomIndex = -1;
@@ -4146,9 +4190,15 @@ public class Grid extends Canvas {
 
 		int vScrollAmount = 0;
 
-		for (int i = 0; i < index; i++) {
-			if (items.get(i).isVisible()) {
-				vScrollAmount++;
+		if (usesSparseVirtualItems()) {
+			// Flat virtual rows are logically visible until the Grid enters tree mode.
+			// Their scrollbar coordinate is therefore the logical row index itself.
+			vScrollAmount = index;
+		} else {
+			for (int i = 0; i < index; i++) {
+				if (items.get(i).isVisible()) {
+					vScrollAmount++;
+				}
 			}
 		}
 
@@ -6665,7 +6715,7 @@ public class Grid extends Canvas {
 
 		cellHeaderSelectionBackground.dispose();
 
-		for (final GridItem item : items) {
+		for (final GridItem item : materializedItems()) {
 			item.dispose();
 		}
 
@@ -8040,7 +8090,7 @@ public class Grid extends Canvas {
 
 		updatePrimaryCheckColumn();
 
-		for (final GridItem item : items) {
+		for (final GridItem item : materializedItems()) {
 			item.columnAdded(index);
 		}
 
@@ -8117,6 +8167,64 @@ public class Grid extends Canvas {
 	 * to the table. This method will ensure that the first column of the table
 	 * always has a checkbox when SWT.CHECK is given to the table.
 	 */
+	private boolean usesSparseVirtualItems() {
+		return items instanceof GridVirtualItemList && !isTree;
+	}
+
+	private GridVirtualItemList sparseVirtualItems() {
+		return (GridVirtualItemList) items;
+	}
+
+	GridItem materializeVirtualItem(final int index) {
+		return new GridItem(this, SWT.NONE, index, true);
+	}
+
+	void initializeVirtualItemFacade(final GridItem item) {
+		item.initializeHeight(itemHeight);
+		item.setHasSetData(false);
+	}
+
+	int virtualMaterializedItemCount() {
+		return items instanceof GridVirtualItemList
+				? ((GridVirtualItemList) items).materializedCount()
+				: items.size();
+	}
+
+	private Iterable<GridItem> materializedItems() {
+		return items instanceof GridVirtualItemList
+				? ((GridVirtualItemList) items).materializedSnapshot()
+				: items;
+	}
+
+	private void materializeVirtualTableForTree() {
+		if (!(items instanceof GridVirtualItemList)) {
+			return;
+		}
+		final GridVirtualItemList sparse = (GridVirtualItemList) items;
+		sparse.materializeAll();
+		rootItems.clear();
+		for (int i = 0; i < sparse.size(); i++) {
+			rootItems.add(sparse.get(i));
+		}
+	}
+
+	private void disposeSparseVirtualItems() {
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		for (final GridItem item : sparse.materializedSnapshot()) {
+			item.disposeOnly();
+		}
+		sparse.clear();
+		rootItems.clear();
+		selectedItems.clear();
+		selectedCells.clear();
+		selectedCellsBeforeRangeSelect.clear();
+		focusItem = null;
+		currentVisibleItems = 0;
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+	}
+
 	private void updatePrimaryCheckColumn() {
 		if ((getStyle() & SWT.CHECK) == SWT.CHECK) {
 			boolean firstCol = true;
@@ -8129,6 +8237,9 @@ public class Grid extends Canvas {
 	}
 
 	void newRootItem(final GridItem item, final int index) {
+		if (usesSparseVirtualItems()) {
+			return;
+		}
 		if (index == -1 || index >= rootItems.size()) {
 			rootItems.add(item);
 		} else {
@@ -8137,6 +8248,9 @@ public class Grid extends Canvas {
 	}
 
 	void removeRootItem(final GridItem item) {
+		if (usesSparseVirtualItems()) {
+			return;
+		}
 		rootItems.remove(item);
 	}
 
@@ -8151,17 +8265,22 @@ public class Grid extends Canvas {
 	int newItem(final GridItem item, int index, final boolean root) {
 		int row = 0;
 
-		if (!isTree) {
-			if (item.getParentItem() != null) {
-				isTree = true;
+		if (!isTree && item.getParentItem() != null) {
+			if (items instanceof GridVirtualItemList) {
+				materializeVirtualTableForTree();
 			}
+			isTree = true;
 		}
 
 		// Have to convert indexes, this method needs a flat index, the method is called
 		// with indexes
 		// that are relative to the level
 		if (root && index != -1) {
-			if (index >= rootItems.size()) {
+			if (usesSparseVirtualItems()) {
+				if (index >= items.size()) {
+					index = -1;
+				}
+			} else if (index >= rootItems.size()) {
 				index = -1;
 			} else {
 				index = rootItems.get(index).getRowIndex();
@@ -8186,8 +8305,10 @@ public class Grid extends Canvas {
 		} else {
 			items.add(index, item);
 			row = index;
-			for (int i = index + 1; i < items.size(); i++) {
-				items.get(i).increaseRow();
+			if (!(items instanceof GridVirtualItemList)) {
+				for (int i = index + 1; i < items.size(); i++) {
+					items.get(i).increaseRow();
+				}
 			}
 		}
 
@@ -8240,8 +8361,10 @@ public class Grid extends Canvas {
 			return;
 		}
 
-		for (int i = index; i < items.size(); i++) {
-			items.get(i).decreaseRow();
+		if (!(items instanceof GridVirtualItemList)) {
+			for (int i = index; i < items.size(); i++) {
+				items.get(i).decreaseRow();
+			}
 		}
 
 		if (selectedItems.remove(item)) {
@@ -9614,20 +9737,44 @@ public class Grid extends Canvas {
 	 */
 	public void setItemCount(int count) {
 		checkWidget();
-		setRedraw(false);
-		if (count < 0) {
-			count = 0;
+		count = Math.max(0, count);
+
+		if (usesSparseVirtualItems()) {
+			final int logicalCount = count;
+			setRedraw(false);
+			try {
+				final GridVirtualItemList sparse = sparseVirtualItems();
+				final int oldCount = sparse.size();
+				final List<GridItem> removed = sparse.setLogicalSize(logicalCount);
+				for (final GridItem removedItem : removed) {
+					selectedItems.remove(removedItem);
+					if (focusItem == removedItem) {
+						focusItem = null;
+					}
+					removedItem.disposeOnly();
+				}
+				selectedCells.removeIf(cell -> cell.y >= logicalCount);
+				selectedCellsBeforeRangeSelect.removeIf(cell -> cell.y >= logicalCount);
+				currentVisibleItems = logicalCount;
+				if (oldCount != logicalCount && !disposing) {
+					updateColumnSelection();
+				}
+				scrollValuesObsolete = true;
+				topIndex = -1;
+				bottomIndex = -1;
+			} finally {
+				setRedraw(true);
+			}
+			return;
 		}
 
+		setRedraw(false);
 		if (count < items.size()) {
-
 			selectedCells.clear();
 			for (int i = items.size() - 1; i >= count; i--) {
 				final GridItem removed = items.remove(i);
 				rootItems.remove(i);
-
 				selectedItems.remove(removed);
-
 				if (removed.isVisible()) {
 					currentVisibleItems--;
 				}
@@ -9640,7 +9787,6 @@ public class Grid extends Canvas {
 			topIndex = -1;
 			bottomIndex = -1;
 		}
-
 		while (count > items.size()) {
 			new GridItem(this, SWT.NONE);
 		}
@@ -9748,7 +9894,7 @@ public class Grid extends Canvas {
 						// Child count for parent. Here if the item parent
 						// is not an other item,
 						// it is consider as children of Grid
-						for (final GridItem item : items) {
+						for (final GridItem item : materializedItems()) {
 							if (item.getParentItem() != null) {
 								length--;
 							}
@@ -9763,7 +9909,7 @@ public class Grid extends Canvas {
 				if (e.childID == ACC.CHILDID_SELF) {
 					int length = items.size();
 					if (isTree) {
-						for (final GridItem item : items) {
+						for (final GridItem item : materializedItems()) {
 							if (item.getParentItem() != null) {
 								length--;
 							}
@@ -10614,7 +10760,7 @@ public class Grid extends Canvas {
 	 */
 	public void refreshData() {
 		if ((getStyle() & SWT.VIRTUAL) != 0) {
-			for (final GridItem item : items) {
+			for (final GridItem item : materializedItems()) {
 				item.setHasSetData(false);
 			}
 		}
@@ -10640,12 +10786,18 @@ public class Grid extends Canvas {
 	}
 
 	private void computeRowHeaderWidth(final int minWidth) {
-		estimate(sizingGC -> {//
-			final int width = items.stream() //
-					.mapToInt(item -> rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x) //
-					.max() //
-					.orElse(minWidth);
-			rowHeaderWidth = width > minWidth ? width : minWidth;
+		estimate(sizingGC -> {
+			int width = minWidth;
+			for (final GridItem item : materializedItems()) {
+				width = Math.max(width,
+						rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x);
+			}
+			if (usesSparseVirtualItems() && !items.isEmpty()) {
+				final GridItem last = items.get(items.size() - 1);
+				width = Math.max(width,
+						rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, last).x);
+			}
+			rowHeaderWidth = width;
 		});
 	}
 
