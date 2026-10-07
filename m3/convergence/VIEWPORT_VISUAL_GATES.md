@@ -156,3 +156,9 @@ Tycho forwards the screen-capture and receiver-hash properties explicitly. The e
 hosted run reported one clipping failure and one skipped capture test because it loaded
 upstream SWT and lacked this forwarding. Preserve those results. The receiving lane must
 run every selected Grid test without a skip and pass the PNG and lifetime oracles.
+
+The prepared SWT repository binding and expected runtime hash live under the separate
+P2 publisher's `target/binding` directory. That publisher is outside the ordinary
+Nebula reactor. The ordinary `clean verify` must not delete its own input platform or
+the expected evidence before the final OpenCV comparison. A real root-clean control
+checks removal of a root-target sentinel and preservation of the receiving evidence.

@@ -41,11 +41,11 @@ jobs:
         GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
           mvn -B -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
           -Dtycho.baseline.replace=none -pl :org.eclipse.swt.gtk.linux.x86_64 -am package
-        python3 m3/convergence/prepare_swt_receiver.py .m3-swt target/swt-receiver \
+        python3 m3/convergence/prepare_swt_receiver.py .m3-swt m3/convergence/swt-receiver-p2/target/binding \
           m3/convergence/swt-receiver-p2/target/repository
         mvn -B -f m3/convergence/swt-receiver-p2/pom.xml \
-          -Dm3.swt.source="$PWD/target/swt-receiver/input" verify
-        cat target/swt-receiver/receiver.env >> "$GITHUB_ENV"
+          -Dm3.swt.source="$PWD/m3/convergence/swt-receiver-p2/target/binding/input" verify
+        cat m3/convergence/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
     - name: Build All Widgets
       uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
       with:
@@ -57,7 +57,7 @@ jobs:
         /tmp/nebula-vision/bin/python m3/convergence/verify_grid_screenshots.py \
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots \
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports \
-          target/swt-receiver/expected.json
+          m3/convergence/swt-receiver-p2/target/binding/expected.json
     - name: Upload Grid visible-range screenshots
       if: always()
       uses: actions/upload-artifact@v4
@@ -65,7 +65,7 @@ jobs:
         name: grid-visible-range-screenshots
         if-no-files-found: warn
         path: |
-          target/swt-receiver/expected.json
+          m3/convergence/swt-receiver-p2/target/binding/expected.json
           m3/convergence/swt-receiver-p2/target/repository/*.xml
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
