@@ -2,8 +2,8 @@ field	value
 schema	NEBULA_M3_FINAL_TRANSFER_PROOF_REQUEST_V2
 baselineRepository	hsoliwal/nebula
 baselineBranch	master
-baselineCommit	be4854788315c48fe0a7198f5b3b3ed9f21def4a
-proofBranch	m3/final-proven-transfer-current-20261007
+baselineCommit	49ce0b4d5ef73db6e31a7dd98db624a4cbf7c8b1
+proofBranch	m3/final-mastered-convergence-proof-20261007
 javaRelease	21
 nebulaInventoryRecipe	com.synexia.rewrite.M3NebulaAtomizePatternizeRecipe
 nebulaInventoryRecipeCommit	8c675781444dc9921bc632854a9891d11b5737c8

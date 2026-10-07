@@ -160,10 +160,14 @@ public final class NebulaM3OrchestratorPlans {
     }
 
     private static String sha256(String value) {
+        return digest(value, "SHA-256");
+    }
+
+    static String digest(String value, String algorithm) {
         try {
             return HexFormat.of()
                     .formatHex(
-                            MessageDigest.getInstance("SHA-256")
+                            MessageDigest.getInstance(algorithm)
                                     .digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException impossible) {
             throw new ExceptionInInitializerError(impossible);
