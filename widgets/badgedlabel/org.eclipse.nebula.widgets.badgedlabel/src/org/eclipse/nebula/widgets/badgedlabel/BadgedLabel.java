@@ -48,10 +48,15 @@ public class BadgedLabel extends Canvas {
 	private Image image;
 	private String text;
 	private String badgeValue;
-	private Color textColor, backgroundColor, borderColor, badgeForeground, badgeBackground;
+    private Color textColor;
+    private Color backgroundColor;
+    private Color borderColor;
+    private Color badgeForeground;
+    private Color badgeBackground;
 	private final Font badgeFont;
 	private Font boldFont;
-	private int horizontalLocation, verticalLocation;
+    private int horizontalLocation;
+    private int verticalLocation;
 	private GC gc;
 	private int left;
 	private int top;
@@ -354,7 +359,8 @@ public class BadgedLabel extends Canvas {
 	}
 
 	private Point computeButtonSize() {
-		int width = 2 * PADDING, height = 2 * PADDING;
+        int width = 2 * PADDING;
+        int height = 2 * PADDING;
 		if (image != null && text == null) {
 			final Rectangle bounds = image.getBounds();
 			width += bounds.width;

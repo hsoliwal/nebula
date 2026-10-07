@@ -98,10 +98,11 @@ public abstract class AbstractSettings implements ISettings {
 		// get the date format from the locale, format it to be 4 digit year
 		DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, getLocale());
 		String pattern = ((SimpleDateFormat)df).toPattern();
-		// some locales (Romanian, Hungarian) have 4 digit years already in their locale, if so, don't do a replacement
-		// or we'll end up with way too many y's
-		if (pattern.indexOf("yyyy") == -1)
-			pattern = pattern.replaceAll("yy", "yyyy");
+        // some locales (Romanian, Hungarian) have 4 digit years already in their locale, if so, don't do a replacement
+        // or we'll end up with way too many y's
+        if (pattern.indexOf("yyyy") == -1) {
+            pattern = pattern.replaceAll("yy", "yyyy");
+        }
 		
 		return pattern;
 	}
@@ -175,15 +176,17 @@ public abstract class AbstractSettings implements ISettings {
 	}
 
 	public Font getCarbonDrawFont() {
-		if (mCarbonFont == null || mCarbonFont.isDisposed())
-			mCarbonFont = new Font(Display.getDefault(), "Arial", 12, SWT.NORMAL);
+        if (mCarbonFont == null || mCarbonFont.isDisposed()) {
+            mCarbonFont = new Font(Display.getDefault(), "Arial", 12, SWT.NORMAL);
+        }
 
 		return mCarbonFont;
 	}
 
 	public Font getWindowsMonthPopupDrawFont() {
-		if (mWindowsPopupFont == null || mWindowsPopupFont.isDisposed())
-			mWindowsPopupFont = new Font(Display.getDefault(), "Arial", 8, SWT.NORMAL);
+        if (mWindowsPopupFont == null || mWindowsPopupFont.isDisposed()) {
+            mWindowsPopupFont = new Font(Display.getDefault(), "Arial", 8, SWT.NORMAL);
+        }
 
 		return mWindowsPopupFont;
 	}
