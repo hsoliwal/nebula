@@ -4159,9 +4159,15 @@ public class Grid extends Canvas {
 
 		int vScrollAmount = 0;
 
-		for (int i = 0; i < index; i++) {
-			if (items.get(i).isVisible()) {
-				vScrollAmount++;
+		if (usesSparseVirtualItems()) {
+			// Flat virtual rows are logically visible until the Grid enters tree mode.
+			// Their scrollbar coordinate is therefore the logical row index itself.
+			vScrollAmount = index;
+		} else {
+			for (int i = 0; i < index; i++) {
+				if (items.get(i).isVisible()) {
+					vScrollAmount++;
+				}
 			}
 		}
 
