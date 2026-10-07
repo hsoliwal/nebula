@@ -170,6 +170,16 @@ public class Grid_Test {
     assertEquals( 10, grid.getItemCount() );
     assertTrue( "shrinking logical extent must dispose exposed facades outside the range", last.isDisposed() );
     assertTrue( grid.virtualMaterializedItemCount() <= 1 );
+
+    grid.setItemCount( 1_000_000 );
+    assertEquals( 0, grid.virtualMaterializedItemCount() );
+    grid.remove( 500_000 );
+    assertEquals( 999_999, grid.getItemCount() );
+    assertEquals( 0, grid.virtualMaterializedItemCount() );
+
+    grid.removeAll();
+    assertEquals( 0, grid.getItemCount() );
+    assertEquals( 0, grid.virtualMaterializedItemCount() );
   }
 
   @Test
