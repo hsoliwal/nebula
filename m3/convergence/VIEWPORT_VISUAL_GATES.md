@@ -162,3 +162,21 @@ P2 publisher's `target/binding` directory. That publisher is outside the ordinar
 Nebula reactor. The ordinary `clean verify` must not delete its own input platform or
 the expected evidence before the final OpenCV comparison. A real root-clean control
 checks removal of a root-target sentinel and preservation of the receiving evidence.
+
+### Full receiving reactor proof, 2026-10-07
+
+The original 314-module Nebula Tycho reactor passed with the explicitly published,
+source-built SWT GTK3 receiver: 226 selected JUnit tests, zero failures, errors or
+skips. The independent local run used JDK 21.0.12.1+1 and Maven 3.9.11 (`verify`);
+the hosted Java CI run 37633371106 at Nebula 5d3e50be used the workflow's ordinary
+`clean verify`, built the pinned SWT distribution, and passed OpenCV. Both runtime
+receipts bind GC bytecode SHA-256
+`7ec17b48aae15bc1930ab66b0980724194a08f48acd6f8f8fd0ded9422f15e2a`.
+
+Canonical successor `nebula-full-receiver-qualification-20261007` retains the full
+local log, 66 JUnit XML reports, final PNGs/metadata, exact source-tree readback and
+the hosted job result. Eight scene/canary images pass; all six defect controls are
+rejected. Forty-eight captures and three write failures retain zero tracked GC/Image.
+The existing reactor's test selection is unchanged; this does not claim all legacy
+Grid tests or every native platform. Separate M3 convergence, offline closure and
+SWT Cocoa/Windows/CPU gates remain independent. Historical failed receipts stay intact.
