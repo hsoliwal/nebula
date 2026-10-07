@@ -58,3 +58,17 @@ If you choose any of these options, just open an issue.
 ## New Widgets
 If you want to contribute a widget, just open an issue and state your intention. We will then guide you through the process.
 
+
+
+## M3 / Synexia licensing boundary
+
+Nebula product source remains governed by the Eclipse Public License 2.0 and
+its existing file-level notices. Independently authored, separable M3/Synexia
+tooling, receipts and documentation are Apache-2.0 only where explicitly
+marked. See [M3-SYNEXIA-NOTICE.md](M3-SYNEXIA-NOTICE.md),
+[M3-SYNEXIA-AUTHORS.md](M3-SYNEXIA-AUTHORS.md), and
+[LICENSE-M3-APACHE-2.0.txt](LICENSE-M3-APACHE-2.0.txt).
+
+These additions do not relicense Eclipse/Nebula product code, OpenJDK,
+OpenRewrite or donor material. Their original licenses and attribution remain
+authoritative.
