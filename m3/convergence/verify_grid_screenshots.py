@@ -34,7 +34,7 @@ def marker_matches(data, color, box):
     return any(tuple(row) == (x, y, width, height, width * height) for row in stats[1:])
 
 
-def verify(directory, reports):
+def verify(directory, reports, receiver=None):
     expected_classes = {'GridFixedColumn_Test', 'GridVisibleRangeSupport_Test',
                         'GridViewportCoordinates_Test', 'GridGCProxy_Test'}
     cases = {}
@@ -93,8 +93,16 @@ def verify(directory, reports):
                'missing-marker': missing, 'clip-leak': leak}
     for name, data in defects.items():
         require(not marker_matches(data, (255, 0, 0), box), 'Observer admitted ' + name)
-    receipt = {'status': 'PASS', 'junitTests': len(cases), 'scenePngs': len(scenes),
-               'canaryPngs': 2, 'rejectedControls': list(defects), 'graphicsLifetime': contract,
+    receiver_proof = {'status': 'NOT_REQUESTED'}
+    if receiver is not None:
+        expected = json.loads(receiver.read_text())
+        actual = properties(directory / 'swt-receiver.properties')
+        require(actual['gcClassSha256'] == expected['gcClassSha256'], 'Runtime SWT receiver mismatch')
+        require(actual['resource'].startswith(('bundleresource:', 'bundleentry:')), 'Expected Tycho OSGi receiver')
+        receiver_proof = {'status': 'PASS', 'sourceCommit': expected['sourceCommit'],
+                          'gcClassSha256': actual['gcClassSha256'], 'resource': actual['resource']}
+    receipt = {'status': 'PASS' , 'junitTests': len(cases), 'scenePngs': len(scenes),
+               'canaryPngs': 2, 'swtReceiver': receiver_proof, 'rejectedControls': list(defects), 'graphicsLifetime': contract,
                'opencv': cv2.__version__, 'numpy': np.__version__, 'manualQaRequired': False,
                'scope': 'GTK3/X11 Grid capture and behavior; not full Tycho, JFace or platform qualification'}
     (directory / 'opencv-validation.json').write_text(json.dumps(receipt, indent=2) + '\n')
@@ -102,5 +110,5 @@ def verify(directory, reports):
 
 
 if __name__ == '__main__':
-    require(len(sys.argv) == 3, 'Usage: verify_grid_screenshots.py SCREENSHOT_DIR JUNIT_REPORT_DIR')
-    verify(Path(sys.argv[1]), Path(sys.argv[2]))
+    require(len(sys.argv) in (3, 4), 'Usage: verify_grid_screenshots.py SCREENSHOT_DIR JUNIT_REPORT_DIR [RECEIVER_EXPECTED_JSON]')
+    verify(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]) if len(sys.argv) == 4 else None)

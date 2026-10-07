@@ -403,6 +403,17 @@ public class GridVisibleRangeSupport_Test {
 		assertEquals("x11", System.getenv("GDK_BACKEND"));
 		assertTrue(!"1".equals(System.getenv("SWT_GTK4")));
 		Path output = Path.of("target", "m3-visible-range-screenshots");
+		String expectedGc = System.getProperty("nebula.swt.gc.sha256", "");
+		assertTrue("Missing pinned SWT receiver hash", expectedGc.matches("[0-9a-f]{64}"));
+		try (var input = GC.class.getResourceAsStream("GC.class")) {
+			assertTrue("Cannot inspect loaded SWT GC", input != null);
+			String actualGc = java.util.HexFormat.of().formatHex(
+					java.security.MessageDigest.getInstance("SHA-256").digest(input.readAllBytes()));
+			assertEquals("Tycho loaded a different SWT GC", expectedGc, actualGc);
+			Files.createDirectories(output);
+			Files.writeString(output.resolve("swt-receiver.properties"),
+					"gcClassSha256=" + actualGc + "\nresource=" + GC.class.getResource("GC.class") + "\n");
+		}
 		int[] color = { SWT.COLOR_RED };
 		grid.addListener(SWT.Paint, event -> {
 			event.gc.setBackground(display.getSystemColor(color[0]));

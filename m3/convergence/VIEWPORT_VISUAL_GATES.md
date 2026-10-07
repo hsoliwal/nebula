@@ -141,3 +141,18 @@ link would be rejected. Keep `invalidJavadoc=error` and all visibility checks en
 The first hosted run of the native qualification change failed at `GridGCStateDAG`
 before tests; retain that diagnostic in the canonical successor recipe rather than
 claiming the earlier javac-only compile qualified the entire Tycho reactor.
+
+### Pinned SWT receiving proof
+
+The native Grid lane builds SWT commit `717f952621852850b68c0c301fca7c6d41a68039`
+with its original Tycho/native build, publishes its host and GTK fragment using the
+standard Tycho P2 publisher, and explicitly includes that repository in Nebula's
+platform. `tycho.localArtifacts=ignore` remains enabled. Source seals, built JARs,
+GC bytecode and native hashes are recorded; the test JVM must load the exact recorded
+GC class. OpenCV also checks the runtime receipt against the independently prepared
+expected file and requires the OSGi runtime. No cross-platform promotion follows.
+
+Tycho forwards the screen-capture and receiver-hash properties explicitly. The earlier
+hosted run reported one clipping failure and one skipped capture test because it loaded
+upstream SWT and lacked this forwarding. Preserve those results. The receiving lane must
+run every selected Grid test without a skip and pass the PNG and lifetime oracles.

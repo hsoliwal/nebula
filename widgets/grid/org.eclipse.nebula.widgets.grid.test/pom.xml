@@ -14,6 +14,11 @@
 	<version>0.4.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
+	<properties>
+		<nebula.grid.viewport.screenshots.screen>false</nebula.grid.viewport.screenshots.screen>
+		<nebula.swt.gc.sha256></nebula.swt.gc.sha256>
+	</properties>
+
 	<!--
 		The other *_Test classes in this bundle (Grid_Test, GridItem_Test,
 		GridColumn_Test, GridColumnGroup_Test) date back to ~2010 and have
@@ -32,6 +37,10 @@
 				<artifactId>tycho-surefire-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
+					<systemProperties>
+						<nebula.grid.viewport.screenshots.screen>${nebula.grid.viewport.screenshots.screen}</nebula.grid.viewport.screenshots.screen>
+						<nebula.swt.gc.sha256>${nebula.swt.gc.sha256}</nebula.swt.gc.sha256>
+					</systemProperties>
 					<includes>
 						<include>**/GridFixedColumn_Test.java</include>
 						<include>**/GridVisibleRangeSupport_Test.java</include>
