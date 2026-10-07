@@ -46,6 +46,7 @@ final class GridGCProxy implements AutoCloseable {
 	private final Pattern originalForegroundPattern;
 	private final Pattern originalBackgroundPattern;
 	private final Font originalFont;
+	private final GridGCStateDAG stateDAG;
 	private boolean closed;
 
 	private GridGCProxy(GC gc) {
@@ -73,6 +74,7 @@ final class GridGCProxy implements AutoCloseable {
 		this.originalForegroundPattern = gc.getForegroundPattern();
 		this.originalBackgroundPattern = gc.getBackgroundPattern();
 		this.originalFont = gc.getFont();
+		this.stateDAG = new GridGCStateDAG(originalLineAttributes, originalAlpha);
 	}
 
 	static GridGCProxy wrap(GC gc) {
@@ -135,14 +137,23 @@ final class GridGCProxy implements AutoCloseable {
         if (attributes == null) {
             throw new IllegalArgumentException("attributes");
         }
-		gc.setLineAttributes(copy(attributes));
+		if (stateDAG.planStroke(attributes) != 0) {
+			gc.setLineAttributes(copy(attributes));
+		}
 		return this;
 	}
 
 	GridGCProxy alpha(int alpha) {
 		checkOpen();
-		gc.setAlpha(alpha);
+		if (stateDAG.planAlpha(alpha) != 0) {
+			gc.setAlpha(alpha);
+		}
 		return this;
+	}
+
+	int nativeStateTransitionCount() {
+		checkOpen();
+		return stateDAG.nativeTransitions();
 	}
 
 	@Override
