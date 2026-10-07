@@ -136,38 +136,57 @@ def verify(base):
 
     grid_counter = "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridIdentityOccurrenceTable.java"
     grid_before, grid_after = blob(base, grid_counter), blob("HEAD", grid_counter)
-    grid_before_sha = "72e66147572991b0fe135d67c406505ca4a6f3fd2831a630e79385f9290d082d"
-    grid_after_sha = "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34"
-    require(sha256(grid_before).hexdigest() in {grid_before_sha, grid_after_sha},
+    grid_v0_sha = "72e66147572991b0fe135d67c406505ca4a6f3fd2831a630e79385f9290d082d"
+    grid_v1_sha = "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34"
+    grid_v2_sha = "1e5849a1661e9f76115b8a17c58e07f9b6200aca766fc8b0851fd313fdef79eb"
+    grid_before_actual = sha256(grid_before).hexdigest()
+    grid_after_actual = sha256(grid_after).hexdigest()
+    require(grid_before_actual in {grid_v0_sha, grid_v1_sha, grid_v2_sha},
             "Grid occurrence counter preimage drift")
-    require(sha256(grid_after).hexdigest() == grid_after_sha,
-            "Grid occurrence counter recipe postimage drift")
-    if sha256(grid_before).hexdigest() == grid_after_sha:
+    require(grid_after_actual == grid_v2_sha,
+            "Grid occurrence counter V2 recipe postimage drift")
+    if grid_before_actual == grid_v2_sha:
         require(grid_before == grid_after,
                 "already-admitted Grid occurrence counter changed")
+
     application = __import__("json").loads(
         Path("m3/grid-counters/APPLICATION.json").read_text(encoding="utf-8"))
     require(application.get("canonical_recipe_repository") == "hsoliwal/com.synexia",
             "Grid occurrence recipe repository drift")
-    require(application.get("canonical_recipe_pr") == 9519,
-            "Grid occurrence recipe PR drift")
-    require(application.get("canonical_recipe") == "com.synexia.m3.NebulaGridCountersV1",
-            "Grid occurrence recipe identity drift")
-    require(application.get("canonical_recipe_commit") == "6ee3502cb206188d44a3325437d10f84786d5478",
-            "Grid occurrence recipe commit drift")
-    require(application.get("canonical_evidence_commit") == "8bc1958d2bf306682e1b487c307e455ac13c0754",
-            "Grid occurrence evidence commit drift")
+    require(application.get("canonical_recipe_pr") == 9552,
+            "Grid occurrence V2 recipe PR drift")
+    require(application.get("canonical_recipe") == "com.synexia.rewrite.M3NebulaGridCountersV2Recipe",
+            "Grid occurrence V2 recipe identity drift")
+    require(application.get("canonical_recipe_commit") == "f487ed322744b8160ac49712eb462ff087eb8fe7",
+            "Grid occurrence V2 recipe commit drift")
+    require(application.get("canonical_evidence_commit") == "db2928aa0157f4dea1f59e744c4286a74dfdd67f",
+            "Grid occurrence V2 evidence commit drift")
     require(application.get("before_blob") == "061faa01d2ff41ec954d1068cd4ebe666338a5cf"
-            and application.get("after_blob") == "35fa69c9309b6f55e8a9e37bee3da8aa15bcdf15",
-            "Grid occurrence Git blob custody drift")
-    require(application.get("before_sha256") == grid_before_sha
-            and application.get("after_sha256") == grid_after_sha,
-            "Grid occurrence SHA-256 custody drift")
+            and application.get("after_blob") == "92113e37af2db1ff64752154b9728f8a35bd90da",
+            "Grid occurrence V2 Git blob custody drift")
+    require(application.get("before_sha256") == grid_v0_sha
+            and application.get("intermediate_v1_sha256") == grid_v1_sha
+            and application.get("after_sha256") == grid_v2_sha,
+            "Grid occurrence V0/V1/V2 SHA-256 custody drift")
+
+    chain = application.get("recipe_chain")
+    require(isinstance(chain, list) and len(chain) == 2,
+            "Grid occurrence recipe chain drift")
+    require(chain[0].get("stage") == "v1-memory-layout"
+            and chain[0].get("pr") == 9540
+            and chain[0].get("input_sha256") == grid_v0_sha
+            and chain[0].get("output_sha256") == grid_v1_sha,
+            "Grid occurrence V1 chain drift")
+    require(chain[1].get("stage") == "v2-hot-path-refinement"
+            and chain[1].get("pr") == 9552
+            and chain[1].get("input_sha256") == grid_v1_sha
+            and chain[1].get("output_sha256") == grid_v2_sha,
+            "Grid occurrence V2 chain drift")
     require(application.get("reusable_recipe_copied_to_target") is False
             and application.get("promotion_authority") is False,
             "Grid occurrence receiver exceeded target authority")
-    print(grid_counter + "\tPASS\t" + sha256(grid_before).hexdigest()
-          + "\t" + grid_after_sha + "\tSYNEXIA_RECIPE_9519")
+    print(grid_counter + "\tPASS\t" + grid_before_actual
+          + "\t" + grid_v2_sha + "\tSYNEXIA_RECIPE_9552_V2")
 
 
 if __name__ == "__main__":
