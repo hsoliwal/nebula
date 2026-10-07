@@ -1988,7 +1988,7 @@ public class Grid extends Canvas {
 		}
 		itemHeight = height;
 		userModifiedItemHeight = true;
-		for (final GridItem item : items) {
+		for (final GridItem item : materializedItems()) {
 			item.setHeight(height);
 		}
 		hasDifferingHeights = false;
@@ -6678,7 +6678,7 @@ public class Grid extends Canvas {
 
 		cellHeaderSelectionBackground.dispose();
 
-		for (final GridItem item : items) {
+		for (final GridItem item : materializedItems()) {
 			item.dispose();
 		}
 
@@ -8053,7 +8053,7 @@ public class Grid extends Canvas {
 
 		updatePrimaryCheckColumn();
 
-		for (final GridItem item : items) {
+		for (final GridItem item : materializedItems()) {
 			item.columnAdded(index);
 		}
 
@@ -9839,7 +9839,7 @@ public class Grid extends Canvas {
 						// Child count for parent. Here if the item parent
 						// is not an other item,
 						// it is consider as children of Grid
-						for (final GridItem item : items) {
+						for (final GridItem item : materializedItems()) {
 							if (item.getParentItem() != null) {
 								length--;
 							}
@@ -9854,7 +9854,7 @@ public class Grid extends Canvas {
 				if (e.childID == ACC.CHILDID_SELF) {
 					int length = items.size();
 					if (isTree) {
-						for (final GridItem item : items) {
+						for (final GridItem item : materializedItems()) {
 							if (item.getParentItem() != null) {
 								length--;
 							}
@@ -10705,7 +10705,7 @@ public class Grid extends Canvas {
 	 */
 	public void refreshData() {
 		if ((getStyle() & SWT.VIRTUAL) != 0) {
-			for (final GridItem item : items) {
+			for (final GridItem item : materializedItems()) {
 				item.setHasSetData(false);
 			}
 		}
@@ -10731,12 +10731,18 @@ public class Grid extends Canvas {
 	}
 
 	private void computeRowHeaderWidth(final int minWidth) {
-		estimate(sizingGC -> {//
-			final int width = items.stream() //
-					.mapToInt(item -> rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x) //
-					.max() //
-					.orElse(minWidth);
-			rowHeaderWidth = width > minWidth ? width : minWidth;
+		estimate(sizingGC -> {
+			int width = minWidth;
+			for (final GridItem item : materializedItems()) {
+				width = Math.max(width,
+						rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x);
+			}
+			if (usesSparseVirtualItems() && !items.isEmpty()) {
+				final GridItem last = items.get(items.size() - 1);
+				width = Math.max(width,
+						rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, last).x);
+			}
+			rowHeaderWidth = width;
 		});
 	}
 
