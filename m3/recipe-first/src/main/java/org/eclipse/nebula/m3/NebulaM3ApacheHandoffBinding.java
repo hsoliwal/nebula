@@ -24,7 +24,7 @@ public final class NebulaM3ApacheHandoffBinding {
     public static final String COPYRIGHT_NOTICE =
             "Copyright 2026 Hitesh Soliwal and contributors";
     public static final String CANONICAL_OWNER = "synexia-m3-recipe";
-    public static final String DELIVERY_STATE = "PENDING_SYNEXIA_MERGE";
+    public static final String DELIVERY_STATE = "SOURCE_MERGED_PROOF_PENDING";
     public static final String TARGET_ROLE = "QUALIFICATION_INPUT_ONLY";
     public static final String NEBULA_RETAINED_LICENSE = "EPL-2.0";
 
