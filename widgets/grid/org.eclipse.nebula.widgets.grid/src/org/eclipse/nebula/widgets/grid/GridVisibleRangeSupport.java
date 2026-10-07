@@ -21,6 +21,7 @@ public class GridVisibleRangeSupport {
 	private GridVisibleRange oldRange = new GridVisibleRange();
 
 	private Listener paintListener = event -> calculateChange();
+	private final Runnable viewportChangeListener = this::calculateChange;
 
 	/**
 	 * Listener notified when the visible range changes
@@ -80,8 +81,14 @@ public class GridVisibleRangeSupport {
 	private GridVisibleRangeSupport(Grid grid) {
 		this.grid = grid;
 		this.grid.setSizeOnEveryItemImageChange(true);
-		// FIXME Maybe better to listen to resize, ... ?
+		grid.addViewportChangeListener(viewportChangeListener);
+		/*
+		 * Paint remains a compatibility fallback for geometry/data mutations that
+		 * do not yet emit an explicit viewport signal. Scroll, top-index and resize
+		 * changes publish before paint.
+		 */
 		grid.addListener(SWT.Paint, paintListener);
+		grid.addListener(SWT.Dispose, event -> grid.removeViewportChangeListener(viewportChangeListener));
 	}
 
 	/**

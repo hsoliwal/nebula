@@ -104,24 +104,30 @@ public class GridVisibleRangeSupport_Test {
 
 		events.clear();
 		grid.setTopIndex(120);
+		assertTrue("viewport signal must publish row-range delta before paint", hasRowDelta(events));
+		int verticalEventsBeforePaint = events.size();
 		flushPaint();
+		assertEquals("paint fallback must not duplicate an already-published row delta",
+				verticalEventsBeforePaint, events.size());
 		GridVisibleRange middle = grid.getVisibleRange();
 		assertTrue("vertical scroll must advance the logical viewport", grid.getTopIndex() >= 100);
 		assertSame(grid.getItem(grid.getTopIndex()), middle.getItems()[0]);
 		assertNotSame(top.getItems()[0], middle.getItems()[0]);
-		assertTrue("paint-driven support must publish a row-range delta", hasRowDelta(events));
 		snapshot("02-middle");
 
 		events.clear();
 		GridColumn firstVisibleBefore = middle.getColumns()[0];
 		grid.showColumn(columns[7]);
+		assertTrue("viewport signal must publish column-range delta before paint", hasColumnDelta(events));
+		int horizontalEventsBeforePaint = events.size();
 		flushPaint();
+		assertEquals("paint fallback must not duplicate an already-published column delta",
+				horizontalEventsBeforePaint, events.size());
 		GridVisibleRange horizontal = grid.getVisibleRange();
 		assertTrue("rightmost column must be visible after showColumn",
 				containsIdentity(horizontal.getColumns(), columns[7]));
 		assertNotSame("horizontal viewport must advance from its initial first column",
 				firstVisibleBefore, horizontal.getColumns()[0]);
-		assertTrue("paint-driven support must publish a column-range delta", hasColumnDelta(events));
 		assertTrue("range delta must report the column that actually left the viewport",
 				hasRemovedColumn(events, firstVisibleBefore));
 		snapshot("03-horizontal");
@@ -314,8 +320,8 @@ public class GridVisibleRangeSupport_Test {
 	}
 
 	private void flushPaint() {
-		// GTK may defer invalidation until its next frame-clock tick. Wait for an
-		// actual Paint event before asserting the paint-driven range publication.
+		// GTK may defer invalidation until its next frame-clock tick. Paint is still
+		// retained as a compatibility fallback and diagnostic screenshot boundary.
 		boolean[] painted = { false };
 		org.eclipse.swt.widgets.Listener observed = event -> painted[0] = true;
 		grid.addListener(SWT.Paint, observed);

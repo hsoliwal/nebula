@@ -614,6 +614,13 @@ public class Grid extends Canvas {
 	private Listener disposeListener;
 
 	/**
+	 * Internal viewport observers. They are deliberately package-private users
+	 * of Grid state; public range-change API remains in GridVisibleRangeSupport.
+	 */
+	private final List<Runnable> viewportChangeListeners = new ArrayList<>();
+
+
+	/**
 	 * The inplace tooltip.
 	 */
 	private GridToolTip inplaceToolTip;
@@ -4205,6 +4212,7 @@ public class Grid extends Canvas {
 		vScroll.setSelection(vScrollAmount);
 		topIndex = -1;
 		bottomIndex = -1;
+		fireViewportChanged();
 		redraw();
 	}
 
@@ -6677,6 +6685,31 @@ public class Grid extends Canvas {
 		addListener(SWT.MouseWheel, this::onMouseWheel);
 	}
 
+	void addViewportChangeListener(final Runnable listener) {
+		if (listener == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		if (!viewportChangeListeners.contains(listener)) {
+			viewportChangeListeners.add(listener);
+		}
+	}
+
+	void removeViewportChangeListener(final Runnable listener) {
+		if (listener == null) {
+			return;
+		}
+		viewportChangeListeners.remove(listener);
+	}
+
+	private void fireViewportChanged() {
+		if (viewportChangeListeners.isEmpty()) {
+			return;
+		}
+		for (Runnable listener : List.copyOf(viewportChangeListeners)) {
+			listener.run();
+		}
+	}
+
 	/**
 	 * Disable default key listener
 	 */
@@ -7719,6 +7752,7 @@ public class Grid extends Canvas {
 		topIndex = -1;
 		bottomIndex = -1;
 		invalidateVisibleColumnCache();
+		fireViewportChanged();
 	}
 
 	private void invalidateVisibleColumnCache() {
@@ -7735,6 +7769,7 @@ public class Grid extends Canvas {
 		if (horizontal) {
 			invalidateVisibleColumnCache();
 		}
+		fireViewportChanged();
 		refreshHoverState();
 		final Rectangle clientArea = getClientArea();
 		final Rectangle damage = GridViewportDamage.scrollDamage(
@@ -10575,6 +10610,9 @@ public class Grid extends Canvas {
 
 		if (previous != getHeaderHeight()) {
 			scrollValuesObsolete = true;
+			topIndex = -1;
+			bottomIndex = -1;
+			fireViewportChanged();
 			redraw();
 		}
 	}
