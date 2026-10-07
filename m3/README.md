@@ -139,6 +139,18 @@ Once this Nebula branch is green, the recipe/DAG shape can be replayed mechanica
 as new atoms rather than hand-editing target files.
 
 
+## Synexia Apache-2.0 custody binding
+
+`m3/catalogue/apache-handoff-binding.tsv` and
+`NebulaM3ApacheHandoffBinding` pin the canonical Synexia Apache handoff manifest by exact
+repository, branch, commit, PR and SHA-256. This is qualification evidence only while the pinned
+Synexia custody PR remains unmerged.
+
+The binding grants no source mutation, automatic application, target relicensing or promotion
+authority. Synexia-original Apache-2.0 recipe/proof assets retain their own license and copyright;
+Nebula product/source remains under its applicable Eclipse license. The original Tycho reactor and
+Nebula behavior tests remain the product acceptance authority.
+
 ## Recipe DAG orchestration manifest
 
 The Nebula proving crate now exports the same recipe graph as a content-addressed scheduler-neutral
