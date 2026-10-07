@@ -184,16 +184,16 @@ Nebula does not duplicate the Synexia second-pass detector. The existing root pr
 `m3-atomize-patternize` consumes an exact merged Synexia recipe artifact. CI overrides the
 profile's broad compatibility entry point with the canonical named repository second-pass:
 
-`com.synexia.rewrite.M3RepositoryAtomPatternSecondPass`
+`com.synexia.rewrite.M3AtomPatternSignalChainRecipe`
 
 Exact reviewed binding:
 
 ```text
 repository  hsoliwal/com.synexia
 branch      develop
-commit      daaab09a1b91fe8344c1ea97359342b52739bf38
-PR          8925 (integrates 8891)
-recipe      com.synexia.rewrite.M3RepositoryAtomPatternSecondPass
+commit      1123430085af1ad886a35efb8cd5354709d5bb4f
+PR          8891; latest owner commit 1123430085af1ad886a35efb8cd5354709d5bb4f
+recipe      com.synexia.rewrite.M3AtomPatternSignalChainRecipe
 signal      com.synexia.rewrite.M3AtomPatternSignalChainRecipe
 DAG         com.synexia.m3.recipe.OpenRewriteRecipeDagPlan
 state       SHARED_JVM_COMPOSITE; external leaf fan-out=false
@@ -205,7 +205,7 @@ Install that exact Synexia commit first, then run:
 
 ```bash
 mvn -B -ntp -Pm3-atomize-patternize \
-  -Drewrite.activeRecipes=com.synexia.rewrite.M3RepositoryAtomPatternSecondPass \
+  -Drewrite.activeRecipes=com.synexia.rewrite.M3AtomPatternSignalChainRecipe \
   rewrite:dryRunNoFork
 ```
 
