@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project
+# SPDX-License-Identifier: Apache-2.0
+path_pattern	license_scope	provenance	notes
+LICENSE	EPL-2.0	Eclipse Nebula product root	Authoritative product license.
+widgets/**	EPL-2.0	Eclipse Nebula product source	Existing file-level notices remain authoritative.
+M3-SYNEXIA-NOTICE.md	Apache-2.0	Separable Synexia first-party documentation	Does not relicense Nebula product code.
+M3-SYNEXIA-AUTHORS.md	Apache-2.0	Separable Synexia first-party documentation	First-party authorship only.
+LICENSE-M3-APACHE-2.0.txt	Apache-2.0	Apache Software Foundation license text	Only explicitly marked separable M3/Synexia additions.
+m3/grid-counters/README.md	Apache-2.0	Separable Synexia/Nebula integration documentation	Canonical recipe remains in com.synexia.
+m3/grid-counters/APPLICATION.json	Apache-2.0	Separable application/provenance receipt	Receipt only; product source keeps EPL-2.0.
+m3/**	FILE_LEVEL_OR_EXISTING_PATH_LICENSE	Existing Nebula M3 proving material	Do not blanket-relicense historical files; honor their SPDX/file notices.
+.github/**	TARGET_REPOSITORY_LICENSE_CONTEXT	Nebula repository configuration	No Apache relicense asserted by M3 notice.
