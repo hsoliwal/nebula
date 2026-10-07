@@ -150,7 +150,7 @@ public class Grid_Test {
     GridItem last = grid.getItem( 999_999 );
     assertSame( last, grid.getItem( 999_999 ) );
     assertEquals( 1, grid.virtualMaterializedItemCount() );
-    assertEquals( 0, setDataCount[ 0 ], "facade access must not request model data" );
+    assertEquals( "facade access must not request model data", 0, setDataCount[ 0 ] );
 
     assertEquals( "row 999999", last.getText() );
     assertEquals( 1, setDataCount[ 0 ] );
@@ -168,7 +168,7 @@ public class Grid_Test {
 
     grid.setItemCount( 10 );
     assertEquals( 10, grid.getItemCount() );
-    assertTrue( last.isDisposed(), "shrinking logical extent must dispose exposed facades outside the range" );
+    assertTrue( "shrinking logical extent must dispose exposed facades outside the range", last.isDisposed() );
     assertTrue( grid.virtualMaterializedItemCount() <= 1 );
   }
 
