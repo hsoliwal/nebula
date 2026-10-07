@@ -1,154 +1,113 @@
-package org.eclipse.nebula.snippets.grid.viewer;
-
 /*******************************************************************************
- * Copyright (c) 2014 Mirko Paturzo (Exeura srl).
+ * Copyright (c) 2008, 2026 Angelo Zerr and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-2.0/
- * 
- * SPDX-License-Identifier: EPL-2.0
  *
- * Contributors:
- *     Mirko Paturzo - realize example
+ * SPDX-License-Identifier: EPL-2.0
  *******************************************************************************/
+package org.eclipse.nebula.snippets.grid.viewer;
 
-import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.ILazyContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.nebula.jface.gridviewer.GridTableViewer;
+import org.eclipse.nebula.widgets.grid.Grid;
 import org.eclipse.nebula.widgets.grid.GridColumn;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 /**
- * A simple TableViewer to demonstrate the usage of a lazy content provider
- * with a virtual table
+ * One-million-row GridTableViewer with a genuinely lazy model and genuinely
+ * sparse SWT.VIRTUAL Grid facades.
+ *
+ * <p>The logical model is only an integer row count. No million-element array
+ * is allocated. JFace asks for individual rows through
+ * {@link ILazyContentProvider#updateElement(int)}, and the Grid manufactures a
+ * stable GridItem facade only for coordinates that are actually touched.</p>
  */
 public class GridVirtualTableViewer {
 
-	private static final int ROWS = 1000000;
-	private static final int COLUMNS = 10;
+    private static final int ROWS = 1_000_000;
 
-	private class MyContentProvider implements IStructuredContentProvider {
-		public MyContentProvider(GridTableViewer viewer) {
-			
-		}
-		public void dispose() {
-			// TODO Auto-generated method stub
-			
-		}
+    private static final class Row {
+        private final int index;
 
-		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-			// TODO Auto-generated method stub
-			
-		}
+        Row(final int index) {
+            this.index = index;
+        }
 
-		public Object[] getElements(Object inputElement) {
-			return (Object[]) inputElement;
-		}
-		
-	}
-	
-	public class MyModel {
-		public int counter;
+        @Override
+        public String toString() {
+            return "Item " + index;
+        }
+    }
 
-		public MyModel(int counter) {
-			this.counter = counter;
-		}
+    private static final class LazyRows implements ILazyContentProvider {
+        private final GridTableViewer viewer;
+        private int rowCount;
 
-		@Override
-		public String toString() {
-			return "Item " + this.counter;
-		}
-	}
+        LazyRows(final GridTableViewer viewer) {
+            this.viewer = viewer;
+        }
 
-	public GridVirtualTableViewer(Shell shell) {
-		LabelProvider labelProvider = new LabelProvider();
-		final GridTableViewer v = new GridTableViewer(shell, SWT.V_SCROLL | SWT.H_SCROLL | SWT.VIRTUAL);
-		
-		v.setLabelProvider(labelProvider);
-		v.setContentProvider(new MyContentProvider(v));
-		v.setUseHashlookup(true);
-		v.getGrid().setLinesVisible(true);
-		v.getGrid().setHeaderVisible(true);
-		v.getGrid().setVisibleLinesColumnPack(true);
-//		v.getGrid().setRowHeaderVisible(true);
-//		v.setRowHeaderLabelProvider(new ColumnLabelProvider() {
-//			@Override
-//			public String getText(Object element) {
-//				return "xyz";
-//			}
-//		});
-		v.getGrid().setLayoutData(new GridData(GridData.FILL_BOTH));
-		
-		for (int i = 0; i < COLUMNS; i++)
-		{
-			createColumn(v, "Column");
-		}
-		
-		MyModel[] model = createModel();
-		v.setInput(model);
-		
-		Button b = new Button(shell, SWT.PUSH);
-		b.setText("Filter items without 0");
-		b.addSelectionListener(new SelectionListener() {
-			
-			public void widgetSelected(SelectionEvent arg0) {
-				v.addFilter(new ViewerFilter() {
-					
-					@Override
-					public boolean select(Viewer viewer, Object parentElement, Object element) {
-						return element.toString().contains("0");
-					}
-				});
-			}
-			
-			public void widgetDefaultSelected(SelectionEvent arg0) {
-			}
-		});
-	}
-	private void createColumn(final GridTableViewer v, String name) {
-		GridColumn column = new GridColumn(v.getGrid(), SWT.NONE);
-		column.setWidth(200);
-		column.setText(name);
-	}
-	private MyModel[] createModel() {
-		MyModel[] elements = new MyModel[ROWS];
+        @Override
+        public void dispose() {
+            // No retained model objects to release.
+        }
 
-		for (int i = 0; i < ROWS; i++) {
-			elements[i] = new MyModel(i);
-		}
+        @Override
+        public void inputChanged(final Viewer viewer, final Object oldInput, final Object newInput) {
+            rowCount = ((Integer) newInput).intValue();
+        }
 
-		return elements;
-	}
+        @Override
+        public void updateElement(final int index) {
+            if (index < 0 || index >= rowCount) {
+                return;
+            }
+            viewer.replace(new Row(index), index);
+        }
+    }
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		Display display = new Display();
-		Shell shell = new Shell(display);
-		shell.setLayout(new GridLayout());
-		new GridVirtualTableViewer(shell);
-		shell.open();
+    public GridVirtualTableViewer(final Shell shell) {
+        final GridTableViewer viewer = new GridTableViewer(shell, SWT.VIRTUAL);
+        final Grid grid = viewer.getGrid();
 
-		while (!shell.isDisposed()) {
+        viewer.setLabelProvider(new LabelProvider());
+        viewer.setContentProvider(new LazyRows(viewer));
+        viewer.setUseHashlookup(true);
+
+        final GridColumn column = new GridColumn(grid, SWT.NONE);
+        column.setWidth(160);
+        column.setText("Logical row");
+
+        viewer.setInput(Integer.valueOf(ROWS));
+        viewer.setItemCount(ROWS);
+
+        grid.setHeaderVisible(true);
+        grid.setLinesVisible(true);
+    }
+
+    public static void main(final String[] args) {
+        final Display display = new Display();
+        final Shell shell = new Shell(display);
+        shell.setText("Nebula Grid - 1,000,000 lazy rows");
+        shell.setLayout(new FillLayout());
+
+        new GridVirtualTableViewer(shell);
+
+        shell.setSize(640, 480);
+        shell.open();
+        while (!shell.isDisposed()) {
             if (!display.readAndDispatch()) {
                 display.sleep();
             }
-		}
-
-		display.dispose();
-
-	}
-
+        }
+        display.dispose();
+    }
 }
