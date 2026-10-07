@@ -229,6 +229,42 @@ public class GridGCProxy_Test {
 	}
 
 	@Test
+	public void collapsesEquivalentStrokeAndAlphaTransitionsButKeepsAffineOrder() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 32, 32);
+		GC gc = new GC(image);
+		try {
+			LineAttributes stroke = new LineAttributes(
+					2f, SWT.CAP_ROUND, SWT.JOIN_BEVEL, SWT.LINE_DASH,
+					new float[] {3f, 5f}, 1f, 8f);
+			try (GridGCProxy proxy = GridGCProxy.wrap(gc)) {
+				assertEquals(0, proxy.nativeStateTransitionCount());
+
+				proxy.lineAttributes(stroke);
+				proxy.lineAttributes(new LineAttributes(
+						2f, SWT.CAP_ROUND, SWT.JOIN_BEVEL, SWT.LINE_DASH,
+						new float[] {3f, 5f}, 1f, 8f));
+				assertEquals(1, proxy.nativeStateTransitionCount(),
+						"equivalent stroke nodes must collapse");
+
+				proxy.alpha(123);
+				proxy.alpha(123);
+				assertEquals(2, proxy.nativeStateTransitionCount(),
+						"equivalent alpha nodes must collapse");
+
+				proxy.translate(4, 0);
+				proxy.translate(4, 0);
+				assertEquals(4, proxy.nativeStateTransitionCount(),
+						"affine deltas remain ordered because applying the same delta twice is observable");
+			}
+		} finally {
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+
+	@Test
 	public void closeAfterCallerDisposesGcOnlyReleasesScopeSnapshots() {
 		Display display = Display.getDefault();
 		Image image = new Image(display, 16, 16);
