@@ -1,0 +1,17 @@
+field	value
+schema	NEBULA_M3_FINAL_MASTERED_REPROOF_V1
+repository	hsoliwal/nebula
+baselineBranch	master
+baselineCommit	45cf65d16dc9535ecda8971cce01261281a60c96
+proofBranch	m3/final-mastered-reproof-20261007-v2
+javaRelease	21
+requiredCoverage	LINE>=0.99
+requiredFixedPoint	SECOND_APPLICATION_BYTE_IDENTICAL
+requiredProductOracle	ORIGINAL_NEBULA_TYCHO_CLEAN_VERIFY
+recipeOwner	hsoliwal/com.synexia
+recipeEntry	org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe
+orchestrators	MAVEN_OPENREWRITE,CAMEL,AIRFLOW,DROOLS
+transferTarget1	hsoliwal/M3jdk21
+transferTarget2	hsoliwal/com.synexia
+sourceMutationAuthority	false
+promotionAuthority	false
