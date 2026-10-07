@@ -39,13 +39,13 @@ http://www.eclipse.org/legal/epl-v10.html -->
 					<plugin>
 						<groupId>org.openrewrite.maven</groupId>
 						<artifactId>rewrite-maven-plugin</artifactId>
-						<version>6.46.1</version>
+						<version>5.23.1</version>
 						<configuration>
 							<failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
 							<failOnDryRunResults>false</failOnDryRunResults>
 							<exportDatatables>true</exportDatatables>
 							<activeRecipes>
-								<recipe>com.synexia.rewrite.M3RepositoryAtomPatternSecondPass</recipe>
+								<recipe>com.synexia.rewrite.M3AtomPatternSignalChainRecipe</recipe>
 							</activeRecipes>
 						</configuration>
 						<dependencies>
