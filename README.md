@@ -66,8 +66,7 @@ Nebula product source remains governed by the Eclipse Public License 2.0 and
 its existing file-level notices. Independently authored, separable M3/Synexia
 tooling, receipts and documentation are Apache-2.0 only where explicitly
 marked. See [M3-SYNEXIA-NOTICE.md](M3-SYNEXIA-NOTICE.md),
-[M3-SYNEXIA-AUTHORS.md](M3-SYNEXIA-AUTHORS.md),
-[M3-SYNEXIA-LICENSING.tsv](M3-SYNEXIA-LICENSING.tsv), and
+[M3-SYNEXIA-AUTHORS.md](M3-SYNEXIA-AUTHORS.md), and
 [LICENSE-M3-APACHE-2.0.txt](LICENSE-M3-APACHE-2.0.txt).
 
 These additions do not relicense Eclipse/Nebula product code, OpenJDK,
