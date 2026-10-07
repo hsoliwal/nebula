@@ -8183,6 +8183,9 @@ public class Grid extends Canvas {
 	}
 
 	void newRootItem(final GridItem item, final int index) {
+		if (usesSparseVirtualItems()) {
+			return;
+		}
 		if (index == -1 || index >= rootItems.size()) {
 			rootItems.add(item);
 		} else {
@@ -8191,6 +8194,9 @@ public class Grid extends Canvas {
 	}
 
 	void removeRootItem(final GridItem item) {
+		if (usesSparseVirtualItems()) {
+			return;
+		}
 		rootItems.remove(item);
 	}
 
@@ -8205,17 +8211,22 @@ public class Grid extends Canvas {
 	int newItem(final GridItem item, int index, final boolean root) {
 		int row = 0;
 
-		if (!isTree) {
-			if (item.getParentItem() != null) {
-				isTree = true;
+		if (!isTree && item.getParentItem() != null) {
+			if (items instanceof GridVirtualItemList) {
+				materializeVirtualTableForTree();
 			}
+			isTree = true;
 		}
 
 		// Have to convert indexes, this method needs a flat index, the method is called
 		// with indexes
 		// that are relative to the level
 		if (root && index != -1) {
-			if (index >= rootItems.size()) {
+			if (usesSparseVirtualItems()) {
+				if (index >= items.size()) {
+					index = -1;
+				}
+			} else if (index >= rootItems.size()) {
 				index = -1;
 			} else {
 				index = rootItems.get(index).getRowIndex();
@@ -8240,8 +8251,10 @@ public class Grid extends Canvas {
 		} else {
 			items.add(index, item);
 			row = index;
-			for (int i = index + 1; i < items.size(); i++) {
-				items.get(i).increaseRow();
+			if (!(items instanceof GridVirtualItemList)) {
+				for (int i = index + 1; i < items.size(); i++) {
+					items.get(i).increaseRow();
+				}
 			}
 		}
 
@@ -8294,8 +8307,10 @@ public class Grid extends Canvas {
 			return;
 		}
 
-		for (int i = index; i < items.size(); i++) {
-			items.get(i).decreaseRow();
+		if (!(items instanceof GridVirtualItemList)) {
+			for (int i = index; i < items.size(); i++) {
+				items.get(i).decreaseRow();
+			}
 		}
 
 		if (selectedItems.remove(item)) {
