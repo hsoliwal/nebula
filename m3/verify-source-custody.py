@@ -136,6 +136,18 @@ def verify(base):
 
     grid_counter = "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridIdentityOccurrenceTable.java"
     grid_before, grid_after = blob(base, grid_counter), blob("HEAD", grid_counter)
+    # V2 is already present in the product base and in its canonical recipe.
+    # Admit preservation only. This branch cannot install V2 over V1/original bytes.
+    grid_v2_sha = "1e5849a1661e9f76115b8a17c58e07f9b6200aca766fc8b0851fd313fdef79eb"
+    if sha256(grid_after).hexdigest() == grid_v2_sha:
+        require(grid_before == grid_after,
+                "already-admitted V2 Grid occurrence counter changed from base")
+        receipt = Path("m3/grid-counters/APPLICATION.json").read_bytes()
+        require(sha256(receipt).hexdigest() == "48d48e7bb7247bcf062aef8a4e8960dc0bdd91d9b884c9577032034ccfdd0057",
+                "Grid V2 canonical recipe/evidence/lineage receipt drift")
+        print(grid_counter + "\tPASS_UNCHANGED_V2\t" + grid_v2_sha
+              + "\tSYNEXIA_RECIPE_9552")
+        return
     grid_before_sha = "72e66147572991b0fe135d67c406505ca4a6f3fd2831a630e79385f9290d082d"
     grid_after_sha = "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34"
     require(sha256(grid_before).hexdigest() in {grid_before_sha, grid_after_sha},

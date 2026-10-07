@@ -119,6 +119,7 @@ final class GridGCProxy implements AutoCloseable {
 					transform.m11, transform.m12, transform.m21, transform.m22, transform.dx, transform.dy);
 			next.multiply(delta);
 			gc.setTransform(next);
+			stateDAG.planTransform(transform);
 		} finally {
             if (delta != null) {
                 delta.dispose();

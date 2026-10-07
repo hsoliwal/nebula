@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+ <modelVersion>4.0.0</modelVersion>
+ <groupId>org.eclipse.nebula.m3</groupId><artifactId>swt-receiver-p2</artifactId><version>1.0.0-SNAPSHOT</version><packaging>pom</packaging>
+ <build><plugins><plugin>
+  <groupId>org.eclipse.tycho.extras</groupId><artifactId>tycho-p2-extras-plugin</artifactId><version>4.0.12</version>
+  <configuration><sourceLocation>${m3.swt.source}</sourceLocation><compress>false</compress></configuration>
+  <executions><execution><id>publish-built-swt</id><phase>package</phase><goals><goal>publish-features-and-bundles</goal></goals></execution></executions>
+ </plugin></plugins></build>
+</project>

@@ -107,3 +107,76 @@ logical extent / state
   -> clipped body pass
   -> independently invalidated chrome/overlay planes
 ```
+
+## Automated native Grid qualification
+
+The GTK3/X11 Maven lane sets `nebula.grid.viewport.screenshots.screen=true` and requires
+`GC(Display).copyArea` for all six Grid viewport scenarios. `Control.print` images remain
+separate diagnostics. Capture must reject hidden, clipped, empty, disposed and off-display
+targets; the shared SWT coordinate logic is donated through the Synexia recipe packet.
+The million-row fixture must fit inside its shell before screen capture.
+Capture visible pixels before offscreen rendering: the rejected trial recorded blank native
+frames after `Control.print` despite changed offscreen output. Drain the native frame before
+capture and require interior content, not only a border or scrollbar. Keep the rejected frames.
+
+Maven runs `GridFixedColumn_Test`, `GridVisibleRangeSupport_Test`,
+`GridViewportCoordinates_Test` and `GridGCProxy_Test`. OpenCV checks persisted PNG hashes,
+dimensions, nonblank rendering, scrolling freshness, resize and sparse-model observations.
+A red/blue geometry oracle proves repaint after moving the shell; six mutated-image controls
+must be rejected. All three capture paths undergo 48 captures and three forced write failures,
+with Image/GC positive leak controls and no retained tracked graphics. No manual QA is required.
+Run `m3/convergence/verify_grid_screenshots.py` with screenshot and JUnit report directories.
+
+These gates complement the separate SWT CPU/heap/process-memory suite. Graphics-object tracking
+does not prove all native allocations, and this Grid lane does not qualify all Nebula widgets,
+JFace adapters, other platforms or repository-wide M3 convergence. Preserve the original Tycho
+reactor as product authority. Recipe, seals and evidence remain canonical in
+`hsoliwal/com.synexia`, crate `nebula-screen-qualification-20261007`.
+
+### Hosted ECJ Javadoc visibility gate
+
+The ordinary Tycho build enforces the Grid bundle's existing JDT Javadoc settings.
+Package-private helper names in prose use `{@code ...}` when a protected-visibility
+link would be rejected. Keep `invalidJavadoc=error` and all visibility checks enabled.
+The first hosted run of the native qualification change failed at `GridGCStateDAG`
+before tests; retain that diagnostic in the canonical successor recipe rather than
+claiming the earlier javac-only compile qualified the entire Tycho reactor.
+
+### Pinned SWT receiving proof
+
+The native Grid lane builds SWT commit `717f952621852850b68c0c301fca7c6d41a68039`
+with its original Tycho/native build, publishes its host and GTK fragment using the
+standard Tycho P2 publisher, and explicitly includes that repository in Nebula's
+platform. `tycho.localArtifacts=ignore` remains enabled. Source seals, built JARs,
+GC bytecode and native hashes are recorded; the test JVM must load the exact recorded
+GC class. OpenCV also checks the runtime receipt against the independently prepared
+expected file and requires the OSGi runtime. No cross-platform promotion follows.
+
+Tycho forwards the screen-capture and receiver-hash properties explicitly. The earlier
+hosted run reported one clipping failure and one skipped capture test because it loaded
+upstream SWT and lacked this forwarding. Preserve those results. The receiving lane must
+run every selected Grid test without a skip and pass the PNG and lifetime oracles.
+
+The prepared SWT repository binding and expected runtime hash live under the separate
+P2 publisher's `target/binding` directory. That publisher is outside the ordinary
+Nebula reactor. The ordinary `clean verify` must not delete its own input platform or
+the expected evidence before the final OpenCV comparison. A real root-clean control
+checks removal of a root-target sentinel and preservation of the receiving evidence.
+
+### Full receiving reactor proof, 2026-10-07
+
+The original 314-module Nebula Tycho reactor passed with the explicitly published,
+source-built SWT GTK3 receiver: 226 selected JUnit tests, zero failures, errors or
+skips. The independent local run used JDK 21.0.12.1+1 and Maven 3.9.11 (`verify`);
+the hosted Java CI run 37633371106 at Nebula 5d3e50be used the workflow's ordinary
+`clean verify`, built the pinned SWT distribution, and passed OpenCV. Both runtime
+receipts bind GC bytecode SHA-256
+`7ec17b48aae15bc1930ab66b0980724194a08f48acd6f8f8fd0ded9422f15e2a`.
+
+Canonical successor `nebula-full-receiver-qualification-20261007` retains the full
+local log, 66 JUnit XML reports, final PNGs/metadata, exact source-tree readback and
+the hosted job result. Eight scene/canary images pass; all six defect controls are
+rejected. Forty-eight captures and three write failures retain zero tracked GC/Image.
+The existing reactor's test selection is unchanged; this does not claim all legacy
+Grid tests or every native platform. Separate M3 convergence, offline closure and
+SWT Cocoa/Windows/CPU gates remain independent. Historical failed receipts stay intact.
