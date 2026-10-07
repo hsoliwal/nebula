@@ -130,9 +130,10 @@ class MonthPick extends Canvas implements MouseListener {
 
 			addListener(SWT.MouseExit, new Listener() {
 				public void handleEvent(Event event) {
-					// if mouse exited east or west, ignore
-					if (event.x < 0 || event.x > getSize().x)
-						return;
+                    // if mouse exited east or west, ignore
+                    if (event.x < 0 || event.x > getSize().x) {
+                        return;
+                    }
 					
 					// mous exit top or bottom, run thread
 					if (event.y < 0) {
@@ -201,13 +202,15 @@ class MonthPick extends Canvas implements MouseListener {
 		Font used = null;
 		if (CalendarCombo.OS_CARBON) {
 			used = mSettings.getCarbonDrawFont();
-			if (used != null)
-				gc.setFont(used);
+            if (used != null) {
+                gc.setFont(used);
+            }
 		}
 		else if (CalendarCombo.OS_WINDOWS) {
 			used = mSettings.getWindowsMonthPopupDrawFont();
-			if (used != null)
-				gc.setFont(used);
+            if (used != null) {
+                gc.setFont(used);
+            }
 		}			
 
 		// double buffering. this could be triple buffering if the platform does
@@ -281,8 +284,9 @@ class MonthPick extends Canvas implements MouseListener {
 
 		if (!CalendarCombo.OS_CARBON) {
 			gc.setFont(mSettings.getWindowsMonthPopupDrawFont());
-		} else
-			gc.setFont(mSettings.getCarbonDrawFont());
+		} else {
+            gc.setFont(mSettings.getCarbonDrawFont());
+        }
 
 		gc.setForeground(ColorCache.getBlack());
 
@@ -346,8 +350,9 @@ class MonthPick extends Canvas implements MouseListener {
 
 	public void mouseUp(MouseEvent event) {
 		mCalendarComposite.mouseUp(event);
-		if (mSelectedMonth != null)
-			mCalendarComposite.setDate(mSelectedMonth);
+        if (mSelectedMonth != null) {
+            mCalendarComposite.setDate(mSelectedMonth);
+        }
 
 		this.dispose();
 	}
@@ -392,10 +397,11 @@ class MonthPick extends Canvas implements MouseListener {
 					}
 					Display.getDefault().asyncExec(new Runnable() {
 						public void run() {
-							if (isDisposed())
-								mAboveThread = null;
-							else
-								scrollOneMonth(true);
+                            if (isDisposed()) {
+                                mAboveThread = null;
+                            } else {
+                                scrollOneMonth(true);
+                            }
 						}
 					});
 				}
@@ -422,10 +428,11 @@ class MonthPick extends Canvas implements MouseListener {
 					}
 					Display.getDefault().asyncExec(new Runnable() {
 						public void run() {
-							if (isDisposed())
-								mBelowThread = null;
-							else
-								scrollOneMonth(false);
+                            if (isDisposed()) {
+                                mBelowThread = null;
+                            } else {
+                                scrollOneMonth(false);
+                            }
 						}
 					});
 				}
