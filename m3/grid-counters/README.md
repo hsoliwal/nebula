@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Grid occurrence counters: applied Synexia v1 -> v2 recipe chain
 
 This branch applies the serial canonical Synexia recipe chain to the existing private
