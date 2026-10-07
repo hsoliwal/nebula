@@ -1,20 +1,19 @@
 {
-  "status": "APPLIED_CANDIDATE;SWT_TYCHO_AND_SDK_PROMOTION_PENDING",
+  "status": "APPLIED_V2_CANDIDATE;SWT_TYCHO_AND_SDK_PROMOTION_PENDING",
   "target_repository": "hsoliwal/nebula",
   "target_base": "a0df2f974b6a15a5e40dffc6335b764838e40b4c",
   "tested_original_base": "0b7d475d0f46901620e4e54442b3fbf382d5a987",
   "unchanged_baseline_grid_tree": "7522f7e71a470169c0deb42e37f44a731d752113",
   "canonical_recipe_repository": "hsoliwal/com.synexia",
-  "canonical_recipe_pr": 9519,
-  "canonical_recipe": "com.synexia.m3.NebulaGridCountersV1",
-  "canonical_recipe_commit": "6ee3502cb206188d44a3325437d10f84786d5478",
-  "canonical_evidence_commit": "8bc1958d2bf306682e1b487c307e455ac13c0754",
-  "canonical_crate": "synexia-openrewrite-recipes/recipe-crates/nebula-grid-counters-20261006",
+  "canonical_recipe_pr": 9552,
+  "canonical_recipe": "com.synexia.rewrite.M3NebulaGridCountersV2Recipe",
+  "canonical_recipe_commit": "f487ed322744b8160ac49712eb462ff087eb8fe7",
+  "canonical_crate": "synexia-openrewrite-recipes/src/main/resources/com/synexia/rewrite/hash-pinned-java/nebula-grid-counters-v2",
   "target_path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridIdentityOccurrenceTable.java",
   "before_blob": "061faa01d2ff41ec954d1068cd4ebe666338a5cf",
-  "after_blob": "35fa69c9309b6f55e8a9e37bee3da8aa15bcdf15",
+  "after_blob": "92113e37af2db1ff64752154b9728f8a35bd90da",
   "before_sha256": "72e66147572991b0fe135d67c406505ca4a6f3fd2831a630e79385f9290d082d",
-  "after_sha256": "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34",
+  "after_sha256": "1e5849a1661e9f76115b8a17c58e07f9b6200aca766fc8b0851fd313fdef79eb",
   "existing_production_files_changed": 1,
   "exact_dependency_owners_preserved": 10,
   "canonical_manifest_core_executed": true,
@@ -24,9 +23,15 @@
   "stages": 3,
   "compiled_mutants_rejected": 3,
   "cancellation_positions_preserved": 24,
-  "memory_bytes_empty_or_null_only_before_after": [280, 32],
-  "memory_bytes_one_identity_before_after": [280, 256],
-  "cpu_results": "MIXED;64-identity final micro-observation slower;not a general speedup",
+  "memory_bytes_empty_or_null_only_before_after": [
+    280,
+    32
+  ],
+  "memory_bytes_one_identity_before_after": [
+    280,
+    256
+  ],
+  "cpu_results": "V1_V2_DIAGNOSTIC_MIXED;allocation_unchanged;no_general_speedup_claim",
   "actual_openrewrite_scheduler_executed": false,
   "maven_executed": false,
   "jupiter_executed": false,
@@ -36,5 +41,31 @@
   "swt_threading_changed": false,
   "reusable_recipe_copied_to_target": false,
   "promotion_authority": false,
-  "whole_nebula_or_eclipse_programme_complete": false
+  "whole_nebula_or_eclipse_programme_complete": false,
+  "recipe_chain": [
+    {
+      "stage": "v1-memory-layout",
+      "pr": 9540,
+      "recipe": "com.synexia.m3.NebulaGridCountersV1",
+      "merge_commit": "1958345b06700cecc1ef767de2aa63e54f3b482e",
+      "input_sha256": "72e66147572991b0fe135d67c406505ca4a6f3fd2831a630e79385f9290d082d",
+      "output_sha256": "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34"
+    },
+    {
+      "stage": "v2-hot-path-refinement",
+      "pr": 9552,
+      "recipe": "com.synexia.rewrite.M3NebulaGridCountersV2Recipe",
+      "merge_commit": "f487ed322744b8160ac49712eb462ff087eb8fe7",
+      "input_sha256": "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34",
+      "output_sha256": "1e5849a1661e9f76115b8a17c58e07f9b6200aca766fc8b0851fd313fdef79eb"
+    }
+  ],
+  "intermediate_v1_blob": "35fa69c9309b6f55e8a9e37bee3da8aa15bcdf15",
+  "intermediate_v1_sha256": "2ad8c923b978f07069744973dbaa2c7a3d2169282c106d2266e1f76116811d34",
+  "v2_compile_werror": true,
+  "v2_exhaustive_range_pairs": 116281,
+  "v2_counter_transitions": 300000,
+  "v2_million_multiplicity_pass": true,
+  "canonical_v1_evidence_commit": "8bc1958d2bf306682e1b487c307e455ac13c0754",
+  "canonical_v2_evidence_commit": "db2928aa0157f4dea1f59e744c4286a74dfdd67f"
 }

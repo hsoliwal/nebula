@@ -20,6 +20,7 @@ package org.eclipse.nebula.widgets.grid;
 final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenceCounter<T> {
     private Object[] keys;
     private static final long LOW_WORD = 0xffff_ffffL;
+    private static final long HIGH_WORD = 0xffff_ffff_0000_0000L;
     // Low word: unmatched previous occurrences. High word: matched occurrences to skip.
     private long[] counts;
     private int distinct;
@@ -32,19 +33,23 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
             nullRemaining++;
             return;
         }
-        if (keys == null) {
+        Object[] table = keys;
+        if (table == null) {
             grow();
+            table = keys;
         }
-        int slot = slot(value, keys);
-        if (keys[slot] != null) {
-            counts[slot] = (counts[slot] & ~LOW_WORD) | ((counts[slot] + 1L) & LOW_WORD);
+        int slot = slot(value, table);
+        if (table[slot] != null) {
+            long count = counts[slot];
+            counts[slot] = (count & HIGH_WORD) | ((count + 1L) & LOW_WORD);
             return;
         }
-        if (distinct >= keys.length - (keys.length >>> 2)) {
+        if (distinct >= table.length - (table.length >>> 2)) {
             grow();
-            slot = slot(value, keys);
+            table = keys;
+            slot = slot(value, table);
         }
-        keys[slot] = value;
+        table[slot] = value;
         counts[slot] = 1L;
         distinct++;
     }
@@ -59,15 +64,20 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
             nullMatched++;
             return true;
         }
-        if (keys == null) {
+        Object[] table = keys;
+        if (table == null) {
             return false;
         }
-        int slot = slot(value, keys);
-        if (keys[slot] == null || (counts[slot] & LOW_WORD) == 0L) {
+        int slot = slot(value, table);
+        if (table[slot] == null) {
+            return false;
+        }
+        long count = counts[slot];
+        if ((count & LOW_WORD) == 0L) {
             return false;
         }
         // Lower word is nonzero: subtract one there and add one to the high word.
-        counts[slot] += LOW_WORD;
+        counts[slot] = count + LOW_WORD;
         return true;
     }
 
@@ -80,14 +90,19 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
             nullMatched--;
             return true;
         }
-        if (keys == null) {
+        Object[] table = keys;
+        if (table == null) {
             return false;
         }
-        int slot = slot(value, keys);
-        if (keys[slot] == null || (counts[slot] >>> 32) == 0L) {
+        int slot = slot(value, table);
+        if (table[slot] == null) {
             return false;
         }
-        counts[slot] -= 1L << 32;
+        long count = counts[slot];
+        if ((count >>> 32) == 0L) {
+            return false;
+        }
+        counts[slot] = count - (1L << 32);
         return true;
     }
 
@@ -102,18 +117,22 @@ final class GridIdentityOccurrenceTable<T> extends AbstractGridIdentityOccurrenc
     }
 
     private void grow() {
-        if (keys != null && keys.length >= (1 << 30)) {
+        Object[] oldKeys = keys;
+        if (oldKeys != null && oldKeys.length >= (1 << 30)) {
             throw new OutOfMemoryError("Visible-range identity index capacity exceeded");
         }
-        int capacity = keys == null ? 16 : keys.length << 1;
+        int capacity = oldKeys == null ? 16 : oldKeys.length << 1;
         Object[] newKeys = new Object[capacity];
         long[] newCounts = new long[capacity];
-        for (int i = 0; keys != null && i < keys.length; i++) {
-            Object key = keys[i];
-            if (key != null) {
-                int destination = slot(key, newKeys);
-                newKeys[destination] = key;
-                newCounts[destination] = counts[i];
+        if (oldKeys != null) {
+            long[] oldCounts = counts;
+            for (int i = 0; i < oldKeys.length; i++) {
+                Object key = oldKeys[i];
+                if (key != null) {
+                    int destination = slot(key, newKeys);
+                    newKeys[destination] = key;
+                    newCounts[destination] = oldCounts[i];
+                }
             }
         }
         keys = newKeys;
