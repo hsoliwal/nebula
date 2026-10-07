@@ -145,6 +145,70 @@ final class NebulaM3PureIntConvergenceRecipeTest {
     }
 
     @Test
+    void existingSemanticBlockCommentIsRecognizedAsFixedPoint() {
+        String path = "src/main/java/example/BlockDocumented.java";
+        String source = """
+                package example;
+                final class BlockDocumented {
+                    /* M3-ATOM: m3$pureIntAtom; Pattern/IOP: PURE_INT_EXPRESSION. */
+                    private static int compute(int a, int b) {
+                        /* M3-IOP: PURE_INT_EXPRESSION */
+                        int m3$pureIntAtom = a + b;
+                        return m3$pureIntAtom;
+                    }
+                }
+                """;
+
+        assertTrue(
+                apply(
+                                new NebulaM3DocumentPureIntAtomRecipe(),
+                                Map.of(path, source))
+                        .isEmpty());
+    }
+
+    @Test
+    void unrelatedMethodCommentStillReceivesSemanticDocumentation() {
+        String path = "src/main/java/example/UnrelatedComment.java";
+        String source = """
+                package example;
+                final class UnrelatedComment {
+                    /* unrelated */
+                    private static int compute(int a, int b) {
+                        /* M3-IOP: PURE_INT_EXPRESSION */
+                        int m3$pureIntAtom = a + b;
+                        return m3$pureIntAtom;
+                    }
+                }
+                """;
+
+        Map<String, String> changed =
+                apply(
+                        new NebulaM3DocumentPureIntAtomRecipe(),
+                        Map.of(path, source));
+
+        assertEquals(1, changed.size());
+        assertTrue(changed.get(path).contains("M3-ATOM: m3$pureIntAtom"));
+        assertTrue(changed.get(path).contains("/* unrelated */"));
+    }
+
+    @Test
+    void compactMethodWithoutLeadingNewlineUsesItsExistingWhitespaceAsIndent() {
+        String path = "src/main/java/example/Compact.java";
+        String source =
+                "package example; final class Compact { private static int compute(int a, int b) { "
+                        + "/* M3-IOP: PURE_INT_EXPRESSION */ int m3$pureIntAtom = a + b; "
+                        + "return m3$pureIntAtom; } }";
+
+        Map<String, String> changed =
+                apply(
+                        new NebulaM3DocumentPureIntAtomRecipe(),
+                        Map.of(path, source));
+
+        assertEquals(1, changed.size());
+        assertTrue(changed.get(path).contains("M3-ATOM: m3$pureIntAtom"));
+    }
+
+    @Test
     void oneHundredIndependentFilesCompileExecuteAndReachFixedPoint() throws Exception {
         Map<String, String> original = corpus(100);
         Map<String, String> transformed =
