@@ -3167,8 +3167,21 @@ public class Grid extends Canvas {
 		if (index < 0 || index > items.size() - 1) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
-		final GridItem item = items.get(index);
-		item.dispose();
+		if (usesSparseVirtualItems()) {
+			final GridVirtualItemList sparse = sparseVirtualItems();
+			final GridItem item = sparse.getMaterialized(index);
+			if (item != null) {
+				item.dispose();
+			} else {
+				sparse.remove(index);
+				currentVisibleItems--;
+				scrollValuesObsolete = true;
+				topIndex = -1;
+				bottomIndex = -1;
+			}
+		} else {
+			items.get(index).dispose();
+		}
 		redraw();
 	}
 
@@ -3196,13 +3209,11 @@ public class Grid extends Canvas {
 	 */
 	public void remove(final int start, final int end) {
 		checkWidget();
-
+		if (start < 0 || end < start || end >= items.size()) {
+			SWT.error(SWT.ERROR_INVALID_RANGE);
+		}
 		for (int i = end; i >= start; i--) {
-			if (i < 0 || i > items.size() - 1) {
-				SWT.error(SWT.ERROR_INVALID_RANGE);
-			}
-			final GridItem item = items.get(i);
-			item.dispose();
+			remove(i);
 		}
 		redraw();
 	}
@@ -3236,19 +3247,32 @@ public class Grid extends Canvas {
 		if (indices == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
-
-		final GridItem[] removeThese = new GridItem[indices.length];
-		for (int i = 0; i < indices.length; i++) {
-			final int j = indices[i];
-			if (j < items.size() && j >= 0) {
-				removeThese[i] = items.get(j);
-			} else {
+		for (final int index : indices) {
+			if (index < 0 || index >= items.size()) {
 				SWT.error(SWT.ERROR_INVALID_RANGE);
 			}
-
 		}
-		for (final GridItem item : removeThese) {
-			item.dispose();
+
+		if (usesSparseVirtualItems()) {
+			final int[] sorted = indices.clone();
+			Arrays.sort(sorted);
+			int previous = Integer.MIN_VALUE;
+			for (int i = sorted.length - 1; i >= 0; i--) {
+				final int index = sorted[i];
+				if (index == previous) {
+					continue;
+				}
+				remove(index);
+				previous = index;
+			}
+		} else {
+			final GridItem[] removeThese = new GridItem[indices.length];
+			for (int i = 0; i < indices.length; i++) {
+				removeThese[i] = items.get(indices[i]);
+			}
+			for (final GridItem item : removeThese) {
+				item.dispose();
+			}
 		}
 		redraw();
 	}
@@ -3270,9 +3294,12 @@ public class Grid extends Canvas {
 	@Deprecated
 	public void removeAll() {
 		checkWidget();
-
-		while (items.size() > 0) {
-			items.get(0).dispose();
+		if (usesSparseVirtualItems()) {
+			disposeSparseVirtualItems();
+		} else {
+			while (items.size() > 0) {
+				items.get(0).dispose();
+			}
 		}
 		deselectAll();
 		redraw();
@@ -3284,11 +3311,15 @@ public class Grid extends Canvas {
 	public void disposeAllItems() {
 		checkWidget();
 
-		final GridItem[] items = getItems();
-		for (final GridItem gridItem : items) {
-			gridItem.disposeOnly();
+		if (usesSparseVirtualItems()) {
+			disposeSparseVirtualItems();
+		} else {
+			final GridItem[] items = getItems();
+			for (final GridItem gridItem : items) {
+				gridItem.disposeOnly();
+			}
+			clearItems();
 		}
-		clearItems();
 		scrollValuesObsolete = true;
 		topIndex = -1;
 		bottomIndex = -1;
@@ -8175,6 +8206,23 @@ public class Grid extends Canvas {
 		for (int i = 0; i < sparse.size(); i++) {
 			rootItems.add(sparse.get(i));
 		}
+	}
+
+	private void disposeSparseVirtualItems() {
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		for (final GridItem item : sparse.materializedSnapshot()) {
+			item.disposeOnly();
+		}
+		sparse.clear();
+		rootItems.clear();
+		selectedItems.clear();
+		selectedCells.clear();
+		selectedCellsBeforeRangeSelect.clear();
+		focusItem = null;
+		currentVisibleItems = 0;
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
 	}
 
 	private void updatePrimaryCheckColumn() {
