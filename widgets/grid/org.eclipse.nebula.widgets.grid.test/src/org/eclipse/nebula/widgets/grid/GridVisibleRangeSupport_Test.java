@@ -44,6 +44,7 @@ import org.junit.Test;
  */
 public class GridVisibleRangeSupport_Test {
 
+	private static final String SCREEN_CAPTURE = "nebula.grid.viewport.screenshots.screen";
 	private static final String NATIVE_CAPTURE = "nebula.grid.viewport.screenshots.native";
 
 	private Display display;
@@ -79,6 +80,7 @@ public class GridVisibleRangeSupport_Test {
 		support.addRangeChangeListener(events::add);
 
 		shell.setSize(380, 260);
+		shell.setLocation(30, 40);
 		shell.open();
 		flushPaint();
 	}
@@ -208,6 +210,7 @@ public class GridVisibleRangeSupport_Test {
 			}
 		});
 
+		shell.setSize(780, 460);
 		grid.setItemCount(1_000_000);
 		flushPaint();
 		assertEquals(1_000_000, grid.getItemCount());
@@ -370,20 +373,22 @@ public class GridVisibleRangeSupport_Test {
 
 	private void flushPaint() {
 		// GTK may defer invalidation until its next frame-clock tick. Paint is still
-		// retained as a compatibility fallback and diagnostic screenshot boundary.
+		// followed by bounded event draining so the frame is presented before screen capture.
 		boolean[] painted = { false };
 		org.eclipse.swt.widgets.Listener observed = event -> painted[0] = true;
 		grid.addListener(SWT.Paint, observed);
 		try {
 			grid.redraw();
-			long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+			long started = System.nanoTime();
+			long deadline = started + java.util.concurrent.TimeUnit.SECONDS.toNanos(2);
+			long presented = started + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(120);
 			do {
 				grid.update();
 				while (display.readAndDispatch()) { /* drain real native events */ }
-                if (!painted[0]) {
+                if (!painted[0] || System.nanoTime() < presented) {
                     java.util.concurrent.locks.LockSupport.parkNanos(1_000_000L);
                 }
-			} while (!painted[0] && System.nanoTime() < deadline && !Thread.currentThread().isInterrupted());
+			} while ((!painted[0] || System.nanoTime() < presented) && System.nanoTime() < deadline && !Thread.currentThread().isInterrupted());
 			assertTrue("actual SWT Paint must complete before range assertions", painted[0]);
 		} finally {
 			grid.removeListener(SWT.Paint, observed);
@@ -391,9 +396,114 @@ public class GridVisibleRangeSupport_Test {
 	}
 
 
+	@Test
+	public void testScreenCaptureFreshnessBoundsAndGraphicsLifetime() throws Exception {
+		org.junit.Assume.assumeTrue(Boolean.getBoolean(SCREEN_CAPTURE));
+		assertEquals("gtk", SWT.getPlatform());
+		assertEquals("x11", System.getenv("GDK_BACKEND"));
+		assertTrue(!"1".equals(System.getenv("SWT_GTK4")));
+		Path output = Path.of("target", "m3-visible-range-screenshots");
+		int[] color = { SWT.COLOR_RED };
+		grid.addListener(SWT.Paint, event -> {
+			event.gc.setBackground(display.getSystemColor(color[0]));
+			event.gc.fillRectangle(32, 40, 64, 32);
+		});
+		flushPaint();
+		GridSwtScreenshotCapture.Result first = GridSwtScreenshotCapture.captureScreenControl(
+				grid, output.resolve("capture-red.png"));
+		Rectangle firstBounds = GridSwtScreenshotCapture.screenBounds(grid);
+		color[0] = SWT.COLOR_BLUE;
+		shell.setLocation(70, 80);
+		flushPaint();
+		GridSwtScreenshotCapture.Result second = GridSwtScreenshotCapture.captureScreenControl(
+				grid, output.resolve("capture-blue.png"));
+		Rectangle secondBounds = GridSwtScreenshotCapture.screenBounds(grid);
+		assertTrue(!firstBounds.equals(secondBounds));
+		int border = grid.getBorderWidth();
+		for (String name : new String[] {"red", "blue"}) {
+			org.eclipse.swt.graphics.ImageData data = new org.eclipse.swt.graphics.ImageLoader()
+					.load(output.resolve("capture-" + name + ".png").toString())[0];
+			org.eclipse.swt.graphics.RGB expected = display.getSystemColor(
+					name.equals("red") ? SWT.COLOR_RED : SWT.COLOR_BLUE).getRGB();
+			assertEquals(expected, data.palette.getRGB(data.getPixel(40 + border, 48 + border)));
+		}
+		grid.setVisible(false);
+		try {
+			GridSwtScreenshotCapture.screenBounds(grid);
+			fail("hidden capture must fail");
+		} catch (IllegalArgumentException expected) { /* required rejection */ }
+		grid.setVisible(true);
+		org.eclipse.swt.graphics.Point original = grid.getLocation();
+		grid.setLocation(-1, original.y);
+		try {
+			GridSwtScreenshotCapture.screenBounds(grid);
+			fail("ancestor-clipped capture must fail");
+		} catch (IllegalArgumentException expected) { /* required rejection */ }
+		grid.setLocation(original);
+		flushPaint();
+		// Warm all paths before turning on the ownership observer.
+		for (int path = 0; path < 3; path++) capturePath(path, output.resolve("repeat.png"));
+		boolean tracking = display.isTracking();
+		display.setTracking(true);
+		int failures = 0;
+		try {
+			java.util.Set<Object> baseline = trackedGraphics();
+			org.eclipse.swt.graphics.Image retained = new org.eclipse.swt.graphics.Image(display, 4, 4);
+			GC retainedGc = null;
+			try {
+				assertEquals(baseline.size() + 1, trackedGraphics().size());
+				retainedGc = new GC(retained);
+				assertEquals(baseline.size() + 2, trackedGraphics().size());
+			} finally {
+				if (retainedGc != null) retainedGc.dispose();
+				retained.dispose();
+			}
+			assertEquals(baseline, trackedGraphics());
+			for (int iteration = 0; iteration < 16; iteration++) {
+				for (int path = 0; path < 3; path++) {
+					capturePath(path, output.resolve("repeat.png"));
+					assertEquals(baseline, trackedGraphics());
+				}
+			}
+			for (int path = 0; path < 3; path++) {
+				try {
+					capturePath(path, output); // Existing directory: deterministic PNG write failure.
+					fail("PNG write to a directory must fail");
+				} catch (org.eclipse.swt.SWTException expected) { failures++; }
+				assertEquals(baseline, trackedGraphics());
+			}
+		} finally { display.setTracking(tracking); }
+		assertEquals(3, failures);
+		Files.writeString(output.resolve("screen-contract.properties"),
+				"captureMethod=DISPLAY_COPY_AREA\nmanualQaRequired=false\n"
+				+ "red.sha256=" + first.sha256() + "\nblue.sha256=" + second.sha256() + "\n"
+				+ "marker.x=" + (32 + border) + "\nmarker.y=" + (40 + border) + "\n"
+				+ "marker.width=64\nmarker.height=32\n"
+				+ "successfulCaptures=48\nwriteFailures=3\npositiveLeakControls=2\nretainedGraphicsDelta=0\n");
+	}
+
+	private void capturePath(int path, Path output) throws IOException {
+		switch (path) {
+			case 0: GridSwtScreenshotCapture.captureScreenControl(grid, output); break;
+			case 1: GridSwtScreenshotCapture.captureControl(grid, output); break;
+			case 2: GridSwtScreenshotCapture.captureNativeShell(grid, output); break;
+			default: throw new IllegalArgumentException("capture path");
+		}
+	}
+
+	private java.util.Set<Object> trackedGraphics() {
+		java.util.Set<Object> result = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+		for (Object value : display.getDeviceData().objects) {
+			if (value instanceof GC || value instanceof org.eclipse.swt.graphics.Image) result.add(value);
+		}
+		return result;
+	}
+
 	private void snapshot(String name) throws IOException {
 		Path directory = Path.of("target", "m3-visible-range-screenshots");
 		Files.createDirectories(directory);
+		GridSwtScreenshotCapture.Result screen = Boolean.getBoolean(SCREEN_CAPTURE)
+				? GridSwtScreenshotCapture.captureScreenControl(grid, directory.resolve(name + "-screen.png")) : null;
 		Path png = directory.resolve(name + ".png");
 		GridSwtScreenshotCapture.Result capture =
 				GridSwtScreenshotCapture.captureControl(grid, png);
@@ -414,6 +524,22 @@ public class GridVisibleRangeSupport_Test {
 		evidence.append("screenshot.sha256=").append(capture.sha256()).append('\n');
 		appendScrollBarEvidence(evidence, "h", grid.getHorizontalBar());
 		appendScrollBarEvidence(evidence, "v", grid.getVerticalBar());
+
+		if (Boolean.getBoolean(SCREEN_CAPTURE)) {
+			assertEquals("gtk", SWT.getPlatform());
+			assertEquals("x11", System.getenv("GDK_BACKEND"));
+			assertTrue(!"1".equals(System.getenv("SWT_GTK4")));
+			org.eclipse.swt.graphics.ImageData pixels = new org.eclipse.swt.graphics.ImageLoader()
+					.load(screen.path().toString())[0];
+			evidence.append("screen.captureMethod=").append(screen.method()).append('\n');
+			evidence.append("screen.screenshot=").append(screen.path().getFileName()).append('\n');
+			evidence.append("screen.sha256=").append(screen.sha256()).append('\n');
+			evidence.append("screen.bounds=").append(GridSwtScreenshotCapture.screenBounds(grid)).append('\n');
+			evidence.append("screen.dpi=").append(display.getDPI()).append('\n');
+			evidence.append("screen.backend=").append(System.getenv("GDK_BACKEND")).append('\n');
+			evidence.append("screen.pixelWidth=").append(pixels.width).append('\n');
+			evidence.append("screen.pixelHeight=").append(pixels.height).append('\n');
+		}
 
 		if (Boolean.getBoolean(NATIVE_CAPTURE)) {
 			Path nativePng = directory.resolve(name + "-native.png");

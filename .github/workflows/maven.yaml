@@ -6,7 +6,10 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    env:
+      SWT_GTK4: "0"
+      GDK_BACKEND: x11
     strategy:
       matrix:
         java: [ '21' ]
@@ -26,7 +29,14 @@ jobs:
     - name: Build All Widgets
       uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
       with:
-       run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+       run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore -Dnebula.grid.viewport.screenshots.screen=true
+    - name: Qualify Grid native screen pixels with OpenCV
+      run: |
+        python3 -m venv /tmp/nebula-vision
+        /tmp/nebula-vision/bin/pip install opencv-python-headless==4.12.0.88 numpy==2.2.6
+        /tmp/nebula-vision/bin/python m3/convergence/verify_grid_screenshots.py \
+          widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots \
+          widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports
     - name: Upload Grid visible-range screenshots
       if: always()
       uses: actions/upload-artifact@v4
@@ -34,7 +44,8 @@ jobs:
         name: grid-visible-range-screenshots
         if-no-files-found: warn
         path: |
-          widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/*.png
+          widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/
+          widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
 #    - name: Build Incubation Widgets
 #      run: xvfb-run mvn -V clean verify -Pincubation  -Dtycho.localArtifacts=ignore
 #    - name: Publish Unit Test Results

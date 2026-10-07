@@ -107,3 +107,28 @@ logical extent / state
   -> clipped body pass
   -> independently invalidated chrome/overlay planes
 ```
+
+## Automated native Grid qualification
+
+The GTK3/X11 Maven lane sets `nebula.grid.viewport.screenshots.screen=true` and requires
+`GC(Display).copyArea` for all six Grid viewport scenarios. `Control.print` images remain
+separate diagnostics. Capture must reject hidden, clipped, empty, disposed and off-display
+targets; the shared SWT coordinate logic is donated through the Synexia recipe packet.
+The million-row fixture must fit inside its shell before screen capture.
+Capture visible pixels before offscreen rendering: the rejected trial recorded blank native
+frames after `Control.print` despite changed offscreen output. Drain the native frame before
+capture and require interior content, not only a border or scrollbar. Keep the rejected frames.
+
+Maven runs `GridFixedColumn_Test`, `GridVisibleRangeSupport_Test`,
+`GridViewportCoordinates_Test` and `GridGCProxy_Test`. OpenCV checks persisted PNG hashes,
+dimensions, nonblank rendering, scrolling freshness, resize and sparse-model observations.
+A red/blue geometry oracle proves repaint after moving the shell; six mutated-image controls
+must be rejected. All three capture paths undergo 48 captures and three forced write failures,
+with Image/GC positive leak controls and no retained tracked graphics. No manual QA is required.
+Run `m3/convergence/verify_grid_screenshots.py` with screenshot and JUnit report directories.
+
+These gates complement the separate SWT CPU/heap/process-memory suite. Graphics-object tracking
+does not prove all native allocations, and this Grid lane does not qualify all Nebula widgets,
+JFace adapters, other platforms or repository-wide M3 convergence. Preserve the original Tycho
+reactor as product authority. Recipe, seals and evidence remain canonical in
+`hsoliwal/com.synexia`, crate `nebula-screen-qualification-20261007`.

@@ -244,18 +244,18 @@ public class GridGCProxy_Test {
 				proxy.lineAttributes(new LineAttributes(
 						2f, SWT.CAP_ROUND, SWT.JOIN_BEVEL, SWT.LINE_DASH,
 						new float[] {3f, 5f}, 1f, 8f));
-				assertEquals(1, proxy.nativeStateTransitionCount(),
-						"equivalent stroke nodes must collapse");
+				assertEquals("equivalent stroke nodes must collapse",
+						1, proxy.nativeStateTransitionCount());
 
 				proxy.alpha(123);
 				proxy.alpha(123);
-				assertEquals(2, proxy.nativeStateTransitionCount(),
-						"equivalent alpha nodes must collapse");
+				assertEquals("equivalent alpha nodes must collapse",
+						2, proxy.nativeStateTransitionCount());
 
 				proxy.translate(4, 0);
 				proxy.translate(4, 0);
-				assertEquals(4, proxy.nativeStateTransitionCount(),
-						"affine deltas remain ordered because applying the same delta twice is observable");
+				assertEquals("affine deltas remain ordered because applying the same delta twice is observable",
+						4, proxy.nativeStateTransitionCount());
 			}
 		} finally {
 			gc.dispose();
