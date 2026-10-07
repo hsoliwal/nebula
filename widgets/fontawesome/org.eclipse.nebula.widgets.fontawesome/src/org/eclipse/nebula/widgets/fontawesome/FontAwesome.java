@@ -712,8 +712,9 @@ public class FontAwesome {
 		// Add dispose listener
 		Display.getDefault().addListener(SWT.Dispose, e -> {
 			for (Font font : fonts.values()) {
-				if (!font.isDisposed())
-					font.dispose();
+                if (!font.isDisposed()) {
+                    font.dispose();
+                }
 			}
 		});
 

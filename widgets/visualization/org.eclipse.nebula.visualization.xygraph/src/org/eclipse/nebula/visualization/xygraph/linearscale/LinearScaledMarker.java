@@ -124,8 +124,9 @@ public class LinearScaledMarker extends Figure {
 		if (markersMap.containsKey(label)) {
 			markersMap.get(label).value = value;
 			markersMap.get(label).color = color;
-		} else
-			markersMap.put(label, new MarkerProperties(value, color));
+		} else {
+            markersMap.put(label, new MarkerProperties(value, color));
+        }
 		dirty = true;
 	}
 
@@ -138,10 +139,11 @@ public class LinearScaledMarker extends Figure {
 	 *            the value of the marker element
 	 */
 	public void addMarkerElement(String label, double value) {
-		if (markersMap.containsKey(label))
-			markersMap.get(label).value = value;
-		else
-			markersMap.put(label, new MarkerProperties(value, DEFAULT_MARKER_COLOR));
+        if (markersMap.containsKey(label)) {
+            markersMap.get(label).value = value;
+        } else {
+            markersMap.put(label, new MarkerProperties(value, DEFAULT_MARKER_COLOR));
+        }
 		dirty = true;
 	}
 
@@ -224,8 +226,9 @@ public class LinearScaledMarker extends Figure {
 
 	@Override
 	public void setBounds(Rectangle rect) {
-		if (!bounds.equals(rect))
-			dirty = true;
+        if (!bounds.equals(rect)) {
+            dirty = true;
+        }
 		super.setBounds(rect);
 
 	}

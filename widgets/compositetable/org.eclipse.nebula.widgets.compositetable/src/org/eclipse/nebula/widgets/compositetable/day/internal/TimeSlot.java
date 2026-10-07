@@ -119,8 +119,12 @@ public class TimeSlot extends Canvas {
 	private RGB lighten(RGB color, float amount) {
 		float[] hsb = color.getHSB();
 		float b = hsb[2] + hsb[2] * amount;
-		if (b < 0) b=0;
-		if (b > 1) b=1;
+        if (b < 0) {
+            b = 0;
+        }
+        if (b > 1) {
+            b = 1;
+        }
 		return new RGB(hsb[0], hsb[1], b);
 	}
 	

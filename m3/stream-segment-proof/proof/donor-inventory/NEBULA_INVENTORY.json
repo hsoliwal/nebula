@@ -1,0 +1,193 @@
+{
+  "repository": "https://github.com/hsoliwal/nebula",
+  "master_pin": "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+  "existing_nebula_owners": [
+    {
+      "path": "m3/recipe-first/pom.xml",
+      "sha256": "540ead22eebef0b756986c32e2c68e9a837af33e181b76a5a667c749b4ac97cf",
+      "bytes": 5862,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3InventoryRecipe.java",
+      "sha256": "3d241d0b17cfea336f585d46ad4564fa5a38c86afb895f560ac2f8254768c007",
+      "bytes": 9759,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3InventoryTable.java",
+      "sha256": "b60de251c4e610b12377f1454a4670992adc786e363d397ecdd87d9960cfb3be",
+      "bytes": 6106,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntAtomEligibility.java",
+      "sha256": "e669ff390743c009909cc945f61e10b0a5c511f15e1c97a2ceb1a9a878106d6c",
+      "bytes": 6900,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/atom/NebulaM3AtomizePureIntReturnRecipe.java",
+      "sha256": "963265e9375b712f2d56f5c58288c731668650efdc1be24071d3035e661cd8d3",
+      "bytes": 3073,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3RecipeDagManifest.java",
+      "sha256": "31230249f1f305c976afe5b41ed750df708411d7dad07598745ca26de5a4acc1",
+      "bytes": 5960,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3FileConvergenceRecipeDag.java",
+      "sha256": "da2746a3603ad6d344ad6c633d4e1bea621fc030637843a325136181fc853f91",
+      "bytes": 4018,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3ExactJavaSnapshotRecipe.java",
+      "sha256": "e11813b817e43b1745b490e8a49099931302519ddec486bcd4156644e1bbf3bd",
+      "bytes": 5901,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3VerbatimSourceSeal.java",
+      "sha256": "23c0c2d90bfd9998f34de9ffdccf39fdd122b651a573671a77df1984e1ccf420",
+      "bytes": 8116,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/openrewrite-line-terminators/PROVENANCE.md",
+      "sha256": "420a706f8581938f7c1a03a74991f61dac006f8500e92c6f01ceb05b7590a517",
+      "bytes": 1698,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "m3/openrewrite-line-terminators/third_party/SHA256SUMS",
+      "sha256": "7f65beb0eb299f45ac2bb009cf65fab96768e5e3b7736cdc37bb3010cd5e74db",
+      "bytes": 1112,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/src/org/eclipse/nebula/widgets/opal/roundedtoolbar/RoundedToolbar.java",
+      "sha256": "fd00029ccb595dfedd0ec1c0604856359e065c9d2ca3fcbbe86382b15bbc0c59",
+      "bytes": 17718,
+      "license": "EPL-2.0"
+    },
+    {
+      "path": "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3DeclarativeConvergenceControlRecipe.java",
+      "sha256": "389cf1487f96774769e36cf0b7352510de8230369a657f911ea870d0680c5e69",
+      "bytes": 9803,
+      "license": "EPL-2.0"
+    }
+  ],
+  "existing_rewrite_version": "8.90.4",
+  "existing_overlay_coordinate": "com.synexia.recipe:openrewrite-line-terminators:8.90.4-m3-f3e4bfe19654",
+  "jdk": {
+    "runtime_version": "Oracle HotSpot21.0.9+7-LTS-338",
+    "private_oracle_source_archive_sha256": "e3b3af6c8fae46c4183c063915c421393766254506e085c962332910f6949e8f",
+    "public_donor_repository": "https://github.com/openjdk/jdk21u",
+    "public_donor_tag": "jdk-21.0.9+7",
+    "public_donor_commit": "98dbb49926d8e911b0713cefd9a2fc40955fa7f7",
+    "sources": [
+      {
+        "path": "src/java.base/share/classes/java/util/ArrayList.java",
+        "sha256": "c7db659273f9130e08b0d4508c34ff655e157b9ed48cdc7f5f5a2146ebb1c137",
+        "bytes": 65533,
+        "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+        "url": "https://raw.githubusercontent.com/openjdk/jdk21u/98dbb49926d8e911b0713cefd9a2fc40955fa7f7/src/java.base/share/classes/java/util/ArrayList.java",
+        "oracle_runtime_source_sha256_private_reference": "ff5dafa05874edf484dbdcf5c54709d4249e9196951c41deeea3ff0617c7e788",
+        "body_after_package_byte_equal_to_local_oracle": true
+      },
+      {
+        "path": "src/java.base/share/classes/java/util/Collection.java",
+        "sha256": "de833f449dd331f125692ae3dd0ff06d7ab62d9be47d7edb56907ce2dd7988e4",
+        "bytes": 38921,
+        "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+        "url": "https://raw.githubusercontent.com/openjdk/jdk21u/98dbb49926d8e911b0713cefd9a2fc40955fa7f7/src/java.base/share/classes/java/util/Collection.java",
+        "oracle_runtime_source_sha256_private_reference": "290d65a39df8dca61b91d3a9e6fb3d4cadb2a27b893a9bd881d7e8da37aa0ea3",
+        "body_after_package_byte_equal_to_local_oracle": true
+      },
+      {
+        "path": "src/java.base/share/classes/java/util/stream/AbstractPipeline.java",
+        "sha256": "cbd4d9f14e048e087fb7d7bc81032f32c5a26d9e6159f8e60fde43ce6d17a3d3",
+        "bytes": 29542,
+        "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+        "url": "https://raw.githubusercontent.com/openjdk/jdk21u/98dbb49926d8e911b0713cefd9a2fc40955fa7f7/src/java.base/share/classes/java/util/stream/AbstractPipeline.java",
+        "oracle_runtime_source_sha256_private_reference": "a952fc62829c551f3454bdf69747a3ff5264e1f0dca3e3fed802c2791c063874",
+        "body_after_package_byte_equal_to_local_oracle": true
+      },
+      {
+        "path": "src/java.base/share/classes/java/util/stream/ReferencePipeline.java",
+        "sha256": "cfaad79cb931191a7f23a3b6133c8c337c9941f9b0ca5656da22b11b1b0bfcd3",
+        "bytes": 31784,
+        "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+        "url": "https://raw.githubusercontent.com/openjdk/jdk21u/98dbb49926d8e911b0713cefd9a2fc40955fa7f7/src/java.base/share/classes/java/util/stream/ReferencePipeline.java",
+        "oracle_runtime_source_sha256_private_reference": "74e0030781e509c62a2abf25fd8cb730abb9dd749fad8640ba249808e64e2df0",
+        "body_after_package_byte_equal_to_local_oracle": true
+      },
+      {
+        "path": "src/java.base/share/classes/java/util/stream/FindOps.java",
+        "sha256": "3ada9949be120880e5e74a113be6fe06469aeaba3dca4bf951af07186739d47f",
+        "bytes": 13902,
+        "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+        "url": "https://raw.githubusercontent.com/openjdk/jdk21u/98dbb49926d8e911b0713cefd9a2fc40955fa7f7/src/java.base/share/classes/java/util/stream/FindOps.java",
+        "oracle_runtime_source_sha256_private_reference": "49a112063a7fc3f9481a0528480cef3cb0e32516bc8e1c5307f93ded87a1e0e4",
+        "body_after_package_byte_equal_to_local_oracle": true
+      },
+      {
+        "path": "src/java.base/share/classes/java/util/stream/Stream.java",
+        "sha256": "3524f25b18c080153554ee03c85d7c82a6b3180c1b5153702358126cf2056f8f",
+        "bytes": 80502,
+        "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+        "url": "https://raw.githubusercontent.com/openjdk/jdk21u/98dbb49926d8e911b0713cefd9a2fc40955fa7f7/src/java.base/share/classes/java/util/stream/Stream.java",
+        "oracle_runtime_source_sha256_private_reference": "142fce07c8872f4aa0f79b78e4d9607b481fcb6ce65cea5e7ad232a425b3c05f",
+        "body_after_package_byte_equal_to_local_oracle": true
+      }
+    ],
+    "use": "Public FOSS semantic reference and runtime direct API calls only; no JDK implementation source port",
+    "oracle_reference_custody": "Private local source references outside shippable donor-inventory; not copied into PR"
+  },
+  "l2m": {
+    "repository": "https://github.com/hsoliwal/com.synexia",
+    "commit": "c921c716219794e62032c882df929fb2d6679903",
+    "pr": "https://github.com/hsoliwal/com.synexia/pull/8913",
+    "sources": [
+      {
+        "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3L2MRecipe.java",
+        "sha256": "412a10fd31527313d0843150e00a64d4649f021d1a991d3b4ede37071cf31f31",
+        "bytes": 3626,
+        "license": "Apache-2.0"
+      },
+      {
+        "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3L2MFacades.java",
+        "sha256": "9fcdaba54bfeb88d563b06d00b99cb2dc0fba83c7232528f75068fb3a45e24b7",
+        "bytes": 10340,
+        "license": "Apache-2.0"
+      },
+      {
+        "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3SemanticAttribution.java",
+        "sha256": "81785a3bc4d62a97a1ce4f14e60c4ebfc51baacc98c900acf21c3225a64c5a90",
+        "bytes": 5189,
+        "license": "Apache-2.0"
+      }
+    ],
+    "fit_limit": "Only owned typed field Function facades; 8.17.1->8.90.4 compatibility not inferred"
+  },
+  "pr49": {
+    "head": "3310de21b63cff8e329d3a785fb7a34d36087b73",
+    "scope": [
+      ".github/workflows/m3-nebula-recipe-first.yml",
+      ".m3/atom-pattern/policy.properties",
+      "m3/README.md",
+      "m3/catalogue/second-pass-recipe-binding.tsv",
+      "m3/convergence/PLAN.tsv",
+      "m3/docs/second-pass-signal-chain.md",
+      "m3/recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3SecondPassBinding.java",
+      "m3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3SecondPassBindingTest.java",
+      "pom.xml"
+    ],
+    "authority": "Read-only external second-pass binding; no stream segment naming owner"
+  },
+  "production_edits": 0
+}

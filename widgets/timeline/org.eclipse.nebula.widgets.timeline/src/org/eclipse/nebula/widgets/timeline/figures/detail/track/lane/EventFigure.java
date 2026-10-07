@@ -43,8 +43,9 @@ public class EventFigure extends RoundedRectangle implements Comparable<EventFig
 		fLabel.setForegroundColor(ColorConstants.black);
 		add(fLabel);
 
-		if (event.getMessage() != null)
-			setToolTip(new EventTooltip(event.getMessage()));
+        if (event.getMessage() != null) {
+            setToolTip(new EventTooltip(event.getMessage()));
+        }
 	}
 
 	public void setEventColor(Color color) {
@@ -67,8 +68,9 @@ public class EventFigure extends RoundedRectangle implements Comparable<EventFig
 			setToolTip((event.getMessage() == null) ? null : new EventTooltip(event.getMessage()));
 
 			Color eventColor = getParent().getForegroundColor();
-			if (event.getColorCode() != null)
-				eventColor = RootFigure.getRootFigure(this).getStyleProvider().getColor(event.getRgb());
+            if (event.getColorCode() != null) {
+                eventColor = RootFigure.getRootFigure(this).getStyleProvider().getColor(event.getRgb());
+            }
 
 			setEventColor(eventColor);
 		}
@@ -86,8 +88,9 @@ public class EventFigure extends RoundedRectangle implements Comparable<EventFig
 	}
 
 	public ITimelineEvent getEvent() {
-		if (getParent() != null)
-			return (ITimelineEvent) getParent().getLayoutManager().getConstraint(this);
+        if (getParent() != null) {
+            return (ITimelineEvent) getParent().getLayoutManager().getConstraint(this);
+        }
 
 		return null;
 	}
@@ -95,12 +98,13 @@ public class EventFigure extends RoundedRectangle implements Comparable<EventFig
 	@Override
 	public int compareTo(EventFigure eventFigure) {
 		final long difference = getEvent().getStartTimestamp() - eventFigure.getEvent().getStartTimestamp();
-		if (difference < 0)
-			return -1;
-		else if (difference > 0)
-			return 1;
-		else
-			return 0;
+        if (difference < 0) {
+            return -1;
+        } else if (difference > 0) {
+            return 1;
+        } else {
+            return 0;
+        }
 	}
 
 	@Override

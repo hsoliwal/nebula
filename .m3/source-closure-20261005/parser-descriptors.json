@@ -1,0 +1,17 @@
+[
+  {
+    "type": "org.openrewrite.internal.StringUtils",
+    "descriptors_equal": true,
+    "sha256": "5c8f340ca0d1476e17991b9490b54aaaf1645f184816aedae5676e6e8c576647"
+  },
+  {
+    "type": "org.openrewrite.java.isolated.ReloadableJava21ParserVisitor",
+    "descriptors_equal": true,
+    "sha256": "a5b76ae8a11673d64377ebf7782fb814b50a01c07b02ed2d40652c90400ffe81"
+  },
+  {
+    "type": "org.openrewrite.java.isolated.ReloadableJava21JavadocVisitor",
+    "descriptors_equal": true,
+    "sha256": "bfd4185aabc9c174f8bc47d82490e104832ba15d3f5a49a5c5a2f773b811b7de"
+  }
+]

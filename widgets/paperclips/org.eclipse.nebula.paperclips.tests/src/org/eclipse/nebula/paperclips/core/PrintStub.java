@@ -31,8 +31,9 @@ public final class PrintStub implements Print {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!Util.sameClass(this, obj))
-			return false;
+        if (!Util.sameClass(this, obj)) {
+            return false;
+        }
 
 		PrintStub that = (PrintStub) obj;
 		return this.id == that.id;

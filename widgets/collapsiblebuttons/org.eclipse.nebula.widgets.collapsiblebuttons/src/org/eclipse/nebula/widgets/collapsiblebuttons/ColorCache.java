@@ -84,7 +84,9 @@ public class ColorCache {
      */
     public static void disposeCachedColor() {
         Iterator<Color> e = mColorTable.values().iterator();
-        while (e.hasNext()) e.next().dispose();
+        while (e.hasNext()) {
+            e.next().dispose();
+        }
 
         mColorTable.clear();
     }
@@ -197,8 +199,9 @@ public class ColorCache {
     }
 
     private static void checkInstance() {
-        if (mInstance == null)
+        if (mInstance == null) {
             mInstance = new ColorCache();
+        }
     }
 
     // see disposeAll();
@@ -206,7 +209,9 @@ public class ColorCache {
     	checkInstance();
 
         Iterator<Color> e = mColorTable.values().iterator();
-        while (e.hasNext()) e.next().dispose();
+        while (e.hasNext()) {
+            e.next().dispose();
+        }
 
         mColorTable.clear();
 

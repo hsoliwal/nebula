@@ -176,14 +176,16 @@ public class DefaultColumnGroupHeaderRenderer extends GridHeaderRenderer
         else
         {
           int toggleWidth = 0;
-            if ((group.getStyle() & SWT.TOGGLE) != 0)
-              toggleWidth = toggleRenderer.getSize().x;
+            if ((group.getStyle() & SWT.TOGGLE) != 0) {
+                toggleWidth = toggleRenderer.getSize().x;
+            }
 
           int plainTextWidth;
-          if (wHint == SWT.DEFAULT)
-            plainTextWidth = getBounds().width - x - rightMargin - toggleWidth;
-          else
-            plainTextWidth = wHint - x - rightMargin - toggleWidth;
+            if (wHint == SWT.DEFAULT) {
+                plainTextWidth = getBounds().width - x - rightMargin - toggleWidth;
+            } else {
+                plainTextWidth = wHint - x - rightMargin - toggleWidth;
+            }
 
           getTextLayout(gc, group);
             textLayout.setText(group.getText());

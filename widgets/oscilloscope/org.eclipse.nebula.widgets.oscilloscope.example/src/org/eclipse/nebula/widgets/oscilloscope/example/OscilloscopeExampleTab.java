@@ -106,14 +106,18 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 				@Override
 				public void hookSetValues(int value) {
 
-					if (btnSine.getSelection())
-						setSineValue(value);
-					if (btnSquareWave.getSelection())
-						setSquareValue(value);
-					if (btnRandomSpikeEvery.getSelection())
-						setRandomPulse(value);
-					if (btnHeartbeatEveryPulse.getSelection())
-						setHeartBeat();
+                    if (btnSine.getSelection()) {
+                        setSineValue(value);
+                    }
+                    if (btnSquareWave.getSelection()) {
+                        setSquareValue(value);
+                    }
+                    if (btnRandomSpikeEvery.getSelection()) {
+                        setRandomPulse(value);
+                    }
+                    if (btnHeartbeatEveryPulse.getSelection()) {
+                        setHeartBeat();
+                    }
 
 				}
 
@@ -140,14 +144,16 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 						}
 
 						int intValue = (int) (Math.sin(value) * 100);
-						if (intValue == 99)
-							if (sound.getSelection()) {
-								clipper.playClip(getActiveSoundfile(), 0);
-							}
+                        if (intValue == 99) {
+                            if (sound.getSelection()) {
+                                clipper.playClip(getActiveSoundfile(), 0);
+                            }
+                        }
 						getOscilloscope().setValue(0, intValue);
 
-						if (!btnFollowProgression.getSelection())
-							return;
+                        if (!btnFollowProgression.getSelection()) {
+                            return;
+                        }
 					}
 				}
 
@@ -163,15 +169,17 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 								+ (Math.sin(7 * value) / 7) + (Math.sin(9 * value) / 9) + (Math.sin(11 * value) / 11)
 								+ (Math.sin(13 * value) / 13) + (Math.sin(15 * value) / 15) + (Math.sin(17 * value) / 17) + (Math
 								.sin(19 * value) / 19)) * 100);
-						// intValue += ;
-						if (intValue >= 90)
-							if (sound.getSelection()) {
-								clipper.playClip(getActiveSoundfile(), 0);
-							}
+                        // intValue += ;
+                        if (intValue >= 90) {
+                            if (sound.getSelection()) {
+                                clipper.playClip(getActiveSoundfile(), 0);
+                            }
+                        }
 						getOscilloscope().setValue(0, intValue);
 
-						if (!btnFollowProgression_1.getSelection())
-							return;
+                        if (!btnFollowProgression_1.getSelection()) {
+                            return;
+                        }
 					}
 				}
 
@@ -207,12 +215,13 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 
 				@Override
 				public File getActiveSoundfile() {
-					if (activeSoundCombo.getSelectionIndex() == -1)
-						return null;
-					else if (activeSoundCombo.getItem(activeSoundCombo.getSelectionIndex()).equals("Heartbeat")) {
-						return new File(HEARTBEAT);
-					} else if (activeSoundCombo.getItem(activeSoundCombo.getSelectionIndex()).equals("Beep"))
-						return new File(BEEP);
+                    if (activeSoundCombo.getSelectionIndex() == -1) {
+                        return null;
+                    } else if (activeSoundCombo.getItem(activeSoundCombo.getSelectionIndex()).equals("Heartbeat")) {
+                        return new File(HEARTBEAT);
+                    } else if (activeSoundCombo.getItem(activeSoundCombo.getSelectionIndex()).equals("Beep")) {
+                        return new File(BEEP);
+                    }
 					return new File(FLATLINE);
 				}
 
@@ -228,12 +237,13 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 
 				@Override
 				public File getInactiveSoundfile() {
-					if (inactiveSoundCombo.getSelectionIndex() == -1)
-						return null;
-					else if (inactiveSoundCombo.getItem(inactiveSoundCombo.getSelectionIndex()).equals("Heartbeat"))
-						return new File(HEARTBEAT);
-					else if (inactiveSoundCombo.getItem(inactiveSoundCombo.getSelectionIndex()).equals("Beep"))
-						return new File(BEEP);
+                    if (inactiveSoundCombo.getSelectionIndex() == -1) {
+                        return null;
+                    } else if (inactiveSoundCombo.getItem(inactiveSoundCombo.getSelectionIndex()).equals("Heartbeat")) {
+                        return new File(HEARTBEAT);
+                    } else if (inactiveSoundCombo.getItem(inactiveSoundCombo.getSelectionIndex()).equals("Beep")) {
+                        return new File(BEEP);
+                    }
 					return new File(FLATLINE);
 				}
 
@@ -247,21 +257,24 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 
 					if (image == null) {
 						byte[] bytes = new byte[BACKGROUND_MONITOR.length];
-						for (int i = 0; i < BACKGROUND_MONITOR.length; i++)
-							bytes[i] = (byte) BACKGROUND_MONITOR[i];
+                        for (int i = 0; i < BACKGROUND_MONITOR.length; i++) {
+                            bytes[i] = (byte) BACKGROUND_MONITOR[i];
+                        }
 						image = new Image(null, new ByteArrayInputStream(bytes));
 					}
 					if (image1 == null) {
 						byte[] bytes = new byte[BACKGROUND_MONITOR_SMALL.length];
-						for (int i = 0; i < BACKGROUND_MONITOR_SMALL.length; i++)
-							bytes[i] = (byte) BACKGROUND_MONITOR_SMALL[i];
+                        for (int i = 0; i < BACKGROUND_MONITOR_SMALL.length; i++) {
+                            bytes[i] = (byte) BACKGROUND_MONITOR_SMALL[i];
+                        }
 						image1 = new Image(null, new ByteArrayInputStream(bytes));
 					}
 
-					if (imageCombo.getItem(imageCombo.getSelectionIndex()).equals("None"))
-						return null;
-					else if (imageCombo.getItem(imageCombo.getSelectionIndex()).equals("SMALL RASTER"))
-						return image1;
+                    if (imageCombo.getItem(imageCombo.getSelectionIndex()).equals("None")) {
+                        return null;
+                    } else if (imageCombo.getItem(imageCombo.getSelectionIndex()).equals("SMALL RASTER")) {
+                        return image1;
+                    }
 
 					return image;
 				}
@@ -278,22 +291,26 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 
 				@Override
 				public boolean isSoundRequired() {
-					// active sounds are handled by the signal providers.
-					if (!isServiceActive())
-						return sound.getSelection();
+                    // active sounds are handled by the signal providers.
+                    if (!isServiceActive()) {
+                        return sound.getSelection();
+                    }
 					return false;
 				}
 
 				@Override
 				public int getTailSize() {
-					if (tailsizeMax.getSelection())
-						return Oscilloscope.TAILSIZE_MAX;
+                    if (tailsizeMax.getSelection()) {
+                        return Oscilloscope.TAILSIZE_MAX;
+                    }
 
-					if (tailsizeFill.getSelection())
-						return Oscilloscope.TAILSIZE_FILL;
+                    if (tailsizeFill.getSelection()) {
+                        return Oscilloscope.TAILSIZE_FILL;
+                    }
 
-					if (tailsizeDefault.getSelection())
-						return Oscilloscope.TAILSIZE_DEFAULT;
+                    if (tailsizeDefault.getSelection()) {
+                        return Oscilloscope.TAILSIZE_DEFAULT;
+                    }
 
 					return tailSize.getSelection();
 				}
@@ -363,10 +380,11 @@ public class OscilloscopeExampleTab extends AbstractExampleTab {
 
 			serviceActive = new Button(grpSpeed, SWT.CHECK);
 			serviceActive.addListener(SWT.Selection, e-> {
-					if (serviceActive.getSelection())
-						oscilloscope.setForeground(oscilloscope.getDisplay().getSystemColor(SWT.COLOR_GREEN));
-					else
-						oscilloscope.setForeground(oscilloscope.getDisplay().getSystemColor(SWT.COLOR_RED));
+                if (serviceActive.getSelection()) {
+                    oscilloscope.setForeground(oscilloscope.getDisplay().getSystemColor(SWT.COLOR_GREEN));
+                } else {
+                    oscilloscope.setForeground(oscilloscope.getDisplay().getSystemColor(SWT.COLOR_RED));
+                }
 			});
 			serviceActive.setSelection(false);
 			new Label(grpSpeed, SWT.NONE);

@@ -1,0 +1,63 @@
+lane	case	exception	trace
+before	MouseHover:EMPTY		
+after	MouseHover:EMPTY		
+before	MouseHover:OVERLAP		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+after	MouseHover:OVERLAP		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+before	MouseHover:MISS_DISABLED_THEN_MATCH		a.bounds;b.bounds;b.enabled;c.bounds;c.enabled;c.tooltip;c.tooltip;toolbar.tooltip:tip-c
+after	MouseHover:MISS_DISABLED_THEN_MATCH		a.bounds;b.bounds;b.enabled;c.bounds;c.enabled;c.tooltip;c.tooltip;toolbar.tooltip:tip-c
+before	MouseHover:NO_MATCH		a.bounds;b.bounds;b.enabled
+after	MouseHover:NO_MATCH		a.bounds;b.bounds;b.enabled
+before	MouseHover:NULL_ITEM	java.lang.NullPointerException	
+after	MouseHover:NULL_ITEM	java.lang.NullPointerException	
+before	MouseHover:NULL_BOUNDS	java.lang.NullPointerException	a.bounds
+after	MouseHover:NULL_BOUNDS	java.lang.NullPointerException	a.bounds
+before	MouseHover:EMPTY_NULL_EVENT		
+after	MouseHover:EMPTY_NULL_EVENT		
+before	MouseHover:NULL_EVENT	java.lang.NullPointerException	a.bounds
+after	MouseHover:NULL_EVENT	java.lang.NullPointerException	a.bounds
+before	MouseHover:BOUNDS_THROW	java.lang.IllegalStateException	a.bounds
+after	MouseHover:BOUNDS_THROW	java.lang.IllegalStateException	a.bounds
+before	MouseHover:ENABLED_THROW	java.lang.IllegalStateException	a.bounds;a.enabled
+after	MouseHover:ENABLED_THROW	java.lang.IllegalStateException	a.bounds;a.enabled
+before	MouseHover:MUTABLE_EVENT		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+after	MouseHover:MUTABLE_EVENT		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+before	MouseHover:POST_REGISTRATION_EVENT		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+after	MouseHover:POST_REGISTRATION_EVENT		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+before	MouseHover:MUTATE_MATCH	java.util.ConcurrentModificationException	a.bounds;a.enabled
+after	MouseHover:MUTATE_MATCH	java.util.ConcurrentModificationException	a.bounds;a.enabled
+before	MouseHover:MUTATE_MISS	java.util.ConcurrentModificationException	a.bounds
+after	MouseHover:MUTATE_MISS	java.util.ConcurrentModificationException	a.bounds
+before	MouseHover:MUTATE_THEN_THROW	java.lang.IllegalStateException	a.bounds
+after	MouseHover:MUTATE_THEN_THROW	java.lang.IllegalStateException	a.bounds
+before	MouseHover:NULL_TOOLTIP		a.bounds;a.enabled;a.tooltip;toolbar.tooltip:
+after	MouseHover:NULL_TOOLTIP		a.bounds;a.enabled;a.tooltip;toolbar.tooltip:
+before	MouseDown:EMPTY		
+after	MouseDown:EMPTY		
+before	MouseDown:OVERLAP		a.bounds;a.enabled;a.isDropDown;a.isPushButon;a.isToogleButon;a.getSelection;a.setSelection;toolbar.redraw;toolbar.update
+after	MouseDown:OVERLAP		a.bounds;a.enabled;a.isDropDown;a.isPushButon;a.isToogleButon;a.getSelection;a.setSelection;toolbar.redraw;toolbar.update
+before	MouseDown:MISS_DISABLED_THEN_MATCH		a.bounds;b.bounds;b.enabled;c.bounds;c.enabled;c.isDropDown;c.isPushButon;c.isToogleButon;c.getSelection;c.setSelection;toolbar.redraw;toolbar.update
+after	MouseDown:MISS_DISABLED_THEN_MATCH		a.bounds;b.bounds;b.enabled;c.bounds;c.enabled;c.isDropDown;c.isPushButon;c.isToogleButon;c.getSelection;c.setSelection;toolbar.redraw;toolbar.update
+before	MouseDown:MUTABLE_EVENT		a.bounds;a.enabled;a.isDropDown;a.isPushButon;a.isToogleButon;a.getSelection;a.setSelection;toolbar.redraw;toolbar.update
+after	MouseDown:MUTABLE_EVENT		a.bounds;a.enabled;a.isDropDown;a.isPushButon;a.isToogleButon;a.getSelection;a.setSelection;toolbar.redraw;toolbar.update
+before	MouseDown:MUTATE_MATCH	java.util.ConcurrentModificationException	a.bounds;a.enabled
+after	MouseDown:MUTATE_MATCH	java.util.ConcurrentModificationException	a.bounds;a.enabled
+before	MouseDown:BOUNDS_THROW	java.lang.IllegalStateException	a.bounds
+after	MouseDown:BOUNDS_THROW	java.lang.IllegalStateException	a.bounds
+before	MouseUp:EMPTY		
+after	MouseUp:EMPTY		
+before	MouseUp:OVERLAP		a.bounds;a.enabled;a.isToogleButon;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED:null;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED_STATE:null;a.isPushButon;a.fireSelectionEvent;a.isRadio;toolbar.redraw;toolbar.update
+after	MouseUp:OVERLAP		a.bounds;a.enabled;a.isToogleButon;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED:null;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED_STATE:null;a.isPushButon;a.fireSelectionEvent;a.isRadio;toolbar.redraw;toolbar.update
+before	MouseUp:MISS_DISABLED_THEN_MATCH		a.bounds;b.bounds;b.enabled;c.bounds;c.enabled;c.isToogleButon;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED:null;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED_STATE:null;c.isPushButon;c.fireSelectionEvent;c.isRadio;toolbar.redraw;toolbar.update
+after	MouseUp:MISS_DISABLED_THEN_MATCH		a.bounds;b.bounds;b.enabled;c.bounds;c.enabled;c.isToogleButon;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED:null;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED_STATE:null;c.isPushButon;c.fireSelectionEvent;c.isRadio;toolbar.redraw;toolbar.update
+before	MouseUp:MUTABLE_EVENT		a.bounds;a.enabled;a.isToogleButon;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED:null;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED_STATE:null;a.isPushButon;a.fireSelectionEvent;a.isRadio;toolbar.redraw;toolbar.update
+after	MouseUp:MUTABLE_EVENT		a.bounds;a.enabled;a.isToogleButon;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED:null;toolbar.setData:class org.eclipse.nebula.widgets.opal.roundedtoolbar.RoundedToolbar_LAST_TOGGLE_BUTTON_SELECTED_STATE:null;a.isPushButon;a.fireSelectionEvent;a.isRadio;toolbar.redraw;toolbar.update
+before	MouseUp:MUTATE_MATCH	java.util.ConcurrentModificationException	a.bounds;a.enabled
+after	MouseUp:MUTATE_MATCH	java.util.ConcurrentModificationException	a.bounds;a.enabled
+before	MouseUp:BOUNDS_THROW	java.lang.IllegalStateException	a.bounds
+after	MouseUp:BOUNDS_THROW	java.lang.IllegalStateException	a.bounds
+before	MouseHover:MUTABLE_EVENT		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+early-coordinates	MouseHover:MUTABLE_EVENT		a.bounds
+before	MouseHover:MUTATE_MATCH	java.util.ConcurrentModificationException	a.bounds;a.enabled
+enhanced-for	MouseHover:MUTATE_MATCH		a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a
+before	MouseHover:MUTATE_MISS	java.util.ConcurrentModificationException	a.bounds
+enhanced-for	MouseHover:MUTATE_MISS		a.bounds

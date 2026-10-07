@@ -48,16 +48,24 @@ public class PrintUtils {
 
 	    // Calculate the printable area, using 1 inch margins
 	    int left = trim.x + dpi.x;
-	    if (left < rect.x) left = rect.x;
+        if (left < rect.x) {
+            left = rect.x;
+        }
 
 	    int right = (rect.width + trim.x + trim.width) - dpi.x;
-	    if (right > rect.width) right = rect.width;
+        if (right > rect.width) {
+            right = rect.width;
+        }
 
 	    int top = trim.y + dpi.y;
-	    if (top < rect.y) top = rect.y;
+        if (top < rect.y) {
+            top = rect.y;
+        }
 
 	    int bottom = (rect.height + trim.y + trim.height) - dpi.y;
-	    if (bottom > rect.height) bottom = rect.height;
+        if (bottom > rect.height) {
+            bottom = rect.height;
+        }
 
 	    return new Rectangle(left, top, right - left, bottom - top);
 	}

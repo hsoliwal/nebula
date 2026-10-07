@@ -113,8 +113,9 @@ public class RoundScale extends AbstractScale {
      * @return the estimated donut width, which is used to calculate the radius
      */
     public int getEstimatedDonutWidth() {
-		if(isDirty())
-			calcEstimatedDonutWidth();
+        if (isDirty()) {
+            calcEstimatedDonutWidth();
+        }
 		return estimatedDonutWidth;
 	}
 
@@ -151,10 +152,11 @@ public class RoundScale extends AbstractScale {
 		//coerce to range
 		double min = getRange().getLower();
         double max = getRange().getUpper();
-        if(max>=min)
-        	value = value < min ? min : (value > max ? max : value);
-        else
-        	value = value > min? min: (value<max? max: value);
+        if (max >= min) {
+            value = value < min ? min : (value > max ? max : value);
+        } else {
+            value = value > min ? min : (value < max ? max : value);
+        }
 		return getValuePosition(value, relative);
     }
     
@@ -171,22 +173,25 @@ public class RoundScale extends AbstractScale {
 
 		double valuePosition;
 		if(isLogScaleEnabled()) {
-			if(value <=0)
-				throw new IllegalArgumentException(
-						"Invalid value: value must be greater than 0");
+            if (value <= 0) {
+                throw new IllegalArgumentException(
+                        "Invalid value: value must be greater than 0");
+            }
 			valuePosition = startAngle - ((Math.log10(value) - Math
                     .log10(min))
                     / (Math.log10(max) - Math.log10(min)) * lengthInDegrees);
-		}			
-		else			
-			valuePosition = startAngle - ((value - min)/(max-min)*lengthInDegrees);
-		
-		//rotate the axis to endAngle
-		if(relative)
-			valuePosition  -= endAngle;
-		
-		if(valuePosition < 0)
-			valuePosition += 360;
+		} else {
+            valuePosition = startAngle - ((value - min) / (max - min) * lengthInDegrees);
+        }
+
+        //rotate the axis to endAngle
+        if (relative) {
+            valuePosition -= endAngle;
+        }
+
+        if (valuePosition < 0) {
+            valuePosition += 360;
+        }
 		
 		return valuePosition;
 	}
@@ -203,8 +208,9 @@ public class RoundScale extends AbstractScale {
 
     @Override
     public void setBounds(Rectangle rect) {
-    	if(!bounds.equals(rect))
-    		setDirty(true);    	
+        if (!bounds.equals(rect)) {
+            setDirty(true);
+        }    	
     	//get the square in the rect
     	rect.width = Math.min(rect.width, rect.height);
     	rect.height = rect.width;
@@ -251,9 +257,9 @@ public class RoundScale extends AbstractScale {
         		//adjust the radius so the tick labels have enough space to 
         		//be drawn inside the bounds  
         		radius -= tickLabels.getTickLabelMaxOutLength();
-        	}    	
-        	else
-        		radius = bounds.width/2 - 1;
+        	} else {
+                radius = bounds.width / 2 - 1;
+            }
         	
     		
     		if(endAngle - startAngle > 0) {

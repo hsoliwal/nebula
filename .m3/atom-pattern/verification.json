@@ -1,0 +1,22 @@
+{
+  "recipe": "M3_TYPED_HIERARCHY/1",
+  "implementationRepository": "hsoliwal/com.synexia",
+  "implementationCommit": "78d1c67fbc97bb4831f0176f2a8b034ecc994eee",
+  "implementationPullRequest": 8692,
+  "artifact": "com.synexia.verification:m3-hierarchy-recipe:0.1.0-hierarchy1",
+  "artifactPublication": "NOT_PUBLISHED_INSTALL_FROM_SOURCE",
+  "javaTests": {"tests": 24, "assertions": 336, "result": "PASS"},
+  "jniTests": {"tests": 24, "assertions": 336, "result": "PASS", "platform": "Linux x86_64"},
+  "donorCommit": "b7dd5097f62ba5ea2515b98311ea20e900642384",
+  "executedScope": "SIX_PINNED_FILES_NOT_FULL_REPOSITORY",
+  "files": 6,
+  "atomsIncludingOpaqueAndResidue": 67,
+  "scopeReceipts": 16,
+  "sourceChanges": 0,
+  "replayIdentical": true,
+  "receiptRoot": "4e7c009efe64c8a0521b1fdbf36a84af20d2379c4f3ed9097034b685f118ed73",
+  "fullNebulaTychoBuild": "NOT_EXECUTED",
+  "fullOpenRewriteRuntime": "NOT_EXECUTED",
+  "accountWideRollout": "NOT_EXECUTED",
+  "promotionAuthority": false
+}

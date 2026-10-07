@@ -43,9 +43,10 @@ public class CompositeEntry {
 	}
 
 	private void checkOffset(Point offset) {
-		if (offset.x < 0 || offset.y < 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"Offset cannot be negative: " + offset); //$NON-NLS-1$
+        if (offset.x < 0 || offset.y < 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "Offset cannot be negative: " + offset); //$NON-NLS-1$
+        }
 	}
 
 	/**

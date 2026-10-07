@@ -61,9 +61,10 @@ public class MeterFigure extends AbstractRoundRampedFigure {
 	
 	public MeterFigure() {
 		super();
-		//TODO, remove this if clip is supported by RAP
-		if(SWT.getPlatform().startsWith("rap"))//$NON-NLS-1$
-			ramp.setVisible(false);
+        //TODO, remove this if clip is supported by RAP
+        if (SWT.getPlatform().startsWith("rap")) {//$NON-NLS-1$
+            ramp.setVisible(false);
+        }
 		setTransparent(false);
 		scale.setScaleLineVisible(false);
 		
@@ -104,12 +105,13 @@ public class MeterFigure extends AbstractRoundRampedFigure {
 	}
 	@Override
 	public void setShowMarkers(boolean showMarkers) {
-		super.setShowMarkers(showMarkers);		
-		//TODO: this should be removed if RAP supports clip
-		if(SWT.getPlatform().startsWith("rap"))//$NON-NLS-1$
-			ramp.setVisible(false);
-		else
-			ramp.setVisible(showMarkers);	
+		super.setShowMarkers(showMarkers);
+        //TODO: this should be removed if RAP supports clip
+        if (SWT.getPlatform().startsWith("rap")) {//$NON-NLS-1$
+            ramp.setVisible(false);
+        } else {
+            ramp.setVisible(showMarkers);
+        }	
 	}
 	
 	@Override
@@ -188,16 +190,18 @@ public class MeterFigure extends AbstractRoundRampedFigure {
 		
 		@Override
 		public void setConstraint(IFigure child, Object constraint) {
-			if(constraint.equals(SCALE))
-				scale = (RoundScale)child;
-			else if (constraint.equals(RAMP))
-				ramp = (RoundScaledRamp) child;
-			else if (constraint.equals(NEEDLE))
-				needle = (Polygon) child;
-		//	else if (constraint.equals(NEEDLE_CENTER))
-		//		needleCenter = (Ellipse) child;
-			else if (constraint.equals(VALUE_LABEL))
-				valueLabel = (Label)child;
+            if (constraint.equals(SCALE)) {
+                scale = (RoundScale) child;
+            } else if (constraint.equals(RAMP)) {
+                ramp = (RoundScaledRamp) child;
+            } else if (constraint.equals(NEEDLE)) {
+                needle = (Polygon) child;
+            }
+            //	else if (constraint.equals(NEEDLE_CENTER))
+            //		needleCenter = (Ellipse) child;
+            else if (constraint.equals(VALUE_LABEL)) {
+                valueLabel = (Label) child;
+            }
 		}
 
 
@@ -212,19 +216,21 @@ public class MeterFigure extends AbstractRoundRampedFigure {
 
 
 		public void layout(IFigure container) {
-			Rectangle area = container.getClientArea();	
-			// calculate a virtual area
+			Rectangle area = container.getClientArea();
+            // calculate a virtual area
 			
-			if(scale != null && scale.isDirty())
-				M = Math.max(FigureUtilities.getTextWidth(
-						scale.format(scale.getRange().getLower()), scale.getFont()),
-						FigureUtilities.getTextWidth(
-						scale.format(scale.getRange().getUpper()), scale.getFont()))/2;
+            if (scale != null && scale.isDirty()) {
+                M = Math.max(FigureUtilities.getTextWidth(
+                                scale.format(scale.getRange().getLower()), scale.getFont()),
+                        FigureUtilities.getTextWidth(
+                                scale.format(scale.getRange().getUpper()), scale.getFont())) / 2;
+            }
 			
 			int h = area.height;
-			int w = area.width;			
-			if(h > HW_RATIO * (w - 2*M)) 
-				h = (int) (HW_RATIO * (w - 2*M));
+			int w = area.width;
+            if (h > HW_RATIO * (w - 2 * M)) {
+                h = (int) (HW_RATIO * (w - 2 * M));
+            }
 			//else if (w > h/HW_RATIO + 2*M) 
 			//	w = (int) (h/HW_RATIO + 2*M);			
 			double r = h/(1- Math.sin(ALPHA)/2);		
@@ -263,15 +269,17 @@ public class MeterFigure extends AbstractRoundRampedFigure {
 	
 				double valuePosition = 360 - scale.getValuePosition(getCoercedValue(), false);
 				if(maximum > minimum){
-					if(value > maximum)
-						valuePosition += 8;
-					else if(value < minimum)
-						valuePosition -=8;
+                    if (value > maximum) {
+                        valuePosition += 8;
+                    } else if (value < minimum) {
+                        valuePosition -= 8;
+                    }
 				}else{
-					if(value > minimum)
-						valuePosition -= 8;
-					else if(value < maximum)
-						valuePosition +=8;
+                    if (value > minimum) {
+                        valuePosition -= 8;
+                    } else if (value < maximum) {
+                        valuePosition += 8;
+                    }
 				}
 				needlePoints.setPoint(
 						PointsUtil.rotate(needlePoints.getPoint(0),	valuePosition, center), 0);

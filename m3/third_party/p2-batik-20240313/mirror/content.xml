@@ -1,0 +1,780 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?metadataRepository version='1.2.0'?>
+<repository name="Nebula pinned Batik legacy closure 2024-03/202403131000" type="org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository" version="1"><properties size="3">
+    <property name="publishPackFilesAsSiblings" value="true" />
+    <property name="p2.compressed" value="true" />
+    <property name="p2.timestamp" value="1709755143787" />
+  </properties>
+  <units size="16"><unit id="org.apache.batik.util.source" version="1.17.0.v20231215-1130" singleton="false">
+      <update id="org.apache.batik.util.source" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="7">
+        <property name="org.eclipse.equinox.p2.name" value="Source Bundle for org.apache.batik.util:1.17.0.v20231215-1130" />
+        <property name="maven-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-artifactId" value="batik-util" />
+        <property name="maven-version" value="1.17" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-repository" value="eclipse.maven.central.mirror" />
+        <property name="maven-type" value="jar" />
+      </properties>
+      <provides size="4">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.util.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.util.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.identity" name="org.apache.batik.util.source" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.util.source" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.util.source
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.xmlgraphics" version="2.9.0.v20230916-1600" singleton="false" generation="2">
+      <update id="org.apache.xmlgraphics" range="[0.0.0,2.9.0.v20230916-1600)" severity="0" />
+      <properties size="4">
+        <property name="org.eclipse.equinox.p2.name" value="Bundle org.apache.xmlgraphics : xmlgraphics-commons" />
+        <property name="maven-wrapped-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-wrapped-artifactId" value="xmlgraphics-commons" />
+        <property name="maven-wrapped-version" value="2.9" />
+      </properties>
+      <provides size="39">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.xmlgraphics" version="2.9.0.v20230916-1600" />
+        <provided namespace="osgi.bundle" name="org.apache.xmlgraphics" version="2.9.0.v20230916-1600" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.fonts" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.codec" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.codec.png" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.codec.tiff" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.codec.util" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.loader" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.loader.cache" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.loader.impl" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.loader.impl.imageio" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.loader.pipeline" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.loader.spi" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.loader.util" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.rendered" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.writer" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.writer.imageio" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.image.writer.internal" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.io" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.java2d" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.java2d.color" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.java2d.color.profile" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.java2d.ps" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.ps" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.ps.dsc" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.ps.dsc.events" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.ps.dsc.tools" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.util" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.util.dijkstra" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.util.i18n" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.util.io" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.util.uri" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.xmp" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.xmp.merge" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.xmp.schemas" version="2.9.0" />
+        <provided namespace="java.package" name="org.apache.xmlgraphics.xmp.schemas.pdf" version="2.9.0" />
+        <provided namespace="osgi.identity" name="org.apache.xmlgraphics" version="2.9.0.v20230916-1600">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+      </provides>
+      <requires size="64">
+        <required namespace="java.package" name="java.awt" range="0.0.0" />
+        <required namespace="java.package" name="java.awt.color" range="0.0.0" />
+        <required namespace="java.package" name="java.awt.font" range="0.0.0" />
+        <required namespace="java.package" name="java.awt.geom" range="0.0.0" />
+        <required namespace="java.package" name="java.awt.image" range="0.0.0" />
+        <required namespace="java.package" name="java.awt.image.renderable" range="0.0.0" />
+        <required namespace="java.package" name="java.io" range="0.0.0" />
+        <required namespace="java.package" name="java.lang" range="0.0.0" />
+        <required namespace="java.package" name="java.lang.ref" range="0.0.0" />
+        <required namespace="java.package" name="java.lang.reflect" range="0.0.0" />
+        <required namespace="java.package" name="java.net" range="0.0.0" />
+        <required namespace="java.package" name="java.nio" range="0.0.0" />
+        <required namespace="java.package" name="java.security" range="0.0.0" />
+        <required namespace="java.package" name="java.text" range="0.0.0" />
+        <required namespace="java.package" name="java.util" range="0.0.0" />
+        <required namespace="java.package" name="java.util.concurrent.atomic" range="0.0.0" />
+        <required namespace="java.package" name="java.util.jar" range="0.0.0" />
+        <required namespace="java.package" name="java.util.zip" range="0.0.0" />
+        <required namespace="java.package" name="javax.imageio" range="0.0.0" />
+        <required namespace="java.package" name="javax.imageio.event" range="0.0.0" />
+        <required namespace="java.package" name="javax.imageio.metadata" range="0.0.0" />
+        <required namespace="java.package" name="javax.imageio.plugins.jpeg" range="0.0.0" />
+        <required namespace="java.package" name="javax.imageio.spi" range="0.0.0" />
+        <required namespace="java.package" name="javax.imageio.stream" range="0.0.0" />
+        <required namespace="java.package" name="javax.xml.transform" range="0.0.0" />
+        <required namespace="java.package" name="javax.xml.transform.dom" range="0.0.0" />
+        <required namespace="java.package" name="javax.xml.transform.sax" range="0.0.0" />
+        <required namespace="java.package" name="javax.xml.transform.stream" range="0.0.0" />
+        <required namespace="java.package" name="org.apache.commons.io" range="[1.4.0,2.0.0)" />
+        <required namespace="java.package" name="org.apache.commons.io.output" range="[1.4.0,2.0.0)" />
+        <required namespace="java.package" name="org.apache.commons.logging" range="[1.0.0,2.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.fonts" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.codec.png" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.codec.tiff" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.codec.util" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.loader" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.loader.cache" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.loader.impl" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.loader.pipeline" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.loader.spi" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.loader.util" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.rendered" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.image.writer" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.io" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.java2d" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.java2d.color" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.java2d.color.profile" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.ps" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.ps.dsc" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.ps.dsc.events" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.ps.dsc.tools" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.util" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.util.dijkstra" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.util.i18n" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.util.io" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.xmp" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.xmp.merge" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.xmp.schemas" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.xmp.schemas.pdf" range="[2.9.0,3.0.0)" />
+        <required namespace="java.package" name="org.w3c.dom" range="0.0.0" />
+        <required namespace="java.package" name="org.xml.sax" range="0.0.0" />
+        <required namespace="java.package" name="org.xml.sax.helpers" range="0.0.0" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=1.8))">
+          <description>
+            org.apache.xmlgraphics
+          </description>
+        </requiredProperties>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.xmlgraphics" version="2.9.0.v20230916-1600" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.xmlgraphics
+Bundle-Version: 2.9.0.v20230916-1600
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.batik.util" version="1.17.0.v20231215-1130" singleton="false" generation="2">
+      <update id="org.apache.batik.util" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="4">
+        <property name="org.eclipse.equinox.p2.name" value="Bundle org.apache.xmlgraphics : batik-util" />
+        <property name="maven-wrapped-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-wrapped-artifactId" value="batik-util" />
+        <property name="maven-wrapped-version" value="1.17" />
+      </properties>
+      <provides size="9">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.util" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.util" version="1.17.0.v20231215-1130" />
+        <provided namespace="java.package" name="org.apache.batik" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.util" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.util.io" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.util.io.resources" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.util.resources" version="1.17.0" />
+        <provided namespace="osgi.identity" name="org.apache.batik.util" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+      </provides>
+      <requires size="13">
+        <required namespace="java.package" name="java.awt" range="0.0.0" />
+        <required namespace="java.package" name="java.io" range="0.0.0" />
+        <required namespace="java.package" name="java.lang" range="0.0.0" />
+        <required namespace="java.package" name="java.lang.ref" range="0.0.0" />
+        <required namespace="java.package" name="java.lang.reflect" range="0.0.0" />
+        <required namespace="java.package" name="java.net" range="0.0.0" />
+        <required namespace="java.package" name="java.security" range="0.0.0" />
+        <required namespace="java.package" name="java.util" range="0.0.0" />
+        <required namespace="java.package" name="java.util.jar" range="0.0.0" />
+        <required namespace="java.package" name="java.util.zip" range="0.0.0" />
+        <required namespace="java.package" name="org.apache.batik.constants" range="[1.17.0,2.0.0)" />
+        <required namespace="java.package" name="org.apache.batik.i18n" range="[1.17.0,2.0.0)" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=1.8))">
+          <description>
+            org.apache.batik.util
+          </description>
+        </requiredProperties>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.util" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.util
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.orbit.xml-apis-ext.source" version="1.0.0.v20230923-0644" singleton="false">
+      <update id="org.eclipse.orbit.xml-apis-ext.source" range="[0.0.0,1.0.0.v20230923-0644)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Orbit Project" />
+        <property name="df_LT.bundleName" value="Extended XML APIs Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.orbit.legacy" />
+        <property name="maven-artifactId" value="org.eclipse.orbit.xml-apis-ext" />
+        <property name="maven-version" value="1.0.0-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.orbit.xml-apis-ext.source" version="1.0.0.v20230923-0644" />
+        <provided namespace="osgi.bundle" name="org.eclipse.orbit.xml-apis-ext.source" version="1.0.0.v20230923-0644" />
+        <provided namespace="osgi.identity" name="org.eclipse.orbit.xml-apis-ext.source" version="1.0.0.v20230923-0644">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.orbit.xml-apis-ext.source" version="1.0.0.v20230923-0644" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.orbit.xml-apis-ext.source
+Bundle-Version: 1.0.0.v20230923-0644
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.commons.commons-io" version="2.15.1" singleton="false" generation="2">
+      <update id="org.apache.commons.commons-io" range="[0.0.0,2.15.1)" severity="0" />
+      <properties size="9">
+        <property name="org.eclipse.equinox.p2.name" value="Apache Commons IO" />
+        <property name="org.eclipse.equinox.p2.description" value="The Apache Commons IO library contains utility classes, stream implementations, file filters,file comparators, endian transformation classes, and much more." />
+        <property name="org.eclipse.equinox.p2.provider" value="The Apache Software Foundation" />
+        <property name="org.eclipse.equinox.p2.doc.url" value="https://commons.apache.org/proper/commons-io/" />
+        <property name="maven-groupId" value="commons-io" />
+        <property name="maven-artifactId" value="commons-io" />
+        <property name="maven-version" value="2.15.1" />
+        <property name="maven-repository" value="eclipse.maven.central.mirror" />
+        <property name="maven-type" value="jar" />
+      </properties>
+      <provides size="24">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.commons.commons-io" version="2.15.1" />
+        <provided namespace="osgi.bundle" name="org.apache.commons.commons-io" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io" version="1.4.9999" />
+        <provided namespace="java.package" name="org.apache.commons.io.comparator" version="1.4.9999" />
+        <provided namespace="java.package" name="org.apache.commons.io.filefilter" version="1.4.9999" />
+        <provided namespace="java.package" name="org.apache.commons.io.input" version="1.4.9999" />
+        <provided namespace="java.package" name="org.apache.commons.io.output" version="1.4.9999" />
+        <provided namespace="java.package" name="org.apache.commons.io.build" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.channels" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.charset" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.file" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.file.attribute" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.file.spi" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.function" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.input.buffer" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.monitor" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.serialization" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.comparator" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.filefilter" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.input" version="2.15.1" />
+        <provided namespace="java.package" name="org.apache.commons.io.output" version="2.15.1" />
+        <provided namespace="osgi.identity" name="org.apache.commons.commons-io" version="2.15.1">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+      </provides>
+      <requires size="4">
+        <required namespace="java.package" name="sun.nio.ch" range="0.0.0" optional="true" greedy="false" />
+        <required namespace="java.package" name="sun.misc" range="0.0.0" optional="true" greedy="false" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=1.8))">
+          <description>
+            org.apache.commons.commons-io
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.apache.commons.commons-io.source" range="[2.15.1,2.15.1]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.commons.commons-io" version="2.15.1" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.commons.commons-io
+Bundle-Version: 2.15.1
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.commons.logging" version="1.2.0.v20180409-1502" singleton="false">
+      <update id="org.apache.commons.logging" range="[0.0.0,1.2.0.v20180409-1502)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.bundleVendor" value="Eclipse Orbit" />
+        <property name="df_LT.bundleName" value="Apache Commons Logging" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.description" value="Apache Commons Logging is a thin adapter allowing configurable bridging to other,    well known logging systems." />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.doc.url" value="http://commons.apache.org/proper/commons-logging/" />
+        <property name="maven-groupId" value="org.eclipse.orbit.bundles" />
+        <property name="maven-artifactId" value="org.apache.commons.logging" />
+        <property name="maven-version" value="1.2.0-SNAPSHOT" />
+      </properties>
+      <provides size="6">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.commons.logging" version="1.2.0.v20180409-1502" />
+        <provided namespace="osgi.bundle" name="org.apache.commons.logging" version="1.2.0.v20180409-1502" />
+        <provided namespace="java.package" name="org.apache.commons.logging.impl" version="1.2.0" />
+        <provided namespace="java.package" name="org.apache.commons.logging" version="1.2.0" />
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="6">
+        <required namespace="java.package" name="javax.servlet" range="0.0.0" optional="true" greedy="false" />
+        <required namespace="java.package" name="org.apache.avalon.framework.logger" range="0.0.0" optional="true" greedy="false" />
+        <required namespace="java.package" name="org.apache.commons.logging" range="[1.2.0,2.0.0)" optional="true" greedy="false" />
+        <required namespace="java.package" name="org.apache.commons.logging.impl" range="[1.2.0,2.0.0)" optional="true" greedy="false" />
+        <required namespace="java.package" name="org.apache.log" range="0.0.0" optional="true" greedy="false" />
+        <required namespace="java.package" name="org.apache.log4j" range="0.0.0" optional="true" greedy="false" />
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.commons.logging" version="1.2.0.v20180409-1502" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.commons.logging
+Bundle-Version: 1.2.0.v20180409-1502
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.batik.i18n" version="1.17.0.v20231215-1130" singleton="false" generation="2">
+      <update id="org.apache.batik.i18n" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="4">
+        <property name="org.eclipse.equinox.p2.name" value="Bundle org.apache.xmlgraphics : batik-i18n" />
+        <property name="maven-wrapped-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-wrapped-artifactId" value="batik-i18n" />
+        <property name="maven-wrapped-version" value="1.17" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.i18n" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.i18n" version="1.17.0.v20231215-1130" />
+        <provided namespace="java.package" name="org.apache.batik.i18n" version="1.17.0" />
+        <provided namespace="osgi.identity" name="org.apache.batik.i18n" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+      </provides>
+      <requires size="4">
+        <required namespace="java.package" name="java.lang" range="0.0.0" />
+        <required namespace="java.package" name="java.text" range="0.0.0" />
+        <required namespace="java.package" name="java.util" range="0.0.0" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=1.8))">
+          <description>
+            org.apache.batik.i18n
+          </description>
+        </requiredProperties>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.i18n" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.i18n
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.batik.css.source" version="1.17.0.v20231215-1130" singleton="false">
+      <update id="org.apache.batik.css.source" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="7">
+        <property name="org.eclipse.equinox.p2.name" value="Source Bundle for org.apache.batik.css:1.17.0.v20231215-1130" />
+        <property name="maven-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-artifactId" value="batik-css" />
+        <property name="maven-version" value="1.17" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-repository" value="eclipse.maven.central.mirror" />
+        <property name="maven-type" value="jar" />
+      </properties>
+      <provides size="4">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.css.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.css.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.identity" name="org.apache.batik.css.source" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.css.source" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.css.source
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.batik.constants" version="1.17.0.v20231215-1130" singleton="false" generation="2">
+      <update id="org.apache.batik.constants" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="4">
+        <property name="org.eclipse.equinox.p2.name" value="Bundle org.apache.xmlgraphics : batik-constants" />
+        <property name="maven-wrapped-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-wrapped-artifactId" value="batik-constants" />
+        <property name="maven-wrapped-version" value="1.17" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.constants" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.constants" version="1.17.0.v20231215-1130" />
+        <provided namespace="java.package" name="org.apache.batik.constants" version="1.17.0" />
+        <provided namespace="osgi.identity" name="org.apache.batik.constants" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+      </provides>
+      <requires size="2">
+        <required namespace="java.package" name="java.lang" range="0.0.0" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=1.8))">
+          <description>
+            org.apache.batik.constants
+          </description>
+        </requiredProperties>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.constants" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.constants
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.batik.i18n.source" version="1.17.0.v20231215-1130" singleton="false">
+      <update id="org.apache.batik.i18n.source" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="7">
+        <property name="org.eclipse.equinox.p2.name" value="Source Bundle for org.apache.batik.i18n:1.17.0.v20231215-1130" />
+        <property name="maven-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-artifactId" value="batik-i18n" />
+        <property name="maven-version" value="1.17" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-repository" value="eclipse.maven.central.mirror" />
+        <property name="maven-type" value="jar" />
+      </properties>
+      <provides size="4">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.i18n.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.i18n.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.identity" name="org.apache.batik.i18n.source" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.i18n.source" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.i18n.source
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.batik.css" version="1.17.0.v20231215-1130" singleton="false" generation="2">
+      <update id="org.apache.batik.css" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="4">
+        <property name="org.eclipse.equinox.p2.name" value="Bundle org.apache.xmlgraphics : batik-css" />
+        <property name="maven-wrapped-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-wrapped-artifactId" value="batik-css" />
+        <property name="maven-wrapped-version" value="1.17" />
+      </properties>
+      <provides size="15">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.css" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.css" version="1.17.0.v20231215-1130" />
+        <provided namespace="java.package" name="org.apache.batik.css.dom" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine.resources" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine.sac" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine.value" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine.value.css2" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine.value.resources" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine.value.svg" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.engine.value.svg12" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.parser" version="1.17.0" />
+        <provided namespace="java.package" name="org.apache.batik.css.parser.resources" version="1.17.0" />
+        <provided namespace="osgi.identity" name="org.apache.batik.css" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+      </provides>
+      <requires size="15">
+        <required namespace="java.package" name="org.w3c.dom.svg" range="1.1.0" />
+        <required namespace="java.package" name="org.w3c.dom" range="0.0.0" />
+        <required namespace="java.package" name="org.w3c.dom.css" range="0.0.0" />
+        <required namespace="java.package" name="org.w3c.dom.events" range="0.0.0" />
+        <required namespace="java.package" name="org.w3c.dom.views" range="0.0.0" />
+        <required namespace="java.package" name="org.apache.xmlgraphics.java2d.color" range="[2.0.0,3.0.0)" />
+        <required namespace="java.package" name="java.awt" range="0.0.0" />
+        <required namespace="java.package" name="java.io" range="0.0.0" />
+        <required namespace="java.package" name="java.lang" range="0.0.0" />
+        <required namespace="java.package" name="java.util" range="0.0.0" />
+        <required namespace="java.package" name="org.apache.batik.i18n" range="0.0.0" />
+        <required namespace="java.package" name="org.apache.batik.util" range="[1.17.0,2.0.0)" />
+        <required namespace="java.package" name="org.apache.batik.util.io" range="[1.17.0,2.0.0)" />
+        <required namespace="java.package" name="org.w3c.css.sac" range="[1.3.0,2.0.0)" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=1.8))">
+          <description>
+            org.apache.batik.css
+          </description>
+        </requiredProperties>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.css" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.css
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.batik.constants.source" version="1.17.0.v20231215-1130" singleton="false">
+      <update id="org.apache.batik.constants.source" range="[0.0.0,1.17.0.v20231215-1130)" severity="0" />
+      <properties size="7">
+        <property name="org.eclipse.equinox.p2.name" value="Source Bundle for org.apache.batik.constants:1.17.0.v20231215-1130" />
+        <property name="maven-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-artifactId" value="batik-constants" />
+        <property name="maven-version" value="1.17" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-repository" value="eclipse.maven.central.mirror" />
+        <property name="maven-type" value="jar" />
+      </properties>
+      <provides size="4">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.batik.constants.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.bundle" name="org.apache.batik.constants.source" version="1.17.0.v20231215-1130" />
+        <provided namespace="osgi.identity" name="org.apache.batik.constants.source" version="1.17.0.v20231215-1130">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.batik.constants.source" version="1.17.0.v20231215-1130" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.batik.constants.source
+Bundle-Version: 1.17.0.v20231215-1130
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.commons.commons-io.source" version="2.15.1" singleton="false">
+      <update id="org.apache.commons.commons-io.source" range="[0.0.0,2.15.1)" severity="0" />
+      <properties size="7">
+        <property name="org.eclipse.equinox.p2.name" value="Source Bundle for org.apache.commons.commons-io:2.15.1" />
+        <property name="maven-groupId" value="commons-io" />
+        <property name="maven-artifactId" value="commons-io" />
+        <property name="maven-version" value="2.15.1" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-repository" value="eclipse.maven.central.mirror" />
+        <property name="maven-type" value="jar" />
+      </properties>
+      <provides size="4">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.commons.commons-io.source" version="2.15.1" />
+        <provided namespace="osgi.bundle" name="org.apache.commons.commons-io.source" version="2.15.1" />
+        <provided namespace="osgi.identity" name="org.apache.commons.commons-io.source" version="2.15.1">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.commons.commons-io.source" version="2.15.1" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.commons.commons-io.source
+Bundle-Version: 2.15.1
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.xmlgraphics.source" version="2.9.0.v20230916-1600" singleton="false">
+      <update id="org.apache.xmlgraphics.source" range="[0.0.0,2.9.0.v20230916-1600)" severity="0" />
+      <properties size="7">
+        <property name="org.eclipse.equinox.p2.name" value="Source Bundle for org.apache.xmlgraphics:2.9.0.v20230916-1600" />
+        <property name="maven-groupId" value="org.apache.xmlgraphics" />
+        <property name="maven-artifactId" value="xmlgraphics-commons" />
+        <property name="maven-version" value="2.9" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-repository" value="eclipse.maven.central.mirror" />
+        <property name="maven-type" value="jar" />
+      </properties>
+      <provides size="4">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.xmlgraphics.source" version="2.9.0.v20230916-1600" />
+        <provided namespace="osgi.bundle" name="org.apache.xmlgraphics.source" version="2.9.0.v20230916-1600" />
+        <provided namespace="osgi.identity" name="org.apache.xmlgraphics.source" version="2.9.0.v20230916-1600">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.xmlgraphics.source" version="2.9.0.v20230916-1600" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.xmlgraphics.source
+Bundle-Version: 2.9.0.v20230916-1600
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.apache.commons.logging.source" version="1.2.0.v20180409-1502" singleton="false">
+      <update id="org.apache.commons.logging.source" range="[0.0.0,1.2.0.v20180409-1502)" severity="0" />
+      <properties size="8">
+        <property name="df_LT.bundleVendor" value="Eclipse Orbit" />
+        <property name="df_LT.bundleName" value="Apache Commons Logging Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="maven-groupId" value="org.eclipse.orbit.bundles" />
+        <property name="maven-artifactId" value="org.apache.commons.logging" />
+        <property name="maven-version" value="1.2.0-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.apache.commons.logging.source" version="1.2.0.v20180409-1502" />
+        <provided namespace="osgi.bundle" name="org.apache.commons.logging.source" version="1.2.0.v20180409-1502" />
+        <provided namespace="osgi.identity" name="org.apache.commons.logging.source" version="1.2.0.v20180409-1502">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.apache.commons.logging.source" version="1.2.0.v20180409-1502" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.apache.commons.logging.source
+Bundle-Version: 1.2.0.v20180409-1502
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.orbit.xml-apis-ext" version="1.0.0.v20230923-0644" singleton="false" generation="2">
+      <update id="org.eclipse.orbit.xml-apis-ext" range="[0.0.0,1.0.0.v20230923-0644)" severity="0" />
+      <properties size="6">
+        <property name="org.eclipse.equinox.p2.name" value="Extended XML APIs" />
+        <property name="org.eclipse.equinox.p2.provider" value="Orbit Project" />
+        <property name="maven-groupId" value="org.eclipse.orbit.legacy" />
+        <property name="maven-artifactId" value="org.eclipse.orbit.xml-apis-ext" />
+        <property name="maven-version" value="1.0.0-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="8">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.orbit.xml-apis-ext" version="1.0.0.v20230923-0644" />
+        <provided namespace="osgi.bundle" name="org.eclipse.orbit.xml-apis-ext" version="1.0.0.v20230923-0644" />
+        <provided namespace="java.package" name="org.w3c.css.sac" version="1.3.0" />
+        <provided namespace="java.package" name="org.w3c.css.sac.helpers" version="1.3.0" />
+        <provided namespace="java.package" name="org.w3c.dom.smil" version="1.0.0" />
+        <provided namespace="java.package" name="org.w3c.dom.svg" version="1.1.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.orbit.xml-apis-ext" version="1.0.0.v20230923-0644">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+      </provides>
+      <requires size="3">
+        <required namespace="java.package" name="org.w3c.dom" range="0.0.0" />
+        <required namespace="java.package" name="org.w3c.dom.events" range="0.0.0" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JRE)(version=1.1))">
+          <description>
+            org.eclipse.orbit.xml-apis-ext
+          </description>
+        </requiredProperties>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.orbit.xml-apis-ext" version="1.0.0.v20230923-0644" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.orbit.xml-apis-ext
+Bundle-Version: 1.0.0.v20230923-0644
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    </units></repository>

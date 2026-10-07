@@ -78,34 +78,46 @@ public class TextStyle {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		TextStyle other = (TextStyle) obj;
-		if (alignment != other.alignment)
-			return false;
+        if (alignment != other.alignment) {
+            return false;
+        }
 		if (background == null) {
-			if (other.background != null)
-				return false;
-		} else if (!background.equals(other.background))
-			return false;
+            if (other.background != null) {
+                return false;
+            }
+		} else if (!background.equals(other.background)) {
+            return false;
+        }
 		if (fontData == null) {
-			if (other.fontData != null)
-				return false;
-		} else if (!fontData.equals(other.fontData))
-			return false;
+            if (other.fontData != null) {
+                return false;
+            }
+		} else if (!fontData.equals(other.fontData)) {
+            return false;
+        }
 		if (foreground == null) {
-			if (other.foreground != null)
-				return false;
-		} else if (!foreground.equals(other.foreground))
-			return false;
-		if (strikeout != other.strikeout)
-			return false;
-		if (underline != other.underline)
-			return false;
+            if (other.foreground != null) {
+                return false;
+            }
+		} else if (!foreground.equals(other.foreground)) {
+            return false;
+        }
+        if (strikeout != other.strikeout) {
+            return false;
+        }
+        if (underline != other.underline) {
+            return false;
+        }
 		return true;
 	}
 

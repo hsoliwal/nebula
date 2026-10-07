@@ -1,0 +1,5 @@
+before	fd00029ccb595dfedd0ec1c0604856359e065c9d2ca3fcbbe86382b15bbc0c59
+after	c02686f975553876c50392f013759d95bf44b792b2b77bc7bba5cb9eddb10407
+widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/src/org/eclipse/nebula/widgets/opal/commons/AdvancedPath.java	391897789ba47701cc54a3b9a2d9624ff588fa300315618e5210b1b4a108736f
+widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/src/org/eclipse/nebula/widgets/opal/roundedtoolbar/GradientColor.java	0ccf8d46a2da4e5a039ef066bd861116a3e41ce8b095fe27acbd50f27a3d9869
+widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/src/org/eclipse/nebula/widgets/opal/roundedtoolbar/RoundedToolItem.java	e85cb1ede372dba0ac02164a4d0300f17f43867119eea45139611e515f317edf

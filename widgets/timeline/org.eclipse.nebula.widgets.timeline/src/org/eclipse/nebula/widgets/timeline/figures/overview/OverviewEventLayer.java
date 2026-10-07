@@ -75,8 +75,9 @@ public class OverviewEventLayer extends FreeformLayer implements IStyledFigure {
 					OverviewFigure.VERTICAL_INDENT + ((fEventHeight + OverviewFigure.Y_PADDING) * RootFigure.getLaneIndex(eventFigure)),
 					screenCoordinates.getDuration(), fEventHeight);
 
-			if (overviewEventArea.width() < MINIMUM_WIDTH)
-				overviewEventArea.setWidth(MINIMUM_WIDTH);
+            if (overviewEventArea.width() < MINIMUM_WIDTH) {
+                overviewEventArea.setWidth(MINIMUM_WIDTH);
+            }
 
 			return overviewEventArea;
 		}

@@ -101,8 +101,9 @@ public abstract class Colored extends MinimalEObjectImpl.Container implements IC
 	public void setColorCode(String newColorCode) {
 		String oldColorCode = colorCode;
 		colorCode = newColorCode;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.COLORED__COLOR_CODE, oldColorCode, colorCode));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.COLORED__COLOR_CODE, oldColorCode, colorCode));
+        }
 	}
 
 	/**
@@ -201,7 +202,9 @@ public abstract class Colored extends MinimalEObjectImpl.Container implements IC
 	 */
 	@Override
 	public String toString() {
-		if (eIsProxy()) return super.toString();
+        if (eIsProxy()) {
+            return super.toString();
+        }
 
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (colorCode: ");

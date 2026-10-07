@@ -102,11 +102,12 @@ public class LinearScale extends AbstractScale implements IScaleProvider {
 					.ceil(Math.max(FigureUtilities.getTextExtents(format(getRange().getLower(), true), getFont()).width,
 							FigureUtilities.getTextExtents(format(getRange().getUpper(), true), getFont()).width)
 							/ 2.0);
-		} else
-			margin = (int) Math.ceil(
-					Math.max(FigureUtilities.getTextExtents(format(getRange().getLower(), true), getFont()).height,
-							FigureUtilities.getTextExtents(format(getRange().getUpper(), true), getFont()).height)
-							/ 2.0);
+		} else {
+            margin = (int) Math.ceil(
+                    Math.max(FigureUtilities.getTextExtents(format(getRange().getLower(), true), getFont()).height,
+                            FigureUtilities.getTextExtents(format(getRange().getUpper(), true), getFont()).height)
+                            / 2.0);
+        }
 	}
 
 	/**
@@ -131,8 +132,9 @@ public class LinearScale extends AbstractScale implements IScaleProvider {
 	 * @return
 	 */
 	public int getMargin(boolean updateTick) {
-		if(updateTick)
-			return getMargin();
+        if (updateTick) {
+            return getMargin();
+        }
 		return margin;
 	}
 
@@ -243,8 +245,9 @@ public class LinearScale extends AbstractScale implements IScaleProvider {
 	 * @return position in pixels
 	 */
 	public double getValuePrecisePosition(double value, boolean relative) {
-		if (dirty)
-			updateTick();
+        if (dirty) {
+            updateTick();
+        }
 		// coerce to range
 		// value = value < min ? min : (value > max ? max : value);
 		Range r = getLocalRange();
@@ -508,10 +511,12 @@ public class LinearScale extends AbstractScale implements IScaleProvider {
 	 */
 	@Override
 	public Dimension getDimension(Object obj) {
-		if (obj == null)
-			return new Dimension();
-		if (obj instanceof String)
-			return FigureUtilities.getTextExtents((String) obj, getFont());
+        if (obj == null) {
+            return new Dimension();
+        }
+        if (obj instanceof String) {
+            return FigureUtilities.getTextExtents((String) obj, getFont());
+        }
 		return FigureUtilities.getTextExtents(format(obj), getFont());
 	}
 

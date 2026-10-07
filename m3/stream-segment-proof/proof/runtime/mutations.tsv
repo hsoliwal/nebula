@@ -1,0 +1,4 @@
+mutant	case	baseline_exception	mutant_exception	baseline_trace	mutant_trace	detected
+early-coordinates	MUTABLE_EVENT			a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a	a.bounds	true
+enhanced-for	MUTATE_MATCH	java.util.ConcurrentModificationException		a.bounds;a.enabled	a.bounds;a.enabled;a.tooltip;a.tooltip;toolbar.tooltip:tip-a	true
+enhanced-for	MUTATE_MISS	java.util.ConcurrentModificationException		a.bounds	a.bounds	true

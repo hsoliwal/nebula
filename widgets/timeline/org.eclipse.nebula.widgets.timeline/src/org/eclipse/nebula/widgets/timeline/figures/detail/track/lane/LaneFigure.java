@@ -83,8 +83,9 @@ public class LaneFigure extends Figure implements IStyledFigure {
 				final Rectangle screenBounds = new PrecisionRectangle(screenCoordinates.getTimestamp(), getBounds().y(), screenCoordinates.getDuration(),
 						getBounds().height());
 
-				if (screenBounds.width() == 0)
-					screenBounds.setWidth(1);
+                if (screenBounds.width() == 0) {
+                    screenBounds.setWidth(1);
+                }
 
 				((IFigure) figure).setBounds(screenBounds);
 			}
@@ -100,16 +101,19 @@ public class LaneFigure extends Figure implements IStyledFigure {
 			while (children.hasNext()) {
 				final IFigure child = (IFigure) children.next();
 				Rectangle r = getConstraintAsRectangle(child);
-				if (r == null)
-					continue;
+                if (r == null) {
+                    continue;
+                }
 
 				if ((r.width == -1) || (r.height == -1)) {
 					final Dimension preferredSize = child.getPreferredSize(r.width, r.height);
 					r = r.getCopy();
-					if (r.width == -1)
-						r.width = preferredSize.width;
-					if (r.height == -1)
-						r.height = preferredSize.height;
+                    if (r.width == -1) {
+                        r.width = preferredSize.width;
+                    }
+                    if (r.height == -1) {
+                        r.height = preferredSize.height;
+                    }
 				}
 				rect.union(r);
 			}

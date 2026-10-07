@@ -961,9 +961,10 @@ public abstract class BaseCombo extends Canvas {
 	 */
 	protected void setButtonVisible(boolean visible) {
 
-		// bug 352689
-		if (!checkButton())
-			return;
+        // bug 352689
+        if (!checkButton()) {
+            return;
+        }
 
 		if (BUTTON_ALWAYS == buttonVisibility) {
 			visible = true;

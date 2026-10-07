@@ -132,8 +132,9 @@ public class GridViewerShortTextPerformance
 
 		public String getColumnText(Object element, int columnIndex)
 		{
-			if (columnIndex == 0)
-				return "Row " + element.toString();
+            if (columnIndex == 0) {
+                return "Row " + element.toString();
+            }
 
 			return doBigText();
 		}
@@ -239,8 +240,9 @@ public class GridViewerShortTextPerformance
 
 		while (!shell.isDisposed())
 		{
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
 		display.dispose();

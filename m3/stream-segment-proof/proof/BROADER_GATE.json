@@ -1,0 +1,204 @@
+{
+  "status": "FAIL",
+  "suites": [
+    {
+      "module": "openrewrite-line-terminators",
+      "suite": "com.synexia.recipe.JavaLineTerminatorsTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "openrewrite-line-terminators",
+      "suite": "org.openrewrite.internal.StringUtilsTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.NebulaM3A3ApplyTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.NebulaM3InventoryRecipeTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.NebulaM3InventoryResidueTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.NebulaM3RepositoryReviewRecipeTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.atom.NebulaM3PureIntConvergenceRecipeTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.convergence.NebulaM3A3FileMaterializerRecipeTest",
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": [
+        {
+          "name": "foreignModuleNoopsAndOccupiedTargetDriftFailsClosed",
+          "message": "Unexpected exception type thrown, expected: <java.lang.RuntimeException> but was: <java.lang.AssertionError>"
+        }
+      ]
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifestCliTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifestTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3CatalogueBaseRefreshRecipeTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3CDateTimeCssCompatibilityRecipeTest",
+      "tests": 4,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": [
+        {
+          "name": "exactHashesPathsAndDonorDecisionArePinned",
+          "message": "expected: <362526ff2fe0f9d877b258bcce631f5993f8a55fd8a4bc41e7edd6b87facdaf5> but was: <8b0542080ffeab65e94dc0e05182866559718e5b2c7187bce4835e717f40556a>"
+        },
+        {
+          "name": "reviewedPreimageTransformsExactlyAndPostimageIsFixedPoint",
+          "message": "[java.lang.IllegalStateException: M3 exact Java postimage resource drift: widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.css/src/org/eclipse/nebula/widgets/cdatetime/css/CDateTimePropertyHandler.java] ==> expected: <true> but was: <false>"
+        }
+      ]
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3CompileBootstrapRecipeTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3DeclarativeConvergenceControlRecipeTest",
+      "tests": 2,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": [
+        {
+          "name": "driftedDagFailsClosed",
+          "message": "Unexpected exception type thrown, expected: <java.lang.RuntimeException> but was: <java.lang.AssertionError>"
+        }
+      ]
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3RoundedToolbarStreamRecipeTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3SvgLoaderLengthConvergenceRecipeTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3VerbatimSourceSealTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.NebulaM3DeclarativeConvergenceTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipeTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    },
+    {
+      "module": "recipe-first",
+      "suite": "org.eclipse.nebula.m3.rewrite.stream.NebulaM3StreamSegmentNamesTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failed_cases": []
+    }
+  ]
+}

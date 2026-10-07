@@ -27,8 +27,9 @@ public abstract class AbstractScaledWidgetTest extends AbstractWidgetTest {
 		String[] superProps =  super.getPropertyNames();	
 		List<String> superPropList = new ArrayList<String>();
 		for(String p : superProps){
-			if(!p.equals("opaque"))
-				superPropList.add(p);
+            if (!p.equals("opaque")) {
+                superPropList.add(p);
+            }
 		}
 		String[] scaleProps = new String[]{
 				"transparent",
@@ -46,11 +47,13 @@ public abstract class AbstractScaledWidgetTest extends AbstractWidgetTest {
 	
 	@Override
 	public Object generateTestData(PropertyDescriptor pd, Object seed) {	
-		if(seed !=null && seed instanceof Integer){			
-			if(pd.getName().equals("logScale"))
-				return super.generateTestData(pd, (Integer)seed  +1);
-			if(pd.getName().equals("range"))
-				return new Range(Math.random()*200-100, Math.random()*200-100);
+		if(seed !=null && seed instanceof Integer){
+            if (pd.getName().equals("logScale")) {
+                return super.generateTestData(pd, (Integer) seed + 1);
+            }
+            if (pd.getName().equals("range")) {
+                return new Range(Math.random() * 200 - 100, Math.random() * 200 - 100);
+            }
 		}
 				return super.generateTestData(pd, seed);
 	}

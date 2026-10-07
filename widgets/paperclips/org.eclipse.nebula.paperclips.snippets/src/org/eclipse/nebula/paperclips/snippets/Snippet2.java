@@ -43,19 +43,22 @@ public class Snippet2 {
 		look.setCellBorder(new LineBorder());
 		GridPrint grid = new GridPrint("d, d, d, d", look);
 
-		// Light gray background on header
-		for (int i = 0; i < 4; i++)
-			grid.add(new BackgroundPrint(new TextPrint("Column " + i),
-					new RGB(200, 200, 200)));
+        // Light gray background on header
+        for (int i = 0; i < 4; i++) {
+            grid.add(new BackgroundPrint(new TextPrint("Column " + i),
+                    new RGB(200, 200, 200)));
+        }
 
 		// Even rows light yellow, odd rows light blue
 		RGB evenRows = new RGB(255, 255, 200);
 		RGB oddRows = new RGB(200, 200, 255);
-		for (int r = 0; r < 20; r++)
-			for (int c = 0; c < 4; c++)
-				grid.add(new BackgroundPrint(
-						new TextPrint("Row " + r + " Col " + c),
-						(r % 2 == 0) ? evenRows : oddRows));
+        for (int r = 0; r < 20; r++) {
+            for (int c = 0; c < 4; c++) {
+                grid.add(new BackgroundPrint(
+                        new TextPrint("Row " + r + " Col " + c),
+                        (r % 2 == 0) ? evenRows : oddRows));
+            }
+        }
 
 		// Give entire grid a light green background.
 		return new BackgroundPrint(grid, new RGB(200, 255, 200));
@@ -87,17 +90,20 @@ public class Snippet2 {
 		button.addListener(SWT.Selection, event -> {
 			PrintDialog dialog = new PrintDialog(shell, SWT.NONE);
 			PrinterData printerData = dialog.open();
-			if (printerData != null)
-				PaperClips.print(
-						new PrintJob("Snippet2.java", print).setMargins(72),
-						printerData);
+            if (printerData != null) {
+                PaperClips.print(
+                        new PrintJob("Snippet2.java", print).setMargins(72),
+                        printerData);
+            }
 		});
 
 		shell.setVisible(true);
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		display.dispose();
 	}

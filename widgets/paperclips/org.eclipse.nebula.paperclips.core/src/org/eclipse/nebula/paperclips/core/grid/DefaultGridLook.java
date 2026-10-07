@@ -103,49 +103,66 @@ public class DefaultGridLook implements GridLook {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		DefaultGridLook other = (DefaultGridLook) obj;
 		if (bodyBackgroundProvider == null) {
-			if (other.bodyBackgroundProvider != null)
-				return false;
-		} else if (!bodyBackgroundProvider.equals(other.bodyBackgroundProvider))
-			return false;
+            if (other.bodyBackgroundProvider != null) {
+                return false;
+            }
+		} else if (!bodyBackgroundProvider.equals(other.bodyBackgroundProvider)) {
+            return false;
+        }
 		if (cellBorder == null) {
-			if (other.cellBorder != null)
-				return false;
-		} else if (!cellBorder.equals(other.cellBorder))
-			return false;
+            if (other.cellBorder != null) {
+                return false;
+            }
+		} else if (!cellBorder.equals(other.cellBorder)) {
+            return false;
+        }
 		if (cellPadding == null) {
-			if (other.cellPadding != null)
-				return false;
-		} else if (!cellPadding.equals(other.cellPadding))
-			return false;
+            if (other.cellPadding != null) {
+                return false;
+            }
+		} else if (!cellPadding.equals(other.cellPadding)) {
+            return false;
+        }
 		if (cellSpacing == null) {
-			if (other.cellSpacing != null)
-				return false;
-		} else if (!cellSpacing.equals(other.cellSpacing))
-			return false;
+            if (other.cellSpacing != null) {
+                return false;
+            }
+		} else if (!cellSpacing.equals(other.cellSpacing)) {
+            return false;
+        }
 		if (footerBackgroundProvider == null) {
-			if (other.footerBackgroundProvider != null)
-				return false;
+            if (other.footerBackgroundProvider != null) {
+                return false;
+            }
 		} else if (!footerBackgroundProvider
-				.equals(other.footerBackgroundProvider))
-			return false;
-		if (footerGap != other.footerGap)
-			return false;
+                .equals(other.footerBackgroundProvider)) {
+            return false;
+        }
+        if (footerGap != other.footerGap) {
+            return false;
+        }
 		if (headerBackgroundProvider == null) {
-			if (other.headerBackgroundProvider != null)
-				return false;
+            if (other.headerBackgroundProvider != null) {
+                return false;
+            }
 		} else if (!headerBackgroundProvider
-				.equals(other.headerBackgroundProvider))
-			return false;
-		if (headerGap != other.headerGap)
-			return false;
+                .equals(other.headerBackgroundProvider)) {
+            return false;
+        }
+        if (headerGap != other.headerGap) {
+            return false;
+        }
 		return true;
 	}
 
@@ -204,10 +221,12 @@ public class DefaultGridLook implements GridLook {
 	 *            the vertical cell spacing.
 	 */
 	public void setCellSpacing(int horizontal, int vertical) {
-		if (horizontal == BORDER_OVERLAP || horizontal >= 0)
-			this.cellSpacing.x = horizontal;
-		if (vertical == BORDER_OVERLAP || vertical >= 0)
-			this.cellSpacing.y = vertical;
+        if (horizontal == BORDER_OVERLAP || horizontal >= 0) {
+            this.cellSpacing.x = horizontal;
+        }
+        if (vertical == BORDER_OVERLAP || vertical >= 0) {
+            this.cellSpacing.y = vertical;
+        }
 	}
 
 	/**

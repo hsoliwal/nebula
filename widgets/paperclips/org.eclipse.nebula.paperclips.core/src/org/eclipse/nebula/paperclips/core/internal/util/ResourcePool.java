@@ -54,8 +54,9 @@ public class ResourcePool {
 	}
 
 	private static void notDisposed(Device device) {
-		if (device.isDisposed())
-			PaperClips.error(SWT.ERROR_DEVICE_DISPOSED);
+        if (device.isDisposed()) {
+            PaperClips.error(SWT.ERROR_DEVICE_DISPOSED);
+        }
 	}
 
 	private final Device device;
@@ -76,8 +77,9 @@ public class ResourcePool {
 	 * @return a font for the passed in FontData.
 	 */
 	public Font getFont(FontData fontData) {
-		if (fontData == null)
-			return null;
+        if (fontData == null) {
+            return null;
+        }
 		notDisposed(device);
 
 		Font font = fonts.get(fontData);
@@ -96,8 +98,9 @@ public class ResourcePool {
 	 * @return a color for the passed in RGB.
 	 */
 	public Color getColor(RGB rgb) {
-		if (rgb == null)
-			return null;
+        if (rgb == null) {
+            return null;
+        }
 		notDisposed(device);
 
 		Color color = colors.get(rgb);

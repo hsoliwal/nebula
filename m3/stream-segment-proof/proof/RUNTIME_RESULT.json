@@ -1,0 +1,28 @@
+{
+  "status": "PASS_BOUNDED_RUNTIME_CONTRACT",
+  "source_aware": true,
+  "independent_source_blind_validation": false,
+  "runtime_log": "runtime-agent-final-maven.log",
+  "junit": {"tests": 32, "failures": 0, "errors": 0, "skipped": 0},
+  "differential_cases": {"MouseHover": 16, "MouseDown_primary": 6, "MouseUp_primary": 6},
+  "recorded_callback_observations": 62,
+  "nonprimary_guard_invocations": 4,
+  "killed_mutant_discriminators": 3,
+  "observable_api": {"methods": 15, "constructors": 2, "fields": 3, "identical_signatures": 20},
+  "strict_widget_compiler": "Microsoft javac17.0.19 --release17 -proc:none -Xlint:all -Werror",
+  "strict_recipe_test_compiler": "Java21 -Xlint:all -Werror",
+  "proof_sdk": {"SWT_win32_x86_64": "3.126.0", "JFace": "3.33.0", "class_major": 61},
+  "sdk_custody": "proof-sdk/SDK_CUSTODY.json",
+  "resolver_replay": "PASS",
+  "resolver_corrupted_cache_refusal": "PASS",
+  "test_sha256": "5f08977f4ab923bb16f583f7dc8f9d7be4a2a793dab55c93bf0e2e3349b26221",
+  "resolver_sha256": "e1561432c5a76471c404c0536126747179075d66135810aa5352a02f70fa6a61",
+  "limits": [
+    "No all-current-SDK or all-platform claim",
+    "No rendered UI validation",
+    "No zero-allocation or universal GC claim",
+    "Finite source-bound contract; no generic stream-lowering admission",
+    "Current SDK21 strict baseline constructor this-escape failure retained",
+    "Broader reactor result owned and reported separately by root"
+  ]
+}

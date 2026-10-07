@@ -1,0 +1,79 @@
+{
+  "command": "mvn verify",
+  "result": "BUILD SUCCESS",
+  "source_binding": "all-files.tsv SHA-256",
+  "source_manifest_sha256": "c94113686f4eea4dda2116a2d0bdd42ceba1f201b3d5ffee40b31ac6e1bcfc74",
+  "raw_log_sha256": "4ba2c5580cad27f06ac5b97cec42b309301096d722912a2cb443288f9f1e9cda",
+  "test_module_totals": [
+    [
+      24,
+      0,
+      0,
+      0
+    ],
+    [
+      13,
+      0,
+      0,
+      0
+    ],
+    [
+      5,
+      0,
+      0,
+      0
+    ],
+    [
+      73,
+      0,
+      0,
+      0
+    ],
+    [
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      6,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      11,
+      0,
+      0,
+      0
+    ],
+    [
+      60,
+      0,
+      0,
+      0
+    ]
+  ],
+  "aggregate_tests": {
+    "tests": 211,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "platform": "Linux x86_64, GTK3, Xvfb, OpenJDK 21.0.12.1",
+  "raw_log_not_published": "Selected test and reactor summaries avoid environment/system-property dumps.",
+  "separate_owned_recipe_reactor_tests": 90,
+  "source_note": "Native reactor excludes m3 tooling; all 74 tooling sources separately covered by parser/recipe reactor."
+}

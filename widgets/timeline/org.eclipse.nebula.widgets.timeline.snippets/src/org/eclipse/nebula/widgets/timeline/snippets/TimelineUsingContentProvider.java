@@ -88,8 +88,9 @@ public class TimelineUsingContentProvider {
 
 		@Override
 		public Color getForeground(Object element) {
-			if ("1200".equals(element.toString()))
-				return ColorConstants.red;
+            if ("1200".equals(element.toString())) {
+                return ColorConstants.red;
+            }
 
 			return null;
 		}
@@ -102,8 +103,9 @@ public class TimelineUsingContentProvider {
 
 		@Override
 		public Timing getTimings(Object element) {
-			if (element instanceof Integer)
-				return new Timing((int) element, 100);
+            if (element instanceof Integer) {
+                return new Timing((int) element, 100);
+            }
 
 			return null;
 		}

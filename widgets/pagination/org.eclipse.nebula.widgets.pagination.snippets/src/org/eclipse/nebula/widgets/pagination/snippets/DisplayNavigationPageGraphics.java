@@ -31,8 +31,9 @@ public class DisplayNavigationPageGraphics {
 		shell.setSize(200, 220);
 
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

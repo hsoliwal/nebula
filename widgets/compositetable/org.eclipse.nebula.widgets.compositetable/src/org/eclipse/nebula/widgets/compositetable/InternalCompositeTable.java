@@ -584,8 +584,9 @@ class InternalCompositeTable extends Composite implements Listener {
 		if (numRowsVisible < numRowsInCollection) {
 			int extra = numRowsInCollection - numRowsVisible;
 			int pageIncrement = numRowsVisible;
-			if (pageIncrement > extra)
-				pageIncrement = extra;
+            if (pageIncrement > extra) {
+                pageIncrement = extra;
+            }
 
 			vSlider.setMaximum(numRowsInCollection);
 			vSlider.setMinimum(0);
@@ -954,12 +955,13 @@ class InternalCompositeTable extends Composite implements Listener {
 			row += -1 * topRowDelta;
 			internalSetSelection(column, row, true);
 		} else {
-			if (row == currentRow)
-				internalSetSelection(column, row, false);
-			else {
-				if (fireRequestRowChangeEvent())
-					internalSetSelection(column, row, true);
-			}
+            if (row == currentRow) {
+                internalSetSelection(column, row, false);
+            } else {
+                if (fireRequestRowChangeEvent()) {
+                    internalSetSelection(column, row, true);
+                }
+            }
 		}
 	}
 	
@@ -1025,8 +1027,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	private void createEmptyTablePlaceholer() {
 		emptyTablePlaceholder = new EmptyTablePlaceholder(controlHolder,
 				SWT.NULL);
-		if (rowControl != null)
-			emptyTablePlaceholder.setBackground(rowControl.getBackground());
+        if (rowControl != null) {
+            emptyTablePlaceholder.setBackground(rowControl.getBackground());
+        }
 		emptyTablePlaceholder.setMessage(parent.getInsertHint());
 	}
 
@@ -1061,7 +1064,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	 *            the actual KeyEvent
 	 */
 	public void keyPressed(TableRow sender, KeyEvent e) {
-		if (doMakeFocusedRowVisible()) return;
+        if (doMakeFocusedRowVisible()) {
+            return;
+        }
 		
 		if ((e.stateMask & SWT.CONTROL) != 0) {
 			switch (e.keyCode) {
@@ -1106,7 +1111,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	 *            The SWT TraverseEvent
 	 */
 	public void keyTraversed(TableRow sender, TraverseEvent e) {
-		if (doMakeFocusedRowVisible()) return;
+        if (doMakeFocusedRowVisible()) {
+            return;
+        }
 
 		if (parent.isTraverseOnTabsEnabled()) {
 			if (e.detail == SWT.TRAVERSE_TAB_NEXT) {
@@ -1355,8 +1362,9 @@ class InternalCompositeTable extends Composite implements Listener {
 		currentRow = senderRowNumber;
 		currentColumn = sender.getColumnNumber((Control) e.widget);
 
-		if (rowChanged)
-			fireRowArriveEvent();
+        if (rowChanged) {
+            fireRowArriveEvent();
+        }
 	}
 
 	private PaintListener headerPaintListener = new PaintListener() {
@@ -1532,8 +1540,9 @@ class InternalCompositeTable extends Composite implements Listener {
             // currentRow() can be null if it's scrolled off the top or bottom
             TableRow row = currentRow();
             Control control = row != null ? row.getRowControl() : null;
-            if (control != null)
+            if (control != null) {
                 listener.depart(parent, topRow + currentRow, control);
+            }
         }
     }
 
@@ -1887,7 +1896,9 @@ class InternalCompositeTable extends Composite implements Listener {
 		}
 		Display.getCurrent().asyncExec(new Runnable() {
 			public void run() {
-				if (toFocus.isDisposed()) return;
+                if (toFocus.isDisposed()) {
+                    return;
+                }
 				toFocus.setFocus();
 				if (rowChange) {
 					fireRowArriveEvent();
@@ -1989,8 +2000,9 @@ class InternalCompositeTable extends Composite implements Listener {
     }
 
     public void doRowUp() {
-        if (maxRowsVisible <= 1)
+        if (maxRowsVisible <= 1) {
             return;
+        }
 
         if (currentRow > 0) {
             if (!fireRequestRowChangeEvent()) {
@@ -2020,8 +2032,9 @@ class InternalCompositeTable extends Composite implements Listener {
     }
 
     public void doRowDown() {
-        if (maxRowsVisible <= 1)
+        if (maxRowsVisible <= 1) {
             return;
+        }
 
         if (currentRow < numRowsVisible - 1) {
             if (!fireRequestRowChangeEvent()) {

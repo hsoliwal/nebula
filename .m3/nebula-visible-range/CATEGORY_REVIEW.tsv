@@ -1,0 +1,5 @@
+order	source	category	decision	contract_difference	source_url
+1	LeetCode 350	array/hash table/multiset intersection	REUSE_COUNTING_SHAPE_ONLY	Nebula requires stable old/new encounter order and exact object identity; integer outputs in any order are not sufficient	https://leetcode.com/problems/intersection-of-two-arrays-ii/
+2	HackerRank Missing Numbers	frequency differences	REUSE_FREQUENCY_ACCOUNTING_ONLY	Sorted unique missing numbers would lose event order and duplicate multiplicity	https://www.hackerrank.com/challenges/missing-numbers/problem
+3	GeeksforGeeks intersection of two arrays	hash set intersection	REJECT_DIRECT_SUBSTITUTION	Set membership erases duplicate counts; retain first-occurrence cancellation	https://www.geeksforgeeks.org/dsa/intersection-of-two-arrays/
+4	JDK IdentityHashMap	identity-indexed occurrence counts	REUSE_JDK_IMPLEMENTATION	Use only when runtime equals is inherited from Object; custom equals falls back to original list algorithm	https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/IdentityHashMap.html

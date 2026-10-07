@@ -54,13 +54,15 @@ public class DoubleStyleProvider extends BasePointStyleProvider {
 		}
 
 		Object object = ((IMetaData) sample).getData();
-		if ((object == null) || !(object instanceof Double))
-			return trace.getTraceColor();
+        if ((object == null) || !(object instanceof Double)) {
+            return trace.getTraceColor();
+        }
 
 		double value = (Double) object;
 		for (Entry<Double, RGB> upperLimit : fColorMap.entrySet()) {
-			if (value < upperLimit.getKey())
-				return XYGraphMediaFactory.getInstance().getColor(upperLimit.getValue());
+            if (value < upperLimit.getKey()) {
+                return XYGraphMediaFactory.getInstance().getColor(upperLimit.getValue());
+            }
 		}
 
 		return XYGraphMediaFactory.getInstance().getColor(fColorMap.lastEntry().getValue());

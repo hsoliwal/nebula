@@ -1,0 +1,102 @@
+{
+  "reason": "Structured reviewer refuses binary diffs; published textual logs are UTF-8",
+  "original_bytes_retained_locally": true,
+  "logs": [
+    {
+      "published_path": "m3/stream-segment-proof/proof/aligned-reactor.log",
+      "raw_sha256": "47f450a138b5263a82199cba904f1770cbc91ac07e74faacc1f0b2e4708abb30",
+      "published_sha256": "c94e40a844791506b22c90c985268bf18e78c91661361e7a38aa2f659e0a6492",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\aligned-reactor.log",
+      "raw_bytes": 39704,
+      "published_bytes": 19851
+    },
+    {
+      "published_path": "m3/stream-segment-proof/proof/baseline-reactor.log",
+      "raw_sha256": "c22608d92ae28ce4931422de55412c42b09d500117f7b55c72ea387608ceb3d6",
+      "published_sha256": "4ca842a09f6cd04ced8bb9742a6ea224b8b4beb3c4e87b28304cf1afa6bb51b2",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\baseline-reactor.log",
+      "raw_bytes": 11206,
+      "published_bytes": 5602
+    },
+    {
+      "published_path": "m3/stream-segment-proof/proof/baseline-repaired-reactor.log",
+      "raw_sha256": "7fd8d69c9c3ab56dfb337e35f6302d52921bc93b50a6830d4fb4e14716a88a39",
+      "published_sha256": "707201bcaa0b67a4d445d9ca16124fd98d7c96e48a3e79ebc802622cfab70d4a",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\baseline-repaired-reactor.log",
+      "raw_bytes": 18892,
+      "published_bytes": 9445
+    },
+    {
+      "published_path": "m3/stream-segment-proof/proof/focused-verified.log",
+      "raw_sha256": "ee015a9f05d3053d970207acac1315c5185e9aad449da86d4709e0e81ee3e38b",
+      "published_sha256": "41e0009ee965588c74c50b99e0a019fa1387aa09e838afa64e3c6b661a2fd87c",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\focused-verified.log",
+      "raw_bytes": 8118,
+      "published_bytes": 4058
+    },
+    {
+      "published_path": "m3/stream-segment-proof/proof/proof-sdk-resolver-refusal.log",
+      "raw_sha256": "b3c66addc7e52348babf293931457c3913264bb4df13d2b121bf56ec8c6ada2b",
+      "published_sha256": "27e58a085f415300727467d5febf05b2a14176742f557dff2f078d1efe94ee5e",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\proof-sdk-resolver-refusal.log",
+      "raw_bytes": 3002,
+      "published_bytes": 1500
+    },
+    {
+      "published_path": "m3/stream-segment-proof/proof/proof-sdk-resolver-replay.log",
+      "raw_sha256": "e6c28090f51f7dfd8794f245f6cb493b7049884e653fea638654b567d79ec334",
+      "published_sha256": "38cf9250abe79c0e77bbc5c3bbfe6bff41c78cdf9a1c9f03efc98559b849cc4d",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\proof-sdk-resolver-replay.log",
+      "raw_bytes": 112,
+      "published_bytes": 55
+    },
+    {
+      "published_path": "m3/stream-segment-proof/proof/reactor-final-fresh.log",
+      "raw_sha256": "83e6fd9056b11809872844baee89073e097319af4ff84a3a7a11bb67827a7622",
+      "published_sha256": "e738797900668ec23f4887c4562e9bcc3aee13c1b0d0d3e6b51bc40fc77e0346",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\reactor-final-fresh.log",
+      "raw_bytes": 40410,
+      "published_bytes": 20204
+    },
+    {
+      "published_path": "m3/stream-segment-proof/proof/reactor-final.log",
+      "raw_sha256": "6757b432991f6fbce40e2885ad7d5f1b3356ce47bd63c15e864a2a4e87b74a9f",
+      "published_sha256": "4f709740be1982b2ade7215e90ac17049969b2bb87e073b93f2b7ccd7440d8f9",
+      "raw_encoding": "UTF-16LE BOM",
+      "published_encoding": "UTF-8",
+      "exact_text_and_line_endings_preserved": true,
+      "byte_roundtrip_verified": true,
+      "original_local_path": "K:\\codex-work\\nebula-stream-segments-20261004\\raw-log-custody\\reactor-final.log",
+      "raw_bytes": 42266,
+      "published_bytes": 21134
+    }
+  ]
+}

@@ -98,8 +98,9 @@ public class LinearScaleTickLabels extends Figure {
 	 * @return the tickVisibilities
 	 */
 	public ArrayList<Boolean> getTickVisibilities() {
-		if (ticks != null)
-			return new ArrayList<Boolean> (ticks.getVisibilities());
+        if (ticks != null) {
+            return new ArrayList<Boolean>(ticks.getVisibilities());
+        }
 		return null;
 	}
 

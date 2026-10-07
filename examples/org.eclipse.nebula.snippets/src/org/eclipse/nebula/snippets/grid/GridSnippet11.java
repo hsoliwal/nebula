@@ -68,8 +68,9 @@ public class GridSnippet11 {
 		shell.setSize(500, 500);
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
 		for (Font f : fonts) {

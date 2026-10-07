@@ -78,8 +78,9 @@ public class SvgSnippet01 {
 		shell.setBounds((screen.width - size.x) / 2, (screen.height - size.y) / 2, size.x, size.y);
 		shell.open();
 		while(!shell.isDisposed()) {
-			if(!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

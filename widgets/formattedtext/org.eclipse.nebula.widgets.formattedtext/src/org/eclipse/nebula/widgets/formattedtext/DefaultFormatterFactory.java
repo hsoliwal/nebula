@@ -105,7 +105,9 @@ public abstract class DefaultFormatterFactory {
    * @param f Class of the formatter
    */
   public static void register(Class<?> c, Class<?> f) {
-  	if ( c == null ) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+      if (c == null) {
+          SWT.error(SWT.ERROR_NULL_ARGUMENT);
+      }
     if ( ! ITextFormatter.class.isAssignableFrom(f) ) {
     	SWT.error(SWT.ERROR_INVALID_ARGUMENT, null, "Must be an ITextFormatter"); //$NON-NLS-1$
     }

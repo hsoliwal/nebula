@@ -51,9 +51,11 @@ public class ColumnPrintExample {
 
 		shell.open();
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		PaperClips.print(
 				new PrintJob("ColumnPrintExample.java", createPrint()),
@@ -64,8 +66,9 @@ public class ColumnPrintExample {
 		StringBuffer buf = new StringBuffer(11000);
 		for (int i = 1; i <= 500; i++) {
 			buf.append("This is sentence #").append(i).append(".  ");
-			if (i % 20 == 0)
-				buf.append("\n\n");
+            if (i % 20 == 0) {
+                buf.append("\n\n");
+            }
 		}
 
 		return new ColumnPrint(new BorderPrint(new TextPrint(buf.toString()),

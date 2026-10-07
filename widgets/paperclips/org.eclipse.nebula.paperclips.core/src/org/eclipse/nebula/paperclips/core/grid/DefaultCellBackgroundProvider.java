@@ -59,23 +59,30 @@ public class DefaultCellBackgroundProvider implements CellBackgroundProvider {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		DefaultCellBackgroundProvider other = (DefaultCellBackgroundProvider) obj;
 		if (background == null) {
-			if (other.background != null)
-				return false;
-		} else if (!background.equals(other.background))
-			return false;
+            if (other.background != null) {
+                return false;
+            }
+		} else if (!background.equals(other.background)) {
+            return false;
+        }
 		if (chain == null) {
-			if (other.chain != null)
-				return false;
-		} else if (!chain.equals(other.chain))
-			return false;
+            if (other.chain != null) {
+                return false;
+            }
+		} else if (!chain.equals(other.chain)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -86,8 +93,9 @@ public class DefaultCellBackgroundProvider implements CellBackgroundProvider {
 	 */
 	public RGB getCellBackground(int row, int column, int colspan) {
 		RGB result = getBackground();
-		if (result == null && chain != null)
-			result = chain.getCellBackground(row, column, colspan);
+        if (result == null && chain != null) {
+            result = chain.getCellBackground(row, column, colspan);
+        }
 		return result;
 	}
 

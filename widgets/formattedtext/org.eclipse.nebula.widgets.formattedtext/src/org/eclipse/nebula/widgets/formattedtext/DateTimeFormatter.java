@@ -255,7 +255,9 @@ public class DateTimeFormatter extends AbstractFormatter {
     // Instantiate the key listener
     klistener = new KeyListener() {
 			public void keyPressed(KeyEvent e) {
-				if ( e.stateMask != 0 ) return;
+                if (e.stateMask != 0) {
+                    return;
+                }
 		  	switch ( e.keyCode ) {
 		  		case SWT.ARROW_UP :
 		  			arrow(1);
@@ -339,9 +341,13 @@ public class DateTimeFormatter extends AbstractFormatter {
 	private void arrow(int inc) {
 		int p = text.getCaretPosition();
 		int l = inputMask.length();
-		if ( p == l ) return;
+        if (p == l) {
+            return;
+        }
 		char m = inputMask.charAt(p);
-		if ( m == '*' ) return;
+        if (m == '*') {
+            return;
+        }
 		FieldDesc f = getField(p, 0);
 		int b = f.pos;
 		if ( countValid() == 0 ) {
@@ -510,7 +516,9 @@ public class DateTimeFormatter extends AbstractFormatter {
 	private int countValid() {
 		int count = 0;
 		for (int i = 0; i < fieldCount; i++) {
-			if ( fields[i].valid ) count++;
+            if (fields[i].valid) {
+                count++;
+            }
 		}
 		return count;
 	}
@@ -638,7 +646,9 @@ public class DateTimeFormatter extends AbstractFormatter {
 					v++;
 					break;
 				case Calendar.HOUR :
-					if ( v == 0 ) v = 12;
+                    if (v == 0) {
+                        v = 12;
+                    }
 					break;
 				case Calendar.AM_PM :
 					return sdfDisplay.getDateFormatSymbols().getAmPmStrings()[v];
@@ -648,9 +658,11 @@ public class DateTimeFormatter extends AbstractFormatter {
 			value.append(v);
 			if ( value.length() > f.maxLen ) {
 				value.delete(0, value.length() - f.maxLen);
-			} else while ( value.length() < f.minLen ) {
-				value.insert(0, '0');
-			}
+			} else {
+                while (value.length() < f.minLen) {
+                    value.insert(0, '0');
+                }
+            }
 		} else {
 			while ( value.length() < f.minLen ) {
 				value.append(SPACE);
@@ -804,7 +816,9 @@ public class DateTimeFormatter extends AbstractFormatter {
    */
   public boolean isEmpty() {
     for (int i = 0; i < fieldCount; i++) {
-      if ( ! fields[i].empty ) return false;
+        if (!fields[i].empty) {
+            return false;
+        }
     }
     return true;
   }
@@ -942,7 +956,9 @@ public class DateTimeFormatter extends AbstractFormatter {
 	 * @param zone Time zone
 	 */
 	public void setTimeZone(TimeZone zone) {
-		if ( zone == null ) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (zone == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
     sdfDisplay.setTimeZone(zone);
     calendar.setTimeZone(zone);
 	}

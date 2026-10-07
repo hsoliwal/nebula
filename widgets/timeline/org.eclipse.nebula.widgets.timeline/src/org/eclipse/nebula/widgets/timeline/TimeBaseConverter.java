@@ -79,11 +79,13 @@ public class TimeBaseConverter {
 
 			// first event
 			setOffset(event.getTiming().left());
-			if (fDetailScreenWidth >= 0)
-				setScaleFactor((fDetailScreenWidth / 3) / event.getTiming().getDuration(), false);
+            if (fDetailScreenWidth >= 0) {
+                setScaleFactor((fDetailScreenWidth / 3) / event.getTiming().getDuration(), false);
+            }
 
-		} else
-			fRequiredEventArea.union(event.getTiming());
+		} else {
+            fRequiredEventArea.union(event.getTiming());
+        }
 	}
 
 	/**
@@ -107,15 +109,18 @@ public class TimeBaseConverter {
 	private boolean translateEventTime(long eventTime) {
 		final Timing eventArea = getEventArea();
 		if (eventTime < 0) {
-			if (fOffset > eventArea.left())
-				setOffset(fOffset + eventTime);
+            if (fOffset > eventArea.left()) {
+                setOffset(fOffset + eventTime);
+            }
 
 		} else if (eventTime > 0) {
-			if (fOffset < ((eventArea.right()) - getVisibleEventArea().getDuration()))
-				setOffset(fOffset + eventTime);
+            if (fOffset < ((eventArea.right()) - getVisibleEventArea().getDuration())) {
+                setOffset(fOffset + eventTime);
+            }
 
-		} else
-			return false;
+		} else {
+            return false;
+        }
 
 		return true;
 	}
@@ -124,8 +129,9 @@ public class TimeBaseConverter {
 		final boolean screenNeedsUpdate = fDetailScreenWidth < 0;
 		fDetailScreenWidth = screenWidth;
 
-		if (screenNeedsUpdate)
-			fRootFigure.fireTimebaseChanged();
+        if (screenNeedsUpdate) {
+            fRootFigure.fireTimebaseChanged();
+        }
 	}
 
 	public void zoom(double factor, int zoomCenterX) {
@@ -175,11 +181,13 @@ public class TimeBaseConverter {
 	}
 
 	private void adjustInvalidOffset() {
-		if (fOffset > (getEventArea().right() - getVisibleEventArea().getDuration()))
-			fOffset = getEventArea().right() - getVisibleEventArea().getDuration();
+        if (fOffset > (getEventArea().right() - getVisibleEventArea().getDuration())) {
+            fOffset = getEventArea().right() - getVisibleEventArea().getDuration();
+        }
 
-		if (fOffset < getEventArea().left())
-			fOffset = getEventArea().left();
+        if (fOffset < getEventArea().left()) {
+            fOffset = getEventArea().left();
+        }
 	}
 
 	/**
@@ -189,8 +197,9 @@ public class TimeBaseConverter {
 	 *            area to reveal
 	 */
 	public void revealEvent(Timing revealArea) {
-		if (getVisibleEventArea().getDuration() <= revealArea.getDuration())
-			fScaleFactor = fDetailScreenWidth / (revealArea.getDuration() * 3.0d);
+        if (getVisibleEventArea().getDuration() <= revealArea.getDuration()) {
+            fScaleFactor = fDetailScreenWidth / (revealArea.getDuration() * 3.0d);
+        }
 
 		setOffset(revealArea.getTimestamp() - ((getVisibleEventArea().getDuration() - revealArea.getDuration()) / 2));
 

@@ -411,8 +411,9 @@ public class GridTableViewer extends AbstractTableViewer {
     protected void doUpdateItem(Widget widget, Object element, boolean fullMap) {
         super.doUpdateItem(widget, element, fullMap);
         updateRowHeader(widget);
-        if (autoPreferredHeight && !widget.isDisposed())
+        if (autoPreferredHeight && !widget.isDisposed()) {
             ((GridItem) widget).pack();
+        }
     }
 
     private void updateRowHeader(Widget widget) {

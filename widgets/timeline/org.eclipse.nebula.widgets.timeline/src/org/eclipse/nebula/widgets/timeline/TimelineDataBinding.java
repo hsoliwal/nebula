@@ -86,33 +86,37 @@ public class TimelineDataBinding extends AdapterImpl implements ICursorListener,
 	public void selectionChanged(SelectionChangedEvent event) {
 		fIgnoreModelChanges = true;
 
-		if (event.getStructuredSelection().isEmpty())
-			fModel.setSelectedEvent(null);
-
-		else if (event.getStructuredSelection().getFirstElement() instanceof ITimelineEvent)
-			fModel.setSelectedEvent((ITimelineEvent) event.getStructuredSelection().getFirstElement());
+        if (event.getStructuredSelection().isEmpty()) {
+            fModel.setSelectedEvent(null);
+        } else if (event.getStructuredSelection().getFirstElement() instanceof ITimelineEvent) {
+            fModel.setSelectedEvent((ITimelineEvent) event.getStructuredSelection().getFirstElement());
+        }
 
 		fIgnoreModelChanges = false;
 	}
 
 	private synchronized void refreshElement(EObject element) {
-		if (!fIgnoreModelChanges)
-			getUIRefreshJob().addElementForRefresh(element);
+        if (!fIgnoreModelChanges) {
+            getUIRefreshJob().addElementForRefresh(element);
+        }
 	}
 
 	private synchronized void updateElement(EObject element) {
-		if (!fIgnoreModelChanges)
-			getUIRefreshJob().addElementForUpdate(element);
+        if (!fIgnoreModelChanges) {
+            getUIRefreshJob().addElementForUpdate(element);
+        }
 	}
 
 	private synchronized void updateSelection() {
-		if (!fIgnoreModelChanges)
-			getUIRefreshJob().forceSelectionUpdate();
+        if (!fIgnoreModelChanges) {
+            getUIRefreshJob().forceSelectionUpdate();
+        }
 	}
 
 	private ViewerRefreshJob getUIRefreshJob() {
-		if (fViewerRefresher == null)
-			fViewerRefresher = new ViewerRefreshJob();
+        if (fViewerRefresher == null) {
+            fViewerRefresher = new ViewerRefreshJob();
+        }
 
 		return fViewerRefresher;
 	}
@@ -123,22 +127,25 @@ public class TimelineDataBinding extends AdapterImpl implements ICursorListener,
 
 			if (msg.getEventType() == Notification.ADD) {
 				final Object value = msg.getNewValue();
-				if (value instanceof Notifier)
-					((Notifier) value).eAdapters().add(this);
+                if (value instanceof Notifier) {
+                    ((Notifier) value).eAdapters().add(this);
+                }
 
 				refreshElement((EObject) msg.getNotifier());
 
 			} else if (msg.getEventType() == Notification.REMOVE) {
 				final Object value = msg.getOldValue();
-				if (value instanceof Notifier)
-					((Notifier) value).eAdapters().remove(this);
+                if (value instanceof Notifier) {
+                    ((Notifier) value).eAdapters().remove(this);
+                }
 
 				refreshElement((EObject) msg.getNotifier());
 
 			} else if (msg.getEventType() == Notification.SET) {
 				if (msg.getNotifier() instanceof ITimeline) {
-					if (msg.getFeature().equals(ITimelinePackage.eINSTANCE.getTimeline_SelectedEvent()))
-						updateSelection();
+                    if (msg.getFeature().equals(ITimelinePackage.eINSTANCE.getTimeline_SelectedEvent())) {
+                        updateSelection();
+                    }
 				}
 
 				updateElement((EObject) msg.getNotifier());
@@ -252,8 +259,9 @@ public class TimelineDataBinding extends AdapterImpl implements ICursorListener,
 
 			while (!copy.isEmpty()) {
 				final EObject candidate = copy.remove(0);
-				if (containsParent(candidate, elementsToRefresh))
-					candidates.remove(candidate);
+                if (containsParent(candidate, elementsToRefresh)) {
+                    candidates.remove(candidate);
+                }
 			}
 		}
 
@@ -269,8 +277,9 @@ public class TimelineDataBinding extends AdapterImpl implements ICursorListener,
 		private boolean containsParent(EObject element, Collection<EObject> scheduledElements) {
 			EObject parent = element.eContainer();
 			while (parent != null) {
-				if (scheduledElements.contains(parent))
-					return true;
+                if (scheduledElements.contains(parent)) {
+                    return true;
+                }
 
 				parent = parent.eContainer();
 			}

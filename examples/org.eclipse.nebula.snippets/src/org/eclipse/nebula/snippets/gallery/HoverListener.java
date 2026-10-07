@@ -140,8 +140,9 @@ public class HoverListener implements MouseMoveListener, MouseTrackListener,
 
 			// Get current background color (backgrounfColor is default)
 			Color bg = item.getBackground();
-			if (bg == null)
-				bg = backgroundColor;
+            if (bg == null) {
+                bg = backgroundColor;
+            }
 
 			// Start animation
 			AnimationRunner animation = new AnimationRunner();

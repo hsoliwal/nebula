@@ -76,8 +76,9 @@ public final class XYGraphMediaFactory {
 
 		if (cursorRegistry != null) {
 			for (Cursor cursor : cursorRegistry.values()) {
-				if (cursor != null && !cursor.isDisposed())
-					cursor.dispose();
+                if (cursor != null && !cursor.isDisposed()) {
+                    cursor.dispose();
+                }
 			}
 			cursorRegistry.clear();
 		}

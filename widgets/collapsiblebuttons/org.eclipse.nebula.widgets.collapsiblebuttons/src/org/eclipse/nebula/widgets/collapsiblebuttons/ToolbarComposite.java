@@ -70,10 +70,11 @@ public class ToolbarComposite extends Composite implements MouseListener, MouseM
 		this.mColorManager = bc.getColorManager();
 		this.mSettings = bc.getSettings();
 
-		if (mColorManager.getTheme() == IColorManager.SKIN_OFFICE_2007)
-			mArrowImage = mOutlook2007ArrowImage;
-		else
-			mArrowImage = mOutlook2005ArrowsImage;
+        if (mColorManager.getTheme() == IColorManager.SKIN_OFFICE_2007) {
+            mArrowImage = mOutlook2007ArrowImage;
+        } else {
+            mArrowImage = mOutlook2005ArrowsImage;
+        }
 
 		mToolBarItems = new ArrayList<>();
 
@@ -127,8 +128,9 @@ public class ToolbarComposite extends Composite implements MouseListener, MouseM
 
 		int right = rect.width;
 
-		if (mArrowImage != null)
-			gc.drawImage(mArrowImage, rect.width - imageBounds.width, verticalLoc);
+        if (mArrowImage != null) {
+            gc.drawImage(mArrowImage, rect.width - imageBounds.width, verticalLoc);
+        }
 		mArrowsBounds = new Rectangle(rect.width - imageBounds.width, verticalLoc, imageBounds.width, imageBounds.height);
 		right -= imageBounds.width + mSettings.getToolBarSpacing();
 
@@ -137,8 +139,9 @@ public class ToolbarComposite extends Composite implements MouseListener, MouseM
 
 		for (int i = 0; i < mToolBarItems.size(); i++) {
 			TBItem tb = mToolBarItems.get(i);
-			if (tb.getHidden())
-				continue;
+            if (tb.getHidden()) {
+                continue;
+            }
 
 			if (tb.getButton() == mSelectedItem) {
 				Rectangle cur = tb.getBounds();
@@ -172,8 +175,9 @@ public class ToolbarComposite extends Composite implements MouseListener, MouseM
 	}
 
 	private void orderItems() {
-		if (mToolBarItems.size() == 0)
-			return;
+        if (mToolBarItems.size() == 0) {
+            return;
+        }
 
 		Collections.sort(mToolBarItems);
 	}
@@ -394,8 +398,9 @@ public class ToolbarComposite extends Composite implements MouseListener, MouseM
 				GC gc = new GC(this);
 				Rectangle lb = item.getBounds();
 				redraw(lb.x - mSettings.getToolBarLeftSpacer(), 0, lb.width + mSettings.getToolBarRightSpacer(), CustomButton.BUTTON_HEIGHT, false);
-				if (item.getButton().getToolBarImage() != null)
-					gc.drawImage(item.getButton().getToolBarImage(), lb.x, lb.y);
+                if (item.getButton().getToolBarImage() != null) {
+                    gc.drawImage(item.getButton().getToolBarImage(), lb.x, lb.y);
+                }
 				gc.dispose();
 			}
 		}
@@ -479,8 +484,9 @@ public class ToolbarComposite extends Composite implements MouseListener, MouseM
 		}
 
 		public int compareTo(Object item) {
-			if (!(item instanceof TBItem))
-				return 0;
+            if (!(item instanceof TBItem)) {
+                return 0;
+            }
 
 			TBItem tbitem = (TBItem) item;
 

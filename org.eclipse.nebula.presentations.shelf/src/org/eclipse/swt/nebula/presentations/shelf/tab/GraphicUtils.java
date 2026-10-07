@@ -49,20 +49,23 @@ public class GraphicUtils
         {
             if (i == 0)
             {
-                if (outerColor == null)
+                if (outerColor == null) {
                     continue;
+                }
                 gc.setForeground(outerColor);
             }
             if (i == 1)
             {
-                if (borderColor == null)
+                if (borderColor == null) {
                     continue;
+                }
                 gc.setForeground(borderColor);
             }
             if (i == 2)
             {
-                if (innerColor == null)
+                if (innerColor == null) {
                     continue;
+                }
                 gc.setForeground(innerColor);
             }
 
@@ -70,8 +73,9 @@ public class GraphicUtils
             {
                 for (int x2 = 0; x2 < 5; x2++)
                 {
-                    if (corner[line][x2] == i)
+                    if (corner[line][x2] == i) {
                         gc.drawPoint(x + x2, y + line);
+                    }
                 }
             }
         }
@@ -92,23 +96,26 @@ public class GraphicUtils
         final Color oldBackground = gc.getBackground();
         if (gradientColors.length == 1)
         {
-            if (gradientColors[0] != null)
+            if (gradientColors[0] != null) {
                 gc.setBackground(gradientColors[0]);
+            }
             gc.fillRectangle(x, y, width, height);
         }
         else
         {
             final Color oldForeground = gc.getForeground();
             Color lastColor = gradientColors[0];
-            if (lastColor == null)
+            if (lastColor == null) {
                 lastColor = oldBackground;
+            }
             int pos = 0;
             for (int i = 0; i < gradientPercents.length; ++i)
             {
                 gc.setForeground(lastColor);
                 lastColor = gradientColors[i + 1];
-                if (lastColor == null)
+                if (lastColor == null) {
                     lastColor = oldBackground;
+                }
                 gc.setBackground(lastColor);
                 if (vertical)
                 {
@@ -241,17 +248,21 @@ public class GraphicUtils
         float[] hsb = java.awt.Color.RGBtoHSB(rgb.red, rgb.green, rgb.blue, null);
 
         hsb[1] += saturation;
-        if (hsb[1] > 1.0f)
+        if (hsb[1] > 1.0f) {
             hsb[1] = 1.0f;
-        if (hsb[1] < 0f)
+        }
+        if (hsb[1] < 0f) {
             hsb[1] = 0f;
+        }
 
         hsb[0] += saturation;
-        if (hsb[0] > 1.0f)
+        if (hsb[0] > 1.0f) {
             hsb[0] = 1.0f;
+        }
 
-        if (hsb[0] < 0f)
+        if (hsb[0] < 0f) {
             hsb[0] = 0f;
+        }
 
         // hsb[2] += saturation;
         // if (hsb[2] > 1.0f)

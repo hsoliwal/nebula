@@ -73,25 +73,34 @@ public class GapBorder implements Border {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		GapBorder other = (GapBorder) obj;
-		if (bottom != other.bottom)
-			return false;
-		if (left != other.left)
-			return false;
-		if (openBottom != other.openBottom)
-			return false;
-		if (openTop != other.openTop)
-			return false;
-		if (right != other.right)
-			return false;
-		if (top != other.top)
-			return false;
+        if (bottom != other.bottom) {
+            return false;
+        }
+        if (left != other.left) {
+            return false;
+        }
+        if (openBottom != other.openBottom) {
+            return false;
+        }
+        if (openTop != other.openTop) {
+            return false;
+        }
+        if (right != other.right) {
+            return false;
+        }
+        if (top != other.top) {
+            return false;
+        }
 		return true;
 	}
 
@@ -106,8 +115,9 @@ public class GapBorder implements Border {
 	}
 
 	int checkGap(int gap) {
-		if (gap < 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Gap must be >= 0"); //$NON-NLS-1$
+        if (gap < 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Gap must be >= 0"); //$NON-NLS-1$
+        }
 		return gap;
 	}
 

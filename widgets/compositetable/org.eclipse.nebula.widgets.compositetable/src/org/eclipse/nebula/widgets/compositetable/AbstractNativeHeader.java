@@ -370,7 +370,9 @@ public abstract class AbstractNativeHeader extends Composite {
             }
             
             if (sortOnColumn(c, toggleSortDirection())) {
-                if (c != lastSortColumn) headerTable.setSortColumn(tableColumn);
+                if (c != lastSortColumn) {
+                    headerTable.setSortColumn(tableColumn);
+                }
                 headerTable.setSortDirection(sortDirection);
                 
                 lastSortColumn = c;

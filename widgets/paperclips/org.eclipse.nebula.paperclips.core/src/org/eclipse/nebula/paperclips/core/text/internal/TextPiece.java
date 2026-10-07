@@ -82,12 +82,14 @@ public class TextPiece implements TextPrintPiece {
 				if (strikeout || underline) {
 					Color saveBackground = gc.getBackground();
 					gc.setBackground(gc.getForeground());
-					if (strikeout)
-						gc.fillRectangle(x + offset, y + lineHeight * i
-								+ strikeoutOffset, lineWidth, lineThickness);
-					if (underline)
-						gc.fillRectangle(x + offset, y + lineHeight * i
-								+ underlineOffset, lineWidth, lineThickness);
+                    if (strikeout) {
+                        gc.fillRectangle(x + offset, y + lineHeight * i
+                                + strikeoutOffset, lineWidth, lineThickness);
+                    }
+                    if (underline) {
+                        gc.fillRectangle(x + offset, y + lineHeight * i
+                                + underlineOffset, lineWidth, lineThickness);
+                    }
 					gc.setBackground(saveBackground);
 				}
 			}
@@ -111,31 +113,35 @@ public class TextPiece implements TextPrintPiece {
 	}
 
 	private int getHorzAlignmentOffset(int align, int lineWidth, int totalWidth) {
-		if (align == SWT.CENTER)
-			return (totalWidth - lineWidth) / 2;
-		else if (align == SWT.RIGHT)
-			return totalWidth - lineWidth;
+        if (align == SWT.CENTER) {
+            return (totalWidth - lineWidth) / 2;
+        } else if (align == SWT.RIGHT) {
+            return totalWidth - lineWidth;
+        }
 		return 0;
 	}
 
 	private boolean initGCBackground(GC gc) {
 		Color background = resources.getColor(style.getBackground());
 		boolean transparent = (background == null);
-		if (!transparent)
-			gc.setBackground(background);
+        if (!transparent) {
+            gc.setBackground(background);
+        }
 		return transparent;
 	}
 
 	private void initGCForeground(GC gc) {
 		Color foreground = resources.getColor(style.getForeground());
-		if (foreground != null)
-			gc.setForeground(foreground);
+        if (foreground != null) {
+            gc.setForeground(foreground);
+        }
 	}
 
 	private void initGCFont(GC gc) {
 		Font font = resources.getFont(style.getFontData());
-		if (font != null)
-			gc.setFont(font);
+        if (font != null) {
+            gc.setFont(font);
+        }
 	}
 
 	public void dispose() {

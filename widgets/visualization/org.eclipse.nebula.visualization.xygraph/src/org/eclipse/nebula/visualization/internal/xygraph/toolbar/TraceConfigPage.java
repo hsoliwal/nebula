@@ -117,8 +117,9 @@ public class TraceConfigPage implements ITraceConfigPage {
 		xAxisLabel.setLayoutData(labelGd);
 
 		xAxisCombo = new Combo(traceCompo, SWT.DROP_DOWN | SWT.READ_ONLY);
-		for (Axis axis : xyGraph.getXAxisList())
-			xAxisCombo.add(axis.getTitle());
+        for (Axis axis : xyGraph.getXAxisList()) {
+            xAxisCombo.add(axis.getTitle());
+        }
 		gd = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
 		xAxisCombo.setLayoutData(gd);
 
@@ -128,8 +129,9 @@ public class TraceConfigPage implements ITraceConfigPage {
 		yAxisLabel.setLayoutData(labelGd);
 
 		yAxisCombo = new Combo(traceCompo, SWT.DROP_DOWN | SWT.READ_ONLY);
-		for (Axis axis : xyGraph.getYAxisList())
-			yAxisCombo.add(axis.getTitle());
+        for (Axis axis : xyGraph.getYAxisList()) {
+            yAxisCombo.add(axis.getTitle());
+        }
 		gd = new GridData(SWT.FILL, SWT.CENTER, true, false, 2, 1);
 		yAxisCombo.setLayoutData(gd);
 
@@ -325,8 +327,9 @@ public class TraceConfigPage implements ITraceConfigPage {
 		trace.setDrawYErrorInArea(drawYErrorInAreaButton.getSelection());
 
 		boolean vis = visible.getSelection();
-		if (vis != trace.isVisible())
-			trace.setVisible(vis);
+        if (vis != trace.isVisible()) {
+            trace.setVisible(vis);
+        }
 
 	}
 

@@ -508,8 +508,9 @@ public class CubicRotationTransition extends Transition {
      * @param quality is a percentage from 0 to 100 inclusive
      */
     public void setQuality(double quality) {
-        if(quality >= 0.0 && quality <= 100.0)
+        if (quality >= 0.0 && quality <= 100.0) {
             _quality = quality;
+        }
     }
     
     

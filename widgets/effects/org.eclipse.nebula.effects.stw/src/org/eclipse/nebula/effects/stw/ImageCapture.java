@@ -48,11 +48,13 @@ public class ImageCapture {
                         // If the child is not visible then don't try and get its image
                         // An example of where this would cause a problem is TabFolder where all the controls
                         // for each page are children of the TabFolder, but only the visible one is being shown on the active page
-                        if (!child.isVisible())
+                        if (!child.isVisible()) {
                             continue;
+                        }
                         Rectangle childBounds = display.map(control, null, child.getBounds());
-                        if (!parentBounds.intersects(childBounds))
-                            continue; // Child is completely outside parent.
+                        if (!parentBounds.intersects(childBounds)) {
+                            continue;
+                        } // Child is completely outside parent.
                         Image childImage = getImage(child, parentRight - childBounds.x, parentBottom - childBounds.y, true);
                         if (childImage != null) {
                             try {
@@ -92,8 +94,9 @@ public class ImageCapture {
     public static Image getImage(Control aControl, int maxWidth, int maxHeight) {
 
         Rectangle rect = aControl.getBounds();
-        if (rect.width <= 0 || rect.height <= 0)
+        if (rect.width <= 0 || rect.height <= 0) {
             return null;
+        }
 
         Image image = new Image(aControl.getDisplay(), Math.min(rect.width, maxWidth), Math.min(rect.height, maxHeight));
         GC gc = new GC(image);
@@ -101,8 +104,9 @@ public class ImageCapture {
         // Need to handle cases where the GC font isn't automatically set by the control's image (e.g. CLabel)
         // see bug 98830 (https://bugs.eclipse.org/bugs/show_bug.cgi?id=98830)
         Font f = aControl.getFont();
-        if (f != null)
+        if (f != null) {
             gc.setFont(f);
+        }
         aControl.print(gc);
         
         gc.dispose();

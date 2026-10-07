@@ -116,8 +116,9 @@ public class ToolbarArmedXYGraph extends Figure {
 	 */
 	@Override
 	public void paintFigure(final Graphics graphics) {
-		if (!transparent)
-			graphics.fillRectangle(getClientArea());
+        if (!transparent) {
+            graphics.fillRectangle(getClientArea());
+        }
 		super.paintFigure(graphics);
 	}
 

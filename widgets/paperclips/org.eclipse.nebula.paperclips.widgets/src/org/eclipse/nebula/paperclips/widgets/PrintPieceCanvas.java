@@ -42,8 +42,9 @@ public class PrintPieceCanvas extends Canvas {
 		setForeground(getDisplay().getSystemColor(SWT.COLOR_LIST_FOREGROUND));
 
 		addListener(SWT.Paint, event -> {
-			if (piece == null)
-				return;
+            if (piece == null) {
+                return;
+            }
 
 			Rectangle client = getClientArea();
 			piece.paint(event.gc, client.x, client.y);
@@ -75,7 +76,8 @@ public class PrintPieceCanvas extends Canvas {
 	}
 
 	private void disposePrintPiece() {
-		if (piece != null)
-			piece.dispose();
+        if (piece != null) {
+            piece.dispose();
+        }
 	}
 }

@@ -138,10 +138,11 @@ public class ClusteredCommand extends AbstractUndoRedoCommand {
 	public List getFlattenedCommands() {
 		ArrayList result = new ArrayList();
 		for (Object command : _commands) {
-			if (command instanceof EventMoveCommand)
-				result.add((EventMoveCommand) command);
-			else if (command instanceof ClusteredCommand)
-				result.addAll(((ClusteredCommand) command).getFlattenedCommands());
+            if (command instanceof EventMoveCommand) {
+                result.add((EventMoveCommand) command);
+            } else if (command instanceof ClusteredCommand) {
+                result.addAll(((ClusteredCommand) command).getFlattenedCommands());
+            }
 		}
 		return Collections.unmodifiableList(result); 
 	}
@@ -154,10 +155,11 @@ public class ClusteredCommand extends AbstractUndoRedoCommand {
 	public List getEvents() {
 		ArrayList result = new ArrayList();
 		for (Object command : getFlattenedCommands()) {
-			if (command instanceof EventMoveCommand)
-				result.add(((EventMoveCommand) command).getEvent());
-			else if (command instanceof EventDeleteCommand)
-				result.add(((EventDeleteCommand) command).getEvent());
+            if (command instanceof EventMoveCommand) {
+                result.add(((EventMoveCommand) command).getEvent());
+            } else if (command instanceof EventDeleteCommand) {
+                result.add(((EventDeleteCommand) command).getEvent());
+            }
 		}
 		return Collections.unmodifiableList(result);
 	}

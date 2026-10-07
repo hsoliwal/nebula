@@ -249,7 +249,9 @@ public class NumberFormatter extends AbstractFormatter {
   			break;
   		}
   		editValue.deleteCharAt(i);
-  		if ( curseur > i ) curseur--;
+          if (curseur > i) {
+              curseur--;
+          }
   	}
 
   	// Recreates the groups in the int part
@@ -666,7 +668,9 @@ public class NumberFormatter extends AbstractFormatter {
 
     	int d = editValue.indexOf(EMPTY + symbols.getDecimalSeparator()); // Decimal separator position
     	for (int i = 0; i < e.text.length(); i++) {
-    		if ( p < prefixLen || p > editValue.length() - suffixLen ) break;
+            if (p < prefixLen || p > editValue.length() - suffixLen) {
+                break;
+            }
     		char c = e.text.charAt(i);
     		if ( c >= '0' && c <= '9' ) {
     			// Controls the number of digits by group

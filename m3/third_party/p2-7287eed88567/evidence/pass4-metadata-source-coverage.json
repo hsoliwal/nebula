@@ -1,0 +1,15 @@
+{
+  "status": "METADATA_ONLY_PAYLOAD_ACQUISITION_PENDING",
+  "units": 215,
+  "binary_exact_source_pairs": 106,
+  "exceptions": [
+    {
+      "id": "org.eclipse.swt",
+      "version": "3.135.0.v20260819-1952"
+    },
+    {
+      "id": "com.ibm.icu",
+      "version": "78.3.0"
+    }
+  ]
+}

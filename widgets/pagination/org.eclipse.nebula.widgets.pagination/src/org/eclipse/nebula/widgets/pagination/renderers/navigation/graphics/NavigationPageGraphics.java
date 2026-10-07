@@ -94,8 +94,9 @@ public class NavigationPageGraphics extends Canvas {
 
 	private void onPaint(GC gc) {
 		gc.setAdvanced(true);
-		if (gc.getAdvanced())
-			gc.setTextAntialias(SWT.ON);
+        if (gc.getAdvanced()) {
+            gc.setTextAntialias(SWT.ON);
+        }
 		if (items == null) {
 			return;
 		}

@@ -383,19 +383,22 @@ public class TickFactoryTest {
 	}
 
 	private String scale(String s, int p) {
-		if (p == 0)
-			return s;
+        if (p == 0) {
+            return s;
+        }
 		// tweak output by manually manipulating string
 		if (s.startsWith("-0.")) {
-			if (s.length() < 5)
-				return String.format("-%ce%+02d", s.charAt(3), p - 1);
+            if (s.length() < 5) {
+                return String.format("-%ce%+02d", s.charAt(3), p - 1);
+            }
 			return String.format("-%c.%se%+02d", s.charAt(3), s.substring(4), p - 1);
 		} else if (s.startsWith("0.")) {
 			if (s.charAt(2) == '0') { // special case of zero
 				return "0e+00";
 			}
-			if (s.length() < 4)
-				return String.format("%ce%+02d", s.charAt(2), p - 1);
+            if (s.length() < 4) {
+                return String.format("%ce%+02d", s.charAt(2), p - 1);
+            }
 			return String.format("%c.%se%+02d", s.charAt(2), s.substring(3), p - 1);
 		}
 		return String.format("%se%+02d", s, p);
@@ -499,8 +502,9 @@ public class TickFactoryTest {
 	private static final String MINUS = "-";
 
 	private String negate(String s) {
-		if (Double.valueOf(s) == 0)
-			return s;
+        if (Double.valueOf(s) == 0) {
+            return s;
+        }
 		if (s.startsWith(MINUS)) {
 			return s.substring(1);
 		}

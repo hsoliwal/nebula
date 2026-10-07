@@ -58,8 +58,9 @@ public class ColorMap {
 		public static String[] getStringValues(){
 			String[] result = new String[values().length];
 			int i =0;
-			for(PredefinedColorMap m : values())
-				result[i++] = m.name;
+            for (PredefinedColorMap m : values()) {
+                result[i++] = m.name;
+            }
 			return result;
 		}
 		
@@ -159,8 +160,9 @@ public class ColorMap {
 	 */
 	public void setPredefinedColorMap(PredefinedColorMap predefinedColorMap) {
 		this.predefinedColorMap = predefinedColorMap;
-		if(predefinedColorMap != PredefinedColorMap.None)
-			colorMap = predefinedColorMap.getMap();
+        if (predefinedColorMap != PredefinedColorMap.None) {
+            colorMap = predefinedColorMap.getMap();
+        }
 		colorsLookupTable = null;
 	}
 
@@ -174,10 +176,11 @@ public class ColorMap {
 	
 	@Override
 	public String toString() {
-		if(predefinedColorMap != null && predefinedColorMap != PredefinedColorMap.None)
-			return predefinedColorMap.toString();
-		else 
-			return "Customized";
+        if (predefinedColorMap != null && predefinedColorMap != PredefinedColorMap.None) {
+            return predefinedColorMap.toString();
+        } else {
+            return "Customized";
+        }
 	}
 	
 	
@@ -194,12 +197,15 @@ public class ColorMap {
 	 */
 	public ImageData drawImage(IPrimaryArrayWrapper dataArray, 
 			int dataWidth, int dataHeight, double max, double min, ImageData imageData, boolean shrink){
-		if(dataWidth <1 || dataHeight < 1 || dataWidth *dataHeight > dataArray.getSize()|| dataWidth * dataHeight < 0)
-			return null;
-		if(imageData == null)
-			imageData = new ImageData(dataWidth,dataHeight, 24, palette);	
-		if(colorsLookupTable == null)
-			getColorsLookupTable();
+        if (dataWidth < 1 || dataHeight < 1 || dataWidth * dataHeight > dataArray.getSize() || dataWidth * dataHeight < 0) {
+            return null;
+        }
+        if (imageData == null) {
+            imageData = new ImageData(dataWidth, dataHeight, 24, palette);
+        }
+        if (colorsLookupTable == null) {
+            getColorsLookupTable();
+        }
 		
 		if(!autoScale){
 			min = colorMapMin;
@@ -219,10 +225,11 @@ public class ColorMap {
 				            x2 = ((j*x_ratio)>>16) ;
 				            y2 = ((i*y_ratio)>>16) ;
 				            int index = (int) ((dataArray.get(y2 * dataWidth + x2) - min) / (max - min) * 255);
-							if (index < 0)
-								index = 0;
-							else if (index > 255)
-								index = 255;
+                            if (index < 0) {
+                                index = 0;
+                            } else if (index > 255) {
+                                index = 255;
+                            }
 							int pixel = pixelLookupTable[index];
 				            imageData.setPixel(j,i,pixel); ;
 				        }                
@@ -234,10 +241,11 @@ public class ColorMap {
 					for (int x = 0; x < dataWidth; x++) {
 						// the index of the value in the color table array
 						int index = (int) ((dataArray.get(y * dataWidth + x) - min) / (max - min) * 255);
-						if (index < 0)
-							index = 0;
-						else if (index > 255)
-							index = 255;
+                        if (index < 0) {
+                            index = 0;
+                        } else if (index > 255) {
+                            index = 255;
+                        }
 						int pixel = pixelLookupTable[index];
 						imageData.setPixel(x, y, pixel);
 					}
@@ -272,16 +280,18 @@ public class ColorMap {
 	public RGB getValueRGB(ColorTuple[] colorTupleArray, double[] keyArray, double value){
 		
 		int insertPoint = Arrays.binarySearch(keyArray, value);
-		if(insertPoint >= 0)
-			return colorTupleArray[insertPoint].rgb;
-		else{			
-			insertPoint = -insertPoint -1;
-			if(insertPoint == 0)
-				return colorTupleArray[0].rgb;
-			if(insertPoint == colorTupleArray.length)
-				return colorTupleArray[colorTupleArray.length -1].rgb;
-			return getInterpolateRGB(colorTupleArray[insertPoint-1], colorTupleArray[insertPoint], value);
-		}	
+        if (insertPoint >= 0) {
+            return colorTupleArray[insertPoint].rgb;
+        } else {
+            insertPoint = -insertPoint - 1;
+            if (insertPoint == 0) {
+                return colorTupleArray[0].rgb;
+            }
+            if (insertPoint == colorTupleArray.length) {
+                return colorTupleArray[colorTupleArray.length - 1].rgb;
+            }
+            return getInterpolateRGB(colorTupleArray[insertPoint - 1], colorTupleArray[insertPoint], value);
+        }	
 	}	
 
 	
@@ -292,8 +302,9 @@ public class ColorMap {
 			int g =(int) ((end.rgb.green - start.rgb.green)*f + start.rgb.green);
 			int b =(int) ((end.rgb.blue - start.rgb.blue)*f + start.rgb.blue);
 			return new RGB(r,g,b);
-		}else
-			return start.rgb;
+		} else {
+            return start.rgb;
+        }
 	}
 
 	/**Get a colors lookup table from 0 to 255. This only works for autoScale is true;
@@ -312,15 +323,17 @@ public class ColorMap {
 			//sort the array
 			Arrays.sort(colorTupleArray);
 			colorMapMin = colorTupleArray[0].value;
-			colorMapMax = colorTupleArray[colorTupleArray.length-1].value;			
-			if(autoScale)
-				for(ColorTuple t : colorTupleArray){
-					t.value = (t.value - colorMapMin)/(colorMapMax-colorMapMin);
-				}
+			colorMapMax = colorTupleArray[colorTupleArray.length-1].value;
+            if (autoScale) {
+                for (ColorTuple t : colorTupleArray) {
+                    t.value = (t.value - colorMapMin) / (colorMapMax - colorMapMin);
+                }
+            }
 			
 			double[] keyArray = new double[colorTupleArray.length];
-			for(int j = 0; j<colorTupleArray.length; j++)
-				keyArray[j] = colorTupleArray[j].value;
+            for (int j = 0; j < colorTupleArray.length; j++) {
+                keyArray[j] = colorTupleArray[j].value;
+            }
 			
 			colorsLookupTable = new RGB[256];
 			pixelLookupTable = new int[256];

@@ -43,11 +43,13 @@ public class CircleAnnotation extends Annotation {
 
 	@Override
 	protected void paintFigure(Graphics graphics) {
-		if (trace != null && currentSnappedSample == null && !pointerDragged)
-			updateToDefaultPosition();
+        if (trace != null && currentSnappedSample == null && !pointerDragged) {
+            updateToDefaultPosition();
+        }
 
-		if (Preferences.useAdvancedGraphics())
-			graphics.setAntialias(SWT.ON);
+        if (Preferences.useAdvancedGraphics()) {
+            graphics.setAntialias(SWT.ON);
+        }
 
 		graphics.setForegroundColor(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
 		xValue = currentSnappedSample.getXValue();

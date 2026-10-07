@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/hsoliwal/nebula",
+  "base": "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+  "path": "widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/src/org/eclipse/nebula/widgets/opal/roundedtoolbar/RoundedToolbar.java",
+  "before": "fd00029ccb595dfedd0ec1c0604856359e065c9d2ca3fcbbe86382b15bbc0c59",
+  "after": "c02686f975553876c50392f013759d95bf44b792b2b77bc7bba5cb9eddb10407",
+  "segments": [
+    "Collection.stream",
+    "Stream.filter(bounds.contains(event.x,event.y) && item.isEnabled)",
+    "Stream.findFirst"
+  ],
+  "suggested_name": "findFirstEnabledItemContainingEvent",
+  "occurrences": 3,
+  "exact_source_recipe": "org.eclipse.nebula.m3.rewrite.exact.NebulaM3RoundedToolbarStreamRecipe",
+  "zero_allocation_authority": false
+}

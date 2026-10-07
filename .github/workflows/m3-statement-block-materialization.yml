@@ -1,0 +1,160 @@
+name: M3 executed statement-block materialization
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'm3/statement-atoms/**'
+      - '.github/workflows/m3-statement-block-materialization.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3-statement-materialization-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      github.event.pull_request.head.repo.full_name == 'hsoliwal/nebula' &&
+      github.event.pull_request.head.ref == 'm3/statement-block-atoms-20261004'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      RECIPE_SHA: 8ef199967074194789794a67e2c042d5e907d08f
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+      TARGET_BRANCH: m3/statement-block-atoms-20261004
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: source
+          fetch-depth: 1
+      - uses: actions/checkout@v5
+        with:
+          repository: hsoliwal/com.synexia
+          ref: 8ef199967074194789794a67e2c042d5e907d08f
+          path: recipes
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21.0.11'
+          cache: maven
+      - uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.6
+
+      - name: Compile and execute actual recipe tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          CRATE="$GITHUB_WORKSPACE/recipes/synexia-openrewrite-recipes/recipes/statement-atoms"
+          test "$(git -C recipes rev-parse HEAD)" = "$RECIPE_SHA"
+          (cd "$CRATE" && sha256sum -c source.sha256)
+          mvn -B -ntp -f "$CRATE/pom.xml" -Drewrite.version=8.90.4 -DskipTests=false -Dmaven.test.skip=false test
+          mvn -B -ntp -f "$CRATE/pom.xml" -Drewrite.version=8.90.4 org.apache.maven.plugins:maven-dependency-plugin:3.6.1:build-classpath -Dmdep.outputFile="$RUNNER_TEMP/m3-runtime-classpath.txt"
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          report=Path('recipes/synexia-openrewrite-recipes/recipes/statement-atoms/target/surefire-reports/TEST-com.synexia.rewrite.atom.M3StatementAtomsTest.xml')
+          suite=ET.parse(report).getroot()
+          assert int(suite.get('tests','0')) >= 11
+          assert all(int(suite.get(k,'0')) == 0 for k in ('errors','failures','skipped'))
+          PY
+
+      - name: Qualify the existing lossless Java parser
+        run: mvn -B -ntp -f source/m3/openrewrite-line-terminators/pom.xml -DskipTests=false -Dmaven.test.skip=false test
+
+      - name: Execute all application Java statement and block compositions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess,hashlib,os
+          root=Path('source')
+          names=subprocess.check_output(['git','-C',str(root),'ls-files','-z','--','*.java']).decode().split('\0')
+          names=sorted(p for p in names if p and not p.startswith(('m3/','.git/','target/')) and '/target/' not in p)
+          assert names
+          Path(os.environ['RUNNER_TEMP'],'m3-input-sha256.tsv').write_text(''.join(p+'\t'+hashlib.sha256((root/p).read_bytes()).hexdigest()+'\n' for p in names))
+          PY
+          CRATE="$GITHUB_WORKSPACE/recipes/synexia-openrewrite-recipes/recipes/statement-atoms"
+          PARSER="$GITHUB_WORKSPACE/source/m3/openrewrite-line-terminators/target/classes"
+          CP="$PARSER:$CRATE/target/classes:$(cat "$RUNNER_TEMP/m3-runtime-classpath.txt")"
+          java -Xmx2300m -cp "$CP" com.synexia.rewrite.atom.M3StatementAtomPass \
+            "$GITHUB_WORKSPACE/source" "$RUNNER_TEMP/m3-input-sha256.tsv" "$RUNNER_TEMP/m3-statement-output" \
+            | tee "$RUNNER_TEMP/m3-statement-pass.log"
+
+      - name: Verify and materialize only recipe-generated Java candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C source rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test -z "$(git -C source status --porcelain --untracked-files=no)"
+          python3 - <<'PY'
+          from pathlib import Path
+          import csv,hashlib,os,shutil,subprocess
+          root=Path('source').resolve(); out=Path(os.environ['RUNNER_TEMP'],'m3-statement-output')
+          summary=dict(line.split('=',1) for line in (out/'summary.properties').read_text().splitlines())
+          assert summary['failures']=='0' and summary['files']==summary['completed']
+          assert summary['stage']=='STATEMENT_BLOCK_NORMALIZATION_EXECUTED'
+          rows=list(csv.DictReader((out/'files.tsv').open(),delimiter='\t'))
+          assert len(rows)==int(summary['files'])
+          planned=[]
+          for row in rows:
+              p=row['path']; target=root/p
+              assert p.endswith('.java') and not p.startswith(('m3/','.git/','target/')) and '/target/' not in p
+              assert target.resolve().is_relative_to(root) and not target.is_symlink()
+              assert hashlib.sha256(target.read_bytes()).hexdigest()==row['beforeSha256']
+              assert row['exactInverse']=='true' and row['fixedPoint']=='true'
+              if row['changed']=='true':
+                  data=(out/'candidate'/p).read_bytes()
+                  assert hashlib.sha256(data).hexdigest()==row['afterSha256']
+                  planned.append((target,data))
+              else:
+                  assert row['beforeSha256']==row['afterSha256']
+          assert len(planned)==int(summary['changed'])
+          for target,data in planned: target.write_bytes(data)
+          proof=root/'m3/statement-atoms'; proof.mkdir(exist_ok=True)
+          for name in ('files.tsv','summary.properties'): shutil.copyfile(out/name,proof/name)
+          shutil.copyfile(Path(os.environ['RUNNER_TEMP'],'m3-input-sha256.tsv'),proof/'input-sha256.tsv')
+          evidence='inputCommit='+os.environ['EXPECTED_HEAD']+'\nrecipeCommit='+os.environ['RECIPE_SHA']+'\n'
+          evidence+='materializedCandidates='+str(len(planned))+'\nreactorVerified=false\npromotion=false\n'
+          for name in ('files.tsv','atoms.tsv'):
+              evidence+=name+'.sha256='+hashlib.sha256((out/name).read_bytes()).hexdigest()+'\n'
+          (proof/'execution.properties').write_text(evidence)
+          patch=subprocess.check_output(['git','-C',str(root),'diff','--binary'])
+          (out/'candidate.patch').write_bytes(patch)
+          PY
+
+      - name: Append generated sources to this feature branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd source
+          REMOTE_HEAD="$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)"
+          test "$REMOTE_HEAD" = "$EXPECTED_HEAD"
+          git add -- '*.java' m3/statement-atoms/files.tsv m3/statement-atoms/summary.properties m3/statement-atoms/input-sha256.tsv m3/statement-atoms/execution.properties
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'refactor(m3): materialize tested statement-block composition recipe'
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+
+      - name: Preserve actual execution and generated source evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-statement-block-execution
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/m3-statement-output/
+            ${{ runner.temp }}/m3-statement-pass.log
+            ${{ runner.temp }}/m3-input-sha256.tsv
+            recipes/synexia-openrewrite-recipes/recipes/statement-atoms/target/surefire-reports/
+            source/m3/openrewrite-line-terminators/target/surefire-reports/

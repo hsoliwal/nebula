@@ -1,0 +1,13 @@
+K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\target\runtime-evidence\before\source\RoundedToolbar.java:103: warning: [this-escape] possible 'this' escape before subclass is fully initialized
+		addListeners();
+		            ^
+K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\target\runtime-evidence\before\source\RoundedToolbar.java:145: warning: [this-escape] previous possible 'this' escape happens here via invocation
+		addListener(SWT.MouseDown, event -> {
+		           ^
+K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\target\runtime-evidence\before\source\RoundedToolbar.java:141: warning: [this-escape] possible 'this' escape before subclass is fully initialized
+		addListeners();
+		            ^
+K:\codex-work\nebula-stream-segments-20261004\worktree\m3\stream-segment-proof\target\runtime-evidence\before\source\RoundedToolbar.java:145: warning: [this-escape] previous possible 'this' escape happens here via invocation
+		addListener(SWT.MouseDown, event -> {
+		           ^
+error: warnings found and -Werror specified
