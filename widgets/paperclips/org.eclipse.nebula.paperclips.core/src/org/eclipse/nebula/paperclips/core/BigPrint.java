@@ -59,18 +59,23 @@ public final class BigPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		BigPrint other = (BigPrint) obj;
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -129,8 +134,9 @@ class BigIterator implements PrintIterator {
 	// Returns a point whose x and y fields represent the required pages wide
 	// and tall, respectively
 	private Point estimatePagesRequired(int width, int height) {
-		if (width <= 0 || height <= 0)
-			return new Point(0, 0);
+        if (width <= 0 || height <= 0) {
+            return new Point(0, 0);
+        }
 
 		Point pref = target.preferredSize();
 		Point prefPages = new Point(pref.x / width, pref.y / height);
@@ -147,15 +153,17 @@ class BigIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext())
-			PaperClips.error("No more content"); //$NON-NLS-1$
+        if (!hasNext()) {
+            PaperClips.error("No more content"); //$NON-NLS-1$
+        }
 
 		if (currentPiece == null) {
 			Point pages = estimatePagesRequired(width, height);
 			currentPiece = PaperClips.next(target, width * pages.x, height
 					* pages.y);
-			if (currentPiece == null)
-				return null; // Iteration fails
+            if (currentPiece == null) {
+                return null;
+            } // Iteration fails
 
 			// Reset the offset for the new piece.
 			xOffset = 0;

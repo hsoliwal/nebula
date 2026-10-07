@@ -150,10 +150,14 @@ public class TabBar extends Canvas
     
     private void onMouseDown(Event e)
     {
-        if (e.button != 1) return;
+        if (e.button != 1) {
+            return;
+        }
         
         TabBarItem item = getItem(new Point(e.x,e.y));
-        if (item == null) return;
+        if (item == null) {
+            return;
+        }
         
         selectedItem = item;
         redraw();
@@ -253,11 +257,13 @@ public class TabBar extends Canvas
     public TabBarItem getItem(Point point)
     {
         int tabStartY = getBounds().height - barHeight - itemHeight;
-        if (point.y < tabStartY)
+        if (point.y < tabStartY) {
             return null;
-        
-        if (point.y > tabStartY + itemHeight - 1)
+        }
+
+        if (point.y > tabStartY + itemHeight - 1) {
             return null;
+        }
         
         int totalWidth = horzMargin + (itemWidth * items.size()) + (itemSpacing * items.size()) - itemSpacing + horzMargin;
         
@@ -328,9 +334,13 @@ public class TabBar extends Canvas
     {
         int w = wHint;
         int h = hHint;
-        
-        if (wHint == SWT.DEFAULT) w = 400;
-        if (hHint == SWT.DEFAULT) h = barHeight + itemHeight + 5;
+
+        if (wHint == SWT.DEFAULT) {
+            w = 400;
+        }
+        if (hHint == SWT.DEFAULT) {
+            h = barHeight + itemHeight + 5;
+        }
         
         return new Point(w,h);
     }    
@@ -345,9 +355,10 @@ public class TabBar extends Canvas
         {
             items.add(item);
         }
-        
-        if (selectedItem == null)
+
+        if (selectedItem == null) {
             selectedItem = item;
+        }
         redraw();
     }
     

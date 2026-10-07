@@ -59,9 +59,10 @@ public class ScalePrint implements Print {
 	 */
 	public ScalePrint(Print target, Double scale) {
 		Util.notNull(target);
-		if (scale != null && !(scale.doubleValue() > 0))
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"Scale " + scale + " must be > 0"); //$NON-NLS-1$ //$NON-NLS-2$
+        if (scale != null && !(scale.doubleValue() > 0)) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "Scale " + scale + " must be > 0"); //$NON-NLS-1$ //$NON-NLS-2$
+        }
 
 		this.target = target;
 		this.scale = scale;
@@ -76,23 +77,30 @@ public class ScalePrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		ScalePrint other = (ScalePrint) obj;
 		if (scale == null) {
-			if (other.scale != null)
-				return false;
-		} else if (!scale.equals(other.scale))
-			return false;
+            if (other.scale != null) {
+                return false;
+            }
+		} else if (!scale.equals(other.scale)) {
+            return false;
+        }
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -175,11 +183,12 @@ class ScaleIterator implements PrintIterator {
 		// Find out what scale we're going to iterate at.
 		double scale;
 		Point pref = target.preferredSize();
-		if (this.scale == null)
-			scale = Math.min(Math.min((double) width / (double) pref.x,
-					(double) height / (double) pref.y), 1.0);
-		else
-			scale = this.scale.doubleValue();
+        if (this.scale == null) {
+            scale = Math.min(Math.min((double) width / (double) pref.x,
+                    (double) height / (double) pref.y), 1.0);
+        } else {
+            scale = this.scale.doubleValue();
+        }
 
 		// Calculate the width and height to be passed to the target.
 		final int scaledWidth = (int) Math.ceil(width / scale);
@@ -188,8 +197,9 @@ class ScaleIterator implements PrintIterator {
 		PrintPiece target = PaperClips.next(this.target, scaledWidth,
 				scaledHeight);
 
-		if (target == null)
-			return null;
+        if (target == null) {
+            return null;
+        }
 
 		return new ScalePiece(device, target, scale, width, height);
 	}
@@ -225,14 +235,16 @@ final class ScalePiece implements PrintPiece {
 	}
 
 	private Transform getOldTransform() {
-		if (oldTransform == null)
-			oldTransform = new Transform(device);
+        if (oldTransform == null) {
+            oldTransform = new Transform(device);
+        }
 		return oldTransform;
 	}
 
 	private Transform getTransform() {
-		if (transform == null)
-			transform = new Transform(device);
+        if (transform == null) {
+            transform = new Transform(device);
+        }
 		return transform;
 	}
 

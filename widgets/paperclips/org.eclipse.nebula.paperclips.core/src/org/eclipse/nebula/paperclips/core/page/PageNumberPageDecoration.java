@@ -63,30 +63,40 @@ public class PageNumberPageDecoration implements PageDecoration {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		PageNumberPageDecoration other = (PageNumberPageDecoration) obj;
-		if (align != other.align)
-			return false;
+        if (align != other.align) {
+            return false;
+        }
 		if (fontData == null) {
-			if (other.fontData != null)
-				return false;
-		} else if (!fontData.equals(other.fontData))
-			return false;
+            if (other.fontData != null) {
+                return false;
+            }
+		} else if (!fontData.equals(other.fontData)) {
+            return false;
+        }
 		if (format == null) {
-			if (other.format != null)
-				return false;
-		} else if (!format.equals(other.format))
-			return false;
+            if (other.format != null) {
+                return false;
+            }
+		} else if (!format.equals(other.format)) {
+            return false;
+        }
 		if (rgb == null) {
-			if (other.rgb != null)
-				return false;
-		} else if (!rgb.equals(other.rgb))
-			return false;
+            if (other.rgb != null) {
+                return false;
+            }
+		} else if (!rgb.equals(other.rgb)) {
+            return false;
+        }
 		return true;
 	}
 

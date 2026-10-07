@@ -1,0 +1,147 @@
+{
+  "request": "Typed stream-segment-derived composed operation/method names in an isolated hsoliwal/nebula branch; Patternizer deferred",
+  "target_repository": "https://github.com/hsoliwal/nebula",
+  "synexia_repository": "https://github.com/hsoliwal/com.synexia",
+  "synexia_commit": "ec384d29e596402e633b7aec2cf6f46fb6cf31d4",
+  "synexia_owners": [
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3CanonicalSemanticIdentity.java",
+      "sha256": "42ce4ab45e88678742f31c1700d6e5e3e8784ad46e26a72401b118e12a231b7d",
+      "bytes": 9626,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3SemanticAttribution.java",
+      "sha256": "81785a3bc4d62a97a1ce4f14e60c4ebfc51baacc98c900acf21c3225a64c5a90",
+      "bytes": 5189,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3JsparrowLoopStreamRecipe.java",
+      "sha256": "b99ed6ac0562f50b816d55187bb72d3f8f1d8308657737c48dd659603338414e",
+      "bytes": 44555,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3JsparrowLoopSafety.java",
+      "sha256": "90f48380ef09590c458ca31493366371d034177aaae55ec6a069e68671c6d5af",
+      "bytes": 11013,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3JavaAtomPatternMaterializationRecipe.java",
+      "sha256": "47e36a8af2ec9df0e56d2eaeb27702731b2880c4ae4e089c638bfff0328115e8",
+      "bytes": 27479,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3TutorialReferenceRecipeNaming.java",
+      "sha256": "881614af2e8bd0cdb878edc1ac29b6e9a9ea479892822f483bbc80b0b2d23627",
+      "bytes": 2714,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3MIndexNamePolicy.java",
+      "sha256": "479c8c501697ce00a79d1cd0fd38fd729da538a65135cf67cec80bf483acde82",
+      "bytes": 4719,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/atomdb/AtomFingerprints.java",
+      "sha256": "1337654658af2a1e699c9e1437251595af76b9605a94c3d2d01fd7312ae8a080",
+      "bytes": 12618,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-maven-plugin/src/main/java/com/synexia/ai/m3scale/M3AttributedAtomizer.java",
+      "sha256": "6564400310dc0d3baa9a264a032b253153b795b27cdad8f9363e312439d890d2",
+      "bytes": 17040,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-maven-plugin/src/main/java/com/synexia/ai/m3scale/M3JavaAtomizer.java",
+      "sha256": "353b250f3e61b2e1f9c6151382220b26a6544de5f7abc020ab11eb256d2198dd",
+      "bytes": 16967,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-maven-plugin/src/main/java/com/synexia/ai/m3scale/M3Hash.java",
+      "sha256": "792c585551d4eee29662b482a2bc04fd766f5b603ac09a29025c355b295c35f4",
+      "bytes": 2475,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "synexia-openrewrite-recipes/src/test/java/com/synexia/rewrite/M3FunctionalJavaProofTest.java",
+      "sha256": "c64565ef36ae5eb121d32e5fffc894591793b33d9ed9914597fd4c24333ccd8b",
+      "bytes": 31665,
+      "license": "Apache-2.0"
+    }
+  ],
+  "openrewrite_repository": "https://github.com/openrewrite/rewrite-static-analysis",
+  "openrewrite_commit": "5dc62ae0e5889c62d86f6943cad34941af10e37d",
+  "archive_sha256": "69b4bf316ee57dbb7e9a2a9d9fce756f3017541eb2d2d6556c9271b21fd16bab",
+  "verified_archive_entries": 306,
+  "native_stream_surfaces": [
+    {
+      "path": "src/main/java/org/openrewrite/staticanalysis/LambdaBlockToExpression.java",
+      "sha256": "b68afa64dbf688463e01fffd02fad8fb3d2dec79e4a4d9670404cc338b42bddd",
+      "bytes": 5128,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/main/java/org/openrewrite/staticanalysis/ReplaceLambdaWithMethodReference.java",
+      "sha256": "b9c6738339c9691690a7cae3c5495c6251edf6c4b28f843463234c9aa8517656",
+      "bytes": 17226,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/main/java/org/openrewrite/staticanalysis/ReplaceStreamToListWithCollect.java",
+      "sha256": "5860a8a1e2670652913c18eb7b1b5bcc8418992ff92b5eebac4f9b0aa934771f",
+      "bytes": 2980,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/main/java/org/openrewrite/staticanalysis/SortedSetStreamToLinkedHashSet.java",
+      "sha256": "dd2850f214bf16ff41913c3d6578fa86f899b6a855203ec87d483ac9a0825638",
+      "bytes": 3183,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/test/java/org/openrewrite/staticanalysis/LambdaBlockToExpressionTest.java",
+      "sha256": "5baef96848437e9349fa0968778ebaf0ea05ce0a0df170841fa5745589ed490f",
+      "bytes": 4471,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/test/java/org/openrewrite/staticanalysis/ReplaceLambdaWithMethodReferenceTest.java",
+      "sha256": "8dda7f923472f7155613d40cc2d4ad26d1d27b1a8ff2a0b03c6cbf02ec8339e8",
+      "bytes": 40994,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/test/java/org/openrewrite/staticanalysis/ReplaceStreamToListWithCollectTest.java",
+      "sha256": "14c8a98e3f43d55bd1897c3d47336634f8e9f93a5c693b2e080a407df7263218",
+      "bytes": 3541,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/test/java/org/openrewrite/staticanalysis/SortedSetStreamToLinkedHashSetTest.java",
+      "sha256": "aa96fcf394de9034ac68d57809efc8fe6142f854ec2e3b15553be8f5be2a9083",
+      "bytes": 3867,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/test/java/org/openrewrite/staticanalysis/groovy/ReplaceLambdaWithMethodReferenceTest.java",
+      "sha256": "1027909de8e906dab5d93bbf4d390d20841cde8e24b96c985ec06b7d8aa831f6",
+      "bytes": 1428,
+      "license": "Apache-2.0"
+    },
+    {
+      "path": "src/test/java/org/openrewrite/staticanalysis/kotlin/ReplaceLambdaWithMethodReferenceTest.java",
+      "sha256": "1e45e4c00147d42c5600c9bcc09318ed3b8ddab113bfd25b63a888a99fa4c5b1",
+      "bytes": 2800,
+      "license": "Apache-2.0"
+    }
+  ],
+  "production_edits": 0
+}

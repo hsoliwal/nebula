@@ -281,7 +281,9 @@ public class CTreeViewer extends AbstractTreeViewer {
 		}
 
 		AbstractColumn column = ctree.getColumn(columnIndex);
-		if(column == null) return ctree; // Hang it off the table if necessary
+        if (column == null) {
+            return ctree;
+        } // Hang it off the table if necessary
 		return column;
 	}
 

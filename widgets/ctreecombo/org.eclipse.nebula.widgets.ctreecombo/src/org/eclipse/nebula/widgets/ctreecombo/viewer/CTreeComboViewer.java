@@ -136,8 +136,9 @@ public class CTreeComboViewer extends AbstractTreeViewer {
 			return null;
 		}
 
-		if (getTree().getColumnCount() == 0)
-			return getTree();
+        if (getTree().getColumnCount() == 0) {
+            return getTree();
+        }
 
 		return getTree().getColumn(columnIndex);
 	}
@@ -369,8 +370,9 @@ public class CTreeComboViewer extends AbstractTreeViewer {
 	 * @param count
 	 */
 	public void setChildCount(final Object elementOrTreePath, final int count) {
-		if (checkBusy())
-			return;
+        if (checkBusy()) {
+            return;
+        }
 		preservingSelection(new Runnable() {
 			public void run() {
 				if (internalIsInputOrEmptyPath(elementOrTreePath)) {
@@ -409,8 +411,9 @@ public class CTreeComboViewer extends AbstractTreeViewer {
 	 * @see ILazyTreePathContentProvider
 	 */
 	public void replace(final Object parentElementOrTreePath, final int index, final Object element) {
-		if (checkBusy())
-			return;
+        if (checkBusy()) {
+            return;
+        }
 		Item[] selectedItems = getSelection(getControl());
 		TreeSelection selection = (TreeSelection) getSelection();
 		Widget[] itemsToDisassociate;
@@ -725,8 +728,9 @@ public class CTreeComboViewer extends AbstractTreeViewer {
 	 *            child index
 	 */
 	public void remove(final Object parentOrTreePath, final int index) {
-		if (checkBusy())
-			return;
+        if (checkBusy()) {
+            return;
+        }
 		final List<TreePath> oldSelection = new LinkedList<TreePath>(Arrays.asList(((TreeSelection) getSelection()).getPaths()));
 		preservingSelection(new Runnable() {
 			public void run() {
@@ -745,8 +749,9 @@ public class CTreeComboViewer extends AbstractTreeViewer {
 					Widget[] parentItems = internalFindItems(parentOrTreePath);
 					for (int i = 0; i < parentItems.length; i++) {
 						CTreeComboItem parentItem = (CTreeComboItem) parentItems[i];
-						if (parentItem.isDisposed())
-							continue;
+                        if (parentItem.isDisposed()) {
+                            continue;
+                        }
 						if (index < parentItem.getItemCount()) {
 							CTreeComboItem item = parentItem.getItem(index);
 							if (item.getData() != null) {
@@ -814,8 +819,9 @@ public class CTreeComboViewer extends AbstractTreeViewer {
 	 * 
 	 */
 	public void setHasChildren(final Object elementOrTreePath, final boolean hasChildren) {
-		if (checkBusy())
-			return;
+        if (checkBusy()) {
+            return;
+        }
 		preservingSelection(new Runnable() {
 			public void run() {
 				if (internalIsInputOrEmptyPath(elementOrTreePath)) {

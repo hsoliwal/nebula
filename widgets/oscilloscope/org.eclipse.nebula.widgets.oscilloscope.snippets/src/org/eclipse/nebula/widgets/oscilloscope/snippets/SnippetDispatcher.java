@@ -85,16 +85,18 @@ public abstract class SnippetDispatcher extends OscilloscopeDispatcher {
 				1, 1));
 
 		byte[] bytes = new byte[BACKGROUND_MONITOR.length];
-		for (int i = 0; i < BACKGROUND_MONITOR.length; i++)
-			bytes[i] = (byte) BACKGROUND_MONITOR[i];
+        for (int i = 0; i < BACKGROUND_MONITOR.length; i++) {
+            bytes[i] = (byte) BACKGROUND_MONITOR[i];
+        }
 
 		gilloscope.setBackgroundImage(new Image(shell.getDisplay(),
 				new ByteArrayInputStream(bytes)));
 
-		if (new SecureRandom().nextInt(2) == 1)
-			gilloscope.setTailSize(0,new SecureRandom().nextInt(200) + 1);
-		else
-			gilloscope.setTailSize(0,-1);
+        if (new SecureRandom().nextInt(2) == 1) {
+            gilloscope.setTailSize(0, new SecureRandom().nextInt(200) + 1);
+        } else {
+            gilloscope.setTailSize(0, -1);
+        }
 
 		TabItem tabItem2 = new TabItem(tabFolder, SWT.NONE);
 		tabItem2.setText("Settings");
@@ -128,11 +130,13 @@ public abstract class SnippetDispatcher extends OscilloscopeDispatcher {
 								getOscilloscope().getDisplay().getSystemColor(
 										SWT.COLOR_GREEN));
 						hookSetValues(pulse);
-						if (isSoundRequired())
-							clipper.playClip(getActiveSoundfile(), 0);
+                        if (isSoundRequired()) {
+                            clipper.playClip(getActiveSoundfile(), 0);
+                        }
 					} else {
-						if (isSoundRequired())
-							clipper.playClip(getInactiveSoundfile(), 0);
+                        if (isSoundRequired()) {
+                            clipper.playClip(getInactiveSoundfile(), 0);
+                        }
 						getOscilloscope().setForeground(
 								getOscilloscope().getDisplay().getSystemColor(
 										SWT.COLOR_RED));

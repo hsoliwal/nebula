@@ -54,18 +54,23 @@ public class LineBreakPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		LineBreakPrint other = (LineBreakPrint) obj;
 		if (font == null) {
-			if (other.font != null)
-				return false;
-		} else if (!font.equals(other.font))
-			return false;
+            if (other.font != null) {
+                return false;
+            }
+		} else if (!font.equals(other.font)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -114,8 +119,9 @@ class LineBreakIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (width < MIN_WIDTH || height < MIN_HEIGHT)
-			return null;
+        if (width < MIN_WIDTH || height < MIN_HEIGHT) {
+            return null;
+        }
 
 		hasNext = false;
 		return new EmptyPiece(new Point(width, Math.min(height, lineHeight)));

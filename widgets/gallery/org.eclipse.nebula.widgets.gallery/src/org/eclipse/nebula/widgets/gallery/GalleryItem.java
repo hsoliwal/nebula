@@ -156,8 +156,9 @@ public class GalleryItem extends Item {
 			virtualGallery = true;
 		}
 
-		if (create)
-			parent.addItem(this, index);
+        if (create) {
+            parent.addItem(this, index);
+        }
 
 	}
 
@@ -170,8 +171,9 @@ public class GalleryItem extends Item {
 			virtualGallery = true;
 		}
 
-		if (create)
-			parent.addItem(this, index);
+        if (create) {
+            parent.addItem(this, index);
+        }
 
 	}
 
@@ -202,8 +204,9 @@ public class GalleryItem extends Item {
 	 */
 	public int getItemCount() {
 
-		if (items == null)
-			return 0;
+        if (items == null) {
+            return 0;
+        }
 
 		return items.length;
 	}
@@ -247,8 +250,9 @@ public class GalleryItem extends Item {
 
 	public GalleryItem[] getItems() {
 		checkWidget();
-		if (items == null)
-			return new GalleryItem[0];
+        if (items == null) {
+            return new GalleryItem[0];
+        }
 
 		GalleryItem[] itemsLocal = new GalleryItem[this.items.length];
 		System.arraycopy(items, 0, itemsLocal, 0, this.items.length);
@@ -334,21 +338,25 @@ public class GalleryItem extends Item {
 
 	protected void _deselectAll() {
 
-		// Deselect groups
-		// We could set selectionFlags to null, but we rather set all values to
-		// 0 to redure garbage collection. On each iteration, we deselect 32
-		// items.
-		if (selectionFlags != null)
-			for (int i = 0; i < selectionFlags.length; i++)
-				selectionFlags[i] = 0;
+        // Deselect groups
+        // We could set selectionFlags to null, but we rather set all values to
+        // 0 to redure garbage collection. On each iteration, we deselect 32
+        // items.
+        if (selectionFlags != null) {
+            for (int i = 0; i < selectionFlags.length; i++) {
+                selectionFlags[i] = 0;
+            }
+        }
 
-		if (items == null)
-			return;
+        if (items == null) {
+            return;
+        }
 
 		// Deselect group content.
 		for (int i = 0; i < items.length; i++) {
-			if (items[i] != null)
-				items[i]._deselectAll();
+            if (items[i] != null) {
+                items[i]._deselectAll();
+            }
 		}
 	}
 
@@ -384,17 +392,20 @@ public class GalleryItem extends Item {
 	}
 
 	protected boolean isSelected(GalleryItem item) {
-		if (item == null)
-			return false;
+        if (item == null) {
+            return false;
+        }
 
 		if (item.getParentItem() == this) {
-			if (selectionFlags == null)
-				return false;
+            if (selectionFlags == null) {
+                return false;
+            }
 
 			int index = indexOf(item);
 			int n = index >> 5;
-			if (n >= selectionFlags.length)
-				return false;
+            if (n >= selectionFlags.length) {
+                return false;
+            }
 			int flags = selectionFlags[n];
 			return flags != 0 && (flags & 1 << (index & 0x1f)) != 0;
 		}
@@ -402,8 +413,9 @@ public class GalleryItem extends Item {
 	}
 
 	protected void select(int from, int to) {
-		if (Gallery.DEBUG)
-			System.out.println("GalleryItem.select(  " + from + "," + to + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        if (Gallery.DEBUG) {
+            System.out.println("GalleryItem.select(  " + from + "," + to + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        }
 
 		for (int i = from; i <= to; i++) {
 			GalleryItem item = getItem(i);
@@ -654,8 +666,9 @@ public class GalleryItem extends Item {
 	public void clearAll(boolean all) {
 		checkWidget();
 
-		if (items == null)
-			return;
+        if (items == null) {
+            return;
+        }
 
 		if (virtualGallery) {
 			items = new GalleryItem[items.length];
@@ -748,8 +761,9 @@ public class GalleryItem extends Item {
 
 	public void setText(int index, String string) {
 		checkWidget();
-		if (string == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (string == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		text[index] = string;
 		parent.redraw(this);
 	}

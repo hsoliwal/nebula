@@ -216,11 +216,11 @@ public class ResultAndNavigationPageLinksRenderer extends
 			if (j == PaginationHelper.SEPARATOR) {
 				s.append(Resources.getText(
 						Resources.PaginationRenderer_separator, getLocale()));
-			} else if (j == newPageNumber)
-				s.append(String.valueOf((j + 1)));
-			else {
-				addA(String.valueOf(j), String.valueOf(j + 1), s);
-			}
+			} else if (j == newPageNumber) {
+                s.append(String.valueOf((j + 1)));
+            } else {
+                addA(String.valueOf(j), String.valueOf(j + 1), s);
+            }
 		}
 		return s.toString();
 	}

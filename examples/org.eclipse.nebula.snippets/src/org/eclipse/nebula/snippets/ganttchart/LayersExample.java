@@ -87,8 +87,9 @@ public class LayersExample {
 			public void run() {
 				ganttChart.getGanttComposite().showLayer(currentLayer);
 				currentLayer++;
-				if (currentLayer > maxLayer)
-					currentLayer = minLayer;
+                if (currentLayer > maxLayer) {
+                    currentLayer = minLayer;
+                }
 				
 				ganttChart.getGanttComposite().hideLayer(currentLayer);
 				
@@ -100,7 +101,9 @@ public class LayersExample {
 		Display.getDefault().timerExec(1000, runnable);
 	
 		while (!shell.isDisposed ()) {
-			if (!display.readAndDispatch ()) display.sleep ();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose ();
 		

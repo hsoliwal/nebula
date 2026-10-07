@@ -140,7 +140,9 @@ public class EventLayoutComputer {
 		// Lay out events
 		for (Iterator eventsIter = calendarables.iterator(); eventsIter.hasNext();) {
 			CalendarableItem event = (CalendarableItem) eventsIter.next();
-			if (event.isAllDayEvent()) continue;
+            if (event.isAllDayEvent()) {
+                continue;
+            }
 			
 			int[] slotsEventSpans = getSlotsForEvent(event);
 			
@@ -151,7 +153,9 @@ public class EventLayoutComputer {
 		// Expand them horizontally if possible
 		for (Iterator eventsIter = calendarables.iterator(); eventsIter.hasNext();) {
 			CalendarableItem event = (CalendarableItem) eventsIter.next();
-			if (event.isAllDayEvent()) continue;
+            if (event.isAllDayEvent()) {
+                continue;
+            }
 
 			int[] slotsEventSpans = getSlotsForEvent(event);
 			int eventColumn = findEventColumn(event, eventLayout.getLayout(), slotsEventSpans);

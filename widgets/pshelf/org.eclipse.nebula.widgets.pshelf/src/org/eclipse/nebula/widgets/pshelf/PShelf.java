@@ -104,8 +104,9 @@ public class PShelf extends Canvas {
 
 		this.addListener(SWT.MouseUp, event -> {
 			PShelfItem item = getItem(new Point(1, event.y));
-			if ((item) == null)
-				return;
+            if ((item) == null) {
+                return;
+            }
 			if (item == mouseDownItem && item != openItem) {
 				openItem(item, true);
 			}
@@ -145,14 +146,17 @@ public class PShelf extends Canvas {
     {
         checkWidget();
 
-        if (renderer == null)
+        if (renderer == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 
-        if (renderer.isDisposed())
+        if (renderer.isDisposed()) {
             SWT.error(SWT.ERROR_WIDGET_DISPOSED);
+        }
 
-        if (this.renderer != null)
+        if (this.renderer != null) {
             this.renderer.dispose();
+        }
 
         this.renderer = renderer;
         renderer.initialize(this);
@@ -193,8 +197,9 @@ public class PShelf extends Canvas {
             if (openItem != null)
             {
                 Point prefSize = openItem.getBody().computeSize(SWT.DEFAULT,SWT.DEFAULT);
-                if (wHint == SWT.DEFAULT)
+                if (wHint == SWT.DEFAULT) {
                     size.x = prefSize.x;
+                }
 
                 if (hHint == SWT.DEFAULT)
                 {
@@ -217,8 +222,9 @@ public class PShelf extends Canvas {
 	private void onPaint(GC gc) {
 
 		gc.setAdvanced(true);
-		if (gc.getAdvanced())
-			gc.setTextAntialias(SWT.ON);
+        if (gc.getAdvanced()) {
+            gc.setTextAntialias(SWT.ON);
+        }
 
 		Color back = getBackground();
 		Color fore = getForeground();
@@ -261,8 +267,9 @@ public class PShelf extends Canvas {
 
             y += itemHeight;
 
-            if (item == openItem)
+            if (item == openItem) {
                 y = getClientArea().y + getClientArea().height - (itemHeight * (items.size() - i));
+            }
         }
     }
 
@@ -321,8 +328,9 @@ public class PShelf extends Canvas {
 			  item.getBodyParent().setRedraw(true);
 			}
 		} else {
-			if (previousOpen != null && !previousOpen.isDisposed())
-				previousOpen.getBodyParent().setBounds(0,0,0,0);
+            if (previousOpen != null && !previousOpen.isDisposed()) {
+                previousOpen.getBodyParent().setBounds(0, 0, 0, 0);
+            }
 			if ((getStyle() & SWT.SIMPLE) != 0){
 				//reorder the items
 				items.remove(item);
@@ -330,8 +338,9 @@ public class PShelf extends Canvas {
 			}
 			onResize();
 		}
-		if (previousOpen != null)
-			previousOpen.getBodyParent().setVisible(false);
+        if (previousOpen != null) {
+            previousOpen.getBodyParent().setVisible(false);
+        }
 
 		redraw();
 		getDisplay().update();
@@ -413,11 +422,13 @@ public class PShelf extends Canvas {
 
     private void sizeClients()
     {
-        if (openItem == null)
+        if (openItem == null) {
             return;
+        }
 
-        if (items.size() == 0)
+        if (items.size() == 0) {
             return;
+        }
 
         for(int i = 0; i < items.size(); i ++)
         {
@@ -478,8 +489,9 @@ public class PShelf extends Canvas {
 		int y1 = 0;
 		int y2 = 0;
 
-        if (point == null)
+        if (point == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 
         for (Iterator<PShelfItem> iter = items.iterator(); iter.hasNext();)
         {
@@ -518,14 +530,17 @@ public class PShelf extends Canvas {
 	public void setSelection(PShelfItem item){
         checkWidget();
 
-        if (item == null)
+        if (item == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 
-		if (!items.contains(item))
-			return;
+        if (!items.contains(item)) {
+            return;
+        }
 
-		if (openItem == item)
-			return;
+        if (openItem == item) {
+            return;
+        }
 
 		openItem(item,true);
 	}
@@ -624,9 +639,10 @@ public class PShelf extends Canvas {
 	public void removeAll() {
 		checkWidget();
 
-		// dispose widgets (also removes from items)
-		while (!items.isEmpty())
-			items.get(0).dispose();
+        // dispose widgets (also removes from items)
+        while (!items.isEmpty()) {
+            items.get(0).dispose();
+        }
 
 		onResize();
 	}

@@ -50,7 +50,9 @@ public class PercentFormatterSnippet1 {
 
     shell.open();
     while ( ! shell.isDisposed() ) {
-    	if (!display.readAndDispatch()) display.sleep();
+        if (!display.readAndDispatch()) {
+            display.sleep();
+        }
     }
     display.dispose();
 	}

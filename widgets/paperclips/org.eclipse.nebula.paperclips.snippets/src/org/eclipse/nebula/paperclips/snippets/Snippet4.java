@@ -49,12 +49,15 @@ public class Snippet4 {
 		final int ROWS = 60;
 		final int COLS = 10;
 
-		for (int i = 0; i < COLS; i++)
-			grid.addColumn("p");
+        for (int i = 0; i < COLS; i++) {
+            grid.addColumn("p");
+        }
 
-		for (int r = 0; r < ROWS; r++)
-			for (int c = 0; c < COLS; c++)
-				grid.add(new TextPrint("Row " + r + " Col " + c));
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                grid.add(new TextPrint("Row " + r + " Col " + c));
+            }
+        }
 
 		return new ScalePrint(grid);
 	}
@@ -117,9 +120,11 @@ public class Snippet4 {
 
 		shell.setVisible(true);
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		display.dispose();
 	}

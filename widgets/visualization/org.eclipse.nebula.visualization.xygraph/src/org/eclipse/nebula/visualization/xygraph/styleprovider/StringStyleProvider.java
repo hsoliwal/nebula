@@ -39,8 +39,9 @@ public class StringStyleProvider extends BasePointStyleProvider {
 
 		Object object = ((IMetaData) sample).getData();
 
-		if ((object == null) || !(object instanceof String))
-			return trace.getTraceColor();
+        if ((object == null) || !(object instanceof String)) {
+            return trace.getTraceColor();
+        }
 
 		String format = (String) object;
 
@@ -76,8 +77,9 @@ public class StringStyleProvider extends BasePointStyleProvider {
 
 		Object object = ((IMetaData) sample).getData();
 
-		if ((object == null) || !(object instanceof String))
-			return trace.getPointStyle();
+        if ((object == null) || !(object instanceof String)) {
+            return trace.getPointStyle();
+        }
 
 		String format = (String) object;
 
@@ -113,8 +115,9 @@ public class StringStyleProvider extends BasePointStyleProvider {
 
 		Object object = ((IMetaData) sample).getData();
 
-		if ((object == null) || !(object instanceof String))
-			return trace.getPointSize();
+        if ((object == null) || !(object instanceof String)) {
+            return trace.getPointSize();
+        }
 
 		String format = (String) object;
 		Pattern regex = Pattern.compile("(\\d+)");

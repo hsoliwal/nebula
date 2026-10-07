@@ -58,7 +58,9 @@ public class RepeatFiringBehavior
 	}
 	
 	public void suspend() {
-		if (timer == null) return;
+        if (timer == null) {
+            return;
+        }
 		timer.cancel();
 		timer = null;
 	}

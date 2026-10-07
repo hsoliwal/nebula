@@ -109,8 +109,9 @@ public class StringSortPageableTableExample {
 		shell.setSize(550, 320);
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

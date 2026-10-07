@@ -51,9 +51,10 @@ public class CursorTimingsLayer extends FreeformLayer {
 
 	@Override
 	public void validate() {
-		// cursor might have been deleted already
-		for (final Object connection : getChildren())
-			((CursorConnection) connection).updateDistance();
+        // cursor might have been deleted already
+        for (final Object connection : getChildren()) {
+            ((CursorConnection) connection).updateDistance();
+        }
 
 		super.validate();
 	}
@@ -91,8 +92,9 @@ public class CursorTimingsLayer extends FreeformLayer {
 
 		final CursorLayer cursorLayer = RootFigure.getFigure(this, CursorLayer.class);
 		for (final Object cursor : cursorLayer.getChildren()) {
-			if (cursor instanceof CursorFigure)
-				cursors.add((CursorFigure) cursor);
+            if (cursor instanceof CursorFigure) {
+                cursors.add((CursorFigure) cursor);
+            }
 		}
 
 		return cursors;
@@ -242,8 +244,9 @@ public class CursorTimingsLayer extends FreeformLayer {
 		@Override
 		public Dimension getPreferredSize(int w, int h) {
 			Dimension dimension = super.getPreferredSize(w, h);
-			if (dimension.width > 150)
-				dimension = super.getPreferredSize(150, -1);
+            if (dimension.width > 150) {
+                dimension = super.getPreferredSize(150, -1);
+            }
 
 			return dimension;
 		}

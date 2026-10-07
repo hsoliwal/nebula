@@ -136,8 +136,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 		public static String[] stringValues() {
 			String[] sv = new String[values().length];
 			int i = 0;
-			for (TraceType p : values())
-				sv[i++] = p.toString();
+            for (TraceType p : values()) {
+                sv[i++] = p.toString();
+            }
 			return sv;
 		}
 	}
@@ -148,8 +149,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 		public static String[] stringValues() {
 			String[] sv = new String[values().length];
 			int i = 0;
-			for (BaseLine p : values())
-				sv[i++] = p.toString();
+            for (BaseLine p : values()) {
+                sv[i++] = p.toString();
+            }
 			return sv;
 		}
 	}
@@ -195,8 +197,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 		public static String[] stringValues() {
 			String[] sv = new String[values().length];
 			int i = 0;
-			for (PointStyle p : values())
-				sv[i++] = p.toString();
+            for (PointStyle p : values()) {
+                sv[i++] = p.toString();
+            }
 			return sv;
 		}
 	}
@@ -207,8 +210,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 		public static String[] stringValues() {
 			String[] sv = new String[values().length];
 			int i = 0;
-			for (ErrorBarType p : values())
-				sv[i++] = p.toString();
+            for (ErrorBarType p : values()) {
+                sv[i++] = p.toString();
+            }
 			return sv;
 		}
 	}
@@ -221,8 +225,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	final private List<ITraceListener> listeners = new ArrayList<ITraceListener>();
 
 	public void addListener(final ITraceListener listener) {
-		if (listeners.contains(listener))
-			return;
+        if (listeners.contains(listener)) {
+            return;
+        }
 		listeners.add(listener);
 	}
 
@@ -333,8 +338,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 					yAxis.getValuePosition(dp.getYValue() - dp.getYMinusError(), false));
 			graphics.drawLine(dpPos, ep);
 			graphics.drawLine(ep.x - errorBarCapWidth / 2, ep.y, ep.x + errorBarCapWidth / 2, ep.y);
-			if (yErrorBarType != ErrorBarType.BOTH)
-				break;
+            if (yErrorBarType != ErrorBarType.BOTH) {
+                break;
+            }
 		case PLUS:
 			ep = new Point(xAxis.getValuePosition(dp.getXValue(), false),
 					yAxis.getValuePosition(dp.getYValue() + dp.getYPlusError(), false));
@@ -352,8 +358,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 					yAxis.getValuePosition(dp.getYValue(), false));
 			graphics.drawLine(dpPos, ep);
 			graphics.drawLine(ep.x, ep.y - errorBarCapWidth / 2, ep.x, ep.y + errorBarCapWidth / 2);
-			if (xErrorBarType != ErrorBarType.BOTH)
-				break;
+            if (xErrorBarType != ErrorBarType.BOTH) {
+                break;
+            }
 		case PLUS:
 			ep = new Point(xAxis.getValuePosition(dp.getXValue() + dp.getXPlusError(), false),
 					yAxis.getValuePosition(dp.getYValue(), false));
@@ -369,10 +376,11 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 
 	private void drawYErrorArea(final Graphics graphics, final ISample predp, final ISample dp, final Point predpPos,
 			final Point dpPos) {
-		// Shortcut if there is no error area
-		if (predp.getYPlusError() == 0.0 && predp.getYMinusError() == 0.0 && dp.getYPlusError() == 0.0
-				&& dp.getYMinusError() == 0.0)
-			return;
+        // Shortcut if there is no error area
+        if (predp.getYPlusError() == 0.0 && predp.getYMinusError() == 0.0 && dp.getYPlusError() == 0.0
+                && dp.getYMinusError() == 0.0) {
+            return;
+        }
 
 		graphics.pushState();
 		Color lighter = null;
@@ -394,8 +402,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			preEp = new Point(predp_xpos, yAxis.getValuePosition(predp.getYValue() + predp.getYPlusError(), false));
 			ep = new Point(dp_xpos, yAxis.getValuePosition(dp.getYValue() + dp.getYPlusError(), false));
 			graphics.fillPolygon(new int[] { predpPos.x, predpPos.y, preEp.x, preEp.y, ep.x, ep.y, dpPos.x, dpPos.y });
-			if (yErrorBarType != ErrorBarType.BOTH)
-				break;
+            if (yErrorBarType != ErrorBarType.BOTH) {
+                break;
+            }
 		case MINUS:
 			preEp = new Point(predp_xpos, yAxis.getValuePosition(predp.getYValue() - predp.getYMinusError(), false));
 			ep = new Point(dp_xpos, yAxis.getValuePosition(dp.getYValue() - dp.getYMinusError(), false));
@@ -405,8 +414,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			break;
 		}
 		graphics.popState();
-		if (lighter != null)
-			lighter.dispose();
+        if (lighter != null) {
+            lighter.dispose();
+        }
 	}
 
 	/**
@@ -512,8 +522,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			graphics.drawLine(p1, p2);
 			break;
 		case BAR:
-			if (use_advanced_graphics)
-				graphics.setAlpha(areaAlpha);
+            if (use_advanced_graphics) {
+                graphics.setAlpha(areaAlpha);
+            }
 			graphics.setLineStyle(SWTConstants.LINE_SOLID);
 			graphics.drawLine(p1, p2);
 			break;
@@ -551,8 +562,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 				basey = yAxis.getValuePosition(0, false);
 				break;
 			}
-			if (use_advanced_graphics)
-				graphics.setAlpha(areaAlpha);
+            if (use_advanced_graphics) {
+                graphics.setAlpha(areaAlpha);
+            }
 			graphics.setBackgroundColor(traceColor);
 			graphics.fillPolygon(new int[] { p1.x, p1.y, p1.x, basey, p2.x, basey, p2.x, p2.y });
 			break;
@@ -623,16 +635,18 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	}
 	
 	private void paintInternalFigure(Graphics graphics) {
-		if (use_advanced_graphics)
-			graphics.setAntialias(antiAliasing ? SWT.ON : SWT.OFF);
+        if (use_advanced_graphics) {
+            graphics.setAntialias(antiAliasing ? SWT.ON : SWT.OFF);
+        }
 		graphics.setForegroundColor(traceColor);
 		graphics.setLineWidth(lineWidth);
 		ISample predp = null;
 		boolean predpInRange = false;
 		Point dpPos = null;
 		hotSampleist.clear();
-		if (traceDataProvider == null)
-			throw new RuntimeException("No DataProvider defined for trace: " + name); //$NON-NLS-1$
+        if (traceDataProvider == null) {
+            throw new RuntimeException("No DataProvider defined for trace: " + name); //$NON-NLS-1$
+        }
 		// Lock data provider to prevent changes while painting
 		synchronized (traceDataProvider) {
 			if (traceDataProvider.getSize() > 0) {
@@ -688,8 +702,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 								xAxis.getTickLabelSide() == LabelSide.Primary ? yAxis.getRange().getLower()
 										: yAxis.getRange().getUpper(),
 								dp.getYPlusError(), dp.getYMinusError(), Double.NaN, dp.getXMinusError(), dp.getInfo());
-						if (dp instanceof IMetaData)
-							nanSample.setData(((IMetaData) dp).getData());
+                        if (dp instanceof IMetaData) {
+                            nanSample.setData(((IMetaData) dp).getData());
+                        }
 						hotSampleist.add(nanSample);
 					}
 					// Is data point in the plot area?
@@ -707,11 +722,13 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 							hsPoint.add(dpPos);
 						}
 
-						if (errorBarEnabled && !drawYErrorInArea)
-							drawErrorBar(graphics, dpPos, dp);
+                        if (errorBarEnabled && !drawYErrorInArea) {
+                            drawErrorBar(graphics, dpPos, dp);
+                        }
 					}
-					if (traceType == TraceType.POINT && !drawYErrorInArea)
-						continue; // no need to draw line
+                    if (traceType == TraceType.POINT && !drawYErrorInArea) {
+                        continue;
+                    } // no need to draw line
 
 					// draw line
 					if (traceType == TraceType.BAR) {
@@ -790,8 +807,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 							yAxis.getValuePosition(dp.getYValue(), false));
 
 					if (!dpPos.equals(predpPos)) {
-						if (errorBarEnabled && drawYErrorInArea && traceType != TraceType.BAR)
-							drawYErrorArea(graphics, predp, dp, predpPos, dpPos);
+                        if (errorBarEnabled && drawYErrorInArea && traceType != TraceType.BAR) {
+                            drawYErrorArea(graphics, predp, dp, predpPos, dpPos);
+                        }
 
 						switch (traceType) {
 						case SOLID_LINE:
@@ -801,8 +819,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 						case DOT_LINE:
 						case STEP_HORIZONTALLY:
 						case STEP_VERTICALLY:
-							if (plPolyline.size() == 0)
-								plPolyline.addPoint(predpPos);
+                            if (plPolyline.size() == 0) {
+                                plPolyline.addPoint(predpPos);
+                            }
 
 							if (traceDataProvider.isChronological()) {
 								// Line drawing optimization is available only
@@ -816,14 +835,16 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 									// to reconstruct a new
 									// polyline for the rest of the trace.
 									if (lastInRegion != null) {
-										// There were several points which have
-										// the same X value.
-										// Draw lines that connect those points
-										// at once.
-										if (minInRegion != null)
-											plPolyline.addPoint(minInRegion);
-										if (maxInRegion != null)
-											plPolyline.addPoint(maxInRegion);
+                                        // There were several points which have
+                                        // the same X value.
+                                        // Draw lines that connect those points
+                                        // at once.
+                                        if (minInRegion != null) {
+                                            plPolyline.addPoint(minInRegion);
+                                        }
+                                        if (maxInRegion != null) {
+                                            plPolyline.addPoint(maxInRegion);
+                                        }
 
 										plPolyline.addPoint(lastInRegion);
 
@@ -864,14 +885,16 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 
 											plPolyline.addPoint(dpPos);
 										} else {
-											// There were several points which
-											// have the same X value.
-											// Draw lines that connect those
-											// points at once.
-											if (minInRegion != null)
-												plPolyline.addPoint(minInRegion);
-											if (maxInRegion != null)
-												plPolyline.addPoint(maxInRegion);
+                                            // There were several points which
+                                            // have the same X value.
+                                            // Draw lines that connect those
+                                            // points at once.
+                                            if (minInRegion != null) {
+                                                plPolyline.addPoint(minInRegion);
+                                            }
+                                            if (maxInRegion != null) {
+                                                plPolyline.addPoint(maxInRegion);
+                                            }
 
 											plPolyline.addPoint(lastInRegion);
 
@@ -1053,20 +1076,24 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			final ISample dp = new Sample(dp2.getXValue(), dp1.getYValue());
 			// Check intersections of horizontal dp1------dp section
 			final ISample iy[] = getStraightLineIntersection(dp1, dp);
-			// Intersects both y axes?
-			if (iy[1] != null)
-				return iy;
-			// Intersects one y axis?
-			if (iy[0] != null)
-				result[count++] = iy[0];
+            // Intersects both y axes?
+            if (iy[1] != null) {
+                return iy;
+            }
+            // Intersects one y axis?
+            if (iy[0] != null) {
+                result[count++] = iy[0];
+            }
 			// Check intersections of vertical dp/dp2 section with x axes
 			final ISample ix[] = getStraightLineIntersection(dp, dp2);
-			// Intersects both x axes?
-			if (ix[1] != null)
-				return ix;
-			// Intersects one x axis?
-			if (ix[0] != null)
-				result[count++] = ix[0];
+            // Intersects both x axes?
+            if (ix[1] != null) {
+                return ix;
+            }
+            // Intersects one x axis?
+            if (ix[0] != null) {
+                result[count++] = ix[0];
+            }
 			return result;
 		}
 		if (traceType == TraceType.STEP_VERTICALLY) {
@@ -1079,20 +1106,24 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			final ISample dp = new Sample(dp1.getXValue(), dp2.getYValue());
 			// Check intersections of vertical dp1/dp section
 			final ISample ix[] = getStraightLineIntersection(dp1, dp);
-			// Intersects both X axes?
-			if (ix[1] != null)
-				return ix;
-			// Intersects one X axis?
-			if (ix[0] != null)
-				result[count++] = ix[0];
+            // Intersects both X axes?
+            if (ix[1] != null) {
+                return ix;
+            }
+            // Intersects one X axis?
+            if (ix[0] != null) {
+                result[count++] = ix[0];
+            }
 			// Check intersection of horizontal dp----dp2 section with Y axes
 			final ISample iy[] = getStraightLineIntersection(dp, dp2);
-			// Intersects both y axes?
-			if (iy[1] != null)
-				return iy;
-			// Intersects one y axis?
-			if (iy[0] != null)
-				result[count++] = iy[0];
+            // Intersects both y axes?
+            if (iy[1] != null) {
+                return iy;
+            }
+            // Intersects one y axis?
+            if (iy[0] != null) {
+                result[count++] = iy[0];
+            }
 			return result;
 		}
 		return getStraightLineIntersection(dp1, dp2);
@@ -1125,22 +1156,25 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			final double ymin = yAxis.getRange().getLower();
 			x = (ymin - y1) * dx / dy + x1;
 			y = ymin;
-			if (evalDP(x, y, dp1, dp2))
-				dpTuple[count++] = new Sample(x, y);
+            if (evalDP(x, y, dp1, dp2)) {
+                dpTuple[count++] = new Sample(x, y);
+            }
 			// Intersection with upper xAxis
 			final double ymax = yAxis.getRange().getUpper();
 			x = (ymax - y1) * dx / dy + x1;
 			y = ymax;
-			if (evalDP(x, y, dp1, dp2))
-				dpTuple[count++] = new Sample(x, y);
+            if (evalDP(x, y, dp1, dp2)) {
+                dpTuple[count++] = new Sample(x, y);
+            }
 		}
-		// A line that runs diagonally through the plot,
-		// hitting for example the lower left as well as upper right corners
-		// would cut both X as well as both Y axes.
-		// Return only the X axes hits, since Y axes hits are actually the
-		// same points.
-		if (count == 2)
-			return dpTuple;
+        // A line that runs diagonally through the plot,
+        // hitting for example the lower left as well as upper right corners
+        // would cut both X as well as both Y axes.
+        // Return only the X axes hits, since Y axes hits are actually the
+        // same points.
+        if (count == 2) {
+            return dpTuple;
+        }
 		if (dx != 0.0) { // Intersection with left yAxis
 			final double xmin = xAxis.getRange().getLower();
 			x = xmin;
@@ -1193,17 +1227,20 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *         either AND within the x/y axes. false otherwise
 	 */
 	private boolean evalDP(final double x, final double y, final ISample dp1, final ISample dp2) {
-		// First check axis limits
-		if (!xAxis.getRange().inRange(x) || !yAxis.getRange().inRange(y))
-			return false;
-		// Check if dp is between dp1 and dp2.
-		// Could this be done without constructing 2 new Ranges?
-		if (!new Range(dp1.getXValue(), dp2.getXValue()).inRange(x)
-				|| !new Range(dp1.getYValue(), dp2.getYValue()).inRange(y))
-			return false;
+        // First check axis limits
+        if (!xAxis.getRange().inRange(x) || !yAxis.getRange().inRange(y)) {
+            return false;
+        }
+        // Check if dp is between dp1 and dp2.
+        // Could this be done without constructing 2 new Ranges?
+        if (!new Range(dp1.getXValue(), dp2.getXValue()).inRange(x)
+                || !new Range(dp1.getYValue(), dp2.getYValue()).inRange(y)) {
+            return false;
+        }
 		final ISample dp = new Sample(x, y);
-		if (dp.equals(dp1) || dp.equals(dp2))
-			return false;
+        if (dp.equals(dp1) || dp.equals(dp2)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -1212,8 +1249,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *            the xAxis to set
 	 */
 	public void setXAxis(Axis axis) {
-		if (Objects.equals(xAxis, axis))
-			return;
+        if (Objects.equals(xAxis, axis)) {
+            return;
+        }
 		if (xAxis != null) {
 			xAxis.removeListener(this);
 			xAxis.removeTrace(this);
@@ -1243,21 +1281,22 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setYAxis(Axis axis) {
 		Axis old = yAxis;
-		if (Objects.equals(old, axis))
-			return;
+        if (Objects.equals(old, axis)) {
+            return;
+        }
 
 		xyGraph.getLegendMap().get(yAxis).removeTrace(this);
 		if (xyGraph.getLegendMap().get(yAxis).getTraceList().size() <= 0) {
 			xyGraph.remove(xyGraph.getLegendMap().get(yAxis));
 			xyGraph.getLegendMap().remove(yAxis);
 		}
-		if (xyGraph.getLegendMap().containsKey(axis))
-			xyGraph.getLegendMap().get(axis).addTrace(this);
-		else {
-			xyGraph.getLegendMap().put(axis, new Legend(xyGraph));
-			xyGraph.getLegendMap().get(axis).addTrace(this);
-			xyGraph.add(xyGraph.getLegendMap().get(axis));
-		}
+        if (xyGraph.getLegendMap().containsKey(axis)) {
+            xyGraph.getLegendMap().get(axis).addTrace(this);
+        } else {
+            xyGraph.getLegendMap().put(axis, new Legend(xyGraph));
+            xyGraph.getLegendMap().get(axis).addTrace(this);
+            xyGraph.add(xyGraph.getLegendMap().get(axis));
+        }
 
 		if (yAxis != null) {
 			yAxis.removeListener(this);
@@ -1278,8 +1317,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	}
 
 	private void fireYAxisChanged(Axis oldName, Axis newName) {
-		for (ITraceListener listener : listeners)
-			listener.traceYAxisChanged(this, oldName, newName);
+        for (ITraceListener listener : listeners) {
+            listener.traceYAxisChanged(this, oldName, newName);
+        }
 	}
 
 	/**
@@ -1306,19 +1346,23 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setTraceColor(final Color traceColor) {
 		Color old = this.traceColor;
-		if (Objects.equals(old, traceColor))
-			return;
+        if (Objects.equals(old, traceColor)) {
+            return;
+        }
 		this.traceColor = traceColor;
-		if (!errorBarColorSetFlag)
-			errorBarColor = traceColor;
-		if (xyGraph != null)
-			xyGraph.repaint();
+        if (!errorBarColorSetFlag) {
+            errorBarColor = traceColor;
+        }
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
 		fireTraceColorChanged(old, this.traceColor);
 	}
 
 	private void fireTraceColorChanged(Color old, Color newColor) {
-		for (ITraceListener listener : listeners)
-			listener.traceColorChanged(this, old, newColor);
+        for (ITraceListener listener : listeners) {
+            listener.traceColorChanged(this, old, newColor);
+        }
 	}
 
 	/**
@@ -1334,17 +1378,20 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setTraceType(TraceType traceType) {
 		TraceType old = this.traceType;
-		if (old == traceType)
-			return;
+        if (old == traceType) {
+            return;
+        }
 		this.traceType = traceType;
-		if (xyGraph != null)
-			xyGraph.repaint();
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
 		fireTraceTypeChanged(old, this.traceType);
 	}
 
 	private void fireTraceTypeChanged(TraceType old, TraceType newTraceType) {
-		for (ITraceListener listener : listeners)
-			listener.traceTypeChanged(this, old, newTraceType);
+        for (ITraceListener listener : listeners) {
+            listener.traceTypeChanged(this, old, newTraceType);
+        }
 	}
 
 	/**
@@ -1353,11 +1400,13 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setBaseLine(BaseLine baseLine) {
 		BaseLine old = this.baseLine;
-		if (old == baseLine)
-			return;
+        if (old == baseLine) {
+            return;
+        }
 		this.baseLine = baseLine;
-		if (xyGraph != null)
-			xyGraph.repaint();
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
 	}
 
 	/**
@@ -1366,17 +1415,20 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setPointStyle(PointStyle pointStyle) {
 		PointStyle old = this.pointStyle;
-		if (old == pointStyle)
-			return;
+        if (old == pointStyle) {
+            return;
+        }
 		this.pointStyle = pointStyle;
-		if (xyGraph != null)
-			xyGraph.repaint();
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
 		firePointStyleChanged(old, this.pointStyle);
 	}
 
 	private void firePointStyleChanged(PointStyle old, PointStyle newStyle) {
-		for (ITraceListener listener : listeners)
-			listener.pointStyleChanged(this, old, newStyle);
+        for (ITraceListener listener : listeners) {
+            listener.pointStyleChanged(this, old, newStyle);
+        }
 	}
 
 	/**
@@ -1385,13 +1437,16 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setLineWidth(int lineWidth) {
 		int orig = this.lineWidth;
-		if (orig == lineWidth)
-			return;
+        if (orig == lineWidth) {
+            return;
+        }
 		this.lineWidth = lineWidth;
-		if (xyGraph != null)
-			xyGraph.repaint();
-		for (ITraceListener listener : listeners)
-			listener.traceWidthChanged(this, orig, lineWidth);
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
+        for (ITraceListener listener : listeners) {
+            listener.traceWidthChanged(this, orig, lineWidth);
+        }
 	}
 
 	/**
@@ -1400,11 +1455,13 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setPointSize(int pointSize) {
 		int old = this.pointSize;
-		if (old == pointSize)
-			return;
+        if (old == pointSize) {
+            return;
+        }
 		this.pointSize = pointSize;
-		if (xyGraph != null)
-			xyGraph.repaint();
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
 	}
 
 	/**
@@ -1413,11 +1470,13 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setAreaAlpha(int areaAlpha) {
 		int old = this.areaAlpha;
-		if (old == areaAlpha)
-			return;
+        if (old == areaAlpha) {
+            return;
+        }
 		this.areaAlpha = areaAlpha;
-		if (xyGraph != null)
-			xyGraph.repaint();
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
 	}
 
 	/**
@@ -1426,11 +1485,13 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setAntiAliasing(boolean antiAliasing) {
 		boolean old = this.antiAliasing;
-		if (old == antiAliasing)
-			return;
+        if (old == antiAliasing) {
+            return;
+        }
 		this.antiAliasing = antiAliasing;
-		if (xyGraph != null)
-			xyGraph.repaint();
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
 	}
 
 	/**
@@ -1449,19 +1510,23 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	public void setName(String name, boolean fire) {
 		String oldName = this.name;
-		if (Objects.equals(oldName, name))
-			return;
+        if (Objects.equals(oldName, name)) {
+            return;
+        }
 		this.name = name;
 		revalidate();
-		if (xyGraph != null)
-			xyGraph.repaint();
-		if (fire)
-			fireTraceNameChanged(oldName, this.name);
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        }
+        if (fire) {
+            fireTraceNameChanged(oldName, this.name);
+        }
 	}
 
 	private void fireTraceNameChanged(String oldName, String newName) {
-		for (ITraceListener listener : listeners)
-			listener.traceNameChanged(this, oldName, newName);
+        for (ITraceListener listener : listeners) {
+            listener.traceNameChanged(this, oldName, newName);
+        }
 	}
 
 	/**
@@ -1503,8 +1568,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 		// the trace doesn't have to be repainted again.
 		boolean xRepainted = xAxis.performAutoScale(false);
 		boolean yRepainted = yAxis.performAutoScale(false);
-		if (!xRepainted && !yRepainted)
-			repaint();
+        if (!xRepainted && !yRepainted) {
+            repaint();
+        }
 	}
 
 	/**
@@ -1519,21 +1585,25 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	private Range getIndexRangeOnXAxis() {
 		Range axisRange = xAxis.getRange();
-		if (traceDataProvider.getSize() <= 0)
-			return null;
+        if (traceDataProvider.getSize() <= 0) {
+            return null;
+        }
 		double min = axisRange.getLower() > axisRange.getUpper() ? axisRange.getUpper() : axisRange.getLower();
 		double max = axisRange.getUpper() > axisRange.getLower() ? axisRange.getUpper() : axisRange.getLower();
 
-		if (min > traceDataProvider.getSample(traceDataProvider.getSize() - 1).getXValue()
-				|| max < traceDataProvider.getSample(0).getXValue())
-			return null;
+        if (min > traceDataProvider.getSample(traceDataProvider.getSize() - 1).getXValue()
+                || max < traceDataProvider.getSample(0).getXValue()) {
+            return null;
+        }
 
 		int lowIndex = 0;
 		int highIndex = traceDataProvider.getSize() - 1;
-		if (min > traceDataProvider.getSample(0).getXValue())
-			lowIndex = nearBinarySearchX(min, true);
-		if (max < traceDataProvider.getSample(highIndex).getXValue())
-			highIndex = nearBinarySearchX(max, false);
+        if (min > traceDataProvider.getSample(0).getXValue()) {
+            lowIndex = nearBinarySearchX(min, true);
+        }
+        if (max < traceDataProvider.getSample(highIndex).getXValue()) {
+            highIndex = nearBinarySearchX(max, false);
+        }
 		return new Range(lowIndex, highIndex);
 	}
 
@@ -1563,25 +1633,27 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 
 			if (cmp < 0) {
 				if (mid < traceDataProvider.getSize() - 1 && key < traceDataProvider.getSample(mid + 1).getXValue()) {
-					if (left)
-						return mid;
-					else
-						return mid + 1;
+                    if (left) {
+                        return mid;
+                    } else {
+                        return mid + 1;
+                    }
 				}
 				low = mid + 1;
 			}
 
 			else if (cmp > 0) {
-				if (mid > 0 && key > traceDataProvider.getSample(mid - 1).getXValue())
-					if (left)
-						return mid - 1;
-					else
-						return mid;
+                if (mid > 0 && key > traceDataProvider.getSample(mid - 1).getXValue()) {
+                    if (left) {
+                        return mid - 1;
+                    } else {
+                        return mid;
+                    }
+                }
 				high = mid - 1;
-			}
-
-			else
-				return mid; // key found
+			} else {
+                return mid;
+            } // key found
 		}
 		return -(low + 1); // key not found.
 	}
@@ -1763,11 +1835,13 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 * Remove figures and reset fields
 	 */
 	public void dispose() {
-		if (getParent() != null)
-			getParent().remove(this);
+        if (getParent() != null) {
+            getParent().remove(this);
+        }
 		removeAll();
-		if (getHotSampleList() != null)
-			getHotSampleList().clear();
+        if (getHotSampleList() != null) {
+            getHotSampleList().clear();
+        }
 		this.name = null;
 		this.traceDataProvider = null;
 		this.xAxis = null;

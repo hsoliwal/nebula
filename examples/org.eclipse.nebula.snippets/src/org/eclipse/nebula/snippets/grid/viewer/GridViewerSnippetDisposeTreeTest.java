@@ -309,8 +309,9 @@ public class GridViewerSnippetDisposeTreeTest
 			{
 				try
 				{
-					if (v.getGrid().isDisposed())
-						return;
+                    if (v.getGrid().isDisposed()) {
+                        return;
+                    }
 					FileDialog fileDialog = new FileDialog(shell);
 					fileDialog.setFilterExtensions(new String[] { "*.xml" });
 					String open = fileDialog.open();
@@ -432,8 +433,9 @@ public class GridViewerSnippetDisposeTreeTest
 
 		while (!shell.isDisposed())
 		{
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
 		display.dispose();

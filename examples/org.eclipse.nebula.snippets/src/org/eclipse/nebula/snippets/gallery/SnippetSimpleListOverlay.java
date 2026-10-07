@@ -93,8 +93,9 @@ public class SnippetSimpleListOverlay {
 		shell.pack();
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
 		for (int i = 0; i < itemImages.length; i++) {

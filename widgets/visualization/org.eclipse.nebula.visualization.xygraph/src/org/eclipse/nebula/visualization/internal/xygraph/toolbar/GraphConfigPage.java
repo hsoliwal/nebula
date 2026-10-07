@@ -89,8 +89,9 @@ public class GraphConfigPage {
 			public void widgetSelected(SelectionEvent e) {
 				FontDialog fontDialog = new FontDialog(composite.getShell());
 				fontDialog.setEffectsVisible(false);
-				if (titleFont != null)
-					fontDialog.setFontList(titleFont.getFontData());
+                if (titleFont != null) {
+                    fontDialog.setFontList(titleFont.getFontData());
+                }
 				FontData fontData = fontDialog.open();
 				if (fontData != null) {
 					titleFont = XYGraphMediaFactory.getInstance().getFont(fontData);

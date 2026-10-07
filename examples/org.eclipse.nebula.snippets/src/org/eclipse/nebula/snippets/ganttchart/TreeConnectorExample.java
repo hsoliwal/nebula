@@ -171,8 +171,9 @@ public class TreeConnectorExample {
 			}
 
 			public void widgetSelected(SelectionEvent e) {
-				if (tree.getSelectionCount() == 0)
-					return;
+                if (tree.getSelectionCount() == 0) {
+                    return;
+                }
 
 				// set the selection
 				TreeItem sel = tree.getSelection()[0];
@@ -202,8 +203,9 @@ public class TreeConnectorExample {
 
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

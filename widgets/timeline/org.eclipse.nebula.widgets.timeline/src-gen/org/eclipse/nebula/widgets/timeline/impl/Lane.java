@@ -69,8 +69,9 @@ public class Lane extends Colored implements ILane {
 	 */
 	@Override
 	public ITrack getTrack() {
-		if (eContainerFeatureID() != ITimelinePackage.LANE__TRACK)
-			return null;
+        if (eContainerFeatureID() != ITimelinePackage.LANE__TRACK) {
+            return null;
+        }
 		return (ITrack) eInternalContainer();
 	}
 
@@ -92,18 +93,23 @@ public class Lane extends Colored implements ILane {
 	@Override
 	public void setTrack(ITrack newTrack) {
 		if ((newTrack != eInternalContainer()) || ((eContainerFeatureID() != ITimelinePackage.LANE__TRACK) && (newTrack != null))) {
-			if (EcoreUtil.isAncestor(this, newTrack))
-				throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            if (EcoreUtil.isAncestor(this, newTrack)) {
+                throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            }
 			NotificationChain msgs = null;
-			if (eInternalContainer() != null)
-				msgs = eBasicRemoveFromContainer(msgs);
-			if (newTrack != null)
-				msgs = ((InternalEObject) newTrack).eInverseAdd(this, ITimelinePackage.TRACK__LANES, ITrack.class, msgs);
+            if (eInternalContainer() != null) {
+                msgs = eBasicRemoveFromContainer(msgs);
+            }
+            if (newTrack != null) {
+                msgs = ((InternalEObject) newTrack).eInverseAdd(this, ITimelinePackage.TRACK__LANES, ITrack.class, msgs);
+            }
 			msgs = basicSetTrack(newTrack, msgs);
-			if (msgs != null)
-				msgs.dispatch();
-		} else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.LANE__TRACK, newTrack, newTrack));
+            if (msgs != null) {
+                msgs.dispatch();
+            }
+		} else if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.LANE__TRACK, newTrack, newTrack));
+        }
 	}
 
 	/**
@@ -159,8 +165,9 @@ public class Lane extends Colored implements ILane {
 	public NotificationChain eInverseAdd(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 		case ITimelinePackage.LANE__TRACK:
-			if (eInternalContainer() != null)
-				msgs = eBasicRemoveFromContainer(msgs);
+            if (eInternalContainer() != null) {
+                msgs = eBasicRemoveFromContainer(msgs);
+            }
 			return basicSetTrack((ITrack) otherEnd, msgs);
 		case ITimelinePackage.LANE__TIME_EVENTS:
 			return ((InternalEList<InternalEObject>) (InternalEList<?>) getTimeEvents()).basicAdd(otherEnd, msgs);

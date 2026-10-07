@@ -99,8 +99,9 @@ public class AbstractButtonPainter implements IButtonPainter {
 	}
 		
 	public void paintImage(GC gc, IColorManager colorManager, ISettings settings, Rectangle bounds, boolean hover, boolean selected, Image image) {
-		if (image == null)
-			return;
+        if (image == null) {
+            return;
+        }
 		
 		int imgHeight = image.getBounds().height;
 
@@ -110,12 +111,14 @@ public class AbstractButtonPainter implements IButtonPainter {
 	}
 
 	public void paintText(GC gc, IColorManager colorManager, ISettings settings, Rectangle bounds, Rectangle imageBounds, boolean hover, boolean selected, String text) {
-		if (text == null || text.length() == 0)
-			return;
+        if (text == null || text.length() == 0) {
+            return;
+        }
 		
 		int imgWidth = 0;
-		if (imageBounds != null)
-			imgWidth = imageBounds.width;		
+        if (imageBounds != null) {
+            imgWidth = imageBounds.width;
+        }		
 
 		Point se = gc.stringExtent(text);
 		int textTop = (CustomButton.BUTTON_HEIGHT - se.y) / 2;

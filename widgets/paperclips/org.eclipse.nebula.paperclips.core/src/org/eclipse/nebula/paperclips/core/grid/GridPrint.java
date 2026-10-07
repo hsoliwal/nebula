@@ -192,8 +192,9 @@ public final class GridPrint implements Print {
 		Util.noNulls(columns);
 
 		this.columns = new ArrayList<>();
-		for (int i = 0; i < columns.length; i++)
-			this.columns.add(columns[i]);
+        for (int i = 0; i < columns.length; i++) {
+            this.columns.add(columns[i]);
+        }
 		this.look = new DefaultGridLook();
 	}
 
@@ -229,8 +230,9 @@ public final class GridPrint implements Print {
 
 	private static int hashCode(int[][] array) {
 		int prime = 31;
-		if (array == null)
-			return 0;
+        if (array == null) {
+            return 0;
+        }
 		int result = 1;
 		for (int index = 0; index < array.length; index++) {
 			result = prime * result
@@ -241,8 +243,9 @@ public final class GridPrint implements Print {
 
 	private static int hashCode(int[] array) {
 		int prime = 31;
-		if (array == null)
-			return 0;
+        if (array == null) {
+            return 0;
+        }
 		int result = 1;
 		for (int index = 0; index < array.length; index++) {
 			result = prime * result + array[index];
@@ -252,48 +255,66 @@ public final class GridPrint implements Print {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		GridPrint other = (GridPrint) obj;
 		if (body == null) {
-			if (other.body != null)
-				return false;
-		} else if (!body.equals(other.body))
-			return false;
-		if (bodyCol != other.bodyCol)
-			return false;
-		if (cellClippingEnabled != other.cellClippingEnabled)
-			return false;
-		if (!Util.equal(columnGroups, other.columnGroups))
-			return false;
+            if (other.body != null) {
+                return false;
+            }
+		} else if (!body.equals(other.body)) {
+            return false;
+        }
+        if (bodyCol != other.bodyCol) {
+            return false;
+        }
+        if (cellClippingEnabled != other.cellClippingEnabled) {
+            return false;
+        }
+        if (!Util.equal(columnGroups, other.columnGroups)) {
+            return false;
+        }
 		if (columns == null) {
-			if (other.columns != null)
-				return false;
-		} else if (!columns.equals(other.columns))
-			return false;
+            if (other.columns != null) {
+                return false;
+            }
+		} else if (!columns.equals(other.columns)) {
+            return false;
+        }
 		if (footer == null) {
-			if (other.footer != null)
-				return false;
-		} else if (!footer.equals(other.footer))
-			return false;
-		if (footerCol != other.footerCol)
-			return false;
+            if (other.footer != null) {
+                return false;
+            }
+		} else if (!footer.equals(other.footer)) {
+            return false;
+        }
+        if (footerCol != other.footerCol) {
+            return false;
+        }
 		if (header == null) {
-			if (other.header != null)
-				return false;
-		} else if (!header.equals(other.header))
-			return false;
-		if (headerCol != other.headerCol)
-			return false;
+            if (other.header != null) {
+                return false;
+            }
+		} else if (!header.equals(other.header)) {
+            return false;
+        }
+        if (headerCol != other.headerCol) {
+            return false;
+        }
 		if (look == null) {
-			if (other.look != null)
-				return false;
-		} else if (!look.equals(other.look))
-			return false;
+            if (other.look != null) {
+                return false;
+            }
+		} else if (!look.equals(other.look)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -426,9 +447,10 @@ public final class GridPrint implements Print {
 	}
 
 	private void checkColumnInsert(int index) {
-		if (index < 0 || index > this.columns.size())
-			PaperClips.error(SWT.ERROR_INVALID_RANGE,
-					"index = " + index + ", size = " + this.columns.size()); //$NON-NLS-1$ //$NON-NLS-2$
+        if (index < 0 || index > this.columns.size()) {
+            PaperClips.error(SWT.ERROR_INVALID_RANGE,
+                    "index = " + index + ", size = " + this.columns.size()); //$NON-NLS-1$ //$NON-NLS-2$
+        }
 	}
 
 	private void adjustForColumnInsert(int index, int count) {
@@ -438,12 +460,15 @@ public final class GridPrint implements Print {
 
 		adjustColumnGroupsForColumnInsert(index, count);
 
-		if (bodyCol > index)
-			bodyCol += count;
-		if (headerCol > index)
-			headerCol += count;
-		if (footerCol > index)
-			footerCol += count;
+        if (bodyCol > index) {
+            bodyCol += count;
+        }
+        if (headerCol > index) {
+            headerCol += count;
+        }
+        if (footerCol > index) {
+            footerCol += count;
+        }
 	}
 
 	private void adjustCellsForColumnInsert(List<List<GridCell>> rows,
@@ -480,9 +505,11 @@ public final class GridPrint implements Print {
 	private void adjustColumnGroupsForColumnInsert(int index, int count) {
 		for (int groupI = 0; groupI < columnGroups.length; groupI++) {
 			int[] group = columnGroups[groupI];
-			for (int i = 0; i < group.length; i++)
-				if (group[i] >= index)
-					group[i] += count;
+            for (int i = 0; i < group.length; i++) {
+                if (group[i] >= index) {
+                    group[i] += count;
+                }
+            }
 		}
 	}
 
@@ -499,8 +526,9 @@ public final class GridPrint implements Print {
 		String[] cols = columns.split("\\s*,\\s*"); //$NON-NLS-1$
 
 		GridColumn[] result = new GridColumn[cols.length];
-		for (int i = 0; i < cols.length; i++)
-			result[i] = GridColumn.parse(cols[i]);
+        for (int i = 0; i < cols.length; i++) {
+            result[i] = GridColumn.parse(cols[i]);
+        }
 
 		return result;
 	}
@@ -656,8 +684,9 @@ public final class GridPrint implements Print {
 		for (int rowIndex = 0; rowIndex < cells.length; rowIndex++) {
 			List<GridCell> row = list.get(rowIndex);
 			GridCell[] rowCells = new GridCell[row.size()];
-			for (int cellIndex = 0; cellIndex < rowCells.length; cellIndex++)
-				rowCells[cellIndex] = row.get(cellIndex);
+            for (int cellIndex = 0; cellIndex < rowCells.length; cellIndex++) {
+                rowCells[cellIndex] = row.get(cellIndex);
+            }
 			cells[rowIndex] = rowCells;
 		}
 		return cells;
@@ -914,8 +943,9 @@ public final class GridPrint implements Print {
 			// ..but just in case.
 
 			row.remove(row.size() - 1);
-			if (row.size() == 0)
-				rows.remove(row);
+            if (row.size() == 0) {
+                rows.remove(row);
+            }
 
 			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Colspan " + colspan //$NON-NLS-1$
 					+ " too wide at column " + startColumn + " (" //$NON-NLS-1$ //$NON-NLS-2$
@@ -927,34 +957,38 @@ public final class GridPrint implements Print {
 
 	private int convertRemainderToExplicitColSpan(int startColumn,
 			int colspan) {
-		if (colspan == REMAINDER)
-			colspan = columns.size() - startColumn;
+        if (colspan == REMAINDER) {
+            colspan = columns.size() - startColumn;
+        }
 		return colspan;
 	}
 
 	private int startNewRowIfCurrentRowFull(int startColumn) {
-		// If we're at the end of a row, start a new row.
-		if (startColumn == columns.size())
-			startColumn = 0;
+        // If we're at the end of a row, start a new row.
+        if (startColumn == columns.size()) {
+            startColumn = 0;
+        }
 		return startColumn;
 	}
 
 	private void checkColumnSpan(int startColumn, int colspan) {
-		if (startColumn + colspan > columns.size())
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Colspan " + colspan //$NON-NLS-1$
-					+ " too wide at column " + startColumn + " (" //$NON-NLS-1$ //$NON-NLS-2$
-					+ columns.size() + " columns total)"); //$NON-NLS-1$
+        if (startColumn + colspan > columns.size()) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Colspan " + colspan //$NON-NLS-1$
+                    + " too wide at column " + startColumn + " (" //$NON-NLS-1$ //$NON-NLS-2$
+                    + columns.size() + " columns total)"); //$NON-NLS-1$
+        }
 	}
 
 	private List<GridCell> getOpenRow(List<List<GridCell>> rows,
 			int startColumn) {
 		List<GridCell> row; // the row we will add the cell to.
-		if (startColumn == 0)
-			// Start a new row if back at column 0.
-			rows.add(row = new ArrayList<>(columns.size()));
-		else
-			// Get the incomplete row.
-			row = rows.get(rows.size() - 1); // List of GridCell
+        if (startColumn == 0) {
+            // Start a new row if back at column 0.
+            rows.add(row = new ArrayList<>(columns.size()));
+        } else {
+            // Get the incomplete row.
+            row = rows.get(rows.size() - 1);
+        } // List of GridCell
 		return row;
 	}
 
@@ -998,21 +1032,24 @@ public final class GridPrint implements Print {
 
 	private void checkColumnGroups(int[][] columnGroups) {
 		Util.notNull(columnGroups);
-		for (int groupIndex = 0; groupIndex < columnGroups.length; groupIndex++)
-			checkColumnGroup(columnGroups[groupIndex]);
+        for (int groupIndex = 0; groupIndex < columnGroups.length; groupIndex++) {
+            checkColumnGroup(columnGroups[groupIndex]);
+        }
 	}
 
 	private void checkColumnGroup(int[] columnGroup) {
 		Util.notNull(columnGroup);
-		for (int columnInGroupIndex = 0; columnInGroupIndex < columnGroup.length; columnInGroupIndex++)
-			checkColumnIndex(columnGroup[columnInGroupIndex]);
+        for (int columnInGroupIndex = 0; columnInGroupIndex < columnGroup.length; columnInGroupIndex++) {
+            checkColumnIndex(columnGroup[columnInGroupIndex]);
+        }
 	}
 
 	private void checkColumnIndex(int columnIndex) {
-		if (columnIndex < 0 || columnIndex >= columns.size())
-			PaperClips.error(SWT.ERROR_INVALID_RANGE,
-					"Column index in column group must be " + "0 <= " //$NON-NLS-1$ //$NON-NLS-2$
-							+ columnIndex + " < " + columns.size()); //$NON-NLS-1$
+        if (columnIndex < 0 || columnIndex >= columns.size()) {
+            PaperClips.error(SWT.ERROR_INVALID_RANGE,
+                    "Column index in column group must be " + "0 <= " //$NON-NLS-1$ //$NON-NLS-2$
+                            + columnIndex + " < " + columns.size()); //$NON-NLS-1$
+        }
 	}
 
 	/**

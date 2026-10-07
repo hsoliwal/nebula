@@ -64,8 +64,9 @@ public class DefaultWidgetIntrospector {
 		
 		List<String> nonPropList = Arrays.asList(getNonProperties());
 		for(PropertyDescriptor pd : pds){
-			if(!nonPropList.contains(pd.getName()) && pd.getWriteMethod() != null && pd.getReadMethod() != null)
-				filteredPDList.add(pd);
+            if (!nonPropList.contains(pd.getName()) && pd.getWriteMethod() != null && pd.getReadMethod() != null) {
+                filteredPDList.add(pd);
+            }
 		}
 		
 		int defaultEvent = bi.getDefaultEventIndex();

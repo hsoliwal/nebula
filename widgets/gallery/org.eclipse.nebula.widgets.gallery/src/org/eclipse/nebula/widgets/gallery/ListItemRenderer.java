@@ -176,11 +176,12 @@ public class ListItemRenderer extends AbstractGalleryItemRenderer {
 				gc.setBackground(itemBackgroundColor);
 			}
 
-			if (showRoundedSelectionCorners)
-				gc.fillRoundRectangle(x, y, width, useableHeight,
-						selectionRadius, selectionRadius);
-			else
-				gc.fillRectangle(x, y, width, useableHeight);
+            if (showRoundedSelectionCorners) {
+                gc.fillRoundRectangle(x, y, width, useableHeight,
+                        selectionRadius, selectionRadius);
+            } else {
+                gc.fillRectangle(x, y, width, useableHeight);
+            }
 		}
 
 		if (itemImage != null && size != null) {
@@ -213,11 +214,13 @@ public class ListItemRenderer extends AbstractGalleryItemRenderer {
 			boolean displayText = false;
 			boolean displayDescription = false;
 			int remainingHeight = height - 2 - textFontHeight;
-			if (remainingHeight > 0)
-				displayText = true;
+            if (remainingHeight > 0) {
+                displayText = true;
+            }
 			remainingHeight -= descriptionFontHeight;
-			if (remainingHeight > 0)
-				displayDescription = true;
+            if (remainingHeight > 0) {
+                displayDescription = true;
+            }
 
 			// Background color
 			gc.setBackground(
@@ -226,8 +229,9 @@ public class ListItemRenderer extends AbstractGalleryItemRenderer {
 			// Draw text
 			if (displayText) {
 				int transY = (height - textFontHeight - 2);
-				if (displayDescription)
-					transY -= descriptionFontHeight;
+                if (displayDescription) {
+                    transY -= descriptionFontHeight;
+                }
 				transY = transY >> 1;
 
 				if (selected) {
@@ -284,8 +288,9 @@ public class ListItemRenderer extends AbstractGalleryItemRenderer {
 			Iterator<Color> i = this.dropShadowsColors.iterator();
 			while (i.hasNext()) {
 				Color c = i.next();
-				if (c != null && !c.isDisposed())
-					c.dispose();
+                if (c != null && !c.isDisposed()) {
+                    c.dispose();
+                }
 			}
 		}
 	}

@@ -78,21 +78,28 @@ public class Margins {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		Margins other = (Margins) obj;
-		if (bottom != other.bottom)
-			return false;
-		if (left != other.left)
-			return false;
-		if (right != other.right)
-			return false;
-		if (top != other.top)
-			return false;
+        if (bottom != other.bottom) {
+            return false;
+        }
+        if (left != other.left) {
+            return false;
+        }
+        if (right != other.right) {
+            return false;
+        }
+        if (top != other.top) {
+            return false;
+        }
 		return true;
 	}
 }

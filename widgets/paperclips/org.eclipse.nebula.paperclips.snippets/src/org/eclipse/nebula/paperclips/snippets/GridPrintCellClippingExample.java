@@ -55,9 +55,11 @@ public class GridPrintCellClippingExample {
 
 		shell.open();
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		PaperClips.print(job, new PrinterData());
 	}
@@ -75,8 +77,9 @@ public class GridPrintCellClippingExample {
 		GridPrint grid = new GridPrint("d, d, d, d", look);
 		grid.setCellClippingEnabled(cellClippingEnabled);
 
-		for (int i = 0; i < 200; i++)
-			grid.add(new TextPrint("Text cell\n#" + i));
+        for (int i = 0; i < 200; i++) {
+            grid.add(new TextPrint("Text cell\n#" + i));
+        }
 		return grid;
 	}
 }

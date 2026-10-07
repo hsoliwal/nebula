@@ -67,8 +67,9 @@ public class RemoveAnnotationDialog extends Dialog {
 			removeLabel.setText("Select the annotation to be removed: ");
 			annotationsCombo = new Combo(composite, SWT.DROP_DOWN);
 			annotationsCombo.setLayoutData(new GridData(SWT.FILL, 0, true, false));
-			for (Annotation annotation : xyGraph.getPlotArea().getAnnotationList())
-				annotationsCombo.add(annotation.getName());
+            for (Annotation annotation : xyGraph.getPlotArea().getAnnotationList()) {
+                annotationsCombo.add(annotation.getName());
+            }
 			annotationsCombo.select(0);
 		} else {
 			removeLabel.setText("There is no annotation on the graph.");
@@ -79,8 +80,9 @@ public class RemoveAnnotationDialog extends Dialog {
 
 	@Override
 	protected void okPressed() {
-		if (annotationsCombo != null)
-			removedAnnotation = xyGraph.getPlotArea().getAnnotationList().get(annotationsCombo.getSelectionIndex());
+        if (annotationsCombo != null) {
+            removedAnnotation = xyGraph.getPlotArea().getAnnotationList().get(annotationsCombo.getSelectionIndex());
+        }
 		super.okPressed();
 	}
 

@@ -131,8 +131,9 @@ public class AxisConfigPage {
 			public void widgetSelected(SelectionEvent e) {
 				FontDialog fontDialog = new FontDialog(composite.getShell());
 				fontDialog.setEffectsVisible(false);
-				if (titleFont != null)
-					fontDialog.setFontList(titleFont.getFontData());
+                if (titleFont != null) {
+                    fontDialog.setFontList(titleFont.getFontData());
+                }
 				FontData fontData = fontDialog.open();
 				if (fontData != null) {
 					titleFont = XYGraphMediaFactory.getInstance().getFont(fontData);
@@ -156,8 +157,9 @@ public class AxisConfigPage {
 			public void widgetSelected(SelectionEvent e) {
 				FontDialog fontDialog = new FontDialog(composite.getShell());
 				fontDialog.setEffectsVisible(false);
-				if (scaleFont != null)
-					fontDialog.setFontList(scaleFont.getFontData());
+                if (scaleFont != null) {
+                    fontDialog.setFontList(scaleFont.getFontData());
+                }
 				FontData fontData = fontDialog.open();
 				if (fontData != null) {
 					scaleFont = XYGraphMediaFactory.getInstance().getFont(fontData);
@@ -341,10 +343,11 @@ public class AxisConfigPage {
 		// button as well
 		setInverted(invertAxisButton.getSelection());
 		axis.setAutoScale(autoScaleButton.getSelection());
-		if (autoScaleButton.getSelection())
-			axis.setAutoScaleThreshold(maxOrAutoScaleThrText.getDoubleValue());
-		else
-			axis.setRange(minText.getDoubleValue(), maxOrAutoScaleThrText.getDoubleValue());
+        if (autoScaleButton.getSelection()) {
+            axis.setAutoScaleThreshold(maxOrAutoScaleThrText.getDoubleValue());
+        } else {
+            axis.setRange(minText.getDoubleValue(), maxOrAutoScaleThrText.getDoubleValue());
+        }
 		axis.setDateEnabled(dateEnabledButton.getSelection());
 		axis.setAutoFormat(autoFormat.getSelection());
 		if (!autoFormat.getSelection()) {
@@ -372,10 +375,11 @@ public class AxisConfigPage {
 		double max = maxOrAutoScaleThrText.getDoubleValue();
 		if ((isInverted && (min < max)) || (!isInverted && (min > max))) {
 			minText.getText().setText(String.valueOf(max));
-			if (autoScaleButton.getSelection())
-				maxOrAutoScaleThrText.getText().setText(String.valueOf(axis.getAutoScaleThreshold()));
-			else
-				maxOrAutoScaleThrText.getText().setText(String.valueOf(min));
+            if (autoScaleButton.getSelection()) {
+                maxOrAutoScaleThrText.getText().setText(String.valueOf(axis.getAutoScaleThreshold()));
+            } else {
+                maxOrAutoScaleThrText.getText().setText(String.valueOf(min));
+            }
 		}
 	}
 
@@ -389,8 +393,9 @@ public class AxisConfigPage {
 		titleFontLabel.setText("Title Font: " + titleFont.getFontData()[0].getName());
 		axisColorSelector.setColorValue(axis.getForegroundColor().getRGB());
 		primaryButton.setSelection(axis.isOnPrimarySide());
-		if (axis == xyGraph.getPrimaryXAxis() || axis == xyGraph.getPrimaryYAxis())
-			primaryButton.setEnabled(false);
+        if (axis == xyGraph.getPrimaryXAxis() || axis == xyGraph.getPrimaryYAxis()) {
+            primaryButton.setEnabled(false);
+        }
 		logButton.setSelection(axis.isLogScaleEnabled());
 		autoScaleButton.setSelection(axis.isAutoScale());
 		Range r = axis.getLocalRange();

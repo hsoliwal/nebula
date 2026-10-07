@@ -31,25 +31,31 @@ public class LayerIterator implements PrintIterator {
 
 	public LayerIterator(LayerIterator that) {
 		this.entries = that.entries.clone();
-		for (int i = 0; i < entries.length; i++)
-			if (entries[i].getTarget().hasNext())
-				entries[i] = entries[i].copy();
+        for (int i = 0; i < entries.length; i++) {
+            if (entries[i].getTarget().hasNext()) {
+                entries[i] = entries[i].copy();
+            }
+        }
 	}
 
 	public boolean hasNext() {
-		for (int i = 0; i < entries.length; i++)
-			if (entries[i].getTarget().hasNext())
-				return true;
+        for (int i = 0; i < entries.length; i++) {
+            if (entries[i].getTarget().hasNext()) {
+                return true;
+            }
+        }
 		return false;
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext())
-			PaperClips.error("No more content"); //$NON-NLS-1$
+        if (!hasNext()) {
+            PaperClips.error("No more content"); //$NON-NLS-1$
+        }
 
 		PrintPiece[] pieces = nextPieces(width, height);
-		if (pieces == null)
-			return null;
+        if (pieces == null) {
+            return null;
+        }
 
 		CompositeEntry[] entries = new CompositeEntry[pieces.length];
 		for (int i = 0; i < entries.length; i++) {
@@ -72,9 +78,10 @@ public class LayerIterator implements PrintIterator {
 				PrintPiece piece = PaperClips.next(entry.target, width, height);
 
 				if (piece == null) {
-					for (Iterator<PrintPiece> iter = pieces.iterator(); iter
-							.hasNext();)
-						iter.next().dispose();
+                    for (Iterator<PrintPiece> iter = pieces.iterator(); iter
+                            .hasNext(); ) {
+                        iter.next().dispose();
+                    }
 					return null;
 				}
 				pieces.add(piece);

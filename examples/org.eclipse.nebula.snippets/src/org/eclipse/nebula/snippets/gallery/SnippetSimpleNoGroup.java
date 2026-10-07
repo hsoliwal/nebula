@@ -71,12 +71,14 @@ public class SnippetSimpleNoGroup {
 		shell.pack();
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
-		if (itemImage != null)
-			itemImage.dispose();
+        if (itemImage != null) {
+            itemImage.dispose();
+        }
 		display.dispose();
 	}
 }

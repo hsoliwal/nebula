@@ -297,7 +297,9 @@ public class TableComboSnippet1 {
 		shell.open();
 
 		while (!shell.isDisposed ()) {
-			if (!display.readAndDispatch ()) display.sleep ();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		
 		// dispose of the font

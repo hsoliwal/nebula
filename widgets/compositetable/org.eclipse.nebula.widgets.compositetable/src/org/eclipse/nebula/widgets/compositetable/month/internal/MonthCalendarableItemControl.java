@@ -82,10 +82,18 @@ public class MonthCalendarableItemControl extends Canvas
 	 */
 	public MonthCalendarableItemControl(Composite parent, int style) {
 		super(parent, checkStyle(style));
-		if ((style & (SWT.CENTER | SWT.RIGHT)) == 0) style |= SWT.LEFT;
-		if ((style & SWT.CENTER) != 0) align = SWT.CENTER;
-		if ((style & SWT.RIGHT) != 0)  align = SWT.RIGHT;
-		if ((style & SWT.LEFT) != 0)   align = SWT.LEFT;
+        if ((style & (SWT.CENTER | SWT.RIGHT)) == 0) {
+            style |= SWT.LEFT;
+        }
+        if ((style & SWT.CENTER) != 0) {
+            align = SWT.CENTER;
+        }
+        if ((style & SWT.RIGHT) != 0) {
+            align = SWT.RIGHT;
+        }
+        if ((style & SWT.LEFT) != 0) {
+            align = SWT.LEFT;
+        }
 		
 		addPaintListener(new PaintListener(){
 			public void paintControl(PaintEvent event) {
@@ -218,7 +226,9 @@ public class MonthCalendarableItemControl extends Canvas
 	 * Check the style bits to ensure that no invalid styles are applied.
 	 */
 	private static int checkStyle (int style) {
-		if ((style & SWT.BORDER) != 0) style |= SWT.SHADOW_IN;
+        if ((style & SWT.BORDER) != 0) {
+            style |= SWT.SHADOW_IN;
+        }
 		int mask = SWT.SHADOW_IN | SWT.SHADOW_OUT | SWT.SHADOW_NONE | SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 		style = style & mask;
 		return style |= SWT.NO_FOCUS | SWT.DOUBLE_BUFFERED;
@@ -265,13 +275,21 @@ public class MonthCalendarableItemControl extends Canvas
 	 * characters in the given string, return '\0'.
 	 */
 	char _findMnemonic (String string) {
-		if (string == null) return '\0';
+        if (string == null) {
+            return '\0';
+        }
 		int index = 0;
 		int length = string.length ();
 		do {
-			while (index < length && string.charAt (index) != '&') index++;
-			if (++index >= length) return '\0';
-			if (string.charAt (index) != '&') return Character.toLowerCase (string.charAt (index));
+            while (index < length && string.charAt(index) != '&') {
+                index++;
+            }
+            if (++index >= length) {
+                return '\0';
+            }
+            if (string.charAt(index) != '&') {
+                return Character.toLowerCase(string.charAt(index));
+            }
 			index++;
 		} while (index < length);
 	 	return '\0';
@@ -312,7 +330,9 @@ public class MonthCalendarableItemControl extends Canvas
 			Point e = gc.textExtent(text, DRAW_FLAGS);
 			size.x += e.x;
 			size.y = Math.max(size.y, e.y);
-			if (image != null) size.x += GAP;
+            if (image != null) {
+                size.x += GAP;
+            }
 		} else {
 			size.y = Math.max(size.y, gc.getFontMetrics().getHeight());
 		}
@@ -399,7 +419,9 @@ public class MonthCalendarableItemControl extends Canvas
 
 	void onPaint(PaintEvent event) {
 		Rectangle rect = getClientArea();
-		if (rect.width == 0 || rect.height == 0) return;
+        if (rect.width == 0 || rect.height == 0) {
+            return;
+        }
 		
 		boolean shortenText = false;
 		String t = text;
@@ -466,17 +488,23 @@ public class MonthCalendarableItemControl extends Canvas
 				// draw a gradient behind the text
 				final Color oldBackground = gc.getBackground();
 				if (gradientColors.length == 1) {
-					if (gradientColors[0] != null) gc.setBackground(gradientColors[0]);
+                    if (gradientColors[0] != null) {
+                        gc.setBackground(gradientColors[0]);
+                    }
 					gc.fillRectangle(0, 0, rect.width, rect.height);
 				} else {
 					final Color oldForeground = gc.getForeground();
 					Color lastColor = gradientColors[0];
-					if (lastColor == null) lastColor = oldBackground;
+                    if (lastColor == null) {
+                        lastColor = oldBackground;
+                    }
 					int pos = 0;
 					for (int i = 0; i < gradientPercents.length; ++i) {
 						gc.setForeground(lastColor);
 						lastColor = gradientColors[i + 1];
-						if (lastColor == null) lastColor = oldBackground;
+                        if (lastColor == null) {
+                            lastColor = oldBackground;
+                        }
 						gc.setBackground(lastColor);
 						if (gradientVertical) {
 							final int gradientHeight = (gradientPercents[i] * rect.height / 100) - pos;
@@ -603,9 +631,13 @@ public class MonthCalendarableItemControl extends Canvas
 			gradientColors == null && 
 			gradientPercents == null) {
 			if (color == null) {
-				if (background == null) return;
+                if (background == null) {
+                    return;
+                }
 			} else {
-				if (color.equals(background)) return;
+                if (color.equals(background)) {
+                    return;
+                }
 			}		
 		}
 		background = color;
@@ -704,15 +736,21 @@ public class MonthCalendarableItemControl extends Canvas
 					same = (gradientColors[i] == colors[i]) ||
 						((gradientColors[i] == null) && (colors[i] == background)) ||
 						((gradientColors[i] == background) && (colors[i] == null));
-					if (!same) break;
+                    if (!same) {
+                        break;
+                    }
 				}
 				if (same) {
 					for (int i = 0; i < gradientPercents.length; i++) {
 						same = gradientPercents[i] == percents[i];
-						if (!same) break;
+                        if (!same) {
+                            break;
+                        }
 					}
 				}
-				if (same && this.gradientVertical == vertical) return;
+                if (same && this.gradientVertical == vertical) {
+                    return;
+                }
 			}
 		} else {
 			backgroundImage = null;
@@ -724,11 +762,13 @@ public class MonthCalendarableItemControl extends Canvas
 			gradientVertical = false;
 		} else {
 			gradientColors = new Color[colors.length];
-			for (int i = 0; i < colors.length; ++i)
-				gradientColors[i] = (colors[i] != null) ? colors[i] : background;
+            for (int i = 0; i < colors.length; ++i) {
+                gradientColors[i] = (colors[i] != null) ? colors[i] : background;
+            }
 			gradientPercents = new int[percents.length];
-			for (int i = 0; i < percents.length; ++i)
-				gradientPercents[i] = percents[i];
+            for (int i = 0; i < percents.length; ++i) {
+                gradientPercents[i] = percents[i];
+            }
 			gradientVertical = vertical;
 		}
 		// Refresh with the new settings
@@ -746,7 +786,9 @@ public class MonthCalendarableItemControl extends Canvas
 	 */
 	public void setBackground(Image image) {
 		checkWidget();
-		if (image == backgroundImage) return;
+        if (image == backgroundImage) {
+            return;
+        }
 		if (image != null) {
 			gradientColors = null;
 			gradientPercents = null;
@@ -790,7 +832,9 @@ public class MonthCalendarableItemControl extends Canvas
 	 */
 	public void setText(String text) {
 		checkWidget();
-		if (text == null) text = ""; //$NON-NLS-1$
+        if (text == null) {
+            text = ""; //$NON-NLS-1$
+        }
 		if (! text.equals(this.text)) {
 			this.text = text;
 			redraw();
@@ -812,7 +856,9 @@ public class MonthCalendarableItemControl extends Canvas
 	 * @return the shortened text
 	 */
 	protected String shortenText(GC gc, String t, int width) {
-		if (t == null) return null;
+        if (t == null) {
+            return null;
+        }
 		int w = gc.textExtent(ELLIPSIS, DRAW_FLAGS).x;
 		int l = t.length();
 		int s = l;

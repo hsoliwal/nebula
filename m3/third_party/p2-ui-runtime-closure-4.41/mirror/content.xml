@@ -1,0 +1,1167 @@
+<?xml version='1.0' encoding='utf-8'?>
+<repository name="Nebula owned UI runtime closure 4.41" type="org.eclipse.equinox.internal.p2.metadata.repository.LocalMetadataRepository" version="1">
+  <properties size="2">
+    <property name="p2.timestamp" value="1787918522601" />
+    <property name="p2.compressed" value="true" />
+  </properties>
+  <units size="20">
+    <unit id="org.eclipse.compare.source" version="3.12.200.v20260814-1536" singleton="false">
+      <update id="org.eclipse.compare.source" range="[0.0.0,3.12.200.v20260814-1536)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Compare Support Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.compare" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.compare.source" version="3.12.200.v20260814-1536" />
+        <provided namespace="osgi.bundle" name="org.eclipse.compare.source" version="3.12.200.v20260814-1536" />
+        <provided namespace="osgi.identity" name="org.eclipse.compare.source" version="3.12.200.v20260814-1536">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.compare.source" version="3.12.200.v20260814-1536" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.compare.source
+Bundle-Version: 3.12.200.v20260814-1536
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.compare" version="3.12.200.v20260814-1536" generation="2">
+      <update id="org.eclipse.compare" range="[0.0.0,3.12.200.v20260814-1536)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.pluginName" value="Compare Support" />
+        <property name="df_LT.providerName" value="Eclipse.org" />
+        <property name="org.eclipse.equinox.p2.name" value="%pluginName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.compare" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="14">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.compare" version="3.12.200.v20260814-1536" />
+        <provided namespace="osgi.bundle" name="org.eclipse.compare" version="3.12.200.v20260814-1536" />
+        <provided namespace="java.package" name="org.eclipse.compare" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare.internal,org.eclipse.compare.structuremergeviewer,org.eclipse.core.resources,org.eclipse.core.runtime,org.eclipse.core.runtime.content,org.eclipse.jface.action,org.eclipse.jface.operation,org.eclipse.jface.preference,org.eclipse.jface.resource,org.eclipse.jface.text,org.eclipse.jface.util,org.eclipse.jface.viewers,org.eclipse.swt.custom,org.eclipse.swt.graphics,org.eclipse.swt.widgets,org.eclipse.ui,org.eclipse.ui.plugin,org.eclipse.ui.services,org.eclipse.ui.texteditor" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.compare.contentmergeviewer" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare,org.eclipse.compare.internal,org.eclipse.compare.rangedifferencer,org.eclipse.compare.structuremergeviewer,org.eclipse.core.runtime,org.eclipse.jface.action,org.eclipse.jface.text,org.eclipse.jface.text.source,org.eclipse.jface.util,org.eclipse.jface.viewers,org.eclipse.swt.events,org.eclipse.swt.graphics,org.eclipse.swt.widgets,org.eclipse.ui" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.compare.internal" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.compare.internal.merge" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.compare.internal.patch" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.compare.patch" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare,org.eclipse.core.resources,org.eclipse.core.runtime,org.eclipse.jface.resource,org.eclipse.swt.widgets,org.eclipse.ui" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.compare.structuremergeviewer" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare,org.eclipse.compare.contentmergeviewer,org.eclipse.core.runtime,org.eclipse.jface.action,org.eclipse.jface.text,org.eclipse.jface.util,org.eclipse.jface.viewers,org.eclipse.swt.events,org.eclipse.swt.graphics,org.eclipse.swt.widgets,org.eclipse.ui,org.eclipse.ui.services,org.eclipse.ui.texteditor" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.compare.unifieddiff" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.compare.unifieddiff.internal" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.compare" version="3.12.200.v20260814-1536">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="15">
+        <required namespace="osgi.bundle" name="org.eclipse.ui" range="[3.206.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.resources" range="[3.4.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.jface.text" range="[3.8.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.ide" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.views" range="[3.2.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.workbench.texteditor" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.expressions" range="[3.2.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.editors" range="[3.19.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.forms" range="[3.2.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.compare.core" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.navigator" range="[3.2.0,4.0.0)" optional="true" greedy="false" />
+        <requiredProperties namespace="eclipse.swt" match="(image.format=svg)">
+          <description>
+            org.eclipse.compare
+          </description>
+        </requiredProperties>
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=21))">
+          <description>
+            org.eclipse.compare
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.compare.source" range="[3.12.200.v20260814-1536,3.12.200.v20260814-1536]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.compare" version="3.12.200.v20260814-1536" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.compare; singleton:=true
+Bundle-Version: 3.12.200.v20260814-1536
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.core.net.source" version="1.5.900.v20260507-0401" singleton="false">
+      <update id="org.eclipse.core.net.source" range="[0.0.0,1.5.900.v20260507-0401)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Internet Connection Management Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.core.net" />
+        <property name="maven-version" value="1.5.900-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.core.net.source" version="1.5.900.v20260507-0401" />
+        <provided namespace="osgi.bundle" name="org.eclipse.core.net.source" version="1.5.900.v20260507-0401" />
+        <provided namespace="osgi.identity" name="org.eclipse.core.net.source" version="1.5.900.v20260507-0401">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.core.net.source" version="1.5.900.v20260507-0401" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.core.net.source
+Bundle-Version: 1.5.900.v20260507-0401
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.core.net" version="1.5.900.v20260507-0401" generation="2">
+      <update id="org.eclipse.core.net" range="[0.0.0,1.5.900.v20260507-0401)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.PLUGIN_NAME" value="Internet Connection Management" />
+        <property name="df_LT.PLUGIN_PROVIDER" value="Eclipse.org" />
+        <property name="org.eclipse.equinox.p2.name" value="%PLUGIN_NAME" />
+        <property name="org.eclipse.equinox.p2.provider" value="%PLUGIN_PROVIDER" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.core.net" />
+        <property name="maven-version" value="1.5.900-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="7">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.core.net" version="1.5.900.v20260507-0401" />
+        <provided namespace="osgi.bundle" name="org.eclipse.core.net" version="1.5.900.v20260507-0401" />
+        <provided namespace="java.package" name="org.eclipse.core.internal.net" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.core.net.proxy" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.core.net" version="1.5.900.v20260507-0401">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="11">
+        <required namespace="osgi.bundle" name="org.eclipse.equinox.security" range="[1.0.0,2.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.equinox.common" range="3.12.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.equinox.preferences" range="3.2.200" />
+        <required namespace="osgi.bundle" name="org.eclipse.osgi" range="3.4.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.equinox.registry" range="3.4.0" />
+        <required namespace="java.package" name="com.sun.jna" range="[5.14.0,6.0.0)" />
+        <required namespace="java.package" name="com.sun.jna.platform.win32" range="[5.14.0,6.0.0)" />
+        <required namespace="java.package" name="com.sun.jna.ptr" range="[5.14.0,6.0.0)" />
+        <required namespace="java.package" name="com.sun.jna.win32" range="[5.14.0,6.0.0)" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=17))">
+          <description>
+            org.eclipse.core.net
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.core.net.source" range="[1.5.900.v20260507-0401,1.5.900.v20260507-0401]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.core.net" version="1.5.900.v20260507-0401" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.core.net;singleton:=true
+Bundle-Version: 1.5.900.v20260507-0401
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ltk.core.refactoring.source" version="3.16.0.v20260702-0744" singleton="false">
+      <update id="org.eclipse.ltk.core.refactoring.source" range="[0.0.0,3.16.0.v20260702-0744)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Refactoring Core Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.core.refactoring" />
+        <property name="maven-version" value="3.16.0-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ltk.core.refactoring.source" version="3.16.0.v20260702-0744" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ltk.core.refactoring.source" version="3.16.0.v20260702-0744" />
+        <provided namespace="osgi.identity" name="org.eclipse.ltk.core.refactoring.source" version="3.16.0.v20260702-0744">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ltk.core.refactoring.source" version="3.16.0.v20260702-0744" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ltk.core.refactoring.source
+Bundle-Version: 3.16.0.v20260702-0744
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ltk.core.refactoring" version="3.16.0.v20260702-0744" generation="2">
+      <update id="org.eclipse.ltk.core.refactoring" range="[0.0.0,3.16.0.v20260702-0744)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.pluginName" value="Refactoring Core" />
+        <property name="df_LT.providerName" value="Eclipse.org" />
+        <property name="org.eclipse.equinox.p2.name" value="%pluginName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.core.refactoring" />
+        <property name="maven-version" value="3.16.0-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="14">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ltk.core.refactoring" version="3.16.0.v20260702-0744" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ltk.core.refactoring" version="3.16.0.v20260702-0744" />
+        <provided namespace="java.package" name="org.eclipse.ltk.core.refactoring" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.core.refactoring.history" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.core.refactoring.model" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.core.refactoring.participants" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.core.refactoring.resource" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.core.refactoring" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.core.refactoring.history" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.core.refactoring.resource" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.core.refactoring.resource.undostates" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.ltk.core.refactoring" version="3.16.0.v20260702-0744">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="9">
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.expressions" range="[3.4.100,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.filesystem" range="[1.2.0,2.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.filebuffers" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.resources" range="[3.16.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.commands" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.text" range="[3.5.0,4.0.0)" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=17))">
+          <description>
+            org.eclipse.ltk.core.refactoring
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ltk.core.refactoring.source" range="[3.16.0.v20260702-0744,3.16.0.v20260702-0744]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ltk.core.refactoring" version="3.16.0.v20260702-0744" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ltk.core.refactoring; singleton:=true
+Bundle-Version: 3.16.0.v20260702-0744
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ltk.ui.refactoring.source" version="3.14.200.v20260702-0744" singleton="false">
+      <update id="org.eclipse.ltk.ui.refactoring.source" range="[0.0.0,3.14.200.v20260702-0744)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Refactoring UI Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.ui.refactoring" />
+        <property name="maven-version" value="3.14.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ltk.ui.refactoring.source" version="3.14.200.v20260702-0744" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ltk.ui.refactoring.source" version="3.14.200.v20260702-0744" />
+        <provided namespace="osgi.identity" name="org.eclipse.ltk.ui.refactoring.source" version="3.14.200.v20260702-0744">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ltk.ui.refactoring.source" version="3.14.200.v20260702-0744" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ltk.ui.refactoring.source
+Bundle-Version: 3.14.200.v20260702-0744
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ltk.ui.refactoring" version="3.14.200.v20260702-0744" generation="2">
+      <update id="org.eclipse.ltk.ui.refactoring" range="[0.0.0,3.14.200.v20260702-0744)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.pluginName" value="Refactoring UI" />
+        <property name="df_LT.providerName" value="Eclipse.org" />
+        <property name="org.eclipse.equinox.p2.name" value="%pluginName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.ui.refactoring" />
+        <property name="maven-version" value="3.14.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="16">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ltk.ui.refactoring" version="3.14.200.v20260702-0744" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ltk.ui.refactoring" version="3.14.200.v20260702-0744" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.ui.refactoring" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.ui.refactoring.actions" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.ui.refactoring.history" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.ui.refactoring.model" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.ui.refactoring.scripting" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.internal.ui.refactoring.util" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.ui.refactoring" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.ui.refactoring.actions" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.ui.refactoring.history" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.ui.refactoring.model" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ltk.ui.refactoring.resource" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.ltk.ui.refactoring" version="3.14.200.v20260702-0744">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="15">
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.expressions" range="[3.4.100,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.filebuffers" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.filesystem" range="[1.2.0,2.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.resources" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ltk.core.refactoring" range="[3.16.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.jface.text" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.navigator" range="[3.3.200,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.compare" range="[3.5.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.team.core" range="[3.4.100,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.team.ui" range="[3.4.100,4.0.0)" />
+        <requiredProperties namespace="eclipse.swt" match="(image.format=svg)">
+          <description>
+            org.eclipse.ltk.ui.refactoring
+          </description>
+        </requiredProperties>
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=21))">
+          <description>
+            org.eclipse.ltk.ui.refactoring
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ltk.ui.refactoring.source" range="[3.14.200.v20260702-0744,3.14.200.v20260702-0744]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ltk.ui.refactoring" version="3.14.200.v20260702-0744" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ltk.ui.refactoring; singleton:=true
+Bundle-Version: 3.14.200.v20260702-0744
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.team.core.source" version="3.10.1100.v20260612-1500" singleton="false">
+      <update id="org.eclipse.team.core.source" range="[0.0.0,3.10.1100.v20260612-1500)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Team Support Core Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.core" />
+        <property name="maven-version" value="3.10.1100-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.team.core.source" version="3.10.1100.v20260612-1500" />
+        <provided namespace="osgi.bundle" name="org.eclipse.team.core.source" version="3.10.1100.v20260612-1500" />
+        <provided namespace="osgi.identity" name="org.eclipse.team.core.source" version="3.10.1100.v20260612-1500">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.team.core.source" version="3.10.1100.v20260612-1500" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.team.core.source
+Bundle-Version: 3.10.1100.v20260612-1500
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.team.core" version="3.10.1100.v20260612-1500" generation="2">
+      <update id="org.eclipse.team.core" range="[0.0.0,3.10.1100.v20260612-1500)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.pluginName" value="Team Support Core" />
+        <property name="df_LT.providerName" value="Eclipse.org" />
+        <property name="org.eclipse.equinox.p2.name" value="%pluginName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.core" />
+        <property name="maven-version" value="3.10.1100-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="22">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.team.core" version="3.10.1100.v20260612-1500" />
+        <provided namespace="osgi.bundle" name="org.eclipse.team.core" version="3.10.1100.v20260612-1500" />
+        <provided namespace="java.package" name="org.eclipse.team.core" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.resources,org.eclipse.core.resources.team,org.eclipse.core.runtime,org.eclipse.core.runtime.content,org.eclipse.team.core.history,org.eclipse.team.core.mapping,org.eclipse.team.core.subscribers" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.diff" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.runtime" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.diff.provider" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.runtime,org.eclipse.team.core.diff" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.history" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.filesystem,org.eclipse.core.resources,org.eclipse.core.runtime" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.history.provider" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.resources,org.eclipse.team.core.history" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.importing.provisional" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.core.mapping" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.resources,org.eclipse.core.resources.mapping,org.eclipse.core.runtime,org.eclipse.core.runtime.content,org.eclipse.core.runtime.jobs,org.eclipse.team.core,org.eclipse.team.core.diff,org.eclipse.team.core.history" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.mapping.provider" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.resources,org.eclipse.core.resources.mapping,org.eclipse.core.runtime,org.eclipse.core.runtime.jobs,org.eclipse.team.core,org.eclipse.team.core.diff,org.eclipse.team.core.diff.provider,org.eclipse.team.core.history,org.eclipse.team.core.mapping" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.subscribers" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.resources,org.eclipse.core.resources.mapping,org.eclipse.core.runtime,org.eclipse.team.core.diff,org.eclipse.team.core.mapping,org.eclipse.team.core.mapping.provider,org.eclipse.team.core.synchronize,org.eclipse.team.core.variants" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.synchronize" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.resources,org.eclipse.core.runtime,org.eclipse.team.core,org.eclipse.team.core.variants" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.core.variants" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.core.resources,org.eclipse.core.runtime,org.eclipse.team.core.subscribers,org.eclipse.team.core.synchronize" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.internal.core" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.core.history" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.core.importing" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.core.mapping" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.core.streams" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.core.subscribers" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.team.core" version="3.10.1100.v20260612-1500">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="6">
+        <required namespace="osgi.bundle" name="org.eclipse.core.resources" range="[3.17.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.filesystem" range="[1.1.0,2.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.compare.core" range="[3.5.200,4.0.0)" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=17))">
+          <description>
+            org.eclipse.team.core
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.team.core.source" range="[3.10.1100.v20260612-1500,3.10.1100.v20260612-1500]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.team.core" version="3.10.1100.v20260612-1500" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.team.core; singleton:=true
+Bundle-Version: 3.10.1100.v20260612-1500
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.team.ui.source" version="3.12.200.v20260608-1918" singleton="false">
+      <update id="org.eclipse.team.ui.source" range="[0.0.0,3.12.200.v20260608-1918)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Team Support UI Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.ui" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.team.ui.source" version="3.12.200.v20260608-1918" />
+        <provided namespace="osgi.bundle" name="org.eclipse.team.ui.source" version="3.12.200.v20260608-1918" />
+        <provided namespace="osgi.identity" name="org.eclipse.team.ui.source" version="3.12.200.v20260608-1918">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.team.ui.source" version="3.12.200.v20260608-1918" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.team.ui.source
+Bundle-Version: 3.12.200.v20260608-1918
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.team.ui" version="3.12.200.v20260608-1918" generation="2">
+      <update id="org.eclipse.team.ui" range="[0.0.0,3.12.200.v20260608-1918)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.pluginName" value="Team Support UI" />
+        <property name="df_LT.providerName" value="Eclipse.org" />
+        <property name="org.eclipse.equinox.p2.name" value="%pluginName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.ui" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="20">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.team.ui" version="3.12.200.v20260608-1918" />
+        <provided namespace="osgi.bundle" name="org.eclipse.team.ui" version="3.12.200.v20260608-1918" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.actions" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.dialogs" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.history" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.mapping" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.preferences" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.registry" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.synchronize" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.synchronize.actions" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.synchronize.patch" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.internal.ui.wizards" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.team.ui" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare,org.eclipse.compare.structuremergeviewer,org.eclipse.core.resources,org.eclipse.core.runtime,org.eclipse.core.runtime.jobs,org.eclipse.jface.action,org.eclipse.jface.dialogs,org.eclipse.jface.operation,org.eclipse.jface.resource,org.eclipse.jface.util,org.eclipse.jface.viewers,org.eclipse.jface.wizard,org.eclipse.swt.graphics,org.eclipse.swt.widgets,org.eclipse.team.ui.history,org.eclipse.team.ui.mapping,org.eclipse.team.ui.synchronize,org.eclipse.ui,org.eclipse.ui.part" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.ui.history" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare,org.eclipse.compare.structuremergeviewer,org.eclipse.core.resources,org.eclipse.core.runtime,org.eclipse.jface.action,org.eclipse.jface.text.revisions,org.eclipse.jface.util,org.eclipse.jface.viewers,org.eclipse.swt.graphics,org.eclipse.swt.widgets,org.eclipse.team.ui,org.eclipse.ui,org.eclipse.ui.part,org.eclipse.ui.texteditor" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.ui.mapping" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare,org.eclipse.compare.structuremergeviewer,org.eclipse.core.commands,org.eclipse.core.resources,org.eclipse.core.resources.mapping,org.eclipse.core.runtime,org.eclipse.jface.action,org.eclipse.jface.preference,org.eclipse.jface.resource,org.eclipse.jface.util,org.eclipse.jface.viewers,org.eclipse.swt.graphics,org.eclipse.team.core.diff,org.eclipse.team.core.mapping,org.eclipse.team.ui,org.eclipse.team.ui.synchronize,org.eclipse.ui,org.eclipse.ui.actions,org.eclipse.ui.navigator" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.team.ui.synchronize" version="0.0.0">
+          <properties size="1">
+            <property name="java.package.directive.uses" value="org.eclipse.compare,org.eclipse.compare.structuremergeviewer,org.eclipse.core.resources,org.eclipse.core.resources.mapping,org.eclipse.core.runtime,org.eclipse.core.runtime.jobs,org.eclipse.jface.action,org.eclipse.jface.dialogs,org.eclipse.jface.operation,org.eclipse.jface.resource,org.eclipse.jface.util,org.eclipse.jface.viewers,org.eclipse.jface.wizard,org.eclipse.swt.graphics,org.eclipse.swt.widgets,org.eclipse.team.core.diff,org.eclipse.team.core.mapping,org.eclipse.team.core.mapping.provider,org.eclipse.team.core.subscribers,org.eclipse.team.core.synchronize,org.eclipse.team.internal.core.subscribers,org.eclipse.team.internal.ui.synchronize,org.eclipse.team.ui,org.eclipse.team.ui.mapping,org.eclipse.ui,org.eclipse.ui.actions,org.eclipse.ui.part" type="List" />
+          </properties>
+        </provided>
+        <provided namespace="osgi.identity" name="org.eclipse.team.ui" version="3.12.200.v20260608-1918">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="14">
+        <required namespace="osgi.bundle" name="org.eclipse.ui.ide" range="[3.3.0,4.0.0)" optional="true" greedy="false" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.resources" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.team.core" range="[3.6.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui" range="[3.208.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.compare" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.forms" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.navigator" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.jface.text" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.editors" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.expressions" range="[3.6.0,4.0.0)" />
+        <requiredProperties namespace="eclipse.swt" match="(image.format=svg)">
+          <description>
+            org.eclipse.team.ui
+          </description>
+        </requiredProperties>
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=21))">
+          <description>
+            org.eclipse.team.ui
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.team.ui.source" range="[3.12.200.v20260608-1918,3.12.200.v20260608-1918]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.team.ui" version="3.12.200.v20260608-1918" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.team.ui; singleton:=true
+Bundle-Version: 3.12.200.v20260608-1918
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.ide.application.source" version="1.6.200.v20260704-1759" singleton="false">
+      <update id="org.eclipse.ui.ide.application.source" range="[0.0.0,1.6.200.v20260704-1759)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Eclipse IDE UI Application Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.ide.application" />
+        <property name="maven-version" value="1.6.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.ide.application.source" version="1.6.200.v20260704-1759" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.ide.application.source" version="1.6.200.v20260704-1759" />
+        <provided namespace="osgi.identity" name="org.eclipse.ui.ide.application.source" version="1.6.200.v20260704-1759">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.ide.application.source" version="1.6.200.v20260704-1759" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.ide.application.source
+Bundle-Version: 1.6.200.v20260704-1759
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.ide.application" version="1.6.200.v20260704-1759" generation="2">
+      <update id="org.eclipse.ui.ide.application" range="[0.0.0,1.6.200.v20260704-1759)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.Plugin.providerName" value="Eclipse.org" />
+        <property name="df_LT.Plugin.name" value="Eclipse IDE UI Application" />
+        <property name="org.eclipse.equinox.p2.name" value="%Plugin.name" />
+        <property name="org.eclipse.equinox.p2.provider" value="%Plugin.providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.ide.application" />
+        <property name="maven-version" value="1.6.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="8">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.ide.application" version="1.6.200.v20260704-1759" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.ide.application" version="1.6.200.v20260704-1759" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.ide.application" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.ide.application.addons" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.ide.application.dialogs" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.ui.ide.application" version="1.6.200.v20260704-1759">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="20">
+        <required namespace="osgi.bundle" name="org.eclipse.ui.ide" range="[3.21.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.resources" range="[3.19.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui" range="[3.209.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.navigator.resources" range="[3.9.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.net" range="[1.5.0,2.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.filesystem" range="1.10.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.ui.workbench" range="0.0.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.ui.model.workbench" range="0.0.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.core.di" range="0.0.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.core.di.extensions" range="0.0.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.core.services" range="2.4.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.core.contexts" range="[1.12.0,2.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.urischeme" range="[1.3.0,2.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.ui.di" range="0.0.0" />
+        <required namespace="java.package" name="jakarta.inject" range="[2.0.0,3.0.0)" />
+        <required namespace="java.package" name="org.osgi.service.event" range="[1.4.0,2.0.0)" />
+        <requiredProperties namespace="eclipse.swt" match="(image.format=svg)">
+          <description>
+            org.eclipse.ui.ide.application
+          </description>
+        </requiredProperties>
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=21))">
+          <description>
+            org.eclipse.ui.ide.application
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.ide.application.source" range="[1.6.200.v20260704-1759,1.6.200.v20260704-1759]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.ide.application" version="1.6.200.v20260704-1759" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.ide.application;singleton:=true
+Bundle-Version: 1.6.200.v20260704-1759
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.navigator.resources.source" version="3.10.100.v20260421-0620" singleton="false">
+      <update id="org.eclipse.ui.navigator.resources.source" range="[0.0.0,3.10.100.v20260421-0620)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Navigator Workbench Components Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.navigator.resources" />
+        <property name="maven-version" value="3.10.100-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.navigator.resources.source" version="3.10.100.v20260421-0620" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.navigator.resources.source" version="3.10.100.v20260421-0620" />
+        <provided namespace="osgi.identity" name="org.eclipse.ui.navigator.resources.source" version="3.10.100.v20260421-0620">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.navigator.resources.source" version="3.10.100.v20260421-0620" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.navigator.resources.source
+Bundle-Version: 3.10.100.v20260421-0620
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.navigator.resources" version="3.10.100.v20260421-0620" generation="2">
+      <update id="org.eclipse.ui.navigator.resources" range="[0.0.0,3.10.100.v20260421-0620)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.Plugin.providerName" value="Eclipse.org" />
+        <property name="df_LT.Plugin.name" value="Navigator Workbench Components" />
+        <property name="org.eclipse.equinox.p2.name" value="%Plugin.name" />
+        <property name="org.eclipse.equinox.p2.provider" value="%Plugin.providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.navigator.resources" />
+        <property name="maven-version" value="3.10.100-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="12">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.navigator.resources" version="3.10.100.v20260421-0620" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.navigator.resources" version="3.10.100.v20260421-0620" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.navigator.resources" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.navigator.resources.actions" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.navigator.resources.plugin" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.navigator.resources.workbench" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.navigator.resources.nested" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.navigator.workingsets" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.navigator.resources" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.ui.navigator.resources" version="3.10.100.v20260421-0620">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="14">
+        <required namespace="osgi.bundle" name="org.eclipse.ui.ide" range="[3.21.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.resources" range="[3.19.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.jface" range="[3.39.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui" range="[3.208.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.navigator" range="[3.12.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.views.properties.tabbed" range="[3.10.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.workbench.texteditor" range="[3.17.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ltk.core.refactoring" range="[3.14.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ltk.ui.refactoring" range="[3.13.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.expressions" range="3.9.0" />
+        <requiredProperties namespace="eclipse.swt" match="(image.format=svg)">
+          <description>
+            org.eclipse.ui.navigator.resources
+          </description>
+        </requiredProperties>
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=21))">
+          <description>
+            org.eclipse.ui.navigator.resources
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.navigator.resources.source" range="[3.10.100.v20260421-0620,3.10.100.v20260421-0620]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.navigator.resources" version="3.10.100.v20260421-0620" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.navigator.resources; singleton:=true
+Bundle-Version: 3.10.100.v20260421-0620
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.views.properties.tabbed.source" version="3.11.0.v20251217-0909" singleton="false">
+      <update id="org.eclipse.ui.views.properties.tabbed.source" range="[0.0.0,3.11.0.v20251217-0909)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Tabbed Properties View Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views.properties.tabbed" />
+        <property name="maven-version" value="3.11.0-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.views.properties.tabbed.source" version="3.11.0.v20251217-0909" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.views.properties.tabbed.source" version="3.11.0.v20251217-0909" />
+        <provided namespace="osgi.identity" name="org.eclipse.ui.views.properties.tabbed.source" version="3.11.0.v20251217-0909">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.views.properties.tabbed.source" version="3.11.0.v20251217-0909" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.views.properties.tabbed.source
+Bundle-Version: 3.11.0.v20251217-0909
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.views.properties.tabbed" version="3.11.0.v20251217-0909" generation="2">
+      <update id="org.eclipse.ui.views.properties.tabbed" range="[0.0.0,3.11.0.v20251217-0909)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.Plugin.providerName" value="Eclipse.org" />
+        <property name="df_LT.Plugin.name" value="Tabbed Properties View" />
+        <property name="org.eclipse.equinox.p2.name" value="%Plugin.name" />
+        <property name="org.eclipse.equinox.p2.provider" value="%Plugin.providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views.properties.tabbed" />
+        <property name="maven-version" value="3.11.0-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="10">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.views.properties.tabbed" version="3.11.0.v20251217-0909" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.views.properties.tabbed" version="3.11.0.v20251217-0909" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.views.properties.tabbed" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.views.properties.tabbed.css" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.views.properties.tabbed.l10n" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.views.properties.tabbed.view" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.views.properties.tabbed" version="0.0.0" />
+        <provided namespace="osgi.identity" name="org.eclipse.ui.views.properties.tabbed" version="3.11.0.v20251217-0909">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="9">
+        <required namespace="osgi.bundle" name="org.eclipse.ui.forms" range="[3.3.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui.views" range="[3.2.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui" range="[3.208.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.ui.css.core" range="0.12.100" />
+        <required namespace="osgi.bundle" name="org.eclipse.e4.ui.css.swt" range="0.0.0" />
+        <required namespace="osgi.bundle" name="org.eclipse.jface" range="[3.39.0,4.0.0)" />
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=21))">
+          <description>
+            org.eclipse.ui.views.properties.tabbed
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.views.properties.tabbed.source" range="[3.11.0.v20251217-0909,3.11.0.v20251217-0909]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.views.properties.tabbed" version="3.11.0.v20251217-0909" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.views.properties.tabbed;singleton:=true
+Bundle-Version: 3.11.0.v20251217-0909
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.views.source" version="3.13.200.v20260703-1200" singleton="false">
+      <update id="org.eclipse.ui.views.source" range="[0.0.0,3.13.200.v20260703-1200)" severity="0" />
+      <properties size="10">
+        <property name="df_LT.bundleVendor" value="Eclipse.org" />
+        <property name="df_LT.bundleName" value="Views Source" />
+        <property name="org.eclipse.equinox.p2.name" value="%bundleName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%bundleVendor" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="OSGI-INF/l10n/bundle-src" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views" />
+        <property name="maven-version" value="3.13.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+      </properties>
+      <provides size="5">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.views.source" version="3.13.200.v20260703-1200" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.views.source" version="3.13.200.v20260703-1200" />
+        <provided namespace="osgi.identity" name="org.eclipse.ui.views.source" version="3.13.200.v20260703-1200">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="source" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.views.source" version="3.13.200.v20260703-1200" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.views.source
+Bundle-Version: 3.13.200.v20260703-1200
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    <unit id="org.eclipse.ui.views" version="3.13.200.v20260703-1200" generation="2">
+      <update id="org.eclipse.ui.views" range="[0.0.0,3.13.200.v20260703-1200)" severity="0" />
+      <properties size="9">
+        <property name="df_LT.pluginName" value="Views" />
+        <property name="df_LT.providerName" value="Eclipse.org" />
+        <property name="org.eclipse.equinox.p2.name" value="%pluginName" />
+        <property name="org.eclipse.equinox.p2.provider" value="%providerName" />
+        <property name="org.eclipse.equinox.p2.bundle.localization" value="plugin" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views" />
+        <property name="maven-version" value="3.13.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+      </properties>
+      <provides size="9">
+        <provided namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.views" version="3.13.200.v20260703-1200" />
+        <provided namespace="osgi.bundle" name="org.eclipse.ui.views" version="3.13.200.v20260703-1200" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.views.contentoutline" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.internal.views.properties" version="0.0.0">
+          <properties size="2">
+            <property name="java.package.directive.mandatory" value="ui.views" type="List" />
+            <property name="java.package.attribute.ui.views" value="split" />
+          </properties>
+        </provided>
+        <provided namespace="java.package" name="org.eclipse.ui.views.contentoutline" version="0.0.0" />
+        <provided namespace="java.package" name="org.eclipse.ui.views.properties" version="0.0.0">
+          <properties size="2">
+            <property name="java.package.directive.mandatory" value="ui.views" type="List" />
+            <property name="java.package.attribute.ui.views" value="split" />
+          </properties>
+        </provided>
+        <provided namespace="osgi.identity" name="org.eclipse.ui.views" version="3.13.200.v20260703-1200">
+          <properties size="1">
+            <property name="type" value="osgi.bundle" />
+          </properties>
+        </provided>
+        <provided namespace="org.eclipse.equinox.p2.eclipse.type" name="bundle" version="1.0.0" />
+        <provided namespace="org.eclipse.equinox.p2.localization" name="df_LT" version="1.0.0" />
+      </provides>
+      <requires size="7">
+        <required namespace="osgi.bundle" name="org.eclipse.core.runtime" range="[3.29.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.help" range="[3.10.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.ui" range="[3.208.0,4.0.0)" />
+        <required namespace="osgi.bundle" name="org.eclipse.jface" range="[3.39.0,4.0.0)" />
+        <requiredProperties namespace="eclipse.swt" match="(image.format=svg)">
+          <description>
+            org.eclipse.ui.views
+          </description>
+        </requiredProperties>
+        <requiredProperties namespace="osgi.ee" match="(&amp;(osgi.ee=JavaSE)(version=21))">
+          <description>
+            org.eclipse.ui.views
+          </description>
+        </requiredProperties>
+        <required namespace="org.eclipse.equinox.p2.iu" name="org.eclipse.ui.views.source" range="[3.13.200.v20260703-1200,3.13.200.v20260703-1200]" optional="true">
+          <filter>
+            (org.eclipse.update.install.sources=true)
+          </filter>
+        </required>
+      </requires>
+      <artifacts size="1">
+        <artifact classifier="osgi.bundle" id="org.eclipse.ui.views" version="3.13.200.v20260703-1200" />
+      </artifacts>
+      <touchpoint id="org.eclipse.equinox.p2.osgi" version="1.0.0" />
+      <touchpointData size="1">
+        <instructions size="1">
+          <instruction key="manifest">
+            Bundle-SymbolicName: org.eclipse.ui.views; singleton:=true
+Bundle-Version: 3.13.200.v20260703-1200
+          </instruction>
+        </instructions>
+      </touchpointData>
+    </unit>
+    </units>
+</repository>

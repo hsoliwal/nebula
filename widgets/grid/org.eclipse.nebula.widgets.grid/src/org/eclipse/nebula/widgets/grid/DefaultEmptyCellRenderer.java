@@ -34,8 +34,9 @@ public class DefaultEmptyCellRenderer extends GridCellRenderer
     {
 
         Grid table = null;
-        if (value instanceof Grid)
-            table = (Grid)value;
+        if (value instanceof Grid) {
+            table = (Grid) value;
+        }
 
         GridItem item;
         if (value instanceof GridItem)
@@ -67,9 +68,10 @@ public class DefaultEmptyCellRenderer extends GridCellRenderer
             gc.setForeground(table.getForeground());
         }
 
-        if (drawBackground)
+        if (drawBackground) {
             gc.fillRectangle(getBounds().x, getBounds().y, getBounds().width + 1,
-                         getBounds().height);
+                    getBounds().height);
+        }
 
         if (table.getLinesVisible())
         {

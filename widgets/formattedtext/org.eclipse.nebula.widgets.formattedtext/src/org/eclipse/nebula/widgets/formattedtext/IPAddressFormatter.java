@@ -23,18 +23,20 @@ public class IPAddressFormatter extends AbstractFormatter {
 		inputCache = new StringBuffer();
 		for (int i = 1; i <= 12; i++) {
 			inputCache.append(SPACE);
-			if (i != 12 && i % 3 == 0)
-				inputCache.append('.');
+            if (i != 12 && i % 3 == 0) {
+                inputCache.append('.');
+            }
 		}
 
 		keyListener = e -> {
 			int currPos = text.getCaretPosition();
 			int nextBegin = 4 * (currPos / 4 + 1);
 			int nextEnd = nextBegin + 3;
-			if (nextBegin <= 12 && e.character == SPACE)
-				text.setSelection(nextBegin, nextEnd);
-			else
-				return;
+            if (nextBegin <= 12 && e.character == SPACE) {
+                text.setSelection(nextBegin, nextEnd);
+            } else {
+                return;
+            }
 			e.doit = false;
 		};
 	}
@@ -46,8 +48,9 @@ public class IPAddressFormatter extends AbstractFormatter {
 	private void locateCurrentArea() {
 		int pos = text.getCaretPosition();
 		end = pos;
-		while (end < 15 && inputCache.charAt(end) != '.')
-			end++;
+        while (end < 15 && inputCache.charAt(end) != '.') {
+            end++;
+        }
 		begin = end - 4;
 	}
 
@@ -61,15 +64,17 @@ public class IPAddressFormatter extends AbstractFormatter {
 		int num = 0;
 		for (char c : ipp.toCharArray()) {
 			int n = c - '0';
-			if (n >= 0 && n <= 9)
-				num = 10 * num + n;
-			else
-				return false;
+            if (n >= 0 && n <= 9) {
+                num = 10 * num + n;
+            } else {
+                return false;
+            }
 		}
-		if (num >= 0 && num <= 255)
-			return true;
-		else
-			return false;
+        if (num >= 0 && num <= 255) {
+            return true;
+        } else {
+            return false;
+        }
 	}
 
 	/**
@@ -83,15 +88,17 @@ public class IPAddressFormatter extends AbstractFormatter {
 	 */
 	private int delClear(int b, int e) {
 		for (int pos = b; pos < e; pos++) {
-			if (inputCache.charAt(pos) != '.')
-				inputCache.setCharAt(pos, SPACE);
+            if (inputCache.charAt(pos) != '.') {
+                inputCache.setCharAt(pos, SPACE);
+            }
 		}
 		adjustInputCache();
 		locateCurrentArea();
-		if ((e > 0 && inputCache.charAt(e - 1) == SPACE) && (e < 15 && inputCache.charAt(e) == '.') || (e == 15 && inputCache.charAt(e - 1) == SPACE))
-			return begin;
-		else
-			return e;
+        if ((e > 0 && inputCache.charAt(e - 1) == SPACE) && (e < 15 && inputCache.charAt(e) == '.') || (e == 15 && inputCache.charAt(e - 1) == SPACE)) {
+            return begin;
+        } else {
+            return e;
+        }
 	}
 
 	/**
@@ -105,8 +112,9 @@ public class IPAddressFormatter extends AbstractFormatter {
 	 */
 	private int bspaceClear(int b, int e) {
 		for (int pos = b; pos < e; pos++) {// firstly,we just replace the position char of SPACE
-			if (inputCache.charAt(pos) != '.')
-				inputCache.setCharAt(pos, SPACE);
+            if (inputCache.charAt(pos) != '.') {
+                inputCache.setCharAt(pos, SPACE);
+            }
 		}
 		// use adjustInputCache function to delete non-uself middle SPACE between numbers
 		// and add useful SPACE in front
@@ -115,14 +123,16 @@ public class IPAddressFormatter extends AbstractFormatter {
 
 		String currPart = inputCache.substring(begin + 1, end);
 		int p = 0;// first pos containing a none space character
-		while (p < 3 && currPart.charAt(p) == SPACE)
-			p++;
-		if ((e < 15) && inputCache.charAt(e) == SPACE)
-			return begin + p + 1;
-		else if ((e < 15) && inputCache.charAt(e) == '.')
-			return end + 1;
-		else
-			return e;
+        while (p < 3 && currPart.charAt(p) == SPACE) {
+            p++;
+        }
+        if ((e < 15) && inputCache.charAt(e) == SPACE) {
+            return begin + p + 1;
+        } else if ((e < 15) && inputCache.charAt(e) == '.') {
+            return end + 1;
+        } else {
+            return e;
+        }
 	}
 
 	/**
@@ -135,12 +145,15 @@ public class IPAddressFormatter extends AbstractFormatter {
 		for (String part : parts) {
 			part = part.trim();
 			StringBuffer temp = new StringBuffer(part);
-			for (int j = 0; j < temp.length(); j++)
-				if (temp.charAt(j) == SPACE)
-					temp.deleteCharAt(j);// remove SPACE in the middle
+            for (int j = 0; j < temp.length(); j++) {
+                if (temp.charAt(j) == SPACE) {
+                    temp.deleteCharAt(j);
+                }
+            }// remove SPACE in the middle
 			int spaceLength = 3 - temp.length();
-			while (spaceLength-- > 0)
-				temp.insert(0, SPACE);// insert space in front
+            while (spaceLength-- > 0) {
+                temp.insert(0, SPACE);
+            }// insert space in front
 			part = temp.toString();
 			inputCache.replace(4 * (i - 1), 4 * i - 1, part);// update the input cache
 			i++;
@@ -159,21 +172,26 @@ public class IPAddressFormatter extends AbstractFormatter {
 	private int insert(String txt, int pos) {
 		locateCurrentArea();
 		String currPart = inputCache.substring(begin + 1, end);
-		if (txt.length() > 3)
-			return end;
-		if ((txt.length() + currPart.trim().length()) > 3)
-			return end;
+        if (txt.length() > 3) {
+            return end;
+        }
+        if ((txt.length() + currPart.trim().length()) > 3) {
+            return end;
+        }
 		int currPos = text.getCaretPosition();
-		if (isValidPart(currPart.trim()) && currPart.trim().length() == 3 && currPos == end)
-			return end + 2;// step to next ip part
+        if (isValidPart(currPart.trim()) && currPart.trim().length() == 3 && currPos == end) {
+            return end + 2;
+        }// step to next ip part
 
 		StringBuffer currEdit = new StringBuffer(currPart);
 		int b = 0;// first pos containing a none space character
-		while (b < 3 && currEdit.charAt(b) == SPACE)
-			b++;
+        while (b < 3 && currEdit.charAt(b) == SPACE) {
+            b++;
+        }
 		int relativeInsertPos = pos - begin - 1;
-		if (relativeInsertPos > end || relativeInsertPos < b)
-			relativeInsertPos = b;
+        if (relativeInsertPos > end || relativeInsertPos < b) {
+            relativeInsertPos = b;
+        }
 		currEdit.insert(relativeInsertPos, txt);
 		if (!isValidPart(currEdit.toString().trim())) {
 			beep();
@@ -184,17 +202,19 @@ public class IPAddressFormatter extends AbstractFormatter {
 			inputCache.replace(begin + 1, end, currEdit.toString());
 			currLength = currEdit.toString().trim().length();// without SPACE length
 			if (currLength == 3) {
-				if (pos == end)
-					return end + 1;
-				else
-					return end;
+                if (pos == end) {
+                    return end + 1;
+                } else {
+                    return end;
+                }
 			} else {
-				if (pos > 0 && pos < 15 && inputCache.charAt(pos - 1) != SPACE && inputCache.charAt(pos) != SPACE)
-					return pos;
-				else if (pos < 15 && inputCache.charAt(pos) == SPACE)
-					return begin + b + 1;
-				else
-					return end;
+                if (pos > 0 && pos < 15 && inputCache.charAt(pos - 1) != SPACE && inputCache.charAt(pos) != SPACE) {
+                    return pos;
+                } else if (pos < 15 && inputCache.charAt(pos) == SPACE) {
+                    return begin + b + 1;
+                } else {
+                    return end;
+                }
 			}
 		}
 	}
@@ -265,12 +285,15 @@ public class IPAddressFormatter extends AbstractFormatter {
 		if (isValid()) {
 			StringBuffer value = new StringBuffer(inputCache);
 			int i = 0;
-			for (i = 0; i < value.length(); i++)
-				if (value.charAt(i) == SPACE)
-					value.deleteCharAt(i);
+            for (i = 0; i < value.length(); i++) {
+                if (value.charAt(i) == SPACE) {
+                    value.deleteCharAt(i);
+                }
+            }
 			return value.toString();
-		} else
-			return null;
+		} else {
+            return null;
+        }
 	}
 
 	/**
@@ -284,8 +307,9 @@ public class IPAddressFormatter extends AbstractFormatter {
 		String[] parts = inputCache.toString().split("[.]");
 		for (String part : parts) {
 			part = part.trim();
-			if (!isValidPart(part))
-				return false;
+            if (!isValidPart(part)) {
+                return false;
+            }
 		}
 		return true;
 	}
@@ -318,8 +342,9 @@ public class IPAddressFormatter extends AbstractFormatter {
 	}
 
 	public void verifyText(VerifyEvent e) {
-		if (ignore)
-			return;
+        if (ignore) {
+            return;
+        }
 		e.doit = false;
 		// when knocking backspace or delete key,the caret should be have a different action
 		// so there are two clear functions

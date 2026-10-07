@@ -1,0 +1,176 @@
+[
+  {
+    "path": "m3/openrewrite-line-terminators/src/test/resources/original-nebula/examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/gallery/SnippetTooltip.java",
+    "sha256": "836b4a2e35dc446fbe3dd7d0931d97fcfdce6467c8d5871d7c90ec10a501ee96",
+    "role": "immutable original parser regression fixture; original tests and hash preflight retained"
+  },
+  {
+    "path": "m3/openrewrite-line-terminators/src/test/resources/original-nebula/widgets/visualization/org.eclipse.nebula.visualization.widgets/src/org/eclipse/nebula/visualization/widgets/figureparts/RoundScale.java",
+    "sha256": "09fa50c810f66c351000b350588d36716fd02d93657f626ce0fa1498f0a109a8",
+    "role": "immutable original parser regression fixture; original tests and hash preflight retained"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/jdk21-donors/java.base/java/util/ArrayList.java",
+    "sha256": "c7db659273f9130e08b0d4508c34ff655e157b9ed48cdc7f5f5a2146ebb1c137"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/jdk21-donors/java.base/java/util/Collection.java",
+    "sha256": "de833f449dd331f125692ae3dd0ff06d7ab62d9be47d7edb56907ce2dd7988e4"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/jdk21-donors/java.base/java/util/stream/AbstractPipeline.java",
+    "sha256": "cbd4d9f14e048e087fb7d7bc81032f32c5a26d9e6159f8e60fde43ce6d17a3d3"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/jdk21-donors/java.base/java/util/stream/FindOps.java",
+    "sha256": "3ada9949be120880e5e74a113be6fe06469aeaba3dca4bf951af07186739d47f"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/jdk21-donors/java.base/java/util/stream/ReferencePipeline.java",
+    "sha256": "cfaad79cb931191a7f23a3b6133c8c337c9941f9b0ca5656da22b11b1b0bfcd3"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/jdk21-donors/java.base/java/util/stream/Stream.java",
+    "sha256": "3524f25b18c080153554ee03c85d7c82a6b3180c1b5153702358126cf2056f8f"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/l2m-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3L2MFacades.java",
+    "sha256": "9fcdaba54bfeb88d563b06d00b99cb2dc0fba83c7232528f75068fb3a45e24b7"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/l2m-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3L2MRecipe.java",
+    "sha256": "412a10fd31527313d0843150e00a64d4649f021d1a991d3b4ede37071cf31f31"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/l2m-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3SemanticAttribution.java",
+    "sha256": "81785a3bc4d62a97a1ce4f14e60c4ebfc51baacc98c900acf21c3225a64c5a90"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3InventoryRecipe.java",
+    "sha256": "3d241d0b17cfea336f585d46ad4564fa5a38c86afb895f560ac2f8254768c007"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/NebulaM3InventoryTable.java",
+    "sha256": "b60de251c4e610b12377f1454a4670992adc786e363d397ecdd87d9960cfb3be"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/atom/NebulaM3AtomizePureIntReturnRecipe.java",
+    "sha256": "963265e9375b712f2d56f5c58288c731668650efdc1be24071d3035e661cd8d3"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntAtomEligibility.java",
+    "sha256": "e669ff390743c009909cc945f61e10b0a5c511f15e1c97a2ceb1a9a878106d6c"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3FileConvergenceRecipeDag.java",
+    "sha256": "da2746a3603ad6d344ad6c633d4e1bea621fc030637843a325136181fc853f91"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/convergence/NebulaM3RecipeDagManifest.java",
+    "sha256": "31230249f1f305c976afe5b41ed750df708411d7dad07598745ca26de5a4acc1"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3DeclarativeConvergenceControlRecipe.java",
+    "sha256": "389cf1487f96774769e36cf0b7352510de8230369a657f911ea870d0680c5e69"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3ExactJavaSnapshotRecipe.java",
+    "sha256": "e11813b817e43b1745b490e8a49099931302519ddec486bcd4156644e1bbf3bd"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/m3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3VerbatimSourceSeal.java",
+    "sha256": "23c0c2d90bfd9998f34de9ffdccf39fdd122b651a573671a77df1984e1ccf420"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/nebula-donors/widgets/opal/roundedtoolbar/org.eclipse.nebula.widgets.opal.roundedtoolbar/src/org/eclipse/nebula/widgets/opal/roundedtoolbar/RoundedToolbar.java",
+    "sha256": "fd00029ccb595dfedd0ec1c0604856359e065c9d2ca3fcbbe86382b15bbc0c59"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/main/java/org/openrewrite/staticanalysis/LambdaBlockToExpression.java",
+    "sha256": "b68afa64dbf688463e01fffd02fad8fb3d2dec79e4a4d9670404cc338b42bddd"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/main/java/org/openrewrite/staticanalysis/ReplaceLambdaWithMethodReference.java",
+    "sha256": "b9c6738339c9691690a7cae3c5495c6251edf6c4b28f843463234c9aa8517656"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/main/java/org/openrewrite/staticanalysis/ReplaceStreamToListWithCollect.java",
+    "sha256": "5860a8a1e2670652913c18eb7b1b5bcc8418992ff92b5eebac4f9b0aa934771f"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/main/java/org/openrewrite/staticanalysis/SortedSetStreamToLinkedHashSet.java",
+    "sha256": "dd2850f214bf16ff41913c3d6578fa86f899b6a855203ec87d483ac9a0825638"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/test/java/org/openrewrite/staticanalysis/LambdaBlockToExpressionTest.java",
+    "sha256": "5baef96848437e9349fa0968778ebaf0ea05ce0a0df170841fa5745589ed490f"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/test/java/org/openrewrite/staticanalysis/ReplaceLambdaWithMethodReferenceTest.java",
+    "sha256": "8dda7f923472f7155613d40cc2d4ad26d1d27b1a8ff2a0b03c6cbf02ec8339e8"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/test/java/org/openrewrite/staticanalysis/ReplaceStreamToListWithCollectTest.java",
+    "sha256": "14c8a98e3f43d55bd1897c3d47336634f8e9f93a5c693b2e080a407df7263218"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/test/java/org/openrewrite/staticanalysis/SortedSetStreamToLinkedHashSetTest.java",
+    "sha256": "aa96fcf394de9034ac68d57809efc8fe6142f854ec2e3b15553be8f5be2a9083"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/test/java/org/openrewrite/staticanalysis/groovy/ReplaceLambdaWithMethodReferenceTest.java",
+    "sha256": "1027909de8e906dab5d93bbf4d390d20841cde8e24b96c985ec06b7d8aa831f6"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/openrewrite-donors/src/test/java/org/openrewrite/staticanalysis/kotlin/ReplaceLambdaWithMethodReferenceTest.java",
+    "sha256": "1e45e4c00147d42c5600c9bcc09318ed3b8ddab113bfd25b63a888a99fa4c5b1"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-maven-plugin/src/main/java/com/synexia/ai/m3scale/M3AttributedAtomizer.java",
+    "sha256": "6564400310dc0d3baa9a264a032b253153b795b27cdad8f9363e312439d890d2"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-maven-plugin/src/main/java/com/synexia/ai/m3scale/M3Hash.java",
+    "sha256": "792c585551d4eee29662b482a2bc04fd766f5b603ac09a29025c355b295c35f4"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-maven-plugin/src/main/java/com/synexia/ai/m3scale/M3JavaAtomizer.java",
+    "sha256": "353b250f3e61b2e1f9c6151382220b26a6544de5f7abc020ab11eb256d2198dd"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3CanonicalSemanticIdentity.java",
+    "sha256": "42ce4ab45e88678742f31c1700d6e5e3e8784ad46e26a72401b118e12a231b7d"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3JavaAtomPatternMaterializationRecipe.java",
+    "sha256": "47e36a8af2ec9df0e56d2eaeb27702731b2880c4ae4e089c638bfff0328115e8"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3JsparrowLoopSafety.java",
+    "sha256": "90f48380ef09590c458ca31493366371d034177aaae55ec6a069e68671c6d5af"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3JsparrowLoopStreamRecipe.java",
+    "sha256": "b99ed6ac0562f50b816d55187bb72d3f8f1d8308657737c48dd659603338414e"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3MIndexNamePolicy.java",
+    "sha256": "479c8c501697ce00a79d1cd0fd38fd729da538a65135cf67cec80bf483acde82"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3SemanticAttribution.java",
+    "sha256": "81785a3bc4d62a97a1ce4f14e60c4ebfc51baacc98c900acf21c3225a64c5a90"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3TutorialReferenceRecipeNaming.java",
+    "sha256": "881614af2e8bd0cdb878edc1ac29b6e9a9ea479892822f483bbc80b0b2d23627"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/atomdb/AtomFingerprints.java",
+    "sha256": "1337654658af2a1e699c9e1437251595af76b9605a94c3d2d01fd7312ae8a080"
+  },
+  {
+    "path": "m3/stream-segment-proof/proof/donor-inventory/synexia-donors/synexia-openrewrite-recipes/src/test/java/com/synexia/rewrite/M3FunctionalJavaProofTest.java",
+    "sha256": "c64565ef36ae5eb121d32e5fffc894591793b33d9ed9914597fd4c24333ccd8b"
+  }
+]

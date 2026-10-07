@@ -67,11 +67,13 @@ public class SnippetSimpleGroupImageHScroll {
 			group.setExpanded(true);
 			group.setImage(itemImage);
 
-			if (g > 0)
-				group.setText(1, "descr1"); //$NON-NLS-1$
+            if (g > 0) {
+                group.setText(1, "descr1"); //$NON-NLS-1$
+            }
 
-			if (g > 1)
-				group.setText(2, "descr2"); //$NON-NLS-1$
+            if (g > 1) {
+                group.setText(2, "descr2"); //$NON-NLS-1$
+            }
 
 			for (int i = 0; i < 50; i++) {
 				GalleryItem item = new GalleryItem(group, SWT.NONE);
@@ -85,12 +87,14 @@ public class SnippetSimpleGroupImageHScroll {
 		shell.pack();
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
-		if (itemImage != null)
-			itemImage.dispose();
+        if (itemImage != null) {
+            itemImage.dispose();
+        }
 		display.dispose();
 	}
 }

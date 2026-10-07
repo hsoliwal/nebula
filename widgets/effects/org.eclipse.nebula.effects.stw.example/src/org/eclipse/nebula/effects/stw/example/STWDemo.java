@@ -79,8 +79,9 @@ public class STWDemo {
         thisClass.sShell.open();
 
         while (!thisClass.sShell.isDisposed()) {
-            if (!display.readAndDispatch())
+            if (!display.readAndDispatch()) {
                 display.sleep();
+            }
         }
     }
 
@@ -267,8 +268,9 @@ public class STWDemo {
     }
     
     private void selectDemo(int index) {
-        if(null != currentDemo)
+        if (null != currentDemo) {
             currentDemo.getContainerComposiste().setVisible(false);
+        }
         
         currentDemo = demoFrames[index];
         currentDemo.getContainerComposiste().setVisible(true);
@@ -282,8 +284,9 @@ public class STWDemo {
     
     private void selectTransition(int index) {
         currentTransition = currentDemo.getTransitionEffect(index);
-        if(null != currentSpecificOptionsComposite)
+        if (null != currentSpecificOptionsComposite) {
             currentSpecificOptionsComposite.setVisible(false);
+        }
         if(currentTransition instanceof FadeTransition) {
             currentSpecificOptionsComposite = fadeOptionsComposite;
             currentSpecificOptionsComposite.setVisible(true);

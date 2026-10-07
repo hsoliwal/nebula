@@ -68,47 +68,69 @@ public class TimelineSwitch<T> extends Switch<T> {
 			case ITimelinePackage.TIMELINE: {
 				ITimeline timeline = (ITimeline)theEObject;
 				T result = caseTimeline(timeline);
-				if (result == null) result = defaultCase(theEObject);
+                if (result == null) {
+                    result = defaultCase(theEObject);
+                }
 				return result;
 			}
 			case ITimelinePackage.TRACK: {
 				ITrack track = (ITrack)theEObject;
 				T result = caseTrack(track);
-				if (result == null) result = defaultCase(theEObject);
+                if (result == null) {
+                    result = defaultCase(theEObject);
+                }
 				return result;
 			}
 			case ITimelinePackage.LANE: {
 				ILane lane = (ILane)theEObject;
 				T result = caseLane(lane);
-				if (result == null) result = caseColored(lane);
-				if (result == null) result = defaultCase(theEObject);
+                if (result == null) {
+                    result = caseColored(lane);
+                }
+                if (result == null) {
+                    result = defaultCase(theEObject);
+                }
 				return result;
 			}
 			case ITimelinePackage.TIMELINE_EVENT: {
 				ITimelineEvent timelineEvent = (ITimelineEvent)theEObject;
 				T result = caseTimelineEvent(timelineEvent);
-				if (result == null) result = caseColored(timelineEvent);
-				if (result == null) result = caseTimed(timelineEvent);
-				if (result == null) result = defaultCase(theEObject);
+                if (result == null) {
+                    result = caseColored(timelineEvent);
+                }
+                if (result == null) {
+                    result = caseTimed(timelineEvent);
+                }
+                if (result == null) {
+                    result = defaultCase(theEObject);
+                }
 				return result;
 			}
 			case ITimelinePackage.CURSOR: {
 				ICursor cursor = (ICursor)theEObject;
 				T result = caseCursor(cursor);
-				if (result == null) result = caseTimed(cursor);
-				if (result == null) result = defaultCase(theEObject);
+                if (result == null) {
+                    result = caseTimed(cursor);
+                }
+                if (result == null) {
+                    result = defaultCase(theEObject);
+                }
 				return result;
 			}
 			case ITimelinePackage.COLORED: {
 				IColored colored = (IColored)theEObject;
 				T result = caseColored(colored);
-				if (result == null) result = defaultCase(theEObject);
+                if (result == null) {
+                    result = defaultCase(theEObject);
+                }
 				return result;
 			}
 			case ITimelinePackage.TIMED: {
 				ITimed timed = (ITimed)theEObject;
 				T result = caseTimed(timed);
-				if (result == null) result = defaultCase(theEObject);
+                if (result == null) {
+                    result = defaultCase(theEObject);
+                }
 				return result;
 			}
 			default: return defaultCase(theEObject);

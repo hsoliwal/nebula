@@ -35,10 +35,12 @@ public class Util {
 	 * @return whether the objects are of the same class.
 	 */
 	public static boolean sameClass(Object left, Object right) {
-		if (left == right)
-			return true;
-		if (left == null || right == null)
-			return false;
+        if (left == right) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
 		return left.getClass() == right.getClass();
 	}
 
@@ -52,30 +54,40 @@ public class Util {
 	 * @return whether the arguments are equal.
 	 */
 	public static boolean equal(Object left, Object right) {
-		if (!sameClass(left, right))
-			return false;
-		if (left == right)
-			return true;
+        if (!sameClass(left, right)) {
+            return false;
+        }
+        if (left == right) {
+            return true;
+        }
 		Class<? extends Object> clazz = left.getClass();
 		if (clazz.isArray()) {
 			Class<?> componentType = clazz.getComponentType();
 			if (componentType.isPrimitive()) {
-				if (componentType == Byte.TYPE)
-					return Arrays.equals((byte[]) left, (byte[]) right);
-				if (componentType == Short.TYPE)
-					return Arrays.equals((short[]) left, (short[]) right);
-				if (componentType == Integer.TYPE)
-					return Arrays.equals((int[]) left, (int[]) right);
-				if (componentType == Long.TYPE)
-					return Arrays.equals((long[]) left, (long[]) right);
-				if (componentType == Character.TYPE)
-					return Arrays.equals((char[]) left, (char[]) right);
-				if (componentType == Float.TYPE)
-					return Arrays.equals((float[]) left, (float[]) right);
-				if (componentType == Double.TYPE)
-					return Arrays.equals((double[]) left, (double[]) right);
-				if (componentType == Boolean.TYPE)
-					return Arrays.equals((boolean[]) left, (boolean[]) right);
+                if (componentType == Byte.TYPE) {
+                    return Arrays.equals((byte[]) left, (byte[]) right);
+                }
+                if (componentType == Short.TYPE) {
+                    return Arrays.equals((short[]) left, (short[]) right);
+                }
+                if (componentType == Integer.TYPE) {
+                    return Arrays.equals((int[]) left, (int[]) right);
+                }
+                if (componentType == Long.TYPE) {
+                    return Arrays.equals((long[]) left, (long[]) right);
+                }
+                if (componentType == Character.TYPE) {
+                    return Arrays.equals((char[]) left, (char[]) right);
+                }
+                if (componentType == Float.TYPE) {
+                    return Arrays.equals((float[]) left, (float[]) right);
+                }
+                if (componentType == Double.TYPE) {
+                    return Arrays.equals((double[]) left, (double[]) right);
+                }
+                if (componentType == Boolean.TYPE) {
+                    return Arrays.equals((boolean[]) left, (boolean[]) right);
+                }
 			}
 			return equal((Object[]) left, (Object[]) right);
 		}
@@ -84,11 +96,14 @@ public class Util {
 
 	private static boolean equal(Object[] left, Object[] right) {
 		int length = left.length;
-		if (length != right.length)
-			return false;
-		for (int i = 0; i < length; i++)
-			if (!equal(left[i], right[i]))
-				return false;
+        if (length != right.length) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            if (!equal(left[i], right[i])) {
+                return false;
+            }
+        }
 		return true;
 	}
 
@@ -114,8 +129,9 @@ public class Util {
 	 */
 	public static void noNulls(List<?> list) {
 		notNull(list);
-		if (list.contains(null))
-			PaperClips.error(SWT.ERROR_NULL_ARGUMENT);
+        if (list.contains(null)) {
+            PaperClips.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 	}
 
 	/**
@@ -127,8 +143,9 @@ public class Util {
 	 */
 	public static void noNulls(Object[] objs) {
 		notNull(objs);
-		for (int i = 0; i < objs.length; i++)
-			notNull(objs[i]);
+        for (int i = 0; i < objs.length; i++) {
+            notNull(objs[i]);
+        }
 	}
 
 	/**
@@ -138,8 +155,9 @@ public class Util {
 	 *            the object to test for null.
 	 */
 	public static void notNull(Object obj) {
-		if (obj == null)
-			PaperClips.error(SWT.ERROR_NULL_ARGUMENT);
+        if (obj == null) {
+            PaperClips.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 	}
 
 	/**

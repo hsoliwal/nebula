@@ -16,8 +16,9 @@ public class BusyItemAnimation extends ImageAnimationPlayer
     @Override
     public void updateImage(Image i)
     {
-        if (!i.isDisposed())
+        if (!i.isDisposed()) {
             item.setImage(i);
+        }
     }
 
 }

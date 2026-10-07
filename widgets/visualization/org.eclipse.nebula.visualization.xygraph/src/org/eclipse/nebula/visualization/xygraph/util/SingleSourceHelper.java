@@ -59,8 +59,9 @@ public abstract class SingleSourceHelper {
 	}
 
 	public static GC getImageGC(final Image image) {
-		if (IMPL == null)
-			return null;
+        if (IMPL == null) {
+            return null;
+        }
 		return IMPL.internalGetImageGC(image);
 	}
 

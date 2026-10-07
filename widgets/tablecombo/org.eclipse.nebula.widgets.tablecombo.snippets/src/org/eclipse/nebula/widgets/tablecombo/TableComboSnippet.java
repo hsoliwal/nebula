@@ -318,8 +318,9 @@ public class TableComboSnippet {
 		shell.open();
 
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
 		// dispose of the font
@@ -539,22 +540,25 @@ public class TableComboSnippet {
 
 			@Override
 			public Color getBackground(int selectionIndex) {
-				if (selectionIndex % 2 == 0)
-					return Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
+                if (selectionIndex % 2 == 0) {
+                    return Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
+                }
 				return null;
 			}
 
 			@Override
 			public Color getForeground(int selectionIndex) {
-				if (selectionIndex % 2 == 0)
-					return Display.getDefault().getSystemColor(SWT.COLOR_WHITE);
+                if (selectionIndex % 2 == 0) {
+                    return Display.getDefault().getSystemColor(SWT.COLOR_WHITE);
+                }
 				return null;
 			}
 
 			@Override
 			public Font getFont(int selectionIndex) {
-				if (selectionIndex % 2 == 0)
-					return null;
+                if (selectionIndex % 2 == 0) {
+                    return null;
+                }
 				return boldFont;
 			}
 		};

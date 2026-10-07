@@ -95,8 +95,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		public static String[] stringValues() {
 			String[] sv = new String[values().length];
 			int i = 0;
-			for (ColorDepth p : values())
-				sv[i++] = p.toString();
+            for (ColorDepth p : values()) {
+                sv[i++] = p.toString();
+            }
 			return sv;
 		}
 	}
@@ -293,23 +294,26 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		 */
 		public void setCrossPosition(int x, int y, boolean updatedCrossDataIndex){
 			Rectangle bounds = getBounds();
-			if(x < bounds.x)
-				crossX = bounds.x;
-			else if(x>=bounds.x + bounds.width)
-				crossX = bounds.x + bounds.width-1;
-			else				
-				crossX = x;
-			if(y < bounds.y)
-				crossY = bounds.y;
-			else if(y>=bounds.y + bounds.height)
-				crossY = bounds.y + bounds.height-1;
-			else
-				crossY = y;
+            if (x < bounds.x) {
+                crossX = bounds.x;
+            } else if (x >= bounds.x + bounds.width) {
+                crossX = bounds.x + bounds.width - 1;
+            } else {
+                crossX = x;
+            }
+            if (y < bounds.y) {
+                crossY = bounds.y;
+            } else if (y >= bounds.y + bounds.height) {
+                crossY = bounds.y + bounds.height - 1;
+            } else {
+                crossY = y;
+            }
 			inDefaultPosition = false;
 			if(updatedCrossDataIndex){
-				crossDataIndex = graphArea.getDataLocation(crossX, crossY);			
-				if(croppedDataArray != null)
-					fireProfileDataChanged(croppedDataArray, croppedDataWidth, croppedDataHeight);
+				crossDataIndex = graphArea.getDataLocation(crossX, crossY);
+                if (croppedDataArray != null) {
+                    fireProfileDataChanged(croppedDataArray, croppedDataWidth, croppedDataHeight);
+                }
 			}
 			hLine.setPoints(new PointList(new int[]{bounds.x,crossY, bounds.width+bounds.x, crossY}));
 			vLine.setPoints(new PointList(new int[]{crossX, bounds.y, crossX, bounds.y + bounds.height}));
@@ -332,14 +336,17 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		}		
 		
 		protected void setSinglePixelProfiling(boolean isSinglePixelProfiling) {
-			if(!runMode)
-				return;
+            if (!runMode) {
+                return;
+            }
 			if(isSingleLineProfiling()){
-				if(crossHair == null)
-					crossHair = new SinglePixelProfileCrossHair();
+                if (crossHair == null) {
+                    crossHair = new SinglePixelProfileCrossHair();
+                }
 				add(crossHair);
-			}else if(crossHair != null && crossHair.getParent()==this)
-				remove(crossHair);
+			}else if (crossHair != null && crossHair.getParent() == this) {
+                remove(crossHair);
+            }
 			dataDirty = true;
 			repaint();
 		}
@@ -360,8 +367,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 			if((left != 0 || right != 0 || top != 0 || bottom != 0) &&
 					(dataWidth - left - right) * (dataHeight - top-bottom) >0){
 				int i=0;
-				if((dataWidth - left - right) * (dataHeight - top - bottom) > MAX_ARRAY_SIZE)
-					return dataArray;
+                if ((dataWidth - left - right) * (dataHeight - top - bottom) > MAX_ARRAY_SIZE) {
+                    return dataArray;
+                }
 				double[] result = null;
 				if (inRGBMode) {
 					result = new double[(dataWidth - left - right)
@@ -385,8 +393,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 					}
 				}				
 				return new DoubleArrayWrapper(result);
-			}else
-				return dataArray;			
+			} else {
+                return dataArray;
+            }			
 		}
 		
 		
@@ -411,17 +420,19 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		 */
 		public PrecisionPoint getGeoLocation(double xIndex, double yIndex){
 			Rectangle clientArea = getClientArea();
-			if(croppedDataHeight == 0 || croppedDataWidth ==0)
-				return new PrecisionPoint(clientArea.x, clientArea.y);
+            if (croppedDataHeight == 0 || croppedDataWidth == 0) {
+                return new PrecisionPoint(clientArea.x, clientArea.y);
+            }
 			double x = (xIndex*clientArea.width)/(double)croppedDataWidth + clientArea.x;
 			double y = (yIndex*clientArea.height)/(double)croppedDataHeight + clientArea.y;
 			return new PrecisionPoint(x, y);
 		}
 		
 		@Override
-		protected synchronized void paintClientArea(Graphics graphics) {			
-			if(dataArray == null)
-				return;
+		protected synchronized void paintClientArea(Graphics graphics) {
+            if (dataArray == null) {
+                return;
+            }
 			Rectangle clientArea = getClientArea();
 			//draw image if data is dirty or bufferedImage has not been created yet
 			if(dataDirty || bufferedImage == null){
@@ -430,28 +441,31 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 					bufferedImage.dispose();
 					bufferedImage = null;
 				}
-				if(clientArea.width <0 || clientArea.height <0)
-					return;
+                if (clientArea.width < 0 || clientArea.height < 0) {
+                    return;
+                }
 				if(dataWidth == 0 || dataHeight == 0 || (!isInRGBMode() && dataArray.getSize() < dataWidth * dataHeight)
 						|| (isInRGBMode() && dataArray.getSize() < 3*dataWidth * dataHeight)){
 					graphics.drawRectangle(new Rectangle(
 							clientArea.x - (yAxis.isVisible()? 1:0),
 							clientArea.y, 
 							clientArea.width-(yAxis.isVisible()? 0:1), clientArea.height - (xAxis.isVisible()? 0:1)));
-					if(dataArray.getSize() ==0)
-						graphics.drawText("No data.", clientArea.getLocation());					
-					else if(!isInRGBMode() && dataArray.getSize() < dataWidth * dataHeight)
-						graphics.drawText("Size of input data is less than dataWidth*dataHeight!",
-								clientArea.getLocation());
-					else if(isInRGBMode() && dataArray.getSize() < 3*dataWidth * dataHeight)
-						graphics.drawText("Size of input data is less than 3*dataWidth*dataHeight!" + 
-								"\nPlease make sure the data is in RGB mode.",
-								clientArea.getLocation());
+                    if (dataArray.getSize() == 0) {
+                        graphics.drawText("No data.", clientArea.getLocation());
+                    } else if (!isInRGBMode() && dataArray.getSize() < dataWidth * dataHeight) {
+                        graphics.drawText("Size of input data is less than dataWidth*dataHeight!",
+                                clientArea.getLocation());
+                    } else if (isInRGBMode() && dataArray.getSize() < 3 * dataWidth * dataHeight) {
+                        graphics.drawText("Size of input data is less than 3*dataWidth*dataHeight!" +
+                                "\nPlease make sure the data is in RGB mode.",
+                                clientArea.getLocation());
+                    }
 					return;
-				}										
+				}
 
-				if(dataWidth - cropLeft - cropRight < 0 || dataHeight - cropTop - cropBottom < 0)
-					return;
+                if (dataWidth - cropLeft - cropRight < 0 || dataHeight - cropTop - cropBottom < 0) {
+                    return;
+                }
 				
 				croppedDataArray = cropDataArray(cropLeft, cropRight, cropTop, cropBottom);
 
@@ -474,29 +488,32 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 							|| bufferedImageData.height !=clientArea.height){
 						bufferedImageData = new ImageData(clientArea.width, clientArea.height, 24, colorMap.getPalette());
 					}					
-				}else if(bufferedImageData == null || bufferedImageData.width != croppedDataWidth
-						|| bufferedImageData.height !=croppedDataHeight)
-					bufferedImageData = new ImageData(croppedDataWidth, croppedDataHeight, 24, colorMap.getPalette());
+				}else if (bufferedImageData == null || bufferedImageData.width != croppedDataWidth
+                        || bufferedImageData.height != croppedDataHeight) {
+                    bufferedImageData = new ImageData(croppedDataWidth, croppedDataHeight, 24, colorMap.getPalette());
+                }
 
 					
 				ImageData imageData = null;
-				if(inRGBMode)
-					try {
-						imageData = drawRGBImage(croppedDataArray,
-								croppedDataWidth, croppedDataHeight,
-								max, min, bufferedImageData, shrink);
-					} catch (IllegalArgumentException e) {
-						graphics.drawText("Drawing Exception: RGB value is not between 0 and 255." +
-					"\nPlease check if the data or color depth is correct.",
-								clientArea.getLocation());
-					}
-				else
-					imageData = colorMap.drawImage(croppedDataArray,
-								croppedDataWidth, croppedDataHeight,
-								max, min, bufferedImageData, shrink);		
+                if (inRGBMode) {
+                    try {
+                        imageData = drawRGBImage(croppedDataArray,
+                                croppedDataWidth, croppedDataHeight,
+                                max, min, bufferedImageData, shrink);
+                    } catch (IllegalArgumentException e) {
+                        graphics.drawText("Drawing Exception: RGB value is not between 0 and 255." +
+                                "\nPlease check if the data or color depth is correct.",
+                                clientArea.getLocation());
+                    }
+                } else {
+                    imageData = colorMap.drawImage(croppedDataArray,
+                            croppedDataWidth, croppedDataHeight,
+                            max, min, bufferedImageData, shrink);
+                }
 
-				if(imageData == null)
-					return;
+                if (imageData == null) {
+                    return;
+                }
 				bufferedImage = new Image(Display.getCurrent(), imageData);
 				
 			}
@@ -515,33 +532,40 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		}
 		
 		private synchronized void updateTextCursor(MouseEvent me) {
-			if(SWT.getPlatform().startsWith("rap")) //$NON-NLS-1$
-				return;
-					if(croppedDataArray == null)
-						return;
-					if(getCursor() != null)
-						getCursor().dispose();
+            if (SWT.getPlatform().startsWith("rap")) { //$NON-NLS-1$
+                return;
+            }
+            if (croppedDataArray == null) {
+                return;
+            }
+            if (getCursor() != null) {
+                getCursor().dispose();
+            }
 					double xCoordinate = xAxis.getPositionValue(me.x, false);
 					double yCoordinate = yAxis.getPositionValue(me.y, false);
 					
-					Point dataLocation = getDataLocation(me.x, me.y);		
-					if(dataLocation == null)
-						return;
-					if((dataLocation.y)*croppedDataWidth + dataLocation.x >= croppedDataArray.getSize())
-						return;
+					Point dataLocation = getDataLocation(me.x, me.y);
+            if (dataLocation == null) {
+                return;
+            }
+            if ((dataLocation.y) * croppedDataWidth + dataLocation.x >= croppedDataArray.getSize()) {
+                return;
+            }
 					double valueUnderMouse;
 					if(inRGBMode){
 						int index = (dataLocation.y) * croppedDataWidth * 3
 								+ dataLocation.x * 3;
-						if(index >= croppedDataArray.getSize()-3)
-							return;
+                        if (index >= croppedDataArray.getSize() - 3) {
+                            return;
+                        }
 						valueUnderMouse = (croppedDataArray.get(index)
 								+ croppedDataArray.get(index + 1) + croppedDataArray
 								.get(index + 2)) / 3;
 					} else {
 						int index = (dataLocation.y)*croppedDataWidth + dataLocation.x;
-						if(index >= croppedDataArray.getSize())
-							return;
+                        if (index >= croppedDataArray.getSize()) {
+                            return;
+                        }
 						valueUnderMouse = croppedDataArray.get(index);
 					}
 					String text = "(" + xAxis.format(xCoordinate) + ", " + yAxis.format(yCoordinate) + ", "+ 
@@ -577,12 +601,15 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	class GraphAreaZoomer extends MouseMotionListener.Stub implements MouseListener{	
 				
 		public void mouseDoubleClicked(MouseEvent me) {
-			if(me.button !=1)
-				return;
-			if(xAxisRange !=null)
-				xAxis.setRange(xAxisRange);
-			if(yAxisRange != null)
-				yAxis.setRange(yAxisRange);
+            if (me.button != 1) {
+                return;
+            }
+            if (xAxisRange != null) {
+                xAxis.setRange(xAxisRange);
+            }
+            if (yAxisRange != null) {
+                yAxis.setRange(yAxisRange);
+            }
 			if(originalCrop != null){
 				setCropLeft(originalCrop.x);
 				setCropTop(originalCrop.y);
@@ -595,8 +622,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		
 		@Override
 		public void mouseDragged(MouseEvent me) {
-			if(!armed)
-				return;
+            if (!armed) {
+                return;
+            }
 			if(graphArea.getClientArea().contains(me.getLocation())){
 				graphArea.updateTextCursor(me);
 				end = me.getLocation();		
@@ -612,9 +640,10 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		
 		public void mousePressed(MouseEvent me) {	
 			requestFocus();
-		    // Only react to 'main' mouse button
-		    if (me.button != 1)
-				return;
+            // Only react to 'main' mouse button
+            if (me.button != 1) {
+                return;
+            }
 			armed = true;
 			//get start position
 			start = me.getLocation();
@@ -750,21 +779,24 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 
 
 	public void addProfileDataListener(IProfileDataChangeLisenter listener){
-		if(listener != null)
-			profileListeners.add(listener);
+        if (listener != null) {
+            profileListeners.add(listener);
+        }
 	}
 
 	public void addPixelInfoProvider(IPixelInfoProvider pixelInfoProvider){
 		if(pixelInfoProvider != null){
-			if(pixelInfoProviders == null)
-				pixelInfoProviders = new ArrayList<IPixelInfoProvider>();
+            if (pixelInfoProviders == null) {
+                pixelInfoProviders = new ArrayList<IPixelInfoProvider>();
+            }
 			pixelInfoProviders.add(pixelInfoProvider);
 		}			
 	}
 	
 	public void addCroppedDataSizeListener(ICroppedDataSizeListener listener){
-		if(croppedDataSizeListeners == null)
-			croppedDataSizeListeners = new ArrayList<ICroppedDataSizeListener>();
+        if (croppedDataSizeListeners == null) {
+            croppedDataSizeListeners = new ArrayList<ICroppedDataSizeListener>();
+        }
 		croppedDataSizeListeners.add(listener);
 	}
 	
@@ -804,19 +836,22 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 					int index = dataloc.y*dw*3 + i*3;
 					output[i] = (data.get(index) + data.get(index + 1) + data
 							.get(index + 2)) / 3;
-				}else
-					output[i] = data.get(dataloc.y*dw + i);
+				} else {
+                    output[i] = data.get(dataloc.y * dw + i);
+                }
 			}
 			
 		}else {
 			for (int i = 0; i < dw; i++) {
-				for (int j = 0; j < dh; j++)
-					if (inRGBMode) {
-						int index = j * dw * 3 + i * 3;
-						output[i] += (data.get(index) + data.get(index + 1) + data
-								.get(index + 2)) / 3;
-					} else
-						output[i] += data.get(j * dw + i);
+                for (int j = 0; j < dh; j++) {
+                    if (inRGBMode) {
+                        int index = j * dw * 3 + i * 3;
+                        output[i] += (data.get(index) + data.get(index + 1) + data
+                                .get(index + 2)) / 3;
+                    } else {
+                        output[i] += data.get(j * dw + i);
+                    }
+                }
 				output[i] /= dh;
 			}
 		}
@@ -835,19 +870,22 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 					int index = dataloc.x *3 + i*dw* 3;
 					output[i] = (data.get(index) + data.get(index + 1) + data
 							.get(index + 2)) / 3;
-				} else
-					output[i] = data.get(dataloc.x + i*dw);
+				} else {
+                    output[i] = data.get(dataloc.x + i * dw);
+                }
 			}
 
 		} else {
 			for (int i = 0; i < dh; i++) {
-				for (int j = 0; j < dw; j++)
-					if (inRGBMode) {
-						int index = i * dw * 3 + j * 3;
-						output[i] += (data.get(index) + data.get(index + 1) + data
-								.get(index + 2)) / 3;
-					} else
-						output[i] += data.get(i * dw + j);
+                for (int j = 0; j < dw; j++) {
+                    if (inRGBMode) {
+                        int index = i * dw * 3 + j * 3;
+                        output[i] += (data.get(index) + data.get(index + 1) + data
+                                .get(index + 2)) / 3;
+                    } else {
+                        output[i] += data.get(i * dw + j);
+                    }
+                }
 				output[i] /= dw;
 			}
 		}
@@ -875,12 +913,14 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	private ImageData drawRGBImage(IPrimaryArrayWrapper dataArray,
 			int dataWidth, int dataHeight, double max, double min,
 			ImageData imageData, boolean shrink) {
-		if (dataWidth < 1 || dataHeight < 1
-				|| dataWidth * dataHeight * 3 > dataArray.getSize()
-				|| dataWidth * dataHeight < 0)
-			return null;
-		if (imageData == null)
-			imageData = new ImageData(dataWidth, dataHeight, 24, palette);
+        if (dataWidth < 1 || dataHeight < 1
+                || dataWidth * dataHeight * 3 > dataArray.getSize()
+                || dataWidth * dataHeight < 0) {
+            return null;
+        }
+        if (imageData == null) {
+            imageData = new ImageData(dataWidth, dataHeight, 24, palette);
+        }
 
 		if (shrink) {
 			int height = imageData.height;
@@ -965,14 +1005,16 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 
 	private synchronized void fireProfileDataChanged(final IPrimaryArrayWrapper data,
 			final int dw, final int dh) {
-		if (profileListeners.size() <= 0)
-			return;
+        if (profileListeners.size() <= 0) {
+            return;
+        }
 
 		double[] xProfileData = calculateXProfileData(data, dw, dh);
 		double[] yProfileData = calculateYProfileData(data, dw, dh);
-		for (IProfileDataChangeLisenter lisenter : profileListeners)
-			lisenter.profileDataChanged(xProfileData, yProfileData,
-					xAxis.getRange(), yAxis.getRange());
+        for (IProfileDataChangeLisenter lisenter : profileListeners) {
+            lisenter.profileDataChanged(xProfileData, yProfileData,
+                    xAxis.getRange(), yAxis.getRange());
+        }
 	}
 
 	
@@ -1059,24 +1101,28 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 		
 		int width = getInsets().getWidth();
 		int height = getInsets().getHeight();
-		if(colorMapRamp.isVisible())
-			width += (colorMapRamp.getPreferredSize(
-				getClientArea().width, getClientArea().height).width + GAP);
+        if (colorMapRamp.isVisible()) {
+            width += (colorMapRamp.getPreferredSize(
+                    getClientArea().width, getClientArea().height).width + GAP);
+        }
 		//This is a temporary fix of cursor value problem when the axes are invisible
 		boolean yVisible = true;// yAxis.isVisible();
 		boolean xVisible = true;// xAxis.isVisible();
 		if(yVisible){
 			width += yAxis.getPreferredSize(getClientArea().width, getClientArea().height).width;
 			height += yAxis.getMargin();
-			if(!xVisible)
-				height += yAxis.getMargin();
+            if (!xVisible) {
+                height += yAxis.getMargin();
+            }
 		}
 		if(xVisible){
 			height += xAxis.getPreferredSize(getClientArea().width, getClientArea().height).height;
-			if(!colorMapRamp.isVisible())
-				width += xAxis.getMargin();
-			if(!yVisible)
-				width += xAxis.getMargin();
+            if (!colorMapRamp.isVisible()) {
+                width += xAxis.getMargin();
+            }
+            if (!yVisible) {
+                width += xAxis.getMargin();
+            }
 				
 		}
 	
@@ -1172,17 +1218,20 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 					rampSize.width, clientArea.height);
 			colorMapRamp.setBounds(rampBounds);
 			clientArea.width -= (rampSize.width + GAP);
-			//re-adjust xAxis width
-			if(xVisible)
-				if(yVisible)
-					xAxisBounds.width -=(rampSize.width + GAP - 2*xAxis.getMargin());
-				else	
-					xAxisBounds.width -= (rampSize.width + GAP - xAxis.getMargin());
+            //re-adjust xAxis width
+            if (xVisible) {
+                if (yVisible) {
+                    xAxisBounds.width -= (rampSize.width + GAP - 2 * xAxis.getMargin());
+                } else {
+                    xAxisBounds.width -= (rampSize.width + GAP - xAxis.getMargin());
+                }
+            }
 		}else{
 			//re-adjust xAxis width
 			if(xVisible){
-				if(yVisible)
-					xAxisBounds.width += xAxis.getMargin();
+                if (yVisible) {
+                    xAxisBounds.width += xAxis.getMargin();
+                }
 				clientArea.width -= xAxis.getMargin();
 			}
 				
@@ -1205,8 +1254,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param colorMap the colorMap to set
 	 */
 	public final void setColorMap(ColorMap colorMap) {
-		if(colorMap == null)
-			return;
+        if (colorMap == null) {
+            return;
+        }
 		this.colorMap = colorMap;
 		colorMapRamp.setColorMap(colorMap);
 		dataDirty = true;
@@ -1218,10 +1268,12 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param cropBottom the cropBottom to set
 	 */
 	public final void setCropBottom(int cropBottom) {
-		if(cropBottom < 0 || cropBottom + cropTop > dataHeight)
-			throw new IllegalArgumentException();
-		if(this.cropBottom == cropBottom)
-			return;
+        if (cropBottom < 0 || cropBottom + cropTop > dataHeight) {
+            throw new IllegalArgumentException();
+        }
+        if (this.cropBottom == cropBottom) {
+            return;
+        }
 		this.cropBottom = cropBottom;
 		dataDirty = true;
 		updateCroppedDataSize();
@@ -1234,10 +1286,12 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param cropLeft the cropLeft to set
 	 */
 	public final void setCropLeft(int cropLeft) {
-		if(cropLeft <0 || cropLeft + cropRight > dataWidth)
-			throw new IllegalArgumentException();
-		if(this.cropLeft == cropLeft)
-			return;
+        if (cropLeft < 0 || cropLeft + cropRight > dataWidth) {
+            throw new IllegalArgumentException();
+        }
+        if (this.cropLeft == cropLeft) {
+            return;
+        }
 		this.cropLeft = cropLeft;
 		dataDirty = true;
 		updateCroppedDataSize();
@@ -1250,10 +1304,12 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param cropRight the cropRigth to set
 	 */
 	public final void setCropRight(int cropRight) {
-		if(cropRight < 0 || cropRight + cropLeft > dataWidth)
-			throw new IllegalArgumentException();
-		if(this.cropRight == cropRight)
-			return;
+        if (cropRight < 0 || cropRight + cropLeft > dataWidth) {
+            throw new IllegalArgumentException();
+        }
+        if (this.cropRight == cropRight) {
+            return;
+        }
 		this.cropRight = cropRight;
 		dataDirty = true;
 		updateCroppedDataSize();
@@ -1265,10 +1321,12 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param cropTop the cropTop to set
 	 */
 	public final void setCropTop(int cropTop) {
-		if(cropTop < 0 || cropTop + cropBottom > dataHeight)
-			throw new IllegalArgumentException();
-		if(this.cropTop == cropTop)
-			return;
+        if (cropTop < 0 || cropTop + cropBottom > dataHeight) {
+            throw new IllegalArgumentException();
+        }
+        if (this.cropTop == cropTop) {
+            return;
+        }
 		this.cropTop = cropTop;
 		dataDirty = true;
 		updateCroppedDataSize();
@@ -1286,8 +1344,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	public final void setDataArray(double[] data) {
 		if(dataArray instanceof DoubleArrayWrapper){
 			((DoubleArrayWrapper)dataArray).setData(data);
-		}else
-			dataArray = new DoubleArrayWrapper(data);
+		} else {
+            dataArray = new DoubleArrayWrapper(data);
+        }
 		setDataArray(dataArray);
 	}
 	
@@ -1302,8 +1361,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	public final void setDataArray(short[] data) {
 		if(dataArray instanceof ShortArrayWrapper){
 			((ShortArrayWrapper)dataArray).setData(data);
-		}else
-			dataArray = new ShortArrayWrapper(data);
+		} else {
+            dataArray = new ShortArrayWrapper(data);
+        }
 		setDataArray(dataArray);
 	}
 	
@@ -1317,8 +1377,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	public final void setDataArray(byte[] data) {
 		if(dataArray instanceof ByteArrayWrapper){
 			((ByteArrayWrapper)dataArray).setData(data);
-		}else
-			dataArray = new ByteArrayWrapper(data);
+		} else {
+            dataArray = new ByteArrayWrapper(data);
+        }
 		setDataArray(dataArray);
 	}
 	
@@ -1332,8 +1393,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	public final void setDataArray(int[] data) {
 		if(dataArray instanceof IntArrayWrapper){
 			((IntArrayWrapper)dataArray).setData(data);
-		}else
-			dataArray = new IntArrayWrapper(data);
+		} else {
+            dataArray = new IntArrayWrapper(data);
+        }
 		setDataArray(dataArray);
 	}
 	
@@ -1347,8 +1409,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	public final void setDataArray(long[] data) {
 		if(dataArray instanceof LongArrayWrapper){
 			((LongArrayWrapper)dataArray).setData(data);
-		}else
-			dataArray = new LongArrayWrapper(data);
+		} else {
+            dataArray = new LongArrayWrapper(data);
+        }
 		setDataArray(dataArray);
 	}
 	
@@ -1362,8 +1425,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	public final void setDataArray(float[] data) {
 		if(dataArray instanceof FloatArrayWrapper){
 			((FloatArrayWrapper)dataArray).setData(data);
-		}else
-			dataArray = new FloatArrayWrapper(data);
+		} else {
+            dataArray = new FloatArrayWrapper(data);
+        }
 		setDataArray(dataArray);
 	}
 	
@@ -1387,10 +1451,12 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param dataHeight the dataHeight to set
 	 */
 	public final void setDataHeight(int dataHeight) {
-		if(dataHeight <0|| dataWidth * dataHeight > MAX_ARRAY_SIZE || dataWidth * dataHeight < 0)
-			throw new IllegalArgumentException();
-		if(this.dataHeight == dataHeight)
-			return;
+        if (dataHeight < 0 || dataWidth * dataHeight > MAX_ARRAY_SIZE || dataWidth * dataHeight < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (this.dataHeight == dataHeight) {
+            return;
+        }
 		this.dataHeight = dataHeight;
 		updateCroppedDataSize();
 		dataDirty = true;
@@ -1402,10 +1468,12 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param dataWidth the dataWidth to set
 	 */
 	public final void setDataWidth(int dataWidth) {
-		if(dataWidth < 0 || dataWidth * dataHeight > MAX_ARRAY_SIZE || dataWidth * dataHeight < 0)
-			throw new IllegalArgumentException();
-		if(this.dataWidth == dataWidth)
-			return;
+        if (dataWidth < 0 || dataWidth * dataHeight > MAX_ARRAY_SIZE || dataWidth * dataHeight < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (this.dataWidth == dataWidth) {
+            return;
+        }
 		this.dataWidth = dataWidth;
 		updateCroppedDataSize();
 		dataDirty = true;
@@ -1419,14 +1487,17 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param inRGBMode true if the input data in RGB mode.
 	 */
 	public synchronized void setInRGBMode(boolean inRGBMode) {
-		if(isInRGBMode() == inRGBMode)
-			return;
+        if (isInRGBMode() == inRGBMode) {
+            return;
+        }
 		if(!isInRGBMode()){
-			if(savedShowRamp == null)
-				savedShowRamp = isShowRamp();
+            if (savedShowRamp == null) {
+                savedShowRamp = isShowRamp();
+            }
 			colorMapRamp.setVisible(false);
-		}else if(savedShowRamp != null)
-			colorMapRamp.setVisible(savedShowRamp);
+		}else if (savedShowRamp != null) {
+            colorMapRamp.setVisible(savedShowRamp);
+        }
 		
 		this.inRGBMode = inRGBMode;
 		dataDirty = true;
@@ -1438,8 +1509,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param max the max to set
 	 */
 	public final void setMax(double max) {
-		if(this.max == max)
-			return;
+        if (this.max == max) {
+            return;
+        }
 		this.max = max;
 		colorMapRamp.setMax(max);
 		dataDirty = true;
@@ -1456,8 +1528,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param min the min to set
 	 */
 	public final void setMin(double min) {
-		if(this.min == min)
-			return;
+        if (this.min == min) {
+            return;
+        }
 		this.min = min;
 		colorMapRamp.setMin(min);
 		dataDirty = true;
@@ -1473,8 +1546,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 *            treated as having signed values.
 	 */
 	public final void setUnsignedBits(int bits) {
-		if (bits > 1023)
-			throw new IllegalArgumentException("The value given is higher than 1023!");
+        if (bits > 1023) {
+            throw new IllegalArgumentException("The value given is higher than 1023!");
+        }
 		this.unsignedBits = bits;
 	}
 
@@ -1484,8 +1558,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 */
 	public void setROIColor(Color roiColor) {
 		this.roiColor = roiColor;
-		for(ROIFigure f : roiMap.values())
-			f.setROIColor(roiColor);
+        for (ROIFigure f : roiMap.values()) {
+            f.setROIColor(roiColor);
+        }
 	}
 	
 	public Color getRoiColor() {
@@ -1493,10 +1568,11 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	};
 	
 	public void setROIDataBounds(String name, int xIndex, int yIndex, int width, int height){
-		if(roiMap.containsKey(name))
-			roiMap.get(name).setROIDataBounds(xIndex, yIndex, width, height);
-		else
-			throw new IllegalArgumentException(name + " is not an existing ROI");
+        if (roiMap.containsKey(name)) {
+            roiMap.get(name).setROIDataBounds(xIndex, yIndex, width, height);
+        } else {
+            throw new IllegalArgumentException(name + " is not an existing ROI");
+        }
 	}
 	
 	public ROIFigure getROI(String name){
@@ -1511,8 +1587,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	}
 
 	public void setShowRamp(boolean show){
-		if(isShowRamp() == show)
-			return;
+        if (isShowRamp() == show) {
+            return;
+        }
 		if(!isInRGBMode()){
 			colorMapRamp.setVisible(show);
 		}
@@ -1535,15 +1612,17 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 					Math.min(start.x, end.x), Math.min(start.y, end.y));
 			Point rightBottom = graphArea.getDataLocation(
 					Math.max(start.x, end.x), Math.max(start.y, end.y));
-			if(leftTop == null || rightBottom == null || leftTop.equals(rightBottom))
-				return;
+        if (leftTop == null || rightBottom == null || leftTop.equals(rightBottom)) {
+            return;
+        }
 			int toBeCropLeft = cropLeft + leftTop.x;
 			int toBeCropTop = cropTop + leftTop.y;
 			int toBeCropRight = cropRight + croppedDataWidth - rightBottom.x;
 			int toBeCropBottom = cropBottom + croppedDataHeight - rightBottom.y;
-			if(toBeCropLeft + toBeCropRight >= dataWidth || 
-					toBeCropBottom + toBeCropTop >=dataHeight)
-				return;
+        if (toBeCropLeft + toBeCropRight >= dataWidth ||
+                toBeCropBottom + toBeCropTop >= dataHeight) {
+            return;
+        }
 			setCropLeft(toBeCropLeft);
 			setCropTop(toBeCropTop);
 			
@@ -1586,8 +1665,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	 * @param isSingleLineProfiling the isSinglePixelProfiling to set
 	 */
 	public void setSingleLineProfiling(boolean isSingleLineProfiling) {
-		if(isSingleLineProfiling() == isSingleLineProfiling)
-			return;
+        if (isSingleLineProfiling() == isSingleLineProfiling) {
+            return;
+        }
 		this.isSingleLineProfiling = isSingleLineProfiling;
 		graphArea.setSinglePixelProfiling(isSingleLineProfiling);
 	}
@@ -1595,8 +1675,9 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
 	public String getPixelInfo(int xIndex, int yIndex,
 			double xCoordinate, double yCoordinate, double pixelValue){
 		String result = "";
-		if(pixelInfoProviders == null)
-			return result;
+        if (pixelInfoProviders == null) {
+            return result;
+        }
 		for(IPixelInfoProvider p: pixelInfoProviders){
 			result += " " + p.getPixelInfo(xIndex, yIndex, xCoordinate, yCoordinate, pixelValue);			
 		}

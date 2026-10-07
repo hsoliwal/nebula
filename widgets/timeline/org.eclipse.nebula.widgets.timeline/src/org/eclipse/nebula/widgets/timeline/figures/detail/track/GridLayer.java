@@ -45,8 +45,9 @@ public class GridLayer extends FreeformLayer implements IStyledFigure {
 
 		final Rectangle bounds = getBounds();
 		final Map<Double, Integer> markerPositions = RootFigure.getFigure(this, DetailFigure.class).getMarkerPositions();
-		for (final int position : markerPositions.values())
-			graphics.drawLine(position + bounds.x(), bounds.y, position + bounds.x(), bounds.y + bounds.height);
+        for (final int position : markerPositions.values()) {
+            graphics.drawLine(position + bounds.x(), bounds.y, position + bounds.x(), bounds.y + bounds.height);
+        }
 	}
 
 	@Override

@@ -78,8 +78,9 @@ public class PageNumberPrintTest extends TestCase {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!Util.sameClass(this, obj))
-				return false;
+            if (!Util.sameClass(this, obj)) {
+                return false;
+            }
 
 			PageNumberStub that = (PageNumberStub) obj;
 			return this.id == that.id;

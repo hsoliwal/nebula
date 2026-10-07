@@ -167,32 +167,43 @@ public class PagePrint implements Print {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		PagePrint other = (PagePrint) obj;
 		if (body == null) {
-			if (other.body != null)
-				return false;
-		} else if (!body.equals(other.body))
-			return false;
+            if (other.body != null) {
+                return false;
+            }
+		} else if (!body.equals(other.body)) {
+            return false;
+        }
 		if (footer == null) {
-			if (other.footer != null)
-				return false;
-		} else if (!footer.equals(other.footer))
-			return false;
-		if (footerGap != other.footerGap)
-			return false;
+            if (other.footer != null) {
+                return false;
+            }
+		} else if (!footer.equals(other.footer)) {
+            return false;
+        }
+        if (footerGap != other.footerGap) {
+            return false;
+        }
 		if (header == null) {
-			if (other.header != null)
-				return false;
-		} else if (!header.equals(other.header))
-			return false;
-		if (headerGap != other.headerGap)
-			return false;
+            if (other.header != null) {
+                return false;
+            }
+		} else if (!header.equals(other.header)) {
+            return false;
+        }
+        if (headerGap != other.headerGap) {
+            return false;
+        }
 		return true;
 	}
 
@@ -297,15 +308,17 @@ public class PagePrint implements Print {
 	}
 
 	private static int checkGap(int gap) {
-		if (gap < 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"Gap must be >= 0 (value is " + gap + ")"); //$NON-NLS-1$ //$NON-NLS-2$
+        if (gap < 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "Gap must be >= 0 (value is " + gap + ")"); //$NON-NLS-1$ //$NON-NLS-2$
+        }
 		return gap;
 	}
 
 	public PrintIterator iterator(Device device, GC gc) {
-		if (header == null && footer == null)
-			return body.iterator(device, gc);
+        if (header == null && footer == null) {
+            return body.iterator(device, gc);
+        }
 
 		return new PageIterator(this, device, gc);
 	}
@@ -459,8 +472,9 @@ class PageIterator implements PrintIterator {
 			if (headerPrint != null) {
 				headerPiece = getDecorationPrintPiece(headerPrint, width,
 						availableHeight);
-				if (headerPiece == null)
-					return null;
+                if (headerPiece == null) {
+                    return null;
+                }
 				availableHeight -= (heightOf(headerPiece) + headerGap);
 			}
 		}
@@ -506,20 +520,23 @@ class PageIterator implements PrintIterator {
 	}
 
 	private PageNumber getCurrentPageNumber() {
-		if (pageNumber == null)
-			pageNumber = numberer.next();
+        if (pageNumber == null) {
+            pageNumber = numberer.next();
+        }
 		return pageNumber;
 	}
 
 	private PrintPiece createResult(int height, PrintPiece headerPiece,
 			PrintPiece bodyPiece, PrintPiece footerPiece) {
-		if (headerPiece == null && footerPiece == null)
-			return bodyPiece;
+        if (headerPiece == null && footerPiece == null) {
+            return bodyPiece;
+        }
 
 		List<CompositeEntry> entries = new ArrayList<>();
 
-		if (headerPiece != null)
-			entries.add(createEntry(headerPiece, 0));
+        if (headerPiece != null) {
+            entries.add(createEntry(headerPiece, 0));
+        }
 
 		int y = headerPiece == null ? 0 : heightOf(headerPiece) + headerGap;
 		entries.add(createEntry(bodyPiece, y));
@@ -541,8 +558,9 @@ class PageIterator implements PrintIterator {
 		PrintIterator iterator = decoration.iterator(device, gc);
 		PrintPiece piece = PaperClips.next(iterator, width, height);
 
-		if (piece == null)
-			return null;
+        if (piece == null) {
+            return null;
+        }
 		if (iterator.hasNext()) {
 			piece.dispose();
 			return null;

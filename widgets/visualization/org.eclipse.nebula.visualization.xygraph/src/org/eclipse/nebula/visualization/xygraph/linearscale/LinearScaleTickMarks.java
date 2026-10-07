@@ -88,11 +88,12 @@ public class LinearScaleTickMarks extends Figure {
 	 */
 	private void updateMinorTickParas() {
 		if (scale.isDateEnabled()) {
-			// when range < 10 min, minor ticks is 5
-			if (Math.abs(scale.getRange().getUpper() - scale.getRange().getLower()) < 600000)
-				minorTicksNumber = 5;
-			else
-				minorTicksNumber = 6;
+            // when range < 10 min, minor ticks is 5
+            if (Math.abs(scale.getRange().getUpper() - scale.getRange().getLower()) < 600000) {
+                minorTicksNumber = 5;
+            } else {
+                minorTicksNumber = 6;
+            }
 			minorGridStepInPixel = (int) (scale.getScaleTickLabels().getGridStepInPixel() / 6.0);
 			return;
 		}
@@ -140,17 +141,19 @@ public class LinearScaleTickMarks extends Figure {
 				int x = tickLabelPositions.get(i);
 				int y = 0;
 				int tickLength = 0;
-				if (tickLabelVisibilities.get(i))
-					tickLength = MAJOR_TICK_LENGTH;
-				else
-					tickLength = MINOR_TICK_LENGTH;
+                if (tickLabelVisibilities.get(i)) {
+                    tickLength = MAJOR_TICK_LENGTH;
+                } else {
+                    tickLength = MINOR_TICK_LENGTH;
+                }
 
 				if (tickLabelSide == LabelSide.Secondary) {
 					y = height - 1 - LINE_WIDTH - tickLength;
 				}
-				// draw minor ticks for log scale
-				if (tickLabelVisibilities.get(i) || scale.isMinorTicksVisible())
-					gc.drawLine(x, y, x, y + tickLength);
+                // draw minor ticks for log scale
+                if (tickLabelVisibilities.get(i) || scale.isMinorTicksVisible()) {
+                    gc.drawLine(x, y, x, y + tickLength);
+                }
 			}
 		} else {
 			for (int i = 0; i < tickLabelPositions.size(); i++) {
@@ -208,10 +211,11 @@ public class LinearScaleTickMarks extends Figure {
 	}
 
 	private void drawXMinorTicks(Graphics gc, LabelSide tickLabelSide, int x, int y) {
-		if (tickLabelSide == LabelSide.Primary)
-			gc.drawLine(x, y, x, y + MINOR_TICK_LENGTH);
-		else
-			gc.drawLine(x, y + MAJOR_TICK_LENGTH - MINOR_TICK_LENGTH, x, y + MAJOR_TICK_LENGTH);
+        if (tickLabelSide == LabelSide.Primary) {
+            gc.drawLine(x, y, x, y + MINOR_TICK_LENGTH);
+        } else {
+            gc.drawLine(x, y + MAJOR_TICK_LENGTH - MINOR_TICK_LENGTH, x, y + MAJOR_TICK_LENGTH);
+        }
 	}
 
 	/**
@@ -240,10 +244,11 @@ public class LinearScaleTickMarks extends Figure {
 			for (int i = 0; i < tickLabelPositions.size(); i++) {
 
 				int tickLength = 0;
-				if (tickLabelVisibilities.get(i))
-					tickLength = MAJOR_TICK_LENGTH;
-				else
-					tickLength = MINOR_TICK_LENGTH;
+                if (tickLabelVisibilities.get(i)) {
+                    tickLength = MAJOR_TICK_LENGTH;
+                } else {
+                    tickLength = MINOR_TICK_LENGTH;
+                }
 
 				if (tickLabelSide == LabelSide.Primary) {
 					x = width - 1 - LINE_WIDTH - tickLength;
@@ -251,8 +256,9 @@ public class LinearScaleTickMarks extends Figure {
 					x = LINE_WIDTH;
 				}
 				y = height - tickLabelPositions.get(i);
-				if (tickLabelVisibilities.get(i) || scale.isMinorTicksVisible())
-					gc.drawLine(x, y, x + tickLength, y);
+                if (tickLabelVisibilities.get(i) || scale.isMinorTicksVisible()) {
+                    gc.drawLine(x, y, x + tickLength, y);
+                }
 			}
 		} else {
 			for (int i = 0; i < tickLabelPositions.size(); i++) {
@@ -311,10 +317,11 @@ public class LinearScaleTickMarks extends Figure {
 	private void drawYMinorTicks(Graphics gc, LabelSide tickLabelSide, int x, int y) {
 		// there is a misillumiation
 		int verticalMinorTickLength = MINOR_TICK_LENGTH - 1;
-		if (tickLabelSide == LabelSide.Primary)
-			gc.drawLine(x + MAJOR_TICK_LENGTH - verticalMinorTickLength, y, x + MAJOR_TICK_LENGTH, y);
-		else
-			gc.drawLine(x, y, x + verticalMinorTickLength, y);
+        if (tickLabelSide == LabelSide.Primary) {
+            gc.drawLine(x + MAJOR_TICK_LENGTH - verticalMinorTickLength, y, x + MAJOR_TICK_LENGTH, y);
+        } else {
+            gc.drawLine(x, y, x + verticalMinorTickLength, y);
+        }
 	}
 
 	/**

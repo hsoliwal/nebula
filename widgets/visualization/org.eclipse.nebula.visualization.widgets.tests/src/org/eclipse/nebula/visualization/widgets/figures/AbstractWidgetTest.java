@@ -243,14 +243,15 @@ public abstract class AbstractWidgetTest {
 
 		} else if (propType == int.class) {
 			if (seed != null && seed instanceof Integer) {
-				if (((Integer) seed) % REPEAT_COUNT == 1)
-					return Integer.MAX_VALUE;
-				else if (((Integer) seed) % REPEAT_COUNT == 2)
-					return Integer.MIN_VALUE;
-				else if (((Integer) seed) % REPEAT_COUNT == 3)
-					return 0;
-				else
-					return (int) (Math.random() * 100);
+                if (((Integer) seed) % REPEAT_COUNT == 1) {
+                    return Integer.MAX_VALUE;
+                } else if (((Integer) seed) % REPEAT_COUNT == 2) {
+                    return Integer.MIN_VALUE;
+                } else if (((Integer) seed) % REPEAT_COUNT == 3) {
+                    return 0;
+                } else {
+                    return (int) (Math.random() * 100);
+                }
 			}
 			return (int) (Math.random() * 100);
 

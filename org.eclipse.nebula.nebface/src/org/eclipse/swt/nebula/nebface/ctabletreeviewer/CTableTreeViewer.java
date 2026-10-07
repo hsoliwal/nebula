@@ -165,7 +165,9 @@ public class CTableTreeViewer extends CContainerViewer {
 		if(parentItem != null && parentItem instanceof CTableTreeItem) {
 			item = new CTableTreeItem((CTableTreeItem) parentItem, SWT.NONE, index, classes);
 		}
-		if(item == null) item = new CTableTreeItem(getCTableTree(), SWT.NONE, index, classes);		
+        if (item == null) {
+            item = new CTableTreeItem(getCTableTree(), SWT.NONE, index, classes);
+        }		
 		updateItem(item, element);
 	}
 
@@ -186,7 +188,9 @@ public class CTableTreeViewer extends CContainerViewer {
 				cttc.setImage(((ILabelProvider) prov).getImage(element));
 				text = ((ILabelProvider) prov).getText(element);
 			}
-			if(text == null) text = ""; //$NON-NLS-1$
+            if (text == null) {
+                text = ""; //$NON-NLS-1$
+            }
 			cttc.setText(text);
 		}
 	}
@@ -445,7 +449,9 @@ public class CTableTreeViewer extends CContainerViewer {
 		List l = new ArrayList(Arrays.asList(container.getItems()));
 		for(Iterator i = l.iterator(); i.hasNext(); ) {
 			CTableTreeItem item = ((CTableTreeItem) i.next());
-			if(!getCTableTree().isVisible(item)) i.remove();
+            if (!getCTableTree().isVisible(item)) {
+                i.remove();
+            }
 		}
 		Object[] elements = new Object[l.size()];
 		for(int i = 0; i < elements.length; i++) {

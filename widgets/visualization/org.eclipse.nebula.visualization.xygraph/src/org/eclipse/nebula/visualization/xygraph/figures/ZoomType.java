@@ -141,11 +141,12 @@ public enum ZoomType {
 			final int backUpSWTCursorType, boolean isZoom) {
 		this.description = description;
 		this.iconImage = iconImage;
-		if (cursorImage == null)
-			defaultCursor = Display.getDefault().getSystemCursor(SWT.CURSOR_ARROW);
-		else
-			defaultCursor = SingleSourceHelper2.createCursor(Display.getDefault(), cursorImage.getImageData(), 8, 8,
-					backUpSWTCursorType);
+        if (cursorImage == null) {
+            defaultCursor = Display.getDefault().getSystemCursor(SWT.CURSOR_ARROW);
+        } else {
+            defaultCursor = SingleSourceHelper2.createCursor(Display.getDefault(), cursorImage.getImageData(), 8, 8,
+                    backUpSWTCursorType);
+        }
 		if (cursorImageOnXAxis == null) {
 			cursorOnXAxis = defaultCursor;
 		} else {
@@ -194,10 +195,11 @@ public enum ZoomType {
 		if (overrideCursor != null) {
 			return overrideCursor;
 		}
-		if (horizontalAxis)
-			return cursorOnXAxis;
-		else
-			return cursorOnYAxis;
+        if (horizontalAxis) {
+            return cursorOnXAxis;
+        } else {
+            return cursorOnYAxis;
+        }
 	}
 
 	/**

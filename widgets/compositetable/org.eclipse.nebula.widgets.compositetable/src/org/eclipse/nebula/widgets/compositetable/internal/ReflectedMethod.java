@@ -64,8 +64,9 @@ public class ReflectedMethod {
      * error occured.
      */
     public Object invoke(Object[] params) {
-        if (method == null)
+        if (method == null) {
             return null;
+        }
         try {
         	if (!method.isAccessible()) {
         		method.setAccessible(true);

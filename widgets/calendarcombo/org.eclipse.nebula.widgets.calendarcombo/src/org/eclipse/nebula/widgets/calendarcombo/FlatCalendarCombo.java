@@ -9,9 +9,10 @@ public class FlatCalendarCombo extends CustomCombo {
 	}
 
 	protected void dropDown(boolean drop) {
-		// flat combos on mac don't like empty lists, so we override this to do nothing, which solves the issue, strangely enough
-		if (CalendarCombo.OS_CARBON)
-			return;
+        // flat combos on mac don't like empty lists, so we override this to do nothing, which solves the issue, strangely enough
+        if (CalendarCombo.OS_CARBON) {
+            return;
+        }
 		
 		super.dropDown(drop);
 	}

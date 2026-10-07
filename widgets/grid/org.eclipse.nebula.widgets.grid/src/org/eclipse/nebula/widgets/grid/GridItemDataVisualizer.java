@@ -110,17 +110,20 @@ public class GridItemDataVisualizer implements DataVisualizer {
 	 */
 	protected <T> T getValueOrDefault(Map<GridItem, List<T>> map, GridItem gridItem, int column, T defaultValue) {
 
-		if (column < 0)
-			return defaultValue;
+        if (column < 0) {
+            return defaultValue;
+        }
 
 		List<T> list = map.get(gridItem);
-		if (list == null || column >= list.size())
-			return defaultValue;
+        if (list == null || column >= list.size()) {
+            return defaultValue;
+        }
 
 		T t = list.get(column);
 
-		if (t == null)
-			return defaultValue;
+        if (t == null) {
+            return defaultValue;
+        }
 
 		return t;
 	}

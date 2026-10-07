@@ -1,10 +1,8 @@
 package org.eclipse.nebula.widgets.grid;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EventObject;
-import java.util.Iterator;
 
 import org.eclipse.nebula.widgets.grid.Grid.GridVisibleRange;
 import org.eclipse.swt.SWT;
@@ -23,6 +21,7 @@ public class GridVisibleRangeSupport {
 	private GridVisibleRange oldRange = new GridVisibleRange();
 
 	private Listener paintListener = event -> calculateChange();
+	private final Runnable viewportChangeListener = this::calculateChange;
 
 	/**
 	 * Listener notified when the visible range changes
@@ -82,8 +81,14 @@ public class GridVisibleRangeSupport {
 	private GridVisibleRangeSupport(Grid grid) {
 		this.grid = grid;
 		this.grid.setSizeOnEveryItemImageChange(true);
-		// FIXME Maybe better to listen to resize, ... ?
+		grid.addViewportChangeListener(viewportChangeListener);
+		/*
+		 * Paint remains a compatibility fallback for geometry/data mutations that
+		 * do not yet emit an explicit viewport signal. Scroll, top-index and resize
+		 * changes publish before paint.
+		 */
 		grid.addListener(SWT.Paint, paintListener);
+		grid.addListener(SWT.Dispose, event -> grid.removeViewportChangeListener(viewportChangeListener));
 	}
 
 	/**
@@ -119,50 +124,15 @@ public class GridVisibleRangeSupport {
 			return;
 		}
 		GridVisibleRange range = grid.getVisibleRange();
+		GridVisibleRangeDiff.Difference<GridItem> items = GridVisibleRangeDiff.between(
+				oldRange.getItems(), range.getItems());
+		GridVisibleRangeDiff.Difference<GridColumn> columns = GridVisibleRangeDiff.between(
+				oldRange.getColumns(), range.getColumns());
 
-		ArrayList<GridItem> lOrigItems = new ArrayList<>();
-		lOrigItems.addAll(Arrays.asList(oldRange.getItems()));
-
-		ArrayList<GridItem> lNewItems = new ArrayList<>();
-		lNewItems.addAll(Arrays.asList(range.getItems()));
-
-		Iterator<GridItem> newItemsIterator = lNewItems.iterator();
-		while (newItemsIterator.hasNext()) {
-			if (lOrigItems.remove(newItemsIterator.next())) {
-				newItemsIterator.remove();
-			}
-		}
-
-		ArrayList<GridColumn> lOrigColumns = new ArrayList<>();
-		lOrigColumns.addAll(Arrays.asList(oldRange.getColumns()));
-
-		ArrayList<GridColumn> lNewColumns = new ArrayList<>();
-		lNewColumns.addAll(Arrays.asList(range.getColumns()));
-
-		Iterator<GridColumn> newColumnsIterator = lNewColumns.iterator();
-		while (newColumnsIterator.hasNext()) {
-			if (lOrigColumns.remove(newColumnsIterator.next())) {
-				newColumnsIterator.remove();
-			}
-		}
-
-		if (lOrigItems.size() != 0 || lNewItems.size() != 0 || lOrigColumns.size() != 0 || lNewColumns.size() != 0) {
-			RangeChangedEvent evt = new RangeChangedEvent(grid, range);
-			evt.addedRows = new GridItem[lNewItems.size()];
-			lNewItems.toArray(evt.addedRows);
-
-			evt.removedRows = new GridItem[lOrigItems.size()];
-			lOrigItems.toArray(evt.removedRows);
-
-			evt.addedColumns = new GridColumn[lNewColumns.size()];
-			lNewColumns.toArray(evt.addedColumns);
-
-			evt.removedColumns = new GridColumn[lOrigColumns.size()];
-			lNewColumns.toArray(evt.removedColumns);
-			Iterator<VisibleRangeChangedListener> rangeChangeIterator = rangeChangeListener.iterator();
-
-			while (rangeChangeIterator.hasNext()) {
-				rangeChangeIterator.next().rangeChanged(evt);
+		if (GridVisibleRangeEventAtom.changed(items, columns)) {
+			RangeChangedEvent event = GridVisibleRangeEventAtom.event(grid, range, items, columns);
+			for (VisibleRangeChangedListener listener : rangeChangeListener) {
+				listener.rangeChanged(event);
 			}
 		}
 

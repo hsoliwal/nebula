@@ -1,0 +1,5 @@
+.gitattributes -text
+src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/SimpleWidgetsPart.java -text
+src/org/eclipse/nebula/widgets/cdatetime/example/e4/parts/BigWidgetsPart.java -text
+META-INF/MANIFEST.MF -text
+org.eclipse.nebula.widgets.cdatetime.example.e4.product -text

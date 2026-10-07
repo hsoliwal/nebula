@@ -27,8 +27,9 @@ class RotateClockwisePrintPiece implements PrintPiece {
 	private final Point size;
 
 	RotateClockwisePrintPiece(Device device, PrintPiece target) {
-		if (device == null || target == null)
-			PaperClips.error(SWT.ERROR_NULL_ARGUMENT);
+        if (device == null || target == null) {
+            PaperClips.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		this.device = device;
 		this.target = target;
 		Point targetSize = target.getSize();
@@ -61,10 +62,12 @@ class RotateClockwisePrintPiece implements PrintPiece {
 
 			gc.setTransform(oldTransform);
 		} finally {
-			if (oldTransform != null)
-				oldTransform.dispose();
-			if (newTransform != null)
-				newTransform.dispose();
+            if (oldTransform != null) {
+                oldTransform.dispose();
+            }
+            if (newTransform != null) {
+                newTransform.dispose();
+            }
 		}
 	}
 }

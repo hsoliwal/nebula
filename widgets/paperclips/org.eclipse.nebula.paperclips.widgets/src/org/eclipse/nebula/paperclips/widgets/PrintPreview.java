@@ -271,8 +271,9 @@ public class PrintPreview extends Canvas {
 	}
 
 	private static float checkScale(float scale) {
-		if (!(scale > 0))
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Scale must be > 0"); //$NON-NLS-1$
+        if (!(scale > 0)) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Scale must be > 0"); //$NON-NLS-1$
+        }
 		return scale;
 	}
 
@@ -300,8 +301,9 @@ public class PrintPreview extends Canvas {
 	 */
 	public void setHorizontalPageCount(int horizontalPages) {
 		checkWidget();
-		if (horizontalPages < 1)
-			horizontalPages = 1;
+        if (horizontalPages < 1) {
+            horizontalPages = 1;
+        }
 		this.horizontalPageCount = horizontalPages;
 		invalidatePageDisplayBounds();
 		redraw();
@@ -331,8 +333,9 @@ public class PrintPreview extends Canvas {
 	 */
 	public void setVerticalPageCount(int verticalPages) {
 		checkWidget();
-		if (verticalPages < 1)
-			verticalPages = 1;
+        if (verticalPages < 1) {
+            verticalPages = 1;
+        }
 		this.verticalPageCount = verticalPages;
 		invalidatePageDisplayBounds();
 		redraw();
@@ -373,14 +376,16 @@ public class PrintPreview extends Canvas {
 	 */
 	// TODO finalize experimental API
 	public void startBackgroundLayout(final Runnable callback) {
-		if (isPageLayoutComplete())
-			return;
+        if (isPageLayoutComplete()) {
+            return;
+        }
 
 		final int DELAY = 10;
 		getDisplay().timerExec(DELAY, new Runnable() {
 			public void run() {
-				if (isDisposed())
-					return;
+                if (isDisposed()) {
+                    return;
+                }
 				if (!isPageLayoutComplete() && pages != null) {
 					fetchPages(pages.size() + 1);
 					if (!isPageLayoutComplete()) {
@@ -400,8 +405,9 @@ public class PrintPreview extends Canvas {
 	private void paint(Event event) {
 		drawBackground(event);
 
-		if (printJob == null || printerData == null)
-			return;
+        if (printJob == null || printerData == null) {
+            return;
+        }
 
 		getPrinter();
 		getPaperSize();
@@ -410,10 +416,11 @@ public class PrintPreview extends Canvas {
 		getPageDisplaySize();
 		getPageDisplayLocations();
 
-		if (printer == null || paperSize == null || pages == null
-				|| pageDisplaySize == null || pageDisplayLocations == null
-				|| pageIndex < 0 || pageIndex >= pages.size())
-			return;
+        if (printer == null || paperSize == null || pages == null
+                || pageDisplaySize == null || pageDisplayLocations == null
+                || pageIndex < 0 || pageIndex >= pages.size()) {
+            return;
+        }
 
 		int count = Math.min(verticalPageCount * horizontalPageCount,
 				pages.size() - pageIndex);
@@ -429,8 +436,9 @@ public class PrintPreview extends Canvas {
 		Rectangle dirtyBounds = new Rectangle(event.x, event.y, event.width,
 				event.height);
 		Rectangle dirtyPaperBounds = dirtyBounds.intersection(rectangle);
-		if (dirtyPaperBounds.width == 0 || dirtyPaperBounds.height == 0)
-			return;
+        if (dirtyPaperBounds.width == 0 || dirtyPaperBounds.height == 0) {
+            return;
+        }
 
 		Image printerImage = null;
 		GC printerGC = null;
@@ -465,14 +473,18 @@ public class PrintPreview extends Canvas {
 
 	private void disposeResources(Image printerImage, GC printerGC,
 			Transform printerTransform, Image displayImage, PrintPiece page) {
-		if (printerImage != null)
-			printerImage.dispose();
-		if (displayImage != null)
-			displayImage.dispose();
-		if (printerGC != null)
-			printerGC.dispose();
-		if (printerTransform != null)
-			printerTransform.dispose();
+        if (printerImage != null) {
+            printerImage.dispose();
+        }
+        if (displayImage != null) {
+            displayImage.dispose();
+        }
+        if (printerGC != null) {
+            printerGC.dispose();
+        }
+        if (printerTransform != null) {
+            printerTransform.dispose();
+        }
 		page.dispose();
 	}
 
@@ -523,29 +535,34 @@ public class PrintPreview extends Canvas {
 	}
 
 	private void fetchPages(int endIndex) {
-		if (getPrintJob() == null || getPrinter() == null)
-			return;
+        if (getPrintJob() == null || getPrinter() == null) {
+            return;
+        }
 		if (pageEnumeration == null) {
-			if (getGC() == null)
-				return;
+            if (getGC() == null) {
+                return;
+            }
 			pageEnumeration = PaperClips.getPageEnumeration(printJob, printer,
 					gc);
 		}
-		if (pages == null)
-			pages = new ArrayList<>();
+        if (pages == null) {
+            pages = new ArrayList<>();
+        }
 		boolean doRotate = orientationRequiresRotate();
 		boolean allPages = endIndex == ALL_PAGES || !lazy;
 		while (pageEnumeration.hasNext()
 				&& (allPages || pages.size() < endIndex)) {
 			PrintPiece page = pageEnumeration.nextPage();
 			if (page != null) {
-				if (doRotate)
-					page = new RotateClockwisePrintPiece(printer, page);
+                if (doRotate) {
+                    page = new RotateClockwisePrintPiece(printer, page);
+                }
 				pages.add(page);
 			}
 		}
-		if (!pageEnumeration.hasNext())
-			disposeGC();
+        if (!pageEnumeration.hasNext()) {
+            disposeGC();
+        }
 	}
 
 	private void drawBackground(Event event) {
@@ -604,8 +621,9 @@ public class PrintPreview extends Canvas {
 	 */
 	public void setMargins(Rectangle margins) {
 		checkWidget();
-		if (margins == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (margins == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		this.margins = new Rectangle(margins.x, margins.y, margins.width,
 				margins.height);
 		invalidatePageDisplayBounds();
@@ -638,8 +656,9 @@ public class PrintPreview extends Canvas {
 	 */
 	public void setPageSpacing(Point pageSpacing) {
 		checkWidget();
-		if (pageSpacing == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (pageSpacing == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		this.pageSpacing = new Point(pageSpacing.x, pageSpacing.y);
 		invalidatePageDisplayBounds();
 		redraw();
@@ -719,8 +738,9 @@ public class PrintPreview extends Canvas {
 			int x0 = clientArea.x + margins.x;
 			clientArea.width -= getBoilerplateSize().x;
 			clientArea.width -= (pageDisplaySize.x * horizontalPageCount);
-			if (clientArea.width > 0)
-				x0 += clientArea.width / 2;
+            if (clientArea.width > 0) {
+                x0 += clientArea.width / 2;
+            }
 
 			pageDisplayLocations = new Point[horizontalPageCount
 					* verticalPageCount];
@@ -742,8 +762,9 @@ public class PrintPreview extends Canvas {
 	private void disposePages() {
 		if (pages != null) {
 			pageEnumeration = null;
-			for (int i = 0; i < pages.size(); i++)
-				pages.get(i).dispose();
+            for (int i = 0; i < pages.size(); i++) {
+                pages.get(i).dispose();
+            }
 			pages = null;
 			paperSize = null;
 			invalidatePageDisplayBounds();
@@ -781,10 +802,12 @@ public class PrintPreview extends Canvas {
 		fetchPages(horizontalPageCount * verticalPageCount);
 		if (getPrinter() == null || pages == null) {
 			Point boilerplate = getBoilerplateSize();
-			if (wHint == SWT.DEFAULT)
-				size.x = boilerplate.x;
-			if (hHint == SWT.DEFAULT)
-				size.y = boilerplate.y;
+            if (wHint == SWT.DEFAULT) {
+                size.x = boilerplate.x;
+            }
+            if (hHint == SWT.DEFAULT) {
+                size.y = boilerplate.y;
+            }
 			return addTrim(size);
 		}
 

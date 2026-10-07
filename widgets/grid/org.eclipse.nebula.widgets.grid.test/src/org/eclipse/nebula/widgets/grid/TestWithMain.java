@@ -46,8 +46,9 @@ public class TestWithMain {
     } );
     assertTrue( columns[ 2 ].isCheck() );
     while( !shell.isDisposed() ) {
-      if( !display.readAndDispatch() )
-        display.sleep();
+        if (!display.readAndDispatch()) {
+            display.sleep();
+        }
     }
     display.dispose();
   }
@@ -65,8 +66,9 @@ public class TestWithMain {
     grid.setTopIndex( 12 );
     grid.showItem( items[ 4 ] );
     while( !shell.isDisposed() ) {
-      if( !display.readAndDispatch() )
-        display.sleep();
+        if (!display.readAndDispatch()) {
+            display.sleep();
+        }
     }
     display.dispose();
   }

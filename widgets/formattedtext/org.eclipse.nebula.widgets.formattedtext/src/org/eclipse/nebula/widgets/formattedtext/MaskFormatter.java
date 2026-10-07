@@ -73,8 +73,9 @@ public class MaskFormatter extends AbstractFormatter {
 	 * @param editPattern edit mask
 	 */
 	public MaskFormatter(String editPattern) {
-		if (editPattern == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (editPattern == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		this.editPattern = editPattern;
 
 		// Initializes the buffer with the formatting characters

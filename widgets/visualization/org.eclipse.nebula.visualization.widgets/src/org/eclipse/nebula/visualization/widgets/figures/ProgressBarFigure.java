@@ -167,8 +167,9 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 	 * @param effect3D the effect3D to set
 	 */
 	public void setEffect3D(boolean effect3D) {
-		if(this.effect3D == effect3D)
-			return;
+        if (this.effect3D == effect3D) {
+            return;
+        }
 		this.effect3D = effect3D;
 		repaint();
 	}
@@ -186,8 +187,9 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 	 * @param fillBackgroundColor the fillBackgroundColor to set
 	 */
 	public void setFillBackgroundColor(Color fillBackgroundColor) {
-		if(this.fillBackgroundColor != null && this.fillBackgroundColor.equals(fillBackgroundColor))
-			return;
+        if (this.fillBackgroundColor != null && this.fillBackgroundColor.equals(fillBackgroundColor)) {
+            return;
+        }
 		this.fillBackgroundColor = fillBackgroundColor;
 		repaint();
 	}
@@ -196,8 +198,9 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 	 * @param fillColor the fillColor to set
 	 */
 	public void setFillColor(Color fillColor) {
-		if(this.fillColor != null && this.fillColor.equals(fillColor))
-			return;
+        if (this.fillColor != null && this.fillColor.equals(fillColor)) {
+            return;
+        }
 		this.fillColor = fillColor;
 		repaint();
 	}
@@ -208,8 +211,9 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 	 * @param horizontal the horizontal to set
 	 */
 	public void setHorizontal(boolean horizontal) {
-		if(this.horizontal == horizontal)
-			return;
+        if (this.horizontal == horizontal) {
+            return;
+        }
 		this.horizontal = horizontal;
 		if(horizontal) {
 			((LinearScale)scale).setOrientation(Orientation.HORIZONTAL);
@@ -224,17 +228,19 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 	}
 	
 	public void setIndicatorMode(boolean indicatorMode) {
-		if(this.indicatorMode == indicatorMode)
-			return;
+        if (this.indicatorMode == indicatorMode) {
+            return;
+        }
 		this.indicatorMode = indicatorMode;
 		thumb.setVisible(indicatorMode);
 		revalidate();
 		repaint();
 	}
 
-	public void setOrigin(double origin) {	
-		if(this.origin == origin)
-			return;
+	public void setOrigin(double origin) {
+        if (this.origin == origin) {
+            return;
+        }
 		this.origin = origin;
 		repaint();
 	}
@@ -242,8 +248,9 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 	
 	
 	public void setOriginIgnored(boolean originIgnored) {
-		if(this.originIgnored == originIgnored)
-			return;
+        if (this.originIgnored == originIgnored) {
+            return;
+        }
 		this.originIgnored = originIgnored;
 		repaint();
 	}
@@ -314,13 +321,15 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 					leftPoint.x, leftPoint.y, rightPoint.x, rightPoint.y, WHITE_COLOR, 0, 
 					fillColor, 255);
 				g.setBackgroundPattern(thumbPattern);		
-			}else
-				g.setBackgroundColor(fillColor);
+			} else {
+                g.setBackgroundColor(fillColor);
+            }
 				
 			g.fillPolygon(getPoints());
-			
-			if(effect3D && support3D)
-				thumbPattern.dispose();
+
+            if (effect3D && support3D) {
+                thumbPattern.dispose();
+            }
 					
 		}
 	}
@@ -338,10 +347,11 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 			graphics.setAntialias(SWT.ON);			
 			int valuePosition = ((LinearScale) scale).getValuePosition(getCoercedValue(), false);
 			double tempOrigin;
-			if(originIgnored)
-				tempOrigin = minimum;
-			else
-				tempOrigin = origin;
+            if (originIgnored) {
+                tempOrigin = minimum;
+            } else {
+                tempOrigin = origin;
+            }
 			int originPosition = ((LinearScale) scale).getValuePosition(tempOrigin, false);
 			int fillLength = valuePosition - originPosition;			
 
@@ -350,19 +360,20 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 				//fill background
 				graphics.setBackgroundColor(fillBackgroundColor);
 				super.fillShape(graphics);
-				Pattern backGroundPattern; 
-				if(horizontal)
-					backGroundPattern= GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
-						bounds.x, bounds.y,
-						bounds.x, bounds.y + bounds.height,
-						WHITE_COLOR, 255,
-						fillBackgroundColor, 0);
-				else
-					backGroundPattern= GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
-						bounds.x, bounds.y,
-						bounds.x + bounds.width, bounds.y,
-						WHITE_COLOR, 255,
-						fillBackgroundColor, 0);
+				Pattern backGroundPattern;
+                if (horizontal) {
+                    backGroundPattern = GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
+                            bounds.x, bounds.y,
+                            bounds.x, bounds.y + bounds.height,
+                            WHITE_COLOR, 255,
+                            fillBackgroundColor, 0);
+                } else {
+                    backGroundPattern = GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
+                            bounds.x, bounds.y,
+                            bounds.x + bounds.width, bounds.y,
+                            WHITE_COLOR, 255,
+                            fillBackgroundColor, 0);
+                }
 				graphics.setBackgroundPattern(backGroundPattern);
 				super.fillShape(graphics);
 				
@@ -370,18 +381,19 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 				
 				//fill value
 				if(!indicatorMode){
-					if(horizontal)
-						backGroundPattern = GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
-							bounds.x, bounds.y,
-							bounds.x, bounds.y + bounds.height,
-							WHITE_COLOR, 255,
-							fillColor, 0);
-					else
-						backGroundPattern = GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
-							bounds.x, bounds.y,
-							bounds.x + bounds.width, bounds.y,
-							WHITE_COLOR, 255,
-							fillColor, 0);
+                    if (horizontal) {
+                        backGroundPattern = GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
+                                bounds.x, bounds.y,
+                                bounds.x, bounds.y + bounds.height,
+                                WHITE_COLOR, 255,
+                                fillColor, 0);
+                    } else {
+                        backGroundPattern = GraphicsUtil.createScaledPattern(graphics, Display.getCurrent(),
+                                bounds.x, bounds.y,
+                                bounds.x + bounds.width, bounds.y,
+                                WHITE_COLOR, 255,
+                                fillColor, 0);
+                    }
 					
 					graphics.setBackgroundColor(fillColor);
 					graphics.setForegroundColor(fillColor);
@@ -429,8 +441,9 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 								bounds.width,
 								fillLength));
 					}
-				}else
-					graphics.fillRectangle(getBounds());
+				} else {
+                    graphics.fillRectangle(getBounds());
+                }
 				
 //				graphics.setForegroundColor(outlineColor);
 //				graphics.setForegroundColor(GRAY_COLOR);
@@ -533,25 +546,27 @@ public class ProgressBarFigure extends AbstractLinearMarkedFigure {
 		}
 	
 		public void layout(IFigure container) {
-			if(horizontal)
-				horizontalLayout(container);
-			else
-				verticalLayout(container);
+            if (horizontal) {
+                horizontalLayout(container);
+            } else {
+                verticalLayout(container);
+            }
 		}
 		
 		
 		@Override
 		public void setConstraint(IFigure child, Object constraint) {
-			if(constraint.equals(SCALE))
-				scale = (LinearScale)child;
-			else if (constraint.equals(MARKERS))
-				marker = (LinearScaledMarker) child;
-			else if (constraint.equals(TRACK))
-				track = (Track) child;
-			else if (constraint.equals(THUMB))
-				thumb = (Thumb)child;
-			else if (constraint.equals(LABEL))
-				label = (Label) child;
+            if (constraint.equals(SCALE)) {
+                scale = (LinearScale) child;
+            } else if (constraint.equals(MARKERS)) {
+                marker = (LinearScaledMarker) child;
+            } else if (constraint.equals(TRACK)) {
+                track = (Track) child;
+            } else if (constraint.equals(THUMB)) {
+                thumb = (Thumb) child;
+            } else if (constraint.equals(LABEL)) {
+                label = (Label) child;
+            }
 		}
 	
 		private void verticalLayout(IFigure container) {

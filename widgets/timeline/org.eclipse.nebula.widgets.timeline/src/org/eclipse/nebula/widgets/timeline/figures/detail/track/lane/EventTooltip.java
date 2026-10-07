@@ -34,8 +34,9 @@ public class EventTooltip extends FlowPage {
 	@Override
 	public Dimension getPreferredSize(int w, int h) {
 		Dimension dimension = super.getPreferredSize(-1, -1);
-		if (dimension.width > 150)
-			dimension = super.getPreferredSize(150, -1);
+        if (dimension.width > 150) {
+            dimension = super.getPreferredSize(150, -1);
+        }
 
 		return dimension;
 	}

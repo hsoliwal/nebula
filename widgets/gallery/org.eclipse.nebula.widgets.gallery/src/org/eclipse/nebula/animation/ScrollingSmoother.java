@@ -170,24 +170,28 @@ public class ScrollingSmoother {
 		if (enable) {
 			component.addListener(SWT.MouseWheel, mouseWheelListener);
 
-			if (verticalScrollBar != null)
-				verticalScrollBar.addListener(SWT.Selection,
-						cancelEffectIfUserSelection);
+            if (verticalScrollBar != null) {
+                verticalScrollBar.addListener(SWT.Selection,
+                        cancelEffectIfUserSelection);
+            }
 
-			if (horizontalScrollBar != null)
-				horizontalScrollBar.addListener(SWT.Selection,
-						cancelEffectIfUserSelection);
+            if (horizontalScrollBar != null) {
+                horizontalScrollBar.addListener(SWT.Selection,
+                        cancelEffectIfUserSelection);
+            }
 
 		} else {
 			component.removeListener(SWT.MouseWheel, mouseWheelListener);
 
-			if (verticalScrollBar != null)
-				verticalScrollBar.removeListener(SWT.Selection,
-						cancelEffectIfUserSelection);
+            if (verticalScrollBar != null) {
+                verticalScrollBar.removeListener(SWT.Selection,
+                        cancelEffectIfUserSelection);
+            }
 
-			if (horizontalScrollBar != null)
-				horizontalScrollBar.removeListener(SWT.Selection,
-						cancelEffectIfUserSelection);
+            if (horizontalScrollBar != null) {
+                horizontalScrollBar.removeListener(SWT.Selection,
+                        cancelEffectIfUserSelection);
+            }
 
 		}
 	}

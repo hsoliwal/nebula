@@ -149,7 +149,9 @@ public class CompositeTableSnippet6 {
 	    shell.setSize(500, 2*preferredSize.y+35);
 	    shell.open ();
 	    while (!shell.isDisposed()) {
-	        if (!display.readAndDispatch ()) display.sleep ();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 	    }
 	    display.dispose ();
 	}
