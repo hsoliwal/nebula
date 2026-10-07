@@ -9692,11 +9692,12 @@ public class Grid extends Canvas {
 		count = Math.max(0, count);
 
 		if (usesSparseVirtualItems()) {
+			final int logicalCount = count;
 			setRedraw(false);
 			try {
 				final GridVirtualItemList sparse = sparseVirtualItems();
 				final int oldCount = sparse.size();
-				final List<GridItem> removed = sparse.setLogicalSize(count);
+				final List<GridItem> removed = sparse.setLogicalSize(logicalCount);
 				for (final GridItem removedItem : removed) {
 					selectedItems.remove(removedItem);
 					if (focusItem == removedItem) {
@@ -9704,10 +9705,10 @@ public class Grid extends Canvas {
 					}
 					removedItem.disposeOnly();
 				}
-				selectedCells.removeIf(cell -> cell.y >= count);
-				selectedCellsBeforeRangeSelect.removeIf(cell -> cell.y >= count);
-				currentVisibleItems = count;
-				if (oldCount != count && !disposing) {
+				selectedCells.removeIf(cell -> cell.y >= logicalCount);
+				selectedCellsBeforeRangeSelect.removeIf(cell -> cell.y >= logicalCount);
+				currentVisibleItems = logicalCount;
+				if (oldCount != logicalCount && !disposing) {
 					updateColumnSelection();
 				}
 				scrollValuesObsolete = true;
