@@ -109,6 +109,9 @@ final class GridTransform {
 	}
 
 	GridTransform inverse() {
+		if (isIdentity()) {
+			return IDENTITY;
+		}
 		float determinant = determinant();
 		if (!Float.isFinite(determinant) || determinant == 0f) {
 			throw new IllegalStateException("non-invertible transform");
