@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project
+# SPDX-License-Identifier: Apache-2.0
 path_pattern	license_scope	provenance	notes
 LICENSE	EPL-2.0	Eclipse Nebula product root	Authoritative product license.
 widgets/**	EPL-2.0	Eclipse Nebula product source	Existing file-level notices remain authoritative.
