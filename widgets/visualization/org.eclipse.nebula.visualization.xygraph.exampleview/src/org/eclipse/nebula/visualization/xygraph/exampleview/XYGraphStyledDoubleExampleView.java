@@ -41,26 +41,33 @@ public class XYGraphStyledDoubleExampleView extends ViewPart {
         @Override
         public Color getPointColor(ISample sample, Trace trace) {
 
-            if (sample == null)
+            if (sample == null) {
                 return super.getPointColor(sample, trace);
+            }
 
-            if (sample.getXValue() < 0.1)
+            if (sample.getXValue() < 0.1) {
                 return XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_PURPLE);
+            }
 
-            if (sample.getXValue() < 0.2)
+            if (sample.getXValue() < 0.2) {
                 return XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_BLUE);
+            }
 
-            if (sample.getXValue() < 0.3)
+            if (sample.getXValue() < 0.3) {
                 return XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_GREEN);
+            }
 
-            if (sample.getXValue() < 0.4)
+            if (sample.getXValue() < 0.4) {
                 return XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_YELLOW);
+            }
 
-            if (sample.getXValue() < 0.5)
+            if (sample.getXValue() < 0.5) {
                 return XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_ORANGE);
+            }
 
-            if (sample.getXValue() < 0.6)
+            if (sample.getXValue() < 0.6) {
                 return XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_RED);
+            }
 
             return XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_WHITE);
 

@@ -56,8 +56,9 @@ public class Snippet8 {
 		GridPrint grid = new GridPrint("p:g, p:g, p:g, p:g, p:g", look);
 
 		String text = "The quick brown fox jumps over the lazy dog.";
-		for (int i = 0; i < 20000; i++)
-			grid.add(new TextPrint(text));
+        for (int i = 0; i < 20000; i++) {
+            grid.add(new TextPrint(text));
+        }
 
 		PagePrint page = new PagePrint(grid);
 		page.setHeader(new SimplePageDecoration(
@@ -278,13 +279,15 @@ public class Snippet8 {
 						Point size = preview.getSize();
 						scrollable = size.x > bounds.width
 								|| size.y > bounds.height;
-						if (!scrollable && dragging)
-							endDragging();
+                        if (!scrollable && dragging) {
+                            endDragging();
+                        }
 						break;
 					case SWT.MouseDown:
 						forgetScrollingPosition();
-						if (scrollable && event.button == 1)
-							beginDragging(event);
+                        if (scrollable && event.button == 1) {
+                            beginDragging(event);
+                        }
 						break;
 					case SWT.MouseMove:
 						if (dragging) {
@@ -299,8 +302,9 @@ public class Snippet8 {
 						break;
 					case SWT.MouseUp:
 						forgetScrollingPosition();
-						if (dragging)
-							endDragging();
+                        if (dragging) {
+                            endDragging();
+                        }
 						break;
 					case SWT.MouseEnter:
 						display.addFilter(SWT.MouseWheel, this);
@@ -315,15 +319,16 @@ public class Snippet8 {
 								size = preview.getSize();
 								Point origin = scroll.getOrigin();
 								int direction = event.count > 0 ? -1 : 1;
-								// Prefer vertical scrolling unless user is
-								// pressing Shift
-								if (size.y > bounds.height
-										&& event.stateMask == SWT.NONE)
-									origin.y += direction * Math.min(dpi.y,
-											bounds.height / 4);
-								else if (size.x > bounds.width)
-									origin.x += direction
-											* Math.min(dpi.x, bounds.width / 4);
+                                // Prefer vertical scrolling unless user is
+                                // pressing Shift
+                                if (size.y > bounds.height
+                                        && event.stateMask == SWT.NONE) {
+                                    origin.y += direction * Math.min(dpi.y,
+                                            bounds.height / 4);
+                                } else if (size.x > bounds.width) {
+                                    origin.x += direction
+                                            * Math.min(dpi.x, bounds.width / 4);
+                                }
 								scroll.setOrigin(origin);
 								event.doit = false;
 							} else if (event.stateMask == SWT.CTRL) { // Ctrl+MouseWheel
@@ -429,8 +434,9 @@ public class Snippet8 {
 							+ Math.min(pageCount, pageIndex + visiblePages)
 					: "Page " + (pageIndex + 1));
 			text += " of " + pageCount;
-			if (!layoutComplete)
-				text += "..";
+            if (!layoutComplete) {
+                text += "..";
+            }
 			pageNumber.setText(text);
 			previousPage.setEnabled(pageIndex > 0);
 			nextPage.setEnabled(
@@ -467,20 +473,24 @@ public class Snippet8 {
 			Point minSize;
 			Rectangle bounds = scroll.getClientArea();
 			if (preview.isFitHorizontal()) {
-				if (preview.isFitVertical())
-					minSize = new Point(0, 0); // Best fit
-				else
-					minSize = new Point(0,
-							preview.computeSize(bounds.width, SWT.DEFAULT).y); // Fit
+                if (preview.isFitVertical()) {
+                    minSize = new Point(0, 0);
+                } // Best fit
+                else {
+                    minSize = new Point(0,
+                            preview.computeSize(bounds.width, SWT.DEFAULT).y);
+                } // Fit
 																				// to
 																				// width
 			} else {
-				if (preview.isFitVertical())
-					minSize = new Point(
-							preview.computeSize(SWT.DEFAULT, bounds.height).x,
-							0); // Fit to height
-				else
-					minSize = preview.computeSize(SWT.DEFAULT, SWT.DEFAULT); // Custom
+                if (preview.isFitVertical()) {
+                    minSize = new Point(
+                            preview.computeSize(SWT.DEFAULT, bounds.height).x,
+                            0);
+                } // Fit to height
+                else {
+                    minSize = preview.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+                } // Custom
 				// scale
 			}
 			scroll.setMinSize(minSize);
@@ -496,11 +506,12 @@ public class Snippet8 {
 		}
 
 		private void setPreviewPageIndex(int pageIndex) {
-			if (preview.isPageLayoutComplete())
-				pageIndex = Math.min(pageIndex,
-						preview.getPageCount()
-								- preview.getHorizontalPageCount()
-										* preview.getVerticalPageCount());
+            if (preview.isPageLayoutComplete()) {
+                pageIndex = Math.min(pageIndex,
+                        preview.getPageCount()
+                                - preview.getHorizontalPageCount()
+                                * preview.getVerticalPageCount());
+            }
 			pageIndex = Math.max(pageIndex, 0);
 			preview.setPageIndex(pageIndex);
 			updatePageNumber();
@@ -517,9 +528,11 @@ public class Snippet8 {
 		final Display display = Display.getDefault();
 
 		Shell shell = new UI(display).createShell();
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		display.dispose();
 	}

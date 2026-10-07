@@ -49,18 +49,23 @@ public class SimplePageDecoration implements PageDecoration {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		SimplePageDecoration other = (SimplePageDecoration) obj;
 		if (print == null) {
-			if (other.print != null)
-				return false;
-		} else if (!print.equals(other.print))
-			return false;
+            if (other.print != null) {
+                return false;
+            }
+		} else if (!print.equals(other.print)) {
+            return false;
+        }
 		return true;
 	}
 

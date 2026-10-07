@@ -125,8 +125,9 @@ public class PaperClips {
 		if (printerData == null) {
 			// Linux may have one or more printers without a default printer
 			PrinterData[] list = Printer.getPrinterList();
-			if (list.length > 0)
-				printerData = list[0];
+            if (list.length > 0) {
+                printerData = list[0];
+            }
 		}
 		return printerData;
 	}
@@ -153,19 +154,22 @@ public class PaperClips {
 	 */
 	public static PrintPiece next(PrintIterator iterator, int width, int height) {
 		Util.notNull(iterator);
-		if (width < 0 || height < 0)
-			error(SWT.ERROR_INVALID_ARGUMENT,
-					"PrintPiece size " + width + "x" + height + " not possible"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		if (!iterator.hasNext())
-			error("Iterator " + iterator + " has no more content."); //$NON-NLS-1$ //$NON-NLS-2$
+        if (width < 0 || height < 0) {
+            error(SWT.ERROR_INVALID_ARGUMENT,
+                    "PrintPiece size " + width + "x" + height + " not possible"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        }
+        if (!iterator.hasNext()) {
+            error("Iterator " + iterator + " has no more content."); //$NON-NLS-1$ //$NON-NLS-2$
+        }
 
 		PrintPiece result = iterator.next(width, height);
 
 		if (result != null) {
 			Point size = result.getSize();
-			if (size.x > width || size.y > height)
-				error("Iterator " + iterator + " produced a " + size.x + "x" + size.y + " piece for a " + width //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-						+ "x" + height + " area."); //$NON-NLS-1$//$NON-NLS-2$
+            if (size.x > width || size.y > height) {
+                error("Iterator " + iterator + " produced a " + size.x + "x" + size.y + " piece for a " + width //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+                        + "x" + height + " area."); //$NON-NLS-1$//$NON-NLS-2$
+            }
 		} else if (debug) {
 			return new NullPrintPiece();
 		}
@@ -216,21 +220,25 @@ public class PaperClips {
 			printer.endJob();
 			completed = true;
 		} finally {
-			if (!completed)
-				cancelJob(printer);
+            if (!completed) {
+                cancelJob(printer);
+            }
 		}
 	}
 
 	private static void startJob(Printer printer, String jobName) {
-		if (!printer.startJob(jobName))
-			error("Unable to start print job"); //$NON-NLS-1$
+        if (!printer.startJob(jobName)) {
+            error("Unable to start print job"); //$NON-NLS-1$
+        }
 	}
 
 	private static void cancelJob(Printer printer) {
-		if (isGTK())
-			printer.endJob(); // Printer.cancelJob() not implemented on GTK
-		else
-			printer.cancelJob();
+        if (isGTK()) {
+            printer.endJob();
+        } // Printer.cancelJob() not implemented on GTK
+        else {
+            printer.cancelJob();
+        }
 	}
 
 	private static GC createAndConfigureGC(Printer printer) {
@@ -364,11 +372,12 @@ public class PaperClips {
 	 *            the name of the dummy print job.
 	 */
 	public static void startDummyJob(Printer printer, String name) {
-		// On Mac OS X Carbon and Linux GTK+, created GC is disposed unless
-		// Printer.startJob() is called
-		// first.
-		if (isCarbon() || isGTK())
-			startJob(printer, name);
+        // On Mac OS X Carbon and Linux GTK+, created GC is disposed unless
+        // Printer.startJob() is called
+        // first.
+        if (isCarbon() || isGTK()) {
+            startJob(printer, name);
+        }
 	}
 
 	/**
@@ -390,15 +399,16 @@ public class PaperClips {
 			// See also:
 			// http://bugzilla.gnome.org/show_bug.cgi?id=339323
 			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=212594
-		} else if (isCarbon()) // Mac OSX
-			// 2007-04-30: A bug in SWT on Mac OSX prior to 3.3 renders Printer
-			// instances useless after a call to cancelJob().
-			// Therefore on Mac OSX we call endJob() instead of cancelJob().
-			if (SWT.getVersion() < 3346) { // Version 3.3
-				printer.endJob();
-			} else {
-				printer.cancelJob();
-			}
+		} else if (isCarbon()) { // Mac OSX
+            // 2007-04-30: A bug in SWT on Mac OSX prior to 3.3 renders Printer
+            // instances useless after a call to cancelJob().
+            // Therefore on Mac OSX we call endJob() instead of cancelJob().
+            if (SWT.getVersion() < 3346) { // Version 3.3
+                printer.endJob();
+            } else {
+                printer.cancelJob();
+            }
+        }
 	}
 
 	private static boolean isCarbon() {
@@ -496,14 +506,18 @@ public class PaperClips {
 
 		// Enforce the printer's minimum margins.
 		Rectangle printableBounds = getPrintableBounds(printer);
-		if (top < printableBounds.y)
-			top = printableBounds.y;
-		if (left < printableBounds.x)
-			left = printableBounds.x;
-		if (right > printableBounds.x + printableBounds.width)
-			right = printableBounds.x + printableBounds.width;
-		if (bottom > printableBounds.y + printableBounds.height)
-			bottom = printableBounds.y + printableBounds.height;
+        if (top < printableBounds.y) {
+            top = printableBounds.y;
+        }
+        if (left < printableBounds.x) {
+            left = printableBounds.x;
+        }
+        if (right > printableBounds.x + printableBounds.width) {
+            right = printableBounds.x + printableBounds.width;
+        }
+        if (bottom > printableBounds.y + printableBounds.height) {
+            bottom = printableBounds.y + printableBounds.height;
+        }
 
 		return new Rectangle(left, top, right - left, bottom - top);
 	}

@@ -32,19 +32,22 @@ public class DefaultTimelineLabelProvider extends LabelProvider implements ITime
 
 	@Override
 	public String getToolTipText(Object element) {
-		if (element instanceof ITimelineEvent)
-			return ((ITimelineEvent) element).getMessage();
+        if (element instanceof ITimelineEvent) {
+            return ((ITimelineEvent) element).getMessage();
+        }
 
 		return null;
 	}
 
 	@Override
 	public Timing getTimings(Object element) {
-		if (element instanceof ITimelineEvent)
-			return new Timing(((ITimelineEvent) element).getStartTimestamp(), ((ITimelineEvent) element).getDuration());
+        if (element instanceof ITimelineEvent) {
+            return new Timing(((ITimelineEvent) element).getStartTimestamp(), ((ITimelineEvent) element).getDuration());
+        }
 
-		if (element instanceof ICursor)
-			return new Timing(((ICursor) element).getTimestamp());
+        if (element instanceof ICursor) {
+            return new Timing(((ICursor) element).getTimestamp());
+        }
 
 		return null;
 	}
@@ -53,8 +56,9 @@ public class DefaultTimelineLabelProvider extends LabelProvider implements ITime
 	public Color getForeground(Object element) {
 		if (element instanceof IColored) {
 			final RGB rgb = ((IColored) element).getRgb();
-			if (rgb != null)
-				return fResourceManager.createColor(rgb);
+            if (rgb != null) {
+                return fResourceManager.createColor(rgb);
+            }
 		}
 
 		return null;

@@ -205,12 +205,32 @@ public class GridItem extends Item {
 	}
 
 	/**
+	 * Creates a facade for an already-existing logical SWT.VIRTUAL row.
+	 *
+	 * <p>This constructor deliberately does not insert a new logical coordinate.
+	 * It is used only by {@link GridVirtualItemList} when indexed API/paint access
+	 * first touches a cold row.</p>
+	 */
+	GridItem(Grid parent, int style, int index, boolean materializedVirtualFacade) {
+		super(parent, style, index);
+		this.parent = parent;
+		if (!materializedVirtualFacade) {
+			row = parent.newItem(this, index, true);
+			parent.newRootItem(this, index);
+		} else {
+			row = index;
+			parent.initializeVirtualItemFacade(this);
+		}
+	}
+
+	/**
 	 * @return grid row index
 	 */
 	public int getRowIndex() {
 		synchronized (ROW_LOCK) {
-			if (row != NO_ROW)
-				return row;
+            if (row != NO_ROW) {
+                return row;
+            }
 		}
 		return parent.indexOf(this);
 	}
@@ -307,10 +327,11 @@ public class GridItem extends Item {
 			} else {
 				parent.removeRootItem(this);
 			}
-			if (hasChildren)
-				for (int i = children.size() - 1; i >= 0; i--) {
-					children.get(i).dispose();
-				}
+            if (hasChildren) {
+                for (int i = children.size() - 1; i >= 0; i--) {
+                    children.get(i).dispose();
+                }
+            }
 		}
 		if (parent.getDataVisualizer() != null) {
 			parent.getDataVisualizer().clearRow(this);
@@ -518,28 +539,31 @@ public class GridItem extends Item {
 	public Rectangle getBoundsCorrected(final int columnIndex) {
 		checkWidget();
 
-		// HACK: The -1000,-1000 xy coordinates below are a hack to deal with
-		// GridEditor issues. In
-		// normal SWT Table, when an editor is created on Table and its
-		// positioned in the header area
-		// the header overlays the editor. Because Grid (header and everything)
-		// is drawn on one
-		// composite, when an editor is positioned in the header area the editor
-		// overlays the header.
-		// So to fix this, when the editor is anywhere its not supposed to be
-		// seen (the editor
-		// coordinates are determined by this getBounds) we position it out in
-		// timbuktu.
-		if (!isVisible())
-			return new Rectangle(-1000, -1000, 0, 0);
+        // HACK: The -1000,-1000 xy coordinates below are a hack to deal with
+        // GridEditor issues. In
+        // normal SWT Table, when an editor is created on Table and its
+        // positioned in the header area
+        // the header overlays the editor. Because Grid (header and everything)
+        // is drawn on one
+        // composite, when an editor is positioned in the header area the editor
+        // overlays the header.
+        // So to fix this, when the editor is anywhere its not supposed to be
+        // seen (the editor
+        // coordinates are determined by this getBounds) we position it out in
+        // timbuktu.
+        if (!isVisible()) {
+            return new Rectangle(-1000, -1000, 0, 0);
+        }
 
-		if (!parent.isShown(this))
-			return new Rectangle(-1000, -1000, 0, 0);
+        if (!parent.isShown(this)) {
+            return new Rectangle(-1000, -1000, 0, 0);
+        }
 
 		Point origin = parent.getOrigin(parent.getColumn(columnIndex), this);
 
-		if (origin.x < 0 && parent.isRowHeaderVisible())
-			return new Rectangle(-1000, -1000, 0, 0);
+        if (origin.x < 0 && parent.isRowHeaderVisible()) {
+            return new Rectangle(-1000, -1000, 0, 0);
+        }
 
 		Point cellSize = this.getCellSize(columnIndex, parent.getExtraFill());
 
@@ -875,8 +899,9 @@ public class GridItem extends Item {
 	 */
 	public GridItem getItem(int index) {
 		checkWidget();
-		if (!hasChildren)
-			throw new IllegalArgumentException("GridItem has no children!");
+        if (!hasChildren) {
+            throw new IllegalArgumentException("GridItem has no children!");
+        }
 		return children.get(index);
 	}
 
@@ -896,8 +921,9 @@ public class GridItem extends Item {
 	 */
 	public int getItemCount() {
 		checkWidget();
-		if (!hasChildren)
-			return 0;
+        if (!hasChildren) {
+            return 0;
+        }
 		return children.size();
 	}
 
@@ -926,12 +952,15 @@ public class GridItem extends Item {
 	 */
 	public int indexOf(GridItem item) {
 		checkWidget();
-		if (item == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		if (item.isDisposed())
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		if (!hasChildren)
-			throw new IllegalArgumentException("GridItem has no children!");
+        if (item == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        if (item.isDisposed()) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (!hasChildren) {
+            throw new IllegalArgumentException("GridItem has no children!");
+        }
 
 		return children.indexOf(item);
 	}
@@ -954,8 +983,9 @@ public class GridItem extends Item {
 	 *             </ul>
 	 */
 	public GridItem[] getItems() {
-		if (!hasChildren)
-			return new GridItem[0];
+        if (!hasChildren) {
+            return new GridItem[0];
+        }
 		return children.toArray(new GridItem[children.size()]);
 	}
 
@@ -1272,25 +1302,26 @@ public class GridItem extends Item {
 	private boolean doUnselect(boolean expanded) {
 		boolean unselected = false;
 
-		if (hasChildren)
-			for (GridItem item : children) {
-				item.setVisible(expanded && visible);
-				if (!expanded) {
-					if (!getParent().getCellSelectionEnabled()) {
-						if (getParent().isSelected(item)) {
-							unselected = true;
-							getParent().deselect(item.getRowIndex());
-						}
-						if (deselectChildren(item)) {
-							unselected = true;
-						}
-					} else {
-						if (deselectCells(item)) {
-							unselected = true;
-						}
-					}
-				}
-			}
+        if (hasChildren) {
+            for (GridItem item : children) {
+                item.setVisible(expanded && visible);
+                if (!expanded) {
+                    if (!getParent().getCellSelectionEnabled()) {
+                        if (getParent().isSelected(item)) {
+                            unselected = true;
+                            getParent().deselect(item.getRowIndex());
+                        }
+                        if (deselectChildren(item)) {
+                            unselected = true;
+                        }
+                    } else {
+                        if (deselectCells(item)) {
+                            unselected = true;
+                        }
+                    }
+                }
+            }
+        }
 		return unselected;
 	}
 
@@ -1523,16 +1554,18 @@ public class GridItem extends Item {
 	 */
 	public void setHeight(int newHeight) {
 		checkWidget();
-		if (newHeight < 1)
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        if (newHeight < 1) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
 		height = newHeight;
 		parent.hasDifferingHeights = true;
 		if (isVisible()) {
 			int myIndex = this.getRowIndex();
-			// note: cannot use Grid#isShown() here, because that returns false
-			// for partially shown items
-			if (parent.getTopIndex() <= myIndex && myIndex <= parent.getBottomIndex())
-				parent.bottomIndex = NO_ROW;
+            // note: cannot use Grid#isShown() here, because that returns false
+            // for partially shown items
+            if (parent.getTopIndex() <= myIndex && myIndex <= parent.getBottomIndex()) {
+                parent.bottomIndex = NO_ROW;
+            }
 		}
 		parent.setScrollValuesObsolete();
 		parent.redraw();
@@ -1556,8 +1589,9 @@ public class GridItem extends Item {
 		GridColumn[] columns = parent.getColumns();
 		GC gc = new GC(parent);
 		for (int cnt = 0; cnt < columns.length; cnt++) {
-			if (!columns[cnt].isVisible())
-				continue; // invisible columns do not affect item/row height
+            if (!columns[cnt].isVisible()) {
+                continue;
+            } // invisible columns do not affect item/row height
 
 			GridCellRenderer renderer = columns[cnt].getCellRenderer();
 
@@ -1568,8 +1602,9 @@ public class GridItem extends Item {
 			renderer.setWordWrap(columns[cnt].getWordWrap());
 
 			Point size = renderer.computeSize(gc, columns[cnt].getWidth(), SWT.DEFAULT, this);
-			if (size != null)
-				maxPrefHeight = Math.max(maxPrefHeight, size.y);
+            if (size != null) {
+                maxPrefHeight = Math.max(maxPrefHeight, size.y);
+            }
 		}
 		gc.dispose();
 
@@ -1661,8 +1696,9 @@ public class GridItem extends Item {
 	 *            child to remove
 	 */
 	private void remove(GridItem child) {
-		if (!hasChildren)
-			throw new IllegalArgumentException("GridItem has no children!");
+        if (!hasChildren) {
+            throw new IllegalArgumentException("GridItem has no children!");
+        }
 		children.remove(child);
 		parent.getDataVisualizer().clearRow(child);
 		hasChildren = !children.isEmpty();
@@ -1689,8 +1725,9 @@ public class GridItem extends Item {
 	 */
 	void newItem(GridItem item, int index) {
 		setHasChildren(true);
-		if (children == null)
-			children = new ArrayList<>();
+        if (children == null) {
+            children = new ArrayList<>();
+        }
 		if (index == NO_ROW) {
 			children.add(item);
 		} else {
@@ -1981,8 +2018,9 @@ public class GridItem extends Item {
 	public boolean getCheckable(int index) {
 		checkWidget();
 
-		if (!parent.getColumn(index).getCheckable())
-			return false;
+        if (!parent.getColumn(index).getCheckable()) {
+            return false;
+        }
 
 		return parent.getDataVisualizer().getCheckable(this, index);
 	}
@@ -2116,10 +2154,11 @@ public class GridItem extends Item {
 	 * this method call only super.dispose, nothing else..
 	 */
 	public void disposeOnly() {
-		if (hasChildren)
-			for (int i = children.size() - 1; i >= 0; i--) {
-				children.get(i).disposeOnly();
-			}
+        if (hasChildren) {
+            for (int i = children.size() - 1; i >= 0; i--) {
+                children.get(i).disposeOnly();
+            }
+        }
 		if (parent.getDataVisualizer() != null) {
 			parent.getDataVisualizer().clearRow(this);
 		}

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.eclipse.nebula.verification</groupId>
+  <artifactId>visible-range-diff-contract</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Nebula visible-range atom contract (not the full Tycho build)</name>
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <build>
+    <sourceDirectory>${project.basedir}/../../widgets/grid/org.eclipse.nebula.widgets.grid/src</sourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.14.1</version>
+        <configuration>
+          <includes><include>org/eclipse/nebula/widgets/grid/GridVisibleRangeDiff.java</include></includes>
+          <compilerArgs><arg>-Xlint:all</arg><arg>-Werror</arg></compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>actual-diff-contract</id><phase>test</phase><goals><goal>java</goal></goals>
+            <configuration>
+              <mainClass>org.eclipse.nebula.widgets.grid.GridVisibleRangeDiffContract</mainClass>
+              <classpathScope>test</classpathScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

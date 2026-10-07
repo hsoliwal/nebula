@@ -100,8 +100,9 @@ public class OneRendererPaginationTableAtHandExample {
 		shell.setSize(350, 250);
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

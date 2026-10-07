@@ -119,8 +119,10 @@ class HeaderLayout extends AbstractGridRowLayout {
         
         int childWidth = child.getSize().x;
         int shellWidth = child.getShell().getSize().x;
-        
-        if (childWidth == lastChildWidth && shellWidth > lastShellWidth) return;
+
+        if (childWidth == lastChildWidth && shellWidth > lastShellWidth) {
+            return;
+        }
         
         if (childWidth > lastChildWidth) {
             final Table headerTable = getHeader(child).headerTable;
@@ -427,7 +429,9 @@ class HeaderLayout extends AbstractGridRowLayout {
         }
 
         public void controlResized(ControlEvent e) {
-            if (lastWidths == null) return;
+            if (lastWidths == null) {
+                return;
+            }
             wasResized = true;
             if (!layingOut) {
                 layingOut = true;

@@ -1,0 +1,17 @@
+autoreview target: local
+branch: codex/m3-stream-segment-names-20261004
+engine: codex
+model: gpt-5.6-sol
+fallback_model: gpt-5.6-terra
+thinking: high
+tools: on
+web_search: on
+refusing binary changes in local staged diff because their contents cannot be reviewed:
+- m3/stream-segment-proof/proof/aligned-reactor.log
+- m3/stream-segment-proof/proof/baseline-reactor.log
+- m3/stream-segment-proof/proof/baseline-repaired-reactor.log
+- m3/stream-segment-proof/proof/focused-verified.log
+- m3/stream-segment-proof/proof/proof-sdk-resolver-refusal.log
+- m3/stream-segment-proof/proof/proof-sdk-resolver-replay.log
+- m3/stream-segment-proof/proof/reactor-final-fresh.log
+- m3/stream-segment-proof/proof/reactor-final.log

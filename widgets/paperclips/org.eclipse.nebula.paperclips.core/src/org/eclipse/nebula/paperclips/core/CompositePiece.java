@@ -57,8 +57,9 @@ public class CompositePiece implements PrintPiece {
 
 	private static List<CompositeEntry> createList(CompositeEntry[] entries) {
 		List<CompositeEntry> result = new ArrayList<>();
-		for (int i = 0; i < entries.length; i++)
-			result.add(entries[i]);
+        for (int i = 0; i < entries.length; i++) {
+            result.add(entries[i]);
+        }
 		return result;
 	}
 
@@ -120,7 +121,8 @@ public class CompositePiece implements PrintPiece {
 	}
 
 	public void dispose() {
-		for (int i = 0; i < entries.length; i++)
-			entries[i].dispose();
+        for (int i = 0; i < entries.length; i++) {
+            entries[i].dispose();
+        }
 	}
 }

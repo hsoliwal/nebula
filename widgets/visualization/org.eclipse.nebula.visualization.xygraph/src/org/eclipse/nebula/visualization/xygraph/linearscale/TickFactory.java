@@ -91,12 +91,14 @@ public class TickFactory {
 
 	private String getTickString(double value) {
 
-		if (scale != null)
-			value = scale.getLabel(value);
+        if (scale != null) {
+            value = scale.getLabel(value);
+        }
 
 		String returnString = "";
-		if (Double.isNaN(value))
-			return returnString;
+        if (Double.isNaN(value)) {
+            return returnString;
+        }
 
 		switch (formatOfTicks) {
 		case autoMode:
@@ -132,8 +134,9 @@ public class TickFactory {
 				returnString = String.format("%6.2fG", value * 1E-9);
 			} else if (absValue < 1E15) {
 				returnString = String.format("%6.2fT", value * 1E-12);
-			} else if (absValue < 1E18)
-				returnString = String.format("%6.2fP", value * 1E-15);
+			} else if (absValue < 1E18) {
+                returnString = String.format("%6.2fP", value * 1E-15);
+            }
 			break;
 		case useCustom:
 			returnString = scale.format(value);
@@ -165,8 +168,9 @@ public class TickFactory {
 	 */
 	protected static double roundDown(BigDecimal numerator, BigDecimal denominator) {
 		final int ns = numerator.signum();
-		if (ns == 0)
-			return 0;
+        if (ns == 0) {
+            return 0;
+        }
 		final int ds = denominator.signum();
 		if (ds == 0) {
 			throw new IllegalArgumentException("Zero denominator is not allowed");
@@ -190,8 +194,9 @@ public class TickFactory {
 			throw new IllegalStateException("Cannot happen!");
 		}
 
-		if (ns != ds)
-			return x[0].signum() == 0 ? -denominator.doubleValue() : -x[0].add(BigDecimal.ONE).multiply(denominator).doubleValue();
+        if (ns != ds) {
+            return x[0].signum() == 0 ? -denominator.doubleValue() : -x[0].add(BigDecimal.ONE).multiply(denominator).doubleValue();
+        }
 
 		return x[0].multiply(denominator).doubleValue();
 	}
@@ -205,8 +210,9 @@ public class TickFactory {
 	 */
 	protected static double roundUp(BigDecimal numerator, BigDecimal denominator) {
 		final int ns = numerator.signum();
-		if (ns == 0)
-			return 0;
+        if (ns == 0) {
+            return 0;
+        }
 		final int ds = denominator.signum();
 		if (ds == 0) {
 			throw new IllegalArgumentException("Zero denominator is not allowed");
@@ -232,8 +238,9 @@ public class TickFactory {
 			throw new IllegalStateException("Cannot happen!");
 		}
 
-		if (ns != ds)
-			return x[0].signum() == 0 ? 0 : -x[0].multiply(denominator).doubleValue();
+        if (ns != ds) {
+            return x[0].signum() == 0 ? 0 : -x[0].multiply(denominator).doubleValue();
+        }
 
 		return x[0].add(BigDecimal.ONE).multiply(denominator).doubleValue();
 	}
@@ -283,24 +290,26 @@ public class TickFactory {
 		bf = x.scaleByPowerOfTen(-expv);
 		f = bf.doubleValue(); /* between 1 and 10 */
 		if (round) {
-			if (f < 1.5)
-				nf = 1;
-			else if (f < 2.25)
-				nf = 2;
-			else if (f < 3.25)
-				nf = 2.5;
-			else if (f < 7.5)
-				nf = 5;
-			else
-				nf = 10;
-		} else if (f <= 1.)
-			nf = 1;
-		else if (f <= 2.)
-			nf = 2;
-		else if (f <= 5.)
-			nf = 5;
-		else
-			nf = 10;
+            if (f < 1.5) {
+                nf = 1;
+            } else if (f < 2.25) {
+                nf = 2;
+            } else if (f < 3.25) {
+                nf = 2.5;
+            } else if (f < 7.5) {
+                nf = 5;
+            } else {
+                nf = 10;
+            }
+		} else if (f <= 1.) {
+            nf = 1;
+        } else if (f <= 2.) {
+            nf = 2;
+        } else if (f <= 5.) {
+            nf = 5;
+        } else {
+            nf = 10;
+        }
 
 		if (negative) {
 			nf = -nf;
@@ -592,28 +601,33 @@ public class TickFactory {
 				boolean allInts = true;
 				for (Tick t : ticks) {
 					double v = Math.abs(scale.getLabel(t.getValue()));
-					if (Double.isNaN(v))
-						continue;
+                    if (Double.isNaN(v)) {
+                        continue;
+                    }
 					if (allInts) {
 						allInts = Math.abs(v - Math.floor(v)) == 0;
 					}
 					v = Math.abs(v);
-					if (v < vmin && v > 0)
-						vmin = v;
-					if (v > vmax)
-						vmax = v;
+                    if (v < vmin && v > 0) {
+                        vmin = v;
+                    }
+                    if (v > vmax) {
+                        vmax = v;
+                    }
 				}
 				if (allInts) {
 					for (Tick t : ticks) {
 						double v = scale.getLabel(t.getValue());
-						if (!Double.isNaN(v))
-							t.setText(INDEX_FORMAT.format(v));
+                        if (!Double.isNaN(v)) {
+                            t.setText(INDEX_FORMAT.format(v));
+                        }
 					}
 				} else if (Math.log10(vmin) >= DIGITS_LOWER_LIMIT || Math.log10(vmax) <= DIGITS_UPPER_LIMIT) {
 					for (Tick t : ticks) {
 						double v = scale.getLabel(t.getValue());
-						if (!Double.isNaN(v))
-							t.setText(scale.format(v));
+                        if (!Double.isNaN(v)) {
+                            t.setText(scale.format(v));
+                        }
 					}
 				}
 			} else {

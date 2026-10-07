@@ -268,9 +268,10 @@ public class DateHelper {
 				return calendarize(foo, locale);
 			}
 			catch (Exception err) {
-				// some locales already have 4 y's
-				if (actualLocalePattern.indexOf("yyyy") == -1)
-					actualLocalePattern = actualLocalePattern.replaceAll("yy", "yyyy");
+                // some locales already have 4 y's
+                if (actualLocalePattern.indexOf("yyyy") == -1) {
+                    actualLocalePattern = actualLocalePattern.replaceAll("yy", "yyyy");
+                }
 
 				try {
 					Date foo = df.parse(str);
@@ -307,8 +308,9 @@ public class DateHelper {
 				// clear the bad chars and try again
 				StringBuffer buf = new StringBuffer();
 				for (int i = 0; i < str.length(); i++) {
-					if (str.charAt(i) >= '0' && str.charAt(i) <= '9')
-						buf.append(str.charAt(i));
+                    if (str.charAt(i) >= '0' && str.charAt(i) <= '9') {
+                        buf.append(str.charAt(i));
+                    }
 				}
 
 				String fixed = buf.toString();
@@ -386,8 +388,9 @@ public class DateHelper {
 				parsed = sdf.parse(str);
 			}
 
-			if (parsed != null)
-				return calendarize(parsed, locale);
+            if (parsed != null) {
+                return calendarize(parsed, locale);
+            }
 		}
 		catch (ParseException pe) {
 			// ignore, try more
@@ -524,13 +527,15 @@ public class DateHelper {
 				break;
 			}
 		}
-		if (start == -1)
-			throw new CalendarDateParseException("Failed to find splitter char", CalendarDateParseException.TYPE_NO_SLPITTER_CHAR);
+        if (start == -1) {
+            throw new CalendarDateParseException("Failed to find splitter char", CalendarDateParseException.TYPE_NO_SLPITTER_CHAR);
+        }
 
 		// replace dateFormat until we have same splitter
 		for (int i = 0; i < separators.length; i++) {
-			if (String.valueOf(separators[i]).equals(splitter))
-				continue;
+            if (String.valueOf(separators[i]).equals(splitter)) {
+                continue;
+            }
 
 			dateFormatToUse = dateFormatToUse.replaceAll("\\" + String.valueOf(separators[i]), splitter);
 		}
@@ -539,8 +544,9 @@ public class DateHelper {
 		StringTokenizer st = new StringTokenizer(str, splitter);
 		StringTokenizer st2 = new StringTokenizer(dateFormatToUse, splitter);
 
-		if (st.countTokens() != st2.countTokens())
-			throw new CalendarDateParseException("Date format does not match date string in terms of splitter character numbers", CalendarDateParseException.TYPE_INSUFFICIENT_SPLITTERS);
+        if (st.countTokens() != st2.countTokens()) {
+            throw new CalendarDateParseException("Date format does not match date string in terms of splitter character numbers", CalendarDateParseException.TYPE_INSUFFICIENT_SPLITTERS);
+        }
 
 		// variables we'll be extracting
 		int monthToSet = -1;
@@ -593,9 +599,10 @@ public class DateHelper {
 		        toReturn.set(Calendar.DATE, dayToSet);
 		    }
 		}
-		
-		if (toReturn.get(Calendar.YEAR) < 100)
-			toReturn.set(Calendar.YEAR, toReturn.get(Calendar.YEAR) + 2000);
+
+        if (toReturn.get(Calendar.YEAR) < 100) {
+            toReturn.set(Calendar.YEAR, toReturn.get(Calendar.YEAR) + 2000);
+        }
 
 		toReturn.set(Calendar.HOUR_OF_DAY, 0);
 		toReturn.set(Calendar.MINUTE, 0);

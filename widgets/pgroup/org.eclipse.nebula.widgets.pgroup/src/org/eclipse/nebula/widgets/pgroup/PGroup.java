@@ -146,8 +146,9 @@ public class PGroup extends Canvas
     public Color getBackground()
     {
         checkWidget();
-        if (backgroundColor == null)
+        if (backgroundColor == null) {
             return super.getBackground();
+        }
         return backgroundColor;
     }
 
@@ -521,8 +522,9 @@ public class PGroup extends Canvas
     public void setStrategy(AbstractGroupStrategy strategy)
     {
         checkWidget();
-        if (strategy == null)
+        if (strategy == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         this.strategy = strategy;
         setForeground(null);
         strategy.initialize();
@@ -557,8 +559,9 @@ public class PGroup extends Canvas
     {
         checkWidget();
 
-        if (image != null && image.isDisposed())
+        if (image != null && image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
         this.image = image;
         strategy.update();
     }
@@ -602,8 +605,9 @@ public class PGroup extends Canvas
     public void setText(String text)
     {
         checkWidget();
-        if (text == null)
+        if (text == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
         this.text = text;
         strategy.update();
         redraw();
@@ -670,8 +674,9 @@ public class PGroup extends Canvas
     private void onDispose()
     {
         strategy.dispose();
-        if (initialFont != null)
+        if (initialFont != null) {
             initialFont.dispose();
+        }
     }
 
     /**
@@ -836,8 +841,9 @@ public class PGroup extends Canvas
     public Rectangle getClientArea()
     {
         checkWidget();
-        if (getExpanded())
+        if (getExpanded()) {
             return strategy.getClientArea();
+        }
 
         return new Rectangle(-10, 0, 0, 0);
     }

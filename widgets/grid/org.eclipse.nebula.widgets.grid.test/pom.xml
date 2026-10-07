@@ -34,6 +34,7 @@
 				<configuration>
 					<includes>
 						<include>**/GridFixedColumn_Test.java</include>
+						<include>**/GridVisibleRangeSupport_Test.java</include>
 					</includes>
 				</configuration>
 			</plugin>

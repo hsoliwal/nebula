@@ -101,8 +101,9 @@ public class DAxis extends Axis {
 
 	@Override
 	public int getMargin() {
-		if (isDirty())
-			setMargin(getTicksProvider().getHeadMargin());
+        if (isDirty()) {
+            setMargin(getTicksProvider().getHeadMargin());
+        }
 		return getMargin(false);
 	}
 
@@ -114,8 +115,9 @@ public class DAxis extends Axis {
 	public double getScaling() {
 		int length = getLength();
 		int margin = getMargin();
-		if (isLogScaleEnabled())
-			return (Math.log10(max) - Math.log10(min)) / (length - 2 * margin);
+        if (isLogScaleEnabled()) {
+            return (Math.log10(max) - Math.log10(min)) / (length - 2 * margin);
+        }
 		return (max - min) / (length - 2 * margin);
 	}
 
@@ -167,8 +169,9 @@ public class DAxis extends Axis {
 	 *            if true, make ticks based on axis dataset indexes
 	 */
 	public void setTicksIndexBased(boolean isTicksIndexBased) {
-		if (ticksIndexBased != isTicksIndexBased)
-			((LinearScaleTickLabels2)getScaleTickLabels()).setTicksIndexBased(isTicksIndexBased);
+        if (ticksIndexBased != isTicksIndexBased) {
+            ((LinearScaleTickLabels2) getScaleTickLabels()).setTicksIndexBased(isTicksIndexBased);
+        }
 		ticksIndexBased = isTicksIndexBased;
 	}
 
@@ -362,10 +365,12 @@ public class DAxis extends Axis {
 			}
 		}
 		if (isLogScaleEnabled()) {
-			if (upper <= 0)
-				upper = DEFAULT_LOG_SCALE_MAX;
-			if (lower <= 0)
-				lower = DEFAULT_LOG_SCALE_MIN * upper;
+            if (upper <= 0) {
+                upper = DEFAULT_LOG_SCALE_MAX;
+            }
+            if (lower <= 0) {
+                lower = DEFAULT_LOG_SCALE_MIN * upper;
+            }
 		}
 		min = lower;
 		max = upper;
@@ -509,8 +514,9 @@ public class DAxis extends Axis {
 	 */
 	public void clear() {
 		for (Iterator<IAxisListener> it = listeners.iterator(); it.hasNext();) {
-			if (getTraceList().contains(it.next()))
-				it.remove();
+            if (getTraceList().contains(it.next())) {
+                it.remove();
+            }
 		}
 		getTraceList().clear();
 	}

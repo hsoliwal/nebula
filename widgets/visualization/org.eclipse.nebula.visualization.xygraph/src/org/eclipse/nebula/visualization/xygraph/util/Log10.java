@@ -37,8 +37,9 @@ public class Log10 {
 	 * @return an adjusted log<sub>10</sub>(val).
 	 */
 	public static double log10(double val) {
-		if (val > 0.0)
-			return Math.log10(val);
+        if (val > 0.0) {
+            return Math.log10(val);
+        }
 		return HUGE_NEGATIVE;
 	}
 

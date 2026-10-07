@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<?compositeArtifactRepository version='1.0.0'?>
+<repository name="Nebula owned current and pinned Batik legacy p2" type="org.eclipse.equinox.internal.p2.artifact.repository.CompositeArtifactRepository" version="1.0.0">
+  <properties size="1">
+    <property name="p2.timestamp" value="1709794724040" />
+  </properties>
+  <children size="2">
+    <child location="../../p2-7287eed88567/mirror" />
+    <child location="../mirror" />
+  </children>
+</repository>

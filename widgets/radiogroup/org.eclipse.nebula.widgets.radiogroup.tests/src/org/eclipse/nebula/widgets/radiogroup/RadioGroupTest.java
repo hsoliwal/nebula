@@ -258,10 +258,12 @@ public class RadioGroupTest extends TestCase {
 	}
 
 	private void simulateDeselect(RadioItem item) {
-		if (item == null)
-			return;
-		if (!item.isSelected())
-			return;
+        if (item == null) {
+            return;
+        }
+        if (!item.isSelected()) {
+            return;
+        }
 
 		Button button = item.getButton();
 		button.setSelection(false);

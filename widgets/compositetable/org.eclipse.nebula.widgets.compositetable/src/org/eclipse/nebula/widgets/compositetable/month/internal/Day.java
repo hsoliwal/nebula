@@ -116,10 +116,12 @@ public class Day extends Canvas implements PaintListener, DisposeListener {
 	private RGB lighten(RGB color, float amount) {
 		float[] hsb = color.getHSB();
 		float b = hsb[2] + hsb[2] * amount;
-		if (b < 0)
-			b = 0;
-		if (b > 1)
-			b = 1;
+        if (b < 0) {
+            b = 0;
+        }
+        if (b > 1) {
+            b = 1;
+        }
 		return new RGB(hsb[0], hsb[1], b);
 	}
 
@@ -247,14 +249,16 @@ public class Day extends Canvas implements PaintListener, DisposeListener {
 	 */
 	public void addMouseListener(MouseListener listener) {
 		super.addMouseListener(listener);
-		if (listener != mouseListener)
-			mouseListeners.add(listener);
+        if (listener != mouseListener) {
+            mouseListeners.add(listener);
+        }
 	}
 
 	public void removeMouseListener(MouseListener listener) {
 		super.removeMouseListener(listener);
-		if (listener != mouseListener)
-			mouseListeners.remove(listener);
+        if (listener != mouseListener) {
+            mouseListeners.remove(listener);
+        }
 	}
 
 	private MouseListener mouseListener = new MouseListener() {
@@ -422,12 +426,13 @@ public class Day extends Canvas implements PaintListener, DisposeListener {
 	}
 
 	public void setFocusState(int focusState) {
-		if (focusState > 0)
-			this.focusState = NO_FOCUS;
-		else if (focusState < 0)
-			this.focusState = NONACTIVE_FOCUS;
-		else
-			this.focusState = FOCUS;
+        if (focusState > 0) {
+            this.focusState = NO_FOCUS;
+        } else if (focusState < 0) {
+            this.focusState = NONACTIVE_FOCUS;
+        } else {
+            this.focusState = FOCUS;
+        }
 	}
 
 } // @jve:decl-index=0:visual-constraint="10,10"

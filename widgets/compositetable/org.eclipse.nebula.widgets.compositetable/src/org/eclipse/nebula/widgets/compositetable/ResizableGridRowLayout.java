@@ -89,7 +89,9 @@ public class ResizableGridRowLayout extends GridRowLayout {
     }
     
     private CompositeTableLayout getLayoutDelegate(Composite composite) {
-        if (delegate != null) return delegate;
+        if (delegate != null) {
+            return delegate;
+        }
         
         findHeader(composite);
         if (delegate != null) {
@@ -160,7 +162,9 @@ public class ResizableGridRowLayout extends GridRowLayout {
                 runnableQueueIsClear = false;
                 row.getDisplay().asyncExec(new Runnable() {
                     public void run() {
-                        if (row.isDisposed()) return;
+                        if (row.isDisposed()) {
+                            return;
+                        }
                         
                         Control[] children = row.getChildren();
                         

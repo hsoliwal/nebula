@@ -73,54 +73,62 @@ public class AbstractLinearMarkedFigure extends AbstractMarkedWidgetFigure {
 	
 	@Override
 	public void setShowLolo(boolean showLolo) {
-		super.setShowLolo(showLolo);		
-		if(showLolo)
-			if(loloColor != null)
-				marker.addMarkerElement(LOLO, loloLevel, loloColor.getRGB());
-			else
-				marker.addMarkerElement(LOLO, loloLevel);
-		else
-			marker.removeMarkerElement(LOLO);
+		super.setShowLolo(showLolo);
+        if (showLolo) {
+            if (loloColor != null) {
+                marker.addMarkerElement(LOLO, loloLevel, loloColor.getRGB());
+            } else {
+                marker.addMarkerElement(LOLO, loloLevel);
+            }
+        } else {
+            marker.removeMarkerElement(LOLO);
+        }
 		revalidate();
 	}
 	
 	@Override
 	public void setShowLo(boolean showLo) {
-		super.setShowLo(showLo);		
-		if(showLo)
-			if(loColor != null)
-				marker.addMarkerElement(LO, loLevel, loColor.getRGB());
-			else
-				marker.addMarkerElement(LO, loLevel);
-		else
-			marker.removeMarkerElement(LO);
+		super.setShowLo(showLo);
+        if (showLo) {
+            if (loColor != null) {
+                marker.addMarkerElement(LO, loLevel, loColor.getRGB());
+            } else {
+                marker.addMarkerElement(LO, loLevel);
+            }
+        } else {
+            marker.removeMarkerElement(LO);
+        }
 		revalidate();
 
 	}
 	
 	@Override
 	public void setShowHi(boolean showHi) {
-		super.setShowHi(showHi);		
-		if(showHi)
-			if(hiColor != null)
-				marker.addMarkerElement(HI, hiLevel, hiColor.getRGB());
-			else
-				marker.addMarkerElement(HI, hiLevel);			
-		else
-			marker.removeMarkerElement(HI);
+		super.setShowHi(showHi);
+        if (showHi) {
+            if (hiColor != null) {
+                marker.addMarkerElement(HI, hiLevel, hiColor.getRGB());
+            } else {
+                marker.addMarkerElement(HI, hiLevel);
+            }
+        } else {
+            marker.removeMarkerElement(HI);
+        }
 		revalidate();
 	}
 	
 	@Override
 	public void setShowHihi(boolean showHihi) {
-		super.setShowHihi(showHihi);		
-		if(showHihi)
-			if(hihiColor != null)
-				marker.addMarkerElement(HIHI, hihiLevel, hihiColor.getRGB());
-			else
-				marker.addMarkerElement(HIHI, hihiLevel);
-		else
-			marker.removeMarkerElement(HIHI);
+		super.setShowHihi(showHihi);
+        if (showHihi) {
+            if (hihiColor != null) {
+                marker.addMarkerElement(HIHI, hihiLevel, hihiColor.getRGB());
+            } else {
+                marker.addMarkerElement(HIHI, hihiLevel);
+            }
+        } else {
+            marker.removeMarkerElement(HIHI);
+        }
 		revalidate();
 	}	
 	

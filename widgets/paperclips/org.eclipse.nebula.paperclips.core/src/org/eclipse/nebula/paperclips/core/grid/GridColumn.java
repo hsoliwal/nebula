@@ -106,47 +106,57 @@ public class GridColumn {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		GridColumn other = (GridColumn) obj;
-		if (align != other.align)
-			return false;
-		if (size != other.size)
-			return false;
-		if (weight != other.weight)
-			return false;
+        if (align != other.align) {
+            return false;
+        }
+        if (size != other.size) {
+            return false;
+        }
+        if (weight != other.weight) {
+            return false;
+        }
 		return true;
 	}
 
 	private static int checkAlign(int align) {
 		align = PaperClipsUtil.firstMatch(align, new int[] { SWT.LEFT,
 				SWT.CENTER, SWT.RIGHT, SWT.DEFAULT }, 0);
-		if (align == 0)
-			PaperClips
-					.error(
-							SWT.ERROR_INVALID_ARGUMENT,
-							"Alignment argument must be one of SWT.LEFT, SWT.CENTER, SWT.RIGHT, or SWT.DEFAULT"); //$NON-NLS-1$
-		if (align == SWT.DEFAULT)
-			return DEFAULT_ALIGN;
+        if (align == 0) {
+            PaperClips
+                    .error(
+                            SWT.ERROR_INVALID_ARGUMENT,
+                            "Alignment argument must be one of SWT.LEFT, SWT.CENTER, SWT.RIGHT, or SWT.DEFAULT"); //$NON-NLS-1$
+        }
+        if (align == SWT.DEFAULT) {
+            return DEFAULT_ALIGN;
+        }
 		return align;
 	}
 
 	private static int checkSize(int size) {
-		if (size != SWT.DEFAULT && size != GridPrint.PREFERRED && size <= 0)
-			PaperClips
-					.error(SWT.ERROR_INVALID_ARGUMENT,
-							"Size argument must be SWT.DEFAULT, GridPrint.PREFERRED, or > 0"); //$NON-NLS-1$
+        if (size != SWT.DEFAULT && size != GridPrint.PREFERRED && size <= 0) {
+            PaperClips
+                    .error(SWT.ERROR_INVALID_ARGUMENT,
+                            "Size argument must be SWT.DEFAULT, GridPrint.PREFERRED, or > 0"); //$NON-NLS-1$
+        }
 		return size;
 	}
 
 	private static int checkWeight(int grow) {
-		if (grow < 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"Weight argument must be >= 0"); //$NON-NLS-1$
+        if (grow < 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "Weight argument must be >= 0"); //$NON-NLS-1$
+        }
 		return grow;
 	}
 
@@ -198,8 +208,9 @@ public class GridColumn {
 		Util.notNull(spec);
 
 		String[] matches = spec.split("\\s*:\\s*"); //$NON-NLS-1$
-		if (matches.length == 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Missing column spec"); //$NON-NLS-1$
+        if (matches.length == 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT, "Missing column spec"); //$NON-NLS-1$
+        }
 
 		int align = DEFAULT_ALIGN;
 		int size = DEFAULT_SIZE;
@@ -250,12 +261,13 @@ public class GridColumn {
 	}
 
 	private static int parseAlign(String alignmentString) {
-		if (LEFT_ALIGN_PATTERN.matcher(alignmentString).matches())
-			return SWT.LEFT;
-		else if (CENTER_ALIGN_PATTERN.matcher(alignmentString).matches())
-			return SWT.CENTER;
-		else if (RIGHT_ALIGN_PATTERN.matcher(alignmentString).matches())
-			return SWT.RIGHT;
+        if (LEFT_ALIGN_PATTERN.matcher(alignmentString).matches()) {
+            return SWT.LEFT;
+        } else if (CENTER_ALIGN_PATTERN.matcher(alignmentString).matches()) {
+            return SWT.CENTER;
+        } else if (RIGHT_ALIGN_PATTERN.matcher(alignmentString).matches()) {
+            return SWT.RIGHT;
+        }
 		PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
 				"Unknown alignment \"" + alignmentString + "\""); //$NON-NLS-1$//$NON-NLS-2$
 		return 0; // unreachable
@@ -276,30 +288,31 @@ public class GridColumn {
 
 	private static int parseSize(String sizeString) {
 		Matcher matcher;
-		if (DEFAULT_SIZE_PATTERN.matcher(sizeString).matches())
-			return SWT.DEFAULT;
-		else if (PREFERRED_SIZE_PATTERN.matcher(sizeString).matches())
-			return GridPrint.PREFERRED;
-		else if ((matcher = EXPLICIT_SIZE_PATTERN.matcher(sizeString))
-				.matches()) {
-			return (int) Math.ceil(convertToPoints(Double.parseDouble(matcher
-					.group(1)), matcher.group(3)));
-		} else {
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"Unknown size pattern: \"" + sizeString + "\""); //$NON-NLS-1$ //$NON-NLS-2$
-			return 0; // unreachable
-		}
+        if (DEFAULT_SIZE_PATTERN.matcher(sizeString).matches()) {
+            return SWT.DEFAULT;
+        } else if (PREFERRED_SIZE_PATTERN.matcher(sizeString).matches()) {
+            return GridPrint.PREFERRED;
+        } else if ((matcher = EXPLICIT_SIZE_PATTERN.matcher(sizeString))
+                .matches()) {
+            return (int) Math.ceil(convertToPoints(Double.parseDouble(matcher
+                    .group(1)), matcher.group(3)));
+        } else {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "Unknown size pattern: \"" + sizeString + "\""); //$NON-NLS-1$ //$NON-NLS-2$
+            return 0; // unreachable
+        }
 	}
 
 	private static double convertToPoints(double value, String unit) {
-		if (unit == null || unit.length() == 0 || unit.equalsIgnoreCase("pt")) //$NON-NLS-1$
-			return value;
-		else if (unit.equalsIgnoreCase("in") || unit.equalsIgnoreCase("inch")) //$NON-NLS-1$ //$NON-NLS-2$
-			return 72 * value;
-		else if (unit.equalsIgnoreCase("cm")) //$NON-NLS-1$
-			return 72 * value / 2.54;
-		else if (unit.equalsIgnoreCase("mm")) //$NON-NLS-1$
-			return 72 * value / 25.4;
+        if (unit == null || unit.length() == 0 || unit.equalsIgnoreCase("pt")) { //$NON-NLS-1$
+            return value;
+        } else if (unit.equalsIgnoreCase("in") || unit.equalsIgnoreCase("inch")) { //$NON-NLS-1$ //$NON-NLS-2$
+            return 72 * value;
+        } else if (unit.equalsIgnoreCase("cm")) { //$NON-NLS-1$
+            return 72 * value / 2.54;
+        } else if (unit.equalsIgnoreCase("mm")) { //$NON-NLS-1$
+            return 72 * value / 25.4;
+        }
 		PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
 				"Unknown unit \"" + unit + "\"."); //$NON-NLS-1$ //$NON-NLS-2$
 		return 0;
@@ -315,17 +328,17 @@ public class GridColumn {
 
 	private static int parseWeight(String weightString) {
 		Matcher matcher;
-		if (WEIGHTLESS_PATTERN.matcher(weightString).matches())
-			return 0;
-		else if ((matcher = WEIGHTED_PATTERN.matcher(weightString)).matches()) {
-			String weight = matcher.group(4);
-			return (weight == null) ? 1 : Integer.parseInt(weight);
-		} else {
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"Illegal grow pattern: \"" + weightString //$NON-NLS-1$
-							+ "\""); //$NON-NLS-1$
-			return 0; // unreachable
-		}
+        if (WEIGHTLESS_PATTERN.matcher(weightString).matches()) {
+            return 0;
+        } else if ((matcher = WEIGHTED_PATTERN.matcher(weightString)).matches()) {
+            String weight = matcher.group(4);
+            return (weight == null) ? 1 : Integer.parseInt(weight);
+        } else {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "Illegal grow pattern: \"" + weightString //$NON-NLS-1$
+                            + "\""); //$NON-NLS-1$
+            return 0; // unreachable
+        }
 	}
 
 	GridColumn copy() {

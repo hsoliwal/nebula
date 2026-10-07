@@ -94,8 +94,9 @@ public class TankFigure extends AbstractLinearMarkedFigure {
 	 * @param effect3D the effect3D to set
 	 */
 	public void setEffect3D(boolean effect3D) {
-		if(this.effect3D == effect3D)
-			return;
+        if (this.effect3D == effect3D) {
+            return;
+        }
 		this.effect3D = effect3D;
 		repaint();
 	}
@@ -104,8 +105,9 @@ public class TankFigure extends AbstractLinearMarkedFigure {
 	 * @param fillBackgroundColor the fillBackgroundColor to set
 	 */
 	public void setFillBackgroundColor(Color fillBackgroundColor) {
-		if(this.fillBackgroundColor != null && this.fillBackgroundColor.equals(fillBackgroundColor))
-			return;
+        if (this.fillBackgroundColor != null && this.fillBackgroundColor.equals(fillBackgroundColor)) {
+            return;
+        }
 		this.fillBackgroundColor = fillBackgroundColor;
 		repaint();
 	}
@@ -114,8 +116,9 @@ public class TankFigure extends AbstractLinearMarkedFigure {
 	 * @param fillColor the fillColor to set
 	 */
 	public void setFillColor(Color fillColor) {
-		if(this.fillColor != null && this.fillColor.equals(fillColor))
-			return;
+        if (this.fillColor != null && this.fillColor.equals(fillColor)) {
+            return;
+        }
 		this.fillColor = fillColor;
 		repaint();
 	}
@@ -142,18 +145,21 @@ public class TankFigure extends AbstractLinearMarkedFigure {
 				int fill_corner = DEFAULT_CORNER;
 				//If this is more close to 1/2, more light the tank will be.
 				double intersectFactor = 11d/20d;
-				if(bounds.width < 2*DEFAULT_CORNER)
-					intersectFactor = 12d/20d;
+                if (bounds.width < 2 * DEFAULT_CORNER) {
+                    intersectFactor = 12d / 20d;
+                }
 				int rectWidth = (int) (bounds.width * intersectFactor);
-				if(fill_corner > (2*rectWidth - (bounds.width - 2*getLineWidth())))
-					fill_corner = 2*rectWidth - bounds.width;
+                if (fill_corner > (2 * rectWidth - (bounds.width - 2 * getLineWidth()))) {
+                    fill_corner = 2 * rectWidth - bounds.width;
+                }
 				
 				corner.height = fill_corner;
 				corner.width = fill_corner;
 				graphics.setAntialias(SWT.ON);			
 				int valuePosition = ((LinearScale) scale).getValuePosition(getCoercedValue(), false);
-				if(support3d == null)
-					support3d = GraphicsUtil.testPatternSupported(graphics);
+                if (support3d == null) {
+                    support3d = GraphicsUtil.testPatternSupported(graphics);
+                }
 				
 				if(effect3D && support3d) {				
 					graphics.setBackgroundColor(WHITE_COLOR);
@@ -287,12 +293,13 @@ public class TankFigure extends AbstractLinearMarkedFigure {
 	
 		@Override
 		public void setConstraint(IFigure child, Object constraint) {
-			if(constraint.equals(SCALE))
-				scale = (LinearScale)child;
-			else if (constraint.equals(MARKERS))
-				marker = (LinearScaledMarker) child;
-			else if (constraint.equals(TANK))
-				tank = (Tank) child;
+            if (constraint.equals(SCALE)) {
+                scale = (LinearScale) child;
+            } else if (constraint.equals(MARKERS)) {
+                marker = (LinearScaledMarker) child;
+            } else if (constraint.equals(TANK)) {
+                tank = (Tank) child;
+            }
 		}
 	
 	}

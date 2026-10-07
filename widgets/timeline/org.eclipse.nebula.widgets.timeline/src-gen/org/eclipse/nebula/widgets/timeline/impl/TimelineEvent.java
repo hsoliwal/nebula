@@ -129,7 +129,9 @@ public class TimelineEvent extends Colored implements ITimelineEvent {
 	 */
 	@Override
 	public ILane getLane() {
-		if (eContainerFeatureID() != ITimelinePackage.TIMELINE_EVENT__LANE) return null;
+        if (eContainerFeatureID() != ITimelinePackage.TIMELINE_EVENT__LANE) {
+            return null;
+        }
 		return (ILane)eInternalContainer();
 	}
 
@@ -149,18 +151,24 @@ public class TimelineEvent extends Colored implements ITimelineEvent {
 	@Override
 	public void setLane(ILane newLane) {
 		if (newLane != eInternalContainer() || (eContainerFeatureID() != ITimelinePackage.TIMELINE_EVENT__LANE && newLane != null)) {
-			if (EcoreUtil.isAncestor(this, newLane))
-				throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            if (EcoreUtil.isAncestor(this, newLane)) {
+                throw new IllegalArgumentException("Recursive containment not allowed for " + toString());
+            }
 			NotificationChain msgs = null;
-			if (eInternalContainer() != null)
-				msgs = eBasicRemoveFromContainer(msgs);
-			if (newLane != null)
-				msgs = ((InternalEObject)newLane).eInverseAdd(this, ITimelinePackage.LANE__TIME_EVENTS, ILane.class, msgs);
+            if (eInternalContainer() != null) {
+                msgs = eBasicRemoveFromContainer(msgs);
+            }
+            if (newLane != null) {
+                msgs = ((InternalEObject) newLane).eInverseAdd(this, ITimelinePackage.LANE__TIME_EVENTS, ILane.class, msgs);
+            }
 			msgs = basicSetLane(newLane, msgs);
-			if (msgs != null) msgs.dispatch();
+            if (msgs != null) {
+                msgs.dispatch();
+            }
 		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__LANE, newLane, newLane));
+		else if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__LANE, newLane, newLane));
+        }
 	}
 
 	/**
@@ -180,8 +188,9 @@ public class TimelineEvent extends Colored implements ITimelineEvent {
 	public void setStartTimestamp(long newStartTimestamp) {
 		long oldStartTimestamp = startTimestamp;
 		startTimestamp = newStartTimestamp;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__START_TIMESTAMP, oldStartTimestamp, startTimestamp));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__START_TIMESTAMP, oldStartTimestamp, startTimestamp));
+        }
 	}
 
 	/**
@@ -201,8 +210,9 @@ public class TimelineEvent extends Colored implements ITimelineEvent {
 	public void setEndTimestamp(long newEndTimestamp) {
 		long oldEndTimestamp = endTimestamp;
 		endTimestamp = newEndTimestamp;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__END_TIMESTAMP, oldEndTimestamp, endTimestamp));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__END_TIMESTAMP, oldEndTimestamp, endTimestamp));
+        }
 	}
 
 	/**
@@ -222,8 +232,9 @@ public class TimelineEvent extends Colored implements ITimelineEvent {
 	public void setTitle(String newTitle) {
 		String oldTitle = title;
 		title = newTitle;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__TITLE, oldTitle, title));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__TITLE, oldTitle, title));
+        }
 	}
 
 	/**
@@ -243,8 +254,9 @@ public class TimelineEvent extends Colored implements ITimelineEvent {
 	public void setMessage(String newMessage) {
 		String oldMessage = message;
 		message = newMessage;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__MESSAGE, oldMessage, message));
+        if (eNotificationRequired()) {
+            eNotify(new ENotificationImpl(this, Notification.SET, ITimelinePackage.TIMELINE_EVENT__MESSAGE, oldMessage, message));
+        }
 	}
 
 	/**
@@ -315,8 +327,9 @@ public class TimelineEvent extends Colored implements ITimelineEvent {
 	public NotificationChain eInverseAdd(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
 			case ITimelinePackage.TIMELINE_EVENT__LANE:
-				if (eInternalContainer() != null)
-					msgs = eBasicRemoveFromContainer(msgs);
+                if (eInternalContainer() != null) {
+                    msgs = eBasicRemoveFromContainer(msgs);
+                }
 				return basicSetLane((ILane)otherEnd, msgs);
 		}
 		return super.eInverseAdd(otherEnd, featureID, msgs);

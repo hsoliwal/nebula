@@ -54,9 +54,11 @@ public class GridPrintExample {
 
 		shell.open();
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		PaperClips.print(new PrintJob("GridPrintExample", createPrint()),
 				new PrinterData());

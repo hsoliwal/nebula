@@ -143,8 +143,9 @@ public class PGroupStackPresentation extends StackPresentation
     private void updateItem(final IPresentablePart part)
     {
         String dirty = "";
-        if (part.isDirty())
+        if (part.isDirty()) {
             dirty = "*";
+        }
         
         group.setText(dirty + part.getName());
         
@@ -239,8 +240,9 @@ public class PGroupStackPresentation extends StackPresentation
     public void selectPart(IPresentablePart toSelect)
     {
         toSelect.setVisible(true);
-        if (toSelect.getToolBar() != null)
+        if (toSelect.getToolBar() != null) {
             toSelect.getToolBar().setVisible(true);
+        }
         resizeSelectedPart();
     }
 
@@ -276,8 +278,10 @@ public class PGroupStackPresentation extends StackPresentation
     private void resizeSelectedPart()
     {
         IPresentablePart part = getSite().getSelectedPart();
-        
-        if (part == null) return;
+
+        if (part == null) {
+            return;
+        }
         
         Control partTB = part.getToolBar();
         
@@ -326,10 +330,13 @@ public class PGroupStackPresentation extends StackPresentation
     public void setVisible(boolean isVisible)
     {
         group.setVisible(isVisible);
-        if (getSite().getSelectedPart() == null) return;
+        if (getSite().getSelectedPart() == null) {
+            return;
+        }
         getSite().getSelectedPart().setVisible(isVisible);
-        if (getSite().getSelectedPart().getToolBar() != null)
+        if (getSite().getSelectedPart().getToolBar() != null) {
             getSite().getSelectedPart().getToolBar().setVisible(isVisible);
+        }
     }
 
     

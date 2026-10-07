@@ -80,8 +80,9 @@ public class SnippetRemove {
 
 			public void mouseDoubleClick(MouseEvent e) {
 				GalleryItem[] selection = gallery.getSelection();
-				if (selection == null)
-					return;
+                if (selection == null) {
+                    return;
+                }
 				GalleryItem item = selection[0];
 				GalleryItem parent = item.getParentItem();
 				if (parent != null) {
@@ -104,12 +105,14 @@ public class SnippetRemove {
 		shell.pack();
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 
-		if (itemImage != null)
-			itemImage.dispose();
+        if (itemImage != null) {
+            itemImage.dispose();
+        }
 		display.dispose();
 	}
 }

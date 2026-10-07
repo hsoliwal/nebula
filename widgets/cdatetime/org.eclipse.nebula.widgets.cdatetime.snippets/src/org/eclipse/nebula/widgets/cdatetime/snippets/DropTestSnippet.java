@@ -60,8 +60,9 @@ public class DropTestSnippet {
 		);
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}
@@ -100,7 +101,9 @@ class MyDialog extends Dialog {
 		);
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch()) display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 	}
 }

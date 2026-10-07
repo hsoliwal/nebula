@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "C:\\toolchain\\venv\\Scripts\\python.exe",
+    "C:/Users/hsoliwal/.codex/skills/autoreview/scripts/autoreview",
+    "--mode",
+    "local",
+    "--base",
+    "f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b",
+    "--stream-engine-output"
+  ],
+  "exit": 1,
+  "engine": "default codex/gpt-5.6-sol/high",
+  "status": "UNAVAILABLE_HTTP401",
+  "full_scope": "SOURCE_REVIEW_PARTITION.json; complete production, tests, recipes, sealed candidates and summary evidence; large proof partition excluded",
+  "no_clean_review_claim": true
+}

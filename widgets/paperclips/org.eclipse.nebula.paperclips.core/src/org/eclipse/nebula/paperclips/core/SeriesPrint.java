@@ -45,18 +45,23 @@ public class SeriesPrint implements Print {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		SeriesPrint other = (SeriesPrint) obj;
 		if (items == null) {
-			if (other.items != null)
-				return false;
-		} else if (!items.equals(other.items))
-			return false;
+            if (other.items != null) {
+                return false;
+            }
+		} else if (!items.equals(other.items)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -68,8 +73,9 @@ public class SeriesPrint implements Print {
 	 */
 	public void add(Print[] items) {
 		Util.noNulls(items);
-		for (int i = 0; i < items.length; i++)
-			this.items.add(items[i]);
+        for (int i = 0; i < items.length; i++) {
+            this.items.add(items[i]);
+        }
 	}
 
 	/**
@@ -112,16 +118,18 @@ class SeriesIterator implements PrintIterator {
 
 	SeriesIterator(SeriesPrint print, Device device, GC gc) {
 		this.iters = new PrintIterator[print.items.size()];
-		for (int i = 0; i < iters.length; i++)
-			iters[i] = print.items.get(i).iterator(device, gc);
+        for (int i = 0; i < iters.length; i++) {
+            iters[i] = print.items.get(i).iterator(device, gc);
+        }
 
 		this.index = 0;
 	}
 
 	SeriesIterator(SeriesIterator that) {
 		this.iters = that.iters.clone();
-		for (int i = index; i < iters.length; i++)
-			this.iters[i] = that.iters[i].copy();
+        for (int i = index; i < iters.length; i++) {
+            this.iters[i] = that.iters[i].copy();
+        }
 
 		this.index = that.index;
 	}
@@ -151,14 +159,16 @@ class SeriesIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (!hasNext())
-			PaperClips.error("No more content"); //$NON-NLS-1$
+        if (!hasNext()) {
+            PaperClips.error("No more content"); //$NON-NLS-1$
+        }
 
 		PrintIterator iter = iters[index];
 		PrintPiece printPiece = PaperClips.next(iter, width, height);
 
-		if (printPiece != null && !iter.hasNext())
-			index++;
+        if (printPiece != null && !iter.hasNext()) {
+            index++;
+        }
 
 		return printPiece;
 	}

@@ -129,8 +129,9 @@ public class ColorMapRampExample {
 		shell.open();
 		Display display = Display.getDefault();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 	}
 

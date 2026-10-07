@@ -45,21 +45,29 @@ public class CTreeEditor extends ControlEditor {
 			final Runnable runnable = new Runnable() {
 				public void run() {
 					Control editor = getEditor();
-					if (editor == null || editor.isDisposed()) return;
-					if (CTreeEditor.this.tree.isDisposed()) return;
+                    if (editor == null || editor.isDisposed()) {
+                        return;
+                    }
+                    if (CTreeEditor.this.tree.isDisposed()) {
+                        return;
+                    }
 					layout();
 					editor.setVisible(true);
 				}
 			};
 			public void treeCollapsed(TreeEvent e) {
 				Control editor = getEditor();
-				if (editor == null || editor.isDisposed ()) return;
+                if (editor == null || editor.isDisposed()) {
+                    return;
+                }
 				editor.setVisible(false);
 				e.display.asyncExec(runnable);
 			}
 			public void treeExpanded(TreeEvent e) {
 				Control editor = getEditor();
-				if (editor == null || editor.isDisposed ()) return;
+                if (editor == null || editor.isDisposed()) {
+                    return;
+                }
 				editor.setVisible(false);
 				e.display.asyncExec(runnable);
 			}
@@ -80,8 +88,9 @@ public class CTreeEditor extends ControlEditor {
 			treeColumn.removeControlListener(columnListener);
 		}
 		columnListener = null;
-		if (treeListener != null) 
-			tree.removeTreeListener(treeListener);
+        if (treeListener != null) {
+            tree.removeTreeListener(treeListener);
+        }
 		treeListener = null;
 		tree = null;
 		item = null;
@@ -110,13 +119,23 @@ public class CTreeEditor extends ControlEditor {
 	}
 
 	public void layout() {
-		if (tree.isDisposed()) return;
-		if (item == null || item.isDisposed()) return;	
+        if (tree.isDisposed()) {
+            return;
+        }
+        if (item == null || item.isDisposed()) {
+            return;
+        }	
 		int columnCount = tree.getColumnCount();
-		if (columnCount == 0 && column != 0) return;
-		if (columnCount > 0 && (column < 0 || column >= columnCount)) return;
+        if (columnCount == 0 && column != 0) {
+            return;
+        }
+        if (columnCount > 0 && (column < 0 || column >= columnCount)) {
+            return;
+        }
 		Control editor = getEditor();
-		if(editor == null || editor.isDisposed()) return;
+        if (editor == null || editor.isDisposed()) {
+            return;
+        }
 
 		Rectangle cell = item.getCell(column).getBounds();
 		Rectangle ca = item.getCell(column).getClientArea();
@@ -175,14 +194,18 @@ public class CTreeEditor extends ControlEditor {
 			editorRect.y += (cell.height - editorRect.height)/2;
 		}
 
-		if(editor == null || editor.isDisposed()) return;
+        if (editor == null || editor.isDisposed()) {
+            return;
+        }
 		boolean hadFocus = editor.getVisible () && editor.isFocusControl();
 		// this doesn't work because
 		// resizing the column takes the focus away
 		// before we get here
 		editor.setBounds (editorRect);
 		if(hadFocus) {
-			if (editor == null || editor.isDisposed()) return;
+            if (editor == null || editor.isDisposed()) {
+                return;
+            }
 			editor.setFocus ();
 		}
 
@@ -211,7 +234,9 @@ public class CTreeEditor extends ControlEditor {
 			this.column = -1;
 		}
 
-		if (column < 0  || column >= tree.getColumnCount()) return;	
+        if (column < 0 || column >= tree.getColumnCount()) {
+            return;
+        }	
 
 		this.column = column;
 		CTreeColumn treeColumn = tree.getColumn(this.column);

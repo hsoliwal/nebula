@@ -68,17 +68,22 @@ public class EmptyPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		EmptyPrint other = (EmptyPrint) obj;
-		if (height != other.height)
-			return false;
-		if (width != other.width)
-			return false;
+        if (height != other.height) {
+            return false;
+        }
+        if (width != other.width) {
+            return false;
+        }
 		return true;
 	}
 
@@ -92,9 +97,10 @@ public class EmptyPrint implements Print {
 	}
 
 	private int checkDimension(int dim) {
-		if (dim < 0)
-			PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
-					"EmptyPrint dimensions must be >= 0"); //$NON-NLS-1$
+        if (dim < 0) {
+            PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
+                    "EmptyPrint dimensions must be >= 0"); //$NON-NLS-1$
+        }
 		return dim;
 	}
 
@@ -124,8 +130,9 @@ class EmptyIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (size.x > width || size.y > height)
-			return null;
+        if (size.x > width || size.y > height) {
+            return null;
+        }
 
 		hasNext = false;
 

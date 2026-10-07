@@ -62,8 +62,9 @@ public class GridSnippet12 {
 		shell.setSize(500,400);
 		shell.open();
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

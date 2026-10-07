@@ -51,8 +51,9 @@ public class PGroupToolItem extends Item {
 	 *            the new selection state
 	 */
 	public void setSelection(boolean selection) {
-		if ((getStyle() & (SWT.CHECK | SWT.RADIO)) == 0)
-			return;
+        if ((getStyle() & (SWT.CHECK | SWT.RADIO)) == 0) {
+            return;
+        }
 
 		if (selection) {
 			PGroupToolItem[] items = parent.getToolItems();

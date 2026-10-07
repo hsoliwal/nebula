@@ -141,22 +141,23 @@ public class RoundScaleTickLabels extends Figure {
             lengthInPixels = 1;
         }
         boolean minBigger = false;
-        if (min >= max) {        	
-        	if(max == min)
-        		max ++;
-        	else{
-        		minBigger = true;
-        		double swap = min;
-        		min = max;
-        		max= swap;
-        	}
+        if (min >= max) {
+            if (max == min) {
+                max++;
+            } else {
+                minBigger = true;
+                double swap = min;
+                min = max;
+                max = swap;
+            }
 //        		throw new IllegalArgumentException("min must be less than max.");
         }
 
         double length = Math.abs(max - min);
         double markStepHint = scale.getMajorTickMarkStepHint();
-        if(markStepHint > lengthInPixels)
-        	markStepHint = lengthInPixels;
+        if (markStepHint > lengthInPixels) {
+            markStepHint = lengthInPixels;
+        }
         double gridStepHint = length / lengthInPixels
                 * markStepHint;       	
         
@@ -209,8 +210,9 @@ public class RoundScaleTickLabels extends Figure {
 		} else {
 			gridStep = Math.pow(10, exp); // 1*10^exponent
 		}
-		if (minBigger)
-			gridStep = -gridStep;
+        if (minBigger) {
+            gridStep = -gridStep;
+        }
 		return gridStep;
     }
 
@@ -274,16 +276,17 @@ public class RoundScaleTickLabels extends Figure {
     	tickLabelAreas.clear();
     	for(int i=0; i<tickLabelPositions.size(); i++) {
     		Dimension ls = FigureUtilities.getTextExtents(tickLabels.get(i), scale.getFont());
-    		if(scale.getTickLabelSide() == LabelSide.Primary)	
-    			labelRadius = (int) (scale.getRadius() + 
-    					RoundScaleTickMarks.MAJOR_TICK_LENGTH + RoundScale.SPACE_BTW_MARK_LABEL +
-    						ls.width/2.0 * Math.abs(Math.cos(tickLabelPositions.get(i))) + 
-    						ls.height/2.0 * Math.abs(Math.sin(tickLabelPositions.get(i))));
-    		else 		
-    			labelRadius = (int) (scale.getRadius() - 
-    					RoundScaleTickMarks.MAJOR_TICK_LENGTH - RoundScale.SPACE_BTW_MARK_LABEL -
-    						ls.width/2.0 * Math.abs(Math.cos(tickLabelPositions.get(i))) - 
-    						ls.height/2.0 * Math.abs(Math.sin(tickLabelPositions.get(i))));
+            if (scale.getTickLabelSide() == LabelSide.Primary) {
+                labelRadius = (int) (scale.getRadius() +
+                        RoundScaleTickMarks.MAJOR_TICK_LENGTH + RoundScale.SPACE_BTW_MARK_LABEL +
+                        ls.width / 2.0 * Math.abs(Math.cos(tickLabelPositions.get(i))) +
+                        ls.height / 2.0 * Math.abs(Math.sin(tickLabelPositions.get(i))));
+            } else {
+                labelRadius = (int) (scale.getRadius() -
+                        RoundScaleTickMarks.MAJOR_TICK_LENGTH - RoundScale.SPACE_BTW_MARK_LABEL -
+                        ls.width / 2.0 * Math.abs(Math.cos(tickLabelPositions.get(i))) -
+                        ls.height / 2.0 * Math.abs(Math.sin(tickLabelPositions.get(i))));
+            }
     	
     		Point lp = new PolarPoint(labelRadius, tickLabelPositions.get(i)).toRelativePoint(
     				scale.getBounds());
@@ -368,9 +371,10 @@ public class RoundScaleTickLabels extends Figure {
     private void updateTickLabelForLogScale(double lengthInDegrees) {
         double min = scale.getRange().getLower();
         double max = scale.getRange().getUpper();
-        if(min <= 0 || max <= 0)
-        	throw new IllegalArgumentException(
-        			"the range for log scale must be in positive range");
+        if (min <= 0 || max <= 0) {
+            throw new IllegalArgumentException(
+                    "the range for log scale must be in positive range");
+        }
         boolean minBigger = max < min;
         
         double minLog = Math.log10(min);
@@ -384,10 +388,11 @@ public class RoundScaleTickLabels extends Figure {
         if (minDec.remainder(tickStep).doubleValue() <= 0) {
             firstPosition = minDec.subtract(minDec.remainder(tickStep));
         } else {
-        	if(minBigger)
-        		firstPosition = minDec.subtract(minDec.remainder(tickStep));
-        	else
-            firstPosition = minDec.subtract(minDec.remainder(tickStep)).add(tickStep);
+            if (minBigger) {
+                firstPosition = minDec.subtract(minDec.remainder(tickStep));
+            } else {
+                firstPosition = minDec.subtract(minDec.remainder(tickStep)).add(tickStep);
+            }
         }
 
         //add min
@@ -405,8 +410,9 @@ public class RoundScaleTickLabels extends Figure {
         for (int i = minLogDigit; minBigger? i>=maxLogDigit : i <= maxLogDigit; i+=minBigger?-1:1) {        	
         	if(Math.abs(maxLogDigit - minLogDigit) > 20){//if the range is too big, skip minor ticks.
 	       		 BigDecimal v = pow(10,i);
-	       		 if(v.doubleValue() > max)
-	       			 break;
+                if (v.doubleValue() > max) {
+                    break;
+                }
 	       		 if (scale.isDateEnabled()) {
 	                 Date date = new Date((long) v.doubleValue());
 	                 tickLabels.add(scale.format(date));
@@ -467,14 +473,18 @@ public class RoundScaleTickLabels extends Figure {
     	int minUp = 0;
     	int maxDown =0;
     	for(Rectangle rect : tickLabelAreas) {
-    		if (rect.x < minLeft)
-    			minLeft = rect.x;
-    		if(rect.x + rect.width > maxRight)
-    			maxRight = rect.x + rect.width;
-    		if(rect.y < minUp )
-    			minUp = rect.y;
-    		if(rect.y + rect.height > maxDown)
-    			maxDown = rect.y + rect.height;    		
+            if (rect.x < minLeft) {
+                minLeft = rect.x;
+            }
+            if (rect.x + rect.width > maxRight) {
+                maxRight = rect.x + rect.width;
+            }
+            if (rect.y < minUp) {
+                minUp = rect.y;
+            }
+            if (rect.y + rect.height > maxDown) {
+                maxDown = rect.y + rect.height;
+            }    		
     	}
     	
     	tickLabelMaxOutLength = Math.max(
@@ -503,12 +513,13 @@ public class RoundScaleTickLabels extends Figure {
             // check if it has space to draw
             boolean hasSpaceToDraw = true;
             if (i != 0) {
-            	if(i != (tickLabelPositions.size()-1))
-            		hasSpaceToDraw = hasSpaceToDraw(previousArea, tickLabelAreas.get(i)) &&
-            			hasSpaceToDraw(tickLabelAreas.get(i), tickLabelAreas.get(tickLabelPositions.size()-1));
-            	else
-            		hasSpaceToDraw = hasSpaceToDraw(previousArea, tickLabelAreas.get(i)) &&
-            					hasSpaceToDraw(tickLabelAreas.get(0), tickLabelAreas.get(i));
+                if (i != (tickLabelPositions.size() - 1)) {
+                    hasSpaceToDraw = hasSpaceToDraw(previousArea, tickLabelAreas.get(i)) &&
+                            hasSpaceToDraw(tickLabelAreas.get(i), tickLabelAreas.get(tickLabelPositions.size() - 1));
+                } else {
+                    hasSpaceToDraw = hasSpaceToDraw(previousArea, tickLabelAreas.get(i)) &&
+                            hasSpaceToDraw(tickLabelAreas.get(0), tickLabelAreas.get(i));
+                }
             }
        
 

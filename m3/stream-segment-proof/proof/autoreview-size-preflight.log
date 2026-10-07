@@ -1,0 +1,9 @@
+autoreview target: local
+branch: codex/m3-stream-segment-names-20261004
+engine: codex
+model: gpt-5.6-sol
+fallback_model: gpt-5.6-terra
+thinking: high
+tools: on
+web_search: on
+local staged diff is too large to review safely (1307079 bytes; limit 180000); split the change into smaller review targets

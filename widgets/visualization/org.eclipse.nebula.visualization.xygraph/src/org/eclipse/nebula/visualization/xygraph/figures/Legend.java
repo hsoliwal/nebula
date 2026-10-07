@@ -88,14 +88,16 @@ public class Legend extends RectangleFigure {
 
 	@Override
 	protected void outlineShape(Graphics graphics) {
-		if (!isVisible() || !drawBorder)
-			return;
+        if (!isVisible() || !drawBorder) {
+            return;
+        }
 		
 		graphics.pushState();
 		if (!traceList.isEmpty()) {
 			Color fg = traceList.get(0).getYAxis().getForegroundColor();
-			if (fg == null)
-				fg = ColorConstants.black;
+            if (fg == null) {
+                fg = ColorConstants.black;
+            }
 			graphics.setForegroundColor(fg);
 		}
 		super.outlineShape(graphics);
@@ -104,8 +106,9 @@ public class Legend extends RectangleFigure {
 
 	@Override
 	protected void fillShape(Graphics graphics) {
-		if (!((XYGraph) getParent()).isTransparent())
-			super.fillShape(graphics);
+        if (!((XYGraph) getParent()).isTransparent()) {
+            super.fillShape(graphics);
+        }
 
 		int upperMargin = 0;
 		if (preferredHeight != -1) {
@@ -121,8 +124,9 @@ public class Legend extends RectangleFigure {
 		int i = 0;
 		int totalHeight = ICON_WIDTH + INNER_GAP;
 		for (Trace trace : traceList) {
-			if (!trace.isVisible())
-				continue;
+            if (!trace.isVisible()) {
+                continue;
+            }
 			int hwidth = OUT_GAP + ICON_WIDTH + INNER_GAP
 					+ +FigureUtilities.getTextExtents(trace.getName(), font==null?super.getFont():font).width;
 			int hEnd = hPos + hwidth;
@@ -144,8 +148,9 @@ public class Legend extends RectangleFigure {
 
 	private void drawTraceLegend(Trace trace, Graphics graphics, int hPos, int vPos) {
 		graphics.pushState();
-		if (Preferences.useAdvancedGraphics())
-			graphics.setAntialias(SWT.ON);
+        if (Preferences.useAdvancedGraphics()) {
+            graphics.setAntialias(SWT.ON);
+        }
 		graphics.setForegroundColor(trace.getTraceColor());
 
 		// limit size of symbol to ICON_WIDTH - INNER_GAP
@@ -165,13 +170,15 @@ public class Legend extends RectangleFigure {
 					hPos + ICON_WIDTH - 1, vPos + ICON_WIDTH / 2, });
 		case AREA:
 			graphics.setBackgroundColor(trace.getTraceColor());
-			if (Preferences.useAdvancedGraphics())
-				graphics.setAlpha(trace.getAreaAlpha());
+            if (Preferences.useAdvancedGraphics()) {
+                graphics.setAlpha(trace.getAreaAlpha());
+            }
 			graphics.fillPolygon(new int[] { hPos, vPos + ICON_WIDTH / 2, hPos + ICON_WIDTH / 2, vPos + maxSize / 2,
 					hPos + ICON_WIDTH, vPos + ICON_WIDTH / 2, hPos + ICON_WIDTH, vPos + ICON_WIDTH, hPos,
 					vPos + ICON_WIDTH });
-			if (Preferences.useAdvancedGraphics())
-				graphics.setAlpha(255);
+            if (Preferences.useAdvancedGraphics()) {
+                graphics.setAlpha(255);
+            }
 			trace.drawPoint(graphics, new Point(hPos + ICON_WIDTH / 2, vPos + maxSize / 2));
 			break;
 		default:
@@ -201,8 +208,9 @@ public class Legend extends RectangleFigure {
 		int height = ICON_WIDTH + INNER_GAP;
 		// int i=0;
 		for (Trace trace : traceList) {
-			if (!trace.isVisible())
-				continue;
+            if (!trace.isVisible()) {
+                continue;
+            }
 			hEnd = hEnd + OUT_GAP + ICON_WIDTH + INNER_GAP
 					+ +FigureUtilities.getTextExtents(trace.getName(), font==null?super.getFont():font).width;
 
@@ -211,8 +219,9 @@ public class Legend extends RectangleFigure {
 						+ +FigureUtilities.getTextExtents(trace.getName(), font==null?super.getFont():font).width;
 				height += ICON_WIDTH + INNER_GAP;
 			}
-			if (maxWidth < hEnd)
-				maxWidth = hEnd;
+            if (maxWidth < hEnd) {
+                maxWidth = hEnd;
+            }
 		}
 		
 		if (preferredHeight != -1) {

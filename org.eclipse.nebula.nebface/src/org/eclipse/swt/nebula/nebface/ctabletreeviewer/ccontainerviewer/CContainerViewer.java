@@ -141,8 +141,9 @@ public abstract class CContainerViewer extends StructuredViewer {
 	 * @see org.eclipse.jface.viewers.StructuredViewer#doFindInputItem(java.lang.Object)
 	 */
 	protected Widget doFindInputItem(Object element) {
-		if (equals(element, getRoot()))
-			return getContainer();
+        if (equals(element, getRoot())) {
+            return getContainer();
+        }
 		return null;
 	}
 	
@@ -155,8 +156,9 @@ public abstract class CContainerViewer extends StructuredViewer {
 		for(int i = 0; i < children.length; i++) {
 			CContainerItem item = children[i];
 			Object data = item.getData();
-			if(data != null && equals(data, element))
-				return item;
+            if (data != null && equals(data, element)) {
+                return item;
+            }
 		}
 		return null;
 	}
@@ -187,8 +189,12 @@ public abstract class CContainerViewer extends StructuredViewer {
 				background = ((IColorProvider) prov).getBackground(element);
 				foreground = ((IColorProvider) prov).getForeground(element);
 			}
-			if(background != null) cell.setCellBackground(background);
-			if(foreground != null) cell.setCellForeground(foreground);
+            if (background != null) {
+                cell.setCellBackground(background);
+            }
+            if (foreground != null) {
+                cell.setCellForeground(foreground);
+            }
 			
 			// TODO doUpdateItem - set fonts...
 		}
@@ -257,8 +263,9 @@ public abstract class CContainerViewer extends StructuredViewer {
 	public Object getElementAt(int index) {
 		if(index >= 0 && index < container.getItemCount()) {
 			CContainerItem i = container.getItem(index);
-			if(i != null)
-				return i.getData();
+            if (i != null) {
+                return i.getData();
+            }
 		}
 		return null;
 	}
@@ -273,8 +280,9 @@ public abstract class CContainerViewer extends StructuredViewer {
 		for (int i = 0; i < items.length; i++) {
 			Widget item = items[i];
 			Object e = item.getData();
-			if (e != null)
-				list.add(e);
+            if (e != null) {
+                list.add(e);
+            }
 		}
 		return list;
 	}
@@ -284,8 +292,9 @@ public abstract class CContainerViewer extends StructuredViewer {
 	 */
 	protected int indexForElement(Object element) {
 		ViewerSorter sorter = getSorter();
-		if (sorter == null)
-			return container.getItemCount();
+        if (sorter == null) {
+            return container.getItemCount();
+        }
 		int count = container.getItemCount();
 		int min = 0, max = count - 1;
 		while(min <= max) {
@@ -296,7 +305,9 @@ public abstract class CContainerViewer extends StructuredViewer {
 				// find first item > element
 				while(compare == 0) {
 					++mid;
-					if(mid >= count) break;
+                    if (mid >= count) {
+                        break;
+                    }
 					data = container.getItem(mid).getData();
 					compare = sorter.compare(this, data, element);
 				}
@@ -346,8 +357,9 @@ public abstract class CContainerViewer extends StructuredViewer {
 			add(element);
 			return;
 		}
-		if (position == -1)
-			position = container.getItemCount();
+        if (position == -1) {
+            position = container.getItemCount();
+        }
 		
 		createItem(element,position);
 	}

@@ -76,8 +76,9 @@ class GridHeaderEditor extends ControlEditor {
 		scrollListener = event -> layout();
 
 		columnGroupListener = event -> {
-			if (getEditor() == null || getEditor().isDisposed())
-				return;
+            if (getEditor() == null || getEditor().isDisposed()) {
+                return;
+            }
 			getEditor().setVisible(column.isVisible());
 			layout();
 		};
@@ -136,11 +137,13 @@ class GridHeaderEditor extends ControlEditor {
 		if (!table.isDisposed()) {
 			table.removeListener(SWT.Resize, resizeListener);
 
-			if (table.getVerticalScrollBarProxy() != null)
-				table.getVerticalScrollBarProxy().removeListener(SWT.Selection,scrollListener);
+            if (table.getVerticalScrollBarProxy() != null) {
+                table.getVerticalScrollBarProxy().removeListener(SWT.Selection, scrollListener);
+            }
 
-			if (table.getHorizontalScrollBarProxy() != null)
-				table.getHorizontalScrollBarProxy().removeListener(SWT.Selection,scrollListener);
+            if (table.getHorizontalScrollBarProxy() != null) {
+                table.getHorizontalScrollBarProxy().removeListener(SWT.Selection, scrollListener);
+            }
 		}
 
 		columnListener = null;
@@ -181,8 +184,9 @@ class GridHeaderEditor extends ControlEditor {
 	 * {@inheritDoc}
 	 */
 	public void layout() {
-		if (table.isDisposed())
-			return;
+        if (table.isDisposed()) {
+            return;
+        }
 
 		boolean hadFocus = false;
 		if (getEditor() == null || getEditor().isDisposed() || !column.isVisible()) {
@@ -206,8 +210,9 @@ class GridHeaderEditor extends ControlEditor {
 		getEditor().setBounds(rect);
 
 		if (hadFocus) {
-			if (getEditor() == null || getEditor().isDisposed())
-				return;
+            if (getEditor() == null || getEditor().isDisposed()) {
+                return;
+            }
 			getEditor().setFocus();
 		}
 	}

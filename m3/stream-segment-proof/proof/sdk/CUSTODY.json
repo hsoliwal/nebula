@@ -1,0 +1,43 @@
+{
+    "source":  "https://repo.maven.apache.org/maven2/org/eclipse/platform/",
+    "swt_version":  "3.126.0",
+    "swt_all_class_major":  61,
+    "swt_class_count":  787,
+    "jface_version":  "3.33.0",
+    "jface_all_class_major":  61,
+    "jface_class_count":  613,
+    "sdk_license":  "EPL-2.0; embedded SWT about_files notices retained verbatim",
+    "javac_path":  "C:\\Program Files\\Microsoft\\jdk-17.0.19.10-hotspot\\bin\\javac.exe",
+    "javac_version":  "javac 17.0.19",
+    "javac_sha256":  "4cc489353447f454a2f8ab720e7bcd52c237dc5567987603192c88e93ea8f4ec",
+    "options":  [
+                    "--release",
+                    "17",
+                    "-proc:none",
+                    "-Xlint:all",
+                    "-Werror"
+                ],
+    "scope":  "test-only historical JavaSE-17 source proof; recipe/test owner remains strict Java21; no all-SDK/rendering claim",
+    "files":  [
+                  {
+                      "path":  "org.eclipse.jface-3.33.0.jar",
+                      "sha256":  "ed854ce69edb931e954ba5a155fe0e8dd61ee5f65b99f33a1c767210e1ee2fb2",
+                      "bytes":  1191194
+                  },
+                  {
+                      "path":  "org.eclipse.jface-3.33.0.pom",
+                      "sha256":  "6112debbe59dd8732c432ed3e28c9511bfd8776e10790a09aa3d6ee95edcc79c",
+                      "bytes":  2351
+                  },
+                  {
+                      "path":  "org.eclipse.swt.win32.win32.x86_64-3.126.0.jar",
+                      "sha256":  "72039b5a1552923783770f714f5ff982486ecbb48c95b0325881bce3691d5655",
+                      "bytes":  2718084
+                  },
+                  {
+                      "path":  "org.eclipse.swt.win32.win32.x86_64-3.126.0.pom",
+                      "sha256":  "69f996a91ad8a2c0dc599d94c4f6b6fbd6d343fc66efbb4cbc9e66fd27aeb565",
+                      "bytes":  1651
+                  }
+              ]
+}

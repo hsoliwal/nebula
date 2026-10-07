@@ -55,30 +55,40 @@ public class PrintJob {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		PrintJob other = (PrintJob) obj;
 		if (document == null) {
-			if (other.document != null)
-				return false;
-		} else if (!document.equals(other.document))
-			return false;
+            if (other.document != null) {
+                return false;
+            }
+		} else if (!document.equals(other.document)) {
+            return false;
+        }
 		if (margins == null) {
-			if (other.margins != null)
-				return false;
-		} else if (!margins.equals(other.margins))
-			return false;
+            if (other.margins != null) {
+                return false;
+            }
+		} else if (!margins.equals(other.margins)) {
+            return false;
+        }
 		if (name == null) {
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
-			return false;
-		if (orientation != other.orientation)
-			return false;
+            if (other.name != null) {
+                return false;
+            }
+		} else if (!name.equals(other.name)) {
+            return false;
+        }
+        if (orientation != other.orientation) {
+            return false;
+        }
 		return true;
 	}
 

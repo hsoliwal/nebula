@@ -3,7 +3,7 @@
 // ==================================================================
 // IBM Confidential
 // OCO Source Materials
-// © Copyright IBM Corp. 2005
+// Â© Copyright IBM Corp. 2005
 // ==================================================================
 
 package org.eclipse.swt.nebula.presentations.shelf;
@@ -100,8 +100,9 @@ public class EmptyStandaloneStackPresentation extends StackPresentation
     public void selectPart(IPresentablePart toSelect)
     {
         toSelect.setVisible(true);
-        if (toSelect.getToolBar() != null)
+        if (toSelect.getToolBar() != null) {
             toSelect.getToolBar().setVisible(true);
+        }
     }
 
     /** 
@@ -123,8 +124,10 @@ public class EmptyStandaloneStackPresentation extends StackPresentation
         Rectangle clientArea = borderComposite.getClientArea();
         
         IPresentablePart part = getSite().getSelectedPart();
-        
-        if (part == null) return;
+
+        if (part == null) {
+            return;
+        }
         
         Control partTB = part.getToolBar();
         
@@ -165,8 +168,9 @@ public class EmptyStandaloneStackPresentation extends StackPresentation
     public void setVisible(boolean isVisible)
     {        
         getSite().getSelectedPart().setVisible(true);
-        if (getSite().getSelectedPart().getToolBar() != null)
+        if (getSite().getSelectedPart().getToolBar() != null) {
             getSite().getSelectedPart().getToolBar().setVisible(true);
+        }
     }
 
     /** 

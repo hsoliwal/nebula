@@ -59,22 +59,29 @@ public class LineBorder implements Border {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		LineBorder other = (LineBorder) obj;
-		if (gapSize != other.gapSize)
-			return false;
-		if (lineWidth != other.lineWidth)
-			return false;
+        if (gapSize != other.gapSize) {
+            return false;
+        }
+        if (lineWidth != other.lineWidth) {
+            return false;
+        }
 		if (rgb == null) {
-			if (other.rgb != null)
-				return false;
-		} else if (!rgb.equals(other.rgb))
-			return false;
+            if (other.rgb != null) {
+                return false;
+            }
+		} else if (!rgb.equals(other.rgb)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -104,8 +111,9 @@ public class LineBorder implements Border {
 	 *            the line width, in points.
 	 */
 	public void setLineWidth(int points) {
-		if (points < 1)
-			points = 1;
+        if (points < 1) {
+            points = 1;
+        }
 
 		this.lineWidth = points;
 	}
@@ -126,8 +134,9 @@ public class LineBorder implements Border {
 	 *            the gap size, expressed in points.
 	 */
 	public void setGapSize(int points) {
-		if (points < 1)
-			points = 1;
+        if (points < 1) {
+            points = 1;
+        }
 
 		this.gapSize = points;
 	}
@@ -195,12 +204,14 @@ class LineBorderPainter extends AbstractBorderPainter {
 			gc.fillRectangle(x, y, lineWidth.x, height);
 			gc.fillRectangle(x + width - lineWidth.x, y, lineWidth.x, height);
 
-			// Top & bottom
-			if (!topOpen)
-				gc.fillRectangle(x, y, width, lineWidth.y);
-			if (!bottomOpen)
-				gc.fillRectangle(x, y + height - lineWidth.y, width,
-						lineWidth.y);
+            // Top & bottom
+            if (!topOpen) {
+                gc.fillRectangle(x, y, width, lineWidth.y);
+            }
+            if (!bottomOpen) {
+                gc.fillRectangle(x, y + height - lineWidth.y, width,
+                        lineWidth.y);
+            }
 		} finally {
 			gc.setBackground(oldColor);
 		}

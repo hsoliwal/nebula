@@ -57,23 +57,30 @@ public class StyledTextPrint implements Print {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		StyledTextPrint other = (StyledTextPrint) obj;
 		if (elements == null) {
-			if (other.elements != null)
-				return false;
-		} else if (!elements.equals(other.elements))
-			return false;
+            if (other.elements != null) {
+                return false;
+            }
+		} else if (!elements.equals(other.elements)) {
+            return false;
+        }
 		if (style == null) {
-			if (other.style != null)
-				return false;
-		} else if (!style.equals(other.style))
-			return false;
+            if (other.style != null) {
+                return false;
+            }
+		} else if (!style.equals(other.style)) {
+            return false;
+        }
 		return true;
 	}
 
@@ -156,8 +163,9 @@ class StyledTextIterator implements PrintIterator {
 
 	StyledTextIterator(Print[] elements, Device device, GC gc) {
 		this.elements = new PrintIterator[elements.length];
-		for (int i = 0; i < elements.length; i++)
-			this.elements[i] = elements[i].iterator(device, gc);
+        for (int i = 0; i < elements.length; i++) {
+            this.elements[i] = elements[i].iterator(device, gc);
+        }
 		minimumSize = computeSize(PrintSizeStrategy.MINIMUM);
 		preferredSize = computeSize(PrintSizeStrategy.PREFERRED);
 	}
@@ -166,8 +174,9 @@ class StyledTextIterator implements PrintIterator {
 		elements = new PrintIterator[that.elements.length - that.cursor];
 		minimumSize = that.minimumSize;
 		preferredSize = that.preferredSize;
-		for (int i = 0; i < elements.length; i++)
-			elements[i] = that.elements[that.cursor + i].copy();
+        for (int i = 0; i < elements.length; i++) {
+            elements[i] = that.elements[that.cursor + i].copy();
+        }
 	}
 
 	private Point computeSize(PrintSizeStrategy strategy) {
@@ -194,22 +203,25 @@ class StyledTextIterator implements PrintIterator {
 	}
 
 	public PrintPiece next(int width, int height) {
-		if (width < 0 || height < 0)
-			return null;
+        if (width < 0 || height < 0) {
+            return null;
+        }
 
 		int y = 0;
 
 		List<CompositeEntry> rows = new ArrayList<>();
 		while (y < height) {
 			PrintPiece row = nextRow(width, height - y);
-			if (row == null)
-				break;
+            if (row == null) {
+                break;
+            }
 			rows.add(new CompositeEntry(row, new Point(0, y)));
 			y += row.getSize().y;
 		}
 
-		if (rows.size() == 0)
-			return null;
+        if (rows.size() == 0) {
+            return null;
+        }
 
 		return new CompositePiece(rows);
 	}
@@ -226,14 +238,16 @@ class StyledTextIterator implements PrintIterator {
 		while (hasNext()) { // hasNext advances cursor internally
 			PrintIterator element = elements[cursor];
 			Point preferredSize = element.preferredSize();
-			if (preferredSize.y > height)
-				break;
+            if (preferredSize.y > height) {
+                break;
+            }
 
 			PrintIterator elementBackup = element.copy();
 			PrintPiece piece = PaperClips.next(element, width - x,
 					preferredSize.y);
-			if (piece == null)
-				break;
+            if (piece == null) {
+                break;
+            }
 
 			rowElements.add(piece);
 			backup.add(elementBackup);
@@ -245,8 +259,9 @@ class StyledTextIterator implements PrintIterator {
 				return null;
 			}
 
-			if (element.hasNext())
-				break;
+            if (element.hasNext()) {
+                break;
+            }
 
 			x += piece.getSize().x;
 		}
@@ -256,8 +271,9 @@ class StyledTextIterator implements PrintIterator {
 
 	private PrintPiece createRowResult(int rowAscent,
 			List<PrintPiece> rowElements) {
-		if (rowElements.size() == 0)
-			return null;
+        if (rowElements.size() == 0) {
+            return null;
+        }
 
 		List<CompositeEntry> entries = new ArrayList<>();
 		int x = 0;
@@ -274,26 +290,30 @@ class StyledTextIterator implements PrintIterator {
 
 	private void restoreBackup(final int backupCursor,
 			final List<PrintIterator> backup) {
-		for (int i = 0; i < backup.size(); i++)
-			elements[backupCursor + i] = backup.get(i);
+        for (int i = 0; i < backup.size(); i++) {
+            elements[backupCursor + i] = backup.get(i);
+        }
 		cursor = backupCursor;
 	}
 
 	private int getAscent(PrintPiece piece) {
-		if (piece instanceof TextPrintPiece)
-			return ((TextPrintPiece) piece).getAscent();
+        if (piece instanceof TextPrintPiece) {
+            return ((TextPrintPiece) piece).getAscent();
+        }
 		return piece.getSize().y;
 	}
 
 	private int getDescent(PrintPiece piece) {
-		if (piece instanceof TextPrintPiece)
-			return piece.getSize().y - ((TextPrintPiece) piece).getAscent();
+        if (piece instanceof TextPrintPiece) {
+            return piece.getSize().y - ((TextPrintPiece) piece).getAscent();
+        }
 		return 0;
 	}
 
 	private void advanceCursor() {
-		while (cursor < elements.length && !elements[cursor].hasNext())
-			cursor++;
+        while (cursor < elements.length && !elements[cursor].hasNext()) {
+            cursor++;
+        }
 	}
 
 	public PrintIterator copy() {

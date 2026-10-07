@@ -162,8 +162,9 @@ public class XYGraphToolbar extends Figure {
 		addUndoRedoButtons();
 
 		addSeparator();
-		if (!SWT.getPlatform().startsWith("rap")) //$NON-NLS-1$
-			addSnapshotButton();
+        if (!SWT.getPlatform().startsWith("rap")) { //$NON-NLS-1$
+            addSnapshotButton();
+        }
 	}
 
 	// @Override
@@ -184,11 +185,13 @@ public class XYGraphToolbar extends Figure {
 				image.dispose();
 				// Prompt for file name
 				String path = SingleSourceHelper2.getImageSavePath();
-				if (path == null || path.length() <= 0)
-					return;
-				// Assert *.png at end of file name
-				if (!path.toLowerCase().endsWith(".png"))
-					path = path + ".png";
+                if (path == null || path.length() <= 0) {
+                    return;
+                }
+                // Assert *.png at end of file name
+                if (!path.toLowerCase().endsWith(".png")) {
+                    path = path + ".png";
+                }
 				// Save
 				loader.save(path, SWT.IMAGE_PNG);
 			}
@@ -257,8 +260,9 @@ public class XYGraphToolbar extends Figure {
 	 */
 	private void createZoomButtons(final int flags) {
 		for (final ZoomType zoomType : ZoomType.values()) {
-			if (!zoomType.useWithFlags(flags))
-				continue;
+            if (!zoomType.useWithFlags(flags)) {
+                continue;
+            }
 			final ImageFigure imageFigure = new ImageFigure(zoomType.getIconImage());
 			final Label tip = new Label(zoomType.getDescription());
 			final ToggleButton button = new ToggleButton(imageFigure);
@@ -279,8 +283,9 @@ public class XYGraphToolbar extends Figure {
 			addButton(button);
 			zoomGroup.add(model);
 
-			if (zoomType == ZoomType.NONE)
-				zoomGroup.setDefault(model);
+            if (zoomType == ZoomType.NONE) {
+                zoomGroup.setDefault(model);
+            }
 		}
 		xyGraph.addPropertyChangeListener(IXYGraph.PROPERTY_ZOOMTYPE, new PropertyChangeListener() {
 			@Override

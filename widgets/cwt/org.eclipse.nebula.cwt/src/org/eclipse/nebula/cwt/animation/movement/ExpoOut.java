@@ -32,10 +32,11 @@ public class ExpoOut extends AbstractMovement {
 	 */
 	public double getValue(double step) {
 		float currentCos = 1.0f - (float) Math.exp(((float) step) * increment);
-		if (step != duration)
-			return min + max * currentCos;
-		else
-			return max;
+        if (step != duration) {
+            return min + max * currentCos;
+        } else {
+            return max;
+        }
 	}
 
 	/*

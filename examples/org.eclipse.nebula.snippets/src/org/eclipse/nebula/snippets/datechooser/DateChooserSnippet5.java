@@ -30,7 +30,9 @@ public class DateChooserSnippet5 {
 
     shell.open();
     while ( ! shell.isDisposed() ) {
-    	if (!display.readAndDispatch()) display.sleep();
+        if (!display.readAndDispatch()) {
+            display.sleep();
+        }
     }
     display.dispose();
 	}

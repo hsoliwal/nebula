@@ -298,8 +298,9 @@ public class DefaultGalleryItemRenderer extends AbstractGalleryItemRenderer {
 			Iterator<Color> i = this.dropShadowsColors.iterator();
 			while (i.hasNext()) {
 				Color c = i.next();
-				if (c != null && !c.isDisposed())
-					c.dispose();
+                if (c != null && !c.isDisposed()) {
+                    c.dispose();
+                }
 			}
 		}
 	}

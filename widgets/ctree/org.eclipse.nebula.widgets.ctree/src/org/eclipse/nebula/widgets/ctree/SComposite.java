@@ -257,31 +257,55 @@ public class SComposite extends Canvas implements Listener {
 		if((borderStyle & BORDER) != 0) {
 			if((borderStyle & SQUARE) != 0) {
 				if(gridlayout.marginHeight < (borderWidth+1)) {
-					if(gridlayout.marginTop 	< (borderWidth+1)) gridlayout.marginTop    = (borderWidth+1); 
-					if(gridlayout.marginBottom 	< (borderWidth+1)) gridlayout.marginBottom = (borderWidth+1); 
+                    if (gridlayout.marginTop < (borderWidth + 1)) {
+                        gridlayout.marginTop = (borderWidth + 1);
+                    }
+                    if (gridlayout.marginBottom < (borderWidth + 1)) {
+                        gridlayout.marginBottom = (borderWidth + 1);
+                    } 
 				}
 				if(gridlayout.marginWidth < (borderWidth+1)) {
-					if(gridlayout.marginLeft  < (borderWidth+1)) gridlayout.marginLeft  = (borderWidth+1); 
-					if(gridlayout.marginRight < (borderWidth+1)) gridlayout.marginRight = (borderWidth+1); 
+                    if (gridlayout.marginLeft < (borderWidth + 1)) {
+                        gridlayout.marginLeft = (borderWidth + 1);
+                    }
+                    if (gridlayout.marginRight < (borderWidth + 1)) {
+                        gridlayout.marginRight = (borderWidth + 1);
+                    } 
 				}
 			} else {
 				if((borderStyle & FLAT) != 0) {
 					if(gridlayout.marginHeight < borderWidth) {
-						if(gridlayout.marginTop 	< borderWidth) gridlayout.marginTop    = borderWidth; 
-						if(gridlayout.marginBottom 	< borderWidth) gridlayout.marginBottom = borderWidth; 
+                        if (gridlayout.marginTop < borderWidth) {
+                            gridlayout.marginTop = borderWidth;
+                        }
+                        if (gridlayout.marginBottom < borderWidth) {
+                            gridlayout.marginBottom = borderWidth;
+                        } 
 					}
 					if(gridlayout.marginWidth < borderWidth) {
-						if(gridlayout.marginLeft  < borderWidth) gridlayout.marginLeft  = borderWidth; 
-						if(gridlayout.marginRight < borderWidth) gridlayout.marginRight = borderWidth; 
+                        if (gridlayout.marginLeft < borderWidth) {
+                            gridlayout.marginLeft = borderWidth;
+                        }
+                        if (gridlayout.marginRight < borderWidth) {
+                            gridlayout.marginRight = borderWidth;
+                        } 
 					}
 				} else {
 					if(gridlayout.marginHeight < (borderWidth+1)) {
-						if(gridlayout.marginTop 	< (borderWidth+1)) gridlayout.marginTop 	= (borderWidth+1); 
-						if(gridlayout.marginBottom 	< (borderWidth+1)) gridlayout.marginBottom  = (borderWidth+1); 
+                        if (gridlayout.marginTop < (borderWidth + 1)) {
+                            gridlayout.marginTop = (borderWidth + 1);
+                        }
+                        if (gridlayout.marginBottom < (borderWidth + 1)) {
+                            gridlayout.marginBottom = (borderWidth + 1);
+                        } 
 					}
 					if(gridlayout.marginWidth < (borderWidth+1)) {
-						if(gridlayout.marginLeft  < (borderWidth+1)) gridlayout.marginLeft  = (borderWidth+1); 
-						if(gridlayout.marginRight < (borderWidth+1)) gridlayout.marginRight = (borderWidth+1); 
+                        if (gridlayout.marginLeft < (borderWidth + 1)) {
+                            gridlayout.marginLeft = (borderWidth + 1);
+                        }
+                        if (gridlayout.marginRight < (borderWidth + 1)) {
+                            gridlayout.marginRight = (borderWidth + 1);
+                        } 
 					}
 				}
 			}

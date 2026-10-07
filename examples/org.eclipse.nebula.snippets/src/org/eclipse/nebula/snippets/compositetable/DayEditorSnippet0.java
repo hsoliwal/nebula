@@ -222,8 +222,9 @@ public class DayEditorSnippet0 {
 		snippet.createShell();
 		snippet.sShell.open();
 		while (!snippet.sShell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 	}

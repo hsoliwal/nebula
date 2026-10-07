@@ -54,9 +54,11 @@ public class ImageCaptureExample {
 			grid.addFooter(new TextPrint("Column " + (c + 1)));
 		}
 
-		for (int r = 0; r < ROWS; r++)
-			for (int c = 0; c < COLS; c++)
-				grid.add(new TextPrint("Row " + (r + 1) + " Col " + (c + 1)));
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                grid.add(new TextPrint("Row " + (r + 1) + " Col " + (c + 1)));
+            }
+        }
 
 		return grid;
 	}
@@ -99,12 +101,15 @@ public class ImageCaptureExample {
 
 			return image.getImageData();
 		} finally {
-			if (transform != null)
-				transform.dispose();
-			if (gc != null)
-				gc.dispose();
-			if (image != null)
-				image.dispose();
+            if (transform != null) {
+                transform.dispose();
+            }
+            if (gc != null) {
+                gc.dispose();
+            }
+            if (image != null) {
+                image.dispose();
+            }
 		}
 	}
 

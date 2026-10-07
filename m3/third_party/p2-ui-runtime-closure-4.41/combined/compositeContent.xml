@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<repository name="Nebula owned UI runtime, current, legacy and Java launcher p2" type="org.eclipse.equinox.internal.p2.metadata.repository.CompositeMetadataRepository" version="1.0.0">
+  <properties size="1">
+    <property name="p2.timestamp" value="1788472819811" />
+  </properties>
+  <children size="2">
+    <child location="../mirror" />
+    <child location="../../p2-equinox-java-launcher-1.8.0/combined" />
+  </children>
+</repository>

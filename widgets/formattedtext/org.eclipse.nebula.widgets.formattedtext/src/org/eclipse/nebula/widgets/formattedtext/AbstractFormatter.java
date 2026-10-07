@@ -69,7 +69,9 @@ public abstract class AbstractFormatter implements ITextFormatter {
    * @see ITextFormatter#setText(Text)
    */
   public void setText(Text text) {
-  	if ( text == null ) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+      if (text == null) {
+          SWT.error(SWT.ERROR_NULL_ARGUMENT);
+      }
     this.text = text;
   }
 

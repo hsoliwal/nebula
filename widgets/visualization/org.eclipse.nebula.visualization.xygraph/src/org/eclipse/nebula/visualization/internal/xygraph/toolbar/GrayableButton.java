@@ -39,12 +39,14 @@ public class GrayableButton extends Button {
 		this.grayImage = XYGraphMediaFactory.getInstance().getRegisteredImage(GRAY_IMAGE + image.toString());
 		if (this.grayImage == null) {
 			if (SWT.getPlatform().startsWith("rap")) { //$NON-NLS-1$
-				if (grayImage != null)
-					this.grayImage = grayImage;
-				else
-					this.grayImage = image;
-			} else
-				this.grayImage = new Image(null, image, SWTConstants.IMAGE_GRAY);
+                if (grayImage != null) {
+                    this.grayImage = grayImage;
+                } else {
+                    this.grayImage = image;
+                }
+			} else {
+                this.grayImage = new Image(null, image, SWTConstants.IMAGE_GRAY);
+            }
 			XYGraphMediaFactory.getInstance().registerImage(GRAY_IMAGE + image.toString(), this.grayImage);
 		}
 	}
@@ -52,10 +54,11 @@ public class GrayableButton extends Button {
 	@Override
 	public void setEnabled(boolean value) {
 		super.setEnabled(value);
-		if (value)
-			setContents(new ImageFigure(image));
-		else
-			setContents(new ImageFigure(grayImage));
+        if (value) {
+            setContents(new ImageFigure(image));
+        } else {
+            setContents(new ImageFigure(grayImage));
+        }
 	}
 
 }

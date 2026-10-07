@@ -92,9 +92,11 @@ public class PagePrintExample {
 
 		shell.open();
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		display.dispose();
 	}
@@ -152,9 +154,11 @@ public class PagePrintExample {
 			grid.addHeader(new TextPrint("Column " + c));
 		}
 
-		for (int r = 0; r < ROWS; r++)
-			for (int c = 0; c < COLS; c++)
-				grid.add(new TextPrint("Cell (" + c + ", " + r + ")"));
+        for (int r = 0; r < ROWS; r++) {
+            for (int c = 0; c < COLS; c++) {
+                grid.add(new TextPrint("Cell (" + c + ", " + r + ")"));
+            }
+        }
 
 		return grid;
 	}

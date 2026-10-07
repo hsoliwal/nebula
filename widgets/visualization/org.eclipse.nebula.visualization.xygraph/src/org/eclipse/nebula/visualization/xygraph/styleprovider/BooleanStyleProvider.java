@@ -36,8 +36,9 @@ public class BooleanStyleProvider extends BasePointStyleProvider {
 		}
 
 		Object object = ((IMetaData) sample).getData();
-		if (object == null || !(object instanceof Boolean))
-			return trace.getTraceColor();
+        if (object == null || !(object instanceof Boolean)) {
+            return trace.getTraceColor();
+        }
 
 		return ((Boolean) object) ? XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_GREEN)
 				: XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_RED);

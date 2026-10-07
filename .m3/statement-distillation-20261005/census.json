@@ -1,0 +1,6 @@
+{
+  "application_files": 1768,
+  "atoms": 157208,
+  "mismatches": [],
+  "baseline": "a46dd1e7 + PR60 GC repair + sealed CssCompatRecipe pre-normalization images"
+}

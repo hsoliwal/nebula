@@ -105,8 +105,9 @@ public class AlphaEffect extends AbstractEffect {
 	}
 
 	public void applyEffect(final long currentTime) {
-		if (shell.isDisposed())
-			return;
+        if (shell.isDisposed()) {
+            return;
+        }
 
 		shell.setAlpha((int) (start
 				+ step * easingFunction.getValue((int) currentTime)));

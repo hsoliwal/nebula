@@ -52,28 +52,32 @@ public abstract class AbstractEffect implements IEffect {
 	 * Run the onCancel runnable if any.
 	 */
 	protected void doCancel() {
-		if (runnableOnCancel != null)
-			runnableOnCancel.run();
+        if (runnableOnCancel != null) {
+            runnableOnCancel.run();
+        }
 	}
 
 	/**
 	 * Run the onStop runnable if any.
 	 */
 	protected void doStop() {
-		if (runnableOnStop != null)
-			runnableOnStop.run();
+        if (runnableOnStop != null) {
+            runnableOnStop.run();
+        }
 	}
 
 	public long getCurrentTime() {
 		long time = System.currentTimeMillis();
 
-		if (startTime == -1)
-			startTime = time;
+        if (startTime == -1) {
+            startTime = time;
+        }
 
 		long currentTime = time - startTime;
 
-		if (currentTime > length)
-			currentTime = length;
+        if (currentTime > length) {
+            currentTime = length;
+        }
 
 		return currentTime;
 	}
@@ -82,8 +86,9 @@ public abstract class AbstractEffect implements IEffect {
 	 * Check if the effect has ended. In that case, start the onStop runnable.
 	 */
 	public void processEnd() {
-		if (done)
-			return;
+        if (done) {
+            return;
+        }
 
 		if (getCurrentTime() == length) {
 			done = true;

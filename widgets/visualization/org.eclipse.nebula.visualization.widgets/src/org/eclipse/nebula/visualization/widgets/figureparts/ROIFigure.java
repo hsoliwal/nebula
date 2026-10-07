@@ -321,8 +321,9 @@ public class ROIFigure extends Figure {
 			setForegroundColor(ColorConstants.black);
 			roiRectFigure = new RectangleFigure(){
 				public boolean containsPoint(int x, int y) {
-					if (!super.containsPoint(x, y))
-						return false;
+                    if (!super.containsPoint(x, y)) {
+                        return false;
+                    }
 					return !Rectangle.SINGLETON.setBounds(getBounds())
 							.shrink(3, 3).contains(x, y);
 				}
@@ -418,8 +419,9 @@ public class ROIFigure extends Figure {
 				handler.setBounds(
 						handler.getHandlerBoundsCalulator().calcBoundsFromROIBounds(roiGeoBounds));
 			}
-			if(roiInfoProvider!=null)
-				repaint();
+            if (roiInfoProvider != null) {
+                repaint();
+            }
 		}
 		
 		@Override
@@ -428,20 +430,24 @@ public class ROIFigure extends Figure {
 		}
 		
 		public void setROIGeoBounds(int x, int y, int w, int h){
-			if(w <=0)
-				w=1;
-		
-			if(h <=0)
-				h=1;
+            if (w <= 0) {
+                w = 1;
+            }
+
+            if (h <= 0) {
+                h = 1;
+            }
 			
 			roiGeoBounds.setBounds(x, y, w, h);	
 			roiDataBounds = getROIFromGeoBounds(new PrecisionRectangle(roiGeoBounds.preciseX() + getBounds().x,
 					roiGeoBounds.preciseY() + getBounds().y, roiGeoBounds.preciseWidth(), roiGeoBounds.preciseHeight()));
 			if(roiDataBounds.width <1 || roiDataBounds.height <1 ){
-				if(roiDataBounds.width <1)
-					roiDataBounds.width =1;
-				if(roiDataBounds.height <1)
-					roiDataBounds.height =1;
+                if (roiDataBounds.width < 1) {
+                    roiDataBounds.width = 1;
+                }
+                if (roiDataBounds.height < 1) {
+                    roiDataBounds.height = 1;
+                }
 				roiGeoBounds = getGeoBoundsFromROI(roiDataBounds);
 			}
 			updateChildrenBounds();
@@ -449,10 +455,12 @@ public class ROIFigure extends Figure {
 		
 		public void setROIDataBounds(int xIndex, int yIndex, int width, int height){
 			RECT_SINGLETON.setBounds(xIndex,yIndex,width,height);
-			if(RECT_SINGLETON.equals(roiDataBounds))
-				return;
-			if(roiDataBounds == null)
-				roiDataBounds = new PrecisionRectangle();
+            if (RECT_SINGLETON.equals(roiDataBounds)) {
+                return;
+            }
+            if (roiDataBounds == null) {
+                roiDataBounds = new PrecisionRectangle();
+            }
 			roiDataBounds.setBounds(xIndex, yIndex, width, height);		
 			updateROIGeoBounds();
 			updateChildrenBounds();

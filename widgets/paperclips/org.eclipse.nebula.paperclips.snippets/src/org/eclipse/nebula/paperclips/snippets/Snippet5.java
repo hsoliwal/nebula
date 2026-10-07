@@ -54,13 +54,16 @@ public class Snippet5 {
 		});
 		GridPrint grid = new GridPrint("d, d, d, d", look);
 
-		// Light gray background on header
-		for (int i = 0; i < 4; i++)
-			grid.addHeader(new TextPrint("Column " + i));
+        // Light gray background on header
+        for (int i = 0; i < 4; i++) {
+            grid.addHeader(new TextPrint("Column " + i));
+        }
 
-		for (int r = 0; r < 20; r++)
-			for (int c = 0; c < 4; c++)
-				grid.add(new TextPrint("Row " + r + " Col " + c));
+        for (int r = 0; r < 20; r++) {
+            for (int c = 0; c < 4; c++) {
+                grid.add(new TextPrint("Row " + r + " Col " + c));
+            }
+        }
 
 		return grid;
 	}
@@ -91,17 +94,20 @@ public class Snippet5 {
 		button.addListener(SWT.Selection, event -> {
 			PrintDialog dialog = new PrintDialog(shell, SWT.NONE);
 			PrinterData printerData = dialog.open();
-			if (printerData != null)
-				PaperClips.print(
-						new PrintJob("Snippet5.java", print).setMargins(72),
-						printerData);
+            if (printerData != null) {
+                PaperClips.print(
+                        new PrintJob("Snippet5.java", print).setMargins(72),
+                        printerData);
+            }
 		});
 
 		shell.setVisible(true);
 
-		while (!shell.isDisposed())
-			if (!display.readAndDispatch())
-				display.sleep();
+        while (!shell.isDisposed()) {
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
+        }
 
 		display.dispose();
 	}

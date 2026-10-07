@@ -1,0 +1,285 @@
+<?xml version='1.0' encoding='utf-8'?>
+<repository name="Nebula owned UI runtime closure 4.41" type="org.eclipse.equinox.p2.artifact.repository.simpleRepository" version="1">
+  <properties size="3">
+    <property name="p2.timestamp" value="1788472819811" />
+    <property name="p2.compressed" value="true" />
+    <property name="pgp.publicKeys" value="-----BEGIN PGP MESSAGE-----&#10;&#10;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&#10;=xtSl&#10;-----END PGP MESSAGE-----" />
+    </properties>
+  <mappings size="3">
+    <rule filter="(&amp; (classifier=osgi.bundle))" output="${repoUrl}/plugins/${id}_${version}.jar" />
+    <rule filter="(&amp; (classifier=binary))" output="${repoUrl}/binary/${id}_${version}" />
+    <rule filter="(&amp; (classifier=org.eclipse.update.feature))" output="${repoUrl}/features/${id}_${version}.jar" />
+  </mappings>
+  <artifacts size="20">
+    <artifact classifier="osgi.bundle" id="org.eclipse.compare.source" version="3.12.200.v20260814-1536">
+      <properties size="10">
+        <property name="artifact.size" value="483968" />
+        <property name="download.size" value="483968" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.compare" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.compare.source/3.12.200.v20260814-1536" />
+        <property name="download.checksum.sha-512" value="4445e317c201e8b723f18a33e443df8cd36dceb507091708b61554abc89251891783d7025fb362de5beee8259f840dce7811a49fc591ec543bb6640e335e4196" />
+        <property name="download.checksum.sha-256" value="b146e7ca3da7b428790cc8c40c3896e478056ca03f4d7c36640b3c0bda69846a" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.compare" version="3.12.200.v20260814-1536">
+      <properties size="9">
+        <property name="artifact.size" value="1048379" />
+        <property name="download.size" value="1048379" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.compare" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.compare/3.12.200.v20260814-1536" />
+        <property name="download.checksum.sha-512" value="5b62da72489178732ffa2e0d05b1742b131331aa6935e28247555672f3f47c365a0d1a7978dd9580a2fb54a6745213541bcc7efaca5126677ac9ef913729ddd0" />
+        <property name="download.checksum.sha-256" value="5b5e9fb1018b714091c11440e61cb943e047399213beaf061ba137e7b3c5e3f6" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.core.net.source" version="1.5.900.v20260507-0401">
+      <properties size="10">
+        <property name="artifact.size" value="58427" />
+        <property name="download.size" value="58427" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.core.net" />
+        <property name="maven-version" value="1.5.900-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.core.net.source/1.5.900.v20260507-0401" />
+        <property name="download.checksum.sha-512" value="4ceaad5b6178ba767cd0acc4b1895d17ae6900b11a42a215679100af8608ec2d902359934b1b430a4e6e70d5d045010baa38b983e72cf8e17d14536b6e635bfb" />
+        <property name="download.checksum.sha-256" value="3b3f7d914e806d0d5c0133e276554755dfb9ca0dfa9b8098cedf7e5c46df93c5" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.core.net" version="1.5.900.v20260507-0401">
+      <properties size="9">
+        <property name="artifact.size" value="77837" />
+        <property name="download.size" value="77837" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.core.net" />
+        <property name="maven-version" value="1.5.900-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.core.net/1.5.900.v20260507-0401" />
+        <property name="download.checksum.sha-512" value="364f6b6206215419430ff1b261fd92335cf366abaee7b4251b624cd2e3fbbeec8932290fe1c140426513fcac3f8e7981e60170b3447f5d5cecd6d1a98aeb93a0" />
+        <property name="download.checksum.sha-256" value="6e7a8db7d87a44bb35924bb345ddf0d9372413e3fee2edd842b50ed630ec254f" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ltk.core.refactoring.source" version="3.16.0.v20260702-0744">
+      <properties size="10">
+        <property name="artifact.size" value="324233" />
+        <property name="download.size" value="324233" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.core.refactoring" />
+        <property name="maven-version" value="3.16.0-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.ltk.core.refactoring.source/3.16.0.v20260702-0744" />
+        <property name="download.checksum.sha-512" value="579c1f4d5c02b0ab7578afe555d8bf376f4fd1367445fc9c1f76073ef096bbf672fef53a076bfe686f4fc3381ab9ab714b7c015a54c5e499cdc732730d6519f8" />
+        <property name="download.checksum.sha-256" value="c42e494958f7603c4f66d6563a6c8d1120a5f89f034b11018dab9fe1c30f71ce" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ltk.core.refactoring" version="3.16.0.v20260702-0744">
+      <properties size="9">
+        <property name="artifact.size" value="381852" />
+        <property name="download.size" value="381852" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.core.refactoring" />
+        <property name="maven-version" value="3.16.0-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.ltk.core.refactoring/3.16.0.v20260702-0744" />
+        <property name="download.checksum.sha-512" value="9fad0f954afb3d536faac16f1d9043ccd21e696f345a4cc711c01e79e0ec441503f69814880e2dac2291a303dc82b0a3ee74e6f509d71bb09559c985c8b84220" />
+        <property name="download.checksum.sha-256" value="fc185dee6c34e594297471ab72f25c1e76deef6dbf674d3c2f0deee3b73e5b7f" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ltk.ui.refactoring.source" version="3.14.200.v20260702-0744">
+      <properties size="10">
+        <property name="artifact.size" value="264061" />
+        <property name="download.size" value="264061" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.ui.refactoring" />
+        <property name="maven-version" value="3.14.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.ltk.ui.refactoring.source/3.14.200.v20260702-0744" />
+        <property name="download.checksum.sha-512" value="2a07934ae985ff3f1b59013645c170d4fdcb18bd869b587f4f6c7e043316a60e844817621725940122e94f265dc964e476019e5f83aa8bc6093f3168c213ad4f" />
+        <property name="download.checksum.sha-256" value="00a4c6116343e09bbb6d80a0a2654da01204311279870b7a82d55495c0f96195" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ltk.ui.refactoring" version="3.14.200.v20260702-0744">
+      <properties size="9">
+        <property name="artifact.size" value="551069" />
+        <property name="download.size" value="551069" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ltk.ui.refactoring" />
+        <property name="maven-version" value="3.14.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.ltk.ui.refactoring/3.14.200.v20260702-0744" />
+        <property name="download.checksum.sha-512" value="bbb5f266f6068637e41679cf33ce85c5cd92e31c4a16aaad1a75fb6b190b6173b098803f3b9f9e12486209becc67530c0bd6ff888235bc6fcba0d1760fb4635d" />
+        <property name="download.checksum.sha-256" value="98ddbad933126edee515d1d6392d807db60841db90124e552aa8594478a6f93b" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.team.core.source" version="3.10.1100.v20260612-1500">
+      <properties size="10">
+        <property name="artifact.size" value="378170" />
+        <property name="download.size" value="378170" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.core" />
+        <property name="maven-version" value="3.10.1100-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.team.core.source/3.10.1100.v20260612-1500" />
+        <property name="download.checksum.sha-512" value="6fbfc585ad3f46644f2872c77fa9714a1333199c73081d9d812d7d834b4ebf20b29c3acf6f22db783b8f32cd58146297feac6b4806b52e64502a07ad3108e9d8" />
+        <property name="download.checksum.sha-256" value="9437e3000e53a208d62ad2ce8e4af2382064bf3af798a35febc347d889515b4f" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.team.core" version="3.10.1100.v20260612-1500">
+      <properties size="9">
+        <property name="artifact.size" value="416922" />
+        <property name="download.size" value="416922" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.core" />
+        <property name="maven-version" value="3.10.1100-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.team.core/3.10.1100.v20260612-1500" />
+        <property name="download.checksum.sha-512" value="a7a239fc0d18827633ce90d27651f7cccb2add3c27c37b906aa8e34e5c7a9418dc84e52604e2cd44d6394a47e4ae3f5b304c28236de58a44131cfec3f7d166a7" />
+        <property name="download.checksum.sha-256" value="4f4d2f9c62c7cca50c1ee07e803858c2f817b2f647449ef4f0549f35d90366ec" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.team.ui.source" version="3.12.200.v20260608-1918">
+      <properties size="10">
+        <property name="artifact.size" value="785226" />
+        <property name="download.size" value="785226" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.ui" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.team.ui.source/3.12.200.v20260608-1918" />
+        <property name="download.checksum.sha-512" value="a57c3935d5d6aa1bd9a0e3c9d1f81a308b310ae24d4a89907d9c63e23de2209b0d9de40929d138ab3394ae642405969d33e883064d028ee6c123b19632c6bb41" />
+        <property name="download.checksum.sha-256" value="1cea4863091e528ed77d6df14218a24b7860e7dd44b1b6ab4705bfa4c4ad0d26" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.team.ui" version="3.12.200.v20260608-1918">
+      <properties size="9">
+        <property name="artifact.size" value="1656600" />
+        <property name="download.size" value="1656600" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.team.ui" />
+        <property name="maven-version" value="3.12.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.team.ui/3.12.200.v20260608-1918" />
+        <property name="download.checksum.sha-512" value="951f5429e1b75788ab4fe5de764b6d91eeb534df220673b1aeaa209a8aa9f29ac314151cb32238135d0b6bc044b7dd1e0ce726ca78f0b748d4c4e41bd8bdedc0" />
+        <property name="download.checksum.sha-256" value="1e5f5e8e89979f568342c9daeecd8481e80ddf9931f635e593644d22a9b5f7b5" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.ide.application.source" version="1.6.200.v20260704-1759">
+      <properties size="10">
+        <property name="artifact.size" value="59122" />
+        <property name="download.size" value="59122" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.ide.application" />
+        <property name="maven-version" value="1.6.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.ui.ide.application.source/1.6.200.v20260704-1759" />
+        <property name="download.checksum.sha-512" value="2d9b9405528b6ec37831ee1c998d1568a07ecdfa7bcd62cec20542004381540577240ff4340e6c13241b2b4d1188e7c3e276af9d19e058d098784d16e6e15a15" />
+        <property name="download.checksum.sha-256" value="7f8ac0cef96923026352e52a99af4ca7d8e76a160505513a22b2af92ab51a871" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.ide.application" version="1.6.200.v20260704-1759">
+      <properties size="9">
+        <property name="artifact.size" value="153798" />
+        <property name="download.size" value="153798" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.ide.application" />
+        <property name="maven-version" value="1.6.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.ui.ide.application/1.6.200.v20260704-1759" />
+        <property name="download.checksum.sha-512" value="c40f075104ba8a9cf623b6726b7b5b648c47669c08bbe620dd07aba5e22d58d82b1db8d6a155fcbd4697f4d188800e1c2306296d2450e91a468342484cf91a3e" />
+        <property name="download.checksum.sha-256" value="15c68952c05f26b7e422f939ec6bc259e4806047e3e159565217aa6a88cac077" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.navigator.resources.source" version="3.10.100.v20260421-0620">
+      <properties size="10">
+        <property name="artifact.size" value="109787" />
+        <property name="download.size" value="109787" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.navigator.resources" />
+        <property name="maven-version" value="3.10.100-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.ui.navigator.resources.source/3.10.100.v20260421-0620" />
+        <property name="download.checksum.sha-512" value="921357b44a4111ba93db6e2d83f46046183145617c70b3f880184c24c1db208831e9e58d17548db51e88b442d9af407cfb1debe23b0d03d5a146edc736ae1383" />
+        <property name="download.checksum.sha-256" value="578ce1339945c61b77e7d76a5f2849a01fa4763abb04229f606278a06700eca6" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.navigator.resources" version="3.10.100.v20260421-0620">
+      <properties size="9">
+        <property name="artifact.size" value="207423" />
+        <property name="download.size" value="207423" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.navigator.resources" />
+        <property name="maven-version" value="3.10.100-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.ui.navigator.resources/3.10.100.v20260421-0620" />
+        <property name="download.checksum.sha-512" value="79db59b6c088d754302c9759b7e82ac9ecc59e001958d8dab92b51aa06c94bc0bd69a606e543c4f8dc255cc46f3024191db1b1fd4231a973f1234de17ec23343" />
+        <property name="download.checksum.sha-256" value="0d0db3094bbbd891b74c6536db9998044dc68de4fdf55906f1a12759ad564ed9" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.views.properties.tabbed.source" version="3.11.0.v20251217-0909">
+      <properties size="10">
+        <property name="artifact.size" value="88026" />
+        <property name="download.size" value="88026" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views.properties.tabbed" />
+        <property name="maven-version" value="3.11.0-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.ui.views.properties.tabbed.source/3.11.0.v20251217-0909" />
+        <property name="download.checksum.sha-512" value="7d3ce03b1e70875e1a8c6c25ba863094715c129a1d048dc75264cd9dad4272aa9ca6a5c302a7a8584f4caba40ba5fe229f81421fcdaa59202dd7f9a741bb94c6" />
+        <property name="download.checksum.sha-256" value="34984c4722893b05ea1d76c5c51c43d4578f8ffdc8efa36b456dae8dc52b15b4" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.views.properties.tabbed" version="3.11.0.v20251217-0909">
+      <properties size="9">
+        <property name="artifact.size" value="114970" />
+        <property name="download.size" value="114970" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views.properties.tabbed" />
+        <property name="maven-version" value="3.11.0-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.ui.views.properties.tabbed/3.11.0.v20251217-0909" />
+        <property name="download.checksum.sha-512" value="0de669fe8c3e088e90e4af4d1cade21632292aad676e65b08f89de51088ffd19a2da6acf667e733cca73f3358ff019bce7396ef90e689fb26f0cdba66c4183f0" />
+        <property name="download.checksum.sha-256" value="23d3780c940327977798e10d553806db495832583339e6ca9bd8653da25f86a5" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.views.source" version="3.13.200.v20260703-1200">
+      <properties size="10">
+        <property name="artifact.size" value="85267" />
+        <property name="download.size" value="85267" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views" />
+        <property name="maven-version" value="3.13.200-SNAPSHOT" />
+        <property name="maven-classifier" value="sources" />
+        <property name="maven-type" value="java-source" />
+        <property name="download.stats" value="org.eclipse.ui.views.source/3.13.200.v20260703-1200" />
+        <property name="download.checksum.sha-512" value="6d5cc01bba8483689f81d457df2a7f0852112e74fba2c2889284ed8d0b186f84589d5b4064641e059a3f4442a4e7478c268d69057ebdd932f4a5af9398a4eb09" />
+        <property name="download.checksum.sha-256" value="dd92cfa155f42bca720e14b96190b1044c2545f84cd924cc70dd5a917f5dff2b" />
+      </properties>
+    </artifact>
+    <artifact classifier="osgi.bundle" id="org.eclipse.ui.views" version="3.13.200.v20260703-1200">
+      <properties size="9">
+        <property name="artifact.size" value="122917" />
+        <property name="download.size" value="122917" />
+        <property name="maven-groupId" value="org.eclipse.platform" />
+        <property name="maven-artifactId" value="org.eclipse.ui.views" />
+        <property name="maven-version" value="3.13.200-SNAPSHOT" />
+        <property name="maven-type" value="eclipse-plugin" />
+        <property name="download.stats" value="org.eclipse.ui.views/3.13.200.v20260703-1200" />
+        <property name="download.checksum.sha-512" value="94c7905fbecdbec09c9ad38053b895183e0784f15ac13dbef727ae17a05f14a2a40f2bbc4b602380810a6968ce72644f2c9ef43659d1b4908cadbb213f41c001" />
+        <property name="download.checksum.sha-256" value="3d53aead6a31ef9506e8643254177fb2130dcaa5296148718e7df5c3420e68f2" />
+      </properties>
+    </artifact>
+    </artifacts>
+</repository>

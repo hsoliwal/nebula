@@ -233,7 +233,7 @@ public class TransitionManager {
             
             //dispose the image of the "to" view
             imgTo.dispose();
-            
+
             //if the current transition was canceled to process
             //a new recent one, show the new selection and make
             //a new transition to it
@@ -246,8 +246,9 @@ public class TransitionManager {
             //} else {
             //    
             //    isAnyTransitionInProgress.set(false);
-                for(TransitionListener tl: _listeners)
-                    tl.transitionFinished(TransitionManager.this);
+            for (TransitionListener tl : _listeners) {
+                tl.transitionFinished(TransitionManager.this);
+            }
                 
             //}
             

@@ -43,19 +43,9 @@ public class BeanUtils {
 			return source;
 		}
 		if (property.indexOf('.') == -1) {
-			if (source == null) {
-				return null;
-			}
-			PropertyDescriptor propertyDescriptor = getPropertyDescriptor(
-					source.getClass(), property);
-			return getValue(source, propertyDescriptor);
+			return getSimpleValue(source, property);
 		}
-
-		String[] properies = property.split("[.]");
-		for (int i = 0; i < properies.length; i++) {
-			source = getValue(source, properies[i]);
-		}
-		return source;
+		return getNestedValue(source, property);
 	}
 
 	/**
@@ -70,15 +60,7 @@ public class BeanUtils {
 	private static Object getValue(Object source,
 			PropertyDescriptor propertyDescriptor) {
 		try {
-			Method readMethod = propertyDescriptor.getReadMethod();
-			if (readMethod == null) {
-				throw new IllegalArgumentException(propertyDescriptor.getName()
-						+ " property does not have a read method."); //$NON-NLS-1$
-			}
-			if (!readMethod.isAccessible()) {
-				readMethod.setAccessible(true);
-			}
-			return readMethod.invoke(source, (Object[])null);
+			return getReadMethod(propertyDescriptor).invoke(source, (Object[])null);
 		} catch (InvocationTargetException e) {
 			/*
 			 * InvocationTargetException wraps any exception thrown by the
@@ -109,28 +91,17 @@ public class BeanUtils {
 				// cannot introspect, give up
 				return null;
 			}
-			PropertyDescriptor[] propertyDescriptors = beanInfo
-					.getPropertyDescriptors();
-			for (int i = 0; i < propertyDescriptors.length; i++) {
-				PropertyDescriptor descriptor = propertyDescriptors[i];
-				if (descriptor.getName().equals(propertyName)) {
-					return descriptor;
-				}
+			PropertyDescriptor descriptor = findPropertyDescriptor(
+					beanInfo.getPropertyDescriptors(), propertyName);
+			if (descriptor != null) {
+				return descriptor;
 			}
 		} else {
 			try {
-				PropertyDescriptor propertyDescriptors[];
-				List<PropertyDescriptor> pds = new ArrayList<>();
-				getInterfacePropertyDescriptors(pds, beanClass);
-				if (pds.size() > 0) {
-					propertyDescriptors = pds
-							.toArray(new PropertyDescriptor[pds.size()]);
-					PropertyDescriptor descriptor;
-					for (int i = 0; i < propertyDescriptors.length; i++) {
-						descriptor = propertyDescriptors[i];
-						if (descriptor.getName().equals(propertyName))
-							return descriptor;
-					}
+				PropertyDescriptor descriptor = findPropertyDescriptor(
+						getInterfaceDescriptors(beanClass), propertyName);
+				if (descriptor != null) {
+					return descriptor;
 				}
 			} catch (IntrospectionException e) {
 				// cannot introspect, give up
@@ -165,6 +136,52 @@ public class BeanUtils {
 		for (int j = 0; j < subIntfs.length; j++) {
 			getInterfacePropertyDescriptors(propertyDescriptors, subIntfs[j]);
 		}
+	}
+
+	private static Object getSimpleValue(Object source, String property) {
+		if (source == null) {
+			return null;
+		}
+		PropertyDescriptor descriptor = getPropertyDescriptor(source.getClass(), property);
+		return getValue(source, descriptor);
+	}
+
+	private static Object getNestedValue(Object source, String property) {
+		String[] properties = property.split("[.]");
+		for (int i = 0; i < properties.length; i++) {
+			source = getValue(source, properties[i]);
+		}
+		return source;
+	}
+
+	private static Method getReadMethod(PropertyDescriptor descriptor) {
+		Method readMethod = descriptor.getReadMethod();
+		if (readMethod == null) {
+			throw new IllegalArgumentException(descriptor.getName()
+					+ " property does not have a read method."); //$NON-NLS-1$
+		}
+		if (!readMethod.isAccessible()) {
+			readMethod.setAccessible(true);
+		}
+		return readMethod;
+	}
+
+	private static PropertyDescriptor[] getInterfaceDescriptors(Class<? extends Object> iface)
+			throws IntrospectionException {
+		List<PropertyDescriptor> descriptors = new ArrayList<>();
+		getInterfacePropertyDescriptors(descriptors, iface);
+		return descriptors.toArray(new PropertyDescriptor[descriptors.size()]);
+	}
+
+	private static PropertyDescriptor findPropertyDescriptor(PropertyDescriptor[] descriptors,
+			String propertyName) {
+		for (int i = 0; i < descriptors.length; i++) {
+			PropertyDescriptor descriptor = descriptors[i];
+			if (descriptor.getName().equals(propertyName)) {
+				return descriptor;
+			}
+		}
+		return null;
 	}
 
 }

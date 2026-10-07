@@ -66,8 +66,9 @@ public class QuartInOut extends AbstractMovement {
 		double c = max - min;
 		step = step / (duration / 2d);
 
-		if ((step) < 1d)
-			return c / 2d * step * step * step * step + min;
+        if ((step) < 1d) {
+            return c / 2d * step * step * step * step + min;
+        }
 
 		return -c / 2d * ((step -= 2d) * step * step * step - 2d) + min;
 	}

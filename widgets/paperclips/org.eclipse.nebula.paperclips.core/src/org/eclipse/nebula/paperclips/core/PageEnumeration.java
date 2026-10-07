@@ -67,8 +67,9 @@ public class PageEnumeration {
 	 * @return the next page.
 	 */
 	public PrintPiece nextPage() {
-		if (!hasNext)
-			return null;
+        if (!hasNext) {
+            return null;
+        }
 
 		PrintPiece page = PaperClips.next(document, marginBounds.width,
 				marginBounds.height);

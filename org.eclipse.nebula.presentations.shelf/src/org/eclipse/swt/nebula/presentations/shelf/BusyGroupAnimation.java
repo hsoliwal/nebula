@@ -16,8 +16,9 @@ public class BusyGroupAnimation extends ImageAnimationPlayer
     @Override
     public void updateImage(Image i)
     {
-        if (!i.isDisposed())
+        if (!i.isDisposed()) {
             group.setImage(i);
+        }
     }
 
 }

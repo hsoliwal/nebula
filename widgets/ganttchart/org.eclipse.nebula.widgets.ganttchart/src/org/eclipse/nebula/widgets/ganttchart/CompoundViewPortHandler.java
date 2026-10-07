@@ -80,15 +80,17 @@ public class CompoundViewPortHandler implements IViewPortHandler2 {
 	
 	public void nextMinute() {
 		for (IViewPortHandler vph : this.handler) {
-			if(vph instanceof IViewPortHandler2)
-				  ((IViewPortHandler2) vph).nextMinute();
+            if (vph instanceof IViewPortHandler2) {
+                ((IViewPortHandler2) vph).nextMinute();
+            }
 		}
 	}
 
 	public void prevMinute() {
 		for (IViewPortHandler vph : this.handler) {
-			if(vph instanceof IViewPortHandler2)
-				  ((IViewPortHandler2) vph).prevMinute();
+            if (vph instanceof IViewPortHandler2) {
+                ((IViewPortHandler2) vph).prevMinute();
+            }
 		}
 	}
 

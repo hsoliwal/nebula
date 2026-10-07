@@ -56,10 +56,11 @@ public class GanttGroupExample {
 				tempEnd.add(Calendar.DATE, start + 1);
 				GanttEvent temp = new GanttEvent(ganttChart, x + ":" + i, tempStart, tempEnd, 50);
 
-				if (x == 1)
-					groupOne.addEvent(temp);
-				else
-					groupTwo.addEvent(temp);
+                if (x == 1) {
+                    groupOne.addEvent(temp);
+                } else {
+                    groupTwo.addEvent(temp);
+                }
 
 				start += 9;
 			}
@@ -93,8 +94,9 @@ public class GanttGroupExample {
 		shell.open();
 
 		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
+            if (!display.readAndDispatch()) {
+                display.sleep();
+            }
 		}
 		display.dispose();
 

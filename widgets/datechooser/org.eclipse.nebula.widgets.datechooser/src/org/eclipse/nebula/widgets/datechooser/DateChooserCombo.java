@@ -351,8 +351,9 @@ public class DateChooserCombo extends AbstractCombo {
 	 */
 	public void setImage(Image image) {
 		checkWidget();
-		if (image == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (image == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		GridData buttonLayout = (GridData) button.getLayoutData();
 		if (WIN32) {
 			ImageData id = image.getImageData();
@@ -381,8 +382,9 @@ public class DateChooserCombo extends AbstractCombo {
 	 */
 	public void setTheme(DateChooserTheme theme) {
 		checkWidget();
-		if (theme == null)
-			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        if (theme == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
 		this.theme = theme;
 		this.gridVisible = theme.gridVisible;
 	}

@@ -64,22 +64,29 @@ public class AlignPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		AlignPrint other = (AlignPrint) obj;
-		if (hAlign != other.hAlign)
-			return false;
+        if (hAlign != other.hAlign) {
+            return false;
+        }
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
-		if (vAlign != other.vAlign)
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
+        if (vAlign != other.vAlign) {
+            return false;
+        }
 		return true;
 	}
 
@@ -104,20 +111,24 @@ public class AlignPrint implements Print {
 	}
 
 	private static int checkHAlign(int hAlign) {
-		if (hAlign == SWT.LEFT || hAlign == SWT.CENTER || hAlign == SWT.RIGHT)
-			return hAlign;
-		if (hAlign == SWT.DEFAULT)
-			return DEFAULT_HORIZONTAL_ALIGN;
+        if (hAlign == SWT.LEFT || hAlign == SWT.CENTER || hAlign == SWT.RIGHT) {
+            return hAlign;
+        }
+        if (hAlign == SWT.DEFAULT) {
+            return DEFAULT_HORIZONTAL_ALIGN;
+        }
 		PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
 				"hAlign must be one of SWT.LEFT, SWT.CENTER or SWT.RIGHT"); //$NON-NLS-1$
 		return hAlign;
 	}
 
 	private static int checkVAlign(int vAlign) {
-		if (vAlign == SWT.TOP || vAlign == SWT.CENTER || vAlign == SWT.BOTTOM)
-			return vAlign;
-		if (vAlign == SWT.DEFAULT)
-			return DEFAULT_VERTICAL_ALIGN;
+        if (vAlign == SWT.TOP || vAlign == SWT.CENTER || vAlign == SWT.BOTTOM) {
+            return vAlign;
+        }
+        if (vAlign == SWT.DEFAULT) {
+            return DEFAULT_VERTICAL_ALIGN;
+        }
 		PaperClips.error(SWT.ERROR_INVALID_ARGUMENT,
 				"vAlign must be one of SWT.TOP, SWT.CENTER or SWT.BOTTOM"); //$NON-NLS-1$
 		return vAlign;
@@ -159,27 +170,32 @@ class AlignIterator implements PrintIterator {
 
 	public PrintPiece next(int width, int height) {
 		PrintPiece piece = PaperClips.next(target, width, height);
-		if (piece == null)
-			return null;
+        if (piece == null) {
+            return null;
+        }
 
 		Point size = piece.getSize();
 		Point offset = new Point(0, 0);
 
-		if (hAlign == SWT.CENTER)
-			offset.x = (width - size.x) / 2;
-		else if (hAlign == SWT.RIGHT)
-			offset.x = width - size.x;
+        if (hAlign == SWT.CENTER) {
+            offset.x = (width - size.x) / 2;
+        } else if (hAlign == SWT.RIGHT) {
+            offset.x = width - size.x;
+        }
 
-		if (hAlign != SWT.LEFT)
-			size.x = width;
+        if (hAlign != SWT.LEFT) {
+            size.x = width;
+        }
 
-		if (vAlign == SWT.CENTER)
-			offset.y = (height - size.y) / 2;
-		else if (vAlign == SWT.BOTTOM)
-			offset.y = height - size.y;
+        if (vAlign == SWT.CENTER) {
+            offset.y = (height - size.y) / 2;
+        } else if (vAlign == SWT.BOTTOM) {
+            offset.y = height - size.y;
+        }
 
-		if (vAlign != SWT.TOP)
-			size.y = height;
+        if (vAlign != SWT.TOP) {
+            size.y = height;
+        }
 
 		CompositeEntry entry = new CompositeEntry(piece, offset);
 

@@ -52,23 +52,30 @@ public class BorderPrint implements Print {
 	}
 
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
 		BorderPrint other = (BorderPrint) obj;
 		if (border == null) {
-			if (other.border != null)
-				return false;
-		} else if (!border.equals(other.border))
-			return false;
+            if (other.border != null) {
+                return false;
+            }
+		} else if (!border.equals(other.border)) {
+            return false;
+        }
 		if (target == null) {
-			if (other.target != null)
-				return false;
-		} else if (!target.equals(other.target))
-			return false;
+            if (other.target != null) {
+                return false;
+            }
+		} else if (!target.equals(other.target)) {
+            return false;
+        }
 		return true;
 	}
 
