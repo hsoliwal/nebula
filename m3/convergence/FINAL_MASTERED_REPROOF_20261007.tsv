@@ -2,8 +2,8 @@ field	value
 schema	NEBULA_M3_FINAL_MASTERED_REPROOF_V1
 repository	hsoliwal/nebula
 baselineBranch	master
-baselineCommit	45cf65d16dc9535ecda8971cce01261281a60c96
-proofBranch	m3/final-mastered-reproof-20261007-v2
+baselineCommit	77337c0ad29ba0dacc70da83fff4dcfd5e6559a6
+proofBranch	m3/final-mastered-reproof-20261007-v3
 javaRelease	21
 requiredCoverage	LINE>=0.99
 requiredFixedPoint	SECOND_APPLICATION_BYTE_IDENTICAL
@@ -15,3 +15,5 @@ transferTarget1	hsoliwal/M3jdk21
 transferTarget2	hsoliwal/com.synexia
 sourceMutationAuthority	false
 promotionAuthority	false
+viewportEvidence	SWT_NATIVE_SCREENSHOT_AND_SPARSE_RESIDENCY
+graphicsModel	SWT_GC_PROXY_AFFINE_PAINT_DAG_GC_STATE_DAG
