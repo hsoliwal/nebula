@@ -52,6 +52,15 @@ Java2s material is used as behavioral/category reference only; example source is
 
 Nebula-specific donors include Grid visible-range support, external scrollbar proxies, CompositeTable's bounded row-control pool, Grid header painting, and XViewer-style tree/table projection.
 
+
+### Java2s SWT/Swing behavioral catalogue
+
+The exact Java2s catalogue URLs and their non-copying behavior-to-proof mapping are retained in
+[`JAVA2S_SWT_SWING_BEHAVIOR_CATALOG.md`](JAVA2S_SWT_SWING_BEHAVIOR_CATALOG.md).
+`GridViewportDistillation_Test` keeps the pure viewport/chrome/affine/stroke invariants
+executable.  This supplements, rather than replaces, the native screenshot, million-row,
+owner-draw and graphics-lifetime gates below.
+
 ## Screenshot invariants
 
 When a transformed candidate changes painting, viewport, scrollbar, header or state code, capture the same scene before and after and compare these invariants:
