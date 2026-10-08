@@ -46,6 +46,7 @@
 						<include>**/GridVisibleRangeSupport_Test.java</include>
 						<include>**/GridViewportCoordinates_Test.java</include>
 						<include>**/GridGCProxy_Test.java</include>
+						<include>**/GridViewportDistillation_Test.java</include>
 					</includes>
 				</configuration>
 			</plugin>
