@@ -57,6 +57,7 @@ jobs:
           fi
           python3 m3/verify-source-custody.py "$BASE_SHA"
           bash -n m3/convergence/verify.sh
+          bash -n m3/convergence/install_bound_synexia_recipe.sh
           grep -F $'4\tSECOND_PASS_SIGNAL_CHAIN' m3/convergence/PLAN.tsv
           grep -F $'9\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
