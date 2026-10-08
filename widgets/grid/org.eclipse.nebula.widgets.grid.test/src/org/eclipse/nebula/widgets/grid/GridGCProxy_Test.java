@@ -234,6 +234,12 @@ public class GridGCProxy_Test {
 		Image image = new Image(display, 32, 32);
 		GC gc = new GC(image);
 		try {
+			Transform identity = new Transform(display);
+			try {
+				gc.setTransform(identity);
+			} finally {
+				identity.dispose();
+			}
 			LineAttributes stroke = new LineAttributes(
 					2f, SWT.CAP_ROUND, SWT.JOIN_BEVEL, SWT.LINE_DASH,
 					new float[] {3f, 5f}, 1f, 8f);
