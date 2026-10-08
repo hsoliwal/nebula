@@ -83,6 +83,7 @@ final class GridGCProxy implements AutoCloseable {
 
 	GC gc() {
 		checkOpen();
+		flushTransform();
 		return gc;
 	}
 
@@ -91,6 +92,7 @@ final class GridGCProxy implements AutoCloseable {
         if (clipping == null) {
             throw new IllegalArgumentException("clipping");
         }
+		flushTransform();
 		Region next = new Region(gc.getDevice());
 		try {
 			next.add(clipping);
@@ -107,25 +109,7 @@ final class GridGCProxy implements AutoCloseable {
         if (transform == null) {
             throw new IllegalArgumentException("transform");
         }
-        if (transform.isIdentity()) {
-            return this;
-        }
-		Transform next = new Transform(gc.getDevice());
-		Transform delta = null;
-		try {
-			gc.getTransform(next);
-			delta = new Transform(
-					gc.getDevice(),
-					transform.m11, transform.m12, transform.m21, transform.m22, transform.dx, transform.dy);
-			next.multiply(delta);
-			gc.setTransform(next);
-			stateDAG.planTransform(transform);
-		} finally {
-            if (delta != null) {
-                delta.dispose();
-            }
-			next.dispose();
-		}
+		stateDAG.planTransform(transform);
 		return this;
 	}
 
@@ -155,6 +139,28 @@ final class GridGCProxy implements AutoCloseable {
 	int nativeStateTransitionCount() {
 		checkOpen();
 		return stateDAG.nativeTransitions();
+	}
+
+	private void flushTransform() {
+		if (!stateDAG.hasPendingTransform()) {
+			return;
+		}
+		GridTransform planned = stateDAG.consumeTransform();
+		Transform next = new Transform(gc.getDevice());
+		Transform delta = null;
+		try {
+			gc.getTransform(next);
+			delta = new Transform(
+					gc.getDevice(),
+					planned.m11, planned.m12, planned.m21, planned.m22, planned.dx, planned.dy);
+			next.multiply(delta);
+			gc.setTransform(next);
+		} finally {
+			if (delta != null) {
+				delta.dispose();
+			}
+			next.dispose();
+		}
 	}
 
 	@Override
