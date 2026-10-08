@@ -1,0 +1,15 @@
+schema	NEBULA_GRID_GC_CLIP_RESTORE_V3_BINDING_V1
+synexiaRepository	hsoliwal/com.synexia
+synexiaBranch	m3/nebula-grid-gc-clip-restore-v3-20261008
+synexiaPullRequest	9910
+synexiaCommit	025b50984b84b1e11b05c7d109f57cb4133cf044
+recipe	com.synexia.rewrite.M3NebulaGridGcStateDagRecipe
+crate	nebula-grid-gc-state-dag-v3
+target	widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridGCProxy.java
+preimageSha256	0e63ac471725ffbb84848e551551b18c7be61fe936b16dfcd3f3bf173847c2c9
+postimageSha256	422f0c0dbb04894f349072807e07712c75cb164d2c67c0fa37f1bcdcfa5967ba
+scope	FILE
+behaviorOracle	widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridGCProxy_Test.java#restoresCompleteMutableGcStateAfterPlanePaint
+sourceMutationAuthority	false
+promotionAuthority	false
+status	CANDIDATE_PENDING_CI

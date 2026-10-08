@@ -175,9 +175,22 @@ final class GridGCProxy implements AutoCloseable {
 			return;
 		}
 		try {
-			gc.setLineAttributes(originalLineAttributes);
+			/*
+			 * Region clipping is captured in device coordinates. Restore that device-space
+			 * region while the transform is identity, then restore the original transform.
+			 * Reapplying the region under a translated/scaled transform would interpret the
+			 * captured device coordinates as logical coordinates and shift the clip.
+			 */
 			if (originalAdvanced) {
-				gc.setTransform(originalTransform);
+				gc.setAdvanced(true);
+				Transform identity = new Transform(gc.getDevice());
+				try {
+					gc.setTransform(identity);
+					gc.setClipping(originalClipping);
+					gc.setTransform(originalTransform);
+				} finally {
+					identity.dispose();
+				}
 				gc.setAlpha(originalAlpha);
 				gc.setAntialias(originalAntialias);
 				gc.setTextAntialias(originalTextAntialias);
@@ -186,10 +199,12 @@ final class GridGCProxy implements AutoCloseable {
 			} else {
 				/*
 				 * Turning advanced mode off resets transform/pattern/alpha/AA state.
-				 * Do it before restoring the basic state and exact clip below.
+				 * Restore the exact device clip only after that reset.
 				 */
 				gc.setAdvanced(false);
+				gc.setClipping(originalClipping);
 			}
+			gc.setLineAttributes(originalLineAttributes);
 			gc.setXORMode(originalXorMode);
 			gc.setForeground(originalForeground);
 			gc.setBackground(originalBackground);
@@ -198,7 +213,6 @@ final class GridGCProxy implements AutoCloseable {
 				gc.setBackgroundPattern(originalBackgroundPattern);
 			}
 			gc.setFont(originalFont);
-			gc.setClipping(originalClipping);
 		} finally {
 			originalTransform.dispose();
 			originalClipping.dispose();
