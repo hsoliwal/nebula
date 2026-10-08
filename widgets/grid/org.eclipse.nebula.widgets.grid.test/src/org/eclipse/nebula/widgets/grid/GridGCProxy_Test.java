@@ -229,11 +229,17 @@ public class GridGCProxy_Test {
 	}
 
 	@Test
-	public void collapsesEquivalentStrokeAndAlphaTransitionsButKeepsAffineOrder() {
+	public void collapsesEquivalentStrokeAndAlphaTransitionsAndFlushesOneAffineNode() {
 		Display display = Display.getDefault();
 		Image image = new Image(display, 32, 32);
 		GC gc = new GC(image);
 		try {
+			Transform identity = new Transform(display);
+			try {
+				gc.setTransform(identity);
+			} finally {
+				identity.dispose();
+			}
 			LineAttributes stroke = new LineAttributes(
 					2f, SWT.CAP_ROUND, SWT.JOIN_BEVEL, SWT.LINE_DASH,
 					new float[] {3f, 5f}, 1f, 8f);
@@ -252,10 +258,25 @@ public class GridGCProxy_Test {
 				assertEquals("equivalent alpha nodes must collapse",
 						2, proxy.nativeStateTransitionCount());
 
+				float[] before = elements(gc);
 				proxy.translate(4, 0);
 				proxy.translate(4, 0);
-				assertEquals("affine deltas remain ordered because applying the same delta twice is observable",
-						4, proxy.nativeStateTransitionCount());
+				assertEquals("ordered affine deltas stay retained until a renderer requests the GC",
+						2, proxy.nativeStateTransitionCount());
+				assertArrayEquals("retained affine state must not mutate the native GC early",
+						before, elements(gc), 0.0001f);
+
+				assertSame(gc, proxy.gc());
+				assertEquals("two ordered translations must flush as one native transform transition",
+						3, proxy.nativeStateTransitionCount());
+				assertArrayEquals(new float[] {1, 0, 0, 1, 8, 0}, elements(gc), 0.0001f);
+
+				proxy.translate(5, 0);
+				proxy.translate(-5, 0);
+				assertSame(gc, proxy.gc());
+				assertEquals("an affine batch that cancels to identity must not hit the native GC",
+						3, proxy.nativeStateTransitionCount());
+				assertArrayEquals(new float[] {1, 0, 0, 1, 8, 0}, elements(gc), 0.0001f);
 			}
 		} finally {
 			gc.dispose();
