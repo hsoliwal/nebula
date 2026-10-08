@@ -16,8 +16,9 @@ import org.eclipse.swt.graphics.LineAttributes;
  *
  * <p>The DAG is deliberately allocation-light: stroke and alpha nodes are
  * retained as semantic state, and repeated requests collapse to the same node
- * instead of issuing another native SWT GC mutation. Transform composition
- * remains ordered because applying the same affine delta twice is observable.</p>
+ * instead of issuing another native SWT GC mutation. Ordered affine deltas are
+ * composed as value transforms and become one native transition only when the
+ * proxy crosses the raw-GC renderer boundary.</p>
  */
 final class GridGCStateDAG {
 
@@ -27,6 +28,7 @@ final class GridGCStateDAG {
 
 	private LineAttributes lineAttributes;
 	private int alpha;
+	private GridTransform pendingTransform = GridTransform.IDENTITY;
 	private int nativeTransitions;
 
 	GridGCStateDAG(LineAttributes lineAttributes, int alpha) {
@@ -65,8 +67,25 @@ final class GridGCStateDAG {
 		if (delta.isIdentity()) {
 			return 0;
 		}
-		nativeTransitions++;
+		pendingTransform = pendingTransform.then(delta);
+		if (pendingTransform.isIdentity()) {
+			pendingTransform = GridTransform.IDENTITY;
+		}
 		return TRANSFORM;
+	}
+
+	boolean hasPendingTransform() {
+		return !pendingTransform.isIdentity();
+	}
+
+	GridTransform consumeTransform() {
+		if (pendingTransform.isIdentity()) {
+			return GridTransform.IDENTITY;
+		}
+		GridTransform result = pendingTransform;
+		pendingTransform = GridTransform.IDENTITY;
+		nativeTransitions++;
+		return result;
 	}
 
 	int nativeTransitions() {
