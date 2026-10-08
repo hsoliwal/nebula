@@ -71,20 +71,36 @@ if [[ -n "$TOKEN" ]]; then
   )
   source_mode="CANONICAL_PRIVATE"
 else
-  git init "$DEST"
-  git -C "$DEST" remote add origin "https://github.com/$receiver_repository.git"
-  git -C "$DEST" sparse-checkout init --cone
-  git -C "$DEST" sparse-checkout set m3/synexia-import/pure-int-recipe-custody
-  git -C "$DEST" fetch --depth 1 --filter=blob:none origin "refs/pull/$receiver_pr/head"
-  git -C "$DEST" checkout --detach FETCH_HEAD
-  [[ "$(git -C "$DEST" rev-parse HEAD)" == "$receiver_commit" ]] || {
-    echo "checked-out public receiver commit does not match binding" >&2
-    exit 1
-  }
+  receiver_root="$DEST/m3/synexia-import/pure-int-recipe-custody"
+  mkdir -p "$receiver_root/src/main/java/com/synexia/rewrite"
+  mkdir -p "$receiver_root/src/test/java/com/synexia/rewrite"
 
-  SOURCE="$DEST/m3/synexia-import/pure-int-recipe-custody/SOURCE.tsv"
-  [[ -f "$SOURCE" ]] || { echo "public receiver source receipt missing" >&2; exit 1; }
-  grep -F $'hsoliwal/com.synexia\t9497\tdcc967a005edb47fd45e1aecc710339b236f28ea\t' "$SOURCE" >/dev/null
+  raw_base="https://raw.githubusercontent.com/$receiver_repository/$receiver_commit/m3/synexia-import/pure-int-recipe-custody"
+  files=(
+    "pom.xml"
+    "SOURCE.tsv"
+    "src/main/java/com/synexia/rewrite/M3PureIntAtomizeRecipe.java"
+    "src/main/java/com/synexia/rewrite/M3PureIntConvergenceRecipe.java"
+    "src/main/java/com/synexia/rewrite/M3PureIntDocumentationRecipe.java"
+    "src/main/java/com/synexia/rewrite/M3PureIntInventoryRecipe.java"
+    "src/main/java/com/synexia/rewrite/M3PureIntLeaf.java"
+    "src/main/java/com/synexia/rewrite/M3PureIntPatternizeRecipe.java"
+    "src/test/java/com/synexia/rewrite/M3PureIntCustodyTest.java"
+  )
+  for relative in "${files[@]}"; do
+    mkdir -p "$(dirname "$receiver_root/$relative")"
+    curl --fail --silent --show-error --location       "$raw_base/$relative"       --output "$receiver_root/$relative"
+  done
+
+  SOURCE="$receiver_root/SOURCE.tsv"
+  grep -F 
+LOCAL_JAR="$HOME/.m2/repository/com/synexia/synexia-openrewrite-recipes/1.0.0-SNAPSHOT/synexia-openrewrite-recipes-1.0.0-SNAPSHOT.jar"
+[[ -s "$LOCAL_JAR" ]] || { echo "bound Synexia recipe artifact was not installed" >&2; exit 1; }
+
+jar tf "$LOCAL_JAR" | grep -Fx 'com/synexia/rewrite/M3PureIntConvergenceRecipe.class' >/dev/null
+
+printf 'BOUND_RECIPE_INSTALLED\t%s\t%s\t%s\t%s\t%s\n'   "$source_mode" "$repository" "$upstream_commit" "$artifact" "$entrypoint"
+hsoliwal/com.synexia\t9497\tdcc967a005edb47fd45e1aecc710339b236f28ea\t' "$SOURCE" >/dev/null
 
   mvn -B -ntp -f "$DEST/$receiver_module" clean verify install
   source_mode="PUBLIC_M3JDK21_CUSTODY"
