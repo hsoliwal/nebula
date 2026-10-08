@@ -30,7 +30,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: hsoliwal/eclipse.platform.swt
-        ref: 717f952621852850b68c0c301fca7c6d41a68039
+        ref: 25e637e40c5243f5210586007a74206d8dce7953
         path: .m3-swt
         fetch-depth: 0
         lfs: false

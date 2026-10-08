@@ -10,7 +10,7 @@ import sys
 import xml.etree.ElementTree as ET
 import zipfile
 
-PIN = '717f952621852850b68c0c301fca7c6d41a68039'
+PIN = '25e637e40c5243f5210586007a74206d8dce7953'
 GC_SOURCE = 'bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/graphics/GC.java'
 GC_SHA256 = 'b68e4dc52b4d009972b01b46eb191eb1a30269345a3044ad2d02c850fce53c76'
 GC_CLASS = 'org/eclipse/swt/graphics/GC.class'
