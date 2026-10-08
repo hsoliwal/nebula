@@ -57,6 +57,7 @@ jobs:
           fi
           python3 m3/verify-source-custody.py "$BASE_SHA"
           bash -n m3/convergence/verify.sh
+          bash -n m3/convergence/install_bound_synexia_recipe.sh
           grep -F $'4\tSECOND_PASS_SIGNAL_CHAIN' m3/convergence/PLAN.tsv
           grep -F $'9\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'source.mutation=false' .m3/atom-pattern/policy.properties
@@ -198,6 +199,14 @@ jobs:
 
       - name: 8 - Install the proven Nebula-local recipe artifact
         run: mvn -B -ntp -f m3/reactor.xml install
+
+      - name: 8a - Install exact bound Synexia FILE recipe
+        env:
+          GH_TOKEN: ${{ secrets.M3_SYNEXIA_TOKEN }}
+        run: >-
+          bash m3/convergence/install_bound_synexia_recipe.sh
+          "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/com.synexia-pure-int"
 
       - name: 9 - Apply FILE-local atomize patternize document DAG
         shell: bash

@@ -1,0 +1,2 @@
+schema	receiver_repository	receiver_pr	receiver_commit	receiver_module	recipe_artifact	recipe_entrypoint	license	authority
+M3_NEBULA_PUBLIC_RECIPE_RECEIVER_V1	hsoliwal/M3jdk21	437	9c7d6121d342e35c8b008557812d41498359c3f7	m3/synexia-import/pure-int-recipe-custody/pom.xml	com.synexia:synexia-openrewrite-recipes:1.0.0-SNAPSHOT	com.synexia.rewrite.M3PureIntConvergenceRecipe	Apache-2.0	CUSTODY_ONLY
