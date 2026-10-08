@@ -199,6 +199,14 @@ jobs:
       - name: 8 - Install the proven Nebula-local recipe artifact
         run: mvn -B -ntp -f m3/reactor.xml install
 
+      - name: 8a - Install exact bound Synexia FILE recipe
+        env:
+          GH_TOKEN: ${{ secrets.M3_SYNEXIA_TOKEN }}
+        run: >-
+          bash m3/convergence/install_bound_synexia_recipe.sh
+          "$GITHUB_WORKSPACE"
+          "$RUNNER_TEMP/com.synexia-pure-int"
+
       - name: 9 - Apply FILE-local atomize patternize document DAG
         shell: bash
         run: |
