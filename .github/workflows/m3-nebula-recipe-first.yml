@@ -189,7 +189,22 @@ jobs:
         run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
       - name: 5 - Inventory the whole Nebula Java checkout
-        run: mvn -B -ntp -f m3/reactor.xml -Pinventory -Dm3.nebula.root="$GITHUB_WORKSPACE" -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Historical parser tests already ran against immutable fixtures in step 3.
+          # Do not rerun them with m3.nebula.root redirected to the live checkout.
+          python3 - <<'PYTEST'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          report = Path('m3/openrewrite-line-terminators/target/surefire-reports/TEST-com.synexia.recipe.JavaLineTerminatorsTest.xml')
+          suite = ET.parse(report).getroot()
+          assert int(suite.get('tests', '0')) >= 6, 'historical parser proof missing'
+          assert all(int(suite.get(k, '0')) == 0 for k in ('failures', 'errors', 'skipped')), 'historical parser proof failed'
+          PYTEST
+          mvn -B -ntp -f m3/reactor.xml -Pinventory -DskipTests \
+            -Dm3.nebula.root="$GITHUB_WORKSPACE" \
+            -Dm3.nebula.out="$GITHUB_WORKSPACE/m3/recipe-first/target/nebula-m3-inventory" verify
 
       - name: 6 - Require complete Java parse inventory
         shell: bash
