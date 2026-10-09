@@ -9,6 +9,8 @@ preimageSha256	422f0c0dbb04894f349072807e07712c75cb164d2c67c0fa37f1bcdcfa5967ba
 postimageSha256	604802f3de598f8d255654ac2e1cb3be84d1ebb6a9949ec35b15a9c114e133a8
 scope	FILE
 swtContract	GC.getClipping(Region)=current-user-space
+swtReceiver	25e637e40c5243f5210586007a74206d8dce7953
+priorFailingNativeRun	37807007188
 behaviorOracle	widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridGCProxy_Test.java#restoresCompleteMutableGcStateAfterPlanePaint
 sourceMutationAuthority	false
 promotionAuthority	false
