@@ -188,6 +188,8 @@ jobs:
       - name: 7 - Baseline original Nebula Tycho reactor
         run: xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
 
+      # Historical fixture tests are proved once before live-checkout inventory.
+      # Live inventory changes only its root/data source and therefore executes with tests skipped.
       - name: 5 - Inventory the whole Nebula Java checkout
         shell: bash
         run: |
