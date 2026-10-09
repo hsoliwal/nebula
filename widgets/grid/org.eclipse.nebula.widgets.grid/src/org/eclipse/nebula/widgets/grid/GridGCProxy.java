@@ -176,21 +176,14 @@ final class GridGCProxy implements AutoCloseable {
 		}
 		try {
 			/*
-			 * Region clipping is captured in device coordinates. Restore that device-space
-			 * region while the transform is identity, then restore the original transform.
-			 * Reapplying the region under a translated/scaled transform would interpret the
-			 * captured device coordinates as logical coordinates and shift the clip.
+			 * SWT reports GC clipping in the current user coordinate space. The snapshot
+			 * was therefore captured under originalTransform. Restore that transform first,
+			 * then reapply the captured Region in the same coordinate space.
 			 */
 			if (originalAdvanced) {
 				gc.setAdvanced(true);
-				Transform identity = new Transform(gc.getDevice());
-				try {
-					gc.setTransform(identity);
-					gc.setClipping(originalClipping);
-					gc.setTransform(originalTransform);
-				} finally {
-					identity.dispose();
-				}
+				gc.setTransform(originalTransform);
+				gc.setClipping(originalClipping);
 				gc.setAlpha(originalAlpha);
 				gc.setAntialias(originalAntialias);
 				gc.setTextAntialias(originalTextAntialias);
