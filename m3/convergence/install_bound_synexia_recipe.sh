@@ -53,8 +53,8 @@ IFS=$'\t' read -r \
 
 [[ "$receiver_schema" == "M3_NEBULA_PUBLIC_RECIPE_RECEIVER_V1" ]] || { echo "receiver schema drift" >&2; exit 1; }
 [[ "$receiver_repository" == "hsoliwal/M3jdk21" ]] || { echo "receiver repository drift" >&2; exit 1; }
-[[ "$receiver_pr" == "437" ]] || { echo "receiver PR drift" >&2; exit 1; }
-[[ "$receiver_commit" == "9c7d6121d342e35c8b008557812d41498359c3f7" ]] || { echo "receiver commit drift" >&2; exit 1; }
+[[ "$receiver_pr" == "544" ]] || { echo "receiver PR drift" >&2; exit 1; }
+[[ "$receiver_commit" == "67198149fcf35e4d38ef281efda28078aed64ccc" ]] || { echo "receiver commit drift" >&2; exit 1; }
 [[ "$receiver_module" == "m3/synexia-import/pure-int-recipe-custody/pom.xml" ]] || { echo "receiver module drift" >&2; exit 1; }
 [[ "$receiver_artifact" == "$artifact" ]] || { echo "receiver artifact mismatch" >&2; exit 1; }
 [[ "$receiver_entrypoint" == "$entrypoint" ]] || { echo "receiver entrypoint mismatch" >&2; exit 1; }
