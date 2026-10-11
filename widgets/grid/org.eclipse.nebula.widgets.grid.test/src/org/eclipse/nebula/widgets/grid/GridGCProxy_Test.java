@@ -433,6 +433,52 @@ public class GridGCProxy_Test {
 		}
 	}
 
+
+	@Test
+	public void nonCommutingAffineBatchMatchesNativeSwtTransformMultiply() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 96, 96);
+		GC gc = new GC(image);
+		Transform initial = null;
+		Transform expected = null;
+		Transform scale = null;
+		Transform translation = null;
+		try {
+			initial = new Transform(display, 1, 0, 0, 1, 3, 5);
+			expected = new Transform(display, 1, 0, 0, 1, 3, 5);
+			scale = new Transform(display, 2, 0, 0, 3, 0, 0);
+			translation = new Transform(display, 1, 0, 0, 1, 7, 11);
+			expected.multiply(scale);
+			expected.multiply(translation);
+			gc.setTransform(initial);
+			float[] callerTransform = elements(gc);
+			try (GridGCProxy proxy = GridGCProxy.wrap(gc)) {
+				proxy.transform(GridTransform.scale(2, 3));
+				proxy.translate(7, 11);
+				assertEquals("affine commands should remain pending", 0,
+						proxy.nativeStateTransitionCount());
+				assertArrayEquals("no native GC mutation before the renderer boundary",
+						callerTransform, elements(gc), 0.0001f);
+				assertSame(gc, proxy.gc());
+				float[] expectedElements = new float[6];
+				expected.getElements(expectedElements);
+				assertArrayEquals("the retained DAG must preserve SWT's non-commuting operation order",
+						expectedElements, elements(gc), 0.0001f);
+				assertEquals("scale plus translate must flush as one native transition", 1,
+						proxy.nativeStateTransitionCount());
+			}
+			assertArrayEquals("closing the scope restores the caller after mixed affine operations",
+					callerTransform, elements(gc), 0.0001f);
+		} finally {
+			if (translation != null) translation.dispose();
+			if (scale != null) scale.dispose();
+			if (expected != null) expected.dispose();
+			if (initial != null) initial.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
 	private static void assertRegionHasInteriorGap(String message, Region region, Display display) {
 		Region rectangle = new Region(display);
 		try {
