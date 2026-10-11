@@ -308,14 +308,16 @@ public class GridGCProxy_Test {
 		GC gc = new GC(image);
 		Transform initial = new Transform(display, 1, 0, 0, 1, 3, 5);
 		Region original = new Region(display);
+		Region expectedCaller = new Region(display);
 		Region expectedOuter = new Region(display);
 		Region actual = new Region(display);
 		try {
 			original.add(new Rectangle(4, 6, 65, 65));
+			original.subtract(new Rectangle(25, 25, 11, 11));
 			gc.setTransform(initial);
 			gc.setClipping(original);
 			float[] callerTransform = elements(gc);
-			Rectangle callerClip = gc.getClipping();
+			gc.getClipping(expectedCaller);
 			int callerAlpha = gc.getAlpha();
 			try (GridGCProxy outer = GridGCProxy.wrap(gc)) {
 				outer.translate(7, 11);
@@ -334,21 +336,112 @@ public class GridGCProxy_Test {
 						outerTransform, elements(gc), 0.0001f);
 				assertEquals("inner scope must restore outer alpha", 151, gc.getAlpha());
 				gc.getClipping(actual);
-				assertEquals("inner scope must restore outer clipping", expectedOuter.getBounds(),
-						actual.getBounds());
+				assertSameRegion("inner scope must restore every outer clipping island and hole",
+						expectedOuter, actual, display);
 			}
 			assertArrayEquals("outer scope must restore caller transform",
 					callerTransform, elements(gc), 0.0001f);
-			assertEquals("outer scope must restore caller clipping",
-					callerClip, gc.getClipping());
+			gc.getClipping(actual);
+			assertSameRegion("outer scope must restore caller clipping, not just its bounds",
+					expectedCaller, actual, display);
 			assertEquals("outer scope must restore caller alpha", callerAlpha, gc.getAlpha());
 		} finally {
 			actual.dispose();
+			expectedCaller.dispose();
 			expectedOuter.dispose();
 			original.dispose();
 			initial.dispose();
 			gc.dispose();
 			image.dispose();
+		}
+	}
+
+	@Test
+	public void failedNestedPaintCannotLeakStateIntoNextRenderer() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 96, 96);
+		GC gc = new GC(image);
+		Region callerRegion = new Region(display);
+		Region savedCaller = new Region(display);
+		Region savedOuter = new Region(display);
+		Region observed = new Region(display);
+		try {
+			callerRegion.add(new Rectangle(4, 4, 82, 82));
+			callerRegion.subtract(new Rectangle(29, 29, 12, 12));
+			gc.setClipping(callerRegion);
+			gc.getClipping(savedCaller);
+			float[] callerTransform = elements(gc);
+			int callerAlpha = gc.getAlpha();
+			LineAttributes callerStroke = gc.getLineAttributes();
+			try (GridGCProxy outer = GridGCProxy.wrap(gc)) {
+				outer.translate(6, 9);
+				outer.gc();
+				outer.clip(new Rectangle(8, 8, 60, 60));
+				outer.alpha(177);
+				outer.lineAttributes(new LineAttributes(4f));
+				float[] outerTransform = elements(gc);
+				LineAttributes outerStroke = gc.getLineAttributes();
+				gc.getClipping(savedOuter);
+				try {
+					try (GridGCProxy inner = GridGCProxy.wrap(gc)) {
+						inner.translate(-4, 11);
+						inner.gc();
+						inner.clip(new Rectangle(14, 14, 9, 9));
+						inner.alpha(23);
+						inner.lineAttributes(new LineAttributes(7f));
+						throw new IllegalStateException("simulated renderer failure");
+					}
+				} catch (IllegalStateException expected) {
+					assertEquals("simulated renderer failure", expected.getMessage());
+				}
+				assertArrayEquals("failed child must restore outer affine state",
+						outerTransform, elements(gc), 0.0001f);
+				assertEquals("failed child must restore outer alpha", 177, gc.getAlpha());
+				assertLineAttributes(outerStroke, gc.getLineAttributes());
+				gc.getClipping(observed);
+				assertSameRegion("failed child must restore the exact outer clip",
+						savedOuter, observed, display);
+
+				try (GridGCProxy nextRenderer = GridGCProxy.wrap(gc)) {
+					nextRenderer.translate(2, -3);
+					nextRenderer.gc();
+				}
+				assertArrayEquals("next renderer must leave the outer affine state unchanged",
+						outerTransform, elements(gc), 0.0001f);
+				gc.getClipping(observed);
+				assertSameRegion("next renderer must leave the exact outer clip unchanged",
+						savedOuter, observed, display);
+			}
+			assertArrayEquals("outer close must restore caller affine state",
+					callerTransform, elements(gc), 0.0001f);
+			assertEquals("outer close must restore caller alpha", callerAlpha, gc.getAlpha());
+			assertLineAttributes(callerStroke, gc.getLineAttributes());
+			gc.getClipping(observed);
+			assertSameRegion("outer close must restore exact caller clipping",
+					savedCaller, observed, display);
+		} finally {
+			observed.dispose();
+			savedOuter.dispose();
+			savedCaller.dispose();
+			callerRegion.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+	private static void assertSameRegion(String message, Region expected, Region actual, Display display) {
+		Region missing = new Region(display);
+		Region extra = new Region(display);
+		try {
+			missing.add(expected);
+			missing.subtract(actual);
+			extra.add(actual);
+			extra.subtract(expected);
+			assertTrue(message + ": missing pixels " + missing.getBounds(), missing.isEmpty());
+			assertTrue(message + ": extra pixels " + extra.getBounds(), extra.isEmpty());
+		} finally {
+			missing.dispose();
+			extra.dispose();
 		}
 	}
 
