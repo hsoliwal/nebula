@@ -93,6 +93,56 @@ final class NebulaM3A3MasteryRecipeTest {
                         .contains("patternization"));
     }
 
+    @Test
+    void exactParserSessionUpgradeReplaysOldImagesAndRefusesDriftOrOtherPaths() throws Exception {
+        var errors = new java.util.ArrayList<Throwable>();
+        var context = new InMemoryExecutionContext(errors::add);
+        var recipe = new NebulaM3A3ParserSessionRecipe();
+        var before = new java.util.ArrayList<SourceFile>();
+        for (String name : List.of("NebulaM3A3Lab", "NebulaM3A3LabTest")) {
+            String directory = name.endsWith("Test") ? "src/test/java/" : "src/main/java/";
+            String path = directory + "org/eclipse/nebula/m3/" + name + ".java";
+            try (var input = getClass().getResourceAsStream(
+                    "/org/eclipse/nebula/m3/rewrite/convergence/a3-parser-session/"
+                            + name + ".before.java.txt")) {
+                org.junit.jupiter.api.Assertions.assertNotNull(input);
+                before.add(parse(path, new String(input.readAllBytes(),
+                        java.nio.charset.StandardCharsets.UTF_8), context));
+            }
+        }
+        var changes = recipe.run(new InMemoryLargeSourceSet(before), context, 2)
+                .getChangeset().getAllResults();
+        assertEquals(2, changes.size());
+        var after = changes.stream().map(change -> Objects.requireNonNull(change.getAfter())).toList();
+        for (SourceFile file : after) {
+            String path = file.getSourcePath().toString().replace('\\', '/');
+            assertEquals(NebulaM3A3MasteryRecipe.reviewedTargets().get(path), gitBlob(file.printAll()));
+            SourceFile original = before.stream().filter(item -> item.getSourcePath().equals(file.getSourcePath()))
+                    .findFirst().orElseThrow();
+            assertEquals(original.getId(), file.getId());
+            assertEquals(original.getMarkers().getId(), file.getMarkers().getId());
+            assertTrue(file.getMarkers().getMarkers().containsAll(original.getMarkers().getMarkers()));
+            assertEquals(original.getCharset(), file.getCharset());
+        }
+        assertTrue(recipe.run(new InMemoryLargeSourceSet(after), context, 2)
+                .getChangeset().getAllResults().isEmpty());
+        assertTrue(errors.isEmpty(), errors.toString());
+        SourceFile drift = parse(before.getFirst().getSourcePath().toString(),
+                before.getFirst().printAll() + "// unrelated change\n", context);
+        assertTrue(recipe.run(new InMemoryLargeSourceSet(List.of(drift)), context, 2)
+                .getChangeset().getAllResults().isEmpty());
+        assertFalse(errors.isEmpty(), "unknown occupied preimage must be refused");
+        errors.clear();
+        SourceFile foreign = before.getFirst().withSourcePath(Path.of("other/Subject.java"));
+        assertTrue(recipe.run(new InMemoryLargeSourceSet(List.of(foreign)), context, 2)
+                .getChangeset().getAllResults().isEmpty());
+        SourceFile text = org.openrewrite.text.PlainText.builder().text(before.getFirst().printAll())
+                .sourcePath(before.getFirst().getSourcePath()).build();
+        assertTrue(recipe.run(new InMemoryLargeSourceSet(List.of(text)), context, 2)
+                .getChangeset().getAllResults().isEmpty());
+        assertTrue(errors.isEmpty(), errors.toString());
+    }
+
     private static SourceFile parse(
             String path,
             String source,

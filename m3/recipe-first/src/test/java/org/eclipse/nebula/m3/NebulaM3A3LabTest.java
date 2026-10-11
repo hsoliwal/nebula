@@ -3,12 +3,15 @@ package org.eclipse.nebula.m3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.openrewrite.java.JavaParser;
+import org.openrewrite.java.tree.J;
 
 final class NebulaM3A3LabTest {
     @TempDir
@@ -51,6 +54,36 @@ final class NebulaM3A3LabTest {
         assertTrue(firstTsv.startsWith("fixture\tschedule\toperationSet\t"));
         assertTrue(firstTsv.contains("\tA>P>A\tA+P\t"));
         assertTrue(firstTsv.contains("\tP>A>P\tA+P\t"));
+    }
+
+    @Test
+    void sameNameParserResetMatchesFreshAttributionAndRecoversAfterMalformedInput() throws Exception {
+        var method = NebulaM3A3Lab.class.getDeclaredMethod("parse", JavaParser.class, String.class);
+        method.setAccessible(true);
+        var reused = JavaParser.fromJavaVersion().build();
+        for (String type : List.of("int", "String", "long", "java.util.List<Integer>",
+                "java.util.List<String>", "int")) {
+            String source = "package org.eclipse.nebula.m3.lab; class Subject { "
+                    + type + " value(" + type + " input) { return input; } }";
+            var cached = (J.CompilationUnit) method.invoke(null, reused, source);
+            var fresh = (J.CompilationUnit) method.invoke(null, JavaParser.fromJavaVersion().build(), source);
+            var cachedType = cached.getClasses().getFirst().getBody().getStatements().stream()
+                    .filter(J.MethodDeclaration.class::isInstance).map(J.MethodDeclaration.class::cast)
+                    .findFirst().orElseThrow().getMethodType();
+            var freshType = fresh.getClasses().getFirst().getBody().getStatements().stream()
+                    .filter(J.MethodDeclaration.class::isInstance).map(J.MethodDeclaration.class::cast)
+                    .findFirst().orElseThrow().getMethodType();
+            org.junit.jupiter.api.Assertions.assertNotNull(cachedType);
+            org.junit.jupiter.api.Assertions.assertNotNull(freshType);
+            assertEquals(freshType.getReturnType().toString(), cachedType.getReturnType().toString());
+            assertEquals(freshType.getParameterTypes().toString(), cachedType.getParameterTypes().toString());
+            assertEquals(source, cached.printAll());
+        }
+        var failure = assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> method.invoke(null, reused, "package org.eclipse.nebula.m3.lab; class Subject {"));
+        assertTrue(failure.getCause() instanceof IllegalArgumentException);
+        String valid = "package org.eclipse.nebula.m3.lab; class Subject { int value() { return 7; } }";
+        assertEquals(valid, ((J.CompilationUnit) method.invoke(null, reused, valid)).printAll());
     }
 
     private static List<String> after(
