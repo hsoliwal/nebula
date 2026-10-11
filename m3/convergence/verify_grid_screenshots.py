@@ -27,6 +27,25 @@ def read_image(path, expected_hash):
     return data
 
 
+def qualify_control_surface(directory, meta, scene):
+    """Qualify the independently captured SWT control pixels, not window chrome."""
+    require(meta['captureMethod'] in ('CONTROL_PRINT', 'CONTROL_COPY_AREA'),
+            'Control capture method: ' + scene)
+    control = read_image(directory / meta['screenshot'], meta['screenshot.sha256'])
+    require(control.shape[0] > 16 and control.shape[1] > 16,
+            'Control capture dimensions: ' + scene)
+    require(np.count_nonzero(cv2.Canny(control[8:-8, 8:-8], 80, 160)) > 20,
+            'Blank/unrendered control surface: ' + scene)
+    return control
+
+
+def require_frame_change(previous, current, scene, surface):
+    require(previous.shape == current.shape,
+            surface + ' dimensions changed unexpectedly: ' + scene)
+    require(np.count_nonzero(cv2.absdiff(previous, current)) > 20,
+            'Stale ' + surface + ' scrolling: ' + scene)
+
+
 def marker_matches(data, color, box):
     x, y, width, height = box
     mask = np.all(data == color, axis=2).astype(np.uint8)
@@ -57,16 +76,9 @@ def verify(directory, reports, receiver=None):
         require(meta['screen.captureMethod'] == 'DISPLAY_COPY_AREA', 'Must use native display pixels')
         require(meta['screen.backend'] == 'x11' and meta['platform'] == 'gtk', 'Unqualified backend')
         image = read_image(directory / meta['screen.screenshot'], meta['screen.sha256'])
-        # Every scene already writes a separate SWT control capture. Qualify its
-        # bytes as well: screen-only proof could accept static window chrome
-        # even when the actual viewport surface was stale or missing.
-        require(meta['captureMethod'] in ('CONTROL_PRINT', 'CONTROL_COPY_AREA'),
-                'Control capture method: ' + scene)
-        control = read_image(directory / meta['screenshot'], meta['screenshot.sha256'])
-        require(control.shape[0] > 16 and control.shape[1] > 16,
-                'Control capture dimensions: ' + scene)
-        require(np.count_nonzero(cv2.Canny(control[8:-8, 8:-8], 80, 160)) > 20,
-                'Blank/unrendered control surface: ' + scene)
+        # Screen-only proof could accept static window chrome while the Grid
+        # itself is blank or stale. Validate the second captured surface too.
+        control = qualify_control_surface(directory, meta, scene)
         require(image.shape[:2] == (int(meta['screen.pixelHeight']), int(meta['screen.pixelWidth'])),
                 'Persisted dimensions: ' + scene)
         # Window borders and scrollbars alone cannot qualify widget content.
@@ -90,14 +102,9 @@ def verify(directory, reports, receiver=None):
                           ('05-virtual-million-top', '06-virtual-million-middle'),
                           ('06-virtual-million-middle', '07-virtual-million-bottom-horizontal'),
                           ('07-virtual-million-bottom-horizontal', '08-virtual-million-return')]:
-        require(images[before].shape == images[after].shape,
-                'Screen dimensions changed unexpectedly: ' + after)
-        require(np.count_nonzero(cv2.absdiff(images[before], images[after])) > 20,
-                'Stale screen scrolling: ' + after)
-        require(control_images[before].shape == control_images[after].shape,
-                'Control dimensions changed unexpectedly: ' + after)
-        require(np.count_nonzero(cv2.absdiff(control_images[before], control_images[after])) > 20,
-                'Stale control-surface scrolling: ' + after)
+        require_frame_change(images[before], images[after], after, 'screen')
+        require_frame_change(control_images[before], control_images[after], after,
+                             'control-surface')
     require(images['04-resized'].shape[1] > images['01-top'].shape[1], 'Resize did not change width')
     contract = properties(directory / 'screen-contract.properties')
     for key, expected in {'captureMethod': 'DISPLAY_COPY_AREA', 'successfulCaptures': '48',
@@ -137,6 +144,63 @@ def verify(directory, reports, receiver=None):
     print(json.dumps(receipt, indent=2))
 
 
+def selftest_control_oracles():
+    """Synthetic negative controls; not a substitute for native GTK/JUnit proof."""
+    from tempfile import TemporaryDirectory
+
+    with TemporaryDirectory(prefix='grid-control-oracle-') as root:
+        directory = Path(root)
+        first = np.full((96, 128, 3), 255, dtype=np.uint8)
+        second = first.copy()
+        cv2.line(first, (16, 18), (98, 69), (0, 0, 0), 3)
+        cv2.line(second, (22, 18), (113, 67), (0, 0, 0), 3)
+        blank = np.zeros_like(first)
+        for name, image in (('first', first), ('second', second), ('blank', blank)):
+            require(cv2.imwrite(str(directory / (name + '.png')), image),
+                    'Synthetic fixture write: ' + name)
+
+        def evidence(name, method):
+            path = directory / (name + '.png')
+            return {
+                'captureMethod': method,
+                'screenshot': path.name,
+                'screenshot.sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+
+        original = evidence('first', 'CONTROL_PRINT')
+        updated = evidence('second', 'CONTROL_COPY_AREA')
+        accepted_first = qualify_control_surface(directory, original, 'first')
+        accepted_second = qualify_control_surface(directory, updated, 'second')
+        require_frame_change(accepted_first, accepted_second, 'changed', 'control-surface')
+
+        def must_reject(name, action):
+            try:
+                action()
+            except AssertionError:
+                return
+            raise AssertionError('Synthetic defect admitted: ' + name)
+
+        must_reject('wrong-control-method',
+                    lambda: qualify_control_surface(directory,
+                        dict(original, captureMethod='DISPLAY_COPY_AREA'), 'wrong-method'))
+        must_reject('wrong-control-hash',
+                    lambda: qualify_control_surface(directory,
+                        dict(original, **{'screenshot.sha256': '0' * 64}), 'bad-hash'))
+        must_reject('blank-control',
+                    lambda: qualify_control_surface(directory,
+                        evidence('blank', 'CONTROL_PRINT'), 'blank'))
+        must_reject('stale-control',
+                    lambda: require_frame_change(accepted_first, accepted_first,
+                        'same', 'control-surface'))
+        must_reject('mismatched-control-dimensions',
+                    lambda: require_frame_change(accepted_first, accepted_second[:80],
+                        'cropped', 'control-surface'))
+    print('SYNTHETIC_GRID_CONTROL_ORACLE_PASS: 2 valid paths; 5 defects rejected')
+
+
 if __name__ == '__main__':
-    require(len(sys.argv) in (3, 4), 'Usage: verify_grid_screenshots.py SCREENSHOT_DIR JUNIT_REPORT_DIR [RECEIVER_EXPECTED_JSON]')
-    verify(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]) if len(sys.argv) == 4 else None)
+    if len(sys.argv) == 2 and sys.argv[1] == '--selftest':
+        selftest_control_oracles()
+    else:
+        require(len(sys.argv) in (3, 4), 'Usage: verify_grid_screenshots.py SCREENSHOT_DIR JUNIT_REPORT_DIR [RECEIVER_EXPECTED_JSON] | --selftest')
+        verify(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]) if len(sys.argv) == 4 else None)
