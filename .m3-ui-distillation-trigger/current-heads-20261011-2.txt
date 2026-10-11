@@ -1,0 +1,11 @@
+schema=M3_UI_DISTILLATION_CURRENT_HEAD_COMPLETION_REQUEST_V1
+request=current-heads-20261011-2
+policy=fail-closed-current-heads
+recipe_authority=hsoliwal/com.synexia
+runner_recipe=M3NebulaPublicUiCompletionPrTrigger20261011Recipe
+runner_workflow_sha256=dd3801efe5ae39f40ecc99845a78346d912c9cabc40eea2bb65631dc9413990c
+target_repository=hsoliwal/nebula
+java2s_behavior_only=true
+challenge_solution_copy=false
+java_before_optional_jni=true
+merge_only_after_completion_green=true
