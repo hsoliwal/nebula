@@ -1,0 +1,53 @@
+{
+  "record": "nebula-scoped-license-provenance",
+  "metadata_license": "Apache-2.0",
+  "copyright": "2026 Hitesh Soliwal and Contributors to the Synexia Project",
+  "target_repository": "hsoliwal/nebula",
+  "observed_target_commit": "e78e926c6940ae8fdcb2741128657d0717dd3089",
+  "precedent": {
+    "repository": "hsoliwal/M3jdk21",
+    "commit": "bd56674dad083d9fe554962b933365793395f935",
+    "notice_path": "M3-SYNEXIA-NOTICE.md",
+    "notice_git_blob": "cc2db752c41507975cf4e1ab895e786e12082cf7",
+    "license_path": "LICENSE-M3-APACHE-2.0.txt",
+    "license_git_blob": "29f81d812f3e768fa89638d1f72920dbfd1413a8"
+  },
+  "retained": [
+    {
+      "path": "LICENSE",
+      "git_blob": "d3087e4c54047062ddcc0b6ecd606711bb246ab8",
+      "sha256": "721c2da257578bace3332b14d8ea06643d7d26753e7ef25a837b4e904edc0bf5"
+    },
+    {
+      "path": "NOTICES.MD",
+      "git_blob": "69b1062842b13be3f272445cf59a7aaf640e1c59",
+      "sha256": "73aead877a8741f69765116a06984630a4654e5fc68e2a1552cecfa4bed1b3e1"
+    },
+    {
+      "path": "LICENSE-M3-APACHE-2.0.txt",
+      "git_blob": "29f81d812f3e768fa89638d1f72920dbfd1413a8",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+    }
+  ],
+  "rights_notice_unchanged": {
+    "path": "M3-SYNEXIA-RIGHTS.md",
+    "git_blob": "e67200aa56d289e7014433882fab8a4d6916b671"
+  },
+  "authors_notice_unchanged": {
+    "path": "M3-SYNEXIA-AUTHORS.md",
+    "git_blob": "0562e44ea00ce84cc94dc942dd4f3459170f0093"
+  },
+  "rules": [
+    "First matching table row supplies review scope, never overrides a more-specific source notice.",
+    "Explicit independent first-party additions may use Apache-2.0; inherited and third-party material retain applicable terms.",
+    "EPL product source, source snapshots, generated product outputs and recipient notices remain licensed as before.",
+    "No blanket approval for combining, linking or redistributing arbitrary donors.",
+    "An unresolved file is review-required, not automatically Apache-2.0."
+  ],
+  "source_files_relicensed": false,
+  "root_licenses_changed": false,
+  "repository_wide_legal_clearance": false,
+  "scope_recipe": "com.synexia.m3.NebulaLicenseScopeV1",
+  "recipe_home": "hsoliwal/com.synexia",
+  "tested_runtime_result_inferred_from_licensing": false
+}
