@@ -189,3 +189,25 @@ rejected. Forty-eight captures and three write failures retain zero tracked GC/I
 The existing reactor's test selection is unchanged; this does not claim all legacy
 Grid tests or every native platform. Separate M3 convergence, offline closure and
 SWT Cocoa/Windows/CPU gates remain independent. Historical failed receipts stay intact.
+
+### Million-row Grid bottom/return snapshots
+
+The native Grid visible-range fixture now captures four positions at one million
+logical rows: initial, midpoint, lower boundary with horizontal projection, and
+return to origin. In addition to the first six baseline scenes, the verifier
+requires `07-virtual-million-bottom-horizontal` and
+`08-virtual-million-return`. It checks that the lower origin reaches at
+least row 999400, selection survives, viewport residency stays below 256
+materialized facades, and a pinned midrange item's checkbox state/identity is
+preserved across the second distant move.
+
+All eight screen PNGs must decode, match their SHA-256 sidecars and contain
+interior geometry. Persisted pixels must differ between midpoint/bottom and
+bottom/return. A stale backbuffer, merely changing a sidecar, or exhausting
+native item residency cannot pass this gate. The test uses original behavioral
+fixtures, not copied Java2s/Swing source.
+
+Cross-project acceptance additionally requires SWT's 10M-row logical-content
+ScrolledComposite screen scenes and native GC resource-lifetime proofs. The
+product test files and Python verifier are sealed together by a Synexia M3
+recipe; unrun native CI is not a pass.
