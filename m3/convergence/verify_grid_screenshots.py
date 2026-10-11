@@ -49,7 +49,8 @@ def verify(directory, reports, receiver=None):
     require(('GridVisibleRangeSupport_Test', 'testScreenCaptureFreshnessBoundsAndGraphicsLifetime') in cases,
             'Missing capture-contract JUnit test')
     scenes = ['01-top', '02-middle', '03-horizontal', '04-resized',
-              '05-virtual-million-top', '06-virtual-million-middle']
+              '05-virtual-million-top', '06-virtual-million-middle',
+              '07-virtual-million-bottom-horizontal', '08-virtual-million-return']
     images, metadata = {}, {}
     for scene in scenes:
         meta = properties(directory / (scene + '.txt'))
@@ -63,12 +64,22 @@ def verify(directory, reports, receiver=None):
         require(interior.size > 0 and np.count_nonzero(cv2.Canny(interior, 80, 160)) > 20,
                 'Blank/unrendered scene: ' + scene)
         require(0 < int(meta['visibleRows']) < int(meta['logicalRows']), 'Unbounded row viewport')
-        if scene.startswith(('05-', '06-')):
+        if scene.startswith(('05-', '06-', '07-', '08-')):
             require(int(meta['logicalRows']) == 1_000_000 and int(meta['materializedItems']) < 256,
                     'Sparse million-row gate')
         images[scene], metadata[scene] = image, meta
+    require(int(metadata['07-virtual-million-bottom-horizontal']['topIndex']) >= 999_400,
+            'Distant lower viewport not reached')
+    require(int(metadata['07-virtual-million-bottom-horizontal']['selectionCount']) >= 3,
+            'Distant selection lost')
+    require(int(metadata['08-virtual-million-return']['topIndex']) == 0,
+            'Logical origin not restored')
+    require(int(metadata['08-virtual-million-return']['selectionCount']) >= 3,
+            'Returning selection lost')
     for before, after in [('01-top', '02-middle'), ('02-middle', '03-horizontal'),
-                          ('05-virtual-million-top', '06-virtual-million-middle')]:
+                          ('05-virtual-million-top', '06-virtual-million-middle'),
+                          ('06-virtual-million-middle', '07-virtual-million-bottom-horizontal'),
+                          ('07-virtual-million-bottom-horizontal', '08-virtual-million-return')]:
         require(np.count_nonzero(cv2.absdiff(images[before], images[after])) > 20,
                 'Stale scrolling: ' + after)
     require(images['04-resized'].shape[1] > images['01-top'].shape[1], 'Resize did not change width')
