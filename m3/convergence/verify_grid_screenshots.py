@@ -51,12 +51,22 @@ def verify(directory, reports, receiver=None):
     scenes = ['01-top', '02-middle', '03-horizontal', '04-resized',
               '05-virtual-million-top', '06-virtual-million-middle',
               '07-virtual-million-bottom-horizontal', '08-virtual-million-return']
-    images, metadata = {}, {}
+    images, control_images, metadata = {}, {}, {}
     for scene in scenes:
         meta = properties(directory / (scene + '.txt'))
         require(meta['screen.captureMethod'] == 'DISPLAY_COPY_AREA', 'Must use native display pixels')
         require(meta['screen.backend'] == 'x11' and meta['platform'] == 'gtk', 'Unqualified backend')
         image = read_image(directory / meta['screen.screenshot'], meta['screen.sha256'])
+        # Every scene already writes a separate SWT control capture. Qualify its
+        # bytes as well: screen-only proof could accept static window chrome
+        # even when the actual viewport surface was stale or missing.
+        require(meta['captureMethod'] == 'CONTROL_COPY_AREA',
+                'Control capture method: ' + scene)
+        control = read_image(directory / meta['screenshot'], meta['screenshot.sha256'])
+        require(control.shape[0] > 16 and control.shape[1] > 16,
+                'Control capture dimensions: ' + scene)
+        require(np.count_nonzero(cv2.Canny(control[8:-8, 8:-8], 80, 160)) > 20,
+                'Blank/unrendered control surface: ' + scene)
         require(image.shape[:2] == (int(meta['screen.pixelHeight']), int(meta['screen.pixelWidth'])),
                 'Persisted dimensions: ' + scene)
         # Window borders and scrollbars alone cannot qualify widget content.
@@ -67,7 +77,7 @@ def verify(directory, reports, receiver=None):
         if scene.startswith(('05-', '06-', '07-', '08-')):
             require(int(meta['logicalRows']) == 1_000_000 and int(meta['materializedItems']) < 256,
                     'Sparse million-row gate')
-        images[scene], metadata[scene] = image, meta
+        images[scene], control_images[scene], metadata[scene] = image, control, meta
     require(int(metadata['07-virtual-million-bottom-horizontal']['topIndex']) >= 999_400,
             'Distant lower viewport not reached')
     require(int(metadata['07-virtual-million-bottom-horizontal']['selectionCount']) >= 3,
@@ -80,8 +90,14 @@ def verify(directory, reports, receiver=None):
                           ('05-virtual-million-top', '06-virtual-million-middle'),
                           ('06-virtual-million-middle', '07-virtual-million-bottom-horizontal'),
                           ('07-virtual-million-bottom-horizontal', '08-virtual-million-return')]:
+        require(images[before].shape == images[after].shape,
+                'Screen dimensions changed unexpectedly: ' + after)
         require(np.count_nonzero(cv2.absdiff(images[before], images[after])) > 20,
-                'Stale scrolling: ' + after)
+                'Stale screen scrolling: ' + after)
+        require(control_images[before].shape == control_images[after].shape,
+                'Control dimensions changed unexpectedly: ' + after)
+        require(np.count_nonzero(cv2.absdiff(control_images[before], control_images[after])) > 20,
+                'Stale control-surface scrolling: ' + after)
     require(images['04-resized'].shape[1] > images['01-top'].shape[1], 'Resize did not change width')
     contract = properties(directory / 'screen-contract.properties')
     for key, expected in {'captureMethod': 'DISPLAY_COPY_AREA', 'successfulCaptures': '48',
@@ -113,6 +129,7 @@ def verify(directory, reports, receiver=None):
         receiver_proof = {'status': 'PASS', 'sourceCommit': expected['sourceCommit'],
                           'gcClassSha256': actual['gcClassSha256'], 'resource': actual['resource']}
     receipt = {'status': 'PASS' , 'junitTests': len(cases), 'scenePngs': len(scenes),
+               'controlPngs': len(control_images),
                'canaryPngs': 2, 'swtReceiver': receiver_proof, 'rejectedControls': list(defects), 'graphicsLifetime': contract,
                'opencv': cv2.__version__, 'numpy': np.__version__, 'manualQaRequired': False,
                'scope': 'GTK3/X11 Grid capture and behavior; not full Tycho, JFace or platform qualification'}
