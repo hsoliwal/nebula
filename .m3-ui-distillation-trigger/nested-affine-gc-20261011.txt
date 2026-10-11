@@ -1,0 +1,6 @@
+M3_NEBULA_NESTED_AFFINE_GC_HOSTED_PROOF_TRIGGER_V1
+product_change=GridGCProxy_Test.java
+canonical_recipe=hsoliwal/com.synexia#10437
+required_workflow=M3 current-head UI distillation completion
+required_native_gate=GridGCProxy_Test
+authority=proof-trigger-only
