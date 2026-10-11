@@ -326,6 +326,8 @@ public class GridGCProxy_Test {
 				outer.alpha(151);
 				float[] outerTransform = elements(gc);
 				gc.getClipping(expectedOuter);
+				assertRegionHasInteriorGap("outer clip must exercise real nonrectangular geometry",
+						expectedOuter, display);
 				try (GridGCProxy inner = GridGCProxy.wrap(gc)) {
 					inner.translate(-3, 9);
 					inner.gc();
@@ -382,6 +384,8 @@ public class GridGCProxy_Test {
 				float[] outerTransform = elements(gc);
 				LineAttributes outerStroke = gc.getLineAttributes();
 				gc.getClipping(savedOuter);
+				assertRegionHasInteriorGap("failed renderer proof must begin with nonrectangular clipping",
+						savedOuter, display);
 				try {
 					try (GridGCProxy inner = GridGCProxy.wrap(gc)) {
 						inner.translate(-4, 11);
@@ -426,6 +430,17 @@ public class GridGCProxy_Test {
 			callerRegion.dispose();
 			gc.dispose();
 			image.dispose();
+		}
+	}
+
+	private static void assertRegionHasInteriorGap(String message, Region region, Display display) {
+		Region rectangle = new Region(display);
+		try {
+			rectangle.add(region.getBounds());
+			rectangle.subtract(region);
+			assertFalse(message, rectangle.isEmpty());
+		} finally {
+			rectangle.dispose();
 		}
 	}
 
