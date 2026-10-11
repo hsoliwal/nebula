@@ -212,6 +212,18 @@ must fail even if the window chrome changes on screen. A stale backbuffer, merel
 native item residency cannot pass this gate. The test uses original behavioral
 fixtures, not copied Java2s/Swing source.
 
+Run the isolated verifier guard with
+
+```bash
+python3 m3/convergence/verify_grid_screenshots.py --selftest
+```
+
+It generates synthetic PNGs and must admit both SWT control capture methods,
+while rejecting wrong methods, forged hashes, blank controls, stale frames and
+mismatched dimensions. The `SYNTHETIC_GRID_CONTROL_ORACLE_PASS` marker proves
+only the verifier's local rejection logic; it is never native rendering or
+Tycho/JUnit acceptance evidence.
+
 Cross-project acceptance additionally requires SWT's 10M-row logical-content
 ScrolledComposite screen scenes and native GC resource-lifetime proofs. The
 product test files and Python verifier are sealed together by a Synexia M3
