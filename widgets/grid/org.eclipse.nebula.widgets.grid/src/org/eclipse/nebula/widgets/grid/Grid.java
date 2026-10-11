@@ -5338,19 +5338,20 @@ public class Grid extends Canvas {
 		final boolean fixedOverlayActive = fixed.hasColumns() && hscroll > fixed.offset();
 		final int header = columnHeadersVisible ? headerHeight : 0;
 		final int footer = columnFootersVisible ? footerHeight : 0;
+		final Rectangle bodyRect = GridViewportDamage.scrollDamage(clientArea, header, footer, false);
 		final int paintPlan = GridPaintDAG.plan(
 				originalClipping, clientArea, headerHeight, footerHeight,
 				columnHeadersVisible, columnFootersVisible, fixedOverlayActive, draggingColumn);
+
+		/*
+		 * Geometry always reserves the chrome plane, but chrome is painted after the
+		 * scrolling and fixed body planes. This makes the visual z-order explicit:
+		 * background -> body -> fixed -> chrome -> transient overlay.
+		 */
 		if (columnHeadersVisible) {
-			if (GridPaintDAG.includes(paintPlan, GridPaintDAG.HEADER)) {
-				final Rectangle headerRect = new Rectangle(
-						clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight, clientArea.height));
-				try (GridGCProxy headerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(headerRect))) {
-					paintHeader(headerGc.gc(), extraFill);
-				}
-			}
 			y += headerHeight;
 		}
+
 		final int availableHeight = clientArea.height - y;
 		int visibleRows = availableHeight / itemHeight + 1;
 		if (items.size() > 0 && availableHeight > 0) {
@@ -5400,8 +5401,9 @@ public class Grid extends Canvas {
 				}
 			}
 		}
+
+		// Z1: scrolling body.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
-			final Rectangle bodyRect = GridViewportDamage.scrollDamage(clientArea, header, footer, false);
 			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
 			try (GridGCProxy bodyGc = GridGCProxy.wrap(gc).clip(bodyClipping)) {
 				paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager,
@@ -5409,12 +5411,54 @@ public class Grid extends Canvas {
 			}
 		}
 
-		// draw drop point
+		// Z2: frozen columns occlude the scrolling body, never transient feedback.
+		if (fixedOverlayActive && GridPaintDAG.includes(paintPlan, GridPaintDAG.FIXED)) {
+			final int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
+			final int fixedTop = columnHeadersVisible ? headerHeight : 0;
+			final int fixedBottom = columnFootersVisible ? footerHeight : 0;
+			final Rectangle fixedRect = new Rectangle(fixedX, fixedTop, getFixedColumnsWidth(),
+					Math.max(0, clientArea.height - fixedTop - fixedBottom));
+			final Rectangle fixedClipping = originalClipping.intersection(fixedRect);
+			try (GridGCProxy fixedGc = GridGCProxy.wrap(gc).clip(fixedClipping)) {
+				paintRows(fixed.columns(), true, firstItemToDraw, visibleRows, 0, cellSpanManager, fixedGc.gc(),
+						fixedClipping, y, clientArea, firstVisibleIndex, insertMark, extraFill);
+			}
+		}
+
+		// Z3: fixed chrome. Vertical body scrolling must not paint these planes.
+		if (columnHeadersVisible && GridPaintDAG.includes(paintPlan, GridPaintDAG.HEADER)) {
+			final Rectangle headerRect = new Rectangle(
+					clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight, clientArea.height));
+			try (GridGCProxy headerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(headerRect))) {
+				paintHeader(headerGc.gc(), extraFill);
+			}
+		}
+
+		if (columnFootersVisible && GridPaintDAG.includes(paintPlan, GridPaintDAG.FOOTER)) {
+			final int footerY = Math.max(clientArea.y, clientArea.y + clientArea.height - footerHeight);
+			final Rectangle footerRect = new Rectangle(
+					clientArea.x, footerY, clientArea.width, Math.min(footerHeight, clientArea.height));
+			try (GridGCProxy footerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(footerRect))) {
+				paintFooter(footerGc.gc());
+			}
+		}
+
+		// Z4: body-local transient insertion feedback, clipped away from header/footer chrome.
+		if (insertMark.posFound && GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
+			final Rectangle insertClip = originalClipping.intersection(bodyRect);
+			try (GridGCProxy insertGc = GridGCProxy.wrap(gc).clip(insertClip)) {
+				insertMarkRenderer.paint(insertGc.gc(),
+						new Rectangle(insertMark.posX1, insertMark.posY, insertMark.posX2 - insertMark.posX1, 0));
+			}
+		}
+
+		// Z4: column drag feedback is last so frozen columns can never cover it.
 		if (draggingColumn && GridPaintDAG.includes(paintPlan, GridPaintDAG.OVERLAY)) {
 			if ((dragDropAfterColumn != null || dragDropBeforeColumn != null)
 					&& dragDropAfterColumn != columnBeingPushed && dragDropBeforeColumn != columnBeingPushed
 					&& dragDropPointValid) {
-				try (GridGCProxy overlayGc = GridGCProxy.wrap(gc)) {
+				final Rectangle overlayClip = originalClipping.intersection(bodyRect);
+				try (GridGCProxy overlayGc = GridGCProxy.wrap(gc).clip(overlayClip)) {
 					final GC overlay = overlayGc.gc();
 					int x;
 					if (dragDropBeforeColumn != null) {
@@ -5431,41 +5475,6 @@ public class Grid extends Canvas {
 					dropPointRenderer.setBounds(x - 1, headerHeight + DROP_POINT_LOWER_OFFSET, size.x, size.y);
 					dropPointRenderer.paint(overlay, null);
 				}
-			}
-		}
-		if (fixedOverlayActive && GridPaintDAG.includes(paintPlan, GridPaintDAG.FIXED)) {
-			// Clip the entire fixed-overlay pass to the on-screen rectangle of
-			// the frozen columns so cell rendering can never bleed into the
-			// scrolled area, even if a renderer paints outside its bounds.
-			final int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
-			final int fixedTop = columnHeadersVisible ? headerHeight : 0;
-			final int fixedBottom = columnFootersVisible ? footerHeight : 0;
-			final Rectangle fixedRect = new Rectangle(fixedX, fixedTop, getFixedColumnsWidth(),
-					Math.max(0, clientArea.height - fixedTop - fixedBottom));
-			final Rectangle fixedClipping = originalClipping.intersection(fixedRect);
-			try (GridGCProxy fixedGc = GridGCProxy.wrap(gc).clip(fixedClipping)) {
-				paintRows(fixed.columns(), true, firstItemToDraw, visibleRows, 0, cellSpanManager, fixedGc.gc(),
-						fixedClipping, y, clientArea, firstVisibleIndex, insertMark, extraFill);
-			}
-		}
-
-		// draw insertion mark
-		if (insertMark.posFound && GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
-			final Rectangle rect = new Rectangle(rowHeaderVisible ? rowHeaderWidth : 0,
-					columnHeadersVisible ? headerHeight : 0, clientArea.width, clientArea.height);
-			try (GridGCProxy insertGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(rect))) {
-				insertMarkRenderer.paint(insertGc.gc(),
-						new Rectangle(insertMark.posX1, insertMark.posY, insertMark.posX2 - insertMark.posX1, 0));
-			}
-		}
-
-		if (columnFootersVisible
-				&& GridPaintDAG.includes(paintPlan, GridPaintDAG.FOOTER)) {
-			final int footerY = Math.max(clientArea.y, clientArea.y + clientArea.height - footerHeight);
-			final Rectangle footerRect = new Rectangle(
-					clientArea.x, footerY, clientArea.width, Math.min(footerHeight, clientArea.height));
-			try (GridGCProxy footerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(footerRect))) {
-				paintFooter(footerGc.gc());
 			}
 		}
 	}
