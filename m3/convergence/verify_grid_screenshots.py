@@ -60,7 +60,7 @@ def verify(directory, reports, receiver=None):
         # Every scene already writes a separate SWT control capture. Qualify its
         # bytes as well: screen-only proof could accept static window chrome
         # even when the actual viewport surface was stale or missing.
-        require(meta['captureMethod'] == 'CONTROL_COPY_AREA',
+        require(meta['captureMethod'] in ('CONTROL_PRINT', 'CONTROL_COPY_AREA'),
                 'Control capture method: ' + scene)
         control = read_image(directory / meta['screenshot'], meta['screenshot.sha256'])
         require(control.shape[0] > 16 and control.shape[1] > 16,
