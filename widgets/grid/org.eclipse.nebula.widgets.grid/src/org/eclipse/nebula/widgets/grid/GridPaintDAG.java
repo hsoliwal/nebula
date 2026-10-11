@@ -15,8 +15,9 @@ import org.eclipse.swt.graphics.Rectangle;
  * Paint-plane dependency atom for Grid.
  *
  * <p>The mask is intentionally primitive: callers can decide plane residency
- * without allocating command objects on every SWT.Paint. The dependency order
- * is background -> body -> fixed overlay -> chrome -> transient overlay.</p>
+ * without allocating command objects on every SWT.Paint. The z-order is
+ * background -> body -> fixed overlay -> chrome -> transient overlay.
+ * Header and footer share the chrome rank because their rectangles do not overlap.</p>
  */
 final class GridPaintDAG {
 
@@ -69,19 +70,20 @@ final class GridPaintDAG {
 		return (plan & plane) != 0;
 	}
 
+	static int zIndex(int plane) {
+		return switch (plane) {
+			case BACKGROUND -> 0;
+			case BODY -> 1;
+			case FIXED -> 2;
+			case HEADER, FOOTER -> 3;
+			case OVERLAY -> 4;
+			default -> -1;
+		};
+	}
+
 	static boolean dependsOn(int plane, int dependency) {
-        if (plane == BODY) {
-            return dependency == BACKGROUND;
-        }
-        if (plane == FIXED) {
-            return dependency == BODY || dependency == BACKGROUND;
-        }
-        if (plane == HEADER || plane == FOOTER) {
-            return dependency == BACKGROUND;
-        }
-        if (plane == OVERLAY) {
-            return dependency == BACKGROUND;
-        }
-		return false;
+		int planeZ = zIndex(plane);
+		int dependencyZ = zIndex(dependency);
+		return planeZ >= 0 && dependencyZ >= 0 && planeZ > dependencyZ;
 	}
 }

@@ -57,8 +57,26 @@ public class GridViewportDistillation_Test {
 		assertFalse(GridPaintDAG.includes(headerPlan, GridPaintDAG.FIXED));
 
 		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.HEADER, GridPaintDAG.BACKGROUND));
-		assertFalse(GridPaintDAG.dependsOn(GridPaintDAG.HEADER, GridPaintDAG.BODY));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.HEADER, GridPaintDAG.BODY));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.HEADER, GridPaintDAG.FIXED));
 		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.FIXED, GridPaintDAG.BODY));
+		assertFalse(GridPaintDAG.dependsOn(GridPaintDAG.HEADER, GridPaintDAG.FOOTER));
+	}
+
+	@Test
+	public void viewportPlanesHaveStableZOrder() {
+		assertEquals(0, GridPaintDAG.zIndex(GridPaintDAG.BACKGROUND));
+		assertEquals(1, GridPaintDAG.zIndex(GridPaintDAG.BODY));
+		assertEquals(2, GridPaintDAG.zIndex(GridPaintDAG.FIXED));
+		assertEquals(3, GridPaintDAG.zIndex(GridPaintDAG.HEADER));
+		assertEquals(3, GridPaintDAG.zIndex(GridPaintDAG.FOOTER));
+		assertEquals(4, GridPaintDAG.zIndex(GridPaintDAG.OVERLAY));
+
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.OVERLAY, GridPaintDAG.BODY));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.OVERLAY, GridPaintDAG.FIXED));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.OVERLAY, GridPaintDAG.HEADER));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.OVERLAY, GridPaintDAG.FOOTER));
+		assertFalse(GridPaintDAG.dependsOn(GridPaintDAG.BODY, GridPaintDAG.OVERLAY));
 	}
 
 	@Test
@@ -78,6 +96,8 @@ public class GridViewportDistillation_Test {
 		assertTrue(GridPaintDAG.includes(plan, GridPaintDAG.BODY));
 		assertTrue(GridPaintDAG.includes(plan, GridPaintDAG.OVERLAY));
 		assertFalse(GridPaintDAG.includes(plan, GridPaintDAG.HEADER));
+		assertTrue(GridPaintDAG.dependsOn(GridPaintDAG.OVERLAY, GridPaintDAG.BODY));
+		assertTrue(GridPaintDAG.zIndex(GridPaintDAG.OVERLAY) > GridPaintDAG.zIndex(GridPaintDAG.FIXED));
 	}
 
 	@Test
