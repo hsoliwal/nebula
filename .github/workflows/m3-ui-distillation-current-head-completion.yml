@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: EPL-2.0
+name: M3 current-head UI distillation completion
+
+on:
+  push:
+    branches:
+      - m3/ui-distillation-current-head-completion-20261011
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  complete:
+    name: Current SWT + JFace + Nebula completion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.11
+      - name: Execute current-head completion proof
+        shell: bash
+        run: bash m3/convergence/run_ui_distillation_current_head_completion.sh
+      - name: Upload current-head completion evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-ui-distillation-current-head-completion
+          if-no-files-found: warn
+          path: |
+            .m3-completion/receipt/
+            .m3-completion/heads.env
+            .m3-completion/swt/**/target/surefire-reports/
+            .m3-completion/swt/**/target/screenshots/
+            .m3-completion/swt/**/target/viewport-resources/
+            widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
+            widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/
