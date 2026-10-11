@@ -5,14 +5,16 @@ This file is a proof trigger and custody marker only. It changes no Nebula runti
 ## Exact receiver
 
 - repository: `hsoliwal/nebula`
-- master before this proof branch: `a6f36816ecd27a1e5d1d4c3688c3b8242e9e78a0`
-- status at creation: `PENDING_CURRENT_MASTER_HOSTED_PROOF`
+- master before this proof branch: `6f17bdba683ca2db41d895c75800aa7ad7d1a32d`
+- status at creation: `PENDING_FINAL_ZPLANE_CURRENT_MASTER_HOSTED_PROOF`
 
 ## Canonical Synexia recipe ownership
 
 The distillation remains recipe-first and singular:
 
 - `M3NebulaGridGcStateDagRecipe` — proxy GC plus ordered affine/stroke/alpha state DAG, exact clipping restoration;
+- `M3NebulaGridViewportZPlanesRecipe` v2 — exact final body -> fixed -> chrome -> transient overlay execution order;
+- `M3NebulaReactorTestWorkflowRecipe` final-gate step — admits the exact Grid/GridPaintDAG/GridViewportDistillation test packet to hosted recipe proof;
 - `M3NebulaJava2sSwingViewportDistillationRecipe` — executable behavior proof from the Java2s SWT/SWT-2D/Swing/Swing-Event catalogues;
 - `M3NebulaJava2sDonorRefresh20261010Recipe` — final behavior-only donor catalogue refresh;
 - `M3UiDistillationClosureV520261010Recipe` — prior runtime-closure receipt;
@@ -22,7 +24,7 @@ The distillation remains recipe-first and singular:
 
 - sparse logical Grid residency independent of million-row logical count;
 - viewport + overscan painting;
-- body/header/editor/feedback z-plane separation;
+- body/frozen/header/editor/feedback z-plane separation with transient feedback painted last;
 - real SWT `GC` remains the native renderer resource;
 - `GridGCProxy` scopes mutable GC state;
 - `GridGCStateDAG` coalesces affine, stroke and alpha transitions;
@@ -31,6 +33,7 @@ The distillation remains recipe-first and singular:
 - Java2s examples provide observable-behavior test obligations only, with no tutorial source copying;
 - LeetCode/HackerRank/GeeksForGeeks are category/algorithm-shape donors only;
 - Java implementation is authoritative before any JNI promotion; JNI requires differential correctness plus benchmark crossover;
+- canonical master blobs for Grid, GridPaintDAG, GridViewportDistillation_Test and the recovered recipe-first workflow exactly match their sealed recipe postimages;
 - Maven/OpenRewrite recipes remain deterministic, fixed-point and drift-refusing;
 - no rebase, squash, force-push or source-history rewrite.
 
