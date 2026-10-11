@@ -300,6 +300,58 @@ public class GridGCProxy_Test {
 		}
 	}
 
+
+	@Test
+	public void nestedPaintScopesRestoreOuterAffineClipAndThenCallerState() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 100, 100);
+		GC gc = new GC(image);
+		Transform initial = new Transform(display, 1, 0, 0, 1, 3, 5);
+		Region original = new Region(display);
+		Region expectedOuter = new Region(display);
+		Region actual = new Region(display);
+		try {
+			original.add(new Rectangle(4, 6, 65, 65));
+			gc.setTransform(initial);
+			gc.setClipping(original);
+			float[] callerTransform = elements(gc);
+			Rectangle callerClip = gc.getClipping();
+			int callerAlpha = gc.getAlpha();
+			try (GridGCProxy outer = GridGCProxy.wrap(gc)) {
+				outer.translate(7, 11);
+				outer.gc();
+				outer.clip(new Rectangle(10, 10, 40, 40));
+				outer.alpha(151);
+				float[] outerTransform = elements(gc);
+				gc.getClipping(expectedOuter);
+				try (GridGCProxy inner = GridGCProxy.wrap(gc)) {
+					inner.translate(-3, 9);
+					inner.gc();
+					inner.clip(new Rectangle(15, 15, 9, 9));
+					inner.alpha(33);
+				}
+				assertArrayEquals("inner scope must restore outer affine coordinates",
+						outerTransform, elements(gc), 0.0001f);
+				assertEquals("inner scope must restore outer alpha", 151, gc.getAlpha());
+				gc.getClipping(actual);
+				assertEquals("inner scope must restore outer clipping", expectedOuter.getBounds(),
+						actual.getBounds());
+			}
+			assertArrayEquals("outer scope must restore caller transform",
+					callerTransform, elements(gc), 0.0001f);
+			assertEquals("outer scope must restore caller clipping",
+					callerClip, gc.getClipping());
+			assertEquals("outer scope must restore caller alpha", callerAlpha, gc.getAlpha());
+		} finally {
+			actual.dispose();
+			expectedOuter.dispose();
+			original.dispose();
+			initial.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
 	private static float[] elements(GC gc) {
 		Transform transform = new Transform(gc.getDevice());
 		try {
