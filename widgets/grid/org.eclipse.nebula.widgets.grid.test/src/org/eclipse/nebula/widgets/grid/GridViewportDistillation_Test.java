@@ -12,6 +12,8 @@ package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.LineAttributes;
 import org.eclipse.swt.graphics.Rectangle;
@@ -152,4 +154,55 @@ public class GridViewportDistillation_Test {
 		assertEquals(GridGCStateDAG.ALPHA, dag.planAlpha(128));
 		assertEquals(2, dag.nativeTransitions());
 	}
+	@Test
+	public void lazyPriorityFrontierPeeksAndPollsHighestWithoutMutatingSource() {
+		int[] source = {3, 7, 3, 1, 9, 9, 2};
+		int[] original = source.clone();
+		GridLazyIntPriorityFrontier frontier = GridLazyIntPriorityFrontier.maxHeap(source);
+
+		assertArrayEquals(original, source);
+		assertEquals(7, frontier.size());
+		assertEquals(9, frontier.peek());
+		assertEquals(7, frontier.size(), "peek must not remove the top priority");
+
+		int[] drained = new int[source.length];
+		for (int index = 0; index < drained.length; index++) {
+			drained[index] = frontier.poll();
+		}
+		assertArrayEquals(new int[] {9, 9, 7, 3, 3, 2, 1}, drained);
+		assertTrue(frontier.isEmpty());
+	}
+
+	@Test
+	public void lazyPriorityFrontierMatchesDescendingPrimitiveSortAndDuplicateSkipping() {
+		int[] source = new int[4_096];
+		for (int index = 0; index < source.length; index++) {
+			source[index] = (index * 1_103_515_245 + 12_345) & 1_023;
+		}
+		int[] expected = source.clone();
+		Arrays.sort(expected);
+
+		GridLazyIntPriorityFrontier frontier = GridLazyIntPriorityFrontier.maxHeap(source);
+		for (int index = expected.length - 1; index >= 0; index--) {
+			assertEquals(expected[index], frontier.poll());
+		}
+		assertTrue(frontier.isEmpty());
+
+		GridLazyIntPriorityFrontier duplicates =
+				GridLazyIntPriorityFrontier.maxHeap(new int[] {3, 5, 3, 9, 5, 1, 9});
+		int previous = -1;
+		int[] unique = new int[7];
+		int uniqueCount = 0;
+		while (!duplicates.isEmpty()) {
+			int value = duplicates.poll();
+			if (value == previous) {
+				continue;
+			}
+			unique[uniqueCount++] = value;
+			previous = value;
+		}
+		assertArrayEquals(new int[] {9, 5, 3, 1}, Arrays.copyOf(unique, uniqueCount));
+	}
+
+
 }
