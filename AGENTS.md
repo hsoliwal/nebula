@@ -38,3 +38,12 @@ SWT's resource gate. Record each stage as NOT_RUN, RUNNING, FAILED or PASSED;
 never infer native execution from a source check or an earlier run. Fixture-only
 validator tests and unavailable platforms remain explicitly unqualified. Keep
 shared improvements and exact recipe/source/test provenance in Synexia.
+
+## SWT naming for distilled capabilities
+
+Keep product APIs and generated runtime code in SWT terminology: Canvas, GC,
+Image, Control, Table, Tree, ScrolledComposite, ScrollBar, and their existing
+packages/contracts. Adapt donor ideas into these owners; do not introduce Swing
+widget/facade names or a second toolkit naming layer. Donor names belong in
+provenance. Preserve already-existing interoperability APIs and third-party
+notices; this rule does not authorize renaming or removing compatible APIs.

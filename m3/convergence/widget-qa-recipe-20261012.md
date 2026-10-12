@@ -37,3 +37,33 @@ sandbox escalation. The existing target CI must execute source-built SWT/JNI and
 Nebula capture, vision and CPU/heap/RSS gates. Win32/Cocoa and full reactor remain
 separate gates. No fresh platform pass, complete widget/donor distillation or
 performance improvement is claimed. Existing licenses and attribution remain.
+
+## Current-source successor
+
+[Synexia #10550](https://github.com/hsoliwal/com.synexia/pull/10550), commit
+`829067596dff4bb72705ad4ccfc98e57122340da`, owns the executed successor in
+`synexia-openrewrite-recipes/recipe-crates/swt-viewport-reconciliation-20261012/`.
+The existing OpenRewrite text owner generated four receiver files against Nebula
+master `ede83fc10c5b072b6676ed53f955f3ff7a61139e`. This receipt is publication
+metadata; both the prior candidate and current master remain in commit ancestry.
+
+The workflow pins generated SWT source `1eb87b687039e8858fb50284d93d7bf12c4e8d58`;
+SWT PR #110 head `84ed239cede4791f3a2fb7c6e41ca18754092ace` adds provenance only.
+The reconciliation preserves eight Grid scenes, screen and control captures,
+million-row bottom/return semantics and the existing control-oracle selftests.
+It retains required producing JUnit methods, duplicate/artifact/stale-PASS
+refusals and all six explicit completion stages. SWT names are an AGENTS invariant;
+no public/protected Java declaration was changed or new Swing facade introduced.
+
+The canonical offline Maven run passes three recipe JUnit tests and eighteen
+Python validator/runner tests. All eighteen generated targets pass no-change
+replay and complete-input drift refusal. The pinned SWT source compiles under
+Java 21 for GTK, Win32 and Cocoa (494/673/634 product files); eleven headless
+viewport/selection tests pass per backend build. This is source qualification,
+not native Win32/Cocoa execution. Synthetic PNGs exercise validator behavior only.
+
+Fresh native widget capture and CPU/heap/RSS execution remain blocked locally by
+missing GTK/Xvfb and rejected installation escalation. The existing combined CI
+must produce native JUnit, OpenCV and resource receipts. No manual QA is required;
+no complete widget/donor distillation or performance improvement is claimed.
+Preserve the earlier receipt above as dated source history.

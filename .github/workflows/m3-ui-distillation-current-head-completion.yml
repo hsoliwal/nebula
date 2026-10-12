@@ -20,7 +20,7 @@ concurrency:
 
 env:
   # Exact SWT source candidate containing the shared native-capture oracle.
-  M3_SWT_REF: 1737076eaf15db78a145d8bedaec975d236f4bbd
+  M3_SWT_REF: 1eb87b687039e8858fb50284d93d7bf12c4e8d58
 
 permissions:
   contents: read
