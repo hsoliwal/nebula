@@ -300,6 +300,212 @@ public class GridGCProxy_Test {
 		}
 	}
 
+
+	@Test
+	public void nestedPaintScopesRestoreOuterAffineClipAndThenCallerState() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 100, 100);
+		GC gc = new GC(image);
+		Transform initial = new Transform(display, 1, 0, 0, 1, 3, 5);
+		Region original = new Region(display);
+		Region expectedCaller = new Region(display);
+		Region expectedOuter = new Region(display);
+		Region actual = new Region(display);
+		try {
+			original.add(new Rectangle(4, 6, 65, 65));
+			original.subtract(new Rectangle(25, 25, 11, 11));
+			gc.setTransform(initial);
+			gc.setClipping(original);
+			float[] callerTransform = elements(gc);
+			gc.getClipping(expectedCaller);
+			int callerAlpha = gc.getAlpha();
+			try (GridGCProxy outer = GridGCProxy.wrap(gc)) {
+				outer.translate(7, 11);
+				outer.gc();
+				outer.clip(new Rectangle(10, 10, 40, 40));
+				outer.alpha(151);
+				float[] outerTransform = elements(gc);
+				gc.getClipping(expectedOuter);
+				assertRegionHasInteriorGap("outer clip must exercise real nonrectangular geometry",
+						expectedOuter, display);
+				try (GridGCProxy inner = GridGCProxy.wrap(gc)) {
+					inner.translate(-3, 9);
+					inner.gc();
+					inner.clip(new Rectangle(15, 15, 9, 9));
+					inner.alpha(33);
+				}
+				assertArrayEquals("inner scope must restore outer affine coordinates",
+						outerTransform, elements(gc), 0.0001f);
+				assertEquals("inner scope must restore outer alpha", 151, gc.getAlpha());
+				gc.getClipping(actual);
+				assertSameRegion("inner scope must restore every outer clipping island and hole",
+						expectedOuter, actual, display);
+			}
+			assertArrayEquals("outer scope must restore caller transform",
+					callerTransform, elements(gc), 0.0001f);
+			gc.getClipping(actual);
+			assertSameRegion("outer scope must restore caller clipping, not just its bounds",
+					expectedCaller, actual, display);
+			assertEquals("outer scope must restore caller alpha", callerAlpha, gc.getAlpha());
+		} finally {
+			actual.dispose();
+			expectedCaller.dispose();
+			expectedOuter.dispose();
+			original.dispose();
+			initial.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+	@Test
+	public void failedNestedPaintCannotLeakStateIntoNextRenderer() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 96, 96);
+		GC gc = new GC(image);
+		Region callerRegion = new Region(display);
+		Region savedCaller = new Region(display);
+		Region savedOuter = new Region(display);
+		Region observed = new Region(display);
+		try {
+			callerRegion.add(new Rectangle(4, 4, 82, 82));
+			callerRegion.subtract(new Rectangle(29, 29, 12, 12));
+			gc.setClipping(callerRegion);
+			gc.getClipping(savedCaller);
+			float[] callerTransform = elements(gc);
+			int callerAlpha = gc.getAlpha();
+			LineAttributes callerStroke = gc.getLineAttributes();
+			try (GridGCProxy outer = GridGCProxy.wrap(gc)) {
+				outer.translate(6, 9);
+				outer.gc();
+				outer.clip(new Rectangle(8, 8, 60, 60));
+				outer.alpha(177);
+				outer.lineAttributes(new LineAttributes(4f));
+				float[] outerTransform = elements(gc);
+				LineAttributes outerStroke = gc.getLineAttributes();
+				gc.getClipping(savedOuter);
+				assertRegionHasInteriorGap("failed renderer proof must begin with nonrectangular clipping",
+						savedOuter, display);
+				try {
+					try (GridGCProxy inner = GridGCProxy.wrap(gc)) {
+						inner.translate(-4, 11);
+						inner.gc();
+						inner.clip(new Rectangle(14, 14, 9, 9));
+						inner.alpha(23);
+						inner.lineAttributes(new LineAttributes(7f));
+						throw new IllegalStateException("simulated renderer failure");
+					}
+				} catch (IllegalStateException expected) {
+					assertEquals("simulated renderer failure", expected.getMessage());
+				}
+				assertArrayEquals("failed child must restore outer affine state",
+						outerTransform, elements(gc), 0.0001f);
+				assertEquals("failed child must restore outer alpha", 177, gc.getAlpha());
+				assertLineAttributes(outerStroke, gc.getLineAttributes());
+				gc.getClipping(observed);
+				assertSameRegion("failed child must restore the exact outer clip",
+						savedOuter, observed, display);
+
+				try (GridGCProxy nextRenderer = GridGCProxy.wrap(gc)) {
+					nextRenderer.translate(2, -3);
+					nextRenderer.gc();
+				}
+				assertArrayEquals("next renderer must leave the outer affine state unchanged",
+						outerTransform, elements(gc), 0.0001f);
+				gc.getClipping(observed);
+				assertSameRegion("next renderer must leave the exact outer clip unchanged",
+						savedOuter, observed, display);
+			}
+			assertArrayEquals("outer close must restore caller affine state",
+					callerTransform, elements(gc), 0.0001f);
+			assertEquals("outer close must restore caller alpha", callerAlpha, gc.getAlpha());
+			assertLineAttributes(callerStroke, gc.getLineAttributes());
+			gc.getClipping(observed);
+			assertSameRegion("outer close must restore exact caller clipping",
+					savedCaller, observed, display);
+		} finally {
+			observed.dispose();
+			savedOuter.dispose();
+			savedCaller.dispose();
+			callerRegion.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+
+	@Test
+	public void nonCommutingAffineBatchMatchesNativeSwtTransformMultiply() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 96, 96);
+		GC gc = new GC(image);
+		Transform initial = null;
+		Transform expected = null;
+		Transform scale = null;
+		Transform translation = null;
+		try {
+			initial = new Transform(display, 1, 0, 0, 1, 3, 5);
+			expected = new Transform(display, 1, 0, 0, 1, 3, 5);
+			scale = new Transform(display, 2, 0, 0, 3, 0, 0);
+			translation = new Transform(display, 1, 0, 0, 1, 7, 11);
+			expected.multiply(scale);
+			expected.multiply(translation);
+			gc.setTransform(initial);
+			float[] callerTransform = elements(gc);
+			try (GridGCProxy proxy = GridGCProxy.wrap(gc)) {
+				proxy.transform(GridTransform.scale(2, 3));
+				proxy.translate(7, 11);
+				assertEquals("affine commands should remain pending", 0,
+						proxy.nativeStateTransitionCount());
+				assertArrayEquals("no native GC mutation before the renderer boundary",
+						callerTransform, elements(gc), 0.0001f);
+				assertSame(gc, proxy.gc());
+				float[] expectedElements = new float[6];
+				expected.getElements(expectedElements);
+				assertArrayEquals("the retained DAG must preserve SWT's non-commuting operation order",
+						expectedElements, elements(gc), 0.0001f);
+				assertEquals("scale plus translate must flush as one native transition", 1,
+						proxy.nativeStateTransitionCount());
+			}
+			assertArrayEquals("closing the scope restores the caller after mixed affine operations",
+					callerTransform, elements(gc), 0.0001f);
+		} finally {
+			if (translation != null) translation.dispose();
+			if (scale != null) scale.dispose();
+			if (expected != null) expected.dispose();
+			if (initial != null) initial.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+	private static void assertRegionHasInteriorGap(String message, Region region, Display display) {
+		Region rectangle = new Region(display);
+		try {
+			rectangle.add(region.getBounds());
+			rectangle.subtract(region);
+			assertFalse(message, rectangle.isEmpty());
+		} finally {
+			rectangle.dispose();
+		}
+	}
+
+	private static void assertSameRegion(String message, Region expected, Region actual, Display display) {
+		Region missing = new Region(display);
+		Region extra = new Region(display);
+		try {
+			missing.add(expected);
+			missing.subtract(actual);
+			extra.add(actual);
+			extra.subtract(expected);
+			assertTrue(message + ": missing pixels " + missing.getBounds(), missing.isEmpty());
+			assertTrue(message + ": extra pixels " + extra.getBounds(), extra.isEmpty());
+		} finally {
+			missing.dispose();
+			extra.dispose();
+		}
+	}
+
 	private static float[] elements(GC gc) {
 		Transform transform = new Transform(gc.getDevice());
 		try {
