@@ -227,6 +227,42 @@ public class GridVisibleRangeSupport_Test {
 		assertTrue("visible data demand must stay far below logical row count",
 				setDataCount[0] < 1_000);
 		snapshot("06-virtual-million-middle");
+
+		/*
+		 * A second distant viewport verifies eviction/reprojection after the
+		 * first scroll.  The test retains one public item facade across the
+		 * movement; private paint shells may be recycled, but not this item.
+		 */
+		GridItem pinned = grid.getItem(500_000);
+		assertTrue("checked virtual state must remain attached to the logical row",
+				pinned.getChecked());
+		grid.setTopIndex(999_500);
+		grid.setSelection(999_500, 999_502);
+		grid.showColumn(columns[3]);
+		flushPaint();
+		assertTrue("bottom viewport must reach the distant logical range",
+				grid.getTopIndex() >= 999_400);
+		assertTrue("horizontal projection must include the requested rightmost column",
+				containsIdentity(grid.getVisibleRange().getColumns(), columns[3]));
+		assertTrue("second distant viewport must remain sparse",
+				grid.virtualMaterializedItemCount() < 256);
+		assertSame("public facades must not be rebound during viewport recycling",
+				pinned, grid.getItem(500_000));
+		assertTrue("packed check state must survive distant viewport re-projection",
+				pinned.getChecked());
+		snapshot("07-virtual-million-bottom-horizontal");
+
+		grid.showColumn(columns[0]);
+		grid.setTopIndex(0);
+		grid.setSelection(0, 2);
+		flushPaint();
+		assertEquals("return to the top must restore logical coordinates", 0, grid.getTopIndex());
+		assertTrue("repeated distant scrolls must not accumulate native item shells",
+				grid.virtualMaterializedItemCount() < 256);
+		assertEquals("row 0", grid.getItem(0).getText(0));
+		assertTrue("SetData calls must remain independent of the million-row logical extent",
+				setDataCount[0] < 1_500);
+		snapshot("08-virtual-million-return");
 	}
 
 	@Test

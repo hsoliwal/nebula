@@ -120,8 +120,11 @@ logical extent / state
 ## Automated native Grid qualification
 
 The GTK3/X11 Maven lane sets `nebula.grid.viewport.screenshots.screen=true` and requires
-`GC(Display).copyArea` for all six Grid viewport scenarios. `Control.print` images remain
-separate diagnostics. Capture must reject hidden, clipped, empty, disposed and off-display
+`GC(Display).copyArea` for all eight Grid viewport scenarios. Each scene's separate
+control-surface PNG is now an additional mandatory oracle: SWT may produce it
+via `Control.print` or the `GC(Control).copyArea` fallback, but the image
+must decode, match its sidecar SHA-256, contain real interior content and
+change when the projected viewport changes. Capture must reject hidden, clipped, empty, disposed and off-display
 targets; the shared SWT coordinate logic is donated through the Synexia recipe packet.
 The million-row fixture must fit inside its shell before screen capture.
 Capture visible pixels before offscreen rendering: the rejected trial recorded blank native
@@ -189,3 +192,39 @@ rejected. Forty-eight captures and three write failures retain zero tracked GC/I
 The existing reactor's test selection is unchanged; this does not claim all legacy
 Grid tests or every native platform. Separate M3 convergence, offline closure and
 SWT Cocoa/Windows/CPU gates remain independent. Historical failed receipts stay intact.
+
+### Million-row Grid bottom/return snapshots
+
+The native Grid visible-range fixture now captures four positions at one million
+logical rows: initial, midpoint, lower boundary with horizontal projection, and
+return to origin. In addition to the first six baseline scenes, the verifier
+requires `07-virtual-million-bottom-horizontal` and
+`08-virtual-million-return`. It checks that the lower origin reaches at
+least row 999400, selection survives, viewport residency stays below 256
+materialized facades, and a pinned midrange item's checkbox state/identity is
+preserved across the second distant move.
+
+All eight native screen PNGs **and all eight independently captured control
+PNG files** must decode, match their respective SHA-256 sidecars and contain
+interior geometry. Both surfaces must change when the projected viewport
+moves between midpoint/bottom and bottom/return; unchanged control pixels
+must fail even if the window chrome changes on screen. A stale backbuffer, merely changing a sidecar, or exhausting
+native item residency cannot pass this gate. The test uses original behavioral
+fixtures, not copied Java2s/Swing source.
+
+Run the isolated verifier guard with
+
+```bash
+python3 m3/convergence/verify_grid_screenshots.py --selftest
+```
+
+It generates synthetic PNGs and must admit both SWT control capture methods,
+while rejecting wrong methods, forged hashes, blank controls, stale frames and
+mismatched dimensions. The `SYNTHETIC_GRID_CONTROL_ORACLE_PASS` marker proves
+only the verifier's local rejection logic; it is never native rendering or
+Tycho/JUnit acceptance evidence.
+
+Cross-project acceptance additionally requires SWT's 10M-row logical-content
+ScrolledComposite screen scenes and native GC resource-lifetime proofs. The
+product test files and Python verifier are sealed together by a Synexia M3
+recipe; unrun native CI is not a pass.
