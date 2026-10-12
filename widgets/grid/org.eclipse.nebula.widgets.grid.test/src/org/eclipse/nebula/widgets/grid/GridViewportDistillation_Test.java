@@ -163,7 +163,7 @@ public class GridViewportDistillation_Test {
 		assertArrayEquals(original, source);
 		assertEquals(7, frontier.size());
 		assertEquals(9, frontier.peek());
-		assertEquals(7, frontier.size(), "peek must not remove the top priority");
+		assertEquals("peek must not remove the top priority", 7, frontier.size());
 
 		int[] drained = new int[source.length];
 		for (int index = 0; index < drained.length; index++) {
