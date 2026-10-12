@@ -54,6 +54,7 @@ def marker_matches(data, color, box):
 
 
 def verify(directory, reports, receiver=None):
+    (directory / 'opencv-validation.json').unlink(missing_ok=True)
     expected_classes = {'GridFixedColumn_Test', 'GridVisibleRangeSupport_Test',
                         'GridViewportCoordinates_Test', 'GridGCProxy_Test'}
     cases = {}
@@ -61,12 +62,17 @@ def verify(directory, reports, receiver=None):
         for case in ET.parse(xml).getroot().iter('testcase'):
             key = (case.get('classname', '').rsplit('.', 1)[-1], case.get('name'))
             if key[0] in expected_classes:
+                require(key not in cases, 'Duplicate JUnit case: ' + str(key))
                 require(not any(case.find(tag) is not None for tag in ('failure', 'error', 'skipped')),
                         'Unqualified test: ' + str(key))
                 cases[key] = True
     require({key[0] for key in cases} == expected_classes, 'Missing required JUnit classes')
     require(('GridVisibleRangeSupport_Test', 'testScreenCaptureFreshnessBoundsAndGraphicsLifetime') in cases,
             'Missing capture-contract JUnit test')
+    required_scenes = {'testVisibleRangeTracksRenderedViewportAndProducesScreenshots',
+                       'testVirtualMillionRowScreenshotsStaySparseAcrossDistantViewport'}
+    require(all(('GridVisibleRangeSupport_Test', name) in cases for name in required_scenes),
+            'Missing scene-producing JUnit tests')
     scenes = ['01-top', '02-middle', '03-horizontal', '04-resized',
               '05-virtual-million-top', '06-virtual-million-middle',
               '07-virtual-million-bottom-horizontal', '08-virtual-million-return']
@@ -75,6 +81,7 @@ def verify(directory, reports, receiver=None):
         meta = properties(directory / (scene + '.txt'))
         require(meta['screen.captureMethod'] == 'DISPLAY_COPY_AREA', 'Must use native display pixels')
         require(meta['screen.backend'] == 'x11' and meta['platform'] == 'gtk', 'Unqualified backend')
+        require(meta['screen.screenshot'] == scene + '-screen.png', 'Unexpected screen artifact path')
         image = read_image(directory / meta['screen.screenshot'], meta['screen.sha256'])
         # Screen-only proof could accept static window chrome while the Grid
         # itself is blank or stale. Validate the second captured surface too.
