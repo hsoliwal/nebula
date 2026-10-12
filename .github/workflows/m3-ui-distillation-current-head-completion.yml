@@ -10,7 +10,17 @@ on:
       - master
     paths:
       - '.m3-ui-distillation-trigger/**'
+      - 'm3/convergence/run_ui_distillation_current_head_completion.sh'
+      - '.github/workflows/m3-ui-distillation-current-head-completion.yml'
   workflow_dispatch:
+
+concurrency:
+  group: m3-ui-completion-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Exact SWT source candidate containing the shared native-capture oracle.
+  M3_SWT_REF: 1737076eaf15db78a145d8bedaec975d236f4bbd
 
 permissions:
   contents: read

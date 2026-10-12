@@ -22,3 +22,19 @@ Nebula's original Maven/Tycho build and tests remain product authority. A Synexi
 candidate machinery only; Nebula must still prove compile/tests/runtime behavior and contract
 preservation before promotion. Repeatable target defects feed back into the canonical Synexia
 recipe/corpus before broad reapplication. Never rebase or rewrite useful proving history.
+
+## Automated native-widget acceptance
+
+Use SWT's visible-screen capture API, `new GC(display).copyArea(image, x, y)`,
+after painting settles. Keep Control.print evidence separately labelled. Reuse
+the existing GridSwtScreenshotCapture, JUnit scene/ownership tests and OpenCV
+validator; do not require manual screenshot sign-off. Reject missing, skipped,
+failed or duplicate test evidence, blank/stale/corrupt frames, wrong bounds and
+geometry, and stale PASS receipts. Preserve independent CPU/heap/native-memory
+budgets and the distinction between default and explicitly enabled models.
+
+The combined SWT/Nebula runner must execute BOTH targets' pixel validators and
+SWT's resource gate. Record each stage as NOT_RUN, RUNNING, FAILED or PASSED;
+never infer native execution from a source check or an earlier run. Fixture-only
+validator tests and unavailable platforms remain explicitly unqualified. Keep
+shared improvements and exact recipe/source/test provenance in Synexia.

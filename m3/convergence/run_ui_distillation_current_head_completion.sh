@@ -9,11 +9,25 @@ JFACE="$WORK/jface"
 RECEIPT="$WORK/receipt"
 STATUS=FAIL
 PHASE=bootstrap
+swt_native=NOT_RUN
+swt_screenshots=NOT_RUN
+swt_opencv=NOT_RUN
+swt_resources=NOT_RUN
+nebula_native=NOT_RUN
+nebula_opencv=NOT_RUN
 
 mkdir -p "$RECEIPT"
 
 finish() {
   rc=$?
+  trap - EXIT
+  [[ $swt_native != RUNNING ]] || swt_native=FAILED
+  [[ $swt_screenshots != RUNNING ]] || swt_screenshots=FAILED
+  [[ $swt_opencv != RUNNING ]] || swt_opencv=FAILED
+  [[ $swt_resources != RUNNING ]] || swt_resources=FAILED
+  [[ $nebula_native != RUNNING ]] || nebula_native=FAILED
+  [[ $nebula_opencv != RUNNING ]] || nebula_opencv=FAILED
+  if [[ $rc -eq 0 && $STATUS != PASS ]]; then rc=1; fi
   {
     echo "schema=M3_UI_DISTILLATION_PUBLIC_COMPLETION_V1"
     echo "job_status=$STATUS"
@@ -28,7 +42,14 @@ finish() {
     echo "java2s_behavior_only=true"
     echo "challenge_solution_copy=false"
     echo "viewport_z_order=background>scrolling-body>fixed-body>header-footer>transient-feedback"
-    echo "gtk3_current_receiver=EXECUTED"
+    echo "gtk3_current_receiver=$swt_native"
+    echo "manual_qa_required=false"
+    echo "swt_native=$swt_native"
+    echo "swt_screenshots=$swt_screenshots"
+    echo "swt_opencv=$swt_opencv"
+    echo "swt_resources=$swt_resources"
+    echo "nebula_native=$nebula_native"
+    echo "nebula_opencv=$nebula_opencv"
     echo "windows_current_receiver=NOT_EXECUTED_IN_THIS_JOB"
     echo "cocoa_current_receiver=NOT_EXECUTED_IN_THIS_JOB"
   } > "$RECEIPT/completion.properties"
@@ -46,6 +67,13 @@ PHASE=checkout-hygiene
 git diff --check
 rm -rf "$SWT" "$JFACE"
 git clone --depth 1 https://github.com/hsoliwal/eclipse.platform.swt.git "$SWT"
+# Optional exact task receiver; record the resolved commit below in either mode.
+if [[ -n ${M3_SWT_REF:-} ]]; then
+  [[ $M3_SWT_REF =~ ^[0-9a-f]{40}$ ]]
+  git -C "$SWT" fetch --depth 1 origin "$M3_SWT_REF"
+  git -C "$SWT" checkout --detach FETCH_HEAD
+  [[ $(git -C "$SWT" rev-parse HEAD) == "$M3_SWT_REF" ]]
+fi
 git clone --depth 1 https://github.com/hsoliwal/eclipse.platform.ui.git "$JFACE"
 {
   echo "NEBULA_HEAD=$(git rev-parse HEAD)"
@@ -101,6 +129,7 @@ grep -F 'HackerRank' "$CATALOG"
 grep -F 'GeeksForGeeks' "$CATALOG"
 
 PHASE=swt-gtk3-native-api-javadoc
+swt_native=RUNNING
 (
   cd "$SWT"
   export GTK_XCFLAGS='-Wno-deprecated-declarations'
@@ -109,7 +138,10 @@ PHASE=swt-gtk3-native-api-javadoc
   dbus-run-session -- xvfb-run -a -s "-screen 0 1200x800x24 -noreset"     mvn --batch-mode -V -U -e       --threads 1C       -DforkCount=1       -Dnative=gtk.linux.x86_64       -Papi-check -Pjavadoc       -Dtycho.baseline.replace=none       --fail-at-end       -DskipNativeTests=false       -DfailIfNoTests=false       clean install
 )
 
+swt_native=PASSED
+
 PHASE=swt-viewport-screenshot
+swt_screenshots=RUNNING
 (
   cd "$SWT/tests/org.eclipse.swt.tests"
   export SWT_GTK4=0
@@ -117,13 +149,28 @@ PHASE=swt-viewport-screenshot
   dbus-run-session -- xvfb-run -a -s "-screen 0 1200x800x24 -noreset"     mvn --batch-mode -V -U -e       -DforkCount=1       -Dnative=gtk.linux.x86_64       -DskipNativeTests=true       -DfailIfNoTests=true       -Dtest=ViewportScreenshotRegressionTest       -Dswt.viewport.screenshotRegression=true       -Dswt.viewport.screenshots=target/screenshots/viewport       integration-test
 )
 
+swt_screenshots=PASSED
+
+PHASE=swt-opencv-screenshot-oracle
+swt_opencv=RUNNING
+python3 -m venv "$WORK/vision"
+"$WORK/vision/bin/python" -m pip install opencv-python-headless==4.12.0.88 numpy==2.2.6
+"$WORK/vision/bin/python" "$SWT/tests/org.eclipse.swt.tests/verify_viewport_screenshots.py" \
+  --test-root "$SWT/tests/org.eclipse.swt.tests"
+swt_opencv=PASSED
+
 PHASE=swt-viewport-resource-gates
+swt_resources=RUNNING
 (
   cd "$SWT/tests/org.eclipse.swt.tests"
   export SWT_GTK4=0
   export GDK_BACKEND=x11
   dbus-run-session -- xvfb-run -a -s "-screen 0 1200x800x24 -noreset"     mvn --batch-mode -V -U -e       -DforkCount=1       -Dnative=gtk.linux.x86_64       -DskipNativeTests=true       -DfailIfNoTests=true       -Dtest=ViewportResourceRegressionTest       -Dswt.viewport.resourceRegression=true       integration-test
 )
+
+python3 "$SWT/tests/org.eclipse.swt.tests/verify_viewport_screenshots.py" \
+  --test-root "$SWT/tests/org.eclipse.swt.tests" --resources
+swt_resources=PASSED
 
 PHASE=nebula-recipe-first-reactor
 mvn -B -ntp -f m3/reactor.xml verify
@@ -133,6 +180,7 @@ python3 m3/convergence/prepare_swt_receiver.py   "$SWT"   m3/convergence/swt-rec
 mvn -B -f m3/convergence/swt-receiver-p2/pom.xml   -Dm3.swt.source="$ROOT/m3/convergence/swt-receiver-p2/target/binding/input"   verify
 
 PHASE=nebula-current-swt-tycho
+nebula_native=RUNNING
 set -a
 source m3/convergence/swt-receiver-p2/target/binding/receiver.env
 set +a
@@ -140,10 +188,19 @@ export SWT_GTK4=0
 export GDK_BACKEND=x11
 dbus-run-session -- xvfb-run -a -s "-screen 0 1200x800x24 -noreset"   mvn -V -B clean verify     -Dtycho.localArtifacts=ignore     -Dnebula.grid.viewport.screenshots.screen=true     -Dnebula.swt.gc.sha256="$M3_SWT_GC_SHA256"     -Dtarget-platform-platform="$M3_SWT_PLATFORM"
 
+nebula_native=PASSED
+
 PHASE=nebula-opencv-screenshot-oracle
-python3 -m venv "$WORK/vision"
-"$WORK/vision/bin/python" -m pip install   opencv-python-headless==4.12.0.88 numpy==2.2.6
+nebula_opencv=RUNNING
 "$WORK/vision/bin/python"   m3/convergence/verify_grid_screenshots.py   widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots   widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports   m3/convergence/swt-receiver-p2/target/binding/expected.json
 
+nebula_opencv=PASSED
+
+[[ $swt_native == PASSED ]]
+[[ $swt_screenshots == PASSED ]]
+[[ $swt_opencv == PASSED ]]
+[[ $swt_resources == PASSED ]]
+[[ $nebula_native == PASSED ]]
+[[ $nebula_opencv == PASSED ]]
 PHASE=complete
 STATUS=PASS
