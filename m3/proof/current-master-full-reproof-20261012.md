@@ -22,3 +22,32 @@ master tree, including:
 This reproof intentionally does not alter public APIs or behavior. If the current master exposes a
 new recurring defect, the reusable recipe/corpus must be improved first and replayed rather than
 hand-editing target files.
+
+
+## Distillation closure assertions
+
+This current-master reproof also binds the UI donor and graphics-state work already admitted on master:
+
+- Java2s SWT catalogue: `https://www.java2s.com/Tutorial/Java/0280__SWT/Catalog0280__SWT.html`
+- Java2s SWT 2D Graphics catalogue: `https://www.java2s.com/Tutorial/Java/0300__SWT-2D-Graphics/Catalog0300__SWT-2D-Graphics.html`
+- Java2s Swing catalogue: `https://www.java2s.com/Tutorial/Java/0240__Swing/Catalog0240__Swing.html`
+- Java2s Swing Event catalogue: `https://www.java2s.com/Tutorial/Java/0260__Swing-Event/Catalog0260__Swing-Event.html`
+
+These are behavior/example donors only; no source-copy authority is granted.
+
+The Grid graphics boundary must retain:
+
+- `GridGCProxy` scoped GC restoration;
+- `GridGCStateDAG` coalescing of stroke, alpha and affine-transform requests;
+- `GridPaintDAG` z-order: background -> body -> fixed -> header/footer chrome -> overlay;
+- bounded visible + overscan rendering and million-row distant-viewport proof;
+- native SWT screenshot return/qualification.
+
+The transferable challenge catalogue must preserve category-first review order:
+
+1. LeetCode taxonomy/evaluation;
+2. HackerRank taxonomy/evaluation;
+3. GeeksForGeeks taxonomy/evaluation;
+4. separately revision/license-qualified GitHub implementation donor.
+
+All competitive/reference sources remain non-authoritative until the corresponding Java/JNI recipe and correctness gates admit them.
