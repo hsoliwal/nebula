@@ -54,6 +54,7 @@ The behavior families above map to the existing package-private Grid atoms:
 - `GridGCProxy`: scoped state compiler around SWT's final `GC`;
 - `GridGCStateDAG`: retained/deduplicated stroke, alpha and affine state transitions;
 - `GridTransform`: allocation-free affine value/composition;
+- `GridLazyIntPriorityFrontier`: primitive max-heap frontier with O(n) heapify, O(1) top inspection and O(log n) top removal for ordered work that does not need a fully sorted retained array;
 - `GridSwtScreenshotCapture` + OpenCV gate: final native visual evidence.
 
 The proxy-GC decision is therefore closed: do not subclass or replace SWT `GC`. Keep the real GC
@@ -74,7 +75,7 @@ admitted:
 2. interval merge, split and overlap search;
 3. prefix sums, Fenwick trees and segment trees for variable-height rank/offset mapping;
 4. trie/prefix/fuzzy lookup;
-5. top-k / bounded priority queues;
+5. top-k / bounded priority queues / lazy top-pop frontiers;
 6. graph/iterative DFS/BFS for tree expansion, release and accessibility traversal;
 7. bit manipulation/bitset state packing;
 8. bounded cache / eviction;
@@ -83,6 +84,13 @@ admitted:
 Prefer direct arithmetic or compact sorted arrays whenever the viewport has fixed row height or a
 small bounded frontier; do not introduce asymptotically heavier structures without a measured
 query/update crossover.
+
+For ordered work that consumes only the next candidate, a heap/frontier may avoid constructing a
+fully sorted retained representation. The current Grid application preserves sparse multi-index
+removal semantics by polling the highest logical index and skipping duplicate tops. This is a
+behavioral/structural admission, not an unmeasured performance claim: when every element is drained,
+primitive `Arrays.sort` may still be faster in practice. Wider replacement requires benchmark
+evidence.
 
 ## Java / JNI admission
 
