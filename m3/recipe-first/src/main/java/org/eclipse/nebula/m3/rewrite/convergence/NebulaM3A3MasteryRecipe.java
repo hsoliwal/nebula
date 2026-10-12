@@ -47,11 +47,11 @@ public final class NebulaM3A3MasteryRecipe
                     "src/main/java/org/eclipse/nebula/m3/NebulaM3A3Lab.java",
                     new Target(
                             "NebulaM3A3Lab.java.txt",
-                            "0ba26288f1263e97d157d35ba3752ab820f39cb6"),
+                            "099de04b1612c30726d0bd2b6bbeb2ad7e065bfb"),
                     "src/test/java/org/eclipse/nebula/m3/NebulaM3A3LabTest.java",
                     new Target(
                             "NebulaM3A3LabTest.java.txt",
-                            "f494f4c3ec14e60148f0d5844500a7260b80255e"));
+                            "b9d449a1c15b99e52c1985000e6181569372f97c"));
 
     static final class State {
         boolean anchorSeen;

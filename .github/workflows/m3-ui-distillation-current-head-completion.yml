@@ -5,6 +5,11 @@ on:
   push:
     branches:
       - m3/ui-distillation-current-head-completion-20261011
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.m3-ui-distillation-trigger/**'
   workflow_dispatch:
 
 permissions:

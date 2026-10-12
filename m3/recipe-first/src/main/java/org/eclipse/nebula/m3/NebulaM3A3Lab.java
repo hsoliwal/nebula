@@ -110,9 +110,11 @@ public final class NebulaM3A3Lab {
             Observation baseline = verify(fixture, ordinal, "baseline", 0);
             NebulaM3A3Cases.Signal signal = NebulaM3A3Cases.signal(fixture);
             Map<String, String> normalForms = new LinkedHashMap<>();
+            // One serial fixture owns this parser; every parse starts a complete donor reset.
+            JavaParser parser = JavaParser.fromJavaVersion().build();
             for (List<String> schedule : SCHEDULES) {
                 ResultAndSource outcome =
-                        converge(ordinal, fixture, schedule, baseline, signal);
+                        converge(ordinal, fixture, schedule, baseline, signal, parser);
                 String prior =
                         normalForms.putIfAbsent(
                                 outcome.result().operationSet(), outcome.source());
@@ -175,7 +177,8 @@ public final class NebulaM3A3Lab {
             String original,
             List<String> schedule,
             Observation baseline,
-            NebulaM3A3Cases.Signal baselineSignal)
+            NebulaM3A3Cases.Signal baselineSignal,
+            JavaParser parser)
             throws Exception {
         String current = original;
         int applications = 0;
@@ -186,7 +189,7 @@ public final class NebulaM3A3Lab {
         for (int pass = 0; pass < MAX_PASSES; pass++) {
             String beforePass = current;
             for (String operation : schedule) {
-                current = apply(recipe(operation), current);
+                current = apply(recipe(operation), current, parser);
                 applications++;
                 Observation observed =
                         verify(
@@ -212,8 +215,10 @@ public final class NebulaM3A3Lab {
         }
 
         String replay = current;
+        // Fixed-point replay must be independent of the fixture parser and its attribution.
+        JavaParser replayParser = JavaParser.fromJavaVersion().build();
         for (String operation : schedule) {
-            replay = apply(recipe(operation), replay);
+            replay = apply(recipe(operation), replay, replayParser);
         }
         if (!current.equals(replay)) {
             throw new IllegalStateException(
@@ -246,8 +251,8 @@ public final class NebulaM3A3Lab {
         };
     }
 
-    private static String apply(Recipe recipe, String source) {
-        SourceFile parsed = parse(source);
+    private static String apply(Recipe recipe, String source, JavaParser parser) {
+        SourceFile parsed = parse(parser, source);
         InMemoryExecutionContext context =
                 new InMemoryExecutionContext(
                         failure -> {
@@ -270,18 +275,17 @@ public final class NebulaM3A3Lab {
             throw new IllegalStateException("mastery recipe changed source path");
         }
         String rendered = after.printAll();
-        if (!parse(rendered).printAll().equals(rendered)) {
+        if (!parse(parser, rendered).printAll().equals(rendered)) {
             throw new IllegalStateException("mastery postimage did not round-trip");
         }
         return rendered;
     }
 
-    private static SourceFile parse(String source) {
+    private static SourceFile parse(JavaParser parser, String source) {
         ArrayList<Throwable> errors = new ArrayList<>();
         InMemoryExecutionContext context = new InMemoryExecutionContext(errors::add);
         List<SourceFile> parsed =
-                JavaParser.fromJavaVersion()
-                        .build()
+                parser.reset()
                         .parseInputs(
                                 List.of(
                                         Parser.Input.fromString(
