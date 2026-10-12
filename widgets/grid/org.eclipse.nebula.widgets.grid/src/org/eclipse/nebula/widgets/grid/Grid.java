@@ -3261,11 +3261,11 @@ public class Grid extends Canvas {
 		}
 
 		if (usesSparseVirtualItems()) {
-			final int[] sorted = indices.clone();
-			Arrays.sort(sorted);
-			int previous = Integer.MIN_VALUE;
-			for (int i = sorted.length - 1; i >= 0; i--) {
-				final int index = sorted[i];
+			final GridLazyIntPriorityFrontier frontier =
+					GridLazyIntPriorityFrontier.maxHeap(indices);
+			int previous = -1;
+			while (!frontier.isEmpty()) {
+				final int index = frontier.poll();
 				if (index == previous) {
 					continue;
 				}
