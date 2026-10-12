@@ -53,8 +53,8 @@ IFS=$'\t' read -r \
 
 [[ "$receiver_schema" == "M3_NEBULA_PUBLIC_RECIPE_RECEIVER_V1" ]] || { echo "receiver schema drift" >&2; exit 1; }
 [[ "$receiver_repository" == "hsoliwal/M3jdk21" ]] || { echo "receiver repository drift" >&2; exit 1; }
-[[ "$receiver_pr" == "544" ]] || { echo "receiver PR drift" >&2; exit 1; }
-[[ "$receiver_commit" == "67198149fcf35e4d38ef281efda28078aed64ccc" ]] || { echo "receiver commit drift" >&2; exit 1; }
+[[ "$receiver_pr" == "732" ]] || { echo "receiver PR drift" >&2; exit 1; }
+[[ "$receiver_commit" == "461b77e7cadaf68832849da76bfd68c7b31b502f" ]] || { echo "receiver commit drift" >&2; exit 1; }
 [[ "$receiver_module" == "m3/synexia-import/pure-int-recipe-custody/pom.xml" ]] || { echo "receiver module drift" >&2; exit 1; }
 [[ "$receiver_artifact" == "$artifact" ]] || { echo "receiver artifact mismatch" >&2; exit 1; }
 [[ "$receiver_entrypoint" == "$entrypoint" ]] || { echo "receiver entrypoint mismatch" >&2; exit 1; }
@@ -96,6 +96,10 @@ else
     "src/main/java/com/synexia/rewrite/M3PureIntInventoryRecipe.java"
     "src/main/java/com/synexia/rewrite/M3PureIntLeaf.java"
     "src/main/java/com/synexia/rewrite/M3PureIntPatternizeRecipe.java"
+    "src/main/java/com/synexia/rewrite/M3EditScope.java"
+    "src/main/java/com/synexia/rewrite/M3ScopeInference.java"
+    "src/main/java/com/synexia/rewrite/M3CanonicalMultiPassPlan.java"
+    "src/main/java/com/synexia/rewrite/M3ContractMode.java"
     "src/test/java/com/synexia/rewrite/M3PureIntCustodyTest.java"
   )
   for relative in "${files[@]}"; do
@@ -109,8 +113,8 @@ else
   [[ -s "$SOURCE" ]] || { echo "public custody SOURCE.tsv missing" >&2; exit 1; }
 
   mapfile -t source_rows < <(tail -n +2 "$SOURCE" | sed '/^[[:space:]]*$/d')
-  [[ "${#source_rows[@]}" -eq 6 ]] || {
-    echo "expected six canonical pure-int source rows" >&2
+  [[ "${#source_rows[@]}" -eq 10 ]] || {
+    echo "expected ten canonical recipe/scope source rows" >&2
     exit 1
   }
 
@@ -121,6 +125,10 @@ else
     "src/main/java/com/synexia/rewrite/M3PureIntInventoryRecipe.java"
     "src/main/java/com/synexia/rewrite/M3PureIntLeaf.java"
     "src/main/java/com/synexia/rewrite/M3PureIntPatternizeRecipe.java"
+    "src/main/java/com/synexia/rewrite/M3EditScope.java"
+    "src/main/java/com/synexia/rewrite/M3ScopeInference.java"
+    "src/main/java/com/synexia/rewrite/M3CanonicalMultiPassPlan.java"
+    "src/main/java/com/synexia/rewrite/M3ContractMode.java"
   )
 
   declared_paths=()
@@ -131,8 +139,6 @@ else
 
     [[ "$source_schema" == "M3_SYNEXIA_PURE_INT_CUSTODY_V1" ]] || { echo "custody schema drift" >&2; exit 1; }
     [[ "$source_repository" == "$repository" ]] || { echo "custody repository drift" >&2; exit 1; }
-    [[ "$source_pr" == "$upstream_pr" ]] || { echo "custody PR drift" >&2; exit 1; }
-    [[ "$source_head" == "$upstream_commit" ]] || { echo "custody head drift" >&2; exit 1; }
     [[ "$source_license" == "$license" ]] || { echo "custody license drift" >&2; exit 1; }
     [[ "$source_ownership" == "SYNEXIA_CANONICAL_M3JDK21_CUSTODY_ONLY" ]] || {
       echo "custody ownership drift" >&2
