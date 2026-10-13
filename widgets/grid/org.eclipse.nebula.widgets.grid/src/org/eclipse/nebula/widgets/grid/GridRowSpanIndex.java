@@ -28,7 +28,7 @@ final class GridRowSpanIndex {
 	private long[] prefixMaxEnds = new long[4];
 	private int projectedCount;
 	private boolean projectionDirty = true;
-	private int visibilitySignature;
+	private boolean[] projectedVisibleColumns = new boolean[0];
 
 	void update(GridItem item, int column, int span) {
 		if (item == null || column < 0) return;
@@ -138,8 +138,7 @@ final class GridRowSpanIndex {
 	}
 
 	private void rebuildProjection(boolean[] visibleColumns) {
-		int signature = visibilitySignature(visibleColumns);
-		if (!projectionDirty && signature == visibilitySignature) return;
+		if (!projectionDirty && sameVisibility(visibleColumns)) return;
 		ensureProjectionCapacity(size);
 		projectedCount = 0;
 
@@ -175,7 +174,7 @@ final class GridRowSpanIndex {
 			prefixMaxEnds[i] = max;
 		}
 		projectionDirty = false;
-		visibilitySignature = signature;
+		projectedVisibleColumns = copyVisibility(visibleColumns);
 	}
 
 	private int indexOf(GridItem item) {
@@ -208,11 +207,20 @@ final class GridRowSpanIndex {
 		return max;
 	}
 
-	private static int visibilitySignature(boolean[] visibleColumns) {
-		if (visibleColumns == null) return 0;
-		int hash = 1;
-		for (boolean visible : visibleColumns) hash = 31 * hash + (visible ? 1231 : 1237);
-		return 31 * hash + visibleColumns.length;
+	private boolean sameVisibility(boolean[] visibleColumns) {
+		if (visibleColumns == null) return projectedVisibleColumns.length == 0;
+		if (projectedVisibleColumns.length != visibleColumns.length) return false;
+		for (int i = 0; i < visibleColumns.length; i++) {
+			if (projectedVisibleColumns[i] != visibleColumns[i]) return false;
+		}
+		return true;
+	}
+
+	private static boolean[] copyVisibility(boolean[] visibleColumns) {
+		if (visibleColumns == null || visibleColumns.length == 0) return new boolean[0];
+		boolean[] copy = new boolean[visibleColumns.length];
+		System.arraycopy(visibleColumns, 0, copy, 0, visibleColumns.length);
+		return copy;
 	}
 
 	private void ensureOwnerCapacity(int required) {
