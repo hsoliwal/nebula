@@ -45,7 +45,7 @@ final class CTreeBitLanes {
 		int word = slot >>> 5;
 		if (word >= lanes[0].length) {
 			for (int i = 0; i < LANES; i++) {
-				int[] grown = new int[lanes[i].length * 2];
+				int[] grown = new int[grow(lanes[i].length, word + 1)];
 				System.arraycopy(lanes[i], 0, grown, 0, lanes[i].length);
 				lanes[i] = grown;
 			}
@@ -59,11 +59,20 @@ final class CTreeBitLanes {
 
 	void setData(int slot, Object value) {
 		if (slot >= data.length) {
-			Object[] grown = new Object[Math.max(slot + 1, data.length * 2)];
+			Object[] grown = new Object[grow(data.length, slot + 1)];
 			System.arraycopy(data, 0, grown, 0, data.length);
 			data = grown;
 		}
 		data[slot] = value;
+	}
+
+	/**
+	 * Growth policy for the lane and payload arrays: doubling while small, then one eighth more per step, so a
+	 * million-item tree does not reserve a second million slots it may never use. Int-only.
+	 */
+	static int grow(int length, int needed) {
+		int next = length < 1 << 20 ? length << 1 : length + (length >>> 3);
+		return next < needed || next < 0 ? needed : next;
 	}
 
 	boolean get(int lane, int slot) {

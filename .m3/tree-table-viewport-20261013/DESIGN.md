@@ -64,6 +64,17 @@ The lanes use `int` words, not `long[]`, to stay GWT-safe as the platform law re
 Batching, prefetch beyond the native overscan and cancellation on scroll-out are decided by the native control for the
 wrapped widgets; a Nebula-side request scheduler on top of the native virtual controls is NOT_DONE in this leaf.
 
+## Relayed rules received by name only
+
+The coordinator relayed these rules by name while tests were suspended; this is how the leaf stands against each.
+
+| Rule | Status |
+|---|---|
+| Paint without materialization | ctree paints the caller's items only (no objects are created during paint) and the painted window is found by binary search; the native wrapped widgets paint rows the native control requested, which is the materialization unit of `SWT.VIRTUAL`. |
+| Xmx-aware growth | `CTreeBitLanes.grow`: doubling below 1,048,576 slots, then one eighth more per step, int-only. The other packed sets are bit sets (32 rows per int) and grow by doubling. A heap-size query is not used because the shared logic must stay GWT-safe. |
+| Batch threshold | NOT_DONE: no batched SetData scheduler on top of the native virtual controls (see the SetData section). |
+| CPU/GPU split | UI thread: input and bounded materialization. Sorting and filtering of a viewport parent's children run on the UI thread, as JFace requires; moving them to a worker is NOT_DONE. Rasterization stays with SWT's `GC`. |
+
 ## Opt-in rule for the native virtual path
 
 `SWT.VIRTUAL` is the SWT-native request for a viewport. A widget that wraps a native Tree/Table switches to the virtual

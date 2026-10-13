@@ -32,6 +32,9 @@ in this run directory's `harness/` and `tools/`. Run one JVM at a time, memory-g
    - `CompositeTableViewport_Test` (1,000,000-row collection, rows built only when shown, editor value/focus/caret round
      trip with pixel hash), and the existing `CompositeTableTest`, `CompositeTable_267316Test`, `NativeHeaderTest`,
      `CalendarControlTestSuite` before and after (upstream skips them, see EclipseNebula/nebula#396).
+   - `CTreeComboViewport_Test` (new fragment `org.eclipse.nebula.widgets.ctreecombo.tests`): drop-down not built at
+     construction, lazily built drop-down has bare native items (eager-widget parity), `SWT.VIRTUAL` drop-down with
+     50,000 roots binds < 200 rows on open and < 400 after selecting and expanding a deep item.
    - tablecombo `TableComboTests`, `TableComboViewerTests`: need SWTBot, not in the local repository — NOT_RUN until
      SWTBot is available.
 3. Snippets and examples smoke run, before and after (`sh scripts/run_all.sh snippets`): CTreeComboSnippet,
