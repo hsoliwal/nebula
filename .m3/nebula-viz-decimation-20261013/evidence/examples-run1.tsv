@@ -1,0 +1,53 @@
+base	org.eclipse.nebula.visualization.xygraph.examples.BarChartExample	CAPTURED	1309290	1440x753
+base	org.eclipse.nebula.visualization.xygraph.examples.BarChartExample	EXIT_OK	1309290	1440x753
+base	org.eclipse.nebula.visualization.xygraph.examples.ComprehensiveExample	CAPTURED	531950	800x500
+base	org.eclipse.nebula.visualization.xygraph.examples.ComprehensiveExample	EXIT_OK	531950	800x500
+base	org.eclipse.nebula.visualization.xygraph.examples.GraphDemo	CAPTURED	531024	800x500
+base	org.eclipse.nebula.visualization.xygraph.examples.GraphDemo	EXIT_OK	531024	800x500
+base	org.eclipse.nebula.visualization.xygraph.examples.LargeNumberOfTracesAnnotationsAxes	CAPTURED	1309288	1440x753
+base	org.eclipse.nebula.visualization.xygraph.examples.LargeNumberOfTracesAnnotationsAxes	EXIT_OK	1309288	1440x753
+base	org.eclipse.nebula.visualization.xygraph.examples.SimpleExample	CAPTURED	1325305	1440x753
+base	org.eclipse.nebula.visualization.xygraph.examples.SimpleExample	EXIT_OK	1325305	1440x753
+base	org.eclipse.nebula.visualization.xygraph.examples.SimpleToolbarArmedXYGraphExample	CAPTURED	319733	600x400
+base	org.eclipse.nebula.visualization.xygraph.examples.SimpleToolbarArmedXYGraphExample	EXIT_OK	319733	600x400
+base	org.eclipse.nebula.visualization.xygraph.examples.StaircaseExample	CAPTURED	1309584	1440x753
+base	org.eclipse.nebula.visualization.xygraph.examples.StaircaseExample	EXIT_OK	1309584	1440x753
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_Basic	CAPTURED	639021	600x800
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_Basic_1Scope	CAPTURED	639618	600x800
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithData	CAPTURED	213115	1440x753
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithData	EXIT_OK	213115	1440x753
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression	CAPTURED	265706	1440x753
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression	EXIT_OK	265706	1440x753
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression10Channels	NO_RESULT
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression2Channels_1	EXIT_EXCEPTION:SWTException:Widget is disposed	-1	-
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression2Channels_2	NO_RESULT
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression2Channels_3	NO_RESULT
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_SimpleScope	NO_RESULT
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.Snippet3	CAPTURED	144168	600x190
+base	org.eclipse.nebula.widgets.oscilloscope.snippets.Snippet4	CAPTURED	116106	600x190
+after	org.eclipse.nebula.visualization.xygraph.examples.BarChartExample	CAPTURED	99660	300x250
+after	org.eclipse.nebula.visualization.xygraph.examples.BarChartExample	EXIT_OK	99660	300x250
+after	org.eclipse.nebula.visualization.xygraph.examples.ComprehensiveExample	CAPTURED	533333	800x500
+after	org.eclipse.nebula.visualization.xygraph.examples.ComprehensiveExample	EXIT_OK	533333	800x500
+after	org.eclipse.nebula.visualization.xygraph.examples.GraphDemo	CAPTURED	2381	800x500
+after	org.eclipse.nebula.visualization.xygraph.examples.GraphDemo	EXIT_OK	2381	800x500
+after	org.eclipse.nebula.visualization.xygraph.examples.LargeNumberOfTracesAnnotationsAxes	CAPTURED	30881	1440x753
+after	org.eclipse.nebula.visualization.xygraph.examples.LargeNumberOfTracesAnnotationsAxes	EXIT_OK	30881	1440x753
+after	org.eclipse.nebula.visualization.xygraph.examples.SimpleExample	CAPTURED	7395	300x250
+after	org.eclipse.nebula.visualization.xygraph.examples.SimpleExample	EXIT_OK	7395	300x250
+after	org.eclipse.nebula.visualization.xygraph.examples.SimpleToolbarArmedXYGraphExample	CAPTURED	1201	600x400
+after	org.eclipse.nebula.visualization.xygraph.examples.SimpleToolbarArmedXYGraphExample	EXIT_OK	1201	600x400
+after	org.eclipse.nebula.visualization.xygraph.examples.StaircaseExample	CAPTURED	34541	1440x753
+after	org.eclipse.nebula.visualization.xygraph.examples.StaircaseExample	EXIT_OK	34541	1440x753
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_Basic	CAPTURED	9658	600x800
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_Basic_1Scope	CAPTURED	3254	600x800
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithData	NO_RESULT
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression	NO_RESULT
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression10Channels	EXIT_EXCEPTION:SWTException:Widget is disposed	-1	-
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression2Channels_1	NO_RESULT
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression2Channels_2	NO_RESULT
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression2Channels_3	CAPTURED	34548	1440x753
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_ScopeWithDataAndProgression2Channels_3	EXIT_OK	34548	1440x753
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.MultiScope_SimpleScope	NO_RESULT
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.Snippet3	CAPTURED	2343	600x190
+after	org.eclipse.nebula.widgets.oscilloscope.snippets.Snippet4	CAPTURED	2310	600x190

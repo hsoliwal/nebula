@@ -192,6 +192,7 @@ public class XYGraphBench {
 		stats("zoom_alloc_bytes_per_frame", allocZoom);
 		stats("same_view_alloc_bytes_per_frame", allocSame);
 		out("display_copyArea_sha256_end", screenHash(display, canvas));
+		out("display_copyArea_vs_control_print_diff_pixels", screenVsPrint(display, canvas));
 		try {
 			java.lang.reflect.Field f = Trace.class.getDeclaredField("decimationPainter");
 			f.setAccessible(true);
@@ -271,6 +272,40 @@ public class XYGraphBench {
 			sb.append(String.format("%02x", b & 0xff));
 		}
 		return sb.toString();
+	}
+
+	/** Pixels (compared as RGB) where the on-screen canvas differs from Control.print of the same frame. */
+	static int screenVsPrint(Display display, Canvas canvas) {
+		canvas.getShell().forceActive();
+		canvas.getShell().moveAbove(null);
+		canvas.redraw();
+		canvas.update();
+		while (display.readAndDispatch()) {
+			// settle
+		}
+		org.eclipse.swt.graphics.Point size = canvas.getSize();
+		org.eclipse.swt.graphics.Point at = canvas.toDisplay(0, 0);
+		Image screen = new Image(display, size.x, size.y);
+		GC gc = new GC(display);
+		gc.copyArea(screen, at.x, at.y);
+		gc.dispose();
+		Image printed = new Image(display, size.x, size.y);
+		gc = new GC(printed);
+		canvas.print(gc);
+		gc.dispose();
+		org.eclipse.swt.graphics.ImageData a = screen.getImageData();
+		org.eclipse.swt.graphics.ImageData b = printed.getImageData();
+		screen.dispose();
+		printed.dispose();
+		int diff = 0;
+		for (int y = 0; y < size.y; y++) {
+			for (int x = 0; x < size.x; x++) {
+				if (!a.palette.getRGB(a.getPixel(x, y)).equals(b.palette.getRGB(b.getPixel(x, y)))) {
+					diff++;
+				}
+			}
+		}
+		return diff;
 	}
 
 	static void stats(String name, double[] values) {
