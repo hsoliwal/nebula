@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: EPL-2.0
 # Modified 2026: recover the valid parent workflow and verify the current DAG export.
+# Current-master reproof synchronization marker: 2026-10-13
 name: M3 Nebula recipe-first convergence
 
 on:
