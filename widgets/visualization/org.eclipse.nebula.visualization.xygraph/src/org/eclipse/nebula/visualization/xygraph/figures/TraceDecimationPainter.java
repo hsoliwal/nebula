@@ -54,6 +54,9 @@ final class TraceDecimationPainter {
 	private IDataProvider provider;
 	private int generation = -1;
 	private Runnable late;
+	/** frames painted from a decimated polyline / by the per-sample loop (diagnostics and tests) */
+	int decimatedFrames;
+	int loopFrames;
 
 	TraceDecimationPainter(Trace trace) {
 		this.trace = trace;
@@ -63,6 +66,16 @@ final class TraceDecimationPainter {
 	 * @return the polyline to draw, {@link #NOTHING}, or null when the per-sample loop must paint this frame
 	 */
 	PointList polyline(IDataProvider dataProvider, Axis xAxis, Axis yAxis) {
+		PointList pl = decide(dataProvider, xAxis, yAxis);
+		if (pl == null) {
+			loopFrames++;
+		} else {
+			decimatedFrames++;
+		}
+		return pl;
+	}
+
+	private PointList decide(IDataProvider dataProvider, Axis xAxis, Axis yAxis) {
 		hot = null;
 		if (!TraceDecimator.ENABLED || !(dataProvider instanceof PackedXYDataProvider)) {
 			return null;

@@ -104,7 +104,7 @@ public final class TraceDecimator {
 					return null;
 				}
 			}
-			return view.equals(pendingView) ? pendingResult : null;
+			return lookup(view);
 		}
 	}
 
@@ -119,6 +119,11 @@ public final class TraceDecimator {
 
 	/** Worker side; one task per trace at a time (the builder, pyramid and scratch belong to this decimator). */
 	private void compute(TraceView view) {
+		synchronized (this) {
+			if (!view.equals(pendingView)) {
+				return; // superseded by a newer view before it started
+			}
+		}
 		DecimatedTrace result;
 		synchronized (builder) {
 			long t0 = System.nanoTime();

@@ -177,11 +177,13 @@ public final class PackedMinMaxPyramid {
 				break;
 			}
 			int cut = Math.max(a, counts[level] * fan);
-			for (int i = cut; i < b; i++) {
-				lo = Math.min(lo, minAt(level, i));
-				hi = Math.max(hi, maxAt(level, i));
+			if (cut < b) {
+				for (int i = cut; i < b; i++) {
+					lo = Math.min(lo, minAt(level, i));
+					hi = Math.max(hi, maxAt(level, i));
+				}
+				b = cut;
 			}
-			b = cut;
 			a = a / fan;
 			b = b / fan;
 			level++;

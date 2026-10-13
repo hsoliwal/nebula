@@ -295,7 +295,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 * data (see {@link #setDecimationEnabled(boolean)}).
 	 */
 	private boolean decimationEnabled = true;
-	private final TraceDecimationPainter decimationPainter = new TraceDecimationPainter(this);
+	final TraceDecimationPainter decimationPainter = new TraceDecimationPainter(this);
 
 	/**
 	 * {@link #init(Axis, Axis, IDataProvider)} needs to be called if a trace is
