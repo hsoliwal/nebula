@@ -62,6 +62,13 @@ public final class ApiProbe {
 	 * @return lines {api_id, outcome, snapshot}
 	 */
 	public static List<String[]> run(Shell host, String fixtureClass, List<String[]> rows, boolean visible) {
+		// the snapshot reads only zero-argument getters of the pre-image surface, so additive API never shows up as a diff
+		for (String[] row : rows) {
+			if ("method".equals(row[3]) && row[4].replaceAll("\\s+", "").endsWith("()")) {
+				String head = row[4].substring(0, row[4].indexOf('('));
+				SURFACE_GETTERS.add(head.substring(head.lastIndexOf(' ') + 1));
+			}
+		}
 		Display display = host.getDisplay();
 		Runnable closer = new ModalCloser(display, host);
 		display.timerExec(150, closer);
@@ -287,6 +294,8 @@ public final class ApiProbe {
 		return out.toString();
 	}
 
+	private static final Set<String> SURFACE_GETTERS = new HashSet<>();
+
 	private static final Set<String> SWT_GETTERS = new HashSet<>(
 			Arrays.asList("getSize", "getVisible", "getEnabled", "isFocusControl", "getToolTipText", "getStyle"));
 
@@ -301,7 +310,8 @@ public final class ApiProbe {
 			boolean named = n.startsWith("get") || n.startsWith("is") || n.startsWith("has");
 			boolean nebula = m.getDeclaringClass().getName().startsWith("org.eclipse.nebula");
 			if (named && m.getParameterCount() == 0 && m.getReturnType() != void.class
-					&& (nebula || SWT_GETTERS.contains(n)) && !Modifier.isStatic(m.getModifiers())) {
+					&& (nebula && SURFACE_GETTERS.contains(n) || SWT_GETTERS.contains(n))
+					&& !Modifier.isStatic(m.getModifiers())) {
 				list.add(m);
 			}
 		}
