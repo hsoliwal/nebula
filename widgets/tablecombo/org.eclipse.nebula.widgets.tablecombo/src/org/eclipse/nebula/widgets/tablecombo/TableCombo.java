@@ -1583,7 +1583,12 @@ public class TableCombo extends Composite {
 		if (closeDropDown && isDropped()) {
 			dropDown(false);
 		}
-		recreatePopup();
+		// Recreate the popup only when the combo has moved to another shell (a detached part).
+		// Recreating it unconditionally hid an open drop-down on every selection that refreshed the
+		// selected image, so setClosePopupAfterSelection(false) was not honored (EclipseNebula/nebula#705).
+		if (popup != null && !getShell().equals(popup.getParent())) {
+			recreatePopup();
+		}
 		final Rectangle rect = getClientArea();
 		final int width = rect.width;
 		final int height = rect.height;
