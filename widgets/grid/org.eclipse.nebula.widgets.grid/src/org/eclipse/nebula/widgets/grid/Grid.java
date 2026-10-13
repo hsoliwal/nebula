@@ -5925,6 +5925,31 @@ public class Grid extends Canvas {
 		}
 	}
 
+	/**
+	 * Freezes the first {@code top} and last {@code bottom} logical rows on a fixed
+	 * paint plane below the column header and above the footer. The rows keep their
+	 * ordinary Grid indices, selection/event semantics and cell renderers; scrolling
+	 * moves only the body plane beneath them.
+	 * <p>
+	 * For an installed {@link RowPermutation}, callers may first use
+	 * {@link RowPermutation#setPinnedRows(int[], int[])} to choose model rows and
+	 * then choose how many projected rows occupy the top/bottom fixed planes here.
+	 * Pinned rows are excluded from cold virtual-item eviction.
+	 * </p>
+	 *
+	 * @param top number of leading projected rows to freeze
+	 * @param bottom number of trailing projected rows to freeze
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if either count is negative or this Grid is a tree</li>
+	 *            </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 *            </ul>
+	 * @since 1.2
+	 */
 	public void setPinnedRowCount(final int top, final int bottom) {
 		checkWidget();
 		if (top < 0 || bottom < 0 || isTree) {
