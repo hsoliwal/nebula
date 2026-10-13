@@ -2163,6 +2163,7 @@ public class GridItem extends Item {
 		if (parent.getDataVisualizer() != null) {
 			parent.getDataVisualizer().clearRow(this);
 		}
+		parent.rowSpanOwnerDisposed(this);
 		noRow();
 		super.dispose();
 	}
