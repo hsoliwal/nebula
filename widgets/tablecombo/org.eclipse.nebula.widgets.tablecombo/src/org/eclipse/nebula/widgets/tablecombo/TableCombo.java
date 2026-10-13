@@ -108,6 +108,10 @@ public class TableCombo extends Composite {
 	private Color background;
 	private Color borderColor;
 	private Color oddLinesForegroundColor, oddLinesBackgroundColor;
+	//FLLDCIM: HPCPOP — SWT.VIRTUAL popup table: rows the table asked for, as a packed bit set
+	private boolean virtualTable;
+	private int[] materializedRows = new int[0];
+	private final Listener lateRowColors = event -> applyLineColors(event.index, (TableItem) event.item);
 	private Color evenLinesForegroundColor, evenLinesBackgroundColor;
 	private int[] columnWidths;
 	private int tableWidthPercentage = 100;
@@ -154,6 +158,7 @@ public class TableCombo extends Composite {
 	 */
 	public TableCombo(final Composite parent, final int style) {
 		super(parent, newStyle = checkStyle(style));
+		virtualTable = (style & SWT.VIRTUAL) != 0;
 		hasBorder = (style & SWT.BORDER) == SWT.BORDER;
 		// set the label style
 		int textStyle = SWT.SINGLE;
@@ -168,7 +173,7 @@ public class TableCombo extends Composite {
 		setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 
 		// create label to hold image if necessary.
-		selectedImage = new Label(this, SWT.NONE);
+		selectedImage = new Label(this, SWT.NO_FOCUS);
 		selectedImage.setAlignment(SWT.RIGHT);
 		selectedImage.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 
@@ -214,8 +219,7 @@ public class TableCombo extends Composite {
 			arrow.addListener(arrowEvent, listener);
 		}
 
-		// initialize the drop down
-		createPopup(-1);
+		//FLLDCIM: lazy — the drop-down shell and table are built on first open or first table API use
 
 		initAccessible();
 
@@ -528,7 +532,7 @@ public class TableCombo extends Composite {
 	public void clearSelection() {
 		checkWidget();
 		text.clearSelection();
-		table.deselectAll();
+		table().deselectAll();
 	}
 
 	/**
@@ -544,8 +548,8 @@ public class TableCombo extends Composite {
 			event.type = SWT.None;
 
 			if (popup != null && !popup.isDisposed()) {
-				if (!table.isDisposed()) {
-					table.removeListener(SWT.Dispose, listener);
+				if (!table().isDisposed()) {
+					table().removeListener(SWT.Dispose, listener);
 				}
 				popup.dispose();
 			}
@@ -568,7 +572,7 @@ public class TableCombo extends Composite {
 			}
 			if (isDropped()) {
 				if (isWindows()) {
-					table.setFocus();
+					table().setFocus();
 				}
 			} else {
 				text.setFocus();
@@ -603,8 +607,6 @@ public class TableCombo extends Composite {
 			overallWidth = wHint;
 			overallHeight = hHint;
 		} else {
-			final TableItem[] tableItems = table.getItems();
-
 			final GC gc = new GC(text);
 			final int spacer = gc.stringExtent(" ").x; //$NON-NLS-1$
 			int maxTextWidth = gc.stringExtent(text.getText()).x;
@@ -612,9 +614,13 @@ public class TableCombo extends Composite {
 			int currTextWidth = 0;
 
 			// calculate the maximum text width and image height.
-			int index = 0;
-			for (final TableItem tableItem : tableItems) {
-				currTextWidth = gc.stringExtent(renderer.getLabel(index++)).x;
+			final int count = table().getItemCount();
+			for (int index = 0; index < count; index++) {
+				if (virtualTable && !isMaterialized(index)) {
+					continue;
+				}
+				final TableItem tableItem = table().getItem(index);
+				currTextWidth = gc.stringExtent(renderer.getLabel(index)).x;
 
 				// take image into account if there is one for the tableitem.
 				if (tableItem.getImage() != null) {
@@ -671,21 +677,35 @@ public class TableCombo extends Composite {
 	 *
 	 * @param selectionIndex
 	 */
+	/**
+	 * @return the drop-down table, building the drop-down on first use
+	 */
+	private Table table() {
+		if (table == null && text != null && !isDisposed()) {
+			createPopup(-1);
+		}
+		return table;
+	}
+
 	void createPopup(final int selectionIndex) {
 		// create shell and table
 		popup = new Shell(getShell(), SWT.NO_TRIM | SWT.ON_TOP);
 
 		// create table
-		table = new Table(popup, SWT.SINGLE | SWT.FULL_SELECTION);
+		table = new Table(popup, SWT.SINGLE | SWT.FULL_SELECTION | (virtualTable ? SWT.VIRTUAL : SWT.NONE));
+		if (virtualTable) {
+			materializedRows = new int[0];
+			table().addListener(SWT.SetData, event -> markMaterialized(event.index));
+		}
 
 		if (font != null) {
-			table.setFont(font);
+			table().setFont(font);
 		}
 		if (foreground != null) {
-			table.setForeground(foreground);
+			table().setForeground(foreground);
 		}
 		if (background != null) {
-			table.setBackground(background);
+			table().setBackground(background);
 		}
 
 		// Add popup listeners
@@ -698,12 +718,12 @@ public class TableCombo extends Composite {
 		final int[] tableEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn,
 				SWT.Dispose };
 		for (final int tableEvent : tableEvents) {
-			table.addListener(tableEvent, listener);
+			table().addListener(tableEvent, listener);
 		}
 
 		// set the selection
 		if (selectionIndex != -1) {
-			table.setSelection(selectionIndex);
+			table().setSelection(selectionIndex);
 		}
 		shellsToBeDisposed.add(popup);
 	}
@@ -744,6 +764,9 @@ public class TableCombo extends Composite {
 
 		// closing the dropDown
 		if (!drop) {
+			if (popup == null) {
+				return;
+			}
 			popup.setVisible(false);
 			if (!isDisposed() && isFocusControl()) {
 				text.setFocus();
@@ -756,6 +779,7 @@ public class TableCombo extends Composite {
 			return;
 		}
 
+		table();
 		if (!getShell().equals(popup.getParent())) {
 			// Can happen when a part is detached
 			recreatePopup();
@@ -765,39 +789,39 @@ public class TableCombo extends Composite {
 		final Point tableComboSize = getSize();
 
 		// calculate the table height.
-		int itemCount = table.getItemCount();
+		int itemCount = table().getItemCount();
 		itemCount = itemCount == 0 ? visibleItemCount : Math.min(visibleItemCount, itemCount);
-		int itemHeight = table.getItemHeight() * itemCount;
+		int itemHeight = table().getItemHeight() * itemCount;
 
 		// add 1 to the table height if the table item count is less than the
 		// visible item count.
-		if (table.getItemCount() <= visibleItemCount) {
+		if (table().getItemCount() <= visibleItemCount) {
 			itemHeight += 1;
 		}
 
 		if (itemCount <= visibleItemCount) {
 			// There is a bug on GTK so in this case do not reduce the item height
-			if (table.getHorizontalBar() != null && !table.getHorizontalBar().isVisible() && !IS_GTK) {
-				itemHeight -= table.getHorizontalBar().getSize().y;
+			if (table().getHorizontalBar() != null && !table().getHorizontalBar().isVisible() && !IS_GTK) {
+				itemHeight -= table().getHorizontalBar().getSize().y;
 			}
 		}
 
 		// add height of header if the header is being displayed.
-		if (table.getHeaderVisible()) {
-			itemHeight += table.getHeaderHeight();
+		if (table().getHeaderVisible()) {
+			itemHeight += table().getHeaderHeight();
 		}
 
 		// get table column references
-		TableColumn[] tableColumns = table.getColumns();
+		TableColumn[] tableColumns = table().getColumns();
 		int totalColumns = tableColumns == null ? 0 : tableColumns.length;
 
 		// check to make sure at least one column has been specified. if it
 		// hasn't
 		// then just create a blank one.
-		if (table.getColumnCount() == 0) {
+		if (table().getColumnCount() == 0) {
 			new TableColumn(table, SWT.NONE);
 			totalColumns = 1;
-			tableColumns = table.getColumns();
+			tableColumns = table().getColumns();
 		}
 
 		int totalColumnWidth = 0;
@@ -817,7 +841,7 @@ public class TableCombo extends Composite {
 		}
 
 		// calculate the table size after making adjustments.
-		final Point tableSize = table.computeSize(SWT.DEFAULT, itemHeight, false);
+		final Point tableSize = table().computeSize(SWT.DEFAULT, itemHeight, false);
 
 		// calculate the table width and table height.
 		final double pct = tableWidthPercentage / 100d;
@@ -827,38 +851,38 @@ public class TableCombo extends Composite {
 		// add the width of a horizontal scrollbar to the table height if we are
 		// not viewing the full table.
 		if (tableWidthPercentage < 100) {
-			tableHeight += table.getHorizontalBar().getSize().y;
+			tableHeight += table().getHorizontalBar().getSize().y;
 		}
 
 		// set the bounds on the table.
-		table.setBounds(1, 1, tableWidth, tableHeight);
+		table().setBounds(1, 1, tableWidth, tableHeight);
 
 		// check to see if we can adjust the table width to by the amount the
 		// vertical
 		// scrollbar would have taken since the table auto allocates the space
 		// whether
 		// it is needed or not.
-		if (!table.getVerticalBar().getVisible()
-				&& tableSize.x - table.getVerticalBar().getSize().x >= tableComboSize.x - 2) {
+		if (!table().getVerticalBar().getVisible()
+				&& tableSize.x - table().getVerticalBar().getSize().x >= tableComboSize.x - 2) {
 
-			tableWidth = tableWidth - table.getVerticalBar().getSize().x;
+			tableWidth = tableWidth - table().getVerticalBar().getSize().x;
 
 			// reset the bounds on the table.
-			table.setBounds(1, 1, tableWidth, tableHeight);
+			table().setBounds(1, 1, tableWidth, tableHeight);
 		}
 
 		// adjust the last column to make sure that there is no empty space.
 		autoAdjustColumnWidthsIfNeeded(tableColumns, tableWidth, totalColumnWidth);
 
 		// set the table top index if there is a valid selection.
-		final int index = table.getSelectionIndex();
+		final int index = table().getSelectionIndex();
 		if (index != -1) {
-			table.setTopIndex(index);
+			table().setTopIndex(index);
 		}
 
 		// calculate popup dimensions.
 		final Display display = getDisplay();
-		final Rectangle tableRect = table.getBounds();
+		final Rectangle tableRect = table().getBounds();
 		final Rectangle parentRect = display.map(getParent(), null, getBounds());
 		final Point comboSize = getSize();
 		final Rectangle displayRect = getMonitor().getClientArea();
@@ -886,8 +910,19 @@ public class TableCombo extends Composite {
 		popup.setBounds(x, y, overallWidth, overallHeight);
 
 		// Change color for odd & even lines
-		for (int i = 0; i < table.getItemCount(); i++) {
-			final TableItem item = table.getItem(i);
+		final boolean lineColors = oddLinesForegroundColor != null || oddLinesBackgroundColor != null
+				|| evenLinesForegroundColor != null || evenLinesBackgroundColor != null;
+		if (virtualTable) {
+			table().removeListener(SWT.SetData, lateRowColors);
+			if (lineColors) {
+				table().addListener(SWT.SetData, lateRowColors);
+			}
+		}
+		for (int i = 0, count = lineColors ? table().getItemCount() : 0; i < count; i++) {
+			if (virtualTable && !isMaterialized(i)) {
+				continue;
+			}
+			final TableItem item = table().getItem(i);
 			if (i % 2 == 0) {
 				// Odd lines
 				if (oddLinesForegroundColor != null) {
@@ -912,7 +947,43 @@ public class TableCombo extends Composite {
 
 	}
 
+	private void markMaterialized(final int index) {
+		if (index < 0) {
+			return;
+		}
+		final int word = index >>> 5;
+		if (word >= materializedRows.length) {
+			final int[] grown = new int[Math.max(word + 1, materializedRows.length * 2)];
+			System.arraycopy(materializedRows, 0, grown, 0, materializedRows.length);
+			materializedRows = grown;
+		}
+		materializedRows[word] |= 1 << (index & 31);
+	}
+
+	private boolean isMaterialized(final int index) {
+		final int word = index >>> 5;
+		return word < materializedRows.length && (materializedRows[word] & 1 << (index & 31)) != 0;
+	}
+
+	private void applyLineColors(final int index, final TableItem item) {
+		if (item == null || item.isDisposed()) {
+			return;
+		}
+		final Color fg = index % 2 == 0 ? oddLinesForegroundColor : evenLinesForegroundColor;
+		final Color bg = index % 2 == 0 ? oddLinesBackgroundColor : evenLinesBackgroundColor;
+		if (fg != null) {
+			item.setForeground(fg);
+		}
+		if (bg != null) {
+			item.setBackground(bg);
+		}
+	}
+
 	private void recreatePopup() {
+		if (popup == null) {
+			// not built yet: it is created under the current shell on first use
+			return;
+		}
 		// Create shell and table
 		final Shell tempShell = new Shell(getShell(), SWT.NO_TRIM | SWT.ON_TOP);
 
@@ -922,7 +993,7 @@ public class TableCombo extends Composite {
 			popup.removeListener(popupEvent, listener);
 			tempShell.addListener(popupEvent, listener);
 		}
-		table.setParent(tempShell);
+		table().setParent(tempShell);
 
 		shellsToBeDisposed.add(tempShell);
 		
@@ -1007,7 +1078,7 @@ public class TableCombo extends Composite {
 	 */
 	public int getItemCount() {
 		checkWidget();
-		return table.getItemCount();
+		return table().getItemCount();
 	}
 
 	/**
@@ -1026,7 +1097,7 @@ public class TableCombo extends Composite {
 	 */
 	public int getItemHeight() {
 		checkWidget();
-		return table.getItemHeight();
+		return table().getItemHeight();
 	}
 
 	/**
@@ -1050,10 +1121,7 @@ public class TableCombo extends Composite {
 	public String[] getItems() {
 		checkWidget();
 
-		// get a list of the table items.
-		final TableItem[] tableItems = table.getItems();
-
-		final int totalItems = tableItems == null ? 0 : tableItems.length;
+		final int totalItems = table().getItemCount();
 
 		// create string array to hold the total number of items.
 		final String[] stringItems = new String[totalItems];
@@ -1103,7 +1171,7 @@ public class TableCombo extends Composite {
 	 */
 	public int getSelectionIndex() {
 		checkWidget();
-		return table.getSelectionIndex();
+		return table().getSelectionIndex();
 	}
 
 	/**
@@ -1254,10 +1322,7 @@ public class TableCombo extends Composite {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
-		// get a list of the table items.
-		final TableItem[] tableItems = table.getItems();
-
-		final int totalItems = tableItems == null ? 0 : tableItems.length;
+		final int totalItems = table().getItemCount();
 
 		// now copy the display string from the tableitems.
 		for (int index = 0; index < totalItems; index++) {
@@ -1298,10 +1363,7 @@ public class TableCombo extends Composite {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
-		// get a list of the table items.
-		final TableItem[] tableItems = table.getItems();
-
-		final int totalItems = tableItems == null ? 0 : tableItems.length;
+		final int totalItems = table().getItemCount();
 
 		if (start < totalItems) {
 
@@ -1323,7 +1385,7 @@ public class TableCombo extends Composite {
 	 */
 	public void setShowTableLines(final boolean showTableLines) {
 		checkWidget();
-		table.setLinesVisible(showTableLines);
+		table().setLinesVisible(showTableLines);
 	}
 
 	/**
@@ -1333,7 +1395,7 @@ public class TableCombo extends Composite {
 	 */
 	public void setShowTableHeader(final boolean showTableHeader) {
 		checkWidget();
-		table.setHeaderVisible(showTableHeader);
+		table().setHeaderVisible(showTableHeader);
 	}
 
 	/**
@@ -1375,7 +1437,7 @@ public class TableCombo extends Composite {
 
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		table.getAccessible().addAccessibleListener(accessibleAdapter);
+		table().getAccessible().addAccessibleListener(accessibleAdapter);
 
 		arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			@Override
@@ -1469,6 +1531,9 @@ public class TableCombo extends Composite {
 	 * @return
 	 */
 	private boolean isDropped() {
+		if (popup == null) {
+			return false;
+		}
 		if (!getShell().equals(popup.getParent())) {
 			// Can happen when a part is detached
 			recreatePopup();
@@ -1485,7 +1550,8 @@ public class TableCombo extends Composite {
 		checkWidget();
 		// if (label.isFocusControl () || arrow.isFocusControl () ||
 		// table.isFocusControl () || popup.isFocusControl ()) {
-		if (arrow.isFocusControl() || table.isFocusControl() || popup.isFocusControl()) {
+		if (arrow.isFocusControl() || table != null && table.isFocusControl()
+				|| popup != null && popup.isFocusControl()) {
 			return true;
 		}
 		return super.isFocusControl();
@@ -1573,7 +1639,7 @@ public class TableCombo extends Composite {
 			break;
 		}
 		case SWT.Selection: {
-			final int index = table.getSelectionIndex();
+			final int index = table().getSelectionIndex();
 			if (index == -1) {
 				return;
 			}
@@ -1582,7 +1648,7 @@ public class TableCombo extends Composite {
 			refreshText(index);
 
 			// set the selection in the table.
-			table.setSelection(index);
+			table().setSelection(index);
 
 			final Event e = new Event();
 			e.time = event.time;
@@ -1712,7 +1778,7 @@ public class TableCombo extends Composite {
 		switch (event.type) {
 		case SWT.Paint:
 			// draw rectangle around table
-			final Rectangle tableRect = table.getBounds();
+			final Rectangle tableRect = table().getBounds();
 			event.gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION));
 			event.gc.drawRectangle(0, 0, tableRect.width + 1, tableRect.height + 1);
 			break;
@@ -1766,7 +1832,7 @@ public class TableCombo extends Composite {
 		super.redraw();
 		text.redraw();
 		arrow.redraw();
-		if (popup.isVisible()) {
+		if (popup != null && popup.isVisible()) {
 			table.redraw();
 		}
 	}
@@ -1881,20 +1947,20 @@ public class TableCombo extends Composite {
 
 		// deselect if a value of -1 is passed in.
 		if (index == -1) {
-			table.deselectAll();
+			table().deselectAll();
 			text.setText("");
 			selectedImage.setImage(null);
 			return;
 		}
 
-		if (0 <= index && index < table.getItemCount()) {
+		if (0 <= index && index < table().getItemCount()) {
 			if (index != getSelectionIndex()) {
 
 				// refresh the text field and image label
 				refreshText(index);
 
 				// select the row in the table.
-				table.setSelection(index);
+				table().setSelection(index);
 			}
 		}
 	}
@@ -1913,7 +1979,7 @@ public class TableCombo extends Composite {
 			selectedImage.setBackground(color);
 		}
 		if (table != null) {
-			table.setBackground(color);
+			table().setBackground(color);
 		}
 		if (arrow != null) {
 			arrow.setBackground(color);
@@ -1985,7 +2051,7 @@ public class TableCombo extends Composite {
 		super.setFont(font);
 		this.font = font;
 		text.setFont(font);
-		table.setFont(font);
+		table().setFont(font);
 		internalLayout(true, true);
 	}
 
@@ -2000,7 +2066,7 @@ public class TableCombo extends Composite {
 			text.setForeground(color);
 		}
 		if (table != null) {
-			table.setForeground(color);
+			table().setForeground(color);
 		}
 		if (arrow != null) {
 			arrow.setForeground(color);
@@ -2121,7 +2187,7 @@ public class TableCombo extends Composite {
 		final int index = indexOf(string);
 
 		if (index == -1) {
-			table.deselectAll();
+			table().deselectAll();
 			text.setText(string);
 			return;
 		} else if (!updateTextWithinSelection) {
@@ -2398,7 +2464,7 @@ public class TableCombo extends Composite {
 	 */
 	int getDisplayColumnIndex() {
 		// make sure the requested column index is valid.
-		return displayColumnIndex <= table.getColumnCount() - 1 ? displayColumnIndex : 0;
+		return displayColumnIndex <= table().getColumnCount() - 1 ? displayColumnIndex : 0;
 	}
 
 	/*
@@ -2516,7 +2582,7 @@ public class TableCombo extends Composite {
 	 */
 	public Table getTable() {
 		checkWidget();
-		return table;
+		return table();
 	}
 
 	/**
@@ -2574,13 +2640,13 @@ public class TableCombo extends Composite {
 					break;
 				}
 
-				final int oldIndex = table.getSelectionIndex();
+				final int oldIndex = table().getSelectionIndex();
 				if (event.keyCode == SWT.ARROW_UP) {
 					select(Math.max(oldIndex - 1, 0));
 				} else {
 					select(Math.min(oldIndex + 1, getItemCount() - 1));
 				}
-				if (oldIndex != table.getSelectionIndex()) {
+				if (oldIndex != table().getSelectionIndex()) {
 					final Event e = new Event();
 					e.time = event.time;
 					e.stateMask = event.stateMask;
@@ -2612,7 +2678,7 @@ public class TableCombo extends Composite {
 			break;
 		}
 		case SWT.Modify: {
-			table.deselectAll();
+			table().deselectAll();
 			final Event e = new Event();
 			e.time = event.time;
 			notifyListeners(SWT.Modify, e);
@@ -2699,13 +2765,13 @@ public class TableCombo extends Composite {
 			}
 			if (event.count != 0) {
 				event.doit = false;
-				final int oldIndex = table.getSelectionIndex();
+				final int oldIndex = table().getSelectionIndex();
 				if (event.count > 0) {
 					select(Math.max(oldIndex - 1, 0));
 				} else {
 					select(Math.min(oldIndex + 1, getItemCount() - 1));
 				}
-				if (oldIndex != table.getSelectionIndex()) {
+				if (oldIndex != table().getSelectionIndex()) {
 					final Event e = new Event();
 					e.time = event.time;
 					e.stateMask = event.stateMask;
@@ -2786,8 +2852,8 @@ public class TableCombo extends Composite {
 		final int totalColumns = tableColumns == null ? 0 : tableColumns.length;
 
 		// determine if the vertical scroll bar needs to be taken into account
-		if (table.getVerticalBar().getVisible()) {
-			scrollBarSize = table.getVerticalBar() == null ? 0 : table.getVerticalBar().getSize().x;
+		if (table().getVerticalBar().getVisible()) {
+			scrollBarSize = table().getVerticalBar() == null ? 0 : table().getVerticalBar().getSize().x;
 		}
 
 		// is there any extra space that the table is not using?

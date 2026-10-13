@@ -1,0 +1,12 @@
+widget	laziness_point	created_when	before	evidence
+xviewer	tree rows (SWT.VIRTUAL)	native tree asks (SWT.SetData via JFace lazy protocol)	all root rows at setInput	XViewerViewportContentProvider.updateElement; XViewer#getViewportMaterializedCount
+xviewer	child rows (SWT.VIRTUAL)	on expand, only the rows the native tree shows	all children of an expanded node	JFace lazy updateChildCount + updateElement
+xviewer	sorted/filtered child order (SWT.VIRTUAL)	first request for that parent; dropped on refresh/add/insert/remove	whole tree on every refresh	XViewerViewportContentProvider.children
+xviewer	status bold font	first status update, once per viewer	every status update (leaked)	XViewer#updateStatusLabel
+xviewer	status layout	first status paint after a hidden update	every status update	XViewer#catchUpStatusLayout
+ctree	painted window	binary search from viewport top over laid-out bottoms	scan from row 0	CTree#firstBottomAtLeast
+ctree	grid-line pass	stops at first invisible line	every visible row	CTree#paintGridLines
+tablecombo	drop-down shell and table	first open, first getTable() or first item API use	constructor	TableCombo#table()
+tablecombo	popup rows (SWT.VIRTUAL)	native table asks (SWT.SetData)	all rows	TableCombo#markMaterialized
+tablecombo	odd/even row colours	rows the table asked for; later rows on SetData	all rows at every drop	TableCombo#applyLineColors
+ctreecombo	drop-down shell and tree	first open, first layout (computeSize needs the native tree's preferred width), first column, or first item API that needs a native item	constructor	CTreeCombo#tree()

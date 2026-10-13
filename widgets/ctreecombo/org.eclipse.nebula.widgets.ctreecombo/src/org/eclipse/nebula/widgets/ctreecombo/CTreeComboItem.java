@@ -951,6 +951,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void setExpanded(boolean expand) {
 		checkWidget();
+		parent.tree();
 		if (checkRealItem()) {
 			realTreeItem.setExpanded(expand);
 		}
@@ -969,6 +970,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void setItemCount(int count) {
 		checkWidget();
+		parent.tree();
 		if (checkRealItem()) {
 			realTreeItem.setItemCount(count);
 		}
@@ -999,6 +1001,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void clear(int index, boolean all) {
 		checkWidget();
+		parent.tree();
 		realTreeItem.clear(index, all);
 	}
 
@@ -1022,6 +1025,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void clearAll(boolean all) {
 		checkWidget();
+		parent.tree();
 		realTreeItem.clearAll(all);
 	}
 

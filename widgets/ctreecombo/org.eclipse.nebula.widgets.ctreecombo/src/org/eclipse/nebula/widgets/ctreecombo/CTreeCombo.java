@@ -183,7 +183,7 @@ public class CTreeCombo extends Composite {
 			arrow.addListener(arrowEvents[i], listener);
 		}
 
-		createPopup(null, null);
+		//FLLDCIM: lazy — the drop-down shell and tree are built on first open, first layout or first item API use
 		initAccessible();
 	}
 
@@ -271,12 +271,12 @@ public class CTreeCombo extends Composite {
 	private void adjustShellSize() {
 		final Point size = getSize();
 		final int itemCount = visibleItemCount;
-		final int itemHeight = tree.getItemHeight() * itemCount;
-		final Point listSize = tree.computeSize(SWT.DEFAULT, itemHeight, false);
-		tree.setBounds(1, 1, Math.max(size.x - 2, listSize.x), listSize.y);
+		final int itemHeight = tree().getItemHeight() * itemCount;
+		final Point listSize = tree().computeSize(SWT.DEFAULT, itemHeight, false);
+		tree().setBounds(1, 1, Math.max(size.x - 2, listSize.x), listSize.y);
 
 		final Display display = getDisplay();
-		final Rectangle listRect = tree.getBounds();
+		final Rectangle listRect = tree().getBounds();
 		final Rectangle parentRect = display.map(getParent(), null, getBounds());
 		final Point comboSize = getSize();
 		final Rectangle displayRect = getMonitor().getClientArea();
@@ -357,7 +357,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public void clear(int index, boolean all) {
 		checkWidget();
-		tree.clear(index, all);
+		tree().clear(index, all);
 	}
 
 	/**
@@ -380,7 +380,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public void clearAll(boolean all) {
 		checkWidget();
-		tree.clearAll(all);
+		tree().clearAll(all);
 		text.setFont(text.getFont());
 		text.setText(""); //$NON-NLS-1$
 	}
@@ -389,7 +389,7 @@ public class CTreeCombo extends Composite {
 		switch (event.type) {
 			case SWT.Dispose:
 				if (popup != null && !popup.isDisposed()) {
-					tree.removeListener(SWT.Dispose, listener);
+					tree().removeListener(SWT.Dispose, listener);
 					popup.dispose();
 				}
 				final Shell shell = getShell();
@@ -407,7 +407,7 @@ public class CTreeCombo extends Composite {
 					return;
 				}
 				if (isDropped()) {
-					tree.setFocus();
+					tree().setFocus();
 				} else {
 					text.setFocus();
 				}
@@ -428,7 +428,7 @@ public class CTreeCombo extends Composite {
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
 		int width = 0, height = 0;
-		final TreeItem[] items = tree.getItems();
+		final TreeItem[] items = tree().getItems();
 		final GC gc = new GC(text);
 		final int spacer = gc.stringExtent(" ").x; //$NON-NLS-1$
 		int textWidth = gc.stringExtent(text.getText()).x;
@@ -438,7 +438,7 @@ public class CTreeCombo extends Composite {
 		gc.dispose();
 		final Point textSize = text.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
 		final Point arrowSize = arrow.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
-		final Point listSize = tree.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
+		final Point listSize = tree().computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
 		final int borderWidth = getBorderWidth();
 
 		height = Math.max(textSize.y, arrowSize.y + 5);
@@ -452,7 +452,21 @@ public class CTreeCombo extends Composite {
 		return new Point(width + 2 * borderWidth, height + 2 * borderWidth);
 	}
 
+	/**
+	 * @return the drop-down tree, building the drop-down (unfiltered, as items were added) on first use
+	 */
+	Tree tree() {
+		if (tree == null && text != null && !isDisposed()) {
+			createPopup(items, null, false);
+		}
+		return tree;
+	}
+
 	void createPopup(Collection<CTreeComboItem> items, CTreeComboItem selectedItem) {
+		createPopup(items, selectedItem, true);
+	}
+
+	private void createPopup(Collection<CTreeComboItem> items, CTreeComboItem selectedItem, boolean filter) {
 		// create shell and list
 		popup = new Shell(getShell(), SWT.NO_TRIM | SWT.ON_TOP);
 		final int style = getStyle();
@@ -469,13 +483,13 @@ public class CTreeCombo extends Composite {
 		tree = new Tree(popup, listStyle);
 		tree.addTreeListener(hookListener);
 		if (font != null) {
-			tree.setFont(font);
+			tree().setFont(font);
 		}
 		if (foreground != null) {
-			tree.setForeground(foreground);
+			tree().setForeground(foreground);
 		}
 		if (background != null) {
-			tree.setBackground(background);
+			tree().setBackground(background);
 		}
 
 		final int[] popupEvents = { SWT.Close, SWT.Paint, SWT.Deactivate };
@@ -484,7 +498,7 @@ public class CTreeCombo extends Composite {
 		}
 		final int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.Dispose, SWT.Collapse, SWT.Expand };
 		for (int i = 0; i < listEvents.length; i++) {
-			tree.addListener(listEvents[i], listener);
+			tree().addListener(listEvents[i], listener);
 		}
 
 		for (final CTreeComboColumn c : columns) {
@@ -493,23 +507,23 @@ public class CTreeCombo extends Composite {
 		}
 
 		if (items != null) {
-			createTreeItems(items.toArray(new CTreeComboItem[0]));
+			createTreeItems(items.toArray(new CTreeComboItem[0]), filter);
 		}
 
 		if (selectedItem != null) {
-			tree.setSelection(selectedItem.getRealTreeItem());
+			tree().setSelection(selectedItem.getRealTreeItem());
 		}
 	}
 
-	private void createTreeItems(CTreeComboItem[] items) {
-		boolean isReadOnly = (getStyle() & SWT.READ_ONLY) != 0;
+	private void createTreeItems(CTreeComboItem[] items, boolean filter) {
+		boolean isReadOnly = !filter || (getStyle() & SWT.READ_ONLY) != 0;
 
 		for (final CTreeComboItem item : items) {
 			if (!isReadOnly && !match(item) && item.getItemCount() == 0) {
 				continue;
 			}
 			item.buildRealTreeItem(tree, columns.size());
-			createTreeItems(item.getItems());
+			createTreeItems(item.getItems(), filter);
 			if (!isReadOnly && !match(item) && item.getRealTreeItem().getItemCount() == 0) {
 				item.getRealTreeItem().dispose();
 			}
@@ -537,7 +551,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public void deselectAll() {
 		checkWidget();
-		tree.deselectAll();
+		tree().deselectAll();
 	}
 
 	void dropDown(boolean drop) {
@@ -545,6 +559,9 @@ public class CTreeCombo extends Composite {
 			return;
 		}
 		if (!drop) {
+			if (popup == null) {
+				return;
+			}
 			popup.setVisible(false);
 			if (!isDisposed() && isFocusControl()) {
 				text.setFocus();
@@ -553,30 +570,31 @@ public class CTreeCombo extends Composite {
 		}
 
 		CTreeComboItem selectionIndex = null;
+		tree();
 		if (getShell() != popup.getParent()) {
-			final TreeItem[] s = tree.getSelection();
+			final TreeItem[] s = tree().getSelection();
 			if (s.length > 0) {
 				selectionIndex = (CTreeComboItem) s[0].getData(CTreeComboItem.DATA_ID);
 			}
 		}
 
 		// Rebuild the popup and filter data if the widget is not read-only (based on what is typed)
-		tree.removeListener(SWT.Dispose, listener);
+		tree().removeListener(SWT.Dispose, listener);
 		popup.dispose();
 		popup = null;
 		tree = null;
 		createPopup(items, selectionIndex);
 
-		final TreeItem[] items = tree.getSelection();
+		final TreeItem[] items = tree().getSelection();
 		if (items.length != 0) {
-			tree.showItem(items[0]);
+			tree().showItem(items[0]);
 		}
 
 		adjustShellSize();
 		popup.setVisible(true);
 		popup.setActive();
 		if (isFocusControl()) {
-			tree.setFocus();
+			tree().setFocus();
 		}
 	}
 
@@ -640,7 +658,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public int getColumnCount() {
 		checkWidget();
-		return tree.getColumnCount();
+		return tree().getColumnCount();
 	}
 
 	/**
@@ -669,7 +687,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public int[] getColumnOrder() {
 		checkWidget();
-		return tree.getColumnOrder();
+		return tree().getColumnOrder();
 	}
 
 	/**
@@ -737,7 +755,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public CTreeComboItem getItem(Point p) {
 		checkWidget();
-		final TreeItem item = tree.getItem(p);
+		final TreeItem item = tree().getItem(p);
 
 		if (item != null) {
 			item.getData(CTreeComboItem.DATA_ID);
@@ -761,7 +779,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public int getItemCount() {
 		checkWidget();
-		return tree.getItemCount();
+		return tree().getItemCount();
 	}
 
 	/**
@@ -809,7 +827,7 @@ public class CTreeCombo extends Composite {
 	public CTreeComboItem[] getSelection() {
 		checkWidget();
 
-		final TreeItem[] items = tree.getSelection();
+		final TreeItem[] items = tree().getSelection();
 		if (items.length > 0) {
 			return new CTreeComboItem[] { (CTreeComboItem) items[0].getData(CTreeComboItem.DATA_ID) };
 		}
@@ -898,7 +916,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public int indexOf(CTreeComboItem item) {
 		checkWidget();
-		return tree.indexOf(item.getRealTreeItem());
+		return tree().indexOf(item.getRealTreeItem());
 	}
 
 	void initAccessible() {
@@ -936,7 +954,7 @@ public class CTreeCombo extends Composite {
 		};
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		tree.getAccessible().addAccessibleListener(accessibleAdapter);
+		tree().getAccessible().addAccessibleListener(accessibleAdapter);
 
 		arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			@Override
@@ -1046,14 +1064,14 @@ public class CTreeCombo extends Composite {
 	}
 
 	boolean isDropped() {
-		return popup.getVisible();
+		return popup != null && popup.getVisible();
 	}
 
 	void popupEvent(Event event) {
 		switch (event.type) {
 			case SWT.Paint:
 				// draw black rectangle around list
-				final Rectangle listRect = tree.getBounds();
+				final Rectangle listRect = tree().getBounds();
 				final Color black = getDisplay().getSystemColor(SWT.COLOR_BLACK);
 				event.gc.setForeground(black);
 				event.gc.drawRectangle(0, 0, listRect.width + 1, listRect.height + 1);
@@ -1088,7 +1106,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public void removeAll() {
 		checkWidget();
-		tree.removeAll();
+		tree().removeAll();
 		items.clear();
 		text.setFont(text.getFont());
 		text.setText(""); //$NON-NLS-1$
@@ -1165,7 +1183,7 @@ public class CTreeCombo extends Composite {
 	public void select(CTreeComboItem item) {
 		checkWidget();
 		if (item == null) {
-			tree.deselectAll();
+			tree().deselectAll();
 			text.setFont(text.getFont());
 			text.setText(""); //$NON-NLS-1$
 			return;
@@ -1176,8 +1194,8 @@ public class CTreeCombo extends Composite {
 				text.setFont(text.getFont());
 				text.setText(item.getText());
 				text.selectAll();
-				tree.select(item.getRealTreeItem());
-				tree.showSelection();
+				tree().select(item.getRealTreeItem());
+				tree().showSelection();
 			}
 		}
 	}
@@ -1196,7 +1214,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public void setItemCount(int count) {
 		checkWidget();
-		tree.setItemCount(count);
+		tree().setItemCount(count);
 	}
 
 	/**
@@ -1236,7 +1254,7 @@ public class CTreeCombo extends Composite {
 			text.setFont(text.getFont());
 			text.setText(items[0].getText());
 		}
-		tree.setSelection(items);
+		tree().setSelection(items);
 	}
 
 	/**
@@ -1261,7 +1279,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public void showItem(CTreeComboItem item) {
 		checkWidget();
-		tree.showItem(item.getRealTreeItem());
+		tree().showItem(item.getRealTreeItem());
 	}
 
 	String stripMnemonic(String string) {
@@ -1313,7 +1331,7 @@ public class CTreeCombo extends Composite {
 				break;
 			}
 			case SWT.Modify: {
-				tree.deselectAll();
+				tree().deselectAll();
 				final Event e = new Event();
 				e.time = event.time;
 				notifyListeners(SWT.Modify, e);
@@ -1440,7 +1458,7 @@ public class CTreeCombo extends Composite {
 				break;
 			}
 			case SWT.Selection: {
-				final TreeItem[] items = tree.getSelection();
+				final TreeItem[] items = tree().getSelection();
 				if (items.length != 1) {
 					return;
 				}
@@ -1452,7 +1470,7 @@ public class CTreeCombo extends Composite {
 				text.setFont(text.getFont());
 				text.setText(items[0].getText());
 				text.selectAll();
-				tree.setSelection(items);
+				tree().setSelection(items);
 				final Event e = new Event();
 				e.time = event.time;
 				e.stateMask = event.stateMask;

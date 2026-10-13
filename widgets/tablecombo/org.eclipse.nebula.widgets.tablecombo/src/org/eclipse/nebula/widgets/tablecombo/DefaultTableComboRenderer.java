@@ -24,7 +24,6 @@ import org.eclipse.swt.widgets.TableItem;
  */
 public class DefaultTableComboRenderer implements TableComboRenderer {
 
-	private Table table;
 	private TableCombo tableCombo;
 
 	/**
@@ -32,7 +31,6 @@ public class DefaultTableComboRenderer implements TableComboRenderer {
 	 */
 	public DefaultTableComboRenderer(TableCombo tableCombo) {
 		this.tableCombo = tableCombo;
-		this.table = tableCombo.getTable();
 	}
 
 	/**
@@ -40,7 +38,7 @@ public class DefaultTableComboRenderer implements TableComboRenderer {
 	 */
 	@Override
 	public String getLabel(int selectionIndex) {
-		final TableItem tableItem = table.getItem(selectionIndex);
+		final TableItem tableItem = tableCombo.getTable().getItem(selectionIndex);
 		return tableItem.getText(tableCombo.getDisplayColumnIndex());
 	}
 
@@ -49,7 +47,7 @@ public class DefaultTableComboRenderer implements TableComboRenderer {
 	 */
 	@Override
 	public Image getImage(int selectionIndex) {
-		final TableItem tableItem = table.getItem(selectionIndex);
+		final TableItem tableItem = tableCombo.getTable().getItem(selectionIndex);
 		return tableItem.getImage(tableCombo.getDisplayColumnIndex());
 	}
 
@@ -58,7 +56,7 @@ public class DefaultTableComboRenderer implements TableComboRenderer {
 	 */
 	@Override
 	public Color getBackground(int selectionIndex) {
-		final TableItem tableItem = table.getItem(selectionIndex);
+		final TableItem tableItem = tableCombo.getTable().getItem(selectionIndex);
 		return tableItem.getBackground(tableCombo.getDisplayColumnIndex());
 
 	}
@@ -68,7 +66,7 @@ public class DefaultTableComboRenderer implements TableComboRenderer {
 	 */
 	@Override
 	public Color getForeground(int selectionIndex) {
-		final TableItem tableItem = table.getItem(selectionIndex);
+		final TableItem tableItem = tableCombo.getTable().getItem(selectionIndex);
 		return tableItem.getForeground(tableCombo.getDisplayColumnIndex());
 	}
 
@@ -77,7 +75,7 @@ public class DefaultTableComboRenderer implements TableComboRenderer {
 	 */
 	@Override
 	public Font getFont(int selectionIndex) {
-		final TableItem tableItem = table.getItem(selectionIndex);
+		final TableItem tableItem = tableCombo.getTable().getItem(selectionIndex);
 		return tableItem.getFont(tableCombo.getDisplayColumnIndex());
 
 	}
