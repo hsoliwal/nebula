@@ -31,7 +31,7 @@ final class NebulaM3SecondPassBindingTest {
                 NebulaM3SecondPassBinding.CANONICAL_CATALOG);
         assertEquals("SHARED_JVM_COMPOSITE", NebulaM3SecondPassBinding.STATE_MODE);
         assertFalse(NebulaM3SecondPassBinding.EXTERNAL_LEAF_FAN_OUT);
-        assertEquals("PENDING_CURRENT_NEBULA_REPROOF_20261007", NebulaM3SecondPassBinding.HOSTED_PROOF);
+        assertEquals("REQUESTED_CURRENT_NEBULA_REPROOF_20261013", NebulaM3SecondPassBinding.HOSTED_PROOF);
         assertFalse(NebulaM3SecondPassBinding.sourceMutationAuthority());
         assertFalse(NebulaM3SecondPassBinding.replacementAuthority());
         assertFalse(NebulaM3SecondPassBinding.promotionAuthority());
