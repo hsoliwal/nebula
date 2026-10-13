@@ -23,3 +23,4 @@ org.eclipse.nebula.widgets.oscilloscope.multichannel.OscilloscopeDispatcher	Osci
 org.eclipse.nebula.widgets.oscilloscope.multichannel.OscilloscopeDispatcher#isParked	new: accessor of the hidden-park state
 org.eclipse.nebula.widgets.oscilloscope.OscilloscopeDispatcher	deprecated single-channel dispatcher: same park rule; not separately measured
 org.eclipse.nebula.widgets.oscilloscope.multichannel.EnvelopeRing	new package-private type: OscilloscopeEnvelopeTest
+org.eclipse.nebula.visualization.xygraph.figures.TraceDecimationPainter	package-private type (not API); exercised by TraceDecimationDifferentialTest
