@@ -29,7 +29,6 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
@@ -64,8 +63,8 @@ public final class XViewerFixture implements TtFixture {
 	private XViewerColumn nameCol;
 
 	@Override
-	public void build(Shell shell) {
-		Composite parent = new Composite(shell, SWT.NONE);
+	public void build(Composite stage) {
+		Composite parent = new Composite(stage, SWT.NONE);
 		parent.setLayout(new GridLayout(1, false));
 		nameCol = new XViewerColumn("tt.name", "Name", 120, XViewerAlign.Left, true, SortDataType.String, false, null);
 		XViewerColumn valueCol = new XViewerColumn("tt.value", "Value", 80, XViewerAlign.Left, true,

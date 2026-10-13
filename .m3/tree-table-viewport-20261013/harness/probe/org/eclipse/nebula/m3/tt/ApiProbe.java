@@ -41,6 +41,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
@@ -70,6 +71,13 @@ public final class ApiProbe {
 			}
 		}
 		Display display = host.getDisplay();
+		host.setLayout(new FillLayout());
+		host.setBounds(40, 40, 480, 360);
+		if (visible) {
+			host.open();
+		} else {
+			host.setVisible(false);
+		}
 		Runnable closer = new ModalCloser(display, host);
 		display.timerExec(150, closer);
 		List<String[]> out = new ArrayList<>();
@@ -147,23 +155,21 @@ public final class ApiProbe {
 	private static String[] invokeRow(Shell host, String fixtureClass, String[] row, Class<?> type, String kind,
 			boolean visible) {
 		Display display = host.getDisplay();
-		Shell shell = new Shell(display, SWT.SHELL_TRIM);
-		shell.setLayout(new FillLayout());
-		shell.setBounds(40, 40, 480, 360);
+		// one host shell for all rows; each row's fixture lives in a fresh child composite
+		Shell shell = new Shell(display);
+		Composite stage = new Composite(host, SWT.NONE);
+		stage.setLayout(new FillLayout());
 		Image image = new Image(display, 8, 8);
 		List<GC> gcs = new ArrayList<>();
 		TtFixture fx;
 		try {
 			fx = (TtFixture) Class.forName(fixtureClass, true, ApiProbe.class.getClassLoader())
 					.getDeclaredConstructor().newInstance();
-			fx.build(shell);
-			if (visible) {
-				shell.open();
-			} else {
-				shell.layout(true, true);
-			}
+			fx.build(stage);
+			host.layout(true, true);
 			pump(display);
 		} catch (Throwable ex) {
+			stage.dispose();
 			shell.dispose();
 			image.dispose();
 			return new String[] { row[0], "FIXTURE_FAILED:" + describe(ex), "" };
@@ -195,6 +201,9 @@ public final class ApiProbe {
 				if (s != host && !s.isDisposed()) {
 					s.dispose();
 				}
+			}
+			if (!stage.isDisposed()) {
+				stage.dispose();
 			}
 			image.dispose();
 			pump(display);

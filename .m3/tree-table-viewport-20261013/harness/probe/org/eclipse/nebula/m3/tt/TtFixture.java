@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.eclipse.nebula.m3.tt;
 
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Composite;
 
 /**
  * Deterministic widget fixture for the pre/post differential API probe. One
@@ -19,8 +19,8 @@ import org.eclipse.swt.widgets.Shell;
  */
 public interface TtFixture {
 
-	/** Builds the widget and its sample content inside {@code shell}. */
-	void build(Shell shell);
+	/** Builds the widget and its sample content inside {@code parent} (FillLayout). */
+	void build(Composite parent);
 
 	/** Returns a sample instance usable as receiver or argument of {@code type}, or null. */
 	Object instanceOf(Class<?> type);
