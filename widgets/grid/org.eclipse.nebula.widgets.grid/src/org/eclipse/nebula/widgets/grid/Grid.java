@@ -159,6 +159,7 @@ public class Grid extends Canvas {
 	public void clearItems() {
 		items.clear();
 		rootItems.clear();
+		clearDataRows();
 		deselectAll();
 		redraw();
 	}
@@ -805,7 +806,7 @@ public class Grid extends Canvas {
 	 * @param style  grid style
 	 */
 	public Grid(final Composite parent, final int style) {
-		this(new GridItemDataVisualizer(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE),
+		this(new GridRowAddressedItemDataVisualizer(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE),
 				Display.getCurrent().getSystemColor(SWT.COLOR_BLACK), null), parent, style);
 	}
 
@@ -3181,6 +3182,7 @@ public class Grid extends Canvas {
 				item.dispose();
 			} else {
 				sparse.remove(index);
+				removeDataRow(index);
 				currentVisibleItems--;
 				scrollValuesObsolete = true;
 				topIndex = -1;
@@ -6774,6 +6776,7 @@ public class Grid extends Canvas {
 		for (final GridItem item : materializedItems()) {
 			item.dispose();
 		}
+		clearDataRows();
 
 		for (final GridColumnGroup columnGroup : columnGroups) {
 			columnGroup.dispose();
@@ -8233,6 +8236,36 @@ public class Grid extends Canvas {
 		return (GridVirtualItemList) items;
 	}
 
+	private GridRowAddressedDataVisualizer rowAddressedDataVisualizer() {
+		return dataVisualizer instanceof GridRowAddressedDataVisualizer
+				? (GridRowAddressedDataVisualizer)dataVisualizer
+				: null;
+	}
+
+	boolean usesRowAddressedDataVisualizer() {
+		return rowAddressedDataVisualizer() != null;
+	}
+
+	private void insertDataRow(final int index) {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.insertRow(this, index);
+	}
+
+	private void removeDataRow(final int index) {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.removeRow(this, index);
+	}
+
+	private void truncateDataRows(final int count) {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.truncateRows(this, count);
+	}
+
+	private void clearDataRows() {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.clearRows(this);
+	}
+
 	GridItem materializeVirtualItem(final int index) {
 		return new GridItem(this, SWT.NONE, index, true);
 	}
@@ -8272,6 +8305,7 @@ public class Grid extends Canvas {
 			item.disposeOnly();
 		}
 		sparse.clear();
+		clearDataRows();
 		rootItems.clear();
 		selectedItems.clear();
 		selectedCells.clear();
@@ -8360,9 +8394,11 @@ public class Grid extends Canvas {
 		if (index == -1) {
 			items.add(item);
 			row = items.size() - 1;
+			insertDataRow(row);
 		} else {
 			items.add(index, item);
 			row = index;
+			insertDataRow(row);
 			if (!(items instanceof GridVirtualItemList)) {
 				for (int i = index + 1; i < items.size(); i++) {
 					items.get(i).increaseRow();
@@ -8413,7 +8449,11 @@ public class Grid extends Canvas {
 
 		items.remove(item);
 
-		dataVisualizer.clearRow(item);
+		if (usesRowAddressedDataVisualizer()) {
+			removeDataRow(index);
+		} else {
+			dataVisualizer.clearRow(item);
+		}
 
 		if (disposing) {
 			return;
@@ -9804,6 +9844,7 @@ public class Grid extends Canvas {
 				final GridVirtualItemList sparse = sparseVirtualItems();
 				final int oldCount = sparse.size();
 				final List<GridItem> removed = sparse.setLogicalSize(logicalCount);
+				truncateDataRows(logicalCount);
 				for (final GridItem removedItem : removed) {
 					selectedItems.remove(removedItem);
 					if (focusItem == removedItem) {
