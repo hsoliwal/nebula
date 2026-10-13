@@ -610,7 +610,9 @@ public class GridItem extends Item {
 		/* height */
 		int indexOfCurrentItem = parent.getIndexOfItem(this);
 
-		GridItem item = parent.getItem(indexOfCurrentItem);
+		// The item at its own row is the receiver; reading it from the parent failed with
+		// "Index out of bounds" while the receiver was being removed (issue #700).
+		GridItem item = this;
 		int height = item.getHeight();
 		span = getRowSpan(columnIndex);
 
