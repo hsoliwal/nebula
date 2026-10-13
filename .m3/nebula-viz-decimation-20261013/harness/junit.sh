@@ -8,5 +8,5 @@ find $src -name '*.java' | while read f; do cygpath -m "$f"; done > $B/$tag/test
 sh $B/scripts/memwait.sh || { echo LOWMEM; exit 3; }
 "$J/javac" -J-Xmx512m -nowarn -encoding UTF-8 --release 21 -proc:none -cp "$CP;$(cygpath -w $B/$tag/classes)" -d "$(cygpath -w $TD)" @"$(cygpath -w $B/$tag/test-$name.lst)" > $B/$tag/test-$name-javac.log 2>&1 || { echo "test javac failed"; grep -A2 ': error:' $B/$tag/test-$name-javac.log | head -30; exit 2; }
 sh $B/scripts/memwait.sh || { echo LOWMEM; exit 3; }
-timeout 1200 "$J/java" -Xmx2g $props -cp "$(cygpath -w $TD);$(cygpath -w $B/$tag/classes);$CP" org.junit.runner.JUnitCore "$@"
+cd /c/m3-work-c/viz-logs && timeout 1200 "$J/java" -Xmx2g -XX:ErrorFile=C:/m3-work-c/viz-logs/hs_err_%p.log $props -cp "$(cygpath -w $TD);$(cygpath -w $B/$tag/classes);$CP" org.junit.runner.JUnitCore "$@"
 echo "junit rc=$?"

@@ -192,7 +192,9 @@ public class XYGraphBench {
 		stats("zoom_alloc_bytes_per_frame", allocZoom);
 		stats("same_view_alloc_bytes_per_frame", allocSame);
 		out("heap_used_end_mb", fmt(usedHeapAfterGc() / 1048576.0));
-		out("hot_samples", trace.getHotSampleList().size());
+		if (n <= 2_000_000) { // the hot list materializes one Sample per visible point when asked
+			out("hot_samples", trace.getHotSampleList().size());
+		}
 		shell.dispose();
 		display.dispose();
 	}

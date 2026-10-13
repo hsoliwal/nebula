@@ -175,6 +175,19 @@ public class OscilloscopeDispatcher {
 
 	private boolean isRunning;
 
+	/**
+	 * When true (the default), the animation loop does not run while the scope is not effectively visible (hidden,
+	 * hidden ancestor, minimized shell): it parks and the first paint after the scope becomes visible resumes it, so
+	 * no timer, hook or redraw runs for a scope nobody sees. {@code -Dorg.eclipse.nebula.widgets.oscilloscope.hiddenWork=run}
+	 * restores the old behaviour (the loop keeps running while hidden).
+	 */
+	static final boolean PARK_WHEN_HIDDEN = !"run".equals(System.getProperty( //$NON-NLS-1$
+			"org.eclipse.nebula.widgets.oscilloscope.hiddenWork")); //$NON-NLS-1$
+
+	/** The loop runnable while parked (scope not visible), else null. */
+	private volatile Runnable parkedLoop;
+	private org.eclipse.swt.widgets.Listener resumeOnPaint;
+
 	private Color activeForegroundColor = Display.getDefault().getSystemColor(SWT.COLOR_GREEN);
 	private Color inactiveForegroundColor = Display.getDefault().getSystemColor(SWT.COLOR_RED);
 	
@@ -252,6 +265,10 @@ public class OscilloscopeDispatcher {
                 if (getOscilloscope().isDisposed()) {
                     return;
                 }
+				if (PARK_WHEN_HIDDEN && !stop && !effectivelyVisible(getOscilloscope())) {
+					park(this);
+					return;
+				}
 
 				hookBeforeDraw(getOscilloscope(), this.pulse);
 				getOscilloscope().redraw();
@@ -383,6 +400,11 @@ public class OscilloscopeDispatcher {
 	 */
 	public void stop() {
 		stop = true;
+		if (parkedLoop != null) {
+			// a parked loop never reaches its stop check: finish it here (the resume listener then finds nothing)
+			parkedLoop = null;
+			isRunning = false;
+		}
 	}
 
 	/**
@@ -747,6 +769,37 @@ public class OscilloscopeDispatcher {
 	 */
 	public boolean mustConnect() {
 		return false;
+	}
+
+	/** True if the scope can be seen: visible with all ancestors and its shell not minimized. */
+	static boolean effectivelyVisible(org.eclipse.swt.widgets.Control scope) {
+		return scope.isVisible() && !scope.getShell().getMinimized();
+	}
+
+	/** Parks the loop until the next paint of the (now visible) scope. UI thread only. */
+	private void park(Runnable loop) {
+		Oscilloscope s = getOscilloscope();
+		parkedLoop = loop;
+		if (resumeOnPaint == null) {
+			resumeOnPaint = e -> resume();
+		}
+		s.removeListener(SWT.Paint, resumeOnPaint);
+		s.addListener(SWT.Paint, resumeOnPaint);
+	}
+
+	private void resume() {
+		Oscilloscope s = getOscilloscope();
+		Runnable loop = parkedLoop;
+		parkedLoop = null;
+		s.removeListener(SWT.Paint, resumeOnPaint);
+		if (loop != null && !s.isDisposed()) {
+			s.getDisplay().asyncExec(loop);
+		}
+	}
+
+	/** @return true while the loop is parked because the scope is not visible */
+	public boolean isParked() {
+		return parkedLoop != null;
 	}
 
 	void updateBackgroundImage() {

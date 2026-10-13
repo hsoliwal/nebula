@@ -1,0 +1,25 @@
+# type<TAB>evidence for existing members of changed types and for new types/members
+org.eclipse.nebula.visualization.xygraph.figures.Trace	TraceDecimationDifferentialTest (384 random + 40 log-axis views + 20 append steps: drawPolyline vertex arrays and getHotSampleList identical, loop vs decimated; 24 Control.print pixel comparisons identical); XYGraphBench Control.print SHA-256 identical base vs after at 1M and 10M (full, pan, zoom); xygraph.test 15/15 before and after
+org.eclipse.nebula.visualization.xygraph.figures.Trace#setDecimationEnabled	new: toggles the decimated paint; exercised by TraceDecimationDifferentialTest (both settings give identical output)
+org.eclipse.nebula.visualization.xygraph.figures.Trace#isDecimationEnabled	new: accessor of the toggle
+org.eclipse.nebula.visualization.xygraph.dataprovider.PackedXYDataProvider	new type: DecimationCoreTest.packedRangesMatchSampleProvider (ranges equal CircularBufferDataProvider bit for bit, 50 random sets x positiveOnly); TraceDecimationDifferentialTest (setData, append); XYGraphBench 1M/10M
+org.eclipse.nebula.visualization.internal.xygraph.decimation.AxisMapping	new internal type: TraceDecimationDifferentialTest (mapping drives identical vertices), fail-closed probe check against Axis.getValuePosition
+org.eclipse.nebula.visualization.internal.xygraph.decimation.PackedMinMaxPyramid	new internal type: DecimationCoreTest (range min/max, first/last diff, extend == build)
+org.eclipse.nebula.visualization.internal.xygraph.decimation.PolylineBuilder	new internal type: DecimationCoreTest.builderMatchesNoRepeatsPointsList (200 x 3000 random adds)
+org.eclipse.nebula.visualization.internal.xygraph.decimation.TraceDecimation	new internal type: TraceDecimationDifferentialTest
+org.eclipse.nebula.visualization.internal.xygraph.decimation.TraceDecimator	new internal type: TraceDecimationDifferentialTest, XYGraphBench
+org.eclipse.nebula.visualization.internal.xygraph.decimation.TraceView	new internal type: TraceDecimationDifferentialTest
+org.eclipse.nebula.visualization.internal.xygraph.decimation.DecimatedTrace	new internal type: TraceDecimationDifferentialTest
+org.eclipse.nebula.visualization.internal.xygraph.decimation.PackedColumns	new internal type: TraceDecimationDifferentialTest
+org.eclipse.nebula.visualization.widgets.datadefinition.ColorMap	IntensityBench: 48 drawImage outputs (all predefined maps, autoscale/interpolate, shrink/non-shrink, double and int wrappers) SHA-256 identical base vs after; 4096x4096 LUT to 1200x900 and to 4096x4096 identical
+org.eclipse.nebula.visualization.widgets.figures.IntensityGraphFigure	IntensityBench: Control.print SHA-256 identical base vs after at crop 0, mid, end (3162x3162 data); widgets.tests before/after
+org.eclipse.nebula.visualization.internal.widgets.raster.ColorMapRaster	new internal type: IntensityBench byte parity
+org.eclipse.nebula.visualization.internal.widgets.raster.WindowArrayWrapper	new internal type: IntensityBench crop print parity
+org.eclipse.nebula.widgets.oscilloscope.multichannel.Oscilloscope	OscilloscopeBench parity (8 configs x 120 frames, setValue/setValues, steady/fade/connect/percentage/progression/tail size/antialias/line width); oscilloscope.tests before/after
+org.eclipse.nebula.widgets.oscilloscope.multichannel.Oscilloscope#setSamplesPerColumn	new: OscilloscopeEnvelopeTest, OscilloscopeBench stream
+org.eclipse.nebula.widgets.oscilloscope.multichannel.Oscilloscope#getSamplesPerColumn	new: accessor
+org.eclipse.nebula.widgets.oscilloscope.multichannel.Oscilloscope#pushSamples	new: OscilloscopeEnvelopeTest (drawn columns equal folds; four-vertex column pixel-equal to all samples, aliased width 1), OscilloscopeBench stream 1M samples/s
+org.eclipse.nebula.widgets.oscilloscope.multichannel.OscilloscopeDispatcher	OscilloscopeBench hidden (hooks while minimized / setVisible(false)); behaviour while visible unchanged (parity run uses no dispatcher; stream run drives it)
+org.eclipse.nebula.widgets.oscilloscope.multichannel.OscilloscopeDispatcher#isParked	new: accessor of the hidden-park state
+org.eclipse.nebula.widgets.oscilloscope.OscilloscopeDispatcher	deprecated single-channel dispatcher: same park rule; not separately measured
+org.eclipse.nebula.widgets.oscilloscope.multichannel.EnvelopeRing	new package-private type: OscilloscopeEnvelopeTest

@@ -6,5 +6,5 @@ HD=$B/$tag/harness; mkdir -p $HD
 sh $B/scripts/memwait.sh || { echo LOWMEM; exit 3; }
 "$J/javac" -J-Xmx512m -nowarn -encoding UTF-8 --release 21 -proc:none -cp "$CP;$(cygpath -w $B/$tag/classes)" -d "$(cygpath -w $HD)" "$(cygpath -w $hs/$main.java)" || exit 2
 sh $B/scripts/memwait.sh || { echo LOWMEM; exit 3; }
-timeout 1800 "$J/java" -Xmx$xmx $props -cp "$(cygpath -w $HD);$(cygpath -w $B/$tag/classes);$CP" $main "$@"
+cd /c/m3-work-c/viz-logs && timeout 1800 "$J/java" -Xmx$xmx -XX:ErrorFile=C:/m3-work-c/viz-logs/hs_err_%p.log $props -cp "$(cygpath -w $HD);$(cygpath -w $B/$tag/classes);$CP" $main "$@"
 echo "bench rc=$?"

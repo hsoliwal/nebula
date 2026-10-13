@@ -89,7 +89,25 @@ public class Oscilloscope extends Canvas {
 		private int width = DEFAULT_WIDTH;
 		private boolean antiAlias = false;
 
+		/** Frame lines, reused while their length does not change (steady scopes allocate nothing per frame). */
+		private int[] l1 = NO_POINTS;
+		private int[] l2 = NO_POINTS;
+		/** Envelope mode (see {@link Oscilloscope#setSamplesPerColumn(int, int)}); 0 = off. */
+		private int samplesPerColumn;
+		/** Guards stack + env together in envelope mode. */
+		private final Object envLock = new Object();
+		/** first/min/max of each queued column, in lock step with {@link #stack} (null when off). */
+		private EnvelopeRing env;
+		/** first/min/max per tail entry, three ints per entry, in lock step with {@link #tail}. */
+		private int[] tailEnv;
+		private int accFirst;
+		private int accMin;
+		private int accMax;
+		private int accCount;
+
 	}
+
+	private static final int[] NO_POINTS = new int[0];
 
 	/**
 	 * The stack can hold a limited number of values but will never overflow.
@@ -444,68 +462,142 @@ public class Oscilloscope extends Canvas {
 	 *
 	 * @return
 	 */
-	private Object[] calculate(int channel) {
-
-		int c = channel;
-
-		int[] line1 = null;
-		int[] line2 = null;
-		int splitPos = 0;
-
-		for (int progress = 0; progress < getProgression(c); progress++) {
-
-			if (chan[c].stack.isEmpty() && chan[c].stackListeners != null) {
-				notifyListeners(c);
+	private void calculate(int channel) {
+		Data ch = chan[channel];
+		int progression = getProgression(channel);
+		for (int progress = 0; progress < progression; progress++) {
+			if (ch.stack.isEmpty() && ch.stackListeners != null) {
+				notifyListeners(channel);
 			}
-
-			splitPos = chan[c].tailSize * 4;
-
-			if (!isSteady(c)) {
-				chan[c].cursor++;
+			if (!isSteady(channel)) {
+				ch.cursor++;
 			}
-			if (chan[c].cursor >= chan[c].width) {
-				chan[c].cursor = 0;
+			if (ch.cursor >= ch.width) {
+				ch.cursor = 0;
 			}
-
-			// Draw
-			int tailIndex = 1;
-			line1 = new int[chan[c].tailSize * 4];
-			line2 = new int[chan[c].tailSize * 4];
-
-			chan[c].tail[chan[c].tailSize] = transform(c, chan[c].width, chan[c].height, chan[c].stack.popNegate(0));
-
-			for (int i = 0; i < chan[c].tailSize; i++) {
-
-				int posx = chan[c].cursor - chan[c].tailSize + i;
-				int pos = i * 4;
-				if (posx < 0) {
-					posx += chan[c].width;
-					line1[pos] = posx - 1;
-
-					line1[pos + 1] = getBase(c) + (isSteady(c) ? 0 : chan[c].tail[tailIndex - 1]);
-					line1[pos + 2] = posx;
-					line1[pos + 3] = getBase(c) + (isSteady(c) ? 0 : chan[c].tail[tailIndex]);
-				}
-
-				else {
-					if (splitPos == chan[c].tailSize * 4) {
-						splitPos = pos;
-					}
-					line2[pos] = posx - 1;
-					line2[pos + 1] = getBase(c) + chan[c].tail[tailIndex - 1];
-					line2[pos + 2] = posx;
-					line2[pos + 3] = (getBase(c) + chan[c].tail[tailIndex]);
-				}
-				chan[c].tail[tailIndex - 1] = chan[c].tail[tailIndex++];
+			popIntoTail(channel, ch);
+			// only the last step's lines are drawn; earlier steps only advance the tail
+			if (progress == progression - 1) {
+				buildLines(channel, ch);
+			}
+			System.arraycopy(ch.tail, 1, ch.tail, 0, ch.tailSize);
+			int[] te = ch.tailEnv;
+			if (te != null) {
+				System.arraycopy(te, 3, te, 0, ch.tailSize * 3);
 			}
 		}
+	}
 
-		int[] l1 = new int[splitPos];
-		System.arraycopy(line1, 0, l1, 0, l1.length);
-		int[] l2 = new int[(chan[c].tailSize * 4) - splitPos];
-		System.arraycopy(line2, splitPos, l2, 0, l2.length);
+	private void popIntoTail(int c, Data ch) {
+		int t = ch.tailSize;
+		int[] te;
+		synchronized (ch.envLock) {
+			ch.tail[t] = transform(c, ch.width, ch.height, ch.stack.popNegate(0));
+			te = ch.tailEnv;
+			if (ch.env == null || te == null) {
+				return;
+			}
+			ch.env.pop(te, t * 3);
+		}
+		for (int k = t * 3; k < t * 3 + 3; k++) {
+			te[k] = transform(c, ch.width, ch.height, -te[k]);
+		}
+	}
 
-		return new Object[] { l1, l2 };
+	/**
+	 * Fills the channel's two frame polylines: the part left of the cursor wrap ({@code l1}) and the rest
+	 * ({@code l2}), four ints per tail entry ({@code posx - 1, previous, posx, current}) exactly as before, or in
+	 * envelope mode a leading vertex plus four vertices per column ({@code first, min, max, last} at {@code posx}).
+	 */
+	private void buildLines(int c, Data ch) {
+		int t = ch.tailSize;
+		int split = Math.max(0, Math.min(t, t - ch.cursor));
+		boolean envelope = ch.tailEnv != null;
+		ch.l1 = sized(ch.l1, part(split, envelope));
+		ch.l2 = sized(ch.l2, part(t - split, envelope));
+		int base = getBase(c);
+		boolean steady = isSteady(c);
+		if (envelope) {
+			fillEnvelope(ch, ch.l1, 0, split, base, steady);
+			fillEnvelope(ch, ch.l2, split, t, base, false);
+			return;
+		}
+		int[] l1 = ch.l1;
+		int[] l2 = ch.l2;
+		for (int i = 0; i < t; i++) {
+			int posx = ch.cursor - t + i;
+			if (posx < 0) {
+				posx += ch.width;
+				int pos = i * 4;
+				l1[pos] = posx - 1;
+				l1[pos + 1] = base + (steady ? 0 : ch.tail[i]);
+				l1[pos + 2] = posx;
+				l1[pos + 3] = base + (steady ? 0 : ch.tail[i + 1]);
+			} else {
+				int pos = (i - split) * 4;
+				l2[pos] = posx - 1;
+				l2[pos + 1] = base + ch.tail[i];
+				l2[pos + 2] = posx;
+				l2[pos + 3] = base + ch.tail[i + 1];
+			}
+		}
+	}
+
+	private static int part(int columns, boolean envelope) {
+		if (!envelope) {
+			return columns * 4;
+		}
+		return columns == 0 ? 0 : 2 + columns * 8;
+	}
+
+	private static int[] sized(int[] a, int n) {
+		return a.length == n ? a : new int[n];
+	}
+
+	/** Envelope polyline of tail entries {@code [from, to)}: leading vertex, then first/min/max/last per column. */
+	private static void fillEnvelope(Data ch, int[] line, int from, int to, int base, boolean flat) {
+		if (from >= to) {
+			return;
+		}
+		int t = ch.tailSize;
+		int posx = ch.cursor - t + from;
+		if (posx < 0) {
+			posx += ch.width;
+		}
+		line[0] = posx - 1;
+		line[1] = base + (flat ? 0 : ch.tail[from]);
+		int o = 2;
+		for (int i = from; i < to; i++) {
+			int px = ch.cursor - t + i;
+			if (px < 0) {
+				px += ch.width;
+			}
+			int e = (i + 1) * 3;
+			line[o] = px;
+			line[o + 1] = base + (flat ? 0 : ch.tailEnv[e]);
+			line[o + 2] = px;
+			line[o + 3] = base + (flat ? 0 : ch.tailEnv[e + 1]);
+			line[o + 4] = px;
+			line[o + 5] = base + (flat ? 0 : ch.tailEnv[e + 2]);
+			line[o + 6] = px;
+			line[o + 7] = base + (flat ? 0 : ch.tail[i + 1]);
+			o += 8;
+		}
+	}
+
+	/** New envelope tail aligned to the newest entries, like the tail copy; degenerate where none existed. */
+	private static int[] resizeTailEnv(int[] old, int[] tail) {
+		int[] e = new int[tail.length * 3];
+		for (int i = 0; i < tail.length; i++) {
+			e[i * 3] = tail[i];
+			e[i * 3 + 1] = tail[i];
+			e[i * 3 + 2] = tail[i];
+		}
+		if (old != null) {
+			int keep = Math.min(old.length, e.length);
+			System.arraycopy(old, old.length - keep, e, e.length - keep, keep);
+		}
+		return e;
 	}
 
 	private void calculateBase(int channel) {
@@ -719,9 +811,9 @@ public class Oscilloscope extends Canvas {
 			}
 
 			// Go calculate the line
-			Object[] result = calculate(c);
-			int[] l1 = (int[]) result[0];
-			int[] l2 = (int[]) result[1];
+			calculate(c);
+			int[] l1 = chan[c].l1;
+			int[] l2 = chan[c].l2;
 
 			// Draw it
 			GC gc = e.gc;
@@ -933,10 +1025,16 @@ public class Oscilloscope extends Canvas {
 			calculateBase(c);
 
 			if (width > 1) {
-				if (chan[c].stack == null) {
-					chan[c].stack = new IntegerFiFoCircularStack(width);
-				} else {
-					chan[c].stack = new IntegerFiFoCircularStack(width, chan[c].stack);
+				synchronized (chan[c].envLock) {
+					if (chan[c].stack == null) {
+						chan[c].stack = new IntegerFiFoCircularStack(width);
+					} else {
+						chan[c].stack = new IntegerFiFoCircularStack(width, chan[c].stack);
+					}
+					if (chan[c].samplesPerColumn > 0) {
+						chan[c].env = chan[c].env == null ? new EnvelopeRing(width)
+								: new EnvelopeRing(width, chan[c].env);
+					}
 				}
 			}
 		}
@@ -1046,6 +1144,9 @@ public class Oscilloscope extends Canvas {
 				}
 			}
 		}
+		if (chan[channel].samplesPerColumn > 0) {
+			chan[channel].tailEnv = resizeTailEnv(chan[channel].tailEnv, chan[channel].tail);
+		}
 	}
 
 	/**
@@ -1068,7 +1169,122 @@ public class Oscilloscope extends Canvas {
 	public void setValue(int channel, int value) {
 		if (width > 0) {
 			if (chan[channel].stack.capacity > 0) {
-				chan[channel].stack.push(value);
+				Data ch = chan[channel];
+				if (ch.samplesPerColumn == 0) {
+					ch.stack.push(value);
+				} else {
+					synchronized (ch.envLock) {
+						ch.stack.push(value);
+						ch.env.push(value, value, value);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Turns envelope mode on ({@code samplesPerColumn > 0}) or off (0, the default) for a channel. In envelope mode
+	 * {@link #pushSamples(int, int[], int, int)} folds every {@code samplesPerColumn} samples into one column and the
+	 * scope draws that column's first, minimum, maximum and last value at one x position, which covers the same
+	 * pixels as drawing every sample at that x. Samples are not stored, only one packed envelope per queued column
+	 * (the queue holds the widget's width in columns, like {@link #setValue(int, int)}), so any sample rate costs a
+	 * bounded amount of memory and one comparison pair per sample. {@link #setValue(int, int)} still queues one
+	 * column holding that single value.
+	 * <p>
+	 * This method can be called outside of the UI thread.
+	 *
+	 * @param channel
+	 * @param samplesPerColumn
+	 *            0 to turn envelope mode off, otherwise the number of samples per column
+	 * @since 1.5
+	 */
+	public synchronized void setSamplesPerColumn(int channel, int samplesPerColumn) {
+		if (samplesPerColumn < 0) {
+			throw new IllegalArgumentException("samplesPerColumn < 0"); //$NON-NLS-1$
+		}
+		Data ch = chan[channel];
+		synchronized (ch.envLock) {
+			ch.accCount = 0;
+			if (samplesPerColumn == 0) {
+				ch.samplesPerColumn = 0;
+				ch.env = null;
+				ch.tailEnv = null;
+				return;
+			}
+			if (ch.samplesPerColumn == 0) {
+				ch.env = degenerateRing(ch.stack, width);
+				ch.tailEnv = ch.tail == null ? null : resizeTailEnv(null, ch.tail);
+			}
+			ch.samplesPerColumn = samplesPerColumn;
+		}
+	}
+
+	/** Envelope ring in lock step with the queued values: one degenerate envelope per queued value. */
+	private static EnvelopeRing degenerateRing(IntegerFiFoCircularStack stack, int width) {
+		if (stack == null) {
+			return new EnvelopeRing(Math.max(2, width));
+		}
+		EnvelopeRing ring = new EnvelopeRing(stack.getCapacity());
+		int[] values = new int[stack.getLoad()];
+		for (int i = 0; i < values.length; i++) {
+			values[i] = stack.pop(0);
+		}
+		for (int v : values) {
+			stack.push(v);
+			ring.push(v, v, v);
+		}
+		return ring;
+	}
+
+	/**
+	 * @return the samples per column of the channel, 0 when envelope mode is off
+	 * @since 1.5
+	 */
+	public int getSamplesPerColumn(int channel) {
+		return chan[channel].samplesPerColumn;
+	}
+
+	/**
+	 * Pushes {@code count} samples starting at {@code samples[offset]}. In envelope mode they are folded into
+	 * column envelopes (see {@link #setSamplesPerColumn(int, int)}); otherwise this is
+	 * {@link #setValues(int, int[])} over the slice. No sample object or per-sample storage is created.
+	 * <p>
+	 * This method can be called outside of the UI thread.
+	 *
+	 * @since 1.5
+	 */
+	public synchronized void pushSamples(int channel, int[] samples, int offset, int count) {
+		if (offset < 0 || count < 0 || offset > samples.length - count) {
+			throw new IllegalArgumentException("offset/count outside the array"); //$NON-NLS-1$
+		}
+		if (width <= 0) {
+			return;
+		}
+		Data ch = chan[channel];
+		if (ch.samplesPerColumn == 0) {
+			for (int i = offset; i < offset + count; i++) {
+				setValue(channel, samples[i]);
+			}
+			return;
+		}
+		synchronized (ch.envLock) {
+			int spc = ch.samplesPerColumn;
+			for (int i = offset; i < offset + count; i++) {
+				int v = samples[i];
+				if (ch.accCount == 0) {
+					ch.accFirst = v;
+					ch.accMin = v;
+					ch.accMax = v;
+				} else if (v < ch.accMin) {
+					ch.accMin = v;
+				} else if (v > ch.accMax) {
+					ch.accMax = v;
+				}
+				if (++ch.accCount == spc) {
+					ch.stack.push(v);
+					ch.env.push(ch.accFirst, ch.accMin, ch.accMax);
+					ch.accCount = 0;
+				}
 			}
 		}
 	}
