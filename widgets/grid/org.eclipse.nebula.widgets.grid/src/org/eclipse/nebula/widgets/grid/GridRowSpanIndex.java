@@ -28,6 +28,7 @@ final class GridRowSpanIndex {
 	private long[] prefixMaxEnds = new long[4];
 	private int projectedCount;
 	private boolean projectionDirty = true;
+	private int visibilitySignature;
 
 	void update(GridItem item, int column, int span) {
 		if (item == null || column < 0) return;
@@ -99,9 +100,9 @@ final class GridRowSpanIndex {
 		projectionDirty = true;
 	}
 
-	int earliestCovering(int firstVisible) {
+	int earliestCovering(int firstVisible, boolean[] visibleColumns) {
 		if (firstVisible <= 0 || size == 0) return Math.max(0, firstVisible);
-		rebuildProjection();
+		rebuildProjection(visibleColumns);
 		if (projectedCount == 0) return firstVisible;
 
 		return earliestCovering(firstVisible, starts, prefixMaxEnds, projectedCount);
@@ -136,15 +137,16 @@ final class GridRowSpanIndex {
 		projectionDirty = true;
 	}
 
-	private void rebuildProjection() {
-		if (!projectionDirty) return;
+	private void rebuildProjection(boolean[] visibleColumns) {
+		int signature = visibilitySignature(visibleColumns);
+		if (!projectionDirty && signature == visibilitySignature) return;
 		ensureProjectionCapacity(size);
 		projectedCount = 0;
 
 		for (int slot = 0; slot < size; slot++) {
 			GridItem item = owners[slot];
 			if (item == null || item.isDisposed()) continue;
-			int span = maxSpan(spansByColumn[slot]);
+			int span = maxSpan(spansByColumn[slot], visibleColumns);
 			if (span <= 0) continue;
 			int row = item.getRowIndex();
 			if (row < 0) continue;
@@ -173,6 +175,7 @@ final class GridRowSpanIndex {
 			prefixMaxEnds[i] = max;
 		}
 		projectionDirty = false;
+		visibilitySignature = signature;
 	}
 
 	private int indexOf(GridItem item) {
@@ -191,9 +194,25 @@ final class GridRowSpanIndex {
 	}
 
 	private static int maxSpan(int[] spans) {
+		return maxSpan(spans, null);
+	}
+
+	private static int maxSpan(int[] spans, boolean[] visibleColumns) {
 		int max = 0;
-		if (spans != null) for (int span : spans) max = Math.max(max, span);
+		if (spans != null) {
+			int limit = visibleColumns == null ? spans.length : Math.min(spans.length, visibleColumns.length);
+			for (int column = 0; column < limit; column++) {
+				if (visibleColumns == null || visibleColumns[column]) max = Math.max(max, spans[column]);
+			}
+		}
 		return max;
+	}
+
+	private static int visibilitySignature(boolean[] visibleColumns) {
+		if (visibleColumns == null) return 0;
+		int hash = 1;
+		for (boolean visible : visibleColumns) hash = 31 * hash + (visible ? 1231 : 1237);
+		return 31 * hash + visibleColumns.length;
 	}
 
 	private void ensureOwnerCapacity(int required) {
