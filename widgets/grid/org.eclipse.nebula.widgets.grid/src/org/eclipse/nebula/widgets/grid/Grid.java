@@ -8291,6 +8291,7 @@ public class Grid extends Canvas {
 			item.disposeOnly();
 		}
 		sparse.clear();
+		rowSpanIndex.clear();
 		rootItems.clear();
 		selectedItems.clear();
 		selectedCells.clear();
@@ -9833,8 +9834,10 @@ public class Grid extends Canvas {
 					if (focusItem == removedItem) {
 						focusItem = null;
 					}
+					if (usesIndexedRowSpans()) rowSpanIndex.remove(removedItem);
 					removedItem.disposeOnly();
 				}
+				if (usesIndexedRowSpans() && oldCount != logicalCount) rowSpanIndex.rowsChanged();
 				selectedCells.removeIf(cell -> cell.y >= logicalCount);
 				selectedCellsBeforeRangeSelect.removeIf(cell -> cell.y >= logicalCount);
 				currentVisibleItems = logicalCount;
