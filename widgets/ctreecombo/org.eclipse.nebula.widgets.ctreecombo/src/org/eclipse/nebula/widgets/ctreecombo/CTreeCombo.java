@@ -108,8 +108,21 @@ public class CTreeCombo extends Composite {
 	 * <dd>DefaultSelection, Modify, Selection, Verify</dd>
 	 * </dl>
 	 */
+	/** style requested by the caller, before checkStyle masks it (UI-thread confined) */
+	private static int requestedStyle;
+	/** SWT.VIRTUAL requested: drop-down rows are bound only when the native tree asks for them */
+	private final boolean virtualRows;
+	private boolean popupFiltered;
+	private final java.util.IdentityHashMap<Object, List<CTreeComboItem>> filteredChildren = new java.util.IdentityHashMap<>();
+
+	private static int remember(int style) {
+		requestedStyle = style;
+		return style;
+	}
+
 	public CTreeCombo(Composite parent, int style) {
-		super(parent, style = checkStyle(style));
+		super(parent, style = checkStyle(remember(style)));
+		virtualRows = (requestedStyle & SWT.VIRTUAL) != 0;
 
 		int textStyle = SWT.SINGLE;
 		if ((style & SWT.READ_ONLY) != 0) {
@@ -480,7 +493,7 @@ public class CTreeCombo extends Composite {
 		if ((style & SWT.LEFT_TO_RIGHT) != 0) {
 			listStyle |= SWT.LEFT_TO_RIGHT;
 		}
-		tree = new Tree(popup, listStyle);
+		tree = new Tree(popup, listStyle | (virtualRows ? SWT.VIRTUAL : SWT.NONE));
 		tree.addTreeListener(hookListener);
 		if (font != null) {
 			tree().setFont(font);
@@ -506,12 +519,18 @@ public class CTreeCombo extends Composite {
 			c.setRealTreeColumn(col);
 		}
 
-		if (items != null) {
+		if (items != null && virtualRows) {
+			//FLLDCIM: lazy — drop-down rows are bound when the native virtual tree shows them
+			popupFiltered = filter && (getStyle() & SWT.READ_ONLY) == 0 && !text.getText().trim().isEmpty();
+			filteredChildren.clear();
+			tree.addListener(SWT.SetData, event -> bindRow((TreeItem) event.item, event.index));
+			tree.setItemCount(visibleChildren(null).size());
+		} else if (items != null) {
 			createTreeItems(items.toArray(new CTreeComboItem[0]), filter);
 		}
 
 		if (selectedItem != null) {
-			tree().setSelection(selectedItem.getRealTreeItem());
+			tree().setSelection(virtualRows ? materialize(selectedItem) : selectedItem.getRealTreeItem());
 		}
 	}
 
@@ -530,6 +549,85 @@ public class CTreeCombo extends Composite {
 		}
 	}
 
+
+	private void bindRow(TreeItem row, int index) {
+		final TreeItem parentRow = row.getParentItem();
+		final CTreeComboItem parentItem = parentRow == null ? null
+				: (CTreeComboItem) parentRow.getData(CTreeComboItem.DATA_ID);
+		final List<CTreeComboItem> siblings = visibleChildren(parentItem);
+		if (index < 0 || index >= siblings.size()) {
+			return;
+		}
+		final CTreeComboItem item = siblings.get(index);
+		item.bindRealTreeItem(row, columns.size());
+		row.setItemCount(visibleChildren(item).size());
+	}
+
+	/** Children shown in the drop-down: all of them, or those passing the typed filter (the eager rule). */
+	private List<CTreeComboItem> visibleChildren(CTreeComboItem parentItem) {
+		final List<CTreeComboItem> all = parentItem == null ? items : parentItem.childList();
+		if (!popupFiltered) {
+			return all;
+		}
+		final Object key = parentItem == null ? (Object) this : parentItem;
+		List<CTreeComboItem> shown = filteredChildren.get(key);
+		if (shown == null) {
+			shown = new ArrayList<CTreeComboItem>();
+			for (final CTreeComboItem child : all) {
+				if (included(child)) {
+					shown.add(child);
+				}
+			}
+			filteredChildren.put(key, shown);
+		}
+		return shown;
+	}
+
+	private boolean included(CTreeComboItem item) {
+		if (match(item)) {
+			return true;
+		}
+		for (final CTreeComboItem child : item.childList()) {
+			if (included(child)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @return the native row of {@code item}, binding the rows on its path in a virtual drop-down; an item that is not
+	 *         shown keeps whatever real item it had, exactly as the eager drop-down leaves it
+	 */
+	TreeItem materialize(CTreeComboItem item) {
+		final Tree t = tree();
+		if (item == null || t == null) {
+			return item == null ? null : item.getRealTreeItem();
+		}
+		final TreeItem real = item.getRealTreeItem();
+		if (!virtualRows || real != null && !real.isDisposed()) {
+			return real;
+		}
+		final List<CTreeComboItem> path = new ArrayList<CTreeComboItem>();
+		for (CTreeComboItem p = item; p != null; p = p.getParentItem()) {
+			path.add(0, p);
+		}
+		TreeItem row = null;
+		CTreeComboItem parentItem = null;
+		for (final CTreeComboItem step : path) {
+			final int index = visibleChildren(parentItem).indexOf(step);
+			if (index < 0) {
+				return real;
+			}
+			row = row == null ? t.getItem(index) : row.getItem(index);
+			if (row.getData(CTreeComboItem.DATA_ID) != step) {
+				step.bindRealTreeItem(row, columns.size());
+				row.setItemCount(visibleChildren(step).size());
+			}
+			parentItem = step;
+		}
+		return row;
+	}
 
 	private boolean match(final CTreeComboItem item) {
 		final String entry = text.getText().trim().toLowerCase();
@@ -916,7 +1014,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public int indexOf(CTreeComboItem item) {
 		checkWidget();
-		return tree().indexOf(item.getRealTreeItem());
+		return tree().indexOf(materialize(item));
 	}
 
 	void initAccessible() {
@@ -1194,7 +1292,7 @@ public class CTreeCombo extends Composite {
 				text.setFont(text.getFont());
 				text.setText(item.getText());
 				text.selectAll();
-				tree().select(item.getRealTreeItem());
+				tree().select(materialize(item));
 				tree().showSelection();
 			}
 		}
@@ -1245,7 +1343,7 @@ public class CTreeCombo extends Composite {
 		checkWidget();
 		final TreeItem[] items = new TreeItem[newItems.length];
 		for (int i = 0; i < items.length; i++) {
-			items[i] = newItems[i].getRealTreeItem();
+			items[i] = materialize(newItems[i]);
 		}
 		if (items.length == 0) {
 			text.setFont(text.getFont());
@@ -1279,7 +1377,7 @@ public class CTreeCombo extends Composite {
 	 */
 	public void showItem(CTreeComboItem item) {
 		checkWidget();
-		tree().showItem(item.getRealTreeItem());
+		tree().showItem(materialize(item));
 	}
 
 	String stripMnemonic(String string) {

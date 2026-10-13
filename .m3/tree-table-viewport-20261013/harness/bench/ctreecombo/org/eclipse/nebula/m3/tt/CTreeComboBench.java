@@ -82,6 +82,43 @@ public final class CTreeComboBench {
 		}
 		clock.frames("openDropDown", opens);
 		clock.memory("opened");
+		combo.dispose();
+		BenchClock.pump(display);
+
+		CTreeCombo virtual = new CTreeCombo(shell, SWT.BORDER | SWT.READ_ONLY | SWT.VIRTUAL);
+		for (int i = 0; i < roots; i++) {
+			CTreeComboItem root = new CTreeComboItem(virtual, SWT.NONE);
+			root.setText("n" + i);
+			for (int j = 0; j < kids; j++) {
+				new CTreeComboItem(root, SWT.NONE).setText("n" + i + "." + j);
+			}
+		}
+		shell.layout(true, true);
+		BenchClock.pump(display);
+		java.lang.reflect.Field treeField = CTreeCombo.class.getDeclaredField("tree");
+		treeField.setAccessible(true);
+		long[] vopens = new long[5];
+		for (int i = 0; i < vopens.length; i++) {
+			long s = System.nanoTime();
+			drop.invoke(virtual, Boolean.TRUE);
+			BenchClock.pump(display);
+			vopens[i] = System.nanoTime() - s;
+			if (i == 0) {
+				org.eclipse.swt.widgets.Tree t = (org.eclipse.swt.widgets.Tree) treeField.get(virtual);
+				clock.put("virtual.supported", (t.getStyle() & SWT.VIRTUAL) != 0 ? 1 : 0, "bool");
+				int bound = 0;
+				for (org.eclipse.swt.widgets.TreeItem row : t.getItems()) {
+					if (row.getData("org.eclipse.nebula.widgets.ctreecombo.CTreeComboItem") != null) {
+						bound++;
+					}
+				}
+				clock.put("virtual.boundRootRows", bound, "rows");
+			}
+			drop.invoke(virtual, Boolean.FALSE);
+			BenchClock.pump(display);
+		}
+		clock.frames("virtual.openDropDown", vopens);
+		clock.memory("virtual");
 		clock.write(args[4]);
 		shell.dispose();
 		display.dispose();
