@@ -92,6 +92,51 @@ has not asked for are not materialized, so item objects the caller could reach o
   the synthetic re-notification is no longer needed). Intended difference: after a click the display focus control is
   the CTree instead of its internal body canvas.
 
+## tablecombo (TableCombo, CheckTableCombo)
+
+- The drop-down shell and table are built on first open, first `getTable()` or first item API use (were: constructor).
+  `computeSize` never builds them: with no drop-down there are no rows to measure.
+- `SWT.VIRTUAL` (masked out of the combo's own style, as before) now reaches the popup table. Rows the table asks for
+  are recorded in a packed `int[]` bit set; `computeSize` and the odd/even row colours touch only those rows, and later
+  rows get their colours on `SWT.SetData` after the caller's listener.
+- `indexOf(String)` variants and `computeSize` no longer allocate the item array just to count.
+- The image label is created with `SWT.NO_FOCUS`.
+
+## ctreecombo
+
+- The drop-down shell and tree are built on first open, first layout (`computeSize` needs the native tree's preferred
+  width), first column, or first item API that needs a native item (were: constructor). Without a drop-down, items keep
+  their attributes in the model as before and get native items when it is built.
+- `SWT.VIRTUAL` (opt-in): the drop-down tree is virtual; rows are bound to model items on `SWT.SetData` and children on
+  expand, following the eager filter rule exactly (an item is shown if it matches, or the combo is read-only, or a
+  descendant is shown). `setExpanded`, `setItemCount`, `clear`, `clearAll`, `select`, `setSelection`, `showItem` and
+  `indexOf` materialize only the item's path.
+
+## calendarcombo and compositetable
+
+- calendarcombo: the flat combo's `CustomCombo` builds its drop-down shell and list on first open, first layout or
+  first item API use instead of in its constructor (its `computeSize` needs the native list's preferred width, so a laid
+  out combo builds it then). The calendar pop-up was already built on `showCalendar()` only.
+- compositetable: the pre-image already keeps only the rows that fit (`rows` + recycled `spareRows`). Rows are now not
+  populated while the table is not effectively visible; one catch-up runs on the first paint or on the first public
+  row read (`getRowControls`, `getNumRowsVisible`, `getSelection`, `setSelection`, `getCurrentRowControl`,
+  `getControlRow`). The focused text editor's caret is recorded by collection position (16 packed `int` slots) when its
+  row is recycled and restored when that position is shown again.
+
+## Law coverage
+
+| Law | xviewer | ctree | ctreecombo | tablecombo | calendarcombo | compositetable |
+|---|---|---|---|---|---|---|
+| Native + viewport (SWT.VIRTUAL / bounded window) | DONE (opt-in `SWT.VIRTUAL`) | PARTIAL: painted window O(log n); populate and layout stay O(n) | DONE (opt-in `SWT.VIRTUAL`) | DONE (opt-in `SWT.VIRTUAL`) | N/A (fixed-size month view) | already windowed |
+| Lazy inner controls / drop-downs | rows lazy | — | drop-down lazy | drop-down lazy | flat drop-down lazy | rows lazy while hidden |
+| Per-item booleans as parent bit lanes | NATIVE | PARTIAL (private state DONE; protected fields are API) | NATIVE | NATIVE | N/A | N/A |
+| Packed selection | NATIVE | NOT_DONE (protected ordered list) | NATIVE | NATIVE | N/A | int coordinates already |
+| Checkbox state as bits | NATIVE | DONE (cell checkable/checked lanes) | NATIVE | NATIVE | N/A | caller controls |
+| Round-trip after scroll-out (API + pixel hash test) | test added | test added | — | — | — | test added (value, focus, caret) |
+| One control (helpers NO_FOCUS) | status line | body + header | unchanged (text is the focus owner) | image label | unchanged | rows are the caller's editors |
+| No work while hidden; catch up once | status layout | — | — | — | — | row population |
+| GWT-safe shared logic (int only) | bridge is JFace-only | `CTreeBitLanes` int words | — | int bit set | — | int caret slots |
+
 ## Verification
 
 Per widget, all run before (pre-image = `eab2a65c`) and after:
