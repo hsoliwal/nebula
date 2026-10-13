@@ -1202,6 +1202,27 @@ public class CalendarCombo extends Composite {
      */
 
     // shows the calendar area
+    /**
+     * Horizontal placement of the calendar pop-up inside the client area of the monitor that shows the
+     * combo: the pop-up is moved left if it would leave that monitor on the right and right if it would
+     * leave it on the left. The vertical position is unchanged.
+     *
+     * @param location the preferred top-left corner, in display coordinates
+     * @param size the pop-up size
+     * @param monitorArea the client area of the combo's monitor, in display coordinates
+     * @return the corrected top-left corner
+     */
+    static Point keepOnMonitor(Point location, Point size, Rectangle monitorArea) {
+        int x = location.x;
+        if (x + size.x > monitorArea.x + monitorArea.width) {
+            x = monitorArea.x + monitorArea.width - size.x;
+        }
+        if (x < monitorArea.x) {
+            x = monitorArea.x;
+        }
+        return new Point(x, location.y);
+    }
+
     public synchronized void showCalendar() {
         try {
             // this is part of the OSX issue where the popup for a combo is
@@ -1459,10 +1480,9 @@ public class CalendarCombo extends Composite {
                 loc = new Point(calLoc.x, calLoc.y + size.y);
             }
             loc = toDisplay(loc);
-            // don't let it slip out on the left side of the screen
-            if (loc.x < 0) {
-                loc.x = 0;
-            }
+            // don't let it slip out of the monitor that shows the combo (EclipseNebula/nebula#612): a monitor
+            // left of the primary one has negative x, and clamping to 0 moved the pop-up to the primary monitor
+            loc = keepOnMonitor(loc, mCalendarShell.getSize(), getMonitor().getClientArea());
 
             mCalendarShell.setLocation(loc);
             mCalendarShell.setVisible(true);
