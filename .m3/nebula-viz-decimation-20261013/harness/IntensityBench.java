@@ -112,6 +112,7 @@ public class IntensityBench {
 			}
 		}
 		out("print_sha256_crop_end", print(display, canvas));
+		out("display_copyArea_sha256_crop_end", screen(display, canvas));
 		stats("crop_frame_ms", t);
 		stats("crop_cpu_ms_per_frame", cpu);
 		stats("crop_alloc_bytes_per_frame", alloc);
@@ -192,6 +193,24 @@ public class IntensityBench {
 		Image img = new Image(display, s.x, s.y);
 		GC gc = new GC(img);
 		canvas.print(gc);
+		gc.dispose();
+		byte[] data = img.getImageData().data;
+		img.dispose();
+		return hex(MessageDigest.getInstance("SHA-256").digest(data));
+	}
+
+	/** Capture mode display_copyArea: shell forced active, canvas pixels read back from the screen. */
+	static String screen(Display display, Canvas canvas) throws Exception {
+		canvas.getShell().forceActive();
+		canvas.getShell().moveAbove(null);
+		canvas.redraw();
+		canvas.update();
+		settle(display);
+		org.eclipse.swt.graphics.Point s = canvas.getSize();
+		org.eclipse.swt.graphics.Point at = canvas.toDisplay(0, 0);
+		Image img = new Image(display, s.x, s.y);
+		GC gc = new GC(display);
+		gc.copyArea(img, at.x, at.y);
 		gc.dispose();
 		byte[] data = img.getImageData().data;
 		img.dispose();

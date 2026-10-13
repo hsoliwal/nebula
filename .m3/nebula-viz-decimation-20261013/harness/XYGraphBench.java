@@ -191,6 +191,27 @@ public class XYGraphBench {
 		stats("pan_alloc_bytes_per_frame", allocPan);
 		stats("zoom_alloc_bytes_per_frame", allocZoom);
 		stats("same_view_alloc_bytes_per_frame", allocSame);
+		out("display_copyArea_sha256_end", screenHash(display, canvas));
+		try {
+			java.lang.reflect.Field f = Trace.class.getDeclaredField("decimationPainter");
+			f.setAccessible(true);
+			Object painter = f.get(trace);
+			java.lang.reflect.Method m = painter.getClass().getDeclaredMethod("lastTimings");
+			m.setAccessible(true);
+			long[] t = (long[]) m.invoke(painter);
+			if (t != null) {
+				out("worker_last_pyramid_ms", fmt(t[0] / 1e6));
+				out("worker_last_decimate_ms", fmt(t[1] / 1e6));
+			}
+			java.lang.reflect.Field df = painter.getClass().getDeclaredField("decimatedFrames");
+			java.lang.reflect.Field lf = painter.getClass().getDeclaredField("loopFrames");
+			df.setAccessible(true);
+			lf.setAccessible(true);
+			out("frames_decimated", df.get(painter));
+			out("frames_per_sample_loop", lf.get(painter));
+		} catch (NoSuchFieldException e) {
+			out("frames_decimated", "n/a (unmodified widget)");
+		}
 		out("heap_used_end_mb", fmt(usedHeapAfterGc() / 1048576.0));
 		if (n <= 2_000_000) { // the hot list materializes one Sample per visible point when asked
 			out("hot_samples", trace.getHotSampleList().size());
@@ -216,6 +237,31 @@ public class XYGraphBench {
 		Image img = new Image(display, size.x, size.y);
 		GC gc = new GC(img);
 		canvas.print(gc);
+		gc.dispose();
+		byte[] data = img.getImageData().data;
+		img.dispose();
+		byte[] d = MessageDigest.getInstance("SHA-256").digest(data);
+		StringBuilder sb = new StringBuilder();
+		for (byte b : d) {
+			sb.append(String.format("%02x", b & 0xff));
+		}
+		return sb.toString();
+	}
+
+	/** Capture mode display_copyArea: shell forced active, canvas pixels read back from the screen. */
+	static String screenHash(Display display, Canvas canvas) throws Exception {
+		canvas.getShell().forceActive();
+		canvas.getShell().moveAbove(null);
+		canvas.redraw();
+		canvas.update();
+		while (display.readAndDispatch()) {
+			// settle
+		}
+		org.eclipse.swt.graphics.Point size = canvas.getSize();
+		org.eclipse.swt.graphics.Point at = canvas.toDisplay(0, 0);
+		Image img = new Image(display, size.x, size.y);
+		GC gc = new GC(display);
+		gc.copyArea(img, at.x, at.y);
 		gc.dispose();
 		byte[] data = img.getImageData().data;
 		img.dispose();
