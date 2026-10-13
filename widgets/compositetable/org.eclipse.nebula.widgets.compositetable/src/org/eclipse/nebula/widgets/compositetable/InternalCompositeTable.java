@@ -85,6 +85,10 @@ class InternalCompositeTable extends Composite implements Listener {
 
 	/** a row update was requested while the table was not visible */
 	private boolean rowsDirty;
+	/** a refresh of all rows was requested while the table was not visible */
+	private boolean refreshDirty;
+	/** a deferred row update or refresh is being caught up */
+	private boolean flushingRows;
 
 	//FLLDCIM: viewport round trip — the focused editor's caret, kept as ints by collection position
 	private final java.util.IdentityHashMap<Control, Integer> shownPosition = new java.util.IdentityHashMap<>();
@@ -122,7 +126,7 @@ class InternalCompositeTable extends Composite implements Listener {
 		setBackground(parentControl.getBackground());
 		controlHolder.addListener(SWT.MouseWheel, this);
 		controlHolder.addListener(SWT.Paint, event -> {
-			if (rowsDirty) {
+			if (rowsDirty || refreshDirty) {
 				getDisplay().asyncExec(this::flushRows);
 			}
 		});
@@ -178,7 +182,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * header object (if applicable) and the row objects.
 	 */
 	private void createControlHolder() {
-		hScroller = new Composite(this, SWT.NULL);
+		hScroller = new Composite(this, SWT.NO_FOCUS);
 		GridData gridData = new GridData();
 		gridData.horizontalAlignment = GridData.FILL;
 		gridData.grabExcessHorizontalSpace = true;
@@ -186,7 +190,7 @@ class InternalCompositeTable extends Composite implements Listener {
 		gridData.verticalAlignment = GridData.FILL;
 		hScroller.setLayoutData(gridData);
 		
-		controlHolder = new Composite(hScroller, SWT.NONE);
+		controlHolder = new Composite(hScroller, SWT.NO_FOCUS);
 		
 		controlHolder.setLayout(new Layout() {
 			protected Point computeSize(Composite composite, int wHint,
@@ -257,8 +261,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	 */
 	private void createVSliderHolder() {
 		GridData gd = getVSliderGridData();
-		vSliderHolder = new Composite(this, SWT.NULL);
-		vSlider = new Slider(vSliderHolder, SWT.VERTICAL);
+		vSliderHolder = new Composite(this, SWT.NO_FOCUS);
+		vSlider = new Slider(vSliderHolder, SWT.VERTICAL | SWT.NO_FOCUS);
+		vSlider.addListener(SWT.FocusIn, e -> returnFocusToRows());
 		vSlider.addSelectionListener(sliderSelectionListener);
 		vSliderHolder.setLayout(new FillLayout());
 		vSliderHolder.setLayoutData(gd);
@@ -272,8 +277,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	 */
 	private void createHSliderHolder() {
 		GridData gd = getHSliderGridData();
-		hSliderHolder = new Composite(this, SWT.NULL);
-		hSlider = new Slider(hSliderHolder, SWT.HORIZONTAL);
+		hSliderHolder = new Composite(this, SWT.NO_FOCUS);
+		hSlider = new Slider(hSliderHolder, SWT.HORIZONTAL | SWT.NO_FOCUS);
+		hSlider.addListener(SWT.FocusIn, e -> returnFocusToRows());
 		hSlider.setMinimum(0);
 		hSlider.setIncrement(20);
 		hSlider.addSelectionListener(sliderSelectionListener);
@@ -518,7 +524,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	void updateVisibleRows() {
 		//FLLDCIM: lazy — no row population while not effectively visible; caught up once on the
 		// first paint or on the first public read of rows
-		if (!isVisible()) {
+		if (!isVisible() && !flushingRows) {
 			rowsDirty = true;
 			return;
 		}
@@ -528,9 +534,32 @@ class InternalCompositeTable extends Composite implements Listener {
 
 	/** Runs a row update that was deferred while the table was not visible. */
 	void flushRows() {
-		if (rowsDirty && !isDisposed()) {
-			rowsDirty = false;
-			updateVisibleRowsNow();
+		if ((rowsDirty || refreshDirty) && !isDisposed()) {
+			flushingRows = true;
+			try {
+				if (rowsDirty) {
+					rowsDirty = false;
+					updateVisibleRowsNow();
+				}
+				if (refreshDirty) {
+					refreshAllRows();
+				}
+			} finally {
+				flushingRows = false;
+			}
+		}
+	}
+
+	/** A slider never keeps focus: keys and accessibility stay with the table's current row. */
+	private void returnFocusToRows() {
+		if (isDisposed()) {
+			return;
+		}
+		Control current = getCurrentRowControl();
+		if (current != null && !current.isDisposed()) {
+			current.setFocus();
+		} else {
+			parent.forceFocus();
 		}
 	}
 
@@ -733,6 +762,11 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * Fire the refresh event on all visible rows.
 	 */
 	void refreshAllRows() {
+		if (!isVisible() && !flushingRows) {
+			refreshDirty = true;
+			return;
+		}
+		refreshDirty = false;
 		int row = 0;
 		for (Iterator<TableRow> rowsIter = rows.iterator(); rowsIter.hasNext();) {
 			TableRow rowControl = (TableRow) rowsIter.next();

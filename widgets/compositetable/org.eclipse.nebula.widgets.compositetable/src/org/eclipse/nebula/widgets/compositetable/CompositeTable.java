@@ -224,7 +224,7 @@ public class CompositeTable extends Canvas {
 				resizeAndRecordPrototypeRows();
 				showPrototypes(false);
 				contentPane.dispose();
-				contentPane = new InternalCompositeTable(this, SWT.NULL);
+				contentPane = new InternalCompositeTable(this, SWT.NO_FOCUS);
 			}
 			updateVisibleRows();
 		} else {
@@ -252,7 +252,7 @@ public class CompositeTable extends Canvas {
 	 */
 	private void switchToRunMode() {
 		showPrototypes(false);
-		contentPane = new InternalCompositeTable(this, SWT.NULL);
+		contentPane = new InternalCompositeTable(this, SWT.NO_FOCUS);
 	}
 
 	/**
