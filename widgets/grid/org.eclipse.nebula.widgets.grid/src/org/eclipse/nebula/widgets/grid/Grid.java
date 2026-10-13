@@ -51,6 +51,7 @@ import org.eclipse.nebula.widgets.grid.internal.GridToolTip;
 import org.eclipse.nebula.widgets.grid.internal.IScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.NullScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter;
+import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.ACC;
@@ -618,6 +619,15 @@ public class Grid extends Canvas {
 	 * of Grid state; public range-change API remains in GridVisibleRangeSupport.
 	 */
 	private final List<Runnable> viewportChangeListeners = new ArrayList<>();
+
+	/** Installed sort/filter view (SWT.VIRTUAL flat Grids only); null = identity. */
+	private RowPermutation rowPermutation;
+
+	/** {@link RowPermutation#getVersion()} applied by the last refresh; -1 = none. */
+	private int rowPermutationVersion = -1;
+
+	/** Viewport event owed by a refresh that ran while the Grid was not visible. */
+	private boolean viewportEventPending;
 
 
 	/**
@@ -5328,6 +5338,10 @@ public class Grid extends Canvas {
 			updateScrollbars();
 			scrollValuesObsolete = false;
 		}
+		if (viewportEventPending) {
+			viewportEventPending = false;
+			fireViewportChanged();
+		}
 
 		final int extraFill = getExtraFill(controlSize);
 		final Rectangle clientArea = getClientArea();
@@ -9849,6 +9863,190 @@ public class Grid extends Canvas {
 			new GridItem(this, SWT.NONE);
 		}
 		setRedraw(true);
+	}
+
+	/**
+	 * Installs a packed sort/filter view. Item index {@code i} then shows model row
+	 * {@code permutation.modelRow(i)}; the item count becomes
+	 * {@code permutation.getViewCount()}. {@code SWT.SetData} keeps reporting the item
+	 * (view) index, so a data callback reads its row as
+	 * {@code getRowPermutation().modelRow(event.index)}.
+	 * <p>
+	 * Only for flat {@code SWT.VIRTUAL} Grids. Passing {@code null} removes the view
+	 * and shows all model rows of the previous permutation in model order.
+	 * </p>
+	 *
+	 * @param permutation the view, or {@code null}
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the Grid is
+	 *                                     not {@code SWT.VIRTUAL} or has child
+	 *                                     items</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @see #refreshRowPermutation()
+	 * @since 1.2
+	 */
+	public void setRowPermutation(final RowPermutation permutation) {
+		checkWidget();
+		if (!usesSparseVirtualItems()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		final RowPermutation previous = rowPermutation;
+		if (permutation == null) {
+			if (previous != null) {
+				rowPermutation = null;
+				rowPermutationVersion = -1;
+				applyRowView(previous.getModelCount(), previous, true);
+			}
+			return;
+		}
+		rowPermutation = permutation;
+		rowPermutationVersion = -1;
+		applyRowView(permutation.getViewCount(), permutation, false);
+	}
+
+	/**
+	 * @return the installed sort/filter view, or {@code null}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public RowPermutation getRowPermutation() {
+		checkWidget();
+		return rowPermutation;
+	}
+
+	/**
+	 * Applies the installed {@link RowPermutation} after it was sorted, filtered or
+	 * resized. The item count becomes the view count; materialized items stay at their
+	 * index and are cleared as {@link #clear(int, int, boolean)} does (row recycling);
+	 * selection and focus follow their model rows, rows filtered out leave the selection.
+	 * No event is sent. While the Grid is not visible, viewport notification is deferred
+	 * to its next paint.
+	 *
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public void refreshRowPermutation() {
+		checkWidget();
+		if (rowPermutation != null) {
+			applyRowView(rowPermutation.getViewCount(), rowPermutation, false);
+		}
+	}
+
+	/**
+	 * @return model row shown at view index {@code index} under the applied view, or -1 if
+	 *         the view changed and was not refreshed yet
+	 */
+	int viewModelRow(final int index) {
+		final RowPermutation p = rowPermutation;
+		if (p == null) {
+			return index;
+		}
+		if (p.getVersion() != rowPermutationVersion || index >= p.getViewCount()) {
+			return -1;
+		}
+		return p.modelRow(index);
+	}
+
+	private void applyRowView(final int count, final RowPermutation view, final boolean identity) {
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		final int[] selectedModels = slotModels(selectedItems, sparse);
+		final int focusModel = focusItem == null ? -1 : slotModel(focusItem, sparse);
+		final int[] cellModels = new int[selectedCells.size()];
+		for (int i = 0; i < cellModels.length; i++) {
+			final GridItem rowItem = sparse.getMaterialized(selectedCells.get(i).y);
+			cellModels[i] = rowItem == null ? -1 : slotModel(rowItem, sparse);
+		}
+		final List<Point> cells = new ArrayList<>(selectedCells);
+		selectedItems.clear();
+		selectedCells.clear();
+		selectedCellsBeforeRangeSelect.clear();
+		focusItem = null;
+		if (!identity) {
+			rowPermutationVersion = view.getVersion();
+		}
+		for (final GridItem removed : sparse.setLogicalSize(count)) {
+			removed.disposeOnly();
+		}
+		for (int slot = 0; slot < sparse.materializedCount(); slot++) {
+			sparse.slotItem(slot).clear(false);
+			sparse.setSlotModel(slot, viewModelRow(sparse.slotIndex(slot)));
+		}
+		for (final int model : selectedModels) {
+			final int v = viewOfModel(model, view, identity);
+			if (v >= 0 && !selectedItems.contains(items.get(v))) {
+				selectedItems.add(items.get(v));
+			}
+		}
+		for (int i = 0; i < cellModels.length; i++) {
+			final int v = viewOfModel(cellModels[i], view, identity);
+			if (v >= 0) {
+				selectedCells.add(new Point(cells.get(i).x, v));
+			}
+		}
+		final int focusView = viewOfModel(focusModel, view, identity);
+		focusItem = focusView >= 0 ? items.get(focusView) : null;
+		if (shiftSelectionAnchorItem != null && shiftSelectionAnchorItem.isDisposed()) {
+			shiftSelectionAnchorItem = null;
+		}
+		if (hoveringItem != null && hoveringItem.isDisposed()) {
+			hoveringItem = null;
+		}
+		currentVisibleItems = count;
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		if (!disposing) {
+			updateColumnSelection();
+		}
+		redraw();
+		if (isVisible()) {
+			fireViewportChanged();
+		} else {
+			viewportEventPending = true;
+		}
+	}
+
+	private static int viewOfModel(final int model, final RowPermutation view, final boolean identity) {
+		if (model < 0 || model >= view.getModelCount()) {
+			return -1;
+		}
+		return identity ? model : view.viewIndex(model);
+	}
+
+	private static int[] slotModels(final List<GridItem> list, final GridVirtualItemList sparse) {
+		final int[] models = new int[list.size()];
+		for (int i = 0; i < models.length; i++) {
+			models[i] = slotModel(list.get(i), sparse);
+		}
+		return models;
+	}
+
+	private static int slotModel(final GridItem item, final GridVirtualItemList sparse) {
+		final int slot = sparse.slotOf(item);
+		return slot < 0 ? -1 : sparse.slotModel(slot);
 	}
 
 	/**
