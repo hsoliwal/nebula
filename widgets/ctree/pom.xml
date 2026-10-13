@@ -15,6 +15,7 @@
 
 	<modules>
 		<module>org.eclipse.nebula.widgets.ctree</module>
+		<module>org.eclipse.nebula.widgets.ctree.tests</module>
 	</modules>
 
 </project>

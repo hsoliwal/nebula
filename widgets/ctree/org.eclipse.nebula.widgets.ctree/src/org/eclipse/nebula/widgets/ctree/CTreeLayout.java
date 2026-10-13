@@ -64,6 +64,9 @@ class CTreeLayout extends Layout {
 	int itemHeight = CTree.gtk ? 25 : 20;
 	private boolean itemHeightSet = false;
 	private boolean fixedHeight = false;
+
+	/** the visible-item list instance whose tops and heights were assigned by the last layoutContent() */
+	private List laidOut;
 	
 	/**
 	 * @param ctree
@@ -328,13 +331,27 @@ class CTreeLayout extends Layout {
 	protected void layoutContent() {
 		int gridLine = ctree.getGridLineWidth();
 		int top = 0;
-		for(Iterator i = ctree.items(false).iterator(); i.hasNext(); ) {
+		List items = ctree.items(false);
+		laidOut = null;
+		boolean monotonic = gridLine >= 0;
+		for(Iterator i = items.iterator(); i.hasNext(); ) {
 			CTreeItem item = (CTreeItem) i.next();
 			item.setTop(top);
-			item.setHeight(fixedHeight ? getItemHeight() : item.computeHeight());
+			//FLLDCIM: HPCPOP — no per-item invalidation; the whole body is redrawn once below
+			item.setHeightQuiet(fixedHeight ? getItemHeight() : item.computeHeight());
+			monotonic &= item.getHeight() >= 0;
 			top += item.getHeight() + gridLine;
 		}
+		laidOut = monotonic ? items : null;
 		ctree.body.redraw();
+	}
+
+	/**
+	 * @return true if {@code items} is the exact list instance laid out last, so its
+	 * items' bottoms are non-decreasing
+	 */
+	boolean isLaidOut(List items) {
+		return items != null && items == laidOut;
 	}
 
 	/**

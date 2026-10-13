@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({DummyTest.class})
+@Suite.SuiteClasses({DummyTest.class, XViewerViewport_Test.class})
 public class AllXViewerTestSuite {
    // do nothing
 }

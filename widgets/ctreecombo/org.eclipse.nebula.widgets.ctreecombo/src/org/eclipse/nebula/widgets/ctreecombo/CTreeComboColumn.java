@@ -80,6 +80,8 @@ public class CTreeComboColumn extends Item {
 	public CTreeComboColumn(CTreeCombo parent, int style) {
 		super(parent, style);
 		this.parent = parent;
+		// a real column needs the drop-down tree: build it before registering this column
+		parent.tree();
 		this.parent.columns.add(this);
 
 		if (this.parent.tree != null && !this.parent.tree.isDisposed()) {
@@ -130,6 +132,8 @@ public class CTreeComboColumn extends Item {
 	public CTreeComboColumn(CTreeCombo parent, int style, int index) {
 		super(parent, style, index);
 		this.parent = parent;
+		// a real column needs the drop-down tree: build it before registering this column
+		parent.tree();
 		this.parent.columns.add(this);
 
 		if (this.parent.tree != null && !this.parent.tree.isDisposed()) {

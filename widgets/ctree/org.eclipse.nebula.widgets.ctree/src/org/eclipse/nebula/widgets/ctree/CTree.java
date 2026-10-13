@@ -203,6 +203,12 @@ public class CTree extends Composite implements Listener {
 
 
 	List itemList = new ArrayList();
+
+	/** per-item and per-cell boolean state as packed bit lanes */
+	final CTreeBitLanes lanes = new CTreeBitLanes();
+
+	/** visible-list index of the first painted item, from the last getPaintedItems() */
+	private int paintedStart;
 	
 	private List visibleItems = null;
 
@@ -254,7 +260,8 @@ public class CTree extends Composite implements Listener {
 			});
 		}
 
-		body = new Canvas(this, SWT.BORDER | SWT.NO_BACKGROUND);
+		//FLLDCIM: one control — the body is a NO_FOCUS helper surface; focus, keys and traversal stay on the CTree
+		body = new Canvas(this, SWT.BORDER | SWT.NO_BACKGROUND | SWT.NO_FOCUS);
 		body.setBackground(colors.getTableBackground());
 
 		nativeHeader = false;
@@ -270,8 +277,9 @@ public class CTree extends Composite implements Listener {
 			}
 		};
 
-		body.addKeyListener(new KeyAdapter() {}); // traverse does not work without this...
-		body.addListener(SWT.FocusIn, this);
+		addKeyListener(new KeyAdapter() {}); // traverse does not work without this...
+		addListener(SWT.FocusIn, this);
+		addListener(SWT.FocusOut, this);
 		body.addListener(SWT.MouseDown, this);
 		body.addListener(SWT.MouseDoubleClick, this);
 		body.addListener(SWT.MouseMove, this);
@@ -283,7 +291,7 @@ public class CTree extends Composite implements Listener {
 				}
 			}
 		});
-		body.addListener(SWT.Traverse, this);
+		addListener(SWT.Traverse, this);
 
 		addListener(SWT.Dispose, new Listener() {
 			public void handleEvent(Event event) {
@@ -513,7 +521,7 @@ public class CTree extends Composite implements Listener {
 
 	Composite getHeader() {
 		if (header == null) {
-			header = new Composite(this, SWT.NONE);
+			header = new Composite(this, SWT.NO_FOCUS);
 			body.moveBelow(header);
 		}
 		return header;
@@ -558,6 +566,7 @@ public class CTree extends Composite implements Listener {
 		if(internalTable == null) {
 			internalTable = new Table(getHeader(), SWT.NONE);
 			internalTable.setLinesVisible(linesVisible);
+			internalTable.addListener(SWT.FocusIn, e -> forceFocus());
 		}
 		return internalTable;
 	}
@@ -660,14 +669,17 @@ public class CTree extends Composite implements Listener {
 	protected List getPaintedItems() {
 		int top = getScrollPosition().y;
 		int bot = top + body.getClientArea().height;
-		int itop = 0;
+		List visible = items(false);
+		//FLLDCIM: HPCPOP — skip the rows whose bottom lies above the viewport (O(log n)); same rows as the full scan
+		int start = firstBottomAtLeast(visible, top);
+		int itop = start == 0 ? 0 : ((CTreeItem) visible.get(start - 1)).getBottom();
 		int ibot = 0;
 		List list = new ArrayList();
 		boolean painting = false;
-		for(Iterator i = items(false).iterator(); i.hasNext(); ) {
+		paintedStart = start;
+		for(ListIterator i = visible.listIterator(start); i.hasNext(); ) {
 			CTreeItem item = (CTreeItem) i.next();
-			Rectangle r = item.getBounds();
-			ibot = r.y+r.height;
+			ibot = item.getBottom();
 			if(itop <= top && top < ibot) {
 				painting = true;
 			}
@@ -677,10 +689,32 @@ public class CTree extends Composite implements Listener {
 			if(itop < bot && bot <= ibot) {
 				break;
 			}
-			itop = r.y+r.height;
+			itop = ibot;
 		}
 		return list;
 	}
+	/**
+	 * Index of the first visible item whose bottom is at or below {@code y}, when the
+	 * visible list is exactly the one last laid out (bottoms are then non-decreasing);
+	 * otherwise 0, so callers scan from the start as before.
+	 */
+	int firstBottomAtLeast(List visible, int y) {
+		if (!layout.isLaidOut(visible)) {
+			return 0;
+		}
+		int lo = 0;
+		int hi = visible.size();
+		while (lo < hi) {
+			int mid = (lo + hi) >>> 1;
+			if (((CTreeItem) visible.get(mid)).getBottom() < y) {
+				lo = mid + 1;
+			} else {
+				hi = mid;
+			}
+		}
+		return lo;
+	}
+
 	public CTreeItem getParentItem() {
 		// TODO Auto-generated method stub
 		return null;
@@ -733,16 +767,17 @@ public class CTree extends Composite implements Listener {
 
 	public CTreeItem getTopItem() {
 		int top = getScrollPosition().y;
-		int itop = 0;
+		List visible = items(false);
+		int start = firstBottomAtLeast(visible, top);
+		int itop = start == 0 ? 0 : ((CTreeItem) visible.get(start - 1)).getBottom();
 		int ibot = 0;
-		for(Iterator i = items(false).iterator(); i.hasNext(); ) {
+		for(ListIterator i = visible.listIterator(start); i.hasNext(); ) {
 			CTreeItem item = (CTreeItem) i.next();
-			Rectangle r = item.getBounds();
-			ibot = r.y+r.height;
+			ibot = item.getBottom();
 			if(itop <= top && top < ibot) {
 				return item;
 			}
-			itop = r.y+r.height;
+			itop = ibot;
 		}
 		return null;
 	}
@@ -791,7 +826,11 @@ public class CTree extends Composite implements Listener {
 		switch (event.type) {
 		case SWT.FocusIn:
 		case SWT.FocusOut:
-			handleFocus(event.type);
+			if (event.widget == this) {
+				nativeFocusChange(event.type);
+			} else {
+				handleFocus(event.type);
+			}
 			break;
 		case SWT.MouseDoubleClick:
 		case SWT.MouseDown:
@@ -844,6 +883,39 @@ public class CTree extends Composite implements Listener {
 			notifyListeners(SWT.FocusOut, e);
 		}
 		}
+	}
+
+	/**
+	 * The CTree itself owns native focus: its FocusIn/FocusOut events already reached
+	 * the listeners, so only the internal focus state is updated here.
+	 */
+	private void nativeFocusChange(int type) {
+		if (isDisposed()) {
+			return;
+		}
+		Display display = getDisplay();
+		if (type == SWT.FocusIn) {
+			if (!hasFocus) {
+				hasFocus = true;
+				updateFocus();
+			}
+			display.removeFilter(SWT.FocusIn, filter);
+			display.addFilter(SWT.FocusIn, filter);
+			return;
+		}
+		Control focusControl = display.getFocusControl();
+		if (focusControl != null && focusControl != this) {
+			for (Iterator i = items(false).iterator(); i.hasNext();) {
+				if (((CTreeItem) i.next()).contains(focusControl)) {
+					return;
+				}
+			}
+		}
+		if (hasFocus) {
+			hasFocus = false;
+			updateFocus();
+		}
+		display.removeFilter(SWT.FocusIn, filter);
 	}
 
 	protected void handleMouseEvents(Event event) {
@@ -1197,7 +1269,13 @@ public class CTree extends Composite implements Listener {
 					}
 				} else {
 					int gridline = getGridLineWidth();
-					for(Iterator i = items(false).iterator(); i.hasNext(); ) {
+					List visible = items(false);
+					//FLLDCIM: HPCPOP — after a full layout y only grows; lines past the image and client area are invisible
+					int limit = layout.isLaidOut(visible) ? Math.max(r.height, ebounds.height) : Integer.MAX_VALUE;
+					for(Iterator i = visible.iterator(); i.hasNext(); ) {
+						if (y >= limit) {
+							break;
+						}
 						gc.drawLine(r.x, y, r.x+r.width, y);
 						CTreeItem item = (CTreeItem) i.next();
 						y += item.getSize().y + gridline;
@@ -1234,7 +1312,9 @@ public class CTree extends Composite implements Listener {
 		if(gtk && nativeGrid && !paintedItems.isEmpty()) {
 			Rectangle r = getClientArea();
 			int gridline = getGridLineWidth();
-			int firstPaintedIndex = items(false).indexOf(paintedItems.get(0));
+			List visible = items(false);
+			int firstPaintedIndex = paintedStart < visible.size() && visible.get(paintedStart) == paintedItems.get(0)
+					? paintedStart : visible.indexOf(paintedItems.get(0));
 			for(int i = 0; i < paintedItems.size(); i++) {
 				CTreeItem item = (CTreeItem) paintedItems.get(i);
 				if(linesVisible && ((firstPaintedIndex + i + 1) % 2 == 0)) {
