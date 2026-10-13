@@ -87,9 +87,11 @@ public final class ClassicDriver implements GridModelBench.Driver {
 				groupOrder[firstSeen[g]] = g;
 			}
 		}
-		final int[] grouped = new int[view.length];
+		// one header row (code ~g) per group, then its rows
+		final int[] grouped = new int[view.length + seen];
 		int k = 0;
 		for (final Integer g : groupOrder) {
+			grouped[k++] = ~g;
 			System.arraycopy(lists[g], 0, grouped, k, sizes[g]);
 			k += sizes[g];
 		}

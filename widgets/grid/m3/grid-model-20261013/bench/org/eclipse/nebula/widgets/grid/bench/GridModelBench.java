@@ -97,6 +97,10 @@ public final class GridModelBench {
 			setData[0]++;
 			final GridItem item = (GridItem) e.item;
 			final int m = driver.modelRow(e.index);
+			if (m < 0) {
+				item.setText(0, "group header");
+				return;
+			}
 			for (int c = 0; c < columns; c++) {
 				item.setText(c, cellText(m, c, keys));
 			}

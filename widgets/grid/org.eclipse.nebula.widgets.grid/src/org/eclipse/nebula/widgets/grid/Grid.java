@@ -637,6 +637,19 @@ public class Grid extends Canvas {
 	/** Viewport event owed by a refresh that ran while the Grid was not visible. */
 	private boolean viewportEventPending;
 
+	/** Column window: x of each display-ordered column relative to the first (reused). */
+	private int[] columnLeft = new int[1];
+
+	/** Reused probe for {@code selectedCells.contains}: no Point per painted cell. */
+	private final Point cellProbe = new Point(0, 0);
+
+	/** Test switch: false forces the full column walk (the unmodified algorithm). */
+	boolean columnWindowEnabled = true;
+
+	/** Paint counters of the last paint (package-private, read by tests and benches). */
+	int paintCellCount;
+	int paintColumnVisits;
+
 
 	/**
 	 * The inplace tooltip.
@@ -5334,6 +5347,8 @@ public class Grid extends Canvas {
 	 */
 	private void onPaint(final PaintEvent event) {
 		final InsertMark insertMark = new InsertMark(); // we will populate these values while drawing the cells
+		paintCellCount = 0;
+		paintColumnVisits = 0;
 
 		final GC gc = event.gc;
 		final Rectangle originalClipping = gc.getClipping();
@@ -5515,6 +5530,44 @@ public class Grid extends Canvas {
 
 	}
 
+	/**
+	 * @return {@code true} when no cell can span columns or rows, so the column window may
+	 *         skip columns left of the body (a custom visualizer may report spans on its own)
+	 */
+	private boolean columnWindowActive() {
+		return columnWindowEnabled && !hasSpanning && dataVisualizer.getClass() == GridItemDataVisualizer.class;
+	}
+
+	/**
+	 * Rebuilds {@link #columnLeft} (x of each display-ordered column, hidden columns zero
+	 * width) and returns the first display position whose right edge is at or right of 0
+	 * when the first column starts at {@code x0}.
+	 */
+	private int columnWindowStart(final List<GridColumn> cols, final int x0, final int extraFill) {
+		final int n = cols.size();
+		if (columnLeft.length < n + 1) {
+			columnLeft = new int[Math.max(n + 1, columnLeft.length * 2)];
+		}
+		int left = 0;
+		int start = -1;
+		columnLeft[0] = 0;
+		for (int i = 0; i < n; i++) {
+			final GridColumn c = cols.get(i);
+			left += c.isVisible() ? c.getWidth(extraFill) : 0;
+			columnLeft[i + 1] = left;
+			if (start < 0 && x0 + left >= 0) {
+				start = i;
+			}
+		}
+		return start < 0 ? n : start;
+	}
+
+	private Point cellProbe(final int column, final int row) {
+		cellProbe.x = column;
+		cellProbe.y = row;
+		return cellProbe;
+	}
+
 	private FixedGridColumns getFixedGridColumns() {
 		final List<GridColumn> fixedColumns = new ArrayList<>();
 		int fixedOffset = 0;
@@ -5533,6 +5586,13 @@ public class Grid extends Canvas {
 			final Rectangle clientArea, final int firstVisibleIndex, final InsertMark insertMark, final int extraFill) {
 		int row = firstRow;
 		final int columnCount = cols.size();
+		// Column window: columns whose right edge is left of the body are never painted, so
+		// they are skipped instead of walked per row. Spanning needs the full walk.
+		final boolean window = !fixed && columnWindowActive();
+		final int windowStart = window
+				? columnWindowStart(cols, (rowHeaderVisible ? rowHeaderWidth : 0) - hScroll, extraFill)
+				: 0;
+		final int windowLeft = window ? columnLeft[windowStart] : 0;
 		for (int i = 0; i < visibleRows + firstVisibleIndex - firstRow; i++) {
 
 			int x = -hScroll;
@@ -5561,10 +5621,13 @@ public class Grid extends Canvas {
 
 				final int focusY = y;
 
-				int colIndex = 0;
+				int colIndex = windowStart;
+				x += windowLeft;
 
-				// draw regular cells for each column
-				for (final GridColumn column : cols) {
+				// draw regular cells for each column of the window
+				for (int ci = windowStart; ci < columnCount; ci++) {
+					final GridColumn column = cols.get(ci);
+					paintColumnVisits++;
 
 					final boolean skipCell = cellSpanManager.skipCell(colIndex, row);
 					final int indexOfColumn = column.index;
@@ -5616,7 +5679,7 @@ public class Grid extends Canvas {
 
 							column.getCellRenderer().setColumn(indexOfColumn);
 
-							if (selectedCells.contains(new Point(indexOfColumn, row))) {
+							if (!selectedCells.isEmpty() && selectedCells.contains(cellProbe(indexOfColumn, row))) {
 								column.getCellRenderer().setCellSelected(true);
 								cellInRowSelected = true;
 							} else {
@@ -5630,6 +5693,7 @@ public class Grid extends Canvas {
 							}
 
 							column.getCellRenderer().paint(gc, item);
+							paintCellCount++;
 
 							gc.setClipping(originalClipping);
 
@@ -5736,7 +5800,9 @@ public class Grid extends Canvas {
 					emptyCellRenderer.setRow(i + 1);
 				}
 
-				for (final GridColumn column : cols) {
+				x += windowLeft;
+				for (int ci = windowStart; ci < columnCount; ci++) {
+					final GridColumn column = cols.get(ci);
 
 					if (column.isVisible()) {
 						final int width = column.getWidth(extraFill);
@@ -5857,27 +5923,44 @@ public class Grid extends Canvas {
 			x += rowHeaderWidth;
 		}
 
-		GridColumnGroup previousPaintedGroup = null;
+		final int clientWidth = getClientArea().width;
+		// fixed-column bookkeeping over exactly the columns the paint loop reaches
+		int probeX = x;
 		for (final GridColumn column : displayOrderedColumns) {
-			if (x > getClientArea().width) {
+			if (probeX > clientWidth || hasFixedColumns) {
 				break;
 			}
 			if (!column.isVisible()) {
 				continue;
 			}
-			if (!hasFixedColumns) {
-				if (column.isFixed()) {
-					hasFixedColumns = true;
-				} else {
-					firstFixed += column.getWidth();
-				}
+			if (column.isFixed()) {
+				hasFixedColumns = true;
+			} else {
+				firstFixed += column.getWidth();
+			}
+			probeX += column.getWidth(extraFill);
+		}
+
+		// Column window for the header row: without column groups a header cell left of
+		// the body paints nothing visible, so it is skipped.
+		final boolean headerWindow = columnWindowEnabled && columnGroups.length == 0;
+		final int headerStart = headerWindow ? columnWindowStart(displayOrderedColumns, x, extraFill) : 0;
+		x += headerWindow ? columnLeft[headerStart] : 0;
+		GridColumnGroup previousPaintedGroup = null;
+		for (int ci = headerStart; ci < displayOrderedColumns.size(); ci++) {
+			final GridColumn column = displayOrderedColumns.get(ci);
+			if (x > clientWidth) {
+				break;
+			}
+			if (!column.isVisible()) {
+				continue;
 			}
 			previousPaintedGroup = paintColumnHeaderWithGroup(column, x, gc, previousPaintedGroup, extraFill);
 			x += column.getWidth(extraFill);
 		}
 
-		if (x < getClientArea().width) {
-			emptyColumnHeaderRenderer.setBounds(x, 0, getClientArea().width - x, headerHeight);
+		if (x < clientWidth) {
+			emptyColumnHeaderRenderer.setBounds(x, 0, clientWidth - x, headerHeight);
 			emptyColumnHeaderRenderer.paint(gc, null);
 		}
 
