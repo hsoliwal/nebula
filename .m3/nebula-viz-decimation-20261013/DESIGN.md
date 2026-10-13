@@ -201,7 +201,7 @@ The widget-level test finds 287 drawn columns equal to the folds of the pushed s
 `NEBULA_VIZ_API_COVERAGE.tsv` lists every public/protected declaration of the xygraph, visualization widgets and
 oscilloscope main bundles (source census, `harness/api_census_source.py`, base `eab2a65c` vs head): 2,343
 declarations in 149 types. 1,907 are in files whose git blob is identical; 338 are existing declarations of the 6
-changed types, each mapped to its differential/parity evidence; 98 are additive (24 outside the `internal` packages:
+changed types, each mapped to its differential/parity evidence; 98 are additive (22 outside the `internal` packages, one of them a member of the package-private `TraceDecimationPainter`; the API additions are
 `PackedXYDataProvider`, `Trace.setDecimationEnabled/isDecimationEnabled`, `Oscilloscope.setSamplesPerColumn/
 getSamplesPerColumn/pushSamples`, `OscilloscopeDispatcher.isParked`); 0 removed. The javap listing
 (`harness/api_coverage.py`) re-derives it from class files (queued in `TESTS_TO_RUN.md`).
