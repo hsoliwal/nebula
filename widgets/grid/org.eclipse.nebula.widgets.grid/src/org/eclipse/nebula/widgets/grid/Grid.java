@@ -650,6 +650,35 @@ public class Grid extends Canvas {
 	static final int LANE_GRAYED = 1;
 	static final int LANE_UNCHECKABLE = 2;
 
+	/**
+	 * Residency flag: the Grid may release cold {@code SWT.VIRTUAL} items (not painted by the
+	 * latest paint, not selected, focused, hovered, marked, pinned or carrying
+	 * {@code Widget.getData()}) least recently painted first, keeping their payload by model row
+	 * and restoring it without another {@code SWT.SetData}. Item identity is then not stable.
+	 *
+	 * @since 1.2
+	 */
+	public static final int RESIDENCY_EVICT_COLD = 1;
+
+	/** Residency flags (0 = every materialized item is pinned, the historic behaviour). */
+	private int residencyFlags;
+
+	/** Materialized items kept before cold ones are released. */
+	private int residencyCapacity = Integer.MAX_VALUE;
+
+	/** Paint counter for the LRU stamps (masked to 31 bits). */
+	private int paintEpoch = 1;
+
+	/** Warm payloads of released rows, paged by model row: {itemState, visualizerPayload}. */
+	private Object[][] residentPages = new Object[0][];
+
+	/** Reused scratch for eviction: (stamp << 32 | slot). */
+	private long[] evictionScratch = new long[0];
+
+	/** Rows released and SetData calls avoided by restores (package-private, for tests/benches). */
+	int residencyReleased;
+	int residencyRestored;
+
 	/** Number of leading items frozen below the column header (pinned plane). */
 	private int pinnedTopRows;
 
@@ -5400,6 +5429,10 @@ public class Grid extends Canvas {
 		} finally {
 			painting = false;
 		}
+		if (evictingCold()) {
+			evictCold();
+		}
+		paintEpoch = (paintEpoch + 1) & 0x7fffffff;
 	}
 
 	private void paintNow(final PaintEvent event) {
@@ -5747,6 +5780,137 @@ public class Grid extends Canvas {
 	 *                                     </ul>
 	 * @since 1.2
 	 */
+	/**
+	 * Chooses how materialized items of a flat {@code SWT.VIRTUAL} Grid stay resident. With
+	 * {@link #RESIDENCY_EVICT_COLD} at most {@code capacity} items are kept: after each paint the
+	 * least recently painted cold items are released and their texts, colours, fonts, images,
+	 * spans, check state, height and header fields are kept by model row; scrolling back creates
+	 * a new item with that payload and no second {@code SWT.SetData}. Callers that keep
+	 * references to items must not use it (identity is not stable); items with
+	 * {@code Widget.getData()} are never released. {@code 0} restores the default.
+	 *
+	 * @param flags    0 or {@link #RESIDENCY_EVICT_COLD}
+	 * @param capacity maximum resident items when evicting, at least 1
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - for unknown flags or
+	 *                                     a capacity below 1</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setItemResidency(final int flags, final int capacity) {
+		checkWidget();
+		if (capacity < 1 || (flags & ~RESIDENCY_EVICT_COLD) != 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		residencyFlags = flags;
+		residencyCapacity = (flags & RESIDENCY_EVICT_COLD) != 0 ? capacity : Integer.MAX_VALUE;
+	}
+
+	/**
+	 * @return the residency flags set by {@link #setItemResidency(int, int)}
+	 * @since 1.2
+	 */
+	public int getItemResidency() {
+		checkWidget();
+		return residencyFlags;
+	}
+
+	private boolean evictingCold() {
+		return (residencyFlags & RESIDENCY_EVICT_COLD) != 0 && usesSparseVirtualItems()
+				&& dataVisualizer.getClass() == GridItemDataVisualizer.class;
+	}
+
+	/** Releases least recently painted cold items until the capacity holds. */
+	private void evictCold() {
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		final int excess = sparse.materializedCount() - residencyCapacity;
+		if (excess <= 0) {
+			return;
+		}
+		if (evictionScratch.length < sparse.materializedCount()) {
+			evictionScratch = new long[sparse.materializedCount() * 2];
+		}
+		int candidates = 0;
+		for (int slot = 0; slot < sparse.materializedCount(); slot++) {
+			if (sparse.slotStamp(slot) != paintEpoch && !residentPinned(sparse.slotItem(slot), sparse.slotIndex(slot))) {
+				evictionScratch[candidates++] = ((long) sparse.slotStamp(slot) << 32) | slot;
+			}
+		}
+		Arrays.sort(evictionScratch, 0, candidates);
+		final int victims = Math.min(excess, candidates);
+		// release by descending slot so earlier slot numbers stay valid
+		final long[] slots = new long[victims];
+		for (int i = 0; i < victims; i++) {
+			slots[i] = evictionScratch[i] & 0xffffffffL;
+		}
+		Arrays.sort(slots);
+		for (int i = victims - 1; i >= 0; i--) {
+			final int slot = (int) slots[i];
+			final int model = sparse.slotModel(slot);
+			final GridItem item = sparse.release(slot);
+			if (model >= 0) {
+				final Object[] payload = { item.takeResidentState(),
+						((GridItemDataVisualizer) dataVisualizer).takeRowPayload(item) };
+				residentPage(model, true)[model & 1023] = payload;
+			} else {
+				dataVisualizer.clearRow(item);
+			}
+			item.disposeOnly();
+			residencyReleased++;
+		}
+	}
+
+	private boolean residentPinned(final GridItem item, final int index) {
+		return selectedItems.contains(item) || item == focusItem || item == hoveringItem || item == insertMarkItem
+				|| item == shiftSelectionAnchorItem || item == rowBeingResized || item.getData() != null
+				|| index < pinnedTopRows || index >= items.size() - pinnedBottomRows;
+	}
+
+	private Object[] residentPage(final int model, final boolean create) {
+		final int page = model >>> 10;
+		if (page >= residentPages.length) {
+			if (!create) {
+				return null;
+			}
+			residentPages = Arrays.copyOf(residentPages, Math.max(page + 1, residentPages.length * 2));
+		}
+		Object[] p = residentPages[page];
+		if (p == null && create) {
+			p = new Object[1024];
+			residentPages[page] = p;
+		}
+		return p;
+	}
+
+	/** Restores a released row's payload onto its new item: no second SetData. */
+	private void restoreResident(final GridItem item, final int model) {
+		final Object[] page = model < 0 ? null : residentPage(model, false);
+		if (page == null || page[model & 1023] == null) {
+			return;
+		}
+		final Object[] payload = (Object[]) page[model & 1023];
+		page[model & 1023] = null;
+		item.putResidentState((Object[]) payload[0]);
+		((GridItemDataVisualizer) dataVisualizer).putRowPayload(item, (Object[]) payload[1]);
+		residencyRestored++;
+	}
+
+	/** Drops every warm payload (the row view changed, so rows are cleared as by Grid.clear). */
+	private void dropResidentPayloads() {
+		if (residentPages.length > 0) {
+			residentPages = new Object[0][];
+		}
+	}
+
 	public void setPinnedRowCount(final int top, final int bottom) {
 		checkWidget();
 		if (top < 0 || bottom < 0 || isTree) {
@@ -5830,6 +5994,9 @@ public class Grid extends Canvas {
 				while (!item.isVisible() && row < items.size() - 1) {
 					row++;
 					item = items.get(row);
+				}
+				if (residencyCapacity != Integer.MAX_VALUE && items instanceof GridVirtualItemList) {
+					((GridVirtualItemList) items).touch(row, paintEpoch);
 				}
 			}
 			if (item != null && !item.isVisible()) {
@@ -8565,7 +8732,11 @@ public class Grid extends Canvas {
 	}
 
 	GridItem materializeVirtualItem(final int index) {
-		return new GridItem(this, SWT.NONE, index, true);
+		final GridItem item = new GridItem(this, SWT.NONE, index, true);
+		if (residentPages.length > 0) {
+			restoreResident(item, viewModelRow(index));
+		}
+		return item;
 	}
 
 	void initializeVirtualItemFacade(final GridItem item) {
@@ -8653,6 +8824,7 @@ public class Grid extends Canvas {
 	 */
 	int newItem(final GridItem item, int index, final boolean root) {
 		int row = 0;
+		dropResidentPayloads();
 
 		if (!isTree && item.getParentItem() != null) {
 			if (items instanceof GridVirtualItemList) {
@@ -8736,6 +8908,7 @@ public class Grid extends Canvas {
 	 * @param item item to remove
 	 */
 	void removeItem(final GridItem item) {
+		dropResidentPayloads();
 
 		final Point[] cells = getCells(item);
 		boolean selectionModified = false;
@@ -10130,6 +10303,7 @@ public class Grid extends Canvas {
 
 		if (usesSparseVirtualItems()) {
 			final int logicalCount = count;
+			dropResidentPayloads();
 			setRedraw(false);
 			try {
 				final GridVirtualItemList sparse = sparseVirtualItems();
@@ -10592,6 +10766,7 @@ public class Grid extends Canvas {
 				lanes.setCount(view.getModelCount());
 			}
 		}
+		dropResidentPayloads();
 		if (!disposing) {
 			updateColumnSelection();
 		}
@@ -11264,6 +11439,7 @@ public class Grid extends Canvas {
 
 		final GridItem item = getItem(index);
 		item.clear(allChildren);
+		dropResidentPayloads();
 		redraw();
 	}
 
@@ -11313,6 +11489,7 @@ public class Grid extends Canvas {
 			final GridItem item = items.get(i);
 			item.clear(allChildren);
 		}
+		dropResidentPayloads();
 		redraw();
 	}
 
@@ -11366,6 +11543,7 @@ public class Grid extends Canvas {
 			final GridItem item = items.get(indice);
 			item.clear(allChildren);
 		}
+		dropResidentPayloads();
 		redraw();
 	}
 
@@ -11592,6 +11770,7 @@ public class Grid extends Canvas {
 	 * Refresh hasData {@link GridItem} state if {@link Grid} is virtual
 	 */
 	public void refreshData() {
+		dropResidentPayloads();
 		if ((getStyle() & SWT.VIRTUAL) != 0) {
 			for (final GridItem item : materializedItems()) {
 				item.setHasSetData(false);

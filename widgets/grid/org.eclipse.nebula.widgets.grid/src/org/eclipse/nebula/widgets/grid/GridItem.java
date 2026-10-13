@@ -2134,6 +2134,25 @@ public class GridItem extends Item {
 		this.height = height;
 	}
 
+	/** Row-level fields for a residency release (opaque; see {@link #putResidentState(Object[])}). */
+	Object[] takeResidentState() {
+		return new Object[] { defaultBackground, defaultForeground, defaultFont, Integer.valueOf(height), headerText,
+				headerImage, headerBackground, headerForeground, headerFont, Boolean.valueOf(hasSetData) };
+	}
+
+	void putResidentState(Object[] state) {
+		defaultBackground = (Color) state[0];
+		defaultForeground = (Color) state[1];
+		defaultFont = (Font) state[2];
+		height = ((Integer) state[3]).intValue();
+		headerText = (String) state[4];
+		headerImage = (Image) state[5];
+		headerBackground = (Color) state[6];
+		headerForeground = (Color) state[7];
+		headerFont = (Font) state[8];
+		hasSetData = ((Boolean) state[9]).booleanValue();
+	}
+
 	void setHasSetData(boolean hasSetData) {
 		this.hasSetData = hasSetData;
 	}

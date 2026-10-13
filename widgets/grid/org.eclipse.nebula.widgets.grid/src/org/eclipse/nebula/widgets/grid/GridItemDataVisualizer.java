@@ -320,6 +320,29 @@ public class GridItemDataVisualizer implements DataVisualizer {
 	}
 
 	/**
+	 * Removes and returns every per-column value of {@code gridItem} (residency release); the
+	 * array is opaque and only valid for {@link #putRowPayload(GridItem, Object[])}.
+	 */
+	Object[] takeRowPayload(GridItem gridItem) {
+		return new Object[] { texts.remove(gridItem), toolTipTexts.remove(gridItem), foregrounds.remove(gridItem),
+				backgrounds.remove(gridItem), images.remove(gridItem), fonts.remove(gridItem),
+				rowSpans.remove(gridItem), columnSpans.remove(gridItem), grayeds.remove(gridItem),
+				checkables.remove(gridItem), checkeds.remove(gridItem) };
+	}
+
+	/** Restores a payload taken by {@link #takeRowPayload(GridItem)} onto a new item. */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	void putRowPayload(GridItem gridItem, Object[] payload) {
+		final Map[] maps = { texts, toolTipTexts, foregrounds, backgrounds, images, fonts, rowSpans, columnSpans,
+				grayeds, checkables, checkeds };
+		for (int i = 0; i < maps.length; i++) {
+			if (payload[i] != null) {
+				maps[i].put(gridItem, payload[i]);
+			}
+		}
+	}
+
+	/**
 	 * In this implementation is too much expensive... Empty is Much better
 	 * 
 	 * @see org.eclipse.nebula.widgets.grid.DataVisualizer#clearRow(GridItem)

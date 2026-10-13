@@ -36,6 +36,8 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
     private GridItem[] values = new GridItem[4];
     // packed model row of each materialized slot (-1 = unknown): Grid state, not a GridItem field
     private int[] models = new int[4];
+    // paint epoch of the last paint that used each slot (LRU for residency)
+    private int[] stamps = new int[4];
     private int materializedCount;
 
     GridVirtualItemList(final Grid grid) {
@@ -74,6 +76,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         System.arraycopy(indices, slot, indices, slot + 1, materializedCount - slot);
         System.arraycopy(values, slot, values, slot + 1, materializedCount - slot);
         System.arraycopy(models, slot, models, slot + 1, materializedCount - slot);
+        System.arraycopy(stamps, slot, stamps, slot + 1, materializedCount - slot);
         for (int i = slot + 1; i <= materializedCount; i++) {
             indices[i]++;
             values[i].increaseRow();
@@ -81,6 +84,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         indices[slot] = index;
         values[slot] = item;
         models[slot] = -1;
+        stamps[slot] = 0;
         materializedCount++;
         logicalSize++;
         modCount++;
@@ -173,6 +177,37 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         return slot >= 0 && values[slot] == item ? models[slot] : -1;
     }
 
+    /** Marks the slot bound at view index {@code index} as used by paint {@code epoch}. */
+    void touch(final int index, final int epoch) {
+        final int slot = find(index);
+        if (slot >= 0) {
+            stamps[slot] = epoch;
+        }
+    }
+
+    int slotStamp(final int slot) {
+        return stamps[slot];
+    }
+
+    /**
+     * Unbinds the item of {@code slot} without changing the logical size: the row becomes
+     * unmaterialized and the next {@link #get(int)} creates a new item for it.
+     */
+    GridItem release(final int slot) {
+        final GridItem item = values[slot];
+        final int move = materializedCount - slot - 1;
+        if (move > 0) {
+            System.arraycopy(indices, slot + 1, indices, slot, move);
+            System.arraycopy(values, slot + 1, values, slot, move);
+            System.arraycopy(models, slot + 1, models, slot, move);
+            System.arraycopy(stamps, slot + 1, stamps, slot, move);
+        }
+        materializedCount--;
+        values[materializedCount] = null;
+        modCount++;
+        return item;
+    }
+
     /** @return slot of the materialized item, or -1 */
     int slotOf(final GridItem item) {
         return identitySlot(item);
@@ -225,9 +260,11 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         System.arraycopy(indices, slot, indices, slot + 1, materializedCount - slot);
         System.arraycopy(values, slot, values, slot + 1, materializedCount - slot);
         System.arraycopy(models, slot, models, slot + 1, materializedCount - slot);
+        System.arraycopy(stamps, slot, stamps, slot + 1, materializedCount - slot);
         indices[slot] = index;
         values[slot] = item;
         models[slot] = grid.viewModelRow(index);
+        stamps[slot] = 0;
         materializedCount++;
         modCount++;
     }
@@ -239,6 +276,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
                 System.arraycopy(indices, slot + 1, indices, slot, move);
                 System.arraycopy(values, slot + 1, values, slot, move);
                 System.arraycopy(models, slot + 1, models, slot, move);
+                System.arraycopy(stamps, slot + 1, stamps, slot, move);
             }
             materializedCount--;
             values[materializedCount] = null;
@@ -292,6 +330,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         indices = Arrays.copyOf(indices, next);
         values = Arrays.copyOf(values, next);
         models = Arrays.copyOf(models, next);
+        stamps = Arrays.copyOf(stamps, next);
     }
 
     private void checkElementIndex(final int index) {
