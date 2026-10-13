@@ -643,6 +643,12 @@ public class Grid extends Canvas {
 	/** Reused probe for {@code selectedCells.contains}: no Point per painted cell. */
 	private final Point cellProbe = new Point(0, 0);
 
+	/** Number of leading items frozen below the column header (pinned plane). */
+	private int pinnedTopRows;
+
+	/** Number of trailing items frozen above the column footer (pinned plane). */
+	private int pinnedBottomRows;
+
 	/** True while {@link #onPaint(PaintEvent)} runs. */
 	private boolean painting;
 
@@ -1907,6 +1913,11 @@ public class Grid extends Canvas {
 				return null;
 			}
 			y2 += headerHeight;
+		}
+
+		final int pinnedRow = pinnedRowAt(p.y);
+		if (pinnedRow >= 0) {
+			return items.get(pinnedRow);
 		}
 
 		GridItem itemToReturn = null;
@@ -5546,6 +5557,12 @@ public class Grid extends Canvas {
 			}
 		}
 
+		// Z2b: pinned rows are a fixed plane of the same Grid over the scrolling body.
+		if (pinnedTopRows + pinnedBottomRows > 0 && !items.isEmpty()
+				&& GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
+			paintPinnedRows(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive);
+		}
+
 	}
 
 	/**
@@ -5584,6 +5601,169 @@ public class Grid extends Canvas {
 		cellProbe.x = column;
 		cellProbe.y = row;
 		return cellProbe;
+	}
+
+	private void paintPinnedRows(final GC gc, final Rectangle originalClipping, final Rectangle clientArea,
+			final int extraFill, final int hscroll, final FixedGridColumns fixed, final boolean fixedOverlayActive) {
+		final int top = Math.min(pinnedTopRows, items.size());
+		final int bottom = Math.min(pinnedBottomRows, items.size() - top);
+		if (top > 0) {
+			final int y = columnHeadersVisible ? headerHeight : 0;
+			paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive, 0,
+					top, y);
+		}
+		if (bottom > 0) {
+			final int first = items.size() - bottom;
+			final int y = clientArea.height - (columnFootersVisible ? footerHeight : 0)
+					- pinnedHeight(first, items.size());
+			paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive, first,
+					bottom, y);
+		}
+	}
+
+	private void paintPinnedPlane(final GC gc, final Rectangle originalClipping, final Rectangle clientArea,
+			final int extraFill, final int hscroll, final FixedGridColumns fixed, final boolean fixedOverlayActive,
+			final int first, final int count, final int y) {
+		final int bodyTop = columnHeadersVisible ? headerHeight : 0;
+		final int bodyBottom = clientArea.height - (columnFootersVisible ? footerHeight : 0);
+		final int planeTop = Math.max(bodyTop, y);
+		final int planeBottom = Math.min(bodyBottom, y + pinnedHeight(first, first + count));
+		if (planeBottom <= planeTop) {
+			return;
+		}
+		final Rectangle plane = new Rectangle(clientArea.x, planeTop, clientArea.width, planeBottom - planeTop);
+		final Rectangle clip = originalClipping.intersection(plane);
+		if (clip.isEmpty()) {
+			return;
+		}
+		try (GridGCProxy pinnedGc = GridGCProxy.wrap(gc).clip(clip)) {
+			// the plane is opaque: cells without a background colour must not draw over the
+			// scrolled rows beneath, so the plane starts from the Grid background as onPaint does
+			pinnedGc.gc().setBackground(getBackground());
+			pinnedGc.gc().fillRectangle(plane);
+			paintRows(displayOrderedColumns, false, first, count, hscroll, new GridCellSpanManager(), pinnedGc.gc(),
+					clip, y, clientArea, first, new InsertMark(), extraFill);
+		}
+		if (fixedOverlayActive) {
+			final int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
+			final Rectangle fixedClip = clip
+					.intersection(new Rectangle(fixedX, planeTop, getFixedColumnsWidth(), planeBottom - planeTop));
+			if (!fixedClip.isEmpty()) {
+				try (GridGCProxy fixedGc = GridGCProxy.wrap(gc).clip(fixedClip)) {
+					paintRows(fixed.columns(), true, first, count, 0, new GridCellSpanManager(), fixedGc.gc(),
+							fixedClip, y, clientArea, first, new InsertMark(), extraFill);
+				}
+			}
+		}
+	}
+
+	/** Height of items {@code [from, to)} as painted (item height plus the grid line). */
+	private int pinnedHeight(final int from, final int to) {
+		int h = 0;
+		for (int r = from; r < to; r++) {
+			h += items.get(r).getHeight() + 1;
+		}
+		return h;
+	}
+
+	/** @return the pinned item index under body y, or -1 when y is not on a pinned plane */
+	private int pinnedRowAt(final int y) {
+		if (pinnedTopRows + pinnedBottomRows == 0 || items.isEmpty()) {
+			return -1;
+		}
+		final int top = Math.min(pinnedTopRows, items.size());
+		final int bottom = Math.min(pinnedBottomRows, items.size() - top);
+		int y0 = columnHeadersVisible ? headerHeight : 0;
+		for (int r = 0; r < top; r++) {
+			final int h = items.get(r).getHeight() + 1;
+			if (y >= y0 && y < y0 + h) {
+				return r;
+			}
+			y0 += h;
+		}
+		final int first = items.size() - bottom;
+		y0 = getClientArea().height - (columnFootersVisible ? footerHeight : 0) - pinnedHeight(first, items.size());
+		for (int r = first; r < items.size(); r++) {
+			final int h = items.get(r).getHeight() + 1;
+			if (y >= y0 && y < y0 + h) {
+				return r;
+			}
+			y0 += h;
+		}
+		return -1;
+	}
+
+	/**
+	 * Freezes the first {@code top} and the last {@code bottom} items: they are painted as a
+	 * fixed plane of the Grid below the column header and above the footer while the other
+	 * rows scroll beneath them, like the fixed columns of {@link GridColumn#setFixed(boolean)}.
+	 * They stay ordinary items (index, selection, events); {@link #getItem(Point)} returns
+	 * the pinned item on the plane. With
+	 * {@link org.eclipse.nebula.widgets.grid.model.RowPermutation#setPinnedRows(int[], int[])}
+	 * the frozen items are chosen model rows. {@code 0, 0} (the default) disables the plane.
+	 *
+	 * @param top    number of leading items to freeze
+	 * @param bottom number of trailing items to freeze
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if a count is
+	 *                                     negative or the Grid has child items</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setPinnedRowCount(final int top, final int bottom) {
+		checkWidget();
+		if (top < 0 || bottom < 0 || isTree) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		if (top == pinnedTopRows && bottom == pinnedBottomRows) {
+			return;
+		}
+		pinnedTopRows = top;
+		pinnedBottomRows = bottom;
+		redraw();
+	}
+
+	/**
+	 * @return number of leading items frozen by {@link #setPinnedRowCount(int, int)}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public int getPinnedTopRowCount() {
+		checkWidget();
+		return pinnedTopRows;
+	}
+
+	/**
+	 * @return number of trailing items frozen by {@link #setPinnedRowCount(int, int)}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public int getPinnedBottomRowCount() {
+		checkWidget();
+		return pinnedBottomRows;
 	}
 
 	private FixedGridColumns getFixedGridColumns() {
