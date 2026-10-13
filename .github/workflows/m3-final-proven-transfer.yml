@@ -143,6 +143,9 @@ jobs:
       - name: 9 - Install the tested Nebula recipe artifact
         run: mvn -B -ntp -f m3/reactor.xml install
 
+      - name: 9a0 - Test vendored source-closure resolver
+        run: python3 m3/convergence/test_vendored_closure.py
+
       - name: 9a - Install exact bound Synexia FILE recipe
         env:
           GH_TOKEN: ${{ secrets.M3_SYNEXIA_TOKEN }}

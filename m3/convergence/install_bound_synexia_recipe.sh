@@ -162,6 +162,25 @@ else
     exit 1
   }
 
+  # The receiver pom pins source-built "-m3-source-1" coordinates (rewrite-core/java/java-21,
+  # slf4j-api) that exist only after M3jdk21's vendored third-party reactor installs them.
+  # Build exactly that closure from the same pinned receiver commit; never substitute binaries.
+  vendor_checkout="$DEST/m3jdk21-vendored-sources"
+  vendor_root="$vendor_checkout/m3/vendor/third_party"
+  git init -q "$vendor_checkout"
+  git -C "$vendor_checkout" config core.longpaths true
+  git -C "$vendor_checkout" remote add origin "https://github.com/$receiver_repository.git"
+  git -C "$vendor_checkout" sparse-checkout set --no-cone 'm3/vendor/third_party/'
+  git -C "$vendor_checkout" fetch -q --depth 1 --filter=blob:none origin "$receiver_commit"
+  git -C "$vendor_checkout" checkout -q --detach FETCH_HEAD
+  [[ "$(git -C "$vendor_checkout" rev-parse HEAD)" == "$receiver_commit" ]] || {
+    echo "vendored source closure commit does not match receiver binding" >&2
+    exit 1
+  }
+  vendor_modules="$(python3 "$ROOT/m3/convergence/vendored_closure.py" \
+    "$DEST/$receiver_module" "$vendor_root")"
+  mvn -B -ntp -f "$vendor_root/pom.xml" -pl "$vendor_modules" -am -DskipTests install
+
   mvn -B -ntp -f "$DEST/$receiver_module" clean verify install
   source_mode="PUBLIC_M3JDK21_CUSTODY"
 fi
