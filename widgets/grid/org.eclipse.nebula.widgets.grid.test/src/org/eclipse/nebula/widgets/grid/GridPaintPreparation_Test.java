@@ -132,6 +132,15 @@ public class GridPaintPreparation_Test {
 
         GridItem spanOwner = indexed.getItem(499_995);
         spanOwner.setRowSpan(0, 10);
+        assertEquals(1, indexed.rowSpanIndexOwnerCount());
+
+        // Once spanning is active, direct mutation through the built-in public
+        // DataVisualizer must keep the sparse owner exact as well.
+        indexed.getDataVisualizer().setRowSpan(spanOwner, 0, 0);
+        assertEquals(0, indexed.rowSpanIndexOwnerCount());
+        indexed.getDataVisualizer().setRowSpan(spanOwner, 0, 10);
+        assertEquals(1, indexed.rowSpanIndexOwnerCount());
+
         indexed.setTopIndex(500_000);
         assertEquals(500_000, indexed.getTopIndex());
 
