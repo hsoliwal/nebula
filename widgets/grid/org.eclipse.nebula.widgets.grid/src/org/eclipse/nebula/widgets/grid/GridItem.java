@@ -1023,6 +1023,10 @@ public class GridItem extends Item {
 		return parent;
 	}
 
+	Grid parentGrid() {
+		return parent;
+	}
+
 	/**
 	 * Returns the receiver's parent item, which must be a <code>GridItem</code>
 	 * or null when the receiver is a root.

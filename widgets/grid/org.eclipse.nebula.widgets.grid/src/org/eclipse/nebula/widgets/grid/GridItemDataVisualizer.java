@@ -245,6 +245,7 @@ public class GridItemDataVisualizer implements DataVisualizer {
 	@Override
 	public void setRowSpan(GridItem gridItem, int column, int span) {
 		put(rowSpans, gridItem, column, span);
+		gridItem.parentGrid().rowSpanChanged(gridItem, column, span);
 	}
 
 	/**
@@ -326,6 +327,7 @@ public class GridItemDataVisualizer implements DataVisualizer {
 	 */
 	@Override
 	public void clearRow(GridItem gridItem) {
+		gridItem.parentGrid().rowSpanOwnerDisposed(gridItem);
 		texts.remove(gridItem);
 		toolTipTexts.remove(gridItem);
 		foregrounds.remove(gridItem);
@@ -358,6 +360,7 @@ public class GridItemDataVisualizer implements DataVisualizer {
 	 */
 	@Override
 	public void clearColumn(int column) {
+		List<Grid> spanParents = rowSpanParents();
 		removeInvertIndex(texts, column);
 		removeInvertIndex(toolTipTexts, column);
 		removeInvertIndex(foregrounds, column);
@@ -369,6 +372,7 @@ public class GridItemDataVisualizer implements DataVisualizer {
 		removeInvertIndex(grayeds, column);
 		removeInvertIndex(checkables, column);
 		removeInvertIndex(checkeds, column);
+		for (Grid parent : spanParents) parent.rowSpanDataColumnRemoved(column);
 	}
 
 	/**
@@ -376,6 +380,7 @@ public class GridItemDataVisualizer implements DataVisualizer {
 	 */
 	@Override
 	public void addColumn(int column) {
+		List<Grid> spanParents = rowSpanParents();
 		addColumnToMap(texts, column);
 		addColumnToMap(toolTipTexts, column);
 		addColumnToMap(foregrounds, column);
@@ -387,6 +392,7 @@ public class GridItemDataVisualizer implements DataVisualizer {
 		addColumnToMap(grayeds, column);
 		addColumnToMap(checkables, column);
 		addColumnToMap(checkeds, column);
+		for (Grid parent : spanParents) parent.rowSpanDataColumnInserted(column);
 	}
 
 	private <T> void addColumnToMap(Map<GridItem, List<T>> map, int column) {
@@ -433,6 +439,7 @@ public class GridItemDataVisualizer implements DataVisualizer {
 	 */
 	@Override
 	public void clearAll() {
+		List<Grid> spanParents = rowSpanParents();
 		texts.clear();
 		toolTipTexts.clear();
 		foregrounds.clear();
@@ -444,6 +451,24 @@ public class GridItemDataVisualizer implements DataVisualizer {
 		grayeds.clear();
 		checkables.clear();
 		checkeds.clear();
+		for (Grid parent : spanParents) parent.rowSpanDataCleared();
+	}
+
+	private List<Grid> rowSpanParents() {
+		List<Grid> result = new ArrayList<>();
+		for (GridItem item : rowSpans.keySet()) {
+			if (item == null) continue;
+			Grid parent = item.parentGrid();
+			boolean known = false;
+			for (Grid candidate : result) {
+				if (candidate == parent) {
+					known = true;
+					break;
+				}
+			}
+			if (!known) result.add(parent);
+		}
+		return result;
 	}
 
 }
