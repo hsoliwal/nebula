@@ -64,6 +64,7 @@
 						<include>**/model/RowBitLanes_Test.java</include>
 						<include>**/model/RowGrouping_Test.java</include>
 						<include>**/model/RowPermutation_Test.java</include>
+						<include>**/model/RowSelection_Test.java</include>
 						<include>**/model/RowStateLanes_Test.java</include>
 					</includes>
 				</configuration>
