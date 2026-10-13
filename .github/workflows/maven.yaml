@@ -2,9 +2,30 @@ name: Java CI with Maven
 
 on:
   pull_request:
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!.m3/**'
+      - '!.m3-ui-distillation-trigger/**'
+      - '!.github/workflows/m3-*.yml'
+      - '!m3/**'
+      - 'm3/third_party/**'
+      - 'm3/convergence/prepare_swt_receiver.py'
+      - 'm3/convergence/swt-receiver-p2/**'
+      - 'm3/convergence/verify_grid_screenshots.py'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
+    # Fork guard: run only in hsoliwal/nebula and only for same-repository PR heads.
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
 
     runs-on: ubuntu-24.04
     env:
