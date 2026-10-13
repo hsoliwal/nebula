@@ -39,6 +39,9 @@ public final class RowPermutation implements RowView {
 
 	private static final int SORTED = 1;
 	private static final int FILTERED = 1 << 1;
+	private static final int PINNED = 1 << 4;
+	/** The view is the compacted {@code visible} array (filter or pinned rows present). */
+	private static final int COMPACT = FILTERED | PINNED;
 	private static final int VIEW_VALID = 1 << 2;
 	private static final int INVERSE_VALID = 1 << 3;
 	private static final int VERSION_MASK = 0x7fffffff;
@@ -53,6 +56,9 @@ public final class RowPermutation implements RowView {
 	private long[] bits = NO_LONGS;
 	private int[] visible = NO_INTS;
 	private int[] inverse = NO_INTS;
+	private int[] pinTop = NO_INTS;
+	private int[] pinBottom = NO_INTS;
+	private long[] pinBits = NO_LONGS;
 	private static final int RADIX = 1 << 11;
 	private int[] radixCount = NO_INTS;
 
@@ -94,6 +100,9 @@ public final class RowPermutation implements RowView {
 		}
 		modelCount = count;
 		flags = 0;
+		pinTop = NO_INTS;
+		pinBottom = NO_INTS;
+		pinBits = NO_LONGS;
 		viewCount = count;
 		changed();
 	}
@@ -103,7 +112,7 @@ public final class RowPermutation implements RowView {
 	 */
 	@Override
 	public int getViewCount() {
-		if ((flags & FILTERED) == 0) {
+		if ((flags & COMPACT) == 0) {
 			return modelCount;
 		}
 		ensureView();
@@ -117,7 +126,7 @@ public final class RowPermutation implements RowView {
 	 */
 	@Override
 	public int modelRow(final int viewIndex) {
-		if ((flags & FILTERED) != 0) {
+		if ((flags & COMPACT) != 0) {
 			ensureView();
 			checkIndex(viewIndex, viewCount);
 			return visible[viewIndex];
@@ -134,7 +143,7 @@ public final class RowPermutation implements RowView {
 	@Override
 	public int viewIndex(final int modelRow) {
 		checkIndex(modelRow, modelCount);
-		if ((flags & (SORTED | FILTERED)) == 0) {
+		if ((flags & (SORTED | COMPACT)) == 0) {
 			return modelRow;
 		}
 		ensureInverse();
@@ -156,7 +165,7 @@ public final class RowPermutation implements RowView {
 			throw new IndexOutOfBoundsException("fromView=" + fromView + ", offset=" + offset + ", length=" + length);
 		}
 		final int n = Math.max(0, Math.min(length, Math.min(count - fromView, target.length - offset)));
-		if ((flags & FILTERED) != 0) {
+		if ((flags & COMPACT) != 0) {
 			System.arraycopy(visible, fromView, target, offset, n);
 		} else if ((flags & SORTED) != 0) {
 			System.arraycopy(order, fromView, target, offset, n);
@@ -186,7 +195,53 @@ public final class RowPermutation implements RowView {
 	 * @return {@code true} if every model row is displayed at its own index
 	 */
 	public boolean isIdentity() {
-		return (flags & (SORTED | FILTERED)) == 0;
+		return (flags & (SORTED | COMPACT)) == 0;
+	}
+
+	/**
+	 * Pins model rows to the ends of the view: {@code top} rows first (in the given order),
+	 * {@code bottom} rows last, independent of sort and filter; every other displayed row lies
+	 * between them in sort order. A Grid freezes them with
+	 * {@code Grid.setPinnedRowCount(top.length, bottom.length)}.
+	 *
+	 * @param top    model rows shown first, or an empty array
+	 * @param bottom model rows shown last, or an empty array
+	 * @throws IllegalArgumentException if a row is out of range or pinned twice
+	 */
+	public void setPinnedRows(final int[] top, final int[] bottom) {
+		final int words = words(modelCount);
+		final long[] mark = new long[words];
+		for (final int[] rows : new int[][] { top, bottom }) {
+			for (final int m : rows) {
+				if (m < 0 || m >= modelCount || (mark[m >>> 6] & (1L << (m & 63))) != 0L) {
+					throw new IllegalArgumentException("bad or repeated pinned row: " + m);
+				}
+				mark[m >>> 6] |= 1L << (m & 63);
+			}
+		}
+		pinTop = Arrays.copyOf(top, top.length);
+		pinBottom = Arrays.copyOf(bottom, bottom.length);
+		pinBits = mark;
+		if (top.length + bottom.length == 0) {
+			flags &= ~PINNED;
+		} else {
+			flags |= PINNED;
+		}
+		changed();
+	}
+
+	/**
+	 * @return number of rows pinned to the top of the view
+	 */
+	public int getPinnedTopCount() {
+		return (flags & PINNED) == 0 ? 0 : pinTop.length;
+	}
+
+	/**
+	 * @return number of rows pinned to the bottom of the view
+	 */
+	public int getPinnedBottomCount() {
+		return (flags & PINNED) == 0 ? 0 : pinBottom.length;
 	}
 
 	/**
@@ -383,7 +438,9 @@ public final class RowPermutation implements RowView {
 			visible = new int[modelCount];
 		}
 		int k = 0;
-		if ((flags & SORTED) != 0) {
+		if ((flags & PINNED) != 0) {
+			k = compactPinned();
+		} else if ((flags & SORTED) != 0) {
 			for (int v = 0; v < modelCount; v++) {
 				final int m = order[v];
 				if ((bits[m >>> 6] & (1L << (m & 63))) != 0L) {
@@ -405,13 +462,34 @@ public final class RowPermutation implements RowView {
 		flags |= VIEW_VALID;
 	}
 
+	/** Pinned top rows, then unpinned rows passing the filter in sort order, then pinned bottom. */
+	private int compactPinned() {
+		int k = 0;
+		for (final int m : pinTop) {
+			visible[k++] = m;
+		}
+		final boolean sorted = (flags & SORTED) != 0;
+		final boolean filtered = (flags & FILTERED) != 0;
+		for (int v = 0; v < modelCount; v++) {
+			final int m = sorted ? order[v] : v;
+			final long bit = 1L << (m & 63);
+			if ((pinBits[m >>> 6] & bit) == 0L && (!filtered || (bits[m >>> 6] & bit) != 0L)) {
+				visible[k++] = m;
+			}
+		}
+		for (final int m : pinBottom) {
+			visible[k++] = m;
+		}
+		return k;
+	}
+
 	private void ensureInverse() {
 		if ((flags & INVERSE_VALID) != 0) {
 			return;
 		}
 		final int[] inv = inverseArray();
 		final int count = getViewCount();
-		if ((flags & FILTERED) != 0) {
+		if ((flags & COMPACT) != 0) {
 			Arrays.fill(inv, 0, modelCount, -1);
 			for (int v = 0; v < count; v++) {
 				inv[visible[v]] = v;

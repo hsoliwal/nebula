@@ -218,6 +218,42 @@ public class RowPermutation_Test {
 		assertTrue(bits == field(p, "bits"));
 	}
 
+	@Test
+	public void pinnedRowsStayAtTheEndsUnderSortAndFilter() {
+		final Random random = new Random(5L);
+		for (final int n : new int[] { 3, 17, 300, 4099 }) {
+			final int[] keys = keys(random, n, 1);
+			final int[] top = { n - 1, 0 };
+			final int[] bottom = { n / 2 };
+			final RowPermutation p = new RowPermutation(n);
+			p.setPinnedRows(top, bottom);
+			p.sortByIntKeys(keys, true);
+			p.setFilter(m -> m % 3 != 1);
+			final java.util.List<Integer> expected = new java.util.ArrayList<>();
+			expected.add(n - 1);
+			expected.add(0);
+			for (final int m : referenceOrder(keys, n, true)) {
+				if (m != n - 1 && m != 0 && m != n / 2 && m % 3 != 1) {
+					expected.add(m);
+				}
+			}
+			expected.add(n / 2);
+			assertArrayEquals("n=" + n, expected.stream().mapToInt(Integer::intValue).toArray(), view(p));
+			assertInverse(p);
+			assertEquals(2, p.getPinnedTopCount());
+			assertEquals(1, p.getPinnedBottomCount());
+			p.setPinnedRows(new int[0], new int[0]);
+			assertEquals(0, p.getPinnedTopCount());
+			assertArrayEquals(Arrays.stream(referenceOrder(keys, n, true)).filter(m -> m % 3 != 1).toArray(), view(p));
+		}
+		try {
+			new RowPermutation(4).setPinnedRows(new int[] { 1 }, new int[] { 1 });
+			fail("row pinned twice");
+		} catch (final IllegalArgumentException expected) {
+			// expected
+		}
+	}
+
 	static int[] view(final RowPermutation p) {
 		final int[] out = new int[p.getViewCount()];
 		for (int v = 0; v < out.length; v++) {
