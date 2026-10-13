@@ -39,6 +39,8 @@ import org.eclipse.nebula.visualization.widgets.datadefinition.ByteArrayWrapper;
 import org.eclipse.nebula.visualization.widgets.datadefinition.ColorMap;
 import org.eclipse.nebula.visualization.widgets.datadefinition.DoubleArrayWrapper;
 import org.eclipse.nebula.visualization.widgets.datadefinition.FloatArrayWrapper;
+import org.eclipse.nebula.visualization.internal.widgets.raster.ColorMapRaster;
+import org.eclipse.nebula.visualization.internal.widgets.raster.WindowArrayWrapper;
 import org.eclipse.nebula.visualization.widgets.datadefinition.IPrimaryArrayWrapper;
 import org.eclipse.nebula.visualization.widgets.datadefinition.IntArrayWrapper;
 import org.eclipse.nebula.visualization.widgets.datadefinition.LongArrayWrapper;
@@ -370,6 +372,11 @@ public class IntensityGraphFigure extends Figure implements Introspectable {
                 if ((dataWidth - left - right) * (dataHeight - top - bottom) > MAX_ARRAY_SIZE) {
                     return dataArray;
                 }
+				if (ColorMapRaster.ENABLED) {
+					// same values as the copy below, read through a window instead of copying them
+					return new WindowArrayWrapper(dataArray, dataWidth, left, top, dataWidth - left - right,
+							dataHeight - top - bottom, inRGBMode ? 3 : 1);
+				}
 				double[] result = null;
 				if (inRGBMode) {
 					result = new double[(dataWidth - left - right)
