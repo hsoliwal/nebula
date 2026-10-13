@@ -144,7 +144,14 @@ public class Grid extends Canvas {
 	}
 
 	int rowSpanPaintStart(final int firstVisibleIndex) {
-		return usesIndexedRowSpans() ? rowSpanIndex.earliestCovering(firstVisibleIndex) : firstVisibleIndex;
+		if (!usesIndexedRowSpans()) return firstVisibleIndex;
+		final boolean[] visibleColumns = new boolean[columns.size()];
+		for (final GridColumn column : columns) {
+			if (0 <= column.index && column.index < visibleColumns.length) {
+				visibleColumns[column.index] = column.isVisible();
+			}
+		}
+		return rowSpanIndex.earliestCovering(firstVisibleIndex, visibleColumns);
 	}
 
 	int rowSpanIndexOwnerCount() {
