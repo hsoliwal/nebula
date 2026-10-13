@@ -24,7 +24,7 @@ public final class NebulaM3SecondPassReviewDagBinding {
     public static final String TASK_CRATE =
             "synexia-m3-recipe/task-crates/m3-second-pass-review-dag-20261005.yaml";
     public static final String HOSTED_PROOF =
-            "PENDING_CURRENT_NEBULA_REPROOF_20261007";
+            "REQUESTED_CURRENT_NEBULA_REPROOF_20261013";
 
     public static final List<String> PROFILES =
             List.of(
