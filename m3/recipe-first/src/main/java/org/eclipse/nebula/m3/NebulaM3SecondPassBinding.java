@@ -19,7 +19,7 @@ public final class NebulaM3SecondPassBinding {
     public static final String STATE_MODE = "SHARED_JVM_COMPOSITE";
     public static final boolean EXTERNAL_LEAF_FAN_OUT = false;
     public static final int PASS_BUDGET = 4;
-    public static final String HOSTED_PROOF = "PENDING_CURRENT_NEBULA_REPROOF_20261007";
+    public static final String HOSTED_PROOF = "REQUESTED_CURRENT_NEBULA_REPROOF_20261013";
 
     private NebulaM3SecondPassBinding() {}
 
