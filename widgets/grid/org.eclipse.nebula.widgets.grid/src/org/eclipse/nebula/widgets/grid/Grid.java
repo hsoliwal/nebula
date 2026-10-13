@@ -51,6 +51,10 @@ import org.eclipse.nebula.widgets.grid.internal.GridToolTip;
 import org.eclipse.nebula.widgets.grid.internal.IScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.NullScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter;
+import org.eclipse.nebula.widgets.grid.model.RowGrouping;
+import org.eclipse.nebula.widgets.grid.model.RowPermutation;
+import org.eclipse.nebula.widgets.grid.model.RowStateLanes;
+import org.eclipse.nebula.widgets.grid.model.RowView;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.ACC;
@@ -618,6 +622,156 @@ public class Grid extends Canvas {
 	 * of Grid state; public range-change API remains in GridVisibleRangeSupport.
 	 */
 	private final List<Runnable> viewportChangeListeners = new ArrayList<>();
+
+	/** Installed sort/filter view (SWT.VIRTUAL flat Grids only); null = identity. */
+	private RowPermutation rowPermutation;
+
+	/** Installed grouping over {@link #rowPermutation}; null = none. */
+	private RowGrouping rowGrouping;
+
+	/** The applied view: {@link #rowGrouping} if set, else {@link #rowPermutation}. */
+	private RowView rowView;
+
+	/** {@link RowView#getVersion()} applied by the last refresh; -1 = none. */
+	private int rowPermutationVersion = -1;
+
+	/** Viewport event owed by a refresh that ran while the Grid was not visible. */
+	private boolean viewportEventPending;
+
+	/** Column window: x of each display-ordered column relative to the first (reused). */
+	private int[] columnLeft = new int[1];
+
+	/** Reused probe for {@code selectedCells.contains}: no Point per painted cell. */
+	private final Point cellProbe = new Point(0, 0);
+
+	/** Packed check lanes per column index (row view installed): checked, grayed, not checkable. */
+	private RowStateLanes[] checkLanes = new RowStateLanes[0];
+	static final int LANE_CHECKED = 0;
+	static final int LANE_GRAYED = 1;
+	static final int LANE_UNCHECKABLE = 2;
+
+	/**
+	 * Residency flag: the Grid may release cold {@code SWT.VIRTUAL} items (not painted by the
+	 * latest paint, not selected, focused, hovered, marked, pinned or carrying
+	 * {@code Widget.getData()}) least recently painted first, keeping their payload by model row
+	 * and restoring it without another {@code SWT.SetData}. Item identity is then not stable.
+	 *
+	 * @since 1.2
+	 */
+	public static final int RESIDENCY_EVICT_COLD = 1;
+
+	/** Rows populated ahead of the viewport after a paint (0 = off, the historic behaviour). */
+	private int prefetchRows;
+
+	/** Paint epoch the scheduled prefetch belongs to; a newer paint cancels it. */
+	private int prefetchEpoch = -1;
+
+	/** Rows populated by prefetch (package-private counter for tests and benches). */
+	int prefetchedRows;
+
+	/** True while prefetch populates rows outside the viewport: their setters need no redraw. */
+	private boolean prefetching;
+
+	private static final int PREFETCH_BATCH = 8;
+
+	/** Residency flags (0 = every materialized item is pinned, the historic behaviour). */
+	private int residencyFlags;
+
+	/** Materialized items kept before cold ones are released. */
+	private int residencyCapacity = Integer.MAX_VALUE;
+
+	/** Paint counter for the LRU stamps (masked to 31 bits). */
+	private int paintEpoch = 1;
+
+	/** Warm payloads of released rows, paged by model row: {itemState, visualizerPayload}. */
+	private Object[][] residentPages = new Object[0][];
+
+	/** Reused scratch for eviction: (stamp << 32 | slot). */
+	private long[] evictionScratch = new long[0];
+
+	/** Rows released and SetData calls avoided by restores (package-private, for tests/benches). */
+	int residencyReleased;
+	int residencyRestored;
+
+	/** Number of leading items frozen below the column header (pinned plane). */
+	private int pinnedTopRows;
+
+	/** Number of trailing items frozen above the column footer (pinned plane). */
+	private int pinnedBottomRows;
+
+	/** True while {@link #onPaint(PaintEvent)} runs. */
+	private boolean painting;
+
+	/** Item whose SWT.SetData callback is running, or null. */
+	private GridItem virtualDataItem;
+
+	/** Test switch: false restores the redraw of every item setter during paint-time SetData. */
+	boolean setDataRedrawGuard = true;
+
+	/**
+	 * Plane mask bits for {@link #freezePlanes(int)}: each plane of the one Grid control is
+	 * frozen independently (mirror of the SWT batch API with plane masks). An operation freezes
+	 * only the plane it changes; the other planes keep painting.
+	 */
+	static final int PLANE_BODY = 1;
+	/** Column header, group header, footer and pinned-row planes. */
+	static final int PLANE_CHROME = 1 << 1;
+	/** Scroll bar metrics (the native bars are only updated when this plane thaws). */
+	static final int PLANE_SCROLLBARS = 1 << 2;
+
+	/** Freeze depth per plane bit (index = bit number). */
+	private final int[] planeDepth = new int[3];
+
+	/** Planes with depth > 0, and planes whose invalidation is owed when they thaw. */
+	private int frozenPlanes;
+	private int pendingPlanes;
+
+	/** A frame paint is scheduled for a thumb drag (at most one per frame). */
+	private boolean dragFrameScheduled;
+	private boolean dragFrameHorizontal;
+	private boolean dragFrameVertical;
+
+	/** Reused frame task of a thumb drag: no allocation per drag event. */
+	private final Runnable dragFrame = () -> {
+		dragFrameScheduled = false;
+		final boolean h = dragFrameHorizontal;
+		final boolean v = dragFrameVertical;
+		dragFrameHorizontal = false;
+		dragFrameVertical = false;
+		if (!isDisposed()) {
+			if (v) {
+				onScrollSelection(false);
+			}
+			if (h) {
+				onScrollSelection(true);
+			}
+		}
+	};
+
+	/** Milliseconds per frame for thumb-drag body paints. */
+	private static final int DRAG_FRAME_MS = 16;
+
+	/** Body planes painted (package-private counter for tests and benches). */
+	int bodyPaintCount;
+
+	/** Top index drawn by the last body paint (origin of a blit scroll); -1 = unknown. */
+	private int paintedTopIndex = -1;
+
+	/** Test switch: false restores the full body redraw on vertical scrolling. */
+	boolean blitScroll = true;
+
+	/** Vertical scrolls served by a blit (package-private, for tests and benches). */
+	int blitScrollCount;
+
+	/** Rows skipped because they lie outside the paint clip (package-private counter). */
+	int paintCulledRows;
+
+	/** Test switch: false forces the full column walk (the unmodified algorithm). */
+	boolean columnWindowEnabled = true;
+
+	/** Paint counters of the last paint (package-private, read by tests and benches). */
+	int paintCellCount;
+	int paintColumnVisits;
 
 
 	/**
@@ -1869,6 +2023,11 @@ public class Grid extends Canvas {
 			y2 += headerHeight;
 		}
 
+		final int pinnedRow = pinnedRowAt(p.y);
+		if (pinnedRow >= 0) {
+			return items.get(pinnedRow);
+		}
+
 		GridItem itemToReturn = null;
 
 		int row = getTopIndex();
@@ -2699,7 +2858,13 @@ public class Grid extends Canvas {
 		range.startIndex = startIndex;
 		range.endIndex = endIndex;
 
-		if (isTree || hasDifferingHeights) {
+		if (!isTree && hasDifferingHeights && usesSparseVirtualItems()) {
+			// Flat virtual rows: an unmaterialized row would be created with itemHeight, so only
+			// materialized rows can differ; no row is created to measure it.
+			range.rows = range.endIndex - range.startIndex + 1;
+			range.height = (itemHeight + 1) * range.rows - 1
+					+ sparseVirtualItems().heightDelta(startIndex, endIndex, itemHeight);
+		} else if (isTree || hasDifferingHeights) {
 			for (int idx = startIndex; idx <= endIndex; idx++) {
 				final GridItem currItem = items.get(idx);
 
@@ -4371,11 +4536,32 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 
+		// An item being disposed is already out of the item list but still holds its old row
+		// (Grid.removeItem may resize the scrollbars, which lays out a GridEditor on it): it
+		// is not shown (issue #700).
+		if (!isRowOf(item, itemIndex)) {
+			return false;
+		}
+
 		final int firstVisibleIndex = getTopIndex();
 		final int lastVisibleIndex = getBottomIndex();
 
 		return itemIndex >= firstVisibleIndex && itemIndex < lastVisibleIndex
 				|| itemIndex == lastVisibleIndex && bottomIndexShownCompletely;
+	}
+
+	/**
+	 * @return {@code true} if {@code item} is the item at row {@code index}; an unmaterialized
+	 *         virtual row is never {@code item}, so no item is created by the check
+	 */
+	boolean isRowOf(final GridItem item, final int index) {
+		if (index < 0 || index >= items.size()) {
+			return false;
+		}
+		final GridItem atIndex = items instanceof GridVirtualItemList
+				? ((GridVirtualItemList) items).getMaterialized(index)
+				: items.get(index);
+		return atIndex == item;
 	}
 
 	/**
@@ -5315,7 +5501,24 @@ public class Grid extends Canvas {
 	 * @param event paint event
 	 */
 	private void onPaint(final PaintEvent event) {
+		painting = true;
+		try {
+			paintNow(event);
+		} finally {
+			painting = false;
+		}
+		if (evictingCold()) {
+			evictCold();
+		}
+		paintEpoch = (paintEpoch + 1) & 0x7fffffff;
+		schedulePrefetch();
+	}
+
+	private void paintNow(final PaintEvent event) {
 		final InsertMark insertMark = new InsertMark(); // we will populate these values while drawing the cells
+		paintCellCount = 0;
+		paintColumnVisits = 0;
+		paintCulledRows = 0;
 
 		final GC gc = event.gc;
 		final Rectangle originalClipping = gc.getClipping();
@@ -5324,9 +5527,13 @@ public class Grid extends Canvas {
 		final Point controlSize = getSize();
 		this.drawBackground(gc, 0, 0, controlSize.x, controlSize.y);
 
-		if (scrollValuesObsolete) {
+		if (scrollValuesObsolete && (frozenPlanes & PLANE_SCROLLBARS) == 0) {
 			updateScrollbars();
 			scrollValuesObsolete = false;
+		}
+		if (viewportEventPending) {
+			viewportEventPending = false;
+			fireViewportChanged();
 		}
 
 		final int extraFill = getExtraFill(controlSize);
@@ -5470,6 +5677,8 @@ public class Grid extends Canvas {
 
 		// Z1: scrolling body.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
+			paintedTopIndex = firstVisibleIndex;
+			bodyPaintCount++;
 			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
 			try (GridGCProxy bodyGc = GridGCProxy.wrap(gc).clip(bodyClipping)) {
 				paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager,
@@ -5491,6 +5700,476 @@ public class Grid extends Canvas {
 			}
 		}
 
+		// Z2b: pinned rows are a fixed plane of the same Grid over the scrolling body.
+		if (pinnedTopRows + pinnedBottomRows > 0 && !items.isEmpty()
+				&& GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
+			paintPinnedRows(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive);
+		}
+
+	}
+
+	/**
+	 * @return {@code true} when no cell can span columns or rows, so the column window may
+	 *         skip columns left of the body (a custom visualizer may report spans on its own)
+	 */
+	private boolean columnWindowActive() {
+		return columnWindowEnabled && !hasSpanning && dataVisualizer.getClass() == GridItemDataVisualizer.class;
+	}
+
+	/**
+	 * Rebuilds {@link #columnLeft} (x of each display-ordered column, hidden columns zero
+	 * width) and returns the first display position whose right edge is at or right of 0
+	 * when the first column starts at {@code x0}.
+	 */
+	private int columnWindowStart(final List<GridColumn> cols, final int x0, final int extraFill) {
+		final int n = cols.size();
+		if (columnLeft.length < n + 1) {
+			columnLeft = new int[Math.max(n + 1, columnLeft.length * 2)];
+		}
+		int left = 0;
+		int start = -1;
+		columnLeft[0] = 0;
+		for (int i = 0; i < n; i++) {
+			final GridColumn c = cols.get(i);
+			left += c.isVisible() ? c.getWidth(extraFill) : 0;
+			columnLeft[i + 1] = left;
+			if (start < 0 && x0 + left >= 0) {
+				start = i;
+			}
+		}
+		return start < 0 ? n : start;
+	}
+
+	private Point cellProbe(final int column, final int row) {
+		cellProbe.x = column;
+		cellProbe.y = row;
+		return cellProbe;
+	}
+
+	private void paintPinnedRows(final GC gc, final Rectangle originalClipping, final Rectangle clientArea,
+			final int extraFill, final int hscroll, final FixedGridColumns fixed, final boolean fixedOverlayActive) {
+		final int top = Math.min(pinnedTopRows, items.size());
+		final int bottom = Math.min(pinnedBottomRows, items.size() - top);
+		if (top > 0) {
+			final int y = columnHeadersVisible ? headerHeight : 0;
+			paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive, 0,
+					top, y);
+		}
+		if (bottom > 0) {
+			final int first = items.size() - bottom;
+			final int y = clientArea.height - (columnFootersVisible ? footerHeight : 0)
+					- pinnedHeight(first, items.size());
+			paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive, first,
+					bottom, y);
+		}
+	}
+
+	private void paintPinnedPlane(final GC gc, final Rectangle originalClipping, final Rectangle clientArea,
+			final int extraFill, final int hscroll, final FixedGridColumns fixed, final boolean fixedOverlayActive,
+			final int first, final int count, final int y) {
+		final int bodyTop = columnHeadersVisible ? headerHeight : 0;
+		final int bodyBottom = clientArea.height - (columnFootersVisible ? footerHeight : 0);
+		final int planeTop = Math.max(bodyTop, y);
+		final int planeBottom = Math.min(bodyBottom, y + pinnedHeight(first, first + count));
+		if (planeBottom <= planeTop) {
+			return;
+		}
+		final Rectangle plane = new Rectangle(clientArea.x, planeTop, clientArea.width, planeBottom - planeTop);
+		final Rectangle clip = originalClipping.intersection(plane);
+		if (clip.isEmpty()) {
+			return;
+		}
+		// Same GC state as the body pass (no proxy round trip): the plane must print the exact
+		// pixels the body prints for the same rows.
+		final Rectangle savedClip = gc.getClipping();
+		final Color savedBackground = gc.getBackground();
+		try {
+			gc.setClipping(clip);
+			// the plane is opaque: cells without a background colour must not draw over the
+			// scrolled rows beneath, so the plane starts from the Grid background as onPaint does
+			gc.setBackground(getBackground());
+			gc.fillRectangle(plane);
+			paintRows(displayOrderedColumns, false, first, count, hscroll, new GridCellSpanManager(), gc, clip, y,
+					clientArea, first, new InsertMark(), extraFill);
+		} finally {
+			gc.setBackground(savedBackground);
+			gc.setClipping(savedClip);
+		}
+		if (fixedOverlayActive) {
+			final int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
+			final Rectangle fixedClip = clip
+					.intersection(new Rectangle(fixedX, planeTop, getFixedColumnsWidth(), planeBottom - planeTop));
+			if (!fixedClip.isEmpty()) {
+				try (GridGCProxy fixedGc = GridGCProxy.wrap(gc).clip(fixedClip)) {
+					paintRows(fixed.columns(), true, first, count, 0, new GridCellSpanManager(), fixedGc.gc(),
+							fixedClip, y, clientArea, first, new InsertMark(), extraFill);
+				}
+			}
+		}
+	}
+
+	/** Height of items {@code [from, to)} as painted (item height plus the grid line). */
+	private int pinnedHeight(final int from, final int to) {
+		int h = 0;
+		for (int r = from; r < to; r++) {
+			h += items.get(r).getHeight() + 1;
+		}
+		return h;
+	}
+
+	/** @return the pinned item index under body y, or -1 when y is not on a pinned plane */
+	private int pinnedRowAt(final int y) {
+		if (pinnedTopRows + pinnedBottomRows == 0 || items.isEmpty()) {
+			return -1;
+		}
+		final int top = Math.min(pinnedTopRows, items.size());
+		final int bottom = Math.min(pinnedBottomRows, items.size() - top);
+		int y0 = columnHeadersVisible ? headerHeight : 0;
+		for (int r = 0; r < top; r++) {
+			final int h = items.get(r).getHeight() + 1;
+			if (y >= y0 && y < y0 + h) {
+				return r;
+			}
+			y0 += h;
+		}
+		final int first = items.size() - bottom;
+		y0 = getClientArea().height - (columnFootersVisible ? footerHeight : 0) - pinnedHeight(first, items.size());
+		for (int r = first; r < items.size(); r++) {
+			final int h = items.get(r).getHeight() + 1;
+			if (y >= y0 && y < y0 + h) {
+				return r;
+			}
+			y0 += h;
+		}
+		return -1;
+	}
+
+	/**
+	 * Freezes the first {@code top} and the last {@code bottom} items: they are painted as a
+	 * fixed plane of the Grid below the column header and above the footer while the other
+	 * rows scroll beneath them, like the fixed columns of {@link GridColumn#setFixed(boolean)}.
+	 * They stay ordinary items (index, selection, events); {@link #getItem(Point)} returns
+	 * the pinned item on the plane. With
+	 * {@link org.eclipse.nebula.widgets.grid.model.RowPermutation#setPinnedRows(int[], int[])}
+	 * the frozen items are chosen model rows. {@code 0, 0} (the default) disables the plane.
+	 *
+	 * @param top    number of leading items to freeze
+	 * @param bottom number of trailing items to freeze
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if a count is
+	 *                                     negative or the Grid has child items</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	/**
+	 * Chooses how materialized items of a flat {@code SWT.VIRTUAL} Grid stay resident. With
+	 * {@link #RESIDENCY_EVICT_COLD} at most {@code capacity} items are kept: after each paint the
+	 * least recently painted cold items are released and their texts, colours, fonts, images,
+	 * spans, check state, height and header fields are kept by model row; scrolling back creates
+	 * a new item with that payload and no second {@code SWT.SetData}. Callers that keep
+	 * references to items must not use it (identity is not stable); items with
+	 * {@code Widget.getData()} are never released. {@code 0} restores the default.
+	 *
+	 * @param flags    0 or {@link #RESIDENCY_EVICT_COLD}
+	 * @param capacity maximum resident items when evicting, at least 1
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - for unknown flags or
+	 *                                     a capacity below 1</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setItemResidency(final int flags, final int capacity) {
+		checkWidget();
+		if (capacity < 1 || (flags & ~RESIDENCY_EVICT_COLD) != 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		residencyFlags = flags;
+		residencyCapacity = (flags & RESIDENCY_EVICT_COLD) != 0 ? capacity : Integer.MAX_VALUE;
+	}
+
+	/**
+	 * @return the residency flags set by {@link #setItemResidency(int, int)}
+	 * @since 1.2
+	 */
+	public int getItemResidency() {
+		checkWidget();
+		return residencyFlags;
+	}
+
+	private boolean evictingCold() {
+		return (residencyFlags & RESIDENCY_EVICT_COLD) != 0 && usesSparseVirtualItems()
+				&& dataVisualizer.getClass() == GridItemDataVisualizer.class;
+	}
+
+	/** Releases least recently painted cold items until the capacity holds. */
+	private void evictCold() {
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		final int excess = sparse.materializedCount() - residencyCapacity;
+		if (excess <= 0) {
+			return;
+		}
+		if (evictionScratch.length < sparse.materializedCount()) {
+			evictionScratch = new long[sparse.materializedCount() * 2];
+		}
+		int candidates = 0;
+		for (int slot = 0; slot < sparse.materializedCount(); slot++) {
+			if (sparse.slotStamp(slot) != paintEpoch && !residentPinned(sparse.slotItem(slot), sparse.slotIndex(slot))) {
+				evictionScratch[candidates++] = ((long) sparse.slotStamp(slot) << 32) | slot;
+			}
+		}
+		Arrays.sort(evictionScratch, 0, candidates);
+		final int victims = Math.min(excess, candidates);
+		// release by descending slot so earlier slot numbers stay valid
+		final long[] slots = new long[victims];
+		for (int i = 0; i < victims; i++) {
+			slots[i] = evictionScratch[i] & 0xffffffffL;
+		}
+		Arrays.sort(slots);
+		for (int i = victims - 1; i >= 0; i--) {
+			final int slot = (int) slots[i];
+			final int model = sparse.slotModel(slot);
+			final GridItem item = sparse.release(slot);
+			if (model >= 0) {
+				final Object[] payload = { item.takeResidentState(),
+						((GridItemDataVisualizer) dataVisualizer).takeRowPayload(item) };
+				residentPage(model, true)[model & 1023] = payload;
+			} else {
+				dataVisualizer.clearRow(item);
+			}
+			item.disposeOnly();
+			residencyReleased++;
+		}
+	}
+
+	private boolean residentPinned(final GridItem item, final int index) {
+		return selectedItems.contains(item) || item == focusItem || item == hoveringItem || item == insertMarkItem
+				|| item == shiftSelectionAnchorItem || item == rowBeingResized || item.getData() != null
+				|| index < pinnedTopRows || index >= items.size() - pinnedBottomRows;
+	}
+
+	private Object[] residentPage(final int model, final boolean create) {
+		final int page = model >>> 10;
+		if (page >= residentPages.length) {
+			if (!create) {
+				return null;
+			}
+			residentPages = Arrays.copyOf(residentPages, Math.max(page + 1, residentPages.length * 2));
+		}
+		Object[] p = residentPages[page];
+		if (p == null && create) {
+			p = new Object[1024];
+			residentPages[page] = p;
+		}
+		return p;
+	}
+
+	/** Restores a released row's payload onto its new item: no second SetData. */
+	private void restoreResident(final GridItem item, final int model) {
+		final Object[] page = model < 0 ? null : residentPage(model, false);
+		if (page == null || page[model & 1023] == null) {
+			return;
+		}
+		final Object[] payload = (Object[]) page[model & 1023];
+		page[model & 1023] = null;
+		item.putResidentState((Object[]) payload[0]);
+		((GridItemDataVisualizer) dataVisualizer).putRowPayload(item, (Object[]) payload[1]);
+		residencyRestored++;
+	}
+
+	/** Drops every warm payload (the row view changed, so rows are cleared as by Grid.clear). */
+	private void dropResidentPayloads() {
+		if (residentPages.length > 0) {
+			residentPages = new Object[0][];
+		}
+	}
+
+	/**
+	 * Freezes the first {@code top} and last {@code bottom} logical rows on a fixed
+	 * paint plane below the column header and above the footer. The rows keep their
+	 * ordinary Grid indices, selection/event semantics and cell renderers; scrolling
+	 * moves only the body plane beneath them.
+	 * <p>
+	 * For an installed {@link RowPermutation}, callers may first use
+	 * {@link RowPermutation#setPinnedRows(int[], int[])} to choose model rows and
+	 * then choose how many projected rows occupy the top/bottom fixed planes here.
+	 * Pinned rows are excluded from cold virtual-item eviction.
+	 * </p>
+	 *
+	 * @param top number of leading projected rows to freeze
+	 * @param bottom number of trailing projected rows to freeze
+	 * @exception IllegalArgumentException
+	 *            <ul>
+	 *            <li>ERROR_INVALID_ARGUMENT - if either count is negative or this Grid is a tree</li>
+	 *            </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *            <ul>
+	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 *            </ul>
+	 * @since 1.2
+	 */
+	/**
+	 * Populates up to {@code rows} rows below and then above the viewport while the event loop is
+	 * idle after a paint, in small batches; scrolling (the next paint) cancels the remaining
+	 * batches. Rows are populated through the normal item path ({@code SWT.SetData} once, or a
+	 * residency restore). Only flat {@code SWT.VIRTUAL} Grids prefetch; {@code 0} (the default)
+	 * disables it. With {@link #RESIDENCY_EVICT_COLD} the prefetch stays within the capacity.
+	 *
+	 * @param rows rows to populate ahead, 0 or more
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if {@code rows} is
+	 *                                     negative</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setPrefetchRows(final int rows) {
+		checkWidget();
+		if (rows < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		prefetchRows = rows;
+	}
+
+	/**
+	 * @return rows populated ahead of the viewport, see {@link #setPrefetchRows(int)}
+	 * @since 1.2
+	 */
+	public int getPrefetchRows() {
+		checkWidget();
+		return prefetchRows;
+	}
+
+	private void schedulePrefetch() {
+		if (prefetchRows <= 0 || !usesSparseVirtualItems() || !isVisible()) {
+			return;
+		}
+		prefetchEpoch = paintEpoch;
+		if (!prefetchQueued) {
+			prefetchQueued = true;
+			getDisplay().asyncExec(prefetchTask);
+		}
+	}
+
+	/** One prefetch chain at a time: set while a batch task is queued. */
+	private boolean prefetchQueued;
+
+	/** Reused prefetch batch task; it always serves the latest viewport. */
+	private final Runnable prefetchTask = () -> {
+		prefetchQueued = false;
+		prefetchStep(prefetchEpoch);
+	};
+
+	/** One idle batch; reschedules itself until done or until a newer paint moved the viewport. */
+	private void prefetchStep(final int epoch) {
+		if (isDisposed() || epoch != prefetchEpoch || !isVisible()) {
+			return;
+		}
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		final int count = items.size();
+		final int budget = residencyCapacity == Integer.MAX_VALUE ? prefetchRows
+				: Math.max(0, Math.min(prefetchRows, residencyCapacity - sparse.materializedCount()));
+		final int bottom = getBottomIndex();
+		final int top = getTopIndex();
+		int done = 0;
+		prefetching = true;
+		try {
+		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
+			final int below = bottom + i;
+			if (below >= 0 && below < count && sparse.getMaterialized(below) == null) {
+				items.get(below).getText(0);
+				prefetchedRows++;
+				done++;
+			}
+		}
+		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
+			final int above = top - i;
+			if (above >= 0 && above < count && sparse.getMaterialized(above) == null) {
+				items.get(above).getText(0);
+				prefetchedRows++;
+				done++;
+			}
+		}
+		} finally {
+			prefetching = false;
+		}
+		if (done == PREFETCH_BATCH && !prefetchQueued) {
+			prefetchQueued = true;
+			getDisplay().asyncExec(prefetchTask);
+		}
+	}
+
+	public void setPinnedRowCount(final int top, final int bottom) {
+		checkWidget();
+		if (top < 0 || bottom < 0 || isTree) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		if (top == pinnedTopRows && bottom == pinnedBottomRows) {
+			return;
+		}
+		pinnedTopRows = top;
+		pinnedBottomRows = bottom;
+		redraw();
+	}
+
+	/**
+	 * @return number of leading items frozen by {@link #setPinnedRowCount(int, int)}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public int getPinnedTopRowCount() {
+		checkWidget();
+		return pinnedTopRows;
+	}
+
+	/**
+	 * @return number of trailing items frozen by {@link #setPinnedRowCount(int, int)}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public int getPinnedBottomRowCount() {
+		checkWidget();
+		return pinnedBottomRows;
 	}
 
 	private FixedGridColumns getFixedGridColumns() {
@@ -5511,6 +6190,18 @@ public class Grid extends Canvas {
 			final Rectangle clientArea, final int firstVisibleIndex, final InsertMark insertMark, final int extraFill) {
 		int row = firstRow;
 		final int columnCount = cols.size();
+		// Column window: columns whose right edge is left of the body are never painted, so
+		// they are skipped instead of walked per row. Spanning needs the full walk.
+		final boolean window = !fixed && columnWindowActive();
+		final int windowStart = window
+				? columnWindowStart(cols, (rowHeaderVisible ? rowHeaderWidth : 0) - hScroll, extraFill)
+				: 0;
+		final int windowLeft = window ? columnLeft[windowStart] : 0;
+		// Rows outside the clip paint no pixel (each row draws inside [y - 1, y + height + 1));
+		// spanning rows and the insert mark need the full walk.
+		final boolean cull = !hasSpanning && insertMarkItem == null;
+		final int clipTop = originalClipping.y;
+		final int clipBottom = originalClipping.y + originalClipping.height;
 		for (int i = 0; i < visibleRows + firstVisibleIndex - firstRow; i++) {
 
 			int x = -hScroll;
@@ -5523,9 +6214,19 @@ public class Grid extends Canvas {
 					row++;
 					item = items.get(row);
 				}
+				if (residencyCapacity != Integer.MAX_VALUE && items instanceof GridVirtualItemList) {
+					((GridVirtualItemList) items).touch(row, paintEpoch);
+				}
 			}
 			if (item != null && !item.isVisible()) {
 				item = null;
+			}
+
+			if (item != null && cull && (y + item.getHeight() + 1 <= clipTop || y - 1 >= clipBottom)) {
+				paintCulledRows++;
+				y += item.getHeight() + 1;
+				row++;
+				continue;
 			}
 
 			if (item != null) {
@@ -5539,10 +6240,13 @@ public class Grid extends Canvas {
 
 				final int focusY = y;
 
-				int colIndex = 0;
+				int colIndex = windowStart;
+				x += windowLeft;
 
-				// draw regular cells for each column
-				for (final GridColumn column : cols) {
+				// draw regular cells for each column of the window
+				for (int ci = windowStart; ci < columnCount; ci++) {
+					final GridColumn column = cols.get(ci);
+					paintColumnVisits++;
 
 					final boolean skipCell = cellSpanManager.skipCell(colIndex, row);
 					final int indexOfColumn = column.index;
@@ -5594,7 +6298,7 @@ public class Grid extends Canvas {
 
 							column.getCellRenderer().setColumn(indexOfColumn);
 
-							if (selectedCells.contains(new Point(indexOfColumn, row))) {
+							if (!selectedCells.isEmpty() && selectedCells.contains(cellProbe(indexOfColumn, row))) {
 								column.getCellRenderer().setCellSelected(true);
 								cellInRowSelected = true;
 							} else {
@@ -5608,6 +6312,7 @@ public class Grid extends Canvas {
 							}
 
 							column.getCellRenderer().paint(gc, item);
+							paintCellCount++;
 
 							gc.setClipping(originalClipping);
 
@@ -5714,7 +6419,9 @@ public class Grid extends Canvas {
 					emptyCellRenderer.setRow(i + 1);
 				}
 
-				for (final GridColumn column : cols) {
+				x += windowLeft;
+				for (int ci = windowStart; ci < columnCount; ci++) {
+					final GridColumn column = cols.get(ci);
 
 					if (column.isVisible()) {
 						final int width = column.getWidth(extraFill);
@@ -5835,27 +6542,44 @@ public class Grid extends Canvas {
 			x += rowHeaderWidth;
 		}
 
-		GridColumnGroup previousPaintedGroup = null;
+		final int clientWidth = getClientArea().width;
+		// fixed-column bookkeeping over exactly the columns the paint loop reaches
+		int probeX = x;
 		for (final GridColumn column : displayOrderedColumns) {
-			if (x > getClientArea().width) {
+			if (probeX > clientWidth || hasFixedColumns) {
 				break;
 			}
 			if (!column.isVisible()) {
 				continue;
 			}
-			if (!hasFixedColumns) {
-				if (column.isFixed()) {
-					hasFixedColumns = true;
-				} else {
-					firstFixed += column.getWidth();
-				}
+			if (column.isFixed()) {
+				hasFixedColumns = true;
+			} else {
+				firstFixed += column.getWidth();
+			}
+			probeX += column.getWidth(extraFill);
+		}
+
+		// Column window for the header row: without column groups a header cell left of
+		// the body paints nothing visible, so it is skipped.
+		final boolean headerWindow = columnWindowEnabled && columnGroups.length == 0;
+		final int headerStart = headerWindow ? columnWindowStart(displayOrderedColumns, x, extraFill) : 0;
+		x += headerWindow ? columnLeft[headerStart] : 0;
+		GridColumnGroup previousPaintedGroup = null;
+		for (int ci = headerStart; ci < displayOrderedColumns.size(); ci++) {
+			final GridColumn column = displayOrderedColumns.get(ci);
+			if (x > clientWidth) {
+				break;
+			}
+			if (!column.isVisible()) {
+				continue;
 			}
 			previousPaintedGroup = paintColumnHeaderWithGroup(column, x, gc, previousPaintedGroup, extraFill);
 			x += column.getWidth(extraFill);
 		}
 
-		if (x < getClientArea().width) {
-			emptyColumnHeaderRenderer.setBounds(x, 0, getClientArea().width - x, headerHeight);
+		if (x < clientWidth) {
+			emptyColumnHeaderRenderer.setBounds(x, 0, clientWidth - x, headerHeight);
 			emptyColumnHeaderRenderer.paint(gc, null);
 		}
 
@@ -6149,6 +6873,57 @@ public class Grid extends Canvas {
 	 * Manages the state of the scrollbars when new items are added or the bounds
 	 * are changed.
 	 */
+	/** Scroll bar visibility changes made by {@link #updateScrollbars()} (package-private counter). */
+	int scrollbarToggles;
+
+	/** Test switch: false restores the measured two-pass scroll bar visibility. */
+	boolean settleScrollbars = true;
+
+	/**
+	 * Computes the result of the two visibility passes of {@link #updateScrollbars()} on
+	 * booleans (the client area grows or shrinks by the native bar sizes) and applies it with at
+	 * most one visibility change per bar, instead of showing and hiding the bars in between.
+	 * Only for the native scroll bars, whose visibility is what shrinks the client area.
+	 *
+	 * @return false when the bars are not both native (the caller runs the passes)
+	 */
+	private boolean settleScrollbarsArithmetically(final Point preferredSize, final Rectangle clientArea) {
+		if (!settleScrollbars || !(vScroll instanceof ScrollBarProxyAdapter) || !(hScroll instanceof ScrollBarProxyAdapter)
+				|| getVerticalBar() == null || getHorizontalBar() == null) {
+			return false;
+		}
+		final boolean v0 = vScroll.getVisible();
+		final boolean h0 = hScroll.getVisible();
+		final int barWidth = getVerticalBar().getSize().x;
+		final int barHeight = getHorizontalBar().getSize().y;
+		final int bareWidth = clientArea.width + (v0 ? barWidth : 0);
+		final int bareHeight = clientArea.height + (h0 ? barHeight : 0);
+		// pass 1 on the current client area, pass 2 on the area left by pass 1
+		final boolean v1 = preferredSize.y > clientArea.height;
+		final boolean h1 = preferredSize.x > clientArea.width;
+		final boolean v2 = preferredSize.y > bareHeight - (h1 ? barHeight : 0);
+		final boolean h2 = preferredSize.x > bareWidth - (v1 ? barWidth : 0);
+		if (!v1 || !v2) {
+			vScroll.setValues(0, 0, 1, 1, 1, 1);
+		}
+		if (!h1 || !h2) {
+			hScroll.setValues(0, 0, 1, 1, 1, 1);
+		}
+		if (v2 != v0) {
+			vScroll.setVisible(v2);
+			scrollbarToggles++;
+		}
+		if (h2 != h0) {
+			hScroll.setVisible(h2);
+			scrollbarToggles++;
+		}
+		// the arithmetic must match the real client area (bar metrics at fractional zoom);
+		// otherwise let the caller run the measured passes from here
+		final Rectangle settled = getClientArea();
+		return settled.width == bareWidth - (v2 ? barWidth : 0)
+				&& settled.height == bareHeight - (h2 ? barHeight : 0);
+	}
+
 	private void updateScrollbars() {
 		final Point preferredSize = getTableSize();
 
@@ -6165,6 +6940,10 @@ public class Grid extends Canvas {
 		// that if a scrollbar is turned on/off, the other scrollbar's
 		// visibility may be affected (more
 		// area may have been added/removed.
+		if (settleScrollbarsArithmetically(preferredSize, clientArea)) {
+			clientArea = getClientArea();
+		} else {
+		clientArea = getClientArea();
 		for (int doublePass = 1; doublePass <= 2; doublePass++) {
 
 			if (preferredSize.y > clientArea.height) {
@@ -6183,6 +6962,7 @@ public class Grid extends Canvas {
 			// get the clientArea again with the now visible/invisible
 			// scrollbars
 			clientArea = getClientArea();
+		}
 		}
 
 		// if the scrollbar is visible set its values
@@ -6637,11 +7417,11 @@ public class Grid extends Canvas {
 		addListener(SWT.Resize, e -> onResize());
 
 		if (getVerticalBar() != null) {
-			getVerticalBar().addListener(SWT.Selection, e -> onScrollSelection(false));
+			getVerticalBar().addListener(SWT.Selection, e -> onScrollBarEvent(false, e.detail));
 		}
 
 		if (getHorizontalBar() != null) {
-			getHorizontalBar().addListener(SWT.Selection, e -> onScrollSelection(true));
+			getHorizontalBar().addListener(SWT.Selection, e -> onScrollBarEvent(true, e.detail));
 		}
 
 		defaultKeyListener = this::onKeyDown;
@@ -7786,7 +8566,146 @@ public class Grid extends Canvas {
 	/**
 	 * Scrollbar selection event handler.
 	 */
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * While the Grid runs one of its own bulk operations the invalidation is merged and issued
+	 * once at the end of the operation.
+	 * </p>
+	 */
+	@Override
+	public void redraw() {
+		checkWidget();
+		if (frozenPlanes == 0) {
+			super.redraw();
+			return;
+		}
+		pendingPlanes |= frozenPlanes & (PLANE_BODY | PLANE_CHROME);
+		invalidatePlanes(~frozenPlanes & (PLANE_BODY | PLANE_CHROME));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * While the Grid runs one of its own bulk operations the invalidation is merged and issued
+	 * once at the end of the operation.
+	 * </p>
+	 */
+	@Override
+	public void redraw(final int x, final int y, final int width, final int height, final boolean all) {
+		checkWidget();
+		if (frozenPlanes == 0) {
+			super.redraw(x, y, width, height, all);
+			return;
+		}
+		final Rectangle damage = new Rectangle(x, y, width, height);
+		for (final int plane : new int[] { PLANE_BODY, PLANE_CHROME }) {
+			for (final Rectangle r : planeRects(plane)) {
+				final Rectangle part = r.intersection(damage);
+				if (part.isEmpty()) {
+					continue;
+				}
+				if ((frozenPlanes & plane) != 0) {
+					pendingPlanes |= plane;
+				} else {
+					super.redraw(part.x, part.y, part.width, part.height, all);
+				}
+			}
+		}
+	}
+
+	/** Freezes the planes of {@code mask} (nested; per-plane depth). */
+	void freezePlanes(final int mask) {
+		for (int bit = 0; bit < planeDepth.length; bit++) {
+			if ((mask & (1 << bit)) != 0 && planeDepth[bit]++ == 0) {
+				frozenPlanes |= 1 << bit;
+			}
+		}
+	}
+
+	/** Thaws the planes of {@code mask}; a plane reaching depth 0 is invalidated once if owed. */
+	void thawPlanes(final int mask) {
+		int owed = 0;
+		for (int bit = 0; bit < planeDepth.length; bit++) {
+			if ((mask & (1 << bit)) != 0 && --planeDepth[bit] == 0) {
+				frozenPlanes &= ~(1 << bit);
+				owed |= pendingPlanes & (1 << bit);
+				pendingPlanes &= ~(1 << bit);
+			}
+		}
+		if ((mask & PLANE_SCROLLBARS) != 0 && (frozenPlanes & PLANE_SCROLLBARS) == 0 && scrollValuesObsolete
+				&& !isDisposed()) {
+			owed |= PLANE_BODY;
+		}
+		invalidatePlanes(owed & (PLANE_BODY | PLANE_CHROME));
+	}
+
+	/** Starts a bulk body operation: body paints are merged; headers and scroll bars stay live. */
+	private void deferBody() {
+		freezePlanes(PLANE_BODY);
+	}
+
+	/** Ends a bulk body operation: one body invalidation for all merged damage. */
+	private void resumeBody() {
+		thawPlanes(PLANE_BODY);
+	}
+
+	private void invalidatePlanes(final int mask) {
+		if (mask == 0 || isDisposed()) {
+			return;
+		}
+		if (mask == (PLANE_BODY | PLANE_CHROME)) {
+			super.redraw();
+			return;
+		}
+		for (final int plane : new int[] { PLANE_BODY, PLANE_CHROME }) {
+			if ((mask & plane) != 0) {
+				for (final Rectangle r : planeRects(plane)) {
+					if (!r.isEmpty()) {
+						super.redraw(r.x, r.y, r.width, r.height, false);
+					}
+				}
+			}
+		}
+	}
+
+	/** Client rectangles of a plane: body between header and footer; chrome = header + footer. */
+	private Rectangle[] planeRects(final int plane) {
+		final Rectangle client = getClientArea();
+		final int header = columnHeadersVisible ? headerHeight : 0;
+		final int footer = columnFootersVisible ? footerHeight : 0;
+		if (plane == PLANE_BODY) {
+			return new Rectangle[] { GridViewportDamage.scrollDamage(client, header, footer, false) };
+		}
+		return new Rectangle[] { new Rectangle(client.x, client.y, client.width, Math.min(header, client.height)),
+				new Rectangle(client.x, Math.max(client.y, client.y + client.height - footer), client.width,
+						Math.min(footer, client.height)) };
+	}
+
+	/**
+	 * Native scroll bar listener: a thumb drag ({@code SWT.DRAG}) moves the scroll bar at once
+	 * and paints the body at most once per frame; any other scroll is handled immediately.
+	 */
+	private void onScrollBarEvent(final boolean horizontal, final int detail) {
+		if (detail != SWT.DRAG) {
+			onScrollSelection(horizontal);
+			return;
+		}
+		topIndex = -1;
+		bottomIndex = -1;
+		if (horizontal) {
+			invalidateVisibleColumnCache();
+		}
+		dragFrameHorizontal |= horizontal;
+		dragFrameVertical |= !horizontal;
+		if (!dragFrameScheduled) {
+			dragFrameScheduled = true;
+			getDisplay().timerExec(DRAG_FRAME_MS, dragFrame);
+		}
+	}
+
 	private void onScrollSelection(final boolean horizontal) {
+		final int oldTop = paintedTopIndex;
 		topIndex = -1;
 		bottomIndex = -1;
 		if (horizontal) {
@@ -7801,8 +8720,52 @@ public class Grid extends Canvas {
 				columnFootersVisible ? footerHeight : 0,
 				horizontal);
 		if (damage.width > 0 && damage.height > 0) {
+			if (!horizontal && blitBody(oldTop, damage)) {
+				return;
+			}
 			redraw(damage.x, damage.y, damage.width, damage.height, false);
 		}
+	}
+
+	/**
+	 * Scrolls the body by copying the pixels that stay visible and invalidating only the
+	 * exposed strip. Only when every row has the same height and the painted rows depend on
+	 * nothing but their absolute index (default renderers, no spans, pinned planes, insert mark,
+	 * column drag, cell hover feedback or child controls such as open cell editors); otherwise
+	 * the caller repaints the whole body.
+	 */
+	private boolean blitBody(final int oldTop, final Rectangle body) {
+		if (!blitScroll || oldTop < 0 || !isVisible() || !blitSafe()) {
+			return false;
+		}
+		final int newTop = getTopIndex();
+		final int dy = (oldTop - newTop) * (itemHeight + 1);
+		if (dy == 0 || Math.abs(dy) >= body.height) {
+			return false;
+		}
+		if (dy > 0) {
+			scroll(body.x, body.y + dy, body.x, body.y, body.width, body.height - dy, false);
+		} else {
+			scroll(body.x, body.y, body.x, body.y - dy, body.width, body.height + dy, false);
+		}
+		paintedTopIndex = newTop;
+		blitScrollCount++;
+		return true;
+	}
+
+	private boolean blitSafe() {
+		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
+				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
+				|| emptyCellRenderer.getClass() != DefaultEmptyCellRenderer.class
+				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
+			return false;
+		}
+		for (final GridColumn column : displayOrderedColumns) {
+			if (column.isVisible() && column.getCellRenderer().getClass() != DefaultCellRenderer.class) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -8121,6 +9084,15 @@ public class Grid extends Canvas {
 	 * @return current number of columns
 	 */
 	int newColumn(final GridColumn column, final int index) {
+		freezePlanes(PLANE_CHROME);
+		try {
+			return newColumnNow(column, index);
+		} finally {
+			thawPlanes(PLANE_CHROME);
+		}
+	}
+
+	private int newColumnNow(final GridColumn column, final int index) {
 
 		final int size = columns.size();
 		if (index == -1) {
@@ -8164,6 +9136,15 @@ public class Grid extends Canvas {
 	 * @param column column to remove
 	 */
 	void removeColumn(final GridColumn column) {
+		freezePlanes(PLANE_CHROME);
+		try {
+			removeColumnNow(column);
+		} finally {
+			thawPlanes(PLANE_CHROME);
+		}
+	}
+
+	private void removeColumnNow(final GridColumn column) {
 		boolean selectionModified = false;
 
 		final int index = column.index;
@@ -8234,7 +9215,11 @@ public class Grid extends Canvas {
 	}
 
 	GridItem materializeVirtualItem(final int index) {
-		return new GridItem(this, SWT.NONE, index, true);
+		final GridItem item = new GridItem(this, SWT.NONE, index, true);
+		if (residentPages.length > 0) {
+			restoreResident(item, viewModelRow(index));
+		}
+		return item;
 	}
 
 	void initializeVirtualItemFacade(final GridItem item) {
@@ -8322,6 +9307,7 @@ public class Grid extends Canvas {
 	 */
 	int newItem(final GridItem item, int index, final boolean root) {
 		int row = 0;
+		dropResidentPayloads();
 
 		if (!isTree && item.getParentItem() != null) {
 			if (items instanceof GridVirtualItemList) {
@@ -8405,6 +9391,7 @@ public class Grid extends Canvas {
 	 * @param item item to remove
 	 */
 	void removeItem(final GridItem item) {
+		dropResidentPayloads();
 
 		final Point[] cells = getCells(item);
 		boolean selectionModified = false;
@@ -9799,7 +10786,8 @@ public class Grid extends Canvas {
 
 		if (usesSparseVirtualItems()) {
 			final int logicalCount = count;
-			setRedraw(false);
+			dropResidentPayloads();
+			deferBody();
 			try {
 				final GridVirtualItemList sparse = sparseVirtualItems();
 				final int oldCount = sparse.size();
@@ -9820,13 +10808,16 @@ public class Grid extends Canvas {
 				scrollValuesObsolete = true;
 				topIndex = -1;
 				bottomIndex = -1;
+				pendingPlanes |= PLANE_BODY;
 			} finally {
-				setRedraw(true);
+				resumeBody();
 			}
 			return;
 		}
 
-		setRedraw(false);
+		deferBody();
+		pendingPlanes |= PLANE_BODY;
+		try {
 		if (count < items.size()) {
 			selectedCells.clear();
 			for (int i = items.size() - 1; i >= count; i--) {
@@ -9848,7 +10839,463 @@ public class Grid extends Canvas {
 		while (count > items.size()) {
 			new GridItem(this, SWT.NONE);
 		}
-		setRedraw(true);
+		} finally {
+			resumeBody();
+		}
+	}
+
+	/**
+	 * Installs a packed sort/filter view. Item index {@code i} then shows model row
+	 * {@code permutation.modelRow(i)}; the item count becomes
+	 * {@code permutation.getViewCount()}. {@code SWT.SetData} keeps reporting the item
+	 * (view) index, so a data callback reads its row as
+	 * {@code getRowPermutation().modelRow(event.index)}.
+	 * <p>
+	 * Only for flat {@code SWT.VIRTUAL} Grids. Passing {@code null} removes the view
+	 * and shows all model rows of the previous permutation in model order.
+	 * </p>
+	 *
+	 * @param permutation the view, or {@code null}
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the Grid is
+	 *                                     not {@code SWT.VIRTUAL} or has child
+	 *                                     items</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @see #refreshRowPermutation()
+	 * @since 1.2
+	 */
+	public void setRowPermutation(final RowPermutation permutation) {
+		checkWidget();
+		if (!usesSparseVirtualItems()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		final RowView previous = rowView;
+		rowGrouping = null;
+		if (permutation == null) {
+			if (previous != null) {
+				rowPermutation = null;
+				rowView = null;
+				rowPermutationVersion = -1;
+				applyRowView(previous.getModelCount(), previous, true);
+			}
+			return;
+		}
+		rowPermutation = permutation;
+		rowView = permutation;
+		rowPermutationVersion = -1;
+		applyRowView(permutation.getViewCount(), permutation, false);
+	}
+
+	/**
+	 * Installs a packed grouping. The Grid then shows, per group, a header item followed by
+	 * the group's rows when it is expanded; {@code getRowPermutation()} returns the grouping's
+	 * source. In {@code SWT.SetData}, {@code getRowGrouping().isGroupHeader(event.index)}
+	 * tells a header from a row, {@code groupOf} gives its group and {@code modelRow} the row.
+	 * Passing {@code null} returns to the plain permutation view.
+	 * <p>
+	 * After {@link RowGrouping#setExpanded(int, boolean)} or a change of the source
+	 * permutation, call {@link #refreshRowPermutation()}.
+	 * </p>
+	 *
+	 * @param grouping the grouping, or {@code null}
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the Grid is
+	 *                                     not {@code SWT.VIRTUAL} or has child
+	 *                                     items</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setRowGrouping(final RowGrouping grouping) {
+		checkWidget();
+		if (!usesSparseVirtualItems()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		if (grouping == null) {
+			if (rowGrouping != null) {
+				rowGrouping = null;
+				rowView = rowPermutation;
+				rowPermutationVersion = -1;
+				applyRowView(rowPermutation.getViewCount(), rowPermutation, false);
+			}
+			return;
+		}
+		rowGrouping = grouping;
+		rowPermutation = grouping.getSource();
+		rowView = grouping;
+		rowPermutationVersion = -1;
+		applyRowView(grouping.getViewCount(), grouping, false);
+	}
+
+	/**
+	 * @return the installed grouping, or {@code null}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public RowGrouping getRowGrouping() {
+		checkWidget();
+		return rowGrouping;
+	}
+
+	/**
+	 * @return the installed sort/filter view, or {@code null}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public RowPermutation getRowPermutation() {
+		checkWidget();
+		return rowPermutation;
+	}
+
+	/**
+	 * Applies the installed {@link RowPermutation} after it was sorted, filtered or
+	 * resized. The item count becomes the view count; materialized items stay at their
+	 * index and are cleared as {@link #clear(int, int, boolean)} does (row recycling);
+	 * selection and focus follow their model rows, rows filtered out leave the selection.
+	 * No event is sent. While the Grid is not visible, viewport notification is deferred
+	 * to its next paint.
+	 *
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public void refreshRowPermutation() {
+		checkWidget();
+		if (rowView != null) {
+			applyRowView(rowView.getViewCount(), rowView, false);
+		}
+	}
+
+	/**
+	 * @return model row whose packed check state {@code item} shows, or -1 when check state lives
+	 *         in the data visualizer (no row view installed, or an item the view does not map)
+	 */
+	int packedCheckRow(final GridItem item) {
+		if (rowView == null || !usesSparseVirtualItems()) {
+			return -1;
+		}
+		return sparseVirtualItems().modelOfItemAt(item, item.getRowIndex());
+	}
+
+	/**
+	 * @return 1 or 0 for the packed check state of {@code lane} at {@code column} of
+	 *         {@code item}, or -1 when the data visualizer owns it
+	 */
+	int packedCheck(final GridItem item, final int column, final int lane) {
+		final int row = packedCheckRow(item);
+		if (row < 0) {
+			return -1;
+		}
+		final RowStateLanes lanes = column < checkLanes.length ? checkLanes[column] : null;
+		return lanes != null && lanes.get(lane, row) ? 1 : 0;
+	}
+
+	/**
+	 * Stores packed check state; returns false when the data visualizer owns it.
+	 */
+	boolean setPackedCheck(final GridItem item, final int column, final int lane, final boolean value) {
+		final int row = packedCheckRow(item);
+		if (row < 0) {
+			return false;
+		}
+		checkLanesOf(column).set(lane, row, value);
+		return true;
+	}
+
+	private RowStateLanes checkLanesOf(final int column) {
+		if (column >= checkLanes.length) {
+			checkLanes = Arrays.copyOf(checkLanes, Math.max(column + 1, checkLanes.length * 2));
+		}
+		RowStateLanes lanes = checkLanes[column];
+		if (lanes == null) {
+			lanes = new RowStateLanes(3);
+			lanes.setCount(rowView.getModelCount());
+			checkLanes[column] = lanes;
+		}
+		return lanes;
+	}
+
+	/**
+	 * Checks or unchecks a column for all model rows of the installed row view at once (bit
+	 * ranges, no item is created), optionally only for rows that pass the filter or are pinned.
+	 *
+	 * @param column             column index
+	 * @param checked            new state
+	 * @param passingFilterOnly  {@code true} to touch only displayed rows of the permutation
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if no row view is
+	 *                                     installed</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setCheckedAll(final int column, final boolean checked, final boolean passingFilterOnly) {
+		checkWidget();
+		if (rowView == null || column < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		final RowStateLanes lanes = checkLanesOf(column);
+		final int rows = rowView.getModelCount();
+		if (!passingFilterOnly || !rowPermutation.isFiltered()) {
+			lanes.setRange(LANE_CHECKED, 0, rows, checked);
+		} else {
+			forEachDisplayedRun(rows, (from, to) -> lanes.setRange(LANE_CHECKED, from, to, checked));
+		}
+		redraw();
+	}
+
+	/**
+	 * @param column            column index
+	 * @param passingFilterOnly {@code true} to count only displayed rows of the permutation
+	 * @return number of checked model rows in the column (bit counts, no item is created)
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if no row view is
+	 *                                     installed</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public int getCheckedCount(final int column, final boolean passingFilterOnly) {
+		checkWidget();
+		if (rowView == null || column < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		final RowStateLanes lanes = column < checkLanes.length ? checkLanes[column] : null;
+		if (lanes == null) {
+			return 0;
+		}
+		final int rows = rowView.getModelCount();
+		if (!passingFilterOnly || !rowPermutation.isFiltered()) {
+			return lanes.countRange(LANE_CHECKED, 0, rows);
+		}
+		final int[] count = new int[1];
+		forEachDisplayedRun(rows, (from, to) -> count[0] += lanes.countRange(LANE_CHECKED, from, to));
+		return count[0];
+	}
+
+	/** Visits maximal runs of displayed model rows, a 64-row word at a time. */
+	private void forEachDisplayedRun(final int rows, final RunVisitor visitor) {
+		final long[] words = rowPermutation.displayedBits(new long[(rows + 63) >>> 6]);
+		int runStart = -1;
+		for (int w = 0; w < words.length; w++) {
+			final long word = words[w];
+			if (word == -1L && runStart >= 0) {
+				continue;
+			}
+			if (word == 0L && runStart < 0) {
+				continue;
+			}
+			for (int b = 0; b < 64; b++) {
+				final boolean on = (word & (1L << b)) != 0L;
+				final int row = (w << 6) + b;
+				if (on && runStart < 0) {
+					runStart = row;
+				} else if (!on && runStart >= 0) {
+					visitor.run(runStart, row);
+					runStart = -1;
+				}
+			}
+		}
+		if (runStart >= 0) {
+			visitor.run(runStart, Math.min(rows, words.length << 6));
+		}
+	}
+
+	@FunctionalInterface
+	private interface RunVisitor {
+		void run(int from, int to);
+	}
+
+	/**
+	 * Runs a SetData callback for {@code item} and remembers it, so that paint-only setters of
+	 * that item do not invalidate the Grid the paint is drawing.
+	 */
+	void fireSetData(final GridItem item, final Event event) {
+		final GridItem outer = virtualDataItem;
+		virtualDataItem = item;
+		try {
+			notifyListeners(SWT.SetData, event);
+		} finally {
+			virtualDataItem = outer;
+		}
+	}
+
+	/**
+	 * Redraw for a paint-only change (text, colour, check state) of {@code item}. Skipped while
+	 * the change comes from the SetData callback that this paint fired for the same item: every
+	 * item getter fires SetData before it returns, so the running paint already draws the new
+	 * value and a second full paint would only repeat it (and flicker).
+	 */
+	void redrawForItemData(final GridItem item) {
+		if (setDataRedrawGuard && painting && virtualDataItem == item) {
+			return;
+		}
+		if (prefetching) {
+			return;
+		}
+		redraw();
+	}
+
+	/**
+	 * @return model row shown at view index {@code index} under the applied view, or -1 if
+	 *         the view changed and was not refreshed yet
+	 */
+	int viewModelRow(final int index) {
+		final RowView p = rowView;
+		if (p == null) {
+			return index;
+		}
+		if (p.getVersion() != rowPermutationVersion || index >= p.getViewCount()) {
+			return -1;
+		}
+		return p.modelRow(index);
+	}
+
+	private void applyRowView(final int count, final RowView view, final boolean identity) {
+		deferBody();
+		try {
+			applyRowViewNow(count, view, identity);
+		} finally {
+			resumeBody();
+		}
+	}
+
+	private void applyRowViewNow(final int count, final RowView view, final boolean identity) {
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		final int[] selectedModels = slotModels(selectedItems, sparse);
+		final int focusModel = focusItem == null ? -1 : slotModel(focusItem, sparse);
+		final int[] cellModels = new int[selectedCells.size()];
+		for (int i = 0; i < cellModels.length; i++) {
+			final GridItem rowItem = sparse.getMaterialized(selectedCells.get(i).y);
+			cellModels[i] = rowItem == null ? -1 : slotModel(rowItem, sparse);
+		}
+		final List<Point> cells = new ArrayList<>(selectedCells);
+		selectedItems.clear();
+		selectedCells.clear();
+		selectedCellsBeforeRangeSelect.clear();
+		focusItem = null;
+		if (!identity) {
+			rowPermutationVersion = view.getVersion();
+		}
+		for (final GridItem removed : sparse.setLogicalSize(count)) {
+			removed.disposeOnly();
+		}
+		for (int slot = 0; slot < sparse.materializedCount(); slot++) {
+			sparse.slotItem(slot).clear(false);
+			sparse.setSlotModel(slot, viewModelRow(sparse.slotIndex(slot)));
+		}
+		for (final int model : selectedModels) {
+			final int v = viewOfModel(model, view, identity);
+			if (v >= 0 && !selectedItems.contains(items.get(v))) {
+				selectedItems.add(items.get(v));
+			}
+		}
+		for (int i = 0; i < cellModels.length; i++) {
+			final int v = viewOfModel(cellModels[i], view, identity);
+			if (v >= 0) {
+				selectedCells.add(new Point(cells.get(i).x, v));
+			}
+		}
+		final int focusView = viewOfModel(focusModel, view, identity);
+		focusItem = focusView >= 0 ? items.get(focusView) : null;
+		if (shiftSelectionAnchorItem != null && shiftSelectionAnchorItem.isDisposed()) {
+			shiftSelectionAnchorItem = null;
+		}
+		if (hoveringItem != null && hoveringItem.isDisposed()) {
+			hoveringItem = null;
+		}
+		currentVisibleItems = count;
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		for (final RowStateLanes lanes : checkLanes) {
+			if (lanes != null) {
+				lanes.setCount(view.getModelCount());
+			}
+		}
+		dropResidentPayloads();
+		if (!disposing) {
+			updateColumnSelection();
+		}
+		redraw();
+		if (isVisible()) {
+			fireViewportChanged();
+		} else {
+			viewportEventPending = true;
+		}
+	}
+
+	private static int viewOfModel(final int model, final RowView view, final boolean identity) {
+		if (model < 0 || model >= view.getModelCount()) {
+			return -1;
+		}
+		return identity ? model : view.viewIndex(model);
+	}
+
+	private static int[] slotModels(final List<GridItem> list, final GridVirtualItemList sparse) {
+		final int[] models = new int[list.size()];
+		for (int i = 0; i < models.length; i++) {
+			models[i] = slotModel(list.get(i), sparse);
+		}
+		return models;
+	}
+
+	private static int slotModel(final GridItem item, final GridVirtualItemList sparse) {
+		final int slot = sparse.slotOf(item);
+		return slot < 0 ? -1 : sparse.slotModel(slot);
 	}
 
 	/**
@@ -10492,6 +11939,7 @@ public class Grid extends Canvas {
 
 		final GridItem item = getItem(index);
 		item.clear(allChildren);
+		dropResidentPayloads();
 		redraw();
 	}
 
@@ -10541,6 +11989,7 @@ public class Grid extends Canvas {
 			final GridItem item = items.get(i);
 			item.clear(allChildren);
 		}
+		dropResidentPayloads();
 		redraw();
 	}
 
@@ -10594,6 +12043,7 @@ public class Grid extends Canvas {
 			final GridItem item = items.get(indice);
 			item.clear(allChildren);
 		}
+		dropResidentPayloads();
 		redraw();
 	}
 
@@ -10820,6 +12270,7 @@ public class Grid extends Canvas {
 	 * Refresh hasData {@link GridItem} state if {@link Grid} is virtual
 	 */
 	public void refreshData() {
+		dropResidentPayloads();
 		if ((getStyle() & SWT.VIRTUAL) != 0) {
 			for (final GridItem item : materializedItems()) {
 				item.setHasSetData(false);

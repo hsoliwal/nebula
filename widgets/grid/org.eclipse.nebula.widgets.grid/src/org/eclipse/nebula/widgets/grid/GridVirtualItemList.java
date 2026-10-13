@@ -34,6 +34,10 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
     private int logicalSize;
     private int[] indices = new int[4];
     private GridItem[] values = new GridItem[4];
+    // packed model row of each materialized slot (-1 = unknown): Grid state, not a GridItem field
+    private int[] models = new int[4];
+    // paint epoch of the last paint that used each slot (LRU for residency)
+    private int[] stamps = new int[4];
     private int materializedCount;
 
     GridVirtualItemList(final Grid grid) {
@@ -71,12 +75,16 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         ensureCapacity(materializedCount + 1);
         System.arraycopy(indices, slot, indices, slot + 1, materializedCount - slot);
         System.arraycopy(values, slot, values, slot + 1, materializedCount - slot);
+        System.arraycopy(models, slot, models, slot + 1, materializedCount - slot);
+        System.arraycopy(stamps, slot, stamps, slot + 1, materializedCount - slot);
         for (int i = slot + 1; i <= materializedCount; i++) {
             indices[i]++;
             values[i].increaseRow();
         }
         indices[slot] = index;
         values[slot] = item;
+        models[slot] = -1;
+        stamps[slot] = 0;
         materializedCount++;
         logicalSize++;
         modCount++;
@@ -138,6 +146,85 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         return slot >= 0 ? values[slot] : null;
     }
 
+    /** @return view index bound to materialized slot {@code slot} */
+    int slotIndex(final int slot) {
+        return indices[slot];
+    }
+
+    /** @return item bound to materialized slot {@code slot} */
+    GridItem slotItem(final int slot) {
+        return values[slot];
+    }
+
+    /** @return packed model row of materialized slot {@code slot}, or -1 */
+    int slotModel(final int slot) {
+        return models[slot];
+    }
+
+    void setSlotModel(final int slot, final int model) {
+        models[slot] = model;
+    }
+
+    /**
+     * @return packed model row of {@code item} bound at view index {@code index}, or -1 when the
+     *         item is not the materialized item there (binary search, no scan)
+     */
+    int modelOfItemAt(final GridItem item, final int index) {
+        if (index < 0 || index >= logicalSize) {
+            return -1;
+        }
+        final int slot = find(index);
+        return slot >= 0 && values[slot] == item ? models[slot] : -1;
+    }
+
+    /**
+     * Sum of {@code height - base} over materialized rows in {@code [from, to]}: the height an
+     * unmaterialized row would get is {@code base}, so only materialized rows contribute.
+     */
+    int heightDelta(final int from, final int to, final int base) {
+        int delta = 0;
+        for (int slot = insertionPoint(from); slot < materializedCount && indices[slot] <= to; slot++) {
+            delta += values[slot].getHeight() - base;
+        }
+        return delta;
+    }
+
+    /** Marks the slot bound at view index {@code index} as used by paint {@code epoch}. */
+    void touch(final int index, final int epoch) {
+        final int slot = find(index);
+        if (slot >= 0) {
+            stamps[slot] = epoch;
+        }
+    }
+
+    int slotStamp(final int slot) {
+        return stamps[slot];
+    }
+
+    /**
+     * Unbinds the item of {@code slot} without changing the logical size: the row becomes
+     * unmaterialized and the next {@link #get(int)} creates a new item for it.
+     */
+    GridItem release(final int slot) {
+        final GridItem item = values[slot];
+        final int move = materializedCount - slot - 1;
+        if (move > 0) {
+            System.arraycopy(indices, slot + 1, indices, slot, move);
+            System.arraycopy(values, slot + 1, values, slot, move);
+            System.arraycopy(models, slot + 1, models, slot, move);
+            System.arraycopy(stamps, slot + 1, stamps, slot, move);
+        }
+        materializedCount--;
+        values[materializedCount] = null;
+        modCount++;
+        return item;
+    }
+
+    /** @return slot of the materialized item, or -1 */
+    int slotOf(final GridItem item) {
+        return identitySlot(item);
+    }
+
     List<GridItem> materializedSnapshot() {
         final List<GridItem> result = new ArrayList<>(materializedCount);
         for (int i = 0; i < materializedCount; i++) {
@@ -184,8 +271,12 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         ensureCapacity(materializedCount + 1);
         System.arraycopy(indices, slot, indices, slot + 1, materializedCount - slot);
         System.arraycopy(values, slot, values, slot + 1, materializedCount - slot);
+        System.arraycopy(models, slot, models, slot + 1, materializedCount - slot);
+        System.arraycopy(stamps, slot, stamps, slot + 1, materializedCount - slot);
         indices[slot] = index;
         values[slot] = item;
+        models[slot] = grid.viewModelRow(index);
+        stamps[slot] = 0;
         materializedCount++;
         modCount++;
     }
@@ -196,6 +287,8 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
             if (move > 0) {
                 System.arraycopy(indices, slot + 1, indices, slot, move);
                 System.arraycopy(values, slot + 1, values, slot, move);
+                System.arraycopy(models, slot + 1, models, slot, move);
+                System.arraycopy(stamps, slot + 1, stamps, slot, move);
             }
             materializedCount--;
             values[materializedCount] = null;
@@ -248,6 +341,8 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         final int next = Math.max(required, indices.length * 3 / 2 + 1);
         indices = Arrays.copyOf(indices, next);
         values = Arrays.copyOf(values, next);
+        models = Arrays.copyOf(models, next);
+        stamps = Arrays.copyOf(stamps, next);
     }
 
     private void checkElementIndex(final int index) {
