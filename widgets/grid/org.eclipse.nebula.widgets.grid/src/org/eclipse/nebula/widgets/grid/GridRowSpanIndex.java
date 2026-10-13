@@ -127,6 +127,10 @@ final class GridRowSpanIndex {
 		return size;
 	}
 
+	boolean owns(GridItem item) {
+		return size > 0 && indexOf(item) >= 0;
+	}
+
 	void clear() {
 		for (int i = 0; i < size; i++) {
 			owners[i] = null;

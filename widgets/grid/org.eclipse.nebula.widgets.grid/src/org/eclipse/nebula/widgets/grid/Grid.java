@@ -135,8 +135,18 @@ public class Grid extends Canvas {
 		return dataVisualizer;
 	}
 
+	/**
+	 * Returns whether the data visualizer is one of the Grid's own (item keyed or row
+	 * addressed). Their row spans and payloads are known to the Grid; a custom
+	 * DataVisualizer keeps the historical query paths.
+	 */
+	private boolean usesBuiltInDataVisualizer() {
+		final Class<?> type = dataVisualizer.getClass();
+		return type == GridItemDataVisualizer.class || type == GridRowAddressedItemDataVisualizer.class;
+	}
+
 	boolean usesIndexedRowSpans() {
-		return dataVisualizer.getClass() == GridItemDataVisualizer.class;
+		return usesBuiltInDataVisualizer();
 	}
 
 	void rowSpanChanged(final GridItem item, final int column, final int span) {
@@ -203,6 +213,7 @@ public class Grid extends Canvas {
 		items.clear();
 		rootItems.clear();
 		rowSpanIndex.clear();
+		clearDataRows();
 		deselectAll();
 		redraw();
 	}
@@ -1000,7 +1011,7 @@ public class Grid extends Canvas {
 	 * @param style  grid style
 	 */
 	public Grid(final Composite parent, final int style) {
-		this(new GridItemDataVisualizer(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE),
+		this(new GridRowAddressedItemDataVisualizer(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE),
 				Display.getCurrent().getSystemColor(SWT.COLOR_BLACK), null), parent, style);
 	}
 
@@ -3388,6 +3399,7 @@ public class Grid extends Canvas {
 			} else {
 				sparse.remove(index);
 				if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
+				removeDataRow(index);
 				currentVisibleItems--;
 				scrollValuesObsolete = true;
 				topIndex = -1;
@@ -5754,7 +5766,7 @@ public class Grid extends Canvas {
 	 *         skip columns left of the body (a custom visualizer may report spans on its own)
 	 */
 	private boolean columnWindowActive() {
-		return columnWindowEnabled && !hasSpanning && dataVisualizer.getClass() == GridItemDataVisualizer.class;
+		return columnWindowEnabled && !hasSpanning && usesBuiltInDataVisualizer();
 	}
 
 	/**
@@ -5957,7 +5969,7 @@ public class Grid extends Canvas {
 
 	private boolean evictingCold() {
 		return (residencyFlags & RESIDENCY_EVICT_COLD) != 0 && usesSparseVirtualItems()
-				&& dataVisualizer.getClass() == GridItemDataVisualizer.class;
+				&& usesBuiltInDataVisualizer();
 	}
 
 	/** Releases least recently painted cold items until the capacity holds. */
@@ -6003,7 +6015,9 @@ public class Grid extends Canvas {
 	private boolean residentPinned(final GridItem item, final int index) {
 		return selectedItems.contains(item) || item == focusItem || item == hoveringItem || item == insertMarkItem
 				|| item == shiftSelectionAnchorItem || item == rowBeingResized || item.getData() != null
-				|| index < pinnedTopRows || index >= items.size() - pinnedBottomRows;
+				|| index < pinnedTopRows || index >= items.size() - pinnedBottomRows
+				// row-span owners stay resident so the span index keeps a live owner
+				|| rowSpanIndex.owns(item);
 	}
 
 	private Object[] residentPage(final int model, final boolean create) {
@@ -7595,6 +7609,7 @@ public class Grid extends Canvas {
 		for (final GridItem item : materializedItems()) {
 			item.dispose();
 		}
+		clearDataRows();
 
 		for (final GridColumnGroup columnGroup : columnGroups) {
 			columnGroup.dispose();
@@ -9255,6 +9270,36 @@ public class Grid extends Canvas {
 		return (GridVirtualItemList) items;
 	}
 
+	private GridRowAddressedDataVisualizer rowAddressedDataVisualizer() {
+		return dataVisualizer instanceof GridRowAddressedDataVisualizer
+				? (GridRowAddressedDataVisualizer)dataVisualizer
+				: null;
+	}
+
+	boolean usesRowAddressedDataVisualizer() {
+		return rowAddressedDataVisualizer() != null;
+	}
+
+	private void insertDataRow(final int index) {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.insertRow(this, index);
+	}
+
+	private void removeDataRow(final int index) {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.removeRow(this, index);
+	}
+
+	private void truncateDataRows(final int count) {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.truncateRows(this, count);
+	}
+
+	private void clearDataRows() {
+		GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.clearRows(this);
+	}
+
 	GridItem materializeVirtualItem(final int index) {
 		final GridItem item = new GridItem(this, SWT.NONE, index, true);
 		if (residentPages.length > 0) {
@@ -9299,6 +9344,7 @@ public class Grid extends Canvas {
 		}
 		sparse.clear();
 		rowSpanIndex.clear();
+		clearDataRows();
 		rootItems.clear();
 		selectedItems.clear();
 		selectedCells.clear();
@@ -9388,9 +9434,11 @@ public class Grid extends Canvas {
 		if (index == -1) {
 			items.add(item);
 			row = items.size() - 1;
+			insertDataRow(row);
 		} else {
 			items.add(index, item);
 			row = index;
+			insertDataRow(row);
 			if (!(items instanceof GridVirtualItemList)) {
 				for (int i = index + 1; i < items.size(); i++) {
 					items.get(i).increaseRow();
@@ -9444,7 +9492,12 @@ public class Grid extends Canvas {
 		items.remove(item);
 		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 
-		dataVisualizer.clearRow(item);
+		if (usesRowAddressedDataVisualizer()) {
+			rowSpanOwnerDisposed(item);
+			removeDataRow(index);
+		} else {
+			dataVisualizer.clearRow(item);
+		}
 
 		if (disposing) {
 			return;
@@ -10836,6 +10889,7 @@ public class Grid extends Canvas {
 				final GridVirtualItemList sparse = sparseVirtualItems();
 				final int oldCount = sparse.size();
 				final List<GridItem> removed = sparse.setLogicalSize(logicalCount);
+				truncateDataRows(logicalCount);
 				for (final GridItem removedItem : removed) {
 					selectedItems.remove(removedItem);
 					if (focusItem == removedItem) {
