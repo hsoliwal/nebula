@@ -139,6 +139,10 @@ public class Grid extends Canvas {
 		if (usesIndexedRowSpans()) rowSpanIndex.update(item, column, span);
 	}
 
+	void rowSpanOwnerDisposed(final GridItem item) {
+		if (usesIndexedRowSpans()) rowSpanIndex.remove(item);
+	}
+
 	int rowSpanPaintStart(final int firstVisibleIndex) {
 		return usesIndexedRowSpans() ? rowSpanIndex.earliestCovering(firstVisibleIndex) : firstVisibleIndex;
 	}
@@ -3199,6 +3203,7 @@ public class Grid extends Canvas {
 				item.dispose();
 			} else {
 				sparse.remove(index);
+				if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 				currentVisibleItems--;
 				scrollValuesObsolete = true;
 				topIndex = -1;
