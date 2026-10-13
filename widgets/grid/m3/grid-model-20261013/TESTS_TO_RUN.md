@@ -19,4 +19,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 11 | `GridModelJobs_Test` (3), `RowPermutation_Test.staticSortedOrderEqualsTheInstanceSort` | #151 | new (batch threshold, worker + UI-thread apply) | compile-checked only |
 | 12 | `GridCheckLanes_Test` (1) + bench check-all on 1M rows | #151 | new (packed check lanes keyed by model row, filter-aware check-all/count) | compile-checked only |
 | 13 | `GridResidency_Test` (1): reproduction round trip (states set, scroll away so rows are released, scroll back: identical API values, identical print hash, SetData once per row) | #151 | new (opt-in RESIDENCY_EVICT_COLD) | compile-checked only |
+| 14 | `GridBodyDefer_Test` (2): one body paint per sort/filter/setItemCount; thumb drag moves the bar at once, body paints <= frames | #151 | new (viewport-only redraw suppression) | compile-checked only |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |

@@ -694,6 +694,23 @@ public class Grid extends Canvas {
 	/** Test switch: false restores the redraw of every item setter during paint-time SetData. */
 	boolean setDataRedrawGuard = true;
 
+	/**
+	 * Viewport-only redraw suppression: while positive, Grid invalidations are accumulated in
+	 * {@link #bodyDamagePending} and issued once when the outermost operation ends. Unlike
+	 * {@code setRedraw(false)} it never freezes the window, so the scroll bars keep repainting.
+	 */
+	private int bodyDeferDepth;
+	private boolean bodyDamagePending;
+
+	/** A frame paint is scheduled for a thumb drag (at most one per frame). */
+	private boolean dragFrameScheduled;
+
+	/** Milliseconds per frame for thumb-drag body paints. */
+	private static final int DRAG_FRAME_MS = 16;
+
+	/** Body planes painted (package-private counter for tests and benches). */
+	int bodyPaintCount;
+
 	/** Top index drawn by the last body paint (origin of a blit scroll); -1 = unknown. */
 	private int paintedTopIndex = -1;
 
@@ -5611,6 +5628,7 @@ public class Grid extends Canvas {
 		// Z1: scrolling body.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
 			paintedTopIndex = firstVisibleIndex;
+			bodyPaintCount++;
 			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
 			try (GridGCProxy bodyGc = GridGCProxy.wrap(gc).clip(bodyClipping)) {
 				paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager,
@@ -7186,11 +7204,11 @@ public class Grid extends Canvas {
 		addListener(SWT.Resize, e -> onResize());
 
 		if (getVerticalBar() != null) {
-			getVerticalBar().addListener(SWT.Selection, e -> onScrollSelection(false));
+			getVerticalBar().addListener(SWT.Selection, e -> onScrollBarEvent(false, e.detail));
 		}
 
 		if (getHorizontalBar() != null) {
-			getHorizontalBar().addListener(SWT.Selection, e -> onScrollSelection(true));
+			getHorizontalBar().addListener(SWT.Selection, e -> onScrollBarEvent(true, e.detail));
 		}
 
 		defaultKeyListener = this::onKeyDown;
@@ -8335,6 +8353,76 @@ public class Grid extends Canvas {
 	/**
 	 * Scrollbar selection event handler.
 	 */
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * While the Grid runs one of its own bulk operations the invalidation is merged and issued
+	 * once at the end of the operation.
+	 * </p>
+	 */
+	@Override
+	public void redraw() {
+		if (bodyDeferDepth > 0) {
+			bodyDamagePending = true;
+			return;
+		}
+		super.redraw();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * While the Grid runs one of its own bulk operations the invalidation is merged and issued
+	 * once at the end of the operation.
+	 * </p>
+	 */
+	@Override
+	public void redraw(final int x, final int y, final int width, final int height, final boolean all) {
+		if (bodyDeferDepth > 0) {
+			bodyDamagePending = true;
+			return;
+		}
+		super.redraw(x, y, width, height, all);
+	}
+
+	/** Starts a bulk operation: Grid paints are merged, the scroll bars stay live. */
+	private void deferBody() {
+		bodyDeferDepth++;
+	}
+
+	/** Ends a bulk operation: one invalidation for all merged damage. */
+	private void resumeBody() {
+		if (--bodyDeferDepth == 0 && bodyDamagePending) {
+			bodyDamagePending = false;
+			super.redraw();
+		}
+	}
+
+	/**
+	 * Native scroll bar listener: a thumb drag ({@code SWT.DRAG}) moves the scroll bar at once
+	 * and paints the body at most once per frame; any other scroll is handled immediately.
+	 */
+	private void onScrollBarEvent(final boolean horizontal, final int detail) {
+		if (detail != SWT.DRAG) {
+			onScrollSelection(horizontal);
+			return;
+		}
+		topIndex = -1;
+		bottomIndex = -1;
+		if (horizontal) {
+			invalidateVisibleColumnCache();
+		}
+		if (!dragFrameScheduled) {
+			dragFrameScheduled = true;
+			getDisplay().timerExec(DRAG_FRAME_MS, () -> {
+				dragFrameScheduled = false;
+				if (!isDisposed()) {
+					onScrollSelection(horizontal);
+				}
+			});
+		}
+	}
+
 	private void onScrollSelection(final boolean horizontal) {
 		final int oldTop = paintedTopIndex;
 		topIndex = -1;
@@ -10399,7 +10487,7 @@ public class Grid extends Canvas {
 		if (usesSparseVirtualItems()) {
 			final int logicalCount = count;
 			dropResidentPayloads();
-			setRedraw(false);
+			deferBody();
 			try {
 				final GridVirtualItemList sparse = sparseVirtualItems();
 				final int oldCount = sparse.size();
@@ -10420,13 +10508,16 @@ public class Grid extends Canvas {
 				scrollValuesObsolete = true;
 				topIndex = -1;
 				bottomIndex = -1;
+				bodyDamagePending = true;
 			} finally {
-				setRedraw(true);
+				resumeBody();
 			}
 			return;
 		}
 
-		setRedraw(false);
+		deferBody();
+		bodyDamagePending = true;
+		try {
 		if (count < items.size()) {
 			selectedCells.clear();
 			for (int i = items.size() - 1; i >= count; i--) {
@@ -10448,7 +10539,9 @@ public class Grid extends Canvas {
 		while (count > items.size()) {
 			new GridItem(this, SWT.NONE);
 		}
-		setRedraw(true);
+		} finally {
+			resumeBody();
+		}
 	}
 
 	/**
@@ -10809,6 +10902,15 @@ public class Grid extends Canvas {
 	}
 
 	private void applyRowView(final int count, final RowView view, final boolean identity) {
+		deferBody();
+		try {
+			applyRowViewNow(count, view, identity);
+		} finally {
+			resumeBody();
+		}
+	}
+
+	private void applyRowViewNow(final int count, final RowView view, final boolean identity) {
 		final GridVirtualItemList sparse = sparseVirtualItems();
 		final int[] selectedModels = slotModels(selectedItems, sparse);
 		final int focusModel = focusItem == null ? -1 : slotModel(focusItem, sparse);
