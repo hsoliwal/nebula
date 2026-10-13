@@ -68,11 +68,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
+      # No Nebula checkout in this job: setup-java's Maven cache needs a pom.xml in the
+      # workspace and fails the job before the Synexia clone when caching is enabled.
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
-          cache: maven
 
       - name: Clone exact merged Synexia DAG content
         env:
