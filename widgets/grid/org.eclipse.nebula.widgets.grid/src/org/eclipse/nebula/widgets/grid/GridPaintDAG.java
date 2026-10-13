@@ -40,7 +40,7 @@ final class GridPaintDAG {
         if (clientArea == null) {
             throw new IllegalArgumentException("clientArea");
         }
-        if (!clip.intersects(clientArea)) {
+        if (clip.isEmpty() || clientArea.isEmpty() || !clip.intersects(clientArea)) {
             return 0;
         }
 
