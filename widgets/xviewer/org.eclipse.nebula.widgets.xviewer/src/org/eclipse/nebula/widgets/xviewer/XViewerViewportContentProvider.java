@@ -7,6 +7,9 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.xviewer;
 
@@ -34,10 +37,10 @@ import org.eclipse.jface.viewers.Viewer;
  * the next request. Model elements are the caller's objects and are never copied or wrapped.
  * </p>
  *
- * @since 1.2
+ * @since 1.1
  */
 public final class XViewerViewportContentProvider implements ILazyTreeContentProvider, ITreeContentProvider {
-   //FLLDCIM: HPCPOP — only rows the native virtual tree requests are materialized
+   // only rows the native virtual tree requests are materialized
    private static final Object[] EMPTY = new Object[0];
    /** Child references kept across cached parents before least-recently-used parents are dropped. */
    static final int CACHE_BUDGET = 1 << 20;

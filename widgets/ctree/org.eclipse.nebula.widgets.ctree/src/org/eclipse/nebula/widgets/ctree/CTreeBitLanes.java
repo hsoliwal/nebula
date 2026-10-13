@@ -7,6 +7,9 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.ctree;
 
@@ -17,7 +20,7 @@ package org.eclipse.nebula.widgets.ctree;
  * per frame. Int-only and GWT-safe.
  */
 final class CTreeBitLanes {
-	//FLLDCIM: HPCPOP — booleans as bit lanes in the parent, not as per-object fields
+	// booleans as bit lanes in the parent, not as per-object fields
 	static final int ITEM_PAINTED = 0;
 	static final int ITEM_AUTO_HEIGHT = 1;
 	static final int CELL_PAINTED = 2;

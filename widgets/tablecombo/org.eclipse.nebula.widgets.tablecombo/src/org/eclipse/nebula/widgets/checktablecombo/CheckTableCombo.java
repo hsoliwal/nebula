@@ -246,7 +246,7 @@ public class CheckTableCombo extends Composite {
 			arrow.addListener(arrowEvent, listener);
 		}
 
-		//FLLDCIM: lazy — the drop-down shell and table are built on first open or first table API use
+		// the drop-down shell and table are built on first open or first table API use
 
 		initAccessible();
 	}
@@ -1250,7 +1250,7 @@ public class CheckTableCombo extends Composite {
 
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		//FLLDCIM: lazy — the drop-down's accessible listener is attached when the drop-down is first built
+		// the drop-down's accessible listener is attached when the drop-down is first built
 		popupAccessible = accessibleAdapter;
 		if (table != null) {
 			attachPopupAccessible();

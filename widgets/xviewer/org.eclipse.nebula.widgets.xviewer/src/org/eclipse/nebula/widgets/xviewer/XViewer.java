@@ -116,7 +116,7 @@ public class XViewer extends TreeViewer {
    private static final Map<Composite, Composite> parentToTopComposites = new HashMap<>();
    private boolean debugLoading = "true".equals(System.getProperty("DebugLoading"));
    private final Map<String, Long> preComputeElapsedTime = new HashMap<>();
-   //FLLDCIM: HPCPOP — viewport state; objects exist only for rows the native tree or the API asked for
+   // viewport state; objects exist only for rows the native tree or the API asked for
    private XViewerViewportContentProvider viewport;
    private final Set<TreeItem> viewportExpanded = new HashSet<>();
    private Font statusBoldFont;
@@ -297,7 +297,7 @@ public class XViewer extends TreeViewer {
          }
 
          if (xViewerFactory.isLoadedStatusLabelAvailable()) {
-            //FLLDCIM: one control — the status line is a helper surface and never takes focus
+            // the status line is a helper surface and never takes focus
             filterText = new StyledText(searchComp, SWT.NO_FOCUS);
             filterText.addListener(SWT.Paint, event -> catchUpStatusLayout());
             filterText.setText(" "); //$NON-NLS-1$
@@ -713,7 +713,7 @@ public class XViewer extends TreeViewer {
          statusLayoutDirty = false;
          filterText.getParent().getParent().layout();
       } else {
-         //FLLDCIM: HPCPOP — no layout while not effectively visible; caught up once on first paint
+         // no layout while not effectively visible; caught up once on first paint
          statusLayoutDirty = true;
       }
       filterText.setToolTipText(str);
@@ -896,7 +896,7 @@ public class XViewer extends TreeViewer {
       TreeItem itemToReturn = getTree().getItem(point);
 
       if (itemToReturn == null) {
-         //FLLDCIM: HPCPOP — uniform row height: row = y / height, no root array (same result as the summing scan)
+         // uniform row height: row = y / height, no root array (same result as the summing scan)
          Tree tree = getTree();
          int count = tree.getItemCount();
          int height = tree.getItemHeight();
@@ -1019,7 +1019,7 @@ public class XViewer extends TreeViewer {
 
    /**
     * @return true if the tree was created with {@code SWT.VIRTUAL}, so the viewer works as a viewport over the model
-    * @since 1.2
+    * @since 1.1
     */
    public boolean isViewport() {
       Tree tree = getTree();
@@ -1029,7 +1029,7 @@ public class XViewer extends TreeViewer {
    /**
     * @return rows materialized by the viewport bridge since the last structural refresh, or -1 when the viewer is not a
     * viewport over a plain tree content provider
-    * @since 1.2
+    * @since 1.1
     */
    public int getViewportMaterializedCount() {
       return viewport == null ? -1 : viewport.getMaterializedCount();

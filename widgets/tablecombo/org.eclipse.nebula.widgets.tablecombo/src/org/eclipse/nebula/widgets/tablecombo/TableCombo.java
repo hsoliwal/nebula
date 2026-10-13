@@ -108,7 +108,7 @@ public class TableCombo extends Composite {
 	private Color background;
 	private Color borderColor;
 	private Color oddLinesForegroundColor, oddLinesBackgroundColor;
-	//FLLDCIM: HPCPOP — SWT.VIRTUAL popup table: rows the table asked for, as a packed bit set
+	// SWT.VIRTUAL popup table: rows the table asked for, as a packed bit set
 	private boolean virtualTable;
 	private int[] materializedRows = new int[0];
 	private final Listener lateRowColors = event -> applyLineColors(event.index, (TableItem) event.item);
@@ -219,7 +219,7 @@ public class TableCombo extends Composite {
 			arrow.addListener(arrowEvent, listener);
 		}
 
-		//FLLDCIM: lazy — the drop-down shell and table are built on first open or first table API use
+		// the drop-down shell and table are built on first open or first table API use
 
 		initAccessible();
 
@@ -1449,7 +1449,7 @@ public class TableCombo extends Composite {
 
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		//FLLDCIM: lazy — the drop-down's accessible listener is attached when the drop-down is first built
+		// the drop-down's accessible listener is attached when the drop-down is first built
 		popupAccessible = accessibleAdapter;
 		if (table != null) {
 			attachPopupAccessible();

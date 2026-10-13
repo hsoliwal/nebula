@@ -1055,7 +1055,16 @@ public class CTreeItem extends Item {
 	}
 
 	/**
-	 * Item data lives in the tree's slot lanes, not in the item.
+	 * Returns the application defined widget data associated with the receiver, or null if it has not been set.
+	 * The data is kept in the tree's slot lanes, not in the item.
+	 *
+	 * @return the widget data
+	 *
+	 * @exception SWTException
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 *                </ul>
 	 */
 	@Override
 	public Object getData() {
@@ -1064,7 +1073,16 @@ public class CTreeItem extends Item {
 	}
 
 	/**
-	 * Item data lives in the tree's slot lanes, not in the item.
+	 * Sets the application defined widget data associated with the receiver to be the argument. The data is kept in
+	 * the tree's slot lanes, not in the item, and is released when the item is disposed.
+	 *
+	 * @param data the widget data
+	 *
+	 * @exception SWTException
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 *                </ul>
 	 */
 	@Override
 	public void setData(Object data) {

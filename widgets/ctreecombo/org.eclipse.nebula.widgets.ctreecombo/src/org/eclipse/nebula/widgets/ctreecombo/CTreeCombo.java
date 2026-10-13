@@ -196,7 +196,7 @@ public class CTreeCombo extends Composite {
 			arrow.addListener(arrowEvents[i], listener);
 		}
 
-		//FLLDCIM: lazy — the drop-down shell and tree are built on first open, first layout or first item API use
+		// the drop-down shell and tree are built on first open, first layout or first item API use
 		initAccessible();
 	}
 
@@ -550,7 +550,7 @@ public class CTreeCombo extends Composite {
 		}
 
 		if (items != null && virtualRows) {
-			//FLLDCIM: lazy — drop-down rows are bound when the native virtual tree shows them
+			// drop-down rows are bound when the native virtual tree shows them
 			popupFiltered = filter && (getStyle() & SWT.READ_ONLY) == 0 && !text.getText().trim().isEmpty();
 			filteredChildren.clear();
 			tree.addListener(SWT.SetData, event -> bindRow((TreeItem) event.item, event.index));
@@ -1082,7 +1082,7 @@ public class CTreeCombo extends Composite {
 		};
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		//FLLDCIM: lazy — the drop-down's accessible listener is attached when the drop-down is first built
+		// the drop-down's accessible listener is attached when the drop-down is first built
 		popupAccessible = accessibleAdapter;
 		if (tree != null) {
 			attachPopupAccessible();

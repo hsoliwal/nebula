@@ -90,7 +90,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	/** a deferred row update or refresh is being caught up */
 	private boolean flushingRows;
 
-	//FLLDCIM: viewport round trip — the focused editor's caret, kept as ints by collection position
+	// the focused editor's caret, kept as ints by collection position
 	private final java.util.IdentityHashMap<Control, Integer> shownPosition = new java.util.IdentityHashMap<>();
 	private static final int CARET_SLOTS = 16;
 	private final int[] caretPositions = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
@@ -127,7 +127,7 @@ class InternalCompositeTable extends Composite implements Listener {
 		controlHolder.addListener(SWT.MouseWheel, this);
 		controlHolder.addListener(SWT.Paint, event -> {
 			if (rowsDirty || refreshDirty) {
-				getDisplay().asyncExec(this::flushRows);
+				getDisplay().asyncExec(flushRowsRunnable);
 			}
 		});
 
@@ -522,7 +522,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * </ul>
 	 */
 	void updateVisibleRows() {
-		//FLLDCIM: lazy — no row population while not effectively visible; caught up once on the
+		// no row population while not effectively visible; caught up once on the
 		// first paint or on the first public read of rows
 		if (!isVisible() && !flushingRows) {
 			rowsDirty = true;
@@ -1316,19 +1316,31 @@ class InternalCompositeTable extends Composite implements Listener {
 	/** a thumb-drag position is waiting to be applied to the row window */
 	private boolean sliderDragPending;
 
+	/** applies the latest thumb-drag position; allocated once, not per drag event */
+	private final Runnable sliderDragCatchUp = new Runnable() {
+		public void run() {
+			sliderDragPending = false;
+			if (!isDisposed() && !vSlider.isDisposed()) {
+				sliderSelectionListener.widgetDefaultSelected(null);
+			}
+		}
+	};
+
+	/** runs a deferred row update; allocated once, not per paint */
+	private final Runnable flushRowsRunnable = new Runnable() {
+		public void run() {
+			flushRows();
+		}
+	};
+
 	private SelectionListener sliderSelectionListener = new SelectionListener() {
 		public void widgetSelected(SelectionEvent e) {
-			if (e.detail == SWT.DRAG) {
-				//FLLDCIM: fast thumb drag — the slider stays live; the row window catches up once per event-loop
+			if (e != null && e.detail == SWT.DRAG) {
+				// the slider stays live; the row window catches up once per event-loop
 				// turn with the latest position, and the end-of-drag event applies the final one synchronously
 				if (!sliderDragPending) {
 					sliderDragPending = true;
-					getDisplay().asyncExec(() -> {
-						sliderDragPending = false;
-						if (!isDisposed() && !vSlider.isDisposed()) {
-							applySliderSelection();
-						}
-					});
+					getDisplay().asyncExec(sliderDragCatchUp);
 				}
 				return;
 			}

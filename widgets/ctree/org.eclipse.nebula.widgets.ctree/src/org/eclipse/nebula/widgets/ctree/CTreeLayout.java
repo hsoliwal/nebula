@@ -337,7 +337,7 @@ class CTreeLayout extends Layout {
 		for(Iterator i = items.iterator(); i.hasNext(); ) {
 			CTreeItem item = (CTreeItem) i.next();
 			item.setTop(top);
-			//FLLDCIM: HPCPOP — no per-item invalidation; the whole body is redrawn once below
+			// no per-item invalidation; the whole body is redrawn once below
 			item.setHeightQuiet(fixedHeight ? getItemHeight() : item.computeHeight());
 			monotonic &= item.getHeight() >= 0;
 			top += item.getHeight() + gridLine;

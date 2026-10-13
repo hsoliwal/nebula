@@ -179,7 +179,7 @@ public class CustomCombo extends Composite {
             arrow.addListener(arrowEvents[i], listener);
         }
 
-		//FLLDCIM: lazy — the drop-down shell and list are built on first open or first item API use
+		// the drop-down shell and list are built on first open or first item API use
 		initAccessible();
 	}
 
@@ -1087,7 +1087,7 @@ public class CustomCombo extends Composite {
 		};
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		//FLLDCIM: lazy — the drop-down's accessible listener is attached when the drop-down is first built
+		// the drop-down's accessible listener is attached when the drop-down is first built
 		popupAccessible = accessibleAdapter;
 		if (list != null) {
 			attachPopupAccessible();

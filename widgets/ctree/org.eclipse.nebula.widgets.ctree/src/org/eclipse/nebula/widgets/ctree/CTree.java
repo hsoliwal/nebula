@@ -260,7 +260,7 @@ public class CTree extends Composite implements Listener {
 			});
 		}
 
-		//FLLDCIM: one control — the body is a NO_FOCUS helper surface; focus, keys and traversal stay on the CTree
+		// the body is a NO_FOCUS helper surface; focus, keys and traversal stay on the CTree
 		body = new Canvas(this, SWT.BORDER | SWT.NO_BACKGROUND | SWT.NO_FOCUS);
 		body.setBackground(colors.getTableBackground());
 
@@ -670,7 +670,7 @@ public class CTree extends Composite implements Listener {
 		int top = getScrollPosition().y;
 		int bot = top + body.getClientArea().height;
 		List visible = items(false);
-		//FLLDCIM: HPCPOP — skip the rows whose bottom lies above the viewport (O(log n)); same rows as the full scan
+		// skip the rows whose bottom lies above the viewport (O(log n)); same rows as the full scan
 		int start = firstBottomAtLeast(visible, top);
 		int itop = start == 0 ? 0 : ((CTreeItem) visible.get(start - 1)).getBottom();
 		int ibot = 0;
@@ -1270,7 +1270,7 @@ public class CTree extends Composite implements Listener {
 				} else {
 					int gridline = getGridLineWidth();
 					List visible = items(false);
-					//FLLDCIM: HPCPOP — after a full layout y only grows; lines past the image and client area are invisible
+					// after a full layout y only grows; lines past the image and client area are invisible
 					int limit = layout.isLaidOut(visible) ? Math.max(r.height, ebounds.height) : Integer.MAX_VALUE;
 					for(Iterator i = visible.iterator(); i.hasNext(); ) {
 						if (y >= limit) {
