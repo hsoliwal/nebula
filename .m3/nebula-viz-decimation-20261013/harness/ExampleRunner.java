@@ -19,7 +19,7 @@ import org.eclipse.swt.widgets.Shell;
 /**
  * Runs one Nebula example/snippet main for a fixed time, then captures its shell on screen (capture mode
  * display_copyArea: shell forced active and on top, {@code new GC(display).copyArea}) and closes every shell so the
- * example's own event loop ends. Prints {@code label, example, status, bright_pixels, shell_size}.
+ * example's own event loop ends. Prints {@code label, example, CAPTURED|EXIT_<status>, bright_pixels, shell_size}; an exception after the capture (window teardown) shows as EXIT_EXCEPTION.
  * Usage: {@code ExampleRunner <label> <millis> <mainClass>}.
  */
 public class ExampleRunner {
@@ -54,6 +54,9 @@ public class ExampleRunner {
 				}
 				bright[0] = lit;
 			}
+			// printed here: several snippets call System.exit(0) once their window closes
+			System.out.println(label + "\t" + main + "\tCAPTURED\t" + bright[0] + "\t" + size[0]);
+			System.out.flush();
 			for (Shell s : display.getShells()) {
 				s.dispose();
 			}
@@ -66,7 +69,7 @@ public class ExampleRunner {
 			Throwable c = e.getCause();
 			status = "EXCEPTION:" + c.getClass().getSimpleName() + ":" + String.valueOf(c.getMessage()).replace('\t', ' ');
 		}
-		System.out.println(label + "\t" + main + "\t" + status + "\t" + bright[0] + "\t" + size[0]);
+		System.out.println(label + "\t" + main + "\tEXIT_" + status + "\t" + bright[0] + "\t" + size[0]);
 		if (!display.isDisposed()) {
 			display.dispose();
 		}
