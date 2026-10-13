@@ -57,6 +57,9 @@ public final class GridModelBench {
 		/** Groups rows by {@code keys[m] % groups}; returns the group count. */
 		int group(int[] keys, int groups);
 
+		/** Checks column 0 of every displayed row. */
+		void checkAll(Grid grid);
+
 		/** Sort through the busy-indicator worker path; false if the driver has none. */
 		default boolean busySort(final Grid grid, final int[] keys, final boolean descending) {
 			return false;
@@ -143,6 +146,8 @@ public final class GridModelBench {
 		report.put("group_1000", groups < 0 ? "NOT_IMPLEMENTED" : ms(g1 - g0), groups < 0 ? "-" : "ms");
 		drain(display);
 		busySort(report, driver, grid, keys, display);
+		timed(report, "check_all", () -> driver.checkAll(grid), display, grid);
+		report.put("materialized_after_check_all", materialized(grid), "items");
 		timed(report, "clear_view", driver::clear, display, grid);
 		report.put("materialized_after_model_ops", materialized(grid), "items");
 

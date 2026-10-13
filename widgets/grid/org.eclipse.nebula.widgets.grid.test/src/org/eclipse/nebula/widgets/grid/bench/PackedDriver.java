@@ -57,6 +57,11 @@ public final class PackedDriver implements GridModelBench.Driver {
 	}
 
 	@Override
+	public void checkAll(final Grid g) {
+		g.setCheckedAll(0, true, true);
+	}
+
+	@Override
 	public boolean busySort(final Grid g, final int[] keys, final boolean descending) {
 		return GridModelJobs.sortByIntKeysBusy(g, keys, descending, java.util.concurrent.ForkJoinPool.commonPool());
 	}
