@@ -19,6 +19,20 @@ patterns only (see `FOSS_REUSE_DECISION.tsv`). Nothing here depends on SWT inter
 | Paint clipped to damage | Work outside the damage rectangle is skipped when its output would be clipped anyway. |
 | Public API results identical; additions additive | Pre/post differential probe over every extracted public/protected API row (`NEBULA_TT_API_COVERAGE.tsv`). Every intended difference is listed per widget below. |
 
+## Residency (mirror of the SWT-side `ItemResidency` pattern; no SWT internals used)
+
+Transient rows are thin handles created lazily by the parent; their state lives in the parent's bits and packed
+arrays; cold payload is destroyed and recreated; identity is pinned only where the API hands objects to callers;
+behaviour is selected by construction bit flags.
+
+| Widget | Transient object | Where its state lives | Cold payload policy | Identity | Construction flag |
+|---|---|---|---|---|---|
+| xviewer (`SWT.VIRTUAL`) | native `TreeItem` rows | SWT native tree (SWT owns item residency); materialized roots as a packed `int[]` bit set in the bridge | sorted/filtered child arrays per parent: least-recently-used, dropped above `CACHE_BUDGET` (1,048,576 child references) and recomputed on demand | caller model elements are never wrapped; `TreeItem`s pinned by SWT once exposed | `SWT.VIRTUAL` |
+| tablecombo (`SWT.VIRTUAL`) | native `TableItem` rows | SWT native table; materialized rows as a packed `int[]` bit set in `TableCombo` | none held beyond the bit set | `TableItem`s pinned by SWT once exposed | `SWT.VIRTUAL` |
+| ctreecombo, calendarcombo, tablecombo | drop-down shell and list/tree/table | created by the parent on first use | built on first open/layout/API use | the parent's `getTable()`/`getItems()` contracts pin them once handed out | none (always lazy) |
+| compositetable | row editor controls | parent's row window (`rows`/`spareRows`, recycled) | rows beyond the client area are recycled; nothing is built while hidden | rows returned by `getRowControls()` are pinned while in the window | none (always lazy) |
+| ctree | `CTreeItem`/`CTreeCell` | still per-object fields | NOT_DONE: items are constructed by callers (`new CTreeItem(...)`) and returned by `getItems()`/`getSelection()`, so the API pins identity; a parent-owned virtual mode needs `setItemCount` (a no-op stub today) and is not attempted in this leaf | pinned by the API | — |
+
 ## Opt-in rule for the native virtual path
 
 `SWT.VIRTUAL` is the SWT-native request for a viewport. A widget that wraps a native Tree/Table switches to the virtual

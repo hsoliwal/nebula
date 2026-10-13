@@ -10,7 +10,8 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.xviewer;
 
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.eclipse.jface.viewers.ILazyTreeContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -27,16 +28,24 @@ import org.eclipse.jface.viewers.Viewer;
  * cached only for parents the tree asked about; any structural refresh clears
  * the cache. Materialized root rows are tracked as a packed bit set.
  * </p>
+ * <p>
+ * The cached child orderings are cold, recomputable payload: they are kept in least-recently-used order and
+ * the oldest are destroyed once more than {@link #CACHE_BUDGET} child references are held, then recomputed on
+ * the next request. Model elements are the caller's objects and are never copied or wrapped.
+ * </p>
  *
  * @since 1.2
  */
 public final class XViewerViewportContentProvider implements ILazyTreeContentProvider, ITreeContentProvider {
    //FLLDCIM: HPCPOP — only rows the native virtual tree requests are materialized
    private static final Object[] EMPTY = new Object[0];
+   /** Child references kept across cached parents before least-recently-used parents are dropped. */
+   static final int CACHE_BUDGET = 1 << 20;
 
    private final XViewer viewer;
    private final ITreeContentProvider delegate;
-   private final Map<Object, Object[]> sortedChildren = new HashMap<>();
+   private final Map<Object, Object[]> sortedChildren = new LinkedHashMap<>(16, 0.75f, true);
+   private int cachedReferences;
    private int[] materializedRoots = new int[0];
    private int materializedCount;
 
@@ -118,6 +127,7 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    /** Drops cached child orderings and the materialized-row bits. */
    void invalidate() {
       sortedChildren.clear();
+      cachedReferences = 0;
       materializedRoots = new int[0];
       materializedCount = 0;
    }
@@ -159,6 +169,14 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       return children(element).length > 0;
    }
 
+   private void evictColdest() {
+      Iterator<Object[]> eldest = sortedChildren.values().iterator();
+      while (cachedReferences > CACHE_BUDGET && sortedChildren.size() > 1) {
+         cachedReferences -= eldest.next().length;
+         eldest.remove();
+      }
+   }
+
    private Object[] children(Object parent) {
       if (parent == null) {
          return EMPTY;
@@ -168,6 +186,8 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
          Object[] raw = isRoot(parent) ? delegate.getElements(parent) : delegate.getChildren(parent);
          cached = viewer.viewportSortedChildren(parent, raw == null ? EMPTY : raw);
          sortedChildren.put(parent, cached);
+         cachedReferences += cached.length;
+         evictColdest();
       }
       return cached;
    }
