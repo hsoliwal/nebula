@@ -728,6 +728,25 @@ public class Grid extends Canvas {
 
 	/** A frame paint is scheduled for a thumb drag (at most one per frame). */
 	private boolean dragFrameScheduled;
+	private boolean dragFrameHorizontal;
+	private boolean dragFrameVertical;
+
+	/** Reused frame task of a thumb drag: no allocation per drag event. */
+	private final Runnable dragFrame = () -> {
+		dragFrameScheduled = false;
+		final boolean h = dragFrameHorizontal;
+		final boolean v = dragFrameVertical;
+		dragFrameHorizontal = false;
+		dragFrameVertical = false;
+		if (!isDisposed()) {
+			if (v) {
+				onScrollSelection(false);
+			}
+			if (h) {
+				onScrollSelection(true);
+			}
+		}
+	};
 
 	/** Milliseconds per frame for thumb-drag body paints. */
 	private static final int DRAG_FRAME_MS = 16;
@@ -6051,10 +6070,21 @@ public class Grid extends Canvas {
 		if (prefetchRows <= 0 || !usesSparseVirtualItems() || !isVisible()) {
 			return;
 		}
-		final int epoch = paintEpoch;
-		prefetchEpoch = epoch;
-		getDisplay().asyncExec(() -> prefetchStep(epoch));
+		prefetchEpoch = paintEpoch;
+		if (!prefetchQueued) {
+			prefetchQueued = true;
+			getDisplay().asyncExec(prefetchTask);
+		}
 	}
+
+	/** One prefetch chain at a time: set while a batch task is queued. */
+	private boolean prefetchQueued;
+
+	/** Reused prefetch batch task; it always serves the latest viewport. */
+	private final Runnable prefetchTask = () -> {
+		prefetchQueued = false;
+		prefetchStep(prefetchEpoch);
+	};
 
 	/** One idle batch; reschedules itself until done or until a newer paint moved the viewport. */
 	private void prefetchStep(final int epoch) {
@@ -6089,8 +6119,9 @@ public class Grid extends Canvas {
 		} finally {
 			prefetching = false;
 		}
-		if (done == PREFETCH_BATCH) {
-			getDisplay().asyncExec(() -> prefetchStep(epoch));
+		if (done == PREFETCH_BATCH && !prefetchQueued) {
+			prefetchQueued = true;
+			getDisplay().asyncExec(prefetchTask);
 		}
 	}
 
@@ -8541,6 +8572,7 @@ public class Grid extends Canvas {
 	 */
 	@Override
 	public void redraw() {
+		checkWidget();
 		if (frozenPlanes == 0) {
 			super.redraw();
 			return;
@@ -8558,6 +8590,7 @@ public class Grid extends Canvas {
 	 */
 	@Override
 	public void redraw(final int x, final int y, final int width, final int height, final boolean all) {
+		checkWidget();
 		if (frozenPlanes == 0) {
 			super.redraw(x, y, width, height, all);
 			return;
@@ -8660,14 +8693,11 @@ public class Grid extends Canvas {
 		if (horizontal) {
 			invalidateVisibleColumnCache();
 		}
+		dragFrameHorizontal |= horizontal;
+		dragFrameVertical |= !horizontal;
 		if (!dragFrameScheduled) {
 			dragFrameScheduled = true;
-			getDisplay().timerExec(DRAG_FRAME_MS, () -> {
-				dragFrameScheduled = false;
-				if (!isDisposed()) {
-					onScrollSelection(horizontal);
-				}
-			});
+			getDisplay().timerExec(DRAG_FRAME_MS, dragFrame);
 		}
 	}
 
