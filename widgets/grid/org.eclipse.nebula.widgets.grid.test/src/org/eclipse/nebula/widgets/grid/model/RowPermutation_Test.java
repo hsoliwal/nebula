@@ -62,6 +62,21 @@ public class RowPermutation_Test {
 	}
 
 	@Test
+	public void staticSortedOrderEqualsTheInstanceSort() {
+		final Random random = new Random(41L);
+		for (final int n : SIZES) {
+			for (int round = 0; round < 6; round++) {
+				final int[] keys = keys(random, n, round);
+				for (final boolean descending : new boolean[] { false, true }) {
+					final RowPermutation p = new RowPermutation(n);
+					p.sortByIntKeys(keys, descending);
+					assertArrayEquals(view(p), RowPermutation.sortedOrder(keys, n, descending));
+				}
+			}
+		}
+	}
+
+	@Test
 	public void sortWithComparatorEqualsStableReferenceSort() {
 		final Random random = new Random(7L);
 		for (final int n : SIZES) {

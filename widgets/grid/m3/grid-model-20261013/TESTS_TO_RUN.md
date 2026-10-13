@@ -16,4 +16,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 7 | existing suite: 11 classes, 509 tests, pre (eab2a65c) vs post, failure-set diff | #151, #153 | after all changes | pre 134 failures, dev 134, identical set (before pinned plane) |
 | 8 | snippets compile (`examples/org.eclipse.nebula.snippets/.../grid`) pre and post | #151 | harness item 4 | not run |
 | 9 | bench `GridModelBench` 1M x 100: pre+Classic, post+Classic, post+Packed, two rounds each, wall + thread CPU | #151 | before/after tables (sort, filter, group, first paint, v/h scroll p50/p95/max, heap, private bytes) | round 1 done for wave 1 (machine load 67-99 %); CPU-time columns added after |
+| 11 | `GridModelJobs_Test` (3), `RowPermutation_Test.staticSortedOrderEqualsTheInstanceSort` | #151 | new (batch threshold, worker + UI-thread apply) | compile-checked only |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |

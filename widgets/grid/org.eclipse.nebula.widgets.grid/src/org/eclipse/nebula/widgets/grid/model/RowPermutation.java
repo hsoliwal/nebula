@@ -277,45 +277,78 @@ public final class RowPermutation implements RowView {
 		// LSD radix sort (11/11/10-bit digits) of the identity order: stable, so ties keep model
 		// order, which equals the model-row tie-break of sort(RowComparator). The inverse array
 		// is the scatter buffer (a sort invalidates it anyway): no allocation after the first sort.
-		int[] src = orderArray();
-		int[] dst = inverseArray();
-		for (int i = 0; i < modelCount; i++) {
-			src[i] = i;
-		}
 		if (radixCount.length == 0) {
 			radixCount = new int[RADIX + 1];
 		}
+		final int[] a = orderArray();
+		final int[] b = inverseArray();
+		final int[] sorted = radix(keys, modelCount, descending, a, b, radixCount);
+		order = sorted;
+		inverse = sorted == a ? b : a;
+		flags |= SORTED;
+		changed();
+	}
+
+	/**
+	 * Computes, on any thread, the order {@link #sortByIntKeys(int[], boolean)} would produce:
+	 * a large sort runs on a worker over an immutable key snapshot and is then applied on the
+	 * UI thread with {@link #setOrder(int[])}. Reads only its arguments.
+	 *
+	 * @param keys       one key per model row; must not change while this runs
+	 * @param modelCount number of model rows
+	 * @param descending {@code true} for descending keys (ties stay in model order)
+	 * @return a new array: view position to model row
+	 */
+	public static int[] sortedOrder(final int[] keys, final int modelCount, final boolean descending) {
+		if (modelCount < 0 || keys.length < modelCount) {
+			throw new IllegalArgumentException("keys.length=" + keys.length + ", modelCount=" + modelCount);
+		}
+		final int[] a = new int[modelCount];
+		final int[] b = new int[modelCount];
+		final int[] sorted = radix(keys, modelCount, descending, a, b, new int[RADIX + 1]);
+		return sorted;
+	}
+
+	/**
+	 * LSD radix sort (11/11/10-bit digits) of the identity order of {@code n} rows by
+	 * {@code keys}, using {@code a} and {@code b} as the two buffers; returns the one holding
+	 * the result. Stable, so ties keep model order.
+	 */
+	private static int[] radix(final int[] keys, final int n, final boolean descending, final int[] a, final int[] b,
+			final int[] count) {
+		int[] src = a;
+		int[] dst = b;
+		for (int i = 0; i < n; i++) {
+			src[i] = i;
+		}
 		final int flip = descending ? -1 : 0;
 		for (int shift = 0; shift < 32; shift += 11) {
-			if (radixPass(keys, src, dst, shift, flip)) {
+			if (radixPass(keys, n, src, dst, shift, flip, count)) {
 				final int[] t = src;
 				src = dst;
 				dst = t;
 			}
 		}
-		order = src;
-		inverse = dst;
-		flags |= SORTED;
-		changed();
+		return src;
 	}
 
 	/** One stable counting pass; returns false (no scatter) when every row has the same digit. */
-	private boolean radixPass(final int[] keys, final int[] src, final int[] dst, final int shift, final int flip) {
-		final int[] count = radixCount;
+	private static boolean radixPass(final int[] keys, final int n, final int[] src, final int[] dst, final int shift,
+			final int flip, final int[] count) {
 		final int mask = shift == 22 ? 0x3ff : 0x7ff;
 		Arrays.fill(count, 0);
-		for (int i = 0; i < modelCount; i++) {
+		for (int i = 0; i < n; i++) {
 			count[((((keys[src[i]] ^ Integer.MIN_VALUE) ^ flip) >>> shift) & mask) + 1]++;
 		}
 		for (int d = 1; d <= RADIX; d++) {
-			if (count[d] == modelCount) {
+			if (count[d] == n) {
 				return false;
 			}
 		}
 		for (int d = 1; d <= RADIX; d++) {
 			count[d] += count[d - 1];
 		}
-		for (int i = 0; i < modelCount; i++) {
+		for (int i = 0; i < n; i++) {
 			final int m = src[i];
 			dst[count[(((keys[m] ^ Integer.MIN_VALUE) ^ flip) >>> shift) & mask]++] = m;
 		}
