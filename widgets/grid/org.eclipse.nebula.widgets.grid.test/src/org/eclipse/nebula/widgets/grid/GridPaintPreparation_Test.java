@@ -120,6 +120,31 @@ public class GridPaintPreparation_Test {
         assertArrayEquals(new GridItem[] {selected}, grid.getSelection());
     }
 
+    @Test public void defaultVisualizerDistantBodyUsesSparseSpanFrontier() {
+        Grid indexed = new Grid(shell, SWT.VIRTUAL | SWT.H_SCROLL | SWT.V_SCROLL);
+        indexed.setSize(360, 220);
+        GridColumn column = new GridColumn(indexed, SWT.NONE);
+        column.setWidth(160);
+        indexed.setItemCount(1_000_000);
+
+        // Settle existing scrollbar geometry at the start of the logical model.
+        paint(indexed, indexed.getClientArea());
+
+        GridItem spanOwner = indexed.getItem(499_995);
+        spanOwner.setRowSpan(0, 10);
+        indexed.setTopIndex(500_000);
+        assertEquals(500_000, indexed.getTopIndex());
+
+        int before = indexed.virtualMaterializedItemCount();
+        paint(indexed, indexed.getClientArea());
+        int after = indexed.virtualMaterializedItemCount();
+
+        assertEquals(1, indexed.rowSpanIndexOwnerCount());
+        assertTrue("distant body paint must materialize only a bounded viewport frontier: " + (after - before),
+                after - before < 128);
+        assertSame(spanOwner, indexed.getItem(499_995));
+    }
+
     @Test public void ordinaryBodyStillPreparesSpansAndRestoresTheClip() {
         Rectangle area = grid.getClientArea();
         Rectangle body = new Rectangle(0, grid.getHeaderHeight(), area.width,
@@ -165,6 +190,10 @@ public class GridPaintPreparation_Test {
     }
 
     private ImageData paint(Rectangle clip) {
+        return paint(grid, clip);
+    }
+
+    private ImageData paint(Grid target, Rectangle clip) {
         Image image = new Image(display, 400, 280);
         GC gc = new GC(image);
         try {
@@ -176,7 +205,7 @@ public class GridPaintPreparation_Test {
             event.y = clip.y;
             event.width = clip.width;
             event.height = clip.height;
-            grid.notifyListeners(SWT.Paint, event);
+            target.notifyListeners(SWT.Paint, event);
             assertEquals("paint must restore incoming clipping", actualClip, gc.getClipping());
             return image.getImageData();
         } finally {
