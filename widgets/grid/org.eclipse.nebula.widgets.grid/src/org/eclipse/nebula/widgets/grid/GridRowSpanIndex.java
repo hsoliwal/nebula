@@ -121,6 +121,16 @@ final class GridRowSpanIndex {
 		return size;
 	}
 
+	void clear() {
+		for (int i = 0; i < size; i++) {
+			owners[i] = null;
+			spansByColumn[i] = null;
+		}
+		size = 0;
+		projectedCount = 0;
+		projectionDirty = true;
+	}
+
 	private void rebuildProjection() {
 		if (!projectionDirty) return;
 		ensureProjectionCapacity(size);
