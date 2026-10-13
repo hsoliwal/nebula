@@ -69,6 +69,18 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       return materializedCount;
    }
 
+   /**
+    * @return distinct root rows materialized since the last structural refresh (bit-set cardinality); equal to the
+    * root share of {@link #getMaterializedCount()} when every root row was requested once per residency
+    */
+   public int getMaterializedRootCount() {
+      int count = 0;
+      for (int word : materializedRoots) {
+         count += Integer.bitCount(word);
+      }
+      return count;
+   }
+
    @Override
    public void updateElement(Object parent, int index) {
       Object[] children = children(parent);

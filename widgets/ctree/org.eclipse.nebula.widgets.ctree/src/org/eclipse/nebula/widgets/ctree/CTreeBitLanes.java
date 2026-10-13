@@ -30,6 +30,8 @@ final class CTreeBitLanes {
 
 	private final int[][] lanes = new int[LANES][];
 	private int slots;
+	/** item payload set through {@code Widget#setData(Object)}, by slot; pinned for the item's life */
+	private Object[] data = new Object[64];
 
 	CTreeBitLanes() {
 		for (int i = 0; i < LANES; i++) {
@@ -49,6 +51,19 @@ final class CTreeBitLanes {
 			}
 		}
 		return slot;
+	}
+
+	Object data(int slot) {
+		return slot < data.length ? data[slot] : null;
+	}
+
+	void setData(int slot, Object value) {
+		if (slot >= data.length) {
+			Object[] grown = new Object[Math.max(slot + 1, data.length * 2)];
+			System.arraycopy(data, 0, grown, 0, data.length);
+			data = grown;
+		}
+		data[slot] = value;
 	}
 
 	boolean get(int lane, int slot) {

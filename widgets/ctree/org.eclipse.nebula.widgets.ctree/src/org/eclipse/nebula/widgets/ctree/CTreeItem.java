@@ -239,6 +239,10 @@ public class CTreeItem extends Item {
 	}
 	
 	public void dispose() {
+		if (!isDisposed()) {
+			// the payload lane follows the item's life, like Widget.data
+			ctree.lanes.setData(slot, null);
+		}
         if ((parentItem != null) && (!parentItem.isDisposed())) {
             parentItem.removeItem(this);
         }
@@ -1048,6 +1052,24 @@ public class CTreeItem extends Item {
 				((CTreeCell) cells[i]).setText(strings[i]);
 			}
 		}
+	}
+
+	/**
+	 * Item data lives in the tree's slot lanes, not in the item.
+	 */
+	@Override
+	public Object getData() {
+		checkWidget();
+		return ctree.lanes.data(slot);
+	}
+
+	/**
+	 * Item data lives in the tree's slot lanes, not in the item.
+	 */
+	@Override
+	public void setData(Object data) {
+		checkWidget();
+		ctree.lanes.setData(slot, data);
 	}
 
 	void setTop(int top) {

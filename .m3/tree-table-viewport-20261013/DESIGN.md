@@ -52,6 +52,18 @@ check state is a parent bitset. Status per widget:
 
 The lanes use `int` words, not `long[]`, to stay GWT-safe as the platform law requires.
 
+## SetData negotiation and item data
+
+| Widget | Who decides which rows are requested | Once per row per residency | Item data |
+|---|---|---|---|
+| xviewer (`SWT.VIRTUAL`) | the native virtual tree asks (visible rows plus its own overscan); the bridge serves each request from cached, filtered and sorted child arrays and records the row in a packed bit set | proven: request count equals the distinct-row bit count after first paint, after scroll-to-end, and after scrolling away and back (`XViewerViewport_Test`) | the caller's element, set by JFace on the native item; identity asserted with `assertSame` |
+| tablecombo (`SWT.VIRTUAL`) | the native virtual table asks; rows recorded in a packed bit set | native table caches rows once filled | native `TableItem` data (caller-owned) |
+| ctreecombo (`SWT.VIRTUAL`) | the native virtual tree asks; API paths bind only the item path | binding skipped when the row already carries its item | model item stored on the native row (`DATA_ID`) |
+| ctree | no virtual population (items are caller-constructed; `setItemCount` is a stub) | n/a | `setData(Object)`/`getData()` live in `CTreeBitLanes` slot payloads, pinned for the item's life and cleared on dispose; keyed data stays in `Widget`; identity asserted in `CTreeViewport_Test` |
+
+Batching, prefetch beyond the native overscan and cancellation on scroll-out are decided by the native control for the
+wrapped widgets; a Nebula-side request scheduler on top of the native virtual controls is NOT_DONE in this leaf.
+
 ## Opt-in rule for the native virtual path
 
 `SWT.VIRTUAL` is the SWT-native request for a viewport. A widget that wraps a native Tree/Table switches to the virtual

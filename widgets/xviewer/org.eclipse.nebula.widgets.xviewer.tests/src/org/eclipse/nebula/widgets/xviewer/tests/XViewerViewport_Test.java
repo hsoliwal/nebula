@@ -74,13 +74,16 @@ public class XViewerViewport_Test {
       assertTrue(viewer.isViewport());
       assertTrue(viewer.getContentProvider() instanceof XViewerViewportContentProvider);
       assertTrue(((XViewerViewportContentProvider) viewer.getContentProvider()).getDelegate() instanceof Model);
-      viewer.setInputXViewer(Model.roots(ROOTS));
+      Integer[] roots = Model.roots(ROOTS);
+      viewer.setInputXViewer(roots);
       shell.open();
       pump();
       Tree tree = viewer.getTree();
+      XViewerViewportContentProvider bridge = (XViewerViewportContentProvider) viewer.getContentProvider();
       assertEquals(ROOTS, tree.getItemCount());
       int first = viewer.getViewportMaterializedCount();
       assertTrue("materialized after first paint: " + first, first > 0 && first <= MATERIALIZED_BOUND);
+      assertEquals("one request per root row", first, bridge.getMaterializedRootCount());
 
       tree.setTopItem(tree.getItem(ROOTS - 1));
       tree.update();
@@ -88,6 +91,17 @@ public class XViewerViewport_Test {
       int scrolled = viewer.getViewportMaterializedCount();
       assertTrue("materialized after scroll to end: " + scrolled, scrolled - first <= MATERIALIZED_BOUND);
       assertEquals("n" + (ROOTS - 1), tree.getItem(ROOTS - 1).getText(0));
+      assertSame("item data is the caller's element", roots[ROOTS - 1], tree.getItem(ROOTS - 1).getData());
+      assertEquals("one request per root row", scrolled, bridge.getMaterializedRootCount());
+
+      tree.setTopItem(tree.getItem(0));
+      tree.update();
+      pump();
+      tree.setTopItem(tree.getItem(ROOTS - 1));
+      tree.update();
+      pump();
+      assertEquals("resident rows are not requested again", scrolled, viewer.getViewportMaterializedCount());
+      assertSame(roots[0], tree.getItem(0).getData());
 
       Integer root = Integer.valueOf(ROOTS - 1);
       viewer.setExpandedState(root, true);

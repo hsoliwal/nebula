@@ -146,6 +146,27 @@ public class CTreeViewport_Test {
 	}
 
 	@Test
+	public void itemDataLivesInTheTreeAndKeepsIdentity() {
+		CTree tree = tree(50, 2);
+		Object payload = new Object();
+		CTreeItem item = tree.getItem(7);
+		item.setData(payload);
+		item.setData("key", "keyed");
+		shell.open();
+		pump();
+		tree.showItem(tree.getItem(49));
+		pump();
+		item.setExpanded(true);
+		item.setExpanded(false);
+		pump();
+		assertSame(payload, item.getData());
+		assertEquals("keyed", item.getData("key"));
+		assertSame(payload, tree.lanes.data(item.slot));
+		item.setData(null);
+		assertEquals(null, item.getData());
+	}
+
+	@Test
 	public void bodyNeverTakesFocus() {
 		CTree tree = tree(5, 0);
 		shell.open();
