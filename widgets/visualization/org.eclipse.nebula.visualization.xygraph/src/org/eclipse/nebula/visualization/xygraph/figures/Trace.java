@@ -1631,6 +1631,8 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	}
 
 	public void dataChanged(IDataProvider dataProvider) {
+		// replaced packed data: drop cached views and the pyramid now (no work, only references released)
+		decimationPainter.releaseIfReplaced(dataProvider);
 		// if the axis has been repainted, it will cause the trace to be
 		// repainted autoly,
 		// the trace doesn't have to be repainted again.

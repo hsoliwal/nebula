@@ -290,6 +290,26 @@ public class TraceDecimationDifferentialTest {
 		assertTrue(decimated >= 15);
 	}
 
+	/** After a data replacement and before the next paint the hot list still answers for the last paint. */
+	@Test
+	public void hotListAfterReplacementMatchesLoop() {
+		Random r = new Random(17L);
+		double[][] a = data(r, 30000, 2);
+		double[][] b = data(r, 20000, 4);
+		List<List<double[]>> hot = new ArrayList<>();
+		for (boolean decimate : new boolean[] { false, true }) {
+			trace.setDecimationEnabled(decimate);
+			provider.setData(a[0], a[1], a[0].length);
+			view(r, a, 0);
+			record();
+			provider.setData(b[0], b[1], b[0].length);
+			hot.add(hot(trace)); // before any event is dispatched: no repaint has happened yet
+			settle();
+		}
+		assertSameHot("hot after replacement", hot.get(0), hot.get(1)); //$NON-NLS-1$
+		assertTrue(hot.get(0).size() > 0);
+	}
+
 	/** Hidden widget: data keeps arriving, but nothing is painted, decimated or built until it is shown. */
 	@Test
 	public void noDecimationWorkWhileHidden() {

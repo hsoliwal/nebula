@@ -130,6 +130,22 @@ final class TraceDecimationPainter {
 		}
 	}
 
+	/**
+	 * Called on every data change, also while hidden: if the packed arrays were replaced (not appended), the cached
+	 * views and the pyramid of the old arrays are released at once instead of at the next paint. No computation.
+	 */
+	void releaseIfReplaced(IDataProvider dataProvider) {
+		if (dataProvider == provider && dataProvider instanceof PackedXYDataProvider
+				&& ((PackedXYDataProvider) dataProvider).snapshot().generation != generation) {
+			if (decimator != null) {
+				decimator.reset();
+			}
+			shown = null;
+			lastView = null;
+			// hot stays: getHotSampleList() still answers for the last paint, as the per-sample loop does
+		}
+	}
+
 	void reset() {
 		if (decimator != null) {
 			decimator.reset();
