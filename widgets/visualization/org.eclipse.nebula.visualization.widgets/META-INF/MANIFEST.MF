@@ -9,6 +9,7 @@ Require-Bundle: org.eclipse.swt,
  org.eclipse.draw2d,
  org.eclipse.nebula.visualization.xygraph;bundle-version="[3.0.0,4.0.0)"
 Export-Package: org.eclipse.nebula.visualization.internal.widgets.introspection,
+ org.eclipse.nebula.visualization.internal.widgets.raster;x-internal:=true,
  org.eclipse.nebula.visualization.widgets.datadefinition,
  org.eclipse.nebula.visualization.widgets.figureparts,
  org.eclipse.nebula.visualization.widgets.figures,

@@ -1,0 +1,44 @@
+# bench rc=0
+# bench rc=0
+# bench rc=0
+metric	base-1M-circular	after-1M-packed	after-10M-packed
+points	1000000	1000000	10000000
+provider	circular	packed	packed
+load_ms	204.55	60.08	147.39
+first_paint_ms	401.35	201.48	188.61
+heap_input_arrays_mb	15.93	15.93	153.93
+heap_after_load_mb	121.67	19.16	157.15
+print_sha256_full	d0aa6fec74422eeaf0d620d19a591b7bad563167b941c76d5ae341580c917910	d0aa6fec74422eeaf0d620d19a591b7bad563167b941c76d5ae341580c917910	c9a21198414791d84369c13b1ef27bb3bf4846a48e598b297428ec00bd28ebd5
+print_sha256_after_pan	6533527f0dd2b3e2281f93ff53179d34d3788a5d380ab4c231cbb1f7aca70093	6533527f0dd2b3e2281f93ff53179d34d3788a5d380ab4c231cbb1f7aca70093	8afb5a1bf8b896d0b4850af6fa03d81dce8dc442d59d90ab63163349a7161e5b
+print_sha256_after_zoom	fc396b1191de691d31ab3e259742fb09341ffc274ec7504f1f45210a67c9e49f	fc396b1191de691d31ab3e259742fb09341ffc274ec7504f1f45210a67c9e49f	4850e3a326f6b68ce05ea4e0ed05fcfa9a02deadb80e4b206f254336fcc51357
+pan_frame_ms_p50	201.00	57.81	78.44
+pan_frame_ms_p95	297.61	84.53	113.23
+pan_frame_ms_max	1027.20	271.19	154.50
+zoom_frame_ms_p50	145.15	62.84	83.18
+zoom_frame_ms_p95	197.99	79.19	98.70
+zoom_frame_ms_max	350.51	89.56	110.25
+repaint_same_view_ms_p50	140.56	69.60	51.80
+repaint_same_view_ms_p95	202.32	192.61	63.69
+repaint_same_view_ms_max	680.33	349.27	85.65
+pan_cpu_ms_per_frame_p50	234.38	78.13	109.38
+pan_cpu_ms_per_frame_p95	468.75	218.75	203.13
+pan_cpu_ms_per_frame_max	2015.63	281.25	250.00
+zoom_cpu_ms_per_frame_p50	140.63	62.50	78.13
+zoom_cpu_ms_per_frame_p95	187.50	93.75	109.38
+zoom_cpu_ms_per_frame_max	265.63	156.25	203.13
+pan_alloc_bytes_per_frame_p50	42101832.00	986296.00	1053072.00
+pan_alloc_bytes_per_frame_p95	49026192.00	1085248.00	1147920.00
+pan_alloc_bytes_per_frame_max	64474136.00	1331024.00	1423016.00
+zoom_alloc_bytes_per_frame_p50	29785120.00	855840.00	921400.00
+zoom_alloc_bytes_per_frame_p95	34038808.00	921856.00	987312.00
+zoom_alloc_bytes_per_frame_max	34762040.00	953536.00	1019544.00
+same_view_alloc_bytes_per_frame_p50	33920464.00	83680.00	91728.00
+same_view_alloc_bytes_per_frame_p95	33920464.00	83776.00	91728.00
+same_view_alloc_bytes_per_frame_max	33920464.00	83776.00	91728.00
+display_copyArea_sha256_end	b493e2efe00908124c5919c489caff1e085a7187d061b2b63b93199bbac9b878	a3384144331866de491644241a2b01bd94d2179a1f659e9834a16567e75ca2ad	85f2d13ffec3e14ddfa75e8ef7591b53e4a2cff782d3cae6c6d36f43baf3e455
+frames_decimated	n/a (unmodified widget)	101	101
+heap_used_end_mb	129.33	23.12	172.19
+hot_samples	693292	693292	
+worker_last_pyramid_ms		0.00	0.00
+worker_last_decimate_ms		2.06	3.05
+frames_per_sample_loop		0	0

@@ -13,6 +13,8 @@ package org.eclipse.nebula.visualization.widgets.datadefinition;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 
+import org.eclipse.nebula.visualization.internal.widgets.raster.ColorMapRaster;
+import org.eclipse.nebula.visualization.internal.widgets.raster.WindowArrayWrapper;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.RGB;
@@ -211,6 +213,11 @@ public class ColorMap {
 			min = colorMapMin;
 			max = colorMapMax;
 		}
+		if (ColorMapRaster.ENABLED && imageData.depth == 24
+				&& (shrink || (imageData.width >= dataWidth && imageData.height >= dataHeight))) {
+			rasterize(dataArray, dataWidth, dataHeight, max, min, imageData, shrink);
+			return imageData;
+		}
 			if(shrink){				
 				int height = imageData.height;
 				int width = imageData.width;
@@ -256,6 +263,29 @@ public class ColorMap {
 			return imageData;
 	}
 		
+	/**
+	 * Same bytes as the per-pixel loop of {@link #drawImage(IPrimaryArrayWrapper, int, int, double, double, ImageData, boolean)}
+	 * for a depth-24 image, written straight into {@code imageData.data} on worker threads; packed
+	 * {@code double[]} sources (including crop windows over them) are read without the wrapper call.
+	 */
+	private void rasterize(IPrimaryArrayWrapper dataArray, int dataWidth, int dataHeight, double max, double min,
+			ImageData imageData, boolean shrink) {
+		double[] packed = null;
+		int base = 0;
+		int stride = dataWidth;
+		if (dataArray instanceof DoubleArrayWrapper) {
+			packed = ((DoubleArrayWrapper) dataArray).data;
+		} else if (dataArray instanceof WindowArrayWrapper) {
+			WindowArrayWrapper w = (WindowArrayWrapper) dataArray;
+			packed = w.packed();
+			base = w.top * w.sourceWidth + w.left;
+			stride = w.sourceWidth;
+		}
+		ColorMapRaster.apply(packed, base, stride, packed == null ? dataArray::get : null, dataWidth, dataHeight,
+				max, min, pixelLookupTable, imageData.data, imageData.bytesPerLine, imageData.width,
+				imageData.height, shrink);
+	}
+
 	/**Calculate the image data from source data based on the color map.
 	 * @param dataArray the source data
 	 * @param dataWidth number of columns of dataArray; This will be the width of image data.
