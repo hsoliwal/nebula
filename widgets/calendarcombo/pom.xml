@@ -16,6 +16,7 @@
 
 	<modules>
 		<module>org.eclipse.nebula.widgets.calendarcombo</module>
+		<module>org.eclipse.nebula.widgets.calendarcombo.tests</module>
 		<module>org.eclipse.nebula.widgets.calendarcombo.example</module>
 		<module>org.eclipse.nebula.widgets.calendarcombo.feature</module>
 	</modules>

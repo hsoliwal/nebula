@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula Calendar Combo Tests
+Bundle-SymbolicName: org.eclipse.nebula.widgets.calendarcombo.tests
+Bundle-Version: 1.1.0.qualifier
+Bundle-Vendor: Eclipse Nebula
+Fragment-Host: org.eclipse.nebula.widgets.calendarcombo
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: org.junit
+Automatic-Module-Name: org.eclipse.nebula.widgets.calendarcombo.tests
