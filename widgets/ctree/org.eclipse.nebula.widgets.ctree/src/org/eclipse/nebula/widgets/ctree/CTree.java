@@ -204,6 +204,9 @@ public class CTree extends Composite implements Listener {
 
 	List itemList = new ArrayList();
 
+	/** per-item and per-cell boolean state as packed bit lanes */
+	final CTreeBitLanes lanes = new CTreeBitLanes();
+
 	/** visible-list index of the first painted item, from the last getPaintedItems() */
 	private int paintedStart;
 	

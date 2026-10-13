@@ -14,3 +14,4 @@ calendarcombo	flat-combo drop-down shell and list (CustomCombo)	first open, firs
 calendarcombo	calendar pop-up shell and CalendarComposite	first showCalendar() (already lazy in the pre-image; recorded, unchanged)	first showCalendar()	CalendarCombo#showCalendar
 compositetable	row editors (row controls from the prototype)	first paint while visible, or first public row read (getRowControls, getNumRowsVisible, getSelection, setSelection, getCurrentRowControl, getControlRow)	first layout with a client area, even while hidden	InternalCompositeTable#updateVisibleRows/flushRows
 compositetable	row window	only rows that fit the client area (pre-image already row-windowed and recycled via spareRows)	same	InternalCompositeTable#fixNumberOfRows
+ctree	per-item/per-cell private booleans (painted, autoHeight, hasChild, inited, holdChild, checkable, checked)	bit lanes in CTree (CTreeBitLanes), slot handed out at creation	per-object boolean fields	CTreeBitLanes

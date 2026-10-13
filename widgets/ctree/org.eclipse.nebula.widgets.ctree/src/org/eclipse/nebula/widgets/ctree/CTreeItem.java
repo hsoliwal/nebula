@@ -62,7 +62,8 @@ public class CTreeItem extends Item {
 	/**
 	 * Whether or not this item is actually painted to the screen.
 	 */
-	boolean painted = false;
+	/** this item's slot in {@link CTree#lanes}: painted and autoHeight live there */
+	final int slot;
 	
 	private int top = -1;
 	private int height = -1;
@@ -71,7 +72,6 @@ public class CTreeItem extends Item {
 	private int treeCell;
 	private CTreeItem parentItem;
 	private List items = new ArrayList();
-	private boolean autoHeight;
 
 	private CTreeItem next;
 	private CTreeItem previous;
@@ -80,6 +80,7 @@ public class CTreeItem extends Item {
 	private CTreeItem(CTree parent, CTreeItem parentItem, int style, int index) {
 		super(parent, style);
 		this.ctree = parent;
+		this.slot = parent.lanes.allocate();
 		this.parentItem = parentItem;
 		this.cells = new CTreeCell[parent.getColumnCount()];
 		createCells(parent.cellClasses);
@@ -255,7 +256,7 @@ public class CTreeItem extends Item {
 	}
 
 	public boolean getAutoHeight() {
-		return autoHeight;
+		return ctree.lanes.get(CTreeBitLanes.ITEM_AUTO_HEIGHT, slot);
 	}
 	
 	public Color getBackground() {
@@ -839,7 +840,7 @@ public class CTreeItem extends Item {
 	}
 	
 	public void redraw() {
-        if (painted) {
+        if (ctree.lanes.get(CTreeBitLanes.ITEM_PAINTED, slot)) {
             ctree.redraw(this);
         }
 	}
@@ -1001,8 +1002,8 @@ public class CTreeItem extends Item {
 	}
 	
 	void setPainted(boolean painted) {
-		if(this.painted != painted) {
-			this.painted = painted;
+		if(ctree.lanes.get(CTreeBitLanes.ITEM_PAINTED, slot) != painted) {
+			ctree.lanes.set(CTreeBitLanes.ITEM_PAINTED, slot, painted);
 			if(painted) {
 				updatePaintedCells();
 			} else {

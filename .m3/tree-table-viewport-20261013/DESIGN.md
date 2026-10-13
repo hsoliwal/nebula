@@ -33,6 +33,25 @@ behaviour is selected by construction bit flags.
 | compositetable | row editor controls | parent's row window (`rows`/`spareRows`, recycled) | rows beyond the client area are recycled; nothing is built while hidden | rows returned by `getRowControls()` are pinned while in the window | none (always lazy) |
 | ctree | `CTreeItem`/`CTreeCell` | still per-object fields | NOT_DONE: items are constructed by callers (`new CTreeItem(...)`) and returned by `getItems()`/`getSelection()`, so the API pins identity; a parent-owned virtual mode needs `setItemCount` (a no-op stub today) and is not attempted in this leaf | pinned by the API | — |
 
+## Per-item state as bit lanes, selection and checks
+
+Laws: every per-item boolean (expanded, has-children, selected, enabled, visible, painted, checked, grayed, ...) is a
+bit lane in the parent; selection is packed in the parent and items are materialized only when `getSelection` asks;
+check state is a parent bitset. Status per widget:
+
+| Widget | State | Where it lives after this leaf | Status |
+|---|---|---|---|
+| xviewer | expanded, selected, checked | the native `Tree` (SWT owns the per-item state; nothing per item in Java) | NATIVE |
+| xviewer (`SWT.VIRTUAL`) | materialized roots | packed `int[]` bit set in the bridge | DONE |
+| tablecombo, CheckTableCombo | selected, checked, materialized rows | the native `Table`; materialized rows as a packed `int[]` bit set | NATIVE / DONE |
+| ctreecombo | expanded, selected | the native drop-down `Tree` (rebuilt per drop as before) | NATIVE |
+| ctree | item `painted`, `autoHeight`; cell `painted`, `hasChild`, `inited`, `holdChild`, checkable, checked | `CTreeBitLanes` in the `CTree`, indexed by a slot handed out at item/cell creation | DONE |
+| ctree | item `enabled`, `visible`; cell `open` (expanded), `selected`, `visible`, `childVisible`, `toggleVisible`, `ghostToggle`, `mouseDown`, `mouseOver`, `mouseOverToggle`, `isGridLine`, `holdControl` | per-object fields | NOT_DONE: these are `protected` fields, i.e. public API for subclasses; moving them would remove API |
+| ctree | selection | `protected List selection` of items in selection order | NOT_DONE: protected field, and `getSelection()` and shift-selection depend on insertion order, which a bit set does not keep |
+| compositetable | row editors' own state | caller's row controls | N/A (caller-owned controls) |
+
+The lanes use `int` words, not `long[]`, to stay GWT-safe as the platform law requires.
+
 ## Opt-in rule for the native virtual path
 
 `SWT.VIRTUAL` is the SWT-native request for a viewport. A widget that wraps a native Tree/Table switches to the virtual

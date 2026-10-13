@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula CTree Tests
+Bundle-SymbolicName: org.eclipse.nebula.widgets.ctree.tests
+Bundle-Version: 0.9.0.qualifier
+Bundle-Vendor: Eclipse Nebula
+Fragment-Host: org.eclipse.nebula.widgets.ctree
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Bundle: org.junit
+Automatic-Module-Name: org.eclipse.nebula.widgets.ctree.tests
