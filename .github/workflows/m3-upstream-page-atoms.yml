@@ -8,8 +8,17 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   upstream-and-contracts:
+    # Fork guard: run only in hsoliwal/nebula and only for same-repository PR heads.
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

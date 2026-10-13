@@ -14,14 +14,41 @@ name: "CodeQL"
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!.m3/**'
+      - '!.m3-ui-distillation-trigger/**'
+      - '!.github/workflows/m3-*.yml'
+      - '!m3/**'
+      - 'm3/third_party/**'
   pull_request:
     branches: [ "master" ]
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!.m3/**'
+      - '!.m3-ui-distillation-trigger/**'
+      - '!.github/workflows/m3-*.yml'
+      - '!m3/**'
+      - 'm3/third_party/**'
   schedule:
     - cron: '16 0 * * 0'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
     name: Analyze
+    # Fork guard: run only in hsoliwal/nebula and only for same-repository PR heads.
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     # Runner size impacts CodeQL analysis time. To learn more, please see:
     #   - https://gh.io/recommended-hardware-resources-for-running-codeql
     #   - https://gh.io/supported-runners-and-hardware-resources
