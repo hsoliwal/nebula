@@ -23,7 +23,8 @@ import java.util.concurrent.ThreadFactory;
  * <p>
  * The source is either a packed {@code double[]} window ({@code base + y * stride + x}) or, for other wrappers, an
  * {@link Source}. Shared with the GWT/RWT client renderer apart from the thread pool: int/double state; the shrink
- * ratios use the receiver's int arithmetic unchanged (they overflow only for data wider or taller than 32767).
+ * ratios use the receiver's int arithmetic unchanged (they overflow only for data wider or taller than 32767); row
+ * bands are split with int arithmetic only.
  */
 public final class ColorMapRaster {
 
@@ -77,7 +78,7 @@ public final class ColorMapRaster {
 		int cols = shrink ? outWidth : dataWidth;
 		int xRatio = shrink ? (int) ((dataWidth << 16) / outWidth) + 1 : 0;
 		int yRatio = shrink ? (int) ((dataHeight << 16) / outHeight) + 1 : 0;
-		if ((long) rows * cols < PARALLEL_PIXELS) {
+		if (rows < PARALLEL_PIXELS / Math.max(1, cols)) {
 			band(packed, base, stride, source, dataWidth, max, min, lut, out, bytesPerLine, cols, 0, rows, shrink,
 					xRatio, yRatio);
 			return;
@@ -85,8 +86,8 @@ public final class ColorMapRaster {
 		int parts = Math.min(rows, Math.max(1, Math.min(8, Runtime.getRuntime().availableProcessors())));
 		Future<?>[] f = new Future<?>[parts];
 		for (int p = 0; p < parts; p++) {
-			int from = (int) ((long) rows * p / parts);
-			int to = (int) ((long) rows * (p + 1) / parts);
+			int from = rows / parts * p + Math.min(p, rows % parts);
+			int to = rows / parts * (p + 1) + Math.min(p + 1, rows % parts);
 			f[p] = pool().submit(() -> band(packed, base, stride, source, dataWidth, max, min, lut, out, bytesPerLine,
 					cols, from, to, shrink, xRatio, yRatio));
 		}
