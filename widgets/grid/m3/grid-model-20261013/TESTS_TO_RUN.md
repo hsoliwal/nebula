@@ -14,7 +14,7 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 5 | `model.RowPermutation_Test`, `RowBitLanes_Test`, `RowGrouping_Test` | #151 | regression after the ports | 14 + 2 pass (before the ports) |
 | 6 | `GridRowPermutation_Test` (7), `GridColumnWindow_Test` (5), `GridSetDataRedraw_Test` (2) | #151 | regression after pinned plane + #700 merge | 7 / 5 / 2 pass before |
 | 7 | existing suite: 11 classes, 509 tests, pre (eab2a65c) vs post, failure-set diff | #151, #153 | after all changes | pre 134 failures, dev 134, identical set (before pinned plane) |
-| 8 | snippets compile (`examples/org.eclipse.nebula.snippets/.../grid`) pre and post | #151 | harness item 4 | not run |
+| 8 | snippets compile (`examples/org.eclipse.nebula.snippets/.../grid`) pre and post | #151 | harness item 4 | compiled: 35 sources, pre rc=0 / post rc=0, 0 errors, 128 classes each; running the snippets (windows) NOT_RUN |
 | 9 | bench `GridModelBench` (sources moved to the test fragment `org.eclipse.nebula.widgets.grid.bench`) 1M x 100: pre+Classic, post+Classic, post+Packed, two rounds each, wall + thread CPU | #151 | before/after tables (sort, filter, group, first paint, v/h scroll p50/p95/max, heap, private bytes) | round 1 done for wave 1 (machine load 67-99 %); CPU-time columns added after |
 | 11 | `GridModelJobs_Test` (3), `RowPermutation_Test.staticSortedOrderEqualsTheInstanceSort` | #151 | new (batch threshold, worker + UI-thread apply) | compile-checked only |
 | 12 | `GridCheckLanes_Test` (1) + bench check-all on 1M rows | #151 | new (packed check lanes keyed by model row, filter-aware check-all/count) | compile-checked only |
