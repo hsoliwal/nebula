@@ -15,6 +15,7 @@ import java.util.concurrent.Executor;
 
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -29,7 +30,67 @@ public final class GridModelJobs {
 	/** Model rows at or above which a job leaves the UI thread. */
 	public static final int BATCH_THRESHOLD = 1 << 17;
 
+	/** UI-thread budget of an inline job; a job predicted to take longer goes to a worker. */
+	public static final long INLINE_BUDGET_NANOS = 100_000_000L;
+
+	/** Measured sort cost per model row (0 = not measured yet). */
+	private static volatile long sortNanosPerRow;
+
 	private GridModelJobs() {
+	}
+
+	/**
+	 * Sorts the installed {@link RowPermutation} by an {@code int} key column and returns when it
+	 * is applied. A sort predicted (from the measured cost per row, or {@link #BATCH_THRESHOLD}
+	 * before the first measurement) to exceed {@link #INLINE_BUDGET_NANOS} runs on
+	 * {@code executor} over a key snapshot while the UI thread waits in
+	 * {@link BusyIndicator#showWhile(java.util.concurrent.Future)}: busy cursor, event loop and
+	 * scroll bars live, the body paints the old view until the new order is applied once.
+	 *
+	 * @param grid       a Grid with an installed permutation
+	 * @param keys       one key per model row
+	 * @param descending {@code true} for descending keys
+	 * @param executor   worker for long sorts
+	 * @return {@code true} if applied, {@code false} if the permutation changed meanwhile
+	 */
+	public static boolean sortByIntKeysBusy(final Grid grid, final int[] keys, final boolean descending,
+			final Executor executor) {
+		final RowPermutation permutation = grid.getRowPermutation();
+		if (permutation == null) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		final int rows = permutation.getModelCount();
+		final long perRow = sortNanosPerRow;
+		final boolean inline = perRow == 0L ? rows < BATCH_THRESHOLD : rows * perRow < INLINE_BUDGET_NANOS;
+		final long t0 = System.nanoTime();
+		if (inline) {
+			permutation.sortByIntKeys(keys, descending);
+			grid.refreshRowPermutation();
+			measured(rows, System.nanoTime() - t0);
+			return true;
+		}
+		if (keys.length < rows) {
+			throw new IllegalArgumentException("keys.length=" + keys.length + " < " + rows);
+		}
+		final int[] snapshot = java.util.Arrays.copyOf(keys, rows);
+		final int version = permutation.getVersion();
+		final CompletableFuture<int[]> order = CompletableFuture
+				.supplyAsync(() -> RowPermutation.sortedOrder(snapshot, rows, descending), executor);
+		BusyIndicator.showWhile(order);
+		final int[] result = order.join();
+		measured(rows, System.nanoTime() - t0);
+		if (grid.isDisposed() || grid.getRowPermutation() != permutation || permutation.getVersion() != version) {
+			return false;
+		}
+		permutation.setOrder(result);
+		grid.refreshRowPermutation();
+		return true;
+	}
+
+	private static void measured(final int rows, final long nanos) {
+		if (rows >= 4096) {
+			sortNanosPerRow = Math.max(1L, nanos / rows);
+		}
 	}
 
 	/**

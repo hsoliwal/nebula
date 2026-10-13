@@ -116,8 +116,10 @@ public class GridCheckLanes_Test {
 		assertEquals(step, classic.getItemCount(), packed.getItemCount());
 		int displayedChecked = 0;
 		for (int v = 0; v < classic.getItemCount(); v++) {
-			assertEquals(step + " v=" + v, classic.getItem(v).getChecked(), packed.getItem(v).getChecked());
-			displayedChecked += classic.getItem(v).getChecked() ? 1 : 0;
+			// getChecked(int) fires SetData first; the no-argument getChecked() of the classic Grid
+			// would read a recycled item's stale state
+			assertEquals(step + " v=" + v, classic.getItem(v).getChecked(0), packed.getItem(v).getChecked(0));
+			displayedChecked += classic.getItem(v).getChecked(0) ? 1 : 0;
 		}
 		assertEquals(step + " count", displayedChecked, packed.getCheckedCount(0, true));
 		assertEquals(step + " pixels", GridRowPermutation_Test.pixels(classic), GridRowPermutation_Test.pixels(packed));

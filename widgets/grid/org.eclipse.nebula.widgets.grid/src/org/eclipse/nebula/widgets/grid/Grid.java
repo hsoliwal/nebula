@@ -5729,13 +5729,21 @@ public class Grid extends Canvas {
 		if (clip.isEmpty()) {
 			return;
 		}
-		try (GridGCProxy pinnedGc = GridGCProxy.wrap(gc).clip(clip)) {
+		// Same GC state as the body pass (no proxy round trip): the plane must print the exact
+		// pixels the body prints for the same rows.
+		final Rectangle savedClip = gc.getClipping();
+		final Color savedBackground = gc.getBackground();
+		try {
+			gc.setClipping(clip);
 			// the plane is opaque: cells without a background colour must not draw over the
 			// scrolled rows beneath, so the plane starts from the Grid background as onPaint does
-			pinnedGc.gc().setBackground(getBackground());
-			pinnedGc.gc().fillRectangle(plane);
-			paintRows(displayOrderedColumns, false, first, count, hscroll, new GridCellSpanManager(), pinnedGc.gc(),
-					clip, y, clientArea, first, new InsertMark(), extraFill);
+			gc.setBackground(getBackground());
+			gc.fillRectangle(plane);
+			paintRows(displayOrderedColumns, false, first, count, hscroll, new GridCellSpanManager(), gc, clip, y,
+					clientArea, first, new InsertMark(), extraFill);
+		} finally {
+			gc.setBackground(savedBackground);
+			gc.setClipping(savedClip);
 		}
 		if (fixedOverlayActive) {
 			final int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;

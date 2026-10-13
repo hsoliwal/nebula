@@ -33,7 +33,7 @@ public class GridResidency_Test {
 
 	private static final int ROWS = 10_000;
 	private static final int COLUMNS = 6;
-	private static final int CAPACITY = 120;
+	private static final int CAPACITY = 40;
 
 	private Display display;
 	private Shell shell;
@@ -89,14 +89,14 @@ public class GridResidency_Test {
 		final String[] before = snapshot(0, 25);
 		final String pixels = GridRowPermutation_Test.pixels(grid);
 
-		for (final int top : new int[] { 1000, 3000, 6000, 9000 }) {
+		for (final int top : new int[] { 1000, 2000, 3000, 4000, 6000, 8000, 9000 }) {
 			grid.setTopIndex(top);
 			grid.update();
 			flush();
 		}
 		assertTrue("cold rows were released: " + grid.residencyReleased, grid.residencyReleased > 0);
 		assertTrue("resident items bounded: " + grid.virtualMaterializedItemCount(),
-				grid.virtualMaterializedItemCount() <= CAPACITY + 64);
+				grid.virtualMaterializedItemCount() <= CAPACITY + 30);
 
 		grid.setTopIndex(0);
 		grid.update();
