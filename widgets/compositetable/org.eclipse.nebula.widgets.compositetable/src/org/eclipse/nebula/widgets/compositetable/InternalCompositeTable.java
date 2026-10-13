@@ -82,6 +82,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	private int numRowsVisible = 0;
 	private LinkedList<TableRow> rows = new LinkedList<TableRow>();
 	private LinkedList<TableRow> spareRows = new LinkedList<TableRow>();
+
+	/** a row update was requested while the table was not visible */
+	private boolean rowsDirty;
 	int clientAreaHeight;
 
 	// The prototype header/row objects and Constructors so we can duplicate
@@ -109,6 +112,11 @@ class InternalCompositeTable extends Composite implements Listener {
 
 		setBackground(parentControl.getBackground());
 		controlHolder.addListener(SWT.MouseWheel, this);
+		controlHolder.addListener(SWT.Paint, event -> {
+			if (rowsDirty) {
+				getDisplay().asyncExec(this::flushRows);
+			}
+		});
 
 		maxRowsVisible = parent.getMaxRowsVisible();
 		numRowsInCollection = parent.getNumRowsInCollection();
@@ -499,6 +507,25 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * </ul>
 	 */
 	void updateVisibleRows() {
+		//FLLDCIM: lazy — no row population while not effectively visible; caught up once on the
+		// first paint or on the first public read of rows
+		if (!isVisible()) {
+			rowsDirty = true;
+			return;
+		}
+		rowsDirty = false;
+		updateVisibleRowsNow();
+	}
+
+	/** Runs a row update that was deferred while the table was not visible. */
+	void flushRows() {
+		if (rowsDirty && !isDisposed()) {
+			rowsDirty = false;
+			updateVisibleRowsNow();
+		}
+	}
+
+	private void updateVisibleRowsNow() {
 		// If we don't have our prototype row object yet, bail out
 		if (rowControl == null) {
 			return;
@@ -861,6 +888,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * @return the actual number of rows that are currently visible.
 	 */
 	public int getNumRowsVisible() {
+		flushRows();
 		return rows.size();
 	}
 
@@ -934,6 +962,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 *         selection is available.
 	 */
 	public Point getSelection() {
+		flushRows();
 		return currentRow != -1 ? new Point(currentColumn, currentRow) : null; 
 	}
 
@@ -949,6 +978,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 *            the row to select
 	 */
 	public void setSelection(int column, int row) {
+		flushRows();
 		int topRowDelta = computeTopRowDelta(row);
 		if (topRowDelta != 0) {
             doSetTopRow(topRow + topRowDelta, currentRow);
@@ -1720,6 +1750,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * @return the current row control.
 	 */
 	public Control getCurrentRowControl() {
+		flushRows();
 		TableRow currentRow = currentRow();
 		if (currentRow == null) {
 			return null;
@@ -1739,6 +1770,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 *         SWT row object.
 	 */
 	public Control[] getRowControls() {
+		flushRows();
 		Control[] rowControls = new Control[rows.size()];
 		for (int i = 0; i < rowControls.length; i++) {
 			rowControls[i] = getRowByNumber(i).getRowControl();
@@ -1775,6 +1807,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * @throws IllegalArgumentException if rowControl is not currently visible
 	 */
 	public int getControlRow(Control rowControl) {
+		flushRows();
 		for (int row = 0; row < rows.size(); row++) {
 			if (getRowByNumber(row).getRowControl() == rowControl) {
 				return row;

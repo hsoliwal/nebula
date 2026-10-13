@@ -32,27 +32,49 @@ import org.eclipse.swt.widgets.Shell;
  * the post-image, then classifies each row.
  *
  * <pre>
- * TtDiff &lt;api.tsv&gt; &lt;widget&gt; &lt;fixtureClass&gt; &lt;probeDir&gt; &lt;preDir&gt; &lt;postDir&gt; &lt;out.tsv&gt; &lt;visible|hidden&gt;
+ * TtDiff probe &lt;api.tsv&gt; &lt;widget&gt; &lt;fixtureClass&gt; &lt;probeDir&gt; &lt;classesDir&gt; &lt;out.tsv&gt; &lt;visible|hidden&gt;
+ * TtDiff compare &lt;api.tsv&gt; &lt;widget&gt; &lt;pre.tsv&gt; &lt;pre2.tsv&gt; &lt;post.tsv&gt; &lt;out.tsv&gt;
  * </pre>
+ * One JVM per probe pass, so native handles leaked by one image never reach the next.
  */
 public final class TtDiff {
 	private TtDiff() {
 	}
 
 	public static void main(String[] args) throws Exception {
-		List<String[]> rows = rows(args[0], args[1]);
+		List<String[]> rows = rows(args[1], args[2]);
+		if ("compare".equals(args[0])) {
+			write(args[6], rows, read(args[3]), read(args[4]), read(args[5]));
+			return;
+		}
 		boolean visible = "visible".equals(args[7]);
 		Display display = new Display();
 		Shell host = new Shell(display);
 		try {
-			Map<String, String[]> pre = probe(host, args[2], args[3], args[4], rows, visible);
-			Map<String, String[]> pre2 = probe(host, args[2], args[3], args[4], rows, visible);
-			Map<String, String[]> post = probe(host, args[2], args[3], args[5], rows, visible);
-			write(args[6], rows, pre, pre2, post);
+			Map<String, String[]> pass = probe(host, args[3], args[4], args[5], rows, visible);
+			List<String> lines = new ArrayList<>();
+			for (String[] r : pass.values()) {
+				lines.add(r[0] + "\t" + escape(r[1]) + "\t" + escape(r[2]));
+			}
+			Files.write(Paths.get(args[6]), lines, StandardCharsets.UTF_8);
+			System.out.println("probed " + lines.size() + " rows");
 		} finally {
 			host.dispose();
 			display.dispose();
 		}
+	}
+
+	private static String escape(String s) {
+		return s.replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n").replace("\r", "\\r");
+	}
+
+	private static Map<String, String[]> read(String path) throws IOException {
+		Map<String, String[]> byId = new LinkedHashMap<>();
+		for (String line : Files.readAllLines(Paths.get(path), StandardCharsets.UTF_8)) {
+			String[] c = line.split("\t", -1);
+			byId.put(c[0], new String[] { c[0], c[1], c.length > 2 ? c[2] : "" });
+		}
+		return byId;
 	}
 
 	private static List<String[]> rows(String tsv, String widget) throws IOException {

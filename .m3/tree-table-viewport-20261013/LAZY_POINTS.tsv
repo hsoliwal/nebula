@@ -10,3 +10,7 @@ tablecombo	drop-down shell and table	first open, first getTable() or first item 
 tablecombo	popup rows (SWT.VIRTUAL)	native table asks (SWT.SetData)	all rows	TableCombo#markMaterialized
 tablecombo	odd/even row colours	rows the table asked for; later rows on SetData	all rows at every drop	TableCombo#applyLineColors
 ctreecombo	drop-down shell and tree	first open, first layout (computeSize needs the native tree's preferred width), first column, or first item API that needs a native item	constructor	CTreeCombo#tree()
+calendarcombo	flat-combo drop-down shell and list (CustomCombo)	first open, first layout (computeSize needs the native list preferred width) or first item API use	constructor	CustomCombo#list()
+calendarcombo	calendar pop-up shell and CalendarComposite	first showCalendar() (already lazy in the pre-image; recorded, unchanged)	first showCalendar()	CalendarCombo#showCalendar
+compositetable	row editors (row controls from the prototype)	first paint while visible, or first public row read (getRowControls, getNumRowsVisible, getSelection, setSelection, getCurrentRowControl, getControlRow)	first layout with a client area, even while hidden	InternalCompositeTable#updateVisibleRows/flushRows
+compositetable	row window	only rows that fit the client area (pre-image already row-windowed and recycled via spareRows)	same	InternalCompositeTable#fixNumberOfRows
