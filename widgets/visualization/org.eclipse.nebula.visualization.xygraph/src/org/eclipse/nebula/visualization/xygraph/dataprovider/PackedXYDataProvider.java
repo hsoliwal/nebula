@@ -7,11 +7,15 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Synexia contributors - initial API and implementation
  ******************************************************************************/
 package org.eclipse.nebula.visualization.xygraph.dataprovider;
 
 import org.eclipse.nebula.visualization.internal.xygraph.decimation.PackedColumns;
 import org.eclipse.nebula.visualization.xygraph.linearscale.Range;
+import org.eclipse.swt.SWT;
 
 /**
  * A chronological data provider that keeps its samples in two packed {@code double[]} columns (x and y) instead of
@@ -48,6 +52,18 @@ public class PackedXYDataProvider extends AbstractDataProvider {
 	/**
 	 * Replaces all samples with copies of {@code xValues[0 .. count)} and {@code yValues[0 .. count)} and notifies
 	 * the listeners once.
+	 *
+	 * @param xValues
+	 *            the x values
+	 * @param yValues
+	 *            the y values
+	 * @param count
+	 *            number of samples to copy
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_NULL_ARGUMENT - if an array is null</li>
+	 *    <li>ERROR_INVALID_RANGE - if count is negative or larger than an array</li>
+	 * </ul>
 	 */
 	public void setData(double[] xValues, double[] yValues, int count) {
 		synchronized (this) {
@@ -63,7 +79,14 @@ public class PackedXYDataProvider extends AbstractDataProvider {
 		fireDataChange();
 	}
 
-	/** Appends one sample and notifies the listeners. */
+	/**
+	 * Appends one sample and notifies the listeners.
+	 *
+	 * @param x
+	 *            the x value
+	 * @param y
+	 *            the y value
+	 */
 	public void append(double x, double y) {
 		synchronized (this) {
 			PackedColumns c = ensureCapacity(1);
@@ -77,6 +100,20 @@ public class PackedXYDataProvider extends AbstractDataProvider {
 	/**
 	 * Appends {@code count} samples from {@code xValues[offset ..]} and {@code yValues[offset ..]} and notifies the
 	 * listeners once.
+	 *
+	 * @param xValues
+	 *            the x values
+	 * @param yValues
+	 *            the y values
+	 * @param offset
+	 *            index of the first sample in both arrays
+	 * @param count
+	 *            number of samples
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_NULL_ARGUMENT - if an array is null</li>
+	 *    <li>ERROR_INVALID_RANGE - if offset or count lie outside an array</li>
+	 * </ul>
 	 */
 	public void append(double[] xValues, double[] yValues, int offset, int count) {
 		synchronized (this) {
@@ -99,8 +136,11 @@ public class PackedXYDataProvider extends AbstractDataProvider {
 	}
 
 	private static void checkCount(double[] x, double[] y, int offset, int count) {
+		if (x == null || y == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
 		if (offset < 0 || count < 0 || offset > x.length - count || offset > y.length - count) {
-			throw new IllegalArgumentException("offset/count outside the arrays"); //$NON-NLS-1$
+			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
 	}
 
@@ -165,20 +205,40 @@ public class PackedXYDataProvider extends AbstractDataProvider {
 		return new Sample(c.x[index], c.y[index]);
 	}
 
-	/** @return the x value at the index without creating a sample object */
+	/**
+	 * Returns the x value at the index without creating a sample object.
+	 *
+	 * @param index
+	 *            the sample index
+	 * @return the x value
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_INVALID_RANGE - if the index is not between 0 and the size - 1 (inclusive)</li>
+	 * </ul>
+	 */
 	public double getXValue(int index) {
 		PackedColumns c = columns;
 		if (index < 0 || index >= c.size) {
-			throw new IndexOutOfBoundsException(String.valueOf(index));
+			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
 		return c.x[index];
 	}
 
-	/** @return the y value at the index without creating a sample object */
+	/**
+	 * Returns the y value at the index without creating a sample object.
+	 *
+	 * @param index
+	 *            the sample index
+	 * @return the y value
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_INVALID_RANGE - if the index is not between 0 and the size - 1 (inclusive)</li>
+	 * </ul>
+	 */
 	public double getYValue(int index) {
 		PackedColumns c = columns;
 		if (index < 0 || index >= c.size) {
-			throw new IndexOutOfBoundsException(String.valueOf(index));
+			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
 		return c.y[index];
 	}

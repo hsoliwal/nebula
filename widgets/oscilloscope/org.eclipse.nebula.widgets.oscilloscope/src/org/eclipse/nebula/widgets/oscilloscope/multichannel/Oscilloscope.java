@@ -1194,13 +1194,18 @@ public class Oscilloscope extends Canvas {
 	 * This method can be called outside of the UI thread.
 	 *
 	 * @param channel
+	 *            the channel
 	 * @param samplesPerColumn
 	 *            0 to turn envelope mode off, otherwise the number of samples per column
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_INVALID_ARGUMENT - if samplesPerColumn is negative</li>
+	 * </ul>
 	 * @since 1.5
 	 */
 	public synchronized void setSamplesPerColumn(int channel, int samplesPerColumn) {
 		if (samplesPerColumn < 0) {
-			throw new IllegalArgumentException("samplesPerColumn < 0"); //$NON-NLS-1$
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		Data ch = chan[channel];
 		synchronized (ch.envLock) {
@@ -1237,7 +1242,13 @@ public class Oscilloscope extends Canvas {
 	}
 
 	/**
-	 * @return the samples per column of the channel, 0 when envelope mode is off
+	 * Returns the number of samples folded into one column of the channel. This method can be called outside of the
+	 * UI thread.
+	 *
+	 * @param channel
+	 *            the channel
+	 * @return the samples per column, 0 when envelope mode is off
+	 * @see #setSamplesPerColumn(int, int)
 	 * @since 1.5
 	 */
 	public int getSamplesPerColumn(int channel) {
@@ -1251,11 +1262,27 @@ public class Oscilloscope extends Canvas {
 	 * <p>
 	 * This method can be called outside of the UI thread.
 	 *
+	 * @param channel
+	 *            the channel
+	 * @param samples
+	 *            the samples, as for {@link #setValue(int, int)}
+	 * @param offset
+	 *            index of the first sample in the array
+	 * @param count
+	 *            number of samples
+	 *
+	 * @exception IllegalArgumentException <ul>
+	 *    <li>ERROR_NULL_ARGUMENT - if samples is null</li>
+	 *    <li>ERROR_INVALID_RANGE - if offset or count lie outside the array</li>
+	 * </ul>
 	 * @since 1.5
 	 */
 	public synchronized void pushSamples(int channel, int[] samples, int offset, int count) {
+		if (samples == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
 		if (offset < 0 || count < 0 || offset > samples.length - count) {
-			throw new IllegalArgumentException("offset/count outside the array"); //$NON-NLS-1$
+			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
 		if (width <= 0) {
 			return;

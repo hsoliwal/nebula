@@ -10,6 +10,7 @@ Require-Bundle: org.eclipse.swt;bundle-version="[3.115.0,4.0.0)",
  org.eclipse.jface,
  org.eclipse.core.runtime
 Export-Package: org.eclipse.nebula.visualization.internal.xygraph.toolbar,
+ org.eclipse.nebula.visualization.internal.xygraph.decimation;x-internal:=true,
  org.eclipse.nebula.visualization.internal.xygraph.undo,
  org.eclipse.nebula.visualization.xygraph.dataprovider,
  org.eclipse.nebula.visualization.xygraph.figures,

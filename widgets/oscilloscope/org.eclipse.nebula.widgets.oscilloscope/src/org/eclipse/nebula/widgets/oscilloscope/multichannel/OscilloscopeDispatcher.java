@@ -797,7 +797,13 @@ public class OscilloscopeDispatcher {
 		}
 	}
 
-	/** @return true while the loop is parked because the scope is not visible */
+	/**
+	 * Returns whether the animation loop is parked because the scope is not effectively visible (hidden, hidden
+	 * ancestor or minimized shell). A parked loop runs no timer and no hook; the next paint of the scope resumes it.
+	 *
+	 * @return true while the loop is parked
+	 * @since 1.5
+	 */
 	public boolean isParked() {
 		return parkedLoop != null;
 	}

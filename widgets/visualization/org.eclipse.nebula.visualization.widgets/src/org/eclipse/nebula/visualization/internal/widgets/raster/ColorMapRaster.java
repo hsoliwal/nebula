@@ -7,6 +7,9 @@
  * https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Synexia contributors - initial API and implementation
  ******************************************************************************/
 package org.eclipse.nebula.visualization.internal.widgets.raster;
 
@@ -14,6 +17,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+
+import org.eclipse.swt.SWT;
 
 /**
  * Packed colour-map LUT apply over the visible raster: for every output pixel the same 256-entry LUT index as
@@ -96,9 +101,9 @@ public final class ColorMapRaster {
 				fu.get();
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
-				throw new IllegalStateException(e);
+				SWT.error(SWT.ERROR_UNSPECIFIED, e);
 			} catch (java.util.concurrent.ExecutionException e) {
-				throw new IllegalStateException(e.getCause());
+				SWT.error(SWT.ERROR_UNSPECIFIED, e.getCause());
 			}
 		}
 	}
