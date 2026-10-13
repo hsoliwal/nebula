@@ -64,6 +64,41 @@ final class GridRowSpanIndex {
 		projectionDirty = true;
 	}
 
+	void columnInserted(int column) {
+		if (column < 0) return;
+		for (int slot = 0; slot < size; slot++) {
+			int[] old = spansByColumn[slot];
+			if (old == null || column > old.length) continue;
+			int[] next = new int[old.length + 1];
+			System.arraycopy(old, 0, next, 0, Math.min(column, old.length));
+			if (column < old.length) {
+				System.arraycopy(old, column, next, column + 1, old.length - column);
+			}
+			spansByColumn[slot] = next;
+		}
+		projectionDirty = true;
+	}
+
+	void columnRemoved(int column) {
+		if (column < 0) return;
+		for (int slot = size - 1; slot >= 0; slot--) {
+			int[] old = spansByColumn[slot];
+			if (old == null || column >= old.length) continue;
+			if (old.length == 1) {
+				removeAt(slot);
+				continue;
+			}
+			int[] next = new int[old.length - 1];
+			System.arraycopy(old, 0, next, 0, column);
+			if (column < next.length) {
+				System.arraycopy(old, column + 1, next, column, next.length - column);
+			}
+			if (maxSpan(next) == 0) removeAt(slot);
+			else spansByColumn[slot] = next;
+		}
+		projectionDirty = true;
+	}
+
 	int earliestCovering(int firstVisible) {
 		if (firstVisible <= 0 || size == 0) return Math.max(0, firstVisible);
 		rebuildProjection();
