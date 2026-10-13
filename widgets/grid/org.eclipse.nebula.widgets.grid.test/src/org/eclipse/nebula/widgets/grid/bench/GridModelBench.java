@@ -152,6 +152,7 @@ public final class GridModelBench {
 		report.put("materialized_after_model_ops", materialized(grid), "items");
 
 		scroll(report, "vscroll", grid, display, true);
+		scroll(report, "vscroll_bar", grid, display, true);
 		scroll(report, "hscroll", grid, display, false);
 		report.put("materialized_after_scroll", materialized(grid), "items");
 		report.put("setdata_events", setData[0], "events");
@@ -246,16 +247,24 @@ public final class GridModelBench {
 		final long[] frames = new long[FRAMES];
 		final long[] cpuFrames = new long[FRAMES];
 		long cells = 0;
+		drain(display);
+		grid.redraw();
+		grid.update(); // settle scroll metrics (updateScrollbars runs in paint) before reading them
 		final ScrollBar bar = vertical ? grid.getVerticalBar() : grid.getHorizontalBar();
 		final int max = Math.max(1, bar.getMaximum() - bar.getThumb());
 		final int step = Math.max(1, vertical ? Math.min(37, max / FRAMES) : Math.min(41, max / FRAMES));
-		drain(display);
+		final int startTop = grid.getTopIndex();
+		final int startH = grid.getHorizontalBar().getSelection();
 		for (int i = 0; i < FRAMES; i++) {
 			final int target = Math.min(max, (i + 1) * step);
 			final long c0 = cpu();
 			final long t0 = System.nanoTime();
-			if (vertical) {
+			if (vertical && !name.endsWith("_bar")) {
 				grid.setTopIndex(Math.min(grid.getItemCount() - 1, target));
+			} else if (vertical) {
+				// scroll bar event path (blit scroll where the Grid supports it)
+				bar.setSelection(startTop + target);
+				bar.notifyListeners(SWT.Selection, new Event());
 			} else {
 				bar.setSelection(target);
 				bar.notifyListeners(SWT.Selection, new Event());
@@ -265,6 +274,9 @@ public final class GridModelBench {
 			cpuFrames[i] = cpu() - c0;
 			cells += intField(grid, "paintCellCount");
 		}
+		report.put(name + "_moved", vertical ? grid.getTopIndex() - startTop
+				: grid.getHorizontalBar().getSelection() - startH, vertical ? "rows" : "units");
+		report.put(name + "_bar_max", max, "units");
 		Arrays.sort(frames);
 		Arrays.sort(cpuFrames);
 		report.put(name + "_cpu_p50", ms(cpuFrames[FRAMES / 2]), "ms");
