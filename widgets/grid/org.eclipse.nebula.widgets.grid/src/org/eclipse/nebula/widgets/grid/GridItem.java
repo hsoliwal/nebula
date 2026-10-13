@@ -1255,6 +1255,7 @@ public class GridItem extends Item {
 	public void setRowSpan(int index, int span) {
 		checkWidget();
 		parent.getDataVisualizer().setRowSpan(this, index, span);
+		parent.rowSpanChanged(this, index, span);
 		parent.setHasSpanning(true);
 		parent.redraw();
 	}
