@@ -8,13 +8,31 @@ on:
       - '.m3/**'
       - 'pom.xml'
       - '.github/workflows/m3-final-proven-transfer.yml'
+      - 'widgets/cwt/org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/svg/SvgLoader.java'
+      - '!**/*.md'
+      - '!m3/docs/**'
+      - '!m3/statement-atoms/**'
+      - '!m3/stream-segment-proof/**'
+      - '!.m3/upstream-page-atoms/**'
+      - '!.m3/nebula-visible-range/**'
+      - '!.m3/source-closure-20261005/**'
+      - '!.m3/statement-distillation-20261005/**'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   prove:
+    # Fork guard: run only in hsoliwal/nebula and only for same-repository PR heads.
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
