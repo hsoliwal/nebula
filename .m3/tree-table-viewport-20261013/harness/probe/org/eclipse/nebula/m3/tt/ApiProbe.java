@@ -72,8 +72,13 @@ public final class ApiProbe {
 				if (++done % 100 == 0) {
 					System.err.println("probe " + done + "/" + rows.size());
 				}
+				long started = System.nanoTime();
 				try {
 					out.add(probe(host, fixtureClass, row, visible));
+					long ms = (System.nanoTime() - started) / 1_000_000L;
+					if (ms > 1500) {
+						System.err.println("slow " + ms + "ms " + row[0] + " " + row[2] + " " + row[4]);
+					}
 				} catch (Throwable ex) {
 					out.add(new String[] { row[0], "PROBE_ERROR:" + describe(ex), "" });
 					for (Shell s : display.getShells()) {

@@ -944,6 +944,11 @@ public class CTreeItem extends Item {
 		this.height = height;
 		redraw();
 	}
+
+	/** sets the height without invalidating; the caller redraws the whole body */
+	void setHeightQuiet(int height) {
+		this.height = height;
+	}
 	
 	public void setImage(Image image) {
 		if(hasTreeCell()) {
