@@ -49,7 +49,13 @@ in this run directory's `harness/` and `tools/`. Run one JVM at a time, memory-g
 
 | PR | Test | Status |
 |---|---|---|
-| hsoliwal/nebula#154 — EclipseNebula/nebula#705 `setClosePopupAfterSelection(false)` | `TableComboClosePopupTests` (2 tests, opens a shell) | written, compile-checked, NOT_RUN |
-| hsoliwal/nebula#155 — EclipseNebula/nebula#612 calendar pop-up monitor | `CalendarComboPopupLocationTest` (4 tests, pure geometry) | written, compile-checked, NOT_RUN; multi-monitor manual check NOT_RUN |
+| hsoliwal/nebula#154 — EclipseNebula/nebula#705 `setClosePopupAfterSelection(false)` | `TableComboClosePopupTests` (2 tests, opens a shell) | RUN 2026-10-13: fix branch `OK (2 tests)`; unfixed master `Tests run: 2, Failures: 1` (`drop-down must stay open`) — reproduces the bug |
+| hsoliwal/nebula#155 — EclipseNebula/nebula#612 calendar pop-up monitor | `CalendarComboPopupLocationTest` (4 tests, pure geometry) | RUN 2026-10-13: `OK (4 tests)`; master does not compile the test (new method); multi-monitor manual check NOT_RUN |
+
+## Showcase matrix cell (Synexia #10916 runner, SWT fork branch `m3/superset-viewport-showcase-20261013`)
+
+Baseline (stock Nebula `eab2a65c`): CompositeTable FAIL at 1K/100K/1M/10M — materialized 69 vs bound 25,
+hidden_layouts 42-46, wrapper_controls 7. Re-run against this branch's jars: `sh scripts/showcase.sh CompositeTable`
+(queued after the pipeline; output label `pr150-tree-table`).
 
 GTK and Cocoa: NOT_RUN for everything.
