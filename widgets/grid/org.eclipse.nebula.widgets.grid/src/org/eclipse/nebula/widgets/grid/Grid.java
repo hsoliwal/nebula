@@ -51,7 +51,9 @@ import org.eclipse.nebula.widgets.grid.internal.GridToolTip;
 import org.eclipse.nebula.widgets.grid.internal.IScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.NullScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter;
+import org.eclipse.nebula.widgets.grid.model.RowGrouping;
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
+import org.eclipse.nebula.widgets.grid.model.RowView;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.ACC;
@@ -623,7 +625,13 @@ public class Grid extends Canvas {
 	/** Installed sort/filter view (SWT.VIRTUAL flat Grids only); null = identity. */
 	private RowPermutation rowPermutation;
 
-	/** {@link RowPermutation#getVersion()} applied by the last refresh; -1 = none. */
+	/** Installed grouping over {@link #rowPermutation}; null = none. */
+	private RowGrouping rowGrouping;
+
+	/** The applied view: {@link #rowGrouping} if set, else {@link #rowPermutation}. */
+	private RowView rowView;
+
+	/** {@link RowView#getVersion()} applied by the last refresh; -1 = none. */
 	private int rowPermutationVersion = -1;
 
 	/** Viewport event owed by a refresh that ran while the Grid was not visible. */
@@ -9899,18 +9907,87 @@ public class Grid extends Canvas {
 		if (!usesSparseVirtualItems()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
-		final RowPermutation previous = rowPermutation;
+		final RowView previous = rowView;
+		rowGrouping = null;
 		if (permutation == null) {
 			if (previous != null) {
 				rowPermutation = null;
+				rowView = null;
 				rowPermutationVersion = -1;
 				applyRowView(previous.getModelCount(), previous, true);
 			}
 			return;
 		}
 		rowPermutation = permutation;
+		rowView = permutation;
 		rowPermutationVersion = -1;
 		applyRowView(permutation.getViewCount(), permutation, false);
+	}
+
+	/**
+	 * Installs a packed grouping. The Grid then shows, per group, a header item followed by
+	 * the group's rows when it is expanded; {@code getRowPermutation()} returns the grouping's
+	 * source. In {@code SWT.SetData}, {@code getRowGrouping().isGroupHeader(event.index)}
+	 * tells a header from a row, {@code groupOf} gives its group and {@code modelRow} the row.
+	 * Passing {@code null} returns to the plain permutation view.
+	 * <p>
+	 * After {@link RowGrouping#setExpanded(int, boolean)} or a change of the source
+	 * permutation, call {@link #refreshRowPermutation()}.
+	 * </p>
+	 *
+	 * @param grouping the grouping, or {@code null}
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if the Grid is
+	 *                                     not {@code SWT.VIRTUAL} or has child
+	 *                                     items</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setRowGrouping(final RowGrouping grouping) {
+		checkWidget();
+		if (!usesSparseVirtualItems()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		if (grouping == null) {
+			if (rowGrouping != null) {
+				rowGrouping = null;
+				rowView = rowPermutation;
+				rowPermutationVersion = -1;
+				applyRowView(rowPermutation.getViewCount(), rowPermutation, false);
+			}
+			return;
+		}
+		rowGrouping = grouping;
+		rowPermutation = grouping.getSource();
+		rowView = grouping;
+		rowPermutationVersion = -1;
+		applyRowView(grouping.getViewCount(), grouping, false);
+	}
+
+	/**
+	 * @return the installed grouping, or {@code null}
+	 * @exception org.eclipse.swt.SWTException
+	 *                                         <ul>
+	 *                                         <li>ERROR_WIDGET_DISPOSED - if the
+	 *                                         receiver has been disposed</li>
+	 *                                         <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                         called from the thread that created the
+	 *                                         receiver</li>
+	 *                                         </ul>
+	 * @since 1.2
+	 */
+	public RowGrouping getRowGrouping() {
+		checkWidget();
+		return rowGrouping;
 	}
 
 	/**
@@ -9950,8 +10027,8 @@ public class Grid extends Canvas {
 	 */
 	public void refreshRowPermutation() {
 		checkWidget();
-		if (rowPermutation != null) {
-			applyRowView(rowPermutation.getViewCount(), rowPermutation, false);
+		if (rowView != null) {
+			applyRowView(rowView.getViewCount(), rowView, false);
 		}
 	}
 
@@ -9960,7 +10037,7 @@ public class Grid extends Canvas {
 	 *         the view changed and was not refreshed yet
 	 */
 	int viewModelRow(final int index) {
-		final RowPermutation p = rowPermutation;
+		final RowView p = rowView;
 		if (p == null) {
 			return index;
 		}
@@ -9970,7 +10047,7 @@ public class Grid extends Canvas {
 		return p.modelRow(index);
 	}
 
-	private void applyRowView(final int count, final RowPermutation view, final boolean identity) {
+	private void applyRowView(final int count, final RowView view, final boolean identity) {
 		final GridVirtualItemList sparse = sparseVirtualItems();
 		final int[] selectedModels = slotModels(selectedItems, sparse);
 		final int focusModel = focusItem == null ? -1 : slotModel(focusItem, sparse);
@@ -10029,7 +10106,7 @@ public class Grid extends Canvas {
 		}
 	}
 
-	private static int viewOfModel(final int model, final RowPermutation view, final boolean identity) {
+	private static int viewOfModel(final int model, final RowView view, final boolean identity) {
 		if (model < 0 || model >= view.getModelCount()) {
 			return -1;
 		}

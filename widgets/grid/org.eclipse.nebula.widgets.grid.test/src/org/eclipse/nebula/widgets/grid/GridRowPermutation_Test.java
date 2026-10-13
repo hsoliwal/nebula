@@ -19,17 +19,21 @@ import static org.junit.Assert.fail;
 
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import org.eclipse.nebula.widgets.grid.model.RowGrouping;
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.junit.After;
@@ -56,6 +60,7 @@ public class GridRowPermutation_Test {
 	private String[][] data;
 	private int[] keys;
 	private Text focusSink;
+	private final List<String> classicHeaders = new ArrayList<>();
 
 	@Before
 	public void setUp() {
@@ -76,12 +81,26 @@ public class GridRowPermutation_Test {
 		}
 		appView = identity(ROWS);
 		classic = grid();
-		classic.addListener(SWT.SetData, e -> fill((GridItem) e.item, appView[e.index]));
+		classic.addListener(SWT.SetData, e -> {
+			final int code = appView[e.index];
+			if (code < 0) {
+				header((GridItem) e.item, classicHeaders.get(~code));
+			} else {
+				fill((GridItem) e.item, code);
+			}
+		});
 		classic.setItemCount(ROWS);
 		packed = grid();
 		permutation = new RowPermutation(ROWS);
-		packed.addListener(SWT.SetData,
-				e -> fill((GridItem) e.item, modelOf(packed, e.index)));
+		packed.addListener(SWT.SetData, e -> {
+			final RowGrouping g = packed.getRowGrouping();
+			if (g != null && g.isGroupHeader(e.index)) {
+				final int group = g.groupOf(e.index);
+				header((GridItem) e.item, headerText(g.getGroupKey(group), g.getGroupSize(group)));
+			} else {
+				fill((GridItem) e.item, modelOf(packed, e.index));
+			}
+		});
 		packed.setItemCount(ROWS);
 		packed.setRowPermutation(permutation);
 		classic.setBounds(0, 30, 420, 330);
@@ -137,6 +156,51 @@ public class GridRowPermutation_Test {
 		packed.setRowPermutation(null);
 		assertNull(packed.getRowPermutation());
 		assertEquivalent("uninstall");
+	}
+
+	@Test
+	public void groupingMatchesTheClassicDriver() throws Exception {
+		select(3, 10, 57);
+		permutation.sortByIntKeys(keys, true);
+		packed.refreshRowPermutation();
+		int[] base = reference(true, null);
+		classicApply(base);
+		assertEquivalent("sorted");
+
+		final int[] groupKeys = new int[ROWS];
+		for (int m = 0; m < ROWS; m++) {
+			groupKeys[m] = keys[m] % 5;
+		}
+		final Set<Integer> collapsed = new HashSet<>();
+		final RowGrouping grouping = new RowGrouping(permutation);
+		grouping.groupBy(groupKeys);
+		packed.setRowGrouping(grouping);
+		assertSame(grouping, packed.getRowGrouping());
+		assertSame(permutation, packed.getRowPermutation());
+		classicApply(grouped(base, groupKeys, collapsed));
+		assertEquivalent("grouped");
+
+		collapsed.add(grouping.getGroupKey(1));
+		grouping.setExpanded(1, false);
+		packed.refreshRowPermutation();
+		classicApply(grouped(base, groupKeys, collapsed));
+		assertEquivalent("collapsed");
+
+		permutation.setFilter(m -> keys[m] % 3 != 0);
+		packed.refreshRowPermutation();
+		base = reference(true, m -> keys[m] % 3 != 0);
+		classicApply(grouped(base, groupKeys, collapsed));
+		assertEquivalent("filtered groups");
+
+		grouping.setExpanded(0, grouping.getGroupCount(), true);
+		collapsed.clear();
+		packed.refreshRowPermutation();
+		classicApply(grouped(base, groupKeys, collapsed));
+		assertEquivalent("expanded all");
+
+		packed.setRowGrouping(null);
+		classicApply(base);
+		assertEquivalent("ungrouped");
 	}
 
 	@Test
@@ -214,7 +278,9 @@ public class GridRowPermutation_Test {
 	private void classicApply(final int[] newView) {
 		final List<Integer> selectedModels = new ArrayList<>();
 		for (final int v : classic.getSelectionIndices()) {
-			selectedModels.add(appView[v]);
+			if (appView[v] >= 0) {
+				selectedModels.add(appView[v]);
+			}
 		}
 		final int focusModel = classic.getFocusItem() == null ? -1 : appView[classic.indexOf(classic.getFocusItem())];
 		appView = newView;
@@ -224,7 +290,9 @@ public class GridRowPermutation_Test {
 		final int[] inverse = new int[ROWS];
 		Arrays.fill(inverse, -1);
 		for (int v = 0; v < newView.length; v++) {
-			inverse[newView[v]] = v;
+			if (newView[v] >= 0) {
+				inverse[newView[v]] = v;
+			}
 		}
 		for (final int m : selectedModels) {
 			if (inverse[m] >= 0) {
@@ -271,8 +339,41 @@ public class GridRowPermutation_Test {
 	}
 
 	private static int modelOf(final Grid grid, final int index) {
+		final RowGrouping g = grid.getRowGrouping();
+		if (g != null) {
+			return g.modelRow(index);
+		}
 		final RowPermutation p = grid.getRowPermutation();
 		return p == null ? index : p.modelRow(index);
+	}
+
+	private static String headerText(final int key, final int size) {
+		return "G" + key + " n=" + size;
+	}
+
+	private static void header(final GridItem item, final String text) {
+		item.setText(0, text);
+		for (int c = 1; c < COLUMNS; c++) {
+			item.setText(c, "");
+		}
+	}
+
+	/** Classic application-side grouping: header code ~g, then the group's rows unless collapsed. */
+	private int[] grouped(final int[] rows, final int[] groupKeys, final Set<Integer> collapsedKeys) {
+		final Map<Integer, List<Integer>> groups = new LinkedHashMap<>();
+		for (final int m : rows) {
+			groups.computeIfAbsent(groupKeys[m], k -> new ArrayList<>()).add(m);
+		}
+		classicHeaders.clear();
+		final List<Integer> out = new ArrayList<>();
+		for (final Map.Entry<Integer, List<Integer>> e : groups.entrySet()) {
+			out.add(~classicHeaders.size());
+			classicHeaders.add(headerText(e.getKey(), e.getValue().size()));
+			if (!collapsedKeys.contains(e.getKey())) {
+				out.addAll(e.getValue());
+			}
+		}
+		return out.stream().mapToInt(Integer::intValue).toArray();
 	}
 
 	private void fill(final GridItem item, final int model) {
@@ -305,21 +406,17 @@ public class GridRowPermutation_Test {
 		return a;
 	}
 
-	/** SHA-256 of the Grid painted into an image through its own paint listener. */
+	/** SHA-256 of the Grid rendered by {@code Control.print(GC)} (capture mode CONTROL_PRINT). */
 	static String pixels(final Grid grid) throws Exception {
 		final Point size = grid.getSize();
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
 			final GC gc = new GC(image);
 			try {
-				gc.setClipping(0, 0, size.x, size.y);
-				final Event e = new Event();
-				e.gc = gc;
-				e.x = 0;
-				e.y = 0;
-				e.width = size.x;
-				e.height = size.y;
-				grid.notifyListeners(SWT.Paint, e);
+				// capture mode CONTROL_PRINT: Control.print(GC) renders the widget's own paint
+				if (!grid.print(gc)) {
+					throw new IllegalStateException("Control.print unsupported");
+				}
 			} finally {
 				gc.dispose();
 			}

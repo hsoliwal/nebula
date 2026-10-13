@@ -35,7 +35,7 @@ import java.util.Arrays;
  *
  * @since 1.2
  */
-public final class RowPermutation {
+public final class RowPermutation implements RowView {
 
 	private static final int SORTED = 1;
 	private static final int FILTERED = 1 << 1;
@@ -75,6 +75,7 @@ public final class RowPermutation {
 	/**
 	 * @return the number of model rows
 	 */
+	@Override
 	public int getModelCount() {
 		return modelCount;
 	}
@@ -99,6 +100,7 @@ public final class RowPermutation {
 	/**
 	 * @return the number of displayed rows (model rows passing the filter)
 	 */
+	@Override
 	public int getViewCount() {
 		if ((flags & FILTERED) == 0) {
 			return modelCount;
@@ -112,6 +114,7 @@ public final class RowPermutation {
 	 * @return the model row shown at {@code viewIndex}
 	 * @throws IndexOutOfBoundsException if {@code viewIndex} is not a displayed row
 	 */
+	@Override
 	public int modelRow(final int viewIndex) {
 		if ((flags & FILTERED) != 0) {
 			ensureView();
@@ -127,6 +130,7 @@ public final class RowPermutation {
 	 * @return the displayed row of {@code modelRow}, or {@code -1} if it is filtered out
 	 * @throws IndexOutOfBoundsException if {@code modelRow} is not a model row
 	 */
+	@Override
 	public int viewIndex(final int modelRow) {
 		checkIndex(modelRow, modelCount);
 		if ((flags & (SORTED | FILTERED)) == 0) {
@@ -321,6 +325,7 @@ public final class RowPermutation {
 	/**
 	 * @return a counter that changes on every sort, filter or size change (31-bit, wraps to 0)
 	 */
+	@Override
 	public int getVersion() {
 		return version;
 	}
