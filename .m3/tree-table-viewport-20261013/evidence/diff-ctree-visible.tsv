@@ -1,0 +1,435 @@
+api_id	kind	verdict	pre_outcome	post_outcome	snapshot_diff
+67a3e80ac5d5	class	EQUAL	T:public super=org.eclipse.swt.widgets.Composite ifaces=[org.eclipse.swt.widgets.Listener]	T:public super=org.eclipse.swt.widgets.Composite ifaces=[org.eclipse.swt.widgets.Listener]	
+274f8247f69b	field	EQUAL	F:public static final boolean=false | S=d2b89354d2b5	F:public static final boolean=false | S=d2b89354d2b5	
+7cefe10a9f8c	field	EQUAL	F:public static final boolean=false | S=d2b89354d2b5	F:public static final boolean=false | S=d2b89354d2b5	
+0caec035a8dd	field	EQUAL	F:public static final boolean=true | S=d2b89354d2b5	F:public static final boolean=true | S=d2b89354d2b5	
+77e9c342eee4	field	EQUAL	F:protected java.util.List=C17[CTreeItem#item/1,CTreeItem#item/2,CTreeItem#item/3,CTreeItem#item/4,CTreeItem#item/5,CTreeItem#item/6,CTreeItem#item/7,CTreeItem#item/8,CTreeItem#item/9,CTreeItem#item/10,CTreeItem#item/11,CTreeItem#item/12,CTreeItem#item/13,CTreeItem#item/14,CTreeItem#item/15,CTreeItem#item/16,CTreeItem#item/17] | S=d2b89354d2b5	F:protected java.util.List=C17[CTreeItem#item/1,CTreeItem#item/2,CTreeItem#item/3,CTreeItem#item/4,CTreeItem#item/5,CTreeItem#item/6,CTreeItem#item/7,CTreeItem#item/8,CTreeItem#item/9,CTreeItem#item/10,CTreeItem#item/11,CTreeItem#item/12,CTreeItem#item/13,CTreeItem#item/14,CTreeItem#item/15,CTreeItem#item/16,CTreeItem#item/17] | S=d2b89354d2b5	
+e619d5e37d34	field	EQUAL	F:protected java.util.List=C1[CTreeItem#item/1] | S=d2b89354d2b5	F:protected java.util.List=C1[CTreeItem#item/1] | S=d2b89354d2b5	
+309f564e3dc4	field	EQUAL	F:protected org.eclipse.nebula.widgets.ctree.CTreeItem=CTreeItem#item/1 | S=d2b89354d2b5	F:protected org.eclipse.nebula.widgets.ctree.CTreeItem=CTreeItem#item/1 | S=d2b89354d2b5	
+252fb03a3075	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+1ad888a36e2f	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+d37a64307d32	field	EQUAL	F:protected int=2818 | S=d2b89354d2b5	F:protected int=2818 | S=d2b89354d2b5	
+5dedbd11963f	field	EQUAL	F:protected org.eclipse.swt.widgets.Canvas=Canvas#? | S=d2b89354d2b5	F:protected org.eclipse.swt.widgets.Canvas=Canvas#? | S=d2b89354d2b5	
+23761aec0958	field	EQUAL	F:protected org.eclipse.swt.widgets.Composite=Composite#? | S=d2b89354d2b5	F:protected org.eclipse.swt.widgets.Composite=Composite#? | S=d2b89354d2b5	
+398407e19a99	field	EQUAL	F:protected org.eclipse.swt.widgets.Table=Table#? | S=d2b89354d2b5	F:protected org.eclipse.swt.widgets.Table=Table#? | S=d2b89354d2b5	
+514591e4959a	field	EQUAL	F:protected org.eclipse.swt.widgets.ScrollBar=ScrollBar#? | S=d2b89354d2b5	F:protected org.eclipse.swt.widgets.ScrollBar=ScrollBar#? | S=d2b89354d2b5	
+7e512be73392	field	EQUAL	F:protected org.eclipse.swt.widgets.ScrollBar=ScrollBar#? | S=d2b89354d2b5	F:protected org.eclipse.swt.widgets.ScrollBar=ScrollBar#? | S=d2b89354d2b5	
+f140e39923a6	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+3185a5e24a42	field	EQUAL	F:protected java.lang.String="" | S=d2b89354d2b5	F:protected java.lang.String="" | S=d2b89354d2b5	
+beb98868f843	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+eb28a2e0ff84	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+b1dc8925d706	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+1826cea998b7	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+5bd2712827be	field	EQUAL	F:protected org.eclipse.nebula.widgets.ctree.SColors=SColors#colors | S=d2b89354d2b5	F:protected org.eclipse.nebula.widgets.ctree.SColors=SColors#colors | S=d2b89354d2b5	
+19c3b0433c3a	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+50bbc858993f	field	EQUAL	F:protected org.eclipse.nebula.widgets.ctree.CTreeLayout=obj:org.eclipse.nebula.widgets.ctree.CTreeLayout | S=d2b89354d2b5	F:protected org.eclipse.nebula.widgets.ctree.CTreeLayout=obj:org.eclipse.nebula.widgets.ctree.CTreeLayout | S=d2b89354d2b5	
+51ab0ab769e2	field	EQUAL	F:public boolean=false | S=d2b89354d2b5	F:public boolean=false | S=d2b89354d2b5	
+c29412468902	field	EQUAL	F:public boolean=false | S=d2b89354d2b5	F:public boolean=false | S=d2b89354d2b5	
+a200c0cf5860	field	EQUAL	F:public boolean=false | S=d2b89354d2b5	F:public boolean=false | S=d2b89354d2b5	
+b25c8aa70a65	field	EQUAL	F:public boolean=false | S=d2b89354d2b5	F:public boolean=false | S=d2b89354d2b5	
+2bfc6b614faa	field	EQUAL	F:public boolean=false | S=d2b89354d2b5	F:public boolean=false | S=d2b89354d2b5	
+0a06f6b2c57c	constructor	EQUAL	NEW=CTree(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTree(org.eclipse.swt.widgets.Composite,int) | S=d2b89354d2b5	NEW=CTree(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTree(org.eclipse.swt.widgets.Composite,int) | S=d2b89354d2b5	
+e3b3c27ac5cf	method	EQUAL	R=null sig=public void addPaintedItemListener(org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	R=null sig=public void addPaintedItemListener(org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	
+e9c3aeadafb0	method	EQUAL	R=null sig=public void addSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	R=null sig=public void addSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	
+373b1e365198	method	EQUAL	R=null sig=public void addTreeListener(org.eclipse.swt.events.TreeListener) | S=d2b89354d2b5	R=null sig=public void addTreeListener(org.eclipse.swt.events.TreeListener) | S=d2b89354d2b5	
+29000e1b6996	method	EQUAL	R=null sig=public void clear(int,boolean) | S=d2b89354d2b5	R=null sig=public void clear(int,boolean) | S=d2b89354d2b5	
+4c5dbd9be7e3	method	EQUAL	R=null sig=public void clearAll(boolean) | S=d2b89354d2b5	R=null sig=public void clearAll(boolean) | S=d2b89354d2b5	
+1ff1b6c4e9ff	method	EQUAL	R=null sig=public void deselectAll() | S=c3f965c7410e	R=null sig=public void deselectAll() | S=c3f965c7410e	
+da7edf5622c1	method	EQUAL	R=null sig=protected void fireSelectionEvent(boolean) | S=d2b89354d2b5	R=null sig=protected void fireSelectionEvent(boolean) | S=d2b89354d2b5	
+fcf7f1740b33	method	EQUAL	R=-1 sig=public int getCheckColumn() | S=d2b89354d2b5	R=-1 sig=public int getCheckColumn() | S=d2b89354d2b5	
+f4194c3369a2	method	EQUAL	R=true sig=public boolean getCheckRoots() | S=d2b89354d2b5	R=true sig=public boolean getCheckRoots() | S=d2b89354d2b5	
+a65b35edb0d7	method	EQUAL	R=SColors#colors sig=public org.eclipse.nebula.widgets.ctree.SColors getColors() | S=d2b89354d2b5	R=SColors#colors sig=public org.eclipse.nebula.widgets.ctree.SColors getColors() | S=d2b89354d2b5	
+98bf11bc3203	method	EQUAL	R=2 sig=public int getColumnCount() | S=d2b89354d2b5	R=2 sig=public int getColumnCount() | S=d2b89354d2b5	
+e8e9b179fdc5	method	EQUAL	R=A2[0,1] sig=public [I getColumnOrder() | S=d2b89354d2b5	R=A2[0,1] sig=public [I getColumnOrder() | S=d2b89354d2b5	
+f69f5599a4a0	method	EQUAL	R=Rectangle {0, 24, 443, 293} sig=protected org.eclipse.swt.graphics.Rectangle getContentArea() | S=d2b89354d2b5	R=Rectangle {0, 24, 443, 293} sig=protected org.eclipse.swt.graphics.Rectangle getContentArea() | S=d2b89354d2b5	
+118b804eb548	method	EQUAL	R="" sig=public java.lang.String getEmptyMessage() | S=d2b89354d2b5	R="" sig=public java.lang.String getEmptyMessage() | S=d2b89354d2b5	
+62f97edb52a5	method	EQUAL	R=1 sig=public int getGridLineWidth() | S=d2b89354d2b5	R=1 sig=public int getGridLineWidth() | S=d2b89354d2b5	
+201a85bd05c8	method	EQUAL	R=24 sig=public int getHeaderHeight() | S=d2b89354d2b5	R=24 sig=public int getHeaderHeight() | S=d2b89354d2b5	
+3043f86c7e88	method	EQUAL	R=true sig=public boolean getHeaderVisible() | S=d2b89354d2b5	R=true sig=public boolean getHeaderVisible() | S=d2b89354d2b5	
+80c680e92355	method	EQUAL	R=CTreeItem#item/1 sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getItem(int) | S=d2b89354d2b5	R=CTreeItem#item/1 sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getItem(int) | S=d2b89354d2b5	
+f5259a37a8a8	method	EQUAL	R=30 sig=public int getItemCount() | S=d2b89354d2b5	R=30 sig=public int getItemCount() | S=d2b89354d2b5	
+be4028b29220	method	EQUAL	R=17 sig=public int getItemHeight() | S=d2b89354d2b5	R=17 sig=public int getItemHeight() | S=d2b89354d2b5	
+81add6936e7b	method	EQUAL	R=A30[CTreeItem#item/0,CTreeItem#item/1,CTreeItem#item/2,CTreeItem#item/3,CTreeItem#item/4,CTreeItem#item/5,CTreeItem#item/6,CTreeItem#item/7,CTreeItem#item/8,CTreeItem#item/9,CTreeItem#item/10,CTreeItem#item/11,CTreeItem#item/12,CTreeItem#item/13,CTreeItem#item/14,CTreeItem#item/15,CTreeItem#item/16,CTreeItem#item/17,CTreeItem#item/18,CTreeItem#item/19,CTreeItem#item/20,CTreeItem#item/21,CTreeIte...	R=A30[CTreeItem#item/0,CTreeItem#item/1,CTreeItem#item/2,CTreeItem#item/3,CTreeItem#item/4,CTreeItem#item/5,CTreeItem#item/6,CTreeItem#item/7,CTreeItem#item/8,CTreeItem#item/9,CTreeItem#item/10,CTreeItem#item/11,CTreeItem#item/12,CTreeItem#item/13,CTreeItem#item/14,CTreeItem#item/15,CTreeItem#item/16,CTreeItem#item/17,CTreeItem#item/18,CTreeItem#item/19,CTreeItem#item/20,CTreeItem#item/21,CTreeIte...	
+cc45f4b2de85	method	EQUAL	R=A0[] sig=protected [Lorg.eclipse.nebula.widgets.ctree.CTreeItem; getItems(org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=A0[] sig=protected [Lorg.eclipse.nebula.widgets.ctree.CTreeItem; getItems(org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+2c825fa51109	method	EQUAL	R=false sig=public boolean getLastLineVisible() | S=d2b89354d2b5	R=false sig=public boolean getLastLineVisible() | S=d2b89354d2b5	
+d1de2518b32c	method	EQUAL	R=false sig=public boolean getLinesVisible() | S=d2b89354d2b5	R=false sig=public boolean getLinesVisible() | S=d2b89354d2b5	
+6b1c1986b92e	method	EQUAL	R=true sig=public boolean getNativeHeader() | S=d2b89354d2b5	R=true sig=public boolean getNativeHeader() | S=d2b89354d2b5	
+f3c1005a4576	method	EQUAL	R=C17[CTreeItem#item/1,CTreeItem#item/2,CTreeItem#item/3,CTreeItem#item/4,CTreeItem#item/5,CTreeItem#item/6,CTreeItem#item/7,CTreeItem#item/8,CTreeItem#item/9,CTreeItem#item/10,CTreeItem#item/11,CTreeItem#item/12,CTreeItem#item/13,CTreeItem#item/14,CTreeItem#item/15,CTreeItem#item/16,CTreeItem#item/17] sig=protected java.util.List getPaintedItems() | S=d2b89354d2b5	R=C17[CTreeItem#item/1,CTreeItem#item/2,CTreeItem#item/3,CTreeItem#item/4,CTreeItem#item/5,CTreeItem#item/6,CTreeItem#item/7,CTreeItem#item/8,CTreeItem#item/9,CTreeItem#item/10,CTreeItem#item/11,CTreeItem#item/12,CTreeItem#item/13,CTreeItem#item/14,CTreeItem#item/15,CTreeItem#item/16,CTreeItem#item/17] sig=protected java.util.List getPaintedItems() | S=d2b89354d2b5	
+5b8a52732a9e	method	EQUAL	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getParentItem() | S=d2b89354d2b5	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getParentItem() | S=d2b89354d2b5	
+832d6c7aeb09	method	EQUAL	R=A1[CTreeItem#item/1] sig=public [Lorg.eclipse.nebula.widgets.ctree.CTreeItem; getSelection() | S=d2b89354d2b5	R=A1[CTreeItem#item/1] sig=public [Lorg.eclipse.nebula.widgets.ctree.CTreeItem; getSelection() | S=d2b89354d2b5	
+1e9df56a6e72	method	EQUAL	R=1 sig=public int getSelectionCount() | S=d2b89354d2b5	R=1 sig=public int getSelectionCount() | S=d2b89354d2b5	
+a2fbf1b3ad97	method	EQUAL	R=true sig=public boolean getSelectOnToggle() | S=d2b89354d2b5	R=true sig=public boolean getSelectOnToggle() | S=d2b89354d2b5	
+f2f468c95ab1	method	EQUAL	R=false sig=public boolean getSelectOnTreeToggle() | S=d2b89354d2b5	R=false sig=public boolean getSelectOnTreeToggle() | S=d2b89354d2b5	
+e597eff3364c	method	EQUAL	R=1024 sig=public int getSortDirection() | S=d2b89354d2b5	R=1024 sig=public int getSortDirection() | S=d2b89354d2b5	
+845cec6917c1	method	EQUAL	R=2818 sig=public int getStyle() | S=d2b89354d2b5	R=2818 sig=public int getStyle() | S=d2b89354d2b5	
+0625c9466b50	method	EQUAL	R=CTreeItem#item/1 sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getTopItem() | S=d2b89354d2b5	R=CTreeItem#item/1 sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getTopItem() | S=d2b89354d2b5	
+49777e0354c7	method	EQUAL	R=0 sig=public int getTreeColumn() | S=d2b89354d2b5	R=0 sig=public int getTreeColumn() | S=d2b89354d2b5	
+a1b32221dec1	method	EQUAL	R=16 sig=public int getTreeIndent() | S=d2b89354d2b5	R=16 sig=public int getTreeIndent() | S=d2b89354d2b5	
+e7b88a08fbd2	method	EQUAL	R=null sig=public void handleEvent(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	R=null sig=public void handleEvent(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	
+5f720730250e	method	EQUAL	R=null sig=protected void handleMouseEvents(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	R=null sig=protected void handleMouseEvents(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	
+1ae01151621d	method	EQUAL	R=true sig=public boolean hasTreeColumn() | S=d2b89354d2b5	R=true sig=public boolean hasTreeColumn() | S=d2b89354d2b5	
+0ad10b8fad1c	method	EQUAL	X=java.lang.StackOverflowError sig=public int indexOf(org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	X=java.lang.StackOverflowError sig=public int indexOf(org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	
+24737fedf1d5	method	EQUAL	R=-1 sig=public int indexOf(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	R=-1 sig=public int indexOf(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+7d9902b1cc2d	method	EQUAL	R=CTreeColumn#col:Value sig=protected org.eclipse.nebula.widgets.ctree.CTreeColumn getSortColumn() | S=d2b89354d2b5	R=CTreeColumn#col:Value sig=protected org.eclipse.nebula.widgets.ctree.CTreeColumn getSortColumn() | S=d2b89354d2b5	
+03296185d5a8	method	EQUAL	R=false sig=public boolean isEmpty() | S=d2b89354d2b5	R=false sig=public boolean isEmpty() | S=d2b89354d2b5	
+eff5e7b5d1f6	method	EQUAL	R=true sig=public boolean isVisible(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	R=true sig=public boolean isVisible(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+ef4168a40564	method	EQUAL	R=null sig=protected void paintBackground(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintBackground(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+6edea8bc34ff	method	EQUAL	X=java.lang.IllegalArgumentException:Argument not valid sig=protected void paintBody(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	X=java.lang.IllegalArgumentException:Argument not valid sig=protected void paintBody(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	
+0b534360d3cd	method	EQUAL	R=null sig=protected void paintColumns(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintColumns(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+f7a07917cf5e	method	EQUAL	R=null sig=protected void paintFocus(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintFocus(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+d80b62af9930	method	EQUAL	R=null sig=protected void paintGridLines(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintGridLines(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+08256ac36bbb	method	EQUAL	R=null sig=protected void paintItemBackgrounds(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintItemBackgrounds(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+c10169417777	method	EQUAL	R=null sig=protected void paintItems(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintItems(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+a06f62bf43f1	method	EQUAL	R=null sig=protected void paintSelectionIndicators(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintSelectionIndicators(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+39d8aa5db26b	method	EQUAL	R=null sig=protected void paintViewport(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void paintViewport(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+2c8bea490be6	method	EQUAL	R=null sig=public void redraw(org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	R=null sig=public void redraw(org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	
+8776b37ddee5	method	EQUAL	R=null sig=public void redraw(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	R=null sig=public void redraw(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+60d55d3eb3ab	method	NONDETERMINISTIC_BASELINE	R=null sig=public void removeAll() | S=851717081395	R=null sig=public void removeAll() | S=851717081395	
+f3f7cad4dcea	method	EQUAL	R=null sig=public void removePaintedItemListener(org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	R=null sig=public void removePaintedItemListener(org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	
+cd9a5be0a23f	method	EQUAL	R=null sig=public void removeSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	R=null sig=public void removeSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	
+0fe30ad36e45	method	EQUAL	R=null sig=public void removeTreeListener(org.eclipse.swt.events.TreeListener) | S=d2b89354d2b5	R=null sig=public void removeTreeListener(org.eclipse.swt.events.TreeListener) | S=d2b89354d2b5	
+57ee90e3a6df	method	EQUAL	R=null sig=public void selectAll() | S=3c3c64bf303e	R=null sig=public void selectAll() | S=3c3c64bf303e	
+1ac6df87fc94	method	EQUAL	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+c4b06dd30ef7	method	EQUAL	R=null sig=public void setCellClass(java.lang.Class) | S=d2b89354d2b5	R=null sig=public void setCellClass(java.lang.Class) | S=d2b89354d2b5	
+38ce38e9f70a	method	EQUAL	R=null sig=public void setCellClasses([Ljava.lang.Class;) | S=d2b89354d2b5	R=null sig=public void setCellClasses([Ljava.lang.Class;) | S=d2b89354d2b5	
+38c53059b14a	method	EQUAL	R=null sig=public void setCheckColumn(int,boolean) | S=b6c2e780b5b7	R=null sig=public void setCheckColumn(int,boolean) | S=b6c2e780b5b7	
+ce98497dd74e	method	EQUAL	X=java.lang.IllegalArgumentException:Argument not valid sig=public void setColumnOrder([I) | S=d2b89354d2b5	X=java.lang.IllegalArgumentException:Argument not valid sig=public void setColumnOrder([I) | S=d2b89354d2b5	
+7db268415a2d	method	EQUAL	R=null sig=public void setEmptyMessage(java.lang.String) | S=e44837100b2c	R=null sig=public void setEmptyMessage(java.lang.String) | S=e44837100b2c	
+a23ff66dd095	method	NONDETERMINISTIC_BASELINE	R=true sig=public boolean setFocus() | S=94d02670098b	R=true sig=public boolean setFocus() | S=94d02670098b	
+0ac7734007bb	method	EQUAL	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+abd63814e1e6	method	EQUAL	R=null sig=public void setHeaderVisible(boolean) | S=d2b89354d2b5	R=null sig=public void setHeaderVisible(boolean) | S=d2b89354d2b5	
+66c82c0e476a	method	EQUAL	R=null sig=public void setHorizontalLinesVisible(boolean) | S=d2b89354d2b5	R=null sig=public void setHorizontalLinesVisible(boolean) | S=d2b89354d2b5	
+c8a10a75e246	method	EQUAL	R=null sig=public void setInsertMark(org.eclipse.nebula.widgets.ctree.CTreeItem,boolean) | S=d2b89354d2b5	R=null sig=public void setInsertMark(org.eclipse.nebula.widgets.ctree.CTreeItem,boolean) | S=d2b89354d2b5	
+9e8ad5b6831b	method	EQUAL	R=null sig=public void setItemCount(int) | S=d2b89354d2b5	R=null sig=public void setItemCount(int) | S=d2b89354d2b5	
+fd4979e45b16	method	EQUAL	R=null sig=public void setLayout(org.eclipse.swt.widgets.Layout) | S=d2b89354d2b5	R=null sig=public void setLayout(org.eclipse.swt.widgets.Layout) | S=d2b89354d2b5	
+a69426b37ed7	method	EQUAL	R=null sig=public void setLinesVisible(boolean) | S=a815bb9f46a6	R=null sig=public void setLinesVisible(boolean) | S=a815bb9f46a6	
+063f000bffb9	method	EQUAL	R=null sig=public void setLinesVisible(boolean,boolean) | S=a815bb9f46a6	R=null sig=public void setLinesVisible(boolean,boolean) | S=a815bb9f46a6	
+db90d48e4f73	method	EQUAL	R=null sig=public void setNativeHeader(boolean) | S=d2b89354d2b5	R=null sig=public void setNativeHeader(boolean) | S=d2b89354d2b5	
+f72457e6e4c7	method	EQUAL	R=null sig=public void setRedraw(boolean) | S=d2b89354d2b5	R=null sig=public void setRedraw(boolean) | S=d2b89354d2b5	
+a51a75f6c6b5	method	EQUAL	R=null sig=public void setSelectable(boolean) | S=d2b89354d2b5	R=null sig=public void setSelectable(boolean) | S=d2b89354d2b5	
+2ba125eee2d7	method	EQUAL	R=null sig=public void setSelection(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=24303130124d	R=null sig=public void setSelection(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=24303130124d	
+5b3d1df5fc21	method	EQUAL	R=null sig=public void setSelection(org.eclipse.nebula.widgets.ctree.CTreeItem,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	R=null sig=public void setSelection(org.eclipse.nebula.widgets.ctree.CTreeItem,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+b53dc4d6822d	method	EQUAL	R=null sig=public void setSelection([Lorg.eclipse.nebula.widgets.ctree.CTreeItem;) | S=24303130124d	R=null sig=public void setSelection([Lorg.eclipse.nebula.widgets.ctree.CTreeItem;) | S=24303130124d	
+fe48a71d54e5	method	EQUAL	R=null sig=public void setSelectOnToggle(boolean) | S=d2b89354d2b5	R=null sig=public void setSelectOnToggle(boolean) | S=d2b89354d2b5	
+5a01d6d8704a	method	EQUAL	R=null sig=public void setSelectOnTreeToggle(boolean) | S=d2b89354d2b5	R=null sig=public void setSelectOnTreeToggle(boolean) | S=d2b89354d2b5	
+97702da36d42	method	EQUAL	R=null sig=public void setSortColumn(org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	R=null sig=public void setSortColumn(org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	
+ff41e9dafb0b	method	EQUAL	R=null sig=public void setSortDirection(int) | S=bc986d58e321	R=null sig=public void setSortDirection(int) | S=bc986d58e321	
+f064d7fefdc1	method	EQUAL	R=null sig=public void setTopItem(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=f72f40dc94dd	R=null sig=public void setTopItem(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=f72f40dc94dd	
+0bf0289c179a	method	EQUAL	R=null sig=public void setTreeColumn(int) | S=8c72eba3e993	R=null sig=public void setTreeColumn(int) | S=8c72eba3e993	
+0fcc6e4eaa39	method	EQUAL	R=null sig=public void setTreeIndent(int) | S=c4ff8bc9294f	R=null sig=public void setTreeIndent(int) | S=c4ff8bc9294f	
+a229abad8a20	method	EQUAL	R=null sig=public void setVerticalLinesVisible(boolean) | S=d2b89354d2b5	R=null sig=public void setVerticalLinesVisible(boolean) | S=d2b89354d2b5	
+05112208076d	method	EQUAL	R=null sig=public void showColumn(org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	R=null sig=public void showColumn(org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	
+64c83c086cb3	method	EQUAL	R=null sig=public void showItem(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=f72f40dc94dd	R=null sig=public void showItem(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=f72f40dc94dd	
+223035dca549	method	EQUAL	R=null sig=public void showSelection() | S=8a10634cd720	R=null sig=public void showSelection() | S=8a10634cd720	
+3d953a50e773	method	EQUAL	R=true sig=public boolean toggleSelection(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=b8e142acf4cf	R=true sig=public boolean toggleSelection(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=b8e142acf4cf	
+2aa5bafe3d2d	method	EQUAL	R=null sig=public void updateColors() | S=d2b89354d2b5	R=null sig=public void updateColors() | S=d2b89354d2b5	
+f7fc9ba2f630	method	EQUAL	R=null sig=protected void updatePaintedItems() | S=d2b89354d2b5	R=null sig=protected void updatePaintedItems() | S=d2b89354d2b5	
+b1f0a94fc609	class	EQUAL	T:public super=java.lang.Object ifaces=[]	T:public super=java.lang.Object ifaces=[]	
+702aa4e950c4	field	EQUAL	F:public static final boolean=false | S=d2b89354d2b5	F:public static final boolean=false | S=d2b89354d2b5	
+875a8fca1c46	field	EQUAL	F:public static final boolean=false | S=d2b89354d2b5	F:public static final boolean=false | S=d2b89354d2b5	
+95979d059ddc	field	EQUAL	F:public static final boolean=true | S=d2b89354d2b5	F:public static final boolean=true | S=d2b89354d2b5	
+cf47878b4bf7	field	EQUAL	F:protected org.eclipse.nebula.widgets.ctree.CTree=CTree#tree | S=d2b89354d2b5	F:protected org.eclipse.nebula.widgets.ctree.CTree=CTree#tree | S=d2b89354d2b5	
+3a4c70d25100	field	EQUAL	F:protected org.eclipse.nebula.widgets.ctree.CTreeItem=CTreeItem#item/0 | S=d2b89354d2b5	F:protected org.eclipse.nebula.widgets.ctree.CTreeItem=CTreeItem#item/0 | S=d2b89354d2b5	
+3bf52bfbf03f	field	EQUAL	F:protected int=16384 | S=d2b89354d2b5	F:protected int=16384 | S=d2b89354d2b5	
+baccbaaf6dfc	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+3fdee84470dd	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+a95078b2ec24	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+3b311c7400c5	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+bf177da03af4	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+706461d2a0a7	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+1153fa039bfe	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+5a1a541bf416	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+24a1faaa8286	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+7dd81f4e6898	field	EQUAL	F:public int=1 | S=d2b89354d2b5	F:public int=1 | S=d2b89354d2b5	
+d2a3a68e1158	field	EQUAL	F:public int=0 | S=d2b89354d2b5	F:public int=0 | S=d2b89354d2b5	
+d6c18a631b1a	field	EQUAL	F:public int=0 | S=d2b89354d2b5	F:public int=0 | S=d2b89354d2b5	
+038dc8e87f98	field	EQUAL	F:public int=0 | S=d2b89354d2b5	F:public int=0 | S=d2b89354d2b5	
+f877e0406000	field	EQUAL	F:public int=1 | S=d2b89354d2b5	F:public int=1 | S=d2b89354d2b5	
+4faa2055a69d	field	EQUAL	F:public int=0 | S=d2b89354d2b5	F:public int=0 | S=d2b89354d2b5	
+8d91da1173e3	field	EQUAL	F:public int=16 | S=d2b89354d2b5	F:public int=16 | S=d2b89354d2b5	
+12f38067d86a	field	EQUAL	F:protected int=0 | S=d2b89354d2b5	F:protected int=0 | S=d2b89354d2b5	
+909b6d756021	field	EQUAL	F:protected boolean=false | S=d2b89354d2b5	F:protected boolean=false | S=d2b89354d2b5	
+284bd504f078	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+6da66ee7cc0b	constructor	EQUAL	NEW=CTreeCell sig=public org.eclipse.nebula.widgets.ctree.CTreeCell(org.eclipse.nebula.widgets.ctree.CTreeItem,int) | S=d2b89354d2b5	NEW=CTreeCell sig=public org.eclipse.nebula.widgets.ctree.CTreeCell(org.eclipse.nebula.widgets.ctree.CTreeItem,int) | S=d2b89354d2b5	
+b8f40a5ae884	method	EQUAL	R=null sig=public void addListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	R=null sig=public void addListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	
+8b348469bf13	method	EQUAL	R=null sig=public void addPropertyChangeListener(java.beans.PropertyChangeListener) | S=d2b89354d2b5	R=null sig=public void addPropertyChangeListener(java.beans.PropertyChangeListener) | S=d2b89354d2b5	
+aa499e579bd5	method	EQUAL	R=null sig=public void addPropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener) | S=d2b89354d2b5	R=null sig=public void addPropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener) | S=d2b89354d2b5	
+81f0059e8bed	method	EQUAL	R=null sig=public void clear() | S=d2b89354d2b5	R=null sig=public void clear() | S=d2b89354d2b5	
+b4dbdd518e93	method	EQUAL	R=Point {31, 15} sig=public org.eclipse.swt.graphics.Point computeClientSize(int,int) | S=d2b89354d2b5	R=Point {31, 15} sig=public org.eclipse.swt.graphics.Point computeClientSize(int,int) | S=d2b89354d2b5	
+71f4030243bd	method	EQUAL	R=Point {1, 1} sig=public org.eclipse.swt.graphics.Point computeSize(int,int) | S=d2b89354d2b5	R=Point {1, 1} sig=public org.eclipse.swt.graphics.Point computeSize(int,int) | S=d2b89354d2b5	
+aa66575c90d7	method	EQUAL	R=Point {31, 15} sig=protected org.eclipse.swt.graphics.Point computeTextSize(int,int) | S=d2b89354d2b5	R=Point {31, 15} sig=protected org.eclipse.swt.graphics.Point computeTextSize(int,int) | S=d2b89354d2b5	
+996d8bd65f38	method	EQUAL	R=null sig=protected org.eclipse.swt.widgets.Control createChildControl(org.eclipse.swt.widgets.Composite) | S=d2b89354d2b5	R=null sig=protected org.eclipse.swt.widgets.Control createChildControl(org.eclipse.swt.widgets.Composite) | S=d2b89354d2b5	
+78297ea4ed99	method	EQUAL	R=null sig=protected org.eclipse.swt.widgets.Control createControl(org.eclipse.swt.widgets.Composite) | S=d2b89354d2b5	R=null sig=protected org.eclipse.swt.widgets.Control createControl(org.eclipse.swt.widgets.Composite) | S=d2b89354d2b5	
+9bb9e3fa281d	method	EQUAL	R=null sig=protected void firePropertyChange(java.lang.String,java.lang.Object,java.lang.Object) | S=d2b89354d2b5	R=null sig=protected void firePropertyChange(java.lang.String,java.lang.Object,java.lang.Object) | S=d2b89354d2b5	
+934350d7b5e9	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getBackground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getBackground() | S=d2b89354d2b5	
+9f46eb2df5bf	method	EQUAL	R=Rectangle {0, 0, 140, 17} sig=public org.eclipse.swt.graphics.Rectangle getBounds() | S=d2b89354d2b5	R=Rectangle {0, 0, 140, 17} sig=public org.eclipse.swt.graphics.Rectangle getBounds() | S=d2b89354d2b5	
+fc796e20b201	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getCellBackground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getCellBackground() | S=d2b89354d2b5	
+9062eea02bc8	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getCellForeground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getCellForeground() | S=d2b89354d2b5	
+8fa4302aefc6	method	EQUAL	R=false sig=public boolean getChecked() | S=d2b89354d2b5	R=false sig=public boolean getChecked() | S=d2b89354d2b5	
+ee098007fcda	method	EQUAL	R=A2[-1,1] sig=public [I getChildSpan() | S=d2b89354d2b5	R=A2[-1,1] sig=public [I getChildSpan() | S=d2b89354d2b5	
+e802b5507dac	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Rectangle getClientArea() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Rectangle getClientArea() | S=d2b89354d2b5	
+db5961e00304	method	EQUAL	R=C0[] sig=protected java.util.List getColorManagedControls() | S=d2b89354d2b5	R=C0[] sig=protected java.util.List getColorManagedControls() | S=d2b89354d2b5	
+fd1b98dfc056	method	EQUAL	R=C0[] sig=protected java.util.List getEventManagedControls() | S=d2b89354d2b5	R=C0[] sig=protected java.util.List getEventManagedControls() | S=d2b89354d2b5	
+3e3d1650947c	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Font getFont() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Font getFont() | S=d2b89354d2b5	
+21671107ffd5	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getForeground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getForeground() | S=d2b89354d2b5	
+857d6ed53fc8	method	EQUAL	X=java.lang.NullPointerException:Cannot read the array length because "this.images" is null sig=public org.eclipse.swt.graphics.Image getImage() | S=d2b89354d2b5	X=java.lang.NullPointerException:Cannot read the array length because "this.images" is null sig=public org.eclipse.swt.graphics.Image getImage() | S=d2b89354d2b5	
+23f0a8285306	method	EQUAL	R=A0[] sig=public [Lorg.eclipse.swt.graphics.Image; getImages() | S=d2b89354d2b5	R=A0[] sig=public [Lorg.eclipse.swt.graphics.Image; getImages() | S=d2b89354d2b5	
+38f004ca1bf3	method	EQUAL	R=0 sig=public int getIndent() | S=d2b89354d2b5	R=0 sig=public int getIndent() | S=d2b89354d2b5	
+b497243224cc	method	EQUAL	R=Point {0, 0} sig=public org.eclipse.swt.graphics.Point getLocation() | S=d2b89354d2b5	R=Point {0, 0} sig=public org.eclipse.swt.graphics.Point getLocation() | S=d2b89354d2b5	
+7cb4a2b88eaf	method	EQUAL	R=false sig=public boolean getPainted() | S=d2b89354d2b5	R=false sig=public boolean getPainted() | S=d2b89354d2b5	
+90af632fe0d3	method	EQUAL	R=Point {140, 17} sig=public org.eclipse.swt.graphics.Point getSize() | S=d2b89354d2b5	R=Point {140, 17} sig=public org.eclipse.swt.graphics.Point getSize() | S=d2b89354d2b5	
+73772b9be137	method	EQUAL	R=0 sig=public int getIndex() | S=d2b89354d2b5	R=0 sig=public int getIndex() | S=d2b89354d2b5	
+594fe35ea11c	method	EQUAL	R=17 sig=public int getHeight() | S=d2b89354d2b5	R=17 sig=public int getHeight() | S=d2b89354d2b5	
+e56c2e3c524a	method	EQUAL	R=140 sig=public int getWidth() | S=d2b89354d2b5	R=140 sig=public int getWidth() | S=d2b89354d2b5	
+92cc5f87ef8c	method	EQUAL	R=CTreeColumn#col:Name sig=public org.eclipse.nebula.widgets.ctree.CTreeColumn getColumn() | S=d2b89354d2b5	R=CTreeColumn#col:Name sig=public org.eclipse.nebula.widgets.ctree.CTreeColumn getColumn() | S=d2b89354d2b5	
+882208db5ef5	method	EQUAL	R=16384 sig=public int getStyle() | S=d2b89354d2b5	R=16384 sig=public int getStyle() | S=d2b89354d2b5	
+fedf6c36fdb9	method	EQUAL	R="root 0" sig=public java.lang.String getText() | S=d2b89354d2b5	R="root 0" sig=public java.lang.String getText() | S=d2b89354d2b5	
+c99abd583fd5	method	EQUAL	R=null sig=protected void handleMouseEvent(org.eclipse.swt.widgets.Event,boolean) | S=d2b89354d2b5	R=null sig=protected void handleMouseEvent(org.eclipse.swt.widgets.Event,boolean) | S=d2b89354d2b5	
+6b71488e7ae0	method	NONDETERMINISTIC_BASELINE	R="GC {-503235310}" sig=protected org.eclipse.swt.graphics.GC internalGC() | S=d2b89354d2b5	R="GC {-2147404781}" sig=protected org.eclipse.swt.graphics.GC internalGC() | S=d2b89354d2b5	
+16ffe39a2907	method	EQUAL	R=false sig=public boolean isCheckCell() | S=d2b89354d2b5	R=false sig=public boolean isCheckCell() | S=d2b89354d2b5	
+a3ce9cfafc2b	method	EQUAL	R=true sig=public boolean isOpen() | S=d2b89354d2b5	R=true sig=public boolean isOpen() | S=d2b89354d2b5	
+7c72b5f576ea	method	EQUAL	R=false sig=public boolean isSelected() | S=d2b89354d2b5	R=false sig=public boolean isSelected() | S=d2b89354d2b5	
+6483f5ae956f	method	EQUAL	R=true sig=public boolean isTreeCell() | S=d2b89354d2b5	R=true sig=public boolean isTreeCell() | S=d2b89354d2b5	
+2970f3b06cb3	method	EQUAL	R=null sig=protected void layout() | S=d2b89354d2b5	R=null sig=protected void layout() | S=d2b89354d2b5	
+82a6a5e3e5d3	method	EQUAL	X=java.lang.NullPointerException:Cannot read field "width" because "<local2>" is null sig=protected void layout(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	X=java.lang.NullPointerException:Cannot read field "width" because "<local2>" is null sig=protected void layout(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	
+f6297e5b2b41	method	EQUAL	R=null sig=protected void layoutChild() | S=d2b89354d2b5	R=null sig=protected void layoutChild() | S=d2b89354d2b5	
+301f8668cd6e	method	EQUAL	R=null sig=protected void layoutChild(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	R=null sig=protected void layoutChild(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	
+fb4ebb51d076	method	EQUAL	X=java.lang.NullPointerException:Cannot read field "x" because "<local2>" is null sig=protected void locate(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	X=java.lang.NullPointerException:Cannot read field "x" because "<local2>" is null sig=protected void locate(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	
+f10e05ccf29d	method	EQUAL	R=null sig=protected void locateChild() | S=d2b89354d2b5	R=null sig=protected void locateChild() | S=d2b89354d2b5	
+5fd21970607f	method	EQUAL	R=false sig=public boolean paintClientArea(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=false sig=public boolean paintClientArea(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+bc0d0d17cab1	method	EQUAL	R=obj:org.eclipse.swt.widgets.Display sig=protected org.eclipse.swt.widgets.Display getDisplay() | S=d2b89354d2b5	R=obj:org.eclipse.swt.widgets.Display sig=protected org.eclipse.swt.widgets.Display getDisplay() | S=d2b89354d2b5	
+31d8b36fa956	method	EQUAL	R=null sig=public void redraw() | S=d2b89354d2b5	R=null sig=public void redraw() | S=d2b89354d2b5	
+77de01781d45	method	EQUAL	R=null sig=public void removeListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	R=null sig=public void removeListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	
+bf2155613994	method	EQUAL	R=null sig=public void removePropertyChangeListener(java.beans.PropertyChangeListener) | S=d2b89354d2b5	R=null sig=public void removePropertyChangeListener(java.beans.PropertyChangeListener) | S=d2b89354d2b5	
+7f494000edb1	method	EQUAL	R=null sig=public void removePropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener) | S=d2b89354d2b5	R=null sig=public void removePropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener) | S=d2b89354d2b5	
+7c0e51973078	method	EQUAL	R=null sig=protected void restoreState(java.util.Map) | S=d2b89354d2b5	R=null sig=protected void restoreState(java.util.Map) | S=d2b89354d2b5	
+153bbdf9a460	method	EQUAL	R=M0[] sig=protected java.util.Map saveState() | S=d2b89354d2b5	R=M0[] sig=protected java.util.Map saveState() | S=d2b89354d2b5	
+3820d6827cc2	method	EQUAL	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+f4899d0bed22	method	EQUAL	R=null sig=public void setCheck(boolean) | S=d2b89354d2b5	R=null sig=public void setCheck(boolean) | S=d2b89354d2b5	
+dbc1e7b41ce8	method	EQUAL	R=null sig=public void setChecked(boolean) | S=d2b89354d2b5	R=null sig=public void setChecked(boolean) | S=d2b89354d2b5	
+c1821354f6a8	method	EQUAL	R=null sig=public void setChildSpan(int,int) | S=d2b89354d2b5	R=null sig=public void setChildSpan(int,int) | S=d2b89354d2b5	
+b82e4f43b977	method	EQUAL	R=null sig=public void setChildVisible(boolean) | S=d2b89354d2b5	R=null sig=public void setChildVisible(boolean) | S=d2b89354d2b5	
+d2e68f729115	method	EQUAL	R=null sig=protected void setControlLayoutData(int,int) | S=d2b89354d2b5	R=null sig=protected void setControlLayoutData(int,int) | S=d2b89354d2b5	
+d075443407ae	method	EQUAL	R=null sig=protected void setCursor(int) | S=d2b89354d2b5	R=null sig=protected void setCursor(int) | S=d2b89354d2b5	
+6503695e011e	method	EQUAL	R=null sig=protected void setExclusions(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	R=null sig=protected void setExclusions(org.eclipse.swt.widgets.Control) | S=d2b89354d2b5	
+a1b345ca8333	method	EQUAL	R=null sig=protected void setExclusions(java.util.List,java.util.List) | S=d2b89354d2b5	R=null sig=protected void setExclusions(java.util.List,java.util.List) | S=d2b89354d2b5	
+9b9f8f8dddab	method	EQUAL	R=false sig=public boolean setFocus() | S=d2b89354d2b5	R=false sig=public boolean setFocus() | S=d2b89354d2b5	
+70a1e6326197	method	EQUAL	R=null sig=public void setFont(org.eclipse.swt.graphics.Font) | S=d2b89354d2b5	R=null sig=public void setFont(org.eclipse.swt.graphics.Font) | S=d2b89354d2b5	
+4dfa12866dc1	method	EQUAL	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+f27e2807dde1	method	EQUAL	R=null sig=public void setGridLine(boolean) | S=d2b89354d2b5	R=null sig=public void setGridLine(boolean) | S=d2b89354d2b5	
+617a096617e2	method	EQUAL	R=null sig=public void setImage(org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	R=null sig=public void setImage(org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	
+59e5e67c123f	method	EQUAL	R=null sig=public void setImages([Lorg.eclipse.swt.graphics.Image;) | S=d2b89354d2b5	R=null sig=public void setImages([Lorg.eclipse.swt.graphics.Image;) | S=d2b89354d2b5	
+ed661d46503d	method	EQUAL	R=null sig=public void setIndent(int) | S=d2b89354d2b5	R=null sig=public void setIndent(int) | S=d2b89354d2b5	
+37c8d1dd471f	method	EQUAL	R=null sig=public void setOpen(boolean) | S=d2b89354d2b5	R=null sig=public void setOpen(boolean) | S=d2b89354d2b5	
+476f11978f62	method	EQUAL	R=null sig=public void setText(java.lang.String) | S=d2b89354d2b5	R=null sig=public void setText(java.lang.String) | S=d2b89354d2b5	
+002f636ed009	method	EQUAL	R=null sig=public void setToggleVisible(boolean) | S=d2b89354d2b5	R=null sig=public void setToggleVisible(boolean) | S=d2b89354d2b5	
+2d65a4d80b1d	method	EQUAL	R=null sig=public void setToggleVisible(boolean,boolean) | S=d2b89354d2b5	R=null sig=public void setToggleVisible(boolean,boolean) | S=d2b89354d2b5	
+530738ee5c2f	method	EQUAL	R=null sig=public void setVisible(boolean) | S=d2b89354d2b5	R=null sig=public void setVisible(boolean) | S=d2b89354d2b5	
+4435abbb46a9	method	EQUAL	R=null sig=protected void snap(org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=protected void snap(org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+9f75a0d41509	method	EQUAL	R=false sig=public boolean update() | S=d2b89354d2b5	R=false sig=public boolean update() | S=d2b89354d2b5	
+a19d5913eda2	method	EQUAL	R=false sig=public boolean update(java.lang.Object,[Ljava.lang.String;) | S=d2b89354d2b5	R=false sig=public boolean update(java.lang.Object,[Ljava.lang.String;) | S=d2b89354d2b5	
+517470a39530	method	EQUAL	R=null sig=protected void updateColors() | S=d2b89354d2b5	R=null sig=protected void updateColors() | S=d2b89354d2b5	
+02b59883d5e8	class	EQUAL	T:public super=org.eclipse.swt.widgets.Item ifaces=[]	T:public super=org.eclipse.swt.widgets.Item ifaces=[]	
+9c0c5ec26acb	constructor	EQUAL	NEW=CTreeColumn(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeColumn(org.eclipse.nebula.widgets.ctree.CTree,int) | S=2eaf74c48c40	NEW=CTreeColumn(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeColumn(org.eclipse.nebula.widgets.ctree.CTree,int) | S=2eaf74c48c40	
+8a8b1a2452ed	method	EQUAL	R=null sig=public void addControlListener(org.eclipse.swt.events.ControlListener) | S=d2b89354d2b5	R=null sig=public void addControlListener(org.eclipse.swt.events.ControlListener) | S=d2b89354d2b5	
+e052c7036ef6	method	EQUAL	R=null sig=public void addListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	R=null sig=public void addListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	
+f249ff375cf5	method	EQUAL	R=null sig=public void addSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	R=null sig=public void addSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	
+e714e8aea901	method	NONDETERMINISTIC_BASELINE	PROBE_ERROR:java.lang.NullPointerException:Cannot invoke "org.eclipse.nebula.widgets.ctree.CTreeColumn.getLeft()" because the return value of "org.eclipse.nebula.widgets.ctree.CTreeCell.getColumn()" is null	PROBE_ERROR:java.lang.NullPointerException:Cannot invoke "org.eclipse.nebula.widgets.ctree.CTreeColumn.getLeft()" because the return value of "org.eclipse.nebula.widgets.ctree.CTreeCell.getColumn()" is null	
+4c5604b17a63	method	EQUAL	R=16384 sig=public int getAlignment() | S=d2b89354d2b5	R=16384 sig=public int getAlignment() | S=d2b89354d2b5	
+143f7c932850	method	EQUAL	R=false sig=public boolean getAutoWidth() | S=d2b89354d2b5	R=false sig=public boolean getAutoWidth() | S=d2b89354d2b5	
+19d7b124d319	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getBackground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getBackground() | S=d2b89354d2b5	
+9eca095d750e	method	EQUAL	R=Rectangle {0, 0, 140, 317} sig=public org.eclipse.swt.graphics.Rectangle getBounds() | S=d2b89354d2b5	R=Rectangle {0, 0, 140, 317} sig=public org.eclipse.swt.graphics.Rectangle getBounds() | S=d2b89354d2b5	
+ad666c3049c8	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getForeground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getForeground() | S=d2b89354d2b5	
+1a880e15e406	method	EQUAL	R=0 sig=public int getLeft() | S=d2b89354d2b5	R=0 sig=public int getLeft() | S=d2b89354d2b5	
+5b4324cf24a0	method	EQUAL	R=false sig=public boolean getMoveable() | S=d2b89354d2b5	R=false sig=public boolean getMoveable() | S=d2b89354d2b5	
+8e8de2f1c8b2	method	EQUAL	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getParent() | S=d2b89354d2b5	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getParent() | S=d2b89354d2b5	
+5007b1c7a852	method	EQUAL	R=true sig=public boolean getResizable() | S=d2b89354d2b5	R=true sig=public boolean getResizable() | S=d2b89354d2b5	
+4617acb6c573	method	EQUAL	R=140 sig=public int getRight() | S=d2b89354d2b5	R=140 sig=public int getRight() | S=d2b89354d2b5	
+06cc8eb08481	method	EQUAL	R="Name" sig=public java.lang.String getText() | S=d2b89354d2b5	R="Name" sig=public java.lang.String getText() | S=d2b89354d2b5	
+e0ab4001a7c0	method	EQUAL	R=null sig=public java.lang.String getToolTipText() | S=d2b89354d2b5	R=null sig=public java.lang.String getToolTipText() | S=d2b89354d2b5	
+6ef659194c0c	method	EQUAL	R=140 sig=public int getWidth() | S=d2b89354d2b5	R=140 sig=public int getWidth() | S=d2b89354d2b5	
+e60c76c976e2	method	EQUAL	R=true sig=public boolean isVisible() | S=d2b89354d2b5	R=true sig=public boolean isVisible() | S=d2b89354d2b5	
+0cf96fc7b0c5	method	EQUAL	R=null sig=public void pack() | S=d2b89354d2b5	R=null sig=public void pack() | S=d2b89354d2b5	
+014385176d7c	method	EQUAL	R=null sig=public void paint(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=public void paint(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+9a0553475160	method	EQUAL	R=null sig=public void removeControlListener(org.eclipse.swt.events.ControlListener) | S=d2b89354d2b5	R=null sig=public void removeControlListener(org.eclipse.swt.events.ControlListener) | S=d2b89354d2b5	
+97f7b132e161	method	EQUAL	R=null sig=public void removeSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	R=null sig=public void removeSelectionListener(org.eclipse.swt.events.SelectionListener) | S=d2b89354d2b5	
+574c22de3d8c	method	EQUAL	R=null sig=public void setAlignment(int) | S=d2b89354d2b5	R=null sig=public void setAlignment(int) | S=d2b89354d2b5	
+9b4c19218b5c	method	EQUAL	R=null sig=public void setAutoWidth(boolean) | S=d2b89354d2b5	R=null sig=public void setAutoWidth(boolean) | S=d2b89354d2b5	
+a0eb62cd0eb6	method	EQUAL	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+9d57eaf1815b	method	EQUAL	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+e8de8c062339	method	EQUAL	R=null sig=public void setImage(org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	R=null sig=public void setImage(org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	
+0866556c72ef	method	EQUAL	R=null sig=public void setMoveable(boolean) | S=d2b89354d2b5	R=null sig=public void setMoveable(boolean) | S=d2b89354d2b5	
+47705f2c9340	method	EQUAL	R=null sig=public void setResizable(boolean) | S=d2b89354d2b5	R=null sig=public void setResizable(boolean) | S=d2b89354d2b5	
+5ea5218a8603	method	EQUAL	R=null sig=public void setText(java.lang.String) | S=d2b89354d2b5	R=null sig=public void setText(java.lang.String) | S=d2b89354d2b5	
+3738c200d1b6	method	EQUAL	R=null sig=public void setToolTipText(java.lang.String) | S=d2b89354d2b5	R=null sig=public void setToolTipText(java.lang.String) | S=d2b89354d2b5	
+864338dfc77e	method	EQUAL	R=null sig=public void setWidth(int) | S=d2b89354d2b5	R=null sig=public void setWidth(int) | S=d2b89354d2b5	
+0b652ce15e8d	class	EQUAL	T:public super=org.eclipse.swt.custom.ControlEditor ifaces=[]	T:public super=org.eclipse.swt.custom.ControlEditor ifaces=[]	
+f86255382358	constructor	EQUAL	NEW=CTreeEditor sig=public org.eclipse.nebula.widgets.ctree.CTreeEditor(org.eclipse.nebula.widgets.ctree.CTree) | S=d2b89354d2b5	NEW=CTreeEditor sig=public org.eclipse.nebula.widgets.ctree.CTreeEditor(org.eclipse.nebula.widgets.ctree.CTree) | S=d2b89354d2b5	
+79651f0b86a7	method	EQUAL	R=null sig=public void dispose() | S=d2b89354d2b5	R=null sig=public void dispose() | S=d2b89354d2b5	
+08d31b9bf045	method	EQUAL	R=0 sig=public int getColumn() | S=d2b89354d2b5	R=0 sig=public int getColumn() | S=d2b89354d2b5	
+3be30ca8a1bd	method	EQUAL	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getItem() | S=d2b89354d2b5	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getItem() | S=d2b89354d2b5	
+8ece66a092b6	method	EQUAL	R=null sig=public void layout() | S=d2b89354d2b5	R=null sig=public void layout() | S=d2b89354d2b5	
+ccb0a1bbcdd8	method	EQUAL	R=null sig=public void setColumn(int) | S=d2b89354d2b5	R=null sig=public void setColumn(int) | S=d2b89354d2b5	
+899979a63ba9	method	EQUAL	X=java.lang.NullPointerException:Cannot read field "x" because "<local4>" is null sig=public void setEditor(org.eclipse.swt.widgets.Control,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	X=java.lang.NullPointerException:Cannot read field "x" because "<local4>" is null sig=public void setEditor(org.eclipse.swt.widgets.Control,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+917c696e1cd0	method	EQUAL	X=java.lang.NullPointerException:Cannot read field "x" because "<local4>" is null sig=public void setEditor(org.eclipse.swt.widgets.Control,org.eclipse.nebula.widgets.ctree.CTreeItem,int) | S=d2b89354d2b5	X=java.lang.NullPointerException:Cannot read field "x" because "<local4>" is null sig=public void setEditor(org.eclipse.swt.widgets.Control,org.eclipse.nebula.widgets.ctree.CTreeItem,int) | S=d2b89354d2b5	
+e0e83c10929f	method	EQUAL	R=null sig=public void setItem(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	R=null sig=public void setItem(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+8b0cbb977c26	class	EQUAL	T:public super=org.eclipse.swt.widgets.Item ifaces=[]	T:public super=org.eclipse.swt.widgets.Item ifaces=[]	
+9c95d678c223	field	EQUAL	F:protected org.eclipse.nebula.widgets.ctree.CTree=CTree#tree | S=d2b89354d2b5	F:protected org.eclipse.nebula.widgets.ctree.CTree=CTree#tree | S=d2b89354d2b5	
+d8ab93b7d9e0	field	EQUAL	F:protected [Lorg.eclipse.nebula.widgets.ctree.CTreeCell;=A2[CTreeCell#cell:item/0/0#0,CTreeCell#cell:item/0/0#1] | S=d2b89354d2b5	F:protected [Lorg.eclipse.nebula.widgets.ctree.CTreeCell;=A2[CTreeCell#cell:item/0/0#0,CTreeCell#cell:item/0/0#1] | S=d2b89354d2b5	
+74693a093edf	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+7c40af15370b	field	EQUAL	F:protected boolean=true | S=d2b89354d2b5	F:protected boolean=true | S=d2b89354d2b5	
+6c4cc4001dc6	constructor	EQUAL	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTree,int) | S=b2018aa141ce	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTree,int) | S=b2018aa141ce	
+49a18cb2c710	constructor	NONDETERMINISTIC_BASELINE	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTree,int,int) | S=0257e322af69	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTree,int,int) | S=0257e322af69	
+59495c7f6c2b	constructor	EQUAL	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTreeItem,int) | S=d2b89354d2b5	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTreeItem,int) | S=d2b89354d2b5	
+78541858810d	constructor	EQUAL	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTreeItem,int,int) | S=d2b89354d2b5	NEW=CTreeItem(style=1) sig=public org.eclipse.nebula.widgets.ctree.CTreeItem(org.eclipse.nebula.widgets.ctree.CTreeItem,int,int) | S=d2b89354d2b5	
+55088257a7b7	method	EQUAL	R=null sig=public void addListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	R=null sig=public void addListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	
+93b51a9a4373	method	EQUAL	R=null sig=protected void checkSubclass() | S=d2b89354d2b5	R=null sig=protected void checkSubclass() | S=d2b89354d2b5	
+4e52003e2f2f	method	EQUAL	R=17 sig=public int computeHeight() | S=d2b89354d2b5	R=17 sig=public int computeHeight() | S=d2b89354d2b5	
+7b4f6ebe256c	method	EQUAL	R=false sig=public boolean contains(org.eclipse.swt.graphics.Point) | S=d2b89354d2b5	R=false sig=public boolean contains(org.eclipse.swt.graphics.Point) | S=d2b89354d2b5	
+0be64f550a8c	method	EQUAL	R=false sig=public boolean contains(int,int) | S=d2b89354d2b5	R=false sig=public boolean contains(int,int) | S=d2b89354d2b5	
+3e79b8b112b8	method	EQUAL	R=null sig=protected void createCell(int,int) | S=d2b89354d2b5	R=null sig=protected void createCell(int,int) | S=d2b89354d2b5	
+b54b6f7c2d37	method	EQUAL	X=java.lang.IllegalArgumentException:Argument not valid sig=public void createCell(int,int,java.lang.Class) | S=d2b89354d2b5	X=java.lang.IllegalArgumentException:Argument not valid sig=public void createCell(int,int,java.lang.Class) | S=d2b89354d2b5	
+f48893405b3e	method	EQUAL	R=null sig=protected void createCells(java.lang.Object) | S=d2b89354d2b5	R=null sig=protected void createCells(java.lang.Object) | S=d2b89354d2b5	
+75b55062ca25	method	EQUAL	R=null sig=public void dispose() | S=d2b89354d2b5	R=null sig=public void dispose() | S=d2b89354d2b5	
+6aac9c674edb	method	EQUAL	R=false sig=public boolean getAutoHeight() | S=d2b89354d2b5	R=false sig=public boolean getAutoHeight() | S=d2b89354d2b5	
+f9c840ffd2ff	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getBackground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getBackground() | S=d2b89354d2b5	
+61c97cbdc21c	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getBackground(int) | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getBackground(int) | S=d2b89354d2b5	
+e70d1ea1143f	method	EQUAL	R=Rectangle {0, 18, 443, 17} sig=public org.eclipse.swt.graphics.Rectangle getBounds() | S=d2b89354d2b5	R=Rectangle {0, 18, 443, 17} sig=public org.eclipse.swt.graphics.Rectangle getBounds() | S=d2b89354d2b5	
+9d773c84b64d	method	EQUAL	R=Rectangle {141, 18, 80, 17} sig=public org.eclipse.swt.graphics.Rectangle getBounds(int) | S=d2b89354d2b5	R=Rectangle {141, 18, 80, 17} sig=public org.eclipse.swt.graphics.Rectangle getBounds(int) | S=d2b89354d2b5	
+56967b698928	method	EQUAL	R=CTreeCell#cell:item/0/0#1 sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCell(int) | S=d2b89354d2b5	R=CTreeCell#cell:item/0/0#1 sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCell(int) | S=d2b89354d2b5	
+ed49f491d46f	method	EQUAL	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCell(org.eclipse.swt.graphics.Point) | S=d2b89354d2b5	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCell(org.eclipse.swt.graphics.Point) | S=d2b89354d2b5	
+f79da02bd746	method	EQUAL	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCell(int,int) | S=d2b89354d2b5	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCell(int,int) | S=d2b89354d2b5	
+3832375ddea5	method	EQUAL	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeColumn getCellColumn(org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeColumn getCellColumn(org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	
+d008ca603e91	method	EQUAL	R=-1 sig=public int getCellIndex(org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	R=-1 sig=public int getCellIndex(org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	
+8012dbdfb59e	method	EQUAL	R=A2[CTreeCell#cell:item/0/0#0,CTreeCell#cell:item/0/0#1] sig=public [Lorg.eclipse.nebula.widgets.ctree.CTreeCell; getCells() | S=d2b89354d2b5	R=A2[CTreeCell#cell:item/0/0#0,CTreeCell#cell:item/0/0#1] sig=public [Lorg.eclipse.nebula.widgets.ctree.CTreeCell; getCells() | S=d2b89354d2b5	
+72af416b7957	method	EQUAL	R=16384 sig=protected int getCellStyle(int) | S=d2b89354d2b5	R=16384 sig=protected int getCellStyle(int) | S=d2b89354d2b5	
+a0373e7f34cf	method	EQUAL	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCheckCell() | S=d2b89354d2b5	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCheckCell() | S=d2b89354d2b5	
+7c88133aeb98	method	EQUAL	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getContainer() | S=d2b89354d2b5	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getContainer() | S=d2b89354d2b5	
+4ace76fe139d	method	EQUAL	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getCTree() | S=d2b89354d2b5	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getCTree() | S=d2b89354d2b5	
+886fca580b8f	method	EQUAL	R=CTreeCell#cell:item/0/0#1 sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCTreeCell(int) | S=d2b89354d2b5	R=CTreeCell#cell:item/0/0#1 sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getCTreeCell(int) | S=d2b89354d2b5	
+6d9c6382af0c	method	EQUAL	R=false sig=public boolean getExpanded() | S=d2b89354d2b5	R=false sig=public boolean getExpanded() | S=d2b89354d2b5	
+1db58d38e255	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Font getFont() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Font getFont() | S=d2b89354d2b5	
+12be5c1cee02	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Font getFont(int) | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Font getFont(int) | S=d2b89354d2b5	
+7e5a5ffc47c4	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getForeground() | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getForeground() | S=d2b89354d2b5	
+58c18caee6b3	method	EQUAL	R=null sig=public org.eclipse.swt.graphics.Color getForeground(int) | S=d2b89354d2b5	R=null sig=public org.eclipse.swt.graphics.Color getForeground(int) | S=d2b89354d2b5	
+6b9db5db710d	method	EQUAL	X=java.lang.NullPointerException:Cannot read the array length because "this.images" is null sig=public org.eclipse.swt.graphics.Image getImage() | S=d2b89354d2b5	X=java.lang.NullPointerException:Cannot read the array length because "this.images" is null sig=public org.eclipse.swt.graphics.Image getImage() | S=d2b89354d2b5	
+dffc96a219ee	method	EQUAL	X=java.lang.NullPointerException:Cannot read the array length because "this.images" is null sig=public org.eclipse.swt.graphics.Image getImage(int) | S=d2b89354d2b5	X=java.lang.NullPointerException:Cannot read the array length because "this.images" is null sig=public org.eclipse.swt.graphics.Image getImage(int) | S=d2b89354d2b5	
+964a48a708ec	method	EQUAL	R=A0[] sig=public [Lorg.eclipse.swt.graphics.Image; getImages(int) | S=d2b89354d2b5	R=A0[] sig=public [Lorg.eclipse.swt.graphics.Image; getImages(int) | S=d2b89354d2b5	
+c874d43dca55	method	EQUAL	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getItem(int) | S=d2b89354d2b5	R=null sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getItem(int) | S=d2b89354d2b5	
+a3f248b21823	method	EQUAL	R=0 sig=public int getItemCount() | S=d2b89354d2b5	R=0 sig=public int getItemCount() | S=d2b89354d2b5	
+1d92b8e8e5b1	method	EQUAL	R=A0[] sig=public [Lorg.eclipse.nebula.widgets.ctree.CTreeItem; getItems() | S=d2b89354d2b5	R=A0[] sig=public [Lorg.eclipse.nebula.widgets.ctree.CTreeItem; getItems() | S=d2b89354d2b5	
+fd2a6dab715d	method	EQUAL	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getParent() | S=d2b89354d2b5	R=CTree#tree sig=public org.eclipse.nebula.widgets.ctree.CTree getParent() | S=d2b89354d2b5	
+d02d10e030eb	method	EQUAL	R=0 sig=public int getParentIndent() | S=d2b89354d2b5	R=0 sig=public int getParentIndent() | S=d2b89354d2b5	
+e3a28bb3cecb	method	EQUAL	R=CTreeItem#item/0 sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getParentItem() | S=d2b89354d2b5	R=CTreeItem#item/0 sig=public org.eclipse.nebula.widgets.ctree.CTreeItem getParentItem() | S=d2b89354d2b5	
+8c7cfae3568d	method	EQUAL	R=Point {443, 17} sig=public org.eclipse.swt.graphics.Point getSize() | S=d2b89354d2b5	R=Point {443, 17} sig=public org.eclipse.swt.graphics.Point getSize() | S=d2b89354d2b5	
+6eb71e7d7d2b	method	EQUAL	R="child 0.0" sig=public java.lang.String getText() | S=d2b89354d2b5	R="child 0.0" sig=public java.lang.String getText() | S=d2b89354d2b5	
+b4ac11654f68	method	EQUAL	R="0" sig=public java.lang.String getText(int) | S=d2b89354d2b5	R="0" sig=public java.lang.String getText(int) | S=d2b89354d2b5	
+d7d4b778c621	method	EQUAL	R=CTreeCell#cell:item/0/0#0 sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getTreeCell() | S=d2b89354d2b5	R=CTreeCell#cell:item/0/0#0 sig=public org.eclipse.nebula.widgets.ctree.CTreeCell getTreeCell() | S=d2b89354d2b5	
+1c166cd8b809	method	EQUAL	R=0 sig=public int getTreeIndent() | S=d2b89354d2b5	R=0 sig=public int getTreeIndent() | S=d2b89354d2b5	
+d2f5afc88b43	method	EQUAL	R=true sig=public boolean getVisible() | S=d2b89354d2b5	R=true sig=public boolean getVisible() | S=d2b89354d2b5	
+aabbc7bea58f	method	EQUAL	R=0 sig=public int handleMouseEvent(org.eclipse.swt.widgets.Event,boolean) | S=d2b89354d2b5	R=0 sig=public int handleMouseEvent(org.eclipse.swt.widgets.Event,boolean) | S=d2b89354d2b5	
+0ad9106e9bf1	method	EQUAL	R=false sig=public boolean hasCheckCell() | S=d2b89354d2b5	R=false sig=public boolean hasCheckCell() | S=d2b89354d2b5	
+f00776c96338	method	EQUAL	R=false sig=public boolean hasItems() | S=d2b89354d2b5	R=false sig=public boolean hasItems() | S=d2b89354d2b5	
+3381427d1ed8	method	EQUAL	R=true sig=public boolean hasParentItem() | S=d2b89354d2b5	R=true sig=public boolean hasParentItem() | S=d2b89354d2b5	
+400908ebfab7	method	EQUAL	R=true sig=public boolean hasTreeCell() | S=d2b89354d2b5	R=true sig=public boolean hasTreeCell() | S=d2b89354d2b5	
+d462d2d31916	method	EQUAL	R=-1 sig=public int indexOf(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	R=-1 sig=public int indexOf(org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+ff55705c439d	method	EQUAL	R=false sig=public boolean isOpen() | S=d2b89354d2b5	R=false sig=public boolean isOpen() | S=d2b89354d2b5	
+9780b18f9a42	method	EQUAL	R=false sig=public boolean isOpen(int) | S=d2b89354d2b5	R=false sig=public boolean isOpen(int) | S=d2b89354d2b5	
+d4973f5db60e	method	EQUAL	R=false sig=public boolean isOpen(int,int) | S=d2b89354d2b5	R=false sig=public boolean isOpen(int,int) | S=d2b89354d2b5	
+49dd862f4be9	method	EQUAL	R=false sig=public boolean isSelected() | S=d2b89354d2b5	R=false sig=public boolean isSelected() | S=d2b89354d2b5	
+330e10426d90	method	EQUAL	R=false sig=public boolean isToggle(int,int) | S=d2b89354d2b5	R=false sig=public boolean isToggle(int,int) | S=d2b89354d2b5	
+0a4a0ff4d5a7	method	EQUAL	R=false sig=public boolean isTreeToggle(int,int) | S=d2b89354d2b5	R=false sig=public boolean isTreeToggle(int,int) | S=d2b89354d2b5	
+118de9df9532	method	EQUAL	R=true sig=public boolean isVisible() | S=d2b89354d2b5	R=true sig=public boolean isVisible() | S=d2b89354d2b5	
+55c172163895	method	EQUAL	R=null sig=public void paint(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	R=null sig=public void paint(org.eclipse.swt.graphics.GC,org.eclipse.swt.graphics.Rectangle) | S=d2b89354d2b5	
+37e322193a10	method	EQUAL	R=null sig=public void redraw() | S=d2b89354d2b5	R=null sig=public void redraw() | S=d2b89354d2b5	
+542c3b196276	method	EQUAL	R=null sig=public void removeListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	R=null sig=public void removeListener(int,org.eclipse.swt.widgets.Listener) | S=d2b89354d2b5	
+366a8f78104c	method	EQUAL	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+82e2fa21cb52	method	EQUAL	R=null sig=public void setBackground(int,org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setBackground(int,org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+7aa97a777713	method	EQUAL	R=null sig=public void setEnabled(boolean) | S=d2b89354d2b5	R=null sig=public void setEnabled(boolean) | S=d2b89354d2b5	
+174f488e0af7	method	EQUAL	R=null sig=public void setExpanded(boolean) | S=d2b89354d2b5	R=null sig=public void setExpanded(boolean) | S=d2b89354d2b5	
+4d16e4925096	method	EQUAL	R=null sig=public void layout(int) | S=d2b89354d2b5	R=null sig=public void layout(int) | S=d2b89354d2b5	
+ebeedf2eefee	method	EQUAL	R=false sig=public boolean setFocus() | S=d2b89354d2b5	R=false sig=public boolean setFocus() | S=d2b89354d2b5	
+1336ebab3233	method	EQUAL	R=null sig=public void setFont(org.eclipse.swt.graphics.Font) | S=d2b89354d2b5	R=null sig=public void setFont(org.eclipse.swt.graphics.Font) | S=d2b89354d2b5	
+c08a54ef8e97	method	EQUAL	R=null sig=public void setFont(int,org.eclipse.swt.graphics.Font) | S=d2b89354d2b5	R=null sig=public void setFont(int,org.eclipse.swt.graphics.Font) | S=d2b89354d2b5	
+107307055eb3	method	EQUAL	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setForeground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+14e76d46b3aa	method	EQUAL	R=null sig=public void setForeground(int,org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setForeground(int,org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+0410c0355fb0	method	EQUAL	R=null sig=public void setGridLine(boolean) | S=d2b89354d2b5	R=null sig=public void setGridLine(boolean) | S=d2b89354d2b5	
+dcaf7f78ba1e	method	EQUAL	R=null sig=public void setImage(org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	R=null sig=public void setImage(org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	
+0cc249553e0b	method	EQUAL	R=null sig=public void setImage(int,org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	R=null sig=public void setImage(int,org.eclipse.swt.graphics.Image) | S=d2b89354d2b5	
+6fa1c52aee72	method	EQUAL	R=null sig=public void setImages([Lorg.eclipse.swt.graphics.Image;) | S=d2b89354d2b5	R=null sig=public void setImages([Lorg.eclipse.swt.graphics.Image;) | S=d2b89354d2b5	
+d8c9df42cbcb	method	EQUAL	R=null sig=public void setImages(int,[Lorg.eclipse.swt.graphics.Image;) | S=d2b89354d2b5	R=null sig=public void setImages(int,[Lorg.eclipse.swt.graphics.Image;) | S=d2b89354d2b5	
+650ab668898a	method	EQUAL	R=null sig=public void setOpen(boolean) | S=d2b89354d2b5	R=null sig=public void setOpen(boolean) | S=d2b89354d2b5	
+6840252541be	method	EQUAL	R=null sig=public void setOpen(int,boolean) | S=d2b89354d2b5	R=null sig=public void setOpen(int,boolean) | S=d2b89354d2b5	
+42234ed3ea40	method	EQUAL	R=null sig=public void setOpen(int,int,boolean) | S=d2b89354d2b5	R=null sig=public void setOpen(int,int,boolean) | S=d2b89354d2b5	
+98ba4c0d5e6e	method	EQUAL	R=null sig=public void setSelected(boolean) | S=d2b89354d2b5	R=null sig=public void setSelected(boolean) | S=d2b89354d2b5	
+09404e0cc775	method	EQUAL	R=null sig=public void setText(int,java.lang.String) | S=d2b89354d2b5	R=null sig=public void setText(int,java.lang.String) | S=d2b89354d2b5	
+46b6b789f037	method	EQUAL	R=null sig=public void setText(java.lang.String) | S=d2b89354d2b5	R=null sig=public void setText(java.lang.String) | S=d2b89354d2b5	
+1131fbd952ff	method	EQUAL	R=null sig=public void setText([Ljava.lang.String;) | S=d2b89354d2b5	R=null sig=public void setText([Ljava.lang.String;) | S=d2b89354d2b5	
+b3d98f6e8ab4	method	EQUAL	R=null sig=public void setTreeIndent(int) | S=d2b89354d2b5	R=null sig=public void setTreeIndent(int) | S=d2b89354d2b5	
+0cd4026c44ad	method	EQUAL	R=null sig=public void setVisible(boolean) | S=d2b89354d2b5	R=null sig=public void setVisible(boolean) | S=d2b89354d2b5	
+9a7acf7ba7a0	method	EQUAL	R=null sig=public void update() | S=d2b89354d2b5	R=null sig=public void update() | S=d2b89354d2b5	
+d89d72bfc078	method	EQUAL	R=null sig=protected void updateColors() | S=d2b89354d2b5	R=null sig=protected void updateColors() | S=d2b89354d2b5	
+a1ab33c3f656	field	EQUAL	F:public static final boolean=false | S=d2b89354d2b5	F:public static final boolean=false | S=d2b89354d2b5	
+4a8b6535e8e4	field	EQUAL	F:public static final boolean=false | S=d2b89354d2b5	F:public static final boolean=false | S=d2b89354d2b5	
+42cd0c5f2dbe	field	EQUAL	F:public static final boolean=true | S=d2b89354d2b5	F:public static final boolean=true | S=d2b89354d2b5	
+fdf49afdd42b	field	EQUAL	F:protected org.eclipse.nebula.widgets.ctree.CTree NOINSTANCE | S=d2b89354d2b5	F:protected org.eclipse.nebula.widgets.ctree.CTree NOINSTANCE | S=d2b89354d2b5	
+af62e6310f13	field	EQUAL	F:protected org.eclipse.swt.graphics.Point NOINSTANCE | S=d2b89354d2b5	F:protected org.eclipse.swt.graphics.Point NOINSTANCE | S=d2b89354d2b5	
+d9ade33c94a9	field	EQUAL	F:protected int NOINSTANCE | S=d2b89354d2b5	F:protected int NOINSTANCE | S=d2b89354d2b5	
+81fb25a6b769	constructor	EQUAL	NEW=CTreeLayout sig=public org.eclipse.nebula.widgets.ctree.CTreeLayout(org.eclipse.nebula.widgets.ctree.CTree) | S=d2b89354d2b5	NEW=CTreeLayout sig=public org.eclipse.nebula.widgets.ctree.CTreeLayout(org.eclipse.nebula.widgets.ctree.CTree) | S=d2b89354d2b5	
+64e4e1ad467a	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void computeContentHeight() | S=d2b89354d2b5	NOINSTANCE sig=protected void computeContentHeight() | S=d2b89354d2b5	
+3302d51e8041	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void computeContentHeight(int,org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	NOINSTANCE sig=protected void computeContentHeight(int,org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	
+fd4259bd38d2	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void computeContentHeight(int,org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	NOINSTANCE sig=protected void computeContentHeight(int,org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	
+49e6d723f2ca	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void computeContentHeight(int,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	NOINSTANCE sig=protected void computeContentHeight(int,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+7e9e9e22e595	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected org.eclipse.swt.graphics.Point computeSize(org.eclipse.swt.widgets.Composite,int,int,boolean) | S=d2b89354d2b5	NOINSTANCE sig=protected org.eclipse.swt.graphics.Point computeSize(org.eclipse.swt.widgets.Composite,int,int,boolean) | S=d2b89354d2b5	
+67a1a8bd8d0e	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void layout(org.eclipse.swt.widgets.Composite,boolean) | S=d2b89354d2b5	NOINSTANCE sig=protected void layout(org.eclipse.swt.widgets.Composite,boolean) | S=d2b89354d2b5	
+f5faa6e73d98	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void layoutContent() | S=d2b89354d2b5	NOINSTANCE sig=protected void layoutContent() | S=d2b89354d2b5	
+69afdb7276e1	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void layoutContent(int,org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	NOINSTANCE sig=protected void layoutContent(int,org.eclipse.nebula.widgets.ctree.CTreeCell) | S=d2b89354d2b5	
+47828224abf7	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void layoutContent(int,org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	NOINSTANCE sig=protected void layoutContent(int,org.eclipse.nebula.widgets.ctree.CTreeColumn) | S=d2b89354d2b5	
+7816faa62e01	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void layoutContent(int,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	NOINSTANCE sig=protected void layoutContent(int,org.eclipse.nebula.widgets.ctree.CTreeItem) | S=d2b89354d2b5	
+60cd9c394a11	method	EQUAL_NONINVOKED	NOINSTANCE sig=protected void layoutHeader() | S=d2b89354d2b5	NOINSTANCE sig=protected void layoutHeader() | S=d2b89354d2b5	
+0b5959967b38	class	EQUAL	T:public super=java.lang.Object ifaces=[]	T:public super=java.lang.Object ifaces=[]	
+259a96ad36cd	field	EQUAL	F:public static final boolean=false | S=d2b89354d2b5	F:public static final boolean=false | S=d2b89354d2b5	
+9e053a2a6e9d	constructor	EQUAL	NEW=SColors sig=public org.eclipse.nebula.widgets.ctree.SColors(org.eclipse.swt.widgets.Display) | S=d2b89354d2b5	NEW=SColors sig=public org.eclipse.nebula.widgets.ctree.SColors(org.eclipse.swt.widgets.Display) | S=d2b89354d2b5	
+cb4e23e29607	method	EQUAL	R=ColorRGBA {100, 100, 100, 255} sig=public org.eclipse.swt.graphics.Color getBorder() | S=d2b89354d2b5	R=ColorRGBA {100, 100, 100, 255} sig=public org.eclipse.swt.graphics.Color getBorder() | S=d2b89354d2b5	
+302555fa0b19	method	EQUAL	R=ColorRGBA {238, 238, 238, 255} sig=public org.eclipse.swt.graphics.Color getGrid() | S=d2b89354d2b5	R=ColorRGBA {238, 238, 238, 255} sig=public org.eclipse.swt.graphics.Color getGrid() | S=d2b89354d2b5	
+39bff1a304b6	method	EQUAL	R=ColorRGBA {255, 255, 255, 255} sig=public org.eclipse.swt.graphics.Color getItemBackgroundNormal() | S=d2b89354d2b5	R=ColorRGBA {255, 255, 255, 255} sig=public org.eclipse.swt.graphics.Color getItemBackgroundNormal() | S=d2b89354d2b5	
+44901c3b4ce6	method	EQUAL	R=ColorRGBA {240, 240, 240, 255} sig=public org.eclipse.swt.graphics.Color getItemBackgroundSelected() | S=d2b89354d2b5	R=ColorRGBA {240, 240, 240, 255} sig=public org.eclipse.swt.graphics.Color getItemBackgroundSelected() | S=d2b89354d2b5	
+7095aae514c4	method	EQUAL	R=ColorRGBA {0, 0, 0, 255} sig=public org.eclipse.swt.graphics.Color getItemForegroundNormal() | S=d2b89354d2b5	R=ColorRGBA {0, 0, 0, 255} sig=public org.eclipse.swt.graphics.Color getItemForegroundNormal() | S=d2b89354d2b5	
+3feed7ad9cbc	method	EQUAL	R=ColorRGBA {255, 255, 255, 255} sig=public org.eclipse.swt.graphics.Color getItemForegroundSelected() | S=d2b89354d2b5	R=ColorRGBA {255, 255, 255, 255} sig=public org.eclipse.swt.graphics.Color getItemForegroundSelected() | S=d2b89354d2b5	
+a67ac546b614	method	EQUAL	R=ColorRGBA {255, 255, 255, 255} sig=public org.eclipse.swt.graphics.Color getTableBackground() | S=d2b89354d2b5	R=ColorRGBA {255, 255, 255, 255} sig=public org.eclipse.swt.graphics.Color getTableBackground() | S=d2b89354d2b5	
+f5584c0862ce	method	EQUAL	R=null sig=public void setFocus(boolean) | S=d2b89354d2b5	R=null sig=public void setFocus(boolean) | S=d2b89354d2b5	
+fb42ea4887e5	method	EQUAL	R=null sig=public void setBorder(int) | S=d2b89354d2b5	R=null sig=public void setBorder(int) | S=d2b89354d2b5	
+973e0318009c	method	EQUAL	R=null sig=public void setBorder(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setBorder(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+c716cab12b43	method	EQUAL	R=null sig=public void setGrid(int) | S=d2b89354d2b5	R=null sig=public void setGrid(int) | S=d2b89354d2b5	
+a5c82c2566b0	method	EQUAL	R=null sig=public void setGrid(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setGrid(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+c7355e137931	method	EQUAL	R=null sig=public void setItemBackgroundNormal(int) | S=d2b89354d2b5	R=null sig=public void setItemBackgroundNormal(int) | S=d2b89354d2b5	
+eb89356da330	method	EQUAL	R=null sig=public void setItemBackgroundNormal(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setItemBackgroundNormal(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+ecee8cb47684	method	EQUAL	R=null sig=public void setItemBackgroundSelected(int) | S=d2b89354d2b5	R=null sig=public void setItemBackgroundSelected(int) | S=d2b89354d2b5	
+deb6926a5603	method	EQUAL	R=null sig=public void setItemBackgroundSelected(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setItemBackgroundSelected(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+2f5f395d54a6	method	EQUAL	R=null sig=public void setItemBackgroundSelectedNoFocus(int) | S=d2b89354d2b5	R=null sig=public void setItemBackgroundSelectedNoFocus(int) | S=d2b89354d2b5	
+f659c559e161	method	EQUAL	R=null sig=public void setItemBackgroundSelectedNoFocus(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setItemBackgroundSelectedNoFocus(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+5367510af2c2	method	EQUAL	R=null sig=public void setItemForegroundNormal(int) | S=d2b89354d2b5	R=null sig=public void setItemForegroundNormal(int) | S=d2b89354d2b5	
+d19ac7d7ae22	method	EQUAL	R=null sig=public void setItemForegroundNormal(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setItemForegroundNormal(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+62098f00b258	method	EQUAL	R=null sig=public void setItemForegroundSelected(int) | S=d2b89354d2b5	R=null sig=public void setItemForegroundSelected(int) | S=d2b89354d2b5	
+8230ed915942	method	EQUAL	R=null sig=public void setItemForegroundSelected(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setItemForegroundSelected(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+15bb3f89ce8e	method	EQUAL	R=null sig=public void setTableBackground(int) | S=d2b89354d2b5	R=null sig=public void setTableBackground(int) | S=d2b89354d2b5	
+23b128eade2a	method	EQUAL	R=null sig=public void setTableBackground(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	R=null sig=public void setTableBackground(org.eclipse.swt.graphics.RGB) | S=d2b89354d2b5	
+40f52a796d3a	method	EQUAL	R=null sig=public void dispose() | S=d2b89354d2b5	R=null sig=public void dispose() | S=d2b89354d2b5	
+dd656a7406b0	class	EQUAL	T:public super=org.eclipse.swt.widgets.Canvas ifaces=[org.eclipse.swt.widgets.Listener]	T:public super=org.eclipse.swt.widgets.Canvas ifaces=[org.eclipse.swt.widgets.Listener]	
+ed0b4629a4d1	field	EQUAL	F:public static int=0 | S=d2b89354d2b5	F:public static int=0 | S=d2b89354d2b5	
+4c967db215c2	field	EQUAL	F:public static int=1 | S=d2b89354d2b5	F:public static int=1 | S=d2b89354d2b5	
+6fbbef3962eb	field	EQUAL	F:public static int=2 | S=d2b89354d2b5	F:public static int=2 | S=d2b89354d2b5	
+84f4c51a9a95	field	EQUAL	F:public static int=4 | S=d2b89354d2b5	F:public static int=4 | S=d2b89354d2b5	
+423c636aa0ae	constructor	EQUAL	NEW=SComposite(style=33554432) sig=public org.eclipse.nebula.widgets.ctree.SComposite(org.eclipse.swt.widgets.Composite) | S=d2b89354d2b5	NEW=SComposite(style=33554432) sig=public org.eclipse.nebula.widgets.ctree.SComposite(org.eclipse.swt.widgets.Composite) | S=d2b89354d2b5	
+27ada414ace9	constructor	EQUAL	NEW=SComposite(style=33554432) sig=public org.eclipse.nebula.widgets.ctree.SComposite(org.eclipse.swt.widgets.Composite,int) | S=d2b89354d2b5	NEW=SComposite(style=33554432) sig=public org.eclipse.nebula.widgets.ctree.SComposite(org.eclipse.swt.widgets.Composite,int) | S=d2b89354d2b5	
+ee97a3bb869d	method	EQUAL	R=0 sig=public int getBorderStyle() | S=d2b89354d2b5	R=0 sig=public int getBorderStyle() | S=d2b89354d2b5	
+b9d6b2c71955	method	EQUAL	R=0 sig=public int getBorderWidth() | S=d2b89354d2b5	R=0 sig=public int getBorderWidth() | S=d2b89354d2b5	
+b9edfc7ec5c5	method	EQUAL	R=null sig=public void handleEvent(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	R=null sig=public void handleEvent(org.eclipse.swt.widgets.Event) | S=d2b89354d2b5	
+f4bd76ee2d44	method	EQUAL	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setBackground(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+00e4d50ef949	method	EQUAL	R=null sig=public void setBorder(int,int) | S=d2b89354d2b5	R=null sig=public void setBorder(int,int) | S=d2b89354d2b5	
+c21949550ad9	method	EQUAL	R=null sig=public void setBorderStyle(int) | S=d2b89354d2b5	R=null sig=public void setBorderStyle(int) | S=d2b89354d2b5	
+f264432c23ee	method	EQUAL	R=null sig=public void setBorderWidth(int) | S=d2b89354d2b5	R=null sig=public void setBorderWidth(int) | S=d2b89354d2b5	
+7a75b2ff5ef0	method	EQUAL	R=null sig=public void setLayout(org.eclipse.swt.widgets.Layout) | S=d2b89354d2b5	R=null sig=public void setLayout(org.eclipse.swt.widgets.Layout) | S=d2b89354d2b5	
+d2b1f767a299	method	EQUAL	R=null sig=public void setMargins(int,int) | S=d2b89354d2b5	R=null sig=public void setMargins(int,int) | S=d2b89354d2b5	
+d4e2ad352fd0	method	EQUAL	R=null sig=public void setNormalBorderColor(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	R=null sig=public void setNormalBorderColor(org.eclipse.swt.graphics.Color) | S=d2b89354d2b5	
+c3c971e82cc8	method	EQUAL	R=null sig=public void updateBackground() | S=d2b89354d2b5	R=null sig=public void updateBackground() | S=d2b89354d2b5	
