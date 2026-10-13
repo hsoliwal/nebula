@@ -647,7 +647,8 @@ public class GridItem extends Item {
 	 */
 	public boolean getChecked() {
 		checkWidget();
-		return parent.getDataVisualizer().getChecked(this, 0);
+		final int packed = parent.packedCheck(this, 0, Grid.LANE_CHECKED);
+		return packed < 0 ? parent.getDataVisualizer().getChecked(this, 0) : packed == 1;
 	}
 
 	/**
@@ -669,7 +670,8 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getChecked(this, index);
+		final int packed = parent.packedCheck(this, index, Grid.LANE_CHECKED);
+		return packed < 0 ? parent.getDataVisualizer().getChecked(this, index) : packed == 1;
 	}
 
 	/**
@@ -834,7 +836,8 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getGrayed(this, index);
+		final int packed = parent.packedCheck(this, index, Grid.LANE_GRAYED);
+		return packed < 0 ? parent.getDataVisualizer().getGrayed(this, index) : packed == 1;
 	}
 
 	/**
@@ -1190,7 +1193,9 @@ public class GridItem extends Item {
 	 */
 	public void setChecked(boolean checked) {
 		checkWidget();
-		parent.getDataVisualizer().setChecked(this, 0, checked);
+		if (!parent.setPackedCheck(this, 0, Grid.LANE_CHECKED, checked)) {
+			parent.getDataVisualizer().setChecked(this, 0, checked);
+		}
 		parent.redrawForItemData(this);
 	}
 
@@ -1211,7 +1216,9 @@ public class GridItem extends Item {
 	 */
 	public void setChecked(int index, boolean checked) {
 		checkWidget();
-		parent.getDataVisualizer().setChecked(this, index, checked);
+		if (!parent.setPackedCheck(this, index, Grid.LANE_CHECKED, checked)) {
+			parent.getDataVisualizer().setChecked(this, index, checked);
+		}
 		parent.redrawForItemData(this);
 	}
 
@@ -1514,7 +1521,9 @@ public class GridItem extends Item {
 	 */
 	public void setGrayed(boolean grayed) {
 		checkWidget();
-		parent.getDataVisualizer().setGrayed(this, 0, grayed);
+		if (!parent.setPackedCheck(this, 0, Grid.LANE_GRAYED, grayed)) {
+			parent.getDataVisualizer().setGrayed(this, 0, grayed);
+		}
 		parent.redrawForItemData(this);
 	}
 
@@ -1537,7 +1546,9 @@ public class GridItem extends Item {
 	 */
 	public void setGrayed(int index, boolean grayed) {
 		checkWidget();
-		parent.getDataVisualizer().setGrayed(this, index, grayed);
+		if (!parent.setPackedCheck(this, index, Grid.LANE_GRAYED, grayed)) {
+			parent.getDataVisualizer().setGrayed(this, index, grayed);
+		}
 		parent.redrawForItemData(this);
 	}
 
@@ -2024,7 +2035,8 @@ public class GridItem extends Item {
             return false;
         }
 
-		return parent.getDataVisualizer().getCheckable(this, index);
+		final int packed = parent.packedCheck(this, index, Grid.LANE_UNCHECKABLE);
+		return packed < 0 ? parent.getDataVisualizer().getCheckable(this, index) : packed == 0;
 	}
 
 	/**
@@ -2047,7 +2059,9 @@ public class GridItem extends Item {
 	 */
 	public void setCheckable(int index, boolean checked) {
 		checkWidget();
-		parent.getDataVisualizer().setCheckable(this, index, checked);
+		if (!parent.setPackedCheck(this, index, Grid.LANE_UNCHECKABLE, !checked)) {
+			parent.getDataVisualizer().setCheckable(this, index, checked);
+		}
 	}
 
 	/**

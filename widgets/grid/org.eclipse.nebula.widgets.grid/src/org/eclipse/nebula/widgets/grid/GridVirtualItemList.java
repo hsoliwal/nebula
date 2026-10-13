@@ -161,6 +161,18 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         models[slot] = model;
     }
 
+    /**
+     * @return packed model row of {@code item} bound at view index {@code index}, or -1 when the
+     *         item is not the materialized item there (binary search, no scan)
+     */
+    int modelOfItemAt(final GridItem item, final int index) {
+        if (index < 0 || index >= logicalSize) {
+            return -1;
+        }
+        final int slot = find(index);
+        return slot >= 0 && values[slot] == item ? models[slot] : -1;
+    }
+
     /** @return slot of the materialized item, or -1 */
     int slotOf(final GridItem item) {
         return identitySlot(item);

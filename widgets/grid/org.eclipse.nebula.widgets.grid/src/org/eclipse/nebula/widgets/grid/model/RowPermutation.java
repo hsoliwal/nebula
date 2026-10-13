@@ -231,6 +231,35 @@ public final class RowPermutation implements RowView {
 	}
 
 	/**
+	 * Writes one bit per model row that is displayed: the filter bits, plus pinned rows (all rows
+	 * when unfiltered).
+	 *
+	 * @param target destination with at least {@code (getModelCount() + 63) / 64} words
+	 * @return {@code target}
+	 */
+	public long[] displayedBits(final long[] target) {
+		final int words = words(modelCount);
+		if (target.length < words) {
+			throw new IllegalArgumentException("target.length=" + target.length + " < " + words);
+		}
+		if ((flags & FILTERED) == 0) {
+			Arrays.fill(target, 0, words, -1L);
+		} else {
+			System.arraycopy(bits, 0, target, 0, words);
+			if ((flags & PINNED) != 0) {
+				for (int i = 0; i < words; i++) {
+					target[i] |= pinBits[i];
+				}
+			}
+		}
+		final int tail = modelCount & 63;
+		if (tail != 0) {
+			target[words - 1] &= (1L << tail) - 1L;
+		}
+		return target;
+	}
+
+	/**
 	 * @return number of rows pinned to the top of the view
 	 */
 	public int getPinnedTopCount() {

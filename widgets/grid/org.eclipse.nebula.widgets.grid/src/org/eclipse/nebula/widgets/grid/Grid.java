@@ -53,6 +53,7 @@ import org.eclipse.nebula.widgets.grid.internal.NullScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter;
 import org.eclipse.nebula.widgets.grid.model.RowGrouping;
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
+import org.eclipse.nebula.widgets.grid.model.RowStateLanes;
 import org.eclipse.nebula.widgets.grid.model.RowView;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -642,6 +643,12 @@ public class Grid extends Canvas {
 
 	/** Reused probe for {@code selectedCells.contains}: no Point per painted cell. */
 	private final Point cellProbe = new Point(0, 0);
+
+	/** Packed check lanes per column index (row view installed): checked, grayed, not checkable. */
+	private RowStateLanes[] checkLanes = new RowStateLanes[0];
+	static final int LANE_CHECKED = 0;
+	static final int LANE_GRAYED = 1;
+	static final int LANE_UNCHECKABLE = 2;
 
 	/** Number of leading items frozen below the column header (pinned plane). */
 	private int pinnedTopRows;
@@ -10335,6 +10342,162 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * @return model row whose packed check state {@code item} shows, or -1 when check state lives
+	 *         in the data visualizer (no row view installed, or an item the view does not map)
+	 */
+	int packedCheckRow(final GridItem item) {
+		if (rowView == null || !usesSparseVirtualItems()) {
+			return -1;
+		}
+		return sparseVirtualItems().modelOfItemAt(item, item.getRowIndex());
+	}
+
+	/**
+	 * @return 1 or 0 for the packed check state of {@code lane} at {@code column} of
+	 *         {@code item}, or -1 when the data visualizer owns it
+	 */
+	int packedCheck(final GridItem item, final int column, final int lane) {
+		final int row = packedCheckRow(item);
+		if (row < 0) {
+			return -1;
+		}
+		final RowStateLanes lanes = column < checkLanes.length ? checkLanes[column] : null;
+		return lanes != null && lanes.get(lane, row) ? 1 : 0;
+	}
+
+	/**
+	 * Stores packed check state; returns false when the data visualizer owns it.
+	 */
+	boolean setPackedCheck(final GridItem item, final int column, final int lane, final boolean value) {
+		final int row = packedCheckRow(item);
+		if (row < 0) {
+			return false;
+		}
+		checkLanesOf(column).set(lane, row, value);
+		return true;
+	}
+
+	private RowStateLanes checkLanesOf(final int column) {
+		if (column >= checkLanes.length) {
+			checkLanes = Arrays.copyOf(checkLanes, Math.max(column + 1, checkLanes.length * 2));
+		}
+		RowStateLanes lanes = checkLanes[column];
+		if (lanes == null) {
+			lanes = new RowStateLanes(3);
+			lanes.setCount(rowView.getModelCount());
+			checkLanes[column] = lanes;
+		}
+		return lanes;
+	}
+
+	/**
+	 * Checks or unchecks a column for all model rows of the installed row view at once (bit
+	 * ranges, no item is created), optionally only for rows that pass the filter or are pinned.
+	 *
+	 * @param column             column index
+	 * @param checked            new state
+	 * @param passingFilterOnly  {@code true} to touch only displayed rows of the permutation
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if no row view is
+	 *                                     installed</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setCheckedAll(final int column, final boolean checked, final boolean passingFilterOnly) {
+		checkWidget();
+		if (rowView == null || column < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		final RowStateLanes lanes = checkLanesOf(column);
+		final int rows = rowView.getModelCount();
+		if (!passingFilterOnly || !rowPermutation.isFiltered()) {
+			lanes.setRange(LANE_CHECKED, 0, rows, checked);
+		} else {
+			forEachDisplayedRun(rows, (from, to) -> lanes.setRange(LANE_CHECKED, from, to, checked));
+		}
+		redraw();
+	}
+
+	/**
+	 * @param column            column index
+	 * @param passingFilterOnly {@code true} to count only displayed rows of the permutation
+	 * @return number of checked model rows in the column (bit counts, no item is created)
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if no row view is
+	 *                                     installed</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public int getCheckedCount(final int column, final boolean passingFilterOnly) {
+		checkWidget();
+		if (rowView == null || column < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		final RowStateLanes lanes = column < checkLanes.length ? checkLanes[column] : null;
+		if (lanes == null) {
+			return 0;
+		}
+		final int rows = rowView.getModelCount();
+		if (!passingFilterOnly || !rowPermutation.isFiltered()) {
+			return lanes.countRange(LANE_CHECKED, 0, rows);
+		}
+		final int[] count = new int[1];
+		forEachDisplayedRun(rows, (from, to) -> count[0] += lanes.countRange(LANE_CHECKED, from, to));
+		return count[0];
+	}
+
+	/** Visits maximal runs of displayed model rows, a 64-row word at a time. */
+	private void forEachDisplayedRun(final int rows, final RunVisitor visitor) {
+		final long[] words = rowPermutation.displayedBits(new long[(rows + 63) >>> 6]);
+		int runStart = -1;
+		for (int w = 0; w < words.length; w++) {
+			final long word = words[w];
+			if (word == -1L && runStart >= 0) {
+				continue;
+			}
+			if (word == 0L && runStart < 0) {
+				continue;
+			}
+			for (int b = 0; b < 64; b++) {
+				final boolean on = (word & (1L << b)) != 0L;
+				final int row = (w << 6) + b;
+				if (on && runStart < 0) {
+					runStart = row;
+				} else if (!on && runStart >= 0) {
+					visitor.run(runStart, row);
+					runStart = -1;
+				}
+			}
+		}
+		if (runStart >= 0) {
+			visitor.run(runStart, Math.min(rows, words.length << 6));
+		}
+	}
+
+	@FunctionalInterface
+	private interface RunVisitor {
+		void run(int from, int to);
+	}
+
+	/**
 	 * Runs a SetData callback for {@code item} and remembers it, so that paint-only setters of
 	 * that item do not invalidate the Grid the paint is drawing.
 	 */
@@ -10424,6 +10587,11 @@ public class Grid extends Canvas {
 		scrollValuesObsolete = true;
 		topIndex = -1;
 		bottomIndex = -1;
+		for (final RowStateLanes lanes : checkLanes) {
+			if (lanes != null) {
+				lanes.setCount(view.getModelCount());
+			}
+		}
 		if (!disposing) {
 			updateColumnSelection();
 		}
