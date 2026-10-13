@@ -104,7 +104,12 @@ final class GridRowSpanIndex {
 		rebuildProjection();
 		if (projectedCount == 0) return firstVisible;
 
-		int hi = upperBound(starts, projectedCount, firstVisible - 1) - 1;
+		return earliestCovering(firstVisible, starts, prefixMaxEnds, projectedCount);
+	}
+
+	static int earliestCovering(int firstVisible, int[] starts, long[] prefixMaxEnds, int count) {
+		if (firstVisible <= 0 || count <= 0) return Math.max(0, firstVisible);
+		int hi = upperBound(starts, count, firstVisible - 1) - 1;
 		if (hi < 0 || prefixMaxEnds[hi] < firstVisible) return firstVisible;
 
 		int low = 0;
