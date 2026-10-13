@@ -8645,7 +8645,8 @@ public class Grid extends Canvas {
 	 * Scrolls the body by copying the pixels that stay visible and invalidating only the
 	 * exposed strip. Only when every row has the same height and the painted rows depend on
 	 * nothing but their absolute index (default renderers, no spans, pinned planes, insert mark,
-	 * column drag or cell hover feedback); otherwise the caller repaints the whole body.
+	 * column drag, cell hover feedback or child controls such as open cell editors); otherwise
+	 * the caller repaints the whole body.
 	 */
 	private boolean blitBody(final int oldTop, final Rectangle body) {
 		if (!blitScroll || oldTop < 0 || !isVisible() || !blitSafe()) {
@@ -8668,7 +8669,7 @@ public class Grid extends Canvas {
 
 	private boolean blitSafe() {
 		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
-				|| insertMarkItem != null || !hoveringDetail.isEmpty()
+				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
 				|| emptyCellRenderer.getClass() != DefaultEmptyCellRenderer.class
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
 			return false;
