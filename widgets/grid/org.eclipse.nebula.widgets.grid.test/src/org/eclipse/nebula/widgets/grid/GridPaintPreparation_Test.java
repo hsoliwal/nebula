@@ -125,13 +125,21 @@ public class GridPaintPreparation_Test {
         indexed.setSize(360, 220);
         GridColumn column = new GridColumn(indexed, SWT.NONE);
         column.setWidth(160);
+        GridColumn hidden = new GridColumn(indexed, SWT.NONE);
+        hidden.setWidth(160);
+        hidden.setVisible(false);
         indexed.setItemCount(1_000_000);
 
         // Settle existing scrollbar geometry at the start of the logical model.
         paint(indexed, indexed.getClientArea());
 
         GridItem spanOwner = indexed.getItem(499_995);
+        spanOwner.setRowSpan(1, 100);
+        assertEquals(500_000, indexed.rowSpanPaintStart(500_000),
+                "a hidden-column span must not change the historical paint frontier");
+
         spanOwner.setRowSpan(0, 10);
+        assertEquals(499_995, indexed.rowSpanPaintStart(500_000));
         assertEquals(1, indexed.rowSpanIndexOwnerCount());
 
         // Once spanning is active, direct mutation through the built-in public
