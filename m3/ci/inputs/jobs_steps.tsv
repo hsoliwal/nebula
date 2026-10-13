@@ -1,0 +1,215 @@
+37807007209	113413800747	prove	failure	14:9a - Install exact bound Synexia FILE recipe
+37807007345	113413801273	recipe	failure	18:5 - Inventory the whole Nebula Java checkout
+37807007188	113413800407	Java 21 compile	failure	7:Build All Widgets
+37792179836	113362175631	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37792179702	113362173852	prove	failure	14:9a - Install exact bound Synexia FILE recipe
+37763737230	113266178352	prove	failure	14:9a - Install exact bound Synexia FILE recipe
+37763737187	113266178324	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37759377378	113251780485	prove	failure	5:1 - Diff hygiene
+37759377518	113251780785	recipe	failure	5:1 - Diff hygiene
+37759321415	113251594272	prove	failure	5:1 - Diff hygiene
+37759321305	113251593994	recipe	failure	5:1 - Diff hygiene
+37759240275	113251328613	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37759240294	113251328723	prove	failure	14:9a - Install exact bound Synexia FILE recipe
+37759180835	113251134111	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37759180877	113251134288	prove	failure	14:9a - Install exact bound Synexia FILE recipe
+37759173806	113251113140	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37759173819	113251113742	prove	failure	14:9a - Install exact bound Synexia FILE recipe
+37744333020	113202128944	prove	failure	14:9a - Install exact bound Synexia FILE recipe
+37744332974	113202129101	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37714520762	113107835384	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37714520794	113107835453	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37635673730	112841125837	recipe	failure	6:2 - M3 custody and saved convergence contract
+37635673691	112841125702	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37633370842	112833121479	recipe	failure	6:2 - M3 custody and saved convergence contract
+37633370909	112833133584	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37626732202	112810303514	recipe	failure	6:2 - M3 custody and saved convergence contract
+37626732119	112810304910	Java 21 compile	failure	5:Build All Widgets
+37626731943	112810302022	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37626715576	112810245302	recipe	failure	6:2 - M3 custody and saved convergence contract
+37626715545	112810244799	Java 21 compile	failure	5:Build All Widgets
+37626715529	112810245109	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37626622531	112809928197	recipe	failure	6:2 - M3 custody and saved convergence contract
+37626622544	112809927413	Java 21 compile	failure	5:Build All Widgets
+37626622602	112809928332	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37624863231	112803936251	recipe	failure	6:2 - M3 custody and saved convergence contract
+37624863649	112803937484	Java 21 compile	failure	5:Build All Widgets
+37624863861	112803939008	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37624863285	112803936020	Analyze (java-kotlin)	failure	6:Autobuild
+37611785393	112760482417	Analyze (java-kotlin)	failure	6:Autobuild
+37611785498	112760482512	Java 21 compile	failure	5:Build All Widgets
+37611738823	112760331673	Analyze (java-kotlin)	failure	6:Autobuild
+37611579607	112759815544	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37611579603	112759815011	recipe	failure	6:2 - M3 custody and saved convergence contract
+37611579686	112759815153	Java 21 compile	failure	5:Build All Widgets
+37611579648	112759815145	Analyze (java-kotlin)	failure	6:Autobuild
+37609166133	112751934269	Analyze (java-kotlin)	failure	6:Autobuild
+37608870526	112750971073	prove	failure	14:10 - Apply FILE-local recipe DAG and capture first candidate
+37608870388	112750970125	Analyze (java-kotlin)	failure	6:Autobuild
+37608870512	112750971136	Java 21 compile	failure	5:Build All Widgets
+37608870521	112750972047	recipe	failure	6:2 - M3 custody and saved convergence contract
+37607609004	112746837552	Analyze (java-kotlin)	failure	6:Autobuild
+37604134218	112735389083	Java 21 compile	failure	5:Build All Widgets
+37604134208	112735389628	Analyze (java-kotlin)	failure	6:Autobuild
+37599171085	112719049310	Analyze (java-kotlin)	failure	6:Autobuild
+37599171090	112719048386	Java 21 compile	failure	5:Build All Widgets
+37599171200	112719049321	prove	failure	5:1 - Diff hygiene
+37599171231	112719049262	recipe	failure	5:1 - Diff hygiene
+37598846056	112717969263	Analyze (java-kotlin)	failure	6:Autobuild
+37598846027	112717968649	Java 21 compile	failure	5:Build All Widgets
+37598846157	112717970594	recipe	failure	5:1 - Diff hygiene
+37598846058	112717969176	prove	failure	5:1 - Diff hygiene
+37598582848	112717095121	Analyze (java-kotlin)	failure	6:Autobuild
+37598513758	112716868193	Java 21 compile	failure	5:Build All Widgets
+37598513709	112716866108	Analyze (java-kotlin)	failure	6:Autobuild
+37598513880	112716865748	recipe	failure	5:1 - Diff hygiene
+37596753367	112711160024	Analyze (java-kotlin)	failure	6:Autobuild
+37594638212	112704164701	Analyze (java-kotlin)	failure	6:Autobuild
+37594638232	112704164950	Java 21 compile	failure	5:Build All Widgets
+37581523681	112662061057	prove	failure	8:4 - Enforce 99 percent semantic recipe coverage
+37581523647	112662060997	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37581523603	112662060925	Java 21 compile	failure	5:Build All Widgets
+37580481316	112658750056	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37580481457	112658751090	binding	success	-
+37580481457	112658751315	upstream	failure	2:Run actions/setup-java@v5
+37580481457	112725564737	nebula-read-only	skipped	-
+37580481405	112658750814	recipe	failure	6:2 - M3 custody and saved convergence contract
+37580481390	112658750430	Java 21 compile	failure	5:Build All Widgets
+37580481417	112658750927	prove	failure	8:4 - Enforce 99 percent semantic recipe coverage
+37578401533	112652343481	binding	success	-
+37578401533	112652343911	upstream	failure	2:Run actions/setup-java@v5
+37578401533	112720480131	nebula-read-only	skipped	-
+37578401484	112652343346	Java 21 compile	failure	5:Build All Widgets
+37578401519	112652343392	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37578401477	112652343421	recipe-proof	failure	7:4 full recipe-first module verification
+37578401546	112652343535	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37578401498	112652343476	recipe	failure	10:3 - Compile and test the Nebula-local recipe crate
+37578031277	112651204991	Java 21 compile	failure	5:Build All Widgets
+37578031245	112651204893	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37578031261	112651205182	upstream	failure	2:Run actions/setup-java@v5
+37578031261	112651205386	binding	success	-
+37578031261	112718622381	nebula-read-only	skipped	-
+37578031236	112651205031	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37578031248	112651205136	prove	failure	8:4 - Enforce 99 percent semantic recipe coverage
+37564890177	112610231022	Java 21 compile	failure	5:Build All Widgets
+37564864759	112610150039	Java 21 compile	failure	5:Build All Widgets
+37564656769	112609519351	Java 21 compile	failure	5:Build All Widgets
+37564075115	112607687314	Java 21 compile	failure	5:Build All Widgets
+37564075013	112607687003	Analyze (java-kotlin)	failure	6:Autobuild
+37486533247	112347882688	recipe	failure	5:1 - Diff hygiene|8:Capture exact checkout and actual recipe SDK for local replay|23:Capture original build dependency and classpath evidence
+37486533185	112347882660	Java 21 compile	failure	5:Build All Widgets
+37430538423	112160114082	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37430538296	112160113401	recipe	failure	10:3 - Compile and test the Nebula-local recipe crate
+37430538333	112160113145	Java 21 compile	failure	5:Build All Widgets
+37430538361	112160113266	recipe-proof	failure	7:4 full recipe-first module verification
+37430538351	112160113522	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37430530194	112160086839	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37430530281	112160086847	recipe	failure	7:Execute tested exact compilation bootstrap
+37430530199	112160086542	Java 21 compile	failure	5:Build All Widgets
+37430530123	112160086115	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37430530170	112160086584	recipe-proof	failure	7:4 full recipe-first module verification
+37429773905	112157659857	recipe	failure	7:Execute tested exact compilation bootstrap
+37429773840	112157659482	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37429773921	112157659729	Java 21 compile	failure	5:Build All Widgets
+37429562569	112156971079	prove	failure	5:1 - Diff hygiene
+37429562500	112156970567	Java 21 compile	failure	5:Build All Widgets
+37429201345	112155822264	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37429201316	112155821968	recipe	failure	6:2 - M3 custody and saved convergence contract
+37429201365	112155822706	Java 21 compile	failure	5:Build All Widgets
+37428258378	112152800096	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37428258449	112152800540	Java 21 compile	failure	5:Build All Widgets
+37428258513	112152800797	recipe	failure	6:2 - M3 custody and saved convergence contract
+37424724748	112141681505	Java 21 compile	failure	5:Build All Widgets
+37424724684	112141681320	recipe-proof	failure	7:4 full recipe-first module verification
+37424724688	112141681574	recipe	failure	6:2 - M3 custody and saved convergence contract
+37424724642	112141681419	upstream	failure	2:Run actions/setup-java@v5
+37424724642	112141681669	binding	failure	6:Prove Nebula binding and declarative wrapper
+37424724642	112148229901	nebula-read-only	skipped	-
+37424724629	112141681243	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37423554886	112138045116	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37423555002	112138045512	recipe-proof	failure	7:4 full recipe-first module verification
+37423554883	112138045186	Java 21 compile	failure	5:Build All Widgets
+37423554955	112138045286	recipe	failure	6:2 - M3 custody and saved convergence contract
+37423555006	112138045265	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37412738783	112104572870	recipe	failure	6:2 - M3 custody and saved convergence contract
+37412738769	112104572862	upstream	failure	2:Run actions/setup-java@v5
+37412738769	112104573224	binding	failure	6:Prove Nebula binding and declarative wrapper
+37412738769	112136183848	nebula-read-only	skipped	-
+37412738785	112104572748	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37412738791	112104572858	Java 21 compile	failure	5:Build All Widgets
+37412738768	112104572886	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37412738787	112104572776	recipe-proof	failure	7:4 full recipe-first module verification
+37412349834	112103368334	recipe-proof	failure	4:1 diff hygiene
+37412349685	112103367718	recipe	failure	5:1 - Diff hygiene
+37412349676	112103367693	binding	failure	6:Prove Nebula binding and declarative wrapper
+37412349676	112103367887	upstream	failure	2:Run actions/setup-java@v5
+37412349676	112135349146	nebula-read-only	skipped	-
+37412349686	112103367624	verify	failure	4:Diff hygiene
+37412349680	112103367678	Java 21 compile	failure	5:Build All Widgets
+37411827868	112101727571	recipe	failure	5:1 - Diff hygiene
+37411827867	112101727407	upstream	failure	2:Run actions/setup-java@v5
+37411827867	112101727487	binding	failure	6:Prove Nebula binding and declarative wrapper
+37411827867	112134556104	nebula-read-only	skipped	-
+37411827918	112101727506	verify	failure	4:Diff hygiene
+37411827847	112101727542	recipe-proof	failure	4:1 diff hygiene
+37411827876	112101727807	Java 21 compile	failure	5:Build All Widgets
+37411630720	112101129331	binding	failure	6:Prove Nebula binding and declarative wrapper
+37411630720	112101129350	upstream	failure	2:Run actions/setup-java@v5
+37411630720	112133765605	nebula-read-only	skipped	-
+37411630787	112101129458	recipe	failure	5:1 - Diff hygiene
+37411630708	112101129141	verify	failure	4:Diff hygiene
+37411630761	112101129209	recipe-proof	failure	4:1 diff hygiene
+37411630746	112101131141	Java 21 compile	failure	5:Build All Widgets
+37411623009	112101104984	recipe	failure	5:1 - Diff hygiene
+37411623015	112101104869	binding	failure	6:Prove Nebula binding and declarative wrapper
+37411623015	112101105016	upstream	failure	2:Run actions/setup-java@v5
+37411623015	112133142134	nebula-read-only	skipped	-
+37411623171	112101105096	verify	failure	4:Diff hygiene
+37411623024	112101105061	recipe-proof	failure	4:1 diff hygiene
+37411623017	112101104953	Java 21 compile	failure	5:Build All Widgets
+37411343936	112100233787	recipe	failure	5:1 - Diff hygiene
+37411343934	112100233722	upstream	failure	2:Run actions/setup-java@v5
+37411343934	112100233899	binding	failure	6:Prove Nebula binding and declarative wrapper
+37411343934	112132379943	nebula-read-only	skipped	-
+37411343965	112100233717	verify	failure	4:Diff hygiene
+37411343941	112100233614	recipe-proof	failure	4:1 diff hygiene
+37411343938	112100233617	Java 21 compile	failure	5:Build All Widgets
+37411323755	112100170493	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37411323765	112100170233	binding	failure	6:Prove Nebula binding and declarative wrapper
+37411323765	112100170397	upstream	failure	2:Run actions/setup-java@v5
+37411323765	112132229065	nebula-read-only	skipped	-
+37411323753	112100170445	recipe	failure	6:2 - M3 custody and saved convergence contract
+37411323803	112100170548	Java 21 compile	failure	5:Build All Widgets
+37411323768	112100170501	recipe-proof	failure	7:4 full recipe-first module verification
+37411323841	112100170798	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37411316738	112100149583	prove	failure	6:2 - Compile and test complete M3 source-first reactor
+37411316726	112100149511	Java 21 compile	failure	5:Build All Widgets
+37411316768	112100149977	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37411316743	112100149700	recipe-proof	failure	7:4 full recipe-first module verification
+37411316731	112100149812	upstream	failure	2:Run actions/setup-java@v5
+37411316731	112100149966	binding	failure	6:Prove Nebula binding and declarative wrapper
+37411316731	112131897950	nebula-read-only	skipped	-
+37411316754	112100149775	recipe	failure	6:2 - M3 custody and saved convergence contract
+37411288207	112100063996	Java 21 compile	failure	5:Build All Widgets
+37411288238	112100064021	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37411288168	112100063705	binding	success	-
+37411288168	112100063851	upstream	failure	2:Run actions/setup-java@v5
+37411288168	112131805585	nebula-read-only	skipped	-
+37411288169	112100063745	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37411288177	112100063755	prove	failure	8:4 - Enforce 99 percent semantic recipe coverage
+37411222822	112099868614	binding	success	-
+37411222822	112099868846	upstream	failure	2:Run actions/setup-java@v5
+37411222822	112130671246	nebula-read-only	skipped	-
+37411222664	112099868382	Java 21 compile	failure	5:Build All Widgets
+37411222711	112099868239	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37411222721	112099868262	prove	failure	8:4 - Enforce 99 percent semantic recipe coverage
+37411222560	112099867867	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37410434687	112097430360	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37410434732	112097430459	prove	failure	8:4 - Enforce 99 percent semantic recipe coverage
+37410434735	112097430491	upstream	failure	2:Run actions/setup-java@v5
+37410434735	112097430614	binding	success	-
+37410434735	112124750451	nebula-read-only	skipped	-
+37410434686	112097431265	Java 21 compile	failure	5:Build All Widgets
+37410434712	112097430453	verify	failure	9:Verify named OpenRewrite recipe is discoverable
+37409884721	112095706571	recipe	failure	17:7 - Baseline original Nebula Tycho reactor
+37409884805	112095707484	prove	failure	8:4 - Enforce 99 percent semantic recipe coverage
