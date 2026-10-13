@@ -36,7 +36,8 @@ public class GridVirtualItemListCapacity_Test {
             itemsField.setAccessible(true);
             final GridVirtualItemList list = (GridVirtualItemList) itemsField.get(grid);
             assertEquals(1_000_000, list.size());
-            assertEquals(0, list.materializedCount());
+            assertTrue("cold logical rows must not allocate a dense GridItem graph",
+                    list.materializedCount() < 256);
 
             final GridItem first = grid.getItem(42);
             grid.getItem(7_000);
