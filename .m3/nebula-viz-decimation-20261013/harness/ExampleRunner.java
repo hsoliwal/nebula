@@ -31,7 +31,9 @@ public class ExampleRunner {
 		Display display = Display.getDefault();
 		int[] bright = { -1 };
 		String[] size = { "-" };
-		display.timerExec(millis, () -> {
+		// posted from a timer thread with asyncExec: WM_TIMER is starved while a snippet keeps the queue busy with
+		// repaints, posted runnables are not
+		Runnable capture = () -> {
 			Shell[] shells = display.getShells();
 			if (shells.length > 0) {
 				Shell s = shells[0];
@@ -60,7 +62,19 @@ public class ExampleRunner {
 			for (Shell s : display.getShells()) {
 				s.dispose();
 			}
-		});
+		};
+		Thread timer = new Thread(() -> {
+			try {
+				Thread.sleep(millis);
+			} catch (InterruptedException e) {
+				return;
+			}
+			if (!display.isDisposed()) {
+				display.asyncExec(capture);
+			}
+		}, "example-capture");
+		timer.setDaemon(true);
+		timer.start();
 		String status = "OK";
 		try {
 			Method m = Class.forName(main).getMethod("main", String[].class);
