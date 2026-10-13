@@ -4422,11 +4422,32 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 
+		// An item being disposed is already out of the item list but still holds its old row
+		// (Grid.removeItem may resize the scrollbars, which lays out a GridEditor on it): it
+		// is not shown (issue #700).
+		if (!isRowOf(item, itemIndex)) {
+			return false;
+		}
+
 		final int firstVisibleIndex = getTopIndex();
 		final int lastVisibleIndex = getBottomIndex();
 
 		return itemIndex >= firstVisibleIndex && itemIndex < lastVisibleIndex
 				|| itemIndex == lastVisibleIndex && bottomIndexShownCompletely;
+	}
+
+	/**
+	 * @return {@code true} if {@code item} is the item at row {@code index}; an unmaterialized
+	 *         virtual row is never {@code item}, so no item is created by the check
+	 */
+	boolean isRowOf(final GridItem item, final int index) {
+		if (index < 0 || index >= items.size()) {
+			return false;
+		}
+		final GridItem atIndex = items instanceof GridVirtualItemList
+				? ((GridVirtualItemList) items).getMaterialized(index)
+				: items.get(index);
+		return atIndex == item;
 	}
 
 	/**
