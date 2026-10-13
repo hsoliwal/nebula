@@ -6876,6 +6876,9 @@ public class Grid extends Canvas {
 	/** Scroll bar visibility changes made by {@link #updateScrollbars()} (package-private counter). */
 	int scrollbarToggles;
 
+	/** Test switch: false restores the measured two-pass scroll bar visibility. */
+	boolean settleScrollbars = true;
+
 	/**
 	 * Computes the result of the two visibility passes of {@link #updateScrollbars()} on
 	 * booleans (the client area grows or shrinks by the native bar sizes) and applies it with at
@@ -6885,7 +6888,7 @@ public class Grid extends Canvas {
 	 * @return false when the bars are not both native (the caller runs the passes)
 	 */
 	private boolean settleScrollbarsArithmetically(final Point preferredSize, final Rectangle clientArea) {
-		if (!(vScroll instanceof ScrollBarProxyAdapter) || !(hScroll instanceof ScrollBarProxyAdapter)
+		if (!settleScrollbars || !(vScroll instanceof ScrollBarProxyAdapter) || !(hScroll instanceof ScrollBarProxyAdapter)
 				|| getVerticalBar() == null || getHorizontalBar() == null) {
 			return false;
 		}

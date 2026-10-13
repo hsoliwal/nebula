@@ -24,4 +24,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 16 | `GridPrefetch_Test` (2): idle prefetch of rows below the viewport, no SetData when they scroll in | #151 | new (setPrefetchRows) | compile-checked only |
 | 17 | `GridVirtualHeights_Test` (1): computeSize of a virtual Grid with differing heights equals the fully materialized Grid and creates <= 2 rows | #151 | new | compile-checked only |
 | 18 | `GridBlitScroll_Test` (1): on-screen pixels after blit scrolling equal a full repaint (capture mode DISPLAY_COPY, shell ON_TOP and active) | #151 | new | compile-checked only |
+| 19 | `GridScrollbarSettle_Test` (1): arithmetic scroll bar settling equals the measured two-pass algorithm over a 300-step resize sweep (visibility, max, thumb, selection) | #151 | new | compile-checked only |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |
