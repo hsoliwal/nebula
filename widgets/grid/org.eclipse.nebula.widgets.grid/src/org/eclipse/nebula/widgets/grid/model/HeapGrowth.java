@@ -31,7 +31,7 @@ package org.eclipse.nebula.widgets.grid.model;
  * <p>{@link #choose} is pure (GWT-safe). {@link #capacity} samples the heap through
  * {@link HeapSampler}, which a GWT build replaces with a sampler that reports no information.</p>
  */
-final class HeapGrowth {
+public final class HeapGrowth {
 
 	private static final long MIB = 1024L * 1024L;
 	private static final int WARM_PERCENT = 70;
@@ -46,7 +46,7 @@ final class HeapGrowth {
 	 * @return the new length: doubling when the heap has room, exactly {@code minimum} under
 	 *         pressure
 	 */
-	static int capacity(final int current, final int minimum, final int elementBytes) {
+	public static int capacity(final int current, final int minimum, final int elementBytes) {
 		return choose(current, minimum, elementBytes, HeapSampler.maxMemory(), HeapSampler.usedMemory());
 	}
 
@@ -65,21 +65,25 @@ final class HeapGrowth {
 		if (elementBytes < 1 || elementBytes > 64) {
 			throw new IllegalArgumentException("bytes per slot 1..64: " + elementBytes);
 		}
-		if (minimum < 0) {
-			throw new IllegalArgumentException("negative minimum: " + minimum);
+		if (current < 0 || minimum < 0) {
+			throw new IllegalArgumentException("negative array length");
 		}
 		if (minimum <= current) {
 			return current;
 		}
-		final int geometric = (int) Math.min(Integer.MAX_VALUE - 8L,
-				Math.max((long) minimum, Math.max(16L, 2L * current)));
+		// Never return a capacity smaller than the caller's required length,
+		// including the Java array VM-limit boundary. Allocation itself may OOME.
+		final long desired = Math.max((long) minimum, Math.max(16L, 2L * current));
+		final int geometric = minimum > Integer.MAX_VALUE - 8L
+				? minimum : (int) Math.min(Integer.MAX_VALUE - 8L, desired);
 		if (geometric == minimum || max <= 0 || max == Long.MAX_VALUE || used < 0 || used > max) {
 			return geometric;
 		}
 		final long available = max - used;
 		final long reserve = Math.min(64L * MIB, Math.max(MIB, max >>> 3));
 		final long peak = (long) geometric * elementBytes + 16L;
-		final boolean warm = used + peak >= (max / 100) * WARM_PERCENT;
+		final long forecast = used > Long.MAX_VALUE - peak ? Long.MAX_VALUE : used + peak;
+		final boolean warm = forecast >= (max / 100) * WARM_PERCENT;
 		// the replacement is live next to its source during the copy
 		if (available <= reserve || peak > available - reserve || warm) {
 			return minimum;
