@@ -1,0 +1,11 @@
+compile after rc=0 files=154 errors=0
+JUnit version 4.13.2
+.......TraceDecimationDifferentialTest scenarios=384 decimated=246
+.print scenarios=24 decimated=24
+.log scenarios=40 decimated=30
+.
+Time: 65.274
+
+OK (10 tests)
+
+junit rc=0

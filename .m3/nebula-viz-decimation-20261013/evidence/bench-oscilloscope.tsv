@@ -1,0 +1,23 @@
+metric	base-osc-hidden	after-osc-hidden	base-osc-stream	after-osc-stream	base-osc-parity	after-osc-parity
+hooks_visible_1s	31	31				
+hooks_minimized_2s	64	0				
+paints_minimized_2s	0	0				
+hooks_after_restore_1s	94	31				
+hooks_setVisible_false_2s	65	0				
+hooks_after_setVisible_true_1s	88	18				
+api			setValues	pushSamples		
+seconds			10	10		
+samples_pushed			10010000	10040000		
+samples_per_second			1001000	1004000		
+frames			312	265	960	960
+producer_cpu_ms_per_s			43.75	81.25		
+ui_cpu_ms_per_s			48.44	207.81		
+frame_ms_p50			3.65	10.04		
+frame_ms_p95			5.87	16.17		
+frame_ms_max			12.86	25.40		
+ui_alloc_bytes_per_frame_p50			44664.00	30432.00		
+ui_alloc_bytes_per_frame_p95			44664.00	30432.00		
+ui_alloc_bytes_per_frame_max			53544.00	39248.00		
+heap_delta_mb			0.25	0.31		
+sha256_paint_dispatch_every_frame					6905dfdb7b362c9bee985a1c596f3cac3c5bb4e08af657a4c717174a22c87862	6905dfdb7b362c9bee985a1c596f3cac3c5bb4e08af657a4c717174a22c87862
+display_copyArea_bright_pixels					155026	120741

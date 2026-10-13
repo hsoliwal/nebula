@@ -234,6 +234,10 @@ public abstract class OscilloscopeDispatcher {
 				if (getOscilloscope().isDisposed()) {
 					return;
 				}
+				if (PARK_WHEN_HIDDEN && !(getOscilloscope().isVisible() && !getOscilloscope().getShell().getMinimized())) {
+					park(this);
+					return;
+				}
 				hookBeforeDraw(getOscilloscope(), this.pulse);
 				getOscilloscope().redraw();
 				hookAfterDraw(getOscilloscope(), this.pulse);
@@ -258,6 +262,31 @@ public abstract class OscilloscopeDispatcher {
 
 		getOscilloscope().getDisplay().syncExec(runnable);
 
+	}
+
+	/**
+	 * Same rule as the multichannel dispatcher: while the scope is not effectively visible the loop parks and the
+	 * first paint resumes it; {@code -Dorg.eclipse.nebula.widgets.oscilloscope.hiddenWork=run} keeps it running.
+	 */
+	private static final boolean PARK_WHEN_HIDDEN = !"run".equals(System.getProperty( //$NON-NLS-1$
+			"org.eclipse.nebula.widgets.oscilloscope.hiddenWork")); //$NON-NLS-1$
+	private Runnable parkedLoop;
+	private org.eclipse.swt.widgets.Listener resumeOnPaint;
+
+	private void park(Runnable loop) {
+		parkedLoop = loop;
+		if (resumeOnPaint == null) {
+			resumeOnPaint = e -> {
+				Runnable r = parkedLoop;
+				parkedLoop = null;
+				getOscilloscope().removeListener(SWT.Paint, resumeOnPaint);
+				if (r != null && !getOscilloscope().isDisposed()) {
+					getOscilloscope().getDisplay().asyncExec(r);
+				}
+			};
+		}
+		getOscilloscope().removeListener(SWT.Paint, resumeOnPaint);
+		getOscilloscope().addListener(SWT.Paint, resumeOnPaint);
 	}
 
 	@Override
