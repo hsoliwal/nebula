@@ -70,7 +70,7 @@ public final class GridModelJobs {
 			return true;
 		}
 		if (keys.length < rows) {
-			throw new IllegalArgumentException("keys.length=" + keys.length + " < " + rows);
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		final int[] snapshot = java.util.Arrays.copyOf(keys, rows);
 		final int version = permutation.getVersion();
@@ -126,7 +126,7 @@ public final class GridModelJobs {
 			return CompletableFuture.completedFuture(Boolean.TRUE);
 		}
 		if (keys.length < rows) {
-			throw new IllegalArgumentException("keys.length=" + keys.length + " < " + rows);
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		final int[] snapshot = java.util.Arrays.copyOf(keys, rows);
 		final int version = permutation.getVersion();
