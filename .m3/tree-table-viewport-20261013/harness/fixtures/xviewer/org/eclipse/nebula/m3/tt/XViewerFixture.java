@@ -100,6 +100,9 @@ public final class XViewerFixture implements TtFixture {
 		if (viewer == null) {
 			return null;
 		}
+		if (type == Object.class) {
+			return roots.get(1);
+		}
 		Object[] candidates = { viewer, viewer.getTree(), factory, nameCol, viewer.getCustomizeMgr(),
 				firstItem(), firstColumn(), roots.get(1), viewer.getLabelProvider(), viewer.getContentProvider(),
 				viewer.getFilterDataUI(), viewer.getColumnFilterDataUI(), customizeData() };

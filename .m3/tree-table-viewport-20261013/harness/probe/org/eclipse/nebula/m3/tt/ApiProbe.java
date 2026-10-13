@@ -67,8 +67,21 @@ public final class ApiProbe {
 		display.timerExec(150, closer);
 		List<String[]> out = new ArrayList<>();
 		try {
+			int done = 0;
 			for (String[] row : rows) {
-				out.add(probe(host, fixtureClass, row, visible));
+				if (++done % 100 == 0) {
+					System.err.println("probe " + done + "/" + rows.size());
+				}
+				try {
+					out.add(probe(host, fixtureClass, row, visible));
+				} catch (Throwable ex) {
+					out.add(new String[] { row[0], "PROBE_ERROR:" + describe(ex), "" });
+					for (Shell s : display.getShells()) {
+						if (s != host && !s.isDisposed()) {
+							s.dispose();
+						}
+					}
+				}
 			}
 		} finally {
 			display.timerExec(-1, closer);
