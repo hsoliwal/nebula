@@ -8455,10 +8455,7 @@ public class Grid extends Canvas {
 		final int index = item.getRowIndex();
 
 		items.remove(item);
-		if (usesIndexedRowSpans()) {
-			rowSpanIndex.remove(item);
-			rowSpanIndex.rowsChanged();
-		}
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 
 		dataVisualizer.clearRow(item);
 
