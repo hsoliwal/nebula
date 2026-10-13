@@ -103,3 +103,100 @@ view is used, so a zoom on a 4K x 4K image does not copy 16M doubles.
 | measurements | load, first paint, pan/zoom frame p50/p95/max, CPU per frame, heap, allocations per frame (ThreadMXBean) before and after |
 
 GTK and Cocoa: NOT_RUN (Win32 host only).
+
+## 6. Results (Win32, JDK 21, SWT 3.135.0, draw2d 3.23.100; javac against the jars, Tycho NOT_RUN)
+
+Before = unmodified receiver classes (`eab2a65c`), after = this branch. One JVM at a time, `-Xmx2g`, memory gate
+(free >= 4 GB, commit headroom >= 8 GB) before every JVM. Process CPU uses `getProcessCpuTime` (15.6 ms Windows
+granularity); allocations are `ThreadMXBean.getThreadAllocatedBytes` summed over all threads.
+
+### 6.1 chart_xy (XYGraph, canvas 1400x800, antialias on, 30 pan + 30 zoom + 30 same-view frames)
+
+| metric | 1M before (circular) | 1M after (packed) | 10M before (circular) | 10M after (packed) |
+|---|---|---|---|---|
+| load ms | 224.8 | 40.5 | 1041.5 | 138.0 |
+| first paint ms | 378.3 | 134.6 | 3818.8 | 191.2 |
+| heap after load MB | 121.7 | 19.2 | 1187.2 | 157.2 |
+| pan frame p50/p95/max ms | 283.9 / 377.4 / 597.2 | 60.6 / 126.2 / 156.7 | 1378.1 / 1777.6 / 1908.2 | 135.0 / 154.0 / 169.9 |
+| zoom frame p50/p95/max ms | 203.2 / 283.0 / 383.1 | 37.1 / 57.4 / 66.6 | 1128.6 / 1293.8 / 1375.7 | 125.8 / 144.0 / 157.1 |
+| same-view repaint p50 ms | 200.1 | 46.1 | 1137.4 | 102.7 |
+| process CPU per pan frame p50 ms | 328.1 | 93.8 | 1500.0 | 125.0 |
+| allocated per pan frame p50 | 42.1 MB | 0.99 MB | 405.3 MB | 1.05 MB |
+| allocated per same-view frame | 33.9 MB | 83.8 KB | 333.8 MB | 91.7 KB |
+| Control.print SHA-256 full / pan / zoom | `d0aa6fec` / `6533527f` / `fc396b11` | identical | `c9a21198` / `8afb5a1b` / `4850e3a3` | identical |
+
+The 10M before run held 10M `Sample` objects (118 bytes each measured at 1M, 1187 MB retained), sized to fit -Xmx2g.
+The remaining after-cost per frame is the rest of XYGraph (axes, tick labels, grid) and the GDI+ antialiased polyline.
+
+### 6.2 heatmap_intensity (ColorMap, IntensityGraphFigure)
+
+| metric | before | after |
+|---|---|---|
+| 48 `drawImage` outputs (every predefined map x autoscale x interpolate x shrink, double and int wrappers) | `8682b776...` | identical |
+| 4096x4096 LUT -> 1200x900 (shrink) ms p50/p95/max | 5.21 / 6.07 / 6.18 | 1.07 / 1.53 / 4.37 |
+| 4096x4096 LUT -> 4096x4096 ms p50/p95/max | 108.3 / 123.3 / 139.8 | 9.55 / 10.3 / 11.7 |
+| figure 3162x3162 crop (zoom) frame ms p50/p95/max | 98.6 / 140.6 / 169.9 | 71.2 / 95.2 / 105.0 |
+| allocated per crop frame p50 | 53.1 MB | 8.19 MB |
+| heap peak during 30 crops | 1002 MB | 145 MB |
+| Control.print SHA-256 at crop 0 / mid / end | `87f27a30` / `e6b16e90` / `da6d62c8` | identical |
+
+`IntensityGraphFigure.setDataWidth/Height` refuse more than 10,000,000 elements (`MAX_ARRAY_SIZE`, an
+`IllegalArgumentException` callers can observe), so the figure-level run uses 3162x3162 and the 4096x4096 scale test
+runs at `ColorMap.drawImage`. The limit is kept: lifting it would change a public result.
+
+### 6.3 oscilloscope_stream
+
+| metric | before | after |
+|---|---|---|
+| 8 configs x 120 frames (setValue/setValues; steady, fade, connect, percentage, progression 1-3, tail sizes, antialias, line width 1-2), paint-dispatch SHA-256 over all frames | `6905dfdb...` (2 runs) | identical (2 runs) |
+| dispatcher hooks while minimized, 2 s | 64 | 0 |
+| hooks while `setVisible(false)`, 2 s | 65 | 0 |
+| hooks in the first 1 s after restore / after `setVisible(true)` (cumulative counters) | 94 / 88 | 31 / 18 |
+| 1M samples/s for 10 s: samples pushed | 10,010,000 via `setValues` (FIFO keeps `width` values; one value drawn per column, the rest dropped) | 10,040,000 via `pushSamples` (every sample folded into a column envelope) |
+| producer CPU ms per s | 43.8 | 81.3 |
+| UI CPU ms per s | 48.4 | 207.8 |
+| frame (redraw + paint) ms p50/p95/max | 3.65 / 5.87 / 12.9 | 10.0 / 16.2 / 25.4 |
+| UI allocations per frame p50 | 44.7 KB | 30.4 KB |
+
+After draws the envelope of every sample (four vertices per column), so its frames draw more than the before frames, which draw one value per column.
+
+Envelope pixel parity (`OscilloscopeEnvelopeTest`, same GC settings as the scope): drawing first/min/max/last per column against drawing every sample at that x is identical for aliased width-1 lines in 24/24 random cases. Antialiased lines and width 2 differ (per case 0 to 536 pixels of a 50..590 x 220 image), because overlapping vertical runs blend and joins differ; that is the stated tolerance.
+The widget-level test finds 287 drawn columns equal to the folds of the pushed samples.
+
+### 6.4 Capture modes
+
+| mode | where | why |
+|---|---|---|
+| `control_print` (`Control.print(GC)` into an Image) | XYGraph and IntensityGraph pixel parity, the differential tests | deterministic, off-screen |
+| `paint_dispatch` (one `SWT.Paint` with a GC on a black Image) | oscilloscope frame parity | the scope advances its animation inside paint; `Control.print` of the unmodified scope gave different hashes in 222 of 960 frames between two identical runs |
+| `display_copyArea` (shell forced active and topmost, `new GC(display).copyArea`) | on-screen check of the oscilloscope, XYGraph and IntensityGraph benches and every example/snippet | verifies on-screen pixels; recorded, not used as parity proof where the frame count is OS-paint dependent |
+
+### 6.5 Tests
+
+| suite | before | after |
+|---|---|---|
+| xygraph.test existing (CircularBufferTest, AxisTest, TickFactoryTest) | 15/15 | 15/15 |
+| DecimationCoreTest (new) | n/a | 6/6 |
+| TraceDecimationDifferentialTest (new): 384 random views (246 decimated), 40 log-axis views (30 decimated), 20 append steps, 24 Control.print comparisons, hidden-work test | n/a | pass |
+| visualization widgets.tests, one JVM per class (9 classes) | 9/9 | 9/9 |
+| visualization widgets.tests, all 9 classes in one JVM | native crash in `swt-gdip-win32` (GDI+ font create/delete under `LinearScale.calcMargin`, hs_err pid 26828) | same crash (hs_err pid 25856); pre-existing |
+| oscilloscope.tests OscilloscopeTest | 5/5 | 5/5 |
+| OscilloscopeEnvelopeTest (new) | n/a | 2/2 |
+| GTK, Cocoa | NOT_RUN | NOT_RUN |
+
+## 7. Not done / not claimed
+
+- JNI min/max kernel: NOT_BUILT. The Java worker builds the 10M pyramid and decimates a view in the times listed in
+  `evidence/` (worker timings); there was no measured need, so the Java twin is the only implementation.
+- GWT/RWT: the shared atoms follow the GWT rules (int/double state; the one `long` is `Math.round`'s result cast at
+  once, as in `LinearScale`; `ColorMapRaster` partitions rows with a local `long` product), but the SWT #117 GWT gate
+  was NOT_RUN for these files.
+- Views with NaN or out-of-y-range samples in the visible range, step/bar/area/point traces, point markers, point style
+  providers and error bars use the unchanged per-sample loop (exact, O(visible samples)).
+- If a worker result takes longer than `waitMillis` (250 ms), the trace shows the previous decimated polyline for that
+  frame and repaints once when the result arrives; never observed in the runs above (first paint of 10M included the
+  trace).
+- Oscilloscope scrolling frames still allocate the two exact-length `int[]` lines `GC.drawPolyline` needs (about 30 KB
+  per frame for a 1200-px scope); steady scopes reuse them.
+- The shared viewport test command `run-matrix.sh` had not landed in the SWT fork when these numbers were taken (master
+  tree and open PRs checked); the leaf's own harness (`harness/`) was used.
