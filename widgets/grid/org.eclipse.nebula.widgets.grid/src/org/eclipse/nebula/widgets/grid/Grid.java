@@ -694,6 +694,18 @@ public class Grid extends Canvas {
 	/** Test switch: false restores the redraw of every item setter during paint-time SetData. */
 	boolean setDataRedrawGuard = true;
 
+	/** Top index drawn by the last body paint (origin of a blit scroll); -1 = unknown. */
+	private int paintedTopIndex = -1;
+
+	/** Test switch: false restores the full body redraw on vertical scrolling. */
+	boolean blitScroll = true;
+
+	/** Vertical scrolls served by a blit (package-private, for tests and benches). */
+	int blitScrollCount;
+
+	/** Rows skipped because they lie outside the paint clip (package-private counter). */
+	int paintCulledRows;
+
 	/** Test switch: false forces the full column walk (the unmodified algorithm). */
 	boolean columnWindowEnabled = true;
 
@@ -5439,6 +5451,7 @@ public class Grid extends Canvas {
 		final InsertMark insertMark = new InsertMark(); // we will populate these values while drawing the cells
 		paintCellCount = 0;
 		paintColumnVisits = 0;
+		paintCulledRows = 0;
 
 		final GC gc = event.gc;
 		final Rectangle originalClipping = gc.getClipping();
@@ -5597,6 +5610,7 @@ public class Grid extends Canvas {
 
 		// Z1: scrolling body.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
+			paintedTopIndex = firstVisibleIndex;
 			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
 			try (GridGCProxy bodyGc = GridGCProxy.wrap(gc).clip(bodyClipping)) {
 				paintRows(cols, false, firstItemToDraw, visibleRows, hscroll, cellSpanManager,
@@ -5983,6 +5997,11 @@ public class Grid extends Canvas {
 				? columnWindowStart(cols, (rowHeaderVisible ? rowHeaderWidth : 0) - hScroll, extraFill)
 				: 0;
 		final int windowLeft = window ? columnLeft[windowStart] : 0;
+		// Rows outside the clip paint no pixel (each row draws inside [y - 1, y + height + 1));
+		// spanning rows and the insert mark need the full walk.
+		final boolean cull = !hasSpanning && insertMarkItem == null;
+		final int clipTop = originalClipping.y;
+		final int clipBottom = originalClipping.y + originalClipping.height;
 		for (int i = 0; i < visibleRows + firstVisibleIndex - firstRow; i++) {
 
 			int x = -hScroll;
@@ -6001,6 +6020,13 @@ public class Grid extends Canvas {
 			}
 			if (item != null && !item.isVisible()) {
 				item = null;
+			}
+
+			if (item != null && cull && (y + item.getHeight() + 1 <= clipTop || y - 1 >= clipBottom)) {
+				paintCulledRows++;
+				y += item.getHeight() + 1;
+				row++;
+				continue;
 			}
 
 			if (item != null) {
@@ -8285,6 +8311,7 @@ public class Grid extends Canvas {
 	 * Scrollbar selection event handler.
 	 */
 	private void onScrollSelection(final boolean horizontal) {
+		final int oldTop = paintedTopIndex;
 		topIndex = -1;
 		bottomIndex = -1;
 		if (horizontal) {
@@ -8299,8 +8326,51 @@ public class Grid extends Canvas {
 				columnFootersVisible ? footerHeight : 0,
 				horizontal);
 		if (damage.width > 0 && damage.height > 0) {
+			if (!horizontal && blitBody(oldTop, damage)) {
+				return;
+			}
 			redraw(damage.x, damage.y, damage.width, damage.height, false);
 		}
+	}
+
+	/**
+	 * Scrolls the body by copying the pixels that stay visible and invalidating only the
+	 * exposed strip. Only when every row has the same height and the painted rows depend on
+	 * nothing but their absolute index (default renderers, no spans, pinned planes, insert mark,
+	 * column drag or cell hover feedback); otherwise the caller repaints the whole body.
+	 */
+	private boolean blitBody(final int oldTop, final Rectangle body) {
+		if (!blitScroll || oldTop < 0 || !isVisible() || !blitSafe()) {
+			return false;
+		}
+		final int newTop = getTopIndex();
+		final int dy = (oldTop - newTop) * (itemHeight + 1);
+		if (dy == 0 || Math.abs(dy) >= body.height) {
+			return false;
+		}
+		if (dy > 0) {
+			scroll(body.x, body.y + dy, body.x, body.y, body.width, body.height - dy, false);
+		} else {
+			scroll(body.x, body.y, body.x, body.y - dy, body.width, body.height + dy, false);
+		}
+		paintedTopIndex = newTop;
+		blitScrollCount++;
+		return true;
+	}
+
+	private boolean blitSafe() {
+		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
+				|| insertMarkItem != null || !hoveringDetail.isEmpty()
+				|| emptyCellRenderer.getClass() != DefaultEmptyCellRenderer.class
+				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
+			return false;
+		}
+		for (final GridColumn column : displayOrderedColumns) {
+			if (column.isVisible() && column.getCellRenderer().getClass() != DefaultCellRenderer.class) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
