@@ -46,7 +46,7 @@ jobs:
         run: >-
           mvn -B -ntp
           -f m3/reactor.xml
-          -Dtest=NebulaM3SecondPassReviewDagBindingTest,NebulaM3SecondPassBindingTest
+          -Dtest=NebulaM3SecondPassReviewDagBindingTest,NebulaM3SecondPassBindingTest,NebulaM3CurrentMasterReproofTest
           -Dsurefire.failIfNoSpecifiedTests=false
           test
 
