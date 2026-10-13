@@ -85,6 +85,15 @@ class InternalCompositeTable extends Composite implements Listener {
 
 	/** a row update was requested while the table was not visible */
 	private boolean rowsDirty;
+
+	//FLLDCIM: viewport round trip — the focused editor's caret, kept as ints by collection position
+	private final java.util.IdentityHashMap<Control, Integer> shownPosition = new java.util.IdentityHashMap<>();
+	private static final int CARET_SLOTS = 16;
+	private final int[] caretPositions = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+	private final int[] caretColumns = new int[CARET_SLOTS];
+	private final int[] caretStarts = new int[CARET_SLOTS];
+	private final int[] caretEnds = new int[CARET_SLOTS];
+	private int caretNext;
 	int clientAreaHeight;
 
 	// The prototype header/row objects and Constructors so we can duplicate
@@ -1043,12 +1052,66 @@ class InternalCompositeTable extends Composite implements Listener {
 		if (numRowsInCollection < 1) {
 			return;
 		}
+		rememberCaret(rowControl);
 		for (Iterator<?> refreshListenersIter = parent.contentProviders.iterator(); refreshListenersIter
 				.hasNext();) {
 			IRowContentProvider listener = (IRowContentProvider) refreshListenersIter
 					.next();
 			listener.refresh(parent, positionInCollection, rowControl);
 		}
+		shownPosition.put(rowControl, Integer.valueOf(positionInCollection));
+		restoreCaret(positionInCollection, rowControl);
+	}
+
+	/**
+	 * Before a row control is refreshed for another collection position, records the
+	 * caret of the focused text editor inside it by the position it was showing.
+	 */
+	private void rememberCaret(Control rowControl) {
+		Control focus = getDisplay().getFocusControl();
+		Integer shown = shownPosition.get(rowControl);
+		if (shown == null || !(rowControl instanceof Composite) || !(focus instanceof org.eclipse.swt.widgets.Text)
+				|| focus.getParent() != rowControl) {
+			return;
+		}
+		Control[] columns = ((Composite) rowControl).getChildren();
+		for (int column = 0; column < columns.length; column++) {
+			if (columns[column] == focus) {
+				Point selection = ((org.eclipse.swt.widgets.Text) focus).getSelection();
+				int slot = caretSlot(shown.intValue());
+				if (slot < 0) {
+					slot = caretNext;
+					caretNext = (caretNext + 1) % CARET_SLOTS;
+				}
+				caretPositions[slot] = shown.intValue();
+				caretColumns[slot] = column;
+				caretStarts[slot] = selection.x;
+				caretEnds[slot] = selection.y;
+				return;
+			}
+		}
+	}
+
+	/** After a refresh, puts back the caret recorded for that collection position. */
+	private void restoreCaret(int positionInCollection, Control rowControl) {
+		int slot = caretSlot(positionInCollection);
+		if (slot < 0 || !(rowControl instanceof Composite)) {
+			return;
+		}
+		Control[] columns = ((Composite) rowControl).getChildren();
+		int column = caretColumns[slot];
+		if (column < columns.length && columns[column] instanceof org.eclipse.swt.widgets.Text) {
+			((org.eclipse.swt.widgets.Text) columns[column]).setSelection(caretStarts[slot], caretEnds[slot]);
+		}
+	}
+
+	private int caretSlot(int position) {
+		for (int i = 0; i < CARET_SLOTS; i++) {
+			if (caretPositions[i] == position) {
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	// Empty table placeholder

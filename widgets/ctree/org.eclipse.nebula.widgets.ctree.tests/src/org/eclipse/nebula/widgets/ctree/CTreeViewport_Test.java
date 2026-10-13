@@ -90,6 +90,62 @@ public class CTreeViewport_Test {
 	}
 
 	@Test
+	public void stateSurvivesScrollingAwayAndBack() {
+		CTree tree = tree(2_000, 2);
+		shell.open();
+		pump();
+		tree.getItem(1).setExpanded(true);
+		tree.setSelection(tree.getItem(3));
+		tree.getItem(2).getCell(0).setChecked(true);
+		tree.setTopItem(tree.getItem(0));
+		pump();
+		String before = state(tree);
+		String pixels = pixels(tree);
+
+		tree.showItem(tree.getItem(1_999));
+		pump();
+		tree.setTopItem(tree.getItem(0));
+		pump();
+		assertEquals(before, state(tree));
+		assertEquals(pixels, pixels(tree));
+	}
+
+	private static String state(CTree tree) {
+		StringBuilder s = new StringBuilder();
+		for (CTreeItem item : tree.getSelection()) {
+			s.append(item.getText()).append(',');
+		}
+		s.append('|').append(tree.getTopItem().getText()).append('|').append(tree.getPaintedItems().size());
+		for (int i = 0; i < 6; i++) {
+			CTreeItem item = tree.getItem(i);
+			s.append('|').append(item.getText()).append(item.getExpanded()).append(item.getCell(0).getChecked());
+		}
+		return s.toString();
+	}
+
+	/** SHA-256 of the control's own rendering (Control.print), independent of window occlusion. */
+	private static String pixels(org.eclipse.swt.widgets.Control control) {
+		org.eclipse.swt.graphics.Point size = control.getSize();
+		org.eclipse.swt.graphics.Image image = new org.eclipse.swt.graphics.Image(control.getDisplay(), size.x, size.y);
+		org.eclipse.swt.graphics.GC gc = new org.eclipse.swt.graphics.GC(image);
+		try {
+			control.print(gc);
+			java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+			md.update(image.getImageData().data);
+			StringBuilder hex = new StringBuilder();
+			for (byte b : md.digest()) {
+				hex.append(String.format("%02x", b & 0xff));
+			}
+			return hex.toString();
+		} catch (java.security.NoSuchAlgorithmException ex) {
+			throw new IllegalStateException(ex);
+		} finally {
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+	@Test
 	public void bodyNeverTakesFocus() {
 		CTree tree = tree(5, 0);
 		shell.open();

@@ -126,6 +126,66 @@ public class XViewerViewport_Test {
    }
 
    @Test
+   public void stateSurvivesScrollingAwayAndBack() {
+      XViewer viewer = viewer(SWT.VIRTUAL, 20_000, 3);
+      viewer.setInputXViewer(Model.roots(20_000));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      viewer.setExpandedState(Integer.valueOf(2), true);
+      viewer.setSelection(new org.eclipse.jface.viewers.StructuredSelection(Integer.valueOf(4)));
+      tree.setTopItem(tree.getItem(0));
+      pump();
+      String before = state(viewer);
+      String pixels = pixels(tree);
+
+      tree.setTopItem(tree.getItem(19_999));
+      tree.update();
+      pump();
+      tree.setTopItem(tree.getItem(0));
+      tree.update();
+      pump();
+      assertEquals(before, state(viewer));
+      assertEquals(pixels, pixels(tree));
+   }
+
+   private static String state(XViewer viewer) {
+      Tree tree = viewer.getTree();
+      StringBuilder s = new StringBuilder();
+      s.append(((org.eclipse.jface.viewers.IStructuredSelection) viewer.getSelection()).toList());
+      s.append('|').append(java.util.Arrays.asList(viewer.getExpandedElements()));
+      s.append('|').append(tree.getTopItem().getText(0));
+      s.append('|').append(viewer.getStatusLabel().getText());
+      for (int i = 0; i < 8; i++) {
+         s.append('|').append(tree.getItem(i).getText(0)).append(tree.getItem(i).getExpanded());
+      }
+      return s.toString();
+   }
+
+   /** SHA-256 of the control's own rendering (Control.print), independent of window occlusion. */
+   static String pixels(org.eclipse.swt.widgets.Control control) {
+      org.eclipse.swt.graphics.Point size = control.getSize();
+      Image image = new Image(control.getDisplay(), size.x, size.y);
+      org.eclipse.swt.graphics.GC gc = new org.eclipse.swt.graphics.GC(image);
+      try {
+         control.print(gc);
+         org.eclipse.swt.graphics.ImageData data = image.getImageData();
+         java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+         md.update(data.data);
+         StringBuilder hex = new StringBuilder();
+         for (byte b : md.digest()) {
+            hex.append(String.format("%02x", b & 0xff));
+         }
+         return hex.toString();
+      } catch (java.security.NoSuchAlgorithmException ex) {
+         throw new IllegalStateException(ex);
+      } finally {
+         gc.dispose();
+         image.dispose();
+      }
+   }
+
+   @Test
    public void plainTreeKeepsCallerContentProvider() {
       XViewer viewer = viewer(SWT.NONE, 5, 1);
       assertTrue(viewer.getContentProvider() instanceof Model);
