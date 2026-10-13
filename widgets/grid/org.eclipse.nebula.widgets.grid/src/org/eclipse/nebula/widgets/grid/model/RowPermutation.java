@@ -53,7 +53,8 @@ public final class RowPermutation implements RowView {
 	private long[] bits = NO_LONGS;
 	private int[] visible = NO_INTS;
 	private int[] inverse = NO_INTS;
-	private final IntKeyComparator keyComparator = new IntKeyComparator();
+	private static final int RADIX = 1 << 11;
+	private int[] radixCount = NO_INTS;
 
 	/**
 	 * Creates an identity permutation over no rows.
@@ -218,13 +219,52 @@ public final class RowPermutation implements RowView {
 		if (keys.length < modelCount) {
 			throw new IllegalArgumentException("keys.length=" + keys.length + " < modelCount=" + modelCount);
 		}
-		keyComparator.keys = keys;
-		keyComparator.descending = descending;
-		try {
-			sort(keyComparator);
-		} finally {
-			keyComparator.keys = NO_INTS;
+		// LSD radix sort (11/11/10-bit digits) of the identity order: stable, so ties keep model
+		// order, which equals the model-row tie-break of sort(RowComparator). The inverse array
+		// is the scatter buffer (a sort invalidates it anyway): no allocation after the first sort.
+		int[] src = orderArray();
+		int[] dst = inverseArray();
+		for (int i = 0; i < modelCount; i++) {
+			src[i] = i;
 		}
+		if (radixCount.length == 0) {
+			radixCount = new int[RADIX + 1];
+		}
+		final int flip = descending ? -1 : 0;
+		for (int shift = 0; shift < 32; shift += 11) {
+			if (radixPass(keys, src, dst, shift, flip)) {
+				final int[] t = src;
+				src = dst;
+				dst = t;
+			}
+		}
+		order = src;
+		inverse = dst;
+		flags |= SORTED;
+		changed();
+	}
+
+	/** One stable counting pass; returns false (no scatter) when every row has the same digit. */
+	private boolean radixPass(final int[] keys, final int[] src, final int[] dst, final int shift, final int flip) {
+		final int[] count = radixCount;
+		final int mask = shift == 22 ? 0x3ff : 0x7ff;
+		Arrays.fill(count, 0);
+		for (int i = 0; i < modelCount; i++) {
+			count[((((keys[src[i]] ^ Integer.MIN_VALUE) ^ flip) >>> shift) & mask) + 1]++;
+		}
+		for (int d = 1; d <= RADIX; d++) {
+			if (count[d] == modelCount) {
+				return false;
+			}
+		}
+		for (int d = 1; d <= RADIX; d++) {
+			count[d] += count[d - 1];
+		}
+		for (int i = 0; i < modelCount; i++) {
+			final int m = src[i];
+			dst[count[(((keys[m] ^ Integer.MIN_VALUE) ^ flip) >>> shift) & mask]++] = m;
+		}
+		return true;
 	}
 
 	/**
@@ -413,23 +453,6 @@ public final class RowPermutation implements RowView {
 	private static void checkIndex(final int index, final int size) {
 		if (index < 0 || index >= size) {
 			throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
-		}
-	}
-
-	/** Reused key comparator: no allocation per sort. */
-	private static final class IntKeyComparator implements RowComparator {
-		int[] keys = NO_INTS;
-		boolean descending;
-
-		@Override
-		public int compare(final int a, final int b) {
-			final int ka = keys[a];
-			final int kb = keys[b];
-			if (ka == kb) {
-				return 0;
-			}
-			final int c = ka < kb ? -1 : 1;
-			return descending ? -c : c;
 		}
 	}
 }

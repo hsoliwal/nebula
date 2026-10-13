@@ -75,6 +75,7 @@ public final class GridModelBench {
 			System.out.println(label + " " + driverName + " " + metric + "=" + value + " " + unit);
 		};
 
+		report.put("cpu_load_start", cpuLoad(), "percent");
 		final int[] keys = new int[rows];
 		final Random random = new Random(20261013L);
 		for (int m = 0; m < rows; m++) {
@@ -161,23 +162,28 @@ public final class GridModelBench {
 	private static void timed(final Report report, final String metric, final Runnable op, final Display display,
 			final Grid grid) {
 		drain(display);
+		final long c0 = cpu();
 		final long t0 = System.nanoTime();
 		op.run();
 		grid.update();
 		final long t1 = System.nanoTime();
 		report.put(metric, ms(t1 - t0), "ms");
+		report.put(metric + "_cpu", ms(cpu() - c0), "ms");
 		drain(display);
 	}
 
 	private static void scroll(final Report report, final String name, final Grid grid, final Display display,
 			final boolean vertical) {
 		final long[] frames = new long[FRAMES];
+		final long[] cpuFrames = new long[FRAMES];
+		long cells = 0;
 		final ScrollBar bar = vertical ? grid.getVerticalBar() : grid.getHorizontalBar();
 		final int max = Math.max(1, bar.getMaximum() - bar.getThumb());
 		final int step = Math.max(1, vertical ? Math.min(37, max / FRAMES) : Math.min(41, max / FRAMES));
 		drain(display);
 		for (int i = 0; i < FRAMES; i++) {
 			final int target = Math.min(max, (i + 1) * step);
+			final long c0 = cpu();
 			final long t0 = System.nanoTime();
 			if (vertical) {
 				grid.setTopIndex(Math.min(grid.getItemCount() - 1, target));
@@ -187,8 +193,14 @@ public final class GridModelBench {
 			}
 			grid.update();
 			frames[i] = System.nanoTime() - t0;
+			cpuFrames[i] = cpu() - c0;
+			cells += intField(grid, "paintCellCount");
 		}
 		Arrays.sort(frames);
+		Arrays.sort(cpuFrames);
+		report.put(name + "_cpu_p50", ms(cpuFrames[FRAMES / 2]), "ms");
+		report.put(name + "_cpu_p95", ms(cpuFrames[(FRAMES * 95) / 100]), "ms");
+		report.put(name + "_cells_per_frame", cells < 0 ? "NOT_INSTRUMENTED" : Long.toString(cells / FRAMES), "cells");
 		report.put(name + "_p50", ms(frames[FRAMES / 2]), "ms");
 		report.put(name + "_p95", ms(frames[(FRAMES * 95) / 100]), "ms");
 		report.put(name + "_max", ms(frames[FRAMES - 1]), "ms");
@@ -203,6 +215,35 @@ public final class GridModelBench {
 
 	private static String ms(final long nanos) {
 		return String.format(java.util.Locale.ROOT, "%.3f", nanos / 1e6);
+	}
+
+	private static long cpu() {
+		return ManagementFactory.getThreadMXBean().getCurrentThreadCpuTime();
+	}
+
+	private static long intField(final Grid grid, final String name) {
+		try {
+			final java.lang.reflect.Field f = Grid.class.getDeclaredField(name);
+			f.setAccessible(true);
+			return f.getInt(grid);
+		} catch (final ReflectiveOperationException e) {
+			return Long.MIN_VALUE / 4;
+		}
+	}
+
+	private static String cpuLoad() {
+		try {
+			final Process p = new ProcessBuilder("powershell", "-NoProfile", "-Command",
+					"(Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average")
+					.redirectErrorStream(true).start();
+			try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+				final String line = r.readLine();
+				p.waitFor();
+				return line == null ? "?" : line.trim();
+			}
+		} catch (final Exception e) {
+			return "?";
+		}
 	}
 
 	private static long allocated() {

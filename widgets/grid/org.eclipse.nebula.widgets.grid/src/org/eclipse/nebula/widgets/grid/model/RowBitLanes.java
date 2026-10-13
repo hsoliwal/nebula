@@ -320,7 +320,7 @@ public final class RowBitLanes {
 			w = new long[need];
 			lanes[lane] = w;
 		} else if (w.length < need) {
-			w = Arrays.copyOf(w, Math.max(need, Math.min(w.length * 2, words(rowCount) + 1)));
+			w = Arrays.copyOf(w, Math.min(words(Math.max(rows, rowCount)) + 1, HeapGrowth.capacity(w.length, need, 8)));
 			lanes[lane] = w;
 		}
 		return w;

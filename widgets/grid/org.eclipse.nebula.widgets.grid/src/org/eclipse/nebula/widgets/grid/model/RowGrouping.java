@@ -354,7 +354,7 @@ public final class RowGrouping implements RowView {
 				tableKeys[h] = key;
 				tableGroups[h] = groupCount;
 				if (groupKey.length <= groupCount) {
-					groupKey = Arrays.copyOf(groupKey, Math.max(16, groupKey.length * 2));
+					groupKey = Arrays.copyOf(groupKey, HeapGrowth.capacity(groupKey.length, groupCount + 1, 4));
 				}
 				groupKey[groupCount++] = key;
 			}

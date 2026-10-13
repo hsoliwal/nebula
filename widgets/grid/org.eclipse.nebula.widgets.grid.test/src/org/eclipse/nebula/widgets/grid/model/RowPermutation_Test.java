@@ -210,9 +210,11 @@ public class RowPermutation_Test {
 			p.setFilter(m -> (m % 3) == 0);
 			p.viewIndex(0);
 		}
-		assertTrue(order == field(p, "order"));
+		// the radix sort swaps order and its scatter buffer (inverse): same two arrays, any parity
+		final Object o2 = field(p, "order");
+		final Object i2 = field(p, "inverse");
+		assertTrue((order == o2 && inverse == i2) || (order == i2 && inverse == o2));
 		assertTrue(visible == field(p, "visible"));
-		assertTrue(inverse == field(p, "inverse"));
 		assertTrue(bits == field(p, "bits"));
 	}
 

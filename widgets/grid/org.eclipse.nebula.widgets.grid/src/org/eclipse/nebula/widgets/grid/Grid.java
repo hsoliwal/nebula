@@ -643,6 +643,15 @@ public class Grid extends Canvas {
 	/** Reused probe for {@code selectedCells.contains}: no Point per painted cell. */
 	private final Point cellProbe = new Point(0, 0);
 
+	/** True while {@link #onPaint(PaintEvent)} runs. */
+	private boolean painting;
+
+	/** Item whose SWT.SetData callback is running, or null. */
+	private GridItem virtualDataItem;
+
+	/** Test switch: false restores the redraw of every item setter during paint-time SetData. */
+	boolean setDataRedrawGuard = true;
+
 	/** Test switch: false forces the full column walk (the unmodified algorithm). */
 	boolean columnWindowEnabled = true;
 
@@ -5346,6 +5355,15 @@ public class Grid extends Canvas {
 	 * @param event paint event
 	 */
 	private void onPaint(final PaintEvent event) {
+		painting = true;
+		try {
+			paintNow(event);
+		} finally {
+			painting = false;
+		}
+	}
+
+	private void paintNow(final PaintEvent event) {
 		final InsertMark insertMark = new InsertMark(); // we will populate these values while drawing the cells
 		paintCellCount = 0;
 		paintColumnVisits = 0;
@@ -10113,6 +10131,33 @@ public class Grid extends Canvas {
 		if (rowView != null) {
 			applyRowView(rowView.getViewCount(), rowView, false);
 		}
+	}
+
+	/**
+	 * Runs a SetData callback for {@code item} and remembers it, so that paint-only setters of
+	 * that item do not invalidate the Grid the paint is drawing.
+	 */
+	void fireSetData(final GridItem item, final Event event) {
+		final GridItem outer = virtualDataItem;
+		virtualDataItem = item;
+		try {
+			notifyListeners(SWT.SetData, event);
+		} finally {
+			virtualDataItem = outer;
+		}
+	}
+
+	/**
+	 * Redraw for a paint-only change (text, colour, check state) of {@code item}. Skipped while
+	 * the change comes from the SetData callback that this paint fired for the same item: every
+	 * item getter fires SetData before it returns, so the running paint already draws the new
+	 * value and a second full paint would only repeat it (and flicker).
+	 */
+	void redrawForItemData(final GridItem item) {
+		if (setDataRedrawGuard && painting && virtualDataItem == item) {
+			return;
+		}
+		redraw();
 	}
 
 	/**

@@ -1170,7 +1170,7 @@ public class GridItem extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		parent.getDataVisualizer().setBackground(this, index, background);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -1189,7 +1189,7 @@ public class GridItem extends Item {
 	public void setChecked(boolean checked) {
 		checkWidget();
 		parent.getDataVisualizer().setChecked(this, 0, checked);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -1210,7 +1210,7 @@ public class GridItem extends Item {
 	public void setChecked(int index, boolean checked) {
 		checkWidget();
 		parent.getDataVisualizer().setChecked(this, index, checked);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -1492,7 +1492,7 @@ public class GridItem extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		parent.getDataVisualizer().setForeground(this, index, foreground);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -1513,7 +1513,7 @@ public class GridItem extends Item {
 	public void setGrayed(boolean grayed) {
 		checkWidget();
 		parent.getDataVisualizer().setGrayed(this, 0, grayed);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -1536,7 +1536,7 @@ public class GridItem extends Item {
 	public void setGrayed(int index, boolean grayed) {
 		checkWidget();
 		parent.getDataVisualizer().setGrayed(this, index, grayed);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -1677,7 +1677,7 @@ public class GridItem extends Item {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		parent.getDataVisualizer().setText(this, index, text);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -1686,7 +1686,7 @@ public class GridItem extends Item {
 	@Override
 	public void setText(String string) {
 		parent.getDataVisualizer().setText(this, 0, string);
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
@@ -2104,7 +2104,7 @@ public class GridItem extends Item {
 			} else {
 				event.index = parentItem.indexOf(this);
 			}
-			getParent().notifyListeners(SWT.SetData, event);
+			getParent().fireSetData(this, event);
 		}
 	}
 
