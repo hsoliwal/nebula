@@ -6842,6 +6842,54 @@ public class Grid extends Canvas {
 	 * Manages the state of the scrollbars when new items are added or the bounds
 	 * are changed.
 	 */
+	/** Scroll bar visibility changes made by {@link #updateScrollbars()} (package-private counter). */
+	int scrollbarToggles;
+
+	/**
+	 * Computes the result of the two visibility passes of {@link #updateScrollbars()} on
+	 * booleans (the client area grows or shrinks by the native bar sizes) and applies it with at
+	 * most one visibility change per bar, instead of showing and hiding the bars in between.
+	 * Only for the native scroll bars, whose visibility is what shrinks the client area.
+	 *
+	 * @return false when the bars are not both native (the caller runs the passes)
+	 */
+	private boolean settleScrollbarsArithmetically(final Point preferredSize, final Rectangle clientArea) {
+		if (!(vScroll instanceof ScrollBarProxyAdapter) || !(hScroll instanceof ScrollBarProxyAdapter)
+				|| getVerticalBar() == null || getHorizontalBar() == null) {
+			return false;
+		}
+		final boolean v0 = vScroll.getVisible();
+		final boolean h0 = hScroll.getVisible();
+		final int barWidth = getVerticalBar().getSize().x;
+		final int barHeight = getHorizontalBar().getSize().y;
+		final int bareWidth = clientArea.width + (v0 ? barWidth : 0);
+		final int bareHeight = clientArea.height + (h0 ? barHeight : 0);
+		// pass 1 on the current client area, pass 2 on the area left by pass 1
+		final boolean v1 = preferredSize.y > clientArea.height;
+		final boolean h1 = preferredSize.x > clientArea.width;
+		final boolean v2 = preferredSize.y > bareHeight - (h1 ? barHeight : 0);
+		final boolean h2 = preferredSize.x > bareWidth - (v1 ? barWidth : 0);
+		if (!v1 || !v2) {
+			vScroll.setValues(0, 0, 1, 1, 1, 1);
+		}
+		if (!h1 || !h2) {
+			hScroll.setValues(0, 0, 1, 1, 1, 1);
+		}
+		if (v2 != v0) {
+			vScroll.setVisible(v2);
+			scrollbarToggles++;
+		}
+		if (h2 != h0) {
+			hScroll.setVisible(h2);
+			scrollbarToggles++;
+		}
+		// the arithmetic must match the real client area (bar metrics at fractional zoom);
+		// otherwise let the caller run the measured passes from here
+		final Rectangle settled = getClientArea();
+		return settled.width == bareWidth - (v2 ? barWidth : 0)
+				&& settled.height == bareHeight - (h2 ? barHeight : 0);
+	}
+
 	private void updateScrollbars() {
 		final Point preferredSize = getTableSize();
 
@@ -6858,6 +6906,10 @@ public class Grid extends Canvas {
 		// that if a scrollbar is turned on/off, the other scrollbar's
 		// visibility may be affected (more
 		// area may have been added/removed.
+		if (settleScrollbarsArithmetically(preferredSize, clientArea)) {
+			clientArea = getClientArea();
+		} else {
+		clientArea = getClientArea();
 		for (int doublePass = 1; doublePass <= 2; doublePass++) {
 
 			if (preferredSize.y > clientArea.height) {
@@ -6876,6 +6928,7 @@ public class Grid extends Canvas {
 			// get the clientArea again with the now visible/invisible
 			// scrollbars
 			clientArea = getClientArea();
+		}
 		}
 
 		// if the scrollbar is visible set its values
