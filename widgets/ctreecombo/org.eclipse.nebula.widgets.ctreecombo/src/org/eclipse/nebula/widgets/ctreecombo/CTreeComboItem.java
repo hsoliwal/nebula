@@ -951,6 +951,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void setExpanded(boolean expand) {
 		checkWidget();
+		parent.materialize(this);
 		if (checkRealItem()) {
 			realTreeItem.setExpanded(expand);
 		}
@@ -969,6 +970,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void setItemCount(int count) {
 		checkWidget();
+		parent.materialize(this);
 		if (checkRealItem()) {
 			realTreeItem.setItemCount(count);
 		}
@@ -999,6 +1001,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void clear(int index, boolean all) {
 		checkWidget();
+		parent.materialize(this);
 		realTreeItem.clear(index, all);
 	}
 
@@ -1022,6 +1025,7 @@ public class CTreeComboItem extends Item {
 	 */
 	public void clearAll(boolean all) {
 		checkWidget();
+		parent.materialize(this);
 		realTreeItem.clearAll(all);
 	}
 
@@ -1032,6 +1036,16 @@ public class CTreeComboItem extends Item {
 		} else {
 			ti = new TreeItem(tree, getStyle());
 		}
+		bindRealTreeItem(ti, numberOfColumns);
+	}
+
+	/** live list of this item's children, for the virtual drop-down rows */
+	List<CTreeComboItem> childList() {
+		return childItems;
+	}
+
+	/** copies this item's attributes onto {@code ti} and binds it as this item's real tree item */
+	void bindRealTreeItem(TreeItem ti, int numberOfColumns) {
 
 		if (getImage() != null) {
 			ti.setImage(getImage());

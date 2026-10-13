@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -35,11 +37,18 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.resource.FontDescriptor;
 import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.IBaseLabelProvider;
+import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ILazyTreeContentProvider;
+import org.eclipse.jface.viewers.ILazyTreePathContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.TreePath;
+import org.eclipse.jface.viewers.TreePathViewerSorter;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.jface.viewers.ViewerComparator;
+import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.jface.viewers.ViewerRow;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.nebula.widgets.xviewer.action.TableCustomizationAction;
@@ -66,10 +75,12 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Tree;
@@ -105,6 +116,11 @@ public class XViewer extends TreeViewer {
    private static final Map<Composite, Composite> parentToTopComposites = new HashMap<>();
    private boolean debugLoading = "true".equals(System.getProperty("DebugLoading"));
    private final Map<String, Long> preComputeElapsedTime = new HashMap<>();
+   // viewport state; objects exist only for rows the native tree or the API asked for
+   private XViewerViewportContentProvider viewport;
+   private final Set<TreeItem> viewportExpanded = new HashSet<>();
+   private Font statusBoldFont;
+   private boolean statusLayoutDirty;
 
    public XViewer(Composite parent, int style, IXViewerFactory xViewerFactory) {
       this(parent, style, xViewerFactory, false, false);
@@ -160,6 +176,10 @@ public class XViewer extends TreeViewer {
 
       tree.setHeaderVisible(true);
       tree.setLinesVisible(true);
+      if ((tree.getStyle() & SWT.VIRTUAL) != 0) {
+         tree.addListener(SWT.Expand, event -> trackExpanded(event.item));
+      }
+      tree.addListener(SWT.Dispose, event -> disposeStatusFont());
       setUseHashlookup(true);
       setupCtrlKeyListener();
       if (xViewerFactory.isCellGradientOn()) {
@@ -209,6 +229,14 @@ public class XViewer extends TreeViewer {
          menuManager.removeAll();
          menuManager.dispose();
       }
+      disposeStatusFont();
+   }
+
+   private void disposeStatusFont() {
+      if (statusBoldFont != null && !statusBoldFont.isDisposed()) {
+         statusBoldFont.dispose();
+      }
+      statusBoldFont = null;
    }
 
    @Override
@@ -269,7 +297,9 @@ public class XViewer extends TreeViewer {
          }
 
          if (xViewerFactory.isLoadedStatusLabelAvailable()) {
-            filterText = new StyledText(searchComp, SWT.NONE);
+            // the status line is a helper surface and never takes focus
+            filterText = new StyledText(searchComp, SWT.NO_FOCUS);
+            filterText.addListener(SWT.Paint, event -> catchUpStatusLayout());
             filterText.setText(" "); //$NON-NLS-1$
             filterText.setLayoutData(new GridData(SWT.FILL, SWT.NONE, true, false));
             filterText.addListener(SWT.MouseUp, getCustomizationMouseListener());
@@ -647,7 +677,7 @@ public class XViewer extends TreeViewer {
       } else {
          // Status Line 1
          int loadedNum = 0;
-         int visibleNum = getVisibleItemCount(getTree().getItems());
+         int visibleNum = viewport == null ? getVisibleItemCount(getTree().getItems()) : viewportVisibleCount();
          if (getRoot() != null && ((ITreeContentProvider) getContentProvider()) != null) {
             loadedNum = ((ITreeContentProvider) getContentProvider()).getChildren(getRoot()).length;
          }
@@ -679,12 +709,21 @@ public class XViewer extends TreeViewer {
       // Display status lines
       String str = sb.toString();
       filterText.setText(str);
-      filterText.getParent().getParent().layout();
+      if (filterText.isVisible()) {
+         statusLayoutDirty = false;
+         filterText.getParent().getParent().layout();
+      } else {
+         // no layout while not effectively visible; caught up once on first paint
+         statusLayoutDirty = true;
+      }
       filterText.setToolTipText(str);
       filterText.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
       filterText.setWordWrap(false);
-      FontDescriptor boldDescriptor = FontDescriptor.createFrom(filterText.getFont()).setStyle(SWT.BOLD);
-      filterText.setFont(boldDescriptor.createFont(Display.getCurrent()));
+      if (statusBoldFont == null || statusBoldFont.isDisposed()) {
+         FontDescriptor boldDescriptor = FontDescriptor.createFrom(filterText.getFont()).setStyle(SWT.BOLD);
+         statusBoldFont = boldDescriptor.createFont(Display.getCurrent());
+      }
+      filterText.setFont(statusBoldFont);
 
       if (loading) {
          filterText.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
@@ -702,6 +741,17 @@ public class XViewer extends TreeViewer {
          filterText.setStyleRange(filterStyleRange);
       } else {
          filterText.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+      }
+   }
+
+   private void catchUpStatusLayout() {
+      if (statusLayoutDirty && filterText != null && !filterText.isDisposed()) {
+         statusLayoutDirty = false;
+         Display.getCurrent().asyncExec(() -> {
+            if (!filterText.isDisposed()) {
+               filterText.getParent().getParent().layout();
+            }
+         });
       }
    }
 
@@ -846,15 +896,13 @@ public class XViewer extends TreeViewer {
       TreeItem itemToReturn = getTree().getItem(point);
 
       if (itemToReturn == null) {
-         int sum;
-         sum = 0;
-         TreeItem[] allItems = getTree().getItems();
-         for (TreeItem item : allItems) {
-            sum = sum + getTree().getItemHeight();
-            if (sum > point.y) {
-               itemToReturn = item;
-               break;
-            }
+         // uniform row height: row = y / height, no root array (same result as the summing scan)
+         Tree tree = getTree();
+         int count = tree.getItemCount();
+         int height = tree.getItemHeight();
+         int row = point.y < height ? 0 : point.y / height;
+         if (count > 0 && (height > 0 || point.y < 0) && row < count) {
+            itemToReturn = tree.getItem(row);
          }
       }
       return itemToReturn;
@@ -878,7 +926,7 @@ public class XViewer extends TreeViewer {
       if (baseLabelProvider instanceof XViewerLabelProvider) {
          XViewerLabelProvider labelProvider = (XViewerLabelProvider) baseLabelProvider;
 
-         TreeItem[] items = getTree().getItems();
+         TreeItem[] items = viewport == null ? getTree().getItems() : materializedRootItems();
          for (TreeItem item : items) {
 
             ViewerRow viewerRow = getViewerRowFromItem(item);
@@ -949,6 +997,155 @@ public class XViewer extends TreeViewer {
 
    public Map<String, Long> getPreComputeElapsedTime() {
       return preComputeElapsedTime;
+   }
+
+   /**
+    * Sets the content provider. When the tree was created with {@code SWT.VIRTUAL} and the provider is a plain
+    * {@link ITreeContentProvider}, it is served through an {@link XViewerViewportContentProvider} so that only rows the
+    * native tree shows are materialized; {@link #getContentProvider()} then returns that bridge and
+    * {@link XViewerViewportContentProvider#getDelegate()} returns the provider given here.
+    */
+   @Override
+   public void setContentProvider(IContentProvider provider) {
+      boolean lazy = provider instanceof ILazyTreeContentProvider || provider instanceof ILazyTreePathContentProvider;
+      if (isViewport() && provider instanceof ITreeContentProvider && !lazy) {
+         viewport = new XViewerViewportContentProvider(this, (ITreeContentProvider) provider);
+         super.setContentProvider(viewport);
+      } else {
+         viewport = null;
+         super.setContentProvider(provider);
+      }
+   }
+
+   /**
+    * @return true if the tree was created with {@code SWT.VIRTUAL}, so the viewer works as a viewport over the model
+    * @since 1.1
+    */
+   public boolean isViewport() {
+      Tree tree = getTree();
+      return tree != null && !tree.isDisposed() && (tree.getStyle() & SWT.VIRTUAL) != 0;
+   }
+
+   /**
+    * @return rows materialized by the viewport bridge since the last structural refresh, or -1 when the viewer is not a
+    * viewport over a plain tree content provider
+    * @since 1.1
+    */
+   public int getViewportMaterializedCount() {
+      return viewport == null ? -1 : viewport.getMaterializedCount();
+   }
+
+   /**
+    * Filtered and sorted children exactly as {@code AbstractTreeViewer#getSortedChildren} orders them.
+    */
+   Object[] viewportSortedChildren(Object parent, Object[] raw) {
+      Object[] result = raw;
+      for (ViewerFilter filter : getFilters()) {
+         result = filter.filter(this, parent, result);
+      }
+      ViewerComparator comparator = getComparator();
+      if (comparator != null) {
+         if (result == raw) {
+            result = result.clone();
+         }
+         if (comparator instanceof TreePathViewerSorter) {
+            ((TreePathViewerSorter) comparator).sort(this, viewportPath(parent), result);
+         } else {
+            comparator.sort(this, result);
+         }
+      }
+      return result;
+   }
+
+   private TreePath viewportPath(Object element) {
+      LinkedList<Object> segments = new LinkedList<>();
+      Object input = getInput();
+      for (Object e = element; e != null && e != input && !e.equals(input); e = viewport.getParent(e)) {
+         segments.addFirst(e);
+      }
+      return new TreePath(segments.toArray());
+   }
+
+   @Override
+   protected void internalRefresh(Object element, boolean updateLabels) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.internalRefresh(element, updateLabels);
+   }
+
+   @Override
+   public void add(Object parentElementOrTreePath, Object... childElements) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.add(parentElementOrTreePath, childElements);
+   }
+
+   @Override
+   public void insert(Object parentElementOrTreePath, Object element, int position) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.insert(parentElementOrTreePath, element, position);
+   }
+
+   @Override
+   public void remove(Object... elementsOrTreePaths) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.remove(elementsOrTreePaths);
+   }
+
+   @Override
+   protected void setExpanded(Item node, boolean expand) {
+      super.setExpanded(node, expand);
+      if (expand) {
+         trackExpanded(node);
+      }
+   }
+
+   private void trackExpanded(Object item) {
+      if (viewport != null && item instanceof TreeItem) {
+         viewportExpanded.add((TreeItem) item);
+      }
+   }
+
+   /**
+    * Visible row count for a viewport tree: root count plus the child counts of expanded items whose ancestors are all
+    * expanded. Only items the tree or the API expanded are visited, never the full root array.
+    */
+   private int viewportVisibleCount() {
+      int count = getTree().getItemCount();
+      viewportExpanded.removeIf(TreeItem::isDisposed);
+      for (TreeItem item : viewportExpanded) {
+         if (item.getExpanded() && ancestorsExpanded(item)) {
+            count += item.getItemCount();
+         }
+      }
+      return count;
+   }
+
+   private static boolean ancestorsExpanded(TreeItem item) {
+      for (TreeItem p = item.getParentItem(); p != null; p = p.getParentItem()) {
+         if (!p.getExpanded()) {
+            return false;
+         }
+      }
+      return true;
+   }
+
+   private TreeItem[] materializedRootItems() {
+      Tree tree = getTree();
+      int limit = Math.min(tree.getItemCount(), viewport.materializedRootLimit());
+      List<TreeItem> items = new ArrayList<>();
+      for (int i = 0; i < limit; i++) {
+         if (viewport.isRootMaterialized(i)) {
+            items.add(tree.getItem(i));
+         }
+      }
+      return items.toArray(new TreeItem[items.size()]);
    }
 
 }

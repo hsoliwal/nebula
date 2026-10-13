@@ -1,0 +1,15 @@
+ui-lock acquired after 0s: sh /c/m3-work-c/nebula-tt-build/scripts/junit.sh tablecombo pre /c/m3-work-c/nebula-tt-build/upstream/705t org.eclipse.nebula.widgets.tablecombo.TableComboClosePopupTests
+JUnit version 4.13.2
+..E
+Time: 0.821
+There was 1 failure:
+1) popupStaysOpenAfterSelectionWhenClosePopupAfterSelectionIsFalse(org.eclipse.nebula.widgets.tablecombo.TableComboClosePopupTests)
+java.lang.AssertionError: drop-down must stay open
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.eclipse.nebula.widgets.tablecombo.TableComboClosePopupTests.popupStaysOpenAfterSelectionWhenClosePopupAfterSelectionIsFalse(TableComboClosePopupTests.java:79)
+
+FAILURES!!!
+Tests run: 2,  Failures: 1
+
+junit rc=1

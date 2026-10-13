@@ -263,7 +263,8 @@ public class CTreeCell {
 	/**
 	 * indicates whether or not this cell is actually painted to the screen.
 	 */
-	private   boolean painted = false;
+	/** this cell's slot in {@link CTree#lanes}: painted, hasChild, inited, holdChild, check state live there */
+	private final int slot;
 	/**
 	 * If true, the toggle will not be drawn, but will take up space
 	 */
@@ -334,7 +335,6 @@ public class CTreeCell {
 	/**
 	 * indicates whether or not this cell has a child area.
 	 */
-	private boolean hasChild;
 
 	/**
 	 * the position of the scroll bars the <b>last</b> time this cell was painted
@@ -383,11 +383,8 @@ public class CTreeCell {
 
 	private PropertyChangeSupport pcListeners;
 
-	private boolean isCheck = false;
 
-	private boolean isChecked = false;
 	
-	private boolean inited = false;
 
 	private Image[] images;
 	private String text;
@@ -413,14 +410,15 @@ public class CTreeCell {
 
 	protected boolean holdControl = true;
 	
-	private boolean holdChild = true;
 
 	public CTreeCell(CTreeItem item, int style) {
 		this.ctree = item.ctree;
 		this.item = item;
 		this.style = style;
+		this.slot = ctree.lanes.allocate();
+		ctree.lanes.set(CTreeBitLanes.CELL_HOLD_CHILD, slot, true);
 		if((style & SWT.CHECK) != 0) {
-			isCheck = true;
+			ctree.lanes.set(CTreeBitLanes.CELL_CHECKABLE, slot, true);
 		}
 	}
 
@@ -520,7 +518,7 @@ public class CTreeCell {
             size.x += toggleWidth;
         }
 
-		if(isCheck) {
+		if(ctree.lanes.get(CTreeBitLanes.CELL_CHECKABLE, slot)) {
 // TODO: check is null unless cell is painted - request from ctree's painted list
 //			Point cSize = check.computeSize(wHint, hHint);
 //			size.x += cSize.x;
@@ -583,7 +581,7 @@ public class CTreeCell {
 		Button b = new Button(ctree.body, SWT.CHECK);
 		b.setBackground(activeBackground);
 		b.setForeground(activeForeground);
-		b.setSelection(isChecked);
+		b.setSelection(ctree.lanes.get(CTreeBitLanes.CELL_CHECKED, slot));
 		b.addListener(SWT.FocusIn, new Listener() {
 			public void handleEvent(Event event) {
                 if (SWT.FocusIn == event.type) {
@@ -594,7 +592,7 @@ public class CTreeCell {
 		b.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event event) {
 				if(SWT.Selection == event.type) {
-					isChecked = ((Button) event.widget).getSelection();
+					ctree.lanes.set(CTreeBitLanes.CELL_CHECKED, slot, ((Button) event.widget).getSelection());
 				}
 			}
 		});
@@ -703,7 +701,7 @@ public class CTreeCell {
 	 * @return boolean representing the check state of the cell.
 	 */
 	public boolean getChecked() {
-		return isChecked;
+		return ctree.lanes.get(CTreeBitLanes.CELL_CHECKED, slot);
 	}
 
 	/**
@@ -797,7 +795,7 @@ public class CTreeCell {
 	}
 
 	public boolean getPainted() {
-		return painted;
+		return ctree.lanes.get(CTreeBitLanes.CELL_PAINTED, slot);
 	}
 	
 	public Point getSize() {
@@ -874,10 +872,10 @@ public class CTreeCell {
 		iBounds = new Rectangle[0];
 		tBounds = new Rectangle(0,0,0,0);
 		if((style & SWT.DROP_DOWN) != 0) {
-			hasChild = true;
+			ctree.lanes.set(CTreeBitLanes.CELL_HAS_CHILD, slot, true);
 			setChildVisible(true);
 		} else {
-			hasChild = false;
+			ctree.lanes.set(CTreeBitLanes.CELL_HAS_CHILD, slot, false);
 		}
 		if((style & SWT.TOGGLE) != 0) {
 			setToggleVisible(true, true);
@@ -891,7 +889,7 @@ public class CTreeCell {
 			}
 			setToggleVisible(((CTreeItem) item).hasItems(), true);
 		}
-		inited = true;
+		ctree.lanes.set(CTreeBitLanes.CELL_INITED, slot, true);
 	}
 
 	protected GC internalGC() {
@@ -945,7 +943,7 @@ public class CTreeCell {
 		}
 
 		// CHECK
-		if(isCheck) {
+		if(ctree.lanes.get(CTreeBitLanes.CELL_CHECKABLE, slot)) {
 			check.setBounds(
 					x,
 					item.getTop(),
@@ -1333,7 +1331,7 @@ public class CTreeCell {
 	}
 
 	public void redraw() {
-        if (painted) {
+        if (ctree.lanes.get(CTreeBitLanes.CELL_PAINTED, slot)) {
             ctree.redraw(this);
         }
 	}
@@ -1394,10 +1392,10 @@ public class CTreeCell {
 //	}
 
 	public void setCheck(boolean check) {
-		if(isCheck != check) {
-			isCheck = check;
+		if(ctree.lanes.get(CTreeBitLanes.CELL_CHECKABLE, slot) != check) {
+			ctree.lanes.set(CTreeBitLanes.CELL_CHECKABLE, slot, check);
 			if(!check) {
-				isChecked = false;
+				ctree.lanes.set(CTreeBitLanes.CELL_CHECKED, slot, false);
 				if(this.check != null) {
 					this.check.dispose();
 					this.check = null;
@@ -1407,8 +1405,8 @@ public class CTreeCell {
 	}
 
 	public void setChecked(boolean checked) {
-        if (isCheck) {
-            isChecked = checked;
+        if (ctree.lanes.get(CTreeBitLanes.CELL_CHECKABLE, slot)) {
+            ctree.lanes.set(CTreeBitLanes.CELL_CHECKED, slot, checked);
         }
 	}
 
@@ -1522,7 +1520,7 @@ public class CTreeCell {
 	public void setOpen(boolean open) {
 		if(this.open != open) {
 			this.open = open;
-			if(hasChild) {
+			if(ctree.lanes.get(CTreeBitLanes.CELL_HAS_CHILD, slot)) {
 				// TODO: setOpen - childArea
 				updateVisibility();
 			}
@@ -1533,13 +1531,13 @@ public class CTreeCell {
 	}
 
 	void setPainted(boolean painted) {
-		if(this.painted != painted) {
-			this.painted = painted;
+		if(ctree.lanes.get(CTreeBitLanes.CELL_PAINTED, slot) != painted) {
+			ctree.lanes.set(CTreeBitLanes.CELL_PAINTED, slot, painted);
 			if(painted) {
-				if(!inited) {
+				if(!ctree.lanes.get(CTreeBitLanes.CELL_INITED, slot)) {
 					initialize();
 				}
-                if (isCheck && check == null) {
+                if (ctree.lanes.get(CTreeBitLanes.CELL_CHECKABLE, slot) && check == null) {
                     check = createCheck();
                 }
 				if(control == null) {
@@ -1563,7 +1561,7 @@ public class CTreeCell {
 					}
 				}
 				if(childControl != null) {
-					if(holdChild) {
+					if(ctree.lanes.get(CTreeBitLanes.CELL_HOLD_CHILD, slot)) {
 						childControl.setVisible(painted);
 					} else {
 						childControl.dispose();

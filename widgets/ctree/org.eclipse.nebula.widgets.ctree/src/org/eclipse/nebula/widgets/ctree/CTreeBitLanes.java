@@ -1,0 +1,102 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal - initial API and implementation
+ *******************************************************************************/
+package org.eclipse.nebula.widgets.ctree;
+
+/**
+ * Per-item and per-cell boolean state of one {@link CTree}, kept in the tree as packed
+ * bit lanes indexed by a slot that the tree hands out when an item or cell is created.
+ * Items and cells keep only their slot; lanes grow by doubling and are never allocated
+ * per frame. Int-only and GWT-safe.
+ */
+final class CTreeBitLanes {
+	// booleans as bit lanes in the parent, not as per-object fields
+	static final int ITEM_PAINTED = 0;
+	static final int ITEM_AUTO_HEIGHT = 1;
+	static final int CELL_PAINTED = 2;
+	static final int CELL_HAS_CHILD = 3;
+	static final int CELL_INITED = 4;
+	static final int CELL_HOLD_CHILD = 5;
+	static final int CELL_CHECKABLE = 6;
+	static final int CELL_CHECKED = 7;
+	private static final int LANES = 8;
+
+	private final int[][] lanes = new int[LANES][];
+	private int slots;
+	/** item payload set through {@code Widget#setData(Object)}, by slot; pinned for the item's life */
+	private Object[] data = new Object[64];
+
+	CTreeBitLanes() {
+		for (int i = 0; i < LANES; i++) {
+			lanes[i] = new int[2];
+		}
+	}
+
+	/** @return a fresh slot whose bits are all clear */
+	int allocate() {
+		int slot = slots++;
+		int word = slot >>> 5;
+		if (word >= lanes[0].length) {
+			for (int i = 0; i < LANES; i++) {
+				int[] grown = new int[grow(lanes[i].length, word + 1)];
+				System.arraycopy(lanes[i], 0, grown, 0, lanes[i].length);
+				lanes[i] = grown;
+			}
+		}
+		return slot;
+	}
+
+	Object data(int slot) {
+		return slot < data.length ? data[slot] : null;
+	}
+
+	void setData(int slot, Object value) {
+		if (slot >= data.length) {
+			Object[] grown = new Object[grow(data.length, slot + 1)];
+			System.arraycopy(data, 0, grown, 0, data.length);
+			data = grown;
+		}
+		data[slot] = value;
+	}
+
+	/**
+	 * Growth policy for the lane and payload arrays: doubling while small, then one eighth more per step, so a
+	 * million-item tree does not reserve a second million slots it may never use. Int-only.
+	 */
+	static int grow(int length, int needed) {
+		int next = length < 1 << 20 ? length << 1 : length + (length >>> 3);
+		return next < needed || next < 0 ? needed : next;
+	}
+
+	boolean get(int lane, int slot) {
+		return (lanes[lane][slot >>> 5] & 1 << (slot & 31)) != 0;
+	}
+
+	void set(int lane, int slot, boolean value) {
+		if (value) {
+			lanes[lane][slot >>> 5] |= 1 << (slot & 31);
+		} else {
+			lanes[lane][slot >>> 5] &= ~(1 << (slot & 31));
+		}
+	}
+
+	/** @return number of set bits of a lane, word-wise */
+	int count(int lane) {
+		int n = 0;
+		int[] bits = lanes[lane];
+		for (int i = 0, words = (slots + 31) >>> 5; i < words; i++) {
+			n += Integer.bitCount(bits[i]);
+		}
+		return n;
+	}
+}

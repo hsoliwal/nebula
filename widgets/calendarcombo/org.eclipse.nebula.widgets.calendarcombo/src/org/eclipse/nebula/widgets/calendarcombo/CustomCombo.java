@@ -179,7 +179,7 @@ public class CustomCombo extends Composite {
             arrow.addListener(arrowEvents[i], listener);
         }
 
-		createPopup(null, -1);
+		// the drop-down shell and list are built on first open or first item API use
 		initAccessible();
 	}
 
@@ -210,7 +210,7 @@ public class CustomCombo extends Composite {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-		list.add(string);
+		list().add(string);
 	}
 
 	/**
@@ -243,7 +243,7 @@ public class CustomCombo extends Composite {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-		list.add(string, index);
+		list().add(string, index);
 	}
 
 	/**
@@ -386,14 +386,14 @@ public class CustomCombo extends Composite {
 	public void clearSelection() {
 		checkWidget();
 		text.clearSelection();
-		list.deselectAll();
+		list().deselectAll();
 	}
 
 	void comboEvent(Event event) {
 		switch (event.type) {
 		case SWT.Dispose:
 			if (popup != null && !popup.isDisposed()) {
-				list.removeListener(SWT.Dispose, listener);
+				list().removeListener(SWT.Dispose, listener);
 				popup.dispose();
 			}
 			Shell shell = getShell();
@@ -411,7 +411,7 @@ public class CustomCombo extends Composite {
                 return;
             }
 			if (isDropped()) {
-				list.setFocus();
+				list().setFocus();
 			} else {
 				text.setFocus();
 			}
@@ -428,7 +428,7 @@ public class CustomCombo extends Composite {
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
 		int width = 0, height = 0;
-		String[] items = list.getItems();
+		String[] items = list().getItems();
 		GC gc = new GC(text);
 		int spacer = gc.stringExtent(" ").x; //$NON-NLS-1$
 		int textWidth = gc.stringExtent(text.getText()).x;
@@ -438,7 +438,7 @@ public class CustomCombo extends Composite {
 		gc.dispose();
 		Point textSize = text.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
 		Point arrowSize = arrow.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
-		Point listSize = list.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
+		Point listSize = list().computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);
 		int borderWidth = getBorderWidth();
 
 		height = Math.max(textSize.y, arrowSize.y);
@@ -472,6 +472,26 @@ public class CustomCombo extends Composite {
 		text.copy();
 	}
 
+	/** accessible listener for the first drop-down control only, exactly as the eager widget attached it */
+	private org.eclipse.swt.accessibility.AccessibleAdapter popupAccessible;
+
+	private void attachPopupAccessible() {
+		if (popupAccessible != null && list != null) {
+			list.getAccessible().addAccessibleListener(popupAccessible);
+			popupAccessible = null;
+		}
+	}
+
+	/**
+	 * @return the drop-down list, building the drop-down on first use
+	 */
+	List list() {
+		if (list == null && text != null && !isDisposed()) {
+			createPopup(null, -1);
+		}
+		return list;
+	}
+
 	void createPopup(String[] items, int selectionIndex) {
 		// create shell and list
 		popup = new Shell(getShell(), SWT.NO_TRIM | SWT.ON_TOP);
@@ -487,14 +507,15 @@ public class CustomCombo extends Composite {
             listStyle |= SWT.LEFT_TO_RIGHT;
         }
 		list = new List(popup, listStyle);
+		attachPopupAccessible();
         if (font != null) {
-            list.setFont(font);
+            list().setFont(font);
         }
         if (foreground != null) {
-            list.setForeground(foreground);
+            list().setForeground(foreground);
         }
         if (background != null) {
-            list.setBackground(background);
+            list().setBackground(background);
         }
 
 		int[] popupEvents = { SWT.Close, SWT.Paint, SWT.Deactivate };
@@ -503,14 +524,14 @@ public class CustomCombo extends Composite {
         }
 		int[] listEvents = { SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.Dispose };
         for (int i = 0; i < listEvents.length; i++) {
-            list.addListener(listEvents[i], listener);
+            list().addListener(listEvents[i], listener);
         }
 
         if (items != null) {
-            list.setItems(items);
+            list().setItems(items);
         }
         if (selectionIndex != -1) {
-            list.setSelection(selectionIndex);
+            list().setSelection(selectionIndex);
         }
 	}
 
@@ -551,9 +572,9 @@ public class CustomCombo extends Composite {
 	 */
 	public void deselect(int index) {
 		checkWidget();
-		if (0 <= index && index < list.getItemCount() && index == list.getSelectionIndex() && text.getText().equals(list.getItem(index))) {
+		if (0 <= index && index < list().getItemCount() && index == list().getSelectionIndex() && text.getText().equals(list().getItem(index))) {
 			text.setText(""); //$NON-NLS-1$
-			list.deselect(index);
+			list().deselect(index);
 		}
 	}
 
@@ -576,7 +597,7 @@ public class CustomCombo extends Composite {
 	public void deselectAll() {
 		checkWidget();
 		text.setText(""); //$NON-NLS-1$
-		list.deselectAll();
+		list().deselectAll();
 	}
 
 	protected void dropDown(boolean drop) {
@@ -584,6 +605,9 @@ public class CustomCombo extends Composite {
             return;
         }
 		if (!drop) {
+			if (popup == null) {
+				return;
+			}
 			popup.setVisible(false);
 			if (!isDisposed() && isFocusControl()) {
 				text.setFocus();
@@ -591,10 +615,11 @@ public class CustomCombo extends Composite {
 			return;
 		}
 
+		list();
 		if (getShell() != popup.getParent()) {
-			String[] items = list.getItems();
-			int selectionIndex = list.getSelectionIndex();
-			list.removeListener(SWT.Dispose, listener);
+			String[] items = list().getItems();
+			int selectionIndex = list().getSelectionIndex();
+			list().removeListener(SWT.Dispose, listener);
 			popup.dispose();
 			popup = null;
 			list = null;
@@ -602,18 +627,18 @@ public class CustomCombo extends Composite {
 		}
 
 		Point size = getSize();
-		int itemCount = list.getItemCount();
+		int itemCount = list().getItemCount();
 		itemCount = (itemCount == 0) ? visibleItemCount : Math.min(visibleItemCount, itemCount);
-		int itemHeight = list.getItemHeight() * itemCount;
-		Point listSize = list.computeSize(SWT.DEFAULT, itemHeight, false);
-		list.setBounds(1, 1, Math.max(size.x - 2, listSize.x), listSize.y);
+		int itemHeight = list().getItemHeight() * itemCount;
+		Point listSize = list().computeSize(SWT.DEFAULT, itemHeight, false);
+		list().setBounds(1, 1, Math.max(size.x - 2, listSize.x), listSize.y);
 
-		int index = list.getSelectionIndex();
+		int index = list().getSelectionIndex();
         if (index != -1) {
-            list.setTopIndex(index);
+            list().setTopIndex(index);
         }
 		Display display = getDisplay();
-		Rectangle listRect = list.getBounds();
+		Rectangle listRect = list().getBounds();
 		Rectangle parentRect = display.map(getParent(), null, getBounds());
 		Point comboSize = getSize();
 		Rectangle displayRect = getMonitor().getClientArea();
@@ -630,7 +655,7 @@ public class CustomCombo extends Composite {
 		popup.setBounds(x, y, width, height);
 		popup.setVisible(true);
         if (isFocusControl()) {
-            list.setFocus();
+            list().setFocus();
         }
 	}
 
@@ -721,7 +746,7 @@ public class CustomCombo extends Composite {
 	 */
 	public String getItem(int index) {
 		checkWidget();
-		return list.getItem(index);
+		return list().getItem(index);
 	}
 
 	/**
@@ -738,7 +763,7 @@ public class CustomCombo extends Composite {
 	 */
 	public int getItemCount() {
 		checkWidget();
-		return list.getItemCount();
+		return list().getItemCount();
 	}
 
 	/**
@@ -756,7 +781,7 @@ public class CustomCombo extends Composite {
 	 */
 	public int getItemHeight() {
 		checkWidget();
-		return list.getItemHeight();
+		return list().getItemHeight();
 	}
 
 	/**
@@ -778,7 +803,7 @@ public class CustomCombo extends Composite {
 	 */
 	public String[] getItems() {
 		checkWidget();
-		return list.getItems();
+		return list().getItems();
 	}
 
 	/**
@@ -846,7 +871,7 @@ public class CustomCombo extends Composite {
 	 */
 	public int getSelectionIndex() {
 		checkWidget();
-		return list.getSelectionIndex();
+		return list().getSelectionIndex();
 	}
 
 	public int getStyle() {
@@ -999,7 +1024,7 @@ public class CustomCombo extends Composite {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-		return list.indexOf(string);
+		return list().indexOf(string);
 	}
 
 	/**
@@ -1027,7 +1052,7 @@ public class CustomCombo extends Composite {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-		return list.indexOf(string, start);
+		return list().indexOf(string, start);
 	}
 
 	void initAccessible() {
@@ -1062,7 +1087,11 @@ public class CustomCombo extends Composite {
 		};
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		list.getAccessible().addAccessibleListener(accessibleAdapter);
+		// the drop-down's accessible listener is attached when the drop-down is first built
+		popupAccessible = accessibleAdapter;
+		if (list != null) {
+			attachPopupAccessible();
+		}
 
 		arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			public void getName(AccessibleEvent e) {
@@ -1138,12 +1167,13 @@ public class CustomCombo extends Composite {
 	}
 
 	boolean isDropped() {
-		return popup.getVisible();
+		return popup != null && popup.getVisible();
 	}
 
 	public boolean isFocusControl() {
 		checkWidget();
-		if (text.isFocusControl() || arrow.isFocusControl() || list.isFocusControl() || popup.isFocusControl()) {
+		if (text.isFocusControl() || arrow.isFocusControl() || list != null && list.isFocusControl()
+				|| popup != null && popup.isFocusControl()) {
 			return true;
 		}
 		return super.isFocusControl();
@@ -1165,8 +1195,8 @@ public class CustomCombo extends Composite {
 		switch (event.type) {
 		case SWT.Dispose:
 			if (getShell() != popup.getParent()) {
-				String[] items = list.getItems();
-				int selectionIndex = list.getSelectionIndex();
+				String[] items = list().getItems();
+				int selectionIndex = list().getSelectionIndex();
 				popup = null;
 				list = null;
 				createPopup(items, selectionIndex);
@@ -1184,13 +1214,13 @@ public class CustomCombo extends Composite {
 			break;
 		}
 		case SWT.Selection: {
-			int index = list.getSelectionIndex();
+			int index = list().getSelectionIndex();
             if (index == -1) {
                 return;
             }
-			text.setText(list.getItem(index));
+			text.setText(list().getItem(index));
 			text.selectAll();
-			list.setSelection(index);
+			list().setSelection(index);
 			Event e = new Event();
 			e.time = event.time;
 			e.stateMask = event.stateMask;
@@ -1294,7 +1324,7 @@ public class CustomCombo extends Composite {
 		switch (event.type) {
 		case SWT.Paint:
 			// draw black rectangle around list
-			Rectangle listRect = list.getBounds();
+			Rectangle listRect = list().getBounds();
 			Color black = getDisplay().getSystemColor(SWT.COLOR_BLACK);
 			event.gc.setForeground(black);
 			event.gc.drawRectangle(0, 0, listRect.width + 1, listRect.height + 1);
@@ -1332,7 +1362,7 @@ public class CustomCombo extends Composite {
 		super.redraw();
 		text.redraw();
 		arrow.redraw();
-        if (popup.isVisible()) {
+        if (popup != null && popup.isVisible()) {
             list.redraw();
         }
 	}
@@ -1361,7 +1391,7 @@ public class CustomCombo extends Composite {
 	 */
 	public void remove(int index) {
 		checkWidget();
-		list.remove(index);
+		list().remove(index);
 	}
 
 	/**
@@ -1385,7 +1415,7 @@ public class CustomCombo extends Composite {
 	 */
 	public void remove(int start, int end) {
 		checkWidget();
-		list.remove(start, end);
+		list().remove(start, end);
 	}
 
 	/**
@@ -1411,7 +1441,7 @@ public class CustomCombo extends Composite {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-		list.remove(string);
+		list().remove(string);
 	}
 
 	/**
@@ -1428,7 +1458,7 @@ public class CustomCombo extends Composite {
 	public void removeAll() {
 		checkWidget();
 		text.setText(""); //$NON-NLS-1$
-		list.removeAll();
+		list().removeAll();
 	}
 
 	/**
@@ -1516,16 +1546,16 @@ public class CustomCombo extends Composite {
 	public void select(int index) {
 		checkWidget();
 		if (index == -1) {
-			list.deselectAll();
+			list().deselectAll();
 			text.setText(""); //$NON-NLS-1$
 			return;
 		}
-		if (0 <= index && index < list.getItemCount()) {
+		if (0 <= index && index < list().getItemCount()) {
 			if (index != getSelectionIndex()) {
-				text.setText(list.getItem(index));
+				text.setText(list().getItem(index));
 				text.selectAll();
-				list.select(index);
-				list.showSelection();
+				list().select(index);
+				list().showSelection();
 			}
 		}
 	}
@@ -1537,7 +1567,7 @@ public class CustomCombo extends Composite {
             text.setBackground(color);
         }
         if (list != null) {
-            list.setBackground(color);
+            list().setBackground(color);
         }
         if (arrow != null) {
             arrow.setBackground(color);
@@ -1590,7 +1620,7 @@ public class CustomCombo extends Composite {
 		super.setFont(font);
 		this.font = font;
 		text.setFont(font);
-		list.setFont(font);
+		list().setFont(font);
 		internalLayout(true);
 	}
 
@@ -1601,7 +1631,7 @@ public class CustomCombo extends Composite {
             text.setForeground(color);
         }
         if (list != null) {
-            list.setForeground(color);
+            list().setForeground(color);
         }
         if (arrow != null) {
             arrow.setForeground(color);
@@ -1630,7 +1660,7 @@ public class CustomCombo extends Composite {
 	 */
 	public void setItem(int index, String string) {
 		checkWidget();
-		list.setItem(index, string);
+		list().setItem(index, string);
 	}
 
 	/**
@@ -1651,7 +1681,7 @@ public class CustomCombo extends Composite {
 	 */
 	public void setItems(String[] items) {
 		checkWidget();
-		list.setItems(items);
+		list().setItems(items);
         if (!text.getEditable()) {
             text.setText(""); //$NON-NLS-1$
         }
@@ -1759,16 +1789,16 @@ public class CustomCombo extends Composite {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-		int index = list.indexOf(string);
+		int index = list().indexOf(string);
 		if (index == -1) {
-			list.deselectAll();
+			list().deselectAll();
 			text.setText(string);
 			return;
 		}
 		text.setText(string);
 		text.selectAll();
-		list.setSelection(index);
-		list.showSelection();
+		list().setSelection(index);
+		list().showSelection();
 	}
 
 	/**
@@ -1936,7 +1966,7 @@ public class CustomCombo extends Composite {
 			break;
 		}
 		case SWT.Modify: {
-			list.deselectAll();
+			list().deselectAll();
 			Event e = new Event();
 			e.time = event.time;
 			notifyListeners(SWT.Modify, e);

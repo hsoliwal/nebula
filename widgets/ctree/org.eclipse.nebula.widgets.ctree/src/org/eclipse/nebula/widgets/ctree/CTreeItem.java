@@ -62,7 +62,8 @@ public class CTreeItem extends Item {
 	/**
 	 * Whether or not this item is actually painted to the screen.
 	 */
-	boolean painted = false;
+	/** this item's slot in {@link CTree#lanes}: painted and autoHeight live there */
+	final int slot;
 	
 	private int top = -1;
 	private int height = -1;
@@ -71,7 +72,6 @@ public class CTreeItem extends Item {
 	private int treeCell;
 	private CTreeItem parentItem;
 	private List items = new ArrayList();
-	private boolean autoHeight;
 
 	private CTreeItem next;
 	private CTreeItem previous;
@@ -80,6 +80,7 @@ public class CTreeItem extends Item {
 	private CTreeItem(CTree parent, CTreeItem parentItem, int style, int index) {
 		super(parent, style);
 		this.ctree = parent;
+		this.slot = parent.lanes.allocate();
 		this.parentItem = parentItem;
 		this.cells = new CTreeCell[parent.getColumnCount()];
 		createCells(parent.cellClasses);
@@ -238,6 +239,10 @@ public class CTreeItem extends Item {
 	}
 	
 	public void dispose() {
+		if (!isDisposed()) {
+			// the payload lane follows the item's life, like Widget.data
+			ctree.lanes.setData(slot, null);
+		}
         if ((parentItem != null) && (!parentItem.isDisposed())) {
             parentItem.removeItem(this);
         }
@@ -255,7 +260,7 @@ public class CTreeItem extends Item {
 	}
 
 	public boolean getAutoHeight() {
-		return autoHeight;
+		return ctree.lanes.get(CTreeBitLanes.ITEM_AUTO_HEIGHT, slot);
 	}
 	
 	public Color getBackground() {
@@ -839,7 +844,7 @@ public class CTreeItem extends Item {
 	}
 	
 	public void redraw() {
-        if (painted) {
+        if (ctree.lanes.get(CTreeBitLanes.ITEM_PAINTED, slot)) {
             ctree.redraw(this);
         }
 	}
@@ -944,6 +949,11 @@ public class CTreeItem extends Item {
 		this.height = height;
 		redraw();
 	}
+
+	/** sets the height without invalidating; the caller redraws the whole body */
+	void setHeightQuiet(int height) {
+		this.height = height;
+	}
 	
 	public void setImage(Image image) {
 		if(hasTreeCell()) {
@@ -996,8 +1006,8 @@ public class CTreeItem extends Item {
 	}
 	
 	void setPainted(boolean painted) {
-		if(this.painted != painted) {
-			this.painted = painted;
+		if(ctree.lanes.get(CTreeBitLanes.ITEM_PAINTED, slot) != painted) {
+			ctree.lanes.set(CTreeBitLanes.ITEM_PAINTED, slot, painted);
 			if(painted) {
 				updatePaintedCells();
 			} else {
@@ -1042,6 +1052,42 @@ public class CTreeItem extends Item {
 				((CTreeCell) cells[i]).setText(strings[i]);
 			}
 		}
+	}
+
+	/**
+	 * Returns the application defined widget data associated with the receiver, or null if it has not been set.
+	 * The data is kept in the tree's slot lanes, not in the item.
+	 *
+	 * @return the widget data
+	 *
+	 * @exception SWTException
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 *                </ul>
+	 */
+	@Override
+	public Object getData() {
+		checkWidget();
+		return ctree.lanes.data(slot);
+	}
+
+	/**
+	 * Sets the application defined widget data associated with the receiver to be the argument. The data is kept in
+	 * the tree's slot lanes, not in the item, and is released when the item is disposed.
+	 *
+	 * @param data the widget data
+	 *
+	 * @exception SWTException
+	 *                <ul>
+	 *                <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *                <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+	 *                </ul>
+	 */
+	@Override
+	public void setData(Object data) {
+		checkWidget();
+		ctree.lanes.setData(slot, data);
 	}
 
 	void setTop(int top) {
