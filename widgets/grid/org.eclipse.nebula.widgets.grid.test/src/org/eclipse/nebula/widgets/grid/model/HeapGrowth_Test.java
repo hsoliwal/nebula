@@ -50,4 +50,22 @@ public class HeapGrowth_Test {
 			// expected
 		}
 	}
+	@Test
+	public void growthNeverPromisesLessThanTheRequestedJavaArrayLength() {
+		assertEquals(Integer.MAX_VALUE, HeapGrowth.choose(
+				Integer.MAX_VALUE - 32, Integer.MAX_VALUE, 8, 0, 0));
+		assertEquals(Integer.MAX_VALUE, HeapGrowth.choose(
+				Integer.MAX_VALUE - 32, Integer.MAX_VALUE, 20, 8L * 1024 * MIB, 7L * 1024 * MIB));
+	}
+
+	@Test
+	public void rejectsNegativeCurrentCapacity() {
+		try {
+			HeapGrowth.choose(-1, 1, 20, 8L * 1024 * MIB, 0);
+			throw new AssertionError("negative current capacity accepted");
+		} catch (final IllegalArgumentException expected) {
+			// Invalid geometry fails before any backing mutation.
+		}
+	}
+
 }

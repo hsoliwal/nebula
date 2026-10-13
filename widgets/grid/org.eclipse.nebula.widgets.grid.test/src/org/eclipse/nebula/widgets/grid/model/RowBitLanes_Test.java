@@ -173,4 +173,45 @@ public class RowBitLanes_Test {
 	static long[] words(final BitSet set, final int rows) {
 		return Arrays.copyOf(set.toLongArray(), (rows + 63) / 64);
 	}
+	@Test
+	public void sparseNearIntegerMaxRowsKeepsOnlyUsedWords() throws Exception {
+		final RowBitLanes lanes = new RowBitLanes(1);
+		lanes.setRowCount(Integer.MAX_VALUE - 128);
+		lanes.set(0, 2, true);
+		lanes.setWhere(0, new long[] { 0L, 0L, 0L, 0L }, true);
+		assertTrue(lanes.get(0, 2));
+		assertFalse(lanes.get(0, Integer.MAX_VALUE - 129));
+		assertEquals(33_554_432, RowBitLanes.words(Integer.MAX_VALUE));
+
+		final java.lang.reflect.Field backing = RowBitLanes.class.getDeclaredField("lanes");
+		backing.setAccessible(true);
+		assertTrue("a low-row flag must not allocate a two-billion-row bitmap",
+				((long[][]) backing.get(lanes))[0].length < 64);
+
+		lanes.insertRows(1, 64);
+		assertEquals(Integer.MAX_VALUE - 64, lanes.getRowCount());
+		assertTrue(lanes.get(0, 66));
+		lanes.removeRows(1, 64);
+		assertEquals(Integer.MAX_VALUE - 128, lanes.getRowCount());
+		assertTrue(lanes.get(0, 2));
+		assertTrue("insertion must preserve sparse word residency",
+				((long[][]) backing.get(lanes))[0].length < 64);
+	}
+
+	@Test
+	public void overflowingInsertDoesNotMutatePackedState() {
+		final RowBitLanes lanes = new RowBitLanes(1);
+		lanes.setRowCount(Integer.MAX_VALUE - 3);
+		lanes.set(0, 0, true);
+		try {
+			lanes.insertRows(0, 4);
+			throw new AssertionError("row count overflow accepted");
+		} catch (final IndexOutOfBoundsException expected) {
+			// Existing cardinality and row coordinates are unchanged.
+		}
+		assertEquals(Integer.MAX_VALUE - 3, lanes.getRowCount());
+		assertTrue(lanes.get(0, 0));
+		assertEquals(1, lanes.cardinality(0));
+	}
+
 }
