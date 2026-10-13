@@ -246,8 +246,7 @@ public class CheckTableCombo extends Composite {
 			arrow.addListener(arrowEvent, listener);
 		}
 
-		// initialize the drop down
-		createPopup(-1);
+		//FLLDCIM: lazy — the drop-down shell and table are built on first open or first table API use
 
 		initAccessible();
 	}
@@ -446,7 +445,7 @@ public class CheckTableCombo extends Composite {
 	public void clearSelection() {
 		checkWidget();
 		text.clearSelection();
-		table.deselectAll();
+		table().deselectAll();
 	}
 
 	/**
@@ -462,7 +461,7 @@ public class CheckTableCombo extends Composite {
 			event.type = SWT.None;
 
 			if (popup != null && !popup.isDisposed()) {
-				table.removeListener(SWT.Dispose, listener);
+				table().removeListener(SWT.Dispose, listener);
 				popup.dispose();
 			}
 			final Shell shell = getShell();
@@ -481,7 +480,7 @@ public class CheckTableCombo extends Composite {
 				return;
 			}
 			if (isDropped()) {
-				table.setFocus();
+				table().setFocus();
 			} else {
 				text.setFocus();
 			}
@@ -511,7 +510,8 @@ public class CheckTableCombo extends Composite {
 			overallWidth = wHint;
 			overallHeight = hHint;
 		} else {
-			final TableItem[] tableItems = table.getItems();
+			// no drop-down yet means no rows yet: measuring must not build it
+			final TableItem[] tableItems = table == null ? new TableItem[0] : table.getItems();
 
 			final GC gc = new GC(text);
 			final int spacer = gc.stringExtent(" ").x; //$NON-NLS-1$
@@ -577,6 +577,16 @@ public class CheckTableCombo extends Composite {
 	 *
 	 * @param selectionIndex
 	 */
+	/**
+	 * @return the drop-down table, building the drop-down on first use
+	 */
+	private Table table() {
+		if (table == null && text != null && !isDisposed()) {
+			createPopup(-1);
+		}
+		return table;
+	}
+
 	void createPopup(final int selectionIndex) {
 		// create shell and table
 		popup = new Shell(getShell(), SWT.NO_TRIM | SWT.ON_TOP);
@@ -585,13 +595,13 @@ public class CheckTableCombo extends Composite {
 		table = new Table(popup, SWT.FULL_SELECTION | SWT.CHECK);
 
 		if (font != null) {
-			table.setFont(font);
+			table().setFont(font);
 		}
 		if (foreground != null) {
-			table.setForeground(foreground);
+			table().setForeground(foreground);
 		}
 		if (background != null) {
-			table.setBackground(background);
+			table().setBackground(background);
 		}
 
 		// Add popup listeners
@@ -604,12 +614,12 @@ public class CheckTableCombo extends Composite {
 		final int[] tableEvents = {SWT.MouseUp, SWT.Selection, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.Dispose};
 		// int[] tableEvents = { SWT.MouseUp, SWT.Traverse, SWT.KeyDown, SWT.KeyUp, SWT.FocusIn, SWT.Dispose };
 		for (final int tableEvent : tableEvents) {
-			table.addListener(tableEvent, listener);
+			table().addListener(tableEvent, listener);
 		}
 
 		// set the selection
 		if (selectionIndex != -1) {
-			table.setSelection(selectionIndex);
+			table().setSelection(selectionIndex);
 		}
 	}
 
@@ -646,6 +656,9 @@ public class CheckTableCombo extends Composite {
 
 		// closing the dropDown
 		if (!drop) {
+			if (popup == null) {
+				return;
+			}
 			popup.setVisible(false);
 			if (!isDisposed() && isFocusControl()) {
 				text.setFocus();
@@ -659,9 +672,10 @@ public class CheckTableCombo extends Composite {
 		}
 
 		// create a new popup if needed.
+		table();
 		if (getShell() != popup.getParent()) {
-			final int selectionIndex = table.getSelectionIndex();
-			table.removeListener(SWT.Dispose, listener);
+			final int selectionIndex = table().getSelectionIndex();
+			table().removeListener(SWT.Dispose, listener);
 			popup.dispose();
 			popup = null;
 			table = null;
@@ -672,36 +686,36 @@ public class CheckTableCombo extends Composite {
 		final Point tableComboSize = getSize();
 
 		// calculate the table height.
-		int itemCount = table.getItemCount();
+		int itemCount = table().getItemCount();
 		itemCount = itemCount == 0 ? visibleItemCount : Math.min(visibleItemCount, itemCount);
-		int itemHeight = table.getItemHeight() * itemCount;
+		int itemHeight = table().getItemHeight() * itemCount;
 
 		// add 1 to the table height if the table item count is less than the visible item count.
-		if (table.getItemCount() <= visibleItemCount) {
+		if (table().getItemCount() <= visibleItemCount) {
 			itemHeight += 1;
 		}
 
 		if (itemCount <= visibleItemCount) {
-			if (table.getHorizontalBar() != null && !table.getHorizontalBar().isVisible()) {
-				itemHeight -= table.getHorizontalBar().getSize().y;
+			if (table().getHorizontalBar() != null && !table().getHorizontalBar().isVisible()) {
+				itemHeight -= table().getHorizontalBar().getSize().y;
 			}
 		}
 
 		// add height of header if the header is being displayed.
-		if (table.getHeaderVisible()) {
-			itemHeight += table.getHeaderHeight();
+		if (table().getHeaderVisible()) {
+			itemHeight += table().getHeaderHeight();
 		}
 
 		// get table column references
-		TableColumn[] tableColumns = table.getColumns();
+		TableColumn[] tableColumns = table().getColumns();
 		int totalColumns = tableColumns == null ? 0 : tableColumns.length;
 
 		// check to make sure at least one column has been specified. if it hasn't
 		// then just create a blank one.
-		if (table.getColumnCount() == 0) {
+		if (table().getColumnCount() == 0) {
 			new TableColumn(table, SWT.NONE);
 			totalColumns = 1;
-			tableColumns = table.getColumns();
+			tableColumns = table().getColumns();
 		}
 
 		int totalColumnWidth = 0;
@@ -720,7 +734,7 @@ public class CheckTableCombo extends Composite {
 		}
 
 		// calculate the table size after making adjustments.
-		final Point tableSize = table.computeSize(SWT.DEFAULT, itemHeight, false);
+		final Point tableSize = table().computeSize(SWT.DEFAULT, itemHeight, false);
 
 		// calculate the table width and table height.
 		final double pct = tableWidthPercentage / 100d;
@@ -730,35 +744,35 @@ public class CheckTableCombo extends Composite {
 		// add the width of a horizontal scrollbar to the table height if we are
 		// not viewing the full table.
 		if (tableWidthPercentage < 100) {
-			tableHeight += table.getHorizontalBar().getSize().y;
+			tableHeight += table().getHorizontalBar().getSize().y;
 		}
 
 		// set the bounds on the table.
-		table.setBounds(1, 1, tableWidth, tableHeight);
+		table().setBounds(1, 1, tableWidth, tableHeight);
 
 		// check to see if we can adjust the table width to by the amount the vertical
 		// scrollbar would have taken since the table auto allocates the space whether
 		// it is needed or not.
-		if (!table.getVerticalBar().getVisible() && tableSize.x - table.getVerticalBar().getSize().x >= tableComboSize.x - 2) {
+		if (!table().getVerticalBar().getVisible() && tableSize.x - table().getVerticalBar().getSize().x >= tableComboSize.x - 2) {
 
-			tableWidth = tableWidth - table.getVerticalBar().getSize().x;
+			tableWidth = tableWidth - table().getVerticalBar().getSize().x;
 
 			// reset the bounds on the table.
-			table.setBounds(1, 1, tableWidth, tableHeight);
+			table().setBounds(1, 1, tableWidth, tableHeight);
 		}
 
 		// adjust the last column to make sure that there is no empty space.
 		autoAdjustColumnWidthsIfNeeded(tableColumns, tableWidth, totalColumnWidth);
 
 		// set the table top index if there is a valid selection.
-		final int index = table.getSelectionIndex();
+		final int index = table().getSelectionIndex();
 		if (index != -1) {
-			table.setTopIndex(index);
+			table().setTopIndex(index);
 		}
 
 		// calculate popup dimensions.
 		final Display display = getDisplay();
-		final Rectangle tableRect = table.getBounds();
+		final Rectangle tableRect = table().getBounds();
 		final Rectangle parentRect = display.map(getParent(), null, getBounds());
 		final Point comboSize = getSize();
 		final Rectangle displayRect = getMonitor().getClientArea();
@@ -791,7 +805,7 @@ public class CheckTableCombo extends Composite {
 		popup.setVisible(true);
 
 		// set focus on the table.
-		table.setFocus();
+		table().setFocus();
 	}
 
 	/*
@@ -854,7 +868,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	public String getItem(final int index) {
 		checkWidget();
-		return table.getItem(index).getText(getDisplayColumnIndex());
+		return table().getItem(index).getText(getDisplayColumnIndex());
 	}
 
 	/**
@@ -870,7 +884,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	public int getItemCount() {
 		checkWidget();
-		return table.getItemCount();
+		return table().getItemCount();
 	}
 
 	/**
@@ -886,7 +900,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	public int getItemHeight() {
 		checkWidget();
-		return table.getItemHeight();
+		return table().getItemHeight();
 	}
 
 	/**
@@ -907,7 +921,7 @@ public class CheckTableCombo extends Composite {
 		checkWidget();
 
 		// get a list of the table items.
-		final TableItem[] tableItems = table.getItems();
+		final TableItem[] tableItems = table().getItems();
 
 		final int totalItems = tableItems == null ? 0 : tableItems.length;
 
@@ -955,7 +969,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	public int[] getSelectionIndices() {
 		checkWidget();
-		return table.getSelectionIndices();
+		return table().getSelectionIndices();
 	}
 
 	/**
@@ -1107,7 +1121,7 @@ public class CheckTableCombo extends Composite {
 		}
 
 		// get a list of the table items.
-		final TableItem[] tableItems = table.getItems();
+		final TableItem[] tableItems = table().getItems();
 
 		final int totalItems = tableItems == null ? 0 : tableItems.length;
 		final int colIndex = getDisplayColumnIndex();
@@ -1147,7 +1161,7 @@ public class CheckTableCombo extends Composite {
 		}
 
 		// get a list of the table items.
-		final TableItem[] tableItems = table.getItems();
+		final TableItem[] tableItems = table().getItems();
 
 		final int totalItems = tableItems == null ? 0 : tableItems.length;
 
@@ -1173,7 +1187,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	public void setShowTableLines(final boolean showTableLines) {
 		checkWidget();
-		table.setLinesVisible(showTableLines);
+		table().setLinesVisible(showTableLines);
 	}
 
 	/**
@@ -1183,7 +1197,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	public void setShowTableHeader(final boolean showTableHeader) {
 		checkWidget();
-		table.setHeaderVisible(showTableHeader);
+		table().setHeaderVisible(showTableHeader);
 	}
 
 	/**
@@ -1225,7 +1239,7 @@ public class CheckTableCombo extends Composite {
 
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		table.getAccessible().addAccessibleListener(accessibleAdapter);
+		table().getAccessible().addAccessibleListener(accessibleAdapter);
 
 		arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			@Override
@@ -1319,7 +1333,7 @@ public class CheckTableCombo extends Composite {
 	 * @return
 	 */
 	private boolean isDropped() {
-		return popup.getVisible();
+		return popup != null && popup.getVisible();
 	}
 
 	/**
@@ -1329,7 +1343,8 @@ public class CheckTableCombo extends Composite {
 	public boolean isFocusControl() {
 		checkWidget();
 		// if (label.isFocusControl () || arrow.isFocusControl () || table.isFocusControl () || popup.isFocusControl ()) {
-		if (arrow.isFocusControl() || table.isFocusControl() || popup.isFocusControl()) {
+		if (arrow.isFocusControl() || table != null && table.isFocusControl()
+				|| popup != null && popup.isFocusControl()) {
 			return true;
 		}
 		return super.isFocusControl();
@@ -1399,7 +1414,7 @@ public class CheckTableCombo extends Composite {
 		switch (event.type) {
 		case SWT.Dispose:
 			if (getShell() != popup.getParent()) {
-				final int selectionIndex = table.getSelectionIndex();
+				final int selectionIndex = table().getSelectionIndex();
 				popup = null;
 				table = null;
 				createPopup(selectionIndex);
@@ -1425,7 +1440,7 @@ public class CheckTableCombo extends Composite {
 				this.refreshText();
 
 				final int[] checkedIndices = getCheckIndices();
-				table.select(checkedIndices);
+				table().select(checkedIndices);
 
 				final Event e = new Event();
 				e.time = event.time;
@@ -1436,11 +1451,11 @@ public class CheckTableCombo extends Composite {
 				notifyListeners(SWT.Selection, e);
 				event.doit = e.doit;
 
-				table.deselectAll();
+				table().deselectAll();
 				return;
 			}
 
-			final int index = table.getSelectionIndex();
+			final int index = table().getSelectionIndex();
 			if (index == -1) {
 				return;
 			}
@@ -1449,7 +1464,7 @@ public class CheckTableCombo extends Composite {
 			this.refreshText(index, event);
 
 			// set the selection in the table.
-			table.select(index);
+			table().select(index);
 
 			// Event e = new Event();
 			// e.time = event.time;
@@ -1572,7 +1587,7 @@ public class CheckTableCombo extends Composite {
 		switch (event.type) {
 		case SWT.Paint:
 			// draw rectangle around table
-			final Rectangle tableRect = table.getBounds();
+			final Rectangle tableRect = table().getBounds();
 			event.gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION));
 			event.gc.drawRectangle(0, 0, tableRect.width + 1, tableRect.height + 1);
 			break;
@@ -1623,7 +1638,7 @@ public class CheckTableCombo extends Composite {
 		super.redraw();
 		text.redraw();
 		arrow.redraw();
-		if (popup.isVisible()) {
+		if (popup != null && popup.isVisible()) {
 			table.redraw();
 		}
 	}
@@ -1803,7 +1818,7 @@ public class CheckTableCombo extends Composite {
 			selectedImage.setBackground(color);
 		}
 		if (table != null) {
-			table.setBackground(color);
+			table().setBackground(color);
 		}
 		if (arrow != null) {
 			arrow.setBackground(color);
@@ -1872,7 +1887,7 @@ public class CheckTableCombo extends Composite {
 		super.setFont(font);
 		this.font = font;
 		text.setFont(font);
-		table.setFont(font);
+		table().setFont(font);
 		internalLayout(true, true);
 	}
 
@@ -1887,7 +1902,7 @@ public class CheckTableCombo extends Composite {
 			text.setForeground(color);
 		}
 		if (table != null) {
-			table.setForeground(color);
+			table().setForeground(color);
 		}
 		if (arrow != null) {
 			arrow.setForeground(color);
@@ -1990,7 +2005,7 @@ public class CheckTableCombo extends Composite {
 		final int[] indices = new int[texts.length];
 
 		// get a list of the table items.
-		final TableItem[] tableItems = table.getItems();
+		final TableItem[] tableItems = table().getItems();
 
 		final int totalItems = tableItems == null ? 0 : tableItems.length;
 		final int colIndex = getDisplayColumnIndex();
@@ -2242,7 +2257,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	private int getDisplayColumnIndex() {
 		// make sure the requested column index is valid.
-		return displayColumnIndex <= table.getColumnCount() - 1 ? displayColumnIndex : 0;
+		return displayColumnIndex <= table().getColumnCount() - 1 ? displayColumnIndex : 0;
 	}
 
 	/*
@@ -2450,7 +2465,7 @@ public class CheckTableCombo extends Composite {
 	 */
 	public Table getTable() {
 		checkWidget();
-		return table;
+		return table();
 	}
 
 	/**
@@ -2507,13 +2522,13 @@ public class CheckTableCombo extends Composite {
 					break;
 				}
 
-				final int oldIndex = table.getSelectionIndex();
+				final int oldIndex = table().getSelectionIndex();
 				if (event.keyCode == SWT.ARROW_UP) {
 					this.select(new int[] {Math.max(oldIndex - 1, 0)});
 				} else {
 					this.select(new int[] {Math.min(oldIndex + 1, getItemCount() - 1)});
 				}
-				if (oldIndex != table.getSelectionIndex()) {
+				if (oldIndex != table().getSelectionIndex()) {
 					final Event e = new Event();
 					e.time = event.time;
 					e.stateMask = event.stateMask;
@@ -2545,7 +2560,7 @@ public class CheckTableCombo extends Composite {
 			break;
 		}
 		case SWT.Modify: {
-			table.deselectAll();
+			table().deselectAll();
 			final Event e = new Event();
 			e.time = event.time;
 			notifyListeners(SWT.Modify, e);
@@ -2632,13 +2647,13 @@ public class CheckTableCombo extends Composite {
 			}
 			if (event.count != 0) {
 				event.doit = false;
-				final int oldIndex = table.getSelectionIndex();
+				final int oldIndex = table().getSelectionIndex();
 				if (event.count > 0) {
 					this.select(new int[] {Math.max(oldIndex - 1, 0)});
 				} else {
 					this.select(new int[] {Math.min(oldIndex + 1, getItemCount() - 1)});
 				}
-				if (oldIndex != table.getSelectionIndex()) {
+				if (oldIndex != table().getSelectionIndex()) {
 					final Event e = new Event();
 					e.time = event.time;
 					e.stateMask = event.stateMask;
@@ -2699,8 +2714,8 @@ public class CheckTableCombo extends Composite {
 		final int totalColumns = tableColumns == null ? 0 : tableColumns.length;
 
 		// determine if the vertical scroll bar needs to be taken into account
-		if (table.getVerticalBar().getVisible()) {
-			scrollBarSize = table.getVerticalBar() == null ? 0 : table.getVerticalBar().getSize().x;
+		if (table().getVerticalBar().getVisible()) {
+			scrollBarSize = table().getVerticalBar() == null ? 0 : table().getVerticalBar().getSize().x;
 		}
 
 		// is there any extra space that the table is not using?

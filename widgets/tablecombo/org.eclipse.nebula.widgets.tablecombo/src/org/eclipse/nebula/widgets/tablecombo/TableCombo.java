@@ -614,7 +614,8 @@ public class TableCombo extends Composite {
 			int currTextWidth = 0;
 
 			// calculate the maximum text width and image height.
-			final int count = table().getItemCount();
+			// no drop-down yet means no rows yet: measuring must not build it
+			final int count = table == null ? 0 : table.getItemCount();
 			for (int index = 0; index < count; index++) {
 				if (virtualTable && !isMaterialized(index)) {
 					continue;
