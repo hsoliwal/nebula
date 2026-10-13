@@ -9,8 +9,8 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 |---|---|---|---|---|
 | 1 | `GridIssue700_Test` | `m3/grid-issue-700-20261013` (#153), merged into #151 | new, written during the pause | compile-checked only |
 | 2 | `GridPinnedRows_Test` (5) | #151 | plane background fill changed after the last run | before the fill: 4 pass, 1 fail (`unscrolledPinnedTopRowsPaintLikeTheUnpinnedGrid`, overlay text pixels) |
-| 3 | `model.RowStateLanes_Test` (3) | #151 | new (containers mirrored from SWT #122) | compile-checked only |
-| 4 | `model.HeapGrowth_Test` (4) | #151 | slot width widened to 1..64 | compile-checked only |
+| 3 | `model.RowStateLanes_Test` (3) | #151 | new (containers mirrored from SWT #122) | PASS (headless run at 566cee84, see row 21) |
+| 4 | `model.HeapGrowth_Test` (4) | #151 | slot width widened to 1..64 | PASS (headless run at 566cee84, see row 21) |
 | 5 | `model.RowPermutation_Test`, `RowBitLanes_Test`, `RowGrouping_Test` | #151 | regression after the ports | 14 + 2 pass (before the ports) |
 | 6 | `GridRowPermutation_Test` (7), `GridColumnWindow_Test` (5), `GridSetDataRedraw_Test` (2) | #151 | regression after pinned plane + #700 merge | 7 / 5 / 2 pass before |
 | 7 | existing suite: 11 classes, 509 tests, pre (eab2a65c) vs post, failure-set diff | #151, #153 | after all changes | pre 134 failures, dev 134, identical set (before pinned plane) |
@@ -26,4 +26,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 18 | `GridBlitScroll_Test` (1): on-screen pixels after blit scrolling equal a full repaint (capture mode DISPLAY_COPY, shell ON_TOP and active) | #151 | new | compile-checked only |
 | 19 | `GridScrollbarSettle_Test` (1): arithmetic scroll bar settling equals the measured two-pass algorithm over a 300-step resize sweep (visibility, max, thumb, selection) | #151 | new | compile-checked only |
 | 20 | `model.RowSelection_Test` (2), headless | #151 | new (packed selection engine) | 2 run, 0 failures (local win32, JDK 21, headless) |
+| 21 | all model tests headless at 566cee84: RowPermutation_Test, RowBitLanes_Test, RowGrouping_Test, HeapGrowth_Test, RowStateLanes_Test, RowSelection_Test | #151 | after the ports and engines | **26 run, 0 failures** (JDK 21, win32, no display) |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |
