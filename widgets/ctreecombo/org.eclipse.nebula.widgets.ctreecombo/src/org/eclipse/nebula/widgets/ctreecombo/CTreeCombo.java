@@ -480,9 +480,28 @@ public class CTreeCombo extends Composite {
 	 */
 	Tree tree() {
 		if (tree == null && text != null && !isDisposed()) {
-			createPopup(items, null, false);
+			createPopup(null, null, false);
+			if (virtualRows) {
+				popupFiltered = false;
+				filteredChildren.clear();
+				tree.addListener(SWT.SetData, event -> bindRow((TreeItem) event.item, event.index));
+				tree.setItemCount(visibleChildren(null).size());
+			} else {
+				// the eager widget gave every item a bare native item when the item was constructed;
+				// attributes reach native items only when a drop-down rebuild copies them
+				createBareTreeItems(items, null);
+			}
 		}
 		return tree;
+	}
+
+	private void createBareTreeItems(List<CTreeComboItem> level, TreeItem parentRow) {
+		for (final CTreeComboItem item : level) {
+			final TreeItem row = parentRow == null ? new TreeItem(tree, item.getStyle())
+					: new TreeItem(parentRow, item.getStyle());
+			item.setRealTreeItem(row);
+			createBareTreeItems(item.childList(), row);
+		}
 	}
 
 	void createPopup(Collection<CTreeComboItem> items, CTreeComboItem selectedItem) {
