@@ -47,14 +47,18 @@
 						<include>**/GridViewportCoordinates_Test.java</include>
 						<include>**/GridGCProxy_Test.java</include>
 						<include>**/GridViewportDistillation_Test.java</include>
+						<include>**/GridBlitScroll_Test.java</include>
+						<include>**/GridBodyDefer_Test.java</include>
 						<include>**/GridCheckLanes_Test.java</include>
 						<include>**/GridColumnWindow_Test.java</include>
 						<include>**/GridIssue700_Test.java</include>
 						<include>**/GridModelJobs_Test.java</include>
 						<include>**/GridPinnedRows_Test.java</include>
+						<include>**/GridPrefetch_Test.java</include>
 						<include>**/GridResidency_Test.java</include>
 						<include>**/GridRowPermutation_Test.java</include>
 						<include>**/GridSetDataRedraw_Test.java</include>
+						<include>**/GridVirtualHeights_Test.java</include>
 						<include>**/model/HeapGrowth_Test.java</include>
 						<include>**/model/RowBitLanes_Test.java</include>
 						<include>**/model/RowGrouping_Test.java</include>

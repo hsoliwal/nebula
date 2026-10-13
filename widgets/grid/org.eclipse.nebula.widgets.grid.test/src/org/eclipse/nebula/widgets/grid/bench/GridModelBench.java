@@ -56,6 +56,14 @@ public final class GridModelBench {
 
 		/** Groups rows by {@code keys[m] % groups}; returns the group count. */
 		int group(int[] keys, int groups);
+
+		/** Checks column 0 of every displayed row. */
+		void checkAll(Grid grid);
+
+		/** Sort through the busy-indicator worker path; false if the driver has none. */
+		default boolean busySort(final Grid grid, final int[] keys, final boolean descending) {
+			return false;
+		}
 	}
 
 	private static final int FRAMES = 200;
@@ -137,6 +145,9 @@ public final class GridModelBench {
 		final long g1 = System.nanoTime();
 		report.put("group_1000", groups < 0 ? "NOT_IMPLEMENTED" : ms(g1 - g0), groups < 0 ? "-" : "ms");
 		drain(display);
+		busySort(report, driver, grid, keys, display);
+		timed(report, "check_all", () -> driver.checkAll(grid), display, grid);
+		report.put("materialized_after_check_all", materialized(grid), "items");
 		timed(report, "clear_view", driver::clear, display, grid);
 		report.put("materialized_after_model_ops", materialized(grid), "items");
 
@@ -170,6 +181,64 @@ public final class GridModelBench {
 		report.put(metric, ms(t1 - t0), "ms");
 		report.put(metric + "_cpu", ms(cpu() - c0), "ms");
 		drain(display);
+	}
+
+	/**
+	 * Sort through the busy indicator while a 10 ms ticker measures event-loop lateness and
+	 * posts thumb-drag events (time to handle each), plus body paints for the whole operation.
+	 */
+	private static void busySort(final Report report, final Driver driver, final Grid grid, final int[] keys,
+			final Display display) {
+		drain(display);
+		final long[] lateness = new long[4096];
+		final long[] thumb = new long[4096];
+		final int[] ticks = new int[2];
+		final boolean[] running = { true };
+		final ScrollBar bar = grid.getVerticalBar();
+		final Runnable[] tick = new Runnable[1];
+		final long[] due = { System.nanoTime() + 10_000_000L };
+		tick[0] = () -> {
+			if (!running[0] || grid.isDisposed()) {
+				return;
+			}
+			final long now = System.nanoTime();
+			if (ticks[0] < lateness.length) {
+				lateness[ticks[0]++] = Math.max(0L, now - due[0]);
+			}
+			final long t0 = System.nanoTime();
+			bar.setSelection((bar.getSelection() + 7) % Math.max(1, bar.getMaximum() - bar.getThumb()));
+			final Event e = new Event();
+			e.detail = SWT.DRAG;
+			bar.notifyListeners(SWT.Selection, e);
+			if (ticks[1] < thumb.length) {
+				thumb[ticks[1]++] = System.nanoTime() - t0;
+			}
+			due[0] = System.nanoTime() + 10_000_000L;
+			display.timerExec(10, tick[0]);
+		};
+		final int paints0 = intField(grid, "bodyPaintCount") < 0 ? 0 : (int) intField(grid, "bodyPaintCount");
+		display.timerExec(10, tick[0]);
+		final long t0 = System.nanoTime();
+		final boolean supported = driver.busySort(grid, keys, true);
+		final long t1 = System.nanoTime();
+		running[0] = false;
+		grid.update();
+		drain(display);
+		if (!supported) {
+			report.put("busy_sort", "NOT_SUPPORTED", "-");
+			return;
+		}
+		report.put("busy_sort", ms(t1 - t0), "ms");
+		report.put("busy_sort_ticks", ticks[0], "ticks");
+		final long[] l = Arrays.copyOf(lateness, ticks[0]);
+		final long[] th = Arrays.copyOf(thumb, ticks[1]);
+		Arrays.sort(l);
+		Arrays.sort(th);
+		report.put("busy_input_latency_p50", l.length == 0 ? "NO_TICKS" : ms(l[l.length / 2]), "ms");
+		report.put("busy_input_latency_max", l.length == 0 ? "NO_TICKS" : ms(l[l.length - 1]), "ms");
+		report.put("busy_thumb_handle_p50", th.length == 0 ? "NO_TICKS" : ms(th[th.length / 2]), "ms");
+		report.put("busy_thumb_handle_max", th.length == 0 ? "NO_TICKS" : ms(th[th.length - 1]), "ms");
+		report.put("busy_body_paints", intField(grid, "bodyPaintCount") - paints0, "paints");
 	}
 
 	private static void scroll(final Report report, final String name, final Grid grid, final Display display,

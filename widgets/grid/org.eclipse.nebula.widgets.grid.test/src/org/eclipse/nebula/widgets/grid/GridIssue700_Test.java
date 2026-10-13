@@ -55,13 +55,15 @@ public class GridIssue700_Test {
 		for (int i = 0; i < rows; i++) {
 			new GridItem(grid, SWT.NONE).setText("row " + i);
 		}
-		// room for rows - 1 rows: the last row needs the vertical scroll bar
-		final int rowHeight = grid.getItemHeight() + 1;
-		final Rectangle trim = grid.computeTrim(0, 0, 200, rowHeight * (rows - 1) + rowHeight / 2);
-		grid.setBounds(10, 10, trim.width, trim.height);
-		flush();
-		grid.redraw();
-		grid.update();
+		// the tallest Grid that still needs the vertical scroll bar for all rows: one row less fits
+		int height = 400;
+		grid.setBounds(10, 10, 200, height);
+		settle(grid);
+		while (!grid.getVerticalBar().getVisible() && height > 20) {
+			height--;
+			grid.setBounds(10, 10, 200, height);
+			settle(grid);
+		}
 		assertTrue("precondition: vertical scroll bar shown", grid.getVerticalBar().getVisible());
 
 		final GridItem last = grid.getItem(rows - 1);
@@ -79,6 +81,13 @@ public class GridIssue700_Test {
 		assertFalse("the scroll bar was hidden by the removal", grid.getVerticalBar().getVisible());
 		editor.layout();
 		assertEquals("editor of the removed item is parked off screen", new Point(0, 0), text.getSize());
+	}
+
+	private void settle(final Grid grid) {
+		flush();
+		grid.redraw();
+		grid.update();
+		flush();
 	}
 
 	private void flush() {

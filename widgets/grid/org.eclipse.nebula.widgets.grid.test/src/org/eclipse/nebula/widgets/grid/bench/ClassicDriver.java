@@ -99,6 +99,14 @@ public final class ClassicDriver implements GridModelBench.Driver {
 		return seen;
 	}
 
+	@Override
+	public void checkAll(final Grid g) {
+		// the unmodified Grid API: one item per row
+		for (int i = 0; i < g.getItemCount(); i++) {
+			g.getItem(i).setChecked(true);
+		}
+	}
+
 	private void apply(final int[] newView) {
 		view = newView;
 		grid.setItemCount(newView.length);

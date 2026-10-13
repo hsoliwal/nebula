@@ -660,6 +660,20 @@ public class Grid extends Canvas {
 	 */
 	public static final int RESIDENCY_EVICT_COLD = 1;
 
+	/** Rows populated ahead of the viewport after a paint (0 = off, the historic behaviour). */
+	private int prefetchRows;
+
+	/** Paint epoch the scheduled prefetch belongs to; a newer paint cancels it. */
+	private int prefetchEpoch = -1;
+
+	/** Rows populated by prefetch (package-private counter for tests and benches). */
+	int prefetchedRows;
+
+	/** True while prefetch populates rows outside the viewport: their setters need no redraw. */
+	private boolean prefetching;
+
+	private static final int PREFETCH_BATCH = 8;
+
 	/** Residency flags (0 = every materialized item is pinned, the historic behaviour). */
 	private int residencyFlags;
 
@@ -695,12 +709,22 @@ public class Grid extends Canvas {
 	boolean setDataRedrawGuard = true;
 
 	/**
-	 * Viewport-only redraw suppression: while positive, Grid invalidations are accumulated in
-	 * {@link #bodyDamagePending} and issued once when the outermost operation ends. Unlike
-	 * {@code setRedraw(false)} it never freezes the window, so the scroll bars keep repainting.
+	 * Plane mask bits for {@link #freezePlanes(int)}: each plane of the one Grid control is
+	 * frozen independently (mirror of the SWT batch API with plane masks). An operation freezes
+	 * only the plane it changes; the other planes keep painting.
 	 */
-	private int bodyDeferDepth;
-	private boolean bodyDamagePending;
+	static final int PLANE_BODY = 1;
+	/** Column header, group header, footer and pinned-row planes. */
+	static final int PLANE_CHROME = 1 << 1;
+	/** Scroll bar metrics (the native bars are only updated when this plane thaws). */
+	static final int PLANE_SCROLLBARS = 1 << 2;
+
+	/** Freeze depth per plane bit (index = bit number). */
+	private final int[] planeDepth = new int[3];
+
+	/** Planes with depth > 0, and planes whose invalidation is owed when they thaw. */
+	private int frozenPlanes;
+	private int pendingPlanes;
 
 	/** A frame paint is scheduled for a thumb drag (at most one per frame). */
 	private boolean dragFrameScheduled;
@@ -2815,7 +2839,13 @@ public class Grid extends Canvas {
 		range.startIndex = startIndex;
 		range.endIndex = endIndex;
 
-		if (isTree || hasDifferingHeights) {
+		if (!isTree && hasDifferingHeights && usesSparseVirtualItems()) {
+			// Flat virtual rows: an unmaterialized row would be created with itemHeight, so only
+			// materialized rows can differ; no row is created to measure it.
+			range.rows = range.endIndex - range.startIndex + 1;
+			range.height = (itemHeight + 1) * range.rows - 1
+					+ sparseVirtualItems().heightDelta(startIndex, endIndex, itemHeight);
+		} else if (isTree || hasDifferingHeights) {
 			for (int idx = startIndex; idx <= endIndex; idx++) {
 				final GridItem currItem = items.get(idx);
 
@@ -5462,6 +5492,7 @@ public class Grid extends Canvas {
 			evictCold();
 		}
 		paintEpoch = (paintEpoch + 1) & 0x7fffffff;
+		schedulePrefetch();
 	}
 
 	private void paintNow(final PaintEvent event) {
@@ -5477,7 +5508,7 @@ public class Grid extends Canvas {
 		final Point controlSize = getSize();
 		this.drawBackground(gc, 0, 0, controlSize.x, controlSize.y);
 
-		if (scrollValuesObsolete) {
+		if (scrollValuesObsolete && (frozenPlanes & PLANE_SCROLLBARS) == 0) {
 			updateScrollbars();
 			scrollValuesObsolete = false;
 		}
@@ -5729,13 +5760,21 @@ public class Grid extends Canvas {
 		if (clip.isEmpty()) {
 			return;
 		}
-		try (GridGCProxy pinnedGc = GridGCProxy.wrap(gc).clip(clip)) {
+		// Same GC state as the body pass (no proxy round trip): the plane must print the exact
+		// pixels the body prints for the same rows.
+		final Rectangle savedClip = gc.getClipping();
+		final Color savedBackground = gc.getBackground();
+		try {
+			gc.setClipping(clip);
 			// the plane is opaque: cells without a background colour must not draw over the
 			// scrolled rows beneath, so the plane starts from the Grid background as onPaint does
-			pinnedGc.gc().setBackground(getBackground());
-			pinnedGc.gc().fillRectangle(plane);
-			paintRows(displayOrderedColumns, false, first, count, hscroll, new GridCellSpanManager(), pinnedGc.gc(),
-					clip, y, clientArea, first, new InsertMark(), extraFill);
+			gc.setBackground(getBackground());
+			gc.fillRectangle(plane);
+			paintRows(displayOrderedColumns, false, first, count, hscroll, new GridCellSpanManager(), gc, clip, y,
+					clientArea, first, new InsertMark(), extraFill);
+		} finally {
+			gc.setBackground(savedBackground);
+			gc.setClipping(savedClip);
 		}
 		if (fixedOverlayActive) {
 			final int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
@@ -5968,6 +6007,93 @@ public class Grid extends Canvas {
 	 *            </ul>
 	 * @since 1.2
 	 */
+	/**
+	 * Populates up to {@code rows} rows below and then above the viewport while the event loop is
+	 * idle after a paint, in small batches; scrolling (the next paint) cancels the remaining
+	 * batches. Rows are populated through the normal item path ({@code SWT.SetData} once, or a
+	 * residency restore). Only flat {@code SWT.VIRTUAL} Grids prefetch; {@code 0} (the default)
+	 * disables it. With {@link #RESIDENCY_EVICT_COLD} the prefetch stays within the capacity.
+	 *
+	 * @param rows rows to populate ahead, 0 or more
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if {@code rows} is
+	 *                                     negative</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setPrefetchRows(final int rows) {
+		checkWidget();
+		if (rows < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		prefetchRows = rows;
+	}
+
+	/**
+	 * @return rows populated ahead of the viewport, see {@link #setPrefetchRows(int)}
+	 * @since 1.2
+	 */
+	public int getPrefetchRows() {
+		checkWidget();
+		return prefetchRows;
+	}
+
+	private void schedulePrefetch() {
+		if (prefetchRows <= 0 || !usesSparseVirtualItems() || !isVisible()) {
+			return;
+		}
+		final int epoch = paintEpoch;
+		prefetchEpoch = epoch;
+		getDisplay().asyncExec(() -> prefetchStep(epoch));
+	}
+
+	/** One idle batch; reschedules itself until done or until a newer paint moved the viewport. */
+	private void prefetchStep(final int epoch) {
+		if (isDisposed() || epoch != prefetchEpoch || !isVisible()) {
+			return;
+		}
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		final int count = items.size();
+		final int budget = residencyCapacity == Integer.MAX_VALUE ? prefetchRows
+				: Math.max(0, Math.min(prefetchRows, residencyCapacity - sparse.materializedCount()));
+		final int bottom = getBottomIndex();
+		final int top = getTopIndex();
+		int done = 0;
+		prefetching = true;
+		try {
+		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
+			final int below = bottom + i;
+			if (below >= 0 && below < count && sparse.getMaterialized(below) == null) {
+				items.get(below).getText(0);
+				prefetchedRows++;
+				done++;
+			}
+		}
+		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
+			final int above = top - i;
+			if (above >= 0 && above < count && sparse.getMaterialized(above) == null) {
+				items.get(above).getText(0);
+				prefetchedRows++;
+				done++;
+			}
+		}
+		} finally {
+			prefetching = false;
+		}
+		if (done == PREFETCH_BATCH) {
+			getDisplay().asyncExec(() -> prefetchStep(epoch));
+		}
+	}
+
 	public void setPinnedRowCount(final int top, final int bottom) {
 		checkWidget();
 		if (top < 0 || bottom < 0 || isTree) {
@@ -8362,11 +8488,12 @@ public class Grid extends Canvas {
 	 */
 	@Override
 	public void redraw() {
-		if (bodyDeferDepth > 0) {
-			bodyDamagePending = true;
+		if (frozenPlanes == 0) {
+			super.redraw();
 			return;
 		}
-		super.redraw();
+		pendingPlanes |= frozenPlanes & (PLANE_BODY | PLANE_CHROME);
+		invalidatePlanes(~frozenPlanes & (PLANE_BODY | PLANE_CHROME));
 	}
 
 	/**
@@ -8378,24 +8505,92 @@ public class Grid extends Canvas {
 	 */
 	@Override
 	public void redraw(final int x, final int y, final int width, final int height, final boolean all) {
-		if (bodyDeferDepth > 0) {
-			bodyDamagePending = true;
+		if (frozenPlanes == 0) {
+			super.redraw(x, y, width, height, all);
 			return;
 		}
-		super.redraw(x, y, width, height, all);
-	}
-
-	/** Starts a bulk operation: Grid paints are merged, the scroll bars stay live. */
-	private void deferBody() {
-		bodyDeferDepth++;
-	}
-
-	/** Ends a bulk operation: one invalidation for all merged damage. */
-	private void resumeBody() {
-		if (--bodyDeferDepth == 0 && bodyDamagePending) {
-			bodyDamagePending = false;
-			super.redraw();
+		final Rectangle damage = new Rectangle(x, y, width, height);
+		for (final int plane : new int[] { PLANE_BODY, PLANE_CHROME }) {
+			for (final Rectangle r : planeRects(plane)) {
+				final Rectangle part = r.intersection(damage);
+				if (part.isEmpty()) {
+					continue;
+				}
+				if ((frozenPlanes & plane) != 0) {
+					pendingPlanes |= plane;
+				} else {
+					super.redraw(part.x, part.y, part.width, part.height, all);
+				}
+			}
 		}
+	}
+
+	/** Freezes the planes of {@code mask} (nested; per-plane depth). */
+	void freezePlanes(final int mask) {
+		for (int bit = 0; bit < planeDepth.length; bit++) {
+			if ((mask & (1 << bit)) != 0 && planeDepth[bit]++ == 0) {
+				frozenPlanes |= 1 << bit;
+			}
+		}
+	}
+
+	/** Thaws the planes of {@code mask}; a plane reaching depth 0 is invalidated once if owed. */
+	void thawPlanes(final int mask) {
+		int owed = 0;
+		for (int bit = 0; bit < planeDepth.length; bit++) {
+			if ((mask & (1 << bit)) != 0 && --planeDepth[bit] == 0) {
+				frozenPlanes &= ~(1 << bit);
+				owed |= pendingPlanes & (1 << bit);
+				pendingPlanes &= ~(1 << bit);
+			}
+		}
+		if ((mask & PLANE_SCROLLBARS) != 0 && (frozenPlanes & PLANE_SCROLLBARS) == 0 && scrollValuesObsolete
+				&& !isDisposed()) {
+			owed |= PLANE_BODY;
+		}
+		invalidatePlanes(owed & (PLANE_BODY | PLANE_CHROME));
+	}
+
+	/** Starts a bulk body operation: body paints are merged; headers and scroll bars stay live. */
+	private void deferBody() {
+		freezePlanes(PLANE_BODY);
+	}
+
+	/** Ends a bulk body operation: one body invalidation for all merged damage. */
+	private void resumeBody() {
+		thawPlanes(PLANE_BODY);
+	}
+
+	private void invalidatePlanes(final int mask) {
+		if (mask == 0 || isDisposed()) {
+			return;
+		}
+		if (mask == (PLANE_BODY | PLANE_CHROME)) {
+			super.redraw();
+			return;
+		}
+		for (final int plane : new int[] { PLANE_BODY, PLANE_CHROME }) {
+			if ((mask & plane) != 0) {
+				for (final Rectangle r : planeRects(plane)) {
+					if (!r.isEmpty()) {
+						super.redraw(r.x, r.y, r.width, r.height, false);
+					}
+				}
+			}
+		}
+	}
+
+	/** Client rectangles of a plane: body between header and footer; chrome = header + footer. */
+	private Rectangle[] planeRects(final int plane) {
+		final Rectangle client = getClientArea();
+		final int header = columnHeadersVisible ? headerHeight : 0;
+		final int footer = columnFootersVisible ? footerHeight : 0;
+		if (plane == PLANE_BODY) {
+			return new Rectangle[] { GridViewportDamage.scrollDamage(client, header, footer, false) };
+		}
+		return new Rectangle[] { new Rectangle(client.x, client.y, client.width, Math.min(header, client.height)),
+				new Rectangle(client.x, Math.max(client.y, client.y + client.height - footer), client.width,
+						Math.min(footer, client.height)) };
 	}
 
 	/**
@@ -8450,7 +8645,8 @@ public class Grid extends Canvas {
 	 * Scrolls the body by copying the pixels that stay visible and invalidating only the
 	 * exposed strip. Only when every row has the same height and the painted rows depend on
 	 * nothing but their absolute index (default renderers, no spans, pinned planes, insert mark,
-	 * column drag or cell hover feedback); otherwise the caller repaints the whole body.
+	 * column drag, cell hover feedback or child controls such as open cell editors); otherwise
+	 * the caller repaints the whole body.
 	 */
 	private boolean blitBody(final int oldTop, final Rectangle body) {
 		if (!blitScroll || oldTop < 0 || !isVisible() || !blitSafe()) {
@@ -8473,7 +8669,7 @@ public class Grid extends Canvas {
 
 	private boolean blitSafe() {
 		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
-				|| insertMarkItem != null || !hoveringDetail.isEmpty()
+				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
 				|| emptyCellRenderer.getClass() != DefaultEmptyCellRenderer.class
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
 			return false;
@@ -8802,6 +8998,15 @@ public class Grid extends Canvas {
 	 * @return current number of columns
 	 */
 	int newColumn(final GridColumn column, final int index) {
+		freezePlanes(PLANE_CHROME);
+		try {
+			return newColumnNow(column, index);
+		} finally {
+			thawPlanes(PLANE_CHROME);
+		}
+	}
+
+	private int newColumnNow(final GridColumn column, final int index) {
 
 		final int size = columns.size();
 		if (index == -1) {
@@ -8845,6 +9050,15 @@ public class Grid extends Canvas {
 	 * @param column column to remove
 	 */
 	void removeColumn(final GridColumn column) {
+		freezePlanes(PLANE_CHROME);
+		try {
+			removeColumnNow(column);
+		} finally {
+			thawPlanes(PLANE_CHROME);
+		}
+	}
+
+	private void removeColumnNow(final GridColumn column) {
 		boolean selectionModified = false;
 
 		final int index = column.index;
@@ -10508,7 +10722,7 @@ public class Grid extends Canvas {
 				scrollValuesObsolete = true;
 				topIndex = -1;
 				bottomIndex = -1;
-				bodyDamagePending = true;
+				pendingPlanes |= PLANE_BODY;
 			} finally {
 				resumeBody();
 			}
@@ -10516,7 +10730,7 @@ public class Grid extends Canvas {
 		}
 
 		deferBody();
-		bodyDamagePending = true;
+		pendingPlanes |= PLANE_BODY;
 		try {
 		if (count < items.size()) {
 			selectedCells.clear();
@@ -10881,6 +11095,9 @@ public class Grid extends Canvas {
 	 */
 	void redrawForItemData(final GridItem item) {
 		if (setDataRedrawGuard && painting && virtualDataItem == item) {
+			return;
+		}
+		if (prefetching) {
 			return;
 		}
 		redraw();
