@@ -129,3 +129,7 @@ build-nebula/tests/org.eclipse.nebula.widgets.xviewer.tests/javac.log	javac				N
 build-nebula/tests/org.eclipse.nebula.widgets.xviewer.tests/javac.log	javac				NOTE		Recompile with -Xlint:deprecation for details.
 build-nebula/extra/cwt/javac.log	javac				NOTE		org.eclipse.nebula.cwt/src/org/eclipse/nebula/cwt/v/VControl.java uses unchecked or unsafe operations.
 build-nebula/extra/cwt/javac.log	javac				NOTE		Recompile with -Xlint:unchecked for details.
+build-nebula/m3/merged-suite-no-a3lab.log	javac				NOTE		Annotation processing is enabled because one or more processors were found
+build-nebula/m3/merged-suite-no-a3lab.log	javac				NOTE		Annotation processing is enabled because one or more processors were found
+build-nebula/m3/merged-suite-no-a3lab.log	javac				NOTE		Annotation processing is enabled because one or more processors were found
+build-nebula/m3/merged-suite-no-a3lab.log	surefire	NebulaM3CurrentMasterReproofTest.java	27		FAIL	proofLedgerBindsCurrentMasterAndByteEquivalentCanonicalRecipes	expected: <schema master_preimage canonical_repository canonical_develop_head lane pinned_commit pinned_blob current_blob byte_equivalent hosted_proof> but was: <schema nebula_master_preimage canonical_repository canonical_develop_head lane pinned_commit pinned_blob current_blob byte_equivalent host

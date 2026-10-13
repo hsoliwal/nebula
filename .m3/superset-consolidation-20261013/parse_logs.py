@@ -3,7 +3,7 @@
 usage: python parse_logs.py OUT.tsv LOG...
 Columns: log, tool, file, line, col, severity, rule, message.
 javac "path:line: error|warning: msg", Maven "[ERROR] /path:[line,col] msg",
-JUnit 4 "N) method(class)" failures and "Tests run/OK" summaries. Unparsed
+JUnit 4 "N) method(class)" failures, surefire "[ERROR]   Class.method:line" summaries and "Tests run/OK" summaries. Unparsed
 javac notes are kept as NOTE rows without a location.
 """
 import re
@@ -14,6 +14,7 @@ MAVEN = re.compile(r"^\[(?P<sev>ERROR|WARNING)\] (?P<file>/?[A-Za-z]:?[^\[]*\.ja
 JUNIT_FAIL = re.compile(r"^\d+\) (?P<method>[^(]+)\((?P<cls>[^)]+)\)$")
 JUNIT_SUM = re.compile(r"^(OK \((?P<ok>\d+) tests?\)|Tests run: (?P<run>\d+),\s+Failures: (?P<fail>\d+))$")
 LINT = re.compile(r"\[(?P<rule>[a-z-]+)\] ")
+SUREFIRE = re.compile(r"^\[ERROR\]\s+(?P<cls>\w+)\.(?P<method>\w+):(?P<line>\d+) (?P<msg>.*)$")
 AT = re.compile(r"^\s+at (?P<cls>[\w.$]+)\.(?P<method>[\w$<>]+)\((?P<file>[\w$]+\.java):(?P<line>\d+)\)$")
 
 
@@ -33,6 +34,10 @@ def rows(path):
             continue
         if line.startswith("Note: "):
             yield ("javac", "", "", "", "NOTE", "", line[6:])
+            continue
+        m = SUREFIRE.match(line)
+        if m:
+            yield ("surefire", m["cls"] + ".java", m["line"], "", "FAIL", m["method"], m["msg"][:300])
             continue
         m = JUNIT_FAIL.match(line)
         if m:

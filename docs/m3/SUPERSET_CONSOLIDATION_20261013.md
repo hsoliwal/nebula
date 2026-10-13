@@ -253,16 +253,18 @@ NOT_RUN (need a Display; this run is headless only): `GridBlitScroll_Test`, `Gri
 
 | Suite | Tests | Failures | Errors | Status | Note |
 |---|---|---|---|---|---|
-| test-compile (openrewrite-line-terminators, recipe-first) | - | - | - | PASS | baseline before the m3 merges: BUILD SUCCESS |
-| NebulaM3MethodSignalEvidenceRecipeTest, NebulaM3InventoryRecipeTest, NebulaM3RepositoryReviewRecipeTest (merged tree) | 9 | 0 | 0 | PASS | mvn -pl recipe-first -am test after the OpenRewrite 8.90.4 adaptation |
+| openrewrite-line-terminators + recipe-first, all test classes except NebulaM3A3LabTest (merged tree dc4aeb0f) | 135 | 1 | 0 | PASS_WITH_PREEXISTING_FAILURE | 18 + 117 tests (BUILD FAILURE only from that one test); the one failure is NebulaM3CurrentMasterReproofTest.proofLedgerBindsCurrentMasterAndByteEquivalentCanonicalRecipes:27 (expects header column master_preimage, m3/catalogue/current-master-reproof-20261013.tsv has nebula_master_preimage). Neither file is changed by this branch; the same failure reproduces on the master m3 tree (a01e4e62). |
+| NebulaM3MethodSignalEvidenceRecipeTest, NebulaM3InventoryRecipeTest, NebulaM3RepositoryReviewRecipeTest | 9 | 0 | 0 | PASS | included above; first run right after the OpenRewrite 8.90.4 adaptation |
+| NebulaM3A3LabTest (288-row compiler/runtime mastery campaign) | - | - | - | NOT_RUN | never finished: on the master m3 tree it was still running after 14 minutes when that baseline run was stopped; on the merged tree one run died after about 30 minutes (Maven exit 75) and one was stopped after 50 minutes, while external git processes exhausted memory (available RAM near 0, commit headroom down to -3 GB). No file it reads is changed by this branch (A3 lab, mastery recipe and fixtures are untouched). |
 
 ### Build-log report (file:line:severity)
 
-`BUILD-LOG-REPORT.tsv` in `.m3/superset-consolidation-20261013/` holds every parsed javac and JUnit row (130 rows: FAIL 2, NOTE 34, PASS 14, WARNING 80).
+`BUILD-LOG-REPORT.tsv` in `.m3/superset-consolidation-20261013/` holds every parsed javac and JUnit row (134 rows: FAIL 3, NOTE 37, PASS 14, WARNING 80).
 
 | File | Line | Severity | Rule / test | Message |
 |---|---|---|---|---|
 | `org/eclipse/nebula/widgets/grid/GridRowSpanIndex_Test.java` | 24 | FAIL | sparseFrontierFindsEarliestCoveringSpanAtDistantViewport | java.lang.AssertionError: expected:<500000> but was:<499995> |
+| `NebulaM3CurrentMasterReproofTest.java` | 27 | FAIL | proofLedgerBindsCurrentMasterAndByteEquivalentCanonicalRecipes | expected: <schema master_preimage canonical_repository canonical_develop_head lane pinned_commit pinned_blob current_blob byte_equivalent hosted_proof> but was: |
 
 ## Jars (`*-m3-20261013.2.jar`)
 
