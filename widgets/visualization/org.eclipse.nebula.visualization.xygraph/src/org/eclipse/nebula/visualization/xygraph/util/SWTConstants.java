@@ -45,7 +45,7 @@ public class SWTConstants {
 	 * 
 	 * @see org.eclipse.swt.graphics.GC#setLineDash(int[])
 	 * @see org.eclipse.swt.graphics.GC#getLineDash()
-	 * @since 3.1
+	 * @since 3.2
 	 */
 	public static final int LINE_CUSTOM = 6;
 

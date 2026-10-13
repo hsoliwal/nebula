@@ -291,6 +291,13 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	private IPointStyleProvider fPointStyleProvider;
 
 	/**
+	 * Per-pixel-column decimation of {@link org.eclipse.nebula.visualization.xygraph.dataprovider.PackedXYDataProvider}
+	 * data (see {@link #setDecimationEnabled(boolean)}).
+	 */
+	private boolean decimationEnabled = true;
+	private final TraceDecimationPainter decimationPainter = new TraceDecimationPainter(this);
+
+	/**
 	 * {@link #init(Axis, Axis, IDataProvider)} needs to be called if a trace is
 	 * created with this constructor
 	 */
@@ -647,6 +654,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
         if (traceDataProvider == null) {
             throw new RuntimeException("No DataProvider defined for trace: " + name); //$NON-NLS-1$
         }
+		if (paintDecimated(graphics)) {
+			return;
+		}
 		// Lock data provider to prevent changes while painting
 		synchronized (traceDataProvider) {
 			if (traceDataProvider.getSize() > 0) {
@@ -1055,6 +1065,63 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	}
 
 	/**
+	 * Draws the trace from the decimated polyline when the data provider is packed, the trace is a plain line (solid,
+	 * dash, dot variants) without point markers, point style provider or error bars, and every visible sample is
+	 * inside the axis ranges. The polyline has exactly the vertices the per-sample loop below builds for the same
+	 * view; it is computed on worker threads in O(pixel columns * log(samples)).
+	 *
+	 * @return false if the per-sample loop must paint this frame
+	 */
+	private boolean paintDecimated(Graphics graphics) {
+		if (!decimationEnabled || pointStyle != PointStyle.NONE || fPointStyleProvider != null || errorBarEnabled) {
+			return false;
+		}
+		switch (traceType) {
+		case SOLID_LINE:
+		case DASH_LINE:
+		case DASHDOT_LINE:
+		case DASHDOTDOT_LINE:
+		case DOT_LINE:
+			break;
+		default:
+			return false;
+		}
+		PointList pl = decimationPainter.polyline(traceDataProvider, xAxis, yAxis);
+		if (pl == null) {
+			return false;
+		}
+		if (pl != TraceDecimationPainter.NOTHING) {
+			drawPolyline(graphics, pl);
+		}
+		return true;
+	}
+
+	/**
+	 * Enables or disables the decimated paint for this trace (enabled by default). It only applies to
+	 * {@link org.eclipse.nebula.visualization.xygraph.dataprovider.PackedXYDataProvider} data; the drawn pixels and
+	 * {@link #getHotSampleList()} are the same either way.
+	 *
+	 * @param enabled
+	 *            false to always paint sample by sample
+	 * @since 3.2
+	 */
+	public void setDecimationEnabled(boolean enabled) {
+		if (decimationEnabled != enabled) {
+			decimationEnabled = enabled;
+			decimationPainter.reset();
+			repaint();
+		}
+	}
+
+	/**
+	 * @return whether packed data is drawn from the decimated polyline
+	 * @since 3.2
+	 */
+	public boolean isDecimationEnabled() {
+		return decimationEnabled;
+	}
+
+	/**
 	 * Compute axes intersection considering the 'TraceType'
 	 * 
 	 * @param dp1
@@ -1327,6 +1394,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *            the traceDataProvider to set
 	 */
 	public void setDataProvider(IDataProvider traceDataProvider) {
+		decimationPainter.reset();
 		traceDataProvider.addDataProviderListener(this);
 		// traceDataProvider.addDataProviderListener(xAxis);
 		// traceDataProvider.addDataProviderListener(yAxis);
@@ -1729,6 +1797,9 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 * @return the hotPointList
 	 */
 	public List<ISample> getHotSampleList() {
+		if (hotSampleist != null) {
+			decimationPainter.materializeHot(hotSampleist);
+		}
 		return hotSampleist;
 	}
 
