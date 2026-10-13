@@ -2839,7 +2839,13 @@ public class Grid extends Canvas {
 		range.startIndex = startIndex;
 		range.endIndex = endIndex;
 
-		if (isTree || hasDifferingHeights) {
+		if (!isTree && hasDifferingHeights && usesSparseVirtualItems()) {
+			// Flat virtual rows: an unmaterialized row would be created with itemHeight, so only
+			// materialized rows can differ; no row is created to measure it.
+			range.rows = range.endIndex - range.startIndex + 1;
+			range.height = (itemHeight + 1) * range.rows - 1
+					+ sparseVirtualItems().heightDelta(startIndex, endIndex, itemHeight);
+		} else if (isTree || hasDifferingHeights) {
 			for (int idx = startIndex; idx <= endIndex; idx++) {
 				final GridItem currItem = items.get(idx);
 

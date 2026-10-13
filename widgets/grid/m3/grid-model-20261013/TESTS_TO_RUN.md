@@ -22,4 +22,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 14 | `GridBodyDefer_Test` (2): one body paint per sort/filter/setItemCount; thumb drag moves the bar at once, body paints <= frames | #151 | new (viewport-only redraw suppression) | compile-checked only |
 | 15 | bench `busy_sort` (1M rows, PackedDriver): BusyIndicator.showWhile(Future) worker sort; event-loop lateness p50/max, thumb handle p50/max, body paints | #151 | new | compile-checked only |
 | 16 | `GridPrefetch_Test` (2): idle prefetch of rows below the viewport, no SetData when they scroll in | #151 | new (setPrefetchRows) | compile-checked only |
+| 17 | `GridVirtualHeights_Test` (1): computeSize of a virtual Grid with differing heights equals the fully materialized Grid and creates <= 2 rows | #151 | new | compile-checked only |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |

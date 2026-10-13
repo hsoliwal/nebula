@@ -177,6 +177,18 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         return slot >= 0 && values[slot] == item ? models[slot] : -1;
     }
 
+    /**
+     * Sum of {@code height - base} over materialized rows in {@code [from, to]}: the height an
+     * unmaterialized row would get is {@code base}, so only materialized rows contribute.
+     */
+    int heightDelta(final int from, final int to, final int base) {
+        int delta = 0;
+        for (int slot = insertionPoint(from); slot < materializedCount && indices[slot] <= to; slot++) {
+            delta += values[slot].getHeight() - base;
+        }
+        return delta;
+    }
+
     /** Marks the slot bound at view index {@code index} as used by paint {@code epoch}. */
     void touch(final int index, final int epoch) {
         final int slot = find(index);
