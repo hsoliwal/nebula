@@ -61,6 +61,8 @@
 						<include>**/GridScrollbarSettle_Test.java</include>
 						<include>**/GridSetDataRedraw_Test.java</include>
 						<include>**/GridVirtualHeights_Test.java</include>
+						<include>**/GridRowSpanIndex_Test.java</include>
+						<include>**/GridVirtualItemListCapacity_Test.java</include>
 						<include>**/model/HeapGrowth_Test.java</include>
 						<include>**/model/RowBitLanes_Test.java</include>
 						<include>**/model/RowGrouping_Test.java</include>

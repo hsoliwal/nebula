@@ -135,8 +135,8 @@ public class GridPaintPreparation_Test {
 
         GridItem spanOwner = indexed.getItem(499_995);
         spanOwner.setRowSpan(1, 100);
-        assertEquals(500_000, indexed.rowSpanPaintStart(500_000),
-                "a hidden-column span must not change the historical paint frontier");
+        assertEquals("a hidden-column span must not change the historical paint frontier",
+                500_000, indexed.rowSpanPaintStart(500_000));
 
         spanOwner.setRowSpan(0, 10);
         assertEquals(499_995, indexed.rowSpanPaintStart(500_000));
