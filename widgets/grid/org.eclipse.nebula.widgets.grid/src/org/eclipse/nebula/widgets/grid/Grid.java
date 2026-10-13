@@ -135,6 +135,45 @@ public class Grid extends Canvas {
 		return dataVisualizer;
 	}
 
+	boolean usesIndexedRowSpans() {
+		return dataVisualizer.getClass() == GridItemDataVisualizer.class;
+	}
+
+	void rowSpanChanged(final GridItem item, final int column, final int span) {
+		if (usesIndexedRowSpans()) rowSpanIndex.update(item, column, span);
+	}
+
+	void rowSpanOwnerDisposed(final GridItem item) {
+		if (usesIndexedRowSpans()) rowSpanIndex.remove(item);
+	}
+
+	void rowSpanDataColumnInserted(final int column) {
+		if (usesIndexedRowSpans()) rowSpanIndex.columnInserted(column);
+	}
+
+	void rowSpanDataColumnRemoved(final int column) {
+		if (usesIndexedRowSpans()) rowSpanIndex.columnRemoved(column);
+	}
+
+	void rowSpanDataCleared() {
+		if (usesIndexedRowSpans()) rowSpanIndex.clear();
+	}
+
+	int rowSpanPaintStart(final int firstVisibleIndex) {
+		if (!usesIndexedRowSpans()) return firstVisibleIndex;
+		final boolean[] visibleColumns = new boolean[columns.size()];
+		for (final GridColumn column : columns) {
+			if (0 <= column.index && column.index < visibleColumns.length) {
+				visibleColumns[column.index] = column.isVisible();
+			}
+		}
+		return rowSpanIndex.earliestCovering(firstVisibleIndex, visibleColumns);
+	}
+
+	int rowSpanIndexOwnerCount() {
+		return usesIndexedRowSpans() ? rowSpanIndex.sparseOwnerCount() : 0;
+	}
+
 	/**
 	 * Object holding the visible range
 	 */
@@ -163,6 +202,7 @@ public class Grid extends Canvas {
 	public void clearItems() {
 		items.clear();
 		rootItems.clear();
+		rowSpanIndex.clear();
 		deselectAll();
 		redraw();
 	}
@@ -899,6 +939,7 @@ public class Grid extends Canvas {
 	private boolean wordWrapRowHeader = false;
 
 	private final DataVisualizer dataVisualizer;
+	private final GridRowSpanIndex rowSpanIndex = new GridRowSpanIndex();
 
 	private Listener defaultKeyListener;
 
@@ -3346,6 +3387,7 @@ public class Grid extends Canvas {
 				item.dispose();
 			} else {
 				sparse.remove(index);
+				if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 				currentVisibleItems--;
 				scrollValuesObsolete = true;
 				topIndex = -1;
@@ -5641,28 +5683,27 @@ public class Grid extends Canvas {
 
 		final List<GridColumn> cols = displayOrderedColumns;
 		if (hasSpanning) {
-			// We need to find the first Item to draw. An earlier item can row-span the
-			// first visible item.
-			for (int rowIndex = 0; rowIndex < firstVisibleIndex && rowIndex < items.size(); rowIndex++) {
-				int colIndex = 0;
-
-				int maxRowSpanForItem = 0;
-				for (final GridColumn column : cols) {
-
-					if (!column.isVisible()) {
+			if (usesIndexedRowSpans()) {
+				firstItemToDraw = rowSpanPaintStart(firstVisibleIndex);
+			} else {
+				// Custom DataVisualizer implementations may compute row spans dynamically.
+				// Preserve the historical query path for that extension contract.
+				for (int rowIndex = 0; rowIndex < firstVisibleIndex && rowIndex < items.size(); rowIndex++) {
+					int colIndex = 0;
+					int maxRowSpanForItem = 0;
+					for (final GridColumn column : cols) {
+						if (!column.isVisible()) {
+							colIndex++;
+							continue;
+						}
+						final int rowSpan = items.get(rowIndex).getRowSpan(colIndex);
+						maxRowSpanForItem = rowSpan > maxRowSpanForItem ? rowSpan : maxRowSpanForItem;
 						colIndex++;
-						continue;
 					}
-
-					final int rowSpan = items.get(rowIndex).getRowSpan(colIndex);
-					maxRowSpanForItem = rowSpan > maxRowSpanForItem ? rowSpan : maxRowSpanForItem;
-					colIndex++;
-				}
-
-				if (rowIndex + maxRowSpanForItem >= firstVisibleIndex) {
-					firstItemToDraw = rowIndex;
-					break;
-				} else {
+					if (rowIndex + maxRowSpanForItem >= firstVisibleIndex) {
+						firstItemToDraw = rowIndex;
+						break;
+					}
 					rowIndex += maxRowSpanForItem;
 				}
 			}
@@ -9257,6 +9298,7 @@ public class Grid extends Canvas {
 			item.disposeOnly();
 		}
 		sparse.clear();
+		rowSpanIndex.clear();
 		rootItems.clear();
 		selectedItems.clear();
 		selectedCells.clear();
@@ -9355,6 +9397,7 @@ public class Grid extends Canvas {
 				}
 			}
 		}
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 
 		estimate(sizingGC -> {
 			if (items.size() == 1 && !userModifiedItemHeight) {
@@ -9399,6 +9442,7 @@ public class Grid extends Canvas {
 		final int index = item.getRowIndex();
 
 		items.remove(item);
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 
 		dataVisualizer.clearRow(item);
 
@@ -10797,8 +10841,10 @@ public class Grid extends Canvas {
 					if (focusItem == removedItem) {
 						focusItem = null;
 					}
+					if (usesIndexedRowSpans()) rowSpanIndex.remove(removedItem);
 					removedItem.disposeOnly();
 				}
+				if (usesIndexedRowSpans() && oldCount != logicalCount) rowSpanIndex.rowsChanged();
 				selectedCells.removeIf(cell -> cell.y >= logicalCount);
 				selectedCellsBeforeRangeSelect.removeIf(cell -> cell.y >= logicalCount);
 				currentVisibleItems = logicalCount;
