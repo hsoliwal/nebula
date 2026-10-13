@@ -128,3 +128,7 @@ marked. See [M3-SYNEXIA-NOTICE.md](M3-SYNEXIA-NOTICE.md),
 These additions do not relicense Eclipse/Nebula product code, OpenJDK,
 OpenRewrite or donor material. Their original licenses and attribution remain
 authoritative.
+
+## Fork development guide
+
+See the [development guide](docs/DEVELOPMENT_GUIDE.md) for source layout, reproducible build and test lanes, fork-specific boundaries and review handover.
