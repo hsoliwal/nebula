@@ -44,7 +44,7 @@ final class NebulaM3SecondPassReviewDagBindingTest {
         assertFalse(NebulaM3SecondPassReviewDagBinding.nativeExecutionAuthority());
         assertFalse(NebulaM3SecondPassReviewDagBinding.promotionAuthority());
         assertEquals(
-                "PENDING_CURRENT_NEBULA_REPROOF_20261007",
+                "REQUESTED_CURRENT_NEBULA_REPROOF_20261013",
                 NebulaM3SecondPassReviewDagBinding.HOSTED_PROOF);
     }
 
