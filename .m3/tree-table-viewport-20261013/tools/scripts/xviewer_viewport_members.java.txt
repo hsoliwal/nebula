@@ -1,0 +1,149 @@
+
+   /**
+    * Sets the content provider. When the tree was created with {@code SWT.VIRTUAL} and the provider is a plain
+    * {@link ITreeContentProvider}, it is served through an {@link XViewerViewportContentProvider} so that only rows the
+    * native tree shows are materialized; {@link #getContentProvider()} then returns that bridge and
+    * {@link XViewerViewportContentProvider#getDelegate()} returns the provider given here.
+    */
+   @Override
+   public void setContentProvider(IContentProvider provider) {
+      boolean lazy = provider instanceof ILazyTreeContentProvider || provider instanceof ILazyTreePathContentProvider;
+      if (isViewport() && provider instanceof ITreeContentProvider && !lazy) {
+         viewport = new XViewerViewportContentProvider(this, (ITreeContentProvider) provider);
+         super.setContentProvider(viewport);
+      } else {
+         viewport = null;
+         super.setContentProvider(provider);
+      }
+   }
+
+   /**
+    * @return true if the tree was created with {@code SWT.VIRTUAL}, so the viewer works as a viewport over the model
+    * @since 1.2
+    */
+   public boolean isViewport() {
+      Tree tree = getTree();
+      return tree != null && !tree.isDisposed() && (tree.getStyle() & SWT.VIRTUAL) != 0;
+   }
+
+   /**
+    * @return rows materialized by the viewport bridge since the last structural refresh, or -1 when the viewer is not a
+    * viewport over a plain tree content provider
+    * @since 1.2
+    */
+   public int getViewportMaterializedCount() {
+      return viewport == null ? -1 : viewport.getMaterializedCount();
+   }
+
+   /**
+    * Filtered and sorted children exactly as {@code AbstractTreeViewer#getSortedChildren} orders them.
+    */
+   Object[] viewportSortedChildren(Object parent, Object[] raw) {
+      Object[] result = raw;
+      for (ViewerFilter filter : getFilters()) {
+         result = filter.filter(this, parent, result);
+      }
+      ViewerComparator comparator = getComparator();
+      if (comparator != null) {
+         if (result == raw) {
+            result = result.clone();
+         }
+         if (comparator instanceof TreePathViewerSorter) {
+            ((TreePathViewerSorter) comparator).sort(this, viewportPath(parent), result);
+         } else {
+            comparator.sort(this, result);
+         }
+      }
+      return result;
+   }
+
+   private TreePath viewportPath(Object element) {
+      LinkedList<Object> segments = new LinkedList<>();
+      Object input = getInput();
+      for (Object e = element; e != null && e != input && !e.equals(input); e = viewport.getParent(e)) {
+         segments.addFirst(e);
+      }
+      return new TreePath(segments.toArray());
+   }
+
+   @Override
+   protected void internalRefresh(Object element, boolean updateLabels) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.internalRefresh(element, updateLabels);
+   }
+
+   @Override
+   public void add(Object parentElementOrTreePath, Object... childElements) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.add(parentElementOrTreePath, childElements);
+   }
+
+   @Override
+   public void insert(Object parentElementOrTreePath, Object element, int position) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.insert(parentElementOrTreePath, element, position);
+   }
+
+   @Override
+   public void remove(Object... elementsOrTreePaths) {
+      if (viewport != null) {
+         viewport.invalidate();
+      }
+      super.remove(elementsOrTreePaths);
+   }
+
+   @Override
+   protected void setExpanded(Item node, boolean expand) {
+      super.setExpanded(node, expand);
+      if (expand) {
+         trackExpanded(node);
+      }
+   }
+
+   private void trackExpanded(Object item) {
+      if (viewport != null && item instanceof TreeItem) {
+         viewportExpanded.add((TreeItem) item);
+      }
+   }
+
+   /**
+    * Visible row count for a viewport tree: root count plus the child counts of expanded items whose ancestors are all
+    * expanded. Only items the tree or the API expanded are visited, never the full root array.
+    */
+   private int viewportVisibleCount() {
+      int count = getTree().getItemCount();
+      viewportExpanded.removeIf(TreeItem::isDisposed);
+      for (TreeItem item : viewportExpanded) {
+         if (item.getExpanded() && ancestorsExpanded(item)) {
+            count += item.getItemCount();
+         }
+      }
+      return count;
+   }
+
+   private static boolean ancestorsExpanded(TreeItem item) {
+      for (TreeItem p = item.getParentItem(); p != null; p = p.getParentItem()) {
+         if (!p.getExpanded()) {
+            return false;
+         }
+      }
+      return true;
+   }
+
+   private TreeItem[] materializedRootItems() {
+      Tree tree = getTree();
+      int limit = Math.min(tree.getItemCount(), viewport.materializedRootLimit());
+      List<TreeItem> items = new ArrayList<>();
+      for (int i = 0; i < limit; i++) {
+         if (viewport.isRootMaterialized(i)) {
+            items.add(tree.getItem(i));
+         }
+      }
+      return items.toArray(new TreeItem[items.size()]);
+   }
