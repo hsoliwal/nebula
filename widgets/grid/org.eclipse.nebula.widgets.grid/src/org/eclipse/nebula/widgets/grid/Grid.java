@@ -143,6 +143,18 @@ public class Grid extends Canvas {
 		if (usesIndexedRowSpans()) rowSpanIndex.remove(item);
 	}
 
+	void rowSpanDataColumnInserted(final int column) {
+		if (usesIndexedRowSpans()) rowSpanIndex.columnInserted(column);
+	}
+
+	void rowSpanDataColumnRemoved(final int column) {
+		if (usesIndexedRowSpans()) rowSpanIndex.columnRemoved(column);
+	}
+
+	void rowSpanDataCleared() {
+		if (usesIndexedRowSpans()) rowSpanIndex.clear();
+	}
+
 	int rowSpanPaintStart(final int firstVisibleIndex) {
 		if (!usesIndexedRowSpans()) return firstVisibleIndex;
 		final boolean[] visibleColumns = new boolean[columns.size()];
@@ -8165,7 +8177,6 @@ public class Grid extends Canvas {
 			displayOrderedColumns.add(index, column);
 
 			dataVisualizer.addColumn(index);
-			if (usesIndexedRowSpans()) rowSpanIndex.columnInserted(index);
 			for (int i = 0; i < size; i++) {
 				columns.get(i).setColumnIndex(i);
 			}
@@ -8227,7 +8238,6 @@ public class Grid extends Canvas {
 		}
 		displayOrderedColumns.remove(column);
 		dataVisualizer.clearColumn(index);
-		if (usesIndexedRowSpans()) rowSpanIndex.columnRemoved(index);
 
 		if (focusColumn == column) {
 			focusColumn = null;
