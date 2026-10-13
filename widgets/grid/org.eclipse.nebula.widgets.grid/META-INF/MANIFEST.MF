@@ -9,6 +9,7 @@ Require-Bundle: org.eclipse.swt;bundle-version="[3.126.0,4.0.0)",
 Export-Package: org.eclipse.nebula.jface.gridviewer,
  org.eclipse.nebula.jface.gridviewer.internal;x-internal:=true,
  org.eclipse.nebula.widgets.grid,
- org.eclipse.nebula.widgets.grid.internal;x-internal:=true
+ org.eclipse.nebula.widgets.grid.internal;x-internal:=true,
+ org.eclipse.nebula.widgets.grid.model
 Bundle-Vendor: Eclipse Nebula
 Automatic-Module-Name: org.eclipse.nebula.widgets.grid
