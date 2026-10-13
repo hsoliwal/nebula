@@ -47,6 +47,7 @@
 						<include>**/GridViewportCoordinates_Test.java</include>
 						<include>**/GridGCProxy_Test.java</include>
 						<include>**/GridViewportDistillation_Test.java</include>
+						<include>**/GridBlitScroll_Test.java</include>
 						<include>**/GridBodyDefer_Test.java</include>
 						<include>**/GridCheckLanes_Test.java</include>
 						<include>**/GridColumnWindow_Test.java</include>

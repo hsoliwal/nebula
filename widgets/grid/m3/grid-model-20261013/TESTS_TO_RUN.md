@@ -23,4 +23,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 15 | bench `busy_sort` (1M rows, PackedDriver): BusyIndicator.showWhile(Future) worker sort; event-loop lateness p50/max, thumb handle p50/max, body paints | #151 | new | compile-checked only |
 | 16 | `GridPrefetch_Test` (2): idle prefetch of rows below the viewport, no SetData when they scroll in | #151 | new (setPrefetchRows) | compile-checked only |
 | 17 | `GridVirtualHeights_Test` (1): computeSize of a virtual Grid with differing heights equals the fully materialized Grid and creates <= 2 rows | #151 | new | compile-checked only |
+| 18 | `GridBlitScroll_Test` (1): on-screen pixels after blit scrolling equal a full repaint (capture mode DISPLAY_COPY, shell ON_TOP and active) | #151 | new | compile-checked only |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |
