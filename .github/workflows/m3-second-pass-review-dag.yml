@@ -154,7 +154,7 @@ jobs:
           grep -F 'java.secondPassReviewDagReplacement=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReviewDagNativeExecution=false' .m3/atom-pattern/policy.properties
           grep -F 'java.secondPassReviewDagPromotion=false' .m3/atom-pattern/policy.properties
-          grep -F 'java.secondPassReviewDagHostedProof=PENDING_CURRENT_NEBULA_REPROOF_20261007' .m3/atom-pattern/policy.properties
+          grep -F 'java.secondPassReviewDagHostedProof=REQUESTED_CURRENT_NEBULA_REPROOF_20261013' .m3/atom-pattern/policy.properties
 
       - name: Upload OpenRewrite evidence
         if: always()
