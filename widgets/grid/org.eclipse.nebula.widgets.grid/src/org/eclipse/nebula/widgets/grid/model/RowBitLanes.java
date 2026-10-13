@@ -292,18 +292,32 @@ public final class RowBitLanes {
 		}
 		if (count == 0) return;
 		final int oldRows = rowCount;
-		rowCount += count;
-		for (int l = 0; l < lanes.length; l++) {
-			final long[] existing = lanes[l];
-			if (existing != null) {
-				final int retainedEnd = (int) Math.min((long) oldRows, (long) existing.length << 6);
-				if (at >= retainedEnd) continue;
-				final int needed = (int) Math.min((long) rowCount, (long) retainedEnd + count);
-				final long[] w = ensure(l, needed);
-				moveUp(w, at, retainedEnd, count);
-				clearBits(w, at, at + count);
+		final int newRows = oldRows + count;
+		// Allocate all replacement lanes first. An OOME cannot publish a partially
+		// shifted bitmap or an incremented rowCount with stale columns.
+		final long[][] next = Arrays.copyOf(lanes, lanes.length);
+		for (int l = 0; l < next.length; l++) {
+			final long[] current = next[l];
+			if (current == null) continue;
+			final int retainedEnd = (int) Math.min((long) oldRows, (long) current.length << 6);
+			if (at >= retainedEnd) continue;
+			final int neededRows = (int) Math.min((long) newRows, (long) retainedEnd + count);
+			final int neededWords = words(neededRows);
+			if (current.length < neededWords) {
+				next[l] = Arrays.copyOf(current,
+						HeapGrowth.capacity(current.length, neededWords, Long.BYTES));
 			}
 		}
+		for (int l = 0; l < next.length; l++) {
+			final long[] w = next[l];
+			if (w == null) continue;
+			final int retainedEnd = (int) Math.min((long) oldRows, (long) lanes[l].length << 6);
+			if (at >= retainedEnd) continue;
+			moveUp(w, at, retainedEnd, count);
+			clearBits(w, at, at + count);
+		}
+		System.arraycopy(next, 0, lanes, 0, lanes.length);
+		rowCount = newRows;
 	}
 
 	/**
@@ -332,7 +346,7 @@ public final class RowBitLanes {
 		// Unwritten logical rows never allocate a physical word.
 		final int need = words(rows);
 		if (w == null) {
-			w = new long[need];
+			w = new long[HeapGrowth.capacity(0, need, Long.BYTES)];
 			lanes[lane] = w;
 		} else if (w.length < need) {
 			w = Arrays.copyOf(w, HeapGrowth.capacity(w.length, need, Long.BYTES));
