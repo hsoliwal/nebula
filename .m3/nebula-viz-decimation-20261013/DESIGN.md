@@ -91,6 +91,18 @@ view is used, so a zoom on a 4K x 4K image does not copy 16M doubles.
 - Hidden: the dispatcher does not re-arm its timer while the scope is not effectively visible; the first paint after
   it becomes visible re-arms it once. `-Dorg.eclipse.nebula.widgets.oscilloscope.hiddenWork=run` restores the old loop.
 
+## 4a. Batch-scope thresholds (all overridable for tests and A/B runs)
+
+| knob | default | effect |
+|---|---|---|
+| `org.eclipse.nebula.visualization.xygraph.decimation.minSamples` | 4096 | visible samples below this use the per-sample loop (cheaper than a worker round trip) |
+| `org.eclipse.nebula.visualization.xygraph.decimation.waitMillis` | 250 | longest UI wait for a worker view before the previous polyline is drawn and one repaint is scheduled |
+| `TraceDecimator` pool | min(4, cores/2) daemon threads | decimation and pyramid work; one task at a time per trace |
+| `TraceDecimator` view cache | 4 views per trace | pans back to a cached view reuse its polyline |
+| `PackedMinMaxPyramid` | 16-sample leaves, fan-out 8 | pyramid memory ~0.14 x samples x 16 bytes |
+| `ColorMapRaster` | serial below 65,536 output pixels, else min(8, cores) row bands | LUT raster |
+| oscilloscope envelope ring | widget width columns x 3 ints | same capacity rule as the existing value stack |
+
 ## 5. Proof plan
 
 | lane | what |
