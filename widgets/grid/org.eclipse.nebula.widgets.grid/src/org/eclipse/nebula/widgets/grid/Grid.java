@@ -695,12 +695,22 @@ public class Grid extends Canvas {
 	boolean setDataRedrawGuard = true;
 
 	/**
-	 * Viewport-only redraw suppression: while positive, Grid invalidations are accumulated in
-	 * {@link #bodyDamagePending} and issued once when the outermost operation ends. Unlike
-	 * {@code setRedraw(false)} it never freezes the window, so the scroll bars keep repainting.
+	 * Plane mask bits for {@link #freezePlanes(int)}: each plane of the one Grid control is
+	 * frozen independently (mirror of the SWT batch API with plane masks). An operation freezes
+	 * only the plane it changes; the other planes keep painting.
 	 */
-	private int bodyDeferDepth;
-	private boolean bodyDamagePending;
+	static final int PLANE_BODY = 1;
+	/** Column header, group header, footer and pinned-row planes. */
+	static final int PLANE_CHROME = 1 << 1;
+	/** Scroll bar metrics (the native bars are only updated when this plane thaws). */
+	static final int PLANE_SCROLLBARS = 1 << 2;
+
+	/** Freeze depth per plane bit (index = bit number). */
+	private final int[] planeDepth = new int[3];
+
+	/** Planes with depth > 0, and planes whose invalidation is owed when they thaw. */
+	private int frozenPlanes;
+	private int pendingPlanes;
 
 	/** A frame paint is scheduled for a thumb drag (at most one per frame). */
 	private boolean dragFrameScheduled;
@@ -5477,7 +5487,7 @@ public class Grid extends Canvas {
 		final Point controlSize = getSize();
 		this.drawBackground(gc, 0, 0, controlSize.x, controlSize.y);
 
-		if (scrollValuesObsolete) {
+		if (scrollValuesObsolete && (frozenPlanes & PLANE_SCROLLBARS) == 0) {
 			updateScrollbars();
 			scrollValuesObsolete = false;
 		}
@@ -8370,11 +8380,12 @@ public class Grid extends Canvas {
 	 */
 	@Override
 	public void redraw() {
-		if (bodyDeferDepth > 0) {
-			bodyDamagePending = true;
+		if (frozenPlanes == 0) {
+			super.redraw();
 			return;
 		}
-		super.redraw();
+		pendingPlanes |= frozenPlanes & (PLANE_BODY | PLANE_CHROME);
+		invalidatePlanes(~frozenPlanes & (PLANE_BODY | PLANE_CHROME));
 	}
 
 	/**
@@ -8386,24 +8397,92 @@ public class Grid extends Canvas {
 	 */
 	@Override
 	public void redraw(final int x, final int y, final int width, final int height, final boolean all) {
-		if (bodyDeferDepth > 0) {
-			bodyDamagePending = true;
+		if (frozenPlanes == 0) {
+			super.redraw(x, y, width, height, all);
 			return;
 		}
-		super.redraw(x, y, width, height, all);
-	}
-
-	/** Starts a bulk operation: Grid paints are merged, the scroll bars stay live. */
-	private void deferBody() {
-		bodyDeferDepth++;
-	}
-
-	/** Ends a bulk operation: one invalidation for all merged damage. */
-	private void resumeBody() {
-		if (--bodyDeferDepth == 0 && bodyDamagePending) {
-			bodyDamagePending = false;
-			super.redraw();
+		final Rectangle damage = new Rectangle(x, y, width, height);
+		for (final int plane : new int[] { PLANE_BODY, PLANE_CHROME }) {
+			for (final Rectangle r : planeRects(plane)) {
+				final Rectangle part = r.intersection(damage);
+				if (part.isEmpty()) {
+					continue;
+				}
+				if ((frozenPlanes & plane) != 0) {
+					pendingPlanes |= plane;
+				} else {
+					super.redraw(part.x, part.y, part.width, part.height, all);
+				}
+			}
 		}
+	}
+
+	/** Freezes the planes of {@code mask} (nested; per-plane depth). */
+	void freezePlanes(final int mask) {
+		for (int bit = 0; bit < planeDepth.length; bit++) {
+			if ((mask & (1 << bit)) != 0 && planeDepth[bit]++ == 0) {
+				frozenPlanes |= 1 << bit;
+			}
+		}
+	}
+
+	/** Thaws the planes of {@code mask}; a plane reaching depth 0 is invalidated once if owed. */
+	void thawPlanes(final int mask) {
+		int owed = 0;
+		for (int bit = 0; bit < planeDepth.length; bit++) {
+			if ((mask & (1 << bit)) != 0 && --planeDepth[bit] == 0) {
+				frozenPlanes &= ~(1 << bit);
+				owed |= pendingPlanes & (1 << bit);
+				pendingPlanes &= ~(1 << bit);
+			}
+		}
+		if ((mask & PLANE_SCROLLBARS) != 0 && (frozenPlanes & PLANE_SCROLLBARS) == 0 && scrollValuesObsolete
+				&& !isDisposed()) {
+			owed |= PLANE_BODY;
+		}
+		invalidatePlanes(owed & (PLANE_BODY | PLANE_CHROME));
+	}
+
+	/** Starts a bulk body operation: body paints are merged; headers and scroll bars stay live. */
+	private void deferBody() {
+		freezePlanes(PLANE_BODY);
+	}
+
+	/** Ends a bulk body operation: one body invalidation for all merged damage. */
+	private void resumeBody() {
+		thawPlanes(PLANE_BODY);
+	}
+
+	private void invalidatePlanes(final int mask) {
+		if (mask == 0 || isDisposed()) {
+			return;
+		}
+		if (mask == (PLANE_BODY | PLANE_CHROME)) {
+			super.redraw();
+			return;
+		}
+		for (final int plane : new int[] { PLANE_BODY, PLANE_CHROME }) {
+			if ((mask & plane) != 0) {
+				for (final Rectangle r : planeRects(plane)) {
+					if (!r.isEmpty()) {
+						super.redraw(r.x, r.y, r.width, r.height, false);
+					}
+				}
+			}
+		}
+	}
+
+	/** Client rectangles of a plane: body between header and footer; chrome = header + footer. */
+	private Rectangle[] planeRects(final int plane) {
+		final Rectangle client = getClientArea();
+		final int header = columnHeadersVisible ? headerHeight : 0;
+		final int footer = columnFootersVisible ? footerHeight : 0;
+		if (plane == PLANE_BODY) {
+			return new Rectangle[] { GridViewportDamage.scrollDamage(client, header, footer, false) };
+		}
+		return new Rectangle[] { new Rectangle(client.x, client.y, client.width, Math.min(header, client.height)),
+				new Rectangle(client.x, Math.max(client.y, client.y + client.height - footer), client.width,
+						Math.min(footer, client.height)) };
 	}
 
 	/**
@@ -8810,6 +8889,15 @@ public class Grid extends Canvas {
 	 * @return current number of columns
 	 */
 	int newColumn(final GridColumn column, final int index) {
+		freezePlanes(PLANE_CHROME);
+		try {
+			return newColumnNow(column, index);
+		} finally {
+			thawPlanes(PLANE_CHROME);
+		}
+	}
+
+	private int newColumnNow(final GridColumn column, final int index) {
 
 		final int size = columns.size();
 		if (index == -1) {
@@ -8853,6 +8941,15 @@ public class Grid extends Canvas {
 	 * @param column column to remove
 	 */
 	void removeColumn(final GridColumn column) {
+		freezePlanes(PLANE_CHROME);
+		try {
+			removeColumnNow(column);
+		} finally {
+			thawPlanes(PLANE_CHROME);
+		}
+	}
+
+	private void removeColumnNow(final GridColumn column) {
 		boolean selectionModified = false;
 
 		final int index = column.index;
@@ -10516,7 +10613,7 @@ public class Grid extends Canvas {
 				scrollValuesObsolete = true;
 				topIndex = -1;
 				bottomIndex = -1;
-				bodyDamagePending = true;
+				pendingPlanes |= PLANE_BODY;
 			} finally {
 				resumeBody();
 			}
@@ -10524,7 +10621,7 @@ public class Grid extends Canvas {
 		}
 
 		deferBody();
-		bodyDamagePending = true;
+		pendingPlanes |= PLANE_BODY;
 		try {
 		if (count < items.size()) {
 			selectedCells.clear();
