@@ -472,6 +472,16 @@ public class CustomCombo extends Composite {
 		text.copy();
 	}
 
+	/** accessible listener for the first drop-down control only, exactly as the eager widget attached it */
+	private org.eclipse.swt.accessibility.AccessibleAdapter popupAccessible;
+
+	private void attachPopupAccessible() {
+		if (popupAccessible != null && list != null) {
+			list.getAccessible().addAccessibleListener(popupAccessible);
+			popupAccessible = null;
+		}
+	}
+
 	/**
 	 * @return the drop-down list, building the drop-down on first use
 	 */
@@ -497,6 +507,7 @@ public class CustomCombo extends Composite {
             listStyle |= SWT.LEFT_TO_RIGHT;
         }
 		list = new List(popup, listStyle);
+		attachPopupAccessible();
         if (font != null) {
             list().setFont(font);
         }
@@ -1076,7 +1087,11 @@ public class CustomCombo extends Composite {
 		};
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		list().getAccessible().addAccessibleListener(accessibleAdapter);
+		//FLLDCIM: lazy — the drop-down's accessible listener is attached when the drop-down is first built
+		popupAccessible = accessibleAdapter;
+		if (list != null) {
+			attachPopupAccessible();
+		}
 
 		arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			public void getName(AccessibleEvent e) {

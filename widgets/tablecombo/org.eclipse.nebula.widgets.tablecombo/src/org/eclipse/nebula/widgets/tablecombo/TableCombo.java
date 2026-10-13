@@ -678,6 +678,16 @@ public class TableCombo extends Composite {
 	 *
 	 * @param selectionIndex
 	 */
+	/** accessible listener for the first drop-down control only, exactly as the eager widget attached it */
+	private org.eclipse.swt.accessibility.AccessibleAdapter popupAccessible;
+
+	private void attachPopupAccessible() {
+		if (popupAccessible != null && table != null) {
+			table.getAccessible().addAccessibleListener(popupAccessible);
+			popupAccessible = null;
+		}
+	}
+
 	/**
 	 * @return the drop-down table, building the drop-down on first use
 	 */
@@ -694,6 +704,7 @@ public class TableCombo extends Composite {
 
 		// create table
 		table = new Table(popup, SWT.SINGLE | SWT.FULL_SELECTION | (virtualTable ? SWT.VIRTUAL : SWT.NONE));
+		attachPopupAccessible();
 		if (virtualTable) {
 			materializedRows = new int[0];
 			table().addListener(SWT.SetData, event -> markMaterialized(event.index));
@@ -1438,7 +1449,11 @@ public class TableCombo extends Composite {
 
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		table().getAccessible().addAccessibleListener(accessibleAdapter);
+		//FLLDCIM: lazy — the drop-down's accessible listener is attached when the drop-down is first built
+		popupAccessible = accessibleAdapter;
+		if (table != null) {
+			attachPopupAccessible();
+		}
 
 		arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			@Override

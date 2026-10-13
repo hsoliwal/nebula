@@ -465,6 +465,16 @@ public class CTreeCombo extends Composite {
 		return new Point(width + 2 * borderWidth, height + 2 * borderWidth);
 	}
 
+	/** accessible listener for the first drop-down control only, exactly as the eager widget attached it */
+	private org.eclipse.swt.accessibility.AccessibleAdapter popupAccessible;
+
+	private void attachPopupAccessible() {
+		if (popupAccessible != null && tree != null) {
+			tree.getAccessible().addAccessibleListener(popupAccessible);
+			popupAccessible = null;
+		}
+	}
+
 	/**
 	 * @return the drop-down tree, building the drop-down (unfiltered, as items were added) on first use
 	 */
@@ -495,6 +505,7 @@ public class CTreeCombo extends Composite {
 		}
 		tree = new Tree(popup, listStyle | (virtualRows ? SWT.VIRTUAL : SWT.NONE));
 		tree.addTreeListener(hookListener);
+		attachPopupAccessible();
 		if (font != null) {
 			tree().setFont(font);
 		}
@@ -1052,7 +1063,11 @@ public class CTreeCombo extends Composite {
 		};
 		getAccessible().addAccessibleListener(accessibleAdapter);
 		text.getAccessible().addAccessibleListener(accessibleAdapter);
-		tree().getAccessible().addAccessibleListener(accessibleAdapter);
+		//FLLDCIM: lazy — the drop-down's accessible listener is attached when the drop-down is first built
+		popupAccessible = accessibleAdapter;
+		if (tree != null) {
+			attachPopupAccessible();
+		}
 
 		arrow.getAccessible().addAccessibleListener(new AccessibleAdapter() {
 			@Override
