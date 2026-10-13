@@ -21,4 +21,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 13 | `GridResidency_Test` (1): reproduction round trip (states set, scroll away so rows are released, scroll back: identical API values, identical print hash, SetData once per row) | #151 | new (opt-in RESIDENCY_EVICT_COLD) | compile-checked only |
 | 14 | `GridBodyDefer_Test` (2): one body paint per sort/filter/setItemCount; thumb drag moves the bar at once, body paints <= frames | #151 | new (viewport-only redraw suppression) | compile-checked only |
 | 15 | bench `busy_sort` (1M rows, PackedDriver): BusyIndicator.showWhile(Future) worker sort; event-loop lateness p50/max, thumb handle p50/max, body paints | #151 | new | compile-checked only |
+| 16 | `GridPrefetch_Test` (2): idle prefetch of rows below the viewport, no SetData when they scroll in | #151 | new (setPrefetchRows) | compile-checked only |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |

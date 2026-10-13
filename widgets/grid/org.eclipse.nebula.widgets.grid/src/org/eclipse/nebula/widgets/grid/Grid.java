@@ -660,6 +660,20 @@ public class Grid extends Canvas {
 	 */
 	public static final int RESIDENCY_EVICT_COLD = 1;
 
+	/** Rows populated ahead of the viewport after a paint (0 = off, the historic behaviour). */
+	private int prefetchRows;
+
+	/** Paint epoch the scheduled prefetch belongs to; a newer paint cancels it. */
+	private int prefetchEpoch = -1;
+
+	/** Rows populated by prefetch (package-private counter for tests and benches). */
+	int prefetchedRows;
+
+	/** True while prefetch populates rows outside the viewport: their setters need no redraw. */
+	private boolean prefetching;
+
+	private static final int PREFETCH_BATCH = 8;
+
 	/** Residency flags (0 = every materialized item is pinned, the historic behaviour). */
 	private int residencyFlags;
 
@@ -5472,6 +5486,7 @@ public class Grid extends Canvas {
 			evictCold();
 		}
 		paintEpoch = (paintEpoch + 1) & 0x7fffffff;
+		schedulePrefetch();
 	}
 
 	private void paintNow(final PaintEvent event) {
@@ -5986,6 +6001,93 @@ public class Grid extends Canvas {
 	 *            </ul>
 	 * @since 1.2
 	 */
+	/**
+	 * Populates up to {@code rows} rows below and then above the viewport while the event loop is
+	 * idle after a paint, in small batches; scrolling (the next paint) cancels the remaining
+	 * batches. Rows are populated through the normal item path ({@code SWT.SetData} once, or a
+	 * residency restore). Only flat {@code SWT.VIRTUAL} Grids prefetch; {@code 0} (the default)
+	 * disables it. With {@link #RESIDENCY_EVICT_COLD} the prefetch stays within the capacity.
+	 *
+	 * @param rows rows to populate ahead, 0 or more
+	 * @exception IllegalArgumentException
+	 *                                     <ul>
+	 *                                     <li>ERROR_INVALID_ARGUMENT - if {@code rows} is
+	 *                                     negative</li>
+	 *                                     </ul>
+	 * @exception org.eclipse.swt.SWTException
+	 *                                     <ul>
+	 *                                     <li>ERROR_WIDGET_DISPOSED - if the receiver
+	 *                                     has been disposed</li>
+	 *                                     <li>ERROR_THREAD_INVALID_ACCESS - if not
+	 *                                     called from the thread that created the
+	 *                                     receiver</li>
+	 *                                     </ul>
+	 * @since 1.2
+	 */
+	public void setPrefetchRows(final int rows) {
+		checkWidget();
+		if (rows < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
+		prefetchRows = rows;
+	}
+
+	/**
+	 * @return rows populated ahead of the viewport, see {@link #setPrefetchRows(int)}
+	 * @since 1.2
+	 */
+	public int getPrefetchRows() {
+		checkWidget();
+		return prefetchRows;
+	}
+
+	private void schedulePrefetch() {
+		if (prefetchRows <= 0 || !usesSparseVirtualItems() || !isVisible()) {
+			return;
+		}
+		final int epoch = paintEpoch;
+		prefetchEpoch = epoch;
+		getDisplay().asyncExec(() -> prefetchStep(epoch));
+	}
+
+	/** One idle batch; reschedules itself until done or until a newer paint moved the viewport. */
+	private void prefetchStep(final int epoch) {
+		if (isDisposed() || epoch != prefetchEpoch || !isVisible()) {
+			return;
+		}
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		final int count = items.size();
+		final int budget = residencyCapacity == Integer.MAX_VALUE ? prefetchRows
+				: Math.max(0, Math.min(prefetchRows, residencyCapacity - sparse.materializedCount()));
+		final int bottom = getBottomIndex();
+		final int top = getTopIndex();
+		int done = 0;
+		prefetching = true;
+		try {
+		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
+			final int below = bottom + i;
+			if (below >= 0 && below < count && sparse.getMaterialized(below) == null) {
+				items.get(below).getText(0);
+				prefetchedRows++;
+				done++;
+			}
+		}
+		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
+			final int above = top - i;
+			if (above >= 0 && above < count && sparse.getMaterialized(above) == null) {
+				items.get(above).getText(0);
+				prefetchedRows++;
+				done++;
+			}
+		}
+		} finally {
+			prefetching = false;
+		}
+		if (done == PREFETCH_BATCH) {
+			getDisplay().asyncExec(() -> prefetchStep(epoch));
+		}
+	}
+
 	public void setPinnedRowCount(final int top, final int bottom) {
 		checkWidget();
 		if (top < 0 || bottom < 0 || isTree) {
@@ -10986,6 +11088,9 @@ public class Grid extends Canvas {
 	 */
 	void redrawForItemData(final GridItem item) {
 		if (setDataRedrawGuard && painting && virtualDataItem == item) {
+			return;
+		}
+		if (prefetching) {
 			return;
 		}
 		redraw();
