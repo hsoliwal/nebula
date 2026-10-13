@@ -1279,8 +1279,29 @@ class InternalCompositeTable extends Composite implements Listener {
 	/**
 	 * The SelectionListener for the table's vertical slider control.
 	 */
+	/** a thumb-drag position is waiting to be applied to the row window */
+	private boolean sliderDragPending;
+
 	private SelectionListener sliderSelectionListener = new SelectionListener() {
 		public void widgetSelected(SelectionEvent e) {
+			if (e.detail == SWT.DRAG) {
+				//FLLDCIM: fast thumb drag — the slider stays live; the row window catches up once per event-loop
+				// turn with the latest position, and the end-of-drag event applies the final one synchronously
+				if (!sliderDragPending) {
+					sliderDragPending = true;
+					getDisplay().asyncExec(() -> {
+						sliderDragPending = false;
+						if (!isDisposed() && !vSlider.isDisposed()) {
+							applySliderSelection();
+						}
+					});
+				}
+				return;
+			}
+			applySliderSelection();
+		}
+
+		private void applySliderSelection() {
 			if (vSlider.getSelection() == topRow) {
 				return;
 			}

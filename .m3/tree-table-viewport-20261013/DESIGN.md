@@ -75,6 +75,17 @@ The coordinator relayed these rules by name while tests were suspended; this is 
 | Batch threshold | NOT_DONE: no batched SetData scheduler on top of the native virtual controls (see the SetData section). |
 | CPU/GPU split | UI thread: input and bounded materialization. Sorting and filtering of a viewport parent's children run on the UI thread, as JFace requires; moving them to a worker is NOT_DONE. Rasterization stays with SWT's `GC`. |
 
+## Bulk updates and fast thumb drags
+
+Rule: during bulk operations and fast thumb drags the viewport is suppressed while the scrollbars stay live.
+
+- compositetable: a thumb drag (`SWT.DRAG`) no longer refreshes every visible row editor per drag event. The slider stays
+  live; the row window catches up once per event-loop turn with the latest position, and the end-of-drag selection is
+  applied synchronously, so the final state is the same. Listeners see fewer intermediate row-change requests.
+- ctree: adding items only queues them and invalidates; layout runs once on the next paint (pre-image behaviour), and a
+  scroll frame costs O(log n) to find the painted window, so no further suppression is needed.
+- xviewer, tablecombo, ctreecombo: the native controls own their scrollbars and thumb-drag painting.
+
 ## Opt-in rule for the native virtual path
 
 `SWT.VIRTUAL` is the SWT-native request for a viewport. A widget that wraps a native Tree/Table switches to the virtual

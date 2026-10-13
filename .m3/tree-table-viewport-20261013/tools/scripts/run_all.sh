@@ -12,13 +12,13 @@ case $step in
 compile)
   for w in $W; do timeout 1800 sh $S/compile.sh $w post $N; done > $L/compile.log 2>&1 ;;
 diffs)
-  timeout 7000 sh $S/diff.sh ctree CTreeFixture visible > $L/diff-ctree.log 2>&1
-  timeout 7000 sh $S/diff.sh ctreecombo CTreeComboFixture visible > $L/diff-ctreecombo.log 2>&1
-  timeout 7000 sh $S/diff.sh tablecombo TableComboFixture visible > $L/diff-tablecombo.log 2>&1
-  timeout 7000 sh $S/diff.sh calendarcombo CalendarComboFixture visible > $L/diff-calendarcombo.log 2>&1
-  timeout 7000 sh $S/diff.sh compositetable CompositeTableFixture visible > $L/diff-compositetable.log 2>&1 ;;
+  sh $S/ui.sh timeout 7000 sh $S/diff.sh ctree CTreeFixture visible > $L/diff-ctree.log 2>&1
+  sh $S/ui.sh timeout 7000 sh $S/diff.sh ctreecombo CTreeComboFixture visible > $L/diff-ctreecombo.log 2>&1
+  sh $S/ui.sh timeout 7000 sh $S/diff.sh tablecombo TableComboFixture visible > $L/diff-tablecombo.log 2>&1
+  sh $S/ui.sh timeout 7000 sh $S/diff.sh calendarcombo CalendarComboFixture visible > $L/diff-calendarcombo.log 2>&1
+  sh $S/ui.sh timeout 7000 sh $S/diff.sh compositetable CompositeTableFixture visible > $L/diff-compositetable.log 2>&1 ;;
 xviewer-post)
-  timeout 7000 sh $S/diff.sh xviewer XViewerFixture visible > $L/diff-xviewer.log 2>&1 ;;
+  sh $S/ui.sh timeout 7000 sh $S/diff.sh xviewer XViewerFixture visible > $L/diff-xviewer.log 2>&1 ;;
 junit)
   T=$B/junit-src; rm -rf $T; mkdir -p $T/xv-pre/org/eclipse/nebula/widgets/xviewer/tests $T/xv-post $T/ct-post $T/cmt-pre $T/cmt-post
   XT=org.eclipse.nebula.widgets.xviewer.tests/src
@@ -29,27 +29,44 @@ junit)
   cp -r $PRE/compositetable/$CTS/. $T/cmt-pre/
   cp -r $POST/compositetable/$CTS/. $T/cmt-post/
   CMT="org.eclipse.nebula.widgets.compositetable.CompositeTableTest org.eclipse.nebula.widgets.compositetable.CompositeTable_267316Test org.eclipse.nebula.widgets.compositetable.NativeHeaderTest org.eclipse.nebula.widgets.compositetable.day.CalendarControlTestSuite"
-  sh $S/junit.sh xviewer pre $T/xv-pre org.eclipse.nebula.widgets.xviewer.tests.DummyTest > $L/junit-xviewer-pre.log 2>&1
-  sh $S/junit.sh xviewer post $T/xv-post org.eclipse.nebula.widgets.xviewer.tests.DummyTest org.eclipse.nebula.widgets.xviewer.tests.XViewerViewport_Test > $L/junit-xviewer-post.log 2>&1
-  sh $S/junit.sh ctree post $T/ct-post org.eclipse.nebula.widgets.ctree.CTreeViewport_Test > $L/junit-ctree-post.log 2>&1
-  sh $S/junit.sh compositetable pre $T/cmt-pre $CMT > $L/junit-compositetable-pre.log 2>&1
-  sh $S/junit.sh compositetable post $T/cmt-post $CMT org.eclipse.nebula.widgets.compositetable.CompositeTableViewport_Test > $L/junit-compositetable-post.log 2>&1 ;;
+  sh $S/ui.sh sh $S/junit.sh xviewer pre $T/xv-pre org.eclipse.nebula.widgets.xviewer.tests.DummyTest > $L/junit-xviewer-pre.log 2>&1
+  sh $S/ui.sh sh $S/junit.sh xviewer post $T/xv-post org.eclipse.nebula.widgets.xviewer.tests.DummyTest org.eclipse.nebula.widgets.xviewer.tests.XViewerViewport_Test > $L/junit-xviewer-post.log 2>&1
+  sh $S/ui.sh sh $S/junit.sh ctree post $T/ct-post org.eclipse.nebula.widgets.ctree.CTreeViewport_Test > $L/junit-ctree-post.log 2>&1
+  sh $S/ui.sh sh $S/junit.sh compositetable pre $T/cmt-pre $CMT > $L/junit-compositetable-pre.log 2>&1
+  sh $S/ui.sh sh $S/junit.sh compositetable post $T/cmt-post $CMT org.eclipse.nebula.widgets.compositetable.CompositeTableViewport_Test > $L/junit-compositetable-post.log 2>&1
+  mkdir -p $T/ctc-post && cp -r $POST/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.tests/src/. $T/ctc-post/
+  sh $S/ui.sh sh $S/junit.sh ctreecombo post $T/ctc-post org.eclipse.nebula.widgets.ctreecombo.CTreeComboViewport_Test > $L/junit-ctreecombo-post.log 2>&1 ;;
+upstream)
+  # EclipseNebula#705 and #612 fix branches: tests against the fixed code and, for #705, against unfixed master (pre)
+  U=$B/upstream; rm -rf $U; mkdir -p $U/705 $U/612 $U/705t
+  git -C $N archive fix/tablecombo-close-popup-705 widgets/tablecombo | tar -x -C $U/705
+  git -C $N archive fix/calendarcombo-popup-monitor-612 widgets/calendarcombo | tar -x -C $U/612
+  timeout 1800 sh $S/compile.sh tablecombo fixed705 $U/705 > $L/upstream.log 2>&1
+  cp $U/705/widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.test/src/org/eclipse/nebula/widgets/tablecombo/TableComboClosePopupTests.java $U/705t/
+  sh $S/ui.sh sh $S/junit.sh tablecombo fixed705 $U/705t org.eclipse.nebula.widgets.tablecombo.TableComboClosePopupTests > $L/junit-705-fixed.log 2>&1
+  sh $S/ui.sh sh $S/junit.sh tablecombo pre $U/705t org.eclipse.nebula.widgets.tablecombo.TableComboClosePopupTests > $L/junit-705-master.log 2>&1
+  timeout 1800 sh $S/compile.sh calendarcombo fixed612 $U/612 >> $L/upstream.log 2>&1
+  sh $S/junit.sh calendarcombo fixed612 $U/612/widgets/calendarcombo/org.eclipse.nebula.widgets.calendarcombo.tests/src org.eclipse.nebula.widgets.calendarcombo.CalendarComboPopupLocationTest > $L/junit-612-fixed.log 2>&1 ;;
+mvn)
+  sh $S/gate.sh > /dev/null
+  timeout 1800 mvn -B -o -ntp -f /c/m3-work-c/wt/syn-tree-table/synexia-openrewrite-recipes/recipe-crates/nebula-tree-table-viewport-20261013/pom.xml verify > $L/mvn-crate.log 2>&1
+  echo "mvn rc=$?" >> $L/mvn-crate.log ;;
 snippets)
   for tag in pre post; do
     R=$PRE; [ $tag = post ] && R=$POST
-    sh $S/snippets.sh ctreecombo $tag $R/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.snippets/src org.eclipse.nebula.widgets.ctreecombo.snippets.CTreeComboSnippet
-    sh $S/snippets.sh tablecombo $tag $R/tablecombo/org.eclipse.nebula.widgets.tablecombo.snippets/src org.eclipse.nebula.widgets.tablecombo.CheckTableComboSnippet org.eclipse.nebula.widgets.tablecombo.TableComboSnippet org.eclipse.nebula.widgets.tablecombo.TableComboViewerSnippet1
-    sh $S/snippets.sh xviewer $tag $R/xviewer/org.eclipse.nebula.widgets.xviewer.example/src org.eclipse.nebula.widgets.xviewer.example.MyXViewerTest org.eclipse.nebula.widgets.xviewer.example.styledExample.XViewerStyledStringLableProviderTest
-    sh $S/snippets.sh calendarcombo $tag "" org.eclipse.nebula.widgets.calendarcombo.CalendarComboTester org.eclipse.nebula.widgets.calendarcombo.Tester
+    sh $S/ui.sh sh $S/snippets.sh ctreecombo $tag $R/ctreecombo/org.eclipse.nebula.widgets.ctreecombo.snippets/src org.eclipse.nebula.widgets.ctreecombo.snippets.CTreeComboSnippet
+    sh $S/ui.sh sh $S/snippets.sh tablecombo $tag $R/tablecombo/org.eclipse.nebula.widgets.tablecombo.snippets/src org.eclipse.nebula.widgets.tablecombo.CheckTableComboSnippet org.eclipse.nebula.widgets.tablecombo.TableComboSnippet org.eclipse.nebula.widgets.tablecombo.TableComboViewerSnippet1
+    sh $S/ui.sh sh $S/snippets.sh xviewer $tag $R/xviewer/org.eclipse.nebula.widgets.xviewer.example/src org.eclipse.nebula.widgets.xviewer.example.MyXViewerTest org.eclipse.nebula.widgets.xviewer.example.styledExample.XViewerStyledStringLableProviderTest
+    sh $S/ui.sh sh $S/snippets.sh calendarcombo $tag "" org.eclipse.nebula.widgets.calendarcombo.CalendarComboTester org.eclipse.nebula.widgets.calendarcombo.Tester
   done > $L/snippets.tsv 2>&1 ;;
 bench)
   for tag in pre post; do
-    sh $S/bench.sh xviewer XViewerBench $tag 2g 100000 9
-    sh $S/bench.sh ctree CTreeBench $tag 3g 100000 9
-    sh $S/bench.sh tablecombo TableComboBench $tag 2g 100000 200
-    sh $S/bench.sh ctreecombo CTreeComboBench $tag 2g 10000 9 200
-    sh $S/bench.sh calendarcombo CalendarComboBench $tag 1g 100
-    sh $S/bench.sh compositetable CompositeTableBench $tag 1g 1000000
+    sh $S/ui.sh sh $S/bench.sh xviewer XViewerBench $tag 2g 100000 9
+    sh $S/ui.sh sh $S/bench.sh ctree CTreeBench $tag 3g 100000 9
+    sh $S/ui.sh sh $S/bench.sh tablecombo TableComboBench $tag 2g 100000 200
+    sh $S/ui.sh sh $S/bench.sh ctreecombo CTreeComboBench $tag 2g 10000 9 200
+    sh $S/ui.sh sh $S/bench.sh calendarcombo CalendarComboBench $tag 1g 100
+    sh $S/ui.sh sh $S/bench.sh compositetable CompositeTableBench $tag 1g 1000000
   done > $L/bench.log 2>&1 ;;
 esac
 echo "step $step done $(date +%H:%M:%S)" >> $L/steps.log
