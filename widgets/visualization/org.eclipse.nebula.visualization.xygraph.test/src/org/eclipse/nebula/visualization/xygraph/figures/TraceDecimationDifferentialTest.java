@@ -290,6 +290,37 @@ public class TraceDecimationDifferentialTest {
 		assertTrue(decimated >= 15);
 	}
 
+	/** Hidden widget: data keeps arriving, but nothing is painted, decimated or built until it is shown. */
+	@Test
+	public void noDecimationWorkWhileHidden() {
+		Random r = new Random(13L);
+		double[][] d = data(r, 100000, 0);
+		provider.setData(d[0], d[1], 50000);
+		view(r, new double[][] { java.util.Arrays.copyOf(d[0], 50000), java.util.Arrays.copyOf(d[1], 50000) }, 0);
+		canvas.redraw();
+		canvas.update();
+		settle();
+		TraceDecimationPainter p = trace.decimationPainter;
+		int decimated = p.decimatedFrames;
+		int loop = p.loopFrames;
+		long[] timings = p.lastTimings();
+		shell.setVisible(false);
+		settle();
+		for (int k = 0; k < 50; k++) {
+			provider.append(java.util.Arrays.copyOfRange(d[0], 50000 + k * 1000, 51000 + k * 1000),
+					java.util.Arrays.copyOfRange(d[1], 50000 + k * 1000, 51000 + k * 1000), 0, 1000);
+			settle();
+		}
+		assertEquals("decimated frames while hidden", decimated, p.decimatedFrames); //$NON-NLS-1$
+		assertEquals("loop frames while hidden", loop, p.loopFrames); //$NON-NLS-1$
+		assertArrayEquals("no worker task while hidden", timings, p.lastTimings()); //$NON-NLS-1$
+		shell.setVisible(true);
+		canvas.redraw();
+		canvas.update();
+		settle();
+		assertTrue("caught up once when shown", p.decimatedFrames > decimated); //$NON-NLS-1$
+	}
+
 	/** Control.print pixels of the whole graph, loop vs decimated, antialias on and off. */
 	@Test
 	public void printedPixelsAreIdentical() {
