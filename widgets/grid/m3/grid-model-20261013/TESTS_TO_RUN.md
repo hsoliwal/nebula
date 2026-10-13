@@ -27,4 +27,5 @@ memory gate (free >= 4 GB, commit headroom >= 8 GB), `-Xmx` <= 2 GB, one JVM at 
 | 19 | `GridScrollbarSettle_Test` (1): arithmetic scroll bar settling equals the measured two-pass algorithm over a 300-step resize sweep (visibility, max, thumb, selection) | #151 | new | compile-checked only |
 | 20 | `model.RowSelection_Test` (2), headless | #151 | new (packed selection engine) | 2 run, 0 failures (local win32, JDK 21, headless) |
 | 21 | all model tests headless at 566cee84: RowPermutation_Test, RowBitLanes_Test, RowGrouping_Test, HeapGrowth_Test, RowStateLanes_Test, RowSelection_Test | #151 | after the ports and engines | **26 run, 0 failures** (JDK 21, win32, no display) |
+| 22 | GWT gate (`org.eclipse.nebula.widgets.grid.test/gwt-gate/run_gate.py`): model package compiled by GWT 2.12.2 `-strict`, seeded workload JVM vs JavaScript | #151 | GWT-safety proof | **GWT_GATE_OK: 8 workloads identical, 12 model classes** (after moving Runtime sampling to HeapSampler + super-source) |
 | 10 | flicker / pixel-exact edge counts at 100/125/150/200 % zoom; resize sweep; box model | #151 | not implemented yet | - |

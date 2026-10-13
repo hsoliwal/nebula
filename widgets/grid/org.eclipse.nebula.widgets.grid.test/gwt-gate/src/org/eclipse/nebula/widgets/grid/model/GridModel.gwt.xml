@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: EPL-2.0 -->
+<module rename-to="org.eclipse.nebula.widgets.grid.model.GridModel">
+  <inherits name="com.google.gwt.core.Core"/>
+  <source path="">
+    <exclude name="HeapSampler.java"/>
+    <exclude name="super/**"/>
+  </source>
+  <super-source path="super"/>
+  <entry-point class="org.eclipse.nebula.widgets.grid.model.GateEntry"/>
+  <add-linker name="sso"/>
+</module>

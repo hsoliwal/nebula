@@ -28,8 +28,8 @@ package org.eclipse.nebula.widgets.grid.model;
  * once per capacity miss, never per element. Pressure only removes speculative capacity: the
  * required length is always returned, nothing is evicted and no GC is forced.</p>
  *
- * <p>{@link #choose} is pure (GWT-safe). {@link #capacity} samples {@code Runtime}; a GWT build
- * replaces it with {@code choose(current, minimum, elementBytes, 0, 0)} (no sampling).</p>
+ * <p>{@link #choose} is pure (GWT-safe). {@link #capacity} samples the heap through
+ * {@link HeapSampler}, which a GWT build replaces with a sampler that reports no information.</p>
  */
 final class HeapGrowth {
 
@@ -47,9 +47,7 @@ final class HeapGrowth {
 	 *         pressure
 	 */
 	static int capacity(final int current, final int minimum, final int elementBytes) {
-		final Runtime runtime = Runtime.getRuntime();
-		return choose(current, minimum, elementBytes, runtime.maxMemory(),
-				runtime.totalMemory() - runtime.freeMemory());
+		return choose(current, minimum, elementBytes, HeapSampler.maxMemory(), HeapSampler.usedMemory());
 	}
 
 	/**
