@@ -42,7 +42,7 @@ final class HeapGrowth {
 	/**
 	 * @param current      current array length
 	 * @param minimum      required length
-	 * @param elementBytes 1, 2, 4 or 8
+	 * @param elementBytes bytes per slot (all parallel arrays of one slot), 1..64
 	 * @return the new length: doubling when the heap has room, exactly {@code minimum} under
 	 *         pressure
 	 */
@@ -57,15 +57,15 @@ final class HeapGrowth {
 	 *
 	 * @param current      current length
 	 * @param minimum      required length
-	 * @param elementBytes 1, 2, 4 or 8
+	 * @param elementBytes bytes per slot (all parallel arrays of one slot), 1..64
 	 * @param max          {@code Runtime.maxMemory()}
 	 * @param used         used heap
 	 * @return the new length
 	 */
 	static int choose(final int current, final int minimum, final int elementBytes, final long max,
 			final long used) {
-		if (elementBytes != 1 && elementBytes != 2 && elementBytes != 4 && elementBytes != 8) {
-			throw new IllegalArgumentException("primitive element width: " + elementBytes);
+		if (elementBytes < 1 || elementBytes > 64) {
+			throw new IllegalArgumentException("bytes per slot 1..64: " + elementBytes);
 		}
 		if (minimum < 0) {
 			throw new IllegalArgumentException("negative minimum: " + minimum);

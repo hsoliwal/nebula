@@ -44,8 +44,8 @@ public class HeapGrowth_Test {
 	public void neverShrinksAndRejectsBadWidths() {
 		assertEquals(100, HeapGrowth.choose(100, 50, 4, 2048 * MIB, 0));
 		try {
-			HeapGrowth.choose(1, 2, 3, 0, 0);
-			throw new AssertionError("width 3 accepted");
+			HeapGrowth.choose(1, 2, 65, 0, 0);
+			throw new AssertionError("width 65 accepted");
 		} catch (final IllegalArgumentException expected) {
 			// expected
 		}
