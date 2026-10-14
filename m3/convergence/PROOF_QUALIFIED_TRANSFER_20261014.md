@@ -64,3 +64,23 @@ No automatic application to `hsoliwal/M3jdk21` or `hsoliwal/com.synexia` occurs.
 Once the complete Nebula proof is externally verified, each receiver performs its own
 inventory, Java-21 compatibility, contract/JNI tests, fixed-point proof and serial
 promotion. The JDK 22–27 JEP/tooling backport denominator remains independently open.
+
+
+## Hosted execution status — 2026-10-14
+
+The one-build convergence workflow was bootstrapped onto default-branch history through Nebula merge commit `17e7af115dbde767141cd37d6fb0d145f26b5b0a`. PR #168 was then synchronized from that master ancestry and received a fresh documentation commit, but the GitHub Actions API still reported zero workflow runs for its current head.
+
+This transfer PR was likewise moved out of draft solely to request a hosted proof attempt. Until a run exists and all twelve stages execute successfully, the authoritative transfer state remains:
+
+- disposition: `HOLD`
+- mutation authority: `false`
+- promotion authority: `false`
+
+The four Java2s catalogues remain behavior taxonomies only:
+
+- https://www.java2s.com/Tutorial/Java/0280__SWT/Catalog0280__SWT.html
+- https://www.java2s.com/Tutorial/Java/0300__SWT-2D-Graphics/Catalog0300__SWT-2D-Graphics.html
+- https://www.java2s.com/Tutorial/Java/0240__Swing/Catalog0240__Swing.html
+- https://www.java2s.com/Tutorial/Java/0260__Swing-Event/Catalog0260__Swing-Event.html
+
+No tutorial source body is copied by this proof path.
