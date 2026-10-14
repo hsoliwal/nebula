@@ -16,7 +16,6 @@
 package org.eclipse.nebula.widgets.gallery;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -163,6 +162,9 @@ public class Gallery extends Canvas {
 	 * paint.
 	 */
 	protected int translate = 0;
+
+	/** Updated only after a successful complete layout of the original groups. */
+	private boolean orderedViewportGroups;
 
 	/**
 	 * Low quality on user action : decrease drawing quality on scrolling or
@@ -1258,46 +1260,56 @@ public class Gallery extends Canvas {
 		}
 	};
 
+	private static final int[] EMPTY_PAINT_WINDOW = new int[0];
+
+	/**
+	 * Project only groups intersecting the GC clip. The Gallery remains the sole
+	 * owner of its GalleryItem identities, SWT.SetData, selection and scrollbars.
+	 * A verified, ordered DefaultGalleryGroupRenderer permits a logarithmic
+	 * initial skip; custom renderers preserve the original serial traversal.
+	 */
 	private int[] getVisibleItems(Rectangle clipping) {
-
-        if (items == null) {
-            return null;
-        }
-
-		int start = vertical ? (clipping.y + translate)
-				: (clipping.x + translate);
-
-		int end = vertical ? (clipping.y + clipping.height + translate)
-				: (clipping.x + clipping.width + translate);
-
-		ArrayList<Integer> al = new ArrayList<>();
-		int index = 0;
-		GalleryItem item = null;
-		while (index < items.length) {
-			if (virtualGroups) {
-				item = _getItem(index, false);
-			} else {
-				item = _getItem(index);
+		if (items == null) return null;
+		if (clipping.width <= 0 || clipping.height <= 0) return EMPTY_PAINT_WINDOW;
+		long start = (vertical ? (long) clipping.y : clipping.x) + translate;
+		long end = start + (vertical ? clipping.height : clipping.width);
+		int first = orderedViewportGroups ? firstGroupEndingAtOrAfter(start) : 0;
+		int[] result = EMPTY_PAINT_WINDOW;
+		int size = 0;
+		for (int i = first; i < items.length; i++) {
+			GalleryItem item = virtualGroups ? _getItem(i, false) : _getItem(i);
+			long leading = vertical ? item.y : item.x;
+			if (leading > end) break;
+			long trailing = leading + (vertical ? item.height : item.width);
+			if (trailing >= start) {
+				if (size == result.length) {
+					int remaining = items.length - first;
+					int capacity = result.length == 0 ? Math.min(16, remaining)
+							: result.length + Math.min(result.length, remaining - result.length);
+					result = java.util.Arrays.copyOf(result, capacity);
+				}
+				result[size++] = i;
 			}
-            if ((vertical ? item.y : item.x) > end) {
-                break;
-            }
-
-            if ((vertical ? (item.y + item.height)
-                    : (item.x + item.width)) >= start) {
-                al.add(new Integer(index));
-            }
-
-			index++;
 		}
+		return size == result.length ? result : java.util.Arrays.copyOf(result, size);
+	}
 
-		int[] result = new int[al.size()];
-
-        for (int i = 0; i < al.size(); i++) {
-            result[i] = ((Integer) al.get(i)).intValue();
-        }
-
-		return result;
+	/** Does not request a GalleryItem facade or invoke SWT.SetData. */
+	private int firstGroupEndingAtOrAfter(long start) {
+		int low = 0, high = items.length;
+		while (low < high) {
+			int mid = low + ((high - low) >>> 1);
+			GalleryItem item = items[mid];
+			if (item == null) {
+				orderedViewportGroups = false;
+				return 0;
+			}
+			long trailing = (vertical ? (long) item.y : item.x)
+					+ (vertical ? item.height : item.width);
+			if (trailing < start) low = mid + 1;
+			else high = mid;
+		}
+		return low;
 	}
 
 	/**
@@ -1545,6 +1557,7 @@ public class Gallery extends Canvas {
 	 * @return
 	 */
 	private int calculateSize(GalleryItem onlyUpdateGroup) {
+		orderedViewportGroups = false;
 
         if (groupRenderer == null) {
             return 0;
@@ -1553,6 +1566,8 @@ public class Gallery extends Canvas {
 		groupRenderer.preLayout(null);
 
 		int currentHeight = 0;
+		boolean ordered = true;
+		long previousStart = Long.MIN_VALUE, previousEnd = Long.MIN_VALUE;
 
 		int mainItemCount = getItemCount();
 
@@ -1596,9 +1611,22 @@ public class Gallery extends Canvas {
 				}
 			}
 
+			// Respect custom or overlapping geometry: only monotone intervals
+			// qualify for paint-time binary search.
+			long leading = vertical ? item.y : item.x;
+			long trailing = leading + (vertical ? item.height : item.width);
+			if (leading < previousStart || trailing < previousEnd || trailing < leading) {
+				ordered = false;
+			}
+			previousStart = leading;
+			previousEnd = trailing;
 		}
 
 		groupRenderer.postLayout(null);
+		// Conservative: custom renderers and ultra-lazy groups retain the
+		// original serial semantics, including SetData timing.
+		orderedViewportGroups = ordered && !virtualGroups
+				&& groupRenderer.getClass() == DefaultGalleryGroupRenderer.class;
 
 		return currentHeight;
 	}
@@ -2532,6 +2560,7 @@ public class Gallery extends Canvas {
 	}
 
 	public void _setGalleryItems(GalleryItem[] items) {
+		orderedViewportGroups = false;
 		this.items = items;
 	}
 

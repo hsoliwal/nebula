@@ -399,7 +399,7 @@ public class DefaultGalleryGroupRenderer extends AbstractGridGroupRenderer {
 			int[] indexes = getVisibleItems(group, x, y, clipX, clipY,
 					clipWidth, clipHeight, groupOffset);
 
-			if (fill) {
+			if (fill && indexes != null && indexes.length > 0) {
 				indexes = new int[] { indexes[0] };
 			}
 
