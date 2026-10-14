@@ -37,8 +37,11 @@ def candidate_paths(name_status: bytes) -> tuple[str, ...]:
             raise ValueError(f"unreviewed Git edit status {status!r}: {path!r}")
         if not path or "\\" in path or ":" in path:
             raise ValueError(f"noncanonical candidate path: {path!r}")
-        parts = PurePosixPath(path).parts
-        if any(part in ("", ".", "..", ".git") for part in parts):
+        parsed = PurePosixPath(path)
+        parts = parsed.parts
+        if parsed.is_absolute() or parsed.as_posix() != path or any(
+            part in ("", ".", "..", ".git") for part in parts
+        ):
             raise ValueError(f"unsafe candidate path: {path!r}")
         if any(ord(ch) < 32 or ord(ch) == 127 for ch in path):
             raise ValueError(f"control character in candidate path: {path!r}")
