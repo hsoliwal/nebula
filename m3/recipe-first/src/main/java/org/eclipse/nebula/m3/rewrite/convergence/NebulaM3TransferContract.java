@@ -19,7 +19,21 @@ import org.eclipse.nebula.m3.NebulaM3FastSearchReviewPolicy;
  * only as a historical proof/application harness and product oracle.</p>
  */
 public final class NebulaM3TransferContract {
-    public static final String SCHEMA = "NEBULA_M3_RECIPE_TRANSFER_V1";
+    public static final String SCHEMA = "NEBULA_M3_RECIPE_TRANSFER_V2";
+    public static final String PROOF_REPOSITORY = "hsoliwal/nebula";
+    public static final String PROOF_BRANCH = "m3/java21-portable-recipe-dag-20261014";
+    public static final String RECIPE_COORDINATE =
+            "org.eclipse.nebula.m3:nebula-m3-recipe-first:1.0.0-SNAPSHOT";
+    public static final String ROOT_PROFILE = "m3-nebula-file-convergence";
+    public static final String DRY_RUN_COMMAND =
+            "mvn -B -ntp -Pm3-nebula-file-convergence rewrite:dryRunNoFork";
+    public static final String APPLY_COMMAND =
+            "mvn -B -ntp -Pm3-nebula-file-convergence rewrite:runNoFork";
+    public static final String ONE_BUILD_WORKFLOW =
+            ".github/workflows/m3-one-build-openrewrite-convergence.yml";
+    public static final String PORTABLE_WORKFLOW =
+            ".github/workflows/m3-portable-recipe-dag-java21.yml";
+    public static final String TRANSFER_STATE = "HOLD_UNTIL_PROVEN";
     public static final int JAVA_RELEASE = 21;
     public static final String OPENREWRITE_VERSION = "8.90.4";
     public static final String ENTRYPOINT =
@@ -82,6 +96,15 @@ public final class NebulaM3TransferContract {
                 javaRelease	%d
                 openRewriteVersion	%s
                 entrypoint	%s
+                proofRepository	%s
+                proofBranch	%s
+                recipeCoordinate	%s
+                rootProfile	%s
+                dryRunCommand	%s
+                applyCommand	%s
+                oneBuildWorkflow	%s
+                portableWorkflow	%s
+                transferState	%s
                 canonicalRecipeRepository	%s
                 canonicalRecipePackage	%s
                 canonicalRecipeDag	%s
@@ -100,6 +123,15 @@ public final class NebulaM3TransferContract {
                         JAVA_RELEASE,
                         OPENREWRITE_VERSION,
                         ENTRYPOINT,
+                        PROOF_REPOSITORY,
+                        PROOF_BRANCH,
+                        RECIPE_COORDINATE,
+                        ROOT_PROFILE,
+                        DRY_RUN_COMMAND,
+                        APPLY_COMMAND,
+                        ONE_BUILD_WORKFLOW,
+                        PORTABLE_WORKFLOW,
+                        TRANSFER_STATE,
                         CANONICAL_RECIPE_REPOSITORY,
                         CANONICAL_RECIPE_PACKAGE,
                         CANONICAL_RECIPE_DAG,
