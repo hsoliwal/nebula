@@ -57,7 +57,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest -Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest verify
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest,transfer-contract -Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3TransferContractTest verify
           if ($LASTEXITCODE -ne 0) { throw 'Host recipe proof failed' }
 
       - name: 3 - Prove exact UTF-8 DAG evidence, JUnit execution, no source edits
@@ -88,7 +88,8 @@ jobs:
             'NebulaM3RefactorScopeTest',
             'NebulaM3OrchestratorPlansTest',
             'NebulaM3RecipeDagManifestTest',
-            'NebulaM3RecipeDagManifestCliTest'
+            'NebulaM3RecipeDagManifestCliTest',
+            'NebulaM3TransferContractTest'
           )
           foreach ($name in $required) {
             $report = Join-Path $reports "TEST-org.eclipse.nebula.m3.rewrite.convergence.$name.xml"
@@ -106,7 +107,113 @@ jobs:
             throw "Recipe proof touched source checkout: $untracked"
           }
 
-          $receipt = "dagRoot`tplansRoot`n$dag`t$plans`n"
+          $transfer = (Get-Content 'm3/recipe-first/target/nebula-m3-transfer/transfer.sha256' -Raw).Trim()
+          if ($transfer -notmatch '^[0-9a-f]{64}          [System.IO.File]::WriteAllText(
+            (Join-Path $out 'portable-roots.tsv'),
+            $receipt,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: 4 - Export host-independent receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-dag-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            m3/recipe-first/target/nebula-m3-dag/portable-roots.tsv
+            m3/recipe-first/target/nebula-m3-dag/recipe-dag.tsv
+            m3/recipe-first/target/nebula-m3-dag/camel-route.yaml
+            m3/recipe-first/target/nebula-m3-dag/airflow-dag.py
+            m3/recipe-first/target/nebula-m3-dag/drools-agenda.drl
+            m3/recipe-first/target/nebula-m3-transfer/transfer-metadata.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer-targets.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer-dag.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer.sha256
+
+  compare-host-receipts:
+    name: Compare Windows/macOS/Linux semantic roots
+    needs: host-neutral-recipe-proof
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nebula-m3-dag-*
+          path: receipts
+
+      - name: Require all three hosts to produce byte-identical DAG identities
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = $null
+          foreach ($hostName in @('linux', 'windows', 'macos')) {
+            $path = Join-Path "receipts/nebula-m3-dag-$hostName" 'portable-roots.tsv'
+            if (!(Test-Path $path)) { throw "Missing $hostName portable receipt" }
+            $lines = @(Get-Content $path)
+            if ($lines.Count -ne 2 -or $lines[0] -ne "dagRoot`tplansRoot`ttransferRoot") {
+              throw "Invalid $hostName portable receipt"
+            }
+            if ($null -eq $expected) { $expected = $lines[1] }
+            elseif ($expected -ne $lines[1]) {
+              throw "Host-dependent recipe DAG or scheduler plan identity: $hostName"
+            }
+          }
+          Write-Output 'Portable DAG and scheduler roots agree across three hosts.'
+) {
+            throw 'Transfer contract SHA-256 proof failed'
+          }
+          $metadata = 'm3/recipe-first/target/nebula-m3-transfer/transfer-metadata.tsv'
+          if (!(Test-Path $metadata)) { throw 'Transfer metadata not generated' }
+          if (-not (Select-String -Path $metadata -Pattern '^transferState\tHOLD_UNTIL_PROVEN          [System.IO.File]::WriteAllText(
+            (Join-Path $out 'portable-roots.tsv'),
+            $receipt,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: 4 - Export host-independent receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-dag-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            m3/recipe-first/target/nebula-m3-dag/portable-roots.tsv
+            m3/recipe-first/target/nebula-m3-dag/recipe-dag.tsv
+            m3/recipe-first/target/nebula-m3-dag/camel-route.yaml
+            m3/recipe-first/target/nebula-m3-dag/airflow-dag.py
+            m3/recipe-first/target/nebula-m3-dag/drools-agenda.drl
+
+  compare-host-receipts:
+    name: Compare Windows/macOS/Linux semantic roots
+    needs: host-neutral-recipe-proof
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nebula-m3-dag-*
+          path: receipts
+
+      - name: Require all three hosts to produce byte-identical DAG identities
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = $null
+          foreach ($hostName in @('linux', 'windows', 'macos')) {
+            $path = Join-Path "receipts/nebula-m3-dag-$hostName" 'portable-roots.tsv'
+            if (!(Test-Path $path)) { throw "Missing $hostName portable receipt" }
+            $lines = @(Get-Content $path)
+            if ($lines.Count -ne 2 -or $lines[0] -ne "dagRoot`tplansRoot") {
+              throw "Invalid $hostName portable receipt"
+            }
+            if ($null -eq $expected) { $expected = $lines[1] }
+            elseif ($expected -ne $lines[1]) {
+              throw "Host-dependent recipe DAG or scheduler plan identity: $hostName"
+            }
+          }
+          Write-Output 'Portable DAG and scheduler roots agree across three hosts.'
+ -Quiet)) {
+            throw 'Transfer contract must remain HOLD until product proof completes'
+          }
+
+          $receipt = "dagRoot`tplansRoot`ttransferRoot`n$dag`t$plans`t$transfer`n"
           [System.IO.File]::WriteAllText(
             (Join-Path $out 'portable-roots.tsv'),
             $receipt,
