@@ -32,10 +32,10 @@ Install Java 21 and Maven 3.9.11. From the repository root, run this same one-li
 PowerShell, Command Prompt, macOS Terminal, Linux shell or a WSL2 Linux shell:
 
 ```text
-mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest -Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest verify
+mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am -Pdag-manifest,transfer-contract -Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3TransferContractTest -Dsurefire.failIfNoSpecifiedTests=false verify
 ```
 
-It compiles the Java 21 recipe module, runs focused JUnit semantics/authority tests, writes
+The source-first `m3/reactor.xml` first resolves/builds the qualified OpenRewrite parser\ndependency, then compiles the Java 21 recipe module, runs focused JUnit semantics/authority tests, writes
 `m3/recipe-first/target/nebula-m3-dag/`, and does **not** apply a source-changing recipe.
 
 Expected host-independent evidence:
@@ -94,7 +94,7 @@ The saved proving branch is:
 The transfer bundle is emitted by the existing Maven profile:
 
 ```text
-mvn -B -ntp -f m3/recipe-first/pom.xml -Ptransfer-contract verify
+mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am -Ptransfer-contract verify
 ```
 
 and binds:
@@ -143,3 +143,19 @@ tests, runtime/JNI parity where applicable, and fixed point.
 
 Until the Nebula one-build proof and three-host matrix execute successfully, the transfer contract
 must remain `HOLD_UNTIL_PROVEN`.
+
+## October 14, 2026 portable-workflow repair and proof status
+
+The saved transfer branch contains a repaired, single-owner portable Actions workflow. The previous
+workflow file had duplicate `compare-host-receipts` jobs and truncated PowerShell fragments, which
+cannot constitute valid hosted proof. The repaired workflow has exactly one Java-21 worker matrix,
+one fan-in reducer, a full three-root UTF-8/LF receipt, a strict selected-JUnit report gate and a
+clean-Git-worktree gate. `m3/ci/test_portable_recipe_workflow.py` locks the structure against
+the known duplicate-job/truncated-handoff regression; the existing one-build workflow executes the
+`m3/ci` Python unit tests.
+
+**Observed status:** structural read-back of the repaired workflow passed, but no new GitHub Actions
+run was reported for the repaired PR head during this review. Maven/JUnit, Tycho/SWT runtime,
+Windows/macOS/Linux portability and 99% semantic coverage must therefore remain **UNVERIFIED**.
+Do not infer that the recipe is deployable or transplant source modifications into either
+downstream repository until the hosted proof and target-specific contracts are actually green.
