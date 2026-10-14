@@ -196,3 +196,34 @@ run was reported for the repaired PR head during this review. Maven/JUnit, Tycho
 Windows/macOS/Linux portability and 99% semantic coverage must therefore remain **UNVERIFIED**.
 Do not infer that the recipe is deployable or transplant source modifications into either
 downstream repository until the hosted proof and target-specific contracts are actually green.
+
+
+## October 14 — One-build source-first reactor repair
+
+The one-build workflow originally invoked `m3/recipe-first/pom.xml` directly before a clean
+runner had installed the pinned `com.synexia.recipe:openrewrite-line-terminators` dependency.
+That module is built from source in `m3/openrewrite-line-terminators`, not published as an
+independent trusted substitute for the checked-in Nebula dependency. Executing the recipe module
+alone therefore cannot establish a reproducible clean-runner dependency closure.
+
+The saved transfer branch now uses the existing source-first reactor for **both** initial proof
+and candidate post-application reproof:
+
+```text
+mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am \
+  -Psemantic-coverage,dag-manifest clean verify install
+
+mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am \
+  -Psemantic-coverage verify
+```
+
+The one-build job pins Maven 3.9.11, matching the three-host portability job. The existing
+`m3/ci/test_one_build_source_first_reactor.py` locks the source-first reactor topology and
+rejects module-only builds, missing dependency closure, skipped JUnit, lost fixed-point replay,
+and removal of the Tycho product gate. The Python tests run before recipe candidate application.
+
+This is a **CI admission repair only**, not a passed build claim. The one-build job must still
+actually complete the original Tycho/SWT reactor, 99-percent semantic-coverage profile and
+second-pass fixed-point proof. The transfer contract remains `HOLD_UNTIL_PROVEN` until that and
+the three-host receipt comparison succeed. Neither Camel, Airflow nor Drools receives mutation
+or promotion authority from the repair.
