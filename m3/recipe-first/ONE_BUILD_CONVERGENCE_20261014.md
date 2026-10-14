@@ -77,3 +77,8 @@ recipe identity, Java 21 proof, fixed point and contract evidence first.
 Repository size never widens edit authority. A contract-preserving FILE transformation stays FILE
 even when applied to thousands of files. Scope promotes only when visibility, package, module,
 multi-module or library/API boundaries are actually crossed.
+
+
+## Hosted proof bootstrap
+
+GitHub evaluates `pull_request` workflows from the default branch. The proof workflow was first bootstrapped onto `master` by merge commit `17e7af115dbde767141cd37d6fb0d145f26b5b0a`. This feature branch then merged that master commit ancestry-first before the hosted proof was retriggered. The bootstrap changes CI definition only; it grants no mutation or promotion authority.
