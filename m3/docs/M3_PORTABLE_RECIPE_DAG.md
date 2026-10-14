@@ -144,6 +144,39 @@ tests, runtime/JNI parity where applicable, and fixed point.
 Until the Nebula one-build proof and three-host matrix execute successfully, the transfer contract
 must remain `HOLD_UNTIL_PROVEN`.
 
+### Machine-readable backport plan
+
+The transfer bundle now includes `backport-plan.tsv`, rooted by
+`NebulaM3BackportPlan.root()`. It fixes the downstream dependency order:
+
+```text
+NEBULA_PROOF
+  -> SYNEXIA_RECIPE_ABSORPTION
+  -> SYNEXIA_RECIPE_PROOF
+  -> M3JDK21_BACKPORT_INVENTORY
+  -> M3JDK21_FILE_REPLAY
+  -> M3JDK21_SCOPE_PROMOTION
+  -> TARGET_PROOF
+```
+
+The Synexia stage absorbs or improves **small OpenRewrite recipe atoms** and composes them into the
+same scheduler-neutral DAG. Maven/OpenRewrite remains the source-change mechanism; Camel, Airflow
+and Drools/KIE remain orchestration/admission projections with no direct mutation or promotion
+authority.
+
+The M3JDK21 inventory stage explicitly retains the larger backport programme. It inventories later
+OpenJDK **JEPs, PRs, non-JEP tooling changes and compatible dependency closure**, records contract
+and Java-21 compatibility, and only then admits recipe atoms. FILE-local compatible work may fan
+out independently. Any boundary-crossing change promotes authority only through:
+
+```text
+FILE -> VISIBILITY -> PACKAGE -> MODULE -> MULTI_MODULE -> LIBRARY_API
+```
+
+The final target proof remains diff -> lint/static analysis -> compile -> jtreg/JUnit -> runtime,
+JNI parity where declared -> setup-inclusive benchmark where a performance claim is made -> second
+pass fixed point. The transfer/backport plan itself has no target mutation or promotion authority.
+
 ## October 14, 2026 portable-workflow repair and proof status
 
 The saved transfer branch contains a repaired, single-owner portable Actions workflow. The previous
