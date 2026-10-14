@@ -50,6 +50,39 @@ The root POM enters the parent reactor. The current parent lists both mature and
 
 CI retains Grid visible-range screenshots from `widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/` when produced. An absent screenshot is not a visual pass. Check test reports and actual images in addition to the Maven exit status.
 
+## Reproduce the bound Grid screen-validation lane
+
+The [Maven workflow](../.github/workflows/maven.yaml) defines a more specific
+acceptance environment than the normal widget build: Ubuntu 24.04, GTK3
+(`SWT_GTK4=0`) and X11 (`GDK_BACKEND=x11`). Reproduce its ordered stages:
+
+1. Check out the workflow's exact `hsoliwal/eclipse.platform.swt` revision into
+   `.m3-swt`. A moving branch tip is not an equivalent receiver.
+2. Install the workflow's GTK development dependencies and build the
+   `gtk.linux.x86_64` native fragment. Run
+   [prepare_swt_receiver.py](../m3/convergence/prepare_swt_receiver.py), then the
+   [receiver p2 project](../m3/convergence/swt-receiver-p2/pom.xml), to prepare the
+   bound target and expected identity. The generated `receiver.env` supplies the
+   target-platform location and expected GC hash to later steps.
+3. Run the Nebula reactor under Xvfb with the workflow's target override and
+   Grid screen-capture properties. Keep the receiver binding with the results.
+4. Run [verify_grid_screenshots.py](../m3/convergence/verify_grid_screenshots.py)
+   against Grid's captured frames, Surefire reports and the generated
+   `binding/expected.json`. Capture and pixel validation are separate stages;
+   a successful Maven invocation alone does not qualify this lane.
+
+The workflow's `grid-visible-range-screenshots` artifact collects the expected
+identity, receiver repository XML metadata, images and Grid Surefire reports.
+The upload uses `if-no-files-found: warn`, so an upload step's completion is not
+proof that every expected artifact exists. Record missing or failed stages
+explicitly. Markdown/docs-only paths are excluded from this Maven workflow;
+absence of its run on a documentation PR is not a passing UI result.
+
+For the ordinary reactor, [Jenkins](../Jenkinsfile) collects test reports under
+`**/target/surefire-reports/*.xml` and non-promotion update-site output under
+`releng/org.eclipse.nebula.site/target/repository/`. These paths describe ordinary
+build output, not a substitute for the receiver identity and pixel evidence above.
+
 ## Reader cheat sheet
 
 | Question | Start here | What to look for |
