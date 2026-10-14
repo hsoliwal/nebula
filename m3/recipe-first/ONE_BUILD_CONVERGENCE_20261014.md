@@ -53,9 +53,17 @@ The CI sequence is:
 6. candidate diff capture;
 7. second OpenRewrite dry run with no remaining patch;
 8. recipe/JUnit/coverage re-proof;
-9. candidate/DAG evidence upload.
+9. original Nebula Tycho `clean verify` under Xvfb on the transformed candidate;
+10. recheck that Tycho changed neither the admitted FILE paths nor their exact candidate diff;
+11. candidate/DAG evidence upload.
 
 The workflow never commits its disposable candidate automatically.
+
+The postimage Tycho stage is a mandatory product-build gate; a recipe-only pass is never
+transfer proof. The build has to succeed **after** candidate application and fixed-point replay,
+and the complete Git patch and candidate path list must remain byte-identical after Tycho.
+This still does not establish SWT visual/platform runtime proof, all-target 99% semantic coverage,
+or permission to apply the result to Synexia/M3jdk21; those remain separately held gates.
 
 ### FILE-scope admission after application
 
