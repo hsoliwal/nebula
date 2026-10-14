@@ -38,6 +38,27 @@ final class NebulaM3CurrentMasterReproofHeaderRecipeTest {
             "schema\\tnebula_master_preimage\\tcanonical_repository";
 
     @Test
+    void yamlEntryPointResolvesTheOneReviewedOpenRewriteLeaf() throws Exception {
+        String resource = "/META-INF/rewrite/nebula-m3-current-master-reproof-header.yml";
+        var url = getClass().getResource(resource);
+        assertNotNull(url, "registered declarative OpenRewrite recipe");
+        try (var input = url.openStream()) {
+            var loader = new org.openrewrite.config.YamlResourceLoader(
+                    input, url.toURI(), new java.util.Properties());
+            var environment = org.openrewrite.config.Environment.builder()
+                    .load(loader).build();
+            var composite =
+                    environment.activateRecipes("org.eclipse.nebula.m3.CurrentMasterReproofHeader");
+            assertTrue(composite.validateAll().stream()
+                    .allMatch(org.openrewrite.Validated::isValid));
+            assertEquals(1, composite.getRecipeList().size());
+            assertEquals(
+                    NebulaM3CurrentMasterReproofHeaderRecipe.class,
+                    composite.getRecipeList().getFirst().getClass());
+        }
+    }
+
+    @Test
     void sourceHashesAndExactJavaPathsArePinned() throws IOException {
         var recipe = new NebulaM3CurrentMasterReproofHeaderRecipe();
         assertEquals(NebulaM3CurrentMasterReproofHeaderRecipe.BEFORE, NebulaM3ExactJavaSnapshotRecipe.sha256(resource(BEFORE)));
