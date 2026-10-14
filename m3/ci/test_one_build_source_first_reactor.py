@@ -113,7 +113,7 @@ class OneBuildSourceFirstReactorTest(unittest.TestCase):
     def test_skipped_recipe_junit_is_rejected(self) -> None:
         broken = self.source.replace(
             "-Psemantic-coverage,dag-manifest clean install",
-            "-Psemantic-coverage,dag-manifest -DskipTests clean verify install",
+            "-Psemantic-coverage,dag-manifest -DskipTests clean install",
             1,
         )
         with self.assertRaises(ValueError):
