@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: EPL-2.0 -->
 # M3 Nebula reproof ledger: exact schema-header convergence
 
-Date: 2026-10-14. State: **CANDIDATE_ONLY / VERIFICATION_PENDING**.
+Date: 2026-10-14. State: **CANDIDATE_ONLY / QUALIFICATION_REQUESTED**.
 
 ## Inventory
 
@@ -67,7 +67,7 @@ compatibility task, not a consequence of this test repair.
 
 ## Evidence / limitations
 
-GitHub's current historical workflow evidence and this candidate commit alone
+This source-audited candidate has been promoted from draft to ready-for-review so the repository's pull-request qualification workflow can execute. Until those jobs report, the candidate alone
 cannot establish green Maven, JUnit, coverage, SWT desktop behavior, JNI/native
 parity, or Java 21 JEP backport completion. When a gate cannot run, mark it
 `NOT_RUN` or `HOLD`, never `PASS`.
