@@ -67,7 +67,7 @@ jobs:
         run: >-
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
-          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
+          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3ProofGateTest,NebulaM3TransferQualificationRecipeTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
           -Dsurefire.failIfNoSpecifiedTests=false
           test
 
@@ -90,6 +90,37 @@ jobs:
           OUT='m3/recipe-first/target/nebula-m3-transfer'
           DAG='m3/recipe-first/target/nebula-m3-dag'
           test -s "$OUT/transfer.sha256"
+          test -s "$OUT/transfer-qualification.tsv"
+          python3 - <<'PYQUALIFICATION'
+          import csv
+          import re
+          from pathlib import Path
+
+          root = Path("m3/recipe-first/target/nebula-m3-transfer")
+          rows = list(csv.DictReader((root / "transfer-qualification.tsv").open(
+              encoding="utf-8", newline=""), delimiter="\t"))
+          stages = [
+              "SOURCE_INVENTORY", "RECIPE_JUNIT", "ATOM_BEHAVIOR", "PATTERN_IOP",
+              "DOCUMENTATION", "JAVA21_COMPILE", "FIXED_POINT", "SEMANTIC_COVERAGE_99",
+              "M3_REACTOR", "TYCHO_REACTOR", "SWT_PLATFORM_RUNTIME",
+              "DIFF_AND_PROVENANCE",
+          ]
+          assert [row["stage"] for row in rows] == stages, "qualification stage drift"
+          assert all(
+              row["schema"] == "NEBULA_M3_PILOT_PROOF_V1"
+              and row["nebula_commit"] == "UNBOUND"
+              and row["synexia_commit"] == "UNBOUND"
+              and row["state"] == "NOT_RUN"
+              and row["proof_sha256"] == "-"
+              and row["disposition"] == "HOLD"
+              and row["mutation_authority"] == "false"
+              and row["promotion_authority"] == "false"
+              for row in rows
+          ), "unverified transfer must remain HOLD"
+          roots = {row["receipt_root"] for row in rows}
+          assert len(roots) == 1 and re.fullmatch(r"[0-9a-f]{64}", roots.pop())
+          print("NEBULA_M3_TRANSFER_QUALIFICATION=HOLD_UNVERIFIED")
+          PYQUALIFICATION
           test -s "$OUT/transfer-dag.tsv"
           test -s "$OUT/ui-behavior-donors.tsv"
           test -s "$OUT/challenge-donors.tsv"
