@@ -13,7 +13,7 @@ mvn -version
 mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 ```
 
-The checked-in [parent POM](../releng/org.eclipse.nebula.nebula-parent/pom.xml) sets Java source/target 21 and the JavaSE-21 execution environment. The [Maven workflow](../.github/workflows/maven.yaml) uses Temurin 21 and Maven 3.9.6. Use those versions when reproducing that lane.
+The checked-in [parent POM](../releng/org.eclipse.nebula.nebula-parent/pom.xml) sets Java source/target 21 and the JavaSE-21 execution environment. The [Maven workflow](../.github/workflows/maven.yaml) uses Temurin 21 and Maven 3.9.11. Use those versions when reproducing that lane.
 
 Tests use Tycho's UI harness. On Linux, provide GTK and a display; CI runs the Maven command through Xvfb. A local equivalent, with Xvfb installed, is:
 
@@ -22,6 +22,10 @@ xvfb-run -a mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 ```
 
 The target platform resolves Eclipse, GEF and SWTBot repositories from the parent POM. Resolution requires network access and those update sites can move. Record the resolved environment when reproducing a failure. Do not remove tests or silently substitute locally installed bundles to hide a dependency failure.
+
+The plain command above is the normal Tycho entry point, not a reproduction of every current CI acceptance step. The current workflow first builds a pinned SWT receiver, prepares its p2 repository and binds that repository and GC hash into the widget build. It then runs an OpenCV screen-pixel validator. Follow those ordered workflow steps if reproducing that qualification lane; do not substitute a stock SWT distribution and label the result equivalent.
+
+All commands in this guide are source-checked examples, not execution results from this documentation change. They require the dependencies and display environment described here.
 
 ## Repository map
 
@@ -34,7 +38,7 @@ The target platform resolves Eclipse, GEF and SWTBot repositories from the paren
 
 Find the implementation bundle and its corresponding test bundle before editing. Grid, for example, has `widgets/grid/org.eclipse.nebula.widgets.grid.test/`; other widget families use `.test` or `.tests` names, so do not guess an artifact selector from the widget name alone.
 
-The root POM enters the parent reactor. Follow that parent's module/profile selection when scoping a build. Release and incubation selection are distinct; a successful selected reactor is not a claim that every possible widget/profile was exercised.
+The root POM enters the parent reactor. The current parent lists both mature and incubation widget modules directly; the commented incubation command in CI is not an active second build. Read the current module list before scoping a build. A successful selected reactor is not a claim that every possible widget/profile was exercised.
 
 ## Working on a widget
 
@@ -45,6 +49,38 @@ The root POM enters the parent reactor. Follow that parent's module/profile sele
 5. For visual changes, include a before/after reproduction with OS, SWT version, scale and theme.
 
 CI retains Grid visible-range screenshots from `widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/` when produced. An absent screenshot is not a visual pass. Check test reports and actual images in addition to the Maven exit status.
+
+## Reader cheat sheet
+
+| Question | Start here | What to look for |
+| --- | --- | --- |
+| Which widget fits an application? | [Widget catalogue](Widgets.md) | API purpose and examples, before changing internals |
+| How does a widget behave? | [Grid snippets](../examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid) | A small public-API reproduction |
+| Where is Grid implemented? | [Grid bundle](../widgets/grid/org.eclipse.nebula.widgets.grid) | Controls, items, columns and rendering owners |
+| Where should a regression live? | [Grid test bundle](../widgets/grid/org.eclipse.nebula.widgets.grid.test) | Existing fixtures and test ownership |
+| Which widgets does Maven build? | [Parent POM](../releng/org.eclipse.nebula.nebula-parent/pom.xml) | Actual modules, target platform and UI harness |
+| Why is CI different from a plain build? | [Maven workflow](../.github/workflows/maven.yaml) | Pinned receiver preparation, screenshot flags and validator |
+
+A bundle is an OSGi implementation/dependency unit. A feature groups bundles for installation; a p2 repository publishes those features and bundles. A snippet demonstrates an interaction and is not automatically a regression test. SWT provides the display, shell and native platform beneath Nebula controls; Nebula's widget-specific behavior remains owned by the corresponding widget bundle.
+
+## Worked exploration: a hierarchical Grid
+
+Start with [GridSnippet1.java](../examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/GridSnippet1.java), rather than a large application:
+
+1. The snippet creates a `Display`, a `Shell` with `FillLayout`, and a `Grid` with horizontal and vertical scrolling.
+2. It makes the header visible, creates a `GridColumn`, and calls `setTree(true)`. The column determines where the hierarchy is presented.
+3. It constructs one root `GridItem` and two nested children. Follow the parent passed to each constructor to distinguish hierarchy from row ordering.
+4. The shell opens and the event loop dispatches events until disposal. The application-created display is disposed afterward.
+5. In a configured PDE workspace, run the snippet and inspect expansion/collapse, header width, scrolling and closing. This is a suggested exploration, not a recorded successful run.
+
+To turn an observation into a fix, capture the smallest failing interaction, trace the matching Grid implementation method, and add assertions in the Grid test bundle. Check selection and disposal as well as pixels. A screenshot or a working snippet alone does not establish test coverage, native-resource bounds or cross-platform compatibility.
+
+## Troubleshooting without weakening the checks
+
+- **Target-platform resolution fails:** record the unresolved bundle/repository and selected target. The default repositories use moving `latest` URLs; compare them with CI's explicitly prepared receiver.
+- **UI harness cannot start:** check GTK, the display server and Xvfb availability. A headless JVM property does not supply a native display.
+- **Build passes but visual artifacts are absent:** check whether the screen-capture lane and validator actually ran. Documentation-only paths are excluded by the normal Maven workflow.
+- **Only one widget was selected:** record the reactor selection; do not extrapolate that result to every widget or platform.
 
 ## Separate recipe tooling from widget acceptance
 
