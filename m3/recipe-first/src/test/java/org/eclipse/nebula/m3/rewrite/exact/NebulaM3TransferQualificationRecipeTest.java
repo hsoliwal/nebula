@@ -30,6 +30,30 @@ final class NebulaM3TransferQualificationRecipeTest {
             RESOURCE + "NebulaM3TransferContractCli.after.java.txt";
 
     @Test
+    void declarativeMavenRecipeResolvesTheReviewedSingleLeaf() throws Exception {
+        var resource =
+                getClass().getResource(
+                        "/META-INF/rewrite/nebula-m3-transfer-qualification.yml");
+        assertNotNull(resource);
+        try (var stream = resource.openStream()) {
+            var loader =
+                    new org.openrewrite.config.YamlResourceLoader(
+                            stream, resource.toURI(), new java.util.Properties());
+            var environment = org.openrewrite.config.Environment.builder()
+                    .load(loader).build();
+            var recipe =
+                    environment.activateRecipes(
+                            "org.eclipse.nebula.m3.TransferQualification");
+            assertTrue(recipe.validateAll().stream()
+                    .allMatch(org.openrewrite.Validated::isValid));
+            assertEquals(1, recipe.getRecipeList().size());
+            assertEquals(
+                    NebulaM3TransferQualificationRecipe.class,
+                    recipe.getRecipeList().getFirst().getClass());
+        }
+    }
+
+    @Test
     void exactSourcesAndTargetFencesArePinned() throws IOException {
         var recipe = new NebulaM3TransferQualificationRecipe();
         assertEquals(NebulaM3TransferQualificationRecipe.BEFORE, NebulaM3ExactJavaSnapshotRecipe.sha256(read(PREIMAGE)));
