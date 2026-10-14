@@ -17,6 +17,8 @@ jobs:
   converge:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -40,6 +42,10 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s m3/ci -p 'test_*.py' -v
+          if find m3/ci -type d -name __pycache__ -print -quit | grep -q .; then
+            echo 'M3 gate test produced untracked Python bytecode'
+            exit 1
+          fi
 
       - name: 3 - Prove and install the recipe atoms
         shell: bash
