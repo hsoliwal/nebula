@@ -17,7 +17,7 @@ final class NebulaM3TransferContractTest {
         assertEquals("NEBULA_M3_RECIPE_TRANSFER_V2", NebulaM3TransferContract.SCHEMA);
         assertEquals("hsoliwal/nebula", NebulaM3TransferContract.PROOF_REPOSITORY);
         assertEquals(
-                "m3/java21-portable-recipe-dag-20261014",
+                "m3/final-portable-recipe-transfer-20261014",
                 NebulaM3TransferContract.PROOF_BRANCH);
         assertEquals(
                 "org.eclipse.nebula.m3:nebula-m3-recipe-first:1.0.0-SNAPSHOT",
@@ -83,7 +83,7 @@ final class NebulaM3TransferContractTest {
         assertTrue(
                 NebulaM3TransferContract.metadataTsv()
                         .contains(
-                                "proofBranch\tm3/java21-portable-recipe-dag-20261014"));
+                                "proofBranch\tm3/final-portable-recipe-transfer-20261014"));
         assertTrue(
                 NebulaM3TransferContract.metadataTsv()
                         .contains("transferState\tHOLD_UNTIL_PROVEN"));
