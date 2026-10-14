@@ -83,3 +83,63 @@ are candidate scheduling evidence only, never a source-mutation shortcut.
 A recipe proven here becomes eligible for bounded FILE fan-out, not automatic source promotion.
 The original Tycho/SWT product build stays authoritative and the non-destructive `master`
 history remains intact.
+
+
+## Saved transfer artifact and backport order
+
+The saved proving branch is:
+
+`m3/java21-portable-recipe-dag-20261014`
+
+The transfer bundle is emitted by the existing Maven profile:
+
+```text
+mvn -B -ntp -f m3/recipe-first/pom.xml -Ptransfer-contract verify
+```
+
+and binds:
+
+- the Java 21/OpenRewrite recipe DAG root;
+- Camel, Airflow and Drools scheduler-plan root;
+- the exact recipe coordinate and root Maven profile;
+- the proof repository and saved proof branch;
+- the two transfer targets: `hsoliwal/M3jdk21` and `hsoliwal/com.synexia`;
+- `HOLD_UNTIL_PROVEN` transfer state.
+
+The host-portability matrix now compares the transfer root as well as the DAG and scheduler roots.
+A transfer artifact is therefore not considered portable if Windows, macOS and Linux disagree on
+any of those identities.
+
+Backporting has **not** been abandoned. It is deliberately downstream of this proof:
+
+```text
+Nebula
+  Mavenize / preserve Tycho authority
+  -> inventory
+  -> atomize
+  -> patternize + IOP
+  -> documentation
+  -> FILE fixed point
+  -> original product build
+  -> portable three-host root agreement
+  -> TRANSFER ELIGIBLE
+
+then mechanically:
+
+com.synexia
+  -> install/improve canonical reusable recipe atoms/DAG
+  -> preserve provenance and JUnit/fixed-point proof
+
+M3jdk21
+  -> inventory JDK21 target contracts
+  -> classify FILE / VISIBILITY / PACKAGE / MODULE / MULTI_MODULE / LIBRARY_API
+  -> replay only admitted compatible recipe atoms
+  -> continue JEP/PR/tooling backport ledger through the same proof gates
+```
+
+No Nebula result grants automatic source mutation or promotion authority in either target
+repository. Each target must bind its own exact inventory/preimages and prove its own compiler,
+tests, runtime/JNI parity where applicable, and fixed point.
+
+Until the Nebula one-build proof and three-host matrix execute successfully, the transfer contract
+must remain `HOLD_UNTIL_PROVEN`.
