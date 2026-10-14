@@ -19,6 +19,7 @@ public final class NebulaM3BackportPlan {
         NEBULA_PROOF,
         SYNEXIA_RECIPE_ABSORPTION,
         SYNEXIA_RECIPE_PROOF,
+        M3JDK21_MAVEN_ORCHESTRATION_BOOTSTRAP,
         M3JDK21_BACKPORT_INVENTORY,
         M3JDK21_FILE_REPLAY,
         M3JDK21_SCOPE_PROMOTION,
@@ -81,15 +82,25 @@ public final class NebulaM3BackportPlan {
                             "synexia-absorb-recipe-atoms"),
                     step(
                             3,
+                            "m3jdk21-maven-orchestration-bootstrap",
+                            Phase.M3JDK21_MAVEN_ORCHESTRATION_BOOTSTRAP,
+                            "hsoliwal/M3jdk21",
+                            "Install or verify the Maven/OpenRewrite recipe orchestration plane around "
+                                    + "the existing OpenJDK build without replacing make/autoconf; prove "
+                                    + "Java21 recipe resolution and target-local inventory entry points.",
+                            NebulaM3RefactorScope.FILE,
+                            "synexia-prove-canonical-dag"),
+                    step(
+                            4,
                             "m3jdk21-inventory-backports",
                             Phase.M3JDK21_BACKPORT_INVENTORY,
                             "hsoliwal/M3jdk21",
                             "Inventory JDK21 contracts plus later JEP, PR, tooling and compatible "
                                     + "dependency closure; classify every candidate before replay.",
                             NebulaM3RefactorScope.FILE,
-                            "synexia-prove-canonical-dag"),
+                            "m3jdk21-maven-orchestration-bootstrap"),
                     step(
-                            4,
+                            5,
                             "m3jdk21-file-replay",
                             Phase.M3JDK21_FILE_REPLAY,
                             "hsoliwal/M3jdk21",
@@ -98,7 +109,7 @@ public final class NebulaM3BackportPlan {
                             NebulaM3RefactorScope.FILE,
                             "m3jdk21-inventory-backports"),
                     step(
-                            5,
+                            6,
                             "m3jdk21-scope-promotion",
                             Phase.M3JDK21_SCOPE_PROMOTION,
                             "hsoliwal/M3jdk21",
@@ -107,7 +118,7 @@ public final class NebulaM3BackportPlan {
                             NebulaM3RefactorScope.LIBRARY_API,
                             "m3jdk21-file-replay"),
                     step(
-                            6,
+                            7,
                             "target-proof",
                             Phase.TARGET_PROOF,
                             "hsoliwal/M3jdk21",
