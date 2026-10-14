@@ -32,8 +32,8 @@ final class NebulaM3TransferQualificationRecipeTest {
     @Test
     void exactSourcesAndTargetFencesArePinned() throws IOException {
         var recipe = new NebulaM3TransferQualificationRecipe();
-        assertEquals(recipe.BEFORE, NebulaM3ExactJavaSnapshotRecipe.sha256(read(PREIMAGE)));
-        assertEquals(recipe.AFTER, NebulaM3ExactJavaSnapshotRecipe.sha256(read(POSTIMAGE)));
+        assertEquals(NebulaM3TransferQualificationRecipe.BEFORE, NebulaM3ExactJavaSnapshotRecipe.sha256(read(PREIMAGE)));
+        assertEquals(NebulaM3TransferQualificationRecipe.AFTER, NebulaM3ExactJavaSnapshotRecipe.sha256(read(POSTIMAGE)));
         assertTrue(recipe.matches(Path.of(NebulaM3TransferQualificationRecipe.REPOSITORY_PATH)));
         assertTrue(recipe.matches(Path.of(NebulaM3TransferQualificationRecipe.MODULE_PATH)));
         assertFalse(recipe.matches(Path.of("widgets/CTree.java")));
