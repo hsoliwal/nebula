@@ -25,7 +25,7 @@ final class NebulaM3CurrentMasterReproofTest {
 
         assertEquals(4, lines.size());
         assertEquals(
-                "schema\tmaster_preimage\tcanonical_repository\tcanonical_develop_head"
+                "schema\tnebula_master_preimage\tcanonical_repository\tcanonical_develop_head"
                         + "\tlane\tpinned_commit\tpinned_blob\tcurrent_blob"
                         + "\tbyte_equivalent\thosted_proof",
                 lines.getFirst());
