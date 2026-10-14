@@ -57,6 +57,29 @@ The CI sequence is:
 
 The workflow never commits its disposable candidate automatically.
 
+### FILE-scope admission after application
+
+The reusable `m3/ci/verify-file-local-candidate.py` gate examines the complete Git
+worktree delta, not a hand-authored list. It admits only **modified, already-tracked
+Java source files** for this FILE-only atomization/patternization/documentation run.
+
+A newly added/deleted/renamed/copied file, a POM/YAML/native/binary change, an
+untracked source output, an unsafe filename or whitespace-error diff is **HOLD**,
+not an implicit PACKAGE/MODULE promotion. Those cases require a separately
+scope-qualified recipe and proof receipt. This deliberately does not limit the
+number of independently modified Java files.
+
+`m3/ci/test_verify_file_local_candidate.py` proves the rule with adversarial
+status/path fixtures and real temporary Git repositories. CI executes the tests
+before Maven, invokes the gate after the candidate apply, writes
+`candidate-paths.txt`, and preserves the diff as an artifact. An empty
+candidate set is acceptable only as a genuine no-change fixed point; it does
+not prove that all possible Nebula files were transformed.
+
+This admission gate alone **does not prove ABI/behavior equivalence**, 99% semantic
+coverage, a successful Tycho/SWT build, or correctness of a JNI/native port.
+Those remain independent test/compiler/runtime/transfer gates.
+
 ## Transfer / backport order
 
 Backporting remains part of the programme; it is deliberately downstream of this proof.
