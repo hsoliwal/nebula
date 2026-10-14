@@ -139,6 +139,18 @@ final class NebulaM3TransferContractTest {
         assertEquals(
                 NebulaM3TransferContract.root() + "\n",
                 Files.readString(output.resolve("transfer.sha256")));
+
+        // The mere existence of a transfer bundle never grants proof or promotion.
+        var hold = NebulaM3ProofGate.pending(NebulaM3RecipeDagManifest.root());
+        String qualification =
+                Files.readString(output.resolve("transfer-qualification.tsv"));
+        assertEquals(hold.toTsv(), qualification);
+        assertFalse(hold.complete());
+        assertEquals("HOLD", hold.disposition());
+        assertTrue(qualification.contains("\tNOT_RUN\t-\tHOLD\tfalse\tfalse\t"));
+        assertEquals(
+                NebulaM3ProofGate.Stage.values().length + 1,
+                qualification.lines().count());
     }
     private static String sha256(String value) {
         try {
