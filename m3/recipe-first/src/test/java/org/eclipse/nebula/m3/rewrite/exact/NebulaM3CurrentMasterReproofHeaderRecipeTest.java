@@ -40,10 +40,10 @@ final class NebulaM3CurrentMasterReproofHeaderRecipeTest {
     @Test
     void sourceHashesAndExactJavaPathsArePinned() throws IOException {
         var recipe = new NebulaM3CurrentMasterReproofHeaderRecipe();
-        assertEquals(recipe.BEFORE, NebulaM3ExactJavaSnapshotRecipe.sha256(resource(BEFORE)));
-        assertEquals(recipe.AFTER, NebulaM3ExactJavaSnapshotRecipe.sha256(resource(AFTER)));
-        assertTrue(recipe.matches(Path.of(recipe.REPOSITORY_PATH)));
-        assertTrue(recipe.matches(Path.of(recipe.MODULE_PATH)));
+        assertEquals(NebulaM3CurrentMasterReproofHeaderRecipe.BEFORE, NebulaM3ExactJavaSnapshotRecipe.sha256(resource(BEFORE)));
+        assertEquals(NebulaM3CurrentMasterReproofHeaderRecipe.AFTER, NebulaM3ExactJavaSnapshotRecipe.sha256(resource(AFTER)));
+        assertTrue(recipe.matches(Path.of(NebulaM3CurrentMasterReproofHeaderRecipe.REPOSITORY_PATH)));
+        assertTrue(recipe.matches(Path.of(NebulaM3CurrentMasterReproofHeaderRecipe.MODULE_PATH)));
         assertFalse(recipe.matches(Path.of("widgets/Other.java")));
         assertEquals(1, recipe.maxCycles());
         assertTrue(recipe.getTags().contains("file-local"));
