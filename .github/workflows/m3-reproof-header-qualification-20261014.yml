@@ -57,6 +57,8 @@ jobs:
                       '\tcurrent_blob\tbyte_equivalent\thosted_proof')
           assert header == expected, (header, expected)
           source = Path('m3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3CurrentMasterReproofTest.java').read_text(encoding='utf-8')
+          # The product checkout must still be the sealed preimage here. The recipe
+          # is proved in step 2 and applied only to the transient candidate in step 4.
           assert '"schema\\tmaster_preimage\\tcanonical_repository"' in source
           assert '"schema\\tnebula_master_preimage\\tcanonical_repository"' not in source
           PY
