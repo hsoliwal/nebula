@@ -6,6 +6,7 @@ on:
     paths:
       - 'pom.xml'
       - 'm3/recipe-first/**'
+      - 'm3/ci/**'
       - '.github/workflows/m3-one-build-openrewrite-convergence.yml'
   workflow_dispatch:
 
@@ -16,6 +17,8 @@ jobs:
   converge:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -34,13 +37,23 @@ jobs:
           set -euo pipefail
           git diff --check
 
-      - name: 2 - Prove and install the recipe atoms
+      - name: 2 - Verify FILE candidate-scope gate fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s m3/ci -p 'test_*.py' -v
+          if find m3/ci -type d -name __pycache__ -print -quit | grep -q .; then
+            echo 'M3 gate test produced untracked Python bytecode'
+            exit 1
+          fi
+
+      - name: 3 - Prove and install the recipe atoms
         shell: bash
         run: |
           set -euo pipefail
           mvn -B -ntp -f m3/recipe-first/pom.xml             -Psemantic-coverage,dag-manifest             clean verify install
 
-      - name: 3 - Verify DAG and scheduler evidence exists
+      - name: 4 - Verify DAG and scheduler evidence exists
         shell: bash
         run: |
           set -euo pipefail
@@ -57,22 +70,24 @@ jobs:
           grep -F $'DOCUMENTATION' "$OUT/recipe-dag.tsv"
           grep -F 'mutationAuthority' "$OUT/orchestrators.tsv"
 
-      - name: 4 - Root reactor OpenRewrite dry run
+      - name: 5 - Root reactor OpenRewrite dry run
         shell: bash
         run: |
           set -euo pipefail
           mvn -B -ntp             -Pm3-nebula-file-convergence             rewrite:dryRunNoFork
 
-      - name: 5 - Apply candidate only in disposable checkout
+      - name: 6 - Apply candidate only in disposable checkout
         shell: bash
         run: |
           set -euo pipefail
           mvn -B -ntp             -Pm3-nebula-file-convergence             rewrite:runNoFork
           git diff --check
-          git diff --name-only | tee m3/recipe-first/target/nebula-m3-dag/candidate-paths.txt
+          python3 m3/ci/verify-file-local-candidate.py \
+            --repo . \
+            --output m3/recipe-first/target/nebula-m3-dag/candidate-paths.txt
           git diff --binary > m3/recipe-first/target/nebula-m3-dag/candidate.patch
 
-      - name: 6 - Second pass must be fixed point
+      - name: 7 - Second pass must be fixed point
         shell: bash
         run: |
           set -euo pipefail
@@ -84,13 +99,13 @@ jobs:
             exit 1
           fi
 
-      - name: 7 - Re-prove recipe tests after candidate application
+      - name: 8 - Re-prove recipe tests after candidate application
         shell: bash
         run: |
           set -euo pipefail
           mvn -B -ntp -f m3/recipe-first/pom.xml             -Psemantic-coverage             verify
 
-      - name: 8 - Preserve candidate and DAG evidence
+      - name: 9 - Preserve candidate and DAG evidence
         uses: actions/upload-artifact@v4
         with:
           name: nebula-m3-one-build-convergence
