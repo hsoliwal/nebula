@@ -75,6 +75,43 @@ Start with [GridSnippet1.java](../examples/org.eclipse.nebula.snippets/src/org/e
 
 To turn an observation into a fix, capture the smallest failing interaction, trace the matching Grid implementation method, and add assertions in the Grid test bundle. Check selection and disposal as well as pixels. A screenshot or a working snippet alone does not establish test coverage, native-resource bounds or cross-platform compatibility.
 
+## Grid API semantics: rows, cells and viewer models
+
+The public [Grid implementation](../widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java) is the place to check overload-specific behavior:
+
+| Operation | Meaning in the current source | Debugging consequence |
+| --- | --- | --- |
+| `select(index)` | Adds a valid item in multi-selection mode; single-selection mode clears the previous item | Check selection mode before assuming accumulation |
+| `setSelection(index)` | For a valid index, replaces selected rows, or selects the row's cells in cell mode | This overload ignores an invalid index; do not assume every overload clears first |
+| `setCellSelectionEnabled(true)` | Clears selected rows and enables cell selection | Switching modes is a state transition, not a cosmetic repaint |
+| `setCellSelectionEnabled(false)` | Clears selected cells | Save any application selection state explicitly if you need it later |
+| `getCellSelection()` | Returns cell coordinates: `Point.x` is column index and `Point.y` is item index | These are logical indices, not display pixels |
+| Selection listener | Cell drag events can carry `SWT.DRAG`, followed by a completion event | Avoid treating every intermediate drag notification as a final operation |
+
+Check the exact overload, enabled state and row/cell mode when reproducing a selection bug. The programmatic selection methods above update selection/redraw; they do not themselves emit a user selection notification. Test programmatic state and mouse/keyboard notification behavior separately.
+
+### Follow an edit through the viewer
+
+[GridViewerSnippet1](../examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/viewer/GridViewerSnippet1.java) demonstrates a different abstraction from constructing `GridItem` objects directly:
+
+1. `GridTableViewer` wraps the Grid. A content provider supplies model elements; the label provider converts those elements into column text and presentation.
+2. `setColumnProperties` associates property names with the editor columns. The snippet installs text editors and a cell modifier.
+3. The activation strategy accepts traversal, double-click and Enter. Editor activation alone is not a committed model change.
+4. Crucially, this snippet's `ICellModifier.modify(...)` body is empty. It demonstrates editor/provider wiring, **not persistence**. If edited text disappears, inspect the modifier's model update and viewer refresh path before diagnosing a paint failure.
+5. Its colors come from the display and its fonts from a registry. Those borrowed resources must not be treated as per-cell application-owned allocations.
+
+### Turn the reproduction into a targeted test
+
+Use the existing [Grid test sources](../widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid) and fixture conventions. Separate these assertions:
+
+- Starting from multiple valid rows, compare `select` with `setSelection`, then repeat in single-selection and cell modes.
+- Assert cell coordinates and selected model elements independently of their painted locations; test scrolling and reordered columns separately.
+- For editing, assert model mutation first, then label refresh and keyboard traversal. An open editor is not evidence of a saved value.
+- Exercise closing/disposal before delayed UI work executes. UI access belongs on the display thread, and the callback must recheck whether its Grid still exists.
+- Release application-created graphics resources and preserve fixture teardown. A successful Java assertion does not substitute for the existing native pixel/resource gates.
+
+These are source-derived test cases to implement or run in a configured environment, not claims of newly executed tests.
+
 ## Troubleshooting without weakening the checks
 
 - **Target-platform resolution fails:** record the unresolved bundle/repository and selected target. The default repositories use moving `latest` URLs; compare them with CI's explicitly prepared receiver.
