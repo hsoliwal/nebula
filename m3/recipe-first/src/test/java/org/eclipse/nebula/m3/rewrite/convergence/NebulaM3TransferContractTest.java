@@ -90,6 +90,9 @@ final class NebulaM3TransferContractTest {
         assertTrue(
                 NebulaM3TransferContract.metadataTsv()
                         .contains("localRecipeImplementationAuthority\tfalse"));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains("backportPlanRoot\t" + NebulaM3BackportPlan.root()));
     }
 
     @Test
@@ -142,6 +145,9 @@ final class NebulaM3TransferContractTest {
         assertEquals(
                 NebulaM3TransferContract.targetsTsv(),
                 Files.readString(output.resolve("transfer-targets.tsv")));
+        assertEquals(
+                NebulaM3BackportPlan.tsv(),
+                Files.readString(output.resolve("backport-plan.tsv")));
         assertEquals(
                 NebulaM3UiBehaviorDonorCatalog.tsv(),
                 Files.readString(output.resolve("ui-behavior-donors.tsv")));
