@@ -121,7 +121,7 @@ public final class RowBitLanes {
 				return;
 			}
 		}
-		final int last = Math.min(to, w.length << 6);
+		final int last = (int) Math.min((long) to, (long) w.length << 6);
 		if (from >= last) {
 			return;
 		}
@@ -161,11 +161,17 @@ public final class RowBitLanes {
 	public void setWhere(final int lane, final long[] mask, final boolean value) {
 		final int words = Math.min(mask.length, words(rowCount));
 		if (value) {
-			final long[] w = ensure(lane, rowCount);
-			for (int i = 0; i < words; i++) {
+			int lastNonzero = words;
+			while (lastNonzero > 0 && mask[lastNonzero - 1] == 0L) {
+				lastNonzero--;
+			}
+			if (lastNonzero == 0) return; // Zero masks never create state pages.
+			final int limit = (int) Math.min((long) rowCount, (long) lastNonzero << 6);
+			final long[] w = ensure(lane, limit);
+			for (int i = 0; i < lastNonzero; i++) {
 				w[i] |= mask[i];
 			}
-			clearTail(w, rowCount, w.length << 6);
+			clearTail(w, rowCount, (int) Math.min(Integer.MAX_VALUE, (long) w.length << 6));
 		} else {
 			final long[] w = lanes[lane];
 			if (w == null) {
@@ -281,15 +287,37 @@ public final class RowBitLanes {
 		if (at < 0 || at > rowCount || count < 0) {
 			throw new IndexOutOfBoundsException("at=" + at + ", count=" + count + ", rows=" + rowCount);
 		}
+		if (count > Integer.MAX_VALUE - rowCount) {
+			throw new IndexOutOfBoundsException("row count overflow");
+		}
+		if (count == 0) return;
 		final int oldRows = rowCount;
-		rowCount += count;
-		for (int l = 0; l < lanes.length; l++) {
-			if (lanes[l] != null) {
-				final long[] w = ensure(l, rowCount);
-				moveUp(w, at, oldRows, count);
-				clearBits(w, at, at + count);
+		final int newRows = oldRows + count;
+		// Allocate all replacement lanes first. An OOME cannot publish a partially
+		// shifted bitmap or an incremented rowCount with stale columns.
+		final long[][] next = Arrays.copyOf(lanes, lanes.length);
+		for (int l = 0; l < next.length; l++) {
+			final long[] current = next[l];
+			if (current == null) continue;
+			final int retainedEnd = (int) Math.min((long) oldRows, (long) current.length << 6);
+			if (at >= retainedEnd) continue;
+			final int neededRows = (int) Math.min((long) newRows, (long) retainedEnd + count);
+			final int neededWords = words(neededRows);
+			if (current.length < neededWords) {
+				next[l] = Arrays.copyOf(current,
+						HeapGrowth.capacity(current.length, neededWords, Long.BYTES));
 			}
 		}
+		for (int l = 0; l < next.length; l++) {
+			final long[] w = next[l];
+			if (w == null) continue;
+			final int retainedEnd = (int) Math.min((long) oldRows, (long) lanes[l].length << 6);
+			if (at >= retainedEnd) continue;
+			moveUp(w, at, retainedEnd, count);
+			clearBits(w, at, at + count);
+		}
+		System.arraycopy(next, 0, lanes, 0, lanes.length);
+		rowCount = newRows;
 	}
 
 	/**
@@ -315,12 +343,13 @@ public final class RowBitLanes {
 
 	private long[] ensure(final int lane, final int rows) {
 		long[] w = lanes[lane];
-		final int need = words(Math.max(rows, rowCount));
+		// Unwritten logical rows never allocate a physical word.
+		final int need = words(rows);
 		if (w == null) {
-			w = new long[need];
+			w = new long[HeapGrowth.capacity(0, need, Long.BYTES)];
 			lanes[lane] = w;
 		} else if (w.length < need) {
-			w = Arrays.copyOf(w, Math.min(words(Math.max(rows, rowCount)) + 1, HeapGrowth.capacity(w.length, need, 8)));
+			w = Arrays.copyOf(w, HeapGrowth.capacity(w.length, need, Long.BYTES));
 			lanes[lane] = w;
 		}
 		return w;
@@ -337,7 +366,7 @@ public final class RowBitLanes {
 
 	/** Moves bits {@code [from, end)} down by {@code shift}, lowest bits first. */
 	private static void moveDown(final long[] w, final int from, final int end, final int shift) {
-		final int limit = Math.min(end, (w.length << 6) + shift);
+		final int limit = (int) Math.min((long) end, ((long) w.length << 6) + shift);
 		for (int i = from; i < limit; i++) {
 			moveBit(w, i, i - shift);
 		}
@@ -358,7 +387,7 @@ public final class RowBitLanes {
 		if (w == null) {
 			return;
 		}
-		final int last = Math.min(to, w.length << 6);
+		final int last = (int) Math.min((long) to, (long) w.length << 6);
 		if (from >= last) {
 			return;
 		}
@@ -377,8 +406,8 @@ public final class RowBitLanes {
 		}
 	}
 
-	private static int words(final int rows) {
-		return (rows + 63) >>> 6;
+	static int words(final int rows) {
+		return (int) (((long) rows + 63L) >>> 6);
 	}
 
 	private void checkRow(final int row) {

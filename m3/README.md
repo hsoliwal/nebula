@@ -248,3 +248,4 @@ leaves is forbidden until a content-addressed signal artifact handoff and reduce
 are implemented. Drools/KIE remains admission evidence only and gains no mutation or promotion
 authority.
 
+- [Method-signal evidence](docs/method-signal-evidence.md) — method-coordinate search/JNI review over the existing M3 policies.

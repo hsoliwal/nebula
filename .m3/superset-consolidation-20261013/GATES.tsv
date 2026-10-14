@@ -1,0 +1,8 @@
+gate	result	evidence
+git diff --check origin/master..HEAD	PASS	0 lines reported
+conflict markers (git grep '^(<<<<<<<|>>>>>>>|=======$)' over java/md/xml/yml/tsv/properties/sh/py)	PASS	0 matches
+line-ending-only changes	PASS	0 of 67 changed files differ only in line endings; git diff and git diff --ignore-cr-at-eol report the same 6660+/88-; all added or modified files are i/lf w/lf
+control characters in changed files	PASS	none
+sealed SvgLoader preimage	PASS	sha256 23d730f01826b3d5c3de5d9f5299f2db11574ae3c482956b20928aaa676f9a08, as pinned by m3-nebula-recipe-first.yml
+origin/master is an ancestor	PASS	b86f35e9 unchanged at push time
+no master content deleted	PASS	no file deleted; 88 lines removed net against master, each one rewritten by the branch that owns it (per commit: #148 replay 21, #161 32, method-signal 25, row-addressed 8, visible-range 2, JUnit 4 assertion 2, EOF blank lines 2)

@@ -46,6 +46,7 @@ public final class NebulaM3InventoryCli {
         }
 
         List<NebulaM3InventoryRecipe.SourceFacts> rows = new ArrayList<>();
+        List<NebulaM3InventoryRecipe.MethodFacts> methodRows = new ArrayList<>();
         List<Failure> failures = new ArrayList<>();
         JavaParser parser = JavaParser.fromJavaVersion().build();
 
@@ -68,6 +69,7 @@ public final class NebulaM3InventoryCli {
                 List<SourceFile> sources = parsed.toList();
                 if (sources.size() == 1 && sources.getFirst() instanceof J.CompilationUnit unit) {
                     rows.add(NebulaM3InventoryRecipe.analyze(unit));
+                    methodRows.addAll(NebulaM3InventoryRecipe.analyzeMethods(unit));
                 } else {
                     failures.add(new Failure(relative, "not-one-java-compilation-unit"));
                 }
@@ -80,6 +82,7 @@ public final class NebulaM3InventoryCli {
         }
 
         writeInventory(output.resolve("nebula-m3-java-inventory.tsv"), rows);
+        writeMethods(output.resolve("nebula-m3-java-methods.tsv"), methodRows);
         writeFailures(output.resolve("nebula-m3-parse-failures.tsv"), failures);
         Summary summary = new Summary(javaFiles.size(), rows.size(), failures.size());
         Files.writeString(
@@ -87,6 +90,7 @@ public final class NebulaM3InventoryCli {
                 "key\tvalue\n"
                         + "javaFiles\t" + summary.javaFiles() + "\n"
                         + "parsedCompilationUnits\t" + summary.parsedCompilationUnits() + "\n"
+                        + "methodRows\t" + methodRows.size() + "\n"
                         + "failureRows\t" + summary.failureRows() + "\n",
                 StandardCharsets.UTF_8);
         return summary;
@@ -121,6 +125,42 @@ public final class NebulaM3InventoryCli {
                     Integer.toString(row.todoMarkers()),
                     Integer.toString(row.methodDensityX1000()),
                     Integer.toString(row.publicSurfaceDensityX1000()),
+                    row.fastSearchSignal(),
+                    row.recommendedNextPass());
+        }
+        Files.writeString(file, out, StandardCharsets.UTF_8);
+    }
+
+    private static void writeMethods(
+            Path file, List<NebulaM3InventoryRecipe.MethodFacts> rows) throws IOException {
+        StringBuilder out =
+                new StringBuilder(
+                        "sourcePath\townerType\tmethodKey\tmethodName\tcontractSurface"
+                                + "\tnativeMethod\tdirectStatements\tloops\tbranches"
+                                + "\texceptionBoundaries\tsynchronized\tlambdas\tinvocations"
+                                + "\tindexOfCalls\tcontainsCalls\tsortCalls\tbinarySearchCalls"
+                                + "\tstructuralPatterns\tfastSearchSignal\trecommendedNextPass\n");
+        for (NebulaM3InventoryRecipe.MethodFacts row : rows) {
+            cells(
+                    out,
+                    row.sourcePath(),
+                    row.ownerType(),
+                    row.methodKey(),
+                    row.methodName(),
+                    row.contractSurface(),
+                    Boolean.toString(row.nativeMethod()),
+                    Integer.toString(row.directStatementCount()),
+                    Integer.toString(row.loopCount()),
+                    Integer.toString(row.branchCount()),
+                    Integer.toString(row.exceptionBoundaryCount()),
+                    Integer.toString(row.synchronizedCount()),
+                    Integer.toString(row.lambdaCount()),
+                    Integer.toString(row.invocationCount()),
+                    Integer.toString(row.indexOfCalls()),
+                    Integer.toString(row.containsCalls()),
+                    Integer.toString(row.sortCalls()),
+                    Integer.toString(row.binarySearchCalls()),
+                    row.structuralPatterns(),
                     row.fastSearchSignal(),
                     row.recommendedNextPass());
         }

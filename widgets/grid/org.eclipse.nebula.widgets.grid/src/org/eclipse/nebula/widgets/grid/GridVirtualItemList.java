@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
+
 /**
  * Sparse logical row owner for a flat {@link Grid} created with SWT.VIRTUAL.
  *
@@ -70,9 +72,12 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         if (item == null) {
             throw new NullPointerException("item");
         }
+        if (logicalSize == Integer.MAX_VALUE) {
+            throw new IllegalStateException("Grid logical row count exhausted");
+        }
 
         final int slot = insertionPoint(index);
-        ensureCapacity(materializedCount + 1);
+        ensureCapacity(Math.addExact(materializedCount, 1));
         System.arraycopy(indices, slot, indices, slot + 1, materializedCount - slot);
         System.arraycopy(values, slot, values, slot + 1, materializedCount - slot);
         System.arraycopy(models, slot, models, slot + 1, materializedCount - slot);
@@ -268,7 +273,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
 
     private void bind(final int index, final GridItem item) {
         final int slot = insertionPoint(index);
-        ensureCapacity(materializedCount + 1);
+        ensureCapacity(Math.addExact(materializedCount, 1));
         System.arraycopy(indices, slot, indices, slot + 1, materializedCount - slot);
         System.arraycopy(values, slot, values, slot + 1, materializedCount - slot);
         System.arraycopy(models, slot, models, slot + 1, materializedCount - slot);
@@ -338,11 +343,20 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         if (required <= indices.length) {
             return;
         }
-        final int next = Math.max(required, indices.length * 3 / 2 + 1);
-        indices = Arrays.copyOf(indices, next);
-        values = Arrays.copyOf(values, next);
-        models = Arrays.copyOf(models, next);
-        stamps = Arrays.copyOf(stamps, next);
+        /*
+         * All four columns share one Xmx-aware growth decision at the real
+         * allocation miss. Old and replacement columns coexist during copy.
+         * Commit the new backing only after every allocation succeeds.
+         */
+        final int next = HeapGrowth.capacity(indices.length, required, 20);
+        final int[] nextIndices = Arrays.copyOf(indices, next);
+        final GridItem[] nextValues = Arrays.copyOf(values, next);
+        final int[] nextModels = Arrays.copyOf(models, next);
+        final int[] nextStamps = Arrays.copyOf(stamps, next);
+        indices = nextIndices;
+        values = nextValues;
+        models = nextModels;
+        stamps = nextStamps;
     }
 
     private void checkElementIndex(final int index) {

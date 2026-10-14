@@ -333,7 +333,7 @@ public class GridItem extends Item {
                 }
             }
 		}
-		if (parent.getDataVisualizer() != null) {
+		if (parent.getDataVisualizer() != null && !parent.usesRowAddressedDataVisualizer()) {
 			parent.getDataVisualizer().clearRow(this);
 		}
 		noRow();
@@ -1025,6 +1025,10 @@ public class GridItem extends Item {
 	 */
 	public Grid getParent() {
 		checkWidget();
+		return parent;
+	}
+
+	Grid parentGrid() {
 		return parent;
 	}
 
@@ -2194,7 +2198,7 @@ public class GridItem extends Item {
                 children.get(i).disposeOnly();
             }
         }
-		if (parent.getDataVisualizer() != null) {
+		if (parent.getDataVisualizer() != null && !parent.usesRowAddressedDataVisualizer()) {
 			parent.getDataVisualizer().clearRow(this);
 		}
 		noRow();
