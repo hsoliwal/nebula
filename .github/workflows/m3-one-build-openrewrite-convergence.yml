@@ -31,6 +31,11 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Pin Maven 3.9.11
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.11
+
       - name: 1 - Diff hygiene
         shell: bash
         run: |
@@ -51,7 +56,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mvn -B -ntp -f m3/recipe-first/pom.xml             -Psemantic-coverage,dag-manifest             clean verify install
+          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am \
+            -Psemantic-coverage,dag-manifest clean verify install
 
       - name: 4 - Verify DAG and scheduler evidence exists
         shell: bash
@@ -103,7 +109,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mvn -B -ntp -f m3/recipe-first/pom.xml             -Psemantic-coverage             verify
+          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am \
+            -Psemantic-coverage verify
 
       - name: 9 - Original Nebula Tycho reactor on transformed candidate
         shell: bash
