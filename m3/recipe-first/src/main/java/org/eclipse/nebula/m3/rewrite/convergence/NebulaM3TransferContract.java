@@ -114,6 +114,7 @@ public final class NebulaM3TransferContract {
                 orchestratorPlansRoot	%s
                 uiBehaviorDonorRoot	%s
                 challengeDonorRoot	%s
+                backportPlanRoot	%s
                 refactorScopeOrder	%s
                 directSourceMutationAuthority	false
                 promotionAuthority	false
@@ -140,6 +141,7 @@ public final class NebulaM3TransferContract {
                         NebulaM3OrchestratorPlans.root(),
                         NebulaM3UiBehaviorDonorCatalog.root(),
                         sha256(NebulaM3FastSearchReviewPolicy.renderTsv()),
+                        NebulaM3BackportPlan.root(),
                         refactorScopeOrder());
     }
 
@@ -172,6 +174,7 @@ public final class NebulaM3TransferContract {
                         + framed(NebulaM3RecipeDagManifest.tsv())
                         + framed(NebulaM3UiBehaviorDonorCatalog.tsv())
                         + framed(NebulaM3FastSearchReviewPolicy.renderTsv())
+                        + framed(NebulaM3BackportPlan.tsv())
                         + framed(targetsTsv())
                         + framed(orchestratorsTsv())
                         + framed(NebulaM3OrchestratorPlans.camelYaml())
