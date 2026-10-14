@@ -1270,7 +1270,8 @@ public class Gallery extends Canvas {
 		int end = vertical ? (clipping.y + clipping.height + translate)
 				: (clipping.x + clipping.width + translate);
 
-		ArrayList<Integer> al = new ArrayList<>();
+		int[] indexes = new int[8];
+		int used = 0;
 		int index = 0;
 		GalleryItem item = null;
 		while (index < items.length) {
@@ -1285,19 +1286,16 @@ public class Gallery extends Canvas {
 
             if ((vertical ? (item.y + item.height)
                     : (item.x + item.width)) >= start) {
-                al.add(new Integer(index));
+				if (used == indexes.length) {
+					indexes = java.util.Arrays.copyOf(indexes, Math.min(items.length, Math.max(used + 1, indexes.length * 2)));
+				}
+				indexes[used++] = index;
             }
 
 			index++;
 		}
 
-		int[] result = new int[al.size()];
-
-        for (int i = 0; i < al.size(); i++) {
-            result[i] = ((Integer) al.get(i)).intValue();
-        }
-
-		return result;
+		return java.util.Arrays.copyOf(indexes, used);
 	}
 
 	/**
