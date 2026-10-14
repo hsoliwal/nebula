@@ -146,6 +146,8 @@ public class Gallery extends Canvas {
 	// Internals
 
 	private int gHeight = 0;
+	/** Only true after a full, nonnegative, contiguous group layout. */
+	private boolean orderedViewportGeometry;
 
 	private int gWidth = 0;
 
@@ -1258,7 +1260,57 @@ public class Gallery extends Canvas {
 		}
 	};
 
+	/** Paint lookup is owned by Gallery, not a second viewer or pager. */
 	private int[] getVisibleItems(Rectangle clipping) {
+		if (items == null) return null;
+		int start = vertical ? (clipping.y + translate) : (clipping.x + translate);
+		int end = vertical ? (clipping.y + clipping.height + translate)
+				: (clipping.x + clipping.width + translate);
+		if (virtualGroups && !virtualGroupsCompatibilityMode
+				&& orderedViewportGeometry && start <= end) {
+			int first = firstGroupEndingAtOrAfter(start);
+			if (first >= 0) {
+				int after = firstGroupStartingAfter(end, first);
+				if (after >= first) {
+					int[] visible = new int[after - first];
+					for (int i = 0; i < visible.length; i++) visible[i] = first + i;
+					return visible;
+				}
+			}
+		}
+		return getVisibleItemsLinear(clipping);
+	}
+
+	/** Inclusive end lower bound; no offscreen facade is constructed here. */
+	private int firstGroupEndingAtOrAfter(int coordinate) {
+		int low = 0, high = items.length;
+		while (low < high) {
+			int mid = low + ((high - low) >>> 1);
+			GalleryItem item = items[mid];
+			if (item == null) return -1;
+			long end = (long) (vertical ? item.y : item.x)
+					+ (vertical ? item.height : item.width);
+			if (end < coordinate) low = mid + 1;
+			else high = mid;
+		}
+		return low;
+	}
+
+	/** Exclusive start upper bound; updates remain owned by the CPU model. */
+	private int firstGroupStartingAfter(int coordinate, int first) {
+		int low = first, high = items.length;
+		while (low < high) {
+			int mid = low + ((high - low) >>> 1);
+			GalleryItem item = items[mid];
+			if (item == null) return -1;
+			if ((vertical ? item.y : item.x) <= coordinate) low = mid + 1;
+			else high = mid;
+		}
+		return low;
+	}
+
+	/** Original SetData and irregular-renderer traversal is preserved. */
+	private int[] getVisibleItemsLinear(Rectangle clipping) {
 
         if (items == null) {
             return null;
@@ -1299,6 +1351,7 @@ public class Gallery extends Canvas {
 
 		return result;
 	}
+
 
 	/**
 	 * Refresh item by firering SWT.SetData.
@@ -1545,18 +1598,21 @@ public class Gallery extends Canvas {
 	 * @return
 	 */
 	private int calculateSize(GalleryItem onlyUpdateGroup) {
+		orderedViewportGeometry = false;
 
         if (groupRenderer == null) {
             return 0;
         }
 
 		groupRenderer.preLayout(null);
+		orderedViewportGeometry = true;
 
 		int currentHeight = 0;
 
 		int mainItemCount = getItemCount();
 
 		for (int i = 0; i < mainItemCount; i++) {
+			int previousExtent = currentHeight;
 			GalleryItem item = null;
 			if (virtualGroups) {
 				item = this._getItem(i, false);
@@ -1596,6 +1652,14 @@ public class Gallery extends Canvas {
 				}
 			}
 
+			// Validate the exact geometry emitted by this renderer without changing it.
+			int extent = vertical ? item.height : item.width;
+			int position = vertical ? item.y : item.x;
+			long next = (long) previousExtent + extent;
+			if (previousExtent < 0 || extent < 0 || position != previousExtent
+					|| next > Integer.MAX_VALUE || currentHeight != (int) next) {
+				orderedViewportGeometry = false;
+			}
 		}
 
 		groupRenderer.postLayout(null);
@@ -2533,6 +2597,7 @@ public class Gallery extends Canvas {
 
 	public void _setGalleryItems(GalleryItem[] items) {
 		this.items = items;
+		orderedViewportGeometry = false;
 	}
 
 	/**
@@ -2587,6 +2652,7 @@ public class Gallery extends Canvas {
 	 */
 	public void setVirtualGroups(boolean virtualGroups) {
 		this.virtualGroups = virtualGroups;
+		orderedViewportGeometry = false;
 	}
 
 	/**
@@ -2628,5 +2694,6 @@ public class Gallery extends Canvas {
 	 */
 	public void setVirtualGroupDefaultItemCount(int defaultItemCount) {
 		this.virtualGroupDefaultItemCount = defaultItemCount;
+		orderedViewportGeometry = false;
 	}
 }
