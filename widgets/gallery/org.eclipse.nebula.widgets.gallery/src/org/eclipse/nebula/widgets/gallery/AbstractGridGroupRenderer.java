@@ -283,87 +283,25 @@ public abstract class AbstractGridGroupRenderer
 
 	protected int[] getVisibleItems(GalleryItem group, int x, int y, int clipX,
 			int clipY, int clipWidth, int clipHeight, int offset) {
-		int[] indexes;
-
-		if (gallery.isVertical()) {
-			int count = ((Integer) group.getData(H_COUNT)).intValue();
-			// TODO: Not used ATM
-			// int vCount = ((Integer) group.getData(V_COUNT)).intValue();
-
-			int firstLine = (clipY - y - offset - minMargin)
-					/ (itemHeight + minMargin);
-            if (firstLine < 0) {
-                firstLine = 0;
-            }
-
-			int firstItem = firstLine * count;
-            if (Gallery.DEBUG) {
-                System.out.println("First line : " + firstLine); //$NON-NLS-1$
-            }
-
-			int lastLine = (clipY - y - offset + clipHeight - minMargin)
-					/ (itemHeight + minMargin);
-
-            if (lastLine < firstLine) {
-                lastLine = firstLine;
-            }
-
-            if (Gallery.DEBUG) {
-                System.out.println("Last line : " + lastLine); //$NON-NLS-1$
-            }
-
-			int lastItem = (lastLine + 1) * count;
-
-            // exit if no item selected
-            if (lastItem - firstItem == 0) {
-                return null;
-            }
-
-			indexes = new int[lastItem - firstItem];
-			for (int i = 0; i < (lastItem - firstItem); i++) {
-				indexes[i] = firstItem + i;
-			}
-
-		} else {
-			int count = ((Integer) group.getData(V_COUNT)).intValue();
-
-			int firstLine = (clipX - x - offset - minMargin)
-					/ (itemWidth + minMargin);
-            if (firstLine < 0) {
-                firstLine = 0;
-            }
-
-			int firstItem = firstLine * count;
-            if (Gallery.DEBUG) {
-                System.out.println("First line : " + firstLine); //$NON-NLS-1$
-            }
-
-			int lastLine = (clipX - x - offset + clipWidth - minMargin)
-					/ (itemWidth + minMargin);
-
-            if (lastLine < firstLine) {
-                lastLine = firstLine;
-            }
-
-            if (Gallery.DEBUG) {
-                System.out.println("Last line : " + lastLine); //$NON-NLS-1$
-            }
-
-			int lastItem = (lastLine + 1) * count;
-
-            // exit if no item selected
-            if (lastItem - firstItem == 0) {
-                return null;
-            }
-
-			indexes = new int[lastItem - firstItem];
-			for (int i = 0; i < (lastItem - firstItem); i++) {
-				indexes[i] = firstItem + i;
-			}
-		}
-
+		// Materialized row facade counts remain authoritative; no copied model.
+		if (clipWidth <= 0 || clipHeight <= 0) return new int[0];
+		boolean vertical = gallery.isVertical();
+		int perLine = ((Integer) group.getData(vertical ? H_COUNT : V_COUNT)).intValue();
+		long stride = (long) (vertical ? itemHeight : itemWidth) + minMargin;
+		int itemCount = group.getItemCount();
+		if (perLine <= 0 || stride <= 0 || itemCount == 0) return new int[0];
+		long start = (vertical ? (long) clipY - y : (long) clipX - x) - offset - minMargin;
+		long end = start + (vertical ? clipHeight : clipWidth);
+		long firstLine = Math.max(0L, start / stride);
+		long lastLine = Math.max(firstLine, end / stride);
+		long lineLimit = ((long) itemCount + perLine - 1L) / perLine;
+		int first = (int) Math.min(itemCount, Math.min(firstLine, lineLimit) * perLine);
+		int last = (int) Math.min(itemCount, Math.min(lastLine + 1L, lineLimit) * perLine);
+		int[] indexes = new int[Math.max(0, last - first)];
+		for (int i = 0; i < indexes.length; i++) indexes[i] = first + i;
 		return indexes;
 	}
+
 
 	/**
 	 * Calculate how many items are displayed horizontally and vertically.
