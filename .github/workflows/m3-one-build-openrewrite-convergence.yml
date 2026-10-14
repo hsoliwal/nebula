@@ -105,7 +105,28 @@ jobs:
           set -euo pipefail
           mvn -B -ntp -f m3/recipe-first/pom.xml             -Psemantic-coverage             verify
 
-      - name: 9 - Preserve candidate and DAG evidence
+      - name: 9 - Original Nebula Tycho reactor on transformed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a mvn -V -B -ntp clean verify -Dtycho.localArtifacts=ignore
+
+      - name: 10 - Verify Tycho left exact FILE postimage untouched
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=m3/recipe-first/target/nebula-m3-dag
+          test -f "$OUT/candidate.patch"
+          test -s "$OUT/recipe-dag.sha256"
+          python3 m3/ci/verify-file-local-candidate.py --repo . \
+            --output "$OUT/candidate-paths-after-tycho.txt"
+          cmp "$OUT/candidate-paths.txt" "$OUT/candidate-paths-after-tycho.txt"
+          git diff --check
+          git diff --binary > "$OUT/candidate-after-tycho.patch"
+          cmp "$OUT/candidate.patch" "$OUT/candidate-after-tycho.patch"
+          test -z "$(git diff --name-only --cached)"
+
+      - name: 11 - Preserve candidate and DAG evidence
         uses: actions/upload-artifact@v4
         with:
           name: nebula-m3-one-build-convergence
