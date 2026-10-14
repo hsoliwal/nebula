@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am \
-            -Psemantic-coverage,dag-manifest clean verify install
+            -Psemantic-coverage,dag-manifest clean install
 
       - name: 4 - Verify DAG and scheduler evidence exists
         shell: bash
