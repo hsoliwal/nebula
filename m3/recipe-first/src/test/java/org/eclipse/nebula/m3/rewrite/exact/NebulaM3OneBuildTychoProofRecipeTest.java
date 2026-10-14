@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.InMemoryExecutionContext;
@@ -43,6 +42,26 @@ final class NebulaM3OneBuildTychoProofRecipeTest {
                 NebulaM3OneBuildTychoProofRecipe.DocumentationLeaf.class,
                 recipe.getRecipeList().get(1).getClass());
         assertTrue(recipe.getTags().contains("candidate-only"));
+    }
+
+    @Test
+    void declarativeEntryPointSelectsTheExactTwoLeafRecipeDag() throws Exception {
+        String yamlPath = "/META-INF/rewrite/nebula-one-build-tycho-proof.yml";
+        var url = getClass().getResource(yamlPath);
+        assertNotNull(url, "declarative OpenRewrite entry point");
+        try (var input = url.openStream()) {
+            var loader = new org.openrewrite.config.YamlResourceLoader(
+                    input, url.toURI(), new java.util.Properties());
+            var environment = org.openrewrite.config.Environment.builder()
+                    .load(loader).build();
+            var composite = environment.activateRecipes(
+                    "org.eclipse.nebula.m3.OneBuildTychoPostimageProof");
+            assertTrue(composite.validateAll().stream()
+                    .allMatch(org.openrewrite.Validated::isValid));
+            assertEquals(1, composite.getRecipeList().size());
+            assertEquals(NebulaM3OneBuildTychoProofRecipe.class,
+                    composite.getRecipeList().getFirst().getClass());
+        }
     }
 
     @Test
