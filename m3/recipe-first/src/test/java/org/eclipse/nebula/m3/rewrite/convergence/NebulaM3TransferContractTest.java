@@ -51,7 +51,7 @@ final class NebulaM3TransferContractTest {
                 NebulaM3TransferContract.CANONICAL_VIEWPORT_RECIPE);
         assertFalse(NebulaM3TransferContract.LOCAL_RECIPE_IMPLEMENTATION_AUTHORITY);
         assertEquals(
-                List.of("hsoliwal/M3jdk21", "hsoliwal/com.synexia"),
+                List.of("hsoliwal/com.synexia", "hsoliwal/M3jdk21"),
                 NebulaM3TransferContract.targets().stream()
                         .map(NebulaM3TransferContract.Target::repository)
                         .toList());
