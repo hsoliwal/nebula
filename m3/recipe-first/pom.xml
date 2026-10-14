@@ -316,5 +316,35 @@
       </build>
     </profile>
 
+
+    <!-- Explicit only: exact FILE Java-LST proof-gate candidate, no lifecycle mutation. -->
+    <profile>
+      <id>transfer-qualification</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.TransferQualification</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.eclipse.nebula.m3</groupId>
+                <artifactId>nebula-m3-recipe-first</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
   </profiles>
 </project>

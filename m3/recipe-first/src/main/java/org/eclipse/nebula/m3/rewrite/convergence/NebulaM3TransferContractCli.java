@@ -65,6 +65,10 @@ public final class NebulaM3TransferContractCli {
                 NebulaM3OrchestratorPlans.root() + "\n",
                 StandardCharsets.UTF_8);
         Files.writeString(
+                output.resolve("transfer-qualification.tsv"),
+                NebulaM3ProofGate.pending(NebulaM3RecipeDagManifest.root()).toTsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
                 output.resolve("transfer.sha256"),
                 NebulaM3TransferContract.root() + "\n",
                 StandardCharsets.UTF_8);
