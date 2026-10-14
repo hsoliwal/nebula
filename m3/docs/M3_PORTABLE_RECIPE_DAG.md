@@ -217,7 +217,9 @@ mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am \
   -Psemantic-coverage verify
 ```
 
-The initial `clean install` runs Maven's `verify` lifecycle exactly once; explicitly requesting\n`clean verify install` would duplicate compile/test/verification work.\n\nThe one-build job pins Maven 3.9.11, matching the three-host portability job. The existing
+The initial `clean install` runs Maven's `verify` lifecycle exactly once; explicitly requesting\n`clean verify install` would duplicate compile/test/verification work.
+
+The one-build job pins Maven 3.9.11, matching the three-host portability job. The existing
 `m3/ci/test_one_build_source_first_reactor.py` locks the source-first reactor topology and
 rejects module-only builds, missing dependency closure, skipped JUnit, lost fixed-point replay,
 and removal of the Tycho product gate. The Python tests run before recipe candidate application.
