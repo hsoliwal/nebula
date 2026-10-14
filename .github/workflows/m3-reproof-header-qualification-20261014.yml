@@ -1,0 +1,140 @@
+# SPDX-License-Identifier: EPL-2.0
+name: Nebula M3 reproof header qualification
+
+on:
+  pull_request:
+    paths:
+      - 'm3/recipe-first/pom.xml'
+      - 'm3/recipe-first/src/main/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3CurrentMasterReproofHeaderRecipe.java'
+      - 'm3/recipe-first/src/main/resources/META-INF/rewrite/nebula-m3-current-master-reproof-header.yml'
+      - 'm3/recipe-first/src/main/resources/org/eclipse/nebula/m3/rewrite/exact/reproof-header/**'
+      - 'm3/recipe-first/src/test/java/org/eclipse/nebula/m3/rewrite/exact/NebulaM3CurrentMasterReproofHeaderRecipeTest.java'
+      - 'm3/recipe-first/src/test/resources/org/eclipse/nebula/m3/rewrite/exact/reproof-header/**'
+      - 'm3/convergence/REPROOF_LEDGER_SCHEMA_CONVERGENCE_20261014.md'
+      - '.github/workflows/m3-reproof-header-qualification-20261014.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Set up Maven 3.9.6
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.6
+
+      - name: 1 - Exact evidence and diff preflight
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${BASE_SHA:-}" ]]; then
+            git diff --check "$BASE_SHA...HEAD"
+          else
+            git diff --check
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          header = Path('m3/catalogue/current-master-reproof-20261013.tsv').read_text(encoding='utf-8').splitlines()[0]
+          expected = ('schema\tnebula_master_preimage\tcanonical_repository'
+                      '\tcanonical_develop_head\tlane\tpinned_commit\tpinned_blob'
+                      '\tcurrent_blob\tbyte_equivalent\thosted_proof')
+          assert header == expected, (header, expected)
+          source = Path('m3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3CurrentMasterReproofTest.java').read_text(encoding='utf-8')
+          assert '"schema\\tmaster_preimage\\tcanonical_repository"' in source
+          assert '"schema\\tnebula_master_preimage\\tcanonical_repository"' not in source
+          PY
+
+      - name: 2 - Prove OpenRewrite candidate, negative scope and fixed point
+        run: >-
+          mvn -B -ntp -f m3/reactor.xml
+          -pl recipe-first -am
+          -Dtest=NebulaM3CurrentMasterReproofHeaderRecipeTest
+          -Dsurefire.failIfNoSpecifiedTests=false
+          test
+
+      - name: 3 - Install tested exact Nebula recipe jar locally
+        run: mvn -B -ntp -f m3/reactor.xml -DskipTests install
+
+      - name: 4 - Apply only in uncommitted candidate checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f m3/recipe-first/pom.xml \
+            -Preproof-header \
+            -DskipMavenParsing=true \
+            org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          git diff --check
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = \
+            'm3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3CurrentMasterReproofTest.java'
+          printf '%s  %s\n' \
+            'b424349855198f0dab5f0ba393b2195bd0e603f2af6ca82d8cebf6129dad3a8b' \
+            'm3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3CurrentMasterReproofTest.java' \
+            | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/nebula-m3-reproof"
+          git diff --binary > "$RUNNER_TEMP/nebula-m3-reproof/first.patch"
+
+      - name: 5 - Reapply recipe and require exact unchanged second pass
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f m3/recipe-first/pom.xml \
+            -Preproof-header \
+            -DskipMavenParsing=true \
+            org.openrewrite.maven:rewrite-maven-plugin:6.46.1:runNoFork
+          git diff --check
+          git diff --binary > "$RUNNER_TEMP/nebula-m3-reproof/second.patch"
+          cmp "$RUNNER_TEMP/nebula-m3-reproof/first.patch" \
+            "$RUNNER_TEMP/nebula-m3-reproof/second.patch"
+
+      - name: 6 - Execute real corrected JUnit ledger contract
+        run: >-
+          mvn -B -ntp -f m3/reactor.xml
+          -pl recipe-first -am
+          -Dtest=NebulaM3CurrentMasterReproofTest,NebulaM3CurrentMasterReproofHeaderRecipeTest
+          -Dsurefire.failIfNoSpecifiedTests=false
+          test
+
+      - name: 7 - Whole Nebula M3 Maven reactor
+        run: mvn -B -ntp -f m3/reactor.xml verify
+
+      - name: 8 - Original Nebula Tycho product authority
+        run: xvfb-run -a mvn -V -B -ntp verify -Dtycho.localArtifacts=ignore
+
+      - name: 9 - Candidate-only and source-boundary assertion
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          test -z "$(git diff --name-only --cached)"
+          test "$(git diff --name-only)" = \
+            'm3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3CurrentMasterReproofTest.java'
+          grep -F 'source.promotion=false' .m3/atom-pattern/policy.properties
+
+      - name: Preserve exact local qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-reproof-header-candidate
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/nebula-m3-reproof/
+            m3/recipe-first/target/surefire-reports/
+            m3/recipe-first/target/site/jacoco/
