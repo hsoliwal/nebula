@@ -121,8 +121,8 @@ class OneBuildSourceFirstReactorTest(unittest.TestCase):
 
     def test_missing_fixed_point_step_is_rejected(self) -> None:
         broken = self.source.replace(
-            "- name: 7 - Second pass must be fixed point",
-            "- name: 7 - Proof skipped",
+            "rewrite:dryRunNoFork\n          if find . -path",
+            "rewrite:runNoFork\n          if find . -path",
             1,
         )
         with self.assertRaises(ValueError):
