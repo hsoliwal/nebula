@@ -47,7 +47,7 @@ def verify_source_first_workflow(source: str, portable: str) -> None:
         if text.count(expected) != 1 or "-DskipTests" in text or "-Dmaven.test.skip" in text:
             raise ValueError(f"step {ordinal} does not prove its Maven dependency closure")
 
-    if "-Psemantic-coverage,dag-manifest clean verify install" not in step(source, 3):
+    if "-Psemantic-coverage,dag-manifest clean install" not in step(source, 3):
         raise ValueError("initial recipe proof must install a tested DAG artifact")
     if "-Psemantic-coverage verify" not in step(source, 8):
         raise ValueError("candidate reproof must execute semantic coverage")
@@ -112,8 +112,17 @@ class OneBuildSourceFirstReactorTest(unittest.TestCase):
 
     def test_skipped_recipe_junit_is_rejected(self) -> None:
         broken = self.source.replace(
-            "-Psemantic-coverage,dag-manifest clean verify install",
+            "-Psemantic-coverage,dag-manifest clean install",
             "-Psemantic-coverage,dag-manifest -DskipTests clean verify install",
+            1,
+        )
+        with self.assertRaises(ValueError):
+            verify_source_first_workflow(broken, self.portable)
+
+    def test_redundant_maven_verify_install_lifecycle_is_rejected(self) -> None:
+        broken = self.source.replace(
+            "-Psemantic-coverage,dag-manifest clean install",
+            "-Psemantic-coverage,dag-manifest clean verify install",
             1,
         )
         with self.assertRaises(ValueError):
