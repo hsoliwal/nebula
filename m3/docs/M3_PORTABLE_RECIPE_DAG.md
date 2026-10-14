@@ -131,6 +131,7 @@ com.synexia
   -> preserve provenance and JUnit/fixed-point proof
 
 M3jdk21
+  -> install/verify Maven + OpenRewrite orchestration around the existing OpenJDK build
   -> inventory JDK21 target contracts
   -> classify FILE / VISIBILITY / PACKAGE / MODULE / MULTI_MODULE / LIBRARY_API
   -> replay only admitted compatible recipe atoms
@@ -153,6 +154,7 @@ The transfer bundle now includes `backport-plan.tsv`, rooted by
 NEBULA_PROOF
   -> SYNEXIA_RECIPE_ABSORPTION
   -> SYNEXIA_RECIPE_PROOF
+  -> M3JDK21_MAVEN_ORCHESTRATION_BOOTSTRAP
   -> M3JDK21_BACKPORT_INVENTORY
   -> M3JDK21_FILE_REPLAY
   -> M3JDK21_SCOPE_PROMOTION
@@ -164,8 +166,10 @@ same scheduler-neutral DAG. Maven/OpenRewrite remains the source-change mechanis
 and Drools/KIE remain orchestration/admission projections with no direct mutation or promotion
 authority.
 
-The M3JDK21 inventory stage explicitly retains the larger backport programme. It inventories later
-OpenJDK **JEPs, PRs, non-JEP tooling changes and compatible dependency closure**, records contract
+The M3JDK21 bootstrap stage installs or verifies the Maven/OpenRewrite orchestration plane around
+the existing OpenJDK make/autoconf build; Maven does not replace the JDK product build. The
+inventory stage then retains the larger backport programme. It inventories later OpenJDK **JEPs,
+PRs, non-JEP tooling changes and compatible dependency closure**, records contract
 and Java-21 compatibility, and only then admits recipe atoms. FILE-local compatible work may fan
 out independently. Any boundary-crossing change promotes authority only through:
 
