@@ -6,6 +6,7 @@ on:
     paths:
       - 'm3/recipe-first/**'
       - 'm3/docs/M3_PORTABLE_RECIPE_DAG.md'
+      - 'm3/ci/test_portable_recipe_workflow.py'
       - '.github/workflows/m3-portable-recipe-dag-java21.yml'
   workflow_dispatch:
 
