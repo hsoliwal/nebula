@@ -65,13 +65,13 @@ public final class NebulaM3TransferContract {
     private static final List<Target> TARGETS =
             List.of(
                     new Target(
-                            "hsoliwal/M3jdk21",
-                            "JAVA21_JDK_COMPATIBILITY_AND_BACKPORT_LANES",
+                            "hsoliwal/com.synexia",
+                            "RECIPE_PACK_AND_MODULE_LANES",
                             false,
                             false),
                     new Target(
-                            "hsoliwal/com.synexia",
-                            "RECIPE_PACK_AND_MODULE_LANES",
+                            "hsoliwal/M3jdk21",
+                            "JAVA21_JDK_COMPATIBILITY_AND_BACKPORT_LANES",
                             false,
                             false));
 
