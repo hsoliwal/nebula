@@ -16,6 +16,7 @@ final class NebulaM3BackportPlanTest {
                         NebulaM3BackportPlan.Phase.NEBULA_PROOF,
                         NebulaM3BackportPlan.Phase.SYNEXIA_RECIPE_ABSORPTION,
                         NebulaM3BackportPlan.Phase.SYNEXIA_RECIPE_PROOF,
+                        NebulaM3BackportPlan.Phase.M3JDK21_MAVEN_ORCHESTRATION_BOOTSTRAP,
                         NebulaM3BackportPlan.Phase.M3JDK21_BACKPORT_INVENTORY,
                         NebulaM3BackportPlan.Phase.M3JDK21_FILE_REPLAY,
                         NebulaM3BackportPlan.Phase.M3JDK21_SCOPE_PROMOTION,
@@ -49,11 +50,16 @@ final class NebulaM3BackportPlanTest {
                 "hsoliwal/M3jdk21",
                 NebulaM3BackportPlan.steps().get(3).repository());
         assertEquals(
+                NebulaM3BackportPlan.Phase.M3JDK21_MAVEN_ORCHESTRATION_BOOTSTRAP,
+                NebulaM3BackportPlan.steps().get(3).phase());
+        assertTrue(
+                NebulaM3BackportPlan.steps().get(3).action().contains("without replacing make/autoconf"));
+        assertEquals(
                 NebulaM3RefactorScope.FILE,
-                NebulaM3BackportPlan.steps().get(4).maximumScope());
+                NebulaM3BackportPlan.steps().get(5).maximumScope());
         assertEquals(
                 NebulaM3RefactorScope.LIBRARY_API,
-                NebulaM3BackportPlan.steps().get(5).maximumScope());
+                NebulaM3BackportPlan.steps().get(6).maximumScope());
     }
 
     @Test
@@ -67,6 +73,7 @@ final class NebulaM3BackportPlanTest {
                                         step.directSourceMutationAuthority()
                                                 || step.promotionAuthority()));
         assertTrue(NebulaM3BackportPlan.root().matches("[0-9a-f]{64}"));
+        assertTrue(NebulaM3BackportPlan.tsv().contains("m3jdk21-maven-orchestration-bootstrap"));
         assertTrue(NebulaM3BackportPlan.tsv().contains("m3jdk21-inventory-backports"));
         assertTrue(NebulaM3BackportPlan.tsv().contains("JEP, PR, tooling"));
         assertTrue(NebulaM3BackportPlan.tsv().endsWith("\n"));
