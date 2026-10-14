@@ -1,0 +1,262 @@
+# SPDX-License-Identifier: EPL-2.0
+name: M3 portable Java21 recipe DAG
+
+on:
+  pull_request:
+    paths:
+      - 'm3/recipe-first/**'
+      - 'm3/docs/M3_PORTABLE_RECIPE_DAG.md'
+      - '.github/workflows/m3-portable-recipe-dag-java21.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  host-neutral-recipe-proof:
+    name: Java21 recipe DAG (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: linux
+            os: ubuntu-24.04
+          - label: windows
+            os: windows-2025
+          - label: macos
+            os: macos-15
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install the same Maven 3.9.11 on each host
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.11
+
+      - name: 1 - Confirm Java and Maven
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          java -version
+          if ($LASTEXITCODE -ne 0) { throw 'Java 21 unavailable' }
+          mvn -version
+          if ($LASTEXITCODE -ne 0) { throw 'Maven unavailable' }
+
+      - name: 2 - Run pure Java/OpenRewrite scope and orchestration tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-manifest,transfer-contract -Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3TransferContractTest verify
+          if ($LASTEXITCODE -ne 0) { throw 'Host recipe proof failed' }
+
+      - name: 3 - Prove exact UTF-8 DAG evidence, JUnit execution, no source edits
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = 'm3/recipe-first/target/nebula-m3-dag'
+          $files = @(
+            'recipe-dag.tsv', 'recipe-dag.sha256', 'orchestrators.tsv',
+            'camel-route.yaml', 'airflow-dag.py', 'drools-agenda.drl',
+            'orchestrator-plans.sha256'
+          )
+          foreach ($file in $files) {
+            if (!(Test-Path (Join-Path $out $file))) {
+              throw "DAG evidence not generated: $file"
+            }
+          }
+          $dag = (Get-Content (Join-Path $out 'recipe-dag.sha256') -Raw).Trim()
+          $plans = (Get-Content (Join-Path $out 'orchestrator-plans.sha256') -Raw).Trim()
+          $actual = (Get-FileHash (Join-Path $out 'recipe-dag.tsv') -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($dag -notmatch '^[0-9a-f]{64}$' -or $plans -notmatch '^[0-9a-f]{64}$' -or $dag -ne $actual) {
+            throw 'DAG SHA-256 proof failed'
+          }
+
+          $reports = 'm3/recipe-first/target/surefire-reports'
+          $required = @(
+            'NebulaM3HostPortabilityTest',
+            'NebulaM3RefactorScopeTest',
+            'NebulaM3OrchestratorPlansTest',
+            'NebulaM3RecipeDagManifestTest',
+            'NebulaM3RecipeDagManifestCliTest',
+            'NebulaM3TransferContractTest'
+          )
+          foreach ($name in $required) {
+            $report = Join-Path $reports "TEST-org.eclipse.nebula.m3.rewrite.convergence.$name.xml"
+            if (!(Test-Path $report)) { throw "JUnit class did not run: $name" }
+            [xml]$suite = Get-Content $report -Raw
+            if ([int]$suite.testsuite.tests -lt 1 -or
+                [int]$suite.testsuite.failures -ne 0 -or
+                [int]$suite.testsuite.errors -ne 0 -or
+                [int]$suite.testsuite.skipped -ne 0) {
+              throw "JUnit proof is incomplete: $name"
+            }
+          }
+          $untracked = @(git status --porcelain --untracked-files=normal)
+          if ($LASTEXITCODE -ne 0 -or $untracked.Count -ne 0) {
+            throw "Recipe proof touched source checkout: $untracked"
+          }
+
+          $transfer = (Get-Content 'm3/recipe-first/target/nebula-m3-transfer/transfer.sha256' -Raw).Trim()
+          if ($transfer -notmatch '^[0-9a-f]{64}          [System.IO.File]::WriteAllText(
+            (Join-Path $out 'portable-roots.tsv'),
+            $receipt,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: 4 - Export host-independent receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-dag-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            m3/recipe-first/target/nebula-m3-dag/portable-roots.tsv
+            m3/recipe-first/target/nebula-m3-dag/recipe-dag.tsv
+            m3/recipe-first/target/nebula-m3-dag/camel-route.yaml
+            m3/recipe-first/target/nebula-m3-dag/airflow-dag.py
+            m3/recipe-first/target/nebula-m3-dag/drools-agenda.drl
+            m3/recipe-first/target/nebula-m3-transfer/transfer-metadata.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer-targets.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer-dag.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer.sha256
+
+  compare-host-receipts:
+    name: Compare Windows/macOS/Linux semantic roots
+    needs: host-neutral-recipe-proof
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nebula-m3-dag-*
+          path: receipts
+
+      - name: Require all three hosts to produce byte-identical DAG identities
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = $null
+          foreach ($hostName in @('linux', 'windows', 'macos')) {
+            $path = Join-Path "receipts/nebula-m3-dag-$hostName" 'portable-roots.tsv'
+            if (!(Test-Path $path)) { throw "Missing $hostName portable receipt" }
+            $lines = @(Get-Content $path)
+            if ($lines.Count -ne 2 -or $lines[0] -ne "dagRoot`tplansRoot`ttransferRoot") {
+              throw "Invalid $hostName portable receipt"
+            }
+            if ($null -eq $expected) { $expected = $lines[1] }
+            elseif ($expected -ne $lines[1]) {
+              throw "Host-dependent recipe DAG or scheduler plan identity: $hostName"
+            }
+          }
+          Write-Output 'Portable DAG and scheduler roots agree across three hosts.'
+) {
+            throw 'Transfer contract SHA-256 proof failed'
+          }
+          $metadata = 'm3/recipe-first/target/nebula-m3-transfer/transfer-metadata.tsv'
+          if (!(Test-Path $metadata)) { throw 'Transfer metadata not generated' }
+          if (-not (Select-String -Path $metadata -Pattern '^transferState\tHOLD_UNTIL_PROVEN          [System.IO.File]::WriteAllText(
+            (Join-Path $out 'portable-roots.tsv'),
+            $receipt,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: 4 - Export host-independent receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-dag-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            m3/recipe-first/target/nebula-m3-dag/portable-roots.tsv
+            m3/recipe-first/target/nebula-m3-dag/recipe-dag.tsv
+            m3/recipe-first/target/nebula-m3-dag/camel-route.yaml
+            m3/recipe-first/target/nebula-m3-dag/airflow-dag.py
+            m3/recipe-first/target/nebula-m3-dag/drools-agenda.drl
+
+  compare-host-receipts:
+    name: Compare Windows/macOS/Linux semantic roots
+    needs: host-neutral-recipe-proof
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nebula-m3-dag-*
+          path: receipts
+
+      - name: Require all three hosts to produce byte-identical DAG identities
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = $null
+          foreach ($hostName in @('linux', 'windows', 'macos')) {
+            $path = Join-Path "receipts/nebula-m3-dag-$hostName" 'portable-roots.tsv'
+            if (!(Test-Path $path)) { throw "Missing $hostName portable receipt" }
+            $lines = @(Get-Content $path)
+            if ($lines.Count -ne 2 -or $lines[0] -ne "dagRoot`tplansRoot") {
+              throw "Invalid $hostName portable receipt"
+            }
+            if ($null -eq $expected) { $expected = $lines[1] }
+            elseif ($expected -ne $lines[1]) {
+              throw "Host-dependent recipe DAG or scheduler plan identity: $hostName"
+            }
+          }
+          Write-Output 'Portable DAG and scheduler roots agree across three hosts.'
+ -Quiet)) {
+            throw 'Transfer contract must remain HOLD until product proof completes'
+          }
+
+          $receipt = "dagRoot`tplansRoot`ttransferRoot`n$dag`t$plans`t$transfer`n"
+          [System.IO.File]::WriteAllText(
+            (Join-Path $out 'portable-roots.tsv'),
+            $receipt,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: 4 - Export host-independent receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-dag-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            m3/recipe-first/target/nebula-m3-dag/portable-roots.tsv
+            m3/recipe-first/target/nebula-m3-dag/recipe-dag.tsv
+            m3/recipe-first/target/nebula-m3-dag/camel-route.yaml
+            m3/recipe-first/target/nebula-m3-dag/airflow-dag.py
+            m3/recipe-first/target/nebula-m3-dag/drools-agenda.drl
+
+  compare-host-receipts:
+    name: Compare Windows/macOS/Linux semantic roots
+    needs: host-neutral-recipe-proof
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nebula-m3-dag-*
+          path: receipts
+
+      - name: Require all three hosts to produce byte-identical DAG identities
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = $null
+          foreach ($hostName in @('linux', 'windows', 'macos')) {
+            $path = Join-Path "receipts/nebula-m3-dag-$hostName" 'portable-roots.tsv'
+            if (!(Test-Path $path)) { throw "Missing $hostName portable receipt" }
+            $lines = @(Get-Content $path)
+            if ($lines.Count -ne 2 -or $lines[0] -ne "dagRoot`tplansRoot") {
+              throw "Invalid $hostName portable receipt"
+            }
+            if ($null -eq $expected) { $expected = $lines[1] }
+            elseif ($expected -ne $lines[1]) {
+              throw "Host-dependent recipe DAG or scheduler plan identity: $hostName"
+            }
+          }
+          Write-Output 'Portable DAG and scheduler roots agree across three hosts.'
