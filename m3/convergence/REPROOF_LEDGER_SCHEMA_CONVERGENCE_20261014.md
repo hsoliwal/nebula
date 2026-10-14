@@ -25,6 +25,20 @@ The reusable mechanism is the existing exact Java LST snapshot recipe.
 proving fixture, **not** a competing canonical Synexia recipe implementation.
 The generalized M3 recipe still belongs in `hsoliwal/com.synexia`.
 
+## Exact file identities
+
+- input: `m3/recipe-first/src/test/java/org/eclipse/nebula/m3/NebulaM3CurrentMasterReproofTest.java`;
+- source SHA-256: `975600aaa0dc984ac9c73e1d4fc446a0872180047701598bcc475cb9978ee7d0`;
+- expected postimage SHA-256: `b424349855198f0dab5f0ba393b2195bd0e603f2af6ca82d8cebf6129dad3a8b`;
+- exact semantic delta: `schema\\tmaster_preimage` becomes
+  `schema\\tnebula_master_preimage` in the JUnit expected header only;
+- recipe: `org.eclipse.nebula.m3.CurrentMasterReproofHeader`;
+- Maven proving profile: `m3/recipe-first/pom.xml -Preproof-header`.
+
+Both Java source images are stored in the Nebula EPL-2.0 proving crate. The original
+test file stays untouched in the PR; CI applies the recipe only to its transient
+checkout after source-bound recipe tests pass.
+
 ## Recipe before target
 
 1. Read the current Java test preimage and TSV fixture verbatim.
