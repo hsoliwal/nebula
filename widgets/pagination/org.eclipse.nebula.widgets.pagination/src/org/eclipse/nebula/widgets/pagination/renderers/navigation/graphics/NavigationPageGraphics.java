@@ -249,6 +249,8 @@ public class NavigationPageGraphics extends Canvas {
 			gc = tempGC;
 		}
 		this.totalWidth = 0;
+		boolean measured = false;
+		try {
 		int x = 0;
 		int y = 0;
 		int width = 0;
@@ -268,9 +270,15 @@ public class NavigationPageGraphics extends Canvas {
 		}
 		// Updat ethe total width of this control
 		totalWidth = x + width - 3;
-		if (tempGC != null) {
-			// Dispose temporary GC.
-			tempGC.dispose();
+		measured = true;
+		} finally {
+			// Preserve the old reentrant totalWidth=0 sentinel until exit.
+			// A failed measurement must be retried, not published as complete.
+			if (!measured) totalWidth = null;
+			if (tempGC != null) {
+				// Only a GC created by this control belongs to this scope.
+				tempGC.dispose();
+			}
 		}
 	}
 
