@@ -14,7 +14,7 @@ import org.junit.jupiter.api.io.TempDir;
 final class NebulaM3ProofReceiptCliTest {
     private static final String NEBULA = "b".repeat(40);
     private static final String SYNEXIA = "c".repeat(40);
-    private static final String DAG = "a".repeat(64);
+    private static final String DAG = NebulaM3RecipeDagManifest.root();
 
     @TempDir Path temp;
 
@@ -37,6 +37,24 @@ final class NebulaM3ProofReceiptCliTest {
                 line -> line.contains("\tPASSED\t")
                         && line.contains("\tMANUAL_REVIEW_REQUIRED\tfalse\tfalse\t")));
         assertFalse(receipt.contains("\tHOLD\t"));
+    }
+
+    @Test
+    void foreignDagRootFailsClosedEvenWhenEveryEvidenceRowPasses() throws Exception {
+        Path evidence = temp.resolve("foreign-evidence.tsv");
+        Path output = temp.resolve("foreign-result.tsv");
+        Files.writeString(evidence, passedEvidence());
+
+        String foreignDag = "a".repeat(64);
+        assertFalse(foreignDag.equals(DAG));
+        assertThrows(
+                IllegalStateException.class,
+                () -> NebulaM3ProofReceiptCli.main(
+                        new String[] {
+                            NEBULA, SYNEXIA, foreignDag,
+                            evidence.toString(), output.toString()
+                        }));
+        assertFalse(Files.exists(output));
     }
 
     @Test
