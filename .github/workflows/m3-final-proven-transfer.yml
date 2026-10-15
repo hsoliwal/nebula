@@ -67,7 +67,7 @@ jobs:
         run: >-
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
-          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3ProofGateTest,NebulaM3ProofReceiptCliTest,NebulaM3TransferQualificationRecipeTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
+          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3DagWavePlannerTest,NebulaM3TransferContractTest,NebulaM3ProofGateTest,NebulaM3ProofReceiptCliTest,NebulaM3TransferQualificationRecipeTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
           -Dsurefire.failIfNoSpecifiedTests=false
           test
 
@@ -76,7 +76,7 @@ jobs:
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
           -Psemantic-coverage
-          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3OrchestratorPlansTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest
+          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3OrchestratorPlansTest,NebulaM3DagWavePlannerTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest
           -Dsurefire.failIfNoSpecifiedTests=false
           verify
 
