@@ -148,6 +148,11 @@ class ImageSelector extends Canvas {
 		coordinateViewport = true;
 		rects.clear();
 
+		// Keep the CPU hit snapshot current even when no pixels are damaged.
+		if (clip.isEmpty()) {
+			return (int) ((long) count * CIRCLE_STEP + CIRCLE_DIAMETER);
+		}
+
 		// Conservative one-circle halo: even GC stroke edges are not excluded.
 		long from = Math.floorDiv((long) clip.x - CIRCLE_STEP, CIRCLE_STEP);
 		long until = Math.floorDiv((long) clip.x + clip.width + CIRCLE_STEP, CIRCLE_STEP) + 1;
@@ -201,21 +206,26 @@ class ImageSelector extends Canvas {
 		final Rectangle clientArea = getClientArea();
 		final int topY = (clientArea.height - ARROW_SIZE) / 2;
 		final int width = (int) (ARROW_SIZE * .5f);
+		final boolean paint = !gc.getClipping().isEmpty();
 
 		gc.setLineWidth(hoverLeftArrow ? 3 : 1);
 
-		gc.drawPolyline(new int[] { x + width, topY, //
-				x, topY + ARROW_SIZE / 2, //
-				x + width, topY + ARROW_SIZE });
+		if (paint) {
+			gc.drawPolyline(new int[] { x + width, topY, //
+					x, topY + ARROW_SIZE / 2, //
+					x + width, topY + ARROW_SIZE });
+		}
 
 		arrowLeftArea = new Rectangle(x, topY, ARROW_SIZE, ARROW_SIZE);
 
 		x += ARROW_SIZE * 3;
 
 		gc.setLineWidth(hoverRightArrow ? 3 : 1);
-		gc.drawPolyline(new int[] { x, topY, //
-				x + width, topY + ARROW_SIZE / 2, //
-				x, topY + ARROW_SIZE });
+		if (paint) {
+			gc.drawPolyline(new int[] { x, topY, //
+					x + width, topY + ARROW_SIZE / 2, //
+					x, topY + ARROW_SIZE });
+		}
 		arrowRightArea = new Rectangle(x, topY, ARROW_SIZE, ARROW_SIZE);
 	}
 
