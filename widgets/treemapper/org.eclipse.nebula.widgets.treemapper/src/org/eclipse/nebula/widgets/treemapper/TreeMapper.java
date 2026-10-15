@@ -65,6 +65,7 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
 /**
@@ -447,19 +448,48 @@ public class TreeMapper<M, L, R> implements ISelectionProvider {
 	 * @param treeItem
 	 * @return
 	 */
+	/**
+	 * Ask the ordinary original SWT TreeItem owner for a child ordinal without
+	 * creating a snapshot of every sibling. Preserve the original getItems()
+	 * path for virtual, subclassed or disposed objects (SetData/override ABI).
+	 */
+	private static int siblingIndex(TreeItem parent, TreeItem child) {
+		if (parent.isDisposed() || child.isDisposed()
+				|| parent.getClass() != TreeItem.class || child.getClass() != TreeItem.class) {
+			return Arrays.asList(parent.getItems()).indexOf(child);
+		}
+		Tree owner = parent.getParent();
+		if (owner.isDisposed() || owner.getClass() != Tree.class
+				|| (owner.getStyle() & SWT.VIRTUAL) != 0) {
+			return Arrays.asList(parent.getItems()).indexOf(child);
+		}
+		return parent.indexOf(child);
+	}
+
+	/** Resolve a root ordinal through its original Tree, never a shadow list. */
+	private static int rootIndex(TreeViewer viewer, TreeItem child) {
+		Tree owner = viewer.getTree();
+		if (owner.isDisposed() || child.isDisposed()
+				|| owner.getClass() != Tree.class || child.getClass() != TreeItem.class
+				|| (owner.getStyle() & SWT.VIRTUAL) != 0) {
+			return Arrays.asList(owner.getItems()).indexOf(child);
+		}
+		return owner.indexOf(child);
+	}
+
 	private Object resolveTreeViewerItem(TreeViewer treeViewer, TreeItem treeItem) {
 		ITreeContentProvider contentProvider = (ITreeContentProvider) treeViewer.getContentProvider();
 		List<Integer> locations = new ArrayList<>();
 		TreeItem parentTreeItem = treeItem.getParentItem();
 		while (parentTreeItem != null) {
-			int index = Arrays.asList(parentTreeItem.getItems()).indexOf(treeItem);
+			int index = siblingIndex(parentTreeItem, treeItem);
 			locations.add(index);
 			treeItem = parentTreeItem;
 			parentTreeItem = treeItem.getParentItem();
 		}
 		// root
 		if (treeItem != null) {
-			int rootIndex = Arrays.asList(treeViewer.getTree().getItems()).indexOf(treeItem);
+			int rootIndex = rootIndex(treeViewer, treeItem);
 			locations.add(rootIndex);
 		}
 		Collections.reverse(locations);
