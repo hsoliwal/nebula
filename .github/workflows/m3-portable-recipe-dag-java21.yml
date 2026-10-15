@@ -62,7 +62,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
+          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
           if ($LASTEXITCODE -ne 0) { throw 'Java 21 recipe/JUnit proof failed' }
 
       - name: 3 - Verify roots, real JUnit reports and source immutability
@@ -97,6 +97,7 @@ jobs:
             'NebulaM3RecipeDagManifestTest',
             'NebulaM3RecipeDagManifestCliTest',
             'NebulaM3BackportPlanTest',
+            'NebulaM3BackportBundleTest',
             'NebulaM3TransferContractTest'
             'NebulaM3JavaGradeQualificationTest'
           )
@@ -163,6 +164,8 @@ jobs:
             m3/recipe-first/target/nebula-m3-transfer/java-grade-qualification.tsv
             m3/recipe-first/target/nebula-m3-transfer/transfer-targets.tsv
             m3/recipe-first/target/nebula-m3-transfer/backport-plan.tsv
+            m3/recipe-first/target/nebula-m3-transfer/backport-bundle.tsv
+            m3/recipe-first/target/nebula-m3-transfer/backport-bundle.sha256
             m3/recipe-first/target/nebula-m3-transfer/transfer-dag.tsv
             m3/recipe-first/target/nebula-m3-transfer/transfer.sha256
 
