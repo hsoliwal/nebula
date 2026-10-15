@@ -19,3 +19,14 @@ java -Xcheck:jni -Xmx256m -Djava.library.path="$work" -cp "$work" \
   org.eclipse.nebula.widgets.pshelf.PShelfGeometryJniParityTest
 java -Xint -Xcheck:jni -Xmx256m -Djava.library.path="$work" -cp "$work" \
   org.eclipse.nebula.widgets.pshelf.PShelfGeometryJniParityTest
+
+# Rebuild the same test-only C kernel with Clang/GCC-compatible undefined
+# behavior instrumentation. The Java oracle exercises all overflow paths.
+gcc -std=c17 -O2 -Wall -Wextra -Wconversion -Wpedantic -Werror -fPIC -shared \
+  -fsanitize=undefined -fno-sanitize-recover=undefined \
+  -I"$java_home/include" -I"$java_home/include/linux" \
+  "$tests/PShelfGeometryJniParityTest.c" -lm \
+  -o "$work/libm3_pshelf_geometry_test.so"
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 \
+  java -Xcheck:jni -Xmx256m -Djava.library.path="$work" -cp "$work" \
+  org.eclipse.nebula.widgets.pshelf.PShelfGeometryJniParityTest

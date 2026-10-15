@@ -63,8 +63,11 @@ bash widgets/pshelf/org.eclipse.nebula.widgets.pshelf/run-jni-parity.sh
 
 Executed independently with OpenJDK21/GCC C17 strict warnings:
 `PSHELF_JNI_PARITY_PASS checks=457053` with `-Xcheck:jni`;
-the same `457053` pass with `-Xint -Xcheck:jni`.
-Total **914,106 Java-vs-JNI comparisons**, including explicit
+the same `457053` pass with `-Xint -Xcheck:jni`,
+and a third `457053` pass with `-fsanitize=undefined`,
+`-fno-sanitize-recover=undefined`, `UBSAN_OPTIONS=halt_on_error=1`
+and `-Xcheck:jni`.
+Total **1,371,159 Java-vs-JNI comparisons**, including explicit
 rejection of negative and out-of-range logical sibling indices to prevent
 undefined arithmetic on non-PShelf inputs, 100,000-row stress,
 invalid range refusal and extreme arithmetic. The actual receiver
