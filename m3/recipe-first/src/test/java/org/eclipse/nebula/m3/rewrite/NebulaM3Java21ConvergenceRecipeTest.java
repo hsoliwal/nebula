@@ -10,6 +10,7 @@ import org.eclipse.nebula.m3.rewrite.atom.NebulaM3DocumentPureIntAtomRecipe;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3InventoryPureIntAtomCandidates;
 import org.eclipse.nebula.m3.rewrite.atom.NebulaM3PatternizePureIntAtomRecipe;
 import org.eclipse.nebula.m3.rewrite.convergence.NebulaM3FileConvergenceRecipeDag;
+import org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifest;
 import org.eclipse.nebula.m3.rewrite.exact.NebulaM3SvgLoaderLengthConvergenceRecipe;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.Recipe;
@@ -22,6 +23,12 @@ final class NebulaM3Java21ConvergenceRecipeTest {
         List<Recipe> children = recipe.getRecipeList();
 
         assertEquals(5, children.size());
+        assertEquals(
+                children.stream().map(recipeAtom -> recipeAtom.getClass().getName()).toList(),
+                NebulaM3RecipeDagManifest.readinessWaves().stream()
+                        .flatMap(List::stream)
+                        .map(NebulaM3RecipeDagManifest.Node::recipeClass)
+                        .toList());
         assertEquals(NebulaM3InventoryPureIntAtomCandidates.class, children.get(0).getClass());
         assertEquals(NebulaM3AtomizePureIntReturnRecipe.class, children.get(1).getClass());
         assertEquals(NebulaM3PatternizePureIntAtomRecipe.class, children.get(2).getClass());
