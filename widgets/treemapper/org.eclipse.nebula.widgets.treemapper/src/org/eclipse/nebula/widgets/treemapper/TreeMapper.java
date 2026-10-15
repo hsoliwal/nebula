@@ -444,11 +444,6 @@ public class TreeMapper<M, L, R> implements ISelectionProvider {
 	}
 
 	/**
-	 * @param treeViewer
-	 * @param treeItem
-	 * @return
-	 */
-	/**
 	 * Ask the ordinary original SWT TreeItem owner for a child ordinal without
 	 * creating a snapshot of every sibling. Preserve the original getItems()
 	 * path for virtual, subclassed or disposed objects (SetData/override ABI).
@@ -477,6 +472,11 @@ public class TreeMapper<M, L, R> implements ISelectionProvider {
 		return owner.indexOf(child);
 	}
 
+	/**
+	 * @param treeViewer
+	 * @param treeItem
+	 * @return
+	 */
 	private Object resolveTreeViewerItem(TreeViewer treeViewer, TreeItem treeItem) {
 		ITreeContentProvider contentProvider = (ITreeContentProvider) treeViewer.getContentProvider();
 		List<Integer> locations = new ArrayList<>();
