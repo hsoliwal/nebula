@@ -31,6 +31,7 @@ final class NebulaM3JavaGradeQualificationTest {
         assertTrue(receipt.root().matches("[0-9a-f]{64}"));
         assertTrue(receipt.toTsv().contains("minimumSemanticLineCoverage	0.99"));
         assertTrue(receipt.toTsv().contains("backportPlanRoot	" + NebulaM3BackportPlan.root()));
+        assertTrue(receipt.toTsv().contains("backportBundleRoot\t" + NebulaM3BackportBundle.root()));
     }
 
     @Test
