@@ -121,7 +121,7 @@ public class RedmondShelfRenderer extends AbstractRenderer {
 				gc.drawLine(0, getBounds().y, getBounds().width - 1, getBounds().y);
 			}
 		} else {
-			if (parent.getItems()[0] != item) {
+			if (!parent.isFirstItem(item)) {
 				gc.setForeground(lineColor);
 				gc.drawLine(0, getBounds().y, getBounds().width - 1, getBounds().y);
 			}
