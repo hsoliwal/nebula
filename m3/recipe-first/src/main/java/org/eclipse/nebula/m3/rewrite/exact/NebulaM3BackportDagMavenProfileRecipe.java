@@ -32,7 +32,7 @@ public final class NebulaM3BackportDagMavenProfileRecipe extends Recipe {
     public static final String BEFORE_SHA256 =
             "0b418ca099d48decd5d521929c48b48899679879d206325e12d99dca1bd1b99f";
     public static final String AFTER_SHA256 =
-            "5bd24c5d9e17f4e7b4060424cd0fa743f138bc0022e406881632630d9fdca292";
+            "46b3eb273ec86cebd01a2b6210b8366e586620bd10864a16dd1c6f775a27e9da";
     public static final String POSTIMAGE =
             "/org/eclipse/nebula/m3/rewrite/exact/backport-dag-integrity/pom.after.xml.txt";
 
