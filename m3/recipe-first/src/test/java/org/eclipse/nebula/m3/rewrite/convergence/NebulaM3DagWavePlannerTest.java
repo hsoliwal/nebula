@@ -148,6 +148,37 @@ final class NebulaM3DagWavePlannerTest {
     }
 
     @Test
+    void laterPhaseCannotRevertToAnEarlierPhase() {
+        var candidate = branched();
+        candidate.set(4, node(4, "reverted-atom", Phase.ATOMIZATION,
+                List.of("pattern")));
+        assertThrows(IllegalArgumentException.class,
+                () -> NebulaM3DagWavePlanner.plan(candidate));
+    }
+
+    @Test
+    void missingFinalPhaseIsRejectedEvenWhenNodeBudgetIsLargeEnough() {
+        var candidate = branched();
+        candidate.remove(candidate.size() - 1);
+        assertEquals(5, candidate.size());
+        assertThrows(IllegalArgumentException.class,
+                () -> NebulaM3DagWavePlanner.plan(candidate));
+    }
+
+    @Test
+    void samePhaseDependenciesCanForceSerialReadinessWithoutChangingScope() {
+        var candidate = branched();
+        candidate.set(2, node(2, "atom-b", Phase.ATOMIZATION,
+                List.of("inventory", "atom-a")));
+        List<List<NebulaM3RecipeDagManifest.Node>> waves =
+                NebulaM3DagWavePlanner.plan(candidate);
+        assertEquals(List.of(1, 1, 1, 1, 1, 1),
+                waves.stream().map(List::size).toList());
+        assertTrue(waves.stream().flatMap(List::stream)
+                .allMatch(node -> "FILE".equals(node.scope())));
+    }
+
+    @Test
     void oversizedPlanAndNullInputFailClosed() {
         List<NebulaM3RecipeDagManifest.Node> tooLarge = new ArrayList<>();
         for (int i = 0; i < 4097; i++) {
