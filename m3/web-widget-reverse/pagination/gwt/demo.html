@@ -1,0 +1,7 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en"><meta charset="utf-8"><title>GWT PageWindow export probe</title>
+<p id="status">The GWT compiler output must be present beside this page.</p>
+<script src="nebula_page_window/nebula_page_window.nocache.js"></script>
+<script>let attempts=0;const timer=setInterval(()=>{if(typeof NebulaPageWindow==='function'){clearInterval(timer);document.querySelector('#status').textContent=JSON.stringify(NebulaPageWindow(499999999,1000000000,9));}else if(++attempts===100){clearInterval(timer);document.querySelector('#status').textContent='GWT artifact unavailable.';}},100);</script>
+</html>
