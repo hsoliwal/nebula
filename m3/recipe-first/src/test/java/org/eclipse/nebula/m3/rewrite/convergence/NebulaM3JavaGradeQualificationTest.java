@@ -25,6 +25,7 @@ final class NebulaM3JavaGradeQualificationTest {
         assertFalse(receipt.mutationAuthority());
         assertFalse(receipt.promotionAuthority());
         assertEquals(NebulaM3BackportPlan.root(), receipt.backportPlanRoot());
+        assertEquals(NebulaM3BackportBundle.root(), receipt.backportBundleRoot());
         assertEquals(NebulaM3RefactorScope.canonicalOrder(), receipt.scopeOrder());
         assertEquals(NebulaM3RecipeDagManifest.orchestrationTargets(), receipt.orchestrators());
         assertTrue(receipt.root().matches("[0-9a-f]{64}"));
@@ -59,6 +60,7 @@ final class NebulaM3JavaGradeQualificationTest {
                         proof,
                         NebulaM3TransferContract.root(),
                         NebulaM3BackportPlan.root(),
+                        NebulaM3BackportBundle.root(),
                         NebulaM3OrchestratorPlans.root(),
                         List.of(NebulaM3RefactorScope.FILE),
                         NebulaM3RecipeDagManifest.orchestrationTargets()));
@@ -68,6 +70,7 @@ final class NebulaM3JavaGradeQualificationTest {
                         proof,
                         NebulaM3TransferContract.root(),
                         NebulaM3BackportPlan.root(),
+                        NebulaM3BackportBundle.root(),
                         NebulaM3OrchestratorPlans.root(),
                         NebulaM3RefactorScope.canonicalOrder(),
                         Set.of(NebulaM3RecipeDagManifest.Orchestrator.MAVEN_OPENREWRITE)));
@@ -77,6 +80,17 @@ final class NebulaM3JavaGradeQualificationTest {
                         proof,
                         NebulaM3TransferContract.root(),
                         "d".repeat(64),
+                        NebulaM3BackportBundle.root(),
+                        NebulaM3OrchestratorPlans.root(),
+                        NebulaM3RefactorScope.canonicalOrder(),
+                        NebulaM3RecipeDagManifest.orchestrationTargets()));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new NebulaM3JavaGradeQualification.Receipt(
+                        proof,
+                        NebulaM3TransferContract.root(),
+                        NebulaM3BackportPlan.root(),
+                        "e".repeat(64),
                         NebulaM3OrchestratorPlans.root(),
                         NebulaM3RefactorScope.canonicalOrder(),
                         NebulaM3RecipeDagManifest.orchestrationTargets()));
@@ -98,6 +112,7 @@ final class NebulaM3JavaGradeQualificationTest {
                         proof,
                         "f".repeat(64),
                         NebulaM3BackportPlan.root(),
+                        NebulaM3BackportBundle.root(),
                         NebulaM3OrchestratorPlans.root(),
                         NebulaM3RefactorScope.canonicalOrder(),
                         NebulaM3RecipeDagManifest.orchestrationTargets()));
