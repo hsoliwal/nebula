@@ -89,6 +89,10 @@ def verify_final_workflow(text: str) -> None:
         if marker not in text:
             raise ValueError(f"missing final-transfer proof requirement: {marker}")
 
+    if text.count("maven-version: 3.9.11") != 1:
+        raise ValueError("final-transfer Maven version must match portable and one-build proof")
+
+
 
 class FinalTransferWorkflowTest(unittest.TestCase):
     def test_current_final_workflow_has_one_complete_stage_chain(self) -> None:
@@ -103,6 +107,13 @@ class FinalTransferWorkflowTest(unittest.TestCase):
         valid = WORKFLOW.read_text(encoding="utf-8")
         with self.assertRaises(ValueError):
             verify_final_workflow(valid + "\nbackportBundleRoot stale-fragment\n")
+
+    def test_maven_version_drift_is_rejected(self) -> None:
+        valid = WORKFLOW.read_text(encoding="utf-8")
+        with self.assertRaises(ValueError):
+            verify_final_workflow(
+                valid.replace("maven-version: 3.9.11", "maven-version: 3.9.6", 1)
+            )
 
     def test_missing_tycho_acceptance_is_rejected(self) -> None:
         valid = WORKFLOW.read_text(encoding="utf-8")
