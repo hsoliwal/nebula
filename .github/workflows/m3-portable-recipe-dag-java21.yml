@@ -98,7 +98,7 @@ jobs:
             'NebulaM3RecipeDagManifestCliTest',
             'NebulaM3BackportPlanTest',
             'NebulaM3BackportBundleTest',
-            'NebulaM3TransferContractTest'
+            'NebulaM3TransferContractTest',
             'NebulaM3JavaGradeQualificationTest'
           )
           foreach ($name in $required) {
@@ -121,6 +121,7 @@ jobs:
           $javaGradeText = Get-Content $javaGrade -Raw
           if ($javaGradeText -notmatch "disposition`tHOLD" -or
               $javaGradeText -notmatch "backportPlanRoot`t[0-9a-f]{64}" -or
+              $javaGradeText -notmatch "backportBundleRoot`t[0-9a-f]{64}" -or
               $javaGradeText -notmatch "mutationAuthority`tfalse" -or
               $javaGradeText -notmatch "promotionAuthority`tfalse") {
             throw 'Portable Java-grade receipt must remain HOLD and bind backport plan'
@@ -140,8 +141,76 @@ jobs:
           }
 
           $backport = (Get-FileHash 'm3/recipe-first/target/nebula-m3-transfer/backport-plan.tsv' -Algorithm SHA256).Hash.ToLowerInvariant()
-          $header = [string]::Join([char]9, @('dagRoot', 'plansRoot', 'backportRoot', 'transferRoot'))
-          $values = [string]::Join([char]9, @($dag, $plans, $backport, $transfer))
+          $bundle = (Get-Content 'm3/recipe-first/target/nebula-m3-transfer/backport-bundle.sha256' -Raw).Trim()
+          if ($bundle -notmatch '^[0-9a-f]{64}          $receipt = $header + [char]10 + $values + [char]10
+          [System.IO.File]::WriteAllText(
+            (Join-Path $out 'portable-roots.tsv'),
+            $receipt,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+      - name: 4 - Export host-independent receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-m3-dag-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            m3/recipe-first/target/nebula-m3-dag/portable-roots.tsv
+            m3/recipe-first/target/nebula-m3-dag/recipe-dag.tsv
+            m3/recipe-first/target/nebula-m3-dag/camel-route.yaml
+            m3/recipe-first/target/nebula-m3-dag/airflow-dag.py
+            m3/recipe-first/target/nebula-m3-dag/drools-agenda.drl
+            m3/recipe-first/target/nebula-m3-transfer/transfer-metadata.tsv
+            m3/recipe-first/target/nebula-m3-transfer/java-grade-qualification.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer-targets.tsv
+            m3/recipe-first/target/nebula-m3-transfer/backport-plan.tsv
+            m3/recipe-first/target/nebula-m3-transfer/backport-bundle.tsv
+            m3/recipe-first/target/nebula-m3-transfer/backport-bundle.sha256
+            m3/recipe-first/target/nebula-m3-transfer/transfer-dag.tsv
+            m3/recipe-first/target/nebula-m3-transfer/transfer.sha256
+
+  compare-host-receipts:
+    name: Compare Linux, Windows and macOS semantic roots
+    needs: host-neutral-recipe-proof
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nebula-m3-dag-*
+          path: receipts
+
+      - name: Require all three hosts and identical content roots
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $expected = $null
+          $header = [string]::Join([char]9, @('dagRoot', 'plansRoot', 'backportRoot', 'bundleRoot', 'transferRoot'))
+          foreach ($hostName in @('linux', 'windows', 'macos')) {
+            $path = Join-Path "receipts/nebula-m3-dag-$hostName" 'portable-roots.tsv'
+            if (!(Test-Path $path)) { throw "Missing $hostName portable receipt" }
+            $lines = @(Get-Content $path)
+            if ($lines.Count -ne 2 -or $lines[0] -cne $header) {
+              throw "Invalid $hostName portable receipt schema"
+            }
+            $fields = @($lines[1].Split([char]9))
+            if ($fields.Count -ne 5) {
+              throw "Invalid $hostName portable receipt fields"
+            }
+            foreach ($value in $fields) {
+              if ($value -cnotmatch '^[0-9a-f]{64}$') {
+                throw "Invalid $hostName root value"
+              }
+            }
+            if ($null -eq $expected) {
+              $expected = $lines[1]
+            } elseif ($expected -cne $lines[1]) {
+              throw "Host-dependent DAG/scheduler/transfer identity: $hostName"
+            }
+          }
+          Write-Output 'Three-host recipe roots agree; transfer remains subject to Nebula product verification.'
+) { throw 'Backport bundle SHA-256 proof failed' }
+          $header = [string]::Join([char]9, @('dagRoot', 'plansRoot', 'backportRoot', 'bundleRoot', 'transferRoot'))
+          $values = [string]::Join([char]9, @($dag, $plans, $backport, $bundle, $transfer))
           $receipt = $header + [char]10 + $values + [char]10
           [System.IO.File]::WriteAllText(
             (Join-Path $out 'portable-roots.tsv'),
