@@ -542,7 +542,7 @@ public class PrintPreview extends Canvas {
 			disposePages(); // just in case
 			pageDisplaySize = null;
 			pageDisplayLocations = null;
-		pageDisplayOrigin = null;
+			pageDisplayOrigin = null;
 		}
 		return printer;
 	}
