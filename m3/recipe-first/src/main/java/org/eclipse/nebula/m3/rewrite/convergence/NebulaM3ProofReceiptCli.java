@@ -13,8 +13,9 @@ import java.util.List;
  *
  * <p>This CLI does not run tests or authenticate external logs. It only validates the canonical
  * evidence schema, binds exact source/DAG identities and refuses to emit a complete receipt unless
- * every proof stage is PASSED. A complete receipt still requires manual review and carries no
- * mutation or promotion authority.</p>
+ * every proof stage is PASSED and the DAG identity equals the canonical current Nebula
+ * recipe DAG. A complete receipt still requires manual review and carries no mutation or
+ * promotion authority. This CLI does not authenticate externally supplied evidence.</p>
  */
 public final class NebulaM3ProofReceiptCli {
     static final String EVIDENCE_HEADER = "stage\tstate\tproof_sha256";
@@ -34,6 +35,11 @@ public final class NebulaM3ProofReceiptCli {
         var receipt =
                 new NebulaM3ProofGate.Receipt(
                         args[0], args[1], args[2], readEvidence(evidence));
+        // Source/shape-valid stage fingerprints alone cannot bind a foreign recipe DAG.
+        // Match the exact canonical root before a final manual-review receipt may be written.
+        if (!NebulaM3RecipeDagManifest.root().equals(receipt.dagRoot())) {
+            throw new IllegalStateException("final proof receipt DAG identity mismatch");
+        }
         if (!receipt.complete()) {
             throw new IllegalStateException("final proof receipt is incomplete");
         }
