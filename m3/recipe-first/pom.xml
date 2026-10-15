@@ -364,7 +364,7 @@
             <configuration>
               <configLocation>${project.basedir}/rewrite.yml</configLocation>
               <activeRecipes>
-                <recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3BackportDagIntegrityRecipe</recipe>
+                <recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3BackportIntegrityConvergenceRecipe</recipe>
               </activeRecipes>
               <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
               <failOnDryRunResults>false</failOnDryRunResults>
