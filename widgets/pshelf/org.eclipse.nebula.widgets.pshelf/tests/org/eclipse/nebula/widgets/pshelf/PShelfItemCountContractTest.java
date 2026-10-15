@@ -114,7 +114,7 @@ public final class PShelfItemCountContractTest {
                 "exception family/message equality for count=" + count + " index=" + index);
         if (subclass) {
             check(a.overrides == b.overrides, "overridden virtual getItems call count");
-            check(a.widgetChecks == b.widgetChecks, "subclass widget guard and callback order");
+            check(a.checks() == b.checks(), "subclass widget guard and callback order");
             check(b.counter == 0, "fast private path may not bypass a subclass");
         } else {
             check(a.error != null || a.getter >= b.getter,
