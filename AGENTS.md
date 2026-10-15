@@ -18,6 +18,12 @@ Small recipes may be composed into the canonical content-addressed DAG. Camel ma
 dependency waves, Airflow may schedule/export that same DAG, and Drools/KIE may perform candidate
 admission. None receives semantic-equivalence, direct source-mutation, or promotion authority.
 
+The same Java 21/Maven/OpenRewrite DAG must remain host-independent. Use the portable
+Windows/macOS/Linux recipe proof in `.github/workflows/m3-portable-recipe-dag-java21.yml`,
+compare exact UTF-8 DAG and scheduler SHA-256 roots, and keep WSL/other Unix as separately
+qualified environments rather than assuming a Linux GitHub runner proves their native behavior.
+SWT/JNI/graphics remain per-OS proof lanes; see `m3/docs/M3_PORTABLE_RECIPE_DAG.md`.
+
 Nebula's original Maven/Tycho build and tests remain product authority. A Synexia recipe handoff is
 candidate machinery only; Nebula must still prove compile/tests/runtime behavior and contract
 preservation before promotion. Repeatable target defects feed back into the canonical Synexia
