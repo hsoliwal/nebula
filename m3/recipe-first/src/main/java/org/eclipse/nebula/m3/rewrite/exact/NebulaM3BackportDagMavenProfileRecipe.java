@@ -85,7 +85,9 @@ public final class NebulaM3BackportDagMavenProfileRecipe extends Recipe {
                     return document;
                 }
                 if (!BEFORE_SHA256.equals(hash)) {
-                    throw new IllegalStateException("backport Maven profile preimage drift");
+                    context.getOnError().accept(
+                            new IllegalStateException("backport Maven profile preimage drift"));
+                    return document;
                 }
                 Xml.Document parsed = parse(postimage, context);
                 return parsed.withId(document.getId())
