@@ -24,6 +24,7 @@ public final class NebulaM3JavaGradeQualification {
             NebulaM3ProofGate.Receipt proof,
             String transferRoot,
             String backportPlanRoot,
+            String backportBundleRoot,
             String orchestratorPlansRoot,
             List<NebulaM3RefactorScope> scopeOrder,
             Set<NebulaM3RecipeDagManifest.Orchestrator> orchestrators) {
@@ -31,6 +32,7 @@ public final class NebulaM3JavaGradeQualification {
             proof = Objects.requireNonNull(proof, "proof");
             transferRoot = sha(transferRoot, "transferRoot");
             backportPlanRoot = sha(backportPlanRoot, "backportPlanRoot");
+            backportBundleRoot = sha(backportBundleRoot, "backportBundleRoot");
             orchestratorPlansRoot = sha(orchestratorPlansRoot, "orchestratorPlansRoot");
             scopeOrder = List.copyOf(Objects.requireNonNull(scopeOrder, "scopeOrder"));
             orchestrators = Set.copyOf(Objects.requireNonNull(orchestrators, "orchestrators"));
@@ -43,6 +45,9 @@ public final class NebulaM3JavaGradeQualification {
             }
             if (!NebulaM3BackportPlan.root().equals(backportPlanRoot)) {
                 throw new IllegalArgumentException("backport plan root drift");
+            }
+            if (!NebulaM3BackportBundle.root().equals(backportBundleRoot)) {
+                throw new IllegalArgumentException("backport bundle root drift");
             }
             if (!NebulaM3OrchestratorPlans.root().equals(orchestratorPlansRoot)) {
                 throw new IllegalArgumentException("orchestrator plans root drift");
@@ -86,6 +91,7 @@ public final class NebulaM3JavaGradeQualification {
             append(framed, proof.dagRoot());
             append(framed, transferRoot);
             append(framed, backportPlanRoot);
+            append(framed, backportBundleRoot);
             append(framed, orchestratorPlansRoot);
             append(framed, NebulaM3TransferContract.refactorScopeOrder());
             orchestrators.stream().sorted(java.util.Comparator.comparing(Enum::name))
@@ -111,6 +117,7 @@ public final class NebulaM3JavaGradeQualification {
                     dagRoot	%s
                     transferRoot	%s
                     backportPlanRoot	%s
+                    backportBundleRoot	%s
                     orchestratorPlansRoot	%s
                     refactorScopeOrder	%s
                     orchestrators	%s
@@ -129,6 +136,7 @@ public final class NebulaM3JavaGradeQualification {
                             proof.dagRoot(),
                             transferRoot,
                             backportPlanRoot,
+                            backportBundleRoot,
                             orchestratorPlansRoot,
                             NebulaM3TransferContract.refactorScopeOrder(),
                             orchestrators.stream().sorted(java.util.Comparator.comparing(Enum::name))
@@ -148,6 +156,7 @@ public final class NebulaM3JavaGradeQualification {
                 proof,
                 NebulaM3TransferContract.root(),
                 NebulaM3BackportPlan.root(),
+                NebulaM3BackportBundle.root(),
                 NebulaM3OrchestratorPlans.root(),
                 NebulaM3RefactorScope.canonicalOrder(),
                 NebulaM3RecipeDagManifest.orchestrationTargets());
