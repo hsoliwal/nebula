@@ -4,3 +4,7 @@
 /widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/css/BaseCSSThemingTest.java -text
 /widgets/cdatetime/org.eclipse.nebula.widgets.cdatetime.tests/src/org/eclipse/nebula/widgets/cdatetime/tests/css/CSSPropertyHandlerSimpleProviderImpl.java -text
 * whitespace=cr-at-eol
+
+# Preserve exactly reviewed EPL-2.0 CTree and Maven recipe bytes on all OSes.
+widgets/ctree/org.eclipse.nebula.widgets.ctree/src/org/eclipse/nebula/widgets/ctree/CTree.java text eol=lf
+m3/recipe-first/task-crates/ctree-viewport-paint-lease-v1/** text eol=lf
