@@ -15,6 +15,7 @@
 package org.eclipse.nebula.cwt.v;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -32,6 +33,8 @@ public class VPanel extends VControl {
 
 	Composite widget;
 	List<VControl> children = new ArrayList<VControl>();
+	private VControl[] paintChildren;
+	private boolean paintingChildren;
 	private VLayout layout = null;
 	private boolean isTopLevel = false;
 	private Listener topLevelListener;
@@ -105,6 +108,7 @@ public class VPanel extends VControl {
 	 * @param disposeComposite
 	 */
 	private void dispose(boolean disposeComposite) {
+		paintChildren = null;
 		if(isTopLevel) {
 			if(composite != null && !composite.isDisposed()) {
 				composite.removeListener(SWT.Dispose, topLevelListener);
@@ -133,6 +137,36 @@ public class VPanel extends VControl {
 	
 	public VControl[] getChildren() {
 		return children.toArray(new VControl[children.size()]);
+	}
+
+	/** Reuses only the parent-owned ordinary paint snapshot; public snapshots still escape independently. */
+	final void paintChildren(Event event) {
+		// getChildren is public and overridable. Preserve subclass dispatch, and
+		// never lend an in-use snapshot to a nested paint of this same panel.
+		if (getClass() != VPanel.class || paintingChildren) {
+			for (VControl child : getChildren()) child.paintControl(event);
+			return;
+		}
+		paintingChildren = true;
+		VControl[] target = null;
+		VControl[] snapshot = null;
+		try {
+			int count = children.size();
+			target = paintChildren;
+			// Exact-size retention avoids keeping a formerly large child array
+			// after the current child count changes. No new growth policy.
+			if (target == null || target.length != count) target = new VControl[count];
+			snapshot = children.toArray(target);
+			paintChildren = snapshot;
+			for (VControl child : snapshot) child.paintControl(event);
+		} finally {
+			// Also clear a partially filled target when toArray fails. Neither
+			// array escapes through getChildren; nested paints use their own copy.
+			if (target != null) Arrays.fill(target, null);
+			if (snapshot != null && snapshot != target) Arrays.fill(snapshot, null);
+			if (isDisposed()) paintChildren = null;
+			paintingChildren = false;
+		}
 	}
 
 	public VControl getControl(int x, int y) {

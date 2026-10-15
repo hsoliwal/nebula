@@ -1,0 +1,11 @@
+# Parent-owned CWT paint snapshot refinement
+
+Base #191: 4130b7b141325b1426a36a5a9c8be0a136746ab4. VControl/VPaintScope and its Grid ancestry are unchanged. Canonical recipe first: hsoliwal/com.synexia#11533 at 4903d7a8383bda96700916d020a7379707096b3a. Named com.synexia.m3.NebulaPanelSnapshot20261015, existing M3GpuToolJoinRecipe/M3GpuToolJoinManifest. Complete tests and source before/after manifests stay in Synexia.
+
+Only VPanel and VPanelPainter change. Ordinary exact VPanel painting refills an exact-sized parent array, snapshots membership/order, clears child references on all exits, drops capacity on disposal and replaces size-mismatched storage. Nested and subclass paths retain independent public getChildren snapshots. Public getChildren and all existing public/protected APIs remain unchanged. A package method and two private fields are added. No replacement widget, event owner, visibility mask, GC or native resource.
+
+Exact generated blobs: VPanel 0acc8a12f824b63d9c20d73fa00884bd853eac63; VPanelPainter 87cb0f6f62713c6fc86d7bf7acfedc90d21e7bc6. Emitted by the canonical recipe kernel, not manually repaired.
+
+Executed finite Java21 tests of full actual classes against explicit SWT/CWT host doubles: 68610 candidate checks each at Xmx32m/64m/256m; ordinary baseline and serial VPanel-only pass also tested. Callback mutation/visibility/order, public snapshot isolation, subclass override, same-size nested painting, failure/retry/partial-copy cleanup, disposal and size shrink covered. Three bad CWT variants detected. Warm 1024-child allocation probe: 4112000 bytes per 1000 paints before, zero after, five samples; not JMH, native memory or frame-time proof. Copy/clear/traversal remain O(n), nested/subclass/changed-size paths can allocate.
+
+Matched incumbent compile warnings retained; public/protected descriptors match. Companion JNI validates header math only, not CWT native painting. Actual Maven/OpenRewrite SDK, full CWT/SWT/Tycho, native GC/Region/UI, GWT/RAP/OSGi, DPI/IME/accessibility and application performance remain NOT_RUN. All-widget viewport and internal data-mediation rollout remains incomplete. Keep draft; inherited EPL-2.0 notices retained; no default-branch mutation or automatic merge.

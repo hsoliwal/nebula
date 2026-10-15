@@ -42,9 +42,7 @@ public class VPanelPainter implements IControlPainter {
 	}
 	
 	public void paintContent(VControl control, Event e) {
-		for(VControl child : ((VPanel) control).getChildren()) {
-			child.paintControl(e);
-		}
+		((VPanel) control).paintChildren(e);
 	}
 
 }
