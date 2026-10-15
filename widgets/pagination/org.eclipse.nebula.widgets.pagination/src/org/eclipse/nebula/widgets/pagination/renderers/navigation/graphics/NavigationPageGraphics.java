@@ -251,26 +251,26 @@ public class NavigationPageGraphics extends Canvas {
 		this.totalWidth = 0;
 		boolean measured = false;
 		try {
-		int x = 0;
-		int y = 0;
-		int width = 0;
-		int height = 0;
-		String text = null;
-		// Loop for each page item.
-		for (NavigationPageGraphicsItem pageItem : items) {
-			text = pageItem.getText();
-			// Get the size of the text of the current item.
-			Point size = gc.stringExtent(text);
+			int x = 0;
+			int y = 0;
+			int width = 0;
+			int height = 0;
+			String text = null;
+			// Loop for each page item.
+			for (NavigationPageGraphicsItem pageItem : items) {
+				text = pageItem.getText();
+				// Get the size of the text of the current item.
+				Point size = gc.stringExtent(text);
 
-			width = size.x + 4;
-			height = size.y;
+				width = size.x + 4;
+				height = size.y;
 
-			pageItem.setBounds(new Rectangle(x, y, width, height));
-			x += width + 3;
-		}
-		// Updat ethe total width of this control
-		totalWidth = x + width - 3;
-		measured = true;
+				pageItem.setBounds(new Rectangle(x, y, width, height));
+				x += width + 3;
+			}
+			// Updat ethe total width of this control
+			totalWidth = x + width - 3;
+			measured = true;
 		} finally {
 			// Preserve the old reentrant totalWidth=0 sentinel until exit.
 			// A failed measurement must be retried, not published as complete.
