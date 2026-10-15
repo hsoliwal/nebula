@@ -104,8 +104,9 @@ public abstract class VControl {
 				if (!child.isDisposed()) {
 					if (child == control) {
 						return true;
-					} else if (child instanceof Composite) {
-						return containsControl(control, (Composite) child);
+					} else if (child instanceof Composite
+							&& containsControl(control, (Composite) child)) {
+						return true; // An unmatched subtree does not exclude later siblings.
 					}
 				}
 			}
@@ -296,7 +297,7 @@ public abstract class VControl {
 				int maxX = points[0];
 				int minY = points[1];
 				int maxY = points[1];
-				for (int i = 2; i < (points.length - 1); i++) {
+				for (int i = 2; i < (points.length - 1); i += 2) { // Visit x/y pairs.
 					minX = Math.min(minX, points[i]);
 					maxX = Math.max(maxX, points[i]);
 					minY = Math.min(minY, points[i + 1]);
@@ -332,11 +333,25 @@ public abstract class VControl {
 
 		if (text != null) {
 			GC gc = new GC(composite);
-			if (getFont() != null) {
-				gc.setFont(getFont());
+			Point tSize;
+			Throwable failure = null;
+			try {
+				if (getFont() != null) {
+					gc.setFont(getFont());
+				}
+				tSize = gc.textExtent(text);
+			} catch (RuntimeException | Error primary) {
+				failure = primary;
+				throw primary;
+			} finally {
+				// This measurement owns the GC, including failed font/extent operations.
+				try {
+					gc.dispose();
+				} catch (RuntimeException | Error cleanup) {
+					if (failure == null) throw cleanup;
+					if (cleanup != failure) failure.addSuppressed(cleanup);
+				}
 			}
-			Point tSize = gc.textExtent(text);
-			gc.dispose();
 			size.x += tSize.x;
 			size.y += tSize.y;
 		}
