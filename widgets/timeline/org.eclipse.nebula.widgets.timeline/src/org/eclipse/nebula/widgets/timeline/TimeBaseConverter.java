@@ -54,6 +54,17 @@ public class TimeBaseConverter {
 		return visibleArea;
 	}
 
+	/**
+	 * Scalar duration for exact instances. Preserve override dispatch for subclasses.
+	 * Match Timing.scale(): width * (1 / scaleFactor), not width / scaleFactor.
+	 */
+	private double currentVisibleDuration() {
+		if (getClass() != TimeBaseConverter.class) {
+			return getVisibleEventArea().getDuration();
+		}
+		return fDetailScreenWidth * (1 / fScaleFactor);
+	}
+
 	public long screenOffsetToEventTime(int screenOffset) {
 		double offset = screenOffset;
 		offset /= getScaleFactor();
@@ -114,7 +125,7 @@ public class TimeBaseConverter {
             }
 
 		} else if (eventTime > 0) {
-            if (fOffset < ((eventArea.right()) - getVisibleEventArea().getDuration())) {
+            if (fOffset < ((eventArea.right()) - currentVisibleDuration())) {
                 setOffset(fOffset + eventTime);
             }
 
@@ -181,8 +192,8 @@ public class TimeBaseConverter {
 	}
 
 	private void adjustInvalidOffset() {
-        if (fOffset > (getEventArea().right() - getVisibleEventArea().getDuration())) {
-            fOffset = getEventArea().right() - getVisibleEventArea().getDuration();
+        if (fOffset > (getEventArea().right() - currentVisibleDuration())) {
+            fOffset = getEventArea().right() - currentVisibleDuration();
         }
 
         if (fOffset < getEventArea().left()) {
@@ -197,11 +208,11 @@ public class TimeBaseConverter {
 	 *            area to reveal
 	 */
 	public void revealEvent(Timing revealArea) {
-        if (getVisibleEventArea().getDuration() <= revealArea.getDuration()) {
+        if (currentVisibleDuration() <= revealArea.getDuration()) {
             fScaleFactor = fDetailScreenWidth / (revealArea.getDuration() * 3.0d);
         }
 
-		setOffset(revealArea.getTimestamp() - ((getVisibleEventArea().getDuration() - revealArea.getDuration()) / 2));
+		setOffset(revealArea.getTimestamp() - ((currentVisibleDuration() - revealArea.getDuration()) / 2));
 
 		fRootFigure.fireTimebaseChanged();
 	}
