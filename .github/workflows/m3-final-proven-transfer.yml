@@ -2,6 +2,9 @@
 name: Nebula M3 final proven transfer
 
 on:
+  push:
+    branches:
+      - 'm3/java-grade-transfer-qualification-v4-20261015'
   pull_request:
     paths:
       - 'm3/**'
