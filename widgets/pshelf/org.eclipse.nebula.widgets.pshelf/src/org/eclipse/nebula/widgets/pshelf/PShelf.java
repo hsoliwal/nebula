@@ -183,11 +183,21 @@ public class PShelf extends Canvas {
         return renderer;
     }
 
-    /** Widget-owned O(1) header check; public getItems() keeps its defensive copy. */
+    /** Widget-owned O(1) header check with exact virtual override semantics. */
     boolean isFirstItem(PShelfItem item) {
+        // A subclass may override public getItems() and change its visible order,
+        // callback effects, or exception behavior. Keep the original virtual call.
+        if (getClass() != PShelf.class || items.isEmpty()) {
+            return getItems()[0] == item;
+        }
         checkWidget();
-        if (items.isEmpty()) throw new ArrayIndexOutOfBoundsException(0);
         return items.get(0) == item;
+    }
+
+    /** Private exact-owner count; never replaces subclass getItems() dispatch. */
+    int itemCountForInsertion() {
+        checkWidget();
+        return items.size();
     }
 
 
