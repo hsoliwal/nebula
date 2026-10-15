@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+m3/ports/carousel-gwt/src/main/java/org/eclipse/nebula/widgets/carousel/client/Carousel.java	ABSENT	a909d41f83551dd5a84e5ad0bca756989df4304c5182f20c3a6b20c4fb828110	part-002.txt
+m3/ports/carousel-gwt/src/main/java/org/eclipse/nebula/widgets/carousel/client/CarouselExample.java	ABSENT	e7d3073b4f8041e64af235eaa83abd542709f86a778dcf46526f6518920434e9	part-003.txt
+m3/ports/carousel-gwt/src/main/java/org/eclipse/nebula/widgets/carousel/client/CarouselGeometry.java	ABSENT	d07f64686307ee5d6b48b3ffc09a274b73fc5b108aedd8589df64d951b49eab4	part-004.txt
+m3/ports/carousel-gwt/src/main/java/org/eclipse/nebula/widgets/carousel/client/Float32.java	ABSENT	850ff583c273105cfc683786ec7a952ba5f557a7321085265759371f0e600b1c	part-005.txt
+m3/ports/carousel-gwt/src/main/java/org/eclipse/nebula/widgets/carousel/client/ImageContainer.java	ABSENT	cbd473596ef0e55633007f11ca1ec50dcf3dd6a607d34ccc153d5f338b8bd748	part-006.txt
+m3/ports/carousel-gwt/src/main/java/org/eclipse/nebula/widgets/carousel/super/org/eclipse/nebula/widgets/carousel/client/Float32.java	ABSENT	b0d5038ab7c80e70d56e1df10becca5c973dfea68822727f329b2cc4336fb28c	part-007.txt
+m3/ports/carousel-gwt/src/test/java/org/eclipse/nebula/widgets/carousel/client/CarouselBrowserContract.java	ABSENT	ef816f02bd912e1247702d291dbffc881e9e8af816efbca0eb7ce7ba5fdc0336	part-016.txt
+m3/ports/carousel-gwt/src/test/java/org/eclipse/nebula/widgets/carousel/client/GeometryCorpus.java	ABSENT	5dc2ed4d3ecfcd0c1f5d847bd1c297219fd2fd2da1c0cb65e72877ea16a3d140	part-017.txt
+m3/ports/carousel-gwt/src/test/java/org/eclipse/nebula/widgets/carousel/client/GeometryEntryPoint.java	ABSENT	b1c3f4871d6beb6940fecb30d9efc63ecb1b77f20914310595b64b696aec7883	part-018.txt
+m3/ports/carousel-gwt/src/test/java/org/eclipse/nebula/widgets/carousel/client/GeometryJvmProof.java	ABSENT	763e934cd4df6669c090e18504780b61a713c7ce2abfa74559f94600596ba037	part-019.txt
+m3/ports/carousel-gwt/src/test/java/org/eclipse/nebula/widgets/carousel/client/GeometryWorkload.java	ABSENT	3d7c0655fecd806bc512cdd20c5911aadc60386b57f25332a840ad0cafb0f741	part-020.txt
+m3/ports/carousel-gwt/src/test/java/org/eclipse/nebula/widgets/carousel/client/OriginalGeometryReference.java	ABSENT	321912f74bfe55630620cc9e21974bda4eb3e8feeb6ddbb73319708f50a6ea5a	part-021.txt

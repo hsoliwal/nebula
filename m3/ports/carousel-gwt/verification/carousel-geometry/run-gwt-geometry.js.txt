@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project
+'use strict';
+// Executes GWT's real single-script output. This bootstrap supplies no widget or geometry doubles.
+const fs = require('node:fs');
+const vm = require('node:vm');
+const crypto = require('node:crypto');
+const path = require('node:path');
+if (process.argv.length !== 3 && process.argv.length !== 4) throw new Error('usage: node run-gwt-geometry.cjs compiled.nocache.js [output.tsv]');
+if (typeof Math.fround !== 'function') throw new Error('Math.fround unavailable');
+const script = path.resolve(process.argv[2]);
+if (!script.endsWith('.nocache.js')) throw new Error('expected GWT single-script output');
+global.window = global;
+global.location = {search: '', href: 'http://geometry.invalid/index.html'};
+global.document = {
+  currentScript: {src: 'http://geometry.invalid/carousel_geometry_proof.nocache.js'},
+  location: global.location,
+  readyState: 'complete',
+  getElementsByTagName() { return []; }
+};
+if (!global.navigator) Object.defineProperty(global, 'navigator', {value: {userAgent: 'geometry-proof'}, configurable: true});
+const deadline = setTimeout(() => { throw new Error('GWT geometry workload deadline'); }, 5000);
+vm.runInThisContext(fs.readFileSync(script, 'utf8'), {filename: script, timeout: 3000});
+const poll = setInterval(() => {
+  const result = global.__carouselGeometryProof;
+  if (!result) return;
+  clearInterval(poll);
+  clearTimeout(deadline);
+  if (typeof result.lines !== 'string' || !Number.isInteger(result.count)
+      || result.lines.split('\n').length - 1 !== result.count) throw new Error('invalid GWT result');
+  if (process.argv.length === 3) process.stdout.write(result.lines);
+  else fs.writeFileSync(process.argv[3], result.lines, {encoding: 'utf8', flag: 'wx'});
+  process.stdout.write('GEOMETRY_SHA256=' + crypto.createHash('sha256').update(result.lines, 'utf8').digest('hex') + '\n');
+  process.stdout.write('GEOMETRY_CASES=' + result.count + '\n');
+  process.stdout.write('GWT_COMPILED_WORKLOAD=PASS\n');
+}, 5);

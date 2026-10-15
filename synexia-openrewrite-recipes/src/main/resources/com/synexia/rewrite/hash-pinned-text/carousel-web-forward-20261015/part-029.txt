@@ -1,0 +1,96 @@
+{
+  "cases": [
+    {
+      "accept": true,
+      "dom": "<html><pre id=\"results\">{\"status\":\"PASS\",\"assertions\":3,\"message\":\"ok\"}</pre></html>",
+      "id": "pass"
+    },
+    {
+      "accept": true,
+      "dom": "<pre id=\"results\">{&quot;status&quot;:&quot;PASS&quot;,&quot;assertions&quot;:1,&quot;message&quot;:&quot;&lt;ready&gt;&amp;&#x21;&quot;}</pre>",
+      "id": "escaped_text"
+    },
+    {
+      "accept": false,
+      "dom": "<pre id=\"results\">{\"status\":\"FAIL\",\"assertions\":4,\"message\":\"counterexample\"}</pre>",
+      "id": "fail"
+    },
+    {
+      "accept": false,
+      "dom": "<pre id=\"results\">{\"status\":\"RUNNING\",\"assertions\":4,\"message\":\"pending\"}</pre>",
+      "id": "running"
+    },
+    {
+      "accept": false,
+      "dom": "<html>No result</html>",
+      "id": "missing"
+    },
+    {
+      "accept": false,
+      "dom": "<pre id=\"results\">{\"status\":\"PASS\",\"assertions\":1,\"message\":\"ok\"}</pre><pre id=\"results\">{\"status\":\"PASS\",\"assertions\":1,\"message\":\"ok\"}</pre>",
+      "id": "duplicate"
+    },
+    {
+      "accept": false,
+      "dom": "<pre id=\"results\">{\"status\":\"PASS\",\"assertions\":0,\"message\":\"ok\"}</pre>",
+      "id": "zero_assertions"
+    },
+    {
+      "accept": false,
+      "dom": "<pre id=\"other\">{\"status\":\"PASS\",\"assertions\":1,\"message\":\"ok\"}</pre>",
+      "id": "wrong_owner"
+    }
+  ],
+  "schema": "carousel.browser-runner-result-fixtures/1",
+  "status": "FROZEN_BEFORE_RUNNER04_SOURCE; NOT_EXECUTED",
+  "tempCases": [
+    {
+      "accept": true,
+      "id": "unique_K",
+      "temp": "K:\\codex-work\\agent-temp\\carousel-web-forward-20261015-03",
+      "tmp": "K:\\codex-work\\agent-temp\\carousel-web-forward-20261015-03"
+    },
+    {
+      "accept": false,
+      "id": "C_route",
+      "temp": "C:\\tmp\\carousel-web-forward-20261015-03",
+      "tmp": "C:\\tmp\\carousel-web-forward-20261015-03"
+    },
+    {
+      "accept": false,
+      "id": "bare_base",
+      "temp": "K:\\codex-work\\agent-temp",
+      "tmp": "K:\\codex-work\\agent-temp"
+    },
+    {
+      "accept": false,
+      "id": "outside_prefix",
+      "temp": "K:\\codex-work\\agent-temp\\unrelated-03",
+      "tmp": "K:\\codex-work\\agent-temp\\unrelated-03"
+    },
+    {
+      "accept": false,
+      "id": "mismatched_TMP",
+      "temp": "K:\\codex-work\\agent-temp\\carousel-web-forward-20261015-03",
+      "tmp": "K:\\codex-work\\agent-temp\\carousel-web-forward-20261015-04"
+    },
+    {
+      "accept": false,
+      "id": "outside_parent",
+      "temp": "K:\\other\\carousel-web-forward-20261015-03",
+      "tmp": "K:\\other\\carousel-web-forward-20261015-03"
+    },
+    {
+      "accept": false,
+      "id": "dot_alias",
+      "temp": "K:\\codex-work\\agent-temp\\sub\\..\\carousel-web-forward-20261015-03",
+      "tmp": "K:\\codex-work\\agent-temp\\sub\\..\\carousel-web-forward-20261015-03"
+    },
+    {
+      "accept": false,
+      "id": "relative_drive",
+      "temp": "K:carousel-web-forward-20261015-03",
+      "tmp": "K:carousel-web-forward-20261015-03"
+    }
+  ]
+}

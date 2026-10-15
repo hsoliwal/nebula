@@ -1,0 +1,28 @@
+{
+  "status": "ACTUAL_JVM_ORIGINAL_PARITY_PASS",
+  "cases": 1485,
+  "pixel_traces": 3,
+  "tsv_path": "S:\\codex-work\\ui-toolkit-convergence-20261014\\qualification\\carousel-web-forward-20261015\\gwt-stage01\\results\\jvm.tsv",
+  "tsv_sha256": "41d43523353c47ff55f404346c47aaafb7bfe4a11edd7c6eedd36354413cefa2",
+  "job": {
+    "activeOwnedProcesses": 0,
+    "activeOwnedProcessesAfterCleanup": 0,
+    "argv_sha256": "b10576fc7b23d6eb2ae9fbf5576d01f134c0ea7c62804aff8d99ce9e5b39e91b",
+    "assignedBeforeResume": true,
+    "cleanupErrors": [],
+    "elapsedSeconds": 19.297,
+    "exitCode": 0,
+    "id": "jvm-geometry",
+    "job_function_sha256": "f8575d33682dd11f18d6b752d16362c33673089717b1bbb1235bfd82becb8cdd",
+    "minimumKFree": 9600192512,
+    "pid": 12792,
+    "processTreeTerminalAndReaped": true,
+    "readerTerminal": true,
+    "resumed": true,
+    "rootNativeWaitAfterCleanup": 0,
+    "samples": 0
+  },
+  "source_geometry_sha256": "d07f64686307ee5d6b48b3ffc09a274b73fc5b108aedd8589df64d951b49eab4",
+  "source_float32_sha256": "850ff583c273105cfc683786ec7a952ba5f557a7321085265759371f0e600b1c",
+  "gwt_pending": true
+}

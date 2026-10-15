@@ -1,0 +1,8 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2026 Hitesh Soliwal and contributors -->
+<module>
+  <inherits name="com.google.gwt.user.User"/>
+  <inherits name="com.google.gwt.canvas.Canvas"/>
+  <source path="client"/>
+  <super-source path="super"/>
+</module>

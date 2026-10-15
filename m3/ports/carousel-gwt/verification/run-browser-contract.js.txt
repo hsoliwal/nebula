@@ -1,0 +1,138 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2026 Hitesh Soliwal and contributors
+'use strict';
+const fs = require('node:fs'), path = require('node:path'), http = require('node:http');
+const {spawn} = require('node:child_process'), {createHash} = require('node:crypto');
+const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+const CHROME_SHA = '6514ecd09e89b59d65ff376b6001de4752f3b15fba91560bfbfaed4c4d933171';
+const TEMP_BASE = 'K:\\codex-work\\agent-temp', MAX_DOM = 2 * 1024 * 1024, MAX_ERR = 65536;
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+function requireThat(ok, message) { if (!ok) throw new Error(message); }
+function admitTemp(temp, tmp) {
+  requireThat(typeof temp === 'string' && temp === tmp, 'TEMP/TMP literal mismatch');
+  requireThat(path.win32.isAbsolute(temp) && path.win32.normalize(temp) === temp, 'Noncanonical task temp');
+  requireThat(path.win32.dirname(temp).toLowerCase() === TEMP_BASE.toLowerCase(), 'Task temp parent');
+  requireThat(/^carousel-web-forward-20261015-[a-z0-9][a-z0-9-]*$/i.test(path.win32.basename(temp)), 'Task temp prefix');
+  return temp;
+}
+function resultFromDom(dom) {
+  const marker = '<pre id="results">', parts = dom.split(marker);
+  requireThat(parts.length === 2 && parts[1].includes('</pre>'), 'Missing or duplicate results owner');
+  const raw = parts[1].slice(0, parts[1].indexOf('</pre>'));
+  const named = {amp:'&', lt:'<', gt:'>', quot:'"', apos:"'"};
+  const text = raw.replace(/&(amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);/gi, (whole, entity) => {
+    if (entity[0] !== '#') return named[entity.toLowerCase()];
+    const number = entity[1].toLowerCase() === 'x' ? parseInt(entity.slice(2),16) : Number(entity.slice(1));
+    requireThat(number >= 0 && number <= 0x10ffff && !(number >= 0xd800 && number <= 0xdfff), 'Invalid entity');
+    return String.fromCodePoint(number);
+  });
+  const value = JSON.parse(text);
+  requireThat(value && Object.keys(value).sort().join(',') === 'assertions,message,status', 'Unexpected result shape');
+  requireThat(value.status === 'PASS' && Number.isInteger(value.assertions) && value.assertions > 0
+    && value.assertions <= 10000 && typeof value.message === 'string' && value.message.length <= 4096, 'Browser did not pass');
+  return value;
+}
+function selfTest(file) {
+  const tests = JSON.parse(fs.readFileSync(file,'utf8')).cases;
+  requireThat(Array.isArray(tests) && tests.length >= 8, 'Missing frozen parser fixtures');
+  for (const test of tests) {
+    let accepted = false; try { resultFromDom(test.dom); accepted = true; } catch (_) {}
+    requireThat(accepted === test.accept, 'Parser fixture failed: ' + test.id);
+  }
+  const tempTests = JSON.parse(fs.readFileSync(file,'utf8')).tempCases;
+  requireThat(Array.isArray(tempTests) && tempTests.length === 8, 'Missing task-temp fixtures');
+  for (const test of tempTests) {
+    let accepted=false; try { admitTemp(test.temp,test.tmp); accepted=true; } catch (_) {}
+    requireThat(accepted === test.accept, 'Temp fixture failed: '+test.id);
+  }
+  return tests.length + tempTests.length;
+}
+function inside(root, file) {
+  const rel = path.relative(root,file); return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+function sRoot(value) {
+  const resolved = fs.realpathSync(value);
+  requireThat(/^S:\\/i.test(resolved) && resolved.length > 3, 'Explicit S directory required');
+  requireThat(fs.statSync(resolved).isDirectory(), 'Directory required'); return resolved;
+}
+async function run(args) {
+  if (args[0] === '--self-test') {
+    requireThat(args.length === 2, 'Usage: --self-test fixture.json');
+    return {status:'PARSER_SELF_TEST_PASS', cases:selfTest(args[1])};
+  }
+  const opts = {};
+  for (let i=0;i<args.length;i+=2) {
+    requireThat(['--scope','--war','--runtime','--fixtures','--page'].includes(args[i]) && args[i+1] && !opts[args[i]], 'Invalid CLI');
+    opts[args[i]] = args[i+1];
+  }
+  requireThat(['--scope','--war','--runtime','--fixtures'].every(key=>opts[key]), 'Require --scope --war --runtime --fixtures');
+  const page=opts['--page'] || 'contract-tests.html'; requireThat(['contract-tests.html','example-behavior.html'].includes(page), 'Unapproved browser page');
+  const scope=sRoot(opts['--scope']), war=sRoot(opts['--war']), runtime=path.resolve(opts['--runtime']);
+  const fixture=fs.realpathSync(opts['--fixtures']);
+  requireThat(inside(scope,war) && inside(scope,fixture) && inside(scope,runtime)
+    && !inside(war,runtime) && !inside(runtime,war), 'Scope overlap or escape');
+  const parent=sRoot(path.dirname(runtime));
+  requireThat((parent === scope || inside(scope,parent)) && !fs.existsSync(runtime), 'Runtime must be fresh under existing S parent');
+  const temp=admitTemp(process.env.TEMP,process.env.TMP), tempStat=fs.lstatSync(temp);
+  requireThat(tempStat.isDirectory() && !tempStat.isSymbolicLink()
+    && fs.realpathSync(temp).toLowerCase() === temp.toLowerCase(), 'Task temp real regular directory required');
+  requireThat(hash(fs.readFileSync(CHROME)) === CHROME_SHA, 'Chrome executable drift');
+  const cases=selfTest(fixture);
+  fs.mkdirSync(runtime);
+  requireThat(sRoot(runtime).toLowerCase() === runtime.toLowerCase(), 'Runtime canonical path drift');
+  for (const dir of ['profile','cache','crashes','logs','roaming','local','home']) fs.mkdirSync(path.join(runtime,dir));
+  const env={...process.env,TEMP:temp,TMP:temp,APPDATA:path.join(runtime,'roaming'),
+    LOCALAPPDATA:path.join(runtime,'local'),HOME:path.join(runtime,'home'),USERPROFILE:path.join(runtime,'home')};
+  delete env.SSLKEYLOGFILE; delete env.NODE_OPTIONS; delete env.CHROME_USER_DATA_DIR;
+  env.CHROME_LOG_FILE=path.join(runtime,'logs','chrome.log');
+  const mime={'.html':'text/html; charset=utf-8','.js':'application/javascript','.css':'text/css',
+    '.svg':'image/svg+xml','.png':'image/png','.gif':'image/gif','.ico':'image/x-icon','.json':'application/json','.map':'application/json','.txt':'text/plain'};
+  const sockets=new Set();
+  const server=http.createServer((req,res) => {
+    try {
+      requireThat(req.method === 'GET' || req.method === 'HEAD','Method');
+      const url=decodeURIComponent(req.url.split('?')[0]);
+      requireThat(url.startsWith('/') && !/[\\\x00-\x1f\x7f]/.test(url)
+        && !url.split('/').some(part => part === '.' || part === '..'),'Path');
+      const file=fs.realpathSync(path.join(war,url === '/' ? 'contract-tests.html' : url.slice(1)));
+      requireThat(inside(war,file) && fs.statSync(file).isFile() && fs.statSync(file).size <= 16*1024*1024,'Static root');
+      const type=mime[path.extname(file)]; requireThat(type,'MIME');
+      const bytes=fs.readFileSync(file); res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','Connection':'close'});
+      res.end(req.method === 'HEAD' ? undefined : bytes);
+    } catch (_) { res.writeHead(404,{'Connection':'close'}); res.end('Not found'); }
+  });
+  server.on('connection', socket => { sockets.add(socket); socket.on('close',()=>sockets.delete(socket)); });
+  await new Promise((resolve,reject)=>{server.once('error',reject); server.listen(0,'127.0.0.1',resolve);});
+  let child, outcome, closed=false;
+  try {
+    const url='http://127.0.0.1:'+server.address().port+'/'+page;
+    const argv=['--headless=new','--dump-dom','--virtual-time-budget=10000','--window-size=1024,768','--force-device-scale-factor=1',
+      '--user-data-dir='+path.join(runtime,'profile'),'--disk-cache-dir='+path.join(runtime,'cache'),'--disk-cache-size=8388608',
+      '--crash-dumps-dir='+path.join(runtime,'crashes'),'--log-file='+env.CHROME_LOG_FILE,
+      '--disable-background-networking','--disable-extensions','--disable-sync','--no-first-run','--no-default-browser-check',
+      '--disable-gpu','--disable-default-apps','--disable-component-update','--disable-updater-scheduler','--disable-gpu-shader-disk-cache',
+      '--disable-crashpad-for-testing','--no-pings',url];
+    child=spawn(CHROME,argv,{env,windowsHide:true,stdio:['ignore','pipe','pipe']});
+    const output=[], errors=[]; let outBytes=0,errBytes=0,failure='';
+    const stop=message=>{if (!failure) failure=message; if (!closed) child.kill();};
+    child.stdout.on('data',chunk=>{if (outBytes+chunk.length>MAX_DOM) return stop('DOM_LIMIT'); outBytes+=chunk.length; output.push(chunk);});
+    child.stderr.on('data',chunk=>{if (errBytes+chunk.length>MAX_ERR) return stop('STDERR_LIMIT'); errBytes+=chunk.length; errors.push(chunk);});
+    child.on('error',error=>{failure=error.message;});
+    const deadline=setTimeout(()=>stop('BROWSER_TIMEOUT'),30000);
+    const exit=await new Promise(resolve=>child.once('close',(code,signal)=>{closed=true; clearTimeout(deadline); resolve({code,signal});}));
+    const dom=Buffer.concat(output), stderr=Buffer.concat(errors);
+    fs.writeFileSync(path.join(runtime,'dom.html'),dom); fs.writeFileSync(path.join(runtime,'chrome-stderr.txt'),stderr);
+    requireThat(!failure && exit.code === 0 && !exit.signal,'Chrome failed: '+(failure || JSON.stringify(exit)));
+    outcome={status:'BROWSER_CONTRACT_PASS',result:resultFromDom(dom.toString('utf8')),parserCases:cases,
+      directChildClosed:closed,chromePid:child.pid,chromeSha256:CHROME_SHA,argv,domBytes:dom.length,domSha256:hash(dom),
+      stderrBytes:stderr.length,stderrSha256:hash(stderr),runtime,scope,war};
+  } finally {
+    if (child && !closed) { child.kill(); await new Promise(resolve=>child.once('close',()=>{closed=true;resolve();})); }
+    for (const socket of sockets) socket.destroy();
+    await new Promise((resolve,reject)=>server.close(error=>error ? reject(error) : resolve()));
+  }
+  requireThat(closed && !server.listening && sockets.size === 0,'Owned child/server not terminal');
+  return {...outcome,httpServerClosed:true};
+}
+run(process.argv.slice(2)).then(value=>process.stdout.write(JSON.stringify(value)+'\n'))
+  .catch(error=>{process.stderr.write(JSON.stringify({status:'FAIL',error:error.message})+'\n');process.exitCode=1;});

@@ -1,0 +1,55 @@
+{
+  "status": "ACTUAL_JAVAC_PASS",
+  "source_files": 6,
+  "classes": [
+    {
+      "path": "S:\\codex-work\\ui-toolkit-convergence-20261014\\qualification\\carousel-web-forward-20261015\\gwt-stage01\\classes\\org\\eclipse\\nebula\\widgets\\carousel\\client\\CarouselGeometry.class",
+      "bytes": 625,
+      "sha256": "1e152863aa1061b6aac3f6ec4a39838fffb56a0db9ffad05d08deeeaa86a4759"
+    },
+    {
+      "path": "S:\\codex-work\\ui-toolkit-convergence-20261014\\qualification\\carousel-web-forward-20261015\\gwt-stage01\\classes\\org\\eclipse\\nebula\\widgets\\carousel\\client\\Float32.class",
+      "bytes": 287,
+      "sha256": "dadc11aeb0534e8d3f45174d7ab401a71a42529210d2a4c4836bc04db271d91b"
+    },
+    {
+      "path": "S:\\codex-work\\ui-toolkit-convergence-20261014\\qualification\\carousel-web-forward-20261015\\gwt-stage01\\classes\\org\\eclipse\\nebula\\widgets\\carousel\\client\\GeometryCorpus.class",
+      "bytes": 2797,
+      "sha256": "2d189ed3f36a03b46a7fb3f160127a4b06446e554dc2e8fced2ab431bce1cb0b"
+    },
+    {
+      "path": "S:\\codex-work\\ui-toolkit-convergence-20261014\\qualification\\carousel-web-forward-20261015\\gwt-stage01\\classes\\org\\eclipse\\nebula\\widgets\\carousel\\client\\GeometryJvmProof.class",
+      "bytes": 3275,
+      "sha256": "35424135445dea976203936613addbb8a72ec1c53e4481b4781b538897ff062f"
+    },
+    {
+      "path": "S:\\codex-work\\ui-toolkit-convergence-20261014\\qualification\\carousel-web-forward-20261015\\gwt-stage01\\classes\\org\\eclipse\\nebula\\widgets\\carousel\\client\\GeometryWorkload.class",
+      "bytes": 1039,
+      "sha256": "f051a4a5ca1e87dce0212be0b3a071d975286f8e53da53fa9c3543217627ae68"
+    },
+    {
+      "path": "S:\\codex-work\\ui-toolkit-convergence-20261014\\qualification\\carousel-web-forward-20261015\\gwt-stage01\\classes\\org\\eclipse\\nebula\\widgets\\carousel\\client\\OriginalGeometryReference.class",
+      "bytes": 534,
+      "sha256": "dcf9c1bd488e20d0824c615e97031047387b7c711fe75a36ce26da658dff31c9"
+    }
+  ],
+  "job": {
+    "activeOwnedProcesses": 0,
+    "activeOwnedProcessesAfterCleanup": 0,
+    "argv_sha256": "377eabb233614c64e2bc498e01137a2aaba270fa483441de355efbcf473fc39d",
+    "assignedBeforeResume": true,
+    "cleanupErrors": [],
+    "elapsedSeconds": 7.688,
+    "exitCode": 0,
+    "id": "javac-geometry",
+    "job_function_sha256": "f8575d33682dd11f18d6b752d16362c33673089717b1bbb1235bfd82becb8cdd",
+    "minimumKFree": 9600192512,
+    "pid": 43520,
+    "processTreeTerminalAndReaped": true,
+    "readerTerminal": true,
+    "resumed": true,
+    "rootNativeWaitAfterCleanup": 0,
+    "samples": 2
+  },
+  "further_runtime_pending": true
+}

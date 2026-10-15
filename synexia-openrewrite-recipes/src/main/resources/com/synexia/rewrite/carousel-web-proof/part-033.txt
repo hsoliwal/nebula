@@ -1,0 +1,292 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Synexia Contributors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Carousel public behavior check</title>
+  <style>
+    body { font: 14px sans-serif; margin: 8px; }
+    h1 { font-size: 18px; margin: 0 0 6px; }
+    h2 { font-size: 14px; margin: 0 0 4px; }
+    .frames { display: flex; gap: 8px; }
+    iframe { display: block; width: 480px; height: 600px; border: 1px solid #aaa; }
+    #results { font-size: 12px; max-height: 90px; overflow: auto; margin: 6px 0; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>Carousel public behavior check</h1>
+  <pre id="results">{"status":"RUNNING","assertions":0,"message":"independentAssertions=0; ownerReportAssertions=0; Loading the two public pages"}</pre>
+  <div class="frames">
+    <section><h2>Independent public example checks</h2><iframe id="example" title="Rendered carousel example"></iframe></section>
+    <section><h2>Existing owner harness report</h2><iframe id="owner" title="Owner contract test report"></iframe></section>
+  </div>
+  <h2>Independent evidence and observed owner report</h2>
+  <pre id="independent-evidence">{}</pre>
+  <script>
+  (() => {
+    'use strict';
+    // Frozen public contract SHA-256, recorded before this harness was authored:
+    // ceaa07252127ee1a90341b66949d74d9530720afaeb6c0b0157220fa66e5f93e
+    const READINESS_MS = 5000;
+    const SETTLE_MS = 650;
+    const OVERALL_MS = 9000;
+    const RED = [204, 51, 34, 255];
+    const BLUE = [34, 68, 204, 255];
+    const steps = [
+      { action: 'Next', selection: 2, rgba: BLUE },
+      { action: 'Next', selection: 1, rgba: RED },
+      { action: 'Previous', selection: 2, rgba: BLUE },
+      { action: 'ArrowRight', selection: 1, rgba: RED },
+      { action: 'ArrowLeft', selection: 2, rgba: BLUE }
+    ];
+    const frame = document.getElementById('example');
+    const ownerFrame = document.getElementById('owner');
+    const output = document.getElementById('results');
+    const evidenceOutput = document.getElementById('independent-evidence');
+    const assertions = [];
+    let ownerReport = null;
+    let ownerReportAssertions = 0;
+    let failureEvidence = null;
+    let finished = false;
+    let phase = 'surface';
+
+    function publish(status, message) {
+      const independentAssertions = assertions.length;
+      output.textContent = JSON.stringify({
+        status,
+        assertions: independentAssertions + ownerReportAssertions,
+        message: 'independentAssertions=' + independentAssertions + '; ownerReportAssertions=' +
+          ownerReportAssertions + '; ' + message
+      }, null, 2);
+      evidenceOutput.textContent = JSON.stringify({
+        independentAssertions: assertions.slice(), ownerReport, failure: failureEvidence
+      }, null, 2);
+    }
+    function active() {
+      if (finished) throw new Error('Run already ended');
+    }
+    function fail(error, failedPhase) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(overallTimer);
+      const message = String(error && error.message ? error.message : error);
+      failureEvidence = { id: failedPhase || phase, status: 'FAIL', evidence: message };
+      publish('FAIL', message);
+    }
+    function check(id, condition, evidence) {
+      active();
+      phase = id;
+      if (!condition) throw new Error(id + ': ' + JSON.stringify(evidence));
+      assertions.push({ id, status: 'PASS', evidence });
+      publish('RUNNING', 'Checking the public example');
+    }
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    function visible(element) {
+      if (!element || element.getClientRects().length === 0) return false;
+      const style = element.ownerDocument.defaultView.getComputedStyle(element);
+      return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse';
+    }
+    function normalize(text) {
+      return String(text || '').replace(/\s+/g, ' ').trim();
+    }
+    function controls(doc, caption) {
+      return Array.from(doc.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"]'))
+        .filter(element => {
+          const name = normalize(element.getAttribute('aria-label') || element.value || element.textContent);
+          return visible(element) && name.toLowerCase() === caption.toLowerCase() &&
+            !element.disabled && element.getAttribute('aria-disabled') !== 'true';
+        });
+    }
+    function selectionStatus(doc) {
+      const text = normalize(doc.body && doc.body.innerText);
+      const selections = Array.from(text.matchAll(/\bSelected image\s+(\d+)\b/gi), match => Number(match[1]));
+      return { selections, visibleText: text.slice(0, 320) };
+    }
+    function statusIs(status, expected) {
+      return status.selections.length > 0 && status.selections.every(value => value === expected);
+    }
+    function canvases(doc) {
+      return Array.from(doc.querySelectorAll('canvas[role="img"]'));
+    }
+    function centerRGBA(canvas) {
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas 2D readback is unavailable');
+      return Array.from(context.getImageData(Math.floor(canvas.width / 2), Math.floor(canvas.height / 2), 1, 1).data);
+    }
+    function sameRGBA(actual, expected) {
+      return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+    }
+    function requireCanvas(doc) {
+      const found = canvases(doc);
+      if (found.length !== 1 || !visible(found[0]) || found[0].width !== 320 || found[0].height !== 180) {
+        throw new Error('Expected one visible 320 by 180 canvas[role=img]');
+      }
+      return found[0];
+    }
+    function inspectReadiness() {
+      const doc = frame.contentDocument;
+      if (!doc || !doc.body || doc.readyState !== 'complete') return { reason: 'Example document is not complete' };
+      const found = canvases(doc);
+      if (found.length !== 1 || !visible(found[0])) return { reason: 'Expected exactly one visible canvas[role=img]' };
+      const canvas = found[0];
+      if (canvas.width !== 320 || canvas.height !== 180) return { reason: 'Expected a 320 by 180 Canvas backing buffer' };
+      if (controls(doc, 'Previous').length !== 1 || controls(doc, 'Next').length !== 1) {
+        return { reason: 'Expected visible enabled Previous and Next controls' };
+      }
+      const status = selectionStatus(doc);
+      if (!statusIs(status, 1)) return { reason: 'Initial visible Selected image 1 status is unavailable' };
+      const rgba = centerRGBA(canvas);
+      if (!sameRGBA(rgba, RED)) return { reason: 'Initial Canvas center is not opaque #cc3322' };
+      return { doc, canvas, status, rgba };
+    }
+    async function readyWithinBound() {
+      const started = performance.now();
+      const deadline = started + READINESS_MS;
+      let lastReason = 'Example has not loaded';
+      while (performance.now() <= deadline) {
+        active();
+        const observed = inspectReadiness();
+        if (observed.doc && performance.now() <= deadline) {
+          observed.elapsedMs = Math.round((performance.now() - started) * 100) / 100;
+          return observed;
+        }
+        lastReason = observed.reason || lastReason;
+        const remaining = deadline - performance.now();
+        if (remaining <= 0) break;
+        await delay(Math.min(20, remaining));
+      }
+      throw new Error('Readiness timed out after 5000 ms: ' + lastReason);
+    }
+    function readOwnerReport() {
+      const doc = ownerFrame.contentDocument;
+      const element = doc && doc.querySelector('pre#results');
+      if (!element || !visible(element)) return null;
+      const text = element.innerText.trim();
+      if (!text) return null;
+      const report = JSON.parse(text);
+      if (!report || Array.isArray(report) ||
+          Object.keys(report).sort().join(',') !== 'assertions,message,status' ||
+          !['PASS', 'FAIL', 'RUNNING'].includes(report.status) ||
+          !Number.isInteger(report.assertions) || report.assertions < 0 ||
+          typeof report.message !== 'string') {
+        throw new Error('Owner visible report does not match its public three-key JSON schema');
+      }
+      ownerReport = { target: '/contract-tests.html', status: report.status,
+        assertions: report.assertions, message: report.message };
+      ownerReportAssertions = report.assertions;
+      if (report.status === 'FAIL') throw new Error('Owner report FAIL: ' + report.message);
+      if (report.status === 'PASS' && report.assertions === 0) {
+        throw new Error('Owner report PASS has zero assertions');
+      }
+      return report;
+    }
+    async function waitOwnerReport() {
+      const deadline = performance.now() + OVERALL_MS;
+      while (performance.now() <= deadline) {
+        active();
+        const report = readOwnerReport();
+        if (report && report.status === 'PASS') {
+          publish('RUNNING', 'Owner report passed; independent public checks must also complete');
+          return report;
+        }
+        const remaining = deadline - performance.now();
+        if (remaining <= 0) break;
+        await delay(Math.min(20, remaining));
+      }
+      throw new Error('Owner visible report did not pass within 9000 ms');
+    }
+    function exercise(doc, step) {
+      if (step.action === 'Next' || step.action === 'Previous') {
+        const targets = controls(doc, step.action);
+        if (targets.length !== 1) throw new Error('Visible enabled control is unavailable: ' + step.action);
+        targets[0].click();
+        return;
+      }
+      const canvas = requireCanvas(doc);
+      canvas.focus({ preventScroll: true });
+      if (doc.activeElement !== canvas) throw new Error('Canvas did not accept focus for ' + step.action);
+      const code = step.action === 'ArrowRight' ? 39 : 37;
+      canvas.dispatchEvent(new doc.defaultView.KeyboardEvent('keydown', {
+        key: step.action, code: step.action, keyCode: code, which: code, bubbles: true, cancelable: true
+      }));
+    }
+    async function verifySettled(doc, step, prefix, started) {
+      const deadline = started + SETTLE_MS;
+      let reachedWithinMs = null;
+      let rgba = [];
+      while (performance.now() <= deadline) {
+        active();
+        rgba = centerRGBA(requireCanvas(doc));
+        const sampledAt = performance.now();
+        if (sameRGBA(rgba, step.rgba) && sampledAt <= deadline) {
+          reachedWithinMs = Math.round((sampledAt - started) * 100) / 100;
+          break;
+        }
+        const remaining = deadline - performance.now();
+        if (remaining <= 0) break;
+        await delay(Math.min(20, remaining));
+      }
+      check(prefix + '.pixel-within-bound', reachedWithinMs !== null, {
+        expectedRGBA: step.rgba, observedRGBA: rgba, reachedWithinMs, boundMs: SETTLE_MS
+      });
+      await delay(Math.max(0, deadline - performance.now()));
+      active();
+      rgba = centerRGBA(requireCanvas(doc));
+      check(prefix + '.pixel-after-settle', sameRGBA(rgba, step.rgba), {
+        expectedRGBA: step.rgba, observedRGBA: rgba,
+        sampledAfterMs: Math.round((performance.now() - started) * 100) / 100
+      });
+      const status = selectionStatus(doc);
+      check(prefix + '.status-after-settle', statusIs(status, step.selection), status);
+    }
+
+    const overallTimer = setTimeout(() => fail(new Error('Overall behavior timeout after 9000 ms')), OVERALL_MS);
+    window.addEventListener('error', event => fail(event.error || event.message || 'Harness error'));
+    window.addEventListener('unhandledrejection', event => fail(event.reason || 'Unhandled harness rejection'));
+    frame.addEventListener('error', () => fail(new Error('Example iframe load error')));
+    ownerFrame.addEventListener('error', () => fail(new Error('Owner iframe load error'), 'owner-report'));
+    publish('RUNNING', 'Waiting for the public example and the owner visible report');
+    frame.src = '/index.html';
+    ownerFrame.src = '/contract-tests.html';
+    const ownerResultPromise = waitOwnerReport().catch(error => {
+      fail(error, 'owner-report');
+      return null;
+    });
+    (async () => {
+      const initial = await readyWithinBound();
+      check('surface.readiness', true, { elapsedMs: initial.elapsedMs, boundMs: READINESS_MS });
+      check('surface.canvas', true, { count: 1, width: initial.canvas.width, height: initial.canvas.height });
+      check('surface.controls', true, { Previous: 1, Next: 1 });
+      check('surface.initial-status', statusIs(initial.status, 1), initial.status);
+      check('surface.initial-pixel', sameRGBA(initial.rgba, RED), { expectedRGBA: RED, observedRGBA: initial.rgba });
+      initial.doc.defaultView.addEventListener('error', event => fail(event.error || event.message || 'Example error'));
+      initial.doc.defaultView.addEventListener('unhandledrejection', event => fail(event.reason || 'Unhandled example rejection'));
+      for (let index = 0; index < steps.length; index += 1) {
+        active();
+        const step = steps[index];
+        const prefix = 'step-' + (index + 1) + '.' + step.action;
+        phase = prefix + '.input';
+        const started = performance.now();
+        exercise(initial.doc, step);
+        const status = selectionStatus(initial.doc);
+        check(prefix + '.status-immediate', statusIs(status, step.selection), status);
+        await verifySettled(initial.doc, step, prefix, started);
+      }
+      await ownerResultPromise;
+      active();
+      const finalOwner = readOwnerReport();
+      if (!finalOwner || finalOwner.status !== 'PASS' || finalOwner.assertions <= 0) {
+        throw new Error('Owner visible report is not PASS at final composition');
+      }
+      clearTimeout(overallTimer);
+      finished = true;
+      publish('PASS', 'All 5 independent public-example actions passed, including status, wrapping, arrow keys and Canvas center pixels. Owner harness reports PASS; its checks retain their owner-report scope.');
+    })().catch(fail);
+  })();
+  </script>
+</body>
+</html>

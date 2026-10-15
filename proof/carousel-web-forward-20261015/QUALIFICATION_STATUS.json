@@ -1,0 +1,41 @@
+{
+  "schema": "nebula-carousel-gwt-qualification/1",
+  "recipe": "com.synexia.rewrite.M3CarouselWebForward20261015",
+  "candidate": "recipe-inputs04",
+  "recipe_seal_sha256": "85e4be9e5e4a2a2b766c56bc1cb9a44e764073256466c0fed4f64783c068ca7b",
+  "actual_recipe": {
+    "status": "PASS",
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exact_generated_targets": 35,
+    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_MAVEN04.json"
+  },
+  "numeric_differential": {
+    "status": "PASS",
+    "cases": 1485,
+    "uncorrected_differences": 282,
+    "corrected_identical_to_jvm": true,
+    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_GWT_GEOMETRY01.json",
+    "scope": "Geometry and Float32 sources unchanged in candidate04"
+  },
+  "browser_runner": {
+    "status": "PASS",
+    "fixtures": 16,
+    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_BROWSER_RUNNER01.json"
+  },
+  "java_api_compile": "IN_PROGRESS",
+  "gwt_browser_modules": "IN_PROGRESS",
+  "actual_chrome_product_behavior": "NOT_RUN",
+  "source_aware_autoreview": "PENDING_NO_CLEAN_VERDICT",
+  "native_swt_owner_changes": 0,
+  "native_base": {
+    "canonical": "b5bbff3a2051ea92d11e1c71b7550a59e70bdde1",
+    "nebula": "bd3922d6ea121ce40b8678542d704c8867e9ab1c",
+    "fixture_tests": 18,
+    "native_platform_and_resource_gates": "OPEN"
+  },
+  "rwt_rap_react_jni_and_performance": "OPEN_NOT_ESTABLISHED_BY_THIS_GWT_PROFILE",
+  "full_migration_and_continual_optimization_goal": "ACTIVE_INCOMPLETE"
+}

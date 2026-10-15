@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project -->
+<!-- Thin CPU adaptation of existing proof POM; canonical recipe engine and explicit existing SLF4J runtime retained. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.synexia.verification</groupId>
+  <artifactId>m3-carousel-web-forward-proof</artifactId>
+  <version>1</version>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <m3.recipe.sourceDirectory>${project.basedir}/../../src/main/java</m3.recipe.sourceDirectory>
+    <m3.recipe.testSourceDirectory>${project.basedir}/../../src/test/java</m3.recipe.testSourceDirectory>
+    <m3.recipe.resourceDirectory>${project.basedir}/../../src/main/resources</m3.recipe.resourceDirectory>
+    <m3.recipe.tempDirectory>${project.build.directory}</m3.recipe.tempDirectory>
+    <m3.recipe.buildDirectory>${project.basedir}/target/m3-carousel-web-forward-proof</m3.recipe.buildDirectory>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.openrewrite</groupId>
+      <artifactId>rewrite-java</artifactId>
+      <version>8.17.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openrewrite</groupId>
+      <artifactId>rewrite-java-21</artifactId>
+      <version>8.17.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.11.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.36</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <directory>${m3.recipe.buildDirectory}</directory>
+    <sourceDirectory>${m3.recipe.sourceDirectory}</sourceDirectory>
+    <testSourceDirectory>${m3.recipe.testSourceDirectory}</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.14.1</version>
+        <configuration>
+          <release>21</release>
+          <proc>none</proc>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+            <arg>-Werror</arg>
+          </compilerArgs>
+          <includes>
+            <include>com/synexia/rewrite/M3HashPinnedJavaSnapshotRecipe.java</include>
+            <include>com/synexia/rewrite/M3HashPinnedTextSnapshotRecipe.java</include>
+            <include>com/synexia/rewrite/M3EditScope.java</include>
+            <include>com/synexia/rewrite/M3ScopeInference.java</include>
+          </includes>
+          <testIncludes>
+            <testInclude>com/synexia/rewrite/M3CarouselWeb20261015RecipeTest.java</testInclude>
+          </testIncludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <useModulePath>false</useModulePath>
+          <failIfNoTests>true</failIfNoTests>
+          <argLine>-Xmx256m -XX:-UsePerfData -Dfile.encoding=UTF-8 -Djava.awt.headless=true -Djava.io.tmpdir=${m3.recipe.tempDirectory} -Dm3.recipe.generatedDirectory=${m3.recipe.buildDirectory}/generated -Dsynexia.recipe.native=false</argLine>
+          <includes>
+            <include>**/M3CarouselWeb20261015RecipeTest.java</include>
+          </includes>
+        </configuration>
+      </plugin>
+    </plugins>
+    <resources>
+      <resource>
+        <directory>${m3.recipe.resourceDirectory}</directory>
+        <includes>
+          <include>com/synexia/rewrite/hash-pinned-java/carousel-web-forward-20261015/**</include>
+          <include>META-INF/rewrite/m3-carousel-web-forward-20261015.yml</include>
+          <include>com/synexia/rewrite/hash-pinned-text/carousel-web-forward-20261015/**</include>
+          <include>com/synexia/rewrite/carousel-web-proof/**</include>
+        </includes>
+      </resource>
+    </resources>
+  </build>
+  <name>Carousel Java to GWT recipe proof</name>
+  <description>Executes the existing canonical Java and text recipe engines, exact generated-byte checks, refusal cases, asset preservation and replay. GWT compilation and browser behavior are separate gates.</description>
+</project>
