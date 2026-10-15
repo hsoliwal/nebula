@@ -49,10 +49,10 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Set up Maven 3.9.6
+      - name: Set up Maven 3.9.11
         uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
         with:
-          maven-version: 3.9.6
+          maven-version: 3.9.11
 
       - name: 1 - Diff hygiene
         if: github.event_name == 'pull_request'
