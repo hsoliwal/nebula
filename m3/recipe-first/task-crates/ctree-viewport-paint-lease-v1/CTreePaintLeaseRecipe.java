@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.eclipse.nebula.m3.recipe;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -98,7 +97,7 @@ public final class CTreePaintLeaseRecipe {
         command.addAll(args);
         Process child = new ProcessBuilder(command).redirectErrorStream(true).start();
         try (InputStream output = child.getInputStream()) {
-            output.transferTo(OutputStreamDiscard.INSTANCE);
+            output.transferTo(java.io.OutputStream.nullOutputStream());
         }
         return child.waitFor();
     }
@@ -130,8 +129,4 @@ public final class CTreePaintLeaseRecipe {
         if (!success) throw new IllegalStateException(cause);
     }
 
-    private enum OutputStreamDiscard {
-        INSTANCE;
-        void accept(byte[] ignored) { }
-    }
 }
