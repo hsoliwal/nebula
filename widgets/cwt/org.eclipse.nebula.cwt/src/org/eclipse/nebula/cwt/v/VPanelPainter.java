@@ -14,13 +14,25 @@
 
 package org.eclipse.nebula.cwt.v;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Event;
 
 public class VPanelPainter implements IControlPainter {
 
+	/** Bound retained scratch to 256 references; larger panels keep the original path. */
+	private static final int MAX_PAINT_BUFFER = 256;
+	private final Object paintBufferLock = new Object();
+	private VControl[] paintBuffer;
+	private boolean bufferDisposed;
+
 	public void dispose() {
-		// nothing to do
+		synchronized (paintBufferLock) {
+			bufferDisposed = true;
+			paintBuffer = null;
+		}
 	}
 	
 	public void paintBackground(VControl control, Event e) {
@@ -42,8 +54,47 @@ public class VPanelPainter implements IControlPainter {
 	}
 	
 	public void paintContent(VControl control, Event e) {
-		for(VControl child : ((VPanel) control).getChildren()) {
-			child.paintControl(e);
+		VPanel panel = (VPanel) control;
+		// Public getChildren overrides and custom list behavior remain authoritative.
+		if (panel == null || panel.getClass() != VPanel.class || panel.children == null
+				|| panel.children.getClass() != ArrayList.class) {
+			paintSnapshot(panel.getChildren(), e);
+			return;
+		}
+		VControl[] buffer = acquirePaintBuffer(panel.children.size());
+		if (buffer == null) {
+			paintSnapshot(panel.getChildren(), e);
+			return;
+		}
+		VControl[] snapshot = buffer;
+		try {
+			// Capture the whole existing child order before invoking any child callback.
+			snapshot = panel.children.toArray(buffer);
+			paintSnapshot(snapshot, e);
+		} finally {
+			Arrays.fill(buffer, null);
+			if (snapshot != buffer) Arrays.fill(snapshot, null);
+			releasePaintBuffer(snapshot);
+		}
+	}
+
+	private static void paintSnapshot(VControl[] snapshot, Event e) {
+		for (VControl child : snapshot) child.paintControl(e);
+	}
+
+	private VControl[] acquirePaintBuffer(int count) {
+		synchronized (paintBufferLock) {
+			if (bufferDisposed || count > MAX_PAINT_BUFFER) return null;
+			VControl[] available = paintBuffer;
+			paintBuffer = null; // A nested/shared-renderer call cannot borrow an active frame.
+			return available != null && available.length == count
+					? available : new VControl[count];
+		}
+	}
+
+	private void releasePaintBuffer(VControl[] buffer) {
+		synchronized (paintBufferLock) {
+			if (!bufferDisposed && buffer.length <= MAX_PAINT_BUFFER) paintBuffer = buffer;
 		}
 	}
 
