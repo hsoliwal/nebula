@@ -46,6 +46,30 @@ Run the native-free Java21 differential (no SWT install necessary):
 
     bash widgets/pshelf/org.eclipse.nebula.widgets.pshelf/run-geometry.sh
 
+## Executed C17/JNI arithmetic proof (test-only)
+
+The canonical source packet now includes `PShelfGeometryJniParityTest.java`
+and `PShelfGeometryJniParityTest.c` plus a strict build runner.
+The C implementation uses unsigned 32-bit arithmetic and bit-preserving
+conversions for Java signed-int overflow, and explicit saturation/truncation
+for Java double-to-int casts including NaN/infinity. It never retains JNI
+array addresses, does not export a production PShelf native method,
+and bounds proof-only scratch memory. NewIntArray + SetIntArrayRegion
+are used only in the test. No JNI change exists in the paint path.
+
+```bash
+bash widgets/pshelf/org.eclipse.nebula.widgets.pshelf/run-jni-parity.sh
+```
+
+Executed independently with OpenJDK21/GCC C17 strict warnings:
+`PSHELF_JNI_PARITY_PASS checks=457050` with `-Xcheck:jni`;
+the same `457050` pass with `-Xint -Xcheck:jni`.
+Total **914,100 Java-vs-JNI comparisons**, including 100,000-row stress,
+invalid range refusal and extreme arithmetic. The actual receiver
+source must match the canonical Git blobs before reusing this evidence.
+This proof establishes algorithm parity, not that native calls improve
+PShelf drawing speed. Production remains Java-first.
+
 CI also tries original PShelf/PShelfItem/Redmond/Palette SWT GTK
 compilation and Xvfb rendering with pinned SWT 3.126.0 host binaries.
 CI is only qualifying evidence if an actual job completes
