@@ -93,6 +93,9 @@ jobs:
           test -s "$OUT/transfer-qualification.tsv"
           test -s "$OUT/java-grade-qualification.tsv"
           test -s "$OUT/backport-plan.tsv"
+          test -s "$OUT/backport-bundle.tsv"
+          test -s "$OUT/backport-bundle.sha256"
+
           python3 - <<'PYQUALIFICATION'
           import csv
           import re
@@ -123,11 +126,9 @@ jobs:
           assert len(roots) == 1 and re.fullmatch(r"[0-9a-f]{64}", roots.pop())
           print("NEBULA_M3_TRANSFER_QUALIFICATION=HOLD_UNVERIFIED")
           PYQUALIFICATION
+
           test -s "$OUT/transfer-dag.tsv"
-          test -s "$OUT/backport-bundle.tsv"
-          test -s "$OUT/backport-bundle.sha256"
-          BUNDLE_ROOT="$(tr -d '\r\n' < "$OUT/backport-bundle.sha256")"
-          test "$BUNDLE_ROOT" = "$(grep -F           test -s "$OUT/ui-behavior-donors.tsv"
+          test -s "$OUT/ui-behavior-donors.tsv"
           test -s "$OUT/challenge-donors.tsv"
           test -s "$DAG/recipe-dag.sha256"
           test -s "$OUT/camel-route.yaml"
@@ -138,6 +139,9 @@ jobs:
           test -s "$DAG/airflow-dag.py"
           test -s "$DAG/drools-agenda.drl"
           test -s "$DAG/orchestrator-plans.sha256"
+
+          BUNDLE_ROOT="$(tr -d '\r\n' < "$OUT/backport-bundle.sha256")"
+          test "$BUNDLE_ROOT" = "$(awk -F'\t' '$1=="backportBundleRoot" {print $2}' "$OUT/java-grade-qualification.tsv")"
           grep -F $'schema\tNEBULA_M3_RECIPE_TRANSFER_V2' "$OUT/transfer-metadata.tsv"
           grep -F $'javaRelease\t21' "$OUT/transfer-metadata.tsv"
           grep -F $'entrypoint\torg.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' "$OUT/transfer-metadata.tsv"
