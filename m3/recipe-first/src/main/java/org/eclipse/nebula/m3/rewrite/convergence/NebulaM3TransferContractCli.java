@@ -40,6 +40,14 @@ public final class NebulaM3TransferContractCli {
                 NebulaM3BackportPlan.tsv(),
                 StandardCharsets.UTF_8);
         Files.writeString(
+                output.resolve("backport-bundle.tsv"),
+                NebulaM3BackportBundle.tsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("backport-bundle.sha256"),
+                NebulaM3BackportBundle.root() + "\n",
+                StandardCharsets.UTF_8);
+        Files.writeString(
                 output.resolve("ui-behavior-donors.tsv"),
                 NebulaM3UiBehaviorDonorCatalog.tsv(),
                 StandardCharsets.UTF_8);
