@@ -54,19 +54,24 @@ final class NebulaM3OrchestratorPlansTest {
     }
 
     @Test
-    void droolsPlanEncodesDeclaredDependencyReadinessWithoutExecutingRecipes() {
+    void droolsReadinessRequiresProvenCompletionNotPredecessorReadiness() {
         String drl = NebulaM3OrchestratorPlans.droolsDrl();
         var nodes = NebulaM3RecipeDagManifest.nodes();
 
         assertEquals(nodes.size(), occurrences(drl, "rule \"m3-"));
         assertTrue(drl.contains("modify($current) { setReady(true) };"));
+        assertTrue(drl.contains("    complete : boolean\\n"));
+        assertTrue(drl.contains("    proofSha256 : String\\n"));
+        assertFalse(drl.contains("setComplete("));
+        assertFalse(drl.contains("setProofSha256("));
+        assertFalse(drl.contains("ready == true)"));
         for (NebulaM3RecipeDagManifest.Node node : nodes) {
             for (String dependency : node.dependsOn()) {
                 assertTrue(
                         drl.contains(
                                 "M3RecipeNode(id == \""
                                         + dependency
-                                        + "\", ready == true)"),
+                                        + "\", complete == true, proofSha256 matches \"[0-9a-f]{64}\")"),
                         node.id() + " <- " + dependency);
             }
         }
