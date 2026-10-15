@@ -1625,7 +1625,7 @@ public class Gallery extends Canvas {
 		groupRenderer.postLayout(null);
 		// Conservative: custom renderers and ultra-lazy groups retain the
 		// original serial semantics, including SetData timing.
-		orderedViewportGroups = ordered && !virtualGroups
+		orderedViewportGroups = ordered && !virtual && !virtualGroups
 				&& groupRenderer.getClass() == DefaultGalleryGroupRenderer.class;
 
 		return currentHeight;
