@@ -67,7 +67,7 @@ jobs:
         run: >-
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
-          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3ProofGateTest,NebulaM3ProofReceiptCliTest,NebulaM3TransferQualificationRecipeTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
+          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3ProofGateTest,NebulaM3JavaGradeQualificationTest,NebulaM3ProofReceiptCliTest,NebulaM3TransferQualificationRecipeTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
           -Dsurefire.failIfNoSpecifiedTests=false
           test
 
@@ -76,7 +76,7 @@ jobs:
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
           -Psemantic-coverage
-          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3OrchestratorPlansTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest
+          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3OrchestratorPlansTest,NebulaM3JavaGradeQualificationTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest
           -Dsurefire.failIfNoSpecifiedTests=false
           verify
 
@@ -91,6 +91,7 @@ jobs:
           DAG='m3/recipe-first/target/nebula-m3-dag'
           test -s "$OUT/transfer.sha256"
           test -s "$OUT/transfer-qualification.tsv"
+          test -s "$OUT/java-grade-qualification.tsv"
           python3 - <<'PYQUALIFICATION'
           import csv
           import re
@@ -351,6 +352,9 @@ jobs:
 
           mvn -B -ntp -f m3/recipe-first/pom.xml -DskipTests             -Dexec.mainClass=org.eclipse.nebula.m3.rewrite.convergence.NebulaM3ProofReceiptCli             -Dexec.args="$NEBULA_COMMIT $SYNEXIA_COMMIT $DAG_ROOT $EVIDENCE $OUT/transfer-qualification.tsv"             compile org.codehaus.mojo:exec-maven-plugin:3.5.1:java
 
+          mvn -B -ntp -f m3/recipe-first/pom.xml -DskipTests             -Dexec.mainClass=org.eclipse.nebula.m3.rewrite.convergence.NebulaM3JavaGradeQualificationCli             -Dexec.args="$NEBULA_COMMIT $SYNEXIA_COMMIT $DAG_ROOT $EVIDENCE $OUT/java-grade-qualification.tsv"             compile org.codehaus.mojo:exec-maven-plugin:3.5.1:java
+
+
           python3 - <<'PYRECEIPT'
           import csv
           import os
@@ -375,6 +379,30 @@ jobs:
           assert len(roots) == 1 and re.fullmatch(r"[0-9a-f]{64}", roots.pop())
           print("NEBULA_M3_TRANSFER_QUALIFICATION=MANUAL_REVIEW_REQUIRED_VERIFIED")
           PYRECEIPT
+
+          python3 - <<'PYJAVAGRADE'
+          from pathlib import Path
+          import re
+
+          text = Path("m3/recipe-first/target/nebula-m3-transfer/java-grade-qualification.tsv").read_text(encoding="utf-8")
+          required = {
+              "schema": "NEBULA_M3_JAVA_GRADE_V1",
+              "javaRelease": "21",
+              "openRewriteVersion": "8.90.4",
+              "minimumSemanticLineCoverage": "0.99",
+              "refactorScopeOrder": "FILE,VISIBILITY,PACKAGE,MODULE,MULTI_MODULE,LIBRARY_API",
+              "orchestrators": "AIRFLOW,CAMEL,DROOLS,MAVEN_OPENREWRITE",
+              "transferTargets": "hsoliwal/M3jdk21,hsoliwal/com.synexia",
+              "disposition": "MANUAL_TRANSFER_REVIEW_REQUIRED",
+              "mutationAuthority": "false",
+              "promotionAuthority": "false",
+          }
+          rows = dict(line.split("\t", 1) for line in text.splitlines()[1:])
+          for key, value in required.items():
+              assert rows.get(key) == value, (key, rows.get(key), value)
+          assert re.fullmatch(r"[0-9a-f]{64}", rows["qualificationRoot"])
+          print("NEBULA_M3_JAVA_GRADE=MANUAL_TRANSFER_REVIEW_REQUIRED_VERIFIED")
+          PYJAVAGRADE
 
       - name: Upload final proof and transfer artifacts
         if: always()
