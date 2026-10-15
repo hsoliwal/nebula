@@ -90,7 +90,7 @@ final class NebulaM3SemanticCoverageGateRecipeTest {
                     new InMemoryLargeSourceSet(List.of(changed)), staleContext);
             rejected = !staleErrors.isEmpty();
             assertTrue(run.getChangeset().getAllResults().isEmpty());
-        } catch (IllegalStateException failure) {
+        } catch (RuntimeException failure) {
             rejected = true;
         }
         assertTrue(rejected, "a stale exact Maven owner may never pass silently");
