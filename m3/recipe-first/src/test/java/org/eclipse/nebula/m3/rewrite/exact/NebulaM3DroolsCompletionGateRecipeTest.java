@@ -27,15 +27,15 @@ final class NebulaM3DroolsCompletionGateRecipeTest {
     @Test
     void exactHashesPathsAndScopeAreSealed() {
         var recipe = new NebulaM3DroolsCompletionGateRecipe();
-        assertEquals(recipe.BEFORE_SHA256,
+        assertEquals(NebulaM3DroolsCompletionGateRecipe.BEFORE_SHA256,
                 NebulaM3ExactJavaSnapshotRecipe.sha256(resource(BEFORE)));
-        assertEquals(recipe.AFTER_SHA256,
-                NebulaM3ExactJavaSnapshotRecipe.sha256(resource(recipe.POSTIMAGE)));
+        assertEquals(NebulaM3DroolsCompletionGateRecipe.AFTER_SHA256,
+                NebulaM3ExactJavaSnapshotRecipe.sha256(resource(NebulaM3DroolsCompletionGateRecipe.POSTIMAGE)));
         assertEquals(1, recipe.maxCycles());
         assertTrue(recipe.getTags().contains("recipe-first"));
         assertTrue(recipe.getTags().contains("file-local"));
-        assertTrue(recipe.matches(Path.of(recipe.PATH)));
-        assertTrue(recipe.matches(Path.of(recipe.MODULE_PATH)));
+        assertTrue(recipe.matches(Path.of(NebulaM3DroolsCompletionGateRecipe.PATH)));
+        assertTrue(recipe.matches(Path.of(NebulaM3DroolsCompletionGateRecipe.MODULE_PATH)));
         assertFalse(recipe.matches(Path.of("unrelated/NebulaM3OrchestratorPlans.java")));
     }
 
@@ -44,7 +44,7 @@ final class NebulaM3DroolsCompletionGateRecipeTest {
         var recipe = new NebulaM3DroolsCompletionGateRecipe();
         var errors = new ArrayList<Throwable>();
         var context = new InMemoryExecutionContext(errors::add);
-        SourceFile before = parse(recipe.PATH, resource(BEFORE), context);
+        SourceFile before = parse(NebulaM3DroolsCompletionGateRecipe.PATH, resource(BEFORE), context);
 
         var first = recipe.run(new InMemoryLargeSourceSet(List.of(before)), context);
         assertTrue(errors.isEmpty(), errors.toString());
@@ -52,7 +52,7 @@ final class NebulaM3DroolsCompletionGateRecipeTest {
         assertEquals(1, changes.size());
         SourceFile post = changes.getFirst().getAfter();
         assertTrue(post instanceof J.CompilationUnit);
-        assertEquals(resource(recipe.POSTIMAGE), post.printAll());
+        assertEquals(resource(NebulaM3DroolsCompletionGateRecipe.POSTIMAGE), post.printAll());
         assertTrue(post.printAll().contains("complete == true, proofSha256 matches"));
 
         var secondErrors = new ArrayList<Throwable>();
@@ -68,7 +68,7 @@ final class NebulaM3DroolsCompletionGateRecipeTest {
         var recipe = new NebulaM3DroolsCompletionGateRecipe();
         var errors = new ArrayList<Throwable>();
         var context = new InMemoryExecutionContext(errors::add);
-        SourceFile drift = parse(recipe.PATH, resource(BEFORE) + "// unexpected\n", context);
+        SourceFile drift = parse(NebulaM3DroolsCompletionGateRecipe.PATH, resource(BEFORE) + "// unexpected\n", context);
         String immutable = drift.printAll();
         var rejected = recipe.run(new InMemoryLargeSourceSet(List.of(drift)), context);
         assertTrue(rejected.getChangeset().getAllResults().isEmpty());
