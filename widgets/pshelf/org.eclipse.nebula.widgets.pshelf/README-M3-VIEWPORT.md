@@ -62,9 +62,11 @@ bash widgets/pshelf/org.eclipse.nebula.widgets.pshelf/run-jni-parity.sh
 ```
 
 Executed independently with OpenJDK21/GCC C17 strict warnings:
-`PSHELF_JNI_PARITY_PASS checks=457050` with `-Xcheck:jni`;
-the same `457050` pass with `-Xint -Xcheck:jni`.
-Total **914,100 Java-vs-JNI comparisons**, including 100,000-row stress,
+`PSHELF_JNI_PARITY_PASS checks=457053` with `-Xcheck:jni`;
+the same `457053` pass with `-Xint -Xcheck:jni`.
+Total **914,106 Java-vs-JNI comparisons**, including explicit
+rejection of negative and out-of-range logical sibling indices to prevent
+undefined arithmetic on non-PShelf inputs, 100,000-row stress,
 invalid range refusal and extreme arithmetic. The actual receiver
 source must match the canonical Git blobs before reusing this evidence.
 This proof establishes algorithm parity, not that native calls improve

@@ -67,6 +67,9 @@ public final class PShelfGeometryJniParityTest {
         reject(() -> animated(-1, 0, 0, 0, 10, 5, .5, true));
         reject(() -> steady(1_048_577, 0, 0, 10, 5));
         reject(() -> animated(1_048_577, 0, 0, 0, 10, 5, .5, true));
+        reject(() -> steady(3, 3, 0, 10, 5));
+        reject(() -> animated(3, -2, 0, 0, 10, 5, .5, true));
+        reject(() -> animated(3, 0, 3, 0, 10, 5, .5, false));
         System.out.println("PSHELF_JNI_PARITY_PASS checks=" + checks);
     }
 }

@@ -64,6 +64,10 @@ Java_org_eclipse_nebula_widgets_pshelf_PShelfGeometryJniParityTest_steady(
         JNIEnv *env, jclass cls, jint count, jint openIndex,
         jint clientY, jint clientHeight, jint itemHeight) {
     (void)cls;
+    if (openIndex < -1 || openIndex >= count) {
+        invalid(env, "steady header index outside original PShelf model");
+        return NULL;
+    }
     jint *work;
     jintArray result = allocate(env, count, &work);
     if (result == NULL || count == 0) return result;
@@ -87,6 +91,10 @@ Java_org_eclipse_nebula_widgets_pshelf_PShelfGeometryJniParityTest_animated(
         jint clientY, jint clientHeight, jint itemHeight,
         jdouble progress, jboolean fromBottom) {
     (void)cls;
+    if (previous < -1 || previous >= count || next < -1 || next >= count) {
+        invalid(env, "animated header indices outside original PShelf model");
+        return NULL;
+    }
     jint *work;
     jintArray result = allocate(env, count, &work);
     if (result == NULL || count == 0) return result;
