@@ -60,6 +60,17 @@ public final class NebulaM3RecipeDagManifest {
         return TARGETS;
     }
 
+    /**
+     * Validated, deterministic dependency waves for external scheduler projections.
+     *
+     * <p>A wave is readiness evidence, not authority to execute recipe atoms concurrently or
+     * mutate source. Actual FILE-local independence and fixed-point proof remain separate gates.</p>
+     */
+    public static List<List<Node>> readinessWaves() {
+        return NebulaM3DagWavePlanner.plan(NODES);
+    }
+
+
     /** External orchestration can choose/order work but never edits source directly. */
     public static boolean orchestratorMutationAuthority() {
         return false;
@@ -120,6 +131,7 @@ public final class NebulaM3RecipeDagManifest {
             previous = atom.id();
         }
         validate(result);
+        NebulaM3DagWavePlanner.plan(result);
         return List.copyOf(result);
     }
 
