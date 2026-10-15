@@ -641,54 +641,58 @@ public abstract class VControl {
 	public final void paintControl(Event e) {
 		if (painter != null && bounds.intersects(e.x, e.y, e.width, e.height)
 				&& isVisible()) {
-			int alpha = e.gc.getAlpha();
-			int fullX, fullY, fullW, fullH;
-			fullX = bounds.x - 1;
-			fullY = bounds.y - 1;
-			if (parent != null) {
-				fullW = Math.min(
-						parent.bounds.x + parent.bounds.width - bounds.x,
-						bounds.x + bounds.width) + 1;
-				fullH = Math.min(
-						parent.bounds.y + parent.bounds.height - bounds.y,
-						bounds.y + bounds.height) + 1;
-			} else {
-				fullW = bounds.width;
-				fullH = bounds.height;
-			}
-			int clientX, clientY, clientW, clientH;
-			clientX = fullX + marginLeft;
-			clientY = fullY + marginTop;
-			clientW = fullW - marginLeft - marginRight;
-			clientH = fullH - marginTop - marginBottom;
+			try (VPaintScope viewport = new VPaintScope(e.gc)) {
+				int fullX, fullY, fullW, fullH;
+				fullX = bounds.x - 1;
+				fullY = bounds.y - 1;
+				if (parent != null) {
+					fullW = Math.min(
+							parent.bounds.x + parent.bounds.width - bounds.x,
+							bounds.x + bounds.width) + 1;
+					fullH = Math.min(
+							parent.bounds.y + parent.bounds.height - bounds.y,
+							bounds.y + bounds.height) + 1;
+				} else {
+					fullW = bounds.width;
+					fullH = bounds.height;
+				}
+				int clientX, clientY, clientW, clientH;
+				clientX = fullX + marginLeft;
+				clientY = fullY + marginTop;
+				clientW = fullW - marginLeft - marginRight;
+				clientH = fullH - marginTop - marginBottom;
 
-			e.gc.setClipping(fullX, fullY, fullW, fullH);
-			setAlpha(e.gc);
-			painter.paintBackground(this, e);
-
-			if (clientW > 0 && clientH > 0) {
-				e.gc.setClipping(clientX, clientY, clientW, clientH);
+				viewport.clip(fullX, fullY, fullW, fullH);
 				setAlpha(e.gc);
-				painter.paintContent(this, e);
-			}
+				painter.paintBackground(this, e);
+				if (isDisposed() || e.gc.isDisposed()) return;
 
-			e.gc.setClipping(fullX, fullY, fullW, fullH);
-			setAlpha(e.gc);
-			painter.paintBorders(this, e);
+				if (clientW > 0 && clientH > 0) {
+					viewport.clip(clientX, clientY, clientW, clientH);
+					setAlpha(e.gc);
+					painter.paintContent(this, e);
+					if (isDisposed() || e.gc.isDisposed()) return;
+				}
 
-			if (!getEnabled()) {
-				setAlpha(e.gc, 25);
-				e.gc.setBackground(
-						e.display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
-				e.gc.fillRectangle(fullX, fullY, fullW, fullH);
-			}
+				viewport.clip(fullX, fullY, fullW, fullH);
+				setAlpha(e.gc);
+				painter.paintBorders(this, e);
+				if (isDisposed() || e.gc.isDisposed()) return;
 
-			e.gc.setClipping((Rectangle) null);
-			e.gc.setAlpha(alpha);
+				if (!getEnabled()) {
+					setAlpha(e.gc, 25);
+					e.gc.setBackground(
+							e.display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+					e.gc.fillRectangle(fullX, fullY, fullW, fullH);
+				}
 
-			if (listeners.containsKey(SWT.Paint)) {
-				for (Listener listener : listeners.get(SWT.Paint)) {
-					listener.handleEvent(e);
+				viewport.restore();
+
+				if (listeners.containsKey(SWT.Paint)) {
+					for (Listener listener : listeners.get(SWT.Paint)) {
+						listener.handleEvent(e);
+						if (isDisposed() || e.gc.isDisposed()) return;
+					}
 				}
 			}
 		}
