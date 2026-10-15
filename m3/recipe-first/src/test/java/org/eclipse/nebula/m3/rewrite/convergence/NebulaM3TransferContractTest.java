@@ -149,6 +149,12 @@ final class NebulaM3TransferContractTest {
                 NebulaM3BackportPlan.tsv(),
                 Files.readString(output.resolve("backport-plan.tsv")));
         assertEquals(
+                NebulaM3BackportBundle.tsv(),
+                Files.readString(output.resolve("backport-bundle.tsv")));
+        assertEquals(
+                NebulaM3BackportBundle.root() + "\n",
+                Files.readString(output.resolve("backport-bundle.sha256")));
+        assertEquals(
                 NebulaM3UiBehaviorDonorCatalog.tsv(),
                 Files.readString(output.resolve("ui-behavior-donors.tsv")));
         assertEquals(
@@ -173,6 +179,7 @@ final class NebulaM3TransferContractTest {
                 Files.readString(output.resolve("java-grade-qualification.tsv"));
         assertEquals(NebulaM3JavaGradeQualification.pending().toTsv(), javaGrade);
         assertTrue(javaGrade.contains("backportPlanRoot\t" + NebulaM3BackportPlan.root()));
+        assertTrue(javaGrade.contains("backportBundleRoot\t" + NebulaM3BackportBundle.root()));
         assertTrue(javaGrade.contains("disposition\tHOLD"));
         assertTrue(javaGrade.contains("mutationAuthority\tfalse"));
         assertTrue(javaGrade.contains("promotionAuthority\tfalse"));
