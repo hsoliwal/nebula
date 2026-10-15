@@ -21,7 +21,7 @@ import org.eclipse.nebula.m3.NebulaM3FastSearchReviewPolicy;
 public final class NebulaM3TransferContract {
     public static final String SCHEMA = "NEBULA_M3_RECIPE_TRANSFER_V2";
     public static final String PROOF_REPOSITORY = "hsoliwal/nebula";
-    public static final String PROOF_BRANCH = "m3/final-portable-recipe-transfer-20261014";
+    public static final String PROOF_BRANCH = "m3/final-portable-recipe-transfer-v2-20261015";
     public static final String RECIPE_COORDINATE =
             "org.eclipse.nebula.m3:nebula-m3-recipe-first:1.0.0-SNAPSHOT";
     public static final String ROOT_PROFILE = "m3-nebula-file-convergence";
