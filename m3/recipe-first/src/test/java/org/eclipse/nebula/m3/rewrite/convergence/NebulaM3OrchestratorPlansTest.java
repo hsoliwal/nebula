@@ -60,8 +60,8 @@ final class NebulaM3OrchestratorPlansTest {
 
         assertEquals(nodes.size(), occurrences(drl, "rule \"m3-"));
         assertTrue(drl.contains("modify($current) { setReady(true) };"));
-        assertTrue(drl.contains("    complete : boolean\\n"));
-        assertTrue(drl.contains("    proofSha256 : String\\n"));
+        assertTrue(drl.contains("    complete : boolean\n"));
+        assertTrue(drl.contains("    proofSha256 : String\n"));
         assertFalse(drl.contains("setComplete("));
         assertFalse(drl.contains("setProofSha256("));
         assertFalse(drl.contains("ready == true)"));
