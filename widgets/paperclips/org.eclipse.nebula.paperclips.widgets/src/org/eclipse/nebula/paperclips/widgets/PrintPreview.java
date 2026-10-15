@@ -429,7 +429,32 @@ public class PrintPreview extends Canvas {
 		}
 	}
 
+	/**
+	 * Candidate-only, allocation-free rejection for pages wholly outside
+	 * the invalidated viewport. Do not alter SWT Rectangle's overflow behavior:
+	 * when a 32-bit endpoint is unrepresentable, leave the established
+	 * intersection and rendering path as the authority.
+	 */
+	private static boolean outsideDirtyPaperBounds(Event event, Point location, Point size) {
+		if (event.width <= 0 || event.height <= 0 || size.x <= 0 || size.y <= 0) {
+			return false;
+		}
+		long dirtyRight = (long) event.x + event.width;
+		long dirtyBottom = (long) event.y + event.height;
+		long paperRight = (long) location.x + size.x;
+		long paperBottom = (long) location.y + size.y;
+		if (dirtyRight > Integer.MAX_VALUE || dirtyBottom > Integer.MAX_VALUE
+				|| paperRight > Integer.MAX_VALUE || paperBottom > Integer.MAX_VALUE) {
+			return false;
+		}
+		return dirtyRight <= location.x || dirtyBottom <= location.y
+				|| paperRight <= event.x || paperBottom <= event.y;
+	}
+
 	private void paintPage(Event event, PrintPiece page, Point location) {
+		if (outsideDirtyPaperBounds(event, location, pageDisplaySize)) {
+			return;
+		}
 		// Check whether any "paper" is in the dirty region
 		Rectangle rectangle = new Rectangle(location.x, location.y,
 				pageDisplaySize.x, pageDisplaySize.y);
