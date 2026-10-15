@@ -89,7 +89,7 @@ history remains intact.
 
 The saved proving branch is:
 
-`m3/final-portable-recipe-transfer-20261014`
+`m3/final-portable-recipe-transfer-v2-20261015`
 
 The transfer bundle is emitted by the existing Maven profile:
 
