@@ -4,7 +4,7 @@ name: M3 portable Java21 recipe DAG
 on:
   push:
     branches:
-      - 'm3/java-grade-transfer-qualification-v4-20261015'
+      - 'm3/nebula-final-recipe-dag-backport-20261015'
   pull_request:
     paths:
       - 'm3/recipe-first/**'
@@ -65,7 +65,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
+          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3DagWavePlannerTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
           if ($LASTEXITCODE -ne 0) { throw 'Java 21 recipe/JUnit proof failed' }
 
       - name: 3 - Verify roots, real JUnit reports and source immutability
@@ -96,6 +96,7 @@ jobs:
           $required = @(
             'NebulaM3HostPortabilityTest',
             'NebulaM3RefactorScopeTest',
+            'NebulaM3DagWavePlannerTest',
             'NebulaM3OrchestratorPlansTest',
             'NebulaM3RecipeDagManifestTest',
             'NebulaM3RecipeDagManifestCliTest',
