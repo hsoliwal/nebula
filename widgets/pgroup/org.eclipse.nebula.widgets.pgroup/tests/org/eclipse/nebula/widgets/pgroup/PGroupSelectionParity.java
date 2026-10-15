@@ -24,7 +24,7 @@ public final class PGroupSelectionParity {
         void add(Item item) {
             items.add(item);
             // Conservative sticky downgrade when any overriding child appeared.
-            if (!item.originalClassItem) plainItems = false;
+            if (item == null || !item.originalClassItem) plainItems = false;
         }
         void remove(Item item) { items.remove(item); }
         Item[] getToolItems() {
@@ -106,7 +106,7 @@ public final class PGroupSelectionParity {
 
     private static Result execute(int size,int selection,int style,boolean derivedGroup,
                                   int derivedIndex,boolean disposeTarget,boolean removeDerived,
-                                  boolean optimized) {
+                                  boolean addNull, boolean optimized) {
         Group group = derivedGroup?new DerivedGroup():new Group(true);
         group.optimized = optimized;
         List<Item> all = new ArrayList<>();
@@ -114,6 +114,7 @@ public final class PGroupSelectionParity {
             all.add(i==derivedIndex?new DerivedItem(group,style):new Item(group,style,true));
         }
         if(removeDerived && derivedIndex>=0) group.remove(all.get(derivedIndex));
+        if(addNull) group.add(null);
         Item target = all.get(selection);
         target.disposed = disposeTarget;
         String failure = null;
@@ -148,12 +149,13 @@ public final class PGroupSelectionParity {
             for(int selected=0;selected<size;selected++)
                 for (int style: new int[]{0,1,2,3})
                     for(boolean derivedGroup:new boolean[]{false,true})
-                        for(int variant=0;variant<4;variant++) {
-                            int derivedIndex = variant==0?-1:Math.min(variant-1,size-1);
+                        for(int variant=0;variant<5;variant++) {
+                            int derivedIndex = variant==0||variant==4?-1:Math.min(variant-1,size-1);
                             boolean removed = variant==3;
-                            boolean isPlain = !derivedGroup && derivedIndex==-1 && style!=0;
-                            Result old=execute(size,selected,style,derivedGroup,derivedIndex,false,removed,false);
-                            Result now=execute(size,selected,style,derivedGroup,derivedIndex,false,removed,true);
+                            boolean addNull = variant==4;
+                            boolean isPlain = !derivedGroup && derivedIndex==-1 && !addNull && style!=0;
+                            Result old=execute(size,selected,style,derivedGroup,derivedIndex,false,removed,addNull,false);
+                            Result now=execute(size,selected,style,derivedGroup,derivedIndex,false,removed,addNull,true);
                             eq(old,now,size,isPlain);
                         }
         Random random=new Random(0x4d33504752504cL);
@@ -165,9 +167,10 @@ public final class PGroupSelectionParity {
             int derivedIndex=random.nextInt(4)==0?random.nextInt(size):-1;
             boolean removed=derivedIndex>=0&&random.nextBoolean();
             boolean disposed=random.nextInt(150)==0;
-            Result old=execute(size,selected,style,derivedGroup,derivedIndex,disposed,removed,false);
-            Result now=execute(size,selected,style,derivedGroup,derivedIndex,disposed,removed,true);
-            eq(old,now,size,!derivedGroup&&derivedIndex<0&&!disposed&&style!=0);
+            boolean addNull=random.nextInt(70)==0;
+            Result old=execute(size,selected,style,derivedGroup,derivedIndex,disposed,removed,addNull,false);
+            Result now=execute(size,selected,style,derivedGroup,derivedIndex,disposed,removed,addNull,true);
+            eq(old,now,size,!derivedGroup&&derivedIndex<0&&!addNull&&!disposed&&style!=0);
         }
         System.out.println("PGROUP_INTRINSIC_SELECTION_PASS checks="+checks+" quick="+quick);
     }

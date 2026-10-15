@@ -30,6 +30,10 @@ GeeksforGeeks source code was copied.
   event/scroll/layout owner. It adds **one private sticky boolean**, set to
   false on the first derived PGroupToolItem. The flag retains a conservative
   original-path fallback after the subtype is removed.
+- `PGroup.addToolItem(null)` remains a supported package-private list
+  mutation: the original list accepts null and fails only if a later setter
+  actually dereferences it. The fast-path witness conservatively downgrades
+  on null, preserving the original deferred exception and callback sequence.
 - The new private/package method `clearToolItemSelectionsWithoutCopy()`
   returns true only for exact `PGroup.class` with all-original item classes.
   It invokes each child's **original public `setSelection(false)`** in
@@ -49,12 +53,12 @@ array. This is allocation reduction, **not a claimed CPU speedup**.
 ## Executed Java21 differential
 
 The locally executed model's **exact Git blob**
-`e7b25285bdd3ad79e2ce9aa69f2a8b5a7e73e394`, SHA-256
-`903823f2b7f24085b23fe605d00414680321261c887a44f7e84b5c35c8a2633a`
+`d81a4ecb016be0a6b632c27cf476e225a29b92fe`, SHA-256
+`56faf4a244739b4258f6ab0ecbef622b848dec0f776f300f29778afef2f596b8`
 is admitted as a source-sealed test, not product code. It compares
 original vs candidate final item selection, per-item redraw/callback order,
 derived parent getters, child override dispatch, exceptions, CHECK/RADIO
-style categories, removal of a derived item and 180,000 seeded random cases.
+style categories, removal of a derived item and 180,000 seeded random cases (including null insertions).
 
 ```bash
 bash widgets/pgroup/org.eclipse.nebula.widgets.pgroup/run-selection-parity.sh
@@ -62,8 +66,8 @@ bash widgets/pgroup/org.eclipse.nebula.widgets.pgroup/run-selection-parity.sh
 
 **Actually executed** with `javac --release 21 -Xlint:all -Werror` on
 OpenJDK21.0.12.1:
-- normal `-Xmx192m`: `PGROUP_INTRINSIC_SELECTION_PASS checks=291855 quick=false`
-- interpreted `-Xint`: `PGROUP_INTRINSIC_SELECTION_PASS checks=5579 quick=true`
+- normal `-Xmx192m`: `PGROUP_INTRINSIC_SELECTION_PASS checks=300610 quick=false`
+- interpreted `-Xint`: `PGROUP_INTRINSIC_SELECTION_PASS checks=6491 quick=true`
 
 The model is an explicit deterministic native-free test double. It does
 not establish a real SWT display, Paint/Canvas callbacks, cross-platform

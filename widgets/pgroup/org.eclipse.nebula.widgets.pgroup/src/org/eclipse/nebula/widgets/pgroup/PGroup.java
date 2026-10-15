@@ -855,7 +855,7 @@ public class PGroup extends Canvas
 		toolitems.add(toolitem);
         // Detect any overriding tool-item class at the same mutation boundary.
         // Keep the fallback even if it is subsequently removed.
-        if (toolitem.getClass() != PGroupToolItem.class) {
+        if (toolitem == null || toolitem.getClass() != PGroupToolItem.class) {
             plainToolItemsOnly = false;
         }
 	}
