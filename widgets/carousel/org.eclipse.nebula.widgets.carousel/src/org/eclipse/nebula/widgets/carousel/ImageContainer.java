@@ -41,6 +41,13 @@ class ImageContainer extends Canvas {
 				return;
 			}
 
+			if (getClass() == ImageContainer.class && carousel.getClass() == Carousel.class
+					&& !image.isDisposed()
+					&& (slider == -1 || (scrollImage != null && !scrollImage.isDisposed()))
+					&& gc.getClipping().isEmpty()) {
+				return;
+			}
+
 			final Rectangle clientArea = getClientArea();
 			if (slider == -1) {
 				final Rectangle imageBounds = image.getBounds();
@@ -71,7 +78,7 @@ class ImageContainer extends Canvas {
 
 		int newWidth = imageBounds.width;
 		int newHeight = imageBounds.height;
-		while (newWidth > clientArea.width - 5 || newHeight > clientArea.height - 5) {
+		while (newWidth > Math.max(5, clientArea.width) - 5 || newHeight > Math.max(5, clientArea.height) - 5) {
 			newWidth = (int) (newWidth * .9f);
 			newHeight = (int) (newWidth / ratio);
 		}
@@ -129,7 +136,7 @@ class ImageContainer extends Canvas {
 			@Override
 			public void run() {
 				ImageContainer.this.redraw();
-				final int step = width / 5;
+				final int step = Math.max(1, width / 5);
 				if (direction == SWT.LEFT) {
 					slider += step;
 					if (slider >= width) {
