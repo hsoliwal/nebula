@@ -42,9 +42,15 @@ as permission for parallel source mutation.
 
 ## Current Nebula behavior
 
-The existing five recipe atoms still form **five serial waves**. The manifest TSV, SHA-256 root,
-Camel route, Airflow source and Drools agenda retain their current serial shapes. No SWT widget
-source, Java public API, JNI ABI or graphics contract is modified.
+The existing five recipe atoms still form **five serial waves** because there is currently one
+atom in each phase. The manifest now derives edges from the phase barrier rather than list
+adjacency. If several admitted atoms occupy one phase, they share the preceding phase dependency
+frontier and can appear in the same readiness wave.
+
+Camel carries the validated wave number and exact `dependsOn` set with every dispatch. Airflow
+edges are emitted from `dependsOn`, and Drools readiness rules require every declared dependency.
+These are scheduling projections only: source mutation inside one FILE candidate remains serial.
+No SWT widget source, Java public API, JNI ABI or graphics contract is modified.
 
 To exercise branching validation, JUnit uses a synthetic graph with two independent ATOMIZATION
 nodes, a PATTERNIZATION node depending on both, and subsequent DOCUMENTATION and fixed-point
@@ -57,8 +63,9 @@ changes remain FILE-local, serial per file, contract-locked and owned by OpenRew
 files may fan out only after separate path/contract fences and JUnit/differential proof.
 Canonical promotion remains serial.
 
-Camel/Airflow/Drools can project readiness but cannot certify semantic equivalence, mutate
-source independently or promote code.
+Camel/Airflow/Drools can project the same dependency DAG and readiness waves, but cannot certify
+semantic equivalence, mutate source independently or promote code. Maven/OpenRewrite remains the
+execution owner; JUnit/compiler/fixed-point/Tycho evidence remains the proof owner.
 
 `hsoliwal/com.synexia` remains the canonical reusable recipe owner. This Nebula validation is a
 product/proving-side contribution under Nebula's existing license. Once the recipe family and its
