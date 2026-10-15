@@ -429,7 +429,38 @@ public class PrintPreview extends Canvas {
 		}
 	}
 
+	/**
+	 * Reject only conclusively disjoint, positive-sized, non-overflowing
+	 * viewport rectangles. All other inputs follow SWT Rectangle.intersection.
+	 * No PageEnumeration, PrintPiece, GC, or SWT callback is touched here.
+	 */
+	private static boolean isOutsideSafeDamage(int dirtyX, int dirtyY,
+			int dirtyWidth, int dirtyHeight, int pageX, int pageY,
+			int pageWidth, int pageHeight) {
+		if (dirtyWidth <= 0 || dirtyHeight <= 0
+				|| pageWidth <= 0 || pageHeight <= 0) {
+			return false;
+		}
+		long dirtyRight = (long) dirtyX + dirtyWidth;
+		long dirtyBottom = (long) dirtyY + dirtyHeight;
+		long pageRight = (long) pageX + pageWidth;
+		long pageBottom = (long) pageY + pageHeight;
+		// SWT Rectangle.intersection adds ints. Refuse fast-path on overflow.
+		if (dirtyRight > Integer.MAX_VALUE || dirtyBottom > Integer.MAX_VALUE
+				|| pageRight > Integer.MAX_VALUE || pageBottom > Integer.MAX_VALUE) {
+			return false;
+		}
+		return dirtyRight <= pageX || pageRight <= dirtyX
+				|| dirtyBottom <= pageY || pageBottom <= dirtyY;
+	}
+
 	private void paintPage(Event event, PrintPiece page, Point location) {
+		// The original method would return before painting or disposing this page.
+		// This gate avoids constructing three short-lived SWT Rectangles.
+		if (isOutsideSafeDamage(event.x, event.y, event.width, event.height,
+				location.x, location.y, pageDisplaySize.x, pageDisplaySize.y)) {
+			return;
+		}
 		// Check whether any "paper" is in the dirty region
 		Rectangle rectangle = new Rectangle(location.x, location.y,
 				pageDisplaySize.x, pageDisplaySize.y);
