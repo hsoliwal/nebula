@@ -10,9 +10,9 @@ import java.util.List;
 /**
  * Deterministic scheduler plans projected from the canonical Nebula M3 recipe DAG.
  *
- * <p>The plans carry ordering and recipe identity only. They never implement source mutation:
- * OpenRewrite recipes remain the source-changing atoms and repository proof/promotion remains
- * outside every scheduler.</p>
+ * <p>The plans carry DAG identity, readiness-wave and recipe metadata only. They never implement
+ * source mutation: OpenRewrite recipes remain the source-changing atoms and repository
+ * proof/promotion remains outside every scheduler.</p>
  */
 public final class NebulaM3OrchestratorPlans {
     private static final String ROOT = sha256(
@@ -23,7 +23,12 @@ public final class NebulaM3OrchestratorPlans {
 
     private NebulaM3OrchestratorPlans() {}
 
-    /** Apache Camel YAML route that serially dispatches admitted recipe atoms to one adapter endpoint. */
+    /**
+     * Apache Camel YAML route emitted in validated readiness-wave order.
+     *
+     * <p>Dispatch stays serial for one FILE candidate; wave/dependency metadata is evidence for an
+     * outer scheduler after independent-file proof.</p>
+     */
     public static String camelYaml() {
         StringBuilder out = new StringBuilder();
         out.append("# generated from DAG ")
@@ -117,7 +122,7 @@ public final class NebulaM3OrchestratorPlans {
     }
 
     /**
-     * Drools agenda that marks recipe atoms ready only after their declared predecessor is ready.
+     * Drools agenda that marks recipe atoms ready only after every declared dependency is ready.
      *
      * <p>The DRL is scheduling evidence only; it does not execute OpenRewrite or write source.</p>
      */
