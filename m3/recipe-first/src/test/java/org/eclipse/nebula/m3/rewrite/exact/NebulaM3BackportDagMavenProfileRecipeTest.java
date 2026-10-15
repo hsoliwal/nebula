@@ -36,7 +36,7 @@ final class NebulaM3BackportDagMavenProfileRecipeTest {
         assertTrue(after.contains("<id>backport-dag-integrity</id>"));
         assertTrue(after.contains("<artifactId>rewrite-xml</artifactId>"));
         assertTrue(after.contains(
-                "<recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3BackportDagIntegrityRecipe</recipe>"));
+                "<recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3BackportIntegrityConvergenceRecipe</recipe>"));
     }
 
     @Test
