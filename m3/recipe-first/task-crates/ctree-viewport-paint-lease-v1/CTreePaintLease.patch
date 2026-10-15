@@ -104,3 +104,4 @@ diff --git a/widgets/ctree/org.eclipse.nebula.widgets.ctree/src/org/eclipse/nebu
 -			image.dispose();
  		}
  	}
+ 
