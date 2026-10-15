@@ -4,8 +4,10 @@ package org.eclipse.nebula.m3.rewrite.convergence;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 
 /**
@@ -52,7 +54,7 @@ public final class NebulaM3BackportPlan {
     }
 
     private static final List<Step> STEPS =
-            List.of(
+            validate(List.of(
                     step(
                             0,
                             "nebula-portable-proof",
@@ -126,7 +128,7 @@ public final class NebulaM3BackportPlan {
                                     + "runtime/JNI parity where declared, setup-inclusive benchmark where "
                                     + "claimed and final fixed point before promotion.",
                             NebulaM3RefactorScope.LIBRARY_API,
-                            "m3jdk21-scope-promotion"));
+                            "m3jdk21-scope-promotion")));
 
     private static final String ROOT = sha256(tsv());
 
@@ -170,6 +172,58 @@ public final class NebulaM3BackportPlan {
                     .append('\n');
         }
         return out.toString();
+    }
+
+    /**
+     * Proves the complete transfer DAG before exposing it as a content-addressed plan.
+     *
+     * <p>Each phase must appear exactly once, in the canonical order. Edges must point to the
+     * immediately preceding phase, so neither a skipped proof gate nor a forward/cyclic edge can
+     * be hidden inside otherwise well-formed step records. Repository and maximum edit scope
+     * are also phase-bound: only Nebula proves Nebula, only Synexia absorbs recipes, and the JDK
+     * never obtains wider authority before its FILE replay has been proven.</p>
+     *
+     * <p>This is a pure validation atom; it performs no source mutation or promotion.</p>
+     */
+    static List<Step> validate(List<Step> proposed) {
+        List<Step> plan = List.copyOf(Objects.requireNonNull(proposed, "proposed"));
+        Phase[] phases = Phase.values();
+        if (plan.size() != phases.length) {
+            throw new IllegalArgumentException("backport plan must contain each phase exactly once");
+        }
+        Set<String> ids = new HashSet<>();
+        for (int index = 0; index < plan.size(); index++) {
+            Step step = plan.get(index);
+            if (step.ordinal() != index || step.phase() != phases[index]) {
+                throw new IllegalArgumentException("backport phase/ordinal drift at " + index);
+            }
+            if (!ids.add(step.id())) {
+                throw new IllegalArgumentException("duplicate backport step: " + step.id());
+            }
+            List<String> expectedDependencies =
+                    index == 0 ? List.of() : List.of(plan.get(index - 1).id());
+            if (!expectedDependencies.equals(step.dependsOn())) {
+                throw new IllegalArgumentException("backport dependency drift at " + step.id());
+            }
+            String expectedRepository =
+                    switch (step.phase()) {
+                        case NEBULA_PROOF -> "hsoliwal/nebula";
+                        case SYNEXIA_RECIPE_ABSORPTION, SYNEXIA_RECIPE_PROOF ->
+                                "hsoliwal/com.synexia";
+                        default -> "hsoliwal/M3jdk21";
+                    };
+            if (!expectedRepository.equals(step.repository())) {
+                throw new IllegalArgumentException("backport repository drift at " + step.id());
+            }
+            NebulaM3RefactorScope expectedScope =
+                    index < 6
+                            ? NebulaM3RefactorScope.FILE
+                            : NebulaM3RefactorScope.LIBRARY_API;
+            if (step.maximumScope() != expectedScope) {
+                throw new IllegalArgumentException("backport authority drift at " + step.id());
+            }
+        }
+        return plan;
     }
 
     private static Step step(
