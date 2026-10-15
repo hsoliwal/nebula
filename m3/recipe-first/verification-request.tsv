@@ -1,0 +1,17 @@
+schema	NEBULA_M3_VERIFICATION_REQUEST_V1
+proofRepository	hsoliwal/nebula
+proofBranch	m3/final-portable-recipe-transfer-20261014
+javaRelease	21
+mavenVersion	3.9.11
+requiredOneBuildWorkflow	.github/workflows/m3-one-build-openrewrite-convergence.yml
+requiredPortableWorkflow	.github/workflows/m3-portable-recipe-dag-java21.yml
+requiredRecipePhases	INVENTORY,ATOMIZATION,PATTERNIZATION,DOCUMENTATION,PROVEN_FILE_CONVERGENCE
+requiredScope	FILE
+requiredSemanticCoverage	0.99
+requiredPortableHosts	linux,windows,macos
+requiredProductProof	Nebula_Tycho_SWT_reactor_after_candidate
+transferState	HOLD_UNTIL_PROVEN
+downstreamOrder	hsoliwal/com.synexia,hsoliwal/M3jdk21
+backportState	PRESERVED_AFTER_NEBULA_AND_SYNEXIA_PROOF
+mutationAuthority	false
+promotionAuthority	false
