@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0 — first-party test orchestration only
+name: M3 CTree viewport paint lease and source recipe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'widgets/ctree/org.eclipse.nebula.widgets.ctree/src/org/eclipse/nebula/widgets/ctree/CTree.java'
+      - 'm3/recipe-first/task-crates/ctree-viewport-paint-lease-v1/**'
+      - '.gitattributes'
+      - '.github/workflows/m3-ctree-paint-lease.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-replay:
+    name: Java 21 recipe and CTree contract (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Git patch replay, source-seal and negative painter checks
+        run: mvn -B -ntp -f m3/recipe-first/task-crates/ctree-viewport-paint-lease-v1/pom.xml verify
+      - name: Exact working-tree whitespace
+        run: git diff --check
