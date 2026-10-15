@@ -34,21 +34,33 @@ public final class NebulaM3OrchestratorPlans {
         out.append("    from:\n");
         out.append("      uri: \"direct:nebula-m3-file-convergence\"\n");
         out.append("      steps:\n");
-        for (NebulaM3RecipeDagManifest.Node node : NebulaM3RecipeDagManifest.nodes()) {
-            out.append("        - setProperty:\n")
-                    .append("            name: m3RecipeOrdinal\n")
-                    .append("            constant: \"").append(node.ordinal()).append("\"\n")
-                    .append("        - setProperty:\n")
-                    .append("            name: m3RecipeId\n")
-                    .append("            constant: \"").append(node.id()).append("\"\n")
-                    .append("        - setProperty:\n")
-                    .append("            name: m3RecipeClass\n")
-                    .append("            constant: \"").append(node.recipeClass()).append("\"\n")
-                    .append("        - setProperty:\n")
-                    .append("            name: m3Authority\n")
-                    .append("            constant: \"").append(node.authority()).append("\"\n")
-                    .append("        - to:\n")
-                    .append("            uri: \"direct:nebula-m3-openrewrite-atom\"\n");
+        List<List<NebulaM3RecipeDagManifest.Node>> waves =
+                NebulaM3RecipeDagManifest.readinessWaves();
+        for (int wave = 0; wave < waves.size(); wave++) {
+            for (NebulaM3RecipeDagManifest.Node node : waves.get(wave)) {
+                out.append("        - setProperty:\n")
+                        .append("            name: m3RecipeWave\n")
+                        .append("            constant: \"").append(wave).append("\"\n")
+                        .append("        - setProperty:\n")
+                        .append("            name: m3RecipeOrdinal\n")
+                        .append("            constant: \"").append(node.ordinal()).append("\"\n")
+                        .append("        - setProperty:\n")
+                        .append("            name: m3RecipeId\n")
+                        .append("            constant: \"").append(node.id()).append("\"\n")
+                        .append("        - setProperty:\n")
+                        .append("            name: m3RecipeClass\n")
+                        .append("            constant: \"").append(node.recipeClass()).append("\"\n")
+                        .append("        - setProperty:\n")
+                        .append("            name: m3DependsOn\n")
+                        .append("            constant: \"")
+                        .append(String.join(",", node.dependsOn()))
+                        .append("\"\n")
+                        .append("        - setProperty:\n")
+                        .append("            name: m3Authority\n")
+                        .append("            constant: \"").append(node.authority()).append("\"\n")
+                        .append("        - to:\n")
+                        .append("            uri: \"direct:nebula-m3-openrewrite-atom\"\n");
+            }
         }
         return out.toString();
     }
@@ -93,12 +105,13 @@ public final class NebulaM3OrchestratorPlans {
                     .append("    )\n");
         }
         out.append('\n');
-        List<NebulaM3RecipeDagManifest.Node> nodes = NebulaM3RecipeDagManifest.nodes();
-        for (int index = 1; index < nodes.size(); index++) {
-            out.append(pythonId(nodes.get(index - 1).id()))
-                    .append(" >> ")
-                    .append(pythonId(nodes.get(index).id()))
-                    .append('\n');
+        for (NebulaM3RecipeDagManifest.Node node : NebulaM3RecipeDagManifest.nodes()) {
+            for (String dependency : node.dependsOn()) {
+                out.append(pythonId(dependency))
+                        .append(" >> ")
+                        .append(pythonId(node.id()))
+                        .append('\n');
+            }
         }
         return out.toString();
     }
@@ -130,9 +143,13 @@ public final class NebulaM3OrchestratorPlans {
                     .append(1000 - index)
                     .append('\n')
                     .append("when\n");
-            if (index > 0) {
-                out.append("    $previous : M3RecipeNode(id == \"")
-                        .append(nodes.get(index - 1).id())
+            for (int dependencyIndex = 0;
+                    dependencyIndex < node.dependsOn().size();
+                    dependencyIndex++) {
+                out.append("    $dependency")
+                        .append(dependencyIndex)
+                        .append(" : M3RecipeNode(id == \"")
+                        .append(node.dependsOn().get(dependencyIndex))
                         .append("\", ready == true)\n");
             }
             out.append("    $current : M3RecipeNode(id == \"")
