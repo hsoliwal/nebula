@@ -1,0 +1,18 @@
+{
+  "findings": [
+    {
+      "title": "[P1] Handle the keyboard event exercised by the frozen browser contract",
+      "body": "The carousel registers only a `keyup` handler, while `example-behavior.html` dispatches `keydown` for both ArrowRight and ArrowLeft. Synthetic `keydown` does not produce a subsequent `keyup`, so neither arrow action changes the selection; the harness consequently fails its immediate status assertion and can never reach PASS. Register the navigation logic for `keydown` (or consistently change the frozen contract and its harness) so the implementation and qualification path use the same event.",
+      "priority": "P1",
+      "confidence": 0.99,
+      "category": "bug",
+      "code_location": {
+        "file_path": "m3/ports/carousel-gwt/src/main/java/org/eclipse/nebula/widgets/carousel/client/Carousel.java",
+        "line": 43
+      }
+    }
+  ],
+  "overall_correctness": "patch is incorrect",
+  "overall_explanation": "The CPU recipe and geometry evidence does not cover this event mismatch. As written, the supplied public browser behavior test is guaranteed to fail on its ArrowRight step because the product listens for `keyup` but the frozen harness emits `keydown`, so the browser profile cannot satisfy its own qualification contract.",
+  "overall_confidence": 0.99
+}

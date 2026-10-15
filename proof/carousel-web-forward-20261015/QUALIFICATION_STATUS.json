@@ -1,41 +1,89 @@
 {
-  "schema": "nebula-carousel-gwt-qualification/1",
+  "schema": "carousel-web-forward-qualification/5",
+  "status": "GWT_CHROME_CANDIDATE_QUALIFIED_BROADER_WORK_OPEN",
+  "candidate": "05",
   "recipe": "com.synexia.rewrite.M3CarouselWebForward20261015",
-  "candidate": "recipe-inputs04",
-  "recipe_seal_sha256": "85e4be9e5e4a2a2b766c56bc1cb9a44e764073256466c0fed4f64783c068ca7b",
-  "actual_recipe": {
+  "recipe_input_seal_sha256": "9897a845d915c496cdab4d2d75b12702da4e3b7887aed492d059f435b488ae4e",
+  "targets_sha256": "d7dd60d57d5f60421ee9e440622215b341eaf20fae51eae2bd77ae5a5745bd2c",
+  "maven": {
     "status": "PASS",
     "tests": 9,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "exact_generated_targets": 35,
-    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_MAVEN04.json"
+    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_MAVEN05.json"
   },
-  "numeric_differential": {
+  "java_api": {
+    "status": "PASS",
+    "sources": 6,
+    "classes": 9,
+    "options": "--release 17 -Xlint:all -Werror"
+  },
+  "gwt": {
+    "status": "PASS",
+    "modules": 2,
+    "qualification_user_agent": "safari (Chrome/WebKit)",
+    "separate_compiler_jvms": true,
+    "production_module_browser_defaults_unchanged": true,
+    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_GWT_BROWSER02.json"
+  },
+  "chrome": {
+    "status": "PASS",
+    "independent_public_assertions": 25,
+    "owner_reported_assertions": 57,
+    "composed_assertions": 82,
+    "owner_assertions_independently_validated": false,
+    "frozen_public_checks_changed": false,
+    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_CHROME_GREEN01.json",
+    "timing_scope": "Virtual-time correctness bounds; not a performance benchmark"
+  },
+  "numeric": {
     "status": "PASS",
     "cases": 1485,
     "uncorrected_differences": 282,
-    "corrected_identical_to_jvm": true,
-    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_GWT_GEOMETRY01.json",
-    "scope": "Geometry and Float32 sources unchanged in candidate04"
+    "corrected_output": "byte-identical to JVM",
+    "reuse_basis": "Geometry and Float32 source bytes unchanged from qualified numeric candidate"
   },
-  "browser_runner": {
+  "runner_fixtures": {
     "status": "PASS",
-    "fixtures": 16,
-    "receipt": "m3/ports/carousel-gwt/verification/ACTUAL_BROWSER_RUNNER01.json"
+    "cases": 16
   },
-  "java_api_compile": "IN_PROGRESS",
-  "gwt_browser_modules": "IN_PROGRESS",
-  "actual_chrome_product_behavior": "NOT_RUN",
-  "source_aware_autoreview": "PENDING_NO_CLEAN_VERDICT",
-  "native_swt_owner_changes": 0,
-  "native_base": {
-    "canonical": "b5bbff3a2051ea92d11e1c71b7550a59e70bdde1",
-    "nebula": "bd3922d6ea121ce40b8678542d704c8867e9ab1c",
-    "fixture_tests": 18,
-    "native_platform_and_resource_gates": "OPEN"
+  "source_review": {
+    "status": "PASS",
+    "engine": "gpt-5.6-sol/high",
+    "findings": 0,
+    "scope": "12-path correction against reviewed106-path baseline;94 paths unchanged",
+    "report": "proof/carousel-web-forward-20261015/SOURCE_REVIEW06.json",
+    "qualification": "proof/carousel-web-forward-20261015/SOURCE_REVIEW06_QUALIFIED.json"
   },
-  "rwt_rap_react_jni_and_performance": "OPEN_NOT_ESTABLISHED_BY_THIS_GWT_PROFILE",
-  "full_migration_and_continual_optimization_goal": "ACTIVE_INCOMPLETE"
+  "retained_failures": {
+    "source04_review": "One accepted P1: keyup binding disagreed with frozen keydown contract",
+    "source04_browser": "Stopped at non-JSON owner startup marker before public or owner assertions; keyboard runtime case was not reached",
+    "source05_corrections": "Recipe regenerated keydown binding, valid RUNNING JSON and catalogue; public oracle unchanged"
+  },
+  "owned_processes": {
+    "status": "PASS",
+    "active_at_terminal": 0,
+    "readers_terminal": true,
+    "cleanup_errors": [],
+    "natural_zero_before_termination": true
+  },
+  "native": {
+    "existing_owner_changes": 0,
+    "parent_fixture_tests": 18,
+    "parent_fixtures_establish_full_native_platform_parity": false
+  },
+  "remaining": [
+    "RWT/RAP and React adapters",
+    "JNI and native platform integration",
+    "All-browser and accessibility qualification",
+    "Performance and heap/native/mapped retention measurements",
+    "Original full MIndex migration Routes A/B/C and twelve passes"
+  ],
+  "original_full_migration_and_continual_optimization_goal": "ACTIVE_UNCHANGED",
+  "draft_prs": {
+    "canonical": "https://github.com/hsoliwal/com.synexia/pull/11709",
+    "receiver": "https://github.com/hsoliwal/nebula/pull/226"
+  }
 }

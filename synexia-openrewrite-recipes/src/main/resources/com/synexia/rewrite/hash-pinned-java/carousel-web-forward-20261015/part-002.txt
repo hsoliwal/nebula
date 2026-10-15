@@ -40,7 +40,7 @@ public final class Carousel extends Composite implements HasSelectionHandlers<In
     getElement().setAttribute("role", "img");
     getElement().setAttribute("aria-label", "Image carousel");
     imageContainer.canvas().setTabIndex(0);
-    imageContainer.canvas().addKeyUpHandler(event -> {
+    imageContainer.canvas().addKeyDownHandler(event -> {
       if (event.getNativeKeyCode() == KeyCodes.KEY_LEFT) previous();
       else if (event.getNativeKeyCode() == KeyCodes.KEY_RIGHT) next();
     });

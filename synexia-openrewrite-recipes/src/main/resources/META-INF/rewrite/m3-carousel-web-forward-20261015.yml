@@ -45,7 +45,7 @@ recipeList:
         <body>
           <h1>Real browser carousel contract</h1>
           <div id="fixture"></div>
-          <pre id="results">NOT_EXECUTED</pre>
+          <pre id="results">{"status":"RUNNING","assertions":0,"message":"Waiting for GWT bootstrap"}</pre>
         </body>
         </html>
   - org.openrewrite.text.CreateTextFile:
