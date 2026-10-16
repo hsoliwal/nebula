@@ -206,10 +206,29 @@ public class BadgedLabel extends Canvas {
 			return textSizeCache;
 		}
 
+		// The original widget owns this temporary native measurement GC.
+		// Release it even if font selection or text measurement throws;
+		// successful metrics and cache publication remain unchanged.
 		final GC gc = new GC(this);
-		gc.setFont(boldFont);
-		textSizeCache = gc.stringExtent(text);
-		gc.dispose();
+		Throwable primary = null;
+		try {
+			gc.setFont(boldFont);
+			textSizeCache = gc.stringExtent(text);
+		} catch (RuntimeException | Error failure) {
+			primary = failure;
+			throw failure;
+		} finally {
+			if (primary == null) {
+				gc.dispose();
+			} else {
+				// A native cleanup error must not replace the original failure.
+				try {
+					gc.dispose();
+				} catch (RuntimeException | Error disposal) {
+					primary.addSuppressed(disposal);
+				}
+			}
+		}
 		return textSizeCache;
 	}
 
@@ -272,10 +291,27 @@ public class BadgedLabel extends Canvas {
 		if (badgeTextSizeCache != null) {
 			return badgeTextSizeCache;
 		}
+		// Same native-lease lifetime as normal text; no second painter or GC owner.
 		final GC gc = new GC(this);
-		gc.setFont(badgeFont);
-		badgeTextSizeCache = gc.stringExtent(badgeValue);
-		gc.dispose();
+		Throwable primary = null;
+		try {
+			gc.setFont(badgeFont);
+			badgeTextSizeCache = gc.stringExtent(badgeValue);
+		} catch (RuntimeException | Error failure) {
+			primary = failure;
+			throw failure;
+		} finally {
+			if (primary == null) {
+				gc.dispose();
+			} else {
+				// A native cleanup error must not replace the original failure.
+				try {
+					gc.dispose();
+				} catch (RuntimeException | Error disposal) {
+					primary.addSuppressed(disposal);
+				}
+			}
+		}
 		return badgeTextSizeCache;
 
 	}
