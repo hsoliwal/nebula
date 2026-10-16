@@ -8,6 +8,7 @@ on:
       - 'm3/recipe-first/**'
       - 'm3/ci/**'
       - '.github/workflows/m3-one-build-openrewrite-convergence.yml'
+      - 'm3/convergence/PORTABLE_RECIPE_TRANSFER_SNAPSHOT_20261016.tsv'
   workflow_dispatch:
 
 permissions:

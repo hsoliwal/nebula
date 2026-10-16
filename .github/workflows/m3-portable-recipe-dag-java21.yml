@@ -11,6 +11,7 @@ on:
       - 'm3/docs/M3_PORTABLE_RECIPE_DAG.md'
       - 'm3/ci/test_portable_recipe_workflow.py'
       - '.github/workflows/m3-portable-recipe-dag-java21.yml'
+      - 'm3/convergence/PORTABLE_RECIPE_TRANSFER_SNAPSHOT_20261016.tsv'
   workflow_dispatch:
 
 permissions:
