@@ -35,6 +35,26 @@ public class VPanel extends VControl {
 	private VLayout layout = null;
 	private boolean isTopLevel = false;
 	private Listener topLevelListener;
+	/* Cleared after every paint; bounded by the original painter's admission policy. */
+	private final Object paintSnapshotLock = new Object();
+	private VControl[] paintSnapshot;
+	private boolean paintSnapshotDisposed;
+
+	VControl[] acquirePaintSnapshot(int count) {
+		synchronized (paintSnapshotLock) {
+			if (paintSnapshotDisposed) return null;
+			VControl[] available = paintSnapshot;
+			paintSnapshot = null; // Nested paints cannot reuse an active outer snapshot.
+			return available != null && available.length == count
+					? available : new VControl[count];
+		}
+	}
+
+	void releasePaintSnapshot(VControl[] clearedSnapshot) {
+		synchronized (paintSnapshotLock) {
+			if (!paintSnapshotDisposed) paintSnapshot = clearedSnapshot;
+		}
+	}
 	
 	public VPanel(Composite parent, int style) {
 		this((VPanel) null, style & ~SWT.BORDER);
@@ -105,6 +125,10 @@ public class VPanel extends VControl {
 	 * @param disposeComposite
 	 */
 	private void dispose(boolean disposeComposite) {
+		synchronized (paintSnapshotLock) {
+			paintSnapshotDisposed = true;
+			paintSnapshot = null;
+		}
 		if(isTopLevel) {
 			if(composite != null && !composite.isDisposed()) {
 				composite.removeListener(SWT.Dispose, topLevelListener);
