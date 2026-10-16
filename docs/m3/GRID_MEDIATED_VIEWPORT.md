@@ -1,6 +1,6 @@
 # Nebula Grid as a mediated viewport
 
-Status: leaf G1 implemented (row extent index); recorded differential passes. See "Status" below.
+Status: leaf G1 (row extent index) and leaf N1 (native look) implemented; recorded differential, acceptance, native-look pixel differential and scroll-paint check pass on the hidden test desktop. See "Status" below.
 
 ## Goal
 
@@ -109,6 +109,55 @@ Rule kept and rule not yet kept:
   to a worker needs the visible flags and heights as parent-owned lanes (a snapshot the worker can read), which
   is leaf G2.
 
+## Leaf N1: native look (user requirement 2026-10-16)
+
+In the viewport mode Grid looks like the platform's own list and tree (SWT `Table` and `Tree`) on the same
+platform. `-Dswt.widget.mode.Grid=original` keeps the stock Grid look; in the viewport mode
+`-Dorg.eclipse.nebula.widgets.grid.look=classic` keeps Grid's classic renderers, and every renderer stays
+selectable per column (`GridColumn.setCellRenderer`, `setHeaderRenderer`) and per Grid
+(`setEmptyCellRenderer`, `setEmptyColumnHeaderRenderer`, `setFocusRenderer`).
+
+- `GridNativeLook`: metrics measured once per display and font from hidden native controls through their public
+  API (`Table.getItemHeight`, `getHeaderHeight`, `TableItem.getTextBounds`, the same for `Tree`, check-box
+  tables and child rows): row height (list 19, list with check boxes 20, tree 18 for Segoe UI 9 at 100 %),
+  header height 24, text insets, tree indent and expander width. A Grid row plus its one-pixel separator is
+  the native row. Text is centred like the native controls (`(row - font height) / 2`).
+- `GridNativeTheme`: the platform's visual styles. On Windows the same `uxtheme` calls SWT's own `Table` and
+  `Tree` use (`OpenThemeData` for the monitor DPI, `DrawThemeBackground`, `DrawThemeText`,
+  `GetThemePartSize`), reached reflectively because the Grid bundle is platform independent: Explorer list and
+  tree items (selected, selected without focus), the list's column lines (`LVP_COLUMNDETAIL`), header items and
+  header text, tree glyphs, check boxes. Without visual styles (other platforms, or the internals missing) the
+  renderers fall back to system colours.
+- Measured native rules (win32, Windows 11, 100 %): the list draws its column lines under the selection; the
+  selection spans the columns in the list and the whole client width in the tree; the list draws a dotted focus
+  rectangle one pixel inside the focused row, the tree only when keyboard cues are shown (`WM_QUERYUISTATE`);
+  a disabled list keeps its header text black and paints its rows on the widget background; check boxes are
+  SWT image-list images, so their anti-aliased edges are blended twice (emulated from renderings on white and
+  black); the end ellipsis leaves two pixels of the reported text area.
+- Renderers: `GridNativeCellRenderer`, `GridNativeHeaderRenderer`, and in `GridNativeLook` the empty header,
+  empty cell and focus renderers. They are installed by two more hooks (Grid constructor, `GridColumn.init`).
+
+Proof: `GridNativeLook_Test`, pixel differential "Grid vs native Table" and "Grid (tree rows) vs native Tree":
+same rows, column widths, selection and focus, captured with `Control.print` on the hidden test desktop, both
+PNGs saved on a mismatch.
+
+| Scene | Differing pixels (300 x 260) |
+|---|---|
+| rows (header, text, column lines) | 0 |
+| selected row, focused | 0 |
+| selected row, not focused | 0 |
+| focused row without selection | 0 |
+| check boxes (checked and unchecked) | 40: the vertical scroll bar thumb (x 291-292, y 190-209); Grid's bar counts one more row than the list's, and the Grid's bar values are its API |
+| disabled, selected row | 0 |
+| tree rows, expanded and collapsed glyphs | 0 |
+| tree, selected child, focused | 0 |
+| tree, selected collapsed root, not focused | 0 |
+
+Not covered yet: hot-tracking (needs real mouse input, not available on the hidden desktop), sort indicators,
+grid lines (`setLinesVisible (true)` draws Grid's line colour; Grid shows lines by default, the native list
+does not, so the scenes set both explicitly), images, column groups, row headers, footers, other DPI scales,
+GTK and Cocoa.
+
 ## Tests
 
 - `GridViewportDifferential_Test` (recorded differential): seeded scripts of public API operations run against
@@ -140,6 +189,22 @@ GUI runs: `ui_lock.sh` + `run_guarded.sh` (`grid-viewport/run_tests.sh`).
 | `ScrollProbe` (out-of-tree probe), 1,000,000 items, 60 scroll steps near the bottom | viewport: geometry 0.378 ms, paint 10.1 ms per step; original: geometry 29.1 ms, paint 8.9 ms per step (77x) |
 | Grid suite (34 classes, 590 tests), `original` mode | 151 failures: the baseline of this harness (the suite expects the Tycho/OSGi test runtime) |
 | Grid suite, `viewport` mode | 152 failures: the same 151 plus `GridCheckLanes_Test.checkStateFollowsModelRowsAndCheckAllIsFilterAware`, a flat `SWT.VIRTUAL` pixel test that never reaches the index (every hook is off for the sparse list); rerun 3 times per mode it failed 3/3 (viewport) and 2/3 (original) with alternating hashes |
+
+### Hidden test desktop (user requirement 2026-10-16: no mouse moves, no focus theft)
+
+From this point every UI run is on the invisible desktop `WinSta0\m3-ui-tests` (`hidden_java.sh`,
+`grid-viewport/run_hidden.sh`) with the official SWT 3.135.0 jar from Maven Central (md5
+`ff30a6787dbca882392b48299274eb88`, the same bytes as the jar used before). No test moves the cursor; captures use
+`Control.print`.
+
+| Gate (hidden desktop) | Result |
+|---|---|
+| `GridViewportDifferential_Test`, oracle `original` mode, 8 seeds x 160 steps (classic look on both sides) | pass: every step and the printed pixels identical |
+| `GridViewport_Test`, 1,000,000 items | pass: built in 9.2 s; median scroll step near the top / bottom: geometry 437 / 463 us, paint 5.0 / 4.1 ms; 100,000-item stock-vs-viewport pixels identical |
+| `GridViewportDifferential_Test`, oracle = stock Nebula Grid `5d0bcbb9` on the official jar (pixels advisory) | seeds 0-3: all 160 steps identical; printed pixels differ in 173, 174, 172 and 2,697 pixels (seeds 0-2: the header text row; seed 3: header and body); seed 4 step 148: the fork's item-text defect (see Findings) |
+| `GridNativeLook_Test` (Grid vs native Table and Tree, 9 scenes) | pass: 0 differing pixels in 8 scenes, 40 (documented scroll-bar thumb) in the check-box scene |
+| `GridScrollPaint_Test` (right after a scroll, before the event loop: the window shows the old or the new rows, never a mix or a row without data), 22 steps each on a 20,000-row `SWT.VIRTUAL` Grid and a tree Grid | viewport: pass (new rows at once in 21 and 15 steps, the old rows until the event loop in 1 and 7); original: pass (14 and 11 / 8 and 11). No blank or mixed window was observed |
+| Grid suite (34 classes, 590 tests): `original` / viewport with `look=classic` / viewport with the native look | 152 / 152 (the same set) / 153 failures. The extra one is `GridColumnWindow_Test.columnGroupsKeepTheFullHeaderWalkAndPaintIdentically` (column window on vs off with column groups paint differently); an out-of-tree probe (`ColumnWindowProbe`) shows the same on/off mismatch also with the classic look at other scroll positions, so it is recorded as a column-window issue to fix in its own leaf |
 
 Findings (pre-existing, both modes, recorded for their own fixes):
 

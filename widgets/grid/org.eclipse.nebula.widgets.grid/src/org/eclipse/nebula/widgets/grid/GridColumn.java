@@ -302,6 +302,9 @@ public class GridColumn extends Item {
 		if ((style & SWT.FILL) != 0) {
 			fill = true;
 		}
+		if (table.viewport != null) {
+			table.viewport.applyLook(this);
+		}
 
 		initHeaderRenderer();
 		initFooterRenderer();

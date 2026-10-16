@@ -109,13 +109,17 @@ public class GridViewportDifferential_Test {
 		return type.getProtectionDomain().getCodeSource().getLocation();
 	}
 
-	/** A Grid build whose classes initialize with the given startup mode. */
+	/**
+	 * A Grid build whose classes initialize with the given startup mode and the classic look (the
+	 * differential compares the mechanics; the native look has its own test, GridNativeLook_Test).
+	 */
 	static ClassLoader gridBuild(final URL gridClasses, final String mode) throws Exception {
 		final ClassLoader loader = new IsolatingLoader(new URL[] { gridClasses, location(GridDifferentialDriver.class) },
 				GridViewportDifferential_Test.class.getClassLoader());
-		final String key = "swt.widget.mode.Grid";
-		final String old = System.getProperty(key);
+		final String key = "swt.widget.mode.Grid", lookKey = "org.eclipse.nebula.widgets.grid.look";
+		final String old = System.getProperty(key), oldLook = System.getProperty(lookKey);
 		System.setProperty(key, mode);
+		System.setProperty(lookKey, "classic");
 		try {
 			Class.forName(PACKAGE + "widgets.grid.Grid", true, loader);
 			try {
@@ -123,14 +127,22 @@ public class GridViewportDifferential_Test {
 			} catch (final ClassNotFoundException e) {
 				// a Grid build without the mode switch
 			}
+			Class.forName(PACKAGE + "widgets.grid.GridNativeLook", true, loader);
+		} catch (final ClassNotFoundException e) {
+			// a Grid build without the native look
 		} finally {
-			if (old == null) {
-				System.clearProperty(key);
-			} else {
-				System.setProperty(key, old);
-			}
+			restore(key, old);
+			restore(lookKey, oldLook);
 		}
 		return loader;
+	}
+
+	private static void restore(final String key, final String value) {
+		if (value == null) {
+			System.clearProperty(key);
+		} else {
+			System.setProperty(key, value);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -157,7 +169,6 @@ public class GridViewportDifferential_Test {
 			assumeTrue("Grid viewport mediation is not active in this build", "viewport".equals(viewport.apply(mode)));
 			stockShell.open();
 			viewportShell.open();
-			display.setCursorLocation(0, 0);
 			final String pixels = run(seed, config, stock, viewport);
 			System.out.println("GridViewportDifferential_Test: seed " + seed + " config " + config + ", " + STEPS
 					+ " steps identical, " + pixels + " (oracle " + stock.apply(mode) + ", candidate " + viewport.apply(mode) + ")");
@@ -189,8 +200,6 @@ public class GridViewportDifferential_Test {
 			compare(log, "step " + step, expected + " | " + stock.apply(state), actual + " | " + viewport.apply(state));
 		}
 		focusHolder.setFocus();
-		// no row may show hover feedback
-		display.setCursorLocation(0, 0);
 		drain();
 		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
 		final ImageData expected = (ImageData) stock.apply(pixels);

@@ -158,7 +158,9 @@ public class GridViewport_Test {
 		new Text(stockShell, SWT.SINGLE).setBounds(5, 390, 60, 22);
 		try {
 			largeTreeScript(GridViewportDifferential_Test.driver(stockBuild, stockShell, GridDifferentialDriver.LARGE),
-					GridViewportDifferential_Test.driver(getClass().getClassLoader(), shell, GridDifferentialDriver.LARGE),
+					GridViewportDifferential_Test.driver(GridViewportDifferential_Test.gridBuild(
+							Grid.class.getProtectionDomain().getCodeSource().getLocation(), "viewport"), shell,
+							GridDifferentialDriver.LARGE),
 					stockShell);
 		} finally {
 			stockShell.dispose();
@@ -169,7 +171,6 @@ public class GridViewport_Test {
 			final Shell stockShell) {
 		stockShell.open();
 		shell.open();
-		display.setCursorLocation(0, 0);
 		settle();
 		final int[][] script = { { 0, 99_900, 0, 0 }, { 0, 99_500, 0, 0 }, { 15, 99_903, 0, 21 }, { 2, 99_480, 0, 0 },
 				{ 3, 99_950, 0, 0 }, { 4, 99_904, 0, 0 }, { 20, 0, 1, 0 }, { 21, 0, 3, 1 } };
@@ -179,8 +180,6 @@ public class GridViewport_Test {
 			final int[] state = { GridDifferentialDriver.STATE, 0, 0, 0 };
 			assertEquals(Arrays.toString(op), stock.apply(state), viewport.apply(state));
 		}
-		// no row may show hover feedback
-		display.setCursorLocation(0, 0);
 		settle();
 		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
 		final ImageData expected = (ImageData) stock.apply(pixels);

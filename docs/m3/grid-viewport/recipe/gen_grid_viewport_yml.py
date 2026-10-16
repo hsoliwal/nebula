@@ -34,7 +34,7 @@ GRID_MEMBERS = [
 GRID_HOOKS = [
     # (method, parameterCount, position, anchor, statements[, parameterTypes])
     ('Grid', 3, 'METHOD_END', '',
-     '\t\tif (GridViewport.ENABLED) {\n\t\t\tviewport = new GridViewport(this, items);\n\t\t}'),
+     '\t\tif (GridViewport.ENABLED) {\n\t\t\tviewport = new GridViewport(this, items);\n\t\t\tviewport.applyLook();\n\t\t}'),
     ('getTopIndex', 0, 'AFTER', 'if (topIndex != -1)',
      '\t\tif (rowsIndexed()) {\n\t\t\ttopIndex = viewport.getTopIndex(isTree);\n\t\t\treturn topIndex;\n\t\t}'),
     ('setTopIndex', 1, 'AFTER', 'if (!vScroll.getVisible())',
@@ -69,6 +69,13 @@ GRID_HOOKS = [
      '\t\tif (viewport != null) {\n\t\t\tviewport.rowsChanged();\n\t\t}'),
     ('setItemHeight', 1, 'AFTER', 'itemHeight = height;',
      '\t\tif (viewport != null) {\n\t\t\tviewport.rowsChanged();\n\t\t}'),
+]
+
+COLUMN = 'org.eclipse.nebula.widgets.grid.GridColumn'
+
+COLUMN_HOOKS = [
+    ('init', 3, 'BEFORE', 'initHeaderRenderer();',
+     '\t\tif (table.viewport != null) {\n\t\t\ttable.viewport.applyLook(this);\n\t\t}'),
 ]
 
 ITEM_MEMBERS = [
@@ -127,6 +134,7 @@ lines = [
     'recipeList:',
     '  - com.synexia.openrewrite.viewport.NebulaGridViewportGrid',
     '  - com.synexia.openrewrite.viewport.NebulaGridViewportGridItem',
+    '  - com.synexia.openrewrite.viewport.NebulaGridViewportGridColumn',
     '---',
     'type: specs.openrewrite.org/v1beta/recipe',
     'name: com.synexia.openrewrite.viewport.NebulaGridViewportGrid',
@@ -140,9 +148,16 @@ lines = [
     'displayName: Nebula GridItem viewport hooks',
     'description: A visibility or height change updates one position of the row extent index.',
     'recipeList:',
-] + members(ITEM, ITEM_MEMBERS) + entries(ITEM, ITEM_HOOKS)
+] + members(ITEM, ITEM_MEMBERS) + entries(ITEM, ITEM_HOOKS) + [
+    '---',
+    'type: specs.openrewrite.org/v1beta/recipe',
+    'name: com.synexia.openrewrite.viewport.NebulaGridViewportGridColumn',
+    'displayName: Nebula GridColumn viewport hooks',
+    'description: A new column of a viewport Grid gets the native look renderers (GridNativeLook).',
+    'recipeList:',
+] + entries(COLUMN, COLUMN_HOOKS)
 
 out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'META-INF', 'rewrite', 'm3-nebula-grid-viewport.yml')
 with open(out, 'w', encoding='utf-8', newline='\n') as f:
     f.write('\n'.join(lines) + '\n')
-print('hooks: Grid %d (+%d members), GridItem %d (+%d members)' % (len(GRID_HOOKS), len(GRID_MEMBERS), len(ITEM_HOOKS), len(ITEM_MEMBERS)))
+print('hooks: Grid %d (+%d members), GridItem %d (+%d members), GridColumn %d' % (len(GRID_HOOKS), len(GRID_MEMBERS), len(ITEM_HOOKS), len(ITEM_MEMBERS), len(COLUMN_HOOKS)))

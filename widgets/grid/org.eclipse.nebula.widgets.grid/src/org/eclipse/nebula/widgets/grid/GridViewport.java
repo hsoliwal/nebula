@@ -48,6 +48,8 @@ final class GridViewport {
 	private final Grid grid;
 	private final List<GridItem> items;
 	private final GridRowExtents rows = new GridRowExtents();
+	/* the visual styles of the native look, or null for the classic look */
+	private final GridNativeTheme theme;
 
 	/**
 	 * @param grid  the mediated Grid
@@ -56,6 +58,25 @@ final class GridViewport {
 	GridViewport(final Grid grid, final List<GridItem> items) {
 		this.grid = grid;
 		this.items = items;
+		this.theme = GridNativeLook.ENABLED ? new GridNativeTheme(grid) : null;
+	}
+
+	/** Gives the Grid the native look's Grid-level renderers (see {@link GridNativeLook}). */
+	void applyLook() {
+		if (theme != null) {
+			GridNativeLook.install(grid, theme);
+		}
+	}
+
+	/**
+	 * Gives a new column the native look's renderers.
+	 *
+	 * @param column the column
+	 */
+	void applyLook(final GridColumn column) {
+		if (theme != null) {
+			GridNativeLook.install(column, theme);
+		}
 	}
 
 	/**

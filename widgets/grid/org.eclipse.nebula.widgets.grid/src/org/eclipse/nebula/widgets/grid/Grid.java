@@ -1105,6 +1105,7 @@ public class Grid extends Canvas {
 		setDragDetect(false);
 		if (GridViewport.ENABLED) {
 			viewport = new GridViewport(this, items);
+			viewport.applyLook();
 		}
 	}
 

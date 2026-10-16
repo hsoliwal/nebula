@@ -8,5 +8,5 @@ python -I $WT/docs/m3/grid-viewport/recipe/gen_grid_viewport_yml.py
 CPR="$WT/docs/m3/grid-viewport/recipe;$C/target/classes;$(cat $C/target/cp.txt)"
 for pass in 1 2; do
   echo "recipe pass $pass:"
-  "$JAVA_HOME/bin/java" -Xmx1g -cp "$CPR" com.synexia.openrewrite.viewport.M3PerFileApply com.synexia.openrewrite.viewport.NebulaGridViewport "$G/Grid.java" "$G/GridItem.java" 2>&1 | grep -E '^(CHANGED|UNCHANGED|ERROR)|Exception' | head -5
+  "$JAVA_HOME/bin/java" -Xmx1g -cp "$CPR" com.synexia.openrewrite.viewport.M3PerFileApply com.synexia.openrewrite.viewport.NebulaGridViewport "$G/Grid.java" "$G/GridItem.java" "$G/GridColumn.java" 2>&1 | grep -E '^(CHANGED|UNCHANGED|ERROR)|Exception' | head -5
 done
