@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: EPL-2.0
+widget	creation_id	java_source_template	donor_git_blob	license	status
+Button	default	new org.eclipse.swt.widgets.Button(%parent%, org.eclipse.swt.SWT.NONE)	91ccd8e263115f8109f2a46380d4a2652f90f2cc	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Button	empty	new org.eclipse.swt.widgets.Button(%parent%, org.eclipse.swt.SWT.NONE)	91ccd8e263115f8109f2a46380d4a2652f90f2cc	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Button	check	new org.eclipse.swt.widgets.Button(%parent%, org.eclipse.swt.SWT.CHECK)	91ccd8e263115f8109f2a46380d4a2652f90f2cc	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Button	radio	new org.eclipse.swt.widgets.Button(%parent%, org.eclipse.swt.SWT.RADIO)	91ccd8e263115f8109f2a46380d4a2652f90f2cc	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Label	default	new org.eclipse.swt.widgets.Label(%parent%, org.eclipse.swt.SWT.NONE)	aa7474fc552b83e6c5f90c67ef734a9c547cbef5	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Label	empty	new org.eclipse.swt.widgets.Label(%parent%, org.eclipse.swt.SWT.NONE)	aa7474fc552b83e6c5f90c67ef734a9c547cbef5	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Label	separatorHorizontal	new org.eclipse.swt.widgets.Label(%parent%, org.eclipse.swt.SWT.SEPARATOR | org.eclipse.swt.SWT.HORIZONTAL)	aa7474fc552b83e6c5f90c67ef734a9c547cbef5	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Label	separatorVertical	new org.eclipse.swt.widgets.Label(%parent%, org.eclipse.swt.SWT.SEPARATOR | org.eclipse.swt.SWT.VERTICAL)	aa7474fc552b83e6c5f90c67ef734a9c547cbef5	EPL-2.0	CONSTRUCTION_METADATA_ONLY
+Text	default	new org.eclipse.swt.widgets.Text(%parent%, org.eclipse.swt.SWT.BORDER)	596f3263fae4afab837753348e34ed8fd6bdfae5	EPL-2.0	CONSTRUCTION_METADATA_ONLY

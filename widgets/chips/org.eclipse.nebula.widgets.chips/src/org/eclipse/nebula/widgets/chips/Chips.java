@@ -296,7 +296,18 @@ public class Chips extends Canvas {
 
 		gc.setBackground(background);
 		gc.setForeground(foreground);
-		closeCenter = new Point(x + 4 + CLOSE_CIRCLE_RAY, (rect.height - 2 * CLOSE_CIRCLE_RAY) / 2 + CLOSE_CIRCLE_RAY);
+		// The existing widget owns its last painted close-center. Reuse the
+		// same private Point after its first allocation; do not add another
+		// viewport, SetData callback, native resource or item owner.
+		// Preserve Java int wrap, event coordinates and the prepaint null state.
+		final int centerX = x + 4 + CLOSE_CIRCLE_RAY;
+		final int centerY = (rect.height - 2 * CLOSE_CIRCLE_RAY) / 2 + CLOSE_CIRCLE_RAY;
+		if (closeCenter == null) {
+			closeCenter = new Point(centerX, centerY);
+		} else {
+			closeCenter.x = centerX;
+			closeCenter.y = centerY;
+		}
 		gc.fillOval(x + 4, (rect.height - 2 * CLOSE_CIRCLE_RAY) / 2, 2 * CLOSE_CIRCLE_RAY, 2 * CLOSE_CIRCLE_RAY);
 
 		// Cross

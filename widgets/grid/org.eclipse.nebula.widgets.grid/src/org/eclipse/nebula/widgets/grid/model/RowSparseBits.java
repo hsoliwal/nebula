@@ -42,7 +42,7 @@ public final class RowSparseBits {
 	private int insertAt(int at, int key, int kind, int[] payload) {
 		if (n == keys.length) {
 			int next = HeapGrowth.capacity(keys.length, n + 1, 16);
-			// Publish the parallel directory only after every replacement succeeds.
+			// Publish only after all four allocations succeed; retain the existing heap policy.
 			int[] nextKeys = Arrays.copyOf(keys, next);
 			int[] nextKinds = Arrays.copyOf(kinds, next);
 			int[] nextSizes = Arrays.copyOf(sizes, next);
@@ -428,6 +428,7 @@ public final class RowSparseBits {
 			int next;
 			switch (kinds[c]) {
 				case BITMAP:
+					// Clamp before addition, as in the canonical SWT ItemBitSet owner.
 					next = base + Math.min(nextClearInBitmap(d, v), limit - base);
 					break;
 				case RUN: {
