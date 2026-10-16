@@ -3,11 +3,16 @@
 
 ## Owner and scope
 
-The source-changing work unit is
-`org.eclipse.nebula.m3.rewrite.exact.NebulaM3DagEvidenceAtomicRecipe`.
-It is an exact Java-LST FILE-scoped OpenRewrite recipe with pinned pre/post SHA-256, stale
-preimage refusal, and an unchanged second replay. The postimage modifies only
-`NebulaM3RecipeDagManifestCli.java`. The existing Nebula Maven/Tycho build remains product authority.
+The canonical work unit is the ordered OpenRewrite DAG
+`org.eclipse.nebula.m3.rewrite.exact.NebulaM3DagAtomicConvergenceRecipe`:
+
+1. `NebulaM3DagAtomicMavenProfileRecipe`: exact XML-LST opt-in POM admission;
+2. `NebulaM3DagEvidenceAtomicRecipe`: exact Java-LST FILE exporter rewrite.
+
+Each atom has pinned pre/post SHA-256, stale-preimage refusal and unchanged second replay.
+The Java change is **FILE** scope; the opt-in Maven profile is **MODULE/build** scope.
+The DAG's highest authority is consequently MODULE, which requires normal review and product
+proof rather than silent FILE promotion. Neither leaf runs mutation in Maven's default lifecycle.
 
 The recipe is a Nebula target-specific proving leaf. Canonical reusable M3 recipes remain
 owned by `hsoliwal/com.synexia`. No duplicate compiler, atomizer, patternizer, scheduler
@@ -36,12 +41,13 @@ External schedulers have no source-mutation, semantic-equivalence or promotion a
 
 ## Recipe / JUnit verification
 
-The portable Linux/Windows/macOS Java 21 workflow now requires both:
+The portable Linux/Windows/macOS Java 21 workflow now requires all three:
 
-- `NebulaM3DagEvidenceAtomicRecipeTest`: LST hash-pin, exact replay, unrelated-file refusal,
-  stale source rejection and fixed-point proof;
+- `NebulaM3DagAtomicConvergenceRecipeTest`: exact XML + Java LST DAG order, byte pins, scoped
+  source application, stale POM refusal, unchanged second replay and opt-in profile proof;
+- `NebulaM3DagEvidenceAtomicRecipeTest`: exact Java LST, stale source rejection and fixed point;
 - `NebulaM3RecipeDagAtomicPublicationTest`: actual publication output, identical replay,
-  special target rejection, symlink/hard-link cases, safe UTF-8 output, and interruption.
+  special target rejection, symlink/hard-link cases, safe UTF-8 output and interruption.
 
 To run the complete module proof:
 
@@ -50,8 +56,17 @@ mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am verify
 ```
 
 The named recipe is registered as `org.eclipse.nebula.m3.DagAtomicEvidence` in
-`m3/recipe-first/rewrite.yml`. Invoke the rewrite Maven goal explicitly; no mutating
-goal is bound to the default lifecycle.
+`m3/recipe-first/rewrite.yml` and loaded by the explicit `dag-atomic-evidence` Maven profile.
+After installing the module artifact for OpenRewrite's plugin dependency, invoke the dry-run
+explicitly:
+
+```bash
+mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-atomic-evidence install
+mvn -B -ntp -f m3/recipe-first/pom.xml -Pdag-atomic-evidence rewrite:dryRun
+```
+
+No mutating OpenRewrite goal is lifecycle-bound; `rewrite:run` requires separate user
+authorization after proof.
 
 ## Evidence and limitations
 
