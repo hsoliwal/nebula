@@ -25,7 +25,7 @@ public final class NebulaM3DagAtomicConvergenceRecipe extends Recipe {
     @Override
     public Set<String> getTags() {
         return Set.of("m3", "nebula", "maven", "openrewrite",
-                "atomization", "documentation", "recipe-dag", "candidate-only");
+                "atomization", "documentation", "recipe-dag", "module-scope", "candidate-only");
     }
 
     @Override
