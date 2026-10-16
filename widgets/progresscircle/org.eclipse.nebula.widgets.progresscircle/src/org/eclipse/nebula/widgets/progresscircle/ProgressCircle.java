@@ -139,64 +139,69 @@ public class ProgressCircle extends Canvas {
 
 		// Draw the selected part
 		final Path pathHighlight = new Path(getDisplay());
-		float ratio = 1.0f * value / (maximum - minimum);
-		if (minimum < 0 && maximum < 0) {
-			ratio = -1.0f * (minimum - value) / (maximum - minimum);
+		float angle;
+		try {
+			float ratio = 1.0f * value / (maximum - minimum);
+			if (minimum < 0 && maximum < 0) {
+				ratio = -1.0f * (minimum - value) / (maximum - minimum);
+			}
+
+			angle = ratio * 360f;
+			if (minimum < 0 && maximum > 0) {
+				angle += 180;
+			}
+
+			pathHighlight.addArc(MARGIN, MARGIN, circleSize, circleSize, 90, -angle);
+			pathHighlight.lineTo((MARGIN + circleSize) / 2, (MARGIN + circleSize) / 2);
+			pathHighlight.close();
+
+			gc.setBackground(getHighlightColor());
+			gc.fillPath(pathHighlight);
+		} finally {
+			pathHighlight.dispose();
 		}
-
-		float angle = ratio * 360f;
-		if (minimum < 0 && maximum > 0) {
-			angle += 180;
-		}
-
-		pathHighlight.addArc(MARGIN, MARGIN, circleSize, circleSize, 90, -angle);
-		pathHighlight.lineTo((MARGIN + circleSize) / 2, (MARGIN + circleSize) / 2);
-		pathHighlight.close();
-
-		gc.setBackground(getHighlightColor());
-		gc.fillPath(pathHighlight);
-		pathHighlight.dispose();
 
 		// Draw the unselected part
 		final Path path = new Path(getDisplay());
-		final float unselectedAngle = 360f - angle;
+		try {
+			final float unselectedAngle = 360f - angle;
+			path.addArc(MARGIN, MARGIN, circleSize, circleSize, 90 - angle, -unselectedAngle);
+			path.lineTo((MARGIN + circleSize) / 2, (MARGIN + circleSize) / 2);
+			path.close();
 
-		path.addArc(MARGIN, MARGIN, circleSize, circleSize, 90 - angle, -unselectedAngle);
-		path.lineTo((MARGIN + circleSize) / 2, (MARGIN + circleSize) / 2);
-		path.close();
+			gc.setBackground(getForeground());
+			gc.fillPath(path);
 
-		gc.setBackground(getForeground());
-		gc.fillPath(path);
-		pathHighlight.dispose();
+			// Draw the hole
+			gc.setBackground(getBackground());
+			gc.fillOval(MARGIN + thickness, MARGIN + thickness, circleSize - thickness * 2, circleSize - thickness * 2);
 
-		// Draw the hole
-		gc.setBackground(getBackground());
-		gc.fillOval(MARGIN + thickness, MARGIN + thickness, circleSize - thickness * 2, circleSize - thickness * 2);
-
-		if (showText) {
-			gc.setForeground(getHighlightColor());
-			final String text;
-			if (isTimer) {
-				final LocalTime time = LocalTime.ofSecondOfDay(value);
-				if (time.getHour() == 0) {
-					if (time.getMinute() == 0) {
-						// Seconds only
-						text = String.format("%02d", time.getSecond());
+			if (showText) {
+				gc.setForeground(getHighlightColor());
+				final String text;
+				if (isTimer) {
+					final LocalTime time = LocalTime.ofSecondOfDay(value);
+					if (time.getHour() == 0) {
+						if (time.getMinute() == 0) {
+							// Seconds only
+							text = String.format("%02d", time.getSecond());
+						} else {
+							// Minutes+secondes
+							text = String.format("%02d:%02d", time.getMinute(), time.getSecond());
+						}
 					} else {
-						// Minutes+secondes
-						text = String.format("%02d:%02d", time.getMinute(), time.getSecond());
+						// Hour/Min/sec
+						text = String.format("%02d:%02d:%02d", time.getHour(), time.getMinute(), time.getSecond());
 					}
 				} else {
-					// Hour/Min/sec
-					text = String.format("%02d:%02d:%02d", time.getHour(), time.getMinute(), time.getSecond());
+					text = String.format(textPattern, value);
 				}
-			} else {
-				text = String.format(textPattern, value);
+				final Point textSize = gc.stringExtent(text);
+				final int x = MARGIN + (circleSize - textSize.x) / 2;
+				final int y = (circleSize - textSize.y) / 2;
+				gc.drawText(text, x, y, true);
 			}
-			final Point textSize = gc.stringExtent(text);
-			final int x = MARGIN + (circleSize - textSize.x) / 2;
-			final int y = (circleSize - textSize.y) / 2;
-			gc.drawText(text, x, y, true);
+		} finally {
 			path.dispose();
 		}
 	}
