@@ -167,6 +167,8 @@ public class Gallery extends Canvas {
 	 */
 	protected int translate = 0;
 
+	/** Updated only after a successful complete layout of the original groups. */
+
 	/**
 	 * Low quality on user action : decrease drawing quality on scrolling or
 	 * resize. (faster)
@@ -1261,55 +1263,56 @@ public class Gallery extends Canvas {
 		}
 	};
 
+	private static final int[] EMPTY_PAINT_WINDOW = new int[0];
+
 	/**
-	 * The widget owns its paint window. For the ordinary default renderer its
-	 * already-laid-out group ends form a monotone search key. Virtual groups must
-	 * still be examined in order: SetData and ultra-lazy initialization are
-	 * observable and must never be skipped by a binary search.
+	 * Project only groups intersecting the GC clip. The Gallery remains the sole
+	 * owner of its GalleryItem identities, SWT.SetData, selection and scrollbars.
+	 * A verified, ordered DefaultGalleryGroupRenderer permits a logarithmic
+	 * initial skip; custom renderers preserve the original serial traversal.
 	 */
-	private int firstVisibleGroupIndex(int start, int end) {
-		if (!monotoneGroupGeometry || start > end || items == null) return 0;
-		int low = 0;
-		int high = items.length;
+	private int[] getVisibleItems(Rectangle clipping) {
+		if (items == null) return null;
+		if (clipping.width <= 0 || clipping.height <= 0) return EMPTY_PAINT_WINDOW;
+		long start = (vertical ? (long) clipping.y : clipping.x) + translate;
+		long end = start + (vertical ? clipping.height : clipping.width);
+		int first = monotoneGroupGeometry ? firstGroupEndingAtOrAfter(start) : 0;
+		int[] result = EMPTY_PAINT_WINDOW;
+		int size = 0;
+		for (int i = first; i < items.length; i++) {
+			GalleryItem item = virtualGroups ? _getItem(i, false) : _getItem(i);
+			long leading = vertical ? item.y : item.x;
+			if (leading > end) break;
+			long trailing = leading + (vertical ? item.height : item.width);
+			if (trailing >= start) {
+				if (size == result.length) {
+					int remaining = items.length - first;
+					int capacity = result.length == 0 ? Math.min(16, remaining)
+							: result.length + Math.min(result.length, remaining - result.length);
+					result = Arrays.copyOf(result, capacity);
+				}
+				result[size++] = i;
+			}
+		}
+		return size == result.length ? result : Arrays.copyOf(result, size);
+	}
+
+	/** Does not request a GalleryItem facade or invoke SWT.SetData. */
+	private int firstGroupEndingAtOrAfter(long start) {
+		int low = 0, high = items.length;
 		while (low < high) {
 			int mid = low + ((high - low) >>> 1);
 			GalleryItem item = items[mid];
-			if (item == null) return 0;
-			int far = vertical ? item.y + item.height : item.x + item.width;
-			if (far < start) {
-				low = mid + 1;
-			} else {
-				high = mid;
+			if (item == null) {
+				monotoneGroupGeometry = false;
+				return 0;
 			}
+			long trailing = (vertical ? (long) item.y : item.x)
+					+ (vertical ? item.height : item.width);
+			if (trailing < start) low = mid + 1;
+			else high = mid;
 		}
 		return low;
-	}
-
-	private int[] getVisibleItems(Rectangle clipping) {
-		if (items == null) return null;
-
-		int start = vertical ? clipping.y + translate : clipping.x + translate;
-		int end = vertical ? clipping.y + clipping.height + translate
-				: clipping.x + clipping.width + translate;
-
-		int index = firstVisibleGroupIndex(start, end);
-		int[] indexes = new int[Math.min(16, items.length - index)];
-		int used = 0;
-		while (index < items.length) {
-			GalleryItem item = virtualGroups ? _getItem(index, false) : _getItem(index);
-			if ((vertical ? item.y : item.x) > end) break;
-			if ((vertical ? item.y + item.height : item.x + item.width) >= start) {
-				if (used == indexes.length) {
-					long grown = (long) indexes.length + Math.max(8L, indexes.length >>> 1);
-					int capacity = (int) Math.min((long) items.length,
-							Math.max((long) used + 1, grown));
-					indexes = Arrays.copyOf(indexes, capacity);
-				}
-				indexes[used++] = index;
-			}
-			index++;
-		}
-		return Arrays.copyOf(indexes, used);
 	}
 
 	/**
@@ -1925,7 +1928,7 @@ public class Gallery extends Canvas {
 
 		int pos = vertical ? (coords.y + translate) : (coords.x + translate);
 
-		int index = firstVisibleGroupIndex(pos, pos);
+		int index = monotoneGroupGeometry ? firstGroupEndingAtOrAfter(pos) : 0;
 		GalleryItem item = null;
 		while (index < items.length) {
 			item = getItem(index);
@@ -2562,6 +2565,7 @@ public class Gallery extends Canvas {
 	}
 
 	public void _setGalleryItems(GalleryItem[] items) {
+		monotoneGroupGeometry = false;
 		this.items = items;
 	}
 
