@@ -22,6 +22,7 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
@@ -60,7 +61,7 @@ public class PShelf extends Canvas {
 	private PShelfItem hoverItem;
     private int itemHeight = 0;
 
-    private ArrayList<Integer> yCoordinates = new ArrayList<>();
+    private int[] yCoordinates = new int[0];
     private double animationSpeed = 0.02;
     private boolean redrawOnAnimation;
 
@@ -182,6 +183,24 @@ public class PShelf extends Canvas {
         return renderer;
     }
 
+    /** Widget-owned O(1) header check with exact virtual override semantics. */
+    boolean isFirstItem(PShelfItem item) {
+        // A subclass may override public getItems() and change its visible order,
+        // callback effects, or exception behavior. Keep the original virtual call.
+        if (getClass() != PShelf.class || items.isEmpty()) {
+            return getItems()[0] == item;
+        }
+        checkWidget();
+        return items.get(0) == item;
+    }
+
+    /** Private exact-owner count; never replaces subclass getItems() dispatch. */
+    int itemCountForInsertion() {
+        checkWidget();
+        return items.size();
+    }
+
+
 	/**
      * {@inheritDoc}
      */
@@ -237,9 +256,9 @@ public class PShelf extends Canvas {
 			gc.setBackground(back);
 			gc.setForeground(fore);
 
-            Integer y = yCoordinates.get(index);
+            int y = yCoordinates[index];
 
-            renderer.setBounds(0,y.intValue(),getClientArea().width,itemHeight);
+            renderer.setBounds(0,y,getClientArea().width,itemHeight);
             renderer.setSelected(item == openItem);
             renderer.setFocus(this.isFocusControl() && focusItem == item);
             renderer.setHover(item == hoverItem);
@@ -252,25 +271,10 @@ public class PShelf extends Canvas {
 
     private void computeItemYCoordinates()
     {
-        yCoordinates.clear();
-
-        int y = getClientArea().y;
-        int i = 0;
-
-        for (Iterator<PShelfItem> iter = items.iterator(); iter.hasNext();)
-        {
-            i ++;
-
-            PShelfItem item = iter.next();
-
-            yCoordinates.add(new Integer(y));
-
-            y += itemHeight;
-
-            if (item == openItem) {
-                y = getClientArea().y + getClientArea().height - (itemHeight * (items.size() - i));
-            }
-        }
+        Rectangle client = getClientArea();
+        // PShelf itself owns the header projection; no per-header Integer state.
+        yCoordinates = PShelfViewportGeometry.steady(items.size(),
+                items.indexOf(openItem), client.y, client.height, itemHeight);
     }
 
 	void createItem(PShelfItem item,int index){
@@ -359,43 +363,13 @@ public class PShelf extends Canvas {
         double percentOfWork = 0;
         while (percentOfWork < 1)
         {
-            yCoordinates.clear();
-
-            int yTop = getClientArea().y;
-
-            int yBottom = getClientArea().y + getClientArea().height - (itemHeight * (items.size() - (items.indexOf(newItem) + 1)));
-
-            int totalShrinkingGrowingArea = getClientArea().height - (itemHeight * items.size());
-
-            int collapsingGrowingSpace = (int)(totalShrinkingGrowingArea * (openFromBottom ? 1 - percentOfWork : percentOfWork));
-            boolean addedCollapsingSpace = false;
-
-            for (int i = 0; i < items.size(); i++)
-            {
-                if (i <= items.indexOf(previousItem))
-                {
-                    //put on top
-                    yCoordinates.add(new Integer(yTop));
-                    yTop += itemHeight;
-                }
-                else if (i > items.indexOf(newItem))
-                {
-                    //put on bottom
-                    yCoordinates.add(new Integer(yBottom));
-                    yBottom += itemHeight;
-                }
-                else
-                {
-                    if (!addedCollapsingSpace)
-                    {
-                        yTop += collapsingGrowingSpace;
-                        addedCollapsingSpace = true;
-                    }
-                    yCoordinates.add(new Integer(yTop));
-                    yTop += itemHeight;
-                }
-
-            }
+            Rectangle client = getClientArea();
+            // Resolve existing item positions once per animation frame, not per header.
+            // Stage the primitive lane before native client sizing/redraw callbacks.
+            yCoordinates = PShelfViewportGeometry.animated(items.size(),
+                    items.indexOf(previousItem), items.indexOf(newItem),
+                    client.y, client.height, itemHeight,
+                    percentOfWork, openFromBottom);
 
             sizeClients();
             redraw(getClientArea().x,getClientArea().y, getClientArea().width, getClientArea().height, true);
@@ -433,11 +407,11 @@ public class PShelf extends Canvas {
         for(int i = 0; i < items.size(); i ++)
         {
             PShelfItem item = items.get(i);
-            int y = yCoordinates.get(i).intValue();
+            int y = yCoordinates[i];
             int nextY = 0;
             if (i + 1 < items.size())
             {
-                nextY = yCoordinates.get(i + 1).intValue();
+                nextY = yCoordinates[i + 1];
             }
             else
             {

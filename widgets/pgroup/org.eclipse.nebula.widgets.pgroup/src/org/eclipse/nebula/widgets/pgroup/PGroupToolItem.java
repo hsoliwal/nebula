@@ -56,10 +56,16 @@ public class PGroupToolItem extends Item {
         }
 
 		if (selection) {
-			PGroupToolItem[] items = parent.getToolItems();
-			for (int i = 0; i < items.length; i++) {
-				items[i].setSelection(false);
-			}
+            // Only the exact original widget/item pair admits live internal
+            // traversal. Keep the public defensive snapshot and observable
+            // virtual getter/override path for all other owners.
+            if (getClass() != PGroupToolItem.class
+                    || !parent.clearToolItemSelectionsWithoutCopy()) {
+                PGroupToolItem[] items = parent.getToolItems();
+                for (int i = 0; i < items.length; i++) {
+                    items[i].setSelection(false);
+                }
+            }
 		}
 		this.selection = selection;
 		parent.redraw();

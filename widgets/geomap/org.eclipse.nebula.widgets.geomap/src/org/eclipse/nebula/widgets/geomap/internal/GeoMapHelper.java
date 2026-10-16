@@ -167,18 +167,22 @@ public class GeoMapHelper implements GeoMapPositioned, GeoMapHelperListener {
 		int x1 = (int) Math.ceil(((double) mapPosition.x + size.x) / TILE_SIZE);
 		int y1 = (int) Math.ceil(((double) mapPosition.y + size.y) / TILE_SIZE);
 
-		int dy = y0 * TILE_SIZE - mapPosition.y;
-		for (int y = y0; y < y1; y++) {
-			int dx = x0 * TILE_SIZE - mapPosition.x;
-			for (int x = x0; x < x1; x++) {
-				if (clip == null || dx + TILE_SIZE >= clip.x && dy + TILE_SIZE >= clip.y && dx <= clip.x + clip.width
-						&& dy <= clip.y + clip.height) {
-					paintTile(gc, dx, dy, x, y);
+		if (canPaintClippedGrid(clip, size, x0, y0, x1, y1)) {
+			tileCount = paintClippedGrid(gc, clip, x0, y0, x1, y1);
+		} else {
+			int dy = y0 * TILE_SIZE - mapPosition.y;
+			for (int y = y0; y < y1; y++) {
+				int dx = x0 * TILE_SIZE - mapPosition.x;
+				for (int x = x0; x < x1; x++) {
+					if (clip == null || dx + TILE_SIZE >= clip.x && dy + TILE_SIZE >= clip.y && dx <= clip.x + clip.width
+							&& dy <= clip.y + clip.height) {
+						paintTile(gc, dx, dy, x, y);
+					}
+					dx += TILE_SIZE;
+					tileCount++;
 				}
-				dx += TILE_SIZE;
-				tileCount++;
+				dy += TILE_SIZE;
 			}
-			dy += TILE_SIZE;
 		}
 
 		long endTime = System.currentTimeMillis();
@@ -188,6 +192,61 @@ public class GeoMapHelper implements GeoMapPositioned, GeoMapHelperListener {
 		for (InternalGeoMapListener listener : internalGeoMapListeners) {
 			listener.tileCacheUpdated(cache.size(), this.cacheSize);
 		}
+	}
+
+	/**
+	 * A geometry-only fast lane for this exact helper and the stock OSM server.
+	 * Listener and extensible-server paths retain the original row-by-row loop:
+	 * those callbacks may mutate map position while a paint is in progress.
+	 */
+	private boolean canPaintClippedGrid(Rectangle clip, Point size, int x0, int y0, int x1, int y1) {
+		if (getClass() != GeoMapHelper.class || !(tileServer instanceof OsmTileServer)
+				|| !internalGeoMapListeners.isEmpty() || clip == null
+				|| clip.width < 0 || clip.height < 0 || size.x < 0 || size.y < 0
+				|| x1 < x0 || y1 < y0) return false;
+
+		// The original comparisons use int additions. Refuse the fast lane if
+		// that arithmetic would wrap; preserve the original behavior instead.
+		if ((long) clip.x + clip.width > Integer.MAX_VALUE
+				|| (long) clip.y + clip.height > Integer.MAX_VALUE) return false;
+
+		long firstX = (long) x0 * TILE_SIZE - mapPosition.x;
+		long afterX = (long) x1 * TILE_SIZE - mapPosition.x;
+		long firstY = (long) y0 * TILE_SIZE - mapPosition.y;
+		long afterY = (long) y1 * TILE_SIZE - mapPosition.y;
+		return firstX >= Integer.MIN_VALUE && afterX <= Integer.MAX_VALUE
+				&& firstY >= Integer.MIN_VALUE && afterY <= Integer.MAX_VALUE;
+	}
+
+	/**
+	 * Convert the supplied damage rectangle into inclusive tile intersections,
+	 * preserving the original <= edge test and row-major paintTile order.
+	 * Original mapPainted(tileCount) counts the *entire* logical viewport, even
+	 * when damage covers only a small subset of its tiles.
+	 */
+	private int paintClippedGrid(GC gc, Rectangle clip, int x0, int y0, int x1, int y1) {
+		int anchorX = mapPosition.x, anchorY = mapPosition.y;
+		long clipLeft = (long) clip.x + anchorX;
+		long clipRight = clipLeft + clip.width;
+		long clipTop = (long) clip.y + anchorY;
+		long clipBottom = clipTop + clip.height;
+		int firstX = (int) Math.max((long) x0,
+				Math.min((long) x1, Math.floorDiv(clipLeft - 1L, TILE_SIZE)));
+		int afterX = (int) Math.max((long) firstX,
+				Math.min((long) x1, Math.floorDiv(clipRight, TILE_SIZE) + 1L));
+		int firstY = (int) Math.max((long) y0,
+				Math.min((long) y1, Math.floorDiv(clipTop - 1L, TILE_SIZE)));
+		int afterY = (int) Math.max((long) firstY,
+				Math.min((long) y1, Math.floorDiv(clipBottom, TILE_SIZE) + 1L));
+
+		for (int y = firstY; y < afterY; y++) {
+			int dy = (int) ((long) y * TILE_SIZE - anchorY);
+			for (int x = firstX; x < afterX; x++) {
+				int dx = (int) ((long) x * TILE_SIZE - anchorX);
+				paintTile(gc, dx, dy, x, y);
+			}
+		}
+		return (x1 - x0) * (y1 - y0);
 	}
 
 	void paintTile(GC gc, int dx, int dy, int x, int y) {
