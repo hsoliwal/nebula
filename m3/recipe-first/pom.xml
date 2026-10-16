@@ -262,6 +262,11 @@
                           <value>COVEREDRATIO</value>
                           <minimum>0.99</minimum>
                         </limit>
+                        <limit>
+                          <counter>BRANCH</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>0.99</minimum>
+                        </limit>
                       </limits>
                     </rule>
                   </rules>
@@ -367,6 +372,34 @@
               <configLocation>${project.basedir}/rewrite.yml</configLocation>
               <activeRecipes>
                 <recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3BackportIntegrityConvergenceRecipe</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.eclipse.nebula.m3</groupId>
+                <artifactId>nebula-m3-recipe-first</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- Candidate-only exact XML-LST rewrite of the semantic 99% line+branch gates. -->
+    <profile>
+      <id>m3-semantic-branch-coverage-recipe</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3SemanticCoverageGateRecipe</recipe>
               </activeRecipes>
               <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
               <failOnDryRunResults>false</failOnDryRunResults>
