@@ -67,7 +67,10 @@ public class PrintPreview extends Canvas {
 	private PageEnumeration pageEnumeration = null;
 	private List<PrintPiece> pages = null;
 	private Point pageDisplaySize = null;
+	/** The original array remains only for invalid/overflow grid fallback. */
 	private Point[] pageDisplayLocations = null;
+	/** Parent-owned lazy origin replaces dense points for valid page grids. */
+	private Point pageDisplayOrigin = null;
 
 	// Margins and page spacing include paper boilerplate.
 	private Rectangle margins = new Rectangle(10, 10, 10, 10);
@@ -400,6 +403,7 @@ public class PrintPreview extends Canvas {
 	private void invalidatePageDisplayBounds() {
 		pageDisplaySize = null;
 		pageDisplayLocations = null;
+		pageDisplayOrigin = null;
 	}
 
 	private void paint(Event event) {
@@ -414,10 +418,15 @@ public class PrintPreview extends Canvas {
 		fetchPages(pageIndex + verticalPageCount * horizontalPageCount);
 
 		getPageDisplaySize();
-		getPageDisplayLocations();
+		if (useLegacyPageLocationArray()) {
+			getPageDisplayLocations();
+		} else {
+			getPageDisplayOrigin();
+		}
 
         if (printer == null || paperSize == null || pages == null
-                || pageDisplaySize == null || pageDisplayLocations == null
+                || pageDisplaySize == null
+                || (pageDisplayLocations == null && pageDisplayOrigin == null)
                 || pageIndex < 0 || pageIndex >= pages.size()) {
             return;
         }
@@ -425,34 +434,40 @@ public class PrintPreview extends Canvas {
 		int count = Math.min(verticalPageCount * horizontalPageCount,
 				pages.size() - pageIndex);
 		for (int i = 0; i < count; i++) {
-			paintPage(event, pages.get(pageIndex + i), pageDisplayLocations[i]);
+			paintPage(event, pages.get(pageIndex + i), pageDisplayLocation(i));
 		}
 	}
 
 	/**
-	 * Candidate-only, allocation-free rejection for pages wholly outside
-	 * the invalidated viewport. Do not alter SWT Rectangle's overflow behavior:
-	 * when a 32-bit endpoint is unrepresentable, leave the established
-	 * intersection and rendering path as the authority.
+	 * Reject only conclusively disjoint, positive-sized, non-overflowing
+	 * viewport rectangles. All other inputs follow SWT Rectangle.intersection.
+	 * No PageEnumeration, PrintPiece, GC, or SWT callback is touched here.
 	 */
-	private static boolean outsideDirtyPaperBounds(Event event, Point location, Point size) {
-		if (event.width <= 0 || event.height <= 0 || size.x <= 0 || size.y <= 0) {
+	private static boolean isOutsideSafeDamage(int dirtyX, int dirtyY,
+			int dirtyWidth, int dirtyHeight, int pageX, int pageY,
+			int pageWidth, int pageHeight) {
+		if (dirtyWidth <= 0 || dirtyHeight <= 0
+				|| pageWidth <= 0 || pageHeight <= 0) {
 			return false;
 		}
-		long dirtyRight = (long) event.x + event.width;
-		long dirtyBottom = (long) event.y + event.height;
-		long paperRight = (long) location.x + size.x;
-		long paperBottom = (long) location.y + size.y;
+		long dirtyRight = (long) dirtyX + dirtyWidth;
+		long dirtyBottom = (long) dirtyY + dirtyHeight;
+		long pageRight = (long) pageX + pageWidth;
+		long pageBottom = (long) pageY + pageHeight;
+		// SWT Rectangle.intersection adds ints. Refuse fast-path on overflow.
 		if (dirtyRight > Integer.MAX_VALUE || dirtyBottom > Integer.MAX_VALUE
-				|| paperRight > Integer.MAX_VALUE || paperBottom > Integer.MAX_VALUE) {
+				|| pageRight > Integer.MAX_VALUE || pageBottom > Integer.MAX_VALUE) {
 			return false;
 		}
-		return dirtyRight <= location.x || dirtyBottom <= location.y
-				|| paperRight <= event.x || paperBottom <= event.y;
+		return dirtyRight <= pageX || pageRight <= dirtyX
+				|| dirtyBottom <= pageY || pageBottom <= dirtyY;
 	}
 
 	private void paintPage(Event event, PrintPiece page, Point location) {
-		if (outsideDirtyPaperBounds(event, location, pageDisplaySize)) {
+		// The original method would return before painting or disposing this page.
+		// This gate avoids constructing three short-lived SWT Rectangles.
+		if (isOutsideSafeDamage(event.x, event.y, event.width, event.height,
+				location.x, location.y, pageDisplaySize.x, pageDisplaySize.y)) {
 			return;
 		}
 		// Check whether any "paper" is in the dirty region
@@ -527,6 +542,7 @@ public class PrintPreview extends Canvas {
 			disposePages(); // just in case
 			pageDisplaySize = null;
 			pageDisplayLocations = null;
+			pageDisplayOrigin = null;
 		}
 		return printer;
 	}
@@ -754,6 +770,46 @@ public class PrintPreview extends Canvas {
 					(int) (scaleY * paperSize.y));
 		}
 		return pageDisplaySize;
+	}
+
+	/**
+	 * Preserve the original array/error path for nonpositive or overflow grids.
+	 * Positive representable grids use the parent-owned lazy origin instead.
+	 */
+	private boolean useLegacyPageLocationArray() {
+		return horizontalPageCount <= 0 || verticalPageCount <= 0
+				|| (long) horizontalPageCount * verticalPageCount > Integer.MAX_VALUE;
+	}
+
+	/** Calculate the existing centering arithmetic without a per-slot Point array. */
+	private Point getPageDisplayOrigin() {
+		if (pageDisplayOrigin == null) {
+			Rectangle clientArea = getClientArea();
+			int x0 = clientArea.x + margins.x;
+			clientArea.width -= getBoilerplateSize().x;
+			clientArea.width -= pageDisplaySize.x * horizontalPageCount;
+			if (clientArea.width > 0) {
+				x0 += clientArea.width / 2;
+			}
+			pageDisplayOrigin = new Point(x0, clientArea.y + margins.y);
+		}
+		return pageDisplayOrigin;
+	}
+
+	/** Read the current parent epoch on each sequential page-paint callback. */
+	private Point pageDisplayLocation(int index) {
+		if (pageDisplayLocations != null) {
+			return pageDisplayLocations[index];
+		}
+		Point origin = pageDisplayOrigin;
+		int x0 = origin.x; // Preserve the original null-cache failure on invalidation.
+		if (index < 0 || index >= horizontalPageCount * verticalPageCount) {
+			throw new ArrayIndexOutOfBoundsException(index);
+		}
+		int column = index % horizontalPageCount;
+		int row = index / horizontalPageCount;
+		return new Point(x0 + column * (pageDisplaySize.x + pageSpacing.x),
+				origin.y + row * (pageDisplaySize.y + pageSpacing.y));
 	}
 
 	private Point[] getPageDisplayLocations() {

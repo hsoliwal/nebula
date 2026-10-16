@@ -22,6 +22,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
@@ -50,6 +51,16 @@ public class Stepbar extends Canvas {
 	private Color textColor;
 	private final Color errorColor;
 	private List<String> steps = new ArrayList<>();
+	/** The public getSteps() list may be mutated outside this widget. */
+	private boolean stepsEscaped;
+	/** Only a current, unnested paint may borrow the previously measured extents. */
+	private List<Point> viewportPaintTextSizes;
+	private Font viewportPaintFont;
+	private int viewportPaintDepth;
+	/** Invalidates metric preparation when a nested paint or model mutation occurs. */
+	private long viewportPaintEpoch;
+	/** The initial prepared measurement is consumable once after a mid-read change. */
+	private int viewportMetricUses;
 	private boolean bottom = false;
 	private int currentStep = 0;
 	private boolean onError = false;
@@ -98,12 +109,42 @@ public class Stepbar extends Canvas {
 			gc.setTextAntialias(SWT.ON);
 			gc.setAntialias(SWT.ON);
 
-			if (bottom) {
-				drawSteps(SPACING, gc);
-				drawTexts(SPACING + CIRCLE_DIAMETER + VERTICAL_SPACE, gc);
-			} else {
-				drawTexts(SPACING, gc);
-				drawSteps(SPACING + CIRCLE_DIAMETER / 2 + VERTICAL_SPACE, gc);
+			viewportPaintDepth++;
+			try {
+				if (viewportPaintDepth > 1) {
+					// Reentrant paint invalidates a metric even before it is published.
+					viewportPaintEpoch++;
+				}
+				if (viewportPaintDepth == 1 && getClass() == Stepbar.class
+						&& !stepsEscaped && steps.getClass() == ArrayList.class
+						&& steps.size() > 1) {
+					final long epoch = viewportPaintEpoch;
+					final Font measuredFont = getFont();
+					final List<Point> measured = computeTextSizes();
+					final Font currentFont = getFont();
+					viewportPaintTextSizes = measured;
+					viewportPaintFont = currentFont;
+					// Preserve the first result while forcing a fresh SECOND
+					// measurement after reentry, mutation or font change.
+					viewportMetricUses = epoch == viewportPaintEpoch
+							&& measuredFont == currentFont && !stepsEscaped ? 2 : 1;
+				} else {
+					viewportPaintTextSizes = null;
+					viewportPaintFont = null;
+					viewportMetricUses = 0;
+				}
+				if (bottom) {
+					drawSteps(SPACING, gc);
+					drawTexts(SPACING + CIRCLE_DIAMETER + VERTICAL_SPACE, gc);
+				} else {
+					drawTexts(SPACING, gc);
+					drawSteps(SPACING + CIRCLE_DIAMETER / 2 + VERTICAL_SPACE, gc);
+				}
+			} finally {
+				viewportPaintTextSizes = null;
+				viewportPaintFont = null;
+				viewportMetricUses = 0;
+				viewportPaintDepth--;
 			}
 		});
 	}
@@ -116,7 +157,19 @@ public class Stepbar extends Canvas {
 	}
 
 	private void drawSteps(final int y, final GC gc) {
-		final List<Point> textSizes = computeTextSizes();
+		final List<Point> textSizes;
+		if (viewportPaintTextSizes != null && viewportMetricUses > 0) {
+			if (viewportPaintFont == getFont()) {
+				viewportMetricUses--;
+				textSizes = viewportPaintTextSizes;
+			} else {
+				viewportPaintTextSizes = null;
+				viewportMetricUses = 0;
+				textSizes = computeTextSizes();
+			}
+		} else {
+			textSizes = computeTextSizes();
+		}
 		final int leftSpacing = Math.max(SPACING, textSizes.get(0).x / 2);
 		final int rightSpacing = Math.max(SPACING, textSizes.get(textSizes.size() - 1).x / 2);
 
@@ -177,7 +230,19 @@ public class Stepbar extends Canvas {
 	}
 
 	private void drawTexts(final int y, final GC gc) {
-		final List<Point> textSizes = computeTextSizes();
+		final List<Point> textSizes;
+		if (viewportPaintTextSizes != null && viewportMetricUses > 0) {
+			if (viewportPaintFont == getFont()) {
+				viewportMetricUses--;
+				textSizes = viewportPaintTextSizes;
+			} else {
+				viewportPaintTextSizes = null;
+				viewportMetricUses = 0;
+				textSizes = computeTextSizes();
+			}
+		} else {
+			textSizes = computeTextSizes();
+		}
 		final int leftSpacing = Math.max(SPACING, textSizes.get(0).x / 2);
 		final int rightSpacing = Math.max(SPACING, textSizes.get(textSizes.size() - 1).x / 2);
 
@@ -214,6 +279,9 @@ public class Stepbar extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		steps.add(stepText);
+		viewportPaintEpoch++;
+		viewportMetricUses = 0;
+		viewportPaintTextSizes = null;
 		layout();
 		redraw();
 	}
@@ -292,6 +360,10 @@ public class Stepbar extends Canvas {
 	 */
 	public List<String> getSteps() {
 		checkWidget();
+		stepsEscaped = true;
+		viewportPaintEpoch++;
+		viewportMetricUses = 0;
+		viewportPaintTextSizes = null;
 		return steps;
 	}
 
@@ -353,6 +425,9 @@ public class Stepbar extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		steps.remove(stepText);
+		viewportPaintEpoch++;
+		viewportMetricUses = 0;
+		viewportPaintTextSizes = null;
 		layout();
 		redraw();
 	}
@@ -439,6 +514,10 @@ public class Stepbar extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		this.steps = Arrays.asList(steps);
+		stepsEscaped = true;
+		viewportPaintEpoch++;
+		viewportMetricUses = 0;
+		viewportPaintTextSizes = null;
 		layout();
 		redraw();
 	}
@@ -463,6 +542,10 @@ public class Stepbar extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		this.steps = steps;
+		stepsEscaped = true;
+		viewportPaintEpoch++;
+		viewportMetricUses = 0;
+		viewportPaintTextSizes = null;
 		layout();
 		redraw();
 	}

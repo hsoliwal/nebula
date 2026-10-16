@@ -67,6 +67,7 @@
 						<include>**/model/RowPermutation_Test.java</include>
 						<include>**/model/RowSelection_Test.java</include>
 						<include>**/model/RowStateLanes_Test.java</include>
+						<include>**/model/SparseMirrorBoundary_Test.java</include>
 					</includes>
 				</configuration>
 			</plugin>

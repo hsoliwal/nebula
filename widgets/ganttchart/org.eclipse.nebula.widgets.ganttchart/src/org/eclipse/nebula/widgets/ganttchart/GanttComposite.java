@@ -287,7 +287,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 	private final Set<Integer> _verticalWeekDividerLineLocations;
 
 	// keeps track of hidden layers
-	private final Set<Integer> _hiddenLayers;
+	private final GanttLayerMask _hiddenLayers;
 	// keeps track of layer opacities
 	private final Map<Integer, Integer> _layerOpacityMap;
 
@@ -396,7 +396,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 		_ganttSections = new ArrayList<GanttSection>();
 		_verticalLineLocations = new ArrayList<Integer>();
 		_verticalWeekDividerLineLocations = new HashSet<Integer>();
-		_hiddenLayers = new HashSet<Integer>();
+		_hiddenLayers = new GanttLayerMask();
 		_allEventsCombined = new HashSet<Object>();
 		_dayLetterStringExtentMap = new HashMap<String, Point>();
 		_layerOpacityMap = new HashMap<Integer, Integer>();
@@ -816,9 +816,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 	 * @param layer Layer to hide.
 	 */
 	public void hideLayer(final int layer) {
-		if (!_hiddenLayers.contains(new Integer(layer))) {
-			_hiddenLayers.add(new Integer(layer));
-		}
+		_hiddenLayers.add(layer);
 	}
 
 	/**
@@ -827,7 +825,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 	 * @param layer Layer to show.
 	 */
 	public void showLayer(final int layer) {
-		final boolean removed = _hiddenLayers.remove(new Integer(layer));
+		final boolean removed = _hiddenLayers.remove(layer);
 		if (removed) {
 			redrawEventsArea();
 		}
@@ -856,10 +854,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 	public void hideAllLayers() {
 		for (int i = 0; i < _ganttEvents.size(); i++) {
 			final GanttEvent event = _ganttEvents.get(i);
-			final Integer layer = new Integer(event.getLayer());
-			if (!_hiddenLayers.contains(layer)) {
-				_hiddenLayers.add(layer);
-			}
+			_hiddenLayers.add(event.getLayer());
 		}
 
 		redrawEventsArea();
@@ -4269,7 +4264,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 			gc.setForeground(connection.getColor() == null ? _arrowColor : connection.getColor());
 
 			// same deal but with hidden layers
-			if (!_hiddenLayers.isEmpty() && (_hiddenLayers.contains(ge1.getLayerInt()) || _hiddenLayers.contains(ge2.getLayerInt()))) {
+			if (!_hiddenLayers.isEmpty() && (_hiddenLayers.contains(ge1.getLayer()) || _hiddenLayers.contains(ge2.getLayer()))) {
 				continue;
 			}
 
@@ -5777,7 +5772,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 		}
 
 		// fastest checks come first, if it's not a visible layer, it's not visible
-		if (_hiddenLayers.contains(new Integer(event.getLayer()))) {
+		if (_hiddenLayers.contains(event.getLayer())) {
 			return Constants.EVENT_NOT_VISIBLE;
 		}
 
@@ -7163,7 +7158,7 @@ public final class GanttComposite extends Canvas implements MouseListener, Mouse
 							continue;
 						}
 
-						if (_hiddenLayers.contains(event.getLayerInt())) {
+						if (_hiddenLayers.contains(event.getLayer())) {
 							continue;
 						}
 
