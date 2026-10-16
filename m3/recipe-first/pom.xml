@@ -380,5 +380,33 @@
         </plugins>
       </build>
     </profile>
+    <!-- Opt-in only: atomically publish complete recipe-DAG evidence through an exact Java LST. -->
+    <profile>
+      <id>dag-atomic-evidence</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.DagAtomicEvidence</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.eclipse.nebula.m3</groupId>
+                <artifactId>nebula-m3-recipe-first</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
