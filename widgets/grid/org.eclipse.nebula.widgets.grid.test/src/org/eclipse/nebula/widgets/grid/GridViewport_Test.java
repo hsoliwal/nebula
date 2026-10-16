@@ -12,6 +12,7 @@ package org.eclipse.nebula.widgets.grid;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.util.Arrays;
@@ -20,9 +21,9 @@ import java.util.function.Function;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +49,8 @@ public class GridViewport_Test {
 		display = Display.getDefault();
 		shell = new Shell(display);
 		shell.setBounds(10, 10, 660, 420);
+		// takes the focus when the shell opens, so no Grid starts with a focus item the other lacks
+		new Text(shell, SWT.SINGLE).setBounds(5, 390, 60, 22);
 	}
 
 	@After
@@ -58,7 +61,10 @@ public class GridViewport_Test {
 	}
 
 	private Grid millionRowTree() {
-		final Grid grid = new Grid(shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+		// data kept in the items: the row-addressed default visualizer re-maps every stored row per
+		// insert, which makes building a large tree quadratic (see GRID_MEDIATED_VIEWPORT.md)
+		final Grid grid = new Grid(new GridItemDataVisualizer(display.getSystemColor(SWT.COLOR_WHITE),
+				display.getSystemColor(SWT.COLOR_BLACK), null), shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
 		grid.setBounds(5, 5, 320, 380);
 		grid.setHeaderVisible(true);
 		final GridColumn column = new GridColumn(grid, SWT.NONE);
@@ -80,21 +86,27 @@ public class GridViewport_Test {
 		}
 	}
 
-	/* median nanoseconds of a scroll to each root, a top-row read and a synchronous paint */
-	private long medianScrollStep(final Grid grid, final int firstRoot) {
-		final long[] times = new long[21];
-		for (int i = 0; i < times.length; i++) {
+	/*
+	 * median nanoseconds of the row geometry of a scroll to each root (setTopIndex and a top-row
+	 * read) in [0], and of the synchronous paint that follows in [1]
+	 */
+	private long[] medianScrollStep(final Grid grid, final int firstRoot) {
+		final long[] geometry = new long[21], paint = new long[21];
+		for (int i = 0; i < geometry.length; i++) {
 			final int index = (firstRoot + i) * ROW;
 			final long start = System.nanoTime();
 			grid.setTopIndex(index);
 			final int top = grid.getTopIndex();
+			final long scrolled = System.nanoTime();
 			grid.redraw();
 			grid.update();
-			times[i] = System.nanoTime() - start;
+			paint[i] = System.nanoTime() - scrolled;
+			geometry[i] = scrolled - start;
 			assertEquals(index, top);
 		}
-		Arrays.sort(times);
-		return times[times.length / 2];
+		Arrays.sort(geometry);
+		Arrays.sort(paint);
+		return new long[] { geometry[geometry.length / 2], paint[paint.length / 2] };
 	}
 
 	@Test
@@ -108,12 +120,17 @@ public class GridViewport_Test {
 		// the bar counts visible rows: the collapsed roots
 		final int thumb = grid.getVerticalBar().getThumb();
 		assertEquals(ROOTS, grid.getVerticalBar().getMaximum());
-		final long top = medianScrollStep(grid, 10);
-		final long bottom = medianScrollStep(grid, ROOTS - 40);
-		System.out.println("GridViewport_Test: " + ROOTS * ROW + " items built in " + buildMillis + " ms; median scroll+paint step "
-				+ top / 1000 + " us near the top, " + bottom / 1000 + " us near the bottom; thumb " + thumb);
-		assertTrue("scroll step near the bottom (" + bottom + " ns) must not grow with the position (top " + top + " ns)",
-				bottom <= 2 * top + 1_000_000);
+		System.gc();
+		final long[] top = medianScrollStep(grid, 10);
+		final long[] bottom = medianScrollStep(grid, ROOTS - 40);
+		System.out.println("GridViewport_Test: " + ROOTS * ROW + " items built in " + buildMillis
+				+ " ms; median scroll step near the top: geometry " + top[0] / 1000 + " us, paint " + top[1] / 1000
+				+ " us; near the bottom: geometry " + bottom[0] / 1000 + " us, paint " + bottom[1] / 1000 + " us; thumb "
+				+ thumb);
+		assertTrue("row geometry near the bottom (" + bottom[0] + " ns) must not grow with the position (top " + top[0]
+				+ " ns)", bottom[0] <= 2 * top[0] + 500_000);
+		assertTrue("paint near the bottom (" + bottom[1] + " ns) must not grow with the position (top " + top[1] + " ns)",
+				bottom[1] <= 2 * top[1] + 2_000_000);
 
 		// expanding a distant root adds its rows to the bar and keeps the geometry exact
 		final GridItem root = grid.getItem((ROOTS - 2) * ROW);
@@ -135,9 +152,24 @@ public class GridViewport_Test {
 	public void largeTreePaintsLikeTheStockGrid() throws Exception {
 		final ClassLoader stockBuild = GridViewportDifferential_Test.gridBuild(
 				Grid.class.getProtectionDomain().getCodeSource().getLocation(), "original");
-		final Function<int[], Object> stock = driver(stockBuild, 5);
-		final Function<int[], Object> viewport = driver(getClass().getClassLoader(), 330);
+		// both Grids at the same place in their own shell: Grid reads the real cursor position
+		final Shell stockShell = new Shell(display);
+		stockShell.setBounds(shell.getBounds());
+		new Text(stockShell, SWT.SINGLE).setBounds(5, 390, 60, 22);
+		try {
+			largeTreeScript(GridViewportDifferential_Test.driver(stockBuild, stockShell, GridDifferentialDriver.LARGE),
+					GridViewportDifferential_Test.driver(getClass().getClassLoader(), shell, GridDifferentialDriver.LARGE),
+					stockShell);
+		} finally {
+			stockShell.dispose();
+		}
+	}
+
+	private void largeTreeScript(final Function<int[], Object> stock, final Function<int[], Object> viewport,
+			final Shell stockShell) {
+		stockShell.open();
 		shell.open();
+		display.setCursorLocation(0, 0);
 		settle();
 		final int[][] script = { { 0, 99_900, 0, 0 }, { 0, 99_500, 0, 0 }, { 15, 99_903, 0, 21 }, { 2, 99_480, 0, 0 },
 				{ 3, 99_950, 0, 0 }, { 4, 99_904, 0, 0 }, { 20, 0, 1, 0 }, { 21, 0, 3, 1 } };
@@ -147,16 +179,17 @@ public class GridViewport_Test {
 			final int[] state = { GridDifferentialDriver.STATE, 0, 0, 0 };
 			assertEquals(Arrays.toString(op), stock.apply(state), viewport.apply(state));
 		}
+		// no row may show hover feedback
+		display.setCursorLocation(0, 0);
+		settle();
 		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
 		final ImageData expected = (ImageData) stock.apply(pixels);
 		final ImageData actual = (ImageData) viewport.apply(pixels);
-		assertTrue("printed pixels of the distant rows", Arrays.equals(expected.data, actual.data));
+		if (!Arrays.equals(expected.data, actual.data)) {
+			GridViewportDifferential_Test.save(expected, "large-stock");
+			GridViewportDifferential_Test.save(actual, "large-viewport");
+			fail("printed pixels of the distant rows differ: " + GridViewportDifferential_Test.difference(expected, actual));
+		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private Function<int[], Object> driver(final ClassLoader build, final int x) throws Exception {
-		return (Function<int[], Object>) build.loadClass(GridDifferentialDriver.class.getName())
-				.getConstructor(Composite.class, Integer.class, Integer.class)
-				.newInstance(shell, Integer.valueOf(x), Integer.valueOf(GridDifferentialDriver.LARGE));
-	}
 }

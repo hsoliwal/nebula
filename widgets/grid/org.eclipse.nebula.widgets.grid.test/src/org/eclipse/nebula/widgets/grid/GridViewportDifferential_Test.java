@@ -48,24 +48,37 @@ public class GridViewportDifferential_Test {
 
 	private static final int SEEDS = Integer.getInteger("grid.differential.seeds", 8).intValue();
 	private static final int STEPS = Integer.getInteger("grid.differential.steps", 160).intValue();
+	private static final int FIRST_SEED = Integer.getInteger("grid.differential.firstSeed", 0).intValue();
 	private static final String PACKAGE = "org.eclipse.nebula.";
 
 	private Display display;
-	private Shell shell;
+	/*
+	 * one shell per Grid, both at the same place: Grid reads the real cursor position (hover state
+	 * after a scroll), so both Grids must see it at the same relative position
+	 */
+	private Shell stockShell, viewportShell;
 	private Button focusHolder;
 
 	@Before
 	public void setUp() {
 		display = Display.getDefault();
-		shell = new Shell(display);
-		shell.setBounds(10, 10, 640, 380);
-		focusHolder = new Button(shell, SWT.PUSH);
+		stockShell = shell();
+		viewportShell = shell();
+		focusHolder = new Button(viewportShell, SWT.PUSH);
 		focusHolder.setBounds(5, 340, 60, 25);
+		new Button(stockShell, SWT.PUSH).setBounds(5, 340, 60, 25);
+	}
+
+	private Shell shell() {
+		final Shell shell = new Shell(display);
+		shell.setBounds(10, 10, 330, 400);
+		return shell;
 	}
 
 	@After
 	public void tearDown() {
-		shell.dispose();
+		stockShell.dispose();
+		viewportShell.dispose();
 	}
 
 	/** Loads Grid builds again, child first, so their static state (the startup mode) is their own. */
@@ -121,10 +134,10 @@ public class GridViewportDifferential_Test {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Function<int[], Object> driver(final ClassLoader build, final int x, final int config) throws Exception {
+	static Function<int[], Object> driver(final ClassLoader build, final Shell shell, final int config) throws Exception {
 		return (Function<int[], Object>) build.loadClass(GridDifferentialDriver.class.getName())
 				.getConstructor(Composite.class, Integer.class, Integer.class)
-				.newInstance(shell, Integer.valueOf(x), Integer.valueOf(config));
+				.newInstance(shell, Integer.valueOf(5), Integer.valueOf(config));
 	}
 
 	private static URL oracleClasses() throws MalformedURLException {
@@ -136,19 +149,23 @@ public class GridViewportDifferential_Test {
 	public void seededScriptsAnswerAndPaintLikeTheStockGrid() throws Exception {
 		final ClassLoader stockBuild = gridBuild(oracleClasses(), "original");
 		final ClassLoader viewportBuild = gridBuild(location(Grid.class), "viewport");
-		for (int seed = 0; seed < SEEDS; seed++) {
+		for (int seed = FIRST_SEED; seed < FIRST_SEED + SEEDS; seed++) {
 			final int config = seed % 4;
-			final Function<int[], Object> stock = driver(stockBuild, 5, config);
-			final Function<int[], Object> viewport = driver(viewportBuild, 320, config);
+			final Function<int[], Object> stock = driver(stockBuild, stockShell, config);
+			final Function<int[], Object> viewport = driver(viewportBuild, viewportShell, config);
 			final int[] mode = { GridDifferentialDriver.MODE, 0, 0, 0 };
 			assumeTrue("Grid viewport mediation is not active in this build", "viewport".equals(viewport.apply(mode)));
-			shell.open();
+			stockShell.open();
+			viewportShell.open();
+			display.setCursorLocation(0, 0);
 			final String pixels = run(seed, config, stock, viewport);
 			System.out.println("GridViewportDifferential_Test: seed " + seed + " config " + config + ", " + STEPS
 					+ " steps identical, " + pixels + " (oracle " + stock.apply(mode) + ", candidate " + viewport.apply(mode) + ")");
-			for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
-				if (child != focusHolder) {
-					child.dispose();
+			for (final Shell shell : new Shell[] { stockShell, viewportShell }) {
+				for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
+					if (!(child instanceof Button)) {
+						child.dispose();
+					}
 				}
 			}
 		}
@@ -172,6 +189,8 @@ public class GridViewportDifferential_Test {
 			compare(log, "step " + step, expected + " | " + stock.apply(state), actual + " | " + viewport.apply(state));
 		}
 		focusHolder.setFocus();
+		// no row may show hover feedback
+		display.setCursorLocation(0, 0);
 		drain();
 		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
 		final ImageData expected = (ImageData) stock.apply(pixels);
@@ -188,7 +207,7 @@ public class GridViewportDifferential_Test {
 	}
 
 	/* number of differing pixels and their bounding box */
-	private static String difference(final ImageData expected, final ImageData actual) {
+	static String difference(final ImageData expected, final ImageData actual) {
 		int count = 0, left = Integer.MAX_VALUE, top = Integer.MAX_VALUE, right = -1, bottom = -1;
 		for (int y = 0; y < Math.min(expected.height, actual.height); y++) {
 			for (int x = 0; x < Math.min(expected.width, actual.width); x++) {
@@ -217,7 +236,7 @@ public class GridViewportDifferential_Test {
 		}
 	}
 
-	private static void save(final ImageData data, final String name) {
+	static void save(final ImageData data, final String name) {
 		final String dir = System.getProperty("grid.differential.out");
 		if (dir == null) {
 			return;

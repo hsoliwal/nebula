@@ -54,7 +54,9 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	 * @param config {@link #CELL_SELECTION} and {@link #DIFFERING_HEIGHTS} bits
 	 */
 	public GridDifferentialDriver(final Composite parent, final Integer x, final Integer config) {
-		grid = new Grid(parent, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.CHECK);
+		final int style = SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.CHECK;
+		// a large tree keeps its data in the items (the row-addressed default re-maps every row per insert)
+		grid = (config.intValue() & LARGE) != 0 ? new Grid(visualizer(parent), parent, style) : new Grid(parent, style);
 		grid.setBounds(x.intValue(), 5, 300, 330);
 		grid.setHeaderVisible(true);
 		grid.setLinesVisible(true);
@@ -85,6 +87,11 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		grid.addListener(SWT.DefaultSelection, e -> record("DefaultSelection", e));
 		grid.addListener(SWT.Expand, e -> record("Expand", e));
 		grid.addListener(SWT.Collapse, e -> record("Collapse", e));
+	}
+
+	private static DataVisualizer visualizer(final Composite parent) {
+		return new GridItemDataVisualizer(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE),
+				parent.getDisplay().getSystemColor(SWT.COLOR_BLACK), null);
 	}
 
 	private static GridItem item(final GridItem item, final String text) {

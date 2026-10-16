@@ -135,8 +135,23 @@ GUI runs: `ui_lock.sh` + `run_guarded.sh` (`grid-viewport/run_tests.sh`).
 | `GridViewportDifferential_Test`, oracle = same build in `original` mode, 8 seeds x 160 steps, 4 configurations (row/cell selection, uniform/differing heights) | pass: every step and the printed pixels of every seed identical; the index was rebuilt 235 times (DEBUG log) |
 | same, candidate = mutant (the `forceEndCompletelyInside` step-back removed, `build_mutant.sh`) | detected: seed 0 step 22, vertical bar maximum 106 (stock) vs 105 |
 | same, oracle = upstream Nebula `5d0bcbb9` (`-Dgrid.differential.oracle`, pixels advisory) | seeds 0-3: all 160 steps identical; pixels differ only in the column header text row (172-224 pixels, y 8..16), a difference between this fork and upstream in both modes. Seed 4 step 148: the fork shows an empty text for item `r66` where upstream shows `r66`, in both modes (the original-mode run of the same seed agrees with the viewport); a pre-existing fork defect, not a viewport one, recorded for a separate fix |
+| `GridViewport_Test` (acceptance), 1,000,000-item tree (10,000 roots x 99 children, per-item data visualizer) | pass: built in 6.7-10.6 s; median scroll step near the top / bottom: row geometry 359 / 341 us, paint 10.6 / 8.9 ms (position independent); bar maximum = visible rows; geometry answers after expanding a distant root exact |
+| same, 100,000-item tree vs stock Grid at distant rows (expand, row height, showItem, selection, bar drag, Page Up) | pass: answers, state and printed pixels identical |
+| `ScrollProbe` (out-of-tree probe), 1,000,000 items, 60 scroll steps near the bottom | viewport: geometry 0.378 ms, paint 10.1 ms per step; original: geometry 29.1 ms, paint 8.9 ms per step (77x) |
 | Grid suite (34 classes, 590 tests), `original` mode | 151 failures: the baseline of this harness (the suite expects the Tycho/OSGi test runtime) |
 | Grid suite, `viewport` mode | 152 failures: the same 151 plus `GridCheckLanes_Test.checkStateFollowsModelRowsAndCheckAllIsFilterAware`, a flat `SWT.VIRTUAL` pixel test that never reaches the index (every hook is off for the sparse list); rerun 3 times per mode it failed 3/3 (viewport) and 2/3 (original) with alternating hashes |
+
+Findings (pre-existing, both modes, recorded for their own fixes):
+
+- The fork's default data visualizer (`GridRowAddressedItemDataVisualizer`) re-maps its whole
+  `HashMap<Integer, List>` on every row insert or removal (`RowStore.remap`), so building a tree is quadratic:
+  40,000 items take 65 s in `original` mode (JFR: `RowStore.remap` and `HashMap.put` are the hot frames). The
+  acceptance test therefore keeps data in the items (`GridItemDataVisualizer`, the upstream default). Columnar
+  lanes for item data are leaf G2.
+- Against upstream `5d0bcbb9`, seed 4 step 148 shows an item text lost by the fork in both modes (see above).
+- Grid reads the real cursor position after a scroll (`refreshHoverState`), so a differential must show both
+  Grids at the same screen position: the harness gives each Grid its own shell at the same bounds, and parks
+  the cursor before pixel captures. Side by side, seed 2 diverged once on a click (hover state).
 
 ## Leaves
 
