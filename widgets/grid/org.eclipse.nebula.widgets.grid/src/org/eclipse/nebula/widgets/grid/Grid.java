@@ -2397,7 +2397,7 @@ public class Grid extends Canvas {
 	public GridItem getNextVisibleItem(final GridItem item) {
 		checkWidget();
 
-		int index = item == null ? -1 : item.getRowIndex();
+		int index = item == null && GridViewport.UPSTREAM_FIXES ? -1 : item.getRowIndex();
 		if (viewport != null && !usesSparseVirtualItems() && index >= -1 && index < items.size()) {
 			return viewport.nextVisibleItem(index + 1);
 		}
@@ -2467,7 +2467,7 @@ public class Grid extends Canvas {
 	/**
 	 * Returns the previous visible column in the table.
 	 *
-	 * @param column column, or {@code null} for the last visible column
+	 * @param column column
 	 * @return previous visible column or null
 	 * @throws org.eclipse.swt.SWTException
 	 *                                      <ul>
@@ -2481,7 +2481,7 @@ public class Grid extends Canvas {
 	public GridColumn getPreviousVisibleColumn(final GridColumn column) {
 		checkWidget();
 
-		int index = column == null ? displayOrderedColumns.size() : displayOrderedColumns.indexOf(column);
+		int index = displayOrderedColumns.indexOf(column);
 
 		if (index == 0) {
 			return null;
@@ -3376,7 +3376,7 @@ public class Grid extends Canvas {
 	 */
 	public boolean isSelected(final GridItem item) {
 		checkWidget();
-		if (item == null) {
+		if (item == null && GridViewport.UPSTREAM_FIXES) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		if (!cellSelectionEnabled) {
@@ -4338,7 +4338,7 @@ public class Grid extends Canvas {
 	 */
 	public void setSelection(final int[] indices) {
 		checkWidget();
-		if (indices == null) {
+		if (indices == null && GridViewport.UPSTREAM_FIXES) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
@@ -4567,10 +4567,10 @@ public class Grid extends Canvas {
 	 */
 	public void showColumn(final GridColumn col) {
 		checkWidget();
-		if (col == null) {
+		if (col == null && GridViewport.UPSTREAM_FIXES) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
-		if (col.isDisposed() || col.getParent() != this) {
+		if (GridViewport.UPSTREAM_FIXES && (col.isDisposed() || col.getParent() != this)) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 
@@ -4722,10 +4722,10 @@ public class Grid extends Canvas {
 	 */
 	public void showItem(final GridItem item) {
 		checkWidget();
-		if (item == null) {
+		if (item == null && GridViewport.UPSTREAM_FIXES) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
-		if (item.isDisposed() || item.getParent() != this) {
+		if (GridViewport.UPSTREAM_FIXES && (item.isDisposed() || item.getParent() != this)) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 
@@ -8348,7 +8348,7 @@ public class Grid extends Canvas {
 	protected void refreshHoverState() {
 		// hover follows the mouse only while it is over this Grid; elsewhere (another window on
 		// top, another desktop) the cursor position says nothing about this Grid
-		if (getDisplay().getCursorControl() != this) {
+		if (GridViewport.UPSTREAM_FIXES && getDisplay().getCursorControl() != this) {
 			if (hoveringItem != null || hoveringColumn != null || hoveringColumnHeader != null
 					|| hoverColumnGroupHeader != null || !hoveringDetail.isEmpty()) {
 				onMouseExit(null);
@@ -11118,7 +11118,9 @@ public class Grid extends Canvas {
 			for (int i = items.size() - 1; i >= count; i--) {
 				final GridItem removed = items.remove(i);
 				// a tree Grid's rows are not all roots: detach the row from its own parent list
-				if (removed.getParentItem() == null) {
+				if (!GridViewport.UPSTREAM_FIXES) {
+					rootItems.remove(i);
+				} else if (removed.getParentItem() == null) {
 					rootItems.remove(removed);
 				} else {
 					removed.getParentItem().detachChild(removed);

@@ -1542,7 +1542,7 @@ public class GridColumn extends Item {
 	 */
 	public void setHeaderFont(final Font font) {
 		checkWidget();
-		if (font != null && font.isDisposed()) {
+		if (GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		headerFont = font;
@@ -1582,7 +1582,7 @@ public class GridColumn extends Item {
 	 */
 	public void setFooterFont(final Font font) {
 		checkWidget();
-		if (font != null && font.isDisposed()) {
+		if (GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		footerFont = font;

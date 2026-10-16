@@ -37,6 +37,13 @@ final class GridViewport {
 	/** Whether Grids mediate their row geometry (the startup mode is {@code viewport}). */
 	static final boolean ENABLED = WidgetMode.of("Grid", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT;
 
+	/**
+	 * Whether Grid fixes the upstream defects listed in {@code docs/m3/grid-viewport/UPSTREAM_DEFECTS.tsv}
+	 * (behaviour that contradicts the API's own Javadoc, crashes, data loss, clipped rendering): in
+	 * every mode but {@code original}, which stays behaviourally identical to stock Nebula Grid.
+	 */
+	static final boolean UPSTREAM_FIXES = ENABLED;
+
 	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.grid.Grid");
 
 	/**

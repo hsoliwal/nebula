@@ -476,6 +476,7 @@ public class GridItem extends Item {
 	 */
 	public Color getBackground() {
 		checkWidget();
+		handleVirtualData();
 
 		if (defaultBackground == null) {
 			return parent.getBackground();
@@ -656,6 +657,7 @@ public class GridItem extends Item {
 	 */
 	public boolean getChecked() {
 		checkWidget();
+		handleVirtualData();
 		final int packed = parent.packedCheck(this, 0, Grid.LANE_CHECKED);
 		return packed < 0 ? parent.getDataVisualizer().getChecked(this, 0) : packed == 1;
 	}
@@ -736,6 +738,7 @@ public class GridItem extends Item {
 	 *             </ul>
 	 */
 	public Font getFont() {
+		handleVirtualData();
 		if (defaultFont == null) {
 			return parent.getFont();
 		}
@@ -778,6 +781,7 @@ public class GridItem extends Item {
 	 *             </ul>
 	 */
 	public Color getForeground() {
+		handleVirtualData();
 		if (defaultForeground == null) {
 			return parent.getForeground();
 		}
@@ -865,6 +869,7 @@ public class GridItem extends Item {
 	@Override
 	public Image getImage() {
 		checkWidget();
+		handleVirtualData();
 		return parent.getDataVisualizer().getImage(this, 0);
 	}
 
@@ -1065,6 +1070,7 @@ public class GridItem extends Item {
 	@Override
 	public String getText() {
 		checkWidget();
+		handleVirtualData();
 		return parent.getDataVisualizer().getText(this, 0);
 	}
 
@@ -1645,9 +1651,11 @@ public class GridItem extends Item {
 	 */
 	@Override
 	public void setImage(Image image) {
-		checkWidget();
-		if (image != null && image.isDisposed()) {
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		if (GridViewport.UPSTREAM_FIXES) {
+			checkWidget();
+			if (image != null && image.isDisposed()) {
+				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+			}
 		}
 		parent.getDataVisualizer().setImage(this, 0, image);
 		parent.redraw();
@@ -2149,6 +2157,17 @@ public class GridItem extends Item {
 		hasSetData = false;
 	}
 
+	/**
+	 * Requests the item's data for a getter without a column index: in the default mode they do
+	 * as the indexed getters (an SWT.VIRTUAL item answers its data, also after a clear); the
+	 * original mode answers without requesting, as stock Nebula Grid.
+	 */
+	private void handleVirtualData() {
+		if (GridViewport.UPSTREAM_FIXES) {
+			handleVirtual();
+		}
+	}
+
 	private void handleVirtual() {
 		if ((getParent().getStyle() & SWT.VIRTUAL) != 0 && !hasSetData) {
 			hasSetData = true;
@@ -2207,7 +2226,9 @@ public class GridItem extends Item {
 		// Grid.clear promises that the text, icon and other attributes (also those the data
 		// visualizer keeps per column: texts, images, colours, fonts, check states, spans) return to
 		// their default values
-		parent.getDataVisualizer().clearRow(this);
+		if (GridViewport.UPSTREAM_FIXES) {
+			parent.getDataVisualizer().clearRow(this);
+		}
 
 		defaultForeground = null;
 		defaultBackground = null;

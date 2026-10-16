@@ -480,7 +480,7 @@ public class GridColumnGroup extends Item
      */
     public void setHeaderFont(Font font) {
     	checkWidget();
-		if (font != null && font.isDisposed()) {
+		if (GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
     	this.headerFont = font;
