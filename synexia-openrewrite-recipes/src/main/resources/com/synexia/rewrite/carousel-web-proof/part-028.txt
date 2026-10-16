@@ -1,0 +1,6 @@
+capability	classification	donor	license	fit	remaining_proof
+carousel-fit-and-slide	ADAPT	hsoliwal/nebula@648ba48c5827425e3aae58fbd185ac87e518bc49 ImageContainer48ee2e193ad5be19295368932d9f8bc42f4ee99a	EPL-2.0	existing14cases; float/truncation selection-order	GWT differential browser lifecycle
+gwt-canvas-timer	WRAP	GWT2.12.2 gwt-user2a853239980f298bd50ac7dd798bdf4fae9256e0c61415db88a6ee4a92ed3d16	Apache-2.0	Canvas Context2d Timer Image bindings	compile actual browser
+float32-client-rounding	DIRECT_IMPORT	ECMAScript Math.fround platform primitive	NO_CODE_COPIED	Java float precision boundary	differential before adoption
+maven-recipe-delivery	WRAP	JavaSnapshot86b4b5824220b3d5ed246b4de6badee5043a781b TextSnapshotc1ce1408b78201139221093076a454ae21169f72	Apache-2.0	existing sealed generators	recipe tests generated-source verification
+additive-web-assets	DIRECT_IMPORT	org.openrewrite.text.CreateTextFile@8.17.1 https://github.com/openrewrite/rewrite/blob/v8.17.1/rewrite-core/src/main/java/org/openrewrite/text/CreateTextFile.java	Apache-2.0	existing exact path creator overwriteExisting=false	actual recipe bytes fixedpoint existing-file preservation

@@ -1,0 +1,49 @@
+{
+  "status": "ACTUAL_JVM_GWT_NUMERIC_DIFFERENTIAL_PASS",
+  "cases": 1485,
+  "uncorrected_differing_rows": 282,
+  "corrected_byte_equal": true,
+  "jvm_sha256": "41d43523353c47ff55f404346c47aaafb7bfe4a11edd7c6eedd36354413cefa2",
+  "green_sha256": "41d43523353c47ff55f404346c47aaafb7bfe4a11edd7c6eedd36354413cefa2",
+  "red_sha256": "0ff3e6987613a0a874e46bd32b22a8953d64ded6852a37c6e0822932781ae6eb",
+  "node_jobs": [
+    {
+      "activeOwnedProcesses": 0,
+      "activeOwnedProcessesAfterCleanup": 0,
+      "argv_sha256": "f0461f71bbceb7c099b8d96e619534858a6b4c19f5596169fdabb339e213b0b1",
+      "assignedBeforeResume": true,
+      "cleanupErrors": [],
+      "elapsedSeconds": 103.312,
+      "exitCode": 0,
+      "id": "node-geometry-red",
+      "job_function_sha256": "db12770eb857311c8939bbdcdb1a2957e1db61a6a8d510225762d934be34c7d4",
+      "minimumKFree": 9587924992,
+      "pid": 37024,
+      "processTreeTerminalAndReaped": true,
+      "readerTerminal": true,
+      "resumed": true,
+      "rootNativeWaitAfterCleanup": 0,
+      "samples": 1
+    },
+    {
+      "activeOwnedProcesses": 0,
+      "activeOwnedProcessesAfterCleanup": 0,
+      "argv_sha256": "02c4e68522c6f7708e13a7fb0dd972f2d6fba94ae5c1311df04d199bf7b092b3",
+      "assignedBeforeResume": true,
+      "cleanupErrors": [],
+      "elapsedSeconds": 93.047,
+      "exitCode": 0,
+      "id": "node-geometry-green",
+      "job_function_sha256": "db12770eb857311c8939bbdcdb1a2957e1db61a6a8d510225762d934be34c7d4",
+      "minimumKFree": 9587924992,
+      "pid": 47748,
+      "processTreeTerminalAndReaped": true,
+      "readerTerminal": true,
+      "resumed": true,
+      "rootNativeWaitAfterCleanup": 0,
+      "samples": 1
+    }
+  ],
+  "parser_fixture_lifecycle": "SEPARATE_REFUSAL; semantic16 reportedPASS but bounded natural-drain observation late; recheck with runtime-only inputs",
+  "browser_pending": true
+}

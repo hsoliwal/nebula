@@ -1,0 +1,47 @@
+{
+  "contractVersion": 1,
+  "frozenBeforeHarness": true,
+  "title": "Nebula carousel GWT example public behavior subset",
+  "target": "/index.html",
+  "harness": "/example-behavior.html",
+  "method": "Source-blind, same-origin iframe; visible DOM, public control events and Canvas 2D pixel readback only",
+  "fixtures": {
+    "images": [
+      {"url": "/assets/first.svg", "width": 80, "height": 40, "color": "#cc3322"},
+      {"url": "/assets/second.svg", "width": 80, "height": 40, "color": "#2244cc"}
+    ],
+    "view": {"width": 320, "height": 180, "background": "white"},
+    "scope": "Fixture URLs, image dimensions and white view configuration are supplied setup assumptions; this harness does not inspect application source or fixture source."
+  },
+  "boundsMs": {"readiness": 5000, "settlePerSelection": 650, "overall": 9000},
+  "clauses": [
+    {"id": "surface", "expect": "Within 5000 ms the rendered example has exactly one visible canvas[role=img], a 320 by 180 backing buffer, visible enabled Previous and Next controls, visible Selected image 1 text, and an opaque #cc3322 center pixel."},
+    {"id": "status", "expect": "Each action synchronously changes the visible contained Selected image N text to its expected selection; appended instructions are allowed; conflicting selection status is rejected."},
+    {"id": "pixel", "expect": "At the end of each 650 ms selection settling window, the actual Canvas center pixel is opaque and exactly matches the selected fixture color, and visible selection text is still correct."},
+    {"id": "input", "expect": "Buttons are exercised with HTMLElement.click(); arrow navigation focuses the Canvas and dispatches a bubbling KeyboardEvent to it, without application objects or internals."},
+    {"id": "result", "expect": "The outer exact <pre id=\"results\"> marker contains JSON with exactly status, assertions and message. Assertions is an integer count. PASS requires all independent actions and the composed owner report; error or timeout publishes FAIL."}
+  ],
+  "sequence": [
+    {"action": "Next", "selection": 2, "centerRGBA": [34, 68, 204, 255]},
+    {"action": "Next", "selection": 1, "centerRGBA": [204, 51, 34, 255]},
+    {"action": "Previous", "selection": 2, "centerRGBA": [34, 68, 204, 255]},
+    {"action": "ArrowRight", "selection": 1, "centerRGBA": [204, 51, 34, 255]},
+    {"action": "ArrowLeft", "selection": 2, "centerRGBA": [34, 68, 204, 255]}
+  ],
+  "antiCheat": ["Read actual Canvas pixels at initial readiness and after every action", "Check immediate status and status after settling", "Exercise both wrap directions and both arrow keys"],
+  "outOfScope": ["Animation trajectory or frame rate", "Fixture source validation", "White-background buffer alpha or CSS compositing", "Full carousel API", "Native SWT, RWT/RAP, JNI and resource lifecycle", "Cross-origin images, empty or invalid data, persistence and refresh"],
+  "composition": {
+    "baseFrozenContractSha256": "62667c0f071e67d334bc6af0bb244b5d77b035661d1421677b5dd17acb614145",
+    "revisionReason": "Root requested one owned browser profile and a composed visible owner-harness report after the original contract and harness authoring; this section is frozen before composition code changes.",
+    "ownerTarget": "/contract-tests.html",
+    "access": "Read only the owner iframe's visible pre#results JSON, never its JS, source or implementation objects.",
+    "ownerReport": {"keys": ["status", "assertions", "message"], "statuses": ["PASS", "FAIL", "RUNNING"], "assertions": "integer count"},
+    "passGate": "Independent public example actions pass and owner report is PASS with assertions greater than zero.",
+    "failureGate": "Owner FAIL, malformed final owner report, runtime error or the 9000 ms overall deadline causes outer FAIL.",
+    "outerAssertions": "Independent passed assertion count plus the owner report's assertion count.",
+    "outerMessage": "Always distinguish independentAssertions=N and ownerReportAssertions=M; owner checks are reported by their harness and are not claimed as independently validated.",
+    "presentation": "Two visible iframes side by side, approximately 480 by 600 each, in a 1024 by 768 viewport; separate visible pre#independent-evidence retains independent records.",
+    "qualificationScope": "Owner-report observation is a composition gate; independent behavioral qualification remains limited to the public example subset."
+  },
+  "authoringStatus": "Re-frozen input contract before composition code changes; no browser or application execution performed by the validator author"
+}

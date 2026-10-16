@@ -1,0 +1,2 @@
+capability	classification	donor	license	fit	remaining_proof
+gwt-chrome-qualification-build	WRAP	GWT2.12.2 gwt-dev fc3911a997caff4fb241b1ad16c768d1bc666afb6ed2886b28c8d1160033bf5e; PrecompileTaskArgProcessor/ArgHandlerSetProperties; gwt-user2a853239 UserAgentPropertyGenerator	Apache-2.0	Existing -setProperty user.agent=safari selects Chrome WebKit; one owned JVM per module bounds temporary cache; production module descriptors unchanged	actual source05 compilation and Chrome behavior; no performance claim

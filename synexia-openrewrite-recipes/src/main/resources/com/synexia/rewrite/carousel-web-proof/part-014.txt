@@ -1,0 +1,10 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project -->
+<module rename-to="carousel_geometry_proof">
+  <inherits name="com.google.gwt.core.Core"/>
+  <define-linker name="geometrysingle" class="com.google.gwt.core.linker.SingleScriptLinker"/>
+  <add-linker name="geometrysingle"/>
+  <source path="client" includes="CarouselGeometry.java,Float32.java,GeometryCorpus.java,GeometryWorkload.java,GeometryEntryPoint.java"/>
+  <super-source path="super"/>
+  <entry-point class="org.eclipse.nebula.widgets.carousel.client.GeometryEntryPoint"/>
+</module>

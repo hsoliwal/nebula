@@ -1,0 +1,19 @@
+{
+  "schema": "nebula.carousel.gwt-browser-contract/1",
+  "status": "FROZEN_BEFORE_BROWSER_SOURCE; NOT_EXECUTED",
+  "source": "hsoliwal/nebula@648ba48c5827425e3aae58fbd185ac87e518bc49 ImageContainer48ee2e193ad5be19295368932d9f8bc42f4ee99a",
+  "owners": ["Carousel owns the single selection and borrowed image list", "ImageContainer owns the Canvas, temporary composed buffer and cancellable timer"],
+  "cases": [
+    "Caller list and image identities are retained; disposing the carousel does not dispose caller images",
+    "Programmatic setSelection emits no selection event and invalid arguments leave selection unchanged",
+    "User navigation wraps; listener observes the new selection synchronously after slide preparation",
+    "Real Canvas pixels preserve unscaled centering and clipped damage",
+    "Original left/right two-viewport slide uses 200ms first and 50ms subsequent scheduling with minimum one-pixel progress",
+    "An overlapping slide cancels the former timer and its stale generation cannot change the new animation",
+    "Hidden, empty and outside-window presentation produces no Canvas drawing; hidden navigation retains semantic selection",
+    "Revealing a hidden owner refreshes the selected image",
+    "Dispose during an animation cancels pending timer work, releases owned buffer pixels and prevents deferred repaint",
+    "Resize validates the bounded viewport before mutating Canvas dimensions"
+  ],
+  "browser_profile_boundary": "Ready positive-size ImageElements, CSS pixel ratio 1:1 with no transforms; explicit refresh after external ancestor visibility/layout changes. GWT browser execution is required. SWT API/native and RAP integration are separate open gates."
+}
