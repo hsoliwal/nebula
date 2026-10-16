@@ -42,10 +42,15 @@ public final class RowSparseBits {
 	private int insertAt(int at, int key, int kind, int[] payload) {
 		if (n == keys.length) {
 			int next = HeapGrowth.capacity(keys.length, n + 1, 16);
-			keys = Arrays.copyOf(keys, next);
-			kinds = Arrays.copyOf(kinds, next);
-			sizes = Arrays.copyOf(sizes, next);
-			data = Arrays.copyOf(data, next);
+			// Publish only after all four allocations succeed; retain the existing heap policy.
+			int[] nextKeys = Arrays.copyOf(keys, next);
+			int[] nextKinds = Arrays.copyOf(kinds, next);
+			int[] nextSizes = Arrays.copyOf(sizes, next);
+			int[][] nextData = Arrays.copyOf(data, next);
+			keys = nextKeys;
+			kinds = nextKinds;
+			sizes = nextSizes;
+			data = nextData;
 		}
 		System.arraycopy(keys, at, keys, at + 1, n - at);
 		System.arraycopy(kinds, at, kinds, at + 1, n - at);
@@ -423,12 +428,13 @@ public final class RowSparseBits {
 			int next;
 			switch (kinds[c]) {
 				case BITMAP:
-					next = base + nextClearInBitmap(d, v);
+					// Clamp before addition, as in the canonical SWT ItemBitSet owner.
+					next = base + Math.min(nextClearInBitmap(d, v), limit - base);
 					break;
 				case RUN: {
 					next = end;
 					for (int i = 0; i < sizes[c]; i++) {
-						if (v >= d[2 * i] && v < d[2 * i + 1]) next = base + d[2 * i + 1];
+						if (v >= d[2 * i] && v < d[2 * i + 1]) next = base + Math.min(d[2 * i + 1], limit - base);
 					}
 					break;
 				}

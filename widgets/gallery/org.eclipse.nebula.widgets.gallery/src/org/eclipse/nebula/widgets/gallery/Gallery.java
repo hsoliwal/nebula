@@ -16,6 +16,7 @@
 package org.eclipse.nebula.widgets.gallery;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -103,6 +104,9 @@ public class Gallery extends Canvas {
 
 	GalleryItem[] items = null;
 
+	/** Layout-derived eligibility for an O(log N) first-visible lookup; never used for SWT.VIRTUAL. */
+	private boolean monotoneGroupGeometry;
+
 	private GalleryItem[] selection = null;
 
 	/**
@@ -164,7 +168,6 @@ public class Gallery extends Canvas {
 	protected int translate = 0;
 
 	/** Updated only after a successful complete layout of the original groups. */
-	private boolean orderedViewportGroups;
 
 	/**
 	 * Low quality on user action : decrease drawing quality on scrolling or
@@ -1273,7 +1276,7 @@ public class Gallery extends Canvas {
 		if (clipping.width <= 0 || clipping.height <= 0) return EMPTY_PAINT_WINDOW;
 		long start = (vertical ? (long) clipping.y : clipping.x) + translate;
 		long end = start + (vertical ? clipping.height : clipping.width);
-		int first = orderedViewportGroups ? firstGroupEndingAtOrAfter(start) : 0;
+		int first = monotoneGroupGeometry ? firstGroupEndingAtOrAfter(start) : 0;
 		int[] result = EMPTY_PAINT_WINDOW;
 		int size = 0;
 		for (int i = first; i < items.length; i++) {
@@ -1286,12 +1289,12 @@ public class Gallery extends Canvas {
 					int remaining = items.length - first;
 					int capacity = result.length == 0 ? Math.min(16, remaining)
 							: result.length + Math.min(result.length, remaining - result.length);
-					result = java.util.Arrays.copyOf(result, capacity);
+					result = Arrays.copyOf(result, capacity);
 				}
 				result[size++] = i;
 			}
 		}
-		return size == result.length ? result : java.util.Arrays.copyOf(result, size);
+		return size == result.length ? result : Arrays.copyOf(result, size);
 	}
 
 	/** Does not request a GalleryItem facade or invoke SWT.SetData. */
@@ -1301,7 +1304,7 @@ public class Gallery extends Canvas {
 			int mid = low + ((high - low) >>> 1);
 			GalleryItem item = items[mid];
 			if (item == null) {
-				orderedViewportGroups = false;
+				monotoneGroupGeometry = false;
 				return 0;
 			}
 			long trailing = (vertical ? (long) item.y : item.x)
@@ -1557,7 +1560,7 @@ public class Gallery extends Canvas {
 	 * @return
 	 */
 	private int calculateSize(GalleryItem onlyUpdateGroup) {
-		orderedViewportGroups = false;
+		monotoneGroupGeometry = false;
 
         if (groupRenderer == null) {
             return 0;
@@ -1566,8 +1569,11 @@ public class Gallery extends Canvas {
 		groupRenderer.preLayout(null);
 
 		int currentHeight = 0;
-		boolean ordered = true;
-		long previousStart = Long.MIN_VALUE, previousEnd = Long.MIN_VALUE;
+		// Preserve all virtual SetData callbacks and any custom-renderer behavior.
+		boolean searchable = !virtual && !virtualGroups
+				&& groupRenderer.getClass() == DefaultGalleryGroupRenderer.class;
+		long previousStart = Long.MIN_VALUE;
+		long previousEnd = Long.MIN_VALUE;
 
 		int mainItemCount = getItemCount();
 
@@ -1611,22 +1617,21 @@ public class Gallery extends Canvas {
 				}
 			}
 
-			// Respect custom or overlapping geometry: only monotone intervals
-			// qualify for paint-time binary search.
-			long leading = vertical ? item.y : item.x;
-			long trailing = leading + (vertical ? item.height : item.width);
-			if (leading < previousStart || trailing < previousEnd || trailing < leading) {
-				ordered = false;
+			if (searchable) {
+				long origin = vertical ? item.y : item.x;
+				long extent = vertical ? item.height : item.width;
+				long far = origin + extent;
+				if (extent < 0 || far < Integer.MIN_VALUE || far > Integer.MAX_VALUE
+						|| origin < previousStart || far < previousEnd) {
+					searchable = false;
+				}
+				previousStart = origin;
+				previousEnd = far;
 			}
-			previousStart = leading;
-			previousEnd = trailing;
 		}
 
 		groupRenderer.postLayout(null);
-		// Conservative: custom renderers and ultra-lazy groups retain the
-		// original serial semantics, including SetData timing.
-		orderedViewportGroups = ordered && !virtual && !virtualGroups
-				&& groupRenderer.getClass() == DefaultGalleryGroupRenderer.class;
+		monotoneGroupGeometry = searchable;
 
 		return currentHeight;
 	}
@@ -1923,7 +1928,7 @@ public class Gallery extends Canvas {
 
 		int pos = vertical ? (coords.y + translate) : (coords.x + translate);
 
-		int index = 0;
+		int index = monotoneGroupGeometry ? firstGroupEndingAtOrAfter(pos) : 0;
 		GalleryItem item = null;
 		while (index < items.length) {
 			item = getItem(index);
@@ -2560,7 +2565,7 @@ public class Gallery extends Canvas {
 	}
 
 	public void _setGalleryItems(GalleryItem[] items) {
-		orderedViewportGroups = false;
+		monotoneGroupGeometry = false;
 		this.items = items;
 	}
 

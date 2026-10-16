@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Nebula Tiles original intrinsic static-grid hit viewport
+on:
+  pull_request:
+    paths:
+      - 'widgets/tiles/org.eclipse.nebula.widgets.tiles/**'
+      - '.github/workflows/m3-tiles-intrinsic-hit-20261015.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  java21-original-candidate-differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Run exact old-vs-new source model with original edge semantics
+        run: bash widgets/tiles/org.eclipse.nebula.widgets.tiles/run-hit-grid.sh
+  java21-c17-jni-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Execute original vs Java vs JNI geometry under C17 UBSan
+        run: bash widgets/tiles/org.eclipse.nebula.widgets.tiles/run-hit-grid-jni.sh
+  original-swt-source-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Resolve pinned SWT host compilation dependencies
+        run: |
+          mkdir -p .m3-tiles/lib .m3-tiles/classes
+          curl --fail --location --retry 3 -o .m3-tiles/lib/swt-core.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt/3.126.0/org.eclipse.swt-3.126.0.jar
+          curl --fail --location --retry 3 -o .m3-tiles/lib/swt-gtk.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt.gtk.linux.x86_64/3.126.0/org.eclipse.swt.gtk.linux.x86_64-3.126.0.jar
+          unzip -t .m3-tiles/lib/swt-core.jar >/dev/null
+          unzip -t .m3-tiles/lib/swt-gtk.jar >/dev/null
+      - name: Compile every actual original Tiles package owner without SWT stubs
+        run: |
+          javac --release 21 \
+            -cp ".m3-tiles/lib/swt-core.jar:.m3-tiles/lib/swt-gtk.jar" \
+            -d .m3-tiles/classes \
+            widgets/tiles/org.eclipse.nebula.widgets.tiles/src/org/eclipse/nebula/widgets/tiles/*.java
