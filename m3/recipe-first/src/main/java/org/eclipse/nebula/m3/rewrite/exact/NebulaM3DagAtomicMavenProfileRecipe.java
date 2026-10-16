@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import org.openrewrite.ExecutionContext;
