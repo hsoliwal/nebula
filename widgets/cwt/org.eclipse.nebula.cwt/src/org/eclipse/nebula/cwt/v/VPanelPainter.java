@@ -25,13 +25,11 @@ public class VPanelPainter implements IControlPainter {
 	/** Bound retained scratch to 256 references; larger panels keep the original path. */
 	private static final int MAX_PAINT_BUFFER = 256;
 	private final Object paintBufferLock = new Object();
-	private VControl[] paintBuffer;
 	private boolean bufferDisposed;
 
 	public void dispose() {
 		synchronized (paintBufferLock) {
 			bufferDisposed = true;
-			paintBuffer = null;
 		}
 	}
 	
@@ -61,7 +59,7 @@ public class VPanelPainter implements IControlPainter {
 			paintSnapshot(panel.getChildren(), e);
 			return;
 		}
-		VControl[] buffer = acquirePaintBuffer(panel.children.size());
+		VControl[] buffer = acquirePaintBuffer(panel, panel.children.size());
 		if (buffer == null) {
 			paintSnapshot(panel.getChildren(), e);
 			return;
@@ -74,7 +72,7 @@ public class VPanelPainter implements IControlPainter {
 		} finally {
 			Arrays.fill(buffer, null);
 			if (snapshot != buffer) Arrays.fill(snapshot, null);
-			releasePaintBuffer(snapshot);
+			releasePaintBuffer(panel, snapshot);
 		}
 	}
 
@@ -82,19 +80,16 @@ public class VPanelPainter implements IControlPainter {
 		for (VControl child : snapshot) child.paintControl(e);
 	}
 
-	private VControl[] acquirePaintBuffer(int count) {
+	private VControl[] acquirePaintBuffer(VPanel panel, int count) {
 		synchronized (paintBufferLock) {
 			if (bufferDisposed || count > MAX_PAINT_BUFFER) return null;
-			VControl[] available = paintBuffer;
-			paintBuffer = null; // A nested/shared-renderer call cannot borrow an active frame.
-			return available != null && available.length == count
-					? available : new VControl[count];
+			return panel.acquirePaintSnapshot(count);
 		}
 	}
 
-	private void releasePaintBuffer(VControl[] buffer) {
+	private void releasePaintBuffer(VPanel panel, VControl[] buffer) {
 		synchronized (paintBufferLock) {
-			if (!bufferDisposed && buffer.length <= MAX_PAINT_BUFFER) paintBuffer = buffer;
+			if (!bufferDisposed && buffer.length <= MAX_PAINT_BUFFER) panel.releasePaintSnapshot(buffer);
 		}
 	}
 
