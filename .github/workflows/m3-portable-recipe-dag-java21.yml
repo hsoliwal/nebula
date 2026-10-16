@@ -65,7 +65,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3DagWavePlannerTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
+          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3DagWavePlannerTest,NebulaM3OrchestratorPlansTest,NebulaM3DroolsCompletionGateRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
           if ($LASTEXITCODE -ne 0) { throw 'Java 21 recipe/JUnit proof failed' }
 
       - name: 3 - Verify roots, real JUnit reports and source immutability
@@ -114,6 +114,16 @@ jobs:
                 [int]$suite.errors -ne 0 -or [int]$suite.skipped -ne 0) {
               throw "JUnit proof is incomplete: $name"
             }
+          }
+
+          # The source-sealed Drools completion recipe lives in the exact package.
+          $droolsReport = Join-Path $reports 'TEST-org.eclipse.nebula.m3.rewrite.exact.NebulaM3DroolsCompletionGateRecipeTest.xml'
+          if (!(Test-Path $droolsReport)) { throw 'Drools completion recipe JUnit did not run' }
+          [xml]$droolsXml = Get-Content $droolsReport -Raw
+          $droolsSuite = $droolsXml.testsuite
+          if ([int]$droolsSuite.tests -lt 3 -or [int]$droolsSuite.failures -ne 0 -or
+              [int]$droolsSuite.errors -ne 0 -or [int]$droolsSuite.skipped -ne 0) {
+            throw 'Drools completion recipe JUnit proof incomplete'
           }
 
           $transfer = (Get-Content 'm3/recipe-first/target/nebula-m3-transfer/transfer.sha256' -Raw).Trim()

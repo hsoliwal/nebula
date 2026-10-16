@@ -36,3 +36,14 @@ displayName: Admit final Nebula upstream-sync ignore leaf
 description: Adds only the reviewed .polyglot* ignore entry from the final upstream sync.
 recipeList:
   - org.eclipse.nebula.m3.rewrite.exact.NebulaM3UpstreamSyncIgnoreRecipe
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.eclipse.nebula.m3.DroolsVerifiedCompletion
+displayName: Gate Nebula Drools DAG readiness on proven predecessor completion
+description: >-
+  Exact Java21 FILE-local recipe: a predecessor must be externally verified complete
+  with a SHA-256-shaped proof receipt before its dependent is considered ready.
+  A candidate-only mechanical change with no widget, JNI or promotion authority.
+recipeList:
+  - org.eclipse.nebula.m3.rewrite.exact.NebulaM3DroolsCompletionGateRecipe

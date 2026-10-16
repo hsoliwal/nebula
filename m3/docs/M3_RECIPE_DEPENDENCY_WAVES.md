@@ -93,3 +93,25 @@ proof, atom/pattern/IOP/contract coverage, unchanged second-pass output, SWT run
 tests where applicable, and explicit review.
 
 A PR or CI workflow that has not executed these checks must remain **HOLD/NOT_RUN**, not PASSED.
+
+## Drools completion receipts (fail-closed)
+
+The scheduler distinction is now explicit: **READY is not COMPLETE**. A Drools recipe-node
+fact carries `ready`, `complete`, and `proofSha256` separately. A downstream rule matches a
+predecessor only when `complete == true` and its proof field matches the lowercase 64-hex
+SHA-256 shape. No generated rule sets `complete` or invents a proof fingerprint: an independent
+Maven/JUnit/contract verifier must validate the evidence before an orchestrator adapter may publish
+completion. A hash-shaped value alone is not authentication of a build.
+
+The corrected Java 21 emission is produced by the exact FILE-local OpenRewrite atom
+`org.eclipse.nebula.m3.rewrite.exact.NebulaM3DroolsCompletionGateRecipe`, registered in
+`m3/recipe-first/rewrite.yml` as `org.eclipse.nebula.m3.DroolsVerifiedCompletion`.
+Its test verifies exact SHA-256 pre/post images, structured Java-LST replacement, drift refusal,
+unrelated-file isolation and second-pass fixed point. The portable/final CI jobs include that JUnit
+class but **a successful Maven and Nebula Tycho/SWT run remains required** before the backport
+receipt can move beyond HOLD. The newly computed orchestration root supersedes any cached root
+from the ready-only projection.
+
+This change neither runs a Drools engine nor grants Camel, Airflow, Drools, OpenRewrite recipes or
+an LLM any implicit promotion authority. It changes only the candidate scheduler representation;
+original Nebula widget behavior, SWT contracts, JNI and native code remain untouched.

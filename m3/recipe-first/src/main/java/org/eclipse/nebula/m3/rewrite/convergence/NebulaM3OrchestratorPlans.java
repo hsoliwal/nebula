@@ -124,7 +124,9 @@ public final class NebulaM3OrchestratorPlans {
     /**
      * Drools agenda that marks recipe atoms ready only after every declared dependency is ready.
      *
-     * <p>The DRL is scheduling evidence only; it does not execute OpenRewrite or write source.</p>
+     * <p>The DRL is scheduling evidence only. A predecessor is usable only when an independent
+     * verifier has marked it complete and supplied a SHA-256 proof fingerprint. Becoming READY
+     * never marks a node COMPLETE. This projection does not execute OpenRewrite or write source.</p>
      */
     public static String droolsDrl() {
         StringBuilder out = new StringBuilder();
@@ -136,6 +138,8 @@ public final class NebulaM3OrchestratorPlans {
                 .append("    id : String\n")
                 .append("    ordinal : int\n")
                 .append("    ready : boolean\n")
+                .append("    complete : boolean\n")
+                .append("    proofSha256 : String\n")
                 .append("end\n\n");
 
         List<NebulaM3RecipeDagManifest.Node> nodes = NebulaM3RecipeDagManifest.nodes();
@@ -155,7 +159,7 @@ public final class NebulaM3OrchestratorPlans {
                         .append(dependencyIndex)
                         .append(" : M3RecipeNode(id == \"")
                         .append(node.dependsOn().get(dependencyIndex))
-                        .append("\", ready == true)\n");
+                        .append("\", complete == true, proofSha256 matches \"[0-9a-f]{64}\")\n");
             }
             out.append("    $current : M3RecipeNode(id == \"")
                     .append(node.id())
