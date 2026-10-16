@@ -36,3 +36,13 @@ displayName: Admit final Nebula upstream-sync ignore leaf
 description: Adds only the reviewed .polyglot* ignore entry from the final upstream sync.
 recipeList:
   - org.eclipse.nebula.m3.rewrite.exact.NebulaM3UpstreamSyncIgnoreRecipe
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.eclipse.nebula.m3.DagAtomicEvidence
+displayName: Publish complete Nebula M3 recipe-DAG evidence atomically
+description: >-
+  Exact hash-pinned Java 21 FILE-local recipe for atomic per-file scheduler/evidence
+  publication. No external scheduler or source mutation/promotion authority is granted.
+recipeList:
+  - org.eclipse.nebula.m3.rewrite.exact.NebulaM3DagEvidenceAtomicRecipe
