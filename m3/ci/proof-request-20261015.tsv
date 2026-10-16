@@ -1,0 +1,2 @@
+schema	requestedAt	branch	state	mutationAuthority	promotionAuthority
+NEBULA_M3_PROOF_REQUEST_V1	2026-10-15	m3/nebula-final-recipe-dag-backport-20261015	HOLD_UNTIL_PROVEN	false	false

@@ -2,6 +2,7 @@
 package org.eclipse.nebula.m3.rewrite;
 
 import org.eclipse.nebula.m3.rewrite.convergence.NebulaM3FileConvergenceRecipeDag;
+import org.eclipse.nebula.m3.rewrite.convergence.NebulaM3RecipeDagManifest;
 import java.util.List;
 import java.util.Set;
 import org.openrewrite.Recipe;
@@ -43,6 +44,8 @@ public final class NebulaM3Java21ConvergenceRecipe extends Recipe {
 
     @Override
     public List<Recipe> getRecipeList() {
+        // Fail closed before OpenRewrite receives any candidate atom sequence.
+        NebulaM3RecipeDagManifest.readinessWaves();
         return NebulaM3FileConvergenceRecipeDag.atoms().stream()
                 .map(NebulaM3FileConvergenceRecipeDag.Atom::recipe)
                 .toList();

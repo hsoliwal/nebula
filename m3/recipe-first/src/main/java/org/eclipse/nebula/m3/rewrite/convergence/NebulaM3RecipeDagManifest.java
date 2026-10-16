@@ -60,6 +60,17 @@ public final class NebulaM3RecipeDagManifest {
         return TARGETS;
     }
 
+    /**
+     * Validated, deterministic dependency waves for external scheduler projections.
+     *
+     * <p>A wave is readiness evidence, not authority to execute recipe atoms concurrently or
+     * mutate source. Actual FILE-local independence and fixed-point proof remain separate gates.</p>
+     */
+    public static List<List<Node>> readinessWaves() {
+        return NebulaM3DagWavePlanner.plan(NODES);
+    }
+
+
     /** External orchestration can choose/order work but never edits source directly. */
     public static boolean orchestratorMutationAuthority() {
         return false;
@@ -101,11 +112,22 @@ public final class NebulaM3RecipeDagManifest {
         List<NebulaM3FileConvergenceRecipeDag.Atom> atoms =
                 NebulaM3FileConvergenceRecipeDag.atoms();
         ArrayList<Node> result = new ArrayList<>(atoms.size());
-        String previous = null;
+        ArrayList<String> previousPhase = new ArrayList<>();
+        ArrayList<String> currentPhase = new ArrayList<>();
+        NebulaM3FileConvergenceRecipeDag.Phase activePhase = null;
         for (int ordinal = 0; ordinal < atoms.size(); ordinal++) {
             NebulaM3FileConvergenceRecipeDag.Atom atom = atoms.get(ordinal);
+            if (activePhase != atom.phase()) {
+                if (activePhase != null) {
+                    previousPhase = new ArrayList<>(currentPhase);
+                    currentPhase.clear();
+                }
+                activePhase = atom.phase();
+            }
             List<String> dependencies =
-                    previous == null ? List.of() : List.of(previous);
+                    atom.phase() == NebulaM3FileConvergenceRecipeDag.Phase.INVENTORY
+                            ? List.of()
+                            : List.copyOf(previousPhase);
             String authority =
                     atom.phase().mutating() ? "CANDIDATE_ONLY" : "READ_ONLY";
             result.add(
@@ -117,9 +139,10 @@ public final class NebulaM3RecipeDagManifest {
                             NebulaM3FileConvergenceRecipeDag.maximumEditScope().name(),
                             authority,
                             dependencies));
-            previous = atom.id();
+            currentPhase.add(atom.id());
         }
         validate(result);
+        NebulaM3DagWavePlanner.plan(result);
         return List.copyOf(result);
     }
 
@@ -129,12 +152,9 @@ public final class NebulaM3RecipeDagManifest {
             if (node.ordinal() != index) {
                 throw new IllegalStateException("recipe DAG ordinal drift");
             }
-            if (index == 0) {
-                if (!node.dependsOn().isEmpty()) {
-                    throw new IllegalStateException("first recipe DAG node must be a root");
-                }
-            } else if (!node.dependsOn().equals(List.of(nodes.get(index - 1).id()))) {
-                throw new IllegalStateException("recipe DAG dependency drift");
+            if (node.phase() == NebulaM3FileConvergenceRecipeDag.Phase.INVENTORY
+                    && !node.dependsOn().isEmpty()) {
+                throw new IllegalStateException("inventory recipe DAG nodes must be roots");
             }
             if (!NebulaM3FileConvergenceRecipeDag.maximumEditScope()
                     .name()
