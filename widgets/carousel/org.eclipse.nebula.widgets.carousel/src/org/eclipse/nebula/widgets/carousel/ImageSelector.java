@@ -25,11 +25,16 @@ import org.eclipse.swt.widgets.Canvas;
 
 class ImageSelector extends Canvas {
 	private static final int CIRCLE_DIAMETER = 20;
+	private static final int CIRCLE_STEP = CIRCLE_DIAMETER + 5;
 	private static final int ARROW_SIZE = 12;
 
 	Color arrowColor, circleBackground, circleForeground, circleHoverColor;
 	private final List<Rectangle> rects = new ArrayList<>();
 	private int indexHover = -1;
+	/** The previous paint's hit geometry, without one Rectangle per image. */
+	private boolean coordinateViewport;
+	private int paintedCircleCount;
+	private int paintedCircleY;
 	private Rectangle arrowLeftArea, arrowRightArea;
 	private boolean hoverLeftArrow, hoverRightArrow;
 	private final Carousel carousel;
@@ -67,12 +72,19 @@ class ImageSelector extends Canvas {
 
 			Cursor expectedCursor = hoverLeftArrow || hoverRightArrow ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : getDisplay().getSystemCursor(SWT.CURSOR_ARROW);
 			indexHover = -1;
-			for (int i = 0; i < rects.size(); i++) {
-				final Rectangle rect = rects.get(i);
-				if (rect.contains(pt)) {
+			if (coordinateViewport) {
+				indexHover = paintedCircleAt(pt);
+				if (indexHover >= 0) {
 					expectedCursor = getDisplay().getSystemCursor(SWT.CURSOR_HAND);
-					indexHover = i;
-					break;
+				}
+			} else {
+				for (int i = 0; i < rects.size(); i++) {
+					final Rectangle rect = rects.get(i);
+					if (rect.contains(pt)) {
+						expectedCursor = getDisplay().getSystemCursor(SWT.CURSOR_HAND);
+						indexHover = i;
+						break;
+					}
 				}
 			}
 
@@ -99,7 +111,71 @@ class ImageSelector extends Canvas {
 		drawArrows(x, gc);
 	}
 
+	/**
+	 * CPU hit-test of rectangles last painted by this very Canvas. A parent
+	 * image-list mutation before the next Paint must not change those bounds.
+	 */
+	private int paintedCircleAt(final Point point) {
+		if (point.x < 0 || point.y < paintedCircleY
+				|| (long) point.y >= (long) paintedCircleY + CIRCLE_DIAMETER) return -1;
+		int index = point.x / CIRCLE_STEP;
+		if (index >= paintedCircleCount || point.x % CIRCLE_STEP >= CIRCLE_DIAMETER) return -1;
+		return index;
+	}
+
+	/** Preserve the original path for subclass overrides and invalid resources. */
 	private int drawCircles(final GC gc) {
+		if (getClass() != ImageSelector.class || carousel.getClass() != Carousel.class
+				|| circleBackground == null || circleForeground == null || circleHoverColor == null
+				|| circleBackground.isDisposed() || circleForeground.isDisposed()
+				|| circleHoverColor.isDisposed()) {
+			coordinateViewport = false;
+			return drawCirclesLegacy(gc);
+		}
+		final int count = carousel.getImages().size();
+		if ((long) count * CIRCLE_STEP + CIRCLE_DIAMETER > Integer.MAX_VALUE) {
+			coordinateViewport = false;
+			return drawCirclesLegacy(gc);
+		}
+		final Rectangle clip = gc.getClipping();
+		if (clip.width < 0) {
+			coordinateViewport = false;
+			return drawCirclesLegacy(gc);
+		}
+		final Rectangle clientArea = getClientArea();
+		paintedCircleCount = count;
+		paintedCircleY = (clientArea.height - CIRCLE_DIAMETER) / 2;
+		coordinateViewport = true;
+		rects.clear();
+
+		// Keep the CPU hit snapshot current even when no pixels are damaged.
+		if (clip.isEmpty()) {
+			return (int) ((long) count * CIRCLE_STEP + CIRCLE_DIAMETER);
+		}
+
+		// Conservative one-circle halo: even GC stroke edges are not excluded.
+		long from = Math.floorDiv((long) clip.x - CIRCLE_STEP, CIRCLE_STEP);
+		long until = Math.floorDiv((long) clip.x + clip.width + CIRCLE_STEP, CIRCLE_STEP) + 1;
+		int first = (int) Math.max(0L, Math.min((long) count, from));
+		int after = (int) Math.max((long) first, Math.min((long) count, until));
+		for (int i = first; i < after; i++) {
+			int x = i * CIRCLE_STEP;
+			if (i == carousel.getSelection()) {
+				gc.setBackground(circleBackground);
+				gc.fillOval(x, paintedCircleY, CIRCLE_DIAMETER, CIRCLE_DIAMETER);
+			} else if (i == indexHover) {
+				gc.setForeground(circleHoverColor);
+				gc.drawOval(x, paintedCircleY, CIRCLE_DIAMETER, CIRCLE_DIAMETER);
+			} else {
+				gc.setForeground(circleForeground);
+				gc.drawOval(x, paintedCircleY, CIRCLE_DIAMETER, CIRCLE_DIAMETER);
+			}
+		}
+		return (int) ((long) count * CIRCLE_STEP + CIRCLE_DIAMETER);
+	}
+
+	/** Exact preimage loop retained for fallback, including its effects. */
+	private int drawCirclesLegacy(final GC gc) {
 		int x = 0;
 		final Rectangle clientArea = getClientArea();
 		rects.clear();
@@ -123,27 +199,33 @@ class ImageSelector extends Canvas {
 
 	}
 
+
 	private void drawArrows(int x, final GC gc) {
 		gc.setForeground(arrowColor);
 
 		final Rectangle clientArea = getClientArea();
 		final int topY = (clientArea.height - ARROW_SIZE) / 2;
 		final int width = (int) (ARROW_SIZE * .5f);
+		final boolean paint = !gc.getClipping().isEmpty();
 
 		gc.setLineWidth(hoverLeftArrow ? 3 : 1);
 
-		gc.drawPolyline(new int[] { x + width, topY, //
-				x, topY + ARROW_SIZE / 2, //
-				x + width, topY + ARROW_SIZE });
+		if (paint) {
+			gc.drawPolyline(new int[] { x + width, topY, //
+					x, topY + ARROW_SIZE / 2, //
+					x + width, topY + ARROW_SIZE });
+		}
 
 		arrowLeftArea = new Rectangle(x, topY, ARROW_SIZE, ARROW_SIZE);
 
 		x += ARROW_SIZE * 3;
 
 		gc.setLineWidth(hoverRightArrow ? 3 : 1);
-		gc.drawPolyline(new int[] { x, topY, //
-				x + width, topY + ARROW_SIZE / 2, //
-				x, topY + ARROW_SIZE });
+		if (paint) {
+			gc.drawPolyline(new int[] { x, topY, //
+					x + width, topY + ARROW_SIZE / 2, //
+					x, topY + ARROW_SIZE });
+		}
 		arrowRightArea = new Rectangle(x, topY, ARROW_SIZE, ARROW_SIZE);
 	}
 

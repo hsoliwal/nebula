@@ -578,6 +578,15 @@ public class Tiles<T> extends Canvas {
 		if (current == null) {
 			return null;
 		}
+		// Only a verified exact static frame uses a primitive O(1) coordinate.
+		// Animated, irregular, overlapping and overflow-prone frames keep
+		// their original first-hit, inclusive ordered traversal.
+		if (current.getClass() == FrameStatic.class) {
+			final FrameStatic<T> staticFrame = (FrameStatic<T>) current;
+			if (staticFrame.hasIndexedHitGrid()) {
+				return staticFrame.indexedTileAt(x, y);
+			}
+		}
 		for (final Tile<T> tile : current.getTiles()) {
 			if (x >= tile.x && y >= tile.y && x <= tile.x + tile.width
 					&& y <= tile.y + tile.height) {

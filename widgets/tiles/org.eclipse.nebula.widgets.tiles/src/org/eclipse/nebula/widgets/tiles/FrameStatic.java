@@ -44,6 +44,8 @@ class FrameStatic<T> extends Frame<T> implements Cloneable  {
 
 	/** Rendered elements*/
 	private final List<Tile<T>>       rendered    = new ArrayList<>();
+	// Private parent-frame CPU hit directory: no per-tile object/index array.
+	private int hitGridColumns, hitGridStepX, hitGridStepY, hitGridCount;
 	/** The current background color */
 	private Color               background;
 	/** Layout*/
@@ -505,7 +507,8 @@ class FrameStatic<T> extends Frame<T> implements Cloneable  {
 	@Override
 	protected void update(){
 
-		// Clear
+		// Clear first: nested filter/decorator callbacks cannot observe stale lookup.
+		hitGridColumns = 0;
 		this.rendered.clear();
 
 		// Tile location
@@ -546,5 +549,64 @@ class FrameStatic<T> extends Frame<T> implements Cloneable  {
 				break;
 			}
 		}
+		validateIndexedHitGrid();
+	}
+
+	/** Indexed only on a complete, exact, non-overlapping static snapshot. */
+	boolean hasIndexedHitGrid() {
+		return hitGridColumns != 0 && hitGridCount == rendered.size();
+	}
+
+	/**
+	 * Original inclusive-edge hit semantics, with no new lookup allocation.
+	 * A null is definitive only after the complete ordered grid was verified.
+	 */
+	Tile<T> indexedTileAt(final int x, final int y) {
+		if (!hasIndexedHitGrid()) throw new IllegalStateException("stale tile index");
+		final Tile<T> first = rendered.get(0);
+		if (x < first.x || y < first.y) return null;
+		final long column = ((long) x - first.x) / hitGridStepX;
+		final long row = ((long) y - first.y) / hitGridStepY;
+		if (column >= hitGridColumns) return null;
+		final long slot = row * hitGridColumns + column;
+		if (slot >= rendered.size()) return null;
+		final Tile<T> tile = rendered.get((int) slot);
+		if (x >= tile.x && y >= tile.y && x <= tile.x + tile.width
+				&& y <= tile.y + tile.height) {
+			return tile;
+		}
+		return null;
+	}
+
+	/**
+	 * One O(n) shape check at the original update boundary, followed by O(1)
+	 * pointer movement. Irregular, empty, overlapping or overflow-prone frames
+	 * remain on the old ordered hit scan. Never change decorators or paint.
+	 */
+	private void validateIndexedHitGrid() {
+		if (rendered.size() < 16 || tileWidth <= 0 || tileHeight <= 0
+				|| tileMarginX <= 0 || tileMarginY <= 0 || width <= 0 || height <= 0) return;
+		final long stepX = (long) tileWidth + tileMarginX;
+		final long stepY = (long) tileHeight + tileMarginY;
+		if (stepX > Integer.MAX_VALUE || stepY > Integer.MAX_VALUE
+				|| (long) tileMarginX + stepX > width
+				|| (long) tileMarginY + stepY > height) return;
+		final long columns = ((long) width - tileMarginX) / stepX;
+		if (columns < 1 || columns > Integer.MAX_VALUE) return;
+		final long rows = (rendered.size() - 1L) / columns + 1L;
+		if ((long) tileMarginX + (columns + 1L) * stepX > Integer.MAX_VALUE
+				|| (long) tileMarginY + (rows + 1L) * stepY > Integer.MAX_VALUE
+				|| (long) tileMarginY + (rows - 1L) * stepY + stepY > height) return;
+		for (int i = 0; i < rendered.size(); i++) {
+			final Tile<T> tile = rendered.get(i);
+			final long expectedX = tileMarginX + (i % columns) * stepX;
+			final long expectedY = tileMarginY + (i / columns) * stepY;
+			if (tile.x != expectedX || tile.y != expectedY
+					|| tile.width != tileWidth || tile.height != tileHeight) return;
+		}
+		hitGridStepX = (int) stepX;
+		hitGridStepY = (int) stepY;
+		hitGridCount = rendered.size();
+		hitGridColumns = (int) columns; // Publish after every proof check.
 	}
 }
