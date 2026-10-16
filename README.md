@@ -1,3 +1,120 @@
+<!-- fork-homepage-detail:v1:start -->
+# Eclipse Nebula and Opal: richer SWT widgets
+
+Nebula provides reusable SWT-based controls for Java desktop applications,
+including grids, charts, galleries, formatted input and the Opal widget family.
+Start with the widget catalogue to choose a component, then its snippet and
+implementation/test bundles. Nebula builds on SWT's display, native platform and
+resource lifecycle; it does not replace those contracts.
+
+[Widget map](#nebula-widget-map) · [Concepts](#nebula-key-concepts) ·
+[Quickstart](#nebula-quickstart) · [Example](#nebula-worked-example) ·
+[Development guide](docs/DEVELOPMENT_GUIDE.md)
+
+## Nebula widget map
+
+| Goal | Start here |
+| --- | --- |
+| Choose an existing control | [Widget catalogue](docs/Widgets.md) |
+| Explore widget implementations | [widgets/](widgets/) and [Opal](widgets/opal/) |
+| Reproduce a Grid interaction | [Grid snippets](examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/) |
+| Change Grid behavior | [Grid bundle](widgets/grid/org.eclipse.nebula.widgets.grid/) and [Grid tests](widgets/grid/org.eclipse.nebula.widgets.grid.test/) |
+| Understand build membership/targets | [Parent reactor](releng/org.eclipse.nebula.nebula-parent/pom.xml) |
+| Understand fork qualification/tooling | [Development guide](docs/DEVELOPMENT_GUIDE.md) and [M3 guide](m3/README.md) |
+
+## Nebula key concepts
+
+- **Widget / viewer:** a control exposes interaction and state; a JFace-style
+  viewer adapts application model elements and labels onto it.
+- **Grid item / column:** hierarchical row data and column presentation. Tree
+  structure, selection and screen position are distinct concepts.
+- **Bundle / feature / p2 site:** implementation unit, installable grouping and
+  published update repository.
+- **Incubating widget:** an explicitly marked component whose API may change
+  between releases; consult the catalogue and release metadata before adoption.
+- **Snippet / regression test:** a small demonstration versus an automated
+  assertion. A working example does not establish every widget contract.
+- **Receiver binding:** an exact SWT source/artifact identity used by the fork's
+  qualification lane; a stock or moving SWT build is not equivalent evidence.
+
+## Nebula fork status
+
+This is the downstream [hsoliwal fork](https://github.com/hsoliwal/nebula) of
+[Eclipse Nebula](https://github.com/EclipseNebula/nebula).
+The checkout contains ordinary widgets, fork-specific Grid/state work,
+[recipe tooling](m3/README.md), and a
+[bound SWT/Grid screen-validation workflow](.github/workflows/maven.yaml).
+Those are inspectable implementations and configured checks, not a blanket claim
+of accepted optimization, passing native tests or measured resource budgets.
+Keep the normal Tycho build, tooling qualification and native/pixel/resource gates
+separate. Original widget licenses and notices remain authoritative.
+
+## Nebula quickstart
+
+The inspected [parent POM](releng/org.eclipse.nebula.nebula-parent/pom.xml) sets
+Java 21, and [the Maven workflow](.github/workflows/maven.yaml) uses
+**Temurin 21 and Maven 3.9.11**. Prepare network access for Maven/p2 targets and
+an SWT/native display environment. Linux CI uses GTK and Xvfb.
+
+```sh
+git clone https://github.com/hsoliwal/nebula.git
+cd nebula
+git rev-parse HEAD
+java -version
+mvn -version
+mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+```
+
+This is the ordinary widget build entry point. Reproducing the current Grid
+qualification lane additionally requires the workflow's pinned SWT checkout,
+native build, receiver p2 preparation, target override and screenshot validator.
+The short command does not perform or certify all of those stages.
+
+## Nebula command and diagnosis cheat sheet
+
+```sh
+# Normal widget verification on a provisioned Linux/Xvfb host.
+xvfb-run -a mvn -V -B clean verify -Dtycho.localArtifacts=ignore
+# Find the minimal hierarchical Grid demonstration.
+git grep -n 'class GridSnippet1' -- examples
+# Inspect reports after the actual selected reactor has run.
+find . -path '*/target/surefire-reports/*.xml' -print
+```
+
+- **Unresolved bundle:** record the target and repository; do not silently replace
+  exact receiver artifacts with an arbitrary local build.
+- **UI harness failure:** inspect native GTK/display setup before widget logic.
+- **Missing images:** a completed artifact upload is not proof of valid screenshots.
+- **Visual change:** use the existing automated capture, pixel and resource gates;
+  missing, blank or stale frames are not a pass.
+
+## Nebula worked example
+
+**Build a hierarchical Grid from the existing minimal snippet.** Open
+[GridSnippet1.java](examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/GridSnippet1.java)
+in the configured PDE workspace.
+
+1. The snippet creates a display, a shell with `FillLayout` and a scrolling Grid.
+2. It creates a visible header and a column with `setTree(true)`, selecting where
+   the hierarchy is presented.
+3. Follow each `GridItem` constructor's parent to distinguish root and child rows.
+4. Run the snippet and exercise expansion, collapse, scroll and close. When
+   investigating a bug, record both model/selection state and displayed pixels.
+5. Put an automated regression in the Grid test bundle. A reproduction snippet
+   alone does not establish native resource or cross-platform coverage.
+
+These are source-derived instructions; this homepage update ran no build or UI
+tests. Continue with [the development guide](docs/DEVELOPMENT_GUIDE.md),
+[widget catalogue](docs/Widgets.md), [M3 scope](m3/README.md) and
+[contributor requirements](CONTRIBUTING.MD).
+The original project download links, fork notes and licensing text follow.
+
+> Source tour checked at [`170cb3e9d64c`](https://github.com/hsoliwal/nebula/tree/170cb3e9d64c3cbcfa2e7709a4d422e572bf793b). Commands describe that revision; recheck build configuration when changing revisions. Build/UI/performance verification was not run for this README update.
+
+---
+
+<!-- fork-homepage-detail:v1:end -->
+
 <div align="center">
 
 ## M³ × Eclipse Nebula
