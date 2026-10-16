@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Objects;
 
 import org.eclipse.swt.SWT;
@@ -42,10 +43,88 @@ class FrameStatic<T> extends Frame<T> implements Cloneable  {
 	/** Comparator*/
 	private Comparator<T>       comparator;
 
-	/** Rendered elements*/
-	private final List<Tile<T>>       rendered    = new ArrayList<>();
+	/**
+	 * Same one ArrayList backing as the original FrameStatic, with a bounded
+	 * modification epoch: structural operations already advance ArrayList's
+	 * modCount; set(), listIterator() and subList() otherwise permit silent
+	 * same-size mutation of the exposed protected List.
+	 *
+	 * No owner reference or per-tile object is introduced. This is a
+	 * private storage atom, not another viewport or public collection API.
+	 */
+	private static final class TrackedRendered<E> extends ArrayList<Tile<E>> {
+		private static final long serialVersionUID = 1L;
+		private long viewEpoch;
+
+		int structuralEpoch() { return modCount; }
+		long viewEpoch() { return viewEpoch; }
+
+		@Override
+		public Tile<E> set(final int index, final Tile<E> tile) {
+			final Tile<E> previous = super.set(index, tile);
+			viewEpoch++;
+			return previous;
+		}
+
+		@Override
+		public ListIterator<Tile<E>> listIterator() {
+			final ListIterator<Tile<E>> iterator = super.listIterator();
+			viewEpoch++;
+			return iterator;
+		}
+
+		@Override
+		public ListIterator<Tile<E>> listIterator(final int index) {
+			final ListIterator<Tile<E>> iterator = super.listIterator(index);
+			viewEpoch++;
+			return iterator;
+		}
+
+		@Override
+		public List<Tile<E>> subList(final int from, final int to) {
+			final List<Tile<E>> slice = super.subList(from, to);
+			viewEpoch++;
+			return slice;
+		}
+
+		/** Callback-bearing bulk operations must invalidate before invoking users. */
+		@Override
+		public void replaceAll(final java.util.function.UnaryOperator<Tile<E>> op) {
+			viewEpoch++;
+			super.replaceAll(op);
+		}
+
+		@Override
+		public void sort(final Comparator<? super Tile<E>> order) {
+			viewEpoch++;
+			super.sort(order);
+		}
+
+		@Override
+		public boolean removeIf(final java.util.function.Predicate<? super Tile<E>> filter) {
+			viewEpoch++;
+			return super.removeIf(filter);
+		}
+
+		@Override
+		public boolean removeAll(final java.util.Collection<?> elements) {
+			viewEpoch++;
+			return super.removeAll(elements);
+		}
+
+		@Override
+		public boolean retainAll(final java.util.Collection<?> elements) {
+			viewEpoch++;
+			return super.retainAll(elements);
+		}
+	}
+
+	/** Rendered elements: original ArrayList semantics and stable List identity. */
+	private final TrackedRendered<T> rendered = new TrackedRendered<>();
 	// Private parent-frame CPU hit directory: no per-tile object/index array.
 	private int hitGridColumns, hitGridStepX, hitGridStepY, hitGridCount;
+	private int hitGridStructuralEpoch;
+	private long hitGridViewEpoch;
 	/** The current background color */
 	private Color               background;
 	/** Layout*/
@@ -554,7 +633,9 @@ class FrameStatic<T> extends Frame<T> implements Cloneable  {
 
 	/** Indexed only on a complete, exact, non-overlapping static snapshot. */
 	boolean hasIndexedHitGrid() {
-		return hitGridColumns != 0 && hitGridCount == rendered.size();
+		return hitGridColumns != 0 && hitGridCount == rendered.size()
+				&& hitGridStructuralEpoch == rendered.structuralEpoch()
+				&& hitGridViewEpoch == rendered.viewEpoch();
 	}
 
 	/**
@@ -607,6 +688,8 @@ class FrameStatic<T> extends Frame<T> implements Cloneable  {
 		hitGridStepX = (int) stepX;
 		hitGridStepY = (int) stepY;
 		hitGridCount = rendered.size();
+		hitGridStructuralEpoch = rendered.structuralEpoch();
+		hitGridViewEpoch = rendered.viewEpoch();
 		hitGridColumns = (int) columns; // Publish after every proof check.
 	}
 }
