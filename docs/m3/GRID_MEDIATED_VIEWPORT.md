@@ -1,6 +1,6 @@
 # Nebula Grid as a mediated viewport
 
-Status: design (this commit). Leaf G1 follows in the same branch, with its measurements.
+Status: leaf G1 implemented (row extent index); recorded differential passes. See "Status" below.
 
 ## Goal
 
@@ -122,6 +122,21 @@ Rule kept and rule not yet kept:
 - `GridViewport_Test` (acceptance, skipped when the viewport is not active): 1,000,000-row tree, bounded paint
   and scroll cost with a collapsed million-row subtree on screen, index answers against a brute-force walk.
 - `GridRowExtents_Test` (pure index): random visibility, heights, appends, inserts against a brute-force model.
+
+## Status (win32, JDK 21, SWT 3.135.0, javac + JUnitCore, 2026-10-16)
+
+Build: the Grid bundle, its tests and upstream Nebula Grid `5d0bcbb9` (oracle) compiled with javac against the
+official SWT 3.135.0 win32 jar (`grid-viewport/build_grid.sh`); a full Tycho build was not run (memory).
+GUI runs: `ui_lock.sh` + `run_guarded.sh` (`grid-viewport/run_tests.sh`).
+
+| Gate | Result |
+|---|---|
+| `GridRowExtents_Test` (4 tests, brute-force walk, 1,000,000 positions) | 4/4 pass |
+| `GridViewportDifferential_Test`, oracle = same build in `original` mode, 8 seeds x 160 steps, 4 configurations (row/cell selection, uniform/differing heights) | pass: every step and the printed pixels of every seed identical; the index was rebuilt 235 times (DEBUG log) |
+| same, candidate = mutant (the `forceEndCompletelyInside` step-back removed, `build_mutant.sh`) | detected: seed 0 step 22, vertical bar maximum 106 (stock) vs 105 |
+| same, oracle = upstream Nebula `5d0bcbb9` (`-Dgrid.differential.oracle`, pixels advisory) | seeds 0-3: all 160 steps identical; pixels differ only in the column header text row (172-224 pixels, y 8..16), a difference between this fork and upstream in both modes. Seed 4 step 148: the fork shows an empty text for item `r66` where upstream shows `r66`, in both modes (the original-mode run of the same seed agrees with the viewport); a pre-existing fork defect, not a viewport one, recorded for a separate fix |
+| Grid suite (34 classes, 590 tests), `original` mode | 151 failures: the baseline of this harness (the suite expects the Tycho/OSGi test runtime) |
+| Grid suite, `viewport` mode | 152 failures: the same 151 plus `GridCheckLanes_Test.checkStateFollowsModelRowsAndCheckAllIsFilterAware`, a flat `SWT.VIRTUAL` pixel test that never reaches the index (every hook is off for the sparse list); rerun 3 times per mode it failed 3/3 (viewport) and 2/3 (original) with alternating hashes |
 
 ## Leaves
 

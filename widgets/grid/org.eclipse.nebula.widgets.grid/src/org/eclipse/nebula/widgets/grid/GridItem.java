@@ -235,6 +235,15 @@ public class GridItem extends Item {
 		return parent.indexOf(this);
 	}
 
+	/**
+	 * @return the row index this item keeps, or -1 when it keeps none (no search)
+	 */
+	int knownRow() {
+		synchronized (ROW_LOCK) {
+			return row;
+		}
+	}
+
 	void increaseRow() {
 		synchronized (ROW_LOCK) {
 			row++;
@@ -1575,6 +1584,9 @@ public class GridItem extends Item {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
 		height = newHeight;
+		if (parent.viewport != null) {
+			parent.viewport.rowChanged(this);
+		}
 		parent.hasDifferingHeights = true;
 		if (isVisible()) {
 			int myIndex = this.getRowIndex();
@@ -1776,6 +1788,9 @@ public class GridItem extends Item {
 		}
 
 		this.visible = visible;
+		if (parent.viewport != null) {
+			parent.viewport.rowChanged(this);
+		}
 
 		if (visible) {
 			parent.updateVisibleItems(1);
