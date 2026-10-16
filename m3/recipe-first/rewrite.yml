@@ -47,3 +47,13 @@ description: >-
   A candidate-only mechanical change with no widget, JNI or promotion authority.
 recipeList:
   - org.eclipse.nebula.m3.rewrite.exact.NebulaM3DroolsCompletionGateRecipe
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.eclipse.nebula.m3.ProofReceiptDagIdentity
+displayName: Require current Nebula DAG root for final proof receipts
+description: >-
+  Apply one reviewed FILE-local structured-Java proof-receipt identity gate
+  with exact preimage, drift rejection and second-pass fixed point.
+recipeList:
+  - org.eclipse.nebula.m3.rewrite.exact.NebulaM3ProofReceiptDagIdentityRecipe

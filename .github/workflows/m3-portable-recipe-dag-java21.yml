@@ -65,7 +65,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3DagWavePlannerTest,NebulaM3OrchestratorPlansTest,NebulaM3DroolsCompletionGateRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
+          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3DagWavePlannerTest,NebulaM3OrchestratorPlansTest,NebulaM3DroolsCompletionGateRecipeTest,NebulaM3ProofReceiptDagIdentityRecipeTest,NebulaM3ProofReceiptCliTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3BackportPlanTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3JavaGradeQualificationTest' -Dsurefire.failIfNoSpecifiedTests=false verify
           if ($LASTEXITCODE -ne 0) { throw 'Java 21 recipe/JUnit proof failed' }
 
       - name: 3 - Verify roots, real JUnit reports and source immutability
@@ -103,7 +103,8 @@ jobs:
             'NebulaM3BackportPlanTest',
             'NebulaM3BackportBundleTest',
             'NebulaM3TransferContractTest',
-            'NebulaM3JavaGradeQualificationTest'
+            'NebulaM3JavaGradeQualificationTest',
+            'NebulaM3ProofReceiptCliTest'
           )
           foreach ($name in $required) {
             $report = Join-Path $reports "TEST-org.eclipse.nebula.m3.rewrite.convergence.$name.xml"
@@ -124,6 +125,16 @@ jobs:
           if ([int]$droolsSuite.tests -lt 3 -or [int]$droolsSuite.failures -ne 0 -or
               [int]$droolsSuite.errors -ne 0 -or [int]$droolsSuite.skipped -ne 0) {
             throw 'Drools completion recipe JUnit proof incomplete'
+          }
+
+          # The final-receipt identity recipe lives in the exact-Java package.
+          $identityReport = Join-Path $reports 'TEST-org.eclipse.nebula.m3.rewrite.exact.NebulaM3ProofReceiptDagIdentityRecipeTest.xml'
+          if (!(Test-Path $identityReport)) { throw 'Proof receipt DAG identity recipe JUnit did not run' }
+          [xml]$identityXml = Get-Content $identityReport -Raw
+          $identitySuite = $identityXml.testsuite
+          if ([int]$identitySuite.tests -lt 3 -or [int]$identitySuite.failures -ne 0 -or
+              [int]$identitySuite.errors -ne 0 -or [int]$identitySuite.skipped -ne 0) {
+            throw 'Proof receipt DAG identity recipe JUnit proof incomplete'
           }
 
           $transfer = (Get-Content 'm3/recipe-first/target/nebula-m3-transfer/transfer.sha256' -Raw).Trim()
