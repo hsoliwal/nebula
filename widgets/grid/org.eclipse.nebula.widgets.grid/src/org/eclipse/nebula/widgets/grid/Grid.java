@@ -990,6 +990,12 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * Row geometry mediation (see {@link GridViewport}); {@code null} when the Grid runs in the
+	 * original mode.
+	 */
+	GridViewport viewport;
+
+	/**
 	 * Filters out unnecessary styles, adds mandatory styles and generally manages
 	 * the style to pass to the super class.
 	 *
@@ -1097,6 +1103,9 @@ public class Grid extends Canvas {
 		cellHeaderSelectionBackground = new Color(cellSel);
 
 		setDragDetect(false);
+		if (GridViewport.ENABLED) {
+			viewport = new GridViewport(this, items);
+		}
 	}
 
 	/**
@@ -2083,6 +2092,10 @@ public class Grid extends Canvas {
 		GridItem itemToReturn = null;
 
 		int row = getTopIndex();
+		if (rowsIndexed()) {
+			itemToReturn = viewport.itemAt(row, p.y - y2, getClientArea().height - y2);
+			row = items.size(); // the walk below has no row left to visit
+		}
 		while (row < items.size() && y2 <= getClientArea().height) {
 			final GridItem currItem = items.get(row);
 			if (currItem.isVisible()) {
@@ -2205,6 +2218,9 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		itemHeight = height;
+		if (viewport != null) {
+			viewport.rowsChanged();
+		}
 		userModifiedItemHeight = true;
 		for (final GridItem item : materializedItems()) {
 			item.setHeight(height);
@@ -2373,6 +2389,9 @@ public class Grid extends Canvas {
 		checkWidget();
 
 		int index = item.getRowIndex();
+		if (viewport != null && !usesSparseVirtualItems() && index >= -1 && index < items.size()) {
+			return viewport.nextVisibleItem(index + 1);
+		}
 		if (items.size() == index + 1) {
 			return null;
 		}
@@ -2417,6 +2436,9 @@ public class Grid extends Canvas {
 			if (index <= 0) {
 				return null;
 			}
+		}
+		if (viewport != null && !usesSparseVirtualItems() && index >= 1 && index <= items.size()) {
+			return viewport.previousVisibleItem(index - 1);
 		}
 
 		GridItem prevItem = items.get(index - 1);
@@ -2786,6 +2808,10 @@ public class Grid extends Canvas {
 		if (topIndex != -1) {
 			return topIndex;
 		}
+		if (rowsIndexed()) {
+			topIndex = viewport.getTopIndex(isTree);
+			return topIndex;
+		}
 
 		if (!vScroll.getVisible()) {
 			topIndex = 0;
@@ -2878,6 +2904,9 @@ public class Grid extends Canvas {
 	 * @return
 	 */
 	private RowRange getRowRange(int startIndex, int endIndex) {
+		if (rowsIndexed()) {
+			return viewport.rowRange(startIndex, endIndex) ? viewportRowRange() : null;
+		}
 
 		// parameter preparation
 		if (startIndex == -1) {
@@ -2962,6 +2991,11 @@ public class Grid extends Canvas {
 	 */
 	private RowRange getRowRange(int startIndex, final int availableHeight, final boolean forceEndCompletelyInside,
 			final boolean inverse) {
+		if (rowsIndexed()) {
+			return viewport.rowRange(startIndex, availableHeight, forceEndCompletelyInside, inverse)
+					? viewportRowRange()
+					: null;
+		}
 		// parameter preparation
 		if (startIndex == -1) {
 			if (!inverse) {
@@ -3089,6 +3123,18 @@ public class Grid extends Canvas {
 			range.height = (itemHeight + 1) * range.rows - 1;
 		}
 
+		return range;
+	}
+
+	/**
+	 * @return the row range the viewport answered last
+	 */
+	private RowRange viewportRowRange() {
+		final RowRange range = new RowRange();
+		range.startIndex = viewport.range[0];
+		range.endIndex = viewport.range[1];
+		range.rows = viewport.range[2];
+		range.height = viewport.range[3];
 		return range;
 	}
 
@@ -4411,6 +4457,14 @@ public class Grid extends Canvas {
 		}
 
 		if (!vScroll.getVisible()) {
+			return;
+		}
+		if (viewport != null && !usesSparseVirtualItems()) {
+			vScroll.setSelection(viewport.scrollSelectionOf(index, isTree));
+			topIndex = -1;
+			bottomIndex = -1;
+			fireViewportChanged();
+			redraw();
 			return;
 		}
 
@@ -6264,6 +6318,10 @@ public class Grid extends Canvas {
 			GridItem item = null;
 			if (row < items.size()) {
 				item = items.get(row);
+				if (viewport != null && !item.isVisible() && !usesSparseVirtualItems()) {
+					row = viewport.nextVisibleRow(row);
+					item = items.get(row);
+				}
 
 				while (!item.isVisible() && row < items.size() - 1) {
 					row++;
@@ -8872,6 +8930,11 @@ public class Grid extends Canvas {
 			if (itemIndex == -1) {
 				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 			}
+			if (viewport != null && !usesSparseVirtualItems() && currIndex <= items.size()
+					&& itemIndex <= items.size()) {
+				y += viewport.offsetBetween(currIndex, itemIndex);
+				currIndex = itemIndex;
+			}
 
 			while (currIndex != itemIndex) {
 				if (currIndex < itemIndex) {
@@ -9258,6 +9321,15 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * @return {@code true} when the viewport answers the row geometry: the item list holds every row
+	 *         (it is not the sparse list of a flat virtual Grid) and rows can be hidden or differ in
+	 *         height
+	 */
+	boolean rowsIndexed() {
+		return viewport != null && !usesSparseVirtualItems() && (isTree || hasDifferingHeights);
+	}
+
+	/**
 	 * Manages the setting of the checkbox column when the SWT.CHECK style was given
 	 * to the table. This method will ensure that the first column of the table
 	 * always has a checkbox when SWT.CHECK is given to the table.
@@ -9467,6 +9539,9 @@ public class Grid extends Canvas {
 		scrollValuesObsolete = true;
 		topIndex = -1;
 		bottomIndex = -1;
+		if (viewport != null) {
+			viewport.inserted(item, row);
+		}
 
 		currentVisibleItems++;
 
@@ -9490,6 +9565,9 @@ public class Grid extends Canvas {
 		final int index = item.getRowIndex();
 
 		items.remove(item);
+		if (viewport != null) {
+			viewport.rowsChanged();
+		}
 		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 
 		if (usesRowAddressedDataVisualizer()) {
