@@ -130,36 +130,52 @@ public class SplitButton extends Button {
 			private PaintEvent e;
 			private int deltaX;
 			private int deltaY;
+			/** Reentrant Paint invalidates its enclosing frame's geometry lease. */
+			private int paintDepth;
+			private long paintGeneration;
 
 			@Override
 			public void paintControl(final PaintEvent e) {
 				this.e = e;
-				final Rectangle rect = getBounds();
+				if (paintDepth != 0) paintGeneration++;
+				final boolean ownedGeometry = paintDepth == 0 && SplitButton.this.getClass() == SplitButton.class;
+				paintDepth++;
+				final long frameGeneration = paintGeneration;
+				try {
+					final Rectangle rect = getBounds();
 
-				final Color oldForeground = e.gc.getForeground();
-				final Color oldBackground = e.gc.getBackground();
+					final Color oldForeground = e.gc.getForeground();
+					final Color oldBackground = e.gc.getBackground();
 
-				splitButtonAreaLeft = e.x + rect.width - 20;
-				splitButtonAreaTop = e.y;
-				splitButtonAreaRight = e.x + rect.width;
-				splitButtonAreaBottom = e.y + rect.height;
+					splitButtonAreaLeft = e.x + rect.width - 20;
+					splitButtonAreaTop = e.y;
+					splitButtonAreaRight = e.x + rect.width;
+					splitButtonAreaBottom = e.y + rect.height;
 
-				final String osName = System.getProperty("os.name"); //$NON-NLS-1$
-				final boolean isMac = osName.toLowerCase().indexOf("mac os") > -1; //$NON-NLS-1$
-				final int macDelta = isMac ? 2 : 0;
+					final String osName = System.getProperty("os.name"); //$NON-NLS-1$
+					final boolean isMac = osName.toLowerCase().indexOf("mac os") > -1; //$NON-NLS-1$
+					final int macDelta = isMac ? 2 : 0;
 
-				deltaX = -e.gc.getClipping().x - macDelta;
-				deltaY = -e.gc.getClipping().y - macDelta;
+					deltaX = -e.gc.getClipping().x - macDelta;
+					deltaY = -e.gc.getClipping().y - macDelta;
 
-				drawLine();
-				drawTriangle();
+					if (ownedGeometry && frameGeneration == paintGeneration) drawLine(rect);
+					else drawLine();
+					if (ownedGeometry && frameGeneration == paintGeneration) drawTriangle(rect);
+					else drawTriangle();
 
-				e.gc.setForeground(oldForeground);
-				e.gc.setBackground(oldBackground);
+					e.gc.setForeground(oldForeground);
+					e.gc.setBackground(oldBackground);
+				} finally {
+					paintDepth--;
+				}
 			}
 
 			private void drawLine() {
-				final Rectangle rect = getBounds();
+				drawLine(getBounds());
+			}
+
+			private void drawLine(final Rectangle rect) {
 				e.gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
 				e.gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
 				e.gc.setLineWidth(1);
@@ -169,7 +185,10 @@ public class SplitButton extends Button {
 			}
 
 			private void drawTriangle() {
-				final Rectangle rect = getBounds();
+				drawTriangle(getBounds());
+			}
+
+			private void drawTriangle(final Rectangle rect) {
 				e.gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_BLACK));
 				e.gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_BLACK));
 				e.gc.fillPolygon(new int[] { e.x + rect.width - 15 + deltaX, e.y + rect.height / 2 - 1 + deltaY, e.x + rect.width - 8 + deltaX, e.y + rect.height / 2 - 1 + deltaY, e.x + rect.width - 12 + deltaX, e.y + rect.height / 2 + 3 + deltaY });
