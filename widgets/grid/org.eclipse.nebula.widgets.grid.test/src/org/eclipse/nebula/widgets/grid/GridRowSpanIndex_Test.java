@@ -21,12 +21,24 @@ public class GridRowSpanIndex_Test {
 		int[] starts = {7, 120, 499_995, 900_000};
 		long[] prefix = {9, 125, 500_015, 900_002};
 
-		assertEquals(500_000,
+		// the span 499_995..500_015 covers every first visible row after its start up to its end
+		assertEquals(499_995,
 				GridRowSpanIndex.earliestCovering(500_000, starts, prefix, starts.length));
 		assertEquals(499_995,
 				GridRowSpanIndex.earliestCovering(500_005, starts, prefix, starts.length));
+		assertEquals(499_995,
+				GridRowSpanIndex.earliestCovering(500_015, starts, prefix, starts.length));
+		// a row is never covered by its own span, nor past the span's end
+		assertEquals(499_995,
+				GridRowSpanIndex.earliestCovering(499_995, starts, prefix, starts.length));
+		assertEquals(500_016,
+				GridRowSpanIndex.earliestCovering(500_016, starts, prefix, starts.length));
 		assertEquals(700_000,
 				GridRowSpanIndex.earliestCovering(700_000, starts, prefix, starts.length));
+		for (int target : new int[] {499_995, 500_000, 500_005, 500_015, 500_016, 700_000}) {
+			assertEquals("oracle at " + target, linear(target, starts, prefix),
+					GridRowSpanIndex.earliestCovering(target, starts, prefix, starts.length));
+		}
 	}
 
 	@Test
