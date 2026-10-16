@@ -62,7 +62,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3RecipeDagAtomicPublicationTest,NebulaM3DagEvidenceAtomicRecipeTest,NebulaM3BackportPlanTest,NebulaM3TransferContractTest' -Dsurefire.failIfNoSpecifiedTests=false verify
+          mvn -B -ntp -f m3/reactor.xml -pl recipe-first -am '-Pdag-manifest,transfer-contract' '-Dtest=NebulaM3HostPortabilityTest,NebulaM3RefactorScopeTest,NebulaM3OrchestratorPlansTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3RecipeDagAtomicPublicationTest,NebulaM3DagEvidenceAtomicRecipeTest,NebulaM3DagAtomicConvergenceRecipeTest,NebulaM3BackportPlanTest,NebulaM3TransferContractTest' -Dsurefire.failIfNoSpecifiedTests=false verify
           if ($LASTEXITCODE -ne 0) { throw 'Java 21 recipe/JUnit proof failed' }
 
       - name: 3 - Verify roots, real JUnit reports and source immutability
@@ -112,13 +112,18 @@ jobs:
           }
 
 
-          $exactReport = Join-Path $reports 'TEST-org.eclipse.nebula.m3.rewrite.exact.NebulaM3DagEvidenceAtomicRecipeTest.xml'
-          if (!(Test-Path $exactReport)) { throw 'Exact OpenRewrite atomic publisher recipe JUnit did not run' }
-          [xml]$exactXml = Get-Content $exactReport -Raw
-          $exactSuite = $exactXml.testsuite
-          if ([int]$exactSuite.tests -lt 1 -or [int]$exactSuite.failures -ne 0 -or
-              [int]$exactSuite.errors -ne 0 -or [int]$exactSuite.skipped -ne 0) {
-            throw 'Exact OpenRewrite publisher recipe proof is incomplete'
+          foreach ($exactName in @(
+              'NebulaM3DagEvidenceAtomicRecipeTest',
+              'NebulaM3DagAtomicConvergenceRecipeTest'
+          )) {
+            $exactReport = Join-Path $reports "TEST-org.eclipse.nebula.m3.rewrite.exact.$exactName.xml"
+            if (!(Test-Path $exactReport)) { throw "Exact OpenRewrite JUnit did not run: $exactName" }
+            [xml]$exactXml = Get-Content $exactReport -Raw
+            $exactSuite = $exactXml.testsuite
+            if ([int]$exactSuite.tests -lt 1 -or [int]$exactSuite.failures -ne 0 -or
+                [int]$exactSuite.errors -ne 0 -or [int]$exactSuite.skipped -ne 0) {
+              throw "Exact OpenRewrite recipe proof is incomplete: $exactName"
+            }
           }
 
           $transfer = (Get-Content 'm3/recipe-first/target/nebula-m3-transfer/transfer.sha256' -Raw).Trim()
