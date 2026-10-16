@@ -47,7 +47,7 @@ public final class NebulaM3DagAtomicMavenProfileRecipe extends Recipe {
     @Override
     public Set<String> getTags() {
         return Set.of("m3", "nebula", "java21", "maven", "xml",
-                "openrewrite", "recipe-first", "file-local", "candidate-only");
+                "openrewrite", "recipe-first", "module-scope", "candidate-only");
     }
 
     @Override
