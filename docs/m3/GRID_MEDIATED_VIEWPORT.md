@@ -273,6 +273,18 @@ arguments; `isSelected (GridItem)` and `setSelection (int[])` reject null as doc
 parent list (it threw an `IndexOutOfBoundsException`); `GridItem.setImage (Image)` and the header and footer
 font setters reject disposed resources. Legacy failures: 133 -> 112 in both modes.
 
+## Stock pixel parity of the header overflow (2026-10-16)
+
+| Defect | Root cause | Fix | Measured |
+|---|---|---|---|
+| seed 5 against stock `5d0bcbb9`: one 244-pixel line at `y = headerHeight` right of the last column | the default empty column header renderer fills `height + 1`. Stock paints the header first and the rows over it, so that pixel row stays wherever the first row paints nothing (an unselected empty cell of an enabled Grid). The fork paints the body first and the header clipped to its plane (PR #128), which cut that row | plane Z0 in `Grid.onPaint`: when the damage reaches the first body pixel row (`Grid.HEADER_OVERFLOW` = 1), only the empty column header renderer is painted there, under the body; column header renderers stay out of body damage (the PR #128 contracts in `GridPaintPreparation_Test` hold) | stock differential: 8 of 8 seeds answer and paint identically, candidate `viewport` and candidate `original` (`-Dgrid.differential.candidate`), with pixels strict (no advisory) |
+| blit scroll and the overflow row | a move down carries the overflow row into the body; a move up covers it with row pixels | `Grid.blitBody` repaints that row too (a move up repaints it in its own paint, so the damage does not span the body) | `GridScrollPaint_Test.blitScrollKeepsTheHeaderOverflowInPlace`: the window right after every blit and once settled equals the Grid's paint; a build without the repaint fails it (3 tests fail in `original` mode) |
+| blit scroll and the classic tree branch lines (`original` mode, classic look) | `BranchRenderer` takes the phase of its dotted lines from the absolute pixel row (`bounds.y % 2`); a blit by an odd number of pixels shifted the dots of every moved row (329 pixels) | no blit for an odd move while a visible tree column paints the classic dotted lines | `GridScrollPaint_Test.blitScrollKeepsTheBranchLinePhase`: before the fix it failed at the first step, after it 2 of 9 steps blit (the even moves) in `original` mode, 8 of 9 with the native look |
+
+Suite after this leaf (598 tests, both modes): 112 failures, the same legacy list as before, 0 elsewhere.
+Non-claim: a custom header renderer other than the empty column header renderer that paints below the header
+stays clipped to the header (stock shows such pixels wherever the rows paint nothing).
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |

@@ -241,6 +241,62 @@ public class GridScrollPaint_Test {
 		assertTrue("SetData answered", setData > 0);
 	}
 
+	/*
+	 * A blit scroll moves the body's pixels. Its first pixel row also shows the header's overflow
+	 * right of the last column (Grid.HEADER_OVERFLOW, as the stock Grid paints it), which a move
+	 * must neither carry into the body nor cover with row pixels; the classic tree column's dotted
+	 * branch lines take their phase from the absolute pixel row, which an odd move would shift.
+	 * Right after each blit scroll, before the event loop runs, and once settled, the window shows
+	 * exactly the Grid's paint.
+	 */
+	@Test
+	public void blitScrollKeepsTheHeaderOverflowInPlace() {
+		blitScript(false);
+	}
+
+	@Test
+	public void blitScrollKeepsTheBranchLinePhase() {
+		blitScript(true);
+	}
+
+	private void blitScript(final boolean treeColumn) {
+		final Grid grid = grid(SWT.NONE);
+		grid.getColumn(0).setTree(treeColumn);
+		for (int r = 0; r < 2000; r++) {
+			new GridItem(grid, SWT.NONE).setText(0, "row " + r);
+		}
+		shell.open();
+		settle();
+		final ScrollBar bar = grid.getVerticalBar();
+		final int blits = grid.blitScrollCount;
+		// rows up and down by one and by several (odd and even), a jump of more than a page (no blit)
+		final int[] values = { 1, 6, 5, 2, 30, 29, 40, 42, 38 };
+		for (final int value : values) {
+			final int before = grid.blitScrollCount;
+			bar.setSelection(value);
+			bar.notifyListeners(SWT.Selection, new Event());
+			if (grid.blitScrollCount > before) {
+				assertScreenIsPaint(grid, "scroll bar " + value + ", right after the blit");
+			}
+			settle();
+			assertScreenIsPaint(grid, "scroll bar " + value + ", settled");
+		}
+		System.out.println("GridScrollPaint_Test: " + (grid.blitScrollCount - blits) + " of " + values.length
+				+ " scroll steps were blits (tree column " + treeColumn + "), window identical to the Grid's paint");
+		assertTrue("blit scrolls", grid.blitScrollCount > blits);
+	}
+
+	private static void assertScreenIsPaint(final Grid grid, final String step) {
+		final ImageData now = screen(grid);
+		final ImageData painted = print(grid);
+		if (!sameClientArea(grid, now, painted)) {
+			GridViewportDifferential_Test.save(now, "blit-now");
+			GridViewportDifferential_Test.save(painted, "blit-painted");
+			fail(step + ": the window differs from the Grid's paint ("
+					+ GridViewportDifferential_Test.difference(now, painted) + ")");
+		}
+	}
+
 	@Test
 	public void treeRowsArePaintedRightAfterAScroll() {
 		final Grid grid = grid(SWT.NONE);

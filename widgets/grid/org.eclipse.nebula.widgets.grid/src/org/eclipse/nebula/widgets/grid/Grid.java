@@ -249,6 +249,14 @@ public class Grid extends Canvas {
 	private static final int COLUMN_DRAG_ALPHA = 128;
 
 	/**
+	 * Pixel rows below the column header that the empty column header renderer paints past its
+	 * bounds (the default one fills {@code height + 1}). The stock Grid paints the header first and
+	 * the rows over it, so these pixels stay wherever the first row paints nothing (an unselected
+	 * empty cell of an enabled Grid).
+	 */
+	static final int HEADER_OVERFLOW = 1;
+
+	/**
 	 * Number of pixels below the header to draw the drop point.
 	 */
 	private static final int DROP_POINT_LOWER_OFFSET = 3;
@@ -5686,6 +5694,20 @@ public class Grid extends Canvas {
 				originalClipping, clientArea, headerHeight, footerHeight,
 				columnHeadersVisible, columnFootersVisible, fixedOverlayActive, draggingColumn);
 
+		// Z0: the empty column header's overflow under the body, where the stock Grid (header
+		// first, rows over it) shows it. Column headers stay out of body damage.
+		if (columnHeadersVisible && headerHeight < clientArea.height) {
+			final int emptyX = emptyColumnHeaderX(extraFill, clientArea.width);
+			final Rectangle band = originalClipping.intersection(new Rectangle(
+					emptyX, clientArea.y + headerHeight, clientArea.width - emptyX, HEADER_OVERFLOW));
+			if (!band.isEmpty()) {
+				try (GridGCProxy underlay = GridGCProxy.wrap(gc).clip(band)) {
+					emptyColumnHeaderRenderer.setBounds(emptyX, 0, clientArea.width - emptyX, headerHeight);
+					emptyColumnHeaderRenderer.paint(underlay.gc(), null);
+				}
+			}
+		}
+
 		// Body projection and spanning-row discovery are unnecessary for chrome-only damage.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY | GridPaintDAG.FIXED)) {
 			paintBody(gc, originalClipping, clientArea, extraFill, hscroll, fixed,
@@ -6670,6 +6692,22 @@ public class Grid extends Canvas {
 	 * @param gc        gc from paint event
 	 * @param extraFill the size of the control
 	 */
+	/**
+	 * @return the x of the empty column header right of the last visible column, as
+	 *         {@link #paintHeader(GC, int)} places it, or {@code clientWidth} when the columns
+	 *         fill the client area
+	 */
+	private int emptyColumnHeaderX(final int extraFill, final int clientWidth) {
+		int x = (rowHeaderVisible ? rowHeaderWidth : 0) - getHScrollSelectionInPixels();
+		for (final GridColumn column : displayOrderedColumns) {
+			if (x > clientWidth) {
+				return clientWidth;
+			}
+			x += column.isVisible() ? column.getWidth(extraFill) : 0;
+		}
+		return Math.min(x, clientWidth);
+	}
+
 	private void paintHeader(final GC gc, final int extraFill) {
 		int x = 0;
 		boolean hasFixedColumns = false;
@@ -8896,13 +8934,27 @@ public class Grid extends Canvas {
 		if (dy == 0 || Math.abs(dy) >= body.height) {
 			return false;
 		}
+		// the classic tree column's dotted branch lines take their phase from the absolute pixel
+		// row (BranchRenderer): an odd move would shift the dots of every moved row
+		if ((dy & 1) != 0 && hasDottedBranches()) {
+			return false;
+		}
+		// the first body pixel rows also show the header's overflow (HEADER_OVERFLOW): a move down
+		// carries them into the body, a move up covers them with row pixels; both are repainted
+		final int band = columnHeadersVisible ? Math.min(HEADER_OVERFLOW, body.height) : 0;
 		if (dy > 0) {
 			scroll(body.x, body.y + dy, body.x, body.y, body.width, body.height - dy, false);
 			// the scroll invalidates only the part of its source rectangle that it uncovers; when
 			// the move is more than half the body the exposed strip reaches past the source
-			redraw(body.x, body.y, body.width, dy, false);
+			redraw(body.x, body.y, body.width, Math.min(dy + band, body.height), false);
 		} else {
 			scroll(body.x, body.y, body.x, body.y - dy, body.width, body.height + dy, false);
+			if (band > 0) {
+				// its own paint: one damage rectangle spanning the band and the bottom strip would
+				// repaint every row between them
+				redraw(body.x, body.y, body.width, band, false);
+				update();
+			}
 			redraw(body.x, body.y + body.height + dy, body.width, -dy, false);
 		}
 		// paint the exposed strip now, as the native list views do after scrolling their bits:
@@ -8920,6 +8972,16 @@ public class Grid extends Canvas {
 	private static boolean blitSafeRenderer(final Object renderer, final Class<?> defaultClass) {
 		return renderer.getClass() == defaultClass || renderer instanceof GridNativeCellRenderer
 				|| renderer instanceof GridNativeLook.EmptyCell;
+	}
+
+	/** @return {@code true} if a visible tree column paints the classic dotted branch lines */
+	private boolean hasDottedBranches() {
+		for (final GridColumn column : displayOrderedColumns) {
+			if (column.isVisible() && column.isTree() && column.getCellRenderer().getClass() == DefaultCellRenderer.class) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private boolean blitSafe() {

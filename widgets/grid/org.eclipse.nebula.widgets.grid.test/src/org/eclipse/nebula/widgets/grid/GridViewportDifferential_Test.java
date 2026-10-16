@@ -49,6 +49,8 @@ public class GridViewportDifferential_Test {
 	private static final int SEEDS = Integer.getInteger("grid.differential.seeds", 8).intValue();
 	private static final int STEPS = Integer.getInteger("grid.differential.steps", 160).intValue();
 	private static final int FIRST_SEED = Integer.getInteger("grid.differential.firstSeed", 0).intValue();
+	/* mode of the candidate build (viewport by default, or original), compared against the oracle */
+	private static final String CANDIDATE = System.getProperty("grid.differential.candidate", "viewport");
 	private static final String PACKAGE = "org.eclipse.nebula.";
 
 	private Display display;
@@ -161,13 +163,13 @@ public class GridViewportDifferential_Test {
 	@Test
 	public void seededScriptsAnswerAndPaintLikeTheStockGrid() throws Exception {
 		final ClassLoader stockBuild = gridBuild(oracleClasses(), "original");
-		final ClassLoader viewportBuild = gridBuild(location(Grid.class), "viewport");
+		final ClassLoader viewportBuild = gridBuild(location(Grid.class), CANDIDATE);
 		for (int seed = FIRST_SEED; seed < FIRST_SEED + SEEDS; seed++) {
 			final int config = seed % 4;
 			final Function<int[], Object> stock = driver(stockBuild, stockShell, config);
 			final Function<int[], Object> viewport = driver(viewportBuild, viewportShell, config);
 			final int[] mode = { GridDifferentialDriver.MODE, 0, 0, 0 };
-			assumeTrue("Grid viewport mediation is not active in this build", "viewport".equals(viewport.apply(mode)));
+			assumeTrue("the candidate build does not run in mode " + CANDIDATE, CANDIDATE.equals(viewport.apply(mode)));
 			stockShell.open();
 			viewportShell.open();
 			final String pixels = run(seed, config, stock, viewport);
