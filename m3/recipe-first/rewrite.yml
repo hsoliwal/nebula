@@ -45,4 +45,4 @@ description: >-
   Exact hash-pinned Java 21 FILE-local recipe for atomic per-file scheduler/evidence
   publication. No external scheduler or source mutation/promotion authority is granted.
 recipeList:
-  - org.eclipse.nebula.m3.rewrite.exact.NebulaM3DagEvidenceAtomicRecipe
+  - org.eclipse.nebula.m3.rewrite.exact.NebulaM3DagAtomicConvergenceRecipe
