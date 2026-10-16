@@ -218,6 +218,43 @@ Findings (pre-existing, both modes, recorded for their own fixes):
   Grids at the same screen position: the harness gives each Grid its own shell at the same bounds, and parks
   the cursor before pixel captures. Side by side, seed 2 diverged once on a click (hover state).
 
+## Regression triage (coordinator item 1, 2026-10-16)
+
+`grid-viewport/REGRESSION_TRIAGE.tsv` lists every failing test of the Grid suite (34 classes plus the
+viewport tests, 597 tests) with its failure, root cause category and action; all runs on the hidden test
+desktop with the official SWT 3.135.0 jar.
+
+| | `original` mode | viewport mode |
+|---|---|---|
+| before (first hidden-desktop run) | 152 failures | 153 |
+| after this leaf | 133 failures, all in the four RAP-derived classes | 139: the same 133, plus `GridCheckLanes_Test` and five `GridColumnWindow_Test` cases (both intermittent; in other runs they pass in this mode and fail in the other) |
+
+Method: the four legacy classes (`Grid_Test`, `GridItem_Test`, `GridColumn_Test`, `GridColumnGroup_Test`,
+455 tests, taken from the RAP project in Nebula bug 477992 and excluded from upstream's build) were run
+against the stock Nebula Grid `5d0bcbb9` and against this fork: both fail exactly the same 135 tests, so none
+of them is a fork regression.
+
+Fixed in this leaf:
+
+| Category | Test | Root cause | Fix |
+|---|---|---|---|
+| environment | 6 image tests, 2 mockito tests | test images were not copied next to the test classes; mockito 1.8.4 needs objenesis and, on JDK 21, `--add-opens java.base/java.lang` | harness (`build_grid.sh`, `run_hidden.sh`) |
+| fork defect | `GridBlitScroll_Test` | the blit scroll invalidated only the uncovered part of its source rectangle; a move of more than half the body left stale rows on screen until another repaint (a likely cause of the "blank rows" the user saw) | the exposed strip is invalidated and painted at once (`update`), as native list views do after scrolling their bits |
+| fork defect | `GridGCProxy_Test` | `GridGCStateDAG` composed pending affine operations in the wrong order (SWT's `Transform.multiply` prepends) | composition order |
+| fork defect | `GridPinnedRows_Test` | `GridGCProxy.close` left the caller's GC in advanced (GDI+) mode after restoring the line attributes, so the planes painted after the body (pinned rows, header, footer) drew text with GDI+ pixels | `close` ends in the caller's GC mode |
+| upstream defect | (`GridColumnWindow_Test` flakes, differential seeds) | `refreshHoverState` read the global cursor position after every scroll even when the cursor was not over the Grid (another window on top, another desktop), giving hover feedback that depended on where the user's mouse was | hover follows the cursor only while it is over the Grid |
+| test bug | 7 `GridVisibleRangeSupport_Test` | `setUp` declared a local `support` that shadowed the field under test | renamed the local |
+| test bug | `GridPaintPreparation_Test` | expected no span owner while the owner still spanned rows in a hidden column | the test clears both spans |
+| test bug | `GridScrollbarSettle_Test` | the two compared Grids overlapped; the covered one never painted and kept the bars of its previous size | one shell per Grid |
+| test robustness | pixel helper (`GridRowPermutation_Test.pixels`) | `Control.print` sometimes returns an all-black capture on the hidden desktop | capture retried, then the Grid's own paint; the hash covers the client area |
+| viewport | `GridScrollPaint_Test` | now copies the window's pixels right after a scroll (no paint) and after settling, with steps of more than half a page | catches the blit defect above (verified against the build before the fix) |
+
+Open (next leaves): the 133 legacy failures (105 expect RAP theme metrics or RAP semantics, 19 argument
+checks to settle per Javadoc, 9 `clear` cases where Nebula keeps the text although its Javadoc says the
+attributes are reset); `GridColumnWindow_Test` (column-window paint differs from the full walk by one
+column at some positions, intermittently; coordinator item 2); `GridCheckLanes_Test` (intermittent
+capture on the hidden desktop).
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |

@@ -61,6 +61,8 @@ public class GridCheckLanes_Test {
 		packed.setItemCount(ROWS);
 		packed.setRowPermutation(permutation);
 		shell.setSize(900, 420);
+		// Control.print cannot capture a Grid outside the screen; keep both Grids on it
+		shell.setLocation(0, 0);
 		shell.open();
 		flush();
 	}

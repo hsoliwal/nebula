@@ -8279,6 +8279,15 @@ public class Grid extends Canvas {
 	 * date.
 	 */
 	protected void refreshHoverState() {
+		// hover follows the mouse only while it is over this Grid; elsewhere (another window on
+		// top, another desktop) the cursor position says nothing about this Grid
+		if (getDisplay().getCursorControl() != this) {
+			if (hoveringItem != null || hoveringColumn != null || hoveringColumnHeader != null
+					|| hoverColumnGroupHeader != null || !hoveringDetail.isEmpty()) {
+				onMouseExit(null);
+			}
+			return;
+		}
 		final Point p = getDisplay().map(null, this, getDisplay().getCursorLocation());
 		handleHovering(p.x, p.y);
 	}
@@ -8860,23 +8869,39 @@ public class Grid extends Canvas {
 		}
 		if (dy > 0) {
 			scroll(body.x, body.y + dy, body.x, body.y, body.width, body.height - dy, false);
+			// the scroll invalidates only the part of its source rectangle that it uncovers; when
+			// the move is more than half the body the exposed strip reaches past the source
+			redraw(body.x, body.y, body.width, dy, false);
 		} else {
 			scroll(body.x, body.y, body.x, body.y - dy, body.width, body.height + dy, false);
+			redraw(body.x, body.y + body.height + dy, body.width, -dy, false);
 		}
+		// paint the exposed strip now, as the native list views do after scrolling their bits:
+		// until then the strip would show erased or stale rows
+		update();
 		paintedTopIndex = newTop;
 		blitScrollCount++;
 		return true;
 	}
 
+	/**
+	 * @return {@code true} for renderers that paint a row from its own item and bounds only (the
+	 *         default ones and the native look's), so a row's pixels can be moved by a blit
+	 */
+	private static boolean blitSafeRenderer(final Object renderer, final Class<?> defaultClass) {
+		return renderer.getClass() == defaultClass || renderer instanceof GridNativeCellRenderer
+				|| renderer instanceof GridNativeLook.EmptyCell;
+	}
+
 	private boolean blitSafe() {
 		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
 				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
-				|| emptyCellRenderer.getClass() != DefaultEmptyCellRenderer.class
+				|| !blitSafeRenderer(emptyCellRenderer, DefaultEmptyCellRenderer.class)
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
 			return false;
 		}
 		for (final GridColumn column : displayOrderedColumns) {
-			if (column.isVisible() && column.getCellRenderer().getClass() != DefaultCellRenderer.class) {
+			if (column.isVisible() && !blitSafeRenderer(column.getCellRenderer(), DefaultCellRenderer.class)) {
 				return false;
 			}
 		}

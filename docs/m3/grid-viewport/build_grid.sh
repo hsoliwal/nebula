@@ -17,7 +17,9 @@ compile() { # <out> <classpath> <srcdir>
   rm -rf "$1"; mkdir -p "$1"
   find "$3" -name '*.java' > "$1.src"
   "$JDK/bin/javac" -J-Xmx768m --release 17 -encoding UTF-8 -nowarn -proc:none -Xmaxerrs 50 -cp "$2" -d "$1" @"$1.src" > "$1.log" 2>&1
-  echo "$(basename $1): sources=$(wc -l < "$1.src") errors=$(grep -c ': error:' "$1.log")"
+  # resources (images and other non-Java files) next to the classes, as the bundle build does
+  (cd "$3" && find . -type f ! -name '*.java' | while read -r f; do mkdir -p "$1/$(dirname "$f")"; cp "$f" "$1/$f"; done)
+  echo "$(basename $1): sources=$(wc -l < "$1.src") resources=$(cd "$3" && find . -type f ! -name '*.java' | wc -l) errors=$(grep -c ': error:' "$1.log")"
   grep -A2 ': error:' "$1.log" | head -30
 }
 compile $OUT/grid-classes "$SWT;$DEPS" $G

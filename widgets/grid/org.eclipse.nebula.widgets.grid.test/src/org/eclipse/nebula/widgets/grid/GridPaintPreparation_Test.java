@@ -145,6 +145,9 @@ public class GridPaintPreparation_Test {
         // Once spanning is active, direct mutation through the built-in public
         // DataVisualizer must keep the sparse owner exact as well.
         indexed.getDataVisualizer().setRowSpan(spanOwner, 0, 0);
+        // the owner still spans rows in the hidden column; clearing that span too releases it
+        assertEquals(1, indexed.rowSpanIndexOwnerCount());
+        indexed.getDataVisualizer().setRowSpan(spanOwner, 1, 0);
         assertEquals(0, indexed.rowSpanIndexOwnerCount());
         indexed.getDataVisualizer().setRowSpan(spanOwner, 0, 10);
         assertEquals(1, indexed.rowSpanIndexOwnerCount());

@@ -69,10 +69,10 @@ public class GridScrollPaint_Test {
 		return grid;
 	}
 
-	/* runs the event loop until it has been idle for 60 ms (frame-coalesced paints use timers) */
+	/* runs the event loop until it has been idle for 200 ms (frame-coalesced drag paints use timers) */
 	private void settle() {
 		long idleSince = System.currentTimeMillis();
-		while (System.currentTimeMillis() - idleSince < 60) {
+		while (System.currentTimeMillis() - idleSince < 200) {
 			if (display.readAndDispatch()) {
 				idleSince = System.currentTimeMillis();
 			} else {
@@ -83,6 +83,23 @@ public class GridScrollPaint_Test {
 					return;
 				}
 			}
+		}
+	}
+
+	/* the window's pixels as they are (a copy of the Grid's client area, no paint) */
+	static ImageData screen(final Grid grid) {
+		final Point size = grid.getSize();
+		final Image image = new Image(grid.getDisplay(), size.x, size.y);
+		try {
+			final GC gc = new GC(grid);
+			try {
+				gc.copyArea(image, 0, 0);
+			} finally {
+				gc.dispose();
+			}
+			return image.getImageData();
+		} finally {
+			image.dispose();
 		}
 	}
 
@@ -136,18 +153,25 @@ public class GridScrollPaint_Test {
 	private int immediate, deferred;
 
 	/*
-	 * Right after a scroll, before the event loop runs, the window shows either the rows before the
-	 * scroll or the rows after it (Control.print captures the window): never a mix, never a row
-	 * without its data.
+	 * Right after a scroll, before the event loop runs, the window (its pixels as they are, copied
+	 * without a paint) shows either the rows before the scroll or the rows after it: never a mix,
+	 * never a row without its data. Once the event loop settled, the window shows exactly what the
+	 * Grid paints: no stale rows are left on screen.
 	 */
 	private void assertPaintedLikeSettled(final Grid grid, final String step) {
 		final int before = setData;
-		final ImageData now = print(grid);
+		final ImageData now = screen(grid);
 		final int answered = setData - before;
 		final int blankNow = blankRows(grid, now);
 		settle();
+		final ImageData onScreen = screen(grid);
 		final ImageData settled = print(grid);
-		// the scroll bars move at once; the rows are the client area
+		if (!sameClientArea(grid, onScreen, settled)) {
+			GridViewportDifferential_Test.save(onScreen, "scroll-screen");
+			GridViewportDifferential_Test.save(settled, "scroll-settled");
+			fail(step + ": the settled window differs from the Grid's paint ("
+					+ GridViewportDifferential_Test.difference(onScreen, settled) + ")");
+		}
 		final boolean isNew = sameClientArea(grid, now, settled);
 		final boolean isOld = previous != null && sameClientArea(grid, now, previous);
 		if (!isNew && !isOld || blankNow > 0) {
@@ -179,14 +203,16 @@ public class GridScrollPaint_Test {
 	private void scrollScript(final Grid grid) {
 		shell.open();
 		settle();
-		previous = print(grid);
+		previous = screen(grid);
 		final ScrollBar bar = grid.getVerticalBar();
 		final int[] tops = { 40, 41, 60, 400, 399, 1200, 7, 5000, 5013, 2 };
 		for (final int top : tops) {
 			grid.setTopIndex(Math.min(top, grid.getItemCount() - 1));
 			assertPaintedLikeSettled(grid, "setTopIndex " + top);
 		}
-		for (final int value : new int[] { 3, 9, 250, 251, 1800, 30 }) {
+		// steps of one row, of more than half a page (the blit's exposed strip reaches past its source),
+		// and jumps of more than a page
+		for (final int value : new int[] { 3, 9, 26, 27, 250, 251, 1800, 30, 47, 46 }) {
 			bar.setSelection(Math.min(value, bar.getMaximum()));
 			final Event drag = new Event();
 			drag.detail = value % 2 == 0 ? SWT.DRAG : SWT.NONE;

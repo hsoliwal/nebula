@@ -73,6 +73,7 @@ public class GridNativeLook_Test {
 
 	@Before
 	public void setUp() {
+		org.junit.Assume.assumeTrue("the native look is part of the viewport mode", GridViewport.ENABLED && GridNativeLook.ENABLED);
 		display = Display.getDefault();
 		shell = new Shell(display, SWT.ON_TOP | SWT.NO_TRIM);
 		shell.setBounds(60, 60, 2 * WIDTH + 30, HEIGHT + 50);
@@ -84,7 +85,9 @@ public class GridNativeLook_Test {
 
 	@After
 	public void tearDown() {
-		shell.dispose();
+		if (shell != null) {
+			shell.dispose();
+		}
 	}
 
 	@Test

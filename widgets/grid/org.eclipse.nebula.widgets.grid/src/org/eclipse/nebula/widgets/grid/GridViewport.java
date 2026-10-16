@@ -9,10 +9,10 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
-import java.lang.System.Logger.Level;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.grid.internal.IScrollBarProxy;
+import org.eclipse.nebula.widgets.grid.internal.SwtLog;
 import org.eclipse.nebula.widgets.grid.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 
@@ -37,7 +37,7 @@ final class GridViewport {
 	/** Whether Grids mediate their row geometry (the startup mode is {@code viewport}). */
 	static final boolean ENABLED = WidgetMode.of("Grid", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT;
 
-	private static final System.Logger LOG = System.getLogger("org.eclipse.nebula.widgets.grid.Grid");
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.grid.Grid");
 
 	/**
 	 * The last row range answered by {@link #rowRange(int, int)} or
@@ -287,7 +287,7 @@ final class GridViewport {
 		final int count = items.size();
 		if (!rows.isValid(count)) {
 			rows.rebuild(count, position -> extentOf(items.get(position)));
-			LOG.log(Level.DEBUG, () -> "row extent index rebuilt for " + count + " items");
+			LOG.debug(() -> "row extent index rebuilt for " + count + " items");
 		}
 		return rows;
 	}
