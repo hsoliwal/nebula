@@ -46,7 +46,12 @@ def verify_workflow(source: str) -> None:
         "m3/reactor.xml",
         "NebulaM3HostPortabilityTest",
         "NebulaM3BackportPlanTest",
+        "NebulaM3BackportBundleTest",
         "NebulaM3TransferContractTest",
+        "NebulaM3JavaGradeQualificationTest",
+        "java-grade-qualification.tsv",
+        "backport-bundle.tsv",
+        "backport-bundle.sha256",
         "HOLD_UNTIL_PROVEN",
         "orchestrator-plans.sha256",
         "backport-plan.tsv",
@@ -69,6 +74,21 @@ def verify_workflow(source: str) -> None:
             raise ValueError(f"missing or duplicate host: {host}")
         if source.count(f"'receipts/nebula-m3-dag-{host}'") > 1:
             raise ValueError(f"duplicated host receipt: {host}")
+
+    # The worker and reducer must agree on all five roots. A 3-/4-field
+    # partial receipt must not be accepted as a Java-grade backport proof.
+    schema = (
+        "'dagRoot', 'plansRoot', 'backportRoot', "
+        "'bundleRoot', 'transferRoot'"
+    )
+    if source.count(schema) != 2:
+        raise ValueError("portable worker/reducer five-root schemas diverge")
+    if "if ($fields.Count -ne 5)" not in source:
+        raise ValueError("five-root reducer field validation is missing")
+    if "$bundle -cne $actualBundle" not in source:
+        raise ValueError("backport bundle SHA-256 content check missing")
+    if "disposition' + [char]9 + 'HOLD'" not in source:
+        raise ValueError("portable Java-grade state must remain HOLD")
 
     if "rewrite:runNoFork" in source or "rewrite:run" in source:
         raise ValueError("portability proof must never mutate product source")
@@ -101,6 +121,26 @@ class PortableRecipeWorkflowTest(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             verify_workflow(broken)
+
+    def test_partial_root_schema_is_rejected(self) -> None:
+        valid = WORKFLOW.read_text(encoding="utf-8")
+        broken = valid.replace(
+            "'backportRoot', 'bundleRoot', 'transferRoot'",
+            "'transferRoot'",
+            1,
+        )
+        with self.assertRaises(ValueError):
+            verify_workflow(broken)
+
+    def test_unverified_backport_bundle_is_rejected(self) -> None:
+        valid = WORKFLOW.read_text(encoding="utf-8")
+        with self.assertRaises(ValueError):
+            verify_workflow(
+                valid.replace(
+                    "$bundle -cne $actualBundle",
+                    "$bundle -eq $actualBundle",
+                )
+            )
 
     def test_source_mutation_is_rejected(self) -> None:
         valid = WORKFLOW.read_text(encoding="utf-8")
