@@ -1645,6 +1645,10 @@ public class GridItem extends Item {
 	 */
 	@Override
 	public void setImage(Image image) {
+		checkWidget();
+		if (image != null && image.isDisposed()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 		parent.getDataVisualizer().setImage(this, 0, image);
 		parent.redraw();
 	}
@@ -1729,7 +1733,11 @@ public class GridItem extends Item {
             throw new IllegalArgumentException("GridItem has no children!");
         }
 		children.remove(child);
-		parent.getDataVisualizer().clearRow(child);
+		// a row-addressed visualizer already removed the child's row (Grid.removeItem); clearing
+		// it by the child's old row index would clear the row that moved into its place
+		if (!parent.usesRowAddressedDataVisualizer()) {
+			parent.getDataVisualizer().clearRow(child);
+		}
 		hasChildren = !children.isEmpty();
 	}
 
@@ -1752,6 +1760,18 @@ public class GridItem extends Item {
 	 * @param index
 	 *            index
 	 */
+	/**
+	 * Removes a child from this item's children without disposing it (the Grid is shrinking its
+	 * rows and disposes the child itself).
+	 *
+	 * @param child the child
+	 */
+	void detachChild(GridItem child) {
+		if (children != null && children.remove(child)) {
+			hasChildren = !children.isEmpty();
+		}
+	}
+
 	void newItem(GridItem item, int index) {
 		setHasChildren(true);
         if (children == null) {
@@ -2184,6 +2204,10 @@ public class GridItem extends Item {
 	 *            recursively, and <code>false</code> otherwise
 	 */
 	void clear(boolean allChildren) {
+		// Grid.clear promises that the text, icon and other attributes (also those the data
+		// visualizer keeps per column: texts, images, colours, fonts, check states, spans) return to
+		// their default values
+		parent.getDataVisualizer().clearRow(this);
 
 		defaultForeground = null;
 		defaultBackground = null;

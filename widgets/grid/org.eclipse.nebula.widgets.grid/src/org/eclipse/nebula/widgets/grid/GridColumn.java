@@ -1535,9 +1535,16 @@ public class GridColumn extends Item {
 	 *
 	 * @param font
 	 *                 the new font
+	 * @throws IllegalArgumentException
+	 *             <ul>
+	 *             <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
+	 *             </ul>
 	 */
 	public void setHeaderFont(final Font font) {
 		checkWidget();
+		if (font != null && font.isDisposed()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 		headerFont = font;
 	}
 
@@ -1568,9 +1575,16 @@ public class GridColumn extends Item {
 	 *
 	 * @param font
 	 *                 the new font
+	 * @throws IllegalArgumentException
+	 *             <ul>
+	 *             <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
+	 *             </ul>
 	 */
 	public void setFooterFont(final Font font) {
 		checkWidget();
+		if (font != null && font.isDisposed()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 		footerFont = font;
 	}
 

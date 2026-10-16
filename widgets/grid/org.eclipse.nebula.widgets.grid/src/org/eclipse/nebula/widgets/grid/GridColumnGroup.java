@@ -473,9 +473,16 @@ public class GridColumnGroup extends Item
     /**
      * Sets the Font to be used when displaying the Header text.
      * @param font the font to set for the header
+     * @throws IllegalArgumentException
+     *             <ul>
+     *             <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
+     *             </ul>
      */
     public void setHeaderFont(Font font) {
     	checkWidget();
+		if (font != null && font.isDisposed()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
     	this.headerFont = font;
     }
 

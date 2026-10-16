@@ -2375,7 +2375,7 @@ public class Grid extends Canvas {
 	/**
 	 * Returns the next visible item in the table.
 	 *
-	 * @param item item
+	 * @param item item, or {@code null} for the first visible item
 	 * @return next visible item or null
 	 * @throws org.eclipse.swt.SWTException
 	 *                                      <ul>
@@ -2389,7 +2389,7 @@ public class Grid extends Canvas {
 	public GridItem getNextVisibleItem(final GridItem item) {
 		checkWidget();
 
-		int index = item.getRowIndex();
+		int index = item == null ? -1 : item.getRowIndex();
 		if (viewport != null && !usesSparseVirtualItems() && index >= -1 && index < items.size()) {
 			return viewport.nextVisibleItem(index + 1);
 		}
@@ -2459,7 +2459,7 @@ public class Grid extends Canvas {
 	/**
 	 * Returns the previous visible column in the table.
 	 *
-	 * @param column column
+	 * @param column column, or {@code null} for the last visible column
 	 * @return previous visible column or null
 	 * @throws org.eclipse.swt.SWTException
 	 *                                      <ul>
@@ -2473,7 +2473,7 @@ public class Grid extends Canvas {
 	public GridColumn getPreviousVisibleColumn(final GridColumn column) {
 		checkWidget();
 
-		int index = displayOrderedColumns.indexOf(column);
+		int index = column == null ? displayOrderedColumns.size() : displayOrderedColumns.indexOf(column);
 
 		if (index == 0) {
 			return null;
@@ -3368,6 +3368,9 @@ public class Grid extends Canvas {
 	 */
 	public boolean isSelected(final GridItem item) {
 		checkWidget();
+		if (item == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
 		if (!cellSelectionEnabled) {
 			return selectedItems.contains(item);
 		} else {
@@ -4327,6 +4330,9 @@ public class Grid extends Canvas {
 	 */
 	public void setSelection(final int[] indices) {
 		checkWidget();
+		if (indices == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
 
 		if (!selectionEnabled) {
 			return;
@@ -4534,6 +4540,14 @@ public class Grid extends Canvas {
 	 * is visible.
 	 *
 	 * @param col the column to be shown
+	 * @throws IllegalArgumentException
+	 *                                      <ul>
+	 *                                      <li>ERROR_NULL_ARGUMENT - if the column
+	 *                                      is null</li>
+	 *                                      <li>ERROR_INVALID_ARGUMENT - if the
+	 *                                      column has been disposed or is not a
+	 *                                      column of the receiver</li>
+	 *                                      </ul>
 	 * @throws org.eclipse.swt.SWTException
 	 *                                      <ul>
 	 *                                      <li>ERROR_WIDGET_DISPOSED - if the
@@ -4545,6 +4559,12 @@ public class Grid extends Canvas {
 	 */
 	public void showColumn(final GridColumn col) {
 		checkWidget();
+		if (col == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		if (col.isDisposed() || col.getParent() != this) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 
 		if (!col.isVisible()) {
 			final GridColumnGroup group = col.getColumnGroup();
@@ -4685,12 +4705,21 @@ public class Grid extends Canvas {
 	 *                                      <li>ERROR_THREAD_INVALID_ACCESS - if not
 	 *                                      called from the thread that created the
 	 *                                      receiver</li>
+	 *                                      <li>ERROR_NULL_ARGUMENT - if 'item' is
+	 *                                      null</li>
 	 *                                      <li>ERROR_INVALID_ARGUMENT - if 'item'
-	 *                                      is not contained in the receiver</li>
+	 *                                      is not contained in the receiver (or has
+	 *                                      been disposed)</li>
 	 *                                      </ul>
 	 */
 	public void showItem(final GridItem item) {
 		checkWidget();
+		if (item == null) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		if (item.isDisposed() || item.getParent() != this) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 
 		updateScrollbars();
 
@@ -11026,7 +11055,12 @@ public class Grid extends Canvas {
 			selectedCells.clear();
 			for (int i = items.size() - 1; i >= count; i--) {
 				final GridItem removed = items.remove(i);
-				rootItems.remove(i);
+				// a tree Grid's rows are not all roots: detach the row from its own parent list
+				if (removed.getParentItem() == null) {
+					rootItems.remove(removed);
+				} else {
+					removed.getParentItem().detachChild(removed);
+				}
 				selectedItems.remove(removed);
 				if (removed.isVisible()) {
 					currentVisibleItems--;

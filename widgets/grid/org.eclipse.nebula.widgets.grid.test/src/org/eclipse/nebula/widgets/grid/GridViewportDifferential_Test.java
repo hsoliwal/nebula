@@ -57,7 +57,7 @@ public class GridViewportDifferential_Test {
 	 * after a scroll), so both Grids must see it at the same relative position
 	 */
 	private Shell stockShell, viewportShell;
-	private Button focusHolder;
+	private Button focusHolder, stockFocusHolder;
 
 	@Before
 	public void setUp() {
@@ -66,7 +66,8 @@ public class GridViewportDifferential_Test {
 		viewportShell = shell();
 		focusHolder = new Button(viewportShell, SWT.PUSH);
 		focusHolder.setBounds(5, 340, 60, 25);
-		new Button(stockShell, SWT.PUSH).setBounds(5, 340, 60, 25);
+		stockFocusHolder = new Button(stockShell, SWT.PUSH);
+		stockFocusHolder.setBounds(5, 340, 60, 25);
 	}
 
 	private Shell shell() {
@@ -199,10 +200,12 @@ public class GridViewportDifferential_Test {
 			drain();
 			compare(log, "step " + step, expected + " | " + stock.apply(state), actual + " | " + viewport.apply(state));
 		}
-		focusHolder.setFocus();
-		drain();
+		// each Grid is captured with its own shell active and its focus holder focused, so window
+		// activation (borders, scroll bars) is the same on both sides
 		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
+		activate(stockShell, stockFocusHolder);
 		final ImageData expected = (ImageData) stock.apply(pixels);
+		activate(viewportShell, focusHolder);
 		final ImageData actual = (ImageData) viewport.apply(pixels);
 		if (!Arrays.equals(expected.data, actual.data)) {
 			save(expected, "stock-seed" + seed);
@@ -237,6 +240,12 @@ public class GridViewportDifferential_Test {
 			fail(where + " differs\n  stock:    " + expected + "\n  viewport: " + actual + "\nlog:\n" + log);
 		}
 		assertEquals(expected, actual);
+	}
+
+	private void activate(final Shell shell, final Button holder) {
+		shell.forceActive();
+		holder.setFocus();
+		drain();
 	}
 
 	private void drain() {

@@ -227,7 +227,8 @@ desktop with the official SWT 3.135.0 jar.
 | | `original` mode | viewport mode |
 |---|---|---|
 | before (first hidden-desktop run) | 152 failures | 153 |
-| after this leaf | 133 failures, all in the four RAP-derived classes | 139: the same 133, plus `GridCheckLanes_Test` and five `GridColumnWindow_Test` cases (both intermittent; in other runs they pass in this mode and fail in the other) |
+| after item 1 | 133 failures, all in the four RAP-derived classes | 139: the same 133, plus `GridCheckLanes_Test` and five `GridColumnWindow_Test` cases (capture artifacts, see items 2 and 3) |
+| after items 2 and 3 | 112 failures, all in the four RAP-derived classes | the same 112 |
 
 Method: the four legacy classes (`Grid_Test`, `GridItem_Test`, `GridColumn_Test`, `GridColumnGroup_Test`,
 455 tests, taken from the RAP project in Nebula bug 477992 and excluded from upstream's build) were run
@@ -254,6 +255,23 @@ checks to settle per Javadoc, 9 `clear` cases where Nebula keeps the text althou
 attributes are reset); `GridColumnWindow_Test` (column-window paint differs from the full walk by one
 column at some positions, intermittently; coordinator item 2); `GridCheckLanes_Test` (intermittent
 capture on the hidden desktop).
+
+## Fork defects of coordinator items 2 and 3 (2026-10-16)
+
+| Defect | Root cause | Fix | Measured |
+|---|---|---|---|
+| quadratic build with the default data visualizer | `GridRowAddressedItemDataVisualizer` kept one `HashMap<Integer, List>` per kind of value (11) and re-keyed every stored row on each row insert or removal | one `RowIndex` per Grid (sorted row positions with a stable id each) and id-addressed `IdStore`s: an insert or removal shifts the positions after it by one int increment, an appended row is an O(log n) search, no rehash and no boxing | 40,000-item tree (`BuildProbe 400`): 65 s before, 0.34 s after (`original`), 0.60 s (viewport); 1,000,000 items: 8.0 s / 8.3 s |
+| lost item text (differential seed 4 step 148 against stock) | `GridItem.remove(child)` cleared the child's data by its old row index after `Grid.removeItem` had already removed the row, so it cleared the row that moved into its place (reproduced in 12 of 12 seeds by `TextLossProbe`: the item after a disposed child lost its text) | a row-addressed visualizer is not cleared again there | no text lost in seeds 0, 2, 4, 9; the differential against stock Nebula `5d0bcbb9` answers identically in all 8 seeds x 160 steps |
+| column-window paint mismatch (`GridColumnWindow_Test`) | not a Grid defect: `Control.print` (PrintWindow) can return the window's last presented surface instead of a fresh paint; the two "differing" prints were one fresh and one stale capture. Tracing both paint paths showed identical column positions | the Grid pixel tests capture the Grid's own paint (its paint listener into an image) | 3 probe runs x 26 positions: 2 to 4 mismatches with `Control.print`, 0 with the Grid's own paint; the suite passes the class in both modes in every run since |
+| header text differs from stock (172 to 2,697 pixels) | `GridGCProxy.close` left the GC in GDI+ mode, so the header (painted after the body) drew its text with GDI+ (fixed in item 1) | as item 1 | against stock Nebula `5d0bcbb9` (client area, the Grid's own paint): 7 of 8 seeds pixel-identical; seed 5: one 244-pixel line under the empty header area in cell-selection mode, where stock paints the empty header one pixel taller than the fork's header plane clip (PR #128) |
+
+Contract fixes in the same leaf (Javadoc-promised or SWT-convention argument handling, both modes):
+`Grid.clear*` reset the visualizer's per-column data; `showItem`/`showColumn` reject null, disposed and foreign
+arguments; `isSelected (GridItem)` and `setSelection (int[])` reject null as documented;
+`getNextVisibleItem (null)` and `getPreviousVisibleColumn (null)` answer the first item and the last column
+(the counterparts already accepted null); `setItemCount` on a tree Grid detaches removed rows from their own
+parent list (it threw an `IndexOutOfBoundsException`); `GridItem.setImage (Image)` and the header and footer
+font setters reject disposed resources. Legacy failures: 133 -> 112 in both modes.
 
 ## Leaves
 

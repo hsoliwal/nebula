@@ -406,52 +406,25 @@ public class GridRowPermutation_Test {
 		return a;
 	}
 
-	/** SHA-256 of the Grid rendered by {@code Control.print(GC)} (capture mode CONTROL_PRINT). */
+	/**
+	 * SHA-256 of the Grid's own paint (capture mode GRID_PAINT: the Grid's paint listener drawn into
+	 * an image). {@code Control.print} is not used: it returns the window's last presented surface
+	 * when one exists, which can still show the state before the last change (measured: two to four
+	 * of 26 consecutive captures on the hidden test desktop); the Grid's own paint is
+	 * deterministic. Scroll bars and borders are not part of it; tests assert their values.
+	 */
 	static String pixels(final Grid grid) throws Exception {
 		final Point size = grid.getSize();
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
-			// capture mode CONTROL_PRINT: Control.print(GC) renders the widget's own paint. A Grid
-			// never paints its whole area black; an all-black image is a failed window print (seen
-			// intermittently on the hidden test desktop), so the capture is repeated.
-			for (int attempt = 0; attempt < 3; attempt++) {
-				final GC gc = new GC(image);
-				try {
-					if (!grid.print(gc)) {
-						throw new IllegalStateException("Control.print unsupported");
-					}
-				} finally {
-					gc.dispose();
-				}
-				if (!allBlack(image.getImageData())) {
-					break;
-				}
-			}
-			if (allBlack(image.getImageData())) {
-				// the window print keeps failing: run the Grid's own paint into the image instead
-				final GC gc = new GC(image);
-				try {
-					final org.eclipse.swt.widgets.Event paint = new org.eclipse.swt.widgets.Event();
-					paint.gc = gc;
-					paint.width = size.x;
-					paint.height = size.y;
-					grid.notifyListeners(SWT.Paint, paint);
-				} finally {
-					gc.dispose();
-				}
-				if (allBlack(image.getImageData())) {
-					throw new IllegalStateException("capture failed: the Grid's paint left the image black (visible "
-							+ grid.isVisible() + ", size " + size + ")");
-				}
-			}
+			paint(grid, image);
 			final String dump = System.getProperty("grid.pixels.dump");
 			if (dump != null) {
 				final org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
 				loader.data = new org.eclipse.swt.graphics.ImageData[] { image.getImageData() };
 				loader.save(dump + "-" + System.identityHashCode(grid) + "-" + System.nanoTime() + ".png", SWT.IMAGE_PNG);
 			}
-			// the client area only: the fallback paint has no scroll bars (their values are asserted apart)
-			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(clientPixels(grid, image.getImageData()));
+			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(image.getImageData().data);
 			final StringBuilder hex = new StringBuilder();
 			for (final byte b : digest) {
 				hex.append(String.format("%02x", b & 0xff));
@@ -462,32 +435,21 @@ public class GridRowPermutation_Test {
 		}
 	}
 
-	/* RGB bytes of the client area, located inside the control by its trim */
-	private static byte[] clientPixels(final Grid grid, final org.eclipse.swt.graphics.ImageData data) {
-		final org.eclipse.swt.graphics.Rectangle trim = grid.computeTrim(0, 0, 0, 0);
-		final org.eclipse.swt.graphics.Rectangle area = grid.getClientArea();
-		final java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(area.width * area.height * 3);
-		for (int y = -trim.y; y < -trim.y + area.height && y < data.height; y++) {
-			for (int x = -trim.x; x < -trim.x + area.width && x < data.width; x++) {
-				final org.eclipse.swt.graphics.RGB rgb = data.palette.getRGB(data.getPixel(x, y));
-				out.write(rgb.red);
-				out.write(rgb.green);
-				out.write(rgb.blue);
-			}
+	/**
+	 * Runs the Grid's own paint into {@code image} (its paint listener with a GC on the image), the
+	 * deterministic capture used by the Grid pixel tests.
+	 */
+	static void paint(final Grid grid, final Image image) {
+		final GC gc = new GC(image);
+		try {
+			final org.eclipse.swt.widgets.Event event = new org.eclipse.swt.widgets.Event();
+			event.gc = gc;
+			event.width = image.getBounds().width;
+			event.height = image.getBounds().height;
+			grid.notifyListeners(SWT.Paint, event);
+		} finally {
+			gc.dispose();
 		}
-		return out.toByteArray();
-	}
-
-	private static boolean allBlack(final org.eclipse.swt.graphics.ImageData data) {
-		for (int y = 0; y < data.height; y++) {
-			for (int x = 0; x < data.width; x++) {
-				final org.eclipse.swt.graphics.RGB rgb = data.palette.getRGB(data.getPixel(x, y));
-				if (rgb.red != 0 || rgb.green != 0 || rgb.blue != 0) {
-					return false;
-				}
-			}
-		}
-		return true;
 	}
 
 	static void assertMaterializedAtMost(final Grid grid, final int bound) {

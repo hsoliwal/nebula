@@ -307,12 +307,22 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private ImageData pixels() {
-		final Point size = grid.getSize();
+		// the client area: what the Grid paints (scroll bars and borders are compared by value)
+		final Rectangle area = grid.getClientArea();
+		final Point size = new Point(Math.max(1, area.width), Math.max(1, area.height));
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
+			// the Grid's own paint: Control.print can return the window's last presented surface
 			final GC gc = new GC(image);
 			try {
-				grid.print(gc);
+				// what the window's background erase does before the paint event
+				gc.setBackground(grid.getBackground());
+				gc.fillRectangle(0, 0, size.x, size.y);
+				final Event event = new Event();
+				event.gc = gc;
+				event.width = size.x;
+				event.height = size.y;
+				grid.notifyListeners(SWT.Paint, event);
 			} finally {
 				gc.dispose();
 			}

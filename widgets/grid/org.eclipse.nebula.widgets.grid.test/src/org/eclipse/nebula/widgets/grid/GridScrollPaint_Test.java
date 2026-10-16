@@ -103,16 +103,12 @@ public class GridScrollPaint_Test {
 		}
 	}
 
+	/* the Grid's own paint (deterministic, unlike Control.print) */
 	static ImageData print(final Grid grid) {
 		final Point size = grid.getSize();
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
-			final GC gc = new GC(image);
-			try {
-				grid.print(gc);
-			} finally {
-				gc.dispose();
-			}
+			GridRowPermutation_Test.paint(grid, image);
 			return image.getImageData();
 		} finally {
 			image.dispose();
