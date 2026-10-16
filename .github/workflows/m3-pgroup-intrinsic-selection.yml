@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Nebula original PGroup intrinsic selection atom
+on:
+  pull_request:
+    paths:
+      - 'widgets/pgroup/org.eclipse.nebula.widgets.pgroup/**'
+      - '.github/workflows/m3-pgroup-intrinsic-selection.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  strict-java21-old-new-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compare original callbacks and fast path with interpreter variant
+        run: bash widgets/pgroup/org.eclipse.nebula.widgets.pgroup/run-selection-parity.sh
+  real-widget-source-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Obtain pinned public SWT GTK platform artifacts for source proof only
+        run: |
+          mkdir -p .m3-pgroup/lib .m3-pgroup/classes
+          curl --fail --location --retry 3 -o .m3-pgroup/lib/swt-core.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt/3.126.0/org.eclipse.swt-3.126.0.jar
+          curl --fail --location --retry 3 -o .m3-pgroup/lib/swt-gtk.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt.gtk.linux.x86_64/3.126.0/org.eclipse.swt.gtk.linux.x86_64-3.126.0.jar
+          unzip -t .m3-pgroup/lib/swt-core.jar >/dev/null
+          unzip -t .m3-pgroup/lib/swt-gtk.jar >/dev/null
+      - name: Compile actual complete original package against SWT binaries, no stubs
+        run: |
+          find widgets/pgroup/org.eclipse.nebula.widgets.pgroup/src -name '*.java' -print0 \
+            | xargs -0 javac --release 21 \
+              -cp ".m3-pgroup/lib/swt-core.jar:.m3-pgroup/lib/swt-gtk.jar" \
+              -d .m3-pgroup/classes
