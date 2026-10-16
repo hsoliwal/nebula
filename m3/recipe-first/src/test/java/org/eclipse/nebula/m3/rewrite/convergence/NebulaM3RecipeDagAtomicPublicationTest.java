@@ -30,7 +30,7 @@ final class NebulaM3RecipeDagAtomicPublicationTest {
                 Files.readString(manifest, StandardCharsets.UTF_8));
         assertEquals(NebulaM3OrchestratorPlans.droolsDrl(),
                 Files.readString(output.resolve("drools-agenda.drl"), StandardCharsets.UTF_8));
-        assertEquals(7, Files.list(output).count());
+        assertEquals(7, countFiles(output));
         FileTime marker = FileTime.fromMillis(1_600_000_000_000L);
         Files.setLastModifiedTime(manifest, marker);
         FileTime retained = Files.getLastModifiedTime(manifest);
@@ -72,7 +72,7 @@ final class NebulaM3RecipeDagAtomicPublicationTest {
         }
         assertThrows(IOException.class,
                 () -> NebulaM3RecipeDagManifestCli.main(new String[] {symlink.toString()}));
-        assertEquals(0, Files.list(real).count());
+        assertEquals(0, countFiles(real));
     }
 
     @Test
@@ -113,7 +113,7 @@ final class NebulaM3RecipeDagAtomicPublicationTest {
         images.put("normal.tsv", "good");
         images.put("../escape", "bad");
         assertThrows(IOException.class, () -> NebulaM3RecipeDagManifestCli.publish(output, images));
-        assertEquals(0, Files.list(output).count());
+        assertEquals(0, countFiles(output));
         assertThrows(IOException.class,
                 () -> NebulaM3RecipeDagManifestCli.publish(sandbox.getRoot(), Map.of("x.tsv", "x")));
 
@@ -133,5 +133,11 @@ final class NebulaM3RecipeDagAtomicPublicationTest {
         NebulaM3RecipeDagManifestCli.publish(output, Map.of("document.tsv", "λ-😀-東京\n"));
         assertArrayEquals("λ-😀-東京\n".getBytes(StandardCharsets.UTF_8),
                 Files.readAllBytes(output.resolve("document.tsv")));
+    }
+
+    private static long countFiles(Path directory) throws IOException {
+        try (var entries = Files.list(directory)) {
+            return entries.count();
+        }
     }
 }
