@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0; focused optional port build, not the Nebula reactor. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+ <modelVersion>4.0.0</modelVersion><groupId>org.eclipse.nebula.proof</groupId><artifactId>pagination-ports</artifactId><version>1.0-SNAPSHOT</version>
+ <properties><maven.compiler.release>21</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding></properties>
+ <build><sourceDirectory>${project.basedir}/../../..</sourceDirectory><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version><configuration><includes>
+ <include>widgets/pagination/org.eclipse.nebula.widgets.pagination/src/org/eclipse/nebula/widgets/pagination/internal/PageWindow.java</include>
+ <include>m3/web-widget-reverse/pagination/jvm/org/eclipse/nebula/widgets/pagination/internal/PageWindowBatch.java</include>
+ </includes><compilerArgs><arg>-Xlint:all</arg><arg>-Werror</arg><arg>-h</arg><arg>${project.build.directory}/jni</arg></compilerArgs></configuration></plugin></plugins></build>
+</project>
