@@ -249,3 +249,8 @@ authoritative.
 ## Fork development guide
 
 See the [development guide](docs/DEVELOPMENT_GUIDE.md) for source layout, reproducible build and test lanes, fork-specific boundaries and review handover.
+
+## Source-level reference and coverage
+
+See the [source reference](docs/source-reference/README.md) for the complete pinned project/module and Java-namespace inventory, selected API lifecycle guides, examples/test links, and an explicit semantic-coverage ledger. Inventory accounting is complete for the listed manifests and checked-in Java declarations; exhaustive package/API review and build/native verification remain open.
+

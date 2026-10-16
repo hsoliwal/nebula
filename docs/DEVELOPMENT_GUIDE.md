@@ -13,7 +13,7 @@ mvn -version
 mvn -V -B clean verify -Dtycho.localArtifacts=ignore
 ```
 
-The checked-in [parent POM](../releng/org.eclipse.nebula.nebula-parent/pom.xml) sets Java source/target 21 and the JavaSE-21 execution environment. The [Maven workflow](../.github/workflows/maven.yaml) uses Temurin 21 and Maven 3.9.11. Use those versions when reproducing that lane.
+The checked-in [parent POM](../releng/org.eclipse.nebula.nebula-parent/pom.xml) sets Java source/target 21 and the JavaSE-21 execution environment. The [Maven workflow](../.github/workflows/maven.yaml) currently selects Temurin 21 and Maven 3.9.11. Those are the workflow's tool versions; its pinned SWT preparation and screen-validation steps, described below, are additional to the ordinary widget build.
 
 Tests use Tycho's UI harness. On Linux, provide GTK and a display; CI runs the Maven command through Xvfb. A local equivalent, with Xvfb installed, is:
 
@@ -38,7 +38,9 @@ All commands in this guide are source-checked examples, not execution results fr
 
 Find the implementation bundle and its corresponding test bundle before editing. Grid, for example, has `widgets/grid/org.eclipse.nebula.widgets.grid.test/`; other widget families use `.test` or `.tests` names, so do not guess an artifact selector from the widget name alone.
 
-The root POM enters the parent reactor. The current parent lists both mature and incubation widget modules directly; the commented incubation command in CI is not an active second build. Read the current module list before scoping a build. A successful selected reactor is not a claim that every possible widget/profile was exercised.
+The root POM enters the parent reactor. The current [parent module list](../releng/org.eclipse.nebula.nebula-parent/pom.xml) includes both the released widget group and the incubation group (including CalendarCombo, DateChooser and Timeline), their example features, and the update site. It does not define an `incubation` profile. The commented-out incubation command in the workflow is not an active build lane.
+
+Use the actual reactor and test bundle names when selecting a narrower build. A selected reactor does not establish coverage for omitted widgets. The update-site output collected by [Jenkins](../Jenkinsfile) is `releng/org.eclipse.nebula.site/target/repository/`; test reports are under `**/target/surefire-reports/*.xml`.
 
 ## Working on a widget
 
@@ -50,38 +52,36 @@ The root POM enters the parent reactor. The current parent lists both mature and
 
 CI retains Grid visible-range screenshots from `widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/` when produced. An absent screenshot is not a visual pass. Check test reports and actual images in addition to the Maven exit status.
 
-## Reproduce the bound Grid screen-validation lane
+## Reproducing the fork's Grid CI lane
 
-The [Maven workflow](../.github/workflows/maven.yaml) defines a more specific
-acceptance environment than the normal widget build: Ubuntu 24.04, GTK3
-(`SWT_GTK4=0`) and X11 (`GDK_BACKEND=x11`). Reproduce its ordered stages:
+The ordinary `mvn verify` command above does not reproduce every step of
+[.github/workflows/maven.yaml](../.github/workflows/maven.yaml).
+That workflow currently runs on Ubuntu 24.04 with GTK3 and X11
+(`SWT_GTK4=0`, `GDK_BACKEND=x11`) and:
 
-1. Check out the workflow's exact `hsoliwal/eclipse.platform.swt` revision into
-   `.m3-swt`. A moving branch tip is not an equivalent receiver.
-2. Install the workflow's GTK development dependencies and build the
-   `gtk.linux.x86_64` native fragment. Run
-   [prepare_swt_receiver.py](../m3/convergence/prepare_swt_receiver.py), then the
-   [receiver p2 project](../m3/convergence/swt-receiver-p2/pom.xml), to prepare the
-   bound target and expected identity. The generated `receiver.env` supplies the
-   target-platform location and expected GC hash to later steps.
-3. Run the Nebula reactor under Xvfb with the workflow's target override and
-   Grid screen-capture properties. Keep the receiver binding with the results.
-4. Run [verify_grid_screenshots.py](../m3/convergence/verify_grid_screenshots.py)
-   against Grid's captured frames, Surefire reports and the generated
-   `binding/expected.json`. Capture and pixel validation are separate stages;
-   a successful Maven invocation alone does not qualify this lane.
+1. Checks out a specific commit of `hsoliwal/eclipse.platform.swt` into
+   `.m3-swt`, rather than following that repository's moving default branch
+2. Builds its GTK native fragment and uses
+   [prepare_swt_receiver.py](../m3/convergence/prepare_swt_receiver.py) plus the
+   [receiver p2 project](../m3/convergence/swt-receiver-p2/pom.xml) to prepare the
+   bound target platform and expected identity
+3. Runs the Nebula reactor under Xvfb with the generated target-platform
+   override and Grid screen-capture properties
+4. Runs [verify_grid_screenshots.py](../m3/convergence/verify_grid_screenshots.py)
+   against the captured images, Surefire reports and expected receiver identity
 
-The workflow's `grid-visible-range-screenshots` artifact collects the expected
-identity, receiver repository XML metadata, images and Grid Surefire reports.
-The upload uses `if-no-files-found: warn`, so an upload step's completion is not
-proof that every expected artifact exists. Record missing or failed stages
-explicitly. Markdown/docs-only paths are excluded from this Maven workflow;
-absence of its run on a documentation PR is not a passing UI result.
+Copy the exact pinned revision and commands from the workflow when reproducing
+this lane; substituting the latest SWT checkout or the default target platform
+changes what is being tested. The native fragment build needs the GTK
+development packages listed in that workflow.
 
-For the ordinary reactor, [Jenkins](../Jenkinsfile) collects test reports under
-`**/target/surefire-reports/*.xml` and non-promotion update-site output under
-`releng/org.eclipse.nebula.site/target/repository/`. These paths describe ordinary
-build output, not a substitute for the receiver identity and pixel evidence above.
+The uploaded `grid-visible-range-screenshots` artifact includes the expected
+identity, receiver repository metadata, screenshots and Surefire reports.
+A Maven build, screenshot generation and successful pixel validation are separate
+results. Report failures or missing evidence at the stage where they occurred;
+a normal widget build alone does not qualify this screen-validation lane.
+The workflow excludes Markdown/docs-only changes, so an absent run for a
+documentation PR is not evidence of passing UI tests.
 
 ## Reader cheat sheet
 

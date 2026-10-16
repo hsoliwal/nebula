@@ -48,6 +48,8 @@ public class Breadcrumb extends Canvas {
 
 	private static final String IS_BUTTON_PRESSED = Breadcrumb.class.toString() + "_pressed";
 	private final List<BreadcrumbItem> items;
+	/** True only if all registered items have original non-overriding getBounds. */
+	private boolean intrinsicHitEligible = true;
 	private static Color START_GRADIENT_COLOR = SWTGraphicUtil.getColorSafely(255, 255, 255);
 	private static Color END_GRADIENT_COLOR = SWTGraphicUtil.getColorSafely(224, 224, 224);
 	static Color BORDER_COLOR = SWTGraphicUtil.getColorSafely(128, 128, 128);
@@ -112,10 +114,7 @@ public class Breadcrumb extends Canvas {
 	private void addMouseDownListener() {
 		addListener(SWT.MouseDown, event -> {
 
-			final BreadcrumbItem item = items.stream()//
-					.filter(element -> element.getBounds().contains(event.x, event.y)) //
-					.findFirst() //
-					.orElse(null);
+			final BreadcrumbItem item = firstHit(event.x, event.y);
 			if (item == null) {
 				return;
 			}
@@ -134,10 +133,7 @@ public class Breadcrumb extends Canvas {
 	private void addMouseUpListener() {
 		addListener(SWT.MouseUp, event -> {
 
-			final BreadcrumbItem item = items.stream()//
-					.filter(element -> element.getBounds().contains(event.x, event.y)) //
-					.findFirst() //
-					.orElse(null);
+			final BreadcrumbItem item = firstHit(event.x, event.y);
 			if (item == null) {
 				return;
 			}
@@ -161,15 +157,44 @@ public class Breadcrumb extends Canvas {
 
 	private void addMouseHoverListener() {
 		addListener(SWT.MouseHover, event -> {
-			final BreadcrumbItem item = items.stream()//
-					.filter(element -> element.getBounds().contains(event.x, event.y)) //
-					.findFirst() //
-					.orElse(null);
+			final BreadcrumbItem item = firstHit(event.x, event.y);
 			if (item == null) {
 				return;
 			}
 			setToolTipText(item.getTooltipText() == null ? "" : item.getTooltipText());
 		});
+	}
+
+	/**
+	 * The original Canvas owns its hit viewport. Ordinary exact items have no
+	 * callback inside getBounds(); still read their live Rectangle on every hit.
+	 * A subclass/extension retains the original Stream spliterator semantics.
+	 */
+	private BreadcrumbItem firstHit(final int x, final int y) {
+		if (getClass() == Breadcrumb.class && intrinsicHitEligible) {
+			for (int i = 0, count = items.size(); i < count; i++) {
+				BreadcrumbItem item = items.get(i);
+				if (item.getBounds().contains(x, y)) return item;
+			}
+			return null;
+		}
+		return items.stream()
+				.filter(element -> element.getBounds().contains(x, y))
+				.findFirst().orElse(null);
+	}
+
+	/** Retain SWT Rectangle.contains(Point) null/error semantics and lazy evaluation. */
+	private BreadcrumbItem firstHit(final Point point) {
+		if (getClass() == Breadcrumb.class && intrinsicHitEligible) {
+			for (int i = 0, count = items.size(); i < count; i++) {
+				BreadcrumbItem item = items.get(i);
+				if (item.getBounds().contains(point)) return item;
+			}
+			return null;
+		}
+		return items.stream()
+				.filter(element -> element.getBounds().contains(point))
+				.findFirst().orElse(null);
 	}
 
 	/**
@@ -214,6 +239,7 @@ public class Breadcrumb extends Canvas {
 	 */
 	void addItem(final BreadcrumbItem item) {
 		items.add(item);
+		if (item == null || item.getClass() != BreadcrumbItem.class) intrinsicHitEligible = false;
 	}
 
 	/**
@@ -278,11 +304,7 @@ public class Breadcrumb extends Canvas {
 	 */
 	public BreadcrumbItem getItem(final Point point) {
 		checkWidget();
-		final BreadcrumbItem item = items.stream()//
-				.filter(element -> element.getBounds().contains(point)) //
-				.findFirst() //
-				.orElse(null);
-		return item;
+		return firstHit(point);
 	}
 
 	/**

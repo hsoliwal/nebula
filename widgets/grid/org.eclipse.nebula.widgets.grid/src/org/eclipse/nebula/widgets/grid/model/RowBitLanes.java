@@ -355,31 +355,63 @@ public final class RowBitLanes {
 		return w;
 	}
 
-	/** Moves bits {@code [from, end)} up by {@code shift}, highest bits first. */
+	/** Moves bits {@code [from, end)} up by {@code shift}, highest words first. */
 	private static void moveUp(final long[] w, final int from, final int end, final int shift) {
-		for (int i = end - 1; i >= from; i--) {
-			final boolean bit = (i >>> 6) < w.length && (w[i >>> 6] & (1L << (i & 63))) != 0L;
-			final int j = i + shift;
-			apply(w, j >>> 6, 1L << (j & 63), bit);
+		if (from >= end || shift == 0) return;
+		final int first = (from + shift) >>> 6;
+		final int last = (end + shift - 1) >>> 6;
+		final int whole = shift >>> 6;
+		final int part = shift & 63;
+		for (int d = last; d >= first; d--) {
+			final int source = d - whole;
+			long bits = wordAt(w, source) << part;
+			if (part != 0) bits |= wordAt(w, source - 1) >>> (64 - part);
+			long mask = -1L;
+			if (d == first) mask &= -1L << ((from + shift) & 63);
+			if (d == last) mask &= -1L >>> (63 - ((end + shift - 1) & 63));
+			w[d] = (w[d] & ~mask) | (bits & mask);
 		}
 	}
 
-	/** Moves bits {@code [from, end)} down by {@code shift}, lowest bits first. */
+	/** Moves bits {@code [from, end)} down by {@code shift}, lowest words first. */
 	private static void moveDown(final long[] w, final int from, final int end, final int shift) {
-		final int limit = (int) Math.min((long) end, ((long) w.length << 6) + shift);
-		for (int i = from; i < limit; i++) {
-			moveBit(w, i, i - shift);
+		if (from >= end || shift == 0) return;
+		final int start = from - shift;
+		// The absent source tail reads as zero, but only resident destinations are written.
+		final int stop = (int) Math.min((long) end - shift, (long) w.length << 6);
+		if (start >= stop) return;
+		final int first = start >>> 6;
+		final int last = (stop - 1) >>> 6;
+		final int whole = shift >>> 6;
+		final int part = shift & 63;
+		for (int d = first; d <= last; d++) {
+			final int source = d + whole;
+			long bits = wordAt(w, source) >>> part;
+			if (part != 0) bits |= wordAt(w, source + 1) << (64 - part);
+			long mask = -1L;
+			if (d == first) mask &= -1L << (start & 63);
+			if (d == last) mask &= -1L >>> (63 - ((stop - 1) & 63));
+			w[d] = (w[d] & ~mask) | (bits & mask);
 		}
 	}
 
-	private static void moveBit(final long[] w, final int from, final int to) {
-		final boolean bit = (from >>> 6) < w.length && (w[from >>> 6] & (1L << (from & 63))) != 0L;
-		apply(w, to >>> 6, 1L << (to & 63), bit);
+	private static long wordAt(final long[] w, final int word) {
+		return word >= 0 && word < w.length ? w[word] : 0L;
 	}
 
 	private static void clearBits(final long[] w, final int from, final int to) {
-		for (int i = from; i < to && (i >>> 6) < w.length; i++) {
-			w[i >>> 6] &= ~(1L << (i & 63));
+		final int stop = (int) Math.min((long) to, (long) w.length << 6);
+		if (from >= stop) return;
+		final int first = from >>> 6;
+		final int last = (stop - 1) >>> 6;
+		final long firstMask = -1L << (from & 63);
+		final long lastMask = -1L >>> (63 - ((stop - 1) & 63));
+		if (first == last) {
+			w[first] &= ~(firstMask & lastMask);
+		} else {
+			w[first] &= ~firstMask;
+			Arrays.fill(w, first + 1, last, 0L);
+			w[last] &= ~lastMask;
 		}
 	}
 
