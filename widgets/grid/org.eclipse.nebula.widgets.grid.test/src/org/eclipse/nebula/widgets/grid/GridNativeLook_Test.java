@@ -198,9 +198,29 @@ public class GridNativeLook_Test {
 			grid.setSelection(new GridItem[] { gridItem });
 			grid.setFocusItem(gridItem);
 		}
+		// both controls draw focus cues by the same window UI state (the native tree hides its focus
+		// rectangle until the keyboard is used); set it once for the shell, as no key was pressed
+		hideFocusCues(shell);
 		compare(name, tree, grid, select && focus);
 		tree.dispose();
 		grid.dispose();
+	}
+
+	/*
+	 * WM_CHANGEUISTATE (UIS_SET, UISF_HIDEFOCUS) to the shell, which updates every child: the test
+	 * desktop may leave the UI state of controls created at different times out of step (win32
+	 * only, through reflection; elsewhere nothing to do)
+	 */
+	private void hideFocusCues(final Shell target) {
+		try {
+			final Class<?> os = Class.forName("org.eclipse.swt.internal.win32.OS");
+			final long handle = org.eclipse.swt.widgets.Control.class.getField("handle").getLong(target);
+			os.getMethod("SendMessage", long.class, int.class, long.class, long.class).invoke(null, handle, 0x0127,
+					0x10001L, 0L);
+		} catch (final ReflectiveOperationException notWin32) {
+			return;
+		}
+		settle();
 	}
 
 	private static void text(final TreeItem ti, final GridItem gi, final String text) {
