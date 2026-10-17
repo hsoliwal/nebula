@@ -24,6 +24,7 @@
  *    Pinard-Legry Guilhaume <guilhaume_pl@yahoo.fr> - bugfix in 267057
  *    Thorsten Schenkel <thorsten.schenkel@compeople.de> - bugfix in 356803
  *    Mirko Paturzo <mirko.paturzo@exeura.eu> - improvement (bugfix in 419928)
+ *    Synexia - viewport mode, header overflow under the rows, default-mode fixes of upstream defects
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -249,12 +250,10 @@ public class Grid extends Canvas {
 	private static final int COLUMN_DRAG_ALPHA = 128;
 
 	/**
-	 * Pixel rows below the column header that the empty column header renderer paints past its
-	 * bounds (the default one fills {@code height + 1}). The stock Grid paints the header first and
-	 * the rows over it, so these pixels stay wherever the first row paints nothing (an unselected
-	 * empty cell of an enabled Grid).
+	 * Whether {@link #paintHeader(GC, int)} paints only the renderers that paint below their bounds
+	 * ({@link IRenderer#getOverflowBelow()}): plane Z0, the header's overflow under the rows.
 	 */
-	static final int HEADER_OVERFLOW = 1;
+	private boolean underlayPass;
 
 	/**
 	 * Number of pixels below the header to draw the drop point.
@@ -787,6 +786,11 @@ public class Grid extends Canvas {
 
 	/** A frame paint is scheduled for a thumb drag (at most one per frame). */
 	private boolean dragFrameScheduled;
+
+	/** @return whether a scroll-bar drag frame waits for its timer (tests settle after it) */
+	boolean dragFramePending() {
+		return dragFrameScheduled;
+	}
 	private boolean dragFrameHorizontal;
 	private boolean dragFrameVertical;
 
@@ -5824,16 +5828,19 @@ public class Grid extends Canvas {
 				originalClipping, clientArea, headerHeight(), footerHeight(),
 				columnHeadersVisible, columnFootersVisible, fixedOverlayActive, draggingColumn);
 
-		// Z0: the empty column header's overflow under the body, where the stock Grid (header
-		// first, rows over it) shows it. Column headers stay out of body damage.
-		if (columnHeadersVisible && headerHeight() < clientArea.height) {
-			final int emptyX = emptyColumnHeaderX(extraFill, clientArea.width);
+		// Z0: what header renderers paint below their bounds, under the body, where the stock Grid
+		// (header first, rows over it) shows it. Only renderers that declare such rows are painted
+		// for damage below the header; the others stay out of body damage.
+		final int overflow = columnHeadersVisible ? headerOverflowBelow(extraFill, clientArea.width) : 0;
+		if (overflow > 0 && headerHeight() < clientArea.height) {
 			final Rectangle band = originalClipping.intersection(new Rectangle(
-					emptyX, clientArea.y + headerHeight(), clientArea.width - emptyX, HEADER_OVERFLOW));
+					clientArea.x, clientArea.y + headerHeight(), clientArea.width, overflow));
 			if (!band.isEmpty()) {
+				underlayPass = true;
 				try (GridGCProxy underlay = GridGCProxy.wrap(gc).clip(band)) {
-					emptyColumnHeaderRenderer.setBounds(emptyX, 0, clientArea.width - emptyX, headerHeight());
-					emptyColumnHeaderRenderer.paint(underlay.gc(), null);
+					paintHeader(underlay.gc(), extraFill);
+				} finally {
+					underlayPass = false;
 				}
 			}
 		}
@@ -6823,6 +6830,38 @@ public class Grid extends Canvas {
 	 * @param extraFill the size of the control
 	 */
 	/**
+	 * @return the most pixel rows that a header renderer {@link #paintHeader(GC, int)} paints
+	 *         declares below its bounds (the columns in view, the empty column header, the top left)
+	 */
+	private int headerOverflowBelow(final int extraFill, final int clientWidth) {
+		int overflow = rowHeaderVisible ? topLeftRenderer.getOverflowBelow() : 0;
+		int x = (rowHeaderVisible ? rowHeaderWidth : 0) - getHScrollSelectionInPixels();
+		for (final GridColumn column : displayOrderedColumns) {
+			if (x > clientWidth) {
+				break;
+			}
+			if (column.isVisible()) {
+				final int width = column.getWidth(extraFill);
+				if (x + width >= 0 || column.isFixed()) {
+					overflow = Math.max(overflow, column.getHeaderRenderer().getOverflowBelow());
+				}
+				x += width;
+			}
+		}
+		if (x < clientWidth) {
+			overflow = Math.max(overflow, emptyColumnHeaderRenderer.getOverflowBelow());
+		}
+		return Math.max(0, overflow);
+	}
+
+	/* paints a header renderer, in the underlay pass only one that paints below its bounds */
+	private void paintHeaderPart(final IRenderer renderer, final GC gc, final Object value) {
+		if (!underlayPass || renderer.getOverflowBelow() > 0) {
+			renderer.paint(gc, value);
+		}
+	}
+
+	/**
 	 * @return the x of the empty column header right of the last visible column, as
 	 *         {@link #paintHeader(GC, int)} places it, or {@code clientWidth} when the columns
 	 *         fill the client area
@@ -6891,7 +6930,7 @@ public class Grid extends Canvas {
 
 		if (x < clientWidth) {
 			emptyColumnHeaderRenderer.setBounds(x, 0, clientWidth - x, headerHeight());
-			emptyColumnHeaderRenderer.paint(gc, null);
+			paintHeaderPart(emptyColumnHeaderRenderer, gc, null);
 		}
 
 		x = 0;
@@ -6899,7 +6938,7 @@ public class Grid extends Canvas {
 		if (rowHeaderVisible) {
 			// paint left corner
 			topLeftRenderer.setBounds(0, 0, rowHeaderWidth, headerHeight());
-			topLeftRenderer.paint(gc, this);
+			paintHeaderPart(topLeftRenderer, gc, this);
 			x += rowHeaderWidth;
 		}
 
@@ -6922,7 +6961,7 @@ public class Grid extends Canvas {
 			columnBeingPushed.getHeaderRenderer().setBounds(
 					getColumnHeaderXPosition(columnBeingPushed) + currentHeaderDragX - startHeaderDragX, y,
 					columnBeingPushed.getWidth(), height);
-			columnBeingPushed.getHeaderRenderer().paint(gc, columnBeingPushed);
+			paintHeaderPart(columnBeingPushed.getHeaderRenderer(), gc, columnBeingPushed);
 			columnBeingPushed.getHeaderRenderer().setSelected(false);
 
 			gc.setAlpha(-1);
@@ -7011,7 +7050,7 @@ public class Grid extends Canvas {
 			renderer.setSelected(selectedColumns.contains(column));
 		}
 		if (x + width >= 0) {
-			renderer.paint(gc, column);
+			paintHeaderPart(renderer, gc, column);
 		}
 	}
 
@@ -7082,7 +7121,7 @@ public class Grid extends Canvas {
 
 				group.getHeaderRenderer().setBounds(x, 0, groupWidth, groupHeaderHeight());
 
-				group.getHeaderRenderer().paint(gc, group);
+				paintHeaderPart(group.getHeaderRenderer(), gc, group);
 
 				previousPaintedGroup = group;
 			}
@@ -7109,7 +7148,7 @@ public class Grid extends Canvas {
 		}
 
 		if (x + width >= 0) {
-			renderer.paint(gc, column);
+			paintHeaderPart(renderer, gc, column);
 		}
 		return previousPaintedGroup;
 	}
@@ -9071,7 +9110,8 @@ public class Grid extends Canvas {
 		}
 		// the first body pixel rows also show the header's overflow (HEADER_OVERFLOW): a move down
 		// carries them into the body, a move up covers them with row pixels; both are repainted
-		final int band = columnHeadersVisible ? Math.min(HEADER_OVERFLOW, body.height) : 0;
+		final int band = columnHeadersVisible
+				? Math.min(headerOverflowBelow(getExtraFill(), getClientArea().width), body.height) : 0;
 		if (dy > 0) {
 			scroll(body.x, body.y + dy, body.x, body.y, body.width, body.height - dy, false);
 			// the scroll invalidates only the part of its source rectangle that it uncovers; when

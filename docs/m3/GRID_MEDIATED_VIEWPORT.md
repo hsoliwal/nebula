@@ -326,6 +326,29 @@ the first item or the first image only, so after `Grid.setFont` with a larger fo
 (text clipped); `GridColumn.pack` ignores the footer; a removed item's data is gone before its Dispose event;
 `removeAll` disposes first to last.
 
+## Header renderers that paint below their bounds (2026-10-17)
+
+Stock Nebula paints the header first and the rows over it, so whatever a header renderer paints below its
+bounds shows wherever a row paints nothing (right of the columns, below the last row, under every column once
+the Grid has no rows). The fork paints the rows first and the header clipped to its plane (PR #128).
+`IRenderer.getOverflowBelow()` (a default method answering 0) lets a renderer declare the pixel rows it paints
+below its bounds; the default empty column header and top-left renderers and the native look's empty header
+declare 1 (they fill `height + 1`). Plane Z0 paints, for damage that reaches those rows, exactly the renderers
+that declare rows (in header order, clipped to the strip), under the rows; renderers that declare none stay out
+of body damage (the PR #128 contracts of `GridPaintPreparation_Test` hold). A blit scroll repaints the declared
+strip. Both modes (stock parity, not a defect fix).
+
+| Gate | Result |
+|---|---|
+| `GridViewportDifferential_Test.customHeaderOverflowPaintsAsStock`: a custom empty column header and a custom column header painting 3 rows below their bounds; a column narrowed, scrolls, an expand, every item removed; answers and pixels per step against stock `5d0bcbb9` | identical in all 7 steps, candidate `viewport` and candidate `original`; the build before this leaf differs at step 1 (48 pixels, empty header rows 2-3) and step 6 (222 pixels under the column) |
+| `GridScrollPaint_Test.blitScrollKeepsACustomHeaderOverflowInPlace` | the window right after every blit and once settled equals the Grid's paint |
+
+Test robustness on the multi-slot hidden desktops: `GridPinnedRows_Test` captures the Grid's own paint (it used
+`Control.print`, which can return a stale surface); `GridNativeLook_Test` waits until the control really has
+the focus and prints until two prints agree; `GridScrollPaint_Test` settles only after the Grid's drag frame
+ran (`Grid.dragFramePending`). Before these, the build of the previous leaf failed the same three tests on the
+new desktop slot.
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |

@@ -69,10 +69,14 @@ public class GridScrollPaint_Test {
 		return grid;
 	}
 
-	/* runs the event loop until it has been idle for 200 ms (frame-coalesced drag paints use timers) */
+	/*
+	 * runs the event loop until it has been idle for 200 ms and no Grid waits for a drag frame
+	 * (frame-coalesced drag paints use timers, which a test desktop may fire late)
+	 */
 	private void settle() {
 		long idleSince = System.currentTimeMillis();
-		while (System.currentTimeMillis() - idleSince < 200) {
+		final long deadline = idleSince + 5000;
+		while (System.currentTimeMillis() - idleSince < 200 || dragFramePending() && System.currentTimeMillis() < deadline) {
 			if (display.readAndDispatch()) {
 				idleSince = System.currentTimeMillis();
 			} else {
@@ -84,6 +88,15 @@ public class GridScrollPaint_Test {
 				}
 			}
 		}
+	}
+
+	private boolean dragFramePending() {
+		for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
+			if (child instanceof Grid && ((Grid) child).dragFramePending()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/* the window's pixels as they are (a copy of the Grid's client area, no paint) */
@@ -259,9 +272,21 @@ public class GridScrollPaint_Test {
 		blitScript(true);
 	}
 
+	/* a custom empty column header that paints three rows below its bounds: a wider band to keep */
+	@Test
+	public void blitScrollKeepsACustomHeaderOverflowInPlace() {
+		overflowing = true;
+		blitScript(false);
+	}
+
+	private boolean overflowing;
+
 	private void blitScript(final boolean treeColumn) {
 		final Grid grid = grid(SWT.NONE);
 		grid.getColumn(0).setTree(treeColumn);
+		if (overflowing) {
+			grid.setEmptyColumnHeaderRenderer(new GridDifferentialDriver.OverflowingEmptyHeader());
+		}
 		for (int r = 0; r < 2000; r++) {
 			new GridItem(grid, SWT.NONE).setText(0, "row " + r);
 		}

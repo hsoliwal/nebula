@@ -16,6 +16,9 @@ import java.util.function.Function;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.nebula.widgets.grid.internal.DefaultEmptyColumnHeaderRenderer;
+import org.eclipse.nebula.widgets.grid.internal.DefaultColumnHeaderRenderer;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -47,6 +50,51 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	 * changed after the columns exist ({@code a == 0} undoes the change; {@code b} picks the column).
 	 */
 	static final int HEADER_FONT = 100, HEADER_IMAGE = 101, FOOTER_VISIBLE = 102, FOOTER_TEXT = 103, FOOTER_FONT = 104;
+
+	/**
+	 * Scripted steps: install header renderers that paint {@link #OVERFLOW_ROWS} rows below their
+	 * bounds (the empty column header and the picked column), and remove every item.
+	 */
+	static final int OVERFLOW_RENDERERS = 105, REMOVE_ALL = 106;
+
+	/** Pixel rows the overflowing renderers paint below their bounds. */
+	static final int OVERFLOW_ROWS = 3;
+
+	/* fills the rows below the bounds a header renderer paints past them */
+	static void paintBelow(final GC gc, final Rectangle bounds) {
+		final Color old = gc.getBackground();
+		gc.setBackground(gc.getDevice().getSystemColor(SWT.COLOR_DARK_YELLOW));
+		gc.fillRectangle(bounds.x, bounds.y + bounds.height, bounds.width, OVERFLOW_ROWS);
+		gc.setBackground(old);
+	}
+
+	/** A column header renderer that paints below its bounds and declares it. */
+	public static final class OverflowingHeader extends DefaultColumnHeaderRenderer {
+		@Override
+		public void paint(final GC gc, final Object value) {
+			super.paint(gc, value);
+			paintBelow(gc, getBounds());
+		}
+
+		@Override
+		public int getOverflowBelow() {
+			return OVERFLOW_ROWS;
+		}
+	}
+
+	/** An empty column header renderer that paints below its bounds and declares it. */
+	public static final class OverflowingEmptyHeader extends DefaultEmptyColumnHeaderRenderer {
+		@Override
+		public void paint(final GC gc, final Object value) {
+			super.paint(gc, value);
+			paintBelow(gc, getBounds());
+		}
+
+		@Override
+		public int getOverflowBelow() {
+			return OVERFLOW_ROWS;
+		}
+	}
 
 	/** Configuration bits; {@link #LARGE} builds 1,000 roots with 99 children each instead. */
 	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4;
@@ -247,6 +295,13 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			break;
 		case FOOTER_TEXT:
 			column.setFooterText(set ? "f" + column.getText() : "");
+			break;
+		case OVERFLOW_RENDERERS:
+			grid.setEmptyColumnHeaderRenderer(new OverflowingEmptyHeader());
+			column.setHeaderRenderer(new OverflowingHeader());
+			break;
+		case REMOVE_ALL:
+			grid.removeAll();
 			break;
 		default:
 			column.setFooterFont(set ? largeFont : null);

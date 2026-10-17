@@ -10,6 +10,7 @@
  *
  * Contributors:
  *    chris.gross@us.ibm.com - initial API and implementation
+ *    Synexia - getOverflowBelow
  *******************************************************************************/ 
 package org.eclipse.nebula.widgets.grid.internal;
 
@@ -58,4 +59,13 @@ public class DefaultTopLeftRenderer extends AbstractRenderer
 
     }
 
+
+    /**
+     * {@inheritDoc} This renderer fills one row more than its bounds.
+     */
+    @Override
+    public int getOverflowBelow()
+    {
+        return 1;
+    }
 }

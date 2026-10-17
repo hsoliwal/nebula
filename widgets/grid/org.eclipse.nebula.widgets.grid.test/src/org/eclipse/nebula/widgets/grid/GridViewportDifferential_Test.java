@@ -239,6 +239,46 @@ public class GridViewportDifferential_Test {
 						GridDifferentialDriver.MODE, 0, 0, 0 }) + ", candidate " + CANDIDATE + ")");
 	}
 
+	/*
+	 * Header renderers that paint rows below their bounds (a custom empty column header and a
+	 * custom column header, IRenderer.getOverflowBelow): stock paints the header first and the rows
+	 * over it, so those rows show wherever a row paints nothing (right of the columns; under the
+	 * columns once no rows are left). Every step answers and paints as the oracle, in both modes.
+	 */
+	@Test
+	public void customHeaderOverflowPaintsAsStock() throws Exception {
+		final ClassLoader stockBuild = gridBuild(oracleClasses(), "original");
+		final ClassLoader candidateBuild = gridBuild(location(Grid.class), CANDIDATE);
+		final Function<int[], Object> stock = driver(stockBuild, stockShell, 0);
+		final Function<int[], Object> candidate = driver(candidateBuild, viewportShell, 0);
+		stockShell.open();
+		viewportShell.open();
+		// a narrow last column leaves room for the empty column header right of the columns
+		final int[][] scene = { { GridDifferentialDriver.OVERFLOW_RENDERERS, 1, 1, 0 }, { 13, 0, 3, 0 }, { 20, 3, 0, 0 },
+				{ 20, 0, 0, 0 }, { 0, 3, 0, 0 }, { 2, 40, 0, 0 }, { GridDifferentialDriver.REMOVE_ALL, 1, 0, 0 } };
+		final int[] state = { GridDifferentialDriver.STATE, 0, 0, 0 };
+		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
+		drain();
+		for (int step = 0; step < scene.length; step++) {
+			final Object stockAnswer = stock.apply(scene[step]);
+			final Object candidateAnswer = candidate.apply(scene[step]);
+			drain();
+			compare(new StringBuilder("overflow scene\n"), "step " + step, stockAnswer + " | " + stock.apply(state),
+					candidateAnswer + " | " + candidate.apply(state));
+			final ImageData expected = (ImageData) stock.apply(pixels);
+			final ImageData actual = (ImageData) candidate.apply(pixels);
+			if (!Arrays.equals(expected.data, actual.data)) {
+				save(expected, "overflow-stock-" + step);
+				save(actual, "overflow-candidate-" + step);
+				fail("overflow scene step " + step + " " + Arrays.toString(scene[step]) + ": pixels differ "
+						+ difference(expected, actual));
+			}
+		}
+		System.out.println("GridViewportDifferential_Test: header overflow scene, " + scene.length
+				+ " steps identical (oracle " + stock.apply(new int[] { GridDifferentialDriver.MODE, 0, 0, 0 })
+				+ ", candidate " + CANDIDATE + ")");
+	}
+
 	/* runs one seed; answers the pixel verdict (a difference fails unless grid.differential.pixelsAdvisory) */
 	private String run(final int seed, final int config, final Function<int[], Object> stock,
 			final Function<int[], Object> viewport) {

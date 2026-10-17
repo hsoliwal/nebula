@@ -178,12 +178,8 @@ public class GridPinnedRows_Test {
 		final Point size = grid.getSize();
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
-			final GC gc = new GC(image);
-			try {
-				grid.print(gc);
-			} finally {
-				gc.dispose();
-			}
+			// the Grid's own paint: Control.print can return the window's last presented surface
+			GridRowPermutation_Test.paint(grid, image);
 			final ImageData data = image.getImageData();
 			final MessageDigest md = MessageDigest.getInstance("SHA-256");
 			for (int y = r.y; y < r.y + r.height; y++) {

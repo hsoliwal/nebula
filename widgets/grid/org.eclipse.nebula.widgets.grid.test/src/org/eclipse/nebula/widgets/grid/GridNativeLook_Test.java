@@ -9,6 +9,7 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -226,14 +227,24 @@ public class GridNativeLook_Test {
 	}
 
 	private ImageData capture(final Control control, final boolean focus) {
-		if (focus) {
-			control.setFocus();
-		} else {
-			focusHolder.setFocus();
+		focus(focus ? control : focusHolder);
+		// the print can return the window's last presented surface (blank right after the shell
+		// opened, or the state before the last change): print until two prints agree
+		ImageData previous = null;
+		for (int attempt = 0; attempt < 8; attempt++) {
+			control.redraw();
+			control.update();
+			settle();
+			final ImageData data = print(control);
+			if (previous != null && java.util.Arrays.equals(previous.data, data.data)) {
+				return data;
+			}
+			previous = data;
 		}
-		control.redraw();
-		control.update();
-		settle();
+		return previous;
+	}
+
+	private ImageData print(final Control control) {
 		// WM_PRINT capture: works on the hidden test desktop, where the screen is not composed
 		final Rectangle bounds = control.getBounds();
 		final Image image = new Image(display, bounds.width, bounds.height);
@@ -245,6 +256,16 @@ public class GridNativeLook_Test {
 			gc.dispose();
 			image.dispose();
 		}
+	}
+
+	/* gives the control the focus and waits until it has it (the test desktop may activate late) */
+	private void focus(final Control control) {
+		for (int attempt = 0; attempt < 20 && display.getFocusControl() != control; attempt++) {
+			control.getShell().forceActive();
+			control.setFocus();
+			settle();
+		}
+		assertSame("focus on " + control, control, display.getFocusControl());
 	}
 
 	private void settle() {

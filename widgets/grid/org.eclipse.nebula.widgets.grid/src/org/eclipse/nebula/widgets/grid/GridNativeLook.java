@@ -227,6 +227,11 @@ final class GridNativeLook {
 	/** The header area right of the last column: plain list background. */
 	static final class EmptyHeader extends AbstractRenderer {
 		@Override
+		public int getOverflowBelow() {
+			return 1;
+		}
+
+		@Override
 		public void paint(final GC gc, final Object value) {
 			gc.setBackground(gc.getDevice().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
 			final Rectangle b = getBounds();
