@@ -871,4 +871,25 @@ public class GridItem_Test {
     while( display.readAndDispatch() ) {
     }
   }
+
+  @Test
+  public void testDispose_ListenerReadsTheItem() {
+    createGridColumns( grid, 2, SWT.NONE );
+    GridItem item = new GridItem( grid, SWT.NONE );
+    item.setText( 1, "foo" );
+    final String[] seen = new String[ 1 ];
+    final int[] row = { -2 };
+    item.addDisposeListener( event -> {
+      GridItem disposed = ( GridItem )event.widget;
+      seen[ 0 ] = disposed.getText( 1 );
+      row[ 0 ] = grid.indexOf( disposed );
+    } );
+    item.dispose();
+    // SWT sends Dispose before it releases a widget; stock removed the item's row and data first
+    // (UPSTREAM_DEFECTS.tsv)
+    assertEquals( fixesUpstreamDefects() ? "foo" : "", seen[ 0 ] );
+    assertEquals( fixesUpstreamDefects() ? 0 : -1, row[ 0 ] );
+    assertTrue( item.isDisposed() );
+    assertEquals( 0, grid.getItemCount() );
+  }
 }

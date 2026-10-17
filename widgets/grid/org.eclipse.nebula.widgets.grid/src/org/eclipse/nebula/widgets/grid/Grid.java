@@ -24,7 +24,7 @@
  *    Pinard-Legry Guilhaume <guilhaume_pl@yahoo.fr> - bugfix in 267057
  *    Thorsten Schenkel <thorsten.schenkel@compeople.de> - bugfix in 356803
  *    Mirko Paturzo <mirko.paturzo@exeura.eu> - improvement (bugfix in 419928)
- *    Synexia - viewport mode, header overflow under the rows, default-mode fixes of upstream defects
+ *    Hitesh Soliwal (Synexia) - viewport mode, header overflow under the rows, default-mode fixes of upstream defects
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -11207,6 +11207,21 @@ public class Grid extends Canvas {
 			}
 			headerContentChanged();
 			footerContentChanged();
+			// rows measured with the old font: measured again (stock keeps them, drawn clipped)
+			if (!userModifiedItemHeight) {
+				final int height = items.isEmpty()
+						? estimateWithResult(sizingGC -> sizingGC.getFontMetrics().getHeight() + 2)
+						: computeItemHeight(items.get(0));
+				if (height != itemHeight) {
+					if (hasDifferingHeights) {
+						// rows sized one by one keep their heights; new rows take the new default
+						itemHeight = height;
+					} else {
+						setItemHeight(height);
+						userModifiedItemHeight = false;
+					}
+				}
+			}
 		}
 	}
 
@@ -11304,6 +11319,7 @@ public class Grid extends Canvas {
 		if (count < items.size()) {
 			selectedCells.clear();
 			for (int i = items.size() - 1; i >= count; i--) {
+				items.get(i).sendDisposeFirst();
 				final GridItem removed = items.remove(i);
 				// a tree Grid's rows are not all roots: detach the row from its own parent list
 				if (!GridViewport.UPSTREAM_FIXES) {

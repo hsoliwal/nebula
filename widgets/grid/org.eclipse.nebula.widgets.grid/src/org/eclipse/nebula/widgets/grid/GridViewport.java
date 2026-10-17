@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.eclipse.nebula.widgets.grid.internal.IScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.SwtLog;
+import org.eclipse.nebula.widgets.grid.internal.UpstreamFixes;
 import org.eclipse.nebula.widgets.grid.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 
@@ -43,6 +44,10 @@ final class GridViewport {
 	 * every mode but {@code original}, which stays behaviourally identical to stock Nebula Grid.
 	 */
 	static final boolean UPSTREAM_FIXES = ENABLED;
+
+	static {
+		UpstreamFixes.set(UPSTREAM_FIXES);
+	}
 
 	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.grid.Grid");
 

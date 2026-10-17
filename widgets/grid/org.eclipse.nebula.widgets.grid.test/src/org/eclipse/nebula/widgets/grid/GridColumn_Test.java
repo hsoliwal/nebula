@@ -43,6 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.eclipse.swt.graphics.GC;
 import static org.eclipse.nebula.widgets.grid.GridTestUtil.assertThrowsByMode;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.fixesUpstreamDefects;
 
 
 @SuppressWarnings({
@@ -758,8 +759,14 @@ public class GridColumn_Test {
     columns[ 0 ].setFooterText( "" );
     columns[ 0 ].pack();
 
-    // Nebula: pack fits the header and the cells; the footer does not widen the column
-    assertEquals( withFooterText, columns[ 0 ].getWidth() );
+    // the default mode fits the visible footer; stock fits the header and the cells only
+    // (UPSTREAM_DEFECTS.tsv)
+    if( fixesUpstreamDefects() ) {
+      assertTrue( withFooterText >= textWidth( "Column footer text wider than its content" ) );
+      assertTrue( withFooterText > columns[ 0 ].getWidth() );
+    } else {
+      assertEquals( withFooterText, columns[ 0 ].getWidth() );
+    }
   }
 
   @Test

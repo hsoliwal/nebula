@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.graphics.Color;
@@ -328,6 +329,7 @@ public class GridItem extends Item {
 	 */
 	@Override
 	public void dispose() {
+		sendDisposeFirst();
 		if (!parent.isDisposing()) {
 			parent.removeItem(this);
 
@@ -2253,6 +2255,7 @@ public class GridItem extends Item {
 	 * this method call only super.dispose, nothing else..
 	 */
 	public void disposeOnly() {
+		sendDisposeFirst();
         if (hasChildren) {
             for (int i = children.size() - 1; i >= 0; i--) {
                 children.get(i).disposeOnly();
@@ -2263,6 +2266,25 @@ public class GridItem extends Item {
 		}
 		noRow();
 		super.dispose();
+	}
+
+	/**
+	 * Sends the Dispose event while the item still has its row and data, as SWT's
+	 * {@code Widget.dispose} sends it before anything is released; the release later finds no
+	 * Dispose listener left. Stock Nebula removes the row and its data first, so a Dispose listener
+	 * reads an empty item (default mode, UPSTREAM_DEFECTS.tsv).
+	 */
+	void sendDisposeFirst() {
+		if (!GridViewport.UPSTREAM_FIXES || isDisposed() || !isListening(SWT.Dispose)) {
+			return;
+		}
+		final Listener[] listeners = getListeners(SWT.Dispose);
+		notifyListeners(SWT.Dispose, new Event());
+		if (!isDisposed()) {
+			for (final Listener listener : listeners) {
+				removeListener(SWT.Dispose, listener);
+			}
+		}
 	}
 
 	private void noRow() {

@@ -737,6 +737,10 @@ public class GridColumn extends Item {
 		final GC gc = new GC(parent);
 		int newWidth = getHeaderRenderer().computeSize(gc, SWT.DEFAULT,
 				SWT.DEFAULT, this).x;
+		// the preferred size includes a visible footer (stock clips its text, UPSTREAM_DEFECTS.tsv)
+		if (GridViewport.UPSTREAM_FIXES && parent.getFooterVisible()) {
+			newWidth = Math.max(newWidth, getFooterRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, this).x);
+		}
 
 		getCellRenderer().setColumn(index);
 		final boolean virtual = (getParent().getStyle() & SWT.VIRTUAL) != 0;

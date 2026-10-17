@@ -321,10 +321,13 @@ Nebula, which has no `GridViewport`).
 | same, header/footer scene (11 steps: header font and image, footer visibility, font and text, set and undone) | candidate `viewport`: exactly the 5 listed steps differ (D15 x3, D17 x2) and each does; candidate `original`: 0 steps differ |
 | `GridNativeLook_Test` | unchanged: 0 pixels in 8 scenes, 40 (scroll-bar thumb) in the check scene |
 
-Not changed (stock in both modes, candidates for a later decision): the default item height is measured with
-the first item or the first image only, so after `Grid.setFont` with a larger font rows keep their height
-(text clipped); `GridColumn.pack` ignores the footer; a removed item's data is gone before its Dispose event;
-`removeAll` disposes first to last.
+Lead decisions of 2026-10-17, default mode (D19-D21): after `Grid.setFont` the default item height is measured
+again with the new font and applied to the rows (rows sized one by one keep their heights); `GridColumn.pack`
+fits a visible footer (stock's footer renderer even measured the header text); the Dispose event of an item comes
+first, while the item still has its row and data, as SWT's `Widget.dispose` sends it before releasing (stock
+removed both first). `removeAll` keeps disposing first to last (ordering, not a defect). Verified: legacy
+classes 457 / 457 / 456 (original / viewport / stock classes); Grid suite 603 tests, 0 failures in both modes;
+stock differential 8/8 seeds and both scenes unchanged.
 
 ## Header renderers that paint below their bounds (2026-10-17)
 

@@ -10,7 +10,7 @@
  *
  * Contributors:
  *    chris.gross@us.ibm.com - initial API and implementation
- *    Synexia - getOverflowBelow
+ *    Hitesh Soliwal (Synexia) - getOverflowBelow
  *******************************************************************************/ 
 package org.eclipse.nebula.widgets.grid;
 

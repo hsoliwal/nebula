@@ -1924,7 +1924,7 @@ public class Grid_Test {
     int before = grid.getItemHeight();
     Font font = new Font( display, "Arial", 20, SWT.BOLD );
     grid.setFont( font );
-    assertEquals( before, grid.getItemHeight() );
+    assertEquals( fixesUpstreamDefects() ? fontHeight( font ) + 2 : before, grid.getItemHeight() );
   }
 
   @Test
@@ -1932,8 +1932,8 @@ public class Grid_Test {
     int before = grid.getItemHeight();
     Font font = new Font( display, "Arial", 8, SWT.NORMAL );
     grid.setFont( font );
-    // Nebula keeps the item height of the font it was created with
-    assertEquals( before, grid.getItemHeight() );
+    // the default mode measures the item height with the new font; stock keeps it (UPSTREAM_DEFECTS.tsv)
+    assertEquals( fixesUpstreamDefects() ? fontHeight( font ) + 2 : before, grid.getItemHeight() );
   }
 
   @Test
@@ -2803,12 +2803,15 @@ public class Grid_Test {
   @Test
   public void testRemoveAll_disposeInReverseOrder() {
     final List<GridItem> log = new ArrayList<GridItem>();
+    final List<String> texts = new ArrayList<String>();
     GridItem[] items = createGridItems( grid, 5, 0 );
     for( GridItem item : grid.getItems() ) {
       item.addDisposeListener( new DisposeListener() {
 
         public void widgetDisposed( DisposeEvent event ) {
-          log.add( ( GridItem )event.getSource() );
+          GridItem item = ( GridItem )event.getSource();
+          log.add( item );
+          texts.add( item.getText() );
         }
       } );
     }
@@ -2822,22 +2825,28 @@ public class Grid_Test {
       items[ 4 ]
     };
     assertArrayEquals( expected, log.toArray( new GridItem[ 0 ] ) );
+    String[] names = fixesUpstreamDefects() ? new String[] { "root_0", "root_1", "root_2", "root_3", "root_4" }
+                                            : new String[] { "", "", "", "", "" };
+    assertArrayEquals( names, texts.toArray( new String[ 0 ] ) );
   }
 
   @Test
   public void testSetItemCount_disposeInReverseOrder() {
     final List<GridItem> log = new ArrayList<GridItem>();
+    final List<String> texts = new ArrayList<String>();
     GridItem[] items = createGridItems( grid, 5, 0 );
     for( GridItem item : grid.getItems() ) {
       item.addDisposeListener( new DisposeListener() {
 
         public void widgetDisposed( DisposeEvent event ) {
-          log.add( ( GridItem )event.getSource() );
+          GridItem item = ( GridItem )event.getSource();
+          log.add( item );
+          texts.add( item.getText() );
         }
       } );
     }
     grid.setItemCount( 0 );
-    // the items are disposed last first (their data is gone when the Dispose event comes)
+    // the items are disposed last first
     GridItem[] expected = {
       items[ 4 ],
       items[ 3 ],
@@ -2846,6 +2855,10 @@ public class Grid_Test {
       items[ 0 ]
     };
     assertArrayEquals( expected, log.toArray( new GridItem[ 0 ] ) );
+    // a Dispose listener reads the item; stock removed its data first (UPSTREAM_DEFECTS.tsv)
+    String[] names = fixesUpstreamDefects() ? new String[] { "root_4", "root_3", "root_2", "root_1", "root_0" }
+                                            : new String[] { "", "", "", "", "" };
+    assertArrayEquals( names, texts.toArray( new String[ 0 ] ) );
   }
 
   @Test
@@ -3013,5 +3026,23 @@ public class Grid_Test {
   /* the text after a clear: the default mode resets it; stock keeps it (UPSTREAM_DEFECTS.tsv) */
   private static String cleared( String stockText ) {
     return fixesUpstreamDefects() ? "" : stockText;
+  }
+
+  @Test
+  public void testGetItemHeight_AfterFontChange_WithItems() {
+    GridItem[] items = createGridItems( grid, 3, 0 );
+    int before = grid.getItemHeight();
+    Font font = new Font( display, "Arial", 20, SWT.BOLD );
+    grid.setFont( font );
+    if( fixesUpstreamDefects() ) {
+      // the rows take the height the new font needs
+      assertTrue( grid.getItemHeight() >= fontHeight( font ) );
+      for( GridItem item : items ) {
+        assertEquals( grid.getItemHeight(), item.getHeight() );
+      }
+    } else {
+      assertEquals( before, grid.getItemHeight() );
+      assertEquals( before, items[ 0 ].getHeight() );
+    }
   }
 }
