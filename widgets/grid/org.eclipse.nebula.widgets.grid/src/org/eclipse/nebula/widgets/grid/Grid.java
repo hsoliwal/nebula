@@ -336,7 +336,8 @@ public class Grid extends Canvas {
 	private boolean cellSelectionEnabled = false;
 	private boolean cellDragSelectionEnabled = true;
 
-	private final List<Point> selectedCells = new ArrayList<>();
+	/* the viewport mode counts each selected cell: O(1) contains for the paint and range selection */
+	private final List<Point> selectedCells = GridViewport.ENABLED ? new GridCellSelectionList() : new ArrayList<>();
 	private final List<Point> selectedCellsBeforeRangeSelect = new ArrayList<>();
 
 	private boolean cellDragSelectionOccuring = false;
@@ -7748,15 +7749,8 @@ public class Grid extends Canvas {
 		}
 
 		if (getColumn(newCell.x).getCellSelectionEnabled()) {
-			boolean found = false;
-			for (final Point p : selectedCells) {
-				if (newCell.equals(p)) {
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
+			// the same equality test as the stock scan; O(1) in the viewport mode
+			if (!selectedCells.contains(newCell)) {
 				if (selectionType == GridSelectionType.SINGLE && selectedCells.size() > 0) {
 					return;
 				}
@@ -7770,7 +7764,12 @@ public class Grid extends Canvas {
 		selectedColumns.clear();
 
 		for (final Point cell : selectedCells) {
-			selectedColumns.add(getColumn(cell.x));
+			final GridColumn column = getColumn(cell.x);
+			// one entry per column: the list is only asked whether it contains a column, and stock's
+			// entry per cell made that a scan of the cell selection per painted header
+			if (!(selectedCells instanceof GridCellSelectionList) || !selectedColumns.contains(column)) {
+				selectedColumns.add(column);
+			}
 		}
 	}
 
@@ -9596,6 +9595,9 @@ public class Grid extends Canvas {
 					cell.x--;
 					selectionModified = true;
 				}
+			}
+			if (selectedCells instanceof GridCellSelectionList) {
+				((GridCellSelectionList) selectedCells).reindex();
 			}
 		}
 
