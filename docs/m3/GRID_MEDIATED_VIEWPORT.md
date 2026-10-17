@@ -285,6 +285,47 @@ Suite after this leaf (598 tests, both modes): 112 failures, the same legacy lis
 Non-claim: a custom header renderer other than the empty column header renderer that paints below the header
 stays clipped to the header (stock shows such pixels wherever the rows paint nothing).
 
+## Upstream defects and the legacy-test port (rule 12, 2026-10-17)
+
+The `original` mode stays behaviourally identical to stock Nebula Grid `5d0bcbb9`; every other mode
+(`viewport`, the default) fixes genuine stock defects: behaviour that contradicts the API's own Javadoc,
+crashes, data loss, clipped or wrong rendering. `GridViewport.UPSTREAM_FIXES` gates each fix; each one is a
+row of [`grid-viewport/UPSTREAM_DEFECTS.tsv`](grid-viewport/UPSTREAM_DEFECTS.tsv) with the stock file:line and
+the Javadoc it contradicts (D1-D18). The fixes of items 1-3 that changed stock behaviour (argument checks,
+clear, setItemCount on a tree, disposed resources, hover from the global cursor) now apply in the default
+mode only.
+
+Header and footer heights (D14, D15): a header or footer content change (text, image, font, word wrap,
+renderer, the Grid font, auto height, a removed column) only marks the header or footer; the heights are
+measured once before their next use (the next paint or height query), so many changes cost one measure.
+`recalculateHeader` measures every column again (stock reused the cached measures); while the Grid paints,
+the wrapping renderers' own calls to it are not needed and return at once. A group header is measured at its
+columns' width (stock: the width it was last painted with, zero before the first paint), and a wrapping
+header counts its wrapped lines only with auto height, as `setAutoHeight` documents.
+
+The native look measures what the native controls grow with: a taller header font or image makes the header
+taller, a taller cell font or image the rows; a word-wrapping header wraps (the native header has one line).
+
+The legacy RAP-derived classes (`Grid_Test`, `GridItem_Test`, `GridColumn_Test`, `GridColumnGroup_Test`) are
+ported: expectations that were RAP theme metrics or RAP semantics assert the Nebula contract (row pitch
+`getItemHeight() + 1`, the renderers' measures, scroll bars sized at paint, explicit tree columns, typed
+listeners instead of Mockito 1.8.4 mocks); where the default mode fixes a listed defect the test asserts the
+fix, and the stock behaviour when `GridTestUtil.fixesUpstreamDefects()` is false (the original mode, and stock
+Nebula, which has no `GridViewport`).
+
+| Gate (hidden desktop, 2026-10-17) | Result |
+|---|---|
+| legacy classes (455 tests): `original` mode / `viewport` mode / stock Nebula `5d0bcbb9` classes | 455 / 455 / 454 pass (stock lacks the fork-only `virtualMaterializedItemCount` of one test) |
+| Grid suite (599 tests, legacy classes included) | 0 failures in both modes (before: 112 legacy failures) |
+| `GridViewportDifferential_Test`, oracle stock `5d0bcbb9`, pixels strict | 8 / 8 seeds answer and paint identically, candidate `viewport` and candidate `original` |
+| same, header/footer scene (11 steps: header font and image, footer visibility, font and text, set and undone) | candidate `viewport`: exactly the 5 listed steps differ (D15 x3, D17 x2) and each does; candidate `original`: 0 steps differ |
+| `GridNativeLook_Test` | unchanged: 0 pixels in 8 scenes, 40 (scroll-bar thumb) in the check scene |
+
+Not changed (stock in both modes, candidates for a later decision): the default item height is measured with
+the first item or the first image only, so after `Grid.setFont` with a larger font rows keep their height
+(text clipped); `GridColumn.pack` ignores the footer; a removed item's data is gone before its Dispose event;
+`removeAll` disposes first to last.
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |
