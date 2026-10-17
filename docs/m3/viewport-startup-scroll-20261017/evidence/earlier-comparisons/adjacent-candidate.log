@@ -1,0 +1,26 @@
+JUnit version 4.13.2
+.SWT SessionManagerDBus: Failed to connect to org.gnome.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+SWT SessionManagerDBus: Failed to connect to org.xfce.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+...........E.E.
+Time: 2.028
+There were 2 failures:
+1) resizeSweepMatchesTheTwoPassAlgorithm(org.eclipse.nebula.widgets.grid.GridScrollbarSettle_Test)
+java.lang.AssertionError: size 471x437 thumb expected:<19> but was:<22>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:647)
+	at org.eclipse.nebula.widgets.grid.GridScrollbarSettle_Test.assertBars(GridScrollbarSettle_Test.java:82)
+	at org.eclipse.nebula.widgets.grid.GridScrollbarSettle_Test.resizeSweepMatchesTheTwoPassAlgorithm(GridScrollbarSettle_Test.java:73)
+2) sortFilterAndCountChangesPaintTheBodyOnce(org.eclipse.nebula.widgets.grid.GridBodyDefer_Test)
+java.lang.AssertionError: expected:<1> but was:<0>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:647)
+	at org.junit.Assert.assertEquals(Assert.java:633)
+	at org.eclipse.nebula.widgets.grid.GridBodyDefer_Test.assertBodyPaints(GridBodyDefer_Test.java:125)
+	at org.eclipse.nebula.widgets.grid.GridBodyDefer_Test.sortFilterAndCountChangesPaintTheBodyOnce(GridBodyDefer_Test.java:86)
+
+FAILURES!!!
+Tests run: 14,  Failures: 2
+
+{"exit": 1, "wall_seconds": 2.4897597880008107, "cpu_user_seconds": 1.841485, "cpu_system_seconds": 0.220441, "max_rss_kib": 155980}

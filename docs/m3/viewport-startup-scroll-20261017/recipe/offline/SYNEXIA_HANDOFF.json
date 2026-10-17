@@ -1,0 +1,165 @@
+{
+  "schema": "SYNEXIA_VIEWPORT_OFFLINE_RECIPE_MIRROR_V1",
+  "canonical_repository": "hsoliwal/com.synexia",
+  "canonical_revision": "f60dff56d006389d893dd45e513f39a20e18392e",
+  "publication_status": "PINNED",
+  "canonical_crate_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017",
+  "canonical_engine_revision": "892e3f6c51d78bc0948e8a8cf736055b4c70eafa",
+  "recipe_name": "com.synexia.nebula.StartupScroll20261017",
+  "target_repository": "hsoliwal/nebula",
+  "target_revision": "7c2c52dde4226265b5492b3904f188371ec39201",
+  "purpose": "Offline source-authoring and qualification mirror only; no product runtime dependency",
+  "licenses": {
+    "recipe_and_engine": "Apache-2.0",
+    "target_payloads": "Retain each original source header; Apache-2.0 OR EPL-2.0 and EPL-2.0 payloads are not relicensed"
+  },
+  "commands_from_recipe_directory": [
+    "mvn -B -o -ntp -Drecipe.owner.root=\"$PWD/sdk-owner\" verify",
+    "python3 receive.py --target /absolute/path/to/product --check",
+    "python3 receive.py --target /absolute/path/to/product",
+    "python3 receive.py --target /absolute/path/to/product --check"
+  ],
+  "sdk_qualification": "Run the exact five SDK tests locally before the receiver; target runtime evidence remains separate",
+  "files": [
+    {
+      "path": "LICENSES/Apache-2.0.txt",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/LICENSES/Apache-2.0.txt",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "git_blob": "29f81d812f3e768fa89638d1f72920dbfd1413a8",
+      "bytes": 11558
+    },
+    {
+      "path": "LICENSES/EPL-2.0.txt",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/LICENSES/EPL-2.0.txt",
+      "sha256": "0becf16567beb77fa252b7664631dd177c8f9a1889e48995b45379c7130e5303",
+      "git_blob": "e23ece2c852415800ac224b74ede6c5849f6f88d",
+      "bytes": 14198
+    },
+    {
+      "path": "NOTICE",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/NOTICE",
+      "sha256": "48c879ec1e01ba1a8f4f4643f9bc0b55324704e50655f9658c9a0ed654b03d0a",
+      "git_blob": "ad17f5b4a7425cf2abc66e54ca3a16b0aca4e3ce",
+      "bytes": 1094
+    },
+    {
+      "path": "README.md",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/README.md",
+      "sha256": "a1f21edbcae192b782a1fbff37e3f058af47f674298a959d040dda979b4068af",
+      "git_blob": "18f49097f4d9476b7ac97e39d08041bb62aa09bb",
+      "bytes": 7321
+    },
+    {
+      "path": "crate.json",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/crate.json",
+      "sha256": "9ab7fa46899dbf7ec55b70c05142c396112351656bbcf43b86dc4e0eb623731a",
+      "git_blob": "a90a58475df9aff8f4722c3bc61520536779a41d",
+      "bytes": 2884
+    },
+    {
+      "path": "pom.xml",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/pom.xml",
+      "sha256": "d84eeb3ba627744101d7829684e7281bfd278065a862d98ec592633ab2c0e8ae",
+      "git_blob": "32f402e3adf5e5d448d151d59ec575ac704f1ee2",
+      "bytes": 3160
+    },
+    {
+      "path": "receive.py",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/receive.py",
+      "sha256": "24ce6011c0bc7d89fc863f8f809740b24d943cb40c5aaf9aba03adf0f222dadf",
+      "git_blob": "7b441c78df78c5c0dcc2f8a3526d588981880037",
+      "bytes": 5941
+    },
+    {
+      "path": "sdk-owner/src/main/java/com/synexia/rewrite/M3EditScope.java",
+      "canonical_path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3EditScope.java",
+      "sha256": "962d37d62d740c3e8055c365a048ae7ee0479c26a9f6bbfe741e540d6c1134ab",
+      "git_blob": "274360816db1e44a2f1796a3bc5cdeff6b0ce6db",
+      "bytes": 1052
+    },
+    {
+      "path": "sdk-owner/src/main/java/com/synexia/rewrite/M3HashPinnedJavaSnapshotRecipe.java",
+      "canonical_path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3HashPinnedJavaSnapshotRecipe.java",
+      "sha256": "67f7b81126e4736c7b61b444fa6545153a61e23c012975ca796fcee623ab6625",
+      "git_blob": "3bdeeaea9a212fe0c7d1f544510f87c4cd49eb40",
+      "bytes": 31181
+    },
+    {
+      "path": "sdk-owner/src/main/java/com/synexia/rewrite/M3HashPinnedTextSnapshotRecipe.java",
+      "canonical_path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3HashPinnedTextSnapshotRecipe.java",
+      "sha256": "fbf1ea9efad784afef5ac201ff7fc324551f77a099ebfe2f79b70c3a17c731ef",
+      "git_blob": "9d0788d3717e017d58345c5c3e62022c2915a3c8",
+      "bytes": 18026
+    },
+    {
+      "path": "sdk-owner/src/main/java/com/synexia/rewrite/M3ScopeInference.java",
+      "canonical_path": "synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3ScopeInference.java",
+      "sha256": "13660b59f60ec2941ec19e9bc8964ffd4b04689cdc33cd19711fba14b8da09a4",
+      "git_blob": "d24729950508857280ea1b56d4e930f05137ec85",
+      "bytes": 7655
+    },
+    {
+      "path": "src/main/resources/META-INF/rewrite/m3-nebula-startup-scroll-20261017.yml",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/META-INF/rewrite/m3-nebula-startup-scroll-20261017.yml",
+      "sha256": "7d264e16dbdb54b32786c8ac6085ce615fec60df1bb2a65a2af2493ed4d61d9c",
+      "git_blob": "3dd2526403331a2b175093cc9c9b4da8d247fa0a",
+      "bytes": 652
+    },
+    {
+      "path": "src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/manifest.tsv",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/manifest.tsv",
+      "sha256": "51f59f976164450b45dea1d346c184fcf05c3b352bc8c5308dc9ae8cfcbabafa",
+      "git_blob": "359579e0c5062e4b16e5e2fb461858395bddc323",
+      "bytes": 530
+    },
+    {
+      "path": "src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/pre/target-002.java.txt",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/pre/target-002.java.txt",
+      "sha256": "7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c",
+      "git_blob": "161ed50912df44440281dc09a6eb2377c28334f2",
+      "bytes": 417660
+    },
+    {
+      "path": "src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-001.java.txt",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-001.java.txt",
+      "sha256": "1b6a33a212459b2354245dadd78c9d442b682e5a1fc1b6d78c51a160f808fc59",
+      "git_blob": "a592dedcda9a58221f6cb91772175ffaec380dc0",
+      "bytes": 14413
+    },
+    {
+      "path": "src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-002.java.txt",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-002.java.txt",
+      "sha256": "945c3872ea011f6830e41ff9eb99341fac0a1c8edd3a4e0e831d05326699b6e5",
+      "git_blob": "03cfb42ff5f21b2104c127e0a29dcc23b6487232",
+      "bytes": 423908
+    },
+    {
+      "path": "src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/manifest.tsv",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/manifest.tsv",
+      "sha256": "0b47403e0a931465a1970f29bac97949a4f79e4e5f4f8456a047b0ded3b04c10",
+      "git_blob": "b37ddacaf809e894884a9abfbafcc93aedda7718",
+      "bytes": 289
+    },
+    {
+      "path": "src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/pre/target-000.text.txt",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/pre/target-000.text.txt",
+      "sha256": "a84523a9ff07d88ab6b24369fae7552f09f5fd3e73c757e237c752907721deba",
+      "git_blob": "14d9505b0b477793f15219f842045e27bfd1d8a1",
+      "bytes": 3903
+    },
+    {
+      "path": "src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/target-000.text.txt",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/target-000.text.txt",
+      "sha256": "55f55f3b55b6f2677086ff50a444baa1fbf6a149cdd90212c0e687297faf3c00",
+      "git_blob": "7c47aef494359ee5d4fad75375eec769b56e8474",
+      "bytes": 4073
+    },
+    {
+      "path": "src/test/java/com/synexia/rewrite/M3TaskRecipeTest.java",
+      "canonical_path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017/src/test/java/com/synexia/rewrite/M3TaskRecipeTest.java",
+      "sha256": "015e2f8257c6e2b5573cecb32929cfbc8a41766a2bac4446172ccfab28b7ebb3",
+      "git_blob": "3ff7e6f49fd75a34d0991ced8d069b956da0ee49",
+      "bytes": 16821
+    }
+  ]
+}

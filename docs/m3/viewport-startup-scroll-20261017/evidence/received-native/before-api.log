@@ -1,0 +1,534 @@
+Compiled from "Grid.java"
+public class org.eclipse.nebula.widgets.grid.Grid extends org.eclipse.swt.widgets.Canvas {
+  public static final int RESIDENCY_EVICT_COLD;
+    descriptor: I
+  public org.eclipse.nebula.widgets.grid.DataVisualizer getDataVisualizer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/DataVisualizer;
+
+  public void clearItems();
+    descriptor: ()V
+
+  public org.eclipse.nebula.widgets.grid.Grid(org.eclipse.swt.widgets.Composite, int);
+    descriptor: (Lorg/eclipse/swt/widgets/Composite;I)V
+
+  public org.eclipse.nebula.widgets.grid.Grid(org.eclipse.nebula.widgets.grid.DataVisualizer, org.eclipse.swt.widgets.Composite, int);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/DataVisualizer;Lorg/eclipse/swt/widgets/Composite;I)V
+
+  public org.eclipse.swt.graphics.Color getBackground();
+    descriptor: ()Lorg/eclipse/swt/graphics/Color;
+
+  public void setBackground(org.eclipse.swt.graphics.Color);
+    descriptor: (Lorg/eclipse/swt/graphics/Color;)V
+
+  public org.eclipse.swt.graphics.Color getCellHeaderSelectionBackground();
+    descriptor: ()Lorg/eclipse/swt/graphics/Color;
+
+  public void setCellHeaderSelectionBackground(org.eclipse.swt.graphics.Color);
+    descriptor: (Lorg/eclipse/swt/graphics/Color;)V
+
+  public void addSelectionListener(org.eclipse.swt.events.SelectionListener);
+    descriptor: (Lorg/eclipse/swt/events/SelectionListener;)V
+
+  public void addTreeListener(org.eclipse.swt.events.TreeListener);
+    descriptor: (Lorg/eclipse/swt/events/TreeListener;)V
+
+  public org.eclipse.swt.graphics.Point computeSize(int, int, boolean);
+    descriptor: (IIZ)Lorg/eclipse/swt/graphics/Point;
+
+  public void deselect(int);
+    descriptor: (I)V
+
+  public void deselect(int, int);
+    descriptor: (II)V
+
+  public void deselect(int[]);
+    descriptor: ([I)V
+
+  public void deselectAll();
+    descriptor: ()V
+
+  public org.eclipse.nebula.widgets.grid.GridColumn getColumn(int);
+    descriptor: (I)Lorg/eclipse/nebula/widgets/grid/GridColumn;
+
+  public org.eclipse.nebula.widgets.grid.GridColumn getColumn(org.eclipse.swt.graphics.Point);
+    descriptor: (Lorg/eclipse/swt/graphics/Point;)Lorg/eclipse/nebula/widgets/grid/GridColumn;
+
+  public int getColumnCount();
+    descriptor: ()I
+
+  public int[] getColumnOrder();
+    descriptor: ()[I
+
+  public int getColumnGroupCount();
+    descriptor: ()I
+
+  public org.eclipse.nebula.widgets.grid.GridColumnGroup[] getColumnGroups();
+    descriptor: ()[Lorg/eclipse/nebula/widgets/grid/GridColumnGroup;
+
+  public org.eclipse.nebula.widgets.grid.GridColumnGroup getColumnGroup(int);
+    descriptor: (I)Lorg/eclipse/nebula/widgets/grid/GridColumnGroup;
+
+  public void setColumnOrder(int[]);
+    descriptor: ([I)V
+
+  public org.eclipse.nebula.widgets.grid.GridColumn[] getColumns();
+    descriptor: ()[Lorg/eclipse/nebula/widgets/grid/GridColumn;
+
+  public org.eclipse.nebula.widgets.grid.GridCellRenderer getEmptyCellRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/GridCellRenderer;
+
+  public org.eclipse.nebula.widgets.grid.IRenderer getEmptyColumnHeaderRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/IRenderer;
+
+  public org.eclipse.nebula.widgets.grid.IRenderer getEmptyColumnFooterRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/IRenderer;
+
+  public org.eclipse.nebula.widgets.grid.IRenderer getEmptyRowHeaderRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/IRenderer;
+
+  public org.eclipse.nebula.widgets.grid.IRenderer getFocusRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/IRenderer;
+
+  public int getHeaderHeight();
+    descriptor: ()I
+
+  public org.eclipse.swt.graphics.Font getFont();
+    descriptor: ()Lorg/eclipse/swt/graphics/Font;
+
+  public int getFooterHeight();
+    descriptor: ()I
+
+  public int getGroupHeaderHeight();
+    descriptor: ()I
+
+  public boolean getHeaderVisible();
+    descriptor: ()Z
+
+  public boolean getFooterVisible();
+    descriptor: ()Z
+
+  public org.eclipse.nebula.widgets.grid.GridItem getItem(int);
+    descriptor: (I)Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public org.eclipse.nebula.widgets.grid.GridItem getItem(org.eclipse.swt.graphics.Point);
+    descriptor: (Lorg/eclipse/swt/graphics/Point;)Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public int getItemCount();
+    descriptor: ()I
+
+  public int getItemHeight();
+    descriptor: ()I
+
+  public void setItemHeight(int);
+    descriptor: (I)V
+
+  public boolean getRowsResizeable();
+    descriptor: ()Z
+
+  public void setRowsResizeable(boolean);
+    descriptor: (Z)V
+
+  public org.eclipse.nebula.widgets.grid.GridItem[] getItems();
+    descriptor: ()[Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public int getIndexOfItem(org.eclipse.nebula.widgets.grid.GridItem);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridItem;)I
+
+  public org.eclipse.swt.graphics.Color getLineColor();
+    descriptor: ()Lorg/eclipse/swt/graphics/Color;
+
+  public boolean getLinesVisible();
+    descriptor: ()Z
+
+  public boolean getTreeLinesVisible();
+    descriptor: ()Z
+
+  public org.eclipse.nebula.widgets.grid.GridItem getNextVisibleItem(org.eclipse.nebula.widgets.grid.GridItem);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridItem;)Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public org.eclipse.nebula.widgets.grid.GridItem getPreviousVisibleItem(org.eclipse.nebula.widgets.grid.GridItem);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridItem;)Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public org.eclipse.nebula.widgets.grid.GridColumn getPreviousVisibleColumn(org.eclipse.nebula.widgets.grid.GridColumn);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridColumn;)Lorg/eclipse/nebula/widgets/grid/GridColumn;
+
+  public org.eclipse.nebula.widgets.grid.GridColumn getNextVisibleColumn(org.eclipse.nebula.widgets.grid.GridColumn);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridColumn;)Lorg/eclipse/nebula/widgets/grid/GridColumn;
+
+  public int getRootItemCount();
+    descriptor: ()I
+
+  public org.eclipse.nebula.widgets.grid.GridItem[] getRootItems();
+    descriptor: ()[Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public org.eclipse.nebula.widgets.grid.GridItem getRootItem(int);
+    descriptor: (I)Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public org.eclipse.nebula.widgets.grid.IRenderer getRowHeaderRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/IRenderer;
+
+  public org.eclipse.nebula.widgets.grid.GridItem[] getSelection();
+    descriptor: ()[Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public int getSelectionCount();
+    descriptor: ()I
+
+  public int getCellSelectionCount();
+    descriptor: ()I
+
+  public int getSelectionIndex();
+    descriptor: ()I
+
+  public int[] getSelectionIndices();
+    descriptor: ()[I
+
+  public int getTopIndex();
+    descriptor: ()I
+
+  public org.eclipse.nebula.widgets.grid.IRenderer getTopLeftRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/IRenderer;
+
+  public org.eclipse.nebula.widgets.grid.IRenderer getBottomLeftRenderer();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/IRenderer;
+
+  public int indexOf(org.eclipse.nebula.widgets.grid.GridColumn);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridColumn;)I
+
+  public int indexOf(org.eclipse.nebula.widgets.grid.GridItem);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridItem;)I
+
+  public boolean isRowHeaderVisible();
+    descriptor: ()Z
+
+  public boolean isSelected(int);
+    descriptor: (I)Z
+
+  public boolean isSelected(org.eclipse.nebula.widgets.grid.GridItem);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridItem;)Z
+
+  public boolean isCellSelected(org.eclipse.swt.graphics.Point);
+    descriptor: (Lorg/eclipse/swt/graphics/Point;)Z
+
+  public void remove(int);
+    descriptor: (I)V
+
+  public void remove(int, int);
+    descriptor: (II)V
+
+  public void remove(int[]);
+    descriptor: ([I)V
+
+  public void removeAll();
+    descriptor: ()V
+
+  public void disposeAllItems();
+    descriptor: ()V
+
+  public void removeSelectionListener(org.eclipse.swt.events.SelectionListener);
+    descriptor: (Lorg/eclipse/swt/events/SelectionListener;)V
+
+  public void removeTreeListener(org.eclipse.swt.events.TreeListener);
+    descriptor: (Lorg/eclipse/swt/events/TreeListener;)V
+
+  public void select(int);
+    descriptor: (I)V
+
+  public void select(int, int);
+    descriptor: (II)V
+
+  public void select(int[]);
+    descriptor: ([I)V
+
+  public void selectAll();
+    descriptor: ()V
+
+  public void setEmptyCellRenderer(org.eclipse.nebula.widgets.grid.GridCellRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridCellRenderer;)V
+
+  public void setEmptyColumnHeaderRenderer(org.eclipse.nebula.widgets.grid.IRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/IRenderer;)V
+
+  public void setEmptyColumnFooterRenderer(org.eclipse.nebula.widgets.grid.IRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/IRenderer;)V
+
+  public void setEmptyRowHeaderRenderer(org.eclipse.nebula.widgets.grid.IRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/IRenderer;)V
+
+  public void setFocusRenderer(org.eclipse.nebula.widgets.grid.IRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/IRenderer;)V
+
+  public void setHeaderVisible(boolean);
+    descriptor: (Z)V
+
+  public void setFooterVisible(boolean);
+    descriptor: (Z)V
+
+  public void setLineColor(org.eclipse.swt.graphics.Color);
+    descriptor: (Lorg/eclipse/swt/graphics/Color;)V
+
+  public void setLinesVisible(boolean);
+    descriptor: (Z)V
+
+  public void setTreeLinesVisible(boolean);
+    descriptor: (Z)V
+
+  public void setRowHeaderRenderer(org.eclipse.nebula.widgets.grid.IRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/IRenderer;)V
+
+  public void setRowHeaderVisible(boolean);
+    descriptor: (Z)V
+
+  public void setRowHeaderVisible(boolean, int);
+    descriptor: (ZI)V
+
+  public void setSelection(int);
+    descriptor: (I)V
+
+  public void setSelection(int, int);
+    descriptor: (II)V
+
+  public boolean isVisibleLinesColumnPack();
+    descriptor: ()Z
+
+  public void setVisibleLinesColumnPack(boolean);
+    descriptor: (Z)V
+
+  public void setSelection(int[]);
+    descriptor: ([I)V
+
+  public void setSelection(org.eclipse.nebula.widgets.grid.GridItem[]);
+    descriptor: ([Lorg/eclipse/nebula/widgets/grid/GridItem;)V
+
+  public void setTopIndex(int);
+    descriptor: (I)V
+
+  public void setTopLeftRenderer(org.eclipse.nebula.widgets.grid.IRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/IRenderer;)V
+
+  public void setBottomLeftRenderer(org.eclipse.nebula.widgets.grid.IRenderer);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/IRenderer;)V
+
+  public void showColumn(org.eclipse.nebula.widgets.grid.GridColumn);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridColumn;)V
+
+  public void showItem(org.eclipse.nebula.widgets.grid.GridItem);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridItem;)V
+
+  public void showSelection();
+    descriptor: ()V
+
+  public void setSelectionEnabled(boolean);
+    descriptor: (Z)V
+
+  public boolean getSelectionEnabled();
+    descriptor: ()Z
+
+  public org.eclipse.swt.graphics.Point getCell(org.eclipse.swt.graphics.Point);
+    descriptor: (Lorg/eclipse/swt/graphics/Point;)Lorg/eclipse/swt/graphics/Point;
+
+  public void setItemResidency(int, int);
+    descriptor: (II)V
+
+  public int getItemResidency();
+    descriptor: ()I
+
+  public void setPrefetchRows(int);
+    descriptor: (I)V
+
+  public int getPrefetchRows();
+    descriptor: ()I
+
+  public void setPinnedRowCount(int, int);
+    descriptor: (II)V
+
+  public int getPinnedTopRowCount();
+    descriptor: ()I
+
+  public int getPinnedBottomRowCount();
+    descriptor: ()I
+
+  public void disableDefaultKeyListener();
+    descriptor: ()V
+
+  public void enableDefaultKeyListener();
+    descriptor: ()V
+
+  public void redraw();
+    descriptor: ()V
+
+  public void redraw(int, int, int, int, boolean);
+    descriptor: (IIIIZ)V
+
+  public org.eclipse.nebula.widgets.grid.GridItem getFocusItem();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/GridItem;
+
+  public org.eclipse.swt.graphics.Point getFocusCell();
+    descriptor: ()Lorg/eclipse/swt/graphics/Point;
+
+  public void setFocusItem(org.eclipse.nebula.widgets.grid.GridItem);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridItem;)V
+
+  public void setFocusColumn(org.eclipse.nebula.widgets.grid.GridColumn);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridColumn;)V
+
+  public boolean getColumnScrolling();
+    descriptor: ()Z
+
+  public void setColumnScrolling(boolean);
+    descriptor: (Z)V
+
+  public boolean getCellSelectionEnabled();
+    descriptor: ()Z
+
+  public void setCellSelectionEnabled(boolean);
+    descriptor: (Z)V
+
+  public boolean isCellSelectionEnabled();
+    descriptor: ()Z
+
+  public void setCellDragSelectionEnabled(boolean);
+    descriptor: (Z)V
+
+  public boolean isCellDragSelectionEnabled();
+    descriptor: ()Z
+
+  public void deselectCell(org.eclipse.swt.graphics.Point);
+    descriptor: (Lorg/eclipse/swt/graphics/Point;)V
+
+  public void deselectCells(org.eclipse.swt.graphics.Point[]);
+    descriptor: ([Lorg/eclipse/swt/graphics/Point;)V
+
+  public void deselectAllCells();
+    descriptor: ()V
+
+  public void selectCell(org.eclipse.swt.graphics.Point);
+    descriptor: (Lorg/eclipse/swt/graphics/Point;)V
+
+  public void selectCells(org.eclipse.swt.graphics.Point[]);
+    descriptor: ([Lorg/eclipse/swt/graphics/Point;)V
+
+  public void selectAllCells();
+    descriptor: ()V
+
+  public void selectColumn(int);
+    descriptor: (I)V
+
+  public void selectColumnGroup(int);
+    descriptor: (I)V
+
+  public void selectColumnGroup(org.eclipse.nebula.widgets.grid.GridColumnGroup);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridColumnGroup;)V
+
+  public void setCellSelection(org.eclipse.swt.graphics.Point);
+    descriptor: (Lorg/eclipse/swt/graphics/Point;)V
+
+  public void setCellSelection(org.eclipse.swt.graphics.Point[]);
+    descriptor: ([Lorg/eclipse/swt/graphics/Point;)V
+
+  public org.eclipse.swt.graphics.Point[] getCellSelection();
+    descriptor: ()[Lorg/eclipse/swt/graphics/Point;
+
+  public void setFont(org.eclipse.swt.graphics.Font);
+    descriptor: (Lorg/eclipse/swt/graphics/Font;)V
+
+  public int getItemHeaderWidth();
+    descriptor: ()I
+
+  public void setItemHeaderWidth(int);
+    descriptor: (I)V
+
+  public void setItemCount(int);
+    descriptor: (I)V
+
+  public void setRowPermutation(org.eclipse.nebula.widgets.grid.model.RowPermutation);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/model/RowPermutation;)V
+
+  public void setRowGrouping(org.eclipse.nebula.widgets.grid.model.RowGrouping);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/model/RowGrouping;)V
+
+  public org.eclipse.nebula.widgets.grid.model.RowGrouping getRowGrouping();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/model/RowGrouping;
+
+  public org.eclipse.nebula.widgets.grid.model.RowPermutation getRowPermutation();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/model/RowPermutation;
+
+  public void refreshRowPermutation();
+    descriptor: ()V
+
+  public void setCheckedAll(int, boolean, boolean);
+    descriptor: (IZZ)V
+
+  public int getCheckedCount(int, boolean);
+    descriptor: (IZ)I
+
+  public java.lang.String getToolTipText();
+    descriptor: ()Ljava/lang/String;
+
+  public void setToolTipText(java.lang.String);
+    descriptor: (Ljava/lang/String;)V
+
+  public void clear(int, boolean);
+    descriptor: (IZ)V
+
+  public void clear(int, int, boolean);
+    descriptor: (IIZ)V
+
+  public void clear(int[], boolean);
+    descriptor: ([IZ)V
+
+  public void clearAll(boolean);
+    descriptor: (Z)V
+
+  public void recalculateHeader();
+    descriptor: ()V
+
+  public org.eclipse.nebula.widgets.grid.Grid$GridVisibleRange getVisibleRange();
+    descriptor: ()Lorg/eclipse/nebula/widgets/grid/Grid$GridVisibleRange;
+
+  public int getRowHeaderWidth();
+    descriptor: ()I
+
+  public void setAutoHeight(boolean);
+    descriptor: (Z)V
+
+  public boolean isAutoHeight();
+    descriptor: ()Z
+
+  public void setAutoWidth(boolean);
+    descriptor: (Z)V
+
+  public boolean isAutoWidth();
+    descriptor: ()Z
+
+  public void setWordWrapHeader(boolean);
+    descriptor: (Z)V
+
+  public void setForeground(org.eclipse.swt.graphics.Color);
+    descriptor: (Lorg/eclipse/swt/graphics/Color;)V
+
+  public boolean isWordWrapHeader();
+    descriptor: ()Z
+
+  public void refreshData();
+    descriptor: ()V
+
+  public boolean isMoveOnTab();
+    descriptor: ()Z
+
+  public void setMoveOnTab(boolean);
+    descriptor: (Z)V
+
+  public boolean isFocusOnGrid();
+    descriptor: ()Z
+
+  public void setSelectionType(org.eclipse.nebula.widgets.grid.GridSelectionType);
+    descriptor: (Lorg/eclipse/nebula/widgets/grid/GridSelectionType;)V
+
+  public void addMouseListener(org.eclipse.swt.events.MouseListener);
+    descriptor: (Lorg/eclipse/swt/events/MouseListener;)V
+
+  public void addListener(int, org.eclipse.swt.widgets.Listener);
+    descriptor: (ILorg/eclipse/swt/widgets/Listener;)V
+}
+
+MEASUREMENTS	{"cpu_system_seconds": 0.058966, "cpu_user_seconds": 0.514941, "exit": 0, "max_rss_kib": 66228, "wall_seconds": 0.23047400799987372}

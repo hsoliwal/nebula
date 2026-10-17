@@ -1,0 +1,48 @@
+// SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project
+// SPDX-License-Identifier: Apache-2.0
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.junit.runner.Description;
+import org.junit.runner.JUnitCore;
+import org.junit.runner.Result;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
+
+/** Evidence runner: one terminal record per discovered method, with no skipped gate. */
+public final class RunGridNativeProof {
+    public static void main(String[] args) throws Exception {
+        int expected = Integer.parseInt(args[0]);
+        Class<?>[] classes = new Class<?>[args.length - 1];
+        for (int i = 1; i < args.length; i++) classes[i - 1] = Class.forName(args[i]);
+        Map<String, String> methods = new LinkedHashMap<>();
+        boolean[] duplicate = { false };
+        JUnitCore runner = new JUnitCore();
+        runner.addListener(new RunListener() {
+            private String id(Description description) {
+                return description.getClassName() + "." + description.getMethodName();
+            }
+            @Override public void testStarted(Description description) {
+                if (methods.putIfAbsent(id(description), "PASS") != null) duplicate[0] = true;
+            }
+            @Override public void testFailure(Failure failure) {
+                methods.put(id(failure.getDescription()), "FAIL");
+            }
+            @Override public void testIgnored(Description description) {
+                methods.put(id(description), "IGNORED");
+            }
+            @Override public void testAssumptionFailure(Failure failure) {
+                methods.put(id(failure.getDescription()), "ASSUMPTION");
+            }
+        });
+        Result result = runner.run(classes);
+        for (Failure failure : result.getFailures()) System.out.print(failure.getTrace());
+        methods.forEach((id, status) -> System.out.println("METHOD\t" + id + "\t" + status));
+        System.out.println("COUNTS\t" + result.getRunCount() + "\t" + result.getFailureCount()
+            + "\t" + result.getIgnoreCount() + "\t" + result.getAssumptionFailureCount()
+            + "\t" + duplicate[0]);
+        if (!result.wasSuccessful() || result.getRunCount() != expected || methods.size() != expected
+                || result.getIgnoreCount() != 0 || result.getAssumptionFailureCount() != 0 || duplicate[0]) {
+            System.exit(1);
+        }
+    }
+}

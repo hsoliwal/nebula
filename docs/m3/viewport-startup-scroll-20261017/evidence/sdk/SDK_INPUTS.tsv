@@ -1,0 +1,16 @@
+# Recipe inputs used by this SDK execution
+crate/pom.xml	d84eeb3ba627744101d7829684e7281bfd278065a862d98ec592633ab2c0e8ae
+crate/receive.py	24ce6011c0bc7d89fc863f8f809740b24d943cb40c5aaf9aba03adf0f222dadf
+crate/src/main/resources/META-INF/rewrite/m3-nebula-startup-scroll-20261017.yml	7d264e16dbdb54b32786c8ac6085ce615fec60df1bb2a65a2af2493ed4d61d9c
+crate/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/manifest.tsv	51f59f976164450b45dea1d346c184fcf05c3b352bc8c5308dc9ae8cfcbabafa
+crate/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/pre/target-002.java.txt	7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c
+crate/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-001.java.txt	1b6a33a212459b2354245dadd78c9d442b682e5a1fc1b6d78c51a160f808fc59
+crate/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-002.java.txt	945c3872ea011f6830e41ff9eb99341fac0a1c8edd3a4e0e831d05326699b6e5
+crate/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/manifest.tsv	0b47403e0a931465a1970f29bac97949a4f79e4e5f4f8456a047b0ded3b04c10
+crate/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/pre/target-000.text.txt	a84523a9ff07d88ab6b24369fae7552f09f5fd3e73c757e237c752907721deba
+crate/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/target-000.text.txt	55f55f3b55b6f2677086ff50a444baa1fbf6a149cdd90212c0e687297faf3c00
+crate/src/test/java/com/synexia/rewrite/M3TaskRecipeTest.java	015e2f8257c6e2b5573cecb32929cfbc8a41766a2bac4446172ccfab28b7ebb3
+owner/src/main/java/com/synexia/rewrite/M3EditScope.java	962d37d62d740c3e8055c365a048ae7ee0479c26a9f6bbfe741e540d6c1134ab
+owner/src/main/java/com/synexia/rewrite/M3HashPinnedJavaSnapshotRecipe.java	67f7b81126e4736c7b61b444fa6545153a61e23c012975ca796fcee623ab6625
+owner/src/main/java/com/synexia/rewrite/M3HashPinnedTextSnapshotRecipe.java	fbf1ea9efad784afef5ac201ff7fc324551f77a099ebfe2f79b70c3a17c731ef
+owner/src/main/java/com/synexia/rewrite/M3ScopeInference.java	13660b59f60ec2941ec19e9bc8964ffd4b04689cdc33cd19711fba14b8da09a4

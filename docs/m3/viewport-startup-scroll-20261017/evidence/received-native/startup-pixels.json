@@ -1,0 +1,71 @@
+{
+  "scope": "Focused full-control startup pairs; not the complete eight-scene/resource gate",
+  "capture": "DISPLAY_COPY_AREA asserted by each source-bound native JUnit capture",
+  "crop": null,
+  "masks": [],
+  "GTK_OVERLAY_SCROLLING": "0",
+  "driver_sha256": "41ba32e5bccc8090f14f8f9ecf0632b6260d67ecf83d165ef9119266a060e607",
+  "reused_validator_sha256": "4d9f6e0440a496b5bf1aa0d5c90064f7183eddd819af7207f18980fb4511a724",
+  "opencv": "4.12.0",
+  "numpy": "2.3.5",
+  "frames": {
+    "startup-before/top-index-first-paint.png": {
+      "sha256": "442a698207082f99e6516349199d60c394ea5a5c3a47e392b9c83740eff48f50",
+      "width": 390,
+      "height": 280,
+      "bytes": 26606,
+      "interior_edge_pixels": 12154
+    },
+    "startup-before/top-index-settled-request.png": {
+      "sha256": "21e71c770cc8919a8c233006d216201f0309fd824f490919da76fe5f58be0706",
+      "width": 390,
+      "height": 280,
+      "bytes": 27970,
+      "interior_edge_pixels": 11233
+    },
+    "startup-default/top-index-first-paint.png": {
+      "sha256": "21e71c770cc8919a8c233006d216201f0309fd824f490919da76fe5f58be0706",
+      "width": 390,
+      "height": 280,
+      "bytes": 27970,
+      "interior_edge_pixels": 11233
+    },
+    "startup-default/top-index-settled-request.png": {
+      "sha256": "21e71c770cc8919a8c233006d216201f0309fd824f490919da76fe5f58be0706",
+      "width": 390,
+      "height": 280,
+      "bytes": 27970,
+      "interior_edge_pixels": 11233
+    },
+    "startup-original/top-index-first-paint.png": {
+      "sha256": "442a698207082f99e6516349199d60c394ea5a5c3a47e392b9c83740eff48f50",
+      "width": 390,
+      "height": 280,
+      "bytes": 26606,
+      "interior_edge_pixels": 12154
+    },
+    "startup-original/top-index-settled-request.png": {
+      "sha256": "442a698207082f99e6516349199d60c394ea5a5c3a47e392b9c83740eff48f50",
+      "width": 390,
+      "height": 280,
+      "bytes": 26606,
+      "interior_edge_pixels": 12154
+    }
+  },
+  "pairs": {
+    "startup-before": {
+      "different_pixels": 11463,
+      "total_pixels": 109200
+    },
+    "startup-default": {
+      "different_pixels": 0,
+      "total_pixels": 109200
+    },
+    "startup-original": {
+      "different_pixels": 0,
+      "total_pixels": 109200
+    }
+  },
+  "repaired_first_frame_matches_baseline_settled_reference": true,
+  "status": "PASSED_FOCUSED_PIXEL_GATE"
+}

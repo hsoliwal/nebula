@@ -1,0 +1,73 @@
+{
+  "format": "nebula-startup-scroll-earlier-comparison-v1",
+  "scope": "Earlier native comparison observations, separate from final received-source 20/20 and 11/11 proof.",
+  "source_fixture": {
+    "Grid_Test.java": "1cef5d4b021d3646c259e5cd1a94fc209ac0d06abfb4dedfc9df51caca2f6210",
+    "GridScrollbarSettle_Test.java": "4156b82a9bf2d0d37f755b4e27001f4f1a799d2c8f86a9ebbf6f2c893c196ba6",
+    "GridBodyDefer_Test.java": "15ab3483991b49680890adbff6ac4471108eb4ea896dbe0eedf2c43e24ab84b7"
+  },
+  "grid_before_sha256": "7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c",
+  "grid_frozen_candidate_sha256": "945c3872ea011f6830e41ff9eb99341fac0a1c8edd3a4e0e831d05326699b6e5",
+  "legacy_98": {
+    "filter": "(?i).*(select|topindex|showitem|updatescrollbars).*",
+    "before": {
+      "tests": 98,
+      "failures": 13,
+      "skips": 0,
+      "swt_runtime": "official org.eclipse.swt.gtk.linux.x86_64:3.135.0"
+    },
+    "candidate": {
+      "tests": 98,
+      "failures": 6,
+      "skips": 0,
+      "swt_runtime": "corrected SWT callback candidate overlay plus current-source GTK stack"
+    },
+    "remaining_preexisting_failing_methods": [
+      "testUpdateScrollBars_OnColumnWidthChange",
+      "testUpdateScrollBars_OnFooterVisible",
+      "testUpdateScrollBars_OnHeaderVisible",
+      "testUpdateScrollBars_OnItemExpandChange",
+      "testUpdateScrollBars_OnColumnChange",
+      "testUpdateScrollBars"
+    ],
+    "previously_failing_methods_absent_from_candidate_failures": [
+      "testShowSelection",
+      "testSetTopIndex",
+      "testSetTopIndex_VisibleSubItem",
+      "testGetTopIndex_DifferentItemHeight",
+      "testGetTopIndex_OnItemAdd",
+      "testSetTopIndex_AdjustTopIndex",
+      "testShowItem_ScrollUp"
+    ],
+    "selection_subgate": "73 selection methods are contained in the 98-method filter; baseline testShowSelection failure is absent in candidate; no extra 73-method rerun claimed.",
+    "qualification": "FAILED overall; pre-existing method-level failures retained. Runtime variants are explicit; this is not the final homogeneous received-source gate."
+  },
+  "adjacent_14": {
+    "before": {
+      "tests": 14,
+      "failures": 2,
+      "skips": 0,
+      "swt_runtime": "admitted SWT callback overlay plus current-source GTK stack"
+    },
+    "candidate": {
+      "tests": 14,
+      "failures": 2,
+      "skips": 0,
+      "swt_runtime": "corrected SWT callback candidate overlay plus current-source GTK stack"
+    },
+    "remaining_preexisting_failing_methods": [
+      "GridScrollbarSettle_Test.resizeSweepMatchesTheTwoPassAlgorithm",
+      "GridBodyDefer_Test.sortFilterAndCountChangesPaintTheBodyOnce"
+    ],
+    "qualification": "FAILED overall. The random resize sweep first mismatch differed; no claim that every assertion or fixture cause is identical."
+  },
+  "official_swt_earlier_staging": {
+    "tests": 15,
+    "failures": 2,
+    "qualification": "FAILED earlier 15-case staging version; not a run of the final received 20-case suite.",
+    "failures_detail": [
+      "Show listener disposes only the scrollbar: NullPointerException in SWT ScrollBar.setVisible",
+      "Show listener disposes the Grid owner: NullPointerException in SWT ScrollBar.setVisible"
+    ]
+  }
+}

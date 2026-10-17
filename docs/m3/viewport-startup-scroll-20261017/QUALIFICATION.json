@@ -1,0 +1,546 @@
+{
+  "format": "nebula-startup-scroll-qualification-v1",
+  "repository": "hsoliwal/nebula",
+  "published_stack_parent": "7c2c52dde4226265b5492b3904f188371ec39201",
+  "published_stack_parent_pr": "https://github.com/hsoliwal/nebula/pull/246",
+  "local_qualification_parent": "d2e08231f221f2023ead1b2fbaa6d9d3f0c57229",
+  "local_received_source_commit": "9de9d28badd28e7f3619c81d3bff0254875fd96f",
+  "source_custody": "Only three SDK Results were received after canonical Java21/Maven/OpenRewrite qualification; diagnostic and selection history retained.",
+  "recipe": {
+    "repository": "hsoliwal/com.synexia",
+    "name": "com.synexia.nebula.StartupScroll20261017",
+    "path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-startup-scroll-20261017",
+    "engine_revision": "892e3f6c51d78bc0948e8a8cf736055b4c70eafa",
+    "new_crate_revision": "f60dff56d006389d893dd45e513f39a20e18392e",
+    "canonical_pr": "https://github.com/hsoliwal/com.synexia/pull/12136",
+    "new_crate_revision_note": "Published new canonical crate revision; the source engine remains separately pinned.",
+    "crate_sha256": "9ab7fa46899dbf7ec55b70c05142c396112351656bbcf43b86dc4e0eb623731a",
+    "targets": [
+      {
+        "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml",
+        "kind": "text",
+        "preimage_sha256": "a84523a9ff07d88ab6b24369fae7552f09f5fd3e73c757e237c752907721deba",
+        "postimage_sha256": "55f55f3b55b6f2677086ff50a444baa1fbf6a149cdd90212c0e687297faf3c00",
+        "preimage_git_blob": "14d9505b0b477793f15219f842045e27bfd1d8a1",
+        "postimage_git_blob": "7c47aef494359ee5d4fad75375eec769b56e8474",
+        "resource": "target-000.text.txt"
+      },
+      {
+        "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridTopIndexStartup_Test.java",
+        "kind": "java",
+        "preimage_sha256": "ABSENT",
+        "postimage_sha256": "1b6a33a212459b2354245dadd78c9d442b682e5a1fc1b6d78c51a160f808fc59",
+        "preimage_git_blob": "ABSENT",
+        "postimage_git_blob": "a592dedcda9a58221f6cb91772175ffaec380dc0",
+        "resource": "target-001.java.txt"
+      },
+      {
+        "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java",
+        "kind": "java",
+        "preimage_sha256": "7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c",
+        "postimage_sha256": "945c3872ea011f6830e41ff9eb99341fac0a1c8edd3a4e0e831d05326699b6e5",
+        "preimage_git_blob": "161ed50912df44440281dc09a6eb2377c28334f2",
+        "postimage_git_blob": "03cfb42ff5f21b2104c127e0a29dcc23b6487232",
+        "resource": "target-002.java.txt"
+      }
+    ],
+    "maven_log_sha256": "d2a6e81b6bdbf33adc52f6e4a3aeb0627bd85f5a0cd66a59ccc6f2aafd515a31"
+  },
+  "stages": {
+    "canonical_sdk": {
+      "status": "PASSED",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "receiver_apply": {
+      "status": "PASSED",
+      "targets": 3,
+      "changes": 3
+    },
+    "receiver_fixed_point": {
+      "status": "PASSED",
+      "targets": 3,
+      "changes": 0
+    },
+    "java21_core_compile": {
+      "status": "PASSED",
+      "sources_per_side": 105,
+      "diagnostics": 0
+    },
+    "public_grid_api_descriptors": {
+      "status": "PASSED",
+      "result": "UNCHANGED"
+    },
+    "native_startup_baseline": {
+      "status": "FAILED",
+      "expected_negative_control": true,
+      "tests": 20,
+      "failures": 19,
+      "skips": 0
+    },
+    "native_default_startup_repair": {
+      "status": "PASSED",
+      "tests": 20,
+      "failures": 0,
+      "skips": 0
+    },
+    "native_original_compatibility": {
+      "status": "PASSED",
+      "tests": 20,
+      "failures": 0,
+      "skips": 0,
+      "mode": "-Dswt.widget.mode.Grid=original",
+      "meaning": "Mode-aware preservation of historical behavior, including ignored prepaint requests/top0; this lane does not prove the repaired default behavior."
+    },
+    "native_selection_default": {
+      "status": "PASSED",
+      "tests": 11,
+      "failures": 0,
+      "skips": 0
+    },
+    "persisted_full_frame_pixels": {
+      "status": "PASSED",
+      "bounds": [
+        390,
+        280
+      ],
+      "crop": null,
+      "masks": [],
+      "baseline_different_pixels": 11463,
+      "default_different_pixels": 0,
+      "original_compatibility_different_pixels": 0,
+      "capture_method": "DISPLAY_COPY_AREA",
+      "GTK_OVERLAY_SCROLLING": "0"
+    },
+    "earlier_98_legacy_methods": {
+      "status": "FAILED",
+      "before_failures": 13,
+      "candidate_failures": 6,
+      "tests_each": 98,
+      "remaining_methods": [
+        "testUpdateScrollBars_OnColumnWidthChange",
+        "testUpdateScrollBars_OnFooterVisible",
+        "testUpdateScrollBars_OnHeaderVisible",
+        "testUpdateScrollBars_OnItemExpandChange",
+        "testUpdateScrollBars_OnColumnChange",
+        "testUpdateScrollBars"
+      ]
+    },
+    "earlier_14_adjacent_methods": {
+      "status": "FAILED",
+      "before_failures": 2,
+      "candidate_failures": 2,
+      "tests_each": 14,
+      "remaining_methods": [
+        "GridScrollbarSettle_Test.resizeSweepMatchesTheTwoPassAlgorithm",
+        "GridBodyDefer_Test.sortFilterAndCountChangesPaintTheBodyOnce"
+      ]
+    },
+    "full_maven_tycho": {
+      "status": "NOT_RUN"
+    },
+    "jface_adapter_compile": {
+      "status": "NOT_RUN",
+      "source_files": 10
+    },
+    "full_eight_scene_grid_opencv_gate": {
+      "status": "NOT_RUN"
+    },
+    "combined_swt_nebula_resource_and_pixel_gate": {
+      "status": "NOT_RUN"
+    },
+    "independent_cpu_heap_native_memory_budget": {
+      "status": "NOT_RUN"
+    },
+    "windows_native": {
+      "status": "NOT_RUN"
+    },
+    "cocoa_native": {
+      "status": "NOT_RUN"
+    },
+    "gtk4_native": {
+      "status": "NOT_RUN"
+    }
+  },
+  "runtime": {
+    "platform": "Linux GTK3/X11 under isolated Xvfb",
+    "java": "OpenJDK21.0.12.1+1",
+    "heap_cap_mib": 512,
+    "swt": "Fork-built current-source GTK classes/resources and SWT-built natives; admitted callback overlay first on the classpath.",
+    "swt_callback_source_revision_local": "64b93072569e9f9749d30a065c793fca865ff16e",
+    "swt_callback_source_sha256": "b2cc90ce5b7f3f706a758099eacdca8199cae5ac53f7b44cdb9beb779aa09966",
+    "swt_graph_local_base": "b42becc14a4522d5342649cb527bd5e70aa7c86b",
+    "swt_graph_published_base": "bff9c98564a575781d9a19f61dc5561c1d13ce2a",
+    "swt_callback_canonical_revision": "893118ced3ba18f97633c24c8090d1aa83b4113c",
+    "swt_callback_canonical_pr": "https://github.com/hsoliwal/com.synexia/pull/12129",
+    "swt_callback_target_published_revision": "8f5c591ae92e5807a979552376fd91d167c04c6b",
+    "swt_callback_target_pr": "https://github.com/hsoliwal/eclipse.platform.swt/pull/221",
+    "swt_callback_target_publication_note": "Root verified the exact 75-path target delta and preserved the #220 base; runtime source identities remain those of the admitted local proof.",
+    "official_swt_3_135_disposal_qualification": "FAILED earlier native staging probes; final default disposal success requires the admitted fork SWT callback fix.",
+    "dependency_inventory": "evidence/received-native/inputs.json.gz",
+    "swt_own_received_dependency_inventory_sha256": "ff1455718c1c9909575307e5779a3371e3ba1b706e32521bb73a6287a7db7ee5",
+    "native_measurements": {
+      "startup_before": {
+        "exit": 1,
+        "wall_seconds": 1.269412427001953,
+        "cpu_user_seconds": 1.423379,
+        "cpu_system_seconds": 0.163331,
+        "max_rss_kib": 134444
+      },
+      "startup_default": {
+        "exit": 0,
+        "wall_seconds": 1.2114356060010323,
+        "cpu_user_seconds": 1.283881,
+        "cpu_system_seconds": 0.136297,
+        "max_rss_kib": 129556
+      },
+      "startup_original": {
+        "exit": 0,
+        "wall_seconds": 1.235796737997589,
+        "cpu_user_seconds": 1.1951640000000001,
+        "cpu_system_seconds": 0.154366,
+        "max_rss_kib": 134220
+      },
+      "selection_default": {
+        "exit": 0,
+        "wall_seconds": 1.4256071700001485,
+        "cpu_user_seconds": 2.156649,
+        "cpu_system_seconds": 0.18681,
+        "max_rss_kib": 143116
+      }
+    },
+    "measurement_scope": "Process wall/user CPU/system CPU/peak RSS observed per JVM, not statistical benchmarks; Xmx is a cap, not measured heap or a native-memory budget."
+  },
+  "sparse_proof": {
+    "logical_rows": 10000000,
+    "requested_top_index": 9000000,
+    "maximum_materialized_facades": 3,
+    "set_data_callbacks": 0,
+    "scope": "Target facade and existing extent endpoints only; stable public GridItem identity."
+  },
+  "pom": {
+    "change": "Discover GridTopIndexStartup_Test and set GTK_OVERLAY_SCROLLING=0 in the forked Tycho test process.",
+    "gtk_condition": "The pixel test requires the environment setting only when SWT.getPlatform() is gtk.",
+    "official_parameter_documentation": "https://tycho.eclipseprojects.io/doc/4.0.2/tycho-surefire-plugin/test-mojo.html#environmentVariables",
+    "full_tycho_execution": "NOT_RUN"
+  },
+  "evidence": [
+    {
+      "path": "README.md",
+      "sha256": "3b1ded8cd86ad332162ed0ec6a89f1b96b58d3890d3066f5b6d1316cc4976f2c",
+      "bytes": 14649
+    },
+    {
+      "path": "evidence/EARLIER_COMPARISONS.json",
+      "sha256": "2bf90aac5b445887f14396598dbab0be63b71a278bb5e383726f71bc8f03d377",
+      "bytes": 3226
+    },
+    {
+      "path": "evidence/earlier-comparisons/adjacent-before.log",
+      "sha256": "743037672c05ef5bc8f7a7b15e5daceae0b205e2a8a52e5ada015088198ebb42",
+      "bytes": 1676
+    },
+    {
+      "path": "evidence/earlier-comparisons/adjacent-candidate.log",
+      "sha256": "59674bb491dccfb6973fc82f9a5d231ea2b7884acdc3c9135f443456b9531c5d",
+      "bytes": 1670
+    },
+    {
+      "path": "evidence/earlier-comparisons/legacy-before.log",
+      "sha256": "f3b96a7076efeb5e0ad5b7a9ecc604cfe2b450dbf1ba988b6ff878bd631b0541",
+      "bytes": 27430
+    },
+    {
+      "path": "evidence/earlier-comparisons/legacy-candidate.log",
+      "sha256": "63e6b9401135ac6158c7383d9372fc05a0898845ba678374ce2ca71556e2a15f",
+      "bytes": 12776
+    },
+    {
+      "path": "evidence/earlier-comparisons/official-swt-earlier-staging.log",
+      "sha256": "7cbfdd62925e83522f5b023e856d20a11687017665c60f6fa604ba6c24799a43",
+      "bytes": 2501
+    },
+    {
+      "path": "evidence/persisted-pixels.log",
+      "sha256": "e8a563b517513544600003d6b66aff8236f7ec8ce513e37b49dc640ee9887840",
+      "bytes": 349
+    },
+    {
+      "path": "evidence/received-native/after-api.log",
+      "sha256": "1d4b0d7ce3845e9d6086723241b8d8ea222d2da97152ac2b1b5d0bd7f7573f54",
+      "bytes": 17017
+    },
+    {
+      "path": "evidence/received-native/after-compile.log",
+      "sha256": "d481f36c7a6c42cb1e8f74ed233ab870a04b2d00ad89a9ac31d2ccb7687f533f",
+      "bytes": 167
+    },
+    {
+      "path": "evidence/received-native/before-api.log",
+      "sha256": "7b4a542cb044b92ffeb2c7802ea01d21eefc2f8be18679e6d423c2fba99cdc60",
+      "bytes": 17019
+    },
+    {
+      "path": "evidence/received-native/before-compile.log",
+      "sha256": "ae913f6fd4e1998225b332b16d2718f8af9f690c1abe7ce83c7cdc8b91baadf5",
+      "bytes": 147
+    },
+    {
+      "path": "evidence/received-native/commands.json",
+      "sha256": "c4fc15c13f4f27c80ed9d49f91fc74ff6158a9eb72ce843440080db4c9e62f3a",
+      "bytes": 42998
+    },
+    {
+      "path": "evidence/received-native/inputs.json.gz",
+      "sha256": "355a598daceee54729e53b4e37cca83f0a3ae99bce059d45eba6b9066d2be7e2",
+      "bytes": 46219
+    },
+    {
+      "path": "evidence/received-native/java-version.log",
+      "sha256": "d3834035543c762edac7f1dbb74fdd965ef5a9ca24d7a97d7175512e18b19c32",
+      "bytes": 366
+    },
+    {
+      "path": "evidence/received-native/result.json",
+      "sha256": "77915230d86ca425ac718c12e9955e3601b807663156ee109aacf11670e6935b",
+      "bytes": 11378
+    },
+    {
+      "path": "evidence/received-native/selection-default/selection-after-duplicate-deselect.png",
+      "sha256": "f30494fc2e360c1e8bfa6513c1339b41acfca74f8b65d07cf224fac6beacc65a",
+      "bytes": 33400
+    },
+    {
+      "path": "evidence/received-native/selection-default/selection-reference-selected.png",
+      "sha256": "f30494fc2e360c1e8bfa6513c1339b41acfca74f8b65d07cf224fac6beacc65a",
+      "bytes": 33400
+    },
+    {
+      "path": "evidence/received-native/selection-default.log",
+      "sha256": "2c9ec5bb6881fb181671068143bebfb8925804ccbc11f895409747225801e982",
+      "bytes": 1793
+    },
+    {
+      "path": "evidence/received-native/startup-before/top-index-first-paint.png",
+      "sha256": "442a698207082f99e6516349199d60c394ea5a5c3a47e392b9c83740eff48f50",
+      "bytes": 26606
+    },
+    {
+      "path": "evidence/received-native/startup-before/top-index-settled-request.png",
+      "sha256": "21e71c770cc8919a8c233006d216201f0309fd824f490919da76fe5f58be0706",
+      "bytes": 27970
+    },
+    {
+      "path": "evidence/received-native/startup-before.log",
+      "sha256": "a6b4bb7d8cacc5706cdafe268627ee69275f5db0b9a5763d7ce4b76f9d781e8b",
+      "bytes": 56293
+    },
+    {
+      "path": "evidence/received-native/startup-default/top-index-first-paint.png",
+      "sha256": "21e71c770cc8919a8c233006d216201f0309fd824f490919da76fe5f58be0706",
+      "bytes": 27970
+    },
+    {
+      "path": "evidence/received-native/startup-default/top-index-settled-request.png",
+      "sha256": "21e71c770cc8919a8c233006d216201f0309fd824f490919da76fe5f58be0706",
+      "bytes": 27970
+    },
+    {
+      "path": "evidence/received-native/startup-default.log",
+      "sha256": "3bee8400d76a70c5306fe792f3a14ad87a8e24a62294b880842d6460d0ae86ed",
+      "bytes": 3003
+    },
+    {
+      "path": "evidence/received-native/startup-original/top-index-first-paint.png",
+      "sha256": "442a698207082f99e6516349199d60c394ea5a5c3a47e392b9c83740eff48f50",
+      "bytes": 26606
+    },
+    {
+      "path": "evidence/received-native/startup-original/top-index-settled-request.png",
+      "sha256": "442a698207082f99e6516349199d60c394ea5a5c3a47e392b9c83740eff48f50",
+      "bytes": 26606
+    },
+    {
+      "path": "evidence/received-native/startup-original.log",
+      "sha256": "41a3132c5bd1ca4be3e87ce4e254558e16b40dab5873640f7de368f9b16a80ed",
+      "bytes": 3012
+    },
+    {
+      "path": "evidence/received-native/startup-pixels.json",
+      "sha256": "66caa301592131c0541510fca077e0b3cdb17b6266a25a32053c95b14f068742",
+      "bytes": 2345
+    },
+    {
+      "path": "evidence/received-native/test-compile.log",
+      "sha256": "69d5e20616a854f9d4c2e363e1b997f49986d3b5cc95215c8c0fb4072db3e977",
+      "bytes": 158
+    },
+    {
+      "path": "evidence/receiver-apply.log",
+      "sha256": "de62dd6b34eb863ac6928ca827aeedd638e7d83126f1300cb2da0ec7fdec5d52",
+      "bytes": 60
+    },
+    {
+      "path": "evidence/receiver-fixedpoint.log",
+      "sha256": "d6b7e05d4e463bd6937e6e864e052323f3ff1c432b4dd6d7c9ba9a1761965ceb",
+      "bytes": 60
+    },
+    {
+      "path": "evidence/sdk/SDK_INPUTS.tsv",
+      "sha256": "962478e3bd38263fdf3b50b17152ea3f7e0607d3039c05bdab3e81705ec6ddef",
+      "bytes": 2268
+    },
+    {
+      "path": "evidence/sdk/SDK_RESULTS.tsv",
+      "sha256": "baad28d436db1c6acadf16db15941400f2a6076a0b0c635f19be86dc9aad6451",
+      "bytes": 657
+    },
+    {
+      "path": "evidence/sdk/TEST-com.synexia.rewrite.M3TaskRecipeTest.xml",
+      "sha256": "a665379b94d011548dca77e9dc684a0b332f1cbcf54a5585cb91a025e4a542c8",
+      "bytes": 13994
+    },
+    {
+      "path": "evidence/sdk-maven.log",
+      "sha256": "d2a6e81b6bdbf33adc52f6e4a3aeb0627bd85f5a0cd66a59ccc6f2aafd515a31",
+      "bytes": 2501
+    },
+    {
+      "path": "recipe/CRATE.json",
+      "sha256": "9ab7fa46899dbf7ec55b70c05142c396112351656bbcf43b86dc4e0eb623731a",
+      "bytes": 2884
+    },
+    {
+      "path": "recipe/MIRROR_QUALIFICATION.json",
+      "sha256": "603f6dac2a7f75b2583e1a853654a0efe406d5843592f24c7b495dabe82f36d7",
+      "bytes": 3093
+    },
+    {
+      "path": "recipe/offline/LICENSES/Apache-2.0.txt",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "bytes": 11558
+    },
+    {
+      "path": "recipe/offline/LICENSES/EPL-2.0.txt",
+      "sha256": "0becf16567beb77fa252b7664631dd177c8f9a1889e48995b45379c7130e5303",
+      "bytes": 14198
+    },
+    {
+      "path": "recipe/offline/NOTICE",
+      "sha256": "48c879ec1e01ba1a8f4f4643f9bc0b55324704e50655f9658c9a0ed654b03d0a",
+      "bytes": 1094
+    },
+    {
+      "path": "recipe/offline/README.md",
+      "sha256": "a1f21edbcae192b782a1fbff37e3f058af47f674298a959d040dda979b4068af",
+      "bytes": 7321
+    },
+    {
+      "path": "recipe/offline/SYNEXIA_HANDOFF.json",
+      "sha256": "56b737ecf05ca7f973777ad07e203fe573637d434aa88d9d45a175702fc31442",
+      "bytes": 9597
+    },
+    {
+      "path": "recipe/offline/crate.json",
+      "sha256": "9ab7fa46899dbf7ec55b70c05142c396112351656bbcf43b86dc4e0eb623731a",
+      "bytes": 2884
+    },
+    {
+      "path": "recipe/offline/pom.xml",
+      "sha256": "d84eeb3ba627744101d7829684e7281bfd278065a862d98ec592633ab2c0e8ae",
+      "bytes": 3160
+    },
+    {
+      "path": "recipe/offline/receive.py",
+      "sha256": "24ce6011c0bc7d89fc863f8f809740b24d943cb40c5aaf9aba03adf0f222dadf",
+      "bytes": 5941
+    },
+    {
+      "path": "recipe/offline/sdk-owner/src/main/java/com/synexia/rewrite/M3EditScope.java",
+      "sha256": "962d37d62d740c3e8055c365a048ae7ee0479c26a9f6bbfe741e540d6c1134ab",
+      "bytes": 1052
+    },
+    {
+      "path": "recipe/offline/sdk-owner/src/main/java/com/synexia/rewrite/M3HashPinnedJavaSnapshotRecipe.java",
+      "sha256": "67f7b81126e4736c7b61b444fa6545153a61e23c012975ca796fcee623ab6625",
+      "bytes": 31181
+    },
+    {
+      "path": "recipe/offline/sdk-owner/src/main/java/com/synexia/rewrite/M3HashPinnedTextSnapshotRecipe.java",
+      "sha256": "fbf1ea9efad784afef5ac201ff7fc324551f77a099ebfe2f79b70c3a17c731ef",
+      "bytes": 18026
+    },
+    {
+      "path": "recipe/offline/sdk-owner/src/main/java/com/synexia/rewrite/M3ScopeInference.java",
+      "sha256": "13660b59f60ec2941ec19e9bc8964ffd4b04689cdc33cd19711fba14b8da09a4",
+      "bytes": 7655
+    },
+    {
+      "path": "recipe/offline/src/main/resources/META-INF/rewrite/m3-nebula-startup-scroll-20261017.yml",
+      "sha256": "7d264e16dbdb54b32786c8ac6085ce615fec60df1bb2a65a2af2493ed4d61d9c",
+      "bytes": 652
+    },
+    {
+      "path": "recipe/offline/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/manifest.tsv",
+      "sha256": "51f59f976164450b45dea1d346c184fcf05c3b352bc8c5308dc9ae8cfcbabafa",
+      "bytes": 530
+    },
+    {
+      "path": "recipe/offline/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/pre/target-002.java.txt",
+      "sha256": "7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c",
+      "bytes": 417660
+    },
+    {
+      "path": "recipe/offline/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-001.java.txt",
+      "sha256": "1b6a33a212459b2354245dadd78c9d442b682e5a1fc1b6d78c51a160f808fc59",
+      "bytes": 14413
+    },
+    {
+      "path": "recipe/offline/src/main/resources/com/synexia/rewrite/hash-pinned-java/m3-nebula-startup-scroll-20261017/target-002.java.txt",
+      "sha256": "945c3872ea011f6830e41ff9eb99341fac0a1c8edd3a4e0e831d05326699b6e5",
+      "bytes": 423908
+    },
+    {
+      "path": "recipe/offline/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/manifest.tsv",
+      "sha256": "0b47403e0a931465a1970f29bac97949a4f79e4e5f4f8456a047b0ded3b04c10",
+      "bytes": 289
+    },
+    {
+      "path": "recipe/offline/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/pre/target-000.text.txt",
+      "sha256": "a84523a9ff07d88ab6b24369fae7552f09f5fd3e73c757e237c752907721deba",
+      "bytes": 3903
+    },
+    {
+      "path": "recipe/offline/src/main/resources/com/synexia/rewrite/hash-pinned-text/m3-nebula-startup-scroll-20261017/target-000.text.txt",
+      "sha256": "55f55f3b55b6f2677086ff50a444baa1fbf6a149cdd90212c0e687297faf3c00",
+      "bytes": 4073
+    },
+    {
+      "path": "recipe/offline/src/test/java/com/synexia/rewrite/M3TaskRecipeTest.java",
+      "sha256": "015e2f8257c6e2b5573cecb32929cfbc8a41766a2bac4446172ccfab28b7ebb3",
+      "bytes": 16821
+    },
+    {
+      "path": "verification/NebulaScrollingContractRunner20261017.java.txt",
+      "sha256": "534a310ac9ec47af1df16f049f9926eb6d99d3437d68eb1a3dfb5546e455311f",
+      "bytes": 1231
+    },
+    {
+      "path": "verification/RunGridNativeProof.java.txt",
+      "sha256": "7d3b2dccad69d287846004af18d6a279f00fef688761d93827bba63b69dbe72d",
+      "bytes": 2474
+    },
+    {
+      "path": "verification/run_native_proof.py",
+      "sha256": "38f7faed0e0aa7898e6339456b54161096084dbe886ee473a5e4b6b0b1c094b1",
+      "bytes": 8537
+    },
+    {
+      "path": "verification/verify_startup_pixels.py",
+      "sha256": "41ba32e5bccc8090f14f8f9ecf0632b6260d67ecf83d165ef9119266a060e607",
+      "bytes": 3127
+    }
+  ]
+}

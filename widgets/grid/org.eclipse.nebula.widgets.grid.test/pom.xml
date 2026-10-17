@@ -37,6 +37,9 @@
 				<artifactId>tycho-surefire-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
+					<environmentVariables>
+						<GTK_OVERLAY_SCROLLING>0</GTK_OVERLAY_SCROLLING>
+					</environmentVariables>
 					<systemProperties>
 						<nebula.grid.viewport.screenshots.screen>${nebula.grid.viewport.screenshots.screen}</nebula.grid.viewport.screenshots.screen>
 						<nebula.swt.gc.sha256>${nebula.swt.gc.sha256}</nebula.swt.gc.sha256>
@@ -62,6 +65,7 @@
 						<include>**/GridSetDataRedraw_Test.java</include>
 						<include>**/GridSelectionList_Test.java</include>
 						<include>**/GridSelectionOccurrence_Test.java</include>
+						<include>**/GridTopIndexStartup_Test.java</include>
 						<include>**/GridVirtualHeights_Test.java</include>
 						<include>**/model/HeapGrowth_Test.java</include>
 						<include>**/model/RowBitLanes_Test.java</include>

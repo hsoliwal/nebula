@@ -1,0 +1,4 @@
+# OpenRewrite SDK Results; no template-copy materialization
+widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridTopIndexStartup_Test.java	ABSENT	1b6a33a212459b2354245dadd78c9d442b682e5a1fc1b6d78c51a160f808fc59
+widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java	7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c	945c3872ea011f6830e41ff9eb99341fac0a1c8edd3a4e0e831d05326699b6e5
+widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml	a84523a9ff07d88ab6b24369fae7552f09f5fd3e73c757e237c752907721deba	55f55f3b55b6f2677086ff50a444baa1fbf6a149cdd90212c0e687297faf3c00
