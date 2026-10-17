@@ -6798,6 +6798,41 @@ public class Grid extends Canvas {
 	 * @param y mouse y
 	 * @return column reference which mouse is over, or null.
 	 */
+	/**
+	 * A header click with cell selection enabled selects the column's cells, as a header click
+	 * selects the column in the native Table. Stock has a branch for exactly this in its mouse-down
+	 * handler, but the column-header push swallows the click before it, so the cells were never
+	 * selected (archived bugs 218713 and 238601, UPSTREAM_DEFECTS.tsv D27); the original mode keeps
+	 * stock's behaviour (the column Selection event alone).
+	 */
+	private void selectPushedColumnCells(final GridColumn column, final Event e) {
+		if (!GridViewport.UPSTREAM_FIXES || !cellSelectionEnabled || getItemCount() == 0
+				|| column != getColumn(new Point(e.x, e.y))) {
+			return;
+		}
+		final Vector<Point> cells = new Vector<>();
+		getCells(column, cells);
+		final Event selectionEvent = updateCellSelection(cells, e.stateMask, false, true);
+		cellColumnSelectedOnLastMouseDown = getCellSelectionCount() > 0;
+		GridItem newFocusItem = getItem(0);
+		while (newFocusItem != null && getSpanningColumn(newFocusItem, column) != null) {
+			newFocusItem = getNextVisibleItem(newFocusItem);
+		}
+		if (newFocusItem != null) {
+			focusColumn = column;
+			focusItem = newFocusItem;
+		}
+		showColumn(column);
+		redraw();
+		if (selectionEvent != null) {
+			selectionEvent.stateMask = e.stateMask;
+			selectionEvent.button = e.button;
+			selectionEvent.x = e.x;
+			selectionEvent.y = e.y;
+			notifyListeners(SWT.Selection, selectionEvent);
+		}
+	}
+
 	private GridColumn overColumnHeader(final int x, final int y) {
 		GridColumn col = null;
 
@@ -8279,6 +8314,7 @@ public class Grid extends Canvas {
 			redraw();
 			if (pushingAndHovering) {
 				columnBeingPushed.fireListeners();
+				selectPushedColumnCells(columnBeingPushed, e);
 			}
 			setCapture(false);
 			return;
