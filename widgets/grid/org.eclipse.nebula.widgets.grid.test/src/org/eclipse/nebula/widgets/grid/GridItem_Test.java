@@ -39,6 +39,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.fixesUpstreamDefects;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.assertThrowsByMode;
 
 
 public class GridItem_Test {
@@ -112,9 +114,14 @@ public class GridItem_Test {
   @Test
   public void testGridItemCreation_onVirtual_doesNotResolveItem() {
     grid = new Grid( shell, SWT.VIRTUAL );
+    grid.addListener( SWT.SetData, new LoggingListener() );
     grid.setItemCount( 1 );
     GridItem item = grid.getItem( 0 );
-    assertFalse( /* item.isResolved() */ true );
+    // neither creating nor looking up a virtual item requests its data
+    assertTrue( eventLog.isEmpty() );
+    item.getText();
+    // the getter without a column index requests it in the default mode only (UPSTREAM_DEFECTS.tsv)
+    assertEquals( fixesUpstreamDefects() ? 1 : 0, eventLog.size() );
   }
 
   @Test
@@ -311,10 +318,11 @@ public class GridItem_Test {
     assertEquals( "", item.getText() );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetText_InvalidColumn() {
     GridItem item = new GridItem( grid, SWT.NONE );
-    item.getText( 5 );
+    // Nebula: a column index without a column answers the empty text
+    assertEquals( "", item.getText( 5 ) );
   }
 
   @Test
@@ -360,15 +368,19 @@ public class GridItem_Test {
     GridItem item = new GridItem( grid, SWT.NONE );
     GridColumn[] columns = createGridColumns( grid, 2, SWT.NONE );
     item.setText( 1, "foo" );
+    // Nebula: the cells right of a disposed column move left; a disposed column's cells go with it
     columns[ 0 ].dispose();
-    columns[ 1 ].dispose();
     assertEquals( "foo", item.getText( 0 ) );
+    columns[ 1 ].dispose();
+    assertEquals( "", item.getText( 0 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testSetText_InvalidColumn() {
     GridItem item = new GridItem( grid, SWT.NONE );
+    // Nebula keeps the text of a column index without a column
     item.setText( 5, "foo" );
+    assertEquals( "foo", item.getText( 5 ) );
   }
 
   @Test( expected = IllegalArgumentException.class )
@@ -381,8 +393,12 @@ public class GridItem_Test {
   public void testSetText_marksItemCached() {
     grid = new Grid( shell, SWT.VIRTUAL );
     GridItem item = new GridItem( grid, SWT.NONE );
+    grid.addListener( SWT.SetData, new LoggingListener() );
     item.setText( "foo" );
-    assertTrue( /* item.isCached() */ false );
+    // Nebula: setting a text does not mark the item as answered: its data is still requested once
+    assertEquals( "foo", item.getText( 0 ) );
+    item.getText( 0 );
+    assertEquals( 1, eventLog.size() );
   }
 
   @Test
@@ -391,12 +407,13 @@ public class GridItem_Test {
     GridItem[] items = createGridItems( grid, 3, 3 );
     grid.clearAll( true );
     grid.addListener( SWT.SetData, new LoggingListener() );
-    items[ 4 ].getText();
+    requestData( items[ 4 ] );
     assertEquals( 1, eventLog.size() );
     Event event = eventLog.get( 0 );
     assertSame( grid, event.widget );
     assertSame( items[ 4 ], event.item );
-    assertEquals( 1, event.index );
+    // Nebula: the index of a root item is its row index (the index of a child is its index in its parent)
+    assertEquals( 4, event.index );
   }
 
   @Test
@@ -405,7 +422,7 @@ public class GridItem_Test {
     GridItem[] items = createGridItems( grid, 3, 3 );
     grid.clearAll( true );
     grid.addListener( SWT.SetData, new LoggingListener() );
-    items[ 2 ].getText();
+    requestData( items[ 2 ] );
     assertEquals( 1, eventLog.size() );
     Event event = eventLog.get( 0 );
     assertSame( grid, event.widget );
@@ -419,8 +436,8 @@ public class GridItem_Test {
     GridItem[] items = createGridItems( grid, 3, 3 );
     grid.clearAll( true );
     grid.addListener( SWT.SetData, new LoggingListener() );
-    items[ 2 ].getText();
-    items[ 2 ].getText();
+    requestData( items[ 2 ] );
+    requestData( items[ 2 ] );
     assertEquals( 1, eventLog.size() );
   }
 
@@ -452,16 +469,17 @@ public class GridItem_Test {
     GridItem item = new GridItem( grid, SWT.NONE );
     Font font = new Font( display, "Arial", 20, SWT.BOLD );
     item.setFont( 1, font );
-    assertSame( grid.getFont(), item.getFont( 0 ) );
+    // Nebula: a cell without its own font answers none (its renderer paints with the item's font)
+    assertNull( item.getFont( 0 ) );
     assertSame( font, item.getFont( 1 ) );
-    assertSame( grid.getFont(), item.getFont( 2 ) );
+    assertNull( item.getFont( 2 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetFontByIndex_InvalidIndex() {
     createGridColumns( grid, 3, SWT.NONE );
     GridItem item = new GridItem( grid, SWT.NONE );
-    item.getFont( 10 );
+    assertNull( item.getFont( 10 ) );
   }
 
   @Test( expected = IllegalArgumentException.class )
@@ -476,7 +494,7 @@ public class GridItem_Test {
   @Test
   public void testGetBackground_Initial() {
     GridItem item = new GridItem( grid, SWT.NONE );
-    assertSame( grid.getBackground(), item.getBackground() );
+    assertEquals( grid.getBackground(), item.getBackground() );
   }
 
   @Test
@@ -501,16 +519,17 @@ public class GridItem_Test {
     GridItem item = new GridItem( grid, SWT.NONE );
     Color background = new Color(0, 0, 255 );
     item.setBackground( 1, background );
-    assertSame( grid.getBackground(), item.getBackground( 0 ) );
+    assertEquals( grid.getBackground(), item.getBackground( 0 ) );
     assertSame( background, item.getBackground( 1 ) );
-    assertSame( grid.getBackground(), item.getBackground( 2 ) );
+    assertEquals( grid.getBackground(), item.getBackground( 2 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetBackgroundByIndex_InvalidIndex() {
     createGridColumns( grid, 3, SWT.NONE );
     GridItem item = new GridItem( grid, SWT.NONE );
-    item.getBackground( 10 );
+    // Nebula: a column index without a column answers the default cell background
+    assertEquals( grid.getBackground(), item.getBackground( 10 ) );
   }
 
   @Test( expected = IllegalArgumentException.class )
@@ -525,7 +544,7 @@ public class GridItem_Test {
   @Test
   public void testGetForeground_Initial() {
     GridItem item = new GridItem( grid, SWT.NONE );
-    assertSame( grid.getForeground(), item.getForeground() );
+    assertEquals( grid.getForeground(), item.getForeground() );
   }
 
   @Test
@@ -550,16 +569,16 @@ public class GridItem_Test {
     GridItem item = new GridItem( grid, SWT.NONE );
     Color foreground = new Color(0, 0, 255 );
     item.setForeground( 1, foreground );
-    assertSame( grid.getForeground(), item.getForeground( 0 ) );
+    assertEquals( grid.getForeground(), item.getForeground( 0 ) );
     assertSame( foreground, item.getForeground( 1 ) );
-    assertSame( grid.getForeground(), item.getForeground( 2 ) );
+    assertEquals( grid.getForeground(), item.getForeground( 2 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetForegroundByIndex_InvalidIndex() {
     createGridColumns( grid, 3, SWT.NONE );
     GridItem item = new GridItem( grid, SWT.NONE );
-    item.getForeground( 10 );
+    assertEquals( grid.getForeground(), item.getForeground( 10 ) );
   }
 
   @Test( expected = IllegalArgumentException.class )
@@ -581,9 +600,10 @@ public class GridItem_Test {
     item.setBackground( background );
     item.setForeground( foreground );
     grid.clear( 0, false );
-    assertSame( grid.getFont(), item.getFont() );
-    assertSame( grid.getBackground(), item.getBackground() );
-    assertSame( grid.getForeground(), item.getForeground() );
+    // SWT answers equal, not identical, colour and font objects for a control's defaults
+    assertEquals( grid.getFont(), item.getFont() );
+    assertEquals( grid.getBackground(), item.getBackground() );
+    assertEquals( grid.getForeground(), item.getForeground() );
   }
 
   @Test
@@ -617,12 +637,13 @@ public class GridItem_Test {
     assertSame( image, item.getImage() );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testSetImage_DisposedImage() {
     GridItem item = new GridItem( grid, SWT.NONE );
     Image image = loadImage( display, Fixture.IMAGE1 );
     image.dispose();
-    item.setImage( image );
+    // the Javadoc of Item.setImage rejects a disposed image; stock accepts it (UPSTREAM_DEFECTS.tsv)
+    assertThrowsByMode( IllegalArgumentException.class, null, () -> item.setImage( image ) );
   }
 
   @Test
@@ -636,11 +657,11 @@ public class GridItem_Test {
     assertNull( item.getImage( 2 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetImagetByIndex_InvalidIndex() {
     createGridColumns( grid, 3, SWT.NONE );
     GridItem item = new GridItem( grid, SWT.NONE );
-    item.getImage( 10 );
+    assertNull( item.getImage( 10 ) );
   }
 
   @Test( expected = IllegalArgumentException.class )
@@ -675,11 +696,12 @@ public class GridItem_Test {
     assertFalse( item.getChecked( 2 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetCheckedByIndex_InvalidIndex() {
     createGridColumns( grid, 3, SWT.NONE );
     GridItem item = new GridItem( grid, SWT.NONE );
-    item.getChecked( 10 );
+    // Nebula: a column index without a column answers unchecked
+    assertFalse( item.getChecked( 10 ) );
   }
 
   @Test
@@ -705,11 +727,11 @@ public class GridItem_Test {
     assertFalse( item.getGrayed( 2 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetGrayedByIndex_InvalidIndex() {
     createGridColumns( grid, 3, SWT.NONE );
     GridItem item = new GridItem( grid, SWT.NONE );
-    item.getGrayed( 10 );
+    assertFalse( item.getGrayed( 10 ) );
   }
 
   @Test
@@ -745,7 +767,8 @@ public class GridItem_Test {
   @Test
   public void testGetHeight_Initial() {
     GridItem item = new GridItem( grid, SWT.NONE );
-    assertEquals( 27, item.getHeight() );
+    // an item starts at the Grid's default item height
+    assertEquals( grid.getItemHeight(), item.getHeight() );
   }
 
   @Test
@@ -768,44 +791,53 @@ public class GridItem_Test {
     createGridColumns( grid, 5, SWT.NONE );
     createGridItems( grid, 5, 5 );
     GridItem item = grid.getRootItem( 2 );
-    assertEquals( new Point( 60, 27 ), item.getCellSize( 2 ) );
+    assertEquals( new Point( 60, grid.getItemHeight() ), item.getCellSize( 2 ) );
   }
 
   @Test
   public void testGetBounds() {
     createGridColumns( grid, 3, SWT.NONE );
     createGridItems( grid, 3, 3 );
-    assertEquals( new Rectangle( 0, 27, 20, 27 ), grid.getItem( 4 ).getBounds( 0 ) );
-    assertEquals( new Rectangle( 20, 27, 40, 27 ), grid.getItem( 4 ).getBounds( 1 ) );
-    assertEquals( new Rectangle( 60, 27, 60, 27 ), grid.getItem( 4 ).getBounds( 2 ) );
+    // Nebula rows are getItemHeight() high with a one-pixel line between them
+    int height = grid.getItemHeight();
+    assertEquals( new Rectangle( 0, height + 1, 20, height ), grid.getItem( 4 ).getBounds( 0 ) );
+    assertEquals( new Rectangle( 20, height + 1, 40, height ), grid.getItem( 4 ).getBounds( 1 ) );
+    assertEquals( new Rectangle( 60, height + 1, 60, height ), grid.getItem( 4 ).getBounds( 2 ) );
   }
 
   @Test
   public void testGetBounds_WithOffset() {
     createGridColumns( grid, 5, SWT.NONE );
     createGridItems( grid, 20, 3 );
+    // Nebula sizes its scroll bars when it paints
+    showGrid();
     grid.getHorizontalBar().setSelection( 30 );
     grid.setTopIndex( 12 );
-    assertEquals( new Rectangle( -30, 54, 20, 27 ), grid.getItem( 20 ).getBounds( 0 ) );
-    assertEquals( new Rectangle( -10, 54, 40, 27 ), grid.getItem( 20 ).getBounds( 1 ) );
-    assertEquals( new Rectangle( 30, 54, 60, 27 ), grid.getItem( 20 ).getBounds( 2 ) );
+    int row = grid.getItemHeight() + 1;
+    int height = grid.getItemHeight();
+    assertEquals( new Rectangle( -30, 2 * row, 20, height ), grid.getItem( 20 ).getBounds( 0 ) );
+    assertEquals( new Rectangle( -10, 2 * row, 40, height ), grid.getItem( 20 ).getBounds( 1 ) );
+    assertEquals( new Rectangle( 30, 2 * row, 60, height ), grid.getItem( 20 ).getBounds( 2 ) );
   }
 
   @Test
   public void testGetBounds_InvisibleItem() {
     createGridColumns( grid, 3, SWT.NONE );
     createGridItems( grid, 3, 3 );
+    // Nebula: getBoundsCorrected moves the cell of a collapsed child far away (for cell editors)
     Rectangle expected = new Rectangle( -1000, -1000, 0, 0 );
-    assertEquals( expected, grid.getItem( 1 ).getBounds( 0 ) );
+    assertEquals( expected, grid.getItem( 1 ).getBoundsCorrected( 0 ) );
   }
 
   @Test
   public void testGetBounds_HiddenItem() {
     createGridColumns( grid, 3, SWT.NONE );
     createGridItems( grid, 20, 3 );
+    showGrid();
     grid.setTopIndex( 12 );
+    // Nebula: getBoundsCorrected moves a cell scrolled out of view far away (for cell editors)
     Rectangle expected = new Rectangle( -1000, -1000, 0, 0 );
-    assertEquals( expected, grid.getItem( 8 ).getBounds( 0 ) );
+    assertEquals( expected, grid.getItem( 8 ).getBoundsCorrected( 0 ) );
   }
 
   //////////////////
@@ -814,6 +846,29 @@ public class GridItem_Test {
 
     public void handleEvent( Event event ) {
       eventLog.add( event );
+    }
+  }
+
+  /*
+   * Reads the item's text: in the default mode getText() requests the data; stock requests it only
+   * from the getters with a column index (UPSTREAM_DEFECTS.tsv).
+   */
+  private void requestData( GridItem item ) {
+    int before = eventLog.size();
+    item.getText();
+    if( !fixesUpstreamDefects() ) {
+      assertEquals( before, eventLog.size() );
+      item.getText( 0 );
+    }
+  }
+
+  /* opens the shell and paints the Grid: Nebula sizes its scroll bars when it paints */
+  private void showGrid() {
+    shell.pack();
+    shell.open();
+    grid.redraw();
+    grid.update();
+    while( display.readAndDispatch() ) {
     }
   }
 }

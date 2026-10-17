@@ -185,6 +185,60 @@ public class GridViewportDifferential_Test {
 		}
 	}
 
+	/*
+	 * Header and footer content changed after the columns exist, and the footer shown and hidden:
+	 * the default mode measures the header and footer again and updates its scroll bars where stock
+	 * keeps stale heights and bars (UPSTREAM_DEFECTS.tsv). Exactly the listed steps answer or paint
+	 * otherwise than the oracle, and each of them does; every other step, among them the steps
+	 * undoing a change, answers and paints as the oracle. The original mode differs in none.
+	 */
+	@Test
+	public void headerAndFooterChangesDivergeExactlyWhereListed() throws Exception {
+		final ClassLoader stockBuild = gridBuild(oracleClasses(), "original");
+		final ClassLoader candidateBuild = gridBuild(location(Grid.class), CANDIDATE);
+		final Function<int[], Object> stock = driver(stockBuild, stockShell, 0);
+		final Function<int[], Object> candidate = driver(candidateBuild, viewportShell, 0);
+		stockShell.open();
+		viewportShell.open();
+		final int[][] scene = {
+				{ GridDifferentialDriver.HEADER_FONT, 1, 0, 0 }, // UPSTREAM_DEFECTS: header height after content
+				{ GridDifferentialDriver.HEADER_FONT, 0, 0, 0 },
+				{ GridDifferentialDriver.HEADER_IMAGE, 1, 1, 0 }, // header height after content
+				{ GridDifferentialDriver.HEADER_IMAGE, 0, 1, 0 },
+				{ GridDifferentialDriver.FOOTER_VISIBLE, 1, 0, 0 }, // scroll bars after footer visibility
+				{ 0, 3, 0, 0 },
+				{ GridDifferentialDriver.FOOTER_FONT, 1, 2, 0 }, // footer height after content
+				{ GridDifferentialDriver.FOOTER_FONT, 0, 2, 0 },
+				{ GridDifferentialDriver.FOOTER_TEXT, 1, 2, 0 },
+				{ GridDifferentialDriver.FOOTER_VISIBLE, 0, 0, 0 }, // scroll bars after footer visibility
+				{ 1, 3, 0, 0 } };
+		final boolean fixes = !"original".equals(CANDIDATE);
+		final java.util.Set<Integer> accepted = fixes ? java.util.Set.of(0, 2, 4, 6, 9) : java.util.Set.of();
+		final int[] state = { GridDifferentialDriver.STATE, 0, 0, 0 };
+		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
+		drain();
+		final StringBuilder verdicts = new StringBuilder();
+		for (int step = 0; step < scene.length; step++) {
+			final Object stockAnswer = stock.apply(scene[step]);
+			final Object candidateAnswer = candidate.apply(scene[step]);
+			drain();
+			final String expected = stockAnswer + " | " + stock.apply(state);
+			final String actual = candidateAnswer + " | " + candidate.apply(state);
+			final boolean samePixels = Arrays.equals(((ImageData) stock.apply(pixels)).data,
+					((ImageData) candidate.apply(pixels)).data);
+			final boolean same = expected.equals(actual) && samePixels;
+			verdicts.append(step).append(same ? " identical" : " differs").append('\n');
+			if (same == accepted.contains(step)) {
+				fail("step " + step + " " + Arrays.toString(scene[step]) + (same ? " is identical but listed"
+						: " differs but is not listed") + "\n  stock:     " + expected + "\n  candidate: " + actual
+						+ "\n  pixels " + (samePixels ? "identical" : "differ") + "\n" + verdicts);
+			}
+		}
+		System.out.println("GridViewportDifferential_Test: header/footer scene, " + scene.length + " steps, "
+				+ accepted.size() + " listed divergences, each one observed (oracle " + stock.apply(new int[] {
+						GridDifferentialDriver.MODE, 0, 0, 0 }) + ", candidate " + CANDIDATE + ")");
+	}
+
 	/* runs one seed; answers the pixel verdict (a difference fails unless grid.differential.pixelsAdvisory) */
 	private String run(final int seed, final int config, final Function<int[], Object> stock,
 			final Function<int[], Object> viewport) {

@@ -258,8 +258,13 @@ final class GridNativeCellRenderer extends GridCellRenderer {
 		gc.setFont(item.getFont(getColumn()));
 		final Layout layout = layout(gc, item, look);
 		final int width = layout.text + gc.textExtent(item.getText(getColumn())).x + look.listTextInset;
-		// the Grid adds a one-pixel separator below each row; together they are the native row
-		return new Point(width, look.rowHeight(item.getParent()) - 1);
+		// the Grid adds a one-pixel separator below each row; together they are the native row,
+		// which grows with a taller font or image as the native rows do
+		final int row = look.rowHeight(item.getParent());
+		final Image image = item.getImage(getColumn());
+		final int text = item.getFont(getColumn()) == null ? look.fontHeight : gc.getFontMetrics().getHeight();
+		final int content = Math.max(text, image == null ? 0 : image.getBounds().height);
+		return new Point(width, Math.max(row, content + row - look.fontHeight) - 1);
 	}
 
 	@Override

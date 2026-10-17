@@ -22,6 +22,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.TreeListener;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Item;
@@ -437,6 +438,31 @@ public class GridColumnGroup extends Item
         checkWidget();
         headerRenderer.setWordWrap(wordWrap);
         parent.redraw();
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setText(String string) {
+        super.setText(string);
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setImage(Image image) {
+        super.setImage(image);
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
     }
     /**
      * Returns whether or not text is word-wrapped in the header for this column group.
@@ -484,6 +510,9 @@ public class GridColumnGroup extends Item
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
     	this.headerFont = font;
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
     }
 
 	/**

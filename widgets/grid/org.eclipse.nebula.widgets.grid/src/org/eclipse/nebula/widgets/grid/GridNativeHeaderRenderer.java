@@ -15,6 +15,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.TextLayout;
 
 /**
  * A Grid column header that looks like the platform's list header: native height, the header
@@ -59,6 +60,16 @@ final class GridNativeHeaderRenderer extends GridHeaderRenderer {
 		if (width > 0) {
 			gc.setForeground(getDisplay().getSystemColor(
 					column.getParent().isEnabled() ? SWT.COLOR_LIST_FOREGROUND : SWT.COLOR_WIDGET_DISABLED_FOREGROUND));
+			if (isWordWrap()) {
+				// the native header has one line; a Grid header that wraps draws its lines itself
+				final TextLayout layout = wrapped(gc, column, width);
+				try {
+					layout.draw(gc, x, b.y + Math.max(0, (b.height - layout.getBounds().height) / 2));
+				} finally {
+					layout.dispose();
+				}
+				return;
+			}
 			final String text = GridNativeCellRenderer.shorten(gc, column.getText(), width);
 			final int extent = gc.textExtent(text).x;
 			final int alignment = column.getAlignment();
@@ -79,7 +90,30 @@ final class GridNativeHeaderRenderer extends GridHeaderRenderer {
 		final Image image = column.getImage();
 		final int width = 2 * look.listTextInset + gc.textExtent(column.getText()).x
 				+ (image == null ? 0 : image.getBounds().width + look.listTextInset);
-		return new Point(width, look.headerHeight);
+		// a taller header font or image makes the header taller, as the native header grows
+		int text = gc.getFontMetrics().getHeight();
+		if (isWordWrap()) {
+			final int available = (wHint == SWT.DEFAULT ? getBounds().width : wHint) - 2 * look.headerTextInset()
+					- (image == null ? 0 : image.getBounds().width + look.listTextInset);
+			final TextLayout layout = wrapped(gc, column, available);
+			try {
+				text = layout.getBounds().height;
+			} finally {
+				layout.dispose();
+			}
+		}
+		final int content = Math.max(text, image == null ? 0 : image.getBounds().height);
+		return new Point(width, Math.max(look.headerHeight, content + look.headerHeight - look.fontHeight));
+	}
+
+	/* the column text wrapped at the width, in the header font (the caller disposes it) */
+	private static TextLayout wrapped(final GC gc, final GridColumn column, final int width) {
+		final TextLayout layout = new TextLayout(gc.getDevice());
+		layout.setFont(column.getHeaderFont());
+		layout.setText(column.getText());
+		layout.setWidth(Math.max(1, width));
+		layout.setAlignment(column.getAlignment());
+		return layout;
 	}
 
 	@Override

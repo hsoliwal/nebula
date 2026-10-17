@@ -16,6 +16,7 @@ import java.util.function.Function;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
@@ -40,6 +41,12 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	static final int STATE = -1, PIXELS = -2, MODE = -3, KINDS = 26;
 
 	static final int ROOTS = 120, CHILDREN = 12, GRANDCHILDREN = 3, COLUMNS = 4;
+
+	/**
+	 * Scripted steps, outside the random kinds: header and footer content and footer visibility
+	 * changed after the columns exist ({@code a == 0} undoes the change; {@code b} picks the column).
+	 */
+	static final int HEADER_FONT = 100, HEADER_IMAGE = 101, FOOTER_VISIBLE = 102, FOOTER_TEXT = 103, FOOTER_FONT = 104;
 
 	/** Configuration bits; {@link #LARGE} builds 1,000 roots with 99 children each instead. */
 	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4;
@@ -125,6 +132,9 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private String step(final int kind, final int a, final int b, final int c) {
+		if (kind >= HEADER_FONT) {
+			return scripted(kind, a != 0, grid.getColumns()[b % grid.getColumns().length]);
+		}
 		final GridItem[] items = grid.getItems();
 		final GridColumn[] columns = grid.getColumns();
 		final GridItem item = items.length == 0 ? null : items[a % items.length];
@@ -211,6 +221,37 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			grid.setItemHeight(14 + c % 12);
 			return "item height " + grid.getItemHeight();
 		}
+	}
+
+	private Font largeFont;
+	private Image tallImage;
+
+	private String scripted(final int kind, final boolean set, final GridColumn column) {
+		if (largeFont == null) {
+			largeFont = new Font(grid.getDisplay(), "Arial", 20, SWT.NORMAL);
+			tallImage = new Image(grid.getDisplay(), 16, 40);
+			grid.addDisposeListener(e -> {
+				largeFont.dispose();
+				tallImage.dispose();
+			});
+		}
+		switch (kind) {
+		case HEADER_FONT:
+			column.setHeaderFont(set ? largeFont : null);
+			break;
+		case HEADER_IMAGE:
+			column.setImage(set ? tallImage : null);
+			break;
+		case FOOTER_VISIBLE:
+			grid.setFooterVisible(set);
+			break;
+		case FOOTER_TEXT:
+			column.setFooterText(set ? "f" + column.getText() : "");
+			break;
+		default:
+			column.setFooterFont(set ? largeFont : null);
+		}
+		return "scripted " + kind + " " + set;
 	}
 
 	private String probe(final int b, final int c) {
@@ -301,6 +342,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				+ " | sel " + Arrays.toString(grid.getSelectionIndices()) + selection
 				+ " | cells " + cells
 				+ " | focus " + text(grid.getFocusItem()) + " " + grid.getFocusCell()
+				+ " | header " + grid.getHeaderHeight() + " footer " + grid.getFooterHeight()
 				+ " | events " + events;
 		events.setLength(0);
 		return answer;
