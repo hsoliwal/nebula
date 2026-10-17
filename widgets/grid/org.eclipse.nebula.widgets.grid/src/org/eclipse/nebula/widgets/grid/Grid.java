@@ -325,7 +325,8 @@ public class Grid extends Canvas {
 	/**
 	 * List of selected items.
 	 */
-	private final List<GridItem> selectedItems = new ArrayList<>();
+	/* the viewport mode marks each selected item's position: O(1) contains, add and remove */
+	private final List<GridItem> selectedItems = GridViewport.ENABLED ? new GridSelectionList() : new ArrayList<>();
 
 	/**
 	 * Reference to the item in focus.
@@ -2851,6 +2852,9 @@ public class Grid extends Canvas {
 		checkWidget();
 
 		if (!cellSelectionEnabled) {
+			if (items instanceof GridRowTree) {
+				return ((GridRowTree) items).rowsOf(selectedItems);
+			}
 			final int[] indices = new int[selectedItems.size()];
 			int i = 0;
 			for (final GridItem item : selectedItems) {

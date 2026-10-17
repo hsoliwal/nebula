@@ -175,6 +175,32 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	}
 
 	/**
+	 * @param selected items of this list
+	 * @return their rows, in their order: O(k log n) for few items, one O(n) walk for many
+	 */
+	int[] rowsOf(final java.util.List<GridItem> selected) {
+		final int[] rows = new int[selected.size()];
+		int i = 0;
+		if ((long) selected.size() * 16 < size()) {
+			for (final GridItem item : selected) {
+				final int slot = slotOf(item);
+				rows[i++] = slot < 0 ? item.getRowIndex() : rowOfSlot(slot);
+			}
+			return rows;
+		}
+		final int[] rowOfSlot = new int[nextSlot];
+		int row = 0;
+		for (int slot = first(root); slot != NONE; slot = successor(slot)) {
+			rowOfSlot[slot] = row++;
+		}
+		for (final GridItem item : selected) {
+			final int slot = slotOf(item);
+			rows[i++] = slot < 0 ? item.getRowIndex() : rowOfSlot[slot];
+		}
+		return rows;
+	}
+
+	/**
 	 * Records that the visibility or the height of {@code item} changed; O(log n).
 	 *
 	 * @param item an item of this list (others are ignored)

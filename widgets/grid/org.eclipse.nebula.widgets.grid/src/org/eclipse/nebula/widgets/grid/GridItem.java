@@ -152,6 +152,9 @@ public class GridItem extends Item {
 	/* this item's slot in the Grid's row tree (GridRowTree), or -1 */
 	private int rowTreeSlot = -1;
 
+	/* this item's position in the Grid's selection (GridSelectionList), or -1 */
+	private int selectionPosition = -1;
+
 	private final Object ROW_LOCK = new Object();
 
 	/**
@@ -253,6 +256,16 @@ public class GridItem extends Item {
 		synchronized (ROW_LOCK) {
 			return row;
 		}
+	}
+
+	/** @return this item's position in the Grid's selection list, or -1 */
+	int selectionPosition() {
+		return selectionPosition;
+	}
+
+	/** The Grid's selection list keeps this item at {@code position} (-1: not selected). */
+	void markSelectionPosition(final int position) {
+		selectionPosition = position;
 	}
 
 	/** @return this item's slot in the Grid's row tree, or -1 */
