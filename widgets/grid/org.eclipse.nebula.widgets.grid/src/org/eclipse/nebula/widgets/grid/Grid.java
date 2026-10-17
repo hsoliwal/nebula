@@ -4797,8 +4797,8 @@ public class Grid extends Canvas {
 
 		// An item being disposed is already out of the item list but still holds its old row
 		// (Grid.removeItem may resize the scrollbars, which lays out a GridEditor on it): it
-		// is not shown (issue #700).
-		if (!isRowOf(item, itemIndex)) {
+		// is not shown (issue #700; default mode, UPSTREAM_DEFECTS.tsv D22).
+		if (GridViewport.UPSTREAM_FIXES && !isRowOf(item, itemIndex)) {
 			return false;
 		}
 
