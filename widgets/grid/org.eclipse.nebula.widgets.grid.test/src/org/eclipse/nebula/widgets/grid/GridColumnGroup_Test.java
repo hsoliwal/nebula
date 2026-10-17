@@ -31,6 +31,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.fixesUpstreamDefects;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.assertThrowsByMode;
 
 
 @SuppressWarnings( {
@@ -158,12 +160,13 @@ public class GridColumnGroup_Test {
     assertSame( font, group.getHeaderFont() );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testSetHeaderFont_DisposedFont() {
     Font font = new Font( display, "Arial", 20, SWT.BOLD );
     font.dispose();
 
-    group.setHeaderFont( font );
+    // stock accepts the disposed font and fails when it paints (UPSTREAM_DEFECTS.tsv)
+    assertThrowsByMode( IllegalArgumentException.class, null, () -> group.setHeaderFont( font ) );
   }
 
   @Test
@@ -180,11 +183,20 @@ public class GridColumnGroup_Test {
 
   @Test
   public void testGetHeaderWordWrap_invalidatesCachedHeaderHeight() {
-    grid.getHeaderHeight();
+    grid.setAutoHeight( true );
+    GridColumn column = new GridColumn( group, SWT.NONE );
+    column.setWidth( 20 );
+    group.setText( "foo bar" );
+    int before = grid.getGroupHeaderHeight();
 
     group.setHeaderWordWrap( true );
 
-    assertFalse( /*grid.layoutCache.hasHeaderHeight()*/ true );
+    // the default mode measures the wrapping group header again; stock keeps the height (UPSTREAM_DEFECTS.tsv)
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getGroupHeaderHeight() > before );
+    } else {
+      assertEquals( before, grid.getGroupHeaderHeight() );
+    }
   }
 
 }

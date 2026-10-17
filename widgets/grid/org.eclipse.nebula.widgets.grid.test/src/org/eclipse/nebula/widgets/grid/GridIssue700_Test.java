@@ -74,6 +74,11 @@ public class GridIssue700_Test {
 		grid.showItem(last);
 		flush();
 
+		if (!GridTestUtil.fixesUpstreamDefects()) {
+			// stock lays the editor out on the item being removed (UPSTREAM_DEFECTS.tsv D22)
+			GridTestUtil.assertThrowsByMode(null, IllegalArgumentException.class, last::dispose);
+			return;
+		}
 		last.dispose(); // threw IllegalArgumentException("Index out of bounds") before the fix
 		flush();
 

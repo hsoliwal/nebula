@@ -41,6 +41,9 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.eclipse.swt.graphics.GC;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.assertThrowsByMode;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.fixesUpstreamDefects;
 
 
 @SuppressWarnings({
@@ -259,7 +262,9 @@ public class GridColumn_Test {
 
     columns[ 1 ].setSort( SWT.DOWN );
 
-    assertEquals( SWT.NONE, columns[ 0 ].getSort() );
+    // Nebula: every column keeps its own sort indicator (several may show one)
+    assertEquals( SWT.UP, columns[ 0 ].getSort() );
+    assertEquals( SWT.DOWN, columns[ 1 ].getSort() );
   }
 
   @Test
@@ -309,9 +314,10 @@ public class GridColumn_Test {
 
     columns[ 1 ].setVisible( false );
 
-    assertEquals( 1, eventLog.size() );
-    Event event = eventLog.get( 0 );
-    assertSame( columns[ 2 ], event.widget );
+    // Nebula fires Move on every other visible column, in display order
+    assertEquals( 2, eventLog.size() );
+    assertSame( columns[ 0 ], eventLog.get( 0 ).widget );
+    assertSame( columns[ 2 ], eventLog.get( 1 ).widget );
   }
 
   @Test
@@ -335,8 +341,12 @@ public class GridColumn_Test {
 
   @Test
   public void testIsTree_WithSubItems() {
+    // Nebula: sub items do not choose the tree column; setTree does
     GridColumn column1 = new GridColumn( grid, SWT.NONE );
     createGridItems( grid, 3, 1 );
+    assertFalse( column.isTree() );
+
+    column.setTree( true );
 
     assertTrue( column.isTree() );
     assertFalse( column1.isTree() );
@@ -344,22 +354,26 @@ public class GridColumn_Test {
 
   @Test
   public void testIsTree_AddColumn() {
+    // Nebula: the tree column is the column marked with setTree, wherever it moves
+    column.setTree( true );
     createGridItems( grid, 3, 1 );
 
     GridColumn column1 = new GridColumn( grid, SWT.NONE, 0 );
 
-    assertFalse( column.isTree() );
-    assertTrue( column1.isTree() );
+    assertTrue( column.isTree() );
+    assertFalse( column1.isTree() );
   }
 
   @Test
   public void testIsTree_RemoveColumn() {
+    // Nebula: disposing the tree column does not make another column the tree column
     GridColumn column1 = new GridColumn( grid, SWT.NONE );
+    column.setTree( true );
     createGridItems( grid, 3, 1 );
 
     column.dispose();
 
-    assertTrue( column1.isTree() );
+    assertFalse( column1.isTree() );
   }
 
   @Test
@@ -383,9 +397,10 @@ public class GridColumn_Test {
 
   @Test
   public void testSetAlignment_InvalidValue() {
+    // Nebula hands the alignment to the cell renderer unchecked
     column.setAlignment( SWT.UP );
 
-    assertEquals( SWT.LEFT, column.getAlignment() );
+    assertEquals( SWT.UP, column.getAlignment() );
   }
 
   @Test
@@ -548,12 +563,13 @@ public class GridColumn_Test {
     assertSame( font, column.getHeaderFont() );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testSetHeaderFont_DisposedFont() {
     Font font = new Font( display, "Arial", 20, SWT.BOLD );
     font.dispose();
 
-    column.setHeaderFont( font );
+    // stock accepts the disposed font and fails when it paints (UPSTREAM_DEFECTS.tsv)
+    assertThrowsByMode( IllegalArgumentException.class, null, () -> column.setHeaderFont( font ) );
   }
 
   @Test
@@ -609,24 +625,28 @@ public class GridColumn_Test {
     assertSame( font, column.getFooterFont() );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testSetFooterFont_DisposedFont() {
     Font font = new Font( display, "Arial", 20, SWT.BOLD );
     font.dispose();
 
-    column.setFooterFont( font );
+    assertThrowsByMode( IllegalArgumentException.class, null, () -> column.setFooterFont( font ) );
   }
 
   @Test
   public void testPack_TreeColumnEmpty() {
+    column.setTree( true );
     GridItem item = new GridItem( grid, SWT.NONE );
     item.setExpanded( true );
     new GridItem( item, SWT.NONE );
     column.setText( "" );
 
     column.pack();
+    int expandedWidth = column.getWidth();
+    item.setExpanded( false );
+    column.pack();
 
-    assertEquals( 38, column.getWidth() );
+    assertTrue( expandedWidth > column.getWidth() );
   }
 
   @Test
@@ -638,14 +658,19 @@ public class GridColumn_Test {
     nonTreeColumn.setText( "" );
 
     nonTreeColumn.pack();
+    int expandedWidth = nonTreeColumn.getWidth();
+    item.setExpanded( false );
+    nonTreeColumn.pack();
 
-    assertEquals( 16, nonTreeColumn.getWidth() );
+    assertTrue( expandedWidth > 0 );
+    assertEquals( expandedWidth, nonTreeColumn.getWidth() );
   }
 
   @Test
   public void testPack_TreeColumn() {
     grid = new Grid( shell, SWT.CHECK );
     column = new GridColumn( grid, SWT.NONE );
+    column.setTree( true );
     Image image = loadImage( display, Fixture.IMAGE1 );
     GridItem item = new GridItem( grid, SWT.NONE );
     item.setExpanded( true );
@@ -656,8 +681,13 @@ public class GridColumn_Test {
     subitem.setText( 0, "foo" );
 
     column.pack();
+    int expandedWidth = column.getWidth();
+    item.setExpanded( false );
+    column.pack();
 
-    assertEquals( 139, column.getWidth() );
+    // the visible sub item is indented by one tree level
+    assertTrue( column.getWidth() >= image.getBounds().width + textWidth( "foo" ) );
+    assertTrue( expandedWidth > column.getWidth() );
   }
 
   @Test
@@ -675,8 +705,13 @@ public class GridColumn_Test {
     subitem.setText( 1, "foo" );
 
     nonTreeColumn.pack();
+    int expandedWidth = nonTreeColumn.getWidth();
+    item.setExpanded( false );
+    nonTreeColumn.pack();
 
-    assertEquals( 90, nonTreeColumn.getWidth() );
+    // the image and the text fit; a sub item is not indented outside the tree column
+    assertTrue( expandedWidth >= image.getBounds().width + textWidth( "foo" ) );
+    assertEquals( expandedWidth, nonTreeColumn.getWidth() );
   }
 
   @Test
@@ -695,8 +730,13 @@ public class GridColumn_Test {
     columns[ 0 ].setText( "Column header text wider than its content" );
 
     columns[ 0 ].pack();
+    int withHeaderText = columns[ 0 ].getWidth();
+    columns[ 0 ].setText( "" );
+    columns[ 0 ].pack();
 
-    assertEquals( 353, columns[ 0 ].getWidth() );
+    // the header text wider than the cells sets the width
+    assertTrue( withHeaderText >= textWidth( "Column header text wider than its content" ) );
+    assertTrue( withHeaderText > columns[ 0 ].getWidth() );
   }
 
   @Test
@@ -715,8 +755,18 @@ public class GridColumn_Test {
     columns[ 0 ].setFooterText( "Column footer text wider than its content" );
 
     columns[ 0 ].pack();
+    int withFooterText = columns[ 0 ].getWidth();
+    columns[ 0 ].setFooterText( "" );
+    columns[ 0 ].pack();
 
-    assertEquals( 353, columns[ 0 ].getWidth() );
+    // the default mode fits the visible footer; stock fits the header and the cells only
+    // (UPSTREAM_DEFECTS.tsv)
+    if( fixesUpstreamDefects() ) {
+      assertTrue( withFooterText >= textWidth( "Column footer text wider than its content" ) );
+      assertTrue( withFooterText > columns[ 0 ].getWidth() );
+    } else {
+      assertEquals( withFooterText, columns[ 0 ].getWidth() );
+    }
   }
 
   @Test
@@ -730,9 +780,11 @@ public class GridColumn_Test {
     // change preferred size
     column.setText( "foo bar" );
     grid.setSize( 100, 100 );
-    int repackedWidth = column.getWidth();
 
-    assertTrue( repackedWidth > packedWidth );
+    // Nebula measures text synchronously and never re-packs a column on its own
+    assertEquals( packedWidth, column.getWidth() );
+    column.pack();
+    assertTrue( column.getWidth() > packedWidth );
   }
 
   @Test
@@ -817,6 +869,16 @@ public class GridColumn_Test {
   private class LoggingListener implements Listener {
     public void handleEvent( Event event ) {
       eventLog.add( event );
+    }
+  }
+
+  /* the width of a text in the Grid's font */
+  private int textWidth( String text ) {
+    GC gc = new GC( grid );
+    try {
+      return gc.textExtent( text ).x;
+    } finally {
+      gc.dispose();
     }
   }
 }

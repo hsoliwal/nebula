@@ -91,8 +91,9 @@ public class GridVisibleRangeSupport_Test {
 			}
 		}
 
-		GridVisibleRangeSupport support = GridVisibleRangeSupport.createFor(grid);
-		support.addRangeChangeListener(events::add);
+		// the support that records the events of the fixture; the field below is the one under test
+		final GridVisibleRangeSupport recording = GridVisibleRangeSupport.createFor(grid);
+		recording.addRangeChangeListener(events::add);
 
 		shell.setSize(380, 260);
 		shell.setLocation(30, 40);

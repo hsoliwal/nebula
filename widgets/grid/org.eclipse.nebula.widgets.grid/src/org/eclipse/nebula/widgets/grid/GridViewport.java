@@ -9,10 +9,11 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
-import java.lang.System.Logger.Level;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.grid.internal.IScrollBarProxy;
+import org.eclipse.nebula.widgets.grid.internal.SwtLog;
+import org.eclipse.nebula.widgets.grid.internal.UpstreamFixes;
 import org.eclipse.nebula.widgets.grid.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 
@@ -37,7 +38,18 @@ final class GridViewport {
 	/** Whether Grids mediate their row geometry (the startup mode is {@code viewport}). */
 	static final boolean ENABLED = WidgetMode.of("Grid", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT;
 
-	private static final System.Logger LOG = System.getLogger("org.eclipse.nebula.widgets.grid.Grid");
+	/**
+	 * Whether Grid fixes the upstream defects listed in {@code docs/m3/grid-viewport/UPSTREAM_DEFECTS.tsv}
+	 * (behaviour that contradicts the API's own Javadoc, crashes, data loss, clipped rendering): in
+	 * every mode but {@code original}, which stays behaviourally identical to stock Nebula Grid.
+	 */
+	static final boolean UPSTREAM_FIXES = ENABLED;
+
+	static {
+		UpstreamFixes.set(UPSTREAM_FIXES);
+	}
+
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.grid.Grid");
 
 	/**
 	 * The last row range answered by {@link #rowRange(int, int)} or
@@ -48,6 +60,10 @@ final class GridViewport {
 	private final Grid grid;
 	private final List<GridItem> items;
 	private final GridRowExtents rows = new GridRowExtents();
+	/* the item list when it answers the row questions itself (never rebuilt), else null */
+	private final GridRowTree tree;
+	/* the visual styles of the native look, or null for the classic look */
+	private final GridNativeTheme theme;
 
 	/**
 	 * @param grid  the mediated Grid
@@ -56,6 +72,26 @@ final class GridViewport {
 	GridViewport(final Grid grid, final List<GridItem> items) {
 		this.grid = grid;
 		this.items = items;
+		this.tree = items instanceof GridRowTree ? (GridRowTree) items : null;
+		this.theme = GridNativeLook.ENABLED ? new GridNativeTheme(grid) : null;
+	}
+
+	/** Gives the Grid the native look's Grid-level renderers (see {@link GridNativeLook}). */
+	void applyLook() {
+		if (theme != null) {
+			GridNativeLook.install(grid, theme);
+		}
+	}
+
+	/**
+	 * Gives a new column the native look's renderers.
+	 *
+	 * @param column the column
+	 */
+	void applyLook(final GridColumn column) {
+		if (theme != null) {
+			GridNativeLook.install(column, theme);
+		}
 	}
 
 	/**
@@ -71,7 +107,7 @@ final class GridViewport {
 		if (!tree) {
 			return selection;
 		}
-		final GridRowExtents index = rows();
+		final GridRowIndex index = rows();
 		// past the last visible row the selection itself is kept, as the item walk does
 		return selection < index.visibleCount() ? items.get(index.positionOfRank(selection)).getRowIndex() : selection;
 	}
@@ -93,7 +129,7 @@ final class GridViewport {
 	 * @return {@code false} when there is no visible item to start or end with
 	 */
 	boolean rowRange(int startIndex, int endIndex) {
-		final GridRowExtents index = rows();
+		final GridRowIndex index = rows();
 		final int count = items.size();
 		if (startIndex == -1) {
 			startIndex = index.nextVisible(0);
@@ -130,7 +166,7 @@ final class GridViewport {
 	 * @return {@code false} when there is no visible item to start with
 	 */
 	boolean rowRange(int startIndex, final int availableHeight, final boolean complete, final boolean inverse) {
-		final GridRowExtents index = rows();
+		final GridRowIndex index = rows();
 		final int count = items.size();
 		if (startIndex == -1) {
 			startIndex = inverse ? index.previousVisible(count - 1) : index.nextVisible(0);
@@ -166,7 +202,7 @@ final class GridViewport {
 		if (topIndex >= items.size() || y < 0) {
 			return null;
 		}
-		final GridRowExtents index = rows();
+		final GridRowIndex index = rows();
 		final long top = index.extentBefore(topIndex);
 		final int rank = index.rankAtExtent(top + y);
 		if (rank >= index.visibleCount() || index.extentOfRank(rank) - top > limit) {
@@ -182,7 +218,7 @@ final class GridViewport {
 	 *         (negative when {@code toIndex} is above)
 	 */
 	int offsetBetween(final int fromIndex, final int toIndex) {
-		final GridRowExtents index = rows();
+		final GridRowIndex index = rows();
 		return (int) (index.extentBefore(toIndex) - index.extentBefore(fromIndex));
 	}
 
@@ -231,6 +267,11 @@ final class GridViewport {
 	 * @param row  its index
 	 */
 	void inserted(final GridItem item, final int row) {
+		if (tree != null) {
+			// the height is set after the item joined the list
+			tree.update(item);
+			return;
+		}
 		final int count = items.size();
 		if (row == count - 1 && rows.isValid(count - 1) && items.get(row) == item) {
 			rows.append(extentOf(item));
@@ -250,6 +291,10 @@ final class GridViewport {
 	 * @param item the item
 	 */
 	void rowChanged(final GridItem item) {
+		if (tree != null) {
+			tree.update(item);
+			return;
+		}
 		final int count = items.size();
 		if (!rows.isValid(count)) {
 			return;
@@ -262,11 +307,14 @@ final class GridViewport {
 		}
 	}
 
-	private GridRowExtents rows() {
+	private GridRowIndex rows() {
+		if (tree != null) {
+			return tree;
+		}
 		final int count = items.size();
 		if (!rows.isValid(count)) {
 			rows.rebuild(count, position -> extentOf(items.get(position)));
-			LOG.log(Level.DEBUG, () -> "row extent index rebuilt for " + count + " items");
+			LOG.debug(() -> "row extent index rebuilt for " + count + " items");
 		}
 		return rows;
 	}
@@ -280,19 +328,19 @@ final class GridViewport {
 	}
 
 	/* the smallest number of rows from rank down whose extent reaches the height, or all rows */
-	private static int rowsBelow(final GridRowExtents index, final int rank, final int availableHeight) {
+	private static int rowsBelow(final GridRowIndex index, final int rank, final int availableHeight) {
 		final long base = index.extentOfRank(rank);
 		final int last = index.rankAtExtent(base + availableHeight - 1);
 		return Math.min(index.visibleCount(), last + 1) - rank;
 	}
 
 	/* the smallest number of rows from rank up whose extent reaches the height, or all rows */
-	private static int rowsAbove(final GridRowExtents index, final int rank, final int availableHeight) {
+	private static int rowsAbove(final GridRowIndex index, final int rank, final int availableHeight) {
 		final long limit = index.extentOfRank(rank + 1) - availableHeight;
 		return limit < 0 ? rank + 1 : rank + 1 - index.rankAtExtent(limit);
 	}
 
-	private static long takenExtent(final GridRowExtents index, final int rank, final int taken, final boolean inverse) {
+	private static long takenExtent(final GridRowIndex index, final int rank, final int taken, final boolean inverse) {
 		return inverse ? index.extentOfRank(rank + 1) - index.extentOfRank(rank + 1 - taken)
 				: index.extentOfRank(rank + taken) - index.extentOfRank(rank);
 	}

@@ -10,6 +10,7 @@
  *
  * Contributors:
  *    chris.gross@us.ibm.com - initial API and implementation
+ *    Hitesh Soliwal (Synexia) - the footer text measured (default mode)
  *    Marty Jones<martybjones@gmail.com> - custom header/footer font in bug 293743
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid.internal;
@@ -55,7 +56,8 @@ public class DefaultColumnFooterRenderer extends GridFooterRenderer
 
         x += leftMargin;
 
-        x += gc.stringExtent(column.getText()).x + rightMargin;
+        // stock measures the header text (UPSTREAM_DEFECTS.tsv)
+        x += gc.stringExtent(UpstreamFixes.enabled() ? column.getFooterText() : column.getText()).x + rightMargin;
 
         int y = 0;
 
@@ -170,7 +172,7 @@ public class DefaultColumnFooterRenderer extends GridFooterRenderer
 
         Rectangle bounds = new Rectangle(x,y,0,0);
 
-        Point p = gc.stringExtent(column.getText());
+        Point p = gc.stringExtent(UpstreamFixes.enabled() ? column.getFooterText() : column.getText());
 
         bounds.height = p.y;
 

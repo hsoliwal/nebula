@@ -10,37 +10,44 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
+
+import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
 
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 
 /**
- * Default Grid visual data owner keyed by stable logical row coordinates.
+ * Default Grid visual data owner keyed by logical row coordinates.
  *
  * <p>The public DataVisualizer API remains GridItem-based. Internally, however,
  * no GridItem is retained as a map key. This lets the Grid parent own payload
  * independently from an optional SWT.VIRTUAL facade.</p>
+ *
+ * <p>Each Grid has one {@link RowIndex}: the rows that hold data, as sorted positions with a
+ * stable id each; every kind of value is an {@link IdStore} addressed by that id. Inserting or
+ * removing a row shifts the positions after it by one, so building a Grid row by row is linear,
+ * not quadratic as with one hash map per kind re-keyed on every insert.</p>
  */
 final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 		implements GridRowAddressedDataVisualizer {
 
-	private final RowStore<Color> backgrounds = new RowStore<>();
-	private final RowStore<Color> foregrounds = new RowStore<>();
-	private final RowStore<Boolean> checkables = new RowStore<>();
-	private final RowStore<Boolean> checkeds = new RowStore<>();
-	private final RowStore<Boolean> grayeds = new RowStore<>();
-	private final RowStore<Integer> columnSpans = new RowStore<>();
-	private final RowStore<Integer> rowSpans = new RowStore<>();
-	private final RowStore<Font> fonts = new RowStore<>();
-	private final RowStore<Image> images = new RowStore<>();
-	private final RowStore<String> texts = new RowStore<>();
-	private final RowStore<String> toolTipTexts = new RowStore<>();
+	private final IdStore<Color> backgrounds = new IdStore<>();
+	private final IdStore<Color> foregrounds = new IdStore<>();
+	private final IdStore<Boolean> checkables = new IdStore<>();
+	private final IdStore<Boolean> checkeds = new IdStore<>();
+	private final IdStore<Boolean> grayeds = new IdStore<>();
+	private final IdStore<Integer> columnSpans = new IdStore<>();
+	private final IdStore<Integer> rowSpans = new IdStore<>();
+	private final IdStore<Font> fonts = new IdStore<>();
+	private final IdStore<Image> images = new IdStore<>();
+	private final IdStore<String> texts = new IdStore<>();
+	private final IdStore<String> toolTipTexts = new IdStore<>();
+	/* per Grid: which rows hold data, and the id that addresses their cells in the stores */
+	private final IdentityHashMap<Grid, RowIndex> indexes = new IdentityHashMap<>();
 
 	GridRowAddressedItemDataVisualizer(
 			Color defaultBackground, Color defaultForeground, Font defaultFont) {
@@ -49,119 +56,123 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 
 	@Override
 	public Color getBackground(GridItem item, int column) {
-		return backgrounds.get(item, column, getDefaultBackground());
+		return get(backgrounds, item, column, getDefaultBackground());
 	}
 
 	@Override
 	public void setBackground(GridItem item, int column, Color color) {
-		backgrounds.put(item, column, color);
+		put(backgrounds, item, column, color);
 	}
 
 	@Override
 	public boolean getCheckable(GridItem item, int column) {
-		return checkables.get(item, column, Boolean.TRUE);
+		return get(checkables, item, column, Boolean.TRUE);
 	}
 
 	@Override
 	public void setCheckable(GridItem item, int column, boolean checkable) {
-		checkables.put(item, column, checkable);
+		put(checkables, item, column, checkable);
 	}
 
 	@Override
 	public boolean getChecked(GridItem item, int column) {
-		return checkeds.get(item, column, Boolean.FALSE);
+		return get(checkeds, item, column, Boolean.FALSE);
 	}
 
 	@Override
 	public void setChecked(GridItem item, int column, boolean checked) {
-		checkeds.put(item, column, checked);
+		put(checkeds, item, column, checked);
 	}
 
 	@Override
 	public int getColumnSpan(GridItem item, int column) {
-		return columnSpans.get(item, column, 0);
+		return get(columnSpans, item, column, 0);
 	}
 
 	@Override
 	public void setColumnSpan(GridItem item, int column, int span) {
-		columnSpans.put(item, column, span);
+		put(columnSpans, item, column, span);
 	}
 
 	@Override
 	public int getRowSpan(GridItem item, int column) {
-		return rowSpans.get(item, column, 0);
+		return get(rowSpans, item, column, 0);
 	}
 
 	@Override
 	public void setRowSpan(GridItem item, int column, int span) {
-		rowSpans.put(item, column, span);
+		put(rowSpans, item, column, span);
 		item.parentGrid().rowSpanChanged(item, column, span);
 	}
 
 	@Override
 	public Font getFont(GridItem item, int column) {
-		return fonts.get(item, column, getDefaultFont());
+		return get(fonts, item, column, getDefaultFont());
 	}
 
 	@Override
 	public void setFont(GridItem item, int column, Font font) {
-		fonts.put(item, column, font);
+		put(fonts, item, column, font);
 	}
 
 	@Override
 	public Color getForeground(GridItem item, int column) {
-		return foregrounds.get(item, column, getDefaultForeground());
+		return get(foregrounds, item, column, getDefaultForeground());
 	}
 
 	@Override
 	public void setForeground(GridItem item, int column, Color foreground) {
-		foregrounds.put(item, column, foreground);
+		put(foregrounds, item, column, foreground);
 	}
 
 	@Override
 	public boolean getGrayed(GridItem item, int column) {
-		return grayeds.get(item, column, Boolean.FALSE);
+		return get(grayeds, item, column, Boolean.FALSE);
 	}
 
 	@Override
 	public void setGrayed(GridItem item, int column, boolean grayed) {
-		grayeds.put(item, column, grayed);
+		put(grayeds, item, column, grayed);
 	}
 
 	@Override
 	public Image getImage(GridItem item, int column) {
-		return images.get(item, column, null);
+		return get(images, item, column, null);
 	}
 
 	@Override
 	public void setImage(GridItem item, int column, Image image) {
-		images.put(item, column, image);
+		put(images, item, column, image);
 	}
 
 	@Override
 	public String getText(GridItem item, int column) {
-		return texts.get(item, column, "");
+		return get(texts, item, column, "");
 	}
 
 	@Override
 	public void setText(GridItem item, int column, String text) {
-		texts.put(item, column, text);
+		put(texts, item, column, text);
 	}
 
 	@Override
 	public String getToolTipText(GridItem item, int column) {
-		return toolTipTexts.get(item, column, null);
+		return get(toolTipTexts, item, column, null);
 	}
 
 	@Override
 	public void setToolTipText(GridItem item, int column, String tooltip) {
-		toolTipTexts.put(item, column, tooltip);
+		put(toolTipTexts, item, column, tooltip);
 	}
 
 	@Override
 	public void clearRow(GridItem item) {
 		item.parentGrid().rowSpanOwnerDisposed(item);
-		forEachStore(store -> store.clearRow(item.getParent(), item.getRowIndex()));
+		final Grid grid = item.getParent();
+		final RowIndex index = indexes.get(grid);
+		if (index == null) return;
+		final int id = index.clear(item.getRowIndex());
+		if (id >= 0) forEachStore(store -> store.clear(grid, id));
 	}
 
 	@Override
@@ -181,35 +192,59 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 	@Override
 	public void clearAll() {
 		Grid[] spanParents = rowSpans.grids();
-		forEachStore(RowStore::clearAll);
+		indexes.clear();
+		forEachStore(IdStore::clearAll);
 		for (Grid parent : spanParents) parent.rowSpanDataCleared();
 	}
 
 	@Override
 	public void insertRow(Grid grid, int index) {
-		forEachStore(store -> store.insertRow(grid, index));
+		final RowIndex rows = indexes.get(grid);
+		if (rows != null) rows.inserted(index);
 	}
 
 	@Override
 	public void removeRow(Grid grid, int index) {
-		forEachStore(store -> store.removeRow(grid, index));
+		final RowIndex rows = indexes.get(grid);
+		if (rows == null) return;
+		final int id = rows.removed(index);
+		if (id >= 0) forEachStore(store -> store.clear(grid, id));
 	}
 
 	@Override
 	public void truncateRows(Grid grid, int count) {
-		forEachStore(store -> store.truncateRows(grid, count));
+		final RowIndex rows = indexes.get(grid);
+		if (rows != null) rows.truncate(count, id -> forEachStore(store -> store.clear(grid, id)));
 	}
 
 	@Override
 	public void clearRows(Grid grid) {
-		forEachStore(store -> store.clearRows(grid));
+		indexes.remove(grid);
+		forEachStore(store -> store.clearGrid(grid));
 	}
 
 	int storedRowCount(Grid grid) {
-		return texts.rowCount(grid);
+		final RowIndex rows = indexes.get(grid);
+		return rows == null ? 0 : texts.count(grid, rows);
 	}
 
-	private void forEachStore(java.util.function.Consumer<RowStore<?>> action) {
+	private <T> T get(IdStore<T> store, GridItem item, int column, T defaultValue) {
+		if (column < 0) return defaultValue;
+		final Grid grid = item.getParent();
+		final RowIndex rows = indexes.get(grid);
+		if (rows == null) return defaultValue;
+		final int id = rows.find(item.getRowIndex());
+		return id < 0 ? defaultValue : store.get(grid, id, column, defaultValue);
+	}
+
+	private <T> void put(IdStore<T> store, GridItem item, int column, T value) {
+		if (column < 0) throw new IndexOutOfBoundsException("column=" + column);
+		final Grid grid = item.getParent();
+		store.put(grid, indexes.computeIfAbsent(grid, ignored -> new RowIndex()).findOrCreate(item.getRowIndex()), column,
+				value);
+	}
+
+	private void forEachStore(java.util.function.Consumer<IdStore<?>> action) {
 		action.accept(backgrounds);
 		action.accept(foregrounds);
 		action.accept(checkables);
@@ -223,101 +258,210 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 		action.accept(toolTipTexts);
 	}
 
-	private static final class RowStore<T> {
-		private final IdentityHashMap<Grid, Map<Integer, List<T>>> rows = new IdentityHashMap<>();
+	/**
+	 * The rows of one Grid that hold data: their positions, sorted, each with a stable id that
+	 * addresses the stores. A row inserted or removed above shifts the positions after it by one
+	 * (an int increment per stored row, no rehash, no boxing); an appended row is an O(log n)
+	 * search. Ids of removed rows are reused.
+	 */
+	private static final class RowIndex {
+		private int[] rows = new int[8];
+		private int[] ids = new int[8];
+		private int size;
+		private int nextId;
+		private int[] free = new int[8];
+		private int freeCount;
 
-		T get(GridItem item, int column, T defaultValue) {
-			if (column < 0) return defaultValue;
-			Map<Integer, List<T>> gridRows = rows.get(item.getParent());
-			if (gridRows == null) return defaultValue;
-			List<T> values = gridRows.get(item.getRowIndex());
-			if (values == null || column >= values.size()) return defaultValue;
-			T value = values.get(column);
+		int find(int row) {
+			final int at = Arrays.binarySearch(rows, 0, size, row);
+			return at >= 0 ? ids[at] : -1;
+		}
+
+		int findOrCreate(int row) {
+			int at = Arrays.binarySearch(rows, 0, size, row);
+			if (at >= 0) return ids[at];
+			at = -at - 1;
+			if (size == rows.length) {
+				final int capacity = HeapGrowth.capacity(rows.length, size + 1, 8);
+				final int[] nextRows = Arrays.copyOf(rows, capacity);
+				final int[] nextIds = Arrays.copyOf(ids, capacity);
+				rows = nextRows;
+				ids = nextIds;
+			}
+			System.arraycopy(rows, at, rows, at + 1, size - at);
+			System.arraycopy(ids, at, ids, at + 1, size - at);
+			rows[at] = row;
+			ids[at] = freeCount > 0 ? free[--freeCount] : nextId++;
+			size++;
+			return ids[at];
+		}
+
+		/** A row was inserted at {@code row}: the stored rows at or after it move down by one. */
+		void inserted(int row) {
+			for (int j = lowerBound(row); j < size; j++) rows[j]++;
+		}
+
+		/** The row at {@code row} was removed: returns its id (or -1) and moves the rows after it up. */
+		int removed(int row) {
+			final int at = lowerBound(row);
+			int id = -1;
+			if (at < size && rows[at] == row) {
+				id = ids[at];
+				remove(at);
+			}
+			for (int j = at; j < size; j++) rows[j]--;
+			return id;
+		}
+
+		/** Forgets the data of the row at {@code row} (the row stays); returns its id or -1. */
+		int clear(int row) {
+			final int at = Arrays.binarySearch(rows, 0, size, row);
+			if (at < 0) return -1;
+			final int id = ids[at];
+			remove(at);
+			return id;
+		}
+
+		void truncate(int count, java.util.function.IntConsumer released) {
+			final int at = lowerBound(count);
+			for (int j = at; j < size; j++) {
+				released.accept(ids[j]);
+				release(ids[j]);
+			}
+			size = at;
+		}
+
+		int size() {
+			return size;
+		}
+
+		int idAt(int j) {
+			return ids[j];
+		}
+
+		private void remove(int at) {
+			release(ids[at]);
+			System.arraycopy(rows, at + 1, rows, at, size - at - 1);
+			System.arraycopy(ids, at + 1, ids, at, size - at - 1);
+			size--;
+		}
+
+		private void release(int id) {
+			if (freeCount == free.length) free = Arrays.copyOf(free, free.length * 2);
+			free[freeCount++] = id;
+		}
+
+		private int lowerBound(int row) {
+			int low = 0, high = size;
+			while (low < high) {
+				final int mid = (low + high) >>> 1;
+				if (rows[mid] < row) low = mid + 1;
+				else high = mid;
+			}
+			return low;
+		}
+	}
+
+	/** One kind of cell value of every Grid, addressed by row id and column. */
+	private static final class IdStore<T> {
+		private static final Object[] NO_CELLS = new Object[0];
+		private final IdentityHashMap<Grid, Object[][]> cells = new IdentityHashMap<>();
+
+		@SuppressWarnings("unchecked")
+		T get(Grid grid, int id, int column, T defaultValue) {
+			final Object[][] rows = cells.get(grid);
+			if (rows == null || id >= rows.length || rows[id] == null || column >= rows[id].length) return defaultValue;
+			final T value = (T) rows[id][column];
 			return value == null ? defaultValue : value;
 		}
 
-		void put(GridItem item, int column, T value) {
-			if (column < 0) throw new IndexOutOfBoundsException("column=" + column);
-			Map<Integer, List<T>> gridRows =
-					rows.computeIfAbsent(item.getParent(), ignored -> new HashMap<>());
-			List<T> values = gridRows.computeIfAbsent(item.getRowIndex(), ignored -> new ArrayList<>());
-			while (column > values.size()) values.add(null);
-			if (values.size() > column) values.set(column, value);
-			else values.add(value);
-		}
-
-		void clearRow(Grid grid, int row) {
-			Map<Integer, List<T>> gridRows = rows.get(grid);
-			if (gridRows == null) return;
-			gridRows.remove(row);
-			if (gridRows.isEmpty()) rows.remove(grid);
-		}
-
-		void insertRow(Grid grid, int index) {
-			remap(grid, index, true);
-		}
-
-		void removeRow(Grid grid, int index) {
-			remap(grid, index, false);
-		}
-
-		private void remap(Grid grid, int index, boolean inserting) {
-			Map<Integer, List<T>> gridRows = rows.get(grid);
-			if (gridRows == null || gridRows.isEmpty()) return;
-			Map<Integer, List<T>> shifted = new HashMap<>(Math.max(4, gridRows.size() * 2));
-			for (Map.Entry<Integer, List<T>> entry : gridRows.entrySet()) {
-				int row = entry.getKey();
-				if (!inserting && row == index) continue;
-				int next = inserting
-						? (row >= index ? row + 1 : row)
-						: (row > index ? row - 1 : row);
-				shifted.put(next, entry.getValue());
+		void put(Grid grid, int id, int column, T value) {
+			Object[][] rows = cells.get(grid);
+			if (rows == null || id >= rows.length) {
+				final int capacity = HeapGrowth.capacity(rows == null ? 0 : rows.length, id + 1, 8);
+				rows = rows == null ? new Object[capacity][] : Arrays.copyOf(rows, capacity);
+				cells.put(grid, rows);
 			}
-			if (shifted.isEmpty()) rows.remove(grid);
-			else rows.put(grid, shifted);
+			Object[] row = rows[id];
+			if (row == null || column >= row.length) {
+				row = Arrays.copyOf(row == null ? NO_CELLS : row, column + 1);
+				rows[id] = row;
+			}
+			row[column] = value;
 		}
 
-		void truncateRows(Grid grid, int count) {
-			Map<Integer, List<T>> gridRows = rows.get(grid);
-			if (gridRows == null) return;
-			gridRows.entrySet().removeIf(entry -> entry.getKey() >= count);
-			if (gridRows.isEmpty()) rows.remove(grid);
-		}
-
-		void clearRows(Grid grid) {
-			rows.remove(grid);
+		void clear(Grid grid, int id) {
+			final Object[][] rows = cells.get(grid);
+			if (rows != null && id < rows.length) rows[id] = null;
 		}
 
 		void clearColumn(int column) {
-			for (Map<Integer, List<T>> gridRows : rows.values()) {
-				for (List<T> values : gridRows.values()) {
-					if (column >= 0 && column < values.size()) values.remove(column);
+			if (column < 0) return;
+			for (final Object[][] rows : cells.values()) {
+				for (int id = 0; id < rows.length; id++) {
+					final Object[] row = rows[id];
+					if (row == null || column >= row.length) continue;
+					final Object[] next = new Object[row.length - 1];
+					System.arraycopy(row, 0, next, 0, column);
+					System.arraycopy(row, column + 1, next, column, row.length - column - 1);
+					rows[id] = next;
 				}
 			}
 		}
 
 		void addColumn(int column) {
-			for (Map<Integer, List<T>> gridRows : rows.values()) {
-				for (List<T> values : gridRows.values()) {
-					if (!values.isEmpty()) {
-						while (values.size() < column) values.add(null);
-						values.add(column, null);
-					}
+			if (column < 0) return;
+			for (final Object[][] rows : cells.values()) {
+				for (int id = 0; id < rows.length; id++) {
+					final Object[] row = rows[id];
+					if (row == null || row.length == 0) continue;
+					final Object[] next = new Object[Math.max(row.length, column) + 1];
+					System.arraycopy(row, 0, next, 0, Math.min(column, row.length));
+					if (column < row.length) System.arraycopy(row, column, next, column + 1, row.length - column);
+					rows[id] = next;
 				}
 			}
 		}
 
+		void clearGrid(Grid grid) {
+			cells.remove(grid);
+		}
+
 		void clearAll() {
-			rows.clear();
+			cells.clear();
 		}
 
-		int rowCount(Grid grid) {
-			Map<Integer, List<T>> gridRows = rows.get(grid);
-			return gridRows == null ? 0 : gridRows.size();
+		/** Number of stored rows of the Grid that hold a value of this kind. */
+		int count(Grid grid, RowIndex index) {
+			final Object[][] rows = cells.get(grid);
+			if (rows == null) return 0;
+			int count = 0;
+			for (int j = 0; j < index.size(); j++) {
+				final int id = index.idAt(j);
+				if (id < rows.length && rows[id] != null) {
+					for (final Object value : rows[id]) {
+						if (value != null) {
+							count++;
+							break;
+						}
+					}
+				}
+			}
+			return count;
 		}
 
+		/** Grids that hold a value of this kind. */
 		Grid[] grids() {
-			return rows.keySet().toArray(new Grid[rows.size()]);
+			final java.util.List<Grid> grids = new java.util.ArrayList<>();
+			for (final Map.Entry<Grid, Object[][]> entry : cells.entrySet()) {
+				for (final Object[] row : entry.getValue()) {
+					if (row != null) {
+						grids.add(entry.getKey());
+						break;
+					}
+				}
+			}
+			return grids.toArray(new Grid[0]);
 		}
 	}
 }

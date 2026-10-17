@@ -10,6 +10,7 @@ description: >-
 recipeList:
   - com.synexia.openrewrite.viewport.NebulaGridViewportGrid
   - com.synexia.openrewrite.viewport.NebulaGridViewportGridItem
+  - com.synexia.openrewrite.viewport.NebulaGridViewportGridColumn
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: com.synexia.openrewrite.viewport.NebulaGridViewportGrid
@@ -36,7 +37,7 @@ recipeList:
       methodName: Grid
       parameterCount: 3
       position: METHOD_END
-      statements: "\t\tif (GridViewport.ENABLED) {\n\t\t\tviewport = new GridViewport(this, items);\n\t\t}"
+      statements: "\t\tif (GridViewport.ENABLED) {\n\t\t\tviewport = new GridViewport(this, items);\n\t\t\tviewport.applyLook();\n\t\t}"
   - com.synexia.openrewrite.viewport.M3InsertStatements:
       declaringClasses: [org.eclipse.nebula.widgets.grid.Grid]
       methodName: getTopIndex
@@ -146,3 +147,16 @@ recipeList:
       anchor: "height = newHeight;"
       position: AFTER
       statements: "\t\tif (parent.viewport != null) {\n\t\t\tparent.viewport.rowChanged(this);\n\t\t}"
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.openrewrite.viewport.NebulaGridViewportGridColumn
+displayName: Nebula GridColumn viewport hooks
+description: A new column of a viewport Grid gets the native look renderers (GridNativeLook).
+recipeList:
+  - com.synexia.openrewrite.viewport.M3InsertStatements:
+      declaringClasses: [org.eclipse.nebula.widgets.grid.GridColumn]
+      methodName: init
+      parameterCount: 3
+      anchor: "initHeaderRenderer();"
+      position: BEFORE
+      statements: "\t\tif (table.viewport != null) {\n\t\t\ttable.viewport.applyLook(this);\n\t\t}"

@@ -110,10 +110,36 @@ public class GridColumn extends Item {
 		return footerHeight;
 	}
 
+	/** Forgets the measured header height (measured again when the Grid next asks). */
+	void forgetHeaderHeight() {
+		headerHeight = NOT_CALCULATED_YET;
+	}
+
+	/** Forgets the measured footer height (measured again when the Grid next asks). */
+	void forgetFooterHeight() {
+		footerHeight = NOT_CALCULATED_YET;
+	}
+
+	/* the header shows other content: measured again in the default mode (UPSTREAM_DEFECTS.tsv) */
+	private void headerChanged() {
+		if (GridViewport.UPSTREAM_FIXES) {
+			headerHeight = NOT_CALCULATED_YET;
+			parent.headerContentChanged();
+		}
+	}
+
+	/* the footer shows other content: measured again in the default mode (UPSTREAM_DEFECTS.tsv) */
+	private void footerChanged() {
+		if (GridViewport.UPSTREAM_FIXES) {
+			footerHeight = NOT_CALCULATED_YET;
+			parent.footerContentChanged();
+		}
+	}
+
 	int getHeaderHeight(final GC gc)
 	{
 		if(headerHeight == NOT_CALCULATED_YET) {
-			headerHeight = getHeaderRenderer().computeSize(gc, getWidth(), SWT.DEFAULT, this).y;
+			headerHeight = parent.headerRendererHeight(getHeaderRenderer(), gc, getWidth(), this);
 		}
 		return headerHeight;
 	}
@@ -302,6 +328,9 @@ public class GridColumn extends Item {
 		if ((style & SWT.FILL) != 0) {
 			fill = true;
 		}
+		if (table.viewport != null) {
+			table.viewport.applyLook(this);
+		}
 
 		initHeaderRenderer();
 		initFooterRenderer();
@@ -465,6 +494,10 @@ public class GridColumn extends Item {
 		parent.handlePacked(this);
 		footerHeight = NOT_CALCULATED_YET;
 		headerHeight = NOT_CALCULATED_YET;
+		// a word-wrapped header measures with the column width
+		if (headerRenderer != null && headerRenderer.isWordWrap()) {
+			headerChanged();
+		}
 	}
 
 	/**
@@ -675,6 +708,16 @@ public class GridColumn extends Item {
 		super.setText(text);
 		Rectangle bounds = getBounds();
 		parent.redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
+		headerChanged();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setImage(final Image image) {
+		super.setImage(image);
+		headerChanged();
 	}
 
 	/**
@@ -694,6 +737,10 @@ public class GridColumn extends Item {
 		final GC gc = new GC(parent);
 		int newWidth = getHeaderRenderer().computeSize(gc, SWT.DEFAULT,
 				SWT.DEFAULT, this).x;
+		// the preferred size includes a visible footer (stock clips its text, UPSTREAM_DEFECTS.tsv)
+		if (GridViewport.UPSTREAM_FIXES && parent.getFooterVisible()) {
+			newWidth = Math.max(newWidth, getFooterRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, this).x);
+		}
 
 		getCellRenderer().setColumn(index);
 		final boolean virtual = (getParent().getStyle() & SWT.VIRTUAL) != 0;
@@ -809,6 +856,7 @@ public class GridColumn extends Item {
 		checkWidget();
 		this.headerRenderer = headerRenderer;
 		initHeaderRenderer();
+		headerChanged();
 	}
 
 	/**
@@ -828,6 +876,7 @@ public class GridColumn extends Item {
 		checkWidget();
 		this.footerRenderer = footerRenderer;
 		initFooterRenderer();
+		footerChanged();
 	}
 
 	/**
@@ -1340,6 +1389,7 @@ public class GridColumn extends Item {
 		checkWidget();
 		headerRenderer.setWordWrap(wordWrap);
 		parent.redraw();
+		headerChanged();
 	}
 
 	/**
@@ -1439,6 +1489,7 @@ public class GridColumn extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		footerImage = image;
+		footerChanged();
 	}
 
 	/**
@@ -1465,6 +1516,7 @@ public class GridColumn extends Item {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		footerText = string;
+		footerChanged();
 	}
 
 	/**
@@ -1532,10 +1584,18 @@ public class GridColumn extends Item {
 	 *
 	 * @param font
 	 *                 the new font
+	 * @throws IllegalArgumentException
+	 *             <ul>
+	 *             <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
+	 *             </ul>
 	 */
 	public void setHeaderFont(final Font font) {
 		checkWidget();
+		if (GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 		headerFont = font;
+		headerChanged();
 	}
 
 	/**
@@ -1565,10 +1625,18 @@ public class GridColumn extends Item {
 	 *
 	 * @param font
 	 *                 the new font
+	 * @throws IllegalArgumentException
+	 *             <ul>
+	 *             <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
+	 *             </ul>
 	 */
 	public void setFooterFont(final Font font) {
 		checkWidget();
+		if (GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 		footerFont = font;
+		footerChanged();
 	}
 
 	/**

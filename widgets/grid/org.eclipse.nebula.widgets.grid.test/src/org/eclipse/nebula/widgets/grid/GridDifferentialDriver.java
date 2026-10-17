@@ -16,6 +16,10 @@ import java.util.function.Function;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.nebula.widgets.grid.internal.DefaultEmptyColumnHeaderRenderer;
+import org.eclipse.nebula.widgets.grid.internal.DefaultColumnHeaderRenderer;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
@@ -40,6 +44,57 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	static final int STATE = -1, PIXELS = -2, MODE = -3, KINDS = 26;
 
 	static final int ROOTS = 120, CHILDREN = 12, GRANDCHILDREN = 3, COLUMNS = 4;
+
+	/**
+	 * Scripted steps, outside the random kinds: header and footer content and footer visibility
+	 * changed after the columns exist ({@code a == 0} undoes the change; {@code b} picks the column).
+	 */
+	static final int HEADER_FONT = 100, HEADER_IMAGE = 101, FOOTER_VISIBLE = 102, FOOTER_TEXT = 103, FOOTER_FONT = 104;
+
+	/**
+	 * Scripted steps: install header renderers that paint {@link #OVERFLOW_ROWS} rows below their
+	 * bounds (the empty column header and the picked column), and remove every item.
+	 */
+	static final int OVERFLOW_RENDERERS = 105, REMOVE_ALL = 106;
+
+	/** Pixel rows the overflowing renderers paint below their bounds. */
+	static final int OVERFLOW_ROWS = 3;
+
+	/* fills the rows below the bounds a header renderer paints past them */
+	static void paintBelow(final GC gc, final Rectangle bounds) {
+		final Color old = gc.getBackground();
+		gc.setBackground(gc.getDevice().getSystemColor(SWT.COLOR_DARK_YELLOW));
+		gc.fillRectangle(bounds.x, bounds.y + bounds.height, bounds.width, OVERFLOW_ROWS);
+		gc.setBackground(old);
+	}
+
+	/** A column header renderer that paints below its bounds and declares it. */
+	public static final class OverflowingHeader extends DefaultColumnHeaderRenderer {
+		@Override
+		public void paint(final GC gc, final Object value) {
+			super.paint(gc, value);
+			paintBelow(gc, getBounds());
+		}
+
+		@Override
+		public int getOverflowBelow() {
+			return OVERFLOW_ROWS;
+		}
+	}
+
+	/** An empty column header renderer that paints below its bounds and declares it. */
+	public static final class OverflowingEmptyHeader extends DefaultEmptyColumnHeaderRenderer {
+		@Override
+		public void paint(final GC gc, final Object value) {
+			super.paint(gc, value);
+			paintBelow(gc, getBounds());
+		}
+
+		@Override
+		public int getOverflowBelow() {
+			return OVERFLOW_ROWS;
+		}
+	}
 
 	/** Configuration bits; {@link #LARGE} builds 1,000 roots with 99 children each instead. */
 	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4;
@@ -125,6 +180,9 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private String step(final int kind, final int a, final int b, final int c) {
+		if (kind >= HEADER_FONT) {
+			return scripted(kind, a != 0, grid.getColumns()[b % grid.getColumns().length]);
+		}
 		final GridItem[] items = grid.getItems();
 		final GridColumn[] columns = grid.getColumns();
 		final GridItem item = items.length == 0 ? null : items[a % items.length];
@@ -211,6 +269,44 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			grid.setItemHeight(14 + c % 12);
 			return "item height " + grid.getItemHeight();
 		}
+	}
+
+	private Font largeFont;
+	private Image tallImage;
+
+	private String scripted(final int kind, final boolean set, final GridColumn column) {
+		if (largeFont == null) {
+			largeFont = new Font(grid.getDisplay(), "Arial", 20, SWT.NORMAL);
+			tallImage = new Image(grid.getDisplay(), 16, 40);
+			grid.addDisposeListener(e -> {
+				largeFont.dispose();
+				tallImage.dispose();
+			});
+		}
+		switch (kind) {
+		case HEADER_FONT:
+			column.setHeaderFont(set ? largeFont : null);
+			break;
+		case HEADER_IMAGE:
+			column.setImage(set ? tallImage : null);
+			break;
+		case FOOTER_VISIBLE:
+			grid.setFooterVisible(set);
+			break;
+		case FOOTER_TEXT:
+			column.setFooterText(set ? "f" + column.getText() : "");
+			break;
+		case OVERFLOW_RENDERERS:
+			grid.setEmptyColumnHeaderRenderer(new OverflowingEmptyHeader());
+			column.setHeaderRenderer(new OverflowingHeader());
+			break;
+		case REMOVE_ALL:
+			grid.removeAll();
+			break;
+		default:
+			column.setFooterFont(set ? largeFont : null);
+		}
+		return "scripted " + kind + " " + set;
 	}
 
 	private String probe(final int b, final int c) {
@@ -301,18 +397,29 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				+ " | sel " + Arrays.toString(grid.getSelectionIndices()) + selection
 				+ " | cells " + cells
 				+ " | focus " + text(grid.getFocusItem()) + " " + grid.getFocusCell()
+				+ " | header " + grid.getHeaderHeight() + " footer " + grid.getFooterHeight()
 				+ " | events " + events;
 		events.setLength(0);
 		return answer;
 	}
 
 	private ImageData pixels() {
-		final Point size = grid.getSize();
+		// the client area: what the Grid paints (scroll bars and borders are compared by value)
+		final Rectangle area = grid.getClientArea();
+		final Point size = new Point(Math.max(1, area.width), Math.max(1, area.height));
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
+			// the Grid's own paint: Control.print can return the window's last presented surface
 			final GC gc = new GC(image);
 			try {
-				grid.print(gc);
+				// what the window's background erase does before the paint event
+				gc.setBackground(grid.getBackground());
+				gc.fillRectangle(0, 0, size.x, size.y);
+				final Event event = new Event();
+				event.gc = gc;
+				event.width = size.x;
+				event.height = size.y;
+				grid.notifyListeners(SWT.Paint, event);
 			} finally {
 				gc.dispose();
 			}

@@ -21,10 +21,12 @@ import java.util.*;
  * <li>{@link #ORIGINAL}: the native SWT implementation, unchanged.</li>
  * <li>{@link #CUSTOM}: the widget is drawn by SWT itself with {@link org.eclipse.swt.graphics.GC}.</li>
  * <li>{@link #SKIJA}: the widget is drawn by SWT itself through Skija (Skia).</li>
+ * <li>{@link #GPU}: the widget is drawn by SWT itself on the graphics hardware (Direct2D on Windows,
+ * OpenGL elsewhere).</li>
  * </ul>
  * The mode is chosen at startup with system properties, read once when a widget class initializes:
  * <ul>
- * <li><code>-Dswt.widget.mode=viewport|original|custom|skija</code> for every widget;</li>
+ * <li><code>-Dswt.widget.mode=viewport|original|custom|skija|gpu</code> for every widget;</li>
  * <li><code>-Dswt.widget.mode.&lt;Widget&gt;=...</code> (for example <code>swt.widget.mode.Tree</code>)
  * for one widget class, overriding the global value.</li>
  * </ul>
@@ -39,12 +41,14 @@ public enum WidgetMode {
 	/** Drawn by SWT with a GC. */
 	CUSTOM,
 	/** Drawn by SWT through Skija. */
-	SKIJA;
+	SKIJA,
+	/** Drawn by SWT on the graphics hardware (Direct2D on Windows, OpenGL elsewhere). */
+	GPU;
 
 	/** Name of the global property; a widget property appends <code>"." + simpleClassName</code>. */
 	public static final String PROPERTY = "swt.widget.mode";
 
-	private static final System.Logger LOG = System.getLogger ("org.eclipse.nebula.widgets.grid.internal.WidgetMode");
+	private static final SwtLog LOG = SwtLog.getLog ("org.eclipse.swt.internal.WidgetMode");
 
 	/**
 	 * Answers the mode of a widget class.
@@ -58,7 +62,7 @@ public enum WidgetMode {
 		EnumSet<WidgetMode> modes = EnumSet.of (ORIGINAL);
 		modes.addAll (Arrays.asList (supported));
 		WidgetMode mode = modes.contains (requested) ? requested : modes.contains (VIEWPORT) ? VIEWPORT : ORIGINAL;
-		LOG.log (System.Logger.Level.DEBUG, () -> widget + ": mode " + mode + (mode == requested ? "" : " (requested " + requested + ")"));
+		LOG.debug (() -> widget + ": mode " + mode + (mode == requested ? "" : " (requested " + requested + ")"));
 		return mode;
 	}
 
@@ -70,7 +74,7 @@ public enum WidgetMode {
 		try {
 			return valueOf (value.trim ().toUpperCase (Locale.ROOT));
 		} catch (IllegalArgumentException e) {
-			LOG.log (System.Logger.Level.INFO, () -> "ignoring " + PROPERTY + " value '" + value + "' for " + widget);
+			LOG.info (() -> "ignoring " + PROPERTY + " value '" + value + "' for " + widget);
 			return VIEWPORT;
 		}
 	}

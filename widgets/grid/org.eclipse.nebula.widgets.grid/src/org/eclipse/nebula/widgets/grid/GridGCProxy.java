@@ -244,6 +244,15 @@ final class GridGCProxy implements AutoCloseable {
 				gc.setBackgroundPattern(originalBackgroundPattern);
 			}
 			gc.setFont(originalFont);
+			if (!originalAdvanced && gc.getAdvanced()) {
+				/*
+				 * Restoring the line attributes switches SWT's GC to advanced (GDI+) mode, which
+				 * draws text with other pixels than the caller's GDI GC: end in the caller's mode,
+				 * and restore the device clip after that reset again.
+				 */
+				gc.setAdvanced(false);
+				gc.setClipping(originalClipping);
+			}
 		} finally {
 			originalTransform.dispose();
 			originalClipping.dispose();

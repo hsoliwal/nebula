@@ -10,6 +10,7 @@
  *
  * Contributors:
  *    chris.gross@us.ibm.com - initial API and implementation
+ *    Hitesh Soliwal (Synexia) - getOverflowBelow
  *******************************************************************************/ 
 package org.eclipse.nebula.widgets.grid;
 
@@ -148,4 +149,18 @@ public interface IRenderer
      * @param display Display.
      */
     void setDisplay(Display display);
+
+    /**
+     * Returns how many pixel rows the renderer paints below its bounds when it paints a header (the
+     * default empty column header renderer fills one row more than its bounds). A Grid that paints
+     * its header first and its rows over it shows these pixels wherever a row paints nothing; Grid
+     * paints exactly this strip of such renderers under its rows. Renderers that paint within their
+     * bounds answer 0 (the default) and are not painted for damage below the header.
+     *
+     * @return the pixel rows painted below the bounds, 0 or more
+     */
+    default int getOverflowBelow()
+    {
+        return 0;
+    }
 }

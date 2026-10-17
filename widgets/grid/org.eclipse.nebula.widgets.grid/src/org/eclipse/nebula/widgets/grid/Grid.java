@@ -24,6 +24,7 @@
  *    Pinard-Legry Guilhaume <guilhaume_pl@yahoo.fr> - bugfix in 267057
  *    Thorsten Schenkel <thorsten.schenkel@compeople.de> - bugfix in 356803
  *    Mirko Paturzo <mirko.paturzo@exeura.eu> - improvement (bugfix in 419928)
+ *    Hitesh Soliwal (Synexia) - viewport mode, header overflow under the rows, default-mode fixes of upstream defects
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -249,6 +250,12 @@ public class Grid extends Canvas {
 	private static final int COLUMN_DRAG_ALPHA = 128;
 
 	/**
+	 * Whether {@link #paintHeader(GC, int)} paints only the renderers that paint below their bounds
+	 * ({@link IRenderer#getOverflowBelow()}): plane Z0, the header's overflow under the rows.
+	 */
+	private boolean underlayPass;
+
+	/**
 	 * Number of pixels below the header to draw the drop point.
 	 */
 	private static final int DROP_POINT_LOWER_OFFSET = 3;
@@ -318,7 +325,8 @@ public class Grid extends Canvas {
 	/**
 	 * List of selected items.
 	 */
-	private final List<GridItem> selectedItems = new ArrayList<>();
+	/* the viewport mode marks each selected item's position: O(1) contains, add and remove */
+	private final List<GridItem> selectedItems = GridViewport.ENABLED ? new GridSelectionList() : new ArrayList<>();
 
 	/**
 	 * Reference to the item in focus.
@@ -328,7 +336,8 @@ public class Grid extends Canvas {
 	private boolean cellSelectionEnabled = false;
 	private boolean cellDragSelectionEnabled = true;
 
-	private final List<Point> selectedCells = new ArrayList<>();
+	/* the viewport mode counts each selected cell: O(1) contains for the paint and range selection */
+	private final List<Point> selectedCells = GridViewport.ENABLED ? new GridCellSelectionList() : new ArrayList<>();
 	private final List<Point> selectedCellsBeforeRangeSelect = new ArrayList<>();
 
 	private boolean cellDragSelectionOccuring = false;
@@ -779,6 +788,11 @@ public class Grid extends Canvas {
 
 	/** A frame paint is scheduled for a thumb drag (at most one per frame). */
 	private boolean dragFrameScheduled;
+
+	/** @return whether a scroll-bar drag frame waits for its timer (tests settle after it) */
+	boolean dragFramePending() {
+		return dragFrameScheduled;
+	}
 	private boolean dragFrameHorizontal;
 	private boolean dragFrameVertical;
 
@@ -1047,9 +1061,11 @@ public class Grid extends Canvas {
 	public Grid(final DataVisualizer dataVisualizer, final Composite parent, final int style) {
 		super(parent, checkStyle(style));
 
+		// the viewport mode keeps its items in a counted tree: row of an item, item of a row and the
+		// rows' pixel extents are O(log n), and no structural change touches the other items
 		this.items = (getStyle() & SWT.VIRTUAL) != 0
 				? new GridVirtualItemList(this)
-				: new ArrayList<>();
+				: GridViewport.ENABLED ? new GridRowTree() : new ArrayList<>();
 		this.dataVisualizer = dataVisualizer;
 
 		// initialize drag & drop support
@@ -1105,6 +1121,7 @@ public class Grid extends Canvas {
 		setDragDetect(false);
 		if (GridViewport.ENABLED) {
 			viewport = new GridViewport(this, items);
+			viewport.applyLook();
 		}
 	}
 
@@ -1920,7 +1937,79 @@ public class Grid extends Canvas {
 	 */
 	public int getHeaderHeight() {
 		checkWidget();
+		return headerHeight();
+	}
+
+	/**
+	 * Whether a column or group changed what its header or footer shows since the heights were
+	 * last measured (default mode, {@code UPSTREAM_DEFECTS.tsv}): measured once, before the next
+	 * use, however many changes came first.
+	 */
+	private boolean headerUnmeasured;
+	private boolean footerUnmeasured;
+
+	/** @return the header height, measured first when a header changed */
+	private int headerHeight() {
+		if (headerUnmeasured) {
+			measureChrome();
+		}
 		return headerHeight;
+	}
+
+	/** @return the group header height, measured first when a header changed */
+	private int groupHeaderHeight() {
+		if (headerUnmeasured) {
+			measureChrome();
+		}
+		return groupHeaderHeight;
+	}
+
+	/** @return the footer height, measured first when a footer changed */
+	private int footerHeight() {
+		if (footerUnmeasured) {
+			measureChrome();
+		}
+		return footerHeight;
+	}
+
+	/**
+	 * A column or column group changed what its header shows (text, image, font, word wrap,
+	 * renderer, or a width its word-wrapped header depends on): the header height is measured
+	 * again before it is next used. The original mode keeps stock Nebula's stale height.
+	 */
+	void headerContentChanged() {
+		if (GridViewport.UPSTREAM_FIXES && !isDisposed()) {
+			headerUnmeasured = true;
+			redraw();
+		}
+	}
+
+	/** As {@link #headerContentChanged()}, for a column footer. */
+	void footerContentChanged() {
+		if (GridViewport.UPSTREAM_FIXES && !isDisposed()) {
+			footerUnmeasured = true;
+			redraw();
+		}
+	}
+
+	private void measureChrome() {
+		final int header = headerHeight;
+		final int group = groupHeaderHeight;
+		final int footer = footerHeight;
+		if (headerUnmeasured) {
+			headerUnmeasured = false;
+			computeHeaderHeight();
+		}
+		if (footerUnmeasured) {
+			footerUnmeasured = false;
+			estimate(this::computeFooterHeight);
+		}
+		if (header != headerHeight || group != groupHeaderHeight || footer != footerHeight) {
+			scrollValuesObsolete = true;
+			topIndex = -1;
+			bottomIndex = -1;
+			viewportEventPending = true;
+		}
 	}
 
 	/**
@@ -1951,7 +2040,7 @@ public class Grid extends Canvas {
 	 */
 	public int getFooterHeight() {
 		checkWidget();
-		return footerHeight;
+		return footerHeight();
 	}
 
 	/**
@@ -1969,7 +2058,7 @@ public class Grid extends Canvas {
 	 */
 	public int getGroupHeaderHeight() {
 		checkWidget();
-		return groupHeaderHeight;
+		return groupHeaderHeight();
 	}
 
 	/**
@@ -2078,10 +2167,10 @@ public class Grid extends Canvas {
 		int y2 = 0;
 
 		if (columnHeadersVisible) {
-			if (p.y <= headerHeight) {
+			if (p.y <= headerHeight()) {
 				return null;
 			}
-			y2 += headerHeight;
+			y2 += headerHeight();
 		}
 
 		final int pinnedRow = pinnedRowAt(p.y);
@@ -2374,7 +2463,7 @@ public class Grid extends Canvas {
 	/**
 	 * Returns the next visible item in the table.
 	 *
-	 * @param item item
+	 * @param item item, or {@code null} for the first visible item
 	 * @return next visible item or null
 	 * @throws org.eclipse.swt.SWTException
 	 *                                      <ul>
@@ -2388,7 +2477,7 @@ public class Grid extends Canvas {
 	public GridItem getNextVisibleItem(final GridItem item) {
 		checkWidget();
 
-		int index = item.getRowIndex();
+		int index = item == null && GridViewport.UPSTREAM_FIXES ? -1 : item.getRowIndex();
 		if (viewport != null && !usesSparseVirtualItems() && index >= -1 && index < items.size()) {
 			return viewport.nextVisibleItem(index + 1);
 		}
@@ -2458,7 +2547,7 @@ public class Grid extends Canvas {
 	/**
 	 * Returns the previous visible column in the table.
 	 *
-	 * @param column column
+	 * @param column column, or {@code null} for the last visible column
 	 * @return previous visible column or null
 	 * @throws org.eclipse.swt.SWTException
 	 *                                      <ul>
@@ -2472,7 +2561,9 @@ public class Grid extends Canvas {
 	public GridColumn getPreviousVisibleColumn(final GridColumn column) {
 		checkWidget();
 
-		int index = displayOrderedColumns.indexOf(column);
+		// stock fails with an IndexOutOfBoundsException for null (UPSTREAM_DEFECTS.tsv)
+		int index = column == null && GridViewport.UPSTREAM_FIXES ? displayOrderedColumns.size()
+				: displayOrderedColumns.indexOf(column);
 
 		if (index == 0) {
 			return null;
@@ -2762,6 +2853,9 @@ public class Grid extends Canvas {
 		checkWidget();
 
 		if (!cellSelectionEnabled) {
+			if (items instanceof GridRowTree) {
+				return ((GridRowTree) items).rowsOf(selectedItems);
+			}
 			final int[] indices = new int[selectedItems.size()];
 			int i = 0;
 			for (final GridItem item : selectedItems) {
@@ -3170,8 +3264,8 @@ public class Grid extends Canvas {
 	 * @return height of visible grid in pixels
 	 */
 	int getVisibleGridHeight() {
-		return getClientArea().height - (columnHeadersVisible ? headerHeight : 0)
-				- (columnFootersVisible ? footerHeight : 0);
+		return getClientArea().height - (columnHeadersVisible ? headerHeight() : 0)
+				- (columnFootersVisible ? footerHeight() : 0);
 	}
 
 	/**
@@ -3276,6 +3370,19 @@ public class Grid extends Canvas {
 	 *                                      receiver</li>
 	 *                                      </ul>
 	 */
+	/** @return the item list when it is a row tree (the viewport mode), else {@code null} */
+	GridRowTree rowTree() {
+		return items instanceof GridRowTree ? (GridRowTree) items : null;
+	}
+
+	/**
+	 * @param item an item of the row tree ({@link GridRowTree})
+	 * @return its row, O(log n)
+	 */
+	int rowInTree(final GridItem item) {
+		return items.indexOf(item);
+	}
+
 	public int indexOf(final GridItem item) {
 		checkWidget();
 
@@ -3367,6 +3474,9 @@ public class Grid extends Canvas {
 	 */
 	public boolean isSelected(final GridItem item) {
 		checkWidget();
+		if (item == null && GridViewport.UPSTREAM_FIXES) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
 		if (!cellSelectionEnabled) {
 			return selectedItems.contains(item);
 		} else {
@@ -3543,6 +3653,11 @@ public class Grid extends Canvas {
 				removeThese[i] = items.get(indices[i]);
 			}
 			for (final GridItem item : removeThese) {
+				// a duplicate index, or the child of an item removed before it: already disposed
+				// (stock disposes it again and fails, UPSTREAM_DEFECTS.tsv)
+				if (GridViewport.UPSTREAM_FIXES && item.isDisposed()) {
+					continue;
+				}
 				item.dispose();
 			}
 		}
@@ -4034,6 +4149,12 @@ public class Grid extends Canvas {
 	public void setHeaderVisible(final boolean show) {
 		checkWidget();
 		columnHeadersVisible = show;
+		// the rows get less or more room: stock keeps its scroll bars (UPSTREAM_DEFECTS.tsv)
+		if (GridViewport.UPSTREAM_FIXES) {
+			setScrollValuesObsolete();
+			topIndex = -1;
+			bottomIndex = -1;
+		}
 		redraw();
 	}
 
@@ -4054,6 +4175,11 @@ public class Grid extends Canvas {
 	public void setFooterVisible(final boolean show) {
 		checkWidget();
 		columnFootersVisible = show;
+		if (GridViewport.UPSTREAM_FIXES) {
+			setScrollValuesObsolete();
+			topIndex = -1;
+			bottomIndex = -1;
+		}
 		redraw();
 	}
 
@@ -4326,6 +4452,9 @@ public class Grid extends Canvas {
 	 */
 	public void setSelection(final int[] indices) {
 		checkWidget();
+		if (indices == null && GridViewport.UPSTREAM_FIXES) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
 
 		if (!selectionEnabled) {
 			return;
@@ -4346,12 +4475,20 @@ public class Grid extends Canvas {
 				continue;
 			}
 			if (j > items.size() - 1) {
+				// the Javadoc ignores an index out of range; stock stops at it (UPSTREAM_DEFECTS.tsv)
+				if (GridViewport.UPSTREAM_FIXES) {
+					continue;
+				}
 				break;
 			}
 
 			final GridItem item = items.get(j);
 
 			if (!cellSelectionEnabled) {
+				// the Javadoc ignores a duplicate index; stock selects the item twice
+				if (GridViewport.UPSTREAM_FIXES && selectedItems.contains(item)) {
+					continue;
+				}
 				selectedItems.add(item);
 			} else {
 				selectCells(getCells(item));
@@ -4533,6 +4670,14 @@ public class Grid extends Canvas {
 	 * is visible.
 	 *
 	 * @param col the column to be shown
+	 * @throws IllegalArgumentException
+	 *                                      <ul>
+	 *                                      <li>ERROR_NULL_ARGUMENT - if the column
+	 *                                      is null</li>
+	 *                                      <li>ERROR_INVALID_ARGUMENT - if the
+	 *                                      column has been disposed or is not a
+	 *                                      column of the receiver</li>
+	 *                                      </ul>
 	 * @throws org.eclipse.swt.SWTException
 	 *                                      <ul>
 	 *                                      <li>ERROR_WIDGET_DISPOSED - if the
@@ -4544,6 +4689,12 @@ public class Grid extends Canvas {
 	 */
 	public void showColumn(final GridColumn col) {
 		checkWidget();
+		if (col == null && GridViewport.UPSTREAM_FIXES) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		if (GridViewport.UPSTREAM_FIXES && (col.isDisposed() || col.getParent() != this)) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 
 		if (!col.isVisible()) {
 			final GridColumnGroup group = col.getColumnGroup();
@@ -4646,8 +4797,8 @@ public class Grid extends Canvas {
 
 		// An item being disposed is already out of the item list but still holds its old row
 		// (Grid.removeItem may resize the scrollbars, which lays out a GridEditor on it): it
-		// is not shown (issue #700).
-		if (!isRowOf(item, itemIndex)) {
+		// is not shown (issue #700; default mode, UPSTREAM_DEFECTS.tsv D22).
+		if (GridViewport.UPSTREAM_FIXES && !isRowOf(item, itemIndex)) {
 			return false;
 		}
 
@@ -4684,12 +4835,21 @@ public class Grid extends Canvas {
 	 *                                      <li>ERROR_THREAD_INVALID_ACCESS - if not
 	 *                                      called from the thread that created the
 	 *                                      receiver</li>
+	 *                                      <li>ERROR_NULL_ARGUMENT - if 'item' is
+	 *                                      null</li>
 	 *                                      <li>ERROR_INVALID_ARGUMENT - if 'item'
-	 *                                      is not contained in the receiver</li>
+	 *                                      is not contained in the receiver (or has
+	 *                                      been disposed)</li>
 	 *                                      </ul>
 	 */
 	public void showItem(final GridItem item) {
 		checkWidget();
+		if (item == null && GridViewport.UPSTREAM_FIXES) {
+			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		if (GridViewport.UPSTREAM_FIXES && (item.isDisposed() || item.getParent() != this)) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 
 		updateScrollbars();
 
@@ -4821,8 +4981,10 @@ public class Grid extends Canvas {
 
 		int groupHeight = 0;
 		for (final GridColumnGroup group : columnGroups) {
-			groupHeight = Math.max(group.getHeaderRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, group).y,
-					groupHeight);
+			final int height = GridViewport.UPSTREAM_FIXES
+					? headerRendererHeight(group.getHeaderRenderer(), gc, groupWidth(group), group)
+					: group.getHeaderRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, group).y;
+			groupHeight = Math.max(height, groupHeight);
 		}
 
 		headerHeight = colHeaderHeight + groupHeight;
@@ -4831,6 +4993,33 @@ public class Grid extends Canvas {
 
 	private void computeHeaderHeight() {
 		estimate(this::computeHeaderHeight);
+	}
+
+	/**
+	 * The height a header renderer asks for at the given width. In the default mode a
+	 * word-wrapping header counts its wrapped lines only with auto height (as
+	 * {@link #setAutoHeight(boolean)} documents); stock measures a group header at the width it
+	 * was last painted with (zero before its first paint).
+	 */
+	int headerRendererHeight(final GridHeaderRenderer renderer, final GC gc, final int width, final Object value) {
+		if (GridViewport.UPSTREAM_FIXES && renderer.isWordWrap() && !autoHeight) {
+			renderer.setWordWrap(false);
+			try {
+				return renderer.computeSize(gc, width, SWT.DEFAULT, value).y;
+			} finally {
+				renderer.setWordWrap(true);
+			}
+		}
+		return renderer.computeSize(gc, width, SWT.DEFAULT, value).y;
+	}
+
+	/* the width of a column group: its visible columns */
+	private static int groupWidth(final GridColumnGroup group) {
+		int width = 0;
+		for (final GridColumn column : group.getColumns()) {
+			width += column.isVisible() ? column.getWidth() : 0;
+		}
+		return width;
 	}
 
 	private void computeFooterHeight(final GC gc) {
@@ -4986,11 +5175,11 @@ public class Grid extends Canvas {
 		int y = 0;
 
 		if (columnHeadersVisible) {
-			y += headerHeight;
+			y += headerHeight();
 		}
 
 		if (columnFootersVisible) {
-			y += footerHeight;
+			y += footerHeight();
 		}
 
 		y += getGridHeight();
@@ -5262,7 +5451,7 @@ public class Grid extends Canvas {
 			}
 		}
 
-		overThis.getHeaderRenderer().setBounds(headerX - getHScrollSelectionInPixels(), 0, width, groupHeaderHeight);
+		overThis.getHeaderRenderer().setBounds(headerX - getHScrollSelectionInPixels(), 0, width, groupHeaderHeight());
 		return overThis.getHeaderRenderer().notify(IInternalWidget.LeftMouseButtonDown, new Point(x, y), overThis);
 	}
 
@@ -5443,7 +5632,7 @@ public class Grid extends Canvas {
 	 */
 	private boolean handleHoverOnColumnResizer(final int x, final int y) {
 		boolean over = false;
-		if (y <= headerHeight) {
+		if (y <= headerHeight()) {
 			int x2 = 0;
 
 			if (rowHeaderVisible) {
@@ -5461,7 +5650,7 @@ public class Grid extends Canvas {
 
 				if (x2 >= x - COLUMN_RESIZER_THRESHOLD && x2 <= x + COLUMN_RESIZER_THRESHOLD) {
 					if (column.getResizeable()) {
-						if (column.getColumnGroup() != null && y <= groupHeaderHeight) {
+						if (column.getColumnGroup() != null && y <= groupHeaderHeight()) {
 							// if this is not the last column
 							if (column != column.getColumnGroup().getLastVisibleColumn()) {
 								break;
@@ -5522,7 +5711,7 @@ public class Grid extends Canvas {
 			int y2 = 0;
 
 			if (columnHeadersVisible) {
-				y2 += headerHeight;
+				y2 += headerHeight();
 			}
 
 			int row = getTopIndex();
@@ -5623,6 +5812,9 @@ public class Grid extends Canvas {
 	}
 
 	private void paintNow(final PaintEvent event) {
+		if (headerUnmeasured || footerUnmeasured) {
+			measureChrome();
+		}
 		final InsertMark insertMark = new InsertMark(); // we will populate these values while drawing the cells
 		paintCellCount = 0;
 		paintColumnVisits = 0;
@@ -5649,12 +5841,29 @@ public class Grid extends Canvas {
 		final int hscroll = getHScrollSelectionInPixels();
 		final FixedGridColumns fixed = getFixedGridColumns();
 		final boolean fixedOverlayActive = fixed.hasColumns() && hscroll > fixed.offset();
-		final int header = columnHeadersVisible ? headerHeight : 0;
-		final int footer = columnFootersVisible ? footerHeight : 0;
+		final int header = columnHeadersVisible ? headerHeight() : 0;
+		final int footer = columnFootersVisible ? footerHeight() : 0;
 		final Rectangle bodyRect = GridViewportDamage.scrollDamage(clientArea, header, footer, false);
 		final int paintPlan = GridPaintDAG.plan(
-				originalClipping, clientArea, headerHeight, footerHeight,
+				originalClipping, clientArea, headerHeight(), footerHeight(),
 				columnHeadersVisible, columnFootersVisible, fixedOverlayActive, draggingColumn);
+
+		// Z0: what header renderers paint below their bounds, under the body, where the stock Grid
+		// (header first, rows over it) shows it. Only renderers that declare such rows are painted
+		// for damage below the header; the others stay out of body damage.
+		final int overflow = columnHeadersVisible ? headerOverflowBelow(extraFill, clientArea.width) : 0;
+		if (overflow > 0 && headerHeight() < clientArea.height) {
+			final Rectangle band = originalClipping.intersection(new Rectangle(
+					clientArea.x, clientArea.y + headerHeight(), clientArea.width, overflow));
+			if (!band.isEmpty()) {
+				underlayPass = true;
+				try (GridGCProxy underlay = GridGCProxy.wrap(gc).clip(band)) {
+					paintHeader(underlay.gc(), extraFill);
+				} finally {
+					underlayPass = false;
+				}
+			}
+		}
 
 		// Body projection and spanning-row discovery are unnecessary for chrome-only damage.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY | GridPaintDAG.FIXED)) {
@@ -5665,16 +5874,16 @@ public class Grid extends Canvas {
 		// Z3: fixed chrome. Vertical body scrolling must not paint these planes.
 		if (columnHeadersVisible && GridPaintDAG.includes(paintPlan, GridPaintDAG.HEADER)) {
 			final Rectangle headerRect = new Rectangle(
-					clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight, clientArea.height));
+					clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight(), clientArea.height));
 			try (GridGCProxy headerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(headerRect))) {
 				paintHeader(headerGc.gc(), extraFill);
 			}
 		}
 
 		if (columnFootersVisible && GridPaintDAG.includes(paintPlan, GridPaintDAG.FOOTER)) {
-			final int footerY = Math.max(clientArea.y, clientArea.y + clientArea.height - footerHeight);
+			final int footerY = Math.max(clientArea.y, clientArea.y + clientArea.height - footerHeight());
 			final Rectangle footerRect = new Rectangle(
-					clientArea.x, footerY, clientArea.width, Math.min(footerHeight, clientArea.height));
+					clientArea.x, footerY, clientArea.width, Math.min(footerHeight(), clientArea.height));
 			try (GridGCProxy footerGc = GridGCProxy.wrap(gc).clip(originalClipping.intersection(footerRect))) {
 				paintFooter(footerGc.gc());
 			}
@@ -5709,7 +5918,7 @@ public class Grid extends Canvas {
 					if (x < 0) {
 						x = 0;
 					}
-					dropPointRenderer.setBounds(x - 1, headerHeight + DROP_POINT_LOWER_OFFSET, size.x, size.y);
+					dropPointRenderer.setBounds(x - 1, headerHeight() + DROP_POINT_LOWER_OFFSET, size.x, size.y);
 					dropPointRenderer.paint(overlay, null);
 				}
 			}
@@ -5730,7 +5939,7 @@ public class Grid extends Canvas {
 		 * background -> body -> fixed -> chrome -> transient overlay.
 		 */
 		if (columnHeadersVisible) {
-			y += headerHeight;
+			y += headerHeight();
 		}
 
 		final int availableHeight = clientArea.height - y;
@@ -5796,8 +6005,8 @@ public class Grid extends Canvas {
 		// Z2: frozen columns occlude the scrolling body, never transient feedback.
 		if (fixedOverlayActive && GridPaintDAG.includes(paintPlan, GridPaintDAG.FIXED)) {
 			final int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
-			final int fixedTop = columnHeadersVisible ? headerHeight : 0;
-			final int fixedBottom = columnFootersVisible ? footerHeight : 0;
+			final int fixedTop = columnHeadersVisible ? headerHeight() : 0;
+			final int fixedBottom = columnFootersVisible ? footerHeight() : 0;
 			final Rectangle fixedRect = new Rectangle(fixedX, fixedTop, getFixedColumnsWidth(),
 					Math.max(0, clientArea.height - fixedTop - fixedBottom));
 			final Rectangle fixedClipping = originalClipping.intersection(fixedRect);
@@ -5858,13 +6067,13 @@ public class Grid extends Canvas {
 		final int top = Math.min(pinnedTopRows, items.size());
 		final int bottom = Math.min(pinnedBottomRows, items.size() - top);
 		if (top > 0) {
-			final int y = columnHeadersVisible ? headerHeight : 0;
+			final int y = columnHeadersVisible ? headerHeight() : 0;
 			paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive, 0,
 					top, y);
 		}
 		if (bottom > 0) {
 			final int first = items.size() - bottom;
-			final int y = clientArea.height - (columnFootersVisible ? footerHeight : 0)
+			final int y = clientArea.height - (columnFootersVisible ? footerHeight() : 0)
 					- pinnedHeight(first, items.size());
 			paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive, first,
 					bottom, y);
@@ -5874,8 +6083,8 @@ public class Grid extends Canvas {
 	private void paintPinnedPlane(final GC gc, final Rectangle originalClipping, final Rectangle clientArea,
 			final int extraFill, final int hscroll, final FixedGridColumns fixed, final boolean fixedOverlayActive,
 			final int first, final int count, final int y) {
-		final int bodyTop = columnHeadersVisible ? headerHeight : 0;
-		final int bodyBottom = clientArea.height - (columnFootersVisible ? footerHeight : 0);
+		final int bodyTop = columnHeadersVisible ? headerHeight() : 0;
+		final int bodyBottom = clientArea.height - (columnFootersVisible ? footerHeight() : 0);
 		final int planeTop = Math.max(bodyTop, y);
 		final int planeBottom = Math.min(bodyBottom, y + pinnedHeight(first, first + count));
 		if (planeBottom <= planeTop) {
@@ -5931,7 +6140,7 @@ public class Grid extends Canvas {
 		}
 		final int top = Math.min(pinnedTopRows, items.size());
 		final int bottom = Math.min(pinnedBottomRows, items.size() - top);
-		int y0 = columnHeadersVisible ? headerHeight : 0;
+		int y0 = columnHeadersVisible ? headerHeight() : 0;
 		for (int r = 0; r < top; r++) {
 			final int h = items.get(r).getHeight() + 1;
 			if (y >= y0 && y < y0 + h) {
@@ -5940,7 +6149,7 @@ public class Grid extends Canvas {
 			y0 += h;
 		}
 		final int first = items.size() - bottom;
-		y0 = getClientArea().height - (columnFootersVisible ? footerHeight : 0) - pinnedHeight(first, items.size());
+		y0 = getClientArea().height - (columnFootersVisible ? footerHeight() : 0) - pinnedHeight(first, items.size());
 		for (int r = first; r < items.size(); r++) {
 			final int h = items.get(r).getHeight() + 1;
 			if (y >= y0 && y < y0 + h) {
@@ -6388,7 +6597,7 @@ public class Grid extends Canvas {
 							final Point sizeOfColumn = cellSize;
 
 							column.getCellRenderer().setBounds(x, y, width, sizeOfColumn.y);
-							final int cellInHeaderDelta = columnHeadersVisible ? headerHeight - y : 0;
+							final int cellInHeaderDelta = columnHeadersVisible ? headerHeight() - y : 0;
 							if (cellInHeaderDelta > 0) {
 								final Rectangle cellRect = new Rectangle(x - 1, y + cellInHeaderDelta, width + 1,
 										sizeOfColumn.y + 2 - cellInHeaderDelta);
@@ -6490,7 +6699,7 @@ public class Grid extends Canvas {
 					} else {
 						rowHeaderRenderer.setSelected(cellInRowSelected);
 					}
-					if (!columnHeadersVisible || y >= headerHeight) {
+					if (!columnHeadersVisible || y >= headerHeight()) {
 						rowHeaderRenderer.setBounds(0, y, rowHeaderWidth, item.getHeight() + 1);
 						rowHeaderRenderer.paint(gc, item);
 					}
@@ -6585,10 +6794,10 @@ public class Grid extends Canvas {
 	private GridColumn overColumnHeader(final int x, final int y) {
 		GridColumn col = null;
 
-		if (y <= headerHeight && y > 0) {
+		if (y <= headerHeight() && y > 0) {
 			col = getColumn(new Point(x, y));
 			if (col != null && col.getColumnGroup() != null) {
-				if (y <= groupHeaderHeight) {
+				if (y <= groupHeaderHeight()) {
 					return null;
 				}
 			}
@@ -6606,7 +6815,7 @@ public class Grid extends Canvas {
 	 * @return column reference which mouse is over, or null.
 	 */
 	private GridColumn overColumnFooter(final int x, final int y) {
-		if (y >= getClientArea().height - footerHeight) {
+		if (y >= getClientArea().height - footerHeight()) {
 			return getColumn(new Point(x, y));
 		}
 
@@ -6624,7 +6833,7 @@ public class Grid extends Canvas {
 	private GridColumnGroup overColumnGroupHeader(final int x, final int y) {
 		GridColumnGroup group = null;
 
-		if (y <= groupHeaderHeight && y > 0) {
+		if (y <= groupHeaderHeight() && y > 0) {
 			final GridColumn col = getColumn(new Point(x, y));
 			if (col != null) {
 				group = col.getColumnGroup();
@@ -6640,6 +6849,54 @@ public class Grid extends Canvas {
 	 * @param gc        gc from paint event
 	 * @param extraFill the size of the control
 	 */
+	/**
+	 * @return the most pixel rows that a header renderer {@link #paintHeader(GC, int)} paints
+	 *         declares below its bounds (the columns in view, the empty column header, the top left)
+	 */
+	private int headerOverflowBelow(final int extraFill, final int clientWidth) {
+		int overflow = rowHeaderVisible ? topLeftRenderer.getOverflowBelow() : 0;
+		int x = (rowHeaderVisible ? rowHeaderWidth : 0) - getHScrollSelectionInPixels();
+		for (final GridColumn column : displayOrderedColumns) {
+			if (x > clientWidth) {
+				break;
+			}
+			if (column.isVisible()) {
+				final int width = column.getWidth(extraFill);
+				if (x + width >= 0 || column.isFixed()) {
+					overflow = Math.max(overflow, column.getHeaderRenderer().getOverflowBelow());
+				}
+				x += width;
+			}
+		}
+		if (x < clientWidth) {
+			overflow = Math.max(overflow, emptyColumnHeaderRenderer.getOverflowBelow());
+		}
+		return Math.max(0, overflow);
+	}
+
+	/* paints a header renderer, in the underlay pass only one that paints below its bounds */
+	private void paintHeaderPart(final IRenderer renderer, final GC gc, final Object value) {
+		if (!underlayPass || renderer.getOverflowBelow() > 0) {
+			renderer.paint(gc, value);
+		}
+	}
+
+	/**
+	 * @return the x of the empty column header right of the last visible column, as
+	 *         {@link #paintHeader(GC, int)} places it, or {@code clientWidth} when the columns
+	 *         fill the client area
+	 */
+	private int emptyColumnHeaderX(final int extraFill, final int clientWidth) {
+		int x = (rowHeaderVisible ? rowHeaderWidth : 0) - getHScrollSelectionInPixels();
+		for (final GridColumn column : displayOrderedColumns) {
+			if (x > clientWidth) {
+				return clientWidth;
+			}
+			x += column.isVisible() ? column.getWidth(extraFill) : 0;
+		}
+		return Math.min(x, clientWidth);
+	}
+
 	private void paintHeader(final GC gc, final int extraFill) {
 		int x = 0;
 		boolean hasFixedColumns = false;
@@ -6692,16 +6949,16 @@ public class Grid extends Canvas {
 		}
 
 		if (x < clientWidth) {
-			emptyColumnHeaderRenderer.setBounds(x, 0, clientWidth - x, headerHeight);
-			emptyColumnHeaderRenderer.paint(gc, null);
+			emptyColumnHeaderRenderer.setBounds(x, 0, clientWidth - x, headerHeight());
+			paintHeaderPart(emptyColumnHeaderRenderer, gc, null);
 		}
 
 		x = 0;
 
 		if (rowHeaderVisible) {
 			// paint left corner
-			topLeftRenderer.setBounds(0, 0, rowHeaderWidth, headerHeight);
-			topLeftRenderer.paint(gc, this);
+			topLeftRenderer.setBounds(0, 0, rowHeaderWidth, headerHeight());
+			paintHeaderPart(topLeftRenderer, gc, this);
 			x += rowHeaderWidth;
 		}
 
@@ -6714,17 +6971,17 @@ public class Grid extends Canvas {
 			int height = 0;
 			int y;
 			if (columnBeingPushed.getColumnGroup() != null) {
-				height = headerHeight - groupHeaderHeight;
-				y = groupHeaderHeight;
+				height = headerHeight() - groupHeaderHeight();
+				y = groupHeaderHeight();
 			} else {
-				height = headerHeight;
+				height = headerHeight();
 				y = 0;
 			}
 
 			columnBeingPushed.getHeaderRenderer().setBounds(
 					getColumnHeaderXPosition(columnBeingPushed) + currentHeaderDragX - startHeaderDragX, y,
 					columnBeingPushed.getWidth(), height);
-			columnBeingPushed.getHeaderRenderer().paint(gc, columnBeingPushed);
+			paintHeaderPart(columnBeingPushed.getHeaderRenderer(), gc, columnBeingPushed);
 			columnBeingPushed.getHeaderRenderer().setSelected(false);
 
 			gc.setAlpha(-1);
@@ -6798,8 +7055,8 @@ public class Grid extends Canvas {
 	private void paintFixedColumnHeaderWithoutGroup(final GridColumn column, final int x, final GC gc,
 			final int extraFill) {
 		final int width = column.getWidth(extraFill);
-		final int y = column.getColumnGroup() != null ? groupHeaderHeight : 0;
-		final int height = column.getColumnGroup() != null ? headerHeight - groupHeaderHeight : headerHeight;
+		final int y = column.getColumnGroup() != null ? groupHeaderHeight() : 0;
+		final int height = column.getColumnGroup() != null ? headerHeight() - groupHeaderHeight() : headerHeight();
 
 		final GridHeaderRenderer renderer = column.getHeaderRenderer();
 		if (pushingColumn) {
@@ -6813,7 +7070,7 @@ public class Grid extends Canvas {
 			renderer.setSelected(selectedColumns.contains(column));
 		}
 		if (x + width >= 0) {
-			renderer.paint(gc, column);
+			paintHeaderPart(renderer, gc, column);
 		}
 	}
 
@@ -6882,17 +7139,17 @@ public class Grid extends Canvas {
 				group.getHeaderRenderer().setHover(hoverColumnGroupHeader == group);
 				group.getHeaderRenderer().setHoverDetail(hoveringDetail);
 
-				group.getHeaderRenderer().setBounds(x, 0, groupWidth, groupHeaderHeight);
+				group.getHeaderRenderer().setBounds(x, 0, groupWidth, groupHeaderHeight());
 
-				group.getHeaderRenderer().paint(gc, group);
+				paintHeaderPart(group.getHeaderRenderer(), gc, group);
 
 				previousPaintedGroup = group;
 			}
 
-			height = headerHeight - groupHeaderHeight;
-			y = groupHeaderHeight;
+			height = headerHeight() - groupHeaderHeight();
+			y = groupHeaderHeight();
 		} else {
-			height = headerHeight;
+			height = headerHeight();
 			y = 0;
 		}
 
@@ -6911,7 +7168,7 @@ public class Grid extends Canvas {
 		}
 
 		if (x + width >= 0) {
-			renderer.paint(gc, column);
+			paintHeaderPart(renderer, gc, column);
 		}
 		return previousPaintedGroup;
 	}
@@ -6940,7 +7197,7 @@ public class Grid extends Canvas {
 				continue;
 			}
 
-			height = footerHeight;
+			height = footerHeight();
 			y = getClientArea().height - height;
 
 			column.getFooterRenderer().setBounds(x, y, column.getWidth(), height);
@@ -6952,14 +7209,14 @@ public class Grid extends Canvas {
 		}
 
 		if (x < getClientArea().width) {
-			emptyColumnFooterRenderer.setBounds(x, getClientArea().height - footerHeight, getClientArea().width - x,
-					footerHeight);
+			emptyColumnFooterRenderer.setBounds(x, getClientArea().height - footerHeight(), getClientArea().width - x,
+					footerHeight());
 			emptyColumnFooterRenderer.paint(gc, null);
 		}
 
 		if (rowHeaderVisible) {
 			// paint left corner
-			bottomLeftRenderer.setBounds(0, getClientArea().height - footerHeight, rowHeaderWidth, footerHeight);
+			bottomLeftRenderer.setBounds(0, getClientArea().height - footerHeight(), rowHeaderWidth, footerHeight());
 			bottomLeftRenderer.paint(gc, this);
 			x += rowHeaderWidth;
 		}
@@ -6970,12 +7227,12 @@ public class Grid extends Canvas {
 		final FixedGridColumns fixed = getFixedGridColumns();
 		if (fixed.hasColumns() && getHScrollSelectionInPixels() > fixed.offset()) {
 			int fx = rowHeaderVisible ? rowHeaderWidth : 0;
-			final int fy = getClientArea().height - footerHeight;
+			final int fy = getClientArea().height - footerHeight();
 			for (final GridColumn column : fixed.columns()) {
 				if (!column.isVisible()) {
 					continue;
 				}
-				column.getFooterRenderer().setBounds(fx, fy, column.getWidth(), footerHeight);
+				column.getFooterRenderer().setBounds(fx, fy, column.getWidth(), footerHeight());
 				column.getFooterRenderer().paint(gc, column);
 				fx += column.getWidth();
 			}
@@ -7492,15 +7749,8 @@ public class Grid extends Canvas {
 		}
 
 		if (getColumn(newCell.x).getCellSelectionEnabled()) {
-			boolean found = false;
-			for (final Point p : selectedCells) {
-				if (newCell.equals(p)) {
-					found = true;
-					break;
-				}
-			}
-
-			if (!found) {
+			// the same equality test as the stock scan; O(1) in the viewport mode
+			if (!selectedCells.contains(newCell)) {
 				if (selectionType == GridSelectionType.SINGLE && selectedCells.size() > 0) {
 					return;
 				}
@@ -7514,7 +7764,12 @@ public class Grid extends Canvas {
 		selectedColumns.clear();
 
 		for (final Point cell : selectedCells) {
-			selectedColumns.add(getColumn(cell.x));
+			final GridColumn column = getColumn(cell.x);
+			// one entry per column: the list is only asked whether it contains a column, and stock's
+			// entry per cell made that a scan of the cell selection per painted header
+			if (!(selectedCells instanceof GridCellSelectionList) || !selectedColumns.contains(column)) {
+				selectedColumns.add(column);
+			}
 		}
 	}
 
@@ -7850,7 +8105,7 @@ public class Grid extends Canvas {
 				showItem(item);
 				redraw();
 			}
-		} else if (e.button == 1 && rowHeaderVisible && e.x <= rowHeaderWidth && e.y < headerHeight) {
+		} else if (e.button == 1 && rowHeaderVisible && e.x <= rowHeaderWidth && e.y < headerHeight()) {
 			// Nothing to select
 			if (items.size() == 0) {
 				return;
@@ -7865,7 +8120,7 @@ public class Grid extends Canvas {
 				selectionEvent = selectAllRowsInternal();
 			}
 			focusItem = getItem(getTopIndex());
-		} else if (cellSelectionEnabled && e.button == 1 && columnHeadersVisible && e.y <= headerHeight) {
+		} else if (cellSelectionEnabled && e.button == 1 && columnHeadersVisible && e.y <= headerHeight()) {
 			// column cell selection
 			final GridColumn col = getColumn(new Point(e.x, e.y));
 
@@ -7880,7 +8135,7 @@ public class Grid extends Canvas {
 			final Vector<Point> cells = new Vector<>();
 
 			final GridColumnGroup group = col.getColumnGroup();
-			if (group != null && e.y < groupHeaderHeight) {
+			if (group != null && e.y < groupHeaderHeight()) {
 				getCells(group, cells);
 			} else {
 				getCells(col, cells);
@@ -7965,7 +8220,7 @@ public class Grid extends Canvas {
 			return;
 		}
 
-		if (e.y < headerHeight && columnHeadersVisible) {
+		if (e.y < headerHeight() && columnHeadersVisible) {
 			e.doit = false;
 			return;
 		}
@@ -8123,7 +8378,7 @@ public class Grid extends Canvas {
 					GridItem intentItem = hoveringItem;
 
 					if (hoveringItem == null) {
-						if (e.y > headerHeight) {
+						if (e.y > headerHeight()) {
 							// then we must be hovering way to the bottom
 							intentItem = getPreviousVisibleItem(null);
 						} else {
@@ -8154,7 +8409,7 @@ public class Grid extends Canvas {
 					GridItem intentItem = hoveringItem;
 
 					if (hoveringItem == null) {
-						if (e.y > headerHeight) {
+						if (e.y > headerHeight()) {
 							// then we must be hovering way to the bottom
 							intentItem = getPreviousVisibleItem(null);
 						} else {
@@ -8278,6 +8533,15 @@ public class Grid extends Canvas {
 	 * date.
 	 */
 	protected void refreshHoverState() {
+		// hover follows the mouse only while it is over this Grid; elsewhere (another window on
+		// top, another desktop) the cursor position says nothing about this Grid
+		if (GridViewport.UPSTREAM_FIXES && getDisplay().getCursorControl() != this) {
+			if (hoveringItem != null || hoveringColumn != null || hoveringColumnHeader != null
+					|| hoverColumnGroupHeader != null || !hoveringDetail.isEmpty()) {
+				onMouseExit(null);
+			}
+			return;
+		}
 		final Point p = getDisplay().map(null, this, getDisplay().getCursorLocation());
 		handleHovering(p.x, p.y);
 	}
@@ -8786,8 +9050,8 @@ public class Grid extends Canvas {
 	/** Client rectangles of a plane: body between header and footer; chrome = header + footer. */
 	private Rectangle[] planeRects(final int plane) {
 		final Rectangle client = getClientArea();
-		final int header = columnHeadersVisible ? headerHeight : 0;
-		final int footer = columnFootersVisible ? footerHeight : 0;
+		final int header = columnHeadersVisible ? headerHeight() : 0;
+		final int footer = columnFootersVisible ? footerHeight() : 0;
 		if (plane == PLANE_BODY) {
 			return new Rectangle[] { GridViewportDamage.scrollDamage(client, header, footer, false) };
 		}
@@ -8830,8 +9094,8 @@ public class Grid extends Canvas {
 		final Rectangle clientArea = getClientArea();
 		final Rectangle damage = GridViewportDamage.scrollDamage(
 				clientArea,
-				columnHeadersVisible ? headerHeight : 0,
-				columnFootersVisible ? footerHeight : 0,
+				columnHeadersVisible ? headerHeight() : 0,
+				columnFootersVisible ? footerHeight() : 0,
 				horizontal);
 		if (damage.width > 0 && damage.height > 0) {
 			if (!horizontal && blitBody(oldTop, damage)) {
@@ -8857,25 +9121,66 @@ public class Grid extends Canvas {
 		if (dy == 0 || Math.abs(dy) >= body.height) {
 			return false;
 		}
+		// the classic tree column's dotted branch lines take their phase from the absolute pixel
+		// row (BranchRenderer): an odd move would shift the dots of every moved row
+		if ((dy & 1) != 0 && hasDottedBranches()) {
+			return false;
+		}
+		// the first body pixel rows also show the header's overflow (HEADER_OVERFLOW): a move down
+		// carries them into the body, a move up covers them with row pixels; both are repainted
+		final int band = columnHeadersVisible
+				? Math.min(headerOverflowBelow(getExtraFill(), getClientArea().width), body.height) : 0;
 		if (dy > 0) {
 			scroll(body.x, body.y + dy, body.x, body.y, body.width, body.height - dy, false);
+			// the scroll invalidates only the part of its source rectangle that it uncovers; when
+			// the move is more than half the body the exposed strip reaches past the source
+			redraw(body.x, body.y, body.width, Math.min(dy + band, body.height), false);
 		} else {
 			scroll(body.x, body.y, body.x, body.y - dy, body.width, body.height + dy, false);
+			if (band > 0) {
+				// its own paint: one damage rectangle spanning the band and the bottom strip would
+				// repaint every row between them
+				redraw(body.x, body.y, body.width, band, false);
+				update();
+			}
+			redraw(body.x, body.y + body.height + dy, body.width, -dy, false);
 		}
+		// paint the exposed strip now, as the native list views do after scrolling their bits:
+		// until then the strip would show erased or stale rows
+		update();
 		paintedTopIndex = newTop;
 		blitScrollCount++;
 		return true;
 	}
 
+	/**
+	 * @return {@code true} for renderers that paint a row from its own item and bounds only (the
+	 *         default ones and the native look's), so a row's pixels can be moved by a blit
+	 */
+	private static boolean blitSafeRenderer(final Object renderer, final Class<?> defaultClass) {
+		return renderer.getClass() == defaultClass || renderer instanceof GridNativeCellRenderer
+				|| renderer instanceof GridNativeLook.EmptyCell;
+	}
+
+	/** @return {@code true} if a visible tree column paints the classic dotted branch lines */
+	private boolean hasDottedBranches() {
+		for (final GridColumn column : displayOrderedColumns) {
+			if (column.isVisible() && column.isTree() && column.getCellRenderer().getClass() == DefaultCellRenderer.class) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private boolean blitSafe() {
 		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
 				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
-				|| emptyCellRenderer.getClass() != DefaultEmptyCellRenderer.class
+				|| !blitSafeRenderer(emptyCellRenderer, DefaultEmptyCellRenderer.class)
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
 			return false;
 		}
 		for (final GridColumn column : displayOrderedColumns) {
-			if (column.isVisible() && column.getCellRenderer().getClass() != DefaultCellRenderer.class) {
+			if (column.isVisible() && !blitSafeRenderer(column.getCellRenderer(), DefaultCellRenderer.class)) {
 				return false;
 			}
 		}
@@ -8921,7 +9226,7 @@ public class Grid extends Canvas {
 		int y = 0;
 		if (item != null) {
 			if (columnHeadersVisible) {
-				y += headerHeight;
+				y += headerHeight();
 			}
 
 			int currIndex = getTopIndex();
@@ -8953,7 +9258,7 @@ public class Grid extends Canvas {
 			}
 		} else {
 			if (column.getColumnGroup() != null) {
-				y += groupHeaderHeight;
+				y += groupHeaderHeight();
 			}
 		}
 
@@ -9017,7 +9322,7 @@ public class Grid extends Canvas {
 
 		if (col != null) {
 			if (item != null) {
-				if (y < getClientArea().height - (columnFootersVisible ? footerHeight : 0)) {
+				if (y < getClientArea().height - (columnFootersVisible ? footerHeight() : 0)) {
 					col.getCellRenderer().setBounds(item.getBounds(col.index));
 
 					if (col.getCellRenderer().notify(IInternalWidget.MouseMove, new Point(x, y), item)) {
@@ -9033,8 +9338,8 @@ public class Grid extends Canvas {
 					}
 				}
 			} else {
-				if (y < headerHeight) {
-					if (columnGroups.length != 0 && y < groupHeaderHeight && col.getColumnGroup() != null) {
+				if (y < headerHeight()) {
+					if (columnGroups.length != 0 && y < groupHeaderHeight() && col.getColumnGroup() != null) {
 						hoverColGroup = col.getColumnGroup();
 						hoverColGroup.getHeaderRenderer().setBounds(hoverColGroup.getBounds());
 						if (hoverColGroup.getHeaderRenderer().notify(IInternalWidget.MouseMove, new Point(x, y),
@@ -9221,13 +9526,16 @@ public class Grid extends Canvas {
 		} else {
 			column.index = index;
 			columns.add(index, column);
-			for (int i = index + 1; i < size; i++) {
+			// stock renumbers up to the old size: the last column kept its old index (a duplicate
+			// in getColumnOrder, its renderer reading the column before it; UPSTREAM_DEFECTS.tsv)
+			final int renumbered = GridViewport.UPSTREAM_FIXES ? columns.size() : size;
+			for (int i = index + 1; i < renumbered; i++) {
 				columns.get(i).index = i;
 			}
 			displayOrderedColumns.add(index, column);
 
 			dataVisualizer.addColumn(index);
-			for (int i = 0; i < size; i++) {
+			for (int i = 0; i < renumbered; i++) {
 				columns.get(i).setColumnIndex(i);
 			}
 		}
@@ -9288,6 +9596,9 @@ public class Grid extends Canvas {
 					selectionModified = true;
 				}
 			}
+			if (selectedCells instanceof GridCellSelectionList) {
+				((GridCellSelectionList) selectedCells).reindex();
+			}
 		}
 
 		columns.remove(column);
@@ -9305,6 +9616,12 @@ public class Grid extends Canvas {
 		updatePrimaryCheckColumn();
 
 		scrollValuesObsolete = true;
+
+		// the removed column may have had the tallest header or footer (stock keeps its height)
+		if (!disposing) {
+			headerContentChanged();
+			footerContentChanged();
+		}
 
 		redraw();
 
@@ -9511,7 +9828,7 @@ public class Grid extends Canvas {
 			items.add(index, item);
 			row = index;
 			insertDataRow(row);
-			if (!(items instanceof GridVirtualItemList)) {
+			if (!(items instanceof GridVirtualItemList) && !(items instanceof GridRowTree)) {
 				for (int i = index + 1; i < items.size(); i++) {
 					items.get(i).increaseRow();
 				}
@@ -9581,7 +9898,7 @@ public class Grid extends Canvas {
 			return;
 		}
 
-		if (!(items instanceof GridVirtualItemList)) {
+		if (!(items instanceof GridVirtualItemList) && !(items instanceof GridRowTree)) {
 			for (int i = index; i < items.size(); i++) {
 				items.get(i).decreaseRow();
 			}
@@ -10903,6 +11220,30 @@ public class Grid extends Canvas {
 		dataVisualizer.setDefaultFont(font);
 		defaultFont = font;
 		super.setFont(font);
+		if (GridViewport.UPSTREAM_FIXES) {
+			// headers and footers without their own font measure with the Grid's
+			for (final GridColumn column : columns) {
+				column.forgetHeaderHeight();
+				column.forgetFooterHeight();
+			}
+			headerContentChanged();
+			footerContentChanged();
+			// rows measured with the old font: measured again (stock keeps them, drawn clipped)
+			if (!userModifiedItemHeight) {
+				final int height = items.isEmpty()
+						? estimateWithResult(sizingGC -> sizingGC.getFontMetrics().getHeight() + 2)
+						: computeItemHeight(items.get(0));
+				if (height != itemHeight) {
+					if (hasDifferingHeights) {
+						// rows sized one by one keep their heights; new rows take the new default
+						itemHeight = height;
+					} else {
+						setItemHeight(height);
+						userModifiedItemHeight = false;
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -10999,8 +11340,16 @@ public class Grid extends Canvas {
 		if (count < items.size()) {
 			selectedCells.clear();
 			for (int i = items.size() - 1; i >= count; i--) {
+				items.get(i).sendDisposeFirst();
 				final GridItem removed = items.remove(i);
-				rootItems.remove(i);
+				// a tree Grid's rows are not all roots: detach the row from its own parent list
+				if (!GridViewport.UPSTREAM_FIXES) {
+					rootItems.remove(i);
+				} else if (removed.getParentItem() == null) {
+					rootItems.remove(removed);
+				} else {
+					removed.getParentItem().detachChild(removed);
+				}
 				selectedItems.remove(removed);
 				if (removed.isVisible()) {
 					currentVisibleItems--;
@@ -11667,9 +12016,9 @@ public class Grid extends Canvas {
 						if (column.getColumnGroup() == null) {
 							location.y = 0;
 						} else {
-							location.y = groupHeaderHeight;
+							location.y = groupHeaderHeight();
 						}
-						location.height = headerHeight;
+						location.height = headerHeight();
 						location.width = column.getWidth();
 					}
 				} else if (childID >= items.size() + columns.size()
@@ -11678,7 +12027,7 @@ public class Grid extends Canvas {
 					final GridColumnGroup columnGroup = getColumnGroup(childID - items.size() - columns.size());
 					if (columnGroup != null) {
 						location.y = 0;
-						location.height = groupHeaderHeight;
+						location.height = groupHeaderHeight();
 						location.x = getColumnHeaderXPosition(columnGroup.getFirstVisibleColumn());
 						int width = 0;
 						for (int i = 0; i < columnGroup.getColumns().length; i++) {
@@ -11937,7 +12286,7 @@ public class Grid extends Canvas {
 		// Point inSelection = null;
 
 		if ((!rowHeaderVisible || x > rowHeaderWidth - SELECTION_DRAG_BORDER_THRESHOLD)
-				&& (!columnHeadersVisible || y > headerHeight - SELECTION_DRAG_BORDER_THRESHOLD)) {
+				&& (!columnHeadersVisible || y > headerHeight() - SELECTION_DRAG_BORDER_THRESHOLD)) {
 			// not on a header
 
 			// if(!dragOnFullSelection)
@@ -12073,7 +12422,7 @@ public class Grid extends Canvas {
 	 */
 	boolean isInDragScrollArea(final Point point) {
 		final int rhw = rowHeaderVisible ? rowHeaderWidth : 0;
-		final int chh = columnHeadersVisible ? headerHeight : 0;
+		final int chh = columnHeadersVisible ? headerHeight() : 0;
 		final Rectangle top = new Rectangle(rhw, chh, getClientArea().width - rhw, DRAG_SCROLL_AREA_HEIGHT);
 		final Rectangle bottom = new Rectangle(rhw, getClientArea().height - DRAG_SCROLL_AREA_HEIGHT,
 				getClientArea().width - rhw, DRAG_SCROLL_AREA_HEIGHT);
@@ -12256,7 +12605,18 @@ public class Grid extends Canvas {
 	 * Recalculate the height of the header
 	 */
 	public void recalculateHeader() {
+		if (GridViewport.UPSTREAM_FIXES && painting) {
+			// the wrapping header renderers ask while they paint; the default mode measures the
+			// header whenever its content or a wrapped header's width changes, before the paint
+			return;
+		}
 		final int previous = getHeaderHeight();
+		if (GridViewport.UPSTREAM_FIXES) {
+			// stock reuses every column's cached measure, so nothing was recalculated
+			for (final GridColumn column : columns) {
+				column.forgetHeaderHeight();
+			}
+		}
 		computeHeaderHeight();
 
 		if (previous != getHeaderHeight()) {
@@ -12365,6 +12725,12 @@ public class Grid extends Canvas {
 		checkWidget();
 		autoHeight = enabled;
 		setRowsResizeable(false); // turn of resizing of row height since it conflicts with this property
+		if (GridViewport.UPSTREAM_FIXES) {
+			for (final GridColumn column : columns) {
+				column.forgetHeaderHeight();
+			}
+			headerContentChanged();
+		}
 		redraw();
 	}
 

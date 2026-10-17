@@ -6,7 +6,7 @@ export MSYS_NO_PATHCONV=1
 WT=K:/m3-work/agents/nebula-grid/wt
 OUT=K:/m3-work/agents/nebula-grid/out
 JDK="C:/Program Files/Java/jdk-21"
-SWT=C:/m3-work-c/integ-build/official/org.eclipse.swt.win32.win32.x86_64-3.135.0.jar
+SWT=C:/Users/hsoliwal/.m2/repository/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.135.0/org.eclipse.swt.win32.win32.x86_64-3.135.0.jar
 D=C:/m3-work-c/showcase-build/platform-deps
 M2=C:/Users/hsoliwal/.m2/repository
 DEPS="$D/org.eclipse.jface-3.40.0.jar;$D/org.eclipse.core.commands-3.13.0.jar;$D/org.eclipse.equinox.common-3.21.0.jar"
@@ -17,7 +17,9 @@ compile() { # <out> <classpath> <srcdir>
   rm -rf "$1"; mkdir -p "$1"
   find "$3" -name '*.java' > "$1.src"
   "$JDK/bin/javac" -J-Xmx768m --release 17 -encoding UTF-8 -nowarn -proc:none -Xmaxerrs 50 -cp "$2" -d "$1" @"$1.src" > "$1.log" 2>&1
-  echo "$(basename $1): sources=$(wc -l < "$1.src") errors=$(grep -c ': error:' "$1.log")"
+  # resources (images and other non-Java files) next to the classes, as the bundle build does
+  (cd "$3" && find . -type f ! -name '*.java' | while read -r f; do mkdir -p "$1/$(dirname "$f")"; cp "$f" "$1/$f"; done)
+  echo "$(basename $1): sources=$(wc -l < "$1.src") resources=$(cd "$3" && find . -type f ! -name '*.java' | wc -l) errors=$(grep -c ': error:' "$1.log")"
   grep -A2 ': error:' "$1.log" | head -30
 }
 compile $OUT/grid-classes "$SWT;$DEPS" $G
