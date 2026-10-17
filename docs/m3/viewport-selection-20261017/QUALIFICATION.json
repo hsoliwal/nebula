@@ -1,0 +1,184 @@
+{
+  "schema": "NEBULA_SELECTION_OCCURRENCE_QUALIFICATION_V1",
+  "base_revision": "91c474935eb4a06e46716a0188b9082f0af0eda9",
+  "recipe": {
+    "repository": "hsoliwal/com.synexia",
+    "name": "com.synexia.nebula.SelectionOccurrence20261017",
+    "path": "synexia-openrewrite-recipes/recipe-crates/m3-nebula-selection-occurrence-20261017",
+    "new_crate_revision": "a14a26e92fb65d0fbcd7f71e7ae1653222ccc439",
+    "existing_engine_revision": "892e3f6c51d78bc0948e8a8cf736055b4c70eafa",
+    "targets": [
+      {
+        "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml",
+        "kind": "text",
+        "preimage_sha256": "6ee366932658047abd693f9e9462c2ade4de663b21d5de72e7cdc41be51ed109",
+        "postimage_sha256": "a84523a9ff07d88ab6b24369fae7552f09f5fd3e73c757e237c752907721deba",
+        "preimage_git_blob": "c09b05ac0737834c82fea8488f3a83832cf5c75c",
+        "postimage_git_blob": "14d9505b0b477793f15219f842045e27bfd1d8a1",
+        "resource": "target-000.text.txt"
+      },
+      {
+        "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridSelectionOccurrence_Test.java",
+        "kind": "java",
+        "preimage_sha256": "ABSENT",
+        "postimage_sha256": "b51b3e10e7c1b77bd3a10ef1c423a34bb156d55e5e4971bc1575b53f35b9ca03",
+        "preimage_git_blob": "ABSENT",
+        "postimage_git_blob": "8bc889b4e5b353960d9d32ef2936b2ff1be82334",
+        "resource": "target-001.java.txt"
+      },
+      {
+        "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridSelectionList.java",
+        "kind": "java",
+        "preimage_sha256": "4c89f1aea123614def63067ae49092ba70706d1bab1944cf527e0d48cd726378",
+        "postimage_sha256": "6f953da39e7450fd3a30b39ecba21714bc686366ea8ad9ea1016f947b1d9cfa2",
+        "preimage_git_blob": "e3ecd71dcb7d52559f53fa56e1b1c3416069e9a0",
+        "postimage_git_blob": "eb42b7d19601507e8611edd44a0756a3e08bf880",
+        "resource": "target-002.java.txt"
+      }
+    ],
+    "pull_request": "https://github.com/hsoliwal/com.synexia/pull/12108"
+  },
+  "contract": "Preserve native Grid selection order, duplicate occurrences, Item identity, first-object removal, last-index lookup, read-compaction iteration and iterator removal. Maintain O(1) item membership and append with primitive parent-owned occurrence links.",
+  "qualification": {
+    "canonical_maven_openrewrite": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "status": "PASSED"
+    },
+    "receiver_first_pass": {
+      "targets": 3,
+      "changes": 3
+    },
+    "receiver_second_pass": {
+      "targets": 3,
+      "changes": 0
+    },
+    "java_widget_source_compile": {
+      "release": 21,
+      "files": 105,
+      "status": "PASSED",
+      "scope": "org.eclipse.nebula.widgets.grid sources; optional JFace viewer package excluded"
+    },
+    "native_baseline": {
+      "tests": 8,
+      "failed": 7,
+      "status": "EXPECTED_NEGATIVE_CONTROL"
+    },
+    "native_viewport": {
+      "tests": 11,
+      "failed": 0,
+      "status": "PASSED"
+    },
+    "native_original": {
+      "tests": 11,
+      "failed": 0,
+      "status": "PASSED"
+    },
+    "existing_Grid_Test_selection_baseline": {
+      "tests": 73,
+      "failed": 1,
+      "ignored": 0,
+      "assumptions": 0,
+      "status": "FAILED",
+      "failure": "testShowSelection expected topIndex 4, observed 0"
+    },
+    "existing_Grid_Test_selection_candidate": {
+      "tests": 73,
+      "failed": 1,
+      "ignored": 0,
+      "assumptions": 0,
+      "status": "FAILED_IDENTICAL_TO_BASELINE",
+      "failure": "testShowSelection expected topIndex 4, observed 0"
+    }
+  },
+  "pixels": {
+    "method": "GC(Display).copyArea via existing GridSwtScreenshotCapture.captureScreenControl",
+    "baseline_mismatched_pixels": 8021,
+    "candidate_mismatched_pixels": 0,
+    "original_mismatched_pixels": 0,
+    "native_blank_frame_rejected": true
+  },
+  "runtime": {
+    "platform": "GTK3/Xvfb Linux x86_64",
+    "java_version": "21.0.12.1+1",
+    "swt_version": "3.135.0",
+    "swt_sha256": "0799e4475b8937e05a0f13c6cbeadbf066ca56dd3622bfd8c7a4ba133b2db2e2",
+    "viewport_heap_limit_bytes": 536870912,
+    "viewport_wall_seconds": 1.052312063,
+    "viewport_cpu_user_seconds": 1.814097,
+    "viewport_cpu_system_seconds": 0.146813,
+    "viewport_max_rss_kib": 150956,
+    "heap_usage_measured": false,
+    "native_memory_measured_separately": false,
+    "performance_claim": "Correctness-test resource observation, not a performance benchmark."
+  },
+  "remaining_scope": {
+    "full_tycho_reactor": "NOT_RUN",
+    "win32": "NOT_RUN",
+    "cocoa": "NOT_RUN",
+    "dpi_matrix": "NOT_RUN",
+    "renderer_theme_matrix": "NOT_RUN",
+    "all_Nebula_widgets": "NOT_RUN",
+    "legacy_test_showSelection": "Diagnosed independently; pending follow-up decision rather than waived."
+  },
+  "artifacts": [
+    {
+      "path": "evidence/baseline-after-duplicate-deselect.png",
+      "sha256": "168cf6589dfff3c74371456863140a93dfbbf4596f4551a0b73e318a8c970eac"
+    },
+    {
+      "path": "evidence/baseline-negative-control.log",
+      "sha256": "6cd76a0a2d1b8fc547307dc24b3bcd7bfd101ab4633239cd1df1a78ee5b672c1"
+    },
+    {
+      "path": "evidence/baseline-reference-selected.png",
+      "sha256": "63a57d33af3443f9f5cfa4c79589eb8cdcde0c43c0ccfe486455c596dbcf6067"
+    },
+    {
+      "path": "evidence/candidate-after-duplicate-deselect.png",
+      "sha256": "63a57d33af3443f9f5cfa4c79589eb8cdcde0c43c0ccfe486455c596dbcf6067"
+    },
+    {
+      "path": "evidence/candidate-reference-selected.png",
+      "sha256": "63a57d33af3443f9f5cfa4c79589eb8cdcde0c43c0ccfe486455c596dbcf6067"
+    },
+    {
+      "path": "evidence/canonical-fixed-point.log",
+      "sha256": "d6b7e05d4e463bd6937e6e864e052323f3ff1c432b4dd6d7c9ba9a1761965ceb"
+    },
+    {
+      "path": "evidence/canonical-receive.log",
+      "sha256": "de62dd6b34eb863ac6928ca827aeedd638e7d83126f1300cb2da0ec7fdec5d52"
+    },
+    {
+      "path": "evidence/legacy-selection-baseline.log",
+      "sha256": "a9af36ae5effc930628236bae299f6300f00654c8c05c1944c440fb98fe718fb"
+    },
+    {
+      "path": "evidence/legacy-selection-candidate.log",
+      "sha256": "86f0cef0d419bf3bf07c0f10dd96afe3cce3bbc925731bf9b61ddf3437a89aa4"
+    },
+    {
+      "path": "evidence/original-after-duplicate-deselect.png",
+      "sha256": "63a57d33af3443f9f5cfa4c79589eb8cdcde0c43c0ccfe486455c596dbcf6067"
+    },
+    {
+      "path": "evidence/original-native.log",
+      "sha256": "000c26e293526e0aa17af4f1976efc851f98a8eb78d4445b01315bf32ac681ec"
+    },
+    {
+      "path": "evidence/original-reference-selected.png",
+      "sha256": "63a57d33af3443f9f5cfa4c79589eb8cdcde0c43c0ccfe486455c596dbcf6067"
+    },
+    {
+      "path": "evidence/show-selection-settlement-probe.log",
+      "sha256": "2de2b0718ac5d38cdcc4e5022565a3dbdc887991a9766d9bb7ff2b887aaf7cd4"
+    },
+    {
+      "path": "evidence/viewport-native.log",
+      "sha256": "836aa02d1e65200f3a27edb8fa60fce502760bdf876299e75840a6967f2f5ef3"
+    }
+  ]
+}

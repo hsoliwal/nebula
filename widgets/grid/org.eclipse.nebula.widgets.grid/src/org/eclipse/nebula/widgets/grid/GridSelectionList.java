@@ -17,20 +17,22 @@ package org.eclipse.nebula.widgets.grid;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.ConcurrentModificationException;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 
 /**
  * The selected items of a Grid in the viewport mode, in the order they were selected (as the
- * stock list keeps them): every item marks its own position, so membership, adding and removing
- * are O(1) and the paint asks {@code contains} per row at no cost of the selection's size. A
- * removed item leaves a hole that is closed when holes outnumber items or when a position other
- * than the first is read, so removals cost O(1) amortized.
+ * stock list keeps them). An item's position identifies its first occurrence; two primitive
+ * lanes link its occurrences in list order, so duplicate selections preserve the stock list's
+ * first-removal and membership semantics without scanning the selection during painting.
+ * Membership, appending and removal by item are O(1), with hole compaction amortized over
+ * removals. Indexed insertion and replacement rebuild the occurrence lanes after moving rows.
  */
 final class GridSelectionList extends AbstractList<GridItem> implements RandomAccess {
 	private GridItem[] order = new GridItem[16];
+	/* Circular occurrence links; the previous link of the first occurrence is the last. */
+	private int[] previousOccurrence = new int[16];
+	private int[] nextOccurrence = new int[16];
 	/* positions [head, end) hold the items and the holes */
 	private int head;
 	private int end;
@@ -48,8 +50,7 @@ final class GridSelectionList extends AbstractList<GridItem> implements RandomAc
 
 	@Override
 	public int indexOf(final Object o) {
-		final int position = positionOf(o);
-		if (position < 0) {
+		if (positionOf(o) < 0) {
 			return -1;
 		}
 		compact();
@@ -58,7 +59,11 @@ final class GridSelectionList extends AbstractList<GridItem> implements RandomAc
 
 	@Override
 	public int lastIndexOf(final Object o) {
-		return indexOf(o);
+		if (positionOf(o) < 0) {
+			return -1;
+		}
+		compact();
+		return previousOccurrence[((GridItem) o).selectionPosition()];
 	}
 
 	@Override
@@ -82,42 +87,41 @@ final class GridSelectionList extends AbstractList<GridItem> implements RandomAc
 
 	@Override
 	public void add(final int index, final GridItem item) {
+		if (index < 0 || index > live) {
+			throw new IndexOutOfBoundsException("index " + index + ", size " + live);
+		}
+		java.util.Objects.requireNonNull(item, "item");
 		if (index != live) {
 			// the Grid appends; an insertion elsewhere keeps the list semantics at O(n)
 			compact();
-			if (index < 0 || index > live) {
-				throw new IndexOutOfBoundsException("index " + index + ", size " + live);
-			}
 			ensureCapacity(end + 1);
 			System.arraycopy(order, index, order, index + 1, end - index);
 			order[index] = item;
 			end++;
 			live++;
-			for (int i = index; i < end; i++) {
-				order[i].markSelectionPosition(i);
-			}
-			modCount++;
-			return;
+			rebuildOccurrences();
+		} else {
+			ensureCapacity(end + 1);
+			appendOccurrence(end, item);
+			end++;
+			live++;
 		}
-		ensureCapacity(end + 1);
-		order[end] = item;
-		item.markSelectionPosition(end);
-		end++;
-		live++;
 		modCount++;
 	}
 
 	@Override
 	public boolean addAll(final Collection<? extends GridItem> items) {
+		if (items == this) {
+			return addAll(Arrays.asList(toArray(new GridItem[0])));
+		}
+		if (items.isEmpty()) {
+			return false;
+		}
 		ensureCapacity(end + items.size());
 		for (final GridItem item : items) {
-			order[end] = item;
-			item.markSelectionPosition(end);
-			end++;
-			live++;
+			add(item);
 		}
-		modCount++;
-		return !items.isEmpty();
+		return true;
 	}
 
 	@Override
@@ -126,32 +130,29 @@ final class GridSelectionList extends AbstractList<GridItem> implements RandomAc
 		if (position < 0) {
 			return false;
 		}
-		order[position] = null;
-		((GridItem) o).markSelectionPosition(-1);
-		live--;
-		modCount++;
-		if (live == 0) {
-			head = end = 0;
-		} else if (end - head > 2 * live + 16) {
-			compact();
-		}
+		removeOccurrence(position);
 		return true;
 	}
 
 	@Override
 	public GridItem remove(final int index) {
 		final GridItem item = get(index);
-		remove(item);
+		// get(0) skips leading holes; other indices compact before returning.
+		removeOccurrence(index == 0 ? head : index);
 		return item;
 	}
 
 	@Override
 	public GridItem set(final int index, final GridItem item) {
 		final GridItem old = get(index);
+		java.util.Objects.requireNonNull(item, "item");
+		if (old == item) {
+			return old;
+		}
 		compact();
 		old.markSelectionPosition(-1);
 		order[index] = item;
-		item.markSelectionPosition(index);
+		rebuildOccurrences();
 		return old;
 	}
 
@@ -186,28 +187,9 @@ final class GridSelectionList extends AbstractList<GridItem> implements RandomAc
 
 	@Override
 	public Iterator<GridItem> iterator() {
-		return new Iterator<GridItem>() {
-			private int next = advance(head);
-			private final int expectedModCount = modCount;
-
-			@Override
-			public boolean hasNext() {
-				return next < end;
-			}
-
-			@Override
-			public GridItem next() {
-				if (modCount != expectedModCount) {
-					throw new ConcurrentModificationException();
-				}
-				if (next >= end) {
-					throw new NoSuchElementException();
-				}
-				final GridItem item = order[next];
-				next = advance(next + 1);
-				return item;
-			}
-		};
+		// AbstractList tracks logical indices: read-triggered compaction cannot move its cursor.
+		// It also retains the stock list's iterator.remove/removeIf/retainAll contracts.
+		return super.iterator();
 	}
 
 	private int advance(final int from) {
@@ -230,17 +212,69 @@ final class GridSelectionList extends AbstractList<GridItem> implements RandomAc
 		head = advance(head);
 	}
 
-	/* closes the holes: every item moves to its index */
+	/* Appends to an item's circular chain, keeping its first list occurrence indexed. */
+	private void appendOccurrence(final int position, final GridItem item) {
+		final int first = positionOf(item);
+		order[position] = item;
+		if (first < 0) {
+			previousOccurrence[position] = nextOccurrence[position] = position;
+			item.markSelectionPosition(position);
+		} else {
+			final int last = previousOccurrence[first];
+			previousOccurrence[position] = last;
+			nextOccurrence[position] = first;
+			nextOccurrence[last] = position;
+			previousOccurrence[first] = position;
+		}
+	}
+
+	/* Unlinks exactly this occurrence without losing membership of other occurrences. */
+	private void removeOccurrence(final int position) {
+		final GridItem item = order[position];
+		final int next = nextOccurrence[position];
+		if (next == position) {
+			item.markSelectionPosition(-1);
+		} else {
+			final int previous = previousOccurrence[position];
+			nextOccurrence[previous] = next;
+			previousOccurrence[next] = previous;
+			if (item.selectionPosition() == position) {
+				item.markSelectionPosition(next);
+			}
+		}
+		order[position] = null;
+		live--;
+		modCount++;
+		if (live == 0) {
+			head = end = 0;
+		} else if ((long) end - head > 2L * live + 16) {
+			compact();
+		}
+	}
+
+	/* Rebuild after moving positions. The first pass discards all old position identities. */
+	private void rebuildOccurrences() {
+		for (int i = head; i < end; i++) {
+			if (order[i] != null) {
+				order[i].markSelectionPosition(-1);
+			}
+		}
+		for (int i = head; i < end; i++) {
+			if (order[i] != null) {
+				appendOccurrence(i, order[i]);
+			}
+		}
+	}
+
+	/* closes the holes: every occurrence moves to its list index */
 	private void compact() {
 		if (end - head == live) {
 			if (head > 0) {
 				System.arraycopy(order, head, order, 0, live);
 				Arrays.fill(order, live, end, null);
-				for (int i = 0; i < live; i++) {
-					order[i].markSelectionPosition(i);
-				}
 				head = 0;
 				end = live;
+				rebuildOccurrences();
 			}
 			return;
 		}
@@ -248,19 +282,25 @@ final class GridSelectionList extends AbstractList<GridItem> implements RandomAc
 		for (int from = head; from < end; from++) {
 			final GridItem item = order[from];
 			if (item != null) {
-				order[to] = item;
-				item.markSelectionPosition(to);
-				to++;
+				order[to++] = item;
 			}
 		}
 		Arrays.fill(order, to, end, null);
 		head = 0;
 		end = to;
+		rebuildOccurrences();
 	}
 
 	private void ensureCapacity(final int capacity) {
 		if (capacity > order.length) {
-			order = Arrays.copyOf(order, Math.max(capacity, order.length + (order.length >> 1)));
+			final int grown = Math.max(capacity, order.length + (order.length >> 1));
+			// Stage every parent-owned lane before publishing any new storage.
+			final GridItem[] nextOrder = Arrays.copyOf(order, grown);
+			final int[] nextPrevious = Arrays.copyOf(previousOccurrence, grown);
+			final int[] nextNext = Arrays.copyOf(nextOccurrence, grown);
+			order = nextOrder;
+			previousOccurrence = nextPrevious;
+			nextOccurrence = nextNext;
 		}
 	}
 }
