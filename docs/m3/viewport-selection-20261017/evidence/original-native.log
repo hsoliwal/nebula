@@ -1,0 +1,9 @@
+JUnit version 4.13.2
+.SWT SessionManagerDBus: Failed to connect to org.gnome.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+SWT SessionManagerDBus: Failed to connect to org.xfce.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+..........
+Time: 0.779
+
+OK (11 tests)
+
+{"exit": 0, "wall_seconds": 1.0468764020006347, "cpu_user_seconds": 1.955218, "cpu_system_seconds": 0.172179, "max_rss_kib": 153496}
