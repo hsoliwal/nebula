@@ -97,13 +97,13 @@ public class GridRowSpanIndex_Test {
 		assertArrayEquals(new boolean[0], GridRowSpanIndex.copyVisibility(new boolean[0]));
 		boolean[] requested = {true, false, true};
 		boolean[] snapshot = GridRowSpanIndex.copyVisibility(requested);
-		assertNotSame(requested, snapshot, "the caller may reuse its visibility mask");
+		assertNotSame("the caller may reuse its visibility mask", requested, snapshot);
 		assertArrayEquals(requested, snapshot);
 		assertTrue(GridRowSpanIndex.sameVisibility(requested, snapshot));
 		requested[0] = false;
 		assertFalse(GridRowSpanIndex.sameVisibility(requested, snapshot));
-		assertArrayEquals(new boolean[] {true, false, true}, snapshot,
-				"cached projection cannot observe later caller mutations");
+		assertArrayEquals("cached projection cannot observe later caller mutations",
+				new boolean[] {true, false, true}, snapshot);
 	}
 
 	private static int linear(int target, int[] starts, long[] ends) {
