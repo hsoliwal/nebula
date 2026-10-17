@@ -80,6 +80,32 @@ public class GridRowSpanIndex_Test {
 		}
 	}
 
+	@Test
+	public void nullAllColumnsIsDistinctFromAnEmptyVisibleColumnMask() {
+		assertTrue(GridRowSpanIndex.sameVisibility(null, null));
+		assertTrue(GridRowSpanIndex.sameVisibility(new boolean[0], new boolean[0]));
+		assertFalse(GridRowSpanIndex.sameVisibility(null, new boolean[0]));
+		assertFalse(GridRowSpanIndex.sameVisibility(new boolean[0], null));
+		assertFalse(GridRowSpanIndex.sameVisibility(null, new boolean[] {true}));
+		assertFalse(GridRowSpanIndex.sameVisibility(new boolean[] {false}, null));
+		assertFalse(GridRowSpanIndex.sameVisibility(new boolean[] {false}, new boolean[0]));
+	}
+
+	@Test
+	public void cachedVisibilitySnapshotOwnsItsArrayAndKeepsItsSentinel() {
+		assertNull(GridRowSpanIndex.copyVisibility(null));
+		assertArrayEquals(new boolean[0], GridRowSpanIndex.copyVisibility(new boolean[0]));
+		boolean[] requested = {true, false, true};
+		boolean[] snapshot = GridRowSpanIndex.copyVisibility(requested);
+		assertNotSame(requested, snapshot, "the caller may reuse its visibility mask");
+		assertArrayEquals(requested, snapshot);
+		assertTrue(GridRowSpanIndex.sameVisibility(requested, snapshot));
+		requested[0] = false;
+		assertFalse(GridRowSpanIndex.sameVisibility(requested, snapshot));
+		assertArrayEquals(new boolean[] {true, false, true}, snapshot,
+				"cached projection cannot observe later caller mutations");
+	}
+
 	private static int linear(int target, int[] starts, long[] ends) {
 		if (target <= 0) return Math.max(0, target);
 		for (int i = 0; i < starts.length && starts[i] < target; i++) {
