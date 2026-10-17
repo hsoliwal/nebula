@@ -1,0 +1,55 @@
+diff --git a/widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowSpanIndex.java b/widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowSpanIndex.java
+index 1763d24a2c..dc6d75f8bc 100644
+--- a/widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowSpanIndex.java
++++ b/widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowSpanIndex.java
+@@ -33,7 +33,8 @@ final class GridRowSpanIndex {
+ 	private long[] prefixMaxEnds = new long[4];
+ 	private int projectedCount;
+ 	private boolean projectionDirty = true;
+-	private boolean[] projectedVisibleColumns = new boolean[0];
++	/** Null denotes the unrestricted/all-columns mask; an empty array means no visible columns. */
++	private boolean[] projectedVisibleColumns;
+ 
+ 	void update(GridItem item, int column, int span) {
+ 		if (item == null || column < 0) return;
+@@ -182,8 +183,10 @@ private void rebuildProjection(boolean[] visibleColumns) {
+ 			max = Math.max(max, ends[i]);
+ 			prefixMaxEnds[i] = max;
+ 		}
+-		projectionDirty = false;
++		// Publish a complete copied mask before admitting cache hits on future lookups.
++		// Allocation failure leaves the projection dirty and therefore forces a retry.
+ 		projectedVisibleColumns = copyVisibility(visibleColumns);
++		projectionDirty = false;
+ 	}
+ 
+ 	private int indexOf(GridItem item) {
+@@ -217,16 +220,23 @@ private static int maxSpan(int[] spans, boolean[] visibleColumns) {
+ 	}
+ 
+ 	private boolean sameVisibility(boolean[] visibleColumns) {
+-		if (visibleColumns == null) return projectedVisibleColumns.length == 0;
+-		if (projectedVisibleColumns.length != visibleColumns.length) return false;
++		return sameVisibility(visibleColumns, projectedVisibleColumns);
++	}
++
++	/** Exact cache-mask identity: null (unrestricted) differs from an explicitly empty mask. */
++	static boolean sameVisibility(boolean[] visibleColumns, boolean[] cachedColumns) {
++		if (visibleColumns == null || cachedColumns == null) return visibleColumns == cachedColumns;
++		if (cachedColumns.length != visibleColumns.length) return false;
+ 		for (int i = 0; i < visibleColumns.length; i++) {
+-			if (projectedVisibleColumns[i] != visibleColumns[i]) return false;
++			if (cachedColumns[i] != visibleColumns[i]) return false;
+ 		}
+ 		return true;
+ 	}
+ 
+-	private static boolean[] copyVisibility(boolean[] visibleColumns) {
+-		if (visibleColumns == null || visibleColumns.length == 0) return new boolean[0];
++	/** Defensive snapshot; preserve the null/all-columns sentinel instead of collapsing it. */
++	static boolean[] copyVisibility(boolean[] visibleColumns) {
++		if (visibleColumns == null) return null;
++		if (visibleColumns.length == 0) return new boolean[0];
+ 		boolean[] copy = new boolean[visibleColumns.length];
+ 		System.arraycopy(visibleColumns, 0, copy, 0, visibleColumns.length);
+ 		return copy;
