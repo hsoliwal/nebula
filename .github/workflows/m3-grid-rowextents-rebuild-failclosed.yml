@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+name: M3 Grid exact-source failure-atomic row extent oracle
+on:
+  pull_request:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowExtents.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridRowExtentsRebuildFailure_Test.java'
+      - '.github/workflows/m3-grid-rowextents-rebuild-failclosed.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-identical-java21:
+    if: github.repository == 'hsoliwal/nebula'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Exact PR diff hygiene
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "$BASE_SHA...HEAD"
+      - name: Download the JUnit4 oracle dependency
+        run: |
+          mvn -B -ntp org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dartifact=junit:junit:4.13.2
+          mvn -B -ntp org.apache.maven.plugins:maven-dependency-plugin:3.8.1:get -Dartifact=org.hamcrest:hamcrest-core:1.3
+      - name: Compile existing Nebula source and new regression, without a stubbed algorithm
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRID='widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid'
+          TEST='widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid'
+          JUNIT="$HOME/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
+          HAMCREST="$HOME/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
+          mkdir -p target/m3-grid-rebuild-oracle
+          git hash-object "$GRID/GridRowExtents.java" | tee target/m3-grid-rebuild-oracle/source-blob.txt
+          javac --release 21 -encoding UTF-8 -cp "$JUNIT:$HAMCREST" \
+            -d target/m3-grid-rebuild-oracle \
+            "$GRID/GridRowIndex.java" \
+            "$GRID/GridRowExtents.java" \
+            "$GRID/model/HeapSampler.java" \
+            "$GRID/model/HeapGrowth.java" \
+            "$TEST/GridRowExtentsRebuildFailure_Test.java"
+      - name: Run real JUnit4 oracle; failures block promotion
+        shell: bash
+        run: |
+          set -euo pipefail
+          JUNIT="$HOME/.m2/repository/junit/junit/4.13.2/junit-4.13.2.jar"
+          HAMCREST="$HOME/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
+          java -cp "target/m3-grid-rebuild-oracle:$JUNIT:$HAMCREST" \
+            org.junit.runner.JUnitCore \
+            org.eclipse.nebula.widgets.grid.GridRowExtentsRebuildFailure_Test \
+            | tee target/m3-grid-rebuild-oracle/junit.log
+      - name: Preserve execution log even when test fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-grid-rebuild-oracle-source-and-junit
+          path: |
+            target/m3-grid-rebuild-oracle/source-blob.txt
+            target/m3-grid-rebuild-oracle/junit.log
+          if-no-files-found: warn
