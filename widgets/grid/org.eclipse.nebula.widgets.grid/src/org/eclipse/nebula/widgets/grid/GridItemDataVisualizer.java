@@ -10,6 +10,7 @@
  *
  * Contributors:
  *     Mirko Paturzo - initial API and implementation
+ *     Hitesh Soliwal (Synexia) - fork changes (see the Git history)
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 

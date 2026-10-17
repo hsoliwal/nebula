@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
 # Run Grid JUnit 4 test classes. Usage: run_tests.sh <budget-seconds> <extra JVM options...> -- <test classes...>
 export MSYS_NO_PATHCONV=1
 OUT=K:/m3-work/agents/nebula-grid/out

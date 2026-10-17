@@ -15,6 +15,9 @@
  * limitations under the License.
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - fork changes (see the Git history)
  */
 package org.eclipse.nebula.widgets.grid.model;
 

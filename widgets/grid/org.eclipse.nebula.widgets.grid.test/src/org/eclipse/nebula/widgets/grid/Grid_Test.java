@@ -10,6 +10,7 @@
  *
  * Contributors:
  *    EclipseSource - initial API and implementation
+ *    Hitesh Soliwal (Synexia) - viewport mode
  ******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
