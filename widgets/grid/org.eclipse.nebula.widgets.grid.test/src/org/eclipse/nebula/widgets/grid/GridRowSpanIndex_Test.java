@@ -80,6 +80,63 @@ public class GridRowSpanIndex_Test {
 		}
 	}
 
+	@Test
+	public void largeDescendingProjectionKeepsEveryPrimitivePair() {
+		final int count = 65_536;
+		int[] starts = new int[count];
+		long[] ends = new long[count];
+		for (int i = 0; i < count; i++) {
+			starts[i] = count - i;
+			ends[i] = (long) starts[i] * 3L + 5L;
+		}
+		GridRowSpanIndex.sortProjection(starts, ends, count);
+		for (int i = 0; i < count; i++) {
+			assertEquals(i + 1, starts[i]);
+			assertEquals((long) (i + 1) * 3L + 5L, ends[i]);
+		}
+	}
+
+	@Test
+	public void sortedOverlapsAndDuplicateRowsMatchIndependentLinearOracle() {
+		Random random = new Random(0x475249445350414EL);
+		final int count = 2_048;
+		int[] starts = new int[count];
+		long[] ends = new long[count];
+		for (int i = 0; i < count; i++) {
+			starts[i] = random.nextInt(5_000);
+			ends[i] = (long) starts[i] + random.nextInt(3_000);
+		}
+		int[] originalStarts = starts.clone();
+		long[] originalEnds = ends.clone();
+		GridRowSpanIndex.sortProjection(starts, ends, count);
+		long[] prefix = new long[count];
+		long highest = Long.MIN_VALUE;
+		for (int i = 0; i < count; i++) {
+			if (i > 0) assertTrue(starts[i - 1] <= starts[i], "sorted row starts");
+			highest = Math.max(highest, ends[i]);
+			prefix[i] = highest;
+		}
+		for (int row = 1; row < 8_000; row += 7) {
+			int expected = row;
+			for (int i = 0; i < count; i++) {
+				if (originalStarts[i] < row && originalEnds[i] >= row) {
+					expected = Math.min(expected, originalStarts[i]);
+				}
+			}
+			assertEquals("row " + row, expected,
+					GridRowSpanIndex.earliestCovering(row, starts, prefix, count));
+		}
+	}
+
+	@Test
+	public void smallProjectionKeepsOriginalStableTieOrder() {
+		int[] starts = {4, 1, 4, 2, 4, 1};
+		long[] ends = {40, 10, 41, 20, 42, 11};
+		GridRowSpanIndex.sortProjection(starts, ends, starts.length);
+		assertArrayEquals(new int[] {1, 1, 2, 4, 4, 4}, starts);
+		assertArrayEquals(new long[] {10, 11, 20, 40, 41, 42}, ends);
+	}
+
 	private static int linear(int target, int[] starts, long[] ends) {
 		if (target <= 0) return Math.max(0, target);
 		for (int i = 0; i < starts.length && starts[i] < target; i++) {
