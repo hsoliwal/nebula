@@ -12,6 +12,7 @@
  *    chris.gross@us.ibm.com - initial API and implementation
  *    mario.winterer@scch.at - bugfix in 244333
  *    Marty Jones<martybjones@gmail.com> - custom header/footer font in bug 293743
+ *    Hitesh Soliwal (Synexia) - viewport mode
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 

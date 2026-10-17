@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: EPL-2.0
+# Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
 """Generate META-INF/rewrite/m3-nebula-grid-viewport.yml: the Nebula Grid viewport hooks (one table, JSON-quoted).
 
 Apply with com.synexia.openrewrite.viewport.M3PerFileApply (crate m3-viewport-catalogue-recipes), with this

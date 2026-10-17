@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
 # Compile the Nebula Grid bundle (worktree), the upstream Nebula Grid (5d0bcbb9, oracle) and the Grid tests with javac.
 # Run under build_lock.sh. Usage: build_grid.sh [upstream]
 set -u

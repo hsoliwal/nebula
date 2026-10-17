@@ -1,0 +1,27 @@
+{
+  "counts": {
+    "DONOR_DERIVED": {
+      "CONTRIBUTOR_LINE": 1
+    },
+    "NON_CODE": {
+      "NONE_NON_CODE": 26
+    },
+    "SYNEXIA_AUTHORED": {
+      "INSERT_HEADER": 7,
+      "NONE_ALREADY_ATTRIBUTED": 4,
+      "REHEAD": 97
+    },
+    "UPSTREAM_MODIFIED": {
+      "CONTRIBUTOR_LINE": 10,
+      "NONE_ALREADY_ATTRIBUTED": 6,
+      "NONE_FORMAT_ONLY": 42,
+      "NONE_NO_UPSTREAM_HEADER": 1
+    }
+  },
+  "head": "7a2e47dab956989eb6037302047210b638e20527",
+  "repo": "neb",
+  "rows": 194,
+  "schema": "m3.synexia-attribution.classification.v1",
+  "tsv_sha256": "2571cac58ae8b19a4b16631a0b454184a497550d363087c62e893c67205f3556",
+  "upstream": "5d0bcbb9c6e3a118685a5ec91c6f5d8eb7833893"
+}
