@@ -1,0 +1,6 @@
+package org.eclipse.nebula.widgets.grid;
+import org.eclipse.swt.*;
+import org.eclipse.swt.widgets.*;
+public class ShowSelectionPrepaintProbe20261017 {
+ public static void main(String[]a){Display d=new Display();Shell s=new Shell(d);Grid g=new Grid(s,SWT.MULTI|SWT.H_SCROLL|SWT.V_SCROLL);g.setSize(200,200);GridTestUtil.createGridItems(g,20,3);g.setSelection(new int[]{4,8,24});boolean before=g.getVerticalBar().getVisible();g.setTopIndex(12);int first=g.getTopIndex();g.showSelection();int afterShow=g.getTopIndex();g.setTopIndex(12);int refreshed=g.getTopIndex();System.out.println("before first paint: barVisible="+before+", requestedTop=12, actualTop="+first+", afterShowSelection="+afterShow+", afterBarsRefreshedRequest12="+refreshed+", itemCount="+g.getItemCount()+", client="+g.getClientArea());s.dispose();d.dispose();}
+}

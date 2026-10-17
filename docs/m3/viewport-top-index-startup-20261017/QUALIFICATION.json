@@ -1,0 +1,67 @@
+{
+  "format": "nebula-viewport-top-index-pending-gate-v1",
+  "repository": "hsoliwal/nebula",
+  "source_base_revision": "644b9ebfed3779c2df9e5adc6435f70c1c99e8a5",
+  "upstream_master_reviewed": "91c474935eb4a06e46716a0188b9082f0af0eda9",
+  "production_source_modified": false,
+  "source_path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java",
+  "source_sha256": "7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c",
+  "prototype_sha256": "0ee44c19cd0da309b957c8ef7d7ab51effe8056d7cb2010d1c97c56560ee9d8e",
+  "prototype_qualification": "REJECTED_NATIVE_CALLBACK_DISPOSAL; not an admitted recipe or product candidate",
+  "stages": {
+    "baseline_no_first_paint_request": "FAILED: requested logical top12, actual0; identical request succeeds after scrollbar refresh",
+    "baseline_show_listener_control": "OBSERVED: no Show event because the startup scroll request was ignored",
+    "staging_refresh_show_listener_disposal": "FAILED: NullPointerException inside native GTK ScrollBar.setVisible after Show listener disposes owner",
+    "qualified_repair_recipe": "NOT_RUN",
+    "corrected_native_viewport": "NOT_RUN",
+    "full_nebula_maven_tycho": "NOT_RUN",
+    "windows_native": "NOT_RUN",
+    "cocoa_native": "NOT_RUN"
+  },
+  "runtime": {
+    "java": "OpenJDK21.0.12.1+1",
+    "swt": "org.eclipse.platform:org.eclipse.swt.gtk.linux.x86_64:3.135.0",
+    "swt_sha256": "0799e4475b8937e05a0f13c6cbeadbf066ca56dd3622bfd8c7a4ba133b2db2e2",
+    "display": "GTK3 under local Xvfb",
+    "swt_source_build": false,
+    "heap_cap_mib": 512,
+    "resource_budget_qualification": "NOT_RUN for these diagnostic probes"
+  },
+  "evidence": [
+    {
+      "path": "ShowSelectionCallbackProbe20261017.java.txt",
+      "sha256": "9f6916986175160130b70a0adf174afcdd5b05a926babb9a8ec1397bc59c82f5",
+      "bytes": 1247
+    },
+    {
+      "path": "ShowSelectionPrepaintProbe20261017.java.txt",
+      "sha256": "ede0af7475e5d729e00e346068805de186df09353c93f6edba811366da25b3d8",
+      "bytes": 830
+    },
+    {
+      "path": "evidence/baseline-prepaint.log",
+      "sha256": "2faf33b140cbd2359544ab0e140b1c8b2d61ab47aa70de639b868337e178d19b",
+      "bytes": 467
+    },
+    {
+      "path": "evidence/baseline-show-disposal.log",
+      "sha256": "8ce43a6723f0e79c19c9e0872a6eb883117677a62a0474548a8c9a43e2ff65f7",
+      "bytes": 355
+    },
+    {
+      "path": "evidence/rejected-refresh-show-disposal.log",
+      "sha256": "1399ca4f5a93f2e95dec537e13f07327c18ee781a8ec0b6c1055f3dfdcff6c04",
+      "bytes": 982
+    },
+    {
+      "path": "rejected-prototype.patch.txt",
+      "sha256": "d948414dae444786da6be745ff3cdc5aae908b40dcd7c08d599333345f83acb2",
+      "bytes": 874
+    },
+    {
+      "path": "README.md",
+      "sha256": "88041d81029111623620bb7df69224771ab1e06defcc1e057af351bbbf6f2c17",
+      "bytes": 6224
+    }
+  ]
+}
