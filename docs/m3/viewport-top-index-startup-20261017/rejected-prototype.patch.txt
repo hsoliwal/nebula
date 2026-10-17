@@ -1,0 +1,22 @@
+--- a/widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java
++++ b/widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java
+@@ -308,0 +309,3 @@
++	/** Guards callback reentry while a pending top-index request settles the scrollbars. */
++	private boolean settlingTopIndex;
++
+@@ -4593,0 +4597,15 @@
++		}
++
++		// A populated or resized Grid may not have painted yet. Its native scrollbar
++		// visibility and range must reflect the rows before accepting a scroll request.
++		if (GridViewport.UPSTREAM_FIXES && scrollValuesObsolete && !settlingTopIndex
++				&& (frozenPlanes & PLANE_SCROLLBARS) == 0) {
++			settlingTopIndex = true;
++			try {
++				updateScrollbars();
++			} finally {
++				settlingTopIndex = false;
++			}
++			if (isDisposed() || !isRowOf(item, index) || !item.isVisible()) {
++				return;
++			}

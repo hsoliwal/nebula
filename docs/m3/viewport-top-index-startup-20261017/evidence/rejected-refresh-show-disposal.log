@@ -1,0 +1,9 @@
+SWT SessionManagerDBus: Failed to connect to org.gnome.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+SWT SessionManagerDBus: Failed to connect to org.xfce.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke "org.eclipse.swt.widgets.Scrollable.sendEvent(int)" because "this.parent" is null
+	at org.eclipse.swt.widgets.ScrollBar.setVisible(ScrollBar.java:916)
+	at org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter.setVisible(ScrollBarProxyAdapter.java:133)
+	at org.eclipse.nebula.widgets.grid.Grid.settleScrollbarsArithmetically(Grid.java:7301)
+	at org.eclipse.nebula.widgets.grid.Grid.updateScrollbars(Grid.java:7331)
+	at org.eclipse.nebula.widgets.grid.Grid.setTopIndex(Grid.java:4605)
+	at org.eclipse.nebula.widgets.grid.ShowSelectionCallbackProbe20261017.main(ShowSelectionCallbackProbe20261017.java:20)

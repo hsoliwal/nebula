@@ -1,0 +1,32 @@
+package org.eclipse.nebula.widgets.grid;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
+public final class ShowSelectionCallbackProbe20261017 {
+  public static void main(String[] args) {
+    Display display = new Display();
+    Shell shell = new Shell(display);
+    Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+    grid.setSize(200, 200);
+    new GridColumn(grid, SWT.NONE).setWidth(100);
+    for (int i=0; i<40; i++) new GridItem(grid, SWT.NONE).setText("row " + i);
+    int[] shows = {0};
+    grid.getVerticalBar().addListener(SWT.Show, event -> {
+      shows[0]++;
+      grid.dispose();
+    });
+    try {
+      grid.setTopIndex(12);
+      System.out.println("result=returned, showEvents=" + shows[0] + ", disposed=" + grid.isDisposed()
+        + (grid.isDisposed() ? "" : ", topIndex=" + grid.getTopIndex()));
+    } catch (SWTException failure) {
+      System.out.println("result=SWTException, code=" + failure.code + ", showEvents=" + shows[0]
+        + ", disposed=" + grid.isDisposed());
+      failure.printStackTrace(System.out);
+    } finally {
+      if (!shell.isDisposed()) shell.dispose();
+      display.dispose();
+    }
+  }
+}
