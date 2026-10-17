@@ -384,13 +384,54 @@ not fit.
 What is left of an insertion (1.7 ms at 1,000,000 items) is stock work per new item: a sizing GC for the item
 height (`Grid.estimate`), the parent's child list and the data visualizer.
 
+## Leaf G3: selection membership in O(1) (2026-10-17)
+
+Stock Nebula keeps the selected rows in an `ArrayList<GridItem>` and the selected cells in an `ArrayList<Point>`;
+every membership test scans them: the paint asks per row (`selectedItems.contains`) and per cell
+(`selectedCells.contains`), a range selection asks per added row or cell, and deselecting removes by scan. A
+large selection makes painting O(window x k) and a range selection O(k^2) (`selectAllCells` over 20,000 rows x
+4 columns: 3.5 s).
+
+In the viewport mode:
+
+- `GridSelectionList` (rows): the stock list semantics and order (getSelection returns items in selection
+  order), but every item marks its own position in the list (a field of `GridItem`), so `contains`, `add` and
+  `remove` are O(1); a removal leaves a hole closed when holes outnumber items or a position other than the first
+  is read (O(1) amortized). `getSelectionIndices` reads the rows from the row tree (G2): O(k log n) for few
+  items, one O(n) walk for many.
+- `GridCellSelectionList` (cells): the stock list plus a count per cell value, so `contains` is O(1); it keeps
+  its own points (added points are copied, `getCellSelection` hands out copies) and the column removal that
+  shifts cells in place reindexes. `addToCellSelection` asks `contains` (the stock equality test, one scan in the
+  original mode) instead of its own scan.
+- The column selection keeps one entry per column (stock added one per selected cell and scanned them per
+  painted header).
+- Focus stays an item reference (already O(1) and stable under inserts); no positional focus is needed.
+
+The native look draws no focus rectangle over a selected focused tree row, as the native tree (Explorer theme)
+does with keyboard cues shown or hidden; `GridNativeLook_Test` now sets the cues explicitly (WM_CHANGEUISTATE),
+which made the scene deterministic (before, it failed or passed with the test desktop's keyboard history). The
+change is a recipe (`recipe/META-INF/rewrite/m3-nebula-grid-native-focus.yml`, second pass UNCHANGED).
+
+| Gate (hidden desktop) | Result |
+|---|---|
+| `GridSelectionList_Test` (20,000 random adds, removals by item and index, reads, clears, bulk adds vs `ArrayList`) and `GridCellSelectionList_Test` (30,000 steps incl. duplicates, removeAll, removeIf, in-place shifts) | pass |
+| `CellSelectProbe`, `selectAllCells`, n rows x 4 columns | 5,000 rows: original 264 ms, viewport 29 ms; 20,000 rows: original 3,510 ms, viewport 219 ms; 100,000 rows (400,000 cells): viewport 213 ms (original quadratic, not run) |
+| `SelectProbe`, 200,000 rows all selected, wall median | deselect + select one row: original 1.48 ms, viewport before G3 0.59 ms, after 0.05 ms; getSelectionIndices: 11.4 / 14.3 / 6.4 ms; selectAll: 0.48 / 4.3 / 2.6 ms (the list marks each item) |
+| Grid suite | 607 tests (viewport run listed three classes more than once: 609), 0 failures in both modes |
+| stock differential (`5d0bcbb9`, strict pixels) | 8 / 8 seeds, both scenes, candidate `viewport` and `original` |
+| `GridNativeLook_Test` | 3 / 3 runs pass (all scenes 0 pixels but the documented check-box residual) |
+
+DOOP note (rule 18): the selection position and the row-tree slot are two ints per `GridItem`; the item's
+text, colours, fonts, height, visibility and expansion still live in `GridItem` fields. Moving them into lanes of
+the row tree is the next DOOP leaf (the data visualizer already holds the cell data).
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |
 |---|---|---|
 | G1 | row extent index; mediated top row, row ranges, row at point, origin, paint skip, next/previous visible | differential identical; paint cost independent of hidden rows |
 | G2 | done (see Leaf G2): the item list is a counted tree with row lanes (row, visible rows, pixel extents), O(log n) insert, remove, row of item and every row question; no rebuild | differential; no O(n) on the UI thread after insert/remove |
-| G3 | selection as ranges + bitset by density (row and cell), focus by position | selection count exact over 1,000,000 rows; differential |
+| G3 | done (see Leaf G3): O(1) row and cell selection membership, one column entry per column, focus by item | differential; probes |
 | G4 | tree Grids with `SWT.VIRTUAL` children: sparse child facades through the same lanes, `SetData` once per row | differential vs non-virtual tree; SetData counts |
 | G5 | variable-height blit scroll using the index's pixel delta; row-rect damage | pixels vs stock after scroll sequences |
 | G6 | column metrics: prefix sums for column x, binary search for column at x, `showColumn` O(log c) | differential on column order/width/visibility |
