@@ -1,0 +1,25 @@
+SWT SessionManagerDBus: Failed to connect to org.gnome.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+SWT SessionManagerDBus: Failed to connect to org.xfce.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.immediateResizeQueryClampsAnEarlierStartupScrollWhenAllRowsFit	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.unchangedPrepaintRequestsReuseSettledScrollbarGeometry	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.hugeVirtualStartupScrollKeepsFacadeCountBounded	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.latestResizeCallbackRequestWinsAfterGeometrySettles	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.disposedTargetIsNotReplacedByTheNextRowAtItsAddress	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstTopRequestUsesCurrentRowsWithoutPaintingOrSelectionEvents	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.movedTargetDoesNotScrollAnUnrelatedReplacementRow	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingResizeCanShowTheBarWithoutASecondPaint	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.collapsedTreeSelectionRevealsTheRequestedRootBeforeFirstPaint	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.shrinkingRowsDuringShowRecomputesVisibilityAndCancelsRemovedTarget	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeOnlyTheNativeBarWithoutStaleGeometryAccess	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingGrowthRefreshesTheRangeEvenWhenTheBarIsAlreadyVisible	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstPaintMatchesTheSameScrollAfterNativeGeometryHasSettled	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingViewportNotificationCannotEraseNewRowInvalidationDuringPaint	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.retiringNativeBarPreservesAListenerInstalledExternalProxy	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.nestedScrollbarFreezeRetainsTheLatestRequestUntilFinalThaw	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showResizeUsesTheNewClientAreaForBothBarsAndTheRowRange	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.resizeListenerCanDisposeTheOwnerWithoutStaleGeometryAccess	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.freezeDuringResizeDefersTheRequestUntilTheListenerThaws	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeTheOwnerWithoutStaleGeometryAccess	PASS
+COUNTS	20	0	0	0	false
+
+MEASUREMENTS	{"cpu_system_seconds": 0.136297, "cpu_user_seconds": 1.283881, "exit": 0, "max_rss_kib": 129556, "wall_seconds": 1.2114356060010323}

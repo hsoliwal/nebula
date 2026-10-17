@@ -1,0 +1,31 @@
+JUnit version 4.13.2
+.SWT SessionManagerDBus: Failed to connect to org.gnome.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+SWT SessionManagerDBus: Failed to connect to org.xfce.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+........E......E
+Time: 1.031
+There were 2 failures:
+1) showListenerCanDisposeOnlyTheNativeBarWithoutStaleGeometryAccess(org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test)
+java.lang.NullPointerException: Cannot invoke "org.eclipse.swt.widgets.Scrollable.sendEvent(int)" because "this.parent" is null
+	at org.eclipse.swt.widgets.ScrollBar.setVisible(ScrollBar.java:916)
+	at org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter.setVisible(ScrollBarProxyAdapter.java:133)
+	at org.eclipse.nebula.widgets.grid.Grid.settleScrollbarsArithmetically(Grid.java:7362)
+	at org.eclipse.nebula.widgets.grid.Grid.updateScrollbarsNow(Grid.java:7447)
+	at org.eclipse.nebula.widgets.grid.Grid.updateScrollbars(Grid.java:7402)
+	at org.eclipse.nebula.widgets.grid.Grid.settlePendingTopIndex(Grid.java:4620)
+	at org.eclipse.nebula.widgets.grid.Grid.setTopIndex(Grid.java:4606)
+	at org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeOnlyTheNativeBarWithoutStaleGeometryAccess(GridTopIndexStartup_Test.java:183)
+2) showListenerCanDisposeTheOwnerWithoutStaleGeometryAccess(org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test)
+java.lang.NullPointerException: Cannot invoke "org.eclipse.swt.widgets.Scrollable.sendEvent(int)" because "this.parent" is null
+	at org.eclipse.swt.widgets.ScrollBar.setVisible(ScrollBar.java:916)
+	at org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter.setVisible(ScrollBarProxyAdapter.java:133)
+	at org.eclipse.nebula.widgets.grid.Grid.settleScrollbarsArithmetically(Grid.java:7362)
+	at org.eclipse.nebula.widgets.grid.Grid.updateScrollbarsNow(Grid.java:7447)
+	at org.eclipse.nebula.widgets.grid.Grid.updateScrollbars(Grid.java:7402)
+	at org.eclipse.nebula.widgets.grid.Grid.settlePendingTopIndex(Grid.java:4620)
+	at org.eclipse.nebula.widgets.grid.Grid.setTopIndex(Grid.java:4606)
+	at org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeTheOwnerWithoutStaleGeometryAccess(GridTopIndexStartup_Test.java:166)
+
+FAILURES!!!
+Tests run: 15,  Failures: 2
+
+{"exit": 1, "wall_seconds": 1.37971237900274, "cpu_user_seconds": 1.316031, "cpu_system_seconds": 0.17274599999999998, "max_rss_kib": 138564}

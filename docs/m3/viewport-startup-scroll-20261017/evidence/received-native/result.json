@@ -1,0 +1,150 @@
+{
+  "format": "nebula-startup-scroll-native-v1",
+  "status": "PASSED_FOCUSED_GATE",
+  "public_api": "UNCHANGED",
+  "core_widget_sources_per_side": 105,
+  "results": {
+    "startup_before": {
+      "tests": 20,
+      "failures": 19,
+      "ignored": 0,
+      "assumptions": 0,
+      "methods": {
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.immediateResizeQueryClampsAnEarlierStartupScrollWhenAllRowsFit": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.unchangedPrepaintRequestsReuseSettledScrollbarGeometry": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.hugeVirtualStartupScrollKeepsFacadeCountBounded": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.latestResizeCallbackRequestWinsAfterGeometrySettles": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.disposedTargetIsNotReplacedByTheNextRowAtItsAddress": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstTopRequestUsesCurrentRowsWithoutPaintingOrSelectionEvents": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.movedTargetDoesNotScrollAnUnrelatedReplacementRow": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingResizeCanShowTheBarWithoutASecondPaint": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.collapsedTreeSelectionRevealsTheRequestedRootBeforeFirstPaint": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.shrinkingRowsDuringShowRecomputesVisibilityAndCancelsRemovedTarget": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeOnlyTheNativeBarWithoutStaleGeometryAccess": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingGrowthRefreshesTheRangeEvenWhenTheBarIsAlreadyVisible": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstPaintMatchesTheSameScrollAfterNativeGeometryHasSettled": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingViewportNotificationCannotEraseNewRowInvalidationDuringPaint": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.retiringNativeBarPreservesAListenerInstalledExternalProxy": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.nestedScrollbarFreezeRetainsTheLatestRequestUntilFinalThaw": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showResizeUsesTheNewClientAreaForBothBarsAndTheRowRange": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.resizeListenerCanDisposeTheOwnerWithoutStaleGeometryAccess": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.freezeDuringResizeDefersTheRequestUntilTheListenerThaws": "FAIL",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeTheOwnerWithoutStaleGeometryAccess": "FAIL"
+      },
+      "metrics": {
+        "exit": 1,
+        "wall_seconds": 1.269412427001953,
+        "cpu_user_seconds": 1.423379,
+        "cpu_system_seconds": 0.163331,
+        "max_rss_kib": 134444
+      }
+    },
+    "startup_default": {
+      "tests": 20,
+      "failures": 0,
+      "ignored": 0,
+      "assumptions": 0,
+      "methods": {
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.immediateResizeQueryClampsAnEarlierStartupScrollWhenAllRowsFit": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.unchangedPrepaintRequestsReuseSettledScrollbarGeometry": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.hugeVirtualStartupScrollKeepsFacadeCountBounded": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.latestResizeCallbackRequestWinsAfterGeometrySettles": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.disposedTargetIsNotReplacedByTheNextRowAtItsAddress": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstTopRequestUsesCurrentRowsWithoutPaintingOrSelectionEvents": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.movedTargetDoesNotScrollAnUnrelatedReplacementRow": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingResizeCanShowTheBarWithoutASecondPaint": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.collapsedTreeSelectionRevealsTheRequestedRootBeforeFirstPaint": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.shrinkingRowsDuringShowRecomputesVisibilityAndCancelsRemovedTarget": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeOnlyTheNativeBarWithoutStaleGeometryAccess": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingGrowthRefreshesTheRangeEvenWhenTheBarIsAlreadyVisible": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstPaintMatchesTheSameScrollAfterNativeGeometryHasSettled": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingViewportNotificationCannotEraseNewRowInvalidationDuringPaint": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.retiringNativeBarPreservesAListenerInstalledExternalProxy": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.nestedScrollbarFreezeRetainsTheLatestRequestUntilFinalThaw": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showResizeUsesTheNewClientAreaForBothBarsAndTheRowRange": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.resizeListenerCanDisposeTheOwnerWithoutStaleGeometryAccess": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.freezeDuringResizeDefersTheRequestUntilTheListenerThaws": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeTheOwnerWithoutStaleGeometryAccess": "PASS"
+      },
+      "metrics": {
+        "exit": 0,
+        "wall_seconds": 1.2114356060010323,
+        "cpu_user_seconds": 1.283881,
+        "cpu_system_seconds": 0.136297,
+        "max_rss_kib": 129556
+      }
+    },
+    "startup_original": {
+      "tests": 20,
+      "failures": 0,
+      "ignored": 0,
+      "assumptions": 0,
+      "methods": {
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.immediateResizeQueryClampsAnEarlierStartupScrollWhenAllRowsFit": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.unchangedPrepaintRequestsReuseSettledScrollbarGeometry": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.hugeVirtualStartupScrollKeepsFacadeCountBounded": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.latestResizeCallbackRequestWinsAfterGeometrySettles": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.disposedTargetIsNotReplacedByTheNextRowAtItsAddress": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstTopRequestUsesCurrentRowsWithoutPaintingOrSelectionEvents": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.movedTargetDoesNotScrollAnUnrelatedReplacementRow": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingResizeCanShowTheBarWithoutASecondPaint": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.collapsedTreeSelectionRevealsTheRequestedRootBeforeFirstPaint": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.shrinkingRowsDuringShowRecomputesVisibilityAndCancelsRemovedTarget": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeOnlyTheNativeBarWithoutStaleGeometryAccess": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingGrowthRefreshesTheRangeEvenWhenTheBarIsAlreadyVisible": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.firstPaintMatchesTheSameScrollAfterNativeGeometryHasSettled": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.pendingViewportNotificationCannotEraseNewRowInvalidationDuringPaint": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.retiringNativeBarPreservesAListenerInstalledExternalProxy": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.nestedScrollbarFreezeRetainsTheLatestRequestUntilFinalThaw": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showResizeUsesTheNewClientAreaForBothBarsAndTheRowRange": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.resizeListenerCanDisposeTheOwnerWithoutStaleGeometryAccess": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.freezeDuringResizeDefersTheRequestUntilTheListenerThaws": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridTopIndexStartup_Test.showListenerCanDisposeTheOwnerWithoutStaleGeometryAccess": "PASS"
+      },
+      "metrics": {
+        "exit": 0,
+        "wall_seconds": 1.235796737997589,
+        "cpu_user_seconds": 1.1951640000000001,
+        "cpu_system_seconds": 0.154366,
+        "max_rss_kib": 134220
+      }
+    },
+    "selection_default": {
+      "tests": 11,
+      "failures": 0,
+      "ignored": 0,
+      "assumptions": 0,
+      "methods": {
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.iteratorRemovalAndBulkPredicatesKeepOccurrenceMembership": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.duplicateDeselectRendersSameNativePixelsAsRemainingSelection": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.nonStructuralSetDoesNotInvalidateAnIterator": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.duplicateFirstLastAndIndexedRemovalAnswerAsAnArrayList": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.duplicateMutationsAndCompactionMatchSeededArrayListOracle": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.publicDuplicateDeselectKeepsRemainingItemSelectedAndInStockOrder": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.repeatedSelfBulkAppendRemainsFiniteAndPreservesDuplicates": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.iteratorUsesLogicalRowsWhenReadersCompactItsHoles": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridSelectionList_Test.randomOperationsAnswerAsAnArrayList": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridCellSelectionList_Test.handsOutCopies": "PASS",
+        "org.eclipse.nebula.widgets.grid.GridCellSelectionList_Test.randomOperationsAnswerAsAnArrayList": "PASS"
+      },
+      "metrics": {
+        "exit": 0,
+        "wall_seconds": 1.4256071700001485,
+        "cpu_user_seconds": 2.156649,
+        "cpu_system_seconds": 0.18681,
+        "max_rss_kib": 143116
+      }
+    }
+  },
+  "unqualified": [
+    "10 JFace adapter sources",
+    "full Maven/Tycho",
+    "Windows",
+    "Cocoa",
+    "GTK4",
+    "independent heap and native memory budgets",
+    "combined SWT/Nebula resource and pixel gate"
+  ],
+  "inputs_sha256": "355a598daceee54729e53b4e37cca83f0a3ae99bce059d45eba6b9066d2be7e2",
+  "commands_sha256": "c4fc15c13f4f27c80ed9d49f91fc74ff6158a9eb72ce843440080db4c9e62f3a"
+}

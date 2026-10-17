@@ -306,6 +306,14 @@ public class Grid extends Canvas {
 	 */
 	private boolean scrollValuesObsolete = false;
 
+	/** A scrollbar visibility callback may request another top row or mutate the Grid. */
+	private boolean updatingScrollbars;
+	private boolean topIndexResizePending;
+	private IScrollBarProxy nativeVScroll;
+	private IScrollBarProxy nativeHScroll;
+	private GridItem pendingTopItem;
+	private int pendingTopIndex = -1;
+
 	/**
 	 * When this variable is true, the pack is based only on the visible lines on
 	 * the screen.
@@ -1092,14 +1100,14 @@ public class Grid extends Canvas {
 
 		if (getVerticalBar() != null) {
 			getVerticalBar().setVisible(false);
-			vScroll = new ScrollBarProxyAdapter(getVerticalBar());
+			vScroll = nativeVScroll = new ScrollBarProxyAdapter(getVerticalBar());
 		} else {
 			vScroll = new NullScrollBarProxy();
 		}
 
 		if (getHorizontalBar() != null) {
 			getHorizontalBar().setVisible(false);
-			hScroll = new ScrollBarProxyAdapter(getHorizontalBar());
+			hScroll = nativeHScroll = new ScrollBarProxyAdapter(getHorizontalBar());
 		} else {
 			hScroll = new NullScrollBarProxy();
 		}
@@ -2898,6 +2906,13 @@ public class Grid extends Canvas {
 	 */
 	public int getTopIndex() {
 		checkWidget();
+		if (GridViewport.UPSTREAM_FIXES && topIndexResizePending && !updatingScrollbars
+				&& (frozenPlanes & PLANE_SCROLLBARS) == 0) {
+			updateScrollbars();
+			if (isDisposed()) {
+				return 0;
+			}
+		}
 
 		if (topIndex != -1) {
 			return topIndex;
@@ -4593,15 +4608,64 @@ public class Grid extends Canvas {
 			return;
 		}
 
+		if (GridViewport.UPSTREAM_FIXES) {
+			// Retain the facade as well as its index: callbacks must not redirect a request
+			// to a different row inserted at the same address. A newer request replaces it.
+			pendingTopItem = item;
+			pendingTopIndex = index;
+			settlePendingTopIndex();
+			return;
+		}
+		setTopIndexNow(index);
+	}
+
+	private void settlePendingTopIndex() {
+		if (pendingTopItem == null || isDisposed() || updatingScrollbars) {
+			return;
+		}
+		if ((frozenPlanes & PLANE_SCROLLBARS) != 0) {
+			return;
+		}
+		if (scrollValuesObsolete && !updateScrollbars()) {
+			return;
+		}
+		applyPendingTopIndex();
+	}
+
+	private void applyPendingTopIndex() {
+		if (isDisposed()) {
+			pendingTopItem = null;
+			pendingTopIndex = -1;
+			return;
+		}
+		if (updatingScrollbars || (frozenPlanes & PLANE_SCROLLBARS) != 0) {
+			return;
+		}
+		final GridItem item = pendingTopItem;
+		final int index = pendingTopIndex;
+		pendingTopItem = null;
+		pendingTopIndex = -1;
+		if (item != null && !item.isDisposed() && isRowOf(item, index) && item.isVisible()) {
+			setTopIndexNow(index);
+		}
+	}
+
+	private void setTopIndexNow(final int index) {
+		final ScrollBar vertical = getVerticalBar();
 		if (!vScroll.getVisible()) {
 			return;
 		}
 		if (viewport != null && !usesSparseVirtualItems()) {
 			vScroll.setSelection(viewport.scrollSelectionOf(index, isTree));
+			if (scrollbarUpdateAborted(vertical, null)) {
+				return;
+			}
 			topIndex = -1;
 			bottomIndex = -1;
 			fireViewportChanged();
-			redraw();
+			if (!GridViewport.UPSTREAM_FIXES || !isDisposed()) {
+				redraw();
+			}
 			return;
 		}
 
@@ -4620,10 +4684,15 @@ public class Grid extends Canvas {
 		}
 
 		vScroll.setSelection(vScrollAmount);
+		if (scrollbarUpdateAborted(vertical, null)) {
+			return;
+		}
 		topIndex = -1;
 		bottomIndex = -1;
 		fireViewportChanged();
-		redraw();
+		if (!GridViewport.UPSTREAM_FIXES || !isDisposed()) {
+			redraw();
+		}
 	}
 
 	/**
@@ -4852,6 +4921,9 @@ public class Grid extends Canvas {
 		}
 
 		updateScrollbars();
+		if (GridViewport.UPSTREAM_FIXES && isDisposed()) {
+			return;
+		}
 
 		// if no items are visible on screen then abort
 		if (getVisibleGridHeight() < 1) {
@@ -4903,6 +4975,9 @@ public class Grid extends Canvas {
 
 		if (scrollValuesObsolete) {
 			updateScrollbars();
+			if (GridViewport.UPSTREAM_FIXES && isDisposed()) {
+				return;
+			}
 		}
 
 		if (!cellSelectionEnabled) {
@@ -5804,6 +5879,9 @@ public class Grid extends Canvas {
 		} finally {
 			painting = false;
 		}
+		if (GridViewport.UPSTREAM_FIXES && isDisposed()) {
+			return;
+		}
 		if (evictingCold()) {
 			evictCold();
 		}
@@ -5828,8 +5906,14 @@ public class Grid extends Canvas {
 		this.drawBackground(gc, 0, 0, controlSize.x, controlSize.y);
 
 		if (scrollValuesObsolete && (frozenPlanes & PLANE_SCROLLBARS) == 0) {
-			updateScrollbars();
-			scrollValuesObsolete = false;
+			final boolean settled = updateScrollbars();
+			if (GridViewport.UPSTREAM_FIXES) {
+				if (isDisposed() || !settled) {
+					return;
+				}
+			} else {
+				scrollValuesObsolete = !settled;
+			}
 		}
 		if (viewportEventPending) {
 			viewportEventPending = false;
@@ -7257,7 +7341,8 @@ public class Grid extends Canvas {
 	 *
 	 * @return false when the bars are not both native (the caller runs the passes)
 	 */
-	private boolean settleScrollbarsArithmetically(final Point preferredSize, final Rectangle clientArea) {
+	private boolean settleScrollbarsArithmetically(final Point preferredSize, final Rectangle clientArea,
+			final ScrollBar vertical, final ScrollBar horizontal) {
 		if (!settleScrollbars || !(vScroll instanceof ScrollBarProxyAdapter) || !(hScroll instanceof ScrollBarProxyAdapter)
 				|| getVerticalBar() == null || getHorizontalBar() == null) {
 			return false;
@@ -7275,16 +7360,28 @@ public class Grid extends Canvas {
 		final boolean h2 = preferredSize.x > bareWidth - (v1 ? barWidth : 0);
 		if (!v1 || !v2) {
 			vScroll.setValues(0, 0, 1, 1, 1, 1);
+			if (scrollbarUpdateAborted(vertical, horizontal)) {
+				return false;
+			}
 		}
 		if (!h1 || !h2) {
 			hScroll.setValues(0, 0, 1, 1, 1, 1);
+			if (scrollbarUpdateAborted(vertical, horizontal)) {
+				return false;
+			}
 		}
 		if (v2 != v0) {
 			vScroll.setVisible(v2);
+			if (scrollbarUpdateAborted(vertical, horizontal)) {
+				return false;
+			}
 			scrollbarToggles++;
 		}
 		if (h2 != h0) {
 			hScroll.setVisible(h2);
+			if (scrollbarUpdateAborted(vertical, horizontal)) {
+				return false;
+			}
 			scrollbarToggles++;
 		}
 		// the arithmetic must match the real client area (bar metrics at fractional zoom);
@@ -7294,9 +7391,88 @@ public class Grid extends Canvas {
 				&& settled.height == bareHeight - (h2 ? barHeight : 0);
 	}
 
-	private void updateScrollbars() {
-		final Point preferredSize = getTableSize();
+	private boolean updateScrollbars() {
+		if (!GridViewport.UPSTREAM_FIXES) {
+			updateScrollbarsNow(getTableSize(), getVerticalBar(), getHorizontalBar());
+			return true;
+		}
+		if (isDisposed() || updatingScrollbars || (frozenPlanes & PLANE_SCROLLBARS) != 0) {
+			return false;
+		}
+		final ScrollBar vertical = getVerticalBar();
+		final ScrollBar horizontal = getHorizontalBar();
+		boolean settled = false;
+		updatingScrollbars = true;
+		try {
+			// Visibility callbacks may change the row/column extents. Recompute once for
+			// each native visibility boundary, but never loop indefinitely in user code.
+			for (int attempt = 0; attempt < 3; attempt++) {
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
+				final Point preferredSize = getTableSize();
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
+				final boolean boundsSettled = updateScrollbarsNow(preferredSize, vertical, horizontal);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
+				final Rectangle settledArea = getClientArea();
+				final Point currentSize = getTableSize();
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
+				if (boundsSettled && preferredSize.equals(currentSize) && settledArea.equals(getClientArea())) {
+					settled = true;
+					break;
+				}
+			}
+		} finally {
+			updatingScrollbars = false;
+		}
+		if (settled) {
+			topIndexResizePending = false;
+			scrollValuesObsolete = false;
+			applyPendingTopIndex();
+		} else {
+			scrollValuesObsolete = true;
+			redraw();
+		}
+		return settled;
+	}
 
+	/** A native visibility or values call may dispose either its owner or its bar. */
+	private boolean scrollbarUpdateAborted(final ScrollBar vertical, final ScrollBar horizontal) {
+		if (!GridViewport.UPSTREAM_FIXES) {
+			return false;
+		}
+		if (isDisposed()) {
+			pendingTopItem = null;
+			pendingTopIndex = -1;
+			return true;
+		}
+		boolean retired = false;
+		if (vertical != null && vertical.isDisposed()) {
+			if (vScroll == nativeVScroll) {
+				vScroll = new NullScrollBarProxy();
+			}
+			nativeVScroll = null;
+			topIndex = -1;
+			bottomIndex = -1;
+			retired = true;
+		}
+		if (horizontal != null && horizontal.isDisposed()) {
+			if (hScroll == nativeHScroll) {
+				hScroll = new NullScrollBarProxy();
+			}
+			nativeHScroll = null;
+			retired = true;
+		}
+		return retired || (frozenPlanes & PLANE_SCROLLBARS) != 0;
+	}
+
+	private boolean updateScrollbarsNow(final Point preferredSize, final ScrollBar vertical, final ScrollBar horizontal) {
 		Rectangle clientArea = getClientArea();
 
 		// First, figure out if the scrollbars should be visible and turn them
@@ -7310,7 +7486,11 @@ public class Grid extends Canvas {
 		// that if a scrollbar is turned on/off, the other scrollbar's
 		// visibility may be affected (more
 		// area may have been added/removed.
-		if (settleScrollbarsArithmetically(preferredSize, clientArea)) {
+		final boolean arithmetic = settleScrollbarsArithmetically(preferredSize, clientArea, vertical, horizontal);
+		if (scrollbarUpdateAborted(vertical, horizontal)) {
+			return false;
+		}
+		if (arithmetic) {
 			clientArea = getClientArea();
 		} else {
 		clientArea = getClientArea();
@@ -7318,15 +7498,33 @@ public class Grid extends Canvas {
 
 			if (preferredSize.y > clientArea.height) {
 				vScroll.setVisible(true);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 			} else {
 				vScroll.setVisible(false);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 				vScroll.setValues(0, 0, 1, 1, 1, 1);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 			}
 			if (preferredSize.x > clientArea.width) {
 				hScroll.setVisible(true);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 			} else {
 				hScroll.setVisible(false);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 				hScroll.setValues(0, 0, 1, 1, 1, 1);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 			}
 
 			// get the clientArea again with the now visible/invisible
@@ -7359,6 +7557,9 @@ public class Grid extends Canvas {
 			final int selection = Math.min(vScroll.getSelection(), max);
 
 			vScroll.setValues(selection, 0, max, thumb, 1, thumb);
+			if (scrollbarUpdateAborted(vertical, horizontal)) {
+				return false;
+			}
 		}
 
 		// if the scrollbar is visible set its values
@@ -7376,6 +7577,9 @@ public class Grid extends Canvas {
 
 				hScroll.setValues(selection, 0, hiddenArea + clientArea.width - 1, clientArea.width,
 						HORZ_SCROLL_INCREMENT, clientArea.width);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 			} else {
 				// horizontal scrolling is column by column
 
@@ -7412,10 +7616,13 @@ public class Grid extends Canvas {
 				final int selection = Math.min(hScroll.getSelection(), max);
 
 				hScroll.setValues(selection, 0, max, 1, 1, 1);
+				if (scrollbarUpdateAborted(vertical, horizontal)) {
+					return false;
+				}
 			}
 		}
 		invalidateVisibleColumnCache();
-
+		return !GridViewport.UPSTREAM_FIXES || clientArea.equals(getClientArea());
 	}
 
 	/**
@@ -8929,6 +9136,7 @@ public class Grid extends Canvas {
 		// }
 		// }
 
+		topIndexResizePending = GridViewport.UPSTREAM_FIXES;
 		scrollValuesObsolete = true;
 		topIndex = -1;
 		bottomIndex = -1;
@@ -9016,6 +9224,9 @@ public class Grid extends Canvas {
 			owed |= PLANE_BODY;
 		}
 		invalidatePlanes(owed & (PLANE_BODY | PLANE_CHROME));
+		if (GridViewport.UPSTREAM_FIXES && (mask & PLANE_SCROLLBARS) != 0) {
+			settlePendingTopIndex();
+		}
 	}
 
 	/** Starts a bulk body operation: body paints are merged; headers and scroll bars stay live. */

@@ -1,0 +1,1 @@
+{"output": "/tmp/nebula-top-index-received-native-canonical-20261017/startup-pixels.json", "pairs": {"startup-before": {"different_pixels": 11463, "total_pixels": 109200}, "startup-default": {"different_pixels": 0, "total_pixels": 109200}, "startup-original": {"different_pixels": 0, "total_pixels": 109200}}, "status": "PASSED_FOCUSED_PIXEL_GATE"}

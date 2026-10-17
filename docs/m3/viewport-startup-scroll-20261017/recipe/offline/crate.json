@@ -1,0 +1,51 @@
+{
+  "schema": "SYNEXIA_VIEWPORT_RECIPE_PACKET_V1",
+  "canonical_repository": "hsoliwal/com.synexia",
+  "canonical_engine_revision": "892e3f6c51d78bc0948e8a8cf736055b4c70eafa",
+  "recipe_name": "com.synexia.nebula.StartupScroll20261017",
+  "crate": "m3-nebula-startup-scroll-20261017",
+  "target_repository": "hsoliwal/nebula",
+  "target_revision": "7c2c52dde4226265b5492b3904f188371ec39201",
+  "targets": [
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml",
+      "kind": "text",
+      "preimage_sha256": "a84523a9ff07d88ab6b24369fae7552f09f5fd3e73c757e237c752907721deba",
+      "postimage_sha256": "55f55f3b55b6f2677086ff50a444baa1fbf6a149cdd90212c0e687297faf3c00",
+      "preimage_git_blob": "14d9505b0b477793f15219f842045e27bfd1d8a1",
+      "postimage_git_blob": "7c47aef494359ee5d4fad75375eec769b56e8474",
+      "resource": "target-000.text.txt"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridTopIndexStartup_Test.java",
+      "kind": "java",
+      "preimage_sha256": "ABSENT",
+      "postimage_sha256": "1b6a33a212459b2354245dadd78c9d442b682e5a1fc1b6d78c51a160f808fc59",
+      "preimage_git_blob": "ABSENT",
+      "postimage_git_blob": "a592dedcda9a58221f6cb91772175ffaec380dc0",
+      "resource": "target-001.java.txt"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java",
+      "kind": "java",
+      "preimage_sha256": "7f9200ee7c08eeb20bdbe29fa22c8935c0c14708544dd2b691b10194780fd21c",
+      "postimage_sha256": "945c3872ea011f6830e41ff9eb99341fac0a1c8edd3a4e0e831d05326699b6e5",
+      "preimage_git_blob": "161ed50912df44440281dc09a6eb2377c28334f2",
+      "postimage_git_blob": "03cfb42ff5f21b2104c127e0a29dcc23b6487232",
+      "resource": "target-002.java.txt"
+    }
+  ],
+  "runtime_gate_status": "SEPARATE_TARGET_EVIDENCE_REQUIRED",
+  "reused_sdk_harness": {
+    "path": "synexia-openrewrite-recipes/recipe-crates/m3-deep-filter-list-20261017/src/test/java/com/synexia/rewrite/M3TaskRecipeTest.java",
+    "git_blob": "3ff7e6f49fd75a34d0991ced8d069b956da0ee49"
+  },
+  "reused_receiver": {
+    "path": "synexia-openrewrite-recipes/recipe-crates/m3-deep-filter-list-20261017/receive.py",
+    "git_blob": "7b441c78df78c5c0dcc2f8a3526d588981880037"
+  },
+  "qualification_checkout_revision": "d2e08231f221f2023ead1b2fbaa6d9d3f0c57229",
+  "parent_relation": "Both existing receiving preimage Git blobs and the new test absence independently match the accessible immutable remote diagnostic parent, as retained in TARGET_SOURCE_CUSTODY.json. Full-tree equivalence is not inferred.",
+  "canonical_parent_revision": "893118ced3ba18f97633c24c8090d1aa83b4113c",
+  "runtime_dependency": "Native GTK callback-disposal lane requires separately received SWT ScrollBar callback correction, canonical Synexia PR #12129."
+}

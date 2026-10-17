@@ -1,0 +1,16 @@
+SWT SessionManagerDBus: Failed to connect to org.gnome.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+SWT SessionManagerDBus: Failed to connect to org.xfce.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.iteratorRemovalAndBulkPredicatesKeepOccurrenceMembership	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.duplicateDeselectRendersSameNativePixelsAsRemainingSelection	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.nonStructuralSetDoesNotInvalidateAnIterator	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.duplicateFirstLastAndIndexedRemovalAnswerAsAnArrayList	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.duplicateMutationsAndCompactionMatchSeededArrayListOracle	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.publicDuplicateDeselectKeepsRemainingItemSelectedAndInStockOrder	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.repeatedSelfBulkAppendRemainsFiniteAndPreservesDuplicates	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionOccurrence_Test.iteratorUsesLogicalRowsWhenReadersCompactItsHoles	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridSelectionList_Test.randomOperationsAnswerAsAnArrayList	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridCellSelectionList_Test.handsOutCopies	PASS
+METHOD	org.eclipse.nebula.widgets.grid.GridCellSelectionList_Test.randomOperationsAnswerAsAnArrayList	PASS
+COUNTS	11	0	0	0	false
+
+MEASUREMENTS	{"cpu_system_seconds": 0.18681, "cpu_user_seconds": 2.156649, "exit": 0, "max_rss_kib": 143116, "wall_seconds": 1.4256071700001485}
