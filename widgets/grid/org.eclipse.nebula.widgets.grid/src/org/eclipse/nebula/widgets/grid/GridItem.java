@@ -521,7 +521,7 @@ public class GridItem extends Item {
 		checkWidget();
 		handleVirtualData();
 
-		if (defaultBackground == null) {
+		if (liveColor(defaultBackground) == null) {
 			return parent.getBackground();
 		}
 		return defaultBackground;
@@ -546,8 +546,22 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getBackground(this, index);
+		return liveColor(parent.getDataVisualizer().getBackground(this, index));
 
+	}
+
+	/*
+	 * A colour the caller disposed after setting it reads as unset in the default mode, so the
+	 * renderers fall back to the defaults instead of failing the whole paint with ERROR_INVALID_ARGUMENT
+	 * (archived bug 455474, UPSTREAM_DEFECTS.tsv D23); the original mode keeps stock's value.
+	 */
+	private static Color liveColor(final Color color) {
+		return GridViewport.UPSTREAM_FIXES && color != null && color.isDisposed() ? null : color;
+	}
+
+	/* as {@link #liveColor(Color)}, for a font (D23) */
+	private static Font liveFont(final Font font) {
+		return GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed() ? null : font;
 	}
 
 	/**
@@ -782,7 +796,7 @@ public class GridItem extends Item {
 	 */
 	public Font getFont() {
 		handleVirtualData();
-		if (defaultFont == null) {
+		if (liveFont(defaultFont) == null) {
 			return parent.getFont();
 		}
 		return defaultFont;
@@ -808,7 +822,7 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getFont(this, index);
+		return liveFont(parent.getDataVisualizer().getFont(this, index));
 	}
 
 	/**
@@ -825,7 +839,7 @@ public class GridItem extends Item {
 	 */
 	public Color getForeground() {
 		handleVirtualData();
-		if (defaultForeground == null) {
+		if (liveColor(defaultForeground) == null) {
 			return parent.getForeground();
 		}
 		return defaultForeground;
@@ -850,7 +864,7 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getForeground(this, index);
+		return liveColor(parent.getDataVisualizer().getForeground(this, index));
 	}
 
 	/**

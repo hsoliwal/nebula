@@ -218,6 +218,25 @@ Findings (pre-existing, both modes, recorded for their own fixes):
   Grids at the same screen position: the harness gives each Grid its own shell at the same bounds, and parks
   the cursor before pixel captures. Side by side, seed 2 diverged once on a click (hover state).
 
+## Nebula bug harvest (lead directive 2026-10-17: every Nebula bug gets fixed)
+
+[`grid-viewport/NEBULA_BUGS.tsv`](grid-viewport/NEBULA_BUGS.tsv) (working copy K:/m3-work/runs/bugs/nebula-BUGS.tsv) lists every reachable Nebula Grid report: the open GitHub tracker
+(13 open issues, one about Grid) and the archived Eclipse Bugzilla (181 Grid-matching reports, closed in bulk
+2021-07-05; the 46 that were not FIXED/DUPLICATE triaged one by one). Per row: source, fork status, priority
+(P1 crashes, P2 behaviour, P3 cosmetic/platform, E enhancements), plan. P1 state, verified by
+`GridArchivedBugs_Test` and `GridIssue700_Test` on both modes and on stock `5d0bcbb9` classes:
+
+| Report | State |
+|---|---|
+| GH #700 (getCellSize crash via GridEditor during removal) | fixed earlier, both modes; kept unconditional, since the stock crash needs a real `WM_SIZE` editor layout the hidden harness cannot deliver (no observable mode difference) |
+| Bugzilla 455474 (disposing an item colour kills the whole paint with `ERROR_INVALID_ARGUMENT`) | fixed, default mode (D23): `GridItem` reads a disposed colour or font as unset, so renderers fall back to the defaults, as the native Table keeps painting; the original mode keeps stock's crash |
+| Bugzilla 218708 (header click on an empty Grid crashed the focus renderer) | not reproducible on stock `5d0bcbb9`; the test documents it and guards the Selection event |
+| Bugzilla 454575 (`disposeAllItems` kept stale state) | verified fixed on the fork and on stock: selection, focus and scroll reset like `removeAll` |
+
+P2 next: 377617 (0-width wrapping header), 259087 (pack ignores the group text), 382376 (pack ignores the
+column span), 238601/218713 (no column Selection event with cell selection), 202517, 360798, 330224, 273923,
+385351 (verify).
+
 ## Regression triage (coordinator item 1, 2026-10-16)
 
 `grid-viewport/REGRESSION_TRIAGE.tsv` lists every failing test of the Grid suite (34 classes plus the
