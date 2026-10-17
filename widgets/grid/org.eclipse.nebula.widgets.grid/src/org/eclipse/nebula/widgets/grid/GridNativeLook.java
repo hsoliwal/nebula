@@ -305,6 +305,10 @@ final class GridNativeLook {
 				// the native tree shows its focus rectangle only with keyboard cues; the list always
 				return;
 			}
+			if (isTree(grid) && grid.isSelected((GridItem) value)) {
+				// the native tree shows a focused selected row by its selection, with no focus rectangle
+				return;
+			}
 			final Rectangle b = getBounds();
 			int total = 0;
 			for (final GridColumn column : grid.getColumns()) {

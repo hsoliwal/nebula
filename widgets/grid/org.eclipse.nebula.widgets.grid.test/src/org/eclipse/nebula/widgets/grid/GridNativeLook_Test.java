@@ -248,6 +248,7 @@ public class GridNativeLook_Test {
 
 	private ImageData capture(final Control control, final boolean focus) {
 		focus(focus ? control : focusHolder);
+		showFocusCues(control.getShell());
 		// the print can return the window's last presented surface (blank right after the shell
 		// opened, or the state before the last change): print until two prints agree
 		ImageData previous = null;
@@ -275,6 +276,23 @@ public class GridNativeLook_Test {
 		} finally {
 			gc.dispose();
 			image.dispose();
+		}
+	}
+
+	/*
+	 * Shows the keyboard focus cues in the whole window (WM_CHANGEUISTATE, UIS_CLEAR,
+	 * UISF_HIDEFOCUS on the top-level window, which updates every child): whether Windows hides
+	 * them otherwise depends on the keyboard history of the test desktop, and the native tree and
+	 * the Grid must be compared in the same state.
+	 */
+	private static void showFocusCues(final Shell shell) {
+		try {
+			final Class<?> os = Class.forName("org.eclipse.swt.internal.win32.OS");
+			final long handle = Control.class.getField("handle").getLong(shell);
+			os.getMethod("SendMessage", long.class, int.class, long.class, long.class).invoke(null,
+					Long.valueOf(handle), Integer.valueOf(0x127), Long.valueOf((1 << 16) | 2), Long.valueOf(0));
+		} catch (final ReflectiveOperationException e) {
+			// not win32: the cues need no setting
 		}
 	}
 
