@@ -731,6 +731,30 @@ public class GridColumn extends Item {
 	 *             thread that created the receiver</li>
 	 *             </ul>
 	 */
+	/*
+	 * The width this column needs for the item's cell. A cell that spans further columns counts
+	 * only the part those columns do not already cover: stock attributed the whole spanned content
+	 * to this column (archived bug 382376, UPSTREAM_DEFECTS.tsv D26); the original mode keeps that.
+	 */
+	private int packedCellWidth(final GC gc, final GridItem item) {
+		final int width = getCellRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, item).x;
+		final int span = GridViewport.UPSTREAM_FIXES ? item.getColumnSpan(index) : 0;
+		if (span <= 0) {
+			return width;
+		}
+		final int[] order = parent.getColumnOrder();
+		int visual = 0;
+		while (visual < order.length && order[visual] != index) {
+			visual++;
+		}
+		int covered = 0;
+		for (int i = 1; i <= span && visual + i < order.length; i++) {
+			final GridColumn next = parent.getColumn(order[visual + i]);
+			covered += next.isVisible() ? next.getWidth() : 0;
+		}
+		return Math.max(0, width - covered);
+	}
+
 	public void pack() {
 		checkWidget();
 
@@ -740,6 +764,19 @@ public class GridColumn extends Item {
 		// the preferred size includes a visible footer (stock clips its text, UPSTREAM_DEFECTS.tsv)
 		if (GridViewport.UPSTREAM_FIXES && parent.getFooterVisible()) {
 			newWidth = Math.max(newWidth, getFooterRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, this).x);
+		}
+		// the group header spans the group's visible columns: the pack widens this column by the
+		// group text's deficit, so it fits (archived bug 259087, UPSTREAM_DEFECTS.tsv D25)
+		final GridColumnGroup packGroup = getColumnGroup();
+		if (GridViewport.UPSTREAM_FIXES && packGroup != null) {
+			int others = 0;
+			for (final GridColumn sibling : packGroup.getColumns()) {
+				if (sibling != this && sibling.isVisible()) {
+					others += sibling.getWidth();
+				}
+			}
+			newWidth = Math.max(newWidth,
+					packGroup.getHeaderRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, packGroup).x - others);
 		}
 
 		getCellRenderer().setColumn(index);
@@ -753,7 +790,7 @@ public class GridColumn extends Item {
 				final GridItem item = parent.getItem(i);
 				if (item.isVisible())
 				{
-					newWidth = Math.max(newWidth, getCellRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, item).x);
+					newWidth = Math.max(newWidth, packedCellWidth(gc, item));
 					if (virtual && (i > bottomIndex || i < topIndex))
 					{
 						getParent().getDataVisualizer().clearRow(item);
@@ -770,7 +807,7 @@ public class GridColumn extends Item {
 				final GridItem item = parent.getItem(i);
 				if (item.isVisible())
 				{
-					newWidth = Math.max(newWidth, getCellRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, item).x);
+					newWidth = Math.max(newWidth, packedCellWidth(gc, item));
 					if (virtual && (i > bottomIndex || i < topIndex))
 					{
 						getParent().getDataVisualizer().clearRow(item);

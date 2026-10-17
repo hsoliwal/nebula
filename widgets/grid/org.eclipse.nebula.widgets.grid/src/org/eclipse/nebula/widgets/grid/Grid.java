@@ -4977,6 +4977,12 @@ public class Grid extends Canvas {
 
 		int colHeaderHeight = 0;
 		for (final GridColumn column : columns) {
+			// a hidden or zero-width column shows no header: its measure does not count (a wrapping
+			// header at width zero wraps per character and got very tall; archived bug 377617,
+			// UPSTREAM_DEFECTS.tsv D24); the original mode keeps stock's measure
+			if (GridViewport.UPSTREAM_FIXES && (!column.isVisible() || column.getWidth() == 0)) {
+				continue;
+			}
 			colHeaderHeight = Math.max(column.getHeaderHeight(gc), colHeaderHeight);
 		}
 
