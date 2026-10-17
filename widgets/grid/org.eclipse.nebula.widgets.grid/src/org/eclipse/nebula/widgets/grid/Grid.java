@@ -1059,9 +1059,11 @@ public class Grid extends Canvas {
 	public Grid(final DataVisualizer dataVisualizer, final Composite parent, final int style) {
 		super(parent, checkStyle(style));
 
+		// the viewport mode keeps its items in a counted tree: row of an item, item of a row and the
+		// rows' pixel extents are O(log n), and no structural change touches the other items
 		this.items = (getStyle() & SWT.VIRTUAL) != 0
 				? new GridVirtualItemList(this)
-				: new ArrayList<>();
+				: GridViewport.ENABLED ? new GridRowTree() : new ArrayList<>();
 		this.dataVisualizer = dataVisualizer;
 
 		// initialize drag & drop support
@@ -3363,6 +3365,19 @@ public class Grid extends Canvas {
 	 *                                      receiver</li>
 	 *                                      </ul>
 	 */
+	/** @return the item list when it is a row tree (the viewport mode), else {@code null} */
+	GridRowTree rowTree() {
+		return items instanceof GridRowTree ? (GridRowTree) items : null;
+	}
+
+	/**
+	 * @param item an item of the row tree ({@link GridRowTree})
+	 * @return its row, O(log n)
+	 */
+	int rowInTree(final GridItem item) {
+		return items.indexOf(item);
+	}
+
 	public int indexOf(final GridItem item) {
 		checkWidget();
 
@@ -9807,7 +9822,7 @@ public class Grid extends Canvas {
 			items.add(index, item);
 			row = index;
 			insertDataRow(row);
-			if (!(items instanceof GridVirtualItemList)) {
+			if (!(items instanceof GridVirtualItemList) && !(items instanceof GridRowTree)) {
 				for (int i = index + 1; i < items.size(); i++) {
 					items.get(i).increaseRow();
 				}
@@ -9877,7 +9892,7 @@ public class Grid extends Canvas {
 			return;
 		}
 
-		if (!(items instanceof GridVirtualItemList)) {
+		if (!(items instanceof GridVirtualItemList) && !(items instanceof GridRowTree)) {
 			for (int i = index; i < items.size(); i++) {
 				items.get(i).decreaseRow();
 			}

@@ -38,7 +38,7 @@ import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
  * where hidden tree rows stay in the list with weight 0.
  * </p>
  */
-final class GridRowExtents {
+final class GridRowExtents implements GridRowIndex {
 
 	/* bytes per position over the three lanes: extent (int), count tree (int), extent tree (long) */
 	private static final int SLOT_BYTES = 16;
@@ -73,12 +73,14 @@ final class GridRowExtents {
 	}
 
 	/** @return the number of visible rows */
-	int visibleCount() {
+	@Override
+	public int visibleCount() {
 		return visibleRows;
 	}
 
 	/** @return the extent of all visible rows */
-	long totalExtent() {
+	@Override
+	public long totalExtent() {
 		return totalExtent;
 	}
 
@@ -167,7 +169,8 @@ final class GridRowExtents {
 	 * @param position a position
 	 * @return its extent, 0 when hidden
 	 */
-	int extentAt(final int position) {
+	@Override
+	public int extentAt(final int position) {
 		return extents[position];
 	}
 
@@ -175,7 +178,8 @@ final class GridRowExtents {
 	 * @param position a position in {@code [0, size]}
 	 * @return the number of visible rows before it
 	 */
-	int rankOf(final int position) {
+	@Override
+	public int rankOf(final int position) {
 		int rank = 0;
 		for (int i = position; i > 0; i -= i & -i) {
 			rank += countTree[i];
@@ -187,7 +191,8 @@ final class GridRowExtents {
 	 * @param position a position in {@code [0, size]}
 	 * @return the extent of the visible rows before it
 	 */
-	long extentBefore(final int position) {
+	@Override
+	public long extentBefore(final int position) {
 		long extent = 0;
 		for (int i = position; i > 0; i -= i & -i) {
 			extent += extentTree[i];
@@ -199,7 +204,8 @@ final class GridRowExtents {
 	 * @param rank a visible row, {@code 0 <= rank < visibleCount()}
 	 * @return its position
 	 */
-	int positionOfRank(final int rank) {
+	@Override
+	public int positionOfRank(final int rank) {
 		int position = 0;
 		int remaining = rank + 1;
 		for (int step = Integer.highestOneBit(size); step > 0; step >>= 1) {
@@ -216,7 +222,8 @@ final class GridRowExtents {
 	 * @param rank a number of visible rows, {@code 0 <= rank <= visibleCount()}
 	 * @return the extent of the first {@code rank} visible rows
 	 */
-	long extentOfRank(final int rank) {
+	@Override
+	public long extentOfRank(final int rank) {
 		if (rank == 0) {
 			return 0;
 		}
@@ -232,7 +239,8 @@ final class GridRowExtents {
 	 *         is the visible row holding {@code offset} ({@link #visibleCount()} when the offset lies
 	 *         past the last row), or -1 when {@code offset} is negative
 	 */
-	int rankAtExtent(final long offset) {
+	@Override
+	public int rankAtExtent(final long offset) {
 		if (offset < 0) {
 			return -1;
 		}
@@ -254,7 +262,8 @@ final class GridRowExtents {
 	 * @param position a position in {@code [0, size]}
 	 * @return the first visible position at or after it, or -1
 	 */
-	int nextVisible(final int position) {
+	@Override
+	public int nextVisible(final int position) {
 		final int rank = rankOf(position);
 		return rank < visibleRows ? positionOfRank(rank) : -1;
 	}
@@ -263,7 +272,8 @@ final class GridRowExtents {
 	 * @param position a position in {@code [-1, size - 1]}
 	 * @return the last visible position at or before it, or -1
 	 */
-	int previousVisible(final int position) {
+	@Override
+	public int previousVisible(final int position) {
 		final int rank = rankOf(position + 1) - 1;
 		return rank >= 0 ? positionOfRank(rank) : -1;
 	}

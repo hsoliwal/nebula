@@ -13,6 +13,7 @@
  *    Claes Rosell<claes.rosell@solme.se> - rowspan in bug 272384
  *    Stefan Widmaier<stefan.widmaier@faktorzehn.de> - rowspan in 304797
  *    Mirko Paturzo <mirko.paturzo@exeura.eu> - improvement (bug in 419928)
+ *    Hitesh Soliwal (Synexia) - row from the row tree, default-mode fixes of upstream defects
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -148,6 +149,9 @@ public class GridItem extends Item {
 
 	private int row = NO_ROW;
 
+	/* this item's slot in the Grid's row tree (GridRowTree), or -1 */
+	private int rowTreeSlot = -1;
+
 	private final Object ROW_LOCK = new Object();
 
 	/**
@@ -228,6 +232,9 @@ public class GridItem extends Item {
 	 * @return grid row index
 	 */
 	public int getRowIndex() {
+		if (rowTreeSlot >= 0) {
+			return parent.rowInTree(this);
+		}
 		synchronized (ROW_LOCK) {
             if (row != NO_ROW) {
                 return row;
@@ -240,8 +247,29 @@ public class GridItem extends Item {
 	 * @return the row index this item keeps, or -1 when it keeps none (no search)
 	 */
 	int knownRow() {
+		if (rowTreeSlot >= 0) {
+			return parent.rowInTree(this);
+		}
 		synchronized (ROW_LOCK) {
 			return row;
+		}
+	}
+
+	/** @return this item's slot in the Grid's row tree, or -1 */
+	int rowTreeSlot() {
+		return rowTreeSlot;
+	}
+
+	/** The Grid's row tree holds this item at {@code slot}; its row follows from the tree. */
+	void enteredRowTree(final int slot) {
+		rowTreeSlot = slot;
+	}
+
+	/** The Grid's row tree let this item go from {@code lastRow}, which it keeps as stock does. */
+	void leftRowTree(final int lastRow) {
+		rowTreeSlot = -1;
+		synchronized (ROW_LOCK) {
+			row = lastRow;
 		}
 	}
 

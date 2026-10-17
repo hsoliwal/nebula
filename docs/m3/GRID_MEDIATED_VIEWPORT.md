@@ -352,12 +352,44 @@ the focus and prints until two prints agree; `GridScrollPaint_Test` settles only
 ran (`Grid.dragFramePending`). Before these, the build of the previous leaf failed the same three tests on the
 new desktop slot.
 
+## Leaf G2: the item list is a counted tree (2026-10-17)
+
+In the viewport mode a non-`SWT.VIRTUAL` Grid keeps its items in `GridRowTree`, a height-balanced tree ordered
+by row whose nodes are lane slots (one per item: left, right, parent, subtree size, subtree visible rows,
+subtree pixel extent, own extent, height, item). It is the Grid's `items` list and also answers every row
+question of G1 (`GridRowIndex`, also implemented by `GridRowExtents`):
+
+| Operation | Stock / G1 | G2 |
+|---|---|---|
+| insert or remove a row anywhere | `ArrayList` shift plus `increaseRow`/`decreaseRow` over every later item, O(n); index rebuilt on the next question, O(n) | O(log n): one path rebalanced, no other item touched |
+| row of an item (`getRowIndex`, `indexOf`) | a field kept by those loops (`indexOf`: O(n) scan) | O(log n): the slot's path to the root |
+| item of a row | O(1) | O(log n) |
+| rank, select, pixel prefix (G1 questions) | Fenwick O(log n) after an O(n) rebuild | O(log n), never rebuilt |
+| visibility or height of one item | O(log n) | O(log n) |
+
+So no structural change costs O(n) on the UI thread any more (the plan to rebuild the G1 index on a worker
+over a snapshot is not needed). The original mode keeps the stock `ArrayList`. Donors (FOSS_REUSE_DECISION.tsv):
+the AVL lanes of the SWT fork's `VirtualTreeSiblingIndex` (PR #197, itself from Synexia's
+`LongOrderStatisticMultiset`) are adapted; the position descent, the parent lane and the two aggregates are
+new. Fenwick sidecars, frozen rank/select, sorted maps, `TreeList` and `FourColorTree` were checked and do
+not fit.
+
+| Gate (hidden desktop) | Result |
+|---|---|
+| `GridRowTree_Test`: a tree Grid, 1,500 random inserts (roots and children), removals, expand/collapse, item and default heights; every item's row, the item of every row, extents, rank, select, pixel prefix and row-at-pixel against a linear walk | pass |
+| `InsertProbe`, 1,000,000 items (10,000 roots x 99 children), a child inserted and disposed in the middle, per step | viewport before G2: insert 27.0 ms, first row question after it 32.2 ms, dispose 54.8 ms, paint 37.3 ms; after: 1.7 ms, 0.7 ms, 0.4 ms, 9.1 ms (the original mode on the same run: 50.8, 31.3, 60.7, 38.7 ms; the machine was loaded, 60 % CPU) |
+| Grid suite (604 tests) | 0 failures in both modes |
+| stock differential (`5d0bcbb9`, strict pixels) | 8 / 8 seeds, both scenes, candidate `viewport` and `original` |
+
+What is left of an insertion (1.7 ms at 1,000,000 items) is stock work per new item: a sizing GC for the item
+height (`Grid.estimate`), the parent's child list and the data visualizer.
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |
 |---|---|---|
 | G1 | row extent index; mediated top row, row ranges, row at point, origin, paint skip, next/previous visible | differential identical; paint cost independent of hidden rows |
-| G2 | visible, expanded, height and has-children state as parent lanes; `GridItem` getters read the lanes; index rebuild on a worker over a generation-stamped snapshot | differential; no O(n) on the UI thread after insert/remove |
+| G2 | done (see Leaf G2): the item list is a counted tree with row lanes (row, visible rows, pixel extents), O(log n) insert, remove, row of item and every row question; no rebuild | differential; no O(n) on the UI thread after insert/remove |
 | G3 | selection as ranges + bitset by density (row and cell), focus by position | selection count exact over 1,000,000 rows; differential |
 | G4 | tree Grids with `SWT.VIRTUAL` children: sparse child facades through the same lanes, `SetData` once per row | differential vs non-virtual tree; SetData counts |
 | G5 | variable-height blit scroll using the index's pixel delta; row-rect damage | pixels vs stock after scroll sequences |
