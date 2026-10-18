@@ -96,12 +96,19 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		}
 	}
 
-	/** Configuration bits; {@link #LARGE} builds 1,000 roots with 99 children each instead. */
-	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4;
+	/**
+	 * Configuration bits; {@link #LARGE} builds 1,000 roots with 99 children each instead;
+	 * {@link #VIRTUAL} makes an {@code SWT.VIRTUAL} Grid whose items get their texts from a SetData
+	 * listener, which counts the requests per item.
+	 */
+	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4, VIRTUAL = 8;
 
 	private final Grid grid;
 	private final StringBuilder events = new StringBuilder();
 	private int added;
+	/* SetData requests per item label (VIRTUAL configurations) */
+	private final java.util.Map<String, Integer> setData = new java.util.TreeMap<>();
+	private final boolean virtual;
 
 	/**
 	 * @param parent where the Grid is created
@@ -157,7 +164,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private void record(final String type, final Event e) {
-		events.append(type).append('(').append(e.item instanceof GridItem ? ((GridItem) e.item).getText() : "-")
+		events.append(type).append('(').append(e.item instanceof GridItem ? ((GridItem) e.item).getText(0) : "-")
 				.append(' ').append(e.detail).append(") ");
 	}
 
@@ -191,10 +198,10 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		switch (kind) {
 		case 0:
 			item.setExpanded(true);
-			return "expanded " + item.getText();
+			return "expanded " + item.getText(0);
 		case 1:
 			item.setExpanded(false);
-			return "collapsed " + item.getText();
+			return "collapsed " + item.getText(0);
 		case 2:
 			grid.setTopIndex(index);
 			return "top " + grid.getTopIndex();
@@ -260,7 +267,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			return insert(item, b);
 		case 24:
 			if (items.length > 20) {
-				final String text = item.getText();
+				final String text = item.getText(0);
 				item.dispose();
 				return "disposed " + text;
 			}
@@ -383,7 +390,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private static String text(final GridItem item) {
-		return item == null ? "null" : item.getText();
+		return item == null ? "null" : item.getText(0);
 	}
 
 	private static String bar(final ScrollBar bar) {
@@ -393,7 +400,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	private String state() {
 		final List<String> selection = new ArrayList<>();
 		for (final GridItem item : grid.getSelection()) {
-			selection.add(item.getText());
+			selection.add(item.getText(0));
 		}
 		final List<String> cells = new ArrayList<>();
 		for (final Point cell : grid.getCellSelection()) {
