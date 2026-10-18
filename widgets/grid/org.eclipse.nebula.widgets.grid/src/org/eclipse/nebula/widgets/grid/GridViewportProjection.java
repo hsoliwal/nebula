@@ -136,7 +136,7 @@ final class GridViewportProjection {
 			int rowHeaderWidth,
 			boolean fixedOverlayActive,
 			int horizontalSelectionPixels) {
-		int x = 0;
+		long x = 0;
 		if (rowHeaderVisible) {
 			if (pointX <= rowHeaderWidth) {
 				return null;
@@ -145,7 +145,7 @@ final class GridViewportProjection {
 		}
 
 		if (fixedOverlayActive) {
-			int fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
+			long fixedX = rowHeaderVisible ? rowHeaderWidth : 0;
 			for (GridColumn column : columns) {
 				if (!column.isVisible()) {
 					continue;
