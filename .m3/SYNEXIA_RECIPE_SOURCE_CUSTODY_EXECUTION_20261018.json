@@ -1,0 +1,198 @@
+{
+  "schema": "synexia.public-custody-binding-execution.v1",
+  "campaign": "public-fork-home-20261018",
+  "created_at_utc": "2026-10-18T07:55:17.489690+00:00",
+  "target": {
+    "repository": "hsoliwal/nebula",
+    "default_ref": "refs/heads/master",
+    "base_sha": "c5f62dbabc643b40fbba56eada89cee3965d145c"
+  },
+  "canonical": {
+    "repository": "hsoliwal/com.synexia",
+    "source_commit": "215546d1ca0e724eb2c8e2e8ef6b4adce724733a",
+    "crate_path": "synexia-openrewrite-recipes/recipe-crates/public-fork-home-20261018",
+    "recipe_class": "com.synexia.rewrite.M3PublicForkRecipeHomeRecipe",
+    "recipe_name": "com.synexia.m3.PublicForkRecipeHome20261018",
+    "sdk_artifact": "com.synexia.verification:public-fork-recipe-home:2026.10.18",
+    "source_custody_path": "synexia-openrewrite-recipes/recipe-crates/public-fork-home-20261018/SOURCE_CUSTODY.tsv",
+    "source_custody_sha256": "ebcfbd42a49eec806f0a4572af731828deda41f22c17250d34d49af985d78f1d",
+    "snapshot_paths": [
+      "synexia-openrewrite-recipes/vendor/public-forks/hsoliwal/nebula/default-91c474935eb4",
+      "synexia-openrewrite-recipes/vendor/public-forks/hsoliwal/nebula/default-c5f62dbabc64"
+    ]
+  },
+  "execution_scope": "CANONICAL_MAVEN_KERNEL_CONTROL_AND_CUSTODY_BINDING",
+  "packet": {
+    "base_sha": "c5f62dbabc643b40fbba56eada89cee3965d145c",
+    "manifest_sha256": "79912b8262aad9d1666a03c282a9c21579b426389a829013adb718b38f681187",
+    "manifest_git_blob": "47b08f724880378c8edaee434828e6fbbe986d22",
+    "public_mirror": ".m3/recipe-source-custody-20261018/binding",
+    "targets": [
+      {
+        "path": "m3/convergence/SYNEXIA_CANONICAL_RECIPE_HOME.tsv",
+        "before_sha256": "9257a230fd60373c72f01f1ab10635a4ea4000ab486fc965b2602c99dcb39ea7",
+        "after_sha256": "53c1e144b0ca3dc7de6d9726560385553e9c8f3dd701162518c50125cc2139d0",
+        "before_git_blob": "bff737f9559010f4e2b2cf80dd377e134a9e9329",
+        "after_git_blob": "f70a4e67afdd016c82cd8576c0c67a317fb8fec0",
+        "mode": "100644",
+        "resource": "payloads/000.txt",
+        "bytes": 727,
+        "reason": "Advance the existing canonical recipe-home control while preserving its DAG and product authority fields."
+      },
+      {
+        "path": "m3/convergence/README.md",
+        "before_sha256": "6e154e088af0c9b8817856cff7c76361be62f36ab521f193bf0b05aea3c7abe0",
+        "after_sha256": "6b20fcb720de3d0975260be8ba5853496af2fad637c0889fab74d920ade037fc",
+        "before_git_blob": "54e2cdeaefa3a3748974e8ede49bef966efe4cbe",
+        "after_git_blob": "715ec390b012b13b93376a21aff2ef38470ff96d",
+        "mode": "100644",
+        "resource": "payloads/001.txt",
+        "bytes": 7586,
+        "reason": "Advance the existing recipe/proof entry point to the sealed canonical source home."
+      },
+      {
+        "path": ".m3/SYNEXIA_RECIPE_CUSTODY_INTAKE_20261017.md",
+        "before_sha256": "6d712845612c3b0bbede5e86c70981a8e22adecb40dfa62d33281bf20b687f8d",
+        "after_sha256": "66f1de33c85dfd8e7d3e2cb71db2cfd7f088898ef9621c52988e5ec4b4ad3902",
+        "before_git_blob": "f19856e9691a008881abdf4ce35aa1ad995046fe",
+        "after_git_blob": "e8702a150c708e2fa4c534b014e3a37a4be216db",
+        "mode": "100644",
+        "resource": "payloads/002.txt",
+        "bytes": 4679,
+        "reason": "Mark the prior intake as historical and link its completed canonical source-custody successor."
+      },
+      {
+        "path": ".m3/SYNEXIA_RECIPE_SOURCE_CUSTODY_20261018.json",
+        "before_sha256": "ABSENT",
+        "after_sha256": "6de00ff46ca1476f6ef80e3537ed6e40bd1528b3e8f2745a6881550da7cb329c",
+        "before_git_blob": null,
+        "after_git_blob": "4e97a283e158779804d47b7fe5b75970a51a7298",
+        "mode": "100644",
+        "resource": "payloads/003.txt",
+        "bytes": 4283,
+        "reason": "Dated source-custody audit record."
+      }
+    ]
+  },
+  "runs": [
+    {
+      "mode": "--plan",
+      "label": "plan",
+      "command": [
+        "/workspace/scratch/9032dcaaba5c/toolchains/apache-maven-3.9.9/bin/mvn",
+        "-o",
+        "-B",
+        "-ntp",
+        "-f",
+        "/workspace/scratch/9032dcaaba5c/canonical-engine/synexia-openrewrite-recipes/tasks/recipe-qualification/pom.xml",
+        "-Dmaven.repo.local=/workspace/scratch/9032dcaaba5c/toolchains/maven-offline",
+        "org.codehaus.mojo:exec-maven-plugin:3.5.0:exec",
+        "-Dexec.executable=/workspace/scratch/9032dcaaba5c/toolchains/jdk-21.0.12.1+1/bin/java",
+        "-Dexec.args=-Xmx1g -cp /workspace/scratch/9032dcaaba5c/canonical-engine/build/replay-classes com.synexia.rewrite.Replay --plan /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/candidate /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/packets/binding"
+      ],
+      "started_at_utc": "2026-10-18T07:54:59.576611+00:00",
+      "finished_at_utc": "2026-10-18T07:55:03.040207+00:00",
+      "exit_code": 0,
+      "log": ".m3/recipe-source-custody-20261018/logs/binding/plan.log",
+      "log_sha256": "c5a6d21473e978ae69ed47f33b827571f830af2d79503ba1b6664cb5de3f0f94",
+      "expected_changes": 4,
+      "report": [
+        "c5f62dbabc643b40fbba56eada89cee3965d145c",
+        "79912b8262aad9d1666a03c282a9c21579b426389a829013adb718b38f681187",
+        "4",
+        "false"
+      ]
+    },
+    {
+      "mode": "--apply",
+      "label": "apply",
+      "command": [
+        "/workspace/scratch/9032dcaaba5c/toolchains/apache-maven-3.9.9/bin/mvn",
+        "-o",
+        "-B",
+        "-ntp",
+        "-f",
+        "/workspace/scratch/9032dcaaba5c/canonical-engine/synexia-openrewrite-recipes/tasks/recipe-qualification/pom.xml",
+        "-Dmaven.repo.local=/workspace/scratch/9032dcaaba5c/toolchains/maven-offline",
+        "org.codehaus.mojo:exec-maven-plugin:3.5.0:exec",
+        "-Dexec.executable=/workspace/scratch/9032dcaaba5c/toolchains/jdk-21.0.12.1+1/bin/java",
+        "-Dexec.args=-Xmx1g -cp /workspace/scratch/9032dcaaba5c/canonical-engine/build/replay-classes com.synexia.rewrite.Replay --apply /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/candidate /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/packets/binding"
+      ],
+      "started_at_utc": "2026-10-18T07:55:03.040905+00:00",
+      "finished_at_utc": "2026-10-18T07:55:08.282265+00:00",
+      "exit_code": 0,
+      "log": ".m3/recipe-source-custody-20261018/logs/binding/apply.log",
+      "log_sha256": "9599fdb15a4ad0b7c21c102f5b450dd208b1d35a013573297da3349290ed7beb",
+      "expected_changes": 4,
+      "report": [
+        "c5f62dbabc643b40fbba56eada89cee3965d145c",
+        "79912b8262aad9d1666a03c282a9c21579b426389a829013adb718b38f681187",
+        "4",
+        "true"
+      ]
+    },
+    {
+      "mode": "--check",
+      "label": "check-1",
+      "command": [
+        "/workspace/scratch/9032dcaaba5c/toolchains/apache-maven-3.9.9/bin/mvn",
+        "-o",
+        "-B",
+        "-ntp",
+        "-f",
+        "/workspace/scratch/9032dcaaba5c/canonical-engine/synexia-openrewrite-recipes/tasks/recipe-qualification/pom.xml",
+        "-Dmaven.repo.local=/workspace/scratch/9032dcaaba5c/toolchains/maven-offline",
+        "org.codehaus.mojo:exec-maven-plugin:3.5.0:exec",
+        "-Dexec.executable=/workspace/scratch/9032dcaaba5c/toolchains/jdk-21.0.12.1+1/bin/java",
+        "-Dexec.args=-Xmx1g -cp /workspace/scratch/9032dcaaba5c/canonical-engine/build/replay-classes com.synexia.rewrite.Replay --check /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/candidate /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/packets/binding"
+      ],
+      "started_at_utc": "2026-10-18T07:55:08.282859+00:00",
+      "finished_at_utc": "2026-10-18T07:55:12.111949+00:00",
+      "exit_code": 0,
+      "log": ".m3/recipe-source-custody-20261018/logs/binding/check-1.log",
+      "log_sha256": "a6ee6088354ed9907a593b521bee6a956bc9824549ec894267d911474c3af0c0",
+      "expected_changes": 0,
+      "report": [
+        "c5f62dbabc643b40fbba56eada89cee3965d145c",
+        "79912b8262aad9d1666a03c282a9c21579b426389a829013adb718b38f681187",
+        "0",
+        "false"
+      ]
+    },
+    {
+      "mode": "--check",
+      "label": "check-2",
+      "command": [
+        "/workspace/scratch/9032dcaaba5c/toolchains/apache-maven-3.9.9/bin/mvn",
+        "-o",
+        "-B",
+        "-ntp",
+        "-f",
+        "/workspace/scratch/9032dcaaba5c/canonical-engine/synexia-openrewrite-recipes/tasks/recipe-qualification/pom.xml",
+        "-Dmaven.repo.local=/workspace/scratch/9032dcaaba5c/toolchains/maven-offline",
+        "org.codehaus.mojo:exec-maven-plugin:3.5.0:exec",
+        "-Dexec.executable=/workspace/scratch/9032dcaaba5c/toolchains/jdk-21.0.12.1+1/bin/java",
+        "-Dexec.args=-Xmx1g -cp /workspace/scratch/9032dcaaba5c/canonical-engine/build/replay-classes com.synexia.rewrite.Replay --check /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/candidate /workspace/scratch/9032dcaaba5c/public-binding-preparation/candidates-215546d1ca0e-r2/nebula/packets/binding"
+      ],
+      "started_at_utc": "2026-10-18T07:55:12.112455+00:00",
+      "finished_at_utc": "2026-10-18T07:55:17.482070+00:00",
+      "exit_code": 0,
+      "log": ".m3/recipe-source-custody-20261018/logs/binding/check-2.log",
+      "log_sha256": "58e1b709cce27a15bd1217ac4d308941dcf95c82185896f7ce879ea53f10fd11",
+      "expected_changes": 0,
+      "report": [
+        "c5f62dbabc643b40fbba56eada89cee3965d145c",
+        "79912b8262aad9d1666a03c282a9c21579b426389a829013adb718b38f681187",
+        "0",
+        "false"
+      ]
+    }
+  ],
+  "all_declared_postimages_verified": true,
+  "fixed_point_checks": 2,
+  "product_source_files_changed_by_this_packet": 0,
+  "sdk_execution": "NOT_RUN",
+  "native_product_verification": "NOT_RUN_IN_THIS_EXECUTION",
+  "promotion_authority": false,
+  "receipt_boundary": "Records the completed binding packet only; its own later installation is recorded separately in the proof mirror RUNS.json."
+}
