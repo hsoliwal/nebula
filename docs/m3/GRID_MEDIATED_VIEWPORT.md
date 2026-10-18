@@ -237,7 +237,9 @@ P2 done (D24-D27, GridArchivedBugs_Test, stock behaviour asserted in the origina
 0-width column no longer counts in the header height), 259087 (pack widens the column by the group header
 deficit), 382376 (a spanning cell counts only the part the spanned columns do not cover), 238601/218713 (the
 push release selects the clicked column cells; the column Selection event already fires in current stock).
-P2 to verify: 202517, 360798, 330224, 273923, 385351.
+P2 rest: 202517 fixed (D28: cell renderers get the row index, stock passed the 1-based window position), 330224
+fixed (D29: a group of one column no longer breaks valid column orders), 360798, 273923 (win32) and 385351
+verified fixed. Every P1 and P2 row of the harvest is closed; P3 next.
 
 ## Regression triage (coordinator item 1, 2026-10-16)
 
