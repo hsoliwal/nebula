@@ -29,8 +29,8 @@ recipeList:
     caseSensitive: true
     filePattern: widgets/pagination/org.eclipse.nebula.widgets.pagination/src/org/eclipse/nebula/widgets/pagination/collections/BeanComparator.java
 - org.openrewrite.text.FindAndReplace:
-    find: "\t@SuppressWarnings(\"unchecked\")\n\tprivate int compare(Comparable c1, Comparable c2) {"
-    replace: "\t/** One shared predicate for the direct-value and bean-property paths. */\n\tprivate static boolean isComparablePair(Object\
+    find: "\t\treturn 0;\n\t}\n\n\t@SuppressWarnings(\"unchecked\")\n\tprivate int compare(Comparable c1, Comparable c2) {"
+    replace: "\t\treturn 0;\n\t}\n\n\t/** One shared predicate for the direct-value and bean-property paths. */\n\tprivate static boolean isComparablePair(Object\
       \ first, Object second) {\n\t\treturn first instanceof Comparable && second instanceof Comparable;\n\t}\n\n\t@SuppressWarnings(\"\
       unchecked\")\n\tprivate int compare(Comparable c1, Comparable c2) {"
     regex: false

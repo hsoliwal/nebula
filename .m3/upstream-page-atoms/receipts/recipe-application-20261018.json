@@ -1,0 +1,166 @@
+{
+  "schema": "M3_NEBULA_PAGINATION_RECIPE_APPLICATION_V1",
+  "owner": "com.synexia",
+  "captured_at": "2026-10-18T10:02:31.077697+00:00",
+  "receiver_repository": "hsoliwal/nebula",
+  "receiver_base": "c5f62dbabc643b40fbba56eada89cee3965d145c",
+  "canonical_repository": "hsoliwal/com.synexia",
+  "canonical_pull_request": "https://github.com/hsoliwal/com.synexia/pull/12270",
+  "canonical_original_source_commit": "09070667ae4de57b64fe5ca831cc7002f2e4e70c",
+  "canonical_original_source_prefix": "synexia-openrewrite-recipes/recipe-crates/public-fork-recipe-custody-20261017/sources/nebula/",
+  "bootstrap": {
+    "recipe": "com.synexia.m3.NebulaPaginationBootstrap20261018",
+    "commit": "cb8457c33a86e7836da2d4ce38e504888d12867e",
+    "packet": "synexia-openrewrite-recipes/recipe-crates/public-fork-recipe-custody-20261017/qualification/nebula-pagination-bootstrap-20261018",
+    "sdk_qualification_version": "8.90.4",
+    "junit_tests": 3
+  },
+  "fresh_parse_correction": {
+    "recipe": "com.synexia.m3.NebulaPaginationFreshParseFixedPoint20261018",
+    "commit": "ae4a5c0fd3c35ad78c5c070f35d5408457591110",
+    "packet": "synexia-openrewrite-recipes/recipe-crates/public-fork-recipe-custody-20261017/qualification/nebula-pagination-fresh-parse-fixed-point-20261018",
+    "sdk_qualification_version": "8.17.1",
+    "junit_tests": 5,
+    "readback_files": 27,
+    "readback_bytes": 152828,
+    "engine_git_blob": "eafdc8317d7a8c9e135e30f9da55499f4c8cdb4c",
+    "engine_unchanged": true
+  },
+  "receiving_recipe": {
+    "name": "com.synexia.NebulaPageBoundaryAtoms",
+    "sdk": "org.openrewrite:rewrite-core:8.17.1",
+    "yaml_sha256": "8516e2c3b79a455b089dfbc771c01b6eda4e2e9dfcfe348ad54a2c1c4cdf13b1",
+    "runner_sha256": "ad36d74ac17ee6d2253bf2620f811ab78c93ea92c13cc847b930e3ed658db71a",
+    "historical_baseline_commit": "887cf8256ab471425bc631334d9e23d24726d34e",
+    "initial_output_count": 2,
+    "fresh_parse_replay_output_count": 0,
+    "markdown_unchanged": true,
+    "unrelated_java_unchanged": true
+  },
+  "receiving_entrypoints": [
+    {
+      "command": "mvn -Papply -f .m3/upstream-page-atoms/pom.xml verify",
+      "status": "PASS",
+      "source_writes": 2,
+      "whole_class_differential_assertions": 5498,
+      "closure_files": 8,
+      "public_api_sets": 4,
+      "no_stubs": true
+    },
+    {
+      "command": "mvn -f .m3/upstream-page-atoms/pom.xml verify",
+      "status": "PASS",
+      "source_writes": 0,
+      "whole_class_differential_assertions": 5498,
+      "closure_files": 8,
+      "public_api_sets": 4,
+      "no_stubs": true,
+      "generated_source_hashes_unchanged": true
+    }
+  ],
+  "unchanged_page_contract": {
+    "path": ".m3/upstream-page-atoms/PageContract.java",
+    "sha256": "b7f303a0167bca2bd2736fc2a0c159561c21e83a382e85c2a7fc7cd32b0ada06",
+    "git_blob": "4e89396cb21ad31342467ed3b221f36f61cd664d"
+  },
+  "compiler_and_jvm_gates": [
+    "Java 21",
+    "-Xlint:all",
+    "-Werror",
+    "-XX:-OmitStackTraceInFastThrow"
+  ],
+  "verification_environment": {
+    "java": "21.0.12.1+1",
+    "maven": "3.9.11",
+    "receiver_swt": "org.eclipse.platform:org.eclipse.swt.gtk.linux.x86_64:3.128.0",
+    "receiver_equinox": "org.eclipse.platform:org.eclipse.equinox.common:3.19.0"
+  },
+  "original_failures_preserved": {
+    "missing_compile_annotation": true,
+    "missing_logging_api": true,
+    "fresh_parse_duplicate_helper": true,
+    "fixed_point_failure": "CHANGE_COUNT:1 at original runner line 55; first application and target seals had passed",
+    "fixed_point_failure_packet": "synexia-openrewrite-recipes/recipe-crates/public-fork-recipe-custody-20261017/qualification/nebula-pagination-fresh-parse-fixed-point-20261018/evidence/ORIGINAL_HOST_FIXED_POINT_FAILURE.log"
+  },
+  "generated_sources": [
+    {
+      "path": ".m3/upstream-page-atoms/pom.xml",
+      "before_sha256": "d3646ae667814235da279658f8d6106449cd018c61dcb6169f0731d180ba8eed",
+      "after_sha256": "cf155939d39f4ec9aa5a721db6a1d47952b4782393a0f74ebf34868e668da12c",
+      "after_git_blob": "c69f7e75a19aa6bdc7788a9944cd4a7e0278b7b9",
+      "bytes": 2671,
+      "mode": "100644",
+      "producer": "com.synexia.m3.NebulaPaginationBootstrap20261018",
+      "producer_sdk": "8.90.4",
+      "canonical_source_commit": "cb8457c33a86e7836da2d4ce38e504888d12867e",
+      "license": "Apache-2.0",
+      "before_git_blob": "e6b6a91cde28d1ae7f748db3e6de3b7f5d33eb93"
+    },
+    {
+      "path": ".m3/upstream-page-atoms/recipe.yml",
+      "before_sha256": "f0d6565526e08e275e646a173536e8bf727a294808b47fb69a9dfa0b9d6e9fda",
+      "after_sha256": "8516e2c3b79a455b089dfbc771c01b6eda4e2e9dfcfe348ad54a2c1c4cdf13b1",
+      "after_git_blob": "11233053f63b5218516b7a4614e8ec73562a3e39",
+      "bytes": 3071,
+      "mode": "100644",
+      "producer": "com.synexia.m3.NebulaPaginationFreshParseFixedPoint20261018",
+      "producer_sdk": "8.17.1",
+      "canonical_source_commit": "ae4a5c0fd3c35ad78c5c070f35d5408457591110",
+      "license": "EPL-2.0",
+      "before_git_blob": "7ae805aa83c53420ca1025a53cd3584795ff095d"
+    },
+    {
+      "path": ".m3/upstream-page-atoms/RunUpstreamRecipe.java",
+      "before_sha256": "b7f0ce1f62bd286c18c0cffe5961be228517273c420749121dffd11d774685a7",
+      "after_sha256": "ad36d74ac17ee6d2253bf2620f811ab78c93ea92c13cc847b930e3ed658db71a",
+      "after_git_blob": "fd5fc2e116c66c2d508b20284f1525140e00fc70",
+      "bytes": 9230,
+      "mode": "100644",
+      "producer": "com.synexia.m3.NebulaPaginationFreshParseFixedPoint20261018",
+      "producer_sdk": "8.17.1",
+      "canonical_source_commit": "ae4a5c0fd3c35ad78c5c070f35d5408457591110",
+      "license": "Apache-2.0",
+      "before_git_blob": "ed3136e1fe43d7e0aa0cfc1e4b9e770802a729de"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination/src/org/eclipse/nebula/widgets/pagination/collections/PageListHelper.java",
+      "before_sha256": "4d57e51cc1050b8cbf4f24221297cd521196d90b6239bffb073fe04320383688",
+      "after_sha256": "d8c8311c8e54355fd0fccaf439608b3d7142c4938f4d118c8dfdd14f205637d6",
+      "after_git_blob": "18181ffc3a478e239b310abdf9d3731ee010654f",
+      "bytes": 2369,
+      "mode": "100644",
+      "producer": "com.synexia.NebulaPageBoundaryAtoms",
+      "producer_sdk": "8.17.1",
+      "canonical_source_commit": "ae4a5c0fd3c35ad78c5c070f35d5408457591110",
+      "license": "EPL-2.0",
+      "before_git_blob": "a2f38ea434c91e7a642a0ab7e4cbfeb396e2afd9"
+    },
+    {
+      "path": "widgets/pagination/org.eclipse.nebula.widgets.pagination/src/org/eclipse/nebula/widgets/pagination/collections/BeanComparator.java",
+      "before_sha256": "19564a6f6d4612788356333c306db4d2a80de46cb24bb4e05bbb90782cf11b8a",
+      "after_sha256": "40b75e386fec078f139b74ee3af6d1cd857a28aa312813b3008d716eaa526eca",
+      "after_git_blob": "a491a1af505f641ecdd93aaf2ce8c914d3b64a6d",
+      "bytes": 2164,
+      "mode": "100644",
+      "producer": "com.synexia.NebulaPageBoundaryAtoms",
+      "producer_sdk": "8.17.1",
+      "canonical_source_commit": "ae4a5c0fd3c35ad78c5c070f35d5408457591110",
+      "license": "EPL-2.0",
+      "before_git_blob": "7cd5f79afde3666408c26eb30e27553ce42bc7a2"
+    }
+  ],
+  "scope": {
+    "full_tycho_build_run": false,
+    "native_ui_execution_run": false,
+    "remote_ci_result_claimed": false,
+    "workflow_files_changed": false,
+    "default_branch_write": false
+  },
+  "publication_lane": {
+    "separate_draft_branch": "work/synexia-nebula-page-atoms-20261018",
+    "base_branch": "master",
+    "receipt_path": ".m3/upstream-page-atoms/receipts/recipe-application-20261018.json",
+    "reason": "The existing recipe-first workflow excludes this pagination lane and its saved changed-path scope must remain intact."
+  },
+  "metadata_license": "Apache-2.0"
+}
