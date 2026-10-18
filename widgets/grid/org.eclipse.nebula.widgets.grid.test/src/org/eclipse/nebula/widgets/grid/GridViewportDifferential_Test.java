@@ -160,6 +160,37 @@ public class GridViewportDifferential_Test {
 		return oracle == null ? location(Grid.class) : new File(oracle).toURI().toURL();
 	}
 
+	/*
+	 * SWT.VIRTUAL tree Grids (G4 step 1): the items get their texts from a SetData listener that
+	 * counts the requests per item. Every step answers and paints as the oracle, and the SetData
+	 * report (total, items asked, items asked more than once) is part of each compared state, so
+	 * the candidate asks exactly the items stock asks, as often. The driver reads item texts by
+	 * column (getText(0)), which requests data in both modes alike.
+	 */
+	@Test
+	public void virtualTreeScriptsRequestDataLikeTheStockGrid() throws Exception {
+		final ClassLoader stockBuild = gridBuild(oracleClasses(), "original");
+		final ClassLoader candidateBuild = gridBuild(location(Grid.class), CANDIDATE);
+		for (int seed = 20; seed < 24; seed++) {
+			final int config = GridDifferentialDriver.VIRTUAL | seed % 4;
+			final Function<int[], Object> stock = driver(stockBuild, stockShell, config);
+			final Function<int[], Object> candidate = driver(candidateBuild, viewportShell, config);
+			stockShell.open();
+			viewportShell.open();
+			final String pixels = run(seed, config, stock, candidate);
+			final String report = String.valueOf(candidate.apply(new int[] { GridDifferentialDriver.STATE, 0, 0, 0 }));
+			System.out.println("GridViewportDifferential_Test: virtual seed " + seed + " config " + config + ", " + STEPS
+					+ " steps identical, " + pixels + ";" + report.substring(report.lastIndexOf(" | setdata")));
+			for (final Shell shell : new Shell[] { stockShell, viewportShell }) {
+				for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
+					if (!(child instanceof Button)) {
+						child.dispose();
+					}
+				}
+			}
+		}
+	}
+
 	@Test
 	public void seededScriptsAnswerAndPaintLikeTheStockGrid() throws Exception {
 		final ClassLoader stockBuild = gridBuild(oracleClasses(), "original");
@@ -294,7 +325,10 @@ public class GridViewportDifferential_Test {
 			final Object expected = stock.apply(op);
 			final Object actual = viewport.apply(op);
 			drain();
-			compare(log, "step " + step, expected + " | " + stock.apply(state), actual + " | " + viewport.apply(state));
+			final String stockState = expected + " | " + stock.apply(state);
+			compare(log, "step " + step, stockState, actual + " | " + viewport.apply(state));
+			// the last agreed answers, so a divergence report shows the state it started from
+			log.append("   = ").append(stockState.length() > 240 ? stockState.substring(0, 240) : stockState).append('\n');
 		}
 		// each Grid is captured with its own shell active and its focus holder focused, so window
 		// activation (borders, scroll bars) is the same on both sides

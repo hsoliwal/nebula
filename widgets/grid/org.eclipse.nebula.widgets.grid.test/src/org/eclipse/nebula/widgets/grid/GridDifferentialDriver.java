@@ -116,7 +116,8 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	 * @param config {@link #CELL_SELECTION} and {@link #DIFFERING_HEIGHTS} bits
 	 */
 	public GridDifferentialDriver(final Composite parent, final Integer x, final Integer config) {
-		final int style = SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.CHECK;
+		virtual = (config.intValue() & VIRTUAL) != 0;
+		final int style = SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.CHECK | (virtual ? SWT.VIRTUAL : 0);
 		// a large tree keeps its data in the items (the row-addressed default re-maps every row per insert)
 		grid = (config.intValue() & LARGE) != 0 ? new Grid(visualizer(parent), parent, style) : new Grid(parent, style);
 		grid.setBounds(x.intValue(), 5, 300, 330);
@@ -145,6 +146,14 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				root.setHeight(root.getHeight() + 9);
 			}
 		}
+		if (virtual) {
+			grid.addListener(SWT.SetData, e -> {
+				final GridItem item = (GridItem) e.item;
+				final String label = String.valueOf(item.getData(LABEL));
+				setData.merge(label, Integer.valueOf(1), Integer::sum);
+				texts(item, label);
+			});
+		}
 		grid.addListener(SWT.Selection, e -> record("Selection", e));
 		grid.addListener(SWT.DefaultSelection, e -> record("DefaultSelection", e));
 		grid.addListener(SWT.Expand, e -> record("Expand", e));
@@ -156,7 +165,18 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				parent.getDisplay().getSystemColor(SWT.COLOR_BLACK), null);
 	}
 
-	private static GridItem item(final GridItem item, final String text) {
+	private GridItem item(final GridItem item, final String text) {
+		if (virtual) {
+			// the SetData listener gives the texts, as a lazy content provider does
+			item.setData(LABEL, text);
+			return item;
+		}
+		return texts(item, text);
+	}
+
+	private static final String LABEL = "label";
+
+	private static GridItem texts(final GridItem item, final String text) {
 		for (int c = 0; c < COLUMNS; c++) {
 			item.setText(c, c == 0 ? text : text + ":" + c);
 		}
@@ -250,7 +270,8 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			return "height " + item.getHeight();
 		case 16:
 			item.setChecked(c % 2 == 0);
-			return "checked " + item.getChecked();
+			// by column: getChecked() requests SetData only in the default mode (D13), getChecked(0) in both
+			return "checked " + item.getChecked(0);
 		case 17:
 			return probe(b, c);
 		case 18:
@@ -397,6 +418,30 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		return bar == null ? "-" : bar.isVisible() + " " + bar.getSelection() + "/" + bar.getMaximum() + " thumb " + bar.getThumb();
 	}
 
+	/*
+	 * VIRTUAL configurations: the SetData requests so far, as a total, the number of items asked and
+	 * every item asked more than once (the SWT contract asks each item once until it is cleared)
+	 */
+	private String setDataReport() {
+		if (!virtual) {
+			return "";
+		}
+		int total = 0;
+		final StringBuilder repeated = new StringBuilder();
+		for (final java.util.Map.Entry<String, Integer> entry : setData.entrySet()) {
+			total += entry.getValue().intValue();
+			if (entry.getValue().intValue() > 1) {
+				repeated.append(' ').append(entry.getKey()).append('x').append(entry.getValue());
+			}
+		}
+		return " | setdata " + total + " items " + setData.size() + " repeated[" + repeated + "]";
+	}
+
+	/** @return the SetData requests per item label so far (VIRTUAL configurations) */
+	java.util.Map<String, Integer> setDataCounts() {
+		return setData;
+	}
+
 	private String state() {
 		final List<String> selection = new ArrayList<>();
 		for (final GridItem item : grid.getSelection()) {
@@ -412,7 +457,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				+ " | sel " + Arrays.toString(grid.getSelectionIndices()) + selection
 				+ " | cells " + cells
 				+ " | focus " + text(grid.getFocusItem()) + " " + grid.getFocusCell()
-				+ " | header " + grid.getHeaderHeight() + " footer " + grid.getFooterHeight()
+				+ " | header " + grid.getHeaderHeight() + " footer " + grid.getFooterHeight() + setDataReport()
 				+ " | events " + events;
 		events.setLength(0);
 		return answer;
