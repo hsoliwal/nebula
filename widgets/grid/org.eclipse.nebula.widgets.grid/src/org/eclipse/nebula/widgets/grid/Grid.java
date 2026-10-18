@@ -1727,7 +1727,25 @@ public class Grid extends Canvas {
 			seen[order[i]] = true;
 		}
 
-		if (columnGroups.length != 0) {
+		if (columnGroups.length != 0 && GridViewport.UPSTREAM_FIXES) {
+			// stock lets a finished group swallow the first column of the next one, so a group
+			// of one column followed by another group fails a valid order (archived bug 330224,
+			// UPSTREAM_DEFECTS.tsv D29): each group's columns must only be contiguous
+			GridColumnGroup currentGroup = null;
+			int colsInGroup = 0;
+			for (final int element : order) {
+				final GridColumn col = getColumn(element);
+				if (colsInGroup > 0) {
+					if (col.getColumnGroup() != currentGroup) {
+						SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+					}
+					colsInGroup--;
+					continue;
+				}
+				currentGroup = col.getColumnGroup();
+				colsInGroup = currentGroup == null ? 0 : currentGroup.getColumns().length - 1;
+			}
+		} else if (columnGroups.length != 0) {
 			GridColumnGroup currentGroup = null;
 			int colsInGroup = 0;
 

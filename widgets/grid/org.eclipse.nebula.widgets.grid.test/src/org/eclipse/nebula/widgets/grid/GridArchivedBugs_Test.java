@@ -233,6 +233,91 @@ public class GridArchivedBugs_Test {
 				grid.getCellSelectionCount());
 	}
 
+	/* bug 202517: GridCellRenderer.getRow() was the 1-based position in the painted window */
+	@Test
+	public void bug202517_cellRendererGetsTheRowIndex() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setWidth(100);
+		final java.util.Map<String, Integer> rows = new java.util.HashMap<>();
+		column.setCellRenderer(new DefaultCellRenderer() {
+			@Override
+			public void paint(final GC gc, final Object value) {
+				rows.put(((GridItem) value).getText(), Integer.valueOf(getRow()));
+				super.paint(gc, value);
+			}
+		});
+		for (int i = 0; i < 100; i++) {
+			new GridItem(grid, SWT.NONE).setText("row " + i);
+		}
+		// the scroll bar exists only after a first paint
+		flush(grid);
+		rows.clear();
+		grid.setTopIndex(40);
+		flush(grid);
+		final Integer painted = rows.get("row 42");
+		// the default mode passes the item's row index (D28); stock its 1-based window position
+		assertEquals(rows.toString(), Integer.valueOf(GridTestUtil.fixesUpstreamDefects() ? 42 : 3), painted);
+	}
+
+	/* bug 360798: getVisibleRange() listed every logically visible column, scrolled out or not */
+	@Test
+	public void bug360798_visibleRangeListsTheShownColumns() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		for (int c = 0; c < 20; c++) {
+			new GridColumn(grid, SWT.NONE).setWidth(100);
+		}
+		new GridItem(grid, SWT.NONE).setText("row");
+		flush(grid);
+		final int shown = grid.getVisibleRange().getColumns().length;
+		assertTrue(shown + " columns in the range of a 300-pixel window", shown <= 4);
+	}
+
+	/* bug 330224: setColumnOrder threw when the first group held a single column */
+	@Test
+	public void bug330224_columnOrderWithSingleColumnGroups() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		final GridColumnGroup first = new GridColumnGroup(grid, SWT.NONE);
+		new GridColumn(first, SWT.NONE).setWidth(50);
+		final GridColumnGroup middle = new GridColumnGroup(grid, SWT.NONE);
+		for (int c = 0; c < 3; c++) {
+			new GridColumn(middle, SWT.NONE).setWidth(50);
+		}
+		final GridColumnGroup last = new GridColumnGroup(grid, SWT.NONE);
+		new GridColumn(last, SWT.NONE).setWidth(50);
+		// the groups in reverse order, each group's columns kept together
+		final int[] order = { 4, 1, 2, 3, 0 };
+		if (!GridTestUtil.fixesUpstreamDefects()) {
+			// stock rejects the valid order (UPSTREAM_DEFECTS.tsv D29)
+			GridTestUtil.assertThrowsByMode(null, IllegalArgumentException.class, () -> grid.setColumnOrder(order));
+			return;
+		}
+		grid.setColumnOrder(order);
+		assertEquals(java.util.Arrays.toString(order), java.util.Arrays.toString(grid.getColumnOrder()));
+		// a column of a group placed apart from the rest of its group is still rejected
+		GridTestUtil.assertThrowsByMode(IllegalArgumentException.class, IllegalArgumentException.class,
+				() -> grid.setColumnOrder(new int[] { 1, 0, 2, 3, 4 }));
+	}
+
+	/* bug 273923: computeSize left no room for the last row when a horizontal scroll bar shows */
+	@Test
+	public void bug273923_preferredHeightShowsTheLastRowWithTheScrollBar() {
+		final Grid grid = new Grid(shell, SWT.H_SCROLL);
+		final GridColumn tree = new GridColumn(grid, SWT.NONE);
+		tree.setTree(true);
+		tree.setWidth(400);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		root.setText("root");
+		new GridItem(root, SWT.NONE).setText("child");
+		final org.eclipse.swt.graphics.Point size = grid.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		grid.setBounds(0, 0, 150, size.y);
+		flush(grid);
+		assertTrue("horizontal bar shown", grid.getHorizontalBar().getVisible());
+		assertTrue("the last row is shown completely", grid.isShown(root));
+	}
+
 	private static void mouse(final Grid grid, final int type, final int x, final int y) {
 		final Event event = new Event();
 		event.button = 1;
