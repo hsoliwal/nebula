@@ -36,7 +36,7 @@ public class BeanComparator implements Comparator {
 	}
 
 	public int compare(Object o1, Object o2) {
-		if ((o1 instanceof Comparable) && (o2 instanceof Comparable)) {
+		if (isComparablePair(o1, o2)) {
 			// Compare simple type like String, Integer etc
 			Comparable c1 = ((Comparable) o1);
 			Comparable c2 = ((Comparable) o2);
@@ -45,7 +45,7 @@ public class BeanComparator implements Comparator {
 
 		o1 = BeanUtils.getValue(o1, sortPropertyName);
 		o2 = BeanUtils.getValue(o2, sortPropertyName);
-		if ((o1 instanceof Comparable) && (o2 instanceof Comparable)) {
+		if (isComparablePair(o1, o2)) {
 			// Compare simple type like String, Integer etc
 			Comparable c1 = ((Comparable) o1);
 			Comparable c2 = ((Comparable) o2);
@@ -53,6 +53,11 @@ public class BeanComparator implements Comparator {
 		}
 
 		return 0;
+	}
+
+	/** One shared predicate for the direct-value and bean-property paths. */
+	private static boolean isComparablePair(Object first, Object second) {
+		return first instanceof Comparable && second instanceof Comparable;
 	}
 
 	@SuppressWarnings("unchecked")
