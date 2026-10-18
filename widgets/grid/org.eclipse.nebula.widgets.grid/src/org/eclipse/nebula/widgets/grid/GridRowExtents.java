@@ -96,6 +96,7 @@ final class GridRowExtents implements GridRowIndex {
 	 * @param extentAt extent of a position (non-negative)
 	 */
 	void rebuild(final int count, final IntUnaryOperator extentAt) {
+		valid = false;
 		ensureCapacity(count);
 		Arrays.fill(countTree, 0, count + 1, 0);
 		Arrays.fill(extentTree, 0, count + 1, 0L);
