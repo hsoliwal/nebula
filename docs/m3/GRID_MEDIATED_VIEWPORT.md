@@ -233,9 +233,11 @@ Findings (pre-existing, both modes, recorded for their own fixes):
 | Bugzilla 218708 (header click on an empty Grid crashed the focus renderer) | not reproducible on stock `5d0bcbb9`; the test documents it and guards the Selection event |
 | Bugzilla 454575 (`disposeAllItems` kept stale state) | verified fixed on the fork and on stock: selection, focus and scroll reset like `removeAll` |
 
-P2 next: 377617 (0-width wrapping header), 259087 (pack ignores the group text), 382376 (pack ignores the
-column span), 238601/218713 (no column Selection event with cell selection), 202517, 360798, 330224, 273923,
-385351 (verify).
+P2 done (D24-D27, GridArchivedBugs_Test, stock behaviour asserted in the original mode): 377617 (a hidden or
+0-width column no longer counts in the header height), 259087 (pack widens the column by the group header
+deficit), 382376 (a spanning cell counts only the part the spanned columns do not cover), 238601/218713 (the
+push release selects the clicked column cells; the column Selection event already fires in current stock).
+P2 to verify: 202517, 360798, 330224, 273923, 385351.
 
 ## Regression triage (coordinator item 1, 2026-10-16)
 

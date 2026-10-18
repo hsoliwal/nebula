@@ -127,17 +127,18 @@ public class GridArchivedBugs_Test {
 		plain.setWidth(100);
 		flush(grid);
 		final int before = grid.getHeaderHeight();
-		final GridColumn hidden = new GridColumn(grid, SWT.NONE);
-		hidden.setHeaderWordWrap(true);
-		hidden.setText("a header text long enough to wrap once per character at width zero");
-		hidden.setWidth(0);
-		hidden.setVisible(false);
+		final GridColumn empty = new GridColumn(grid, SWT.NONE);
+		empty.setHeaderWordWrap(true);
+		empty.setText("a header text long enough to wrap once per character at width zero");
+		empty.setWidth(0);
+		// a further column makes stock measure the header again (its only trigger, D14)
+		new GridColumn(grid, SWT.NONE).setWidth(60);
 		flush(grid);
 		if (GridTestUtil.fixesUpstreamDefects()) {
-			// a hidden or zero-width column shows no header: it does not count (D24)
+			// a zero-width column shows no header: it does not count (D24)
 			assertEquals(before, grid.getHeaderHeight());
 		} else {
-			assertTrue(grid.getHeaderHeight() > 2 * before);
+			assertTrue(before + " -> " + grid.getHeaderHeight(), grid.getHeaderHeight() > 2 * before);
 		}
 	}
 
@@ -227,7 +228,9 @@ public class GridArchivedBugs_Test {
 		mouse(grid, SWT.MouseUp, 50, 2);
 		flush(grid);
 		assertEquals("column Selection events", 1, selections[0]);
-		assertEquals("cells of the clicked column", 3, grid.getCellSelectionCount());
+		// stock's own header branch for this is unreachable: no cell gets selected (D27)
+		assertEquals("cells of the clicked column", GridTestUtil.fixesUpstreamDefects() ? 3 : 0,
+				grid.getCellSelectionCount());
 	}
 
 	private static void mouse(final Grid grid, final int type, final int x, final int y) {

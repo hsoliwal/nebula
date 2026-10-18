@@ -344,6 +344,14 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		event.button = 1;
 		event.x = b % Math.max(1, area.width);
 		event.y = c % Math.max(1, area.height);
+		// With cell selection, a header click selects the clicked column's cells in the default
+		// mode (UPSTREAM_DEFECTS.tsv D27, archived bugs 218713/238601) and nothing in stock: a
+		// listed divergence, asserted per mode by GridArchivedBugs_Test. The seeded scripts stay a
+		// strict parity oracle, so they park such clicks below the header, deterministically and
+		// identically on both sides; configs without cell selection keep clicking headers.
+		if (grid.getCellSelectionEnabled() && grid.getHeaderVisible() && event.y <= grid.getHeaderHeight()) {
+			event.y = Math.min(area.height - 1, grid.getHeaderHeight() + 1 + event.y);
+		}
 		event.stateMask = c % 4 == 0 ? SWT.MOD1 : 0;
 		grid.notifyListeners(SWT.MouseDown, event);
 		final Event up = new Event();
