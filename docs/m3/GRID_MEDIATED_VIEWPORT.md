@@ -446,6 +446,30 @@ DOOP note (rule 18): the selection position and the row-tree slot are two ints p
 text, colours, fonts, height, visibility and expansion still live in `GridItem` fields. Moving them into lanes of
 the row tree is the next DOOP leaf (the data visualizer already holds the cell data).
 
+## JaCoCo baseline (brief rule 15: 99% line and branch, 2026-10-18)
+
+[`grid-viewport/grid_coverage.sh`](grid-viewport/grid_coverage.sh) runs the Grid suite (614 tests) in one mode on
+the hidden desktop with the JaCoCo 0.8.15 agent and reports line and branch coverage of the viewport classes
+(`GridViewport*`, `GridRow*`, the selection lists, the native look, `GridGC*`, `GridPaintDAG`,
+`GridVirtualItemList`, `GridModelJobs`, `GridLazyIntPriorityFrontier`, `UpstreamFixes`, `WidgetMode`, the `model`
+package). Baseline, viewport mode, head 55492f26: 38 classes, **line 88.3 % (3,301 / 3,740), branch 77.1 %
+(1,883 / 2,442)**. That run left the anonymous iterators of the selection list out of the agent's include
+pattern (fixed in the script); the largest gaps:
+
+| Class | Line | Branch |
+|---|---|---|
+| GridRowSpanIndex | 58.9 % | 49.2 % |
+| GridNativeCellRenderer | 75.3 % | 66.9 % |
+| GridModelJobs | 43.3 % | 25.0 % |
+| RowStateLanes | 86.4 % | 68.0 % |
+| GridCellSelectionList | 68.4 % | 59.1 % |
+| GridSelectionList | 79.5 % | 76.7 % |
+| GridViewport | 84.9 % | 65.8 % |
+
+The changed code inside the upstream classes (`Grid`, `GridItem`, `GridColumn`) is not in this measure yet:
+those classes are mostly stock code, so their own percentage says little; their viewport hooks are measured
+through the classes above and the differential.
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |
