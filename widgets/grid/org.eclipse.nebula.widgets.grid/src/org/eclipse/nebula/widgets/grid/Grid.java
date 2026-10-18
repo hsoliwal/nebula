@@ -6614,7 +6614,7 @@ public class Grid extends Canvas {
 								gc.setClipping(originalClipping.intersection(cellRect));
 							}
 
-							column.getCellRenderer().setRow(i + 1);
+							column.getCellRenderer().setRow(GridViewport.UPSTREAM_FIXES ? row : i + 1); // D28: the row index (stock: 1-based window position)
 
 							column.getCellRenderer().setSelected(selectedItems.contains(item));
 							column.getCellRenderer().setFocus(isFocusControl());
@@ -6690,7 +6690,7 @@ public class Grid extends Canvas {
 					if (!fixed) {
 						emptyCellRenderer.setSelected(selectedItems.contains(item));
 						emptyCellRenderer.setFocus(isFocusControl());
-						emptyCellRenderer.setRow(i + 1);
+						emptyCellRenderer.setRow(GridViewport.UPSTREAM_FIXES ? row : i + 1); // D28: the row index (stock: 1-based window position)
 						emptyCellRenderer.setBounds(x, y, clientArea.width - x + 1, item.getHeight());
 						emptyCellRenderer.setColumn(columnCount);
 						emptyCellRenderer.paint(gc, item);
@@ -6745,7 +6745,7 @@ public class Grid extends Canvas {
 					emptyCellRenderer.setBounds(x, y, clientArea.width - x, itemHeight);
 					emptyCellRenderer.setFocus(false);
 					emptyCellRenderer.setSelected(false);
-					emptyCellRenderer.setRow(i + 1);
+					emptyCellRenderer.setRow(GridViewport.UPSTREAM_FIXES ? row : i + 1); // D28: the row index (stock: 1-based window position)
 				}
 
 				x += windowLeft;
