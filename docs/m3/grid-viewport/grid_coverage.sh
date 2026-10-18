@@ -6,7 +6,7 @@ OUT=K:/m3-work/agents/nebula-grid/out
 M=C:/Users/hsoliwal/.m2/repository/org/jacoco
 AGENT=$M/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar
 CLI=$M/org.jacoco.cli/0.8.15/org.jacoco.cli-0.8.15-nodeps.jar
-COV=K:/m3-work/runs/coverage/grid; mkdir -p $COV
+COV=G:/m3-scratch/grid/coverage; mkdir -p $COV
 INC='org.eclipse.nebula.widgets.grid.GridViewport*:org.eclipse.nebula.widgets.grid.GridRow*:org.eclipse.nebula.widgets.grid.GridSelectionList*:org.eclipse.nebula.widgets.grid.GridCellSelectionList*:org.eclipse.nebula.widgets.grid.GridNative*:org.eclipse.nebula.widgets.grid.GridGC*:org.eclipse.nebula.widgets.grid.GridPaintDAG*:org.eclipse.nebula.widgets.grid.GridVirtualItemList*:org.eclipse.nebula.widgets.grid.GridModelJobs*:org.eclipse.nebula.widgets.grid.GridLazyIntPriorityFrontier*:org.eclipse.nebula.widgets.grid.internal.UpstreamFixes*:org.eclipse.nebula.widgets.grid.internal.WidgetMode:org.eclipse.nebula.widgets.grid.model.*'
 SUITE=$(grep '^SUITE=' $OUT/ui_batch53.sh | sed 's/^SUITE="//; s/"$//')
 bash $OUT/run_hidden.sh 1800 $COV/run-$MODE.log "-javaagent:$AGENT=destfile=$COV/grid-$MODE.exec,includes=$INC" -Xmx2g -Dgrid.acceptance.roots=1000 -Dswt.widget.mode.Grid=$MODE -- $SUITE GridArchivedBugs_Test

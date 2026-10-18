@@ -12667,6 +12667,12 @@ public class Grid extends Canvas {
 		}
 	}
 
+	/** After {@link GridItem#clear(int, boolean)} or {@link GridItem#clearAll(boolean)}. */
+	void itemsCleared() {
+		dropResidentPayloads();
+		redraw();
+	}
+
 	/**
 	 * Recalculate the height of the header
 	 */

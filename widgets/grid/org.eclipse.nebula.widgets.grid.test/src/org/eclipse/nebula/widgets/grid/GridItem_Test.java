@@ -152,10 +152,25 @@ public class GridItem_Test {
     assertSame( items[ 5 ], items[ 0 ].getItem( 4 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetItem_InvalidIndex() {
     GridItem[] items = createGridItems( grid, 1, 10 );
-    items[ 0 ].getItem( 100 );
+    // the documented ERROR_INVALID_RANGE in the default mode (UPSTREAM_DEFECTS.tsv D30)
+    assertThrowsByMode( IllegalArgumentException.class, IndexOutOfBoundsException.class,
+                        () -> items[ 0 ].getItem( 100 ) );
+    assertThrowsByMode( IllegalArgumentException.class, IllegalArgumentException.class,
+                        () -> items[ 1 ].getItem( 0 ) );
+  }
+
+  @Test
+  public void testIndexOf_NoChildren() {
+    GridItem[] items = createGridItems( grid, 2, 0 );
+    // the documented -1 in the default mode; stock throws (UPSTREAM_DEFECTS.tsv D31)
+    if( fixesUpstreamDefects() ) {
+      assertEquals( -1, items[ 0 ].indexOf( items[ 1 ] ) );
+    } else {
+      assertThrowsByMode( null, IllegalArgumentException.class, () -> items[ 0 ].indexOf( items[ 1 ] ) );
+    }
   }
 
   @Test

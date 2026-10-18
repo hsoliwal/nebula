@@ -356,7 +356,11 @@ public class GridItem extends Item {
 
 		parentItem.newItem(this, index);
 
-		parentItem.indexOf(this);
+		if (!GridViewport.ENABLED) {
+			// stock's call has no effect but a linear search of the siblings, which made appending
+			// n children O(n^2); the viewport mode skips it
+			parentItem.indexOf(this);
+		}
 
 		if (parent.isVisible() && parent.isExpanded()) {
 			setVisible(true);
@@ -975,6 +979,11 @@ public class GridItem extends Item {
 	 */
 	public GridItem getItem(int index) {
 		checkWidget();
+		if (GridViewport.UPSTREAM_FIXES && (index < 0 || index >= getItemCount())) {
+			// documented above; stock throws IndexOutOfBoundsException, or an IllegalArgumentException
+			// without the SWT code when there are no children (UPSTREAM_DEFECTS.tsv D30)
+			SWT.error(SWT.ERROR_INVALID_RANGE);
+		}
         if (!hasChildren) {
             throw new IllegalArgumentException("GridItem has no children!");
         }
@@ -1001,6 +1010,120 @@ public class GridItem extends Item {
             return 0;
         }
 		return children.size();
+	}
+
+	/**
+	 * Sets the number of child items contained in the receiver, with the contract of
+	 * {@code TreeItem.setItemCount}: the children past the count are disposed, first to last, and
+	 * new children are appended after the last one. In an {@code SWT.VIRTUAL} Grid a new child
+	 * requests its data with {@code SWT.SetData} when it is first painted or its data is read;
+	 * otherwise its attributes are the defaults.
+	 *
+	 * @param count
+	 *            the number of child items (a negative count is taken as 0)
+	 * @throws SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 *             </li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *             thread that created the receiver</li>
+	 *             </ul>
+	 * @see SWT#VIRTUAL
+	 * @see SWT#SetData
+	 * @since 1.3
+	 */
+	public void setItemCount(int count) {
+		checkWidget();
+		final int target = Math.max(0, count);
+		final int current = getItemCount();
+		if (target < current) {
+			// TreeItem disposes the removed children in order; each disposes its own subtree
+			final GridItem[] removed = children.subList(target, current).toArray(new GridItem[current - target]);
+			for (final GridItem child : removed) {
+				if (!child.isDisposed()) {
+					child.dispose();
+				}
+			}
+		}
+		for (int i = current; i < target; i++) {
+			new GridItem(this, SWT.NONE);
+		}
+	}
+
+	/**
+	 * Clears the child item at the given zero-relative index in the receiver, with the contract of
+	 * {@code TreeItem.clear(int, boolean)}: its text, image, colours, font and check state return to
+	 * their defaults; in an {@code SWT.VIRTUAL} Grid they are requested again as needed.
+	 *
+	 * @param index
+	 *            the index of the child item to clear
+	 * @param all
+	 *            {@code true} to clear the child's own children recursively
+	 * @throws IllegalArgumentException
+	 *             <ul>
+	 *             <li>ERROR_INVALID_RANGE - if the index is not between 0 and
+	 *             the number of child items minus 1 (inclusive)</li>
+	 *             </ul>
+	 * @throws SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 *             </li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *             thread that created the receiver</li>
+	 *             </ul>
+	 * @see SWT#VIRTUAL
+	 * @see SWT#SetData
+	 * @since 1.3
+	 */
+	public void clear(int index, boolean all) {
+		checkWidget();
+		if (index < 0 || index >= getItemCount()) {
+			SWT.error(SWT.ERROR_INVALID_RANGE);
+		}
+		children.get(index).clearAsTreeItem(all);
+		parent.itemsCleared();
+	}
+
+	/**
+	 * Clears all child items of the receiver, with the contract of
+	 * {@code TreeItem.clearAll(boolean)}: their text, image, colours, font and check state return
+	 * to their defaults; in an {@code SWT.VIRTUAL} Grid they are requested again as needed.
+	 *
+	 * @param all
+	 *            {@code true} to clear the children's own children recursively
+	 * @throws SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 *             </li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *             thread that created the receiver</li>
+	 *             </ul>
+	 * @see SWT#VIRTUAL
+	 * @see SWT#SetData
+	 * @since 1.3
+	 */
+	public void clearAll(boolean all) {
+		checkWidget();
+		if (getItemCount() == 0) {
+			return;
+		}
+		for (final GridItem child : children) {
+			child.clearAsTreeItem(all);
+		}
+		parent.itemsCleared();
+	}
+
+	/* the TreeItem clear: the per-column data too, which the original mode's clear(boolean) keeps */
+	private void clearAsTreeItem(boolean all) {
+		if (!GridViewport.UPSTREAM_FIXES) {
+			parent.getDataVisualizer().clearRow(this);
+		}
+		clear(false);
+		if (all && hasChildren) {
+			for (final GridItem child : children) {
+				child.clearAsTreeItem(true);
+			}
+		}
 	}
 
 	/**
@@ -1035,6 +1158,10 @@ public class GridItem extends Item {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (!hasChildren) {
+            if (GridViewport.UPSTREAM_FIXES) {
+                // documented above: no item found is -1 (UPSTREAM_DEFECTS.tsv D31)
+                return -1;
+            }
             throw new IllegalArgumentException("GridItem has no children!");
         }
 
