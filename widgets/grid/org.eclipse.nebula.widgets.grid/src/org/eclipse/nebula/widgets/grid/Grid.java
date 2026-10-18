@@ -4775,7 +4775,12 @@ public class Grid extends Canvas {
 			}
 		}
 
-		onScrollSelection(true);
+		// a programmatic column scroll: the visible columns change, the top row does not. Stock ends with
+		// redraw() and keeps its top row; onScrollSelection would recompute it from the vertical bar,
+		// which stock does only for a user scroll (found by the virtual-tree differential, seed 22)
+		invalidateVisibleColumnCache();
+		fireViewportChanged();
+		redraw();
 	}
 
 	/**

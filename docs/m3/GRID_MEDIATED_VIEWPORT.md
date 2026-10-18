@@ -448,6 +448,39 @@ DOOP note (rule 18): the selection position and the row-tree slot are two ints p
 text, colours, fonts, height, visibility and expansion still live in `GridItem` fields. Moving them into lanes of
 the row tree is the next DOOP leaf (the data visualizer already holds the cell data).
 
+## Leaf G4, step 1: SWT.VIRTUAL tree Grids on the existing API (2026-10-18)
+
+Stock Nebula has no lazy child count: a VIRTUAL tree Grid builds every item, and only the data comes lazily
+through `SWT.SetData`. The differential driver has a `VIRTUAL` configuration bit: the Grid is `SWT.VIRTUAL`, items
+carry a label only, and a SetData listener sets their texts and counts the requests per item. The report of each
+compared state carries the requests (total, items asked, items asked more than once), so the candidate must ask
+exactly the items stock asks, as often. The driver reads texts and check states by column (`getText(0)`,
+`getChecked(0)`), which request data in both modes alike (the no-argument getters request it only in the default
+mode, D13).
+
+`virtualTreeScriptsRequestDataLikeTheStockGrid`: 4 seeds x 160 steps (VIRTUAL with the cell-selection and
+differing-heights bits) identical in answers, pixels and SetData requests against stock `5d0bcbb9`, candidates
+`viewport` and `original`; every item is asked once (185-257 requests per seed, none repeated).
+
+It found one original-mode deviation from stock, fixed in both modes: `showColumn` ended with
+`onScrollSelection(true)`, which also recomputes the top row from the vertical bar. Stock ends with `redraw()` and
+keeps its top row (it recomputes only for a user scroll), so after `setItemHeight` had clamped the bar the two
+showed different rows (seed 22, step 13). `showColumn` now invalidates the visible-column cache, fires the
+viewport event and redraws, like stock.
+
+`probe/VirtualTreeProbe` (hidden desktop; roots x 99 children, eager items as the API requires):
+
+| | stock `5d0bcbb9` | original | viewport |
+|---|---|---|---|
+| heap per item | 262 B | 288 B | 287 B |
+| SetData after the first paint / 40 scroll steps / expanding every tenth root | 20 / 78 / 97 | 20 / 78 / 97 | 21 / 80 / 100 (the native look's shorter rows show one more row) |
+| scroll step, 100,000 items | 13.4 ms | 19.4 ms | 10.7 ms |
+| scroll step, 1,000,000 items | - | 129.5 ms | 10.9 ms |
+| build, 1,000,000 items | - | 35.3 s | 58.2 s (to investigate: the row tree appends cost more per item than the list) |
+
+Step 2 (lead decision 2026-10-18): `GridItem.setItemCount(int)` and the TreeItem virtual contract as an additive
+API, backed by sparse child facades over the row tree in the viewport mode.
+
 ## JaCoCo baseline (brief rule 15: 99% line and branch, 2026-10-18)
 
 [`grid-viewport/grid_coverage.sh`](grid-viewport/grid_coverage.sh) runs the Grid suite (614 tests) in one mode on
