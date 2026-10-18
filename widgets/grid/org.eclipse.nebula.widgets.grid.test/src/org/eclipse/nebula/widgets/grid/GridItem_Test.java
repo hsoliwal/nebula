@@ -410,10 +410,10 @@ public class GridItem_Test {
     GridItem item = new GridItem( grid, SWT.NONE );
     grid.addListener( SWT.SetData, new LoggingListener() );
     item.setText( "foo" );
-    // Nebula: setting a text does not mark the item as answered: its data is still requested once
+    // the text is the item's data, as TreeItem; stock still requests it once (D35)
     assertEquals( "foo", item.getText( 0 ) );
     item.getText( 0 );
-    assertEquals( 1, eventLog.size() );
+    assertEquals( fixesUpstreamDefects() ? 0 : 1, eventLog.size() );
   }
 
   @Test
@@ -427,8 +427,8 @@ public class GridItem_Test {
     Event event = eventLog.get( 0 );
     assertSame( grid, event.widget );
     assertSame( items[ 4 ], event.item );
-    // Nebula: the index of a root item is its row index (the index of a child is its index in its parent)
-    assertEquals( 4, event.index );
+    // the index among the roots, as for a child in its parent and as TreeItem; stock gives the row (D33)
+    assertEquals( fixesUpstreamDefects() ? 1 : 4, event.index );
   }
 
   @Test

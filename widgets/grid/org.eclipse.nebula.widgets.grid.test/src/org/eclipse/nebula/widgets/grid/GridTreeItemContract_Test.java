@@ -97,8 +97,8 @@ public class GridTreeItemContract_Test {
 	}
 
 	private void run(final int seed, final int style) {
-		final Side tree = new TreeSide(new Tree(shell, style));
-		final Side grid = new GridSide(new Grid(shell, style));
+		final Side tree = new TreeSide(new Tree(shell, style), style);
+		final Side grid = new GridSide(new Grid(shell, style), style);
 		final Random random = new Random(0x7E1AL + seed);
 		final StringBuilder log = new StringBuilder("seed " + seed + " style " + Integer.toHexString(style) + "\n");
 		for (int step = 0; step < STEPS; step++) {
@@ -121,6 +121,12 @@ public class GridTreeItemContract_Test {
 	private abstract static class Side {
 		private final StringBuilder events = new StringBuilder();
 		private int ids;
+		final boolean virtual, check;
+
+		Side(final int style) {
+			virtual = (style & SWT.VIRTUAL) != 0;
+			check = (style & SWT.CHECK) != 0;
+		}
 
 		abstract Item root(int index);
 
@@ -167,7 +173,9 @@ public class GridTreeItemContract_Test {
 		final void setData(final Event event) {
 			final Item item = (Item) event.item;
 			final String path = path(item);
-			events.append("SetData(").append(id(item)).append(' ').append(path).append(" index ").append(event.index)
+			// the original mode gives a root its row, stock (D33): compared in the default mode only
+			final String index = parentOf(item) == null && !modeFixesStock() ? "-" : String.valueOf(event.index);
+			events.append("SetData(").append(id(item)).append(' ').append(path).append(" index ").append(index)
 					.append(") ");
 			setText(item, "t" + path);
 		}
@@ -192,15 +200,34 @@ public class GridTreeItemContract_Test {
 
 		final String apply(final int[] op) {
 			final Item item = pick(op[1]);
+			final String id = id(item);
 			String answer;
 			try {
 				answer = run(op[0], item, op[2], op[3]);
 			} catch (final IllegalArgumentException | org.eclipse.swt.SWTException e) {
 				answer = "threw " + e.getClass().getSimpleName() + " " + e.getMessage();
 			}
-			final String result = id(item) + " " + answer + " | " + events;
+			final String result = id + " " + answer + " | " + (modeFixesStock() ? events.toString() : sortDisposes());
 			events.setLength(0);
 			return result;
+		}
+
+		/*
+		 * The original mode disposes descendants in stock's order (D34): compared as a set there.
+		 * SetData events of a step all come before its disposal, so they keep their order.
+		 */
+		private String sortDisposes() {
+			final StringBuilder kept = new StringBuilder();
+			final java.util.List<String> disposes = new java.util.ArrayList<>();
+			for (final String token : events.toString().split("(?<=\\) )")) {
+				if (token.startsWith("Dispose(")) {
+					disposes.add(token);
+				} else {
+					kept.append(token);
+				}
+			}
+			java.util.Collections.sort(disposes);
+			return kept + String.join("", disposes);
 		}
 
 		private String run(final int kind, final Item item, final int b, final int c) {
@@ -230,6 +257,10 @@ public class GridTreeItemContract_Test {
 				}
 				return "kept";
 			case 7:
+				if (virtual && !modeFixesStock()) {
+					// stock: a text set is no data, and SetData overwrites it (D35)
+					return "skipped (D35)";
+				}
 				setText(item, "s" + b % 100);
 				return "set";
 			case 8:
@@ -240,10 +271,18 @@ public class GridTreeItemContract_Test {
 				child(item, (b & 1) == 0 ? n : -1 - b % 3);
 				return "no exception";
 			case 9:
+				if (!check) {
+					// a Tree without SWT.CHECK ignores setChecked; a Grid keeps it (outside this API)
+					return "no check style";
+				}
+				if (virtual && !modeFixesStock()) {
+					// stock: a check state set is no data (D35)
+					return "skipped (D35)";
+				}
 				setChecked(item, (b & 1) == 0);
 				return "checked " + checked(item);
 			default:
-				return "checked " + checked(item);
+				return check ? "checked " + checked(item) : "no check style";
 			}
 		}
 
@@ -267,7 +306,8 @@ public class GridTreeItemContract_Test {
 	private static final class TreeSide extends Side {
 		private final Tree tree;
 
-		TreeSide(final Tree tree) {
+		TreeSide(final Tree tree, final int style) {
+			super(style);
 			this.tree = tree;
 			for (int r = 0; r < ROOTS; r++) {
 				named(new TreeItem(tree, SWT.NONE), r);
@@ -349,7 +389,8 @@ public class GridTreeItemContract_Test {
 	private static final class GridSide extends Side {
 		private final Grid grid;
 
-		GridSide(final Grid grid) {
+		GridSide(final Grid grid, final int style) {
+			super(style);
 			this.grid = grid;
 			final GridColumn column = new GridColumn(grid, SWT.NONE);
 			column.setTree(true);
@@ -360,6 +401,16 @@ public class GridTreeItemContract_Test {
 			grid.addListener(SWT.SetData, this::setData);
 		}
 
+		/*
+		 * The original mode keeps stock's child getters, which request no data (D32); the script then
+		 * requests the receiver's data where TreeItem's getters do, so the new API is compared alike
+		 */
+		private void emulateTreeRequest(final Item item) {
+			if (virtual && !modeFixesStock()) {
+				((GridItem) item).getText(0);
+			}
+		}
+
 		@Override
 		Item root(final int index) {
 			return grid.getRootItem(index);
@@ -367,11 +418,15 @@ public class GridTreeItemContract_Test {
 
 		@Override
 		int count(final Item item) {
+			emulateTreeRequest(item);
 			return ((GridItem) item).getItemCount();
 		}
 
 		@Override
 		Item child(final Item item, final int index) {
+			if (index >= 0) {
+				emulateTreeRequest(item);
+			}
 			return ((GridItem) item).getItem(index);
 		}
 

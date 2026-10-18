@@ -8297,7 +8297,7 @@ public class Grid extends Canvas {
 				newEvent.item = item;
 
 				notifyListeners(SWT.DefaultSelection, newEvent);
-			} else if (item.getItemCount() > 0) {
+			} else if (item.childCount() > 0) {
 				item.setExpanded(!item.isExpanded());
 
 				if (item.isExpanded()) {
@@ -8739,7 +8739,7 @@ public class Grid extends Canvas {
 				intendedFocusColumn = newColumnFocus;
 			} else {
 				if (impliedFocusItem != null && impliedFocusItem.hasChildren()) {
-					newSelection = impliedFocusItem.getItem(0);
+					newSelection = impliedFocusItem.childAt(0);
 				}
 			}
 			break;
@@ -9873,16 +9873,16 @@ public class Grid extends Canvas {
 				index = rootItems.get(index).getRowIndex();
 			}
 		} else if (!root) {
-			if (index == -1 || index >= item.getParentItem().getItemCount()) {
+			if (index == -1 || index >= item.getParentItem().childCount()) {
 				GridItem rightMostDescendent = item.getParentItem();
 
-				while (rightMostDescendent.getItemCount() > 0) {
-					rightMostDescendent = rightMostDescendent.getItem(rightMostDescendent.getItemCount() - 1);
+				while (rightMostDescendent.childCount() > 0) {
+					rightMostDescendent = rightMostDescendent.childAt(rightMostDescendent.childCount() - 1);
 				}
 
 				index = rightMostDescendent.getRowIndex() + 1;
 			} else {
-				index = item.getParentItem().getItem(index).getRowIndex();
+				index = item.getParentItem().childAt(index).getRowIndex();
 			}
 		}
 
@@ -12665,6 +12665,15 @@ public class Grid extends Canvas {
 		if (items.size() > 0) {
 			clear(0, items.size() - 1, allChildren);
 		}
+	}
+
+	/**
+	 * @param item a root item
+	 * @return the {@code SWT.SetData} index of a root: its index among the roots of a tree Grid,
+	 *         its row in a flat one (the same there)
+	 */
+	int rootIndexForSetData(final GridItem item) {
+		return isTree ? rootItems.indexOf(item) : item.getRowIndex();
 	}
 
 	/** After {@link GridItem#clear(int, boolean)} or {@link GridItem#clearAll(boolean)}. */

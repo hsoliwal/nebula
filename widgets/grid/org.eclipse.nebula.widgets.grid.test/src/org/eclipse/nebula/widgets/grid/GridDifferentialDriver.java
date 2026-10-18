@@ -397,6 +397,8 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			item(new GridItem(grid, SWT.NONE, b % (grid.getRootItemCount() + 1)), text);
 		} else {
 			final GridItem parent = item.getParentItem() != null ? item.getParentItem() : item;
+			// the parent's data first: its getItemCount requests it in the default mode only (D32)
+			parent.getText(0);
 			item(new GridItem(parent, SWT.NONE, b % (parent.getItemCount() + 1)), text);
 		}
 		return "inserted " + text;
