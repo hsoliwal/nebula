@@ -388,14 +388,11 @@ public class GridItem extends Item {
 			} else {
 				parent.removeRootItem(this);
 			}
-            if (hasChildren) {
+            if (hasChildren && children instanceof GridChildList) {
+                disposeChildrenBackwards(0, children.size());
+            } else if (hasChildren) {
                 for (int i = children.size() - 1; i >= 0; i--) {
-                    final GridItem child = childIfMaterialized(i);
-                    if (child != null) {
-                        child.dispose();
-                    } else {
-                        removeUnreadChild(i);
-                    }
+                    children.get(i).dispose();
                 }
             }
 		}
@@ -430,12 +427,29 @@ public class GridItem extends Item {
 				: children.get(index);
 	}
 
-	/* removes a child that has no item: its row only */
-	private void removeUnreadChild(int index) {
+	/*
+	 * Disposes the children [from, to) from the last (each row removal then moves no row of a
+	 * sibling still to go): an item with its subtree, a run of children without items at once
+	 */
+	private void disposeChildrenBackwards(int from, int to) {
 		final GridChildList list = childList();
-		parent.removeVirtualRow(list.slot(index));
-		list.remove(index);
-		hasChildren = !list.isEmpty();
+		int end = to;
+		while (end > from) {
+			final GridItem child = list.materialized(end - 1);
+			if (child != null) {
+				child.dispose();
+				end--;
+				continue;
+			}
+			int start = end - 1;
+			while (start > from && list.materialized(start - 1) == null) {
+				start--;
+			}
+			parent.removeVirtualRows(list, start, end);
+			list.removeRange(start, end);
+			hasChildren = !list.isEmpty();
+			end = start;
+		}
 	}
 
 	/** @return the row of the last row of this item's subtree (makes no item) */
@@ -452,6 +466,12 @@ public class GridItem extends Item {
 			}
 			last = child;
 		}
+	}
+
+	/** @return the row of the child at {@code index} (makes no item) */
+	int childRowAt(int index) {
+		final GridItem child = childIfMaterialized(index);
+		return child != null ? child.getRowIndex() : parent.rowOfSlot(childList().slot(index));
 	}
 
 	/** Appends children that have rows but no items (see {@link Grid#appendVirtualChildren}). */
@@ -1171,14 +1191,8 @@ public class GridItem extends Item {
 				child.sendDescendantDisposes();
 			}
 		}
-		for (int i = to - 1; i >= from; i--) {
-			final GridItem child = list.materialized(i);
-			if (child == null) {
-				removeUnreadChild(i);
-			} else if (!child.isDisposed()) {
-				child.dispose();
-			}
-		}
+		// a listener may have disposed some of them meanwhile
+		disposeChildrenBackwards(Math.min(from, list.size()), Math.min(to, list.size()));
 	}
 
 	/**

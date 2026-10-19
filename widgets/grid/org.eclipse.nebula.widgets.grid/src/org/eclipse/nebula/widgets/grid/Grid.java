@@ -9844,9 +9844,8 @@ public class Grid extends Canvas {
 		final int row = owner.lastDescendantRow() + 1;
 		final int weight = owner.isVisible() && owner.isExpanded() ? itemHeight + 1 : 0;
 		owner.appendChildSlots(tree.insertUnread(row, owner, count, weight));
-		for (int i = 0; i < count; i++) {
-			insertDataRow(row + i);
-		}
+		final GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.insertRows(this, row, count);
 		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 		if (weight > 0) {
 			currentVisibleItems += count;
@@ -9858,34 +9857,47 @@ public class Grid extends Canvas {
 	}
 
 	/**
-	 * Removes a child nobody has read (its parent shrinks or is disposed): no item, so no event;
-	 * the row, its data row and its selected cells go.
+	 * Removes children nobody has read (their parent shrinks or is disposed): no item, so no
+	 * event; the rows, their data rows and their selected cells go. Such children have no
+	 * descendants, so siblings next to each other have rows next to each other.
 	 *
-	 * @param slot its row-tree slot
+	 * @param list the parent's children
+	 * @param from the first child to remove
+	 * @param to   the child after the last to remove; [from, to) all have no item
 	 */
-	void removeVirtualRow(final int slot) {
+	void removeVirtualRows(final GridChildList list, final int from, final int to) {
 		dropResidentPayloads();
 		final GridRowTree tree = rowTree();
-		final int row = tree.rowOfSlotIndex(slot);
-		final boolean wasVisible = tree.weightOf(slot) > 0;
-		tree.removeUnread(slot);
-		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
-		if (usesRowAddressedDataVisualizer()) {
-			removeDataRow(row);
+		final int row = tree.rowOfSlotIndex(list.slot(from));
+		final int count = to - from;
+		int visibleRows = 0;
+		for (int i = to - 1; i >= from; i--) {
+			final int slot = list.slot(i);
+			if (tree.weightOf(slot) > 0) {
+				visibleRows++;
+			}
+			tree.removeUnread(slot);
 		}
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
+		final GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.removeRows(this, row, count);
 		if (disposing) {
 			return;
 		}
-		if (deselectCellsOfRow(row)) {
+		boolean deselected = false;
+		for (int r = row; r < row + count; r++) {
+			deselected |= deselectCellsOfRow(r);
+		}
+		if (deselected) {
 			updateColumnSelection();
 		}
-		if (wasVisible) {
-			currentVisibleItems--;
-		}
+		currentVisibleItems -= visibleRows;
 		scrollValuesObsolete = true;
 		topIndex = -1;
 		bottomIndex = -1;
 		redraw();
+		// as removeItem: the scrollbars now (see 375327)
+		updateScrollbars();
 	}
 
 	/**
@@ -10031,16 +10043,12 @@ public class Grid extends Canvas {
 				index = rootItems.get(index).getRowIndex();
 			}
 		} else if (!root) {
+			// the rows of the right-most descendant and of a sibling, without making the item of a
+			// child nobody has read (G4 step 2c); the same rows as stock's walk
 			if (index == -1 || index >= item.getParentItem().childCount()) {
-				GridItem rightMostDescendent = item.getParentItem();
-
-				while (rightMostDescendent.childCount() > 0) {
-					rightMostDescendent = rightMostDescendent.childAt(rightMostDescendent.childCount() - 1);
-				}
-
-				index = rightMostDescendent.getRowIndex() + 1;
+				index = item.getParentItem().lastDescendantRow() + 1;
 			} else {
-				index = item.getParentItem().childAt(index).getRowIndex();
+				index = item.getParentItem().childRowAt(index);
 			}
 		}
 

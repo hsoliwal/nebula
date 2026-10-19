@@ -18,6 +18,8 @@ import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
+
 /**
  * The children of an item of an {@code SWT.VIRTUAL} tree Grid in the viewport mode (G4 step 2c):
  * two lanes in child order, the row-tree slot of every child and its {@link GridItem}, which is
@@ -154,12 +156,22 @@ final class GridChildList extends AbstractList<GridItem> {
 				return index;
 			}
 		}
-		for (int i = 0; i < size; i++) {
+		// an item that left the row tree (being disposed): children go from the last, so search back
+		for (int i = size - 1; i >= 0; i--) {
 			if (items[i] == o) {
 				return i;
 			}
 		}
 		return -1;
+	}
+
+	@Override
+	protected void removeRange(final int from, final int to) {
+		System.arraycopy(slots, to, slots, from, size - to);
+		System.arraycopy(items, to, items, from, size - to);
+		Arrays.fill(items, size - (to - from), size, null);
+		size -= to - from;
+		modCount++;
 	}
 
 	@Override

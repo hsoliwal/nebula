@@ -25,6 +25,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
@@ -43,6 +44,7 @@ public class GridSparseChildren_Test {
 
 	private Display display;
 	private Shell shell;
+	private Button focusSink;
 
 	@Before
 	public void setUp() {
@@ -50,6 +52,8 @@ public class GridSparseChildren_Test {
 		display = Display.getDefault();
 		shell = new Shell(display);
 		shell.setBounds(10, 10, 700, 420);
+		focusSink = new Button(shell, SWT.PUSH);
+		focusSink.setBounds(680, 400, 10, 10);
 	}
 
 	@After
@@ -65,6 +69,8 @@ public class GridSparseChildren_Test {
 			final Side sparse = new Side(true, 5);
 			final Side eager = new Side(false, 345);
 			shell.open();
+			// neither Grid has the focus, which would draw a focus rectangle in one of them
+			focusSink.setFocus();
 			flush();
 			final Random random = new Random(0x5BA75EL + seed);
 			final StringBuilder log = new StringBuilder("seed " + seed + "\n");
