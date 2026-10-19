@@ -34,6 +34,8 @@ if [ "${1:-}" = stock ]; then
   compile "$OUT/stock-classes" "$SWT;$DEPS" "$OUT/stock-src/$B"
 fi
 compile "$OUT/test-classes" "$OUT/gallery-classes;$SWT;$DEPS;$TESTDEPS" "$WT/$T"
-[ -d "$WT/$E" ] && compile "$OUT/example-classes" "$OUT/gallery-classes;$SWT;$DEPS" "$WT/$E" | head -3
+EX=examples/org.eclipse.nebula.examples/src/org/eclipse/nebula/examples
+UI="$D/org.eclipse.ui.workbench-3.140.0.jar;$D/org.eclipse.ui-3.209.100.jar;$D/org.eclipse.core.runtime-3.35.0.jar;$D/org.eclipse.osgi-3.24.300.jar;$D/org.eclipse.equinox.registry-3.12.600.jar;$D/org.eclipse.core.jobs-3.15.900.jar"
+compile "$OUT/example-classes" "$OUT/gallery-classes;$SWT;$DEPS;$UI" "$WT/$E" "$WT/$EX/AbstractExampleTab.java" "$WT/$EX/ButtonFactory.java" "$WT/$EX/ListenersDialog.java" "$WT/$EX/ExamplesView.java"
 SN=examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/gallery
 compile "$OUT/snippet-classes" "$OUT/gallery-classes;$SWT;$DEPS" "$WT/$SN"
