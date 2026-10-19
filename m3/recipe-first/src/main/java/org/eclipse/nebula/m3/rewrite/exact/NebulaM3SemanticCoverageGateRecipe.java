@@ -84,13 +84,17 @@ public final class NebulaM3SemanticCoverageGateRecipe extends Recipe {
                 if (document.isCharsetBomMarked()
                         || (document.getCharset() != null
                                 && !StandardCharsets.UTF_8.equals(document.getCharset()))) {
-                    throw new IllegalStateException("M3_SEMANTIC_COVERAGE_REQUIRES_UTF8_NO_BOM");
+                    context.getOnError().accept(new IllegalStateException(
+                            "M3_SEMANTIC_COVERAGE_REQUIRES_UTF8_NO_BOM"));
+                    return document;
                 }
                 if (AFTER_SHA256.equals(hash)) {
                     return document;
                 }
                 if (!BEFORE_SHA256.equals(hash) || !before.equals(current)) {
-                    throw new IllegalStateException("M3_SEMANTIC_COVERAGE_PREIMAGE_DRIFT:" + path);
+                    context.getOnError().accept(new IllegalStateException(
+                            "M3_SEMANTIC_COVERAGE_PREIMAGE_DRIFT:" + path));
+                    return document;
                 }
                 Xml.Document parsed = parse(after, context);
                 return parsed.withId(document.getId())
