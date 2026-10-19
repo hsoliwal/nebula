@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Nebula original LED nested native GC paint scope
+on:
+  pull_request:
+    paths:
+      - 'widgets/led/org.eclipse.nebula.widgets.led/src/org/eclipse/nebula/widgets/led/BaseLED.java'
+      - 'widgets/led/org.eclipse.nebula.widgets.led/tests/org/eclipse/nebula/widgets/led/LEDNestedGcScopeProof.java'
+      - 'widgets/led/org.eclipse.nebula.widgets.led/run-gc-scope-proof.sh'
+      - '.github/workflows/m3-led-original-gc-scope-20261019.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  java21-reentrancy-differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compare old and new nested GC callback/lifetime contracts
+        run: bash widgets/led/org.eclipse.nebula.widgets.led/run-gc-scope-proof.sh
