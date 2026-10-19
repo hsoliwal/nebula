@@ -2029,6 +2029,10 @@ public class GridItem extends Item {
 			parent.viewport.rowChanged(this);
 		}
 		parent.hasDifferingHeights = true;
+		if (parent.rowExtentChanged(this)) {
+			// G7: the row on screen repainted from its top, or nothing for a row off screen
+			return;
+		}
 		if (isVisible()) {
 			int myIndex = this.getRowIndex();
             // note: cannot use Grid#isShown() here, because that returns false

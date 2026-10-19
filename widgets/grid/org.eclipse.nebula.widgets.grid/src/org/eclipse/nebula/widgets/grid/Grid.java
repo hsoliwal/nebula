@@ -12031,7 +12031,75 @@ public class Grid extends Canvas {
 		if (prefetching) {
 			return;
 		}
-		redraw();
+		if (!redrawRow(item)) {
+			redraw();
+		}
+	}
+
+	/* paints of one row's rectangle, and changes left to the next paint (package-private counters) */
+	int rowDeltaPaints;
+	int rowDeltaSkips;
+
+	/**
+	 * One row's data changed (G7, one model with deltas): on screen, that row's rectangle is
+	 * repainted; off screen or hidden, nothing is, since the painted rows and the scroll extents
+	 * do not change. Only in the viewport mode with the window known, and when a row can paint
+	 * nothing outside its rectangle (no spans, pinned planes or auto height) and no body paint is
+	 * frozen.
+	 *
+	 * @param item the item whose row changed
+	 * @return whether the change was handled ({@code false}: the caller repaints the Grid)
+	 */
+	private boolean redrawRow(final GridItem item) {
+		if (viewport == null || usesSparseVirtualItems() || hasSpanning || autoHeight || frozenPlanes != 0
+				|| pinnedTopRows + pinnedBottomRows > 0 || topIndex < 0 || bottomIndex < 0 || item.isDisposed()) {
+			return false;
+		}
+		final int row = item.getRowIndex();
+		if (row < 0) {
+			return false;
+		}
+		if (row < topIndex || row > bottomIndex || !item.isVisible()) {
+			rowDeltaSkips++;
+			return true;
+		}
+		final Rectangle area = getClientArea();
+		final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(topIndex, row);
+		redraw(area.x, y, area.width, item.getHeight() + 1, false);
+		rowDeltaPaints++;
+		return true;
+	}
+
+	/**
+	 * One row's height changed (G7): on screen, the rows from it down repaint and the bottom row
+	 * is recomputed; off screen or hidden, only the row index's extents change (already done by
+	 * the caller) and the scroll values are left to the next paint, since the rows on screen and
+	 * the row-based scroll bar do not move.
+	 *
+	 * @param item the item whose height changed
+	 * @return whether the change was handled ({@code false}: the caller repaints as stock)
+	 */
+	boolean rowExtentChanged(final GridItem item) {
+		if (viewport == null || usesSparseVirtualItems() || hasSpanning || frozenPlanes != 0
+				|| pinnedTopRows + pinnedBottomRows > 0 || topIndex < 0 || bottomIndex < 0 || item.isDisposed()) {
+			return false;
+		}
+		final int row = item.getRowIndex();
+		if (row < 0) {
+			return false;
+		}
+		if (row < topIndex || row > bottomIndex || !item.isVisible()) {
+			scrollValuesObsolete = true;
+			rowDeltaSkips++;
+			return true;
+		}
+		final Rectangle area = getClientArea();
+		final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(topIndex, row);
+		bottomIndex = -1;
+		scrollValuesObsolete = true;
+		redraw(area.x, y, area.width, area.height - y, false);
+		rowDeltaPaints++;
+		return true;
 	}
 
 	/**

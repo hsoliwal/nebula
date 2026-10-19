@@ -198,7 +198,7 @@ public class GridScrollPaint_Test {
 		previous = settled;
 	}
 
-	private static boolean sameClientArea(final Grid grid, final ImageData a, final ImageData b) {
+	static boolean sameClientArea(final Grid grid, final ImageData a, final ImageData b) {
 		final org.eclipse.swt.graphics.Rectangle area = grid.getClientArea();
 		final int dx = (grid.getSize().x - grid.getClientArea().width - (grid.getVerticalBar().isVisible() ? grid.getVerticalBar().getSize().x : 0)) / 2;
 		for (int y = area.y; y < area.y + area.height; y++) {
