@@ -45,6 +45,8 @@ import org.junit.Test;
  * </p>
  */
 public class GridViewportDifferential_Test {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger("org.eclipse.nebula.widgets.grid");
 
 	private static final int SEEDS = Integer.getInteger("grid.differential.seeds", 8).intValue();
 	private static final int STEPS = Integer.getInteger("grid.differential.steps", 160).intValue();
@@ -179,7 +181,7 @@ public class GridViewportDifferential_Test {
 			viewportShell.open();
 			final String pixels = run(seed, config, stock, candidate);
 			final String report = String.valueOf(candidate.apply(new int[] { GridDifferentialDriver.STATE, 0, 0, 0 }));
-			System.out.println("GridViewportDifferential_Test: virtual seed " + seed + " config " + config + ", " + STEPS
+			LOG.info("GridViewportDifferential_Test: virtual seed " + seed + " config " + config + ", " + STEPS
 					+ " steps identical, " + pixels + ";" + report.substring(report.lastIndexOf(" | setdata")));
 			for (final Shell shell : new Shell[] { stockShell, viewportShell }) {
 				for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
@@ -204,7 +206,7 @@ public class GridViewportDifferential_Test {
 			stockShell.open();
 			viewportShell.open();
 			final String pixels = run(seed, config, stock, viewport);
-			System.out.println("GridViewportDifferential_Test: seed " + seed + " config " + config + ", " + STEPS
+			LOG.info("GridViewportDifferential_Test: seed " + seed + " config " + config + ", " + STEPS
 					+ " steps identical, " + pixels + " (oracle " + stock.apply(mode) + ", candidate " + viewport.apply(mode) + ")");
 			for (final Shell shell : new Shell[] { stockShell, viewportShell }) {
 				for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
@@ -265,7 +267,7 @@ public class GridViewportDifferential_Test {
 						+ "\n  pixels " + (samePixels ? "identical" : "differ") + "\n" + verdicts);
 			}
 		}
-		System.out.println("GridViewportDifferential_Test: header/footer scene, " + scene.length + " steps, "
+		LOG.info("GridViewportDifferential_Test: header/footer scene, " + scene.length + " steps, "
 				+ accepted.size() + " listed divergences, each one observed (oracle " + stock.apply(new int[] {
 						GridDifferentialDriver.MODE, 0, 0, 0 }) + ", candidate " + CANDIDATE + ")");
 	}
@@ -305,7 +307,7 @@ public class GridViewportDifferential_Test {
 						+ difference(expected, actual));
 			}
 		}
-		System.out.println("GridViewportDifferential_Test: header overflow scene, " + scene.length
+		LOG.info("GridViewportDifferential_Test: header overflow scene, " + scene.length
 				+ " steps identical (oracle " + stock.apply(new int[] { GridDifferentialDriver.MODE, 0, 0, 0 })
 				+ ", candidate " + CANDIDATE + ")");
 	}

@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
+import java.util.logging.Logger;
 
 import org.eclipse.nebula.widgets.grid.internal.DefaultBottomLeftRenderer;
 import org.eclipse.nebula.widgets.grid.internal.DefaultColumnGroupHeaderRenderer;
@@ -110,6 +111,9 @@ import org.eclipse.swt.widgets.ScrollBar;
  *
  */
 public class Grid extends Canvas {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final Logger LOG = Logger.getLogger("org.eclipse.nebula.widgets.grid");
+
 
 	/**
 	 * Cached default font of Control.getFont.
@@ -7169,7 +7173,9 @@ public class Grid extends Canvas {
 		if (group == null || !warnedFixedGroups.add(group)) {
 			return;
 		}
-		System.err.println("[nebula.grid] Fixed column belongs to column group '" + group.getText()
+		// brief rule 22: java.util.logging (the package's logger), once per group, built only when logged
+		final String groupText = group.getText();
+		LOG.warning(() -> "Fixed column belongs to column group '" + groupText
 				+ "' that also contains scrollable columns; the group header is omitted from the frozen overlay. "
 				+ "Place the fixed column outside any multi-column group.");
 	}

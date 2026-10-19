@@ -69,12 +69,15 @@ def main():
     if jc.returncode != 0:
         print(jc.stdout, jc.stderr)
         sys.exit("GWT_GATE_FAIL: javac failed")
-    jvm = run([tool("java"), "-cp", classes, "org.eclipse.nebula.widgets.grid.model.GateJava"])
+    digests = os.path.join(a.work, "jvm-digests.txt")
+    jvm = run([tool("java"), "-cp", classes, "org.eclipse.nebula.widgets.grid.model.GateJava", digests])
     js = run([a.node, os.path.join(here, "run_node.mjs"), os.path.join(war, MODULE, MODULE + ".nocache.js")])
     if jvm.returncode != 0 or js.returncode != 0:
         print(jvm.stderr, js.stderr)
         sys.exit("GWT_GATE_FAIL: workload did not run")
-    jvm_lines, js_lines = jvm.stdout.strip().splitlines(), js.stdout.strip().splitlines()
+    with open(digests, encoding="utf-8") as f:
+        jvm_lines = f.read().strip().splitlines()
+    js_lines = js.stdout.strip().splitlines()
     print("JVM:", *jvm_lines, sep="\n  ")
     print("JS:", *js_lines, sep="\n  ")
     if jvm_lines != js_lines or not jvm_lines:

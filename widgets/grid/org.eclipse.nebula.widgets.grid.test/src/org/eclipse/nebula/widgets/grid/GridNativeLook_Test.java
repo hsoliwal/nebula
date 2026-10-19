@@ -48,6 +48,8 @@ import org.junit.Test;
  * </p>
  */
 public class GridNativeLook_Test {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger("org.eclipse.nebula.widgets.grid");
 
 	private static final int[] WIDTHS = { 120, 90, 80 };
 	private static final int ROWS = 12, WIDTH = 300, HEIGHT = 260;
@@ -102,7 +104,7 @@ public class GridNativeLook_Test {
 		treeScene("tree", false, true);
 		treeScene("tree-selected-focused", true, true);
 		treeScene("tree-collapsed-selected-unfocused", true, false);
-		System.out.println(report);
+		LOG.info(report.toString());
 		assertTrue(report.toString(), !failed || Boolean.getBoolean("grid.nativelook.measure"));
 	}
 

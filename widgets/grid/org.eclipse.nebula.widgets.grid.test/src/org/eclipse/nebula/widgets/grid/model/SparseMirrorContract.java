@@ -6,6 +6,8 @@ import java.util.SplittableRandom;
 
 /** Independent bounded scalar/BitSet oracle; no Display, mock SWT or native dependency. */
 public final class SparseMirrorContract {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger("org.eclipse.nebula.widgets.grid.model");
     private SparseMirrorContract() { }
     private static long checks;
     private static void equal(long expected, long actual, String detail) {
@@ -94,11 +96,11 @@ public final class SparseMirrorContract {
             int actual = bits.runEnd(Integer.MAX_VALUE - 15, Integer.MAX_VALUE);
             boolean defective = actual != Integer.MAX_VALUE;
             if (defective != defectExpected) throw new AssertionError("counterexample expectation: " + actual);
-            System.out.println("ENDPOINT_WITNESS encoding=" + kind + " actual=" + actual + " defective=" + defective);
+            LOG.info("ENDPOINT_WITNESS encoding=" + kind + " actual=" + actual + " defective=" + defective);
         }
     }
     public static void main(String[] args) {
         if (args.length == 1) { witness(Boolean.parseBoolean(args[0])); return; }
-        System.out.println("SPARSE_CONTRACT checks=" + verify());
+        LOG.info("SPARSE_CONTRACT checks=" + verify());
     }
 }

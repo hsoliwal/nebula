@@ -39,6 +39,8 @@ import org.junit.Test;
  * Grid's and the columns' own hooks must invalidate them.
  */
 public class GridColumnMetrics_Test {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger("org.eclipse.nebula.widgets.grid");
 	private Display display;
 	private Shell shell;
 
@@ -71,7 +73,7 @@ public class GridColumnMetrics_Test {
 			}
 			grid.dispose();
 		}
-		System.out.println("GridColumnMetrics_Test: " + checks + " answers equal to the linear scans");
+		LOG.info("GridColumnMetrics_Test: " + checks + " answers equal to the linear scans");
 	}
 
 	private static String apply(final Grid grid, final List<GridColumnGroup> groups, final Random random) {

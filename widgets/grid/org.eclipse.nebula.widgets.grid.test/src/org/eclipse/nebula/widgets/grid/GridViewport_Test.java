@@ -35,6 +35,8 @@ import org.junit.Test;
  * active.
  */
 public class GridViewport_Test {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger("org.eclipse.nebula.widgets.grid");
 
 	/* 10,000 roots with 99 children each: 1,000,000 items (-Dgrid.acceptance.roots for a smaller run) */
 	private static final int ROOTS = Integer.getInteger("grid.acceptance.roots", 10_000).intValue();
@@ -123,7 +125,7 @@ public class GridViewport_Test {
 		System.gc();
 		final long[] top = medianScrollStep(grid, 10);
 		final long[] bottom = medianScrollStep(grid, ROOTS - 40);
-		System.out.println("GridViewport_Test: " + ROOTS * ROW + " items built in " + buildMillis
+		LOG.info("GridViewport_Test: " + ROOTS * ROW + " items built in " + buildMillis
 				+ " ms; median scroll step near the top: geometry " + top[0] / 1000 + " us, paint " + top[1] / 1000
 				+ " us; near the bottom: geometry " + bottom[0] / 1000 + " us, paint " + bottom[1] / 1000 + " us; thumb "
 				+ thumb);

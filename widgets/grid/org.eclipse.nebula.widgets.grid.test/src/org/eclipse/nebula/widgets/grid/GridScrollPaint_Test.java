@@ -37,6 +37,8 @@ import org.junit.Test;
  * {@code SWT.SetData} during the paint) and a tree Grid, in whatever mode the run selects.
  */
 public class GridScrollPaint_Test {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger("org.eclipse.nebula.widgets.grid");
 
 	private Display display;
 	private Shell shell;
@@ -235,7 +237,7 @@ public class GridScrollPaint_Test {
 			grid.notifyListeners(SWT.KeyDown, event);
 			assertPaintedLikeSettled(grid, "key " + key);
 		}
-		System.out.println("GridScrollPaint_Test: " + (immediate + deferred) + " scroll steps, new rows shown right away "
+		LOG.info("GridScrollPaint_Test: " + (immediate + deferred) + " scroll steps, new rows shown right away "
 				+ immediate + ", old rows until the event loop ran " + deferred + ", no mixed or blank window");
 	}
 
@@ -343,7 +345,7 @@ public class GridScrollPaint_Test {
 			settle();
 			assertScreenIsPaint(grid, label + ", scroll bar " + value + ", settled");
 		}
-		System.out.println("GridScrollPaint_Test: " + (grid.blitScrollCount - blits) + " of " + values.length
+		LOG.info("GridScrollPaint_Test: " + (grid.blitScrollCount - blits) + " of " + values.length
 				+ " scroll steps were blits (" + label + "), window identical to the Grid's paint");
 		if (expectBlits) {
 			assertTrue("blit scrolls", grid.blitScrollCount > blits);
