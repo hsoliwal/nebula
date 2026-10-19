@@ -576,6 +576,39 @@ it compares the window with the Grid's own paint:
 - the original mode repaints those bodies (0 of 9);
 - the window equals the paint after every step in both modes.
 
+## Leaf G6: column metrics in lanes (2026-10-19)
+
+`GridColumnMetrics` keeps the Grid's columns in display order as lanes. For each display position it holds:
+- the column and whether it is visible;
+- its width when visible, 0 when hidden, and the prefix sums of those widths;
+- how many pinned columns (visible and fixed) come before it.
+
+A separate lane holds the prefix sums of the pinned widths. The lanes are rebuilt in O(c) after a change of
+a column's width, visibility, fixed state, detail or summary flag, of a group's expansion, of the column
+order, or of the column set; each of those places calls `Grid.columnGeometryChanged` or
+`clearDisplayOrderedCache`. In the viewport mode the Grid then answers its column questions from the lanes:
+
+| question | stock | lanes |
+|---|---|---|
+| column at an x (`getColumn(Point)`, fixed overlay first) | O(c) walk | binary search, O(log c) |
+| first and last column on screen (`getStartColumnIndex`, `getEndColumnIndex`) | O(c) | O(log c) |
+| columns a paint covers (`getVisibleRange`) | O(c) | O(log c + k) |
+| x of a column header, origin of a cell, width of the fixed run | O(c) | O(1) |
+| display position of a column (`getPreviousVisibleColumn`, `getNextVisibleColumn`, `showColumn`, keyboard and drag code) | `List.indexOf`, O(c) | O(1) |
+
+A negative width breaks the prefix order. Column scrolling in a client area narrower than the row header can
+produce one, and then the lanes leave every answer to the stock scans. The original mode always uses the
+stock scans.
+
+`GridColumnMetrics_Test` (viewport mode) runs 16 seeds × 120 steps of random column operations: add at any
+index, add to a group, remove, set the width (zero included) or the minimum width, show and hide, fix and unfix,
+reorder (group blocks stay together), expand and collapse groups, set detail and summary. The test never
+invalidates the lanes itself, so the Grid's own hooks have to. After every step, for several horizontal scroll
+positions, with and without the row header and the fixed overlay, it compares every lane answer with the stock
+linear scan: the column at each column edge ±1 in both planes and at random points, the first and last column,
+the covered columns for several viewports, every header x and origin x, the fixed-run width and every display
+position. It found no difference in 22.8 million comparisons (the first, longer run).
+
 ## JaCoCo baseline (brief rule 15: 99% line and branch, 2026-10-18)
 
 [`grid-viewport/grid_coverage.sh`](grid-viewport/grid_coverage.sh) runs the Grid suite (614 tests) in one mode on
@@ -609,7 +642,7 @@ through the classes above and the differential.
 | G3 | done (see Leaf G3): O(1) row and cell selection membership, one column entry per column, focus by item | differential; probes |
 | G4 | tree Grids with `SWT.VIRTUAL` children: sparse child facades through the same lanes, `SetData` once per row | differential vs non-virtual tree; SetData counts |
 | G5 | done (see Leaf G5): variable-height and tree blit scroll by the row index's pixel delta; exposed strip repainted | window equals paint after scroll sequences |
-| G6 | column metrics: prefix sums for column x, binary search for column at x, `showColumn` O(log c) | differential on column order/width/visibility |
+| G6 | done (see Leaf G6): column lanes with prefix sums; column at x by binary search, x of a column and display position O(1) | lane answers equal the stock scans under seeded column scripts |
 
 ## Non-claims
 
