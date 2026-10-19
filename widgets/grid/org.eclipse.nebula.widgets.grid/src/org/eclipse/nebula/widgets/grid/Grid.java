@@ -9192,7 +9192,8 @@ public class Grid extends Canvas {
 
 	/**
 	 * Scrolls the body by copying the pixels that stay visible and invalidating only the
-	 * exposed strip. Only when every row has the same height and the painted rows depend on
+	 * exposed strip. Only when the row index gives the pixels between two rows (every row the same
+	 * height, or the viewport mode's row index: variable heights and trees, G5) and the painted rows depend on
 	 * nothing but their absolute index (default renderers, no spans, pinned planes, insert mark,
 	 * column drag, cell hover feedback or child controls such as open cell editors); otherwise
 	 * the caller repaints the whole body.
@@ -9202,7 +9203,9 @@ public class Grid extends Canvas {
 			return false;
 		}
 		final int newTop = getTopIndex();
-		final int dy = (oldTop - newTop) * (itemHeight + 1);
+		// G5: the pixels between the two top rows, from the row index when rows differ in height or
+		// hide (a tree): hidden rows add nothing, each visible row its height and line
+		final int dy = rowsIndexed() ? viewport.offsetBetween(newTop, oldTop) : (oldTop - newTop) * (itemHeight + 1);
 		if (dy == 0 || Math.abs(dy) >= body.height) {
 			return false;
 		}
@@ -9258,7 +9261,7 @@ public class Grid extends Canvas {
 	}
 
 	private boolean blitSafe() {
-		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
+		if ((!rowsIndexed() && (hasDifferingHeights || isTree)) || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
 				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
 				|| !blitSafeRenderer(emptyCellRenderer, DefaultEmptyCellRenderer.class)
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {

@@ -290,6 +290,43 @@ public class GridScrollPaint_Test {
 		for (int r = 0; r < 2000; r++) {
 			new GridItem(grid, SWT.NONE).setText(0, "row " + r);
 		}
+		scrollScript(grid, "tree column " + treeColumn, true);
+	}
+
+	/*
+	 * G5: rows of different heights (odd and even moves) and a tree with collapsed and expanded
+	 * parents scroll by a blit of the row index's pixel delta in the viewport mode; the original
+	 * mode repaints the body. Either way the window shows exactly the Grid's paint.
+	 */
+	@Test
+	public void blitScrollWithVariableRowHeights() {
+		final Grid grid = grid(SWT.NONE);
+		grid.getColumn(0).setTree(false);
+		for (int r = 0; r < 2000; r++) {
+			final GridItem item = new GridItem(grid, SWT.NONE);
+			item.setText(0, "row " + r);
+			item.setHeight(14 + r % 3 * 7);
+		}
+		scrollScript(grid, "variable heights", GridViewport.ENABLED);
+	}
+
+	@Test
+	public void blitScrollInATree() {
+		final Grid grid = grid(SWT.NONE);
+		// an even row extent: the classic tree column's dotted lines allow even moves only
+		grid.setItemHeight(19);
+		for (int r = 0; r < 300; r++) {
+			final GridItem root = new GridItem(grid, SWT.NONE);
+			root.setText(0, "root " + r);
+			for (int c = 0; c < r % 5; c++) {
+				new GridItem(root, SWT.NONE).setText(0, "child " + r + "." + c);
+			}
+			root.setExpanded(r % 3 != 0);
+		}
+		scrollScript(grid, "tree", GridViewport.ENABLED);
+	}
+
+	private void scrollScript(final Grid grid, final String label, final boolean expectBlits) {
 		shell.open();
 		settle();
 		final ScrollBar bar = grid.getVerticalBar();
@@ -301,14 +338,16 @@ public class GridScrollPaint_Test {
 			bar.setSelection(value);
 			bar.notifyListeners(SWT.Selection, new Event());
 			if (grid.blitScrollCount > before) {
-				assertScreenIsPaint(grid, "scroll bar " + value + ", right after the blit");
+				assertScreenIsPaint(grid, label + ", scroll bar " + value + ", right after the blit");
 			}
 			settle();
-			assertScreenIsPaint(grid, "scroll bar " + value + ", settled");
+			assertScreenIsPaint(grid, label + ", scroll bar " + value + ", settled");
 		}
 		System.out.println("GridScrollPaint_Test: " + (grid.blitScrollCount - blits) + " of " + values.length
-				+ " scroll steps were blits (tree column " + treeColumn + "), window identical to the Grid's paint");
-		assertTrue("blit scrolls", grid.blitScrollCount > blits);
+				+ " scroll steps were blits (" + label + "), window identical to the Grid's paint");
+		if (expectBlits) {
+			assertTrue("blit scrolls", grid.blitScrollCount > blits);
+		}
 	}
 
 	private static void assertScreenIsPaint(final Grid grid, final String step) {
