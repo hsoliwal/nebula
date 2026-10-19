@@ -250,6 +250,8 @@ final class GridRowExtents implements GridRowIndex {
 		if (offset < 0) {
 			return -1;
 		}
+		// Beyond-content viewport coordinates need no Fenwick descent.
+		if (offset >= totalExtent) return visibleRows;
 		int position = 0;
 		int rank = 0;
 		long extent = 0;
