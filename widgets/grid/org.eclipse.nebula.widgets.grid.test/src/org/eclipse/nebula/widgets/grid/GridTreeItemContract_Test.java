@@ -94,7 +94,9 @@ public class GridTreeItemContract_Test {
 		roots[1].setExpanded(true);
 		assertEquals(roots[1].getItem(2), grid.getItem(4));
 		assertEquals(4, grid.getItem(4).getRowIndex());
-		assertEquals(roots[3], grid.getItem(5));
+		// rows: R0, R1, R1.0-R1.2, R2, R3, R3.0, R3.1, R4 (hidden rows count)
+		assertEquals(roots[2], grid.getItem(5));
+		assertEquals(roots[3], grid.getItem(6));
 	}
 
 	@Test

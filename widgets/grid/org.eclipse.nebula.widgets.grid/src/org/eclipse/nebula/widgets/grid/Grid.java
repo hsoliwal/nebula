@@ -9914,22 +9914,29 @@ public class Grid extends Canvas {
 		}
 		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 
-		estimate(sizingGC -> {
-			if (items.size() == 1 && !userModifiedItemHeight) {
-				itemHeight = computeItemHeight(item, sizingGC);
-				// virtual problems here
-				if ((getStyle() & SWT.VIRTUAL) != 0) {
-					item.setHasSetData(false);
-				}
-			}
-
+		if (GridViewport.ENABLED && !(items.size() == 1 && !userModifiedItemHeight)
+				&& !(isRowHeaderVisible() && isAutoWidth())) {
+			// nothing to measure: stock still opens a GC per item, a native device context that
+			// dominated building a large tree (1,000,000 items: tens of seconds)
 			item.initializeHeight(itemHeight);
+		} else {
+			estimate(sizingGC -> {
+				if (items.size() == 1 && !userModifiedItemHeight) {
+					itemHeight = computeItemHeight(item, sizingGC);
+					// virtual problems here
+					if ((getStyle() & SWT.VIRTUAL) != 0) {
+						item.setHasSetData(false);
+					}
+				}
 
-			if (isRowHeaderVisible() && isAutoWidth()) {
-				rowHeaderWidth = Math.max(rowHeaderWidth, //
-						rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x);
-			}
-		});
+				item.initializeHeight(itemHeight);
+
+				if (isRowHeaderVisible() && isAutoWidth()) {
+					rowHeaderWidth = Math.max(rowHeaderWidth, //
+							rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x);
+				}
+			});
+		}
 
 		scrollValuesObsolete = true;
 		topIndex = -1;
