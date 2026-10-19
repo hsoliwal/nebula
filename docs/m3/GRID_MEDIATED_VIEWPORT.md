@@ -518,8 +518,63 @@ In the original mode the script asks for the data where TreeItem's getters would
 stock behaviour the mode keeps. The stock differential driver reads the parent's data before an insertion and
 before `setChecked`, so stock and the default mode ask alike.
 
-Step 2b next: in the viewport mode a virtual tree keeps its rows in the row tree. Step 2c after that: children
-nobody has read are row-tree slots with no `GridItem`.
+Steps 2b and 2c follow below.
+
+## Leaf G4, steps 2b and 2c: virtual tree rows in the row tree, items only for rows that are read (2026-10-19)
+
+**Step 2b.** When an `SWT.VIRTUAL` Grid gets its first child item, the viewport mode moves its rows from the
+sparse list (`GridVirtualItemList`) to the row tree (`GridRowTree`, `GridViewport.itemsReplaced`). The sparse
+list moved every later item on each insertion; the row tree moves none. `Grid.newItem` also opens no `GC` in the
+viewport mode when there is nothing to measure (not the first item, no auto-width row header); stock opens a
+native device context per item. `probe/VirtualTreeProbe`, 1,000,000 items under 1,000 roots: build 58.2 s
+before the step, 1.3 s after (original mode 10.0 s in the same run); a scroll step 3.1 ms (original 66 ms);
+the `SetData` counts are unchanged (21 after the first paint, 80 after 40 scroll steps, 100 after expanding
+the 1,000 roots).
+
+**Step 2c.** In the viewport mode `GridItem.setItemCount` on a virtual Grid appends rows to the row tree and
+makes no item. The row tree gains an owner lane: a row without an item remembers its parent, and `get(int)`
+or the iterator makes its item (a facade on the row, with no `SetData` yet) when the row is first read.
+`GridChildList` keeps a parent's children in two lanes, row-tree slot and item; it finds a child's index by a
+binary search over the children's rows, so a child's `SetData` index costs O(log k log n). The internal walks
+make no item: expand and collapse, deselection, `clear`/`clearAll`, dispose, `setItemHeight` and the row a
+new child goes to (`lastDescendantRow`, `childRowAt`). A run of children without items is removed in one
+step, and the row-addressed cell data moves once (`GridRowAddressedDataVisualizer.insertRows`/`removeRows`).
+`Dispose` events go only to children that have items, in TreeItem's order (D34).
+
+The comparison of the two ways to build a tree found D36 (default mode): `Grid.setItemHeight` sets every row's
+height at once and then recomputes the bottom index. Stock called `GridItem.setHeight` per item, and each call
+asked for the visible range while only some rows had the new height; the bottom index computed then was kept.
+The top row stays where stock keeps it.
+
+`GridSparseChildren_Test` (viewport mode) covers step 2c:
+- 4 seeds × 120 steps. A Grid whose children come from `setItemCount` and a Grid with one constructor call per
+  child run the same script: expand and collapse, set the top index, show an item, change the child count of
+  a root or of a child, select, clear, set the item height. They give the same answers, `SetData` events, top
+  and bottom index, scroll bar and selection, and the same pixels every 10 steps.
+- 1,000,000 children make no item until they are read. Painting makes fewer than 40. The last child's text,
+  index and row are right. Shrinking to 10 children and disposing the parent leave the right row count.
+- Shrinking removes children; only the ones that have items get `Dispose` events, in TreeItem's order.
+
+Grid suite: 630 tests, 0 failures in both modes. Stock differential: 8/8 seeds, both scenes and 4 virtual seeds,
+candidates viewport and original.
+
+## Leaf G5: blit scroll for variable row heights and trees (2026-10-19)
+
+A vertical scroll moves the body's pixels when the rows that stay visible paint the same at their new place
+(`Grid.blitBody`); the exposed strip is repainted. Until now the blit needed rows of one height in a flat
+Grid, because the move was `(old top - new top) × (item height + 1)`. In the viewport mode the move is now the
+row index's pixel difference between the two top rows (`GridViewport.offsetBetween`): hidden rows add nothing,
+and each visible row adds its own height and line. Variable heights and trees therefore blit too. The other
+conditions are unchanged: default renderers, no spans, pinned rows, insert mark, column drag, cell hover or
+child controls, and even moves only under the classic tree column's dotted lines.
+
+`GridScrollPaint_Test` sets the scroll bar to 1, 6, 5, 2, 30, 29, 40, 42 and 38: moves of 1 to 11 rows up and down and one
+jump of more than a page (2 to 30). After each blit, and again once the event loop is idle,
+it compares the window with the Grid's own paint:
+- variable heights (14, 21 and 28 px, so moves are odd and even): 8 of 9 steps blit in the viewport mode;
+- a tree of 300 roots with collapsed and expanded parents: 8 of 9 steps blit;
+- the original mode repaints those bodies (0 of 9);
+- the window equals the paint after every step in both modes.
 
 ## JaCoCo baseline (brief rule 15: 99% line and branch, 2026-10-18)
 
@@ -553,7 +608,7 @@ through the classes above and the differential.
 | G2 | done (see Leaf G2): the item list is a counted tree with row lanes (row, visible rows, pixel extents), O(log n) insert, remove, row of item and every row question; no rebuild | differential; no O(n) on the UI thread after insert/remove |
 | G3 | done (see Leaf G3): O(1) row and cell selection membership, one column entry per column, focus by item | differential; probes |
 | G4 | tree Grids with `SWT.VIRTUAL` children: sparse child facades through the same lanes, `SetData` once per row | differential vs non-virtual tree; SetData counts |
-| G5 | variable-height blit scroll using the index's pixel delta; row-rect damage | pixels vs stock after scroll sequences |
+| G5 | done (see Leaf G5): variable-height and tree blit scroll by the row index's pixel delta; exposed strip repainted | window equals paint after scroll sequences |
 | G6 | column metrics: prefix sums for column x, binary search for column at x, `showColumn` O(log c) | differential on column order/width/visibility |
 
 ## Non-claims
