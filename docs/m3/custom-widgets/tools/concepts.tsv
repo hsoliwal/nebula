@@ -19,7 +19,7 @@ TOKEN_FIELD	token / tag / chips input field	Token(Field|Input|Text|Pane)$|Tags?(
 DATE_PICKER	date / time picker	(Date|Time|DateTime|Calendar|Month|Duration)(Time)?(Picker|Chooser|Combo|Field|Spinner|Selector|Edit)$|^CDateTime$|^JXDatePicker$|^DateTime$|^JDateChooser$|DateChooser|DatePicker|TimePicker|CalendarPicker|LocalDatePicker|^CalendarCombo$	N	DateTime	- (JSpinner date model)
 CALENDAR_VIEW	calendar / agenda view (day, week, month with entries)	^(Agenda|CalendarView|DayView|WeekView|MonthView|YearView|MonthPage|DayPage|WeekPage|YearPage|DetailedDayView|AllDayView)$|^JXMonthView$|^JCalendar$	P	DateTime SWT.CALENDAR	-
 TASK_PANE	task pane / collapsible section / accordion / shelf	TaskPane|Collapsible(Pane|Panel|Section|Composite)$|^PShelf$|^PGroup$|Accordion|ExpandableComposite|^Section$|OutlookBar|^JButtonBar$|^ExpandBar$|CollapsibleButtons|^TitledPane$|^Drawer$|DrawersStack|ExpandablePanel	N	ExpandBar	-
-MULTI_SPLIT	multi split pane (layout tree of splits)	MultiSplit|JideSplitPane|ThreeComponentsSplitter|OnePixelSplitter|^Splitter$|^JBSplitter$|SplitLayout$|^SplitPane$|MasterDetailPane	N	SashForm (one orientation)	JSplitPane (two children)
+MULTI_SPLIT	multi split pane (layout tree of splits)	MultiSplit|JideSplitPane|ThreeComponentsSplitter|OnePixelSplitter|^Splitter$|^JBSplitter$|SplitLayout$|^SplitPane$|MasterDetailPane	N	- (SashForm: one orientation)	- (JSplitPane: two children)
 DOCKING	docking framework	Dock(able|ing|Station|ingPane|ingDesktop|ingWindow|Node|Panel)$|^Dock$|DockPane$|^DockingFrame$|^CControl$|ToolWindow(Pane|Manager)?$	N	- (Eclipse e4 workbench only)	-
 TAB_FOLDER_RICH	tab stack (close, drag, overflow, thousands of tabs)	^CTabFolder$|JideTabbedPane|^JBTabs|TabPanePro|ClosableTab|DraggableTab|^JhromeTabbedPane$|^DnDTabbedPane$|^TabbedPane$|^TabFolder$|^TabPane$	Y	CTabFolder	JTabbedPane (no close/drag)
 HYPERLINK	hyperlink	Hyperlink|LinkLabel|ActionLink|^JXHyperlink$|LinkButton|ImageHyperlink	N	Link	-
@@ -38,14 +38,14 @@ PROMPT_DECORATION	prompt / placeholder / field decoration and validation	PromptS
 PASSWORD_REVEAL	password reveal	PasswordRevealer|RevealPassword|ShowPassword	N	-	-
 COLOR_CHOOSER	colour chooser / picker	Colou?r(Chooser|Picker|Selector|Wheel|Palette|Combo|Button|Well|Swatch|ComboBox|ChooserButton)$|^JXColorSelectionButton$	N	ColorDialog	JColorChooser
 FONT_CHOOSER	font chooser	Font(Chooser|Picker|Selector|Combo|ComboBox|ChooserPanel)$	N	FontDialog	-
-TOAST	toast / notification popup	Toast|^Notifier$|Notification(Pane|Popup|Window|Balloon|Bar)$|^Notifications$|^Balloon$|Snackbar|PopupNotification|^InfoBar$|^Alert(Pane|Popup)$	N	ToolTip SWT.BALLOON (tray)	-
+TOAST	toast / notification popup	Toast|^Notifier$|Notification(Pane|Popup|Window|Balloon|Bar)$|^Notifications$|^Balloon$|Snackbar|PopupNotification|^InfoBar$|^Alert(Pane|Popup)$	N	- (ToolTip SWT.BALLOON only)	-
 POPOVER	popover / rich tooltip / balloon tip	^PopOver$|^Popover$|BalloonTip|^Callout$|HelpTooltip|RichTooltip|^GotItTooltip$	N	ToolTip	JToolTip
-BUSY_INDICATOR	busy indicator / throbber / masker	Busy(Label|Indicator|Painter|Icon|Pane)$|Throbber|AsyncProcessIcon|ProgressCircle|^ProgressIndicator$|RingProgress|MaskerPane|LoadingPanel|InfiniteProgress|ActivityIndicator|LoadingIndicator|^Spinner(Icon|Animation)$	N	BusyIndicator (cursor only)	JProgressBar indeterminate
+BUSY_INDICATOR	busy indicator / throbber / masker	Busy(Label|Indicator|Painter|Icon|Pane)$|Throbber|AsyncProcessIcon|ProgressCircle|^ProgressIndicator$|RingProgress|MaskerPane|LoadingPanel|InfiniteProgress|ActivityIndicator|LoadingIndicator|^Spinner(Icon|Animation)$	N	- (BusyIndicator: cursor only)	JProgressBar indeterminate
 STATUS_BAR	status bar	StatusBar$|^StatusLine$	N	-	-
-HEADER_PANEL	header / titled panel / titled separator	^JXHeader$|^Header$|TitledPanel$|TitledSeparator|BannerPanel|^TitlePanel$|^HeaderPanel$|^TitledBorderPanel$	N	-	TitledBorder (border only)
+HEADER_PANEL	header / titled panel / titled separator	^JXHeader$|^Header$|TitledPanel$|TitledSeparator|BannerPanel|^TitlePanel$|^HeaderPanel$|^TitledBorderPanel$	N	-	- (TitledBorder: border only)
 LOGIN_DIALOG	login dialog	Login(Dialog|Pane|Panel)$	N	-	-
 TIP_OF_DAY	tip of the day	TipOfTheDay|TipOfDay	N	-	-
-ERROR_PANE	error / exception details pane	^JXErrorPane$|ErrorPane$|ExceptionDialog$|ExceptionPane$|^ErrorInfo$	N	-	JOptionPane (no details)
+ERROR_PANE	error / exception details pane	^JXErrorPane$|ErrorPane$|ExceptionDialog$|ExceptionPane$|^ErrorInfo$	N	-	- (JOptionPane: no details)
 IMAGE_VIEW	image view (zoom, pan, crop)	Image(View|Viewer|Panel|Canvas|Pane|Box)$|^Picture$|ZoomPane$|PhotoView$|ZoomableImage|^SnapshotView$|^GesturePane$	P	-	-
 CHART	chart / plot / sparkline	(^|[a-z])Chart(Panel|Composite|View|Viewer|Canvas|Widget|Control)?$|XYGraph|^Plot(Panel|Canvas)?$|Graph(Panel|View)$|Sparkline|Oscilloscope	Y	-	-
 GANTT_TIMELINE	Gantt / timeline	Gantt|Timeline$|TimeLine$	Y	-	-
@@ -58,10 +58,10 @@ NODE_EDITOR	node / diagram editor	NodeEditor|^Diagram(View|Canvas|Panel)?$|Graph
 RIBBON	ribbon / command bar	Ribbon|^CommandBar$|^CommandButton$|^JCommandButton$	N	-	-
 BADGE	badge	Badge	N	-	-
 FLOATING_LABEL	floating label text	FloatingText|FloatingLabel	N	-	-
-RADIO_GROUP	radio / check box group widget	RadioGroup|CheckBoxGroup|CheckboxGroup|^ButtonGroupPanel$|RadioButtonGroup|RadioButtonPanel	N	-	ButtonGroup (no widget)
+RADIO_GROUP	radio / check box group widget	RadioGroup|CheckBoxGroup|CheckboxGroup|^ButtonGroupPanel$|RadioButtonGroup|RadioButtonPanel	N	-	- (ButtonGroup: no widget)
 HORIZONTAL_SPINNER	list / horizontal spinner	HorizontalSpinner|^ListSpinner$|ArrowSpinner	N	Spinner	JSpinner
 PREFERENCE_WINDOW	preference window / settings pane	PreferenceWindow|^PreferencesFx$|^Preferences(Pane|Panel|View)$|SettingsPane$	N	-	-
 WIZARD	wizard	^Wizard(Pane|Dialog|Panel)?$	N	-	-
-CALCULATOR	calculator field	Calculator	N	-	-
+CALCULATOR	calculator field	^Calculator(Combo|Field|Button|Panel|Dialog|Popup)?$	N	-	-
 MEMORY_MONITOR	heap / memory monitor	HeapManager|MemoryMonitor|MemoryBar	N	-	-
-PRINT_PREVIEW	print / report preview	^PrintPreview$|^PrintViewer$|^PrintPreviewDialog$	P	-	JTable.print
+PRINT_PREVIEW	print / report preview	^PrintPreview$|^PrintViewer$|^PrintPreviewDialog$	P	-	- (JTable.print: no preview)

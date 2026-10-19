@@ -10,15 +10,16 @@
 set -u
 export LC_ALL=C
 HERE=$(cd "$(dirname "$0")" && pwd); CACHE=$1; OUT=$2; mkdir -p "$OUT"
-EXCL='(UI|Skin|Behavior|Behaviour|Listener|Event|Model|Renderer|Painter|Provider|Factory|Adapter|Util|Utils|Helper|Action|Accessible|Accessibility|Handler|Command|Configuration|Config|Styler|Border|Converter|Exception|Constants|Messages|Impl|BeanInfo|Descriptor|Serializer|Resources?|Cell|CellEditor|Layer|Test|Tests|Demo|Example|Snippet|Interface|Strategy|State|Data|Item|Column)$|^(Abstract|Basic|Metal|Synth|Default|Windows|Motif|Aqua|Gtk|Mock|Fake|Dummy)|^I[A-Z]'
+EXCL='(UI|Skin|Behavior|Behaviour|Listener|Event|Model|Renderer|Painter|Provider|Factory|Adapter|Util|Utils|Helper|Action|Accessible|Accessibility|Handler|Command|Configuration|Config|Styler|Border|Converter|Exception|Constants|Messages|Impl|BeanInfo|Descriptor|Serializer|Resources?|Cell|CellEditor|Layer|Test|Tests|Demo|Example|Snippet|Interface|Strategy|State|Data|Item|Column|Builder|Settings|Addon|Runner|Engine|Processor|Fixture|Dataset|Series|Position|Memento|Flags|Operations)$|^(Abstract|Basic|Metal|Synth|Default|Windows|Motif|Aqua|Gtk|Mock|Fake|Dummy)|^I[A-Z]'
 # 1. slug <TAB> class basename, one line per distinct pair
 for f in "$CACHE"/classes/*.txt; do
-  s=$(basename "$f" .txt); s=${s/__//}
+  s=$(basename "$f" .txt); s=${s/__//}; s=${s,,}
   sed -e 's#.*/##' -e 's#\.java$##' "$f" | grep -Ev "$EXCL" | sort -u | sed "s#^#$s\t#"
 done > "$OUT/.pairs.tsv"
 # 2. concept matches: concept <TAB> slug <TAB> class
 awk -F'\t' 'NR==FNR { if (FNR > 1) { n++; id[n] = $1; re[n] = $3 } next }
-  { for (i = 1; i <= n; i++) if ($2 ~ re[i]) print id[i] "\t" $1 "\t" $2 }' "$HERE/concepts.tsv" "$OUT/.pairs.tsv" | sort -u > "$OUT/.matches.tsv"
+  { for (i = 1; i <= n; i++) if ($2 ~ re[i]) printf "%s\t%s\t%05d\t%s\n", id[i], $1, length($2), $2 }' "$HERE/concepts.tsv" "$OUT/.pairs.tsv" \
+  | sort -t'	' -k1,1 -k2,2 -k3,3 -k4,4 -u | cut -f1,2,4 > "$OUT/.matches.tsv"
 # 3. libraries with licence route and widget-class count
 awk -F'\t' -v OFS='\t' '
   function route(l) {
@@ -28,30 +29,32 @@ awk -F'\t' -v OFS='\t' '
     if (l ~ /GPL|LGPL|MPL|CPL|EUPL|CDDL/) return "PATTERN_ONLY (copyleft)";
     return "PATTERN_ONLY (licence review: none detected)";
   }
-  FILENAME ~ /licence_overrides/ { if (FNR > 1) ov[$1] = $2; next }
-  FILENAME ~ /excluded/ { if (FNR > 1) ex[$1] = $2; next }
-  FILENAME ~ /matches/ { lib[$2]++; next }
-  { slug = $1; lic = (slug in ov) ? ov[slug] : $2; stock = ($9 ~ /-stock$/);
+  FILENAME ~ /licence_overrides/ { if (FNR > 1) ov[tolower($1)] = $2; next }
+  FILENAME ~ /excluded/ { if (FNR > 1) ex[tolower($1)] = $2; next }
+  FILENAME ~ /matches/ { if (!(($2, $3) in seen)) { seen[$2, $3] = 1; lib[$2]++ } next }
+  FILENAME ~ /meta/ { slug = $1; k = tolower(slug); done[k] = 1; lic = (k in ov) ? ov[k] : $2; stock = ($9 ~ /-stock$/);
     r = stock ? "STOCK (column reference)" : route(lic);
     if ($2 == "NOT_FOUND") r = "EXCLUDE (repository not found)";
-    if (slug in ex) r = "EXCLUDE (" ex[slug] ")";
-    if (slug ~ /swingx$/) r = "PATTERN_ONLY (LGPL-2.1: API shape only, never code)";
-    print slug, lic, $3, $4, $9, $8, (slug in lib) ? lib[slug] : 0, $7, $10, r }' \
-  "$HERE/licence_overrides.tsv" "$HERE/excluded.tsv" "$OUT/.matches.tsv" "$CACHE/meta.tsv" \
-  | sort -t'	' -k5,5 -k3,3nr > "$OUT/.libs.tsv"
-{ printf 'slug\tlicence\tstars\tlast_push\ttoolkit\tjava_files\twidget_classes_matched\ttree_truncated\tsource\tlicence_route\n'
+    if (k in ex) r = "EXCLUDE (" ex[k] ")";
+    if (k ~ /swingx$/) r = "PATTERN_ONLY (LGPL-2.1: API shape only, never code)";
+    print slug, lic, $3, $4, $6, $9, $8, (k in lib) ? lib[k] : 0, $7, $10, r; next }
+  { k = tolower($1); if ((k in ex) && !(k in done)) { done[k] = 1;
+      print $1, $2, $3, $4, $6, "-", "-", "-", "-", "gh-search", "EXCLUDE (" ex[k] ")" } }' \
+  "$HERE/licence_overrides.tsv" "$HERE/excluded.tsv" "$OUT/.matches.tsv" "$CACHE/meta.tsv" "$CACHE/search_hits.tsv" \
+  | sort -t'	' -k6,6 -k3,3nr > "$OUT/.libs.tsv"
+{ printf 'slug\tlicence\tstars\tlast_push\tarchived\ttoolkit\tjava_files\twidget_classes_matched\ttree_truncated\tsource\tlicence_route\n'
   cat "$OUT/.libs.tsv"; } > "$OUT/LIBRARIES.tsv"
 # 4. matrix rows
 awk -F'\t' -v OFS='\t' '
   FILENAME ~ /concepts/ { if (FNR > 1) { n++; id[n] = $1; nm[$1] = $2; vt[$1] = $4; sw[$1] = $5; sg[$1] = $6 } next }
   FILENAME ~ /owners/ { if (FNR > 1) { po[$1] = $2; ow[$1] = $3; pn[$1] = $4 } next }
-  FILENAME ~ /libs/ { rt[$1] = $10; tk[$1] = $5; next }
+  FILENAME ~ /libs/ { rt[tolower($1)] = $11; tk[tolower($1)] = $6; next }
   { c = $1; s = $2; k = $3; if (rt[s] ~ /^EXCLUDE/) next;
     if (tk[s] ~ /-stock$/) { st[c, tk[s]] = st[c, tk[s]] (st[c, tk[s]] ? ";" : "") k; next }
     fam = (s ~ /swingx$/) ? "SwingX" : s;
     if (!((c, fam) in seen)) { seen[c, fam] = 1; cnt[c]++; libs[c] = libs[c] (libs[c] ? " " : "") fam }
-    if (s ~ /swingx$/) { if (index(";" sx[c] ";", ";" k ";") == 0) sx[c] = sx[c] (sx[c] ? ";" : "") k; next }
-    if (s == "hsoliwal/nebula") { nb[c] = nb[c] (nb[c] ? ";" : "") k; next }
+    if (s ~ /swingx$/) { if (index(";" sx[c] ";", ";" k ";") == 0 && nsx[c]++ < 4) sx[c] = sx[c] (sx[c] ? ";" : "") k; next }
+    if (s == "hsoliwal/nebula") { if (nnb[c]++ < 4) nb[c] = nb[c] (nb[c] ? ";" : "") k; next }
     if (oc[c, s] < 3) { oc[c, s]++; ol[c] = ol[c] (ol[c] ? "; " : "") s ":" k }
     if (rt[s] ~ /^ADAPT/ && index(ad[c], s) == 0) ad[c] = ad[c] (ad[c] ? "," : "") s }
   END {
@@ -72,7 +75,7 @@ awk -F'\t' -v OFS='\t' '
       if (sx[c] != "") lr = lr "; SwingX shape only";
       print score, c, nm[c], (sx[c] == "" ? "-" : sx[c]), (nb[c] == "" ? "-" : nb[c]), (ol[c] == "" ? "-" : ol[c]),
         sw[c], (st[c, "swt-stock"] == "" ? "-" : st[c, "swt-stock"]), sg[c], (st[c, "swing-stock"] == "" ? "-" : st[c, "swing-stock"]),
-        (st[c, "javafx-stock"] == "" ? "-" : st[c, "javafx-stock"]), v, cnt[c] + 0, miss, plan, lr, (c in po) ? po[c] : "", (c in ow) ? ow[c] : "custom-widgets", libs[c] } }' \
+        (st[c, "javafx-stock"] == "" ? "-" : st[c, "javafx-stock"]), v, cnt[c] + 0, miss, plan, lr, (c in po && po[c] != "-") ? po[c] : "", (c in ow) ? ow[c] : "custom-widgets", libs[c] } }' \
   "$HERE/concepts.tsv" "$HERE/owners.tsv" "$OUT/.libs.tsv" "$OUT/.matches.tsv" \
   | sort -t'	' -k1,1nr -k13,13nr -k2,2 \
   | awk -F'\t' -v OFS='\t' '{ r++; p = $17; if (p == "") p = (r <= 12) ? "P1" : (r <= 30) ? "P2" : "P3"; $17 = p; print r, $0 }' \
@@ -81,3 +84,17 @@ awk -F'\t' -v OFS='\t' '
   cat "$OUT/.matrix.tsv"; } > "$OUT/WIDGET_MATRIX.tsv"
 rm -f "$OUT/.pairs.tsv" "$OUT/.libs.tsv" "$OUT/.matrix.tsv"
 echo "libraries=$(($(wc -l < "$OUT/LIBRARIES.tsv") - 1)) concepts=$(($(wc -l < "$OUT/WIDGET_MATRIX.tsv") - 1)) matches=$(wc -l < "$OUT/.matches.tsv")"
+# 5. Swing hand-off rows in the shared ENHANCED_API_MAP format (enhanced-API Swing track, M3jdk21 java.desktop)
+awk -F'\t' -v OFS='\t' '
+  FILENAME ~ /m3_names/ { if (FNR > 1) { nm[$1] = $2; dp[$1] = $3 } next }
+  FNR == 1 { print "api_id", "family", "source", "swt", "nebula", "rwt", "intellij", "swing_swingx", "awt", "m3jdk_core", "donor_slugs",
+      "donor_evidence", "proposed_m3_surface", "doop_data_plan", "contract_tests", "priority", "status"; next }
+  $16 ~ /SWING_HANDOFF/ || $18 == "P0" { c = $3; n = (c in nm) ? nm[c] : "M3" c;
+    swt = ($8 ~ /^-/) ? "-" : "Y (" $8 ")"; neb = ($6 == "-") ? "-" : "Y (" $6 ")"; ij = ($20 ~ /intellij/) ? "Y" : "-";
+    sx = ($5 == "-") ? "-" : "SwingX " $5 " (API shape only)";
+    print "CW-" c, "widget/" tolower(c), "custom-widgets WIDGET_MATRIX rank " $1 " (score " $2 ")", swt, neb, "-", ij, sx, "-", "-",
+      $20, $7, "SWT: org.eclipse.nebula.widgets.m3." n " | Swing: javax.swing." n " (same members; Swing naming and events)",
+      (c in dp) ? dp[c] : "-", "Swing: seeded differential against the stock Swing composition it replaces (--patch-module java.desktop), 99% JaCoCo; SWT: recorded differential and example",
+      $18, "HANDOFF to the enhanced-API Swing track (m3/swing-enhanced-api-20261019); SWT side: " (($16 ~ /^NEW_SWT/) ? "custom-widgets new widget" : $16 ~ /^NEBULA/ ? "Nebula widget onto the viewport" : "stock SWT") }' \
+  "$HERE/m3_names.tsv" "$OUT/WIDGET_MATRIX.tsv" > "$OUT/ENHANCED_API_MAP.tsv"
+echo "swing_handoff_rows=$(($(wc -l < "$OUT/ENHANCED_API_MAP.tsv") - 1))"
