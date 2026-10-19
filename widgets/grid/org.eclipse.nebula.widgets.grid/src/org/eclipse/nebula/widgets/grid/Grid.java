@@ -2331,12 +2331,23 @@ public class Grid extends Canvas {
 			viewport.rowsChanged();
 		}
 		userModifiedItemHeight = true;
-		for (final GridItem item : materializedItems()) {
-			item.setHeight(height);
-		}
-		if (rowTree() != null) {
-			// the rows nobody has read have the Grid's item height too
-			rowTree().reweighUnread(height + 1);
+		if (GridViewport.UPSTREAM_FIXES) {
+			// every row gets the same height at once; stock's setHeight per item asked for the
+			// visible range with half the rows updated and kept that bottom index (D36), O(n) each
+			for (final GridItem item : materializedItems()) {
+				item.initializeHeight(height);
+				viewport.rowChanged(item);
+			}
+			if (rowTree() != null) {
+				// the rows nobody has read have the Grid's item height too
+				rowTree().reweighUnread(height + 1);
+			}
+			topIndex = -1;
+			bottomIndex = -1;
+		} else {
+			for (final GridItem item : materializedItems()) {
+				item.setHeight(height);
+			}
 		}
 		hasDifferingHeights = false;
 		setScrollValuesObsolete();

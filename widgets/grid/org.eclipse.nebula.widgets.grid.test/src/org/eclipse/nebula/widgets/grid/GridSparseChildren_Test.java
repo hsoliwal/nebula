@@ -139,7 +139,8 @@ public class GridSparseChildren_Test {
 		root.setItemCount(1);
 		assertEquals("c2 c2.1 c4 c4.1 ", events.toString());
 		assertEquals(2, grid.getItemCount());
-		assertEquals(2, grid.virtualMaterializedItemCount());
+		// the root only: the child left was never read
+		assertEquals(1, grid.virtualMaterializedItemCount());
 	}
 
 	private void flush() {
