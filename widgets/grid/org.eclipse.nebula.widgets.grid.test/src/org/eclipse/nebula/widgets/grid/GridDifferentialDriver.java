@@ -269,6 +269,8 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			item.setHeight(8 + c % 30);
 			return "height " + item.getHeight();
 		case 16:
+			// the item's data first: a changed check state is its data in the default mode only (D35)
+			item.getText(0);
 			item.setChecked(c % 2 == 0);
 			// by column: getChecked() requests SetData only in the default mode (D13), getChecked(0) in both
 			return "checked " + item.getChecked(0);
