@@ -45,6 +45,8 @@ public class RoundedCheckbox extends Canvas {
 	private Color unselectedColor, selectionBackground, selectionForeground, hoverColor;
 	private final Color disabledColor;
 	private GC gc;
+	/** Original Canvas is its own viewport; this records nested paint ownership only. */
+	private int paintDepth;
 	private boolean cursorInside;
 
 	/**
@@ -83,8 +85,19 @@ public class RoundedCheckbox extends Canvas {
 		hoverColor = getAndDisposeColor(56, 143, 188);
 
 		addListener(SWT.Paint, e -> {
+			// The GC belongs to SWT's incoming Event; never dispose or replace it.
+			// Like the existing Nebula LED owner, only a nested paint borrows the
+			// private GC field and must restore its caller's context in finally.
+			final GC previous = gc;
+			final boolean nested = paintDepth != 0;
+			paintDepth++;
 			gc = e.gc;
-			drawElement();
+			try {
+				drawElement();
+			} finally {
+				paintDepth--;
+				if (nested) gc = previous;
+			}
 		});
 
 		addListener(SWT.MouseUp, e -> onClick(e));

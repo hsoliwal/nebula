@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Nebula RoundedCheckbox intrinsic nested GC viewport
+on:
+  pull_request:
+    paths:
+      - 'widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/**'
+      - '.github/workflows/m3-roundedcheckbox-nested-gc-20261019.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  java21-jni-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Execute original vs nested Paint model and C17/JNI geometry
+        run: bash widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/run-viewport-proof.sh
+  native-swt-gtk-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Fetch pinned actual SWT GTK dependencies
+        run: |
+          mkdir -p .m3-checkbox/lib .m3-checkbox/classes
+          curl --fail --location --retry 3 -o .m3-checkbox/lib/swt-core.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt/3.126.0/org.eclipse.swt-3.126.0.jar
+          curl --fail --location --retry 3 -o .m3-checkbox/lib/swt-gtk.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/platform/org.eclipse.swt.gtk.linux.x86_64/3.126.0/org.eclipse.swt.gtk.linux.x86_64-3.126.0.jar
+          unzip -t .m3-checkbox/lib/swt-core.jar >/dev/null
+          unzip -t .m3-checkbox/lib/swt-gtk.jar >/dev/null
+      - name: Compile original RoundedCheckbox Canvas and original opal commons
+        run: |
+          commons=widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/src/org/eclipse/nebula/widgets/opal/commons
+          own=widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox
+          javac --release 21 \
+            -cp ".m3-checkbox/lib/swt-core.jar:.m3-checkbox/lib/swt-gtk.jar" \
+            -d .m3-checkbox/classes \
+            "$commons/ReflectionUtils.java" "$commons/SelectionListenerUtil.java" \
+            "$own/src/org/eclipse/nebula/widgets/roundedcheckbox/RoundedCheckbox.java" \
+            "$own/tests/org/eclipse/nebula/widgets/roundedcheckbox/RoundedCheckboxNativePaintSmoke.java"
+      - name: Launch original Canvas and nested SWT.Paint against real native GTK
+        run: |
+          xvfb-run -a java -Xcheck:jni \
+            -cp ".m3-checkbox/classes:.m3-checkbox/lib/swt-core.jar:.m3-checkbox/lib/swt-gtk.jar" \
+            org.eclipse.nebula.widgets.roundedcheckbox.RoundedCheckboxNativePaintSmoke
