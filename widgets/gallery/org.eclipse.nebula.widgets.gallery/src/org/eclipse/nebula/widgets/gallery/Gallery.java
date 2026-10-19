@@ -12,6 +12,7 @@
  *    Nicolas Richeton (nicolas.richeton@gmail.com) - initial API and implementation
  *    Tom Schindl      (tom.schindl@bestsolution.at) - fix for bug 174933
  *    Hitesh Soliwal (Synexia) - viewport mode: scroll bar values set only when they change, one client area per layout
+ *    Hitesh Soliwal (Synexia) - viewport mode: selection lane with amortized growth (docs/m3/custom-widgets/gallery)
  *******************************************************************************/
 
 package org.eclipse.nebula.widgets.gallery;
@@ -110,6 +111,9 @@ public class Gallery extends Canvas {
 	private boolean monotoneGroupGeometry;
 
 	private GalleryItem[] selection = null;
+
+	/** Viewport mode: the number of selected items at the front of {@link #selection}, which grows amortized. */
+	private int selectionCount;
 
 	/**
 	 * Selection bit flags. Each 'int' contains flags for 32 items.
@@ -827,9 +831,7 @@ public class Gallery extends Canvas {
 			if (item != null && selected) {
 				notifiedItem = item;
 			} else {
-				if (selection != null && selection.length > 0) {
-					notifiedItem = selection[selection.length - 1];
-				}
+				notifiedItem = lastSelected();
 			}
 
 			int index = -1;
@@ -882,6 +884,16 @@ public class Gallery extends Canvas {
 
 		}
 
+		if (VIEWPORT) {
+			//FLLDCIM: VIEWPORT - selection lane: amortized growth, no copy per selected item
+			if (selection == null) {
+				selection = new GalleryItem[8];
+			} else if (selectionCount == selection.length) {
+				selection = Arrays.copyOf(selection, selectionCount * 2);
+			}
+			selection[selectionCount++] = item;
+			return;
+		}
 		if (selection == null) {
 			selection = new GalleryItem[1];
 		} else {
@@ -908,8 +920,22 @@ public class Gallery extends Canvas {
             return;
         }
 
+		if (VIEWPORT) {
+			//FLLDCIM: VIEWPORT - selection lane: in-place shift keeps the selection order, no copy
+			System.arraycopy(selection, index + 1, selection, index, selectionCount - index - 1);
+			selection[--selectionCount] = null;
+			return;
+		}
 		selection = (GalleryItem[]) _arrayRemoveItem(selection, index);
 
+	}
+
+	/** The item selected last, or null: the item a Selection event names when one is deselected. */
+	private GalleryItem lastSelected() {
+		if (VIEWPORT) {
+			return selectionCount == 0 ? null : selection[selectionCount - 1];
+		}
+		return selection == null || selection.length == 0 ? null : selection[selection.length - 1];
 	}
 
 	protected void _removeSelection(GalleryItem parent, GalleryItem item) {
@@ -964,7 +990,15 @@ public class Gallery extends Canvas {
             System.out.println("clear"); //$NON-NLS-1$
         }
 
-		this.selection = null;
+		if (VIEWPORT) {
+			//FLLDCIM: VIEWPORT - selection lane: the array is kept and reused; the facades are released
+			if (selection != null) {
+				Arrays.fill(selection, 0, selectionCount, null);
+			}
+			selectionCount = 0;
+		} else {
+			this.selection = null;
+		}
         // Deselect groups
         // We could set selectionFlags to null, but we rather set all values to
         // 0 to redure garbage collection. On each iteration, we deselect 32
@@ -2478,6 +2512,10 @@ public class Gallery extends Canvas {
 	}
 
 	public GalleryItem[] getSelection() {
+		if (VIEWPORT) {
+			//FLLDCIM: VIEWPORT - selection lane: the caller gets a copy of the selected prefix, in selection order
+			return selectionCount == 0 ? new GalleryItem[0] : Arrays.copyOf(selection, selectionCount);
+		}
 		if (selection == null) {
 			return new GalleryItem[0];
 		}
@@ -2486,6 +2524,9 @@ public class Gallery extends Canvas {
 	}
 
 	public int getSelectionCount() {
+		if (VIEWPORT) {
+			return selectionCount;
+		}
         if (selection == null) {
             return 0;
         }

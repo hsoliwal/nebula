@@ -162,6 +162,10 @@ public class GalleryScaleOracleTest {
 				remove [k] = (System.nanoTime () - start) / 1000;
 			}
 		}
+		start = System.nanoTime ();
+		gallery.selectAll ();
+		gallery.deselectAll ();
+		long selectAll = (System.nanoTime () - start) / 1000;
 		long append = 0;
 		if (!virtual) {
 			GalleryItem last = gallery.getItem (groups - 1);
@@ -176,7 +180,7 @@ public class GalleryScaleOracleTest {
 		}
 		System.out.println ("gallery-oracle " + mode () + (virtual ? " virtual" : " items") + " " + groups * GROUP + " create " + create + " paint "
 			+ median (paint) + " scroll " + median (scroll) + " select " + median (select) + " hit " + median (hit) + " redraw " + median (redraw)
-			+ " collapse " + median (collapse) + " indexOf " + median (index) + " remove " + median (remove) + " append " + append);
+			+ " collapse " + median (collapse) + " indexOf " + median (index) + " remove " + median (remove) + " append " + append + " selectAll " + selectAll);
 		shell.dispose ();
 	}
 

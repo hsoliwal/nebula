@@ -35,3 +35,5 @@ if [ "${1:-}" = stock ]; then
 fi
 compile "$OUT/test-classes" "$OUT/gallery-classes;$SWT;$DEPS;$TESTDEPS" "$WT/$T"
 [ -d "$WT/$E" ] && compile "$OUT/example-classes" "$OUT/gallery-classes;$SWT;$DEPS" "$WT/$E" | head -3
+SN=examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/gallery
+compile "$OUT/snippet-classes" "$OUT/gallery-classes;$SWT;$DEPS" "$WT/$SN"
