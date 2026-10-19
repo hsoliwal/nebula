@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.eclipse.nebula</groupId>
+		<version>1.0.0-SNAPSHOT</version>
+		<artifactId>nebula-parent</artifactId>
+		<relativePath>../../releng/org.eclipse.nebula.nebula-parent</relativePath>
+	</parent>
+
+	<artifactId>m3</artifactId>
+	<packaging>pom</packaging>
+	<version>1.0.0-SNAPSHOT</version>
+
+	<modules>
+		<module>org.eclipse.nebula.widgets.m3</module>
+		<module>org.eclipse.nebula.widgets.m3.example</module>
+		<module>org.eclipse.nebula.widgets.m3.snippets</module>
+		<module>org.eclipse.nebula.widgets.m3.tests</module>
+	</modules>
+
+</project>
