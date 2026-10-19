@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Nebula intrinsic Canvas GC source contracts
+on:
+  pull_request:
+    paths:
+      - 'widgets/chips/org.eclipse.nebula.widgets.chips/**'
+      - 'widgets/pgroup/org.eclipse.nebula.widgets.pgroup/**'
+      - '.github/workflows/m3-canvas-gc-failure-20261019.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  java21-source-contract-oracle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Real Java21 compile and original-vs-candidate GC failure corpus
+        run: bash widgets/chips/org.eclipse.nebula.widgets.chips/run-canvas-gc-contract.sh

@@ -10,6 +10,7 @@
  *
  * Contributors:
  *    EclipseSource - initial API and implementation
+ *    Hitesh Soliwal (Synexia) - viewport mode
  ******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -68,6 +69,44 @@ public class GridTestUtil {
       result[ i ] = column;
     }
     return result;
+  }
+
+  /**
+   * Whether the Grid under test fixes the stock defects listed in
+   * docs/m3/grid-viewport/UPSTREAM_DEFECTS.tsv: every mode but original. Stock Nebula Grid (no
+   * GridViewport class) answers false, as the original mode does.
+   */
+  public static boolean fixesUpstreamDefects() {
+    try {
+      java.lang.reflect.Field field = Class.forName( "org.eclipse.nebula.widgets.grid.GridViewport" )
+        .getDeclaredField( "UPSTREAM_FIXES" );
+      field.setAccessible( true );
+      return field.getBoolean( null );
+    } catch( ReflectiveOperationException stock ) {
+      return false;
+    }
+  }
+
+  /**
+   * Runs a call that throws {@code fixed} in the default mode and {@code stock} in the original
+   * mode and on stock Nebula Grid (a {@code null} class: the call returns normally).
+   */
+  public static void assertThrowsByMode( Class<? extends Throwable> fixed, Class<? extends Throwable> stock,
+                                         Runnable call )
+  {
+    Class<? extends Throwable> expected = fixesUpstreamDefects() ? fixed : stock;
+    try {
+      call.run();
+    } catch( Throwable thrown ) {
+      if( expected != null && expected.isInstance( thrown ) ) {
+        return;
+      }
+      throw new AssertionError( "expected " + ( expected == null ? "no exception" : expected.getName() ) + " but got "
+                                + thrown, thrown );
+    }
+    if( expected != null ) {
+      throw new AssertionError( "expected " + expected.getName() );
+    }
   }
 
   public static Image loadImage( Display display, String name ) {

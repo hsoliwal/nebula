@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
  * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -406,20 +410,18 @@ public class GridRowPermutation_Test {
 		return a;
 	}
 
-	/** SHA-256 of the Grid rendered by {@code Control.print(GC)} (capture mode CONTROL_PRINT). */
+	/**
+	 * SHA-256 of the Grid's own paint (capture mode GRID_PAINT: the Grid's paint listener drawn into
+	 * an image). {@code Control.print} is not used: it returns the window's last presented surface
+	 * when one exists, which can still show the state before the last change (measured: two to four
+	 * of 26 consecutive captures on the hidden test desktop); the Grid's own paint is
+	 * deterministic. Scroll bars and borders are not part of it; tests assert their values.
+	 */
 	static String pixels(final Grid grid) throws Exception {
 		final Point size = grid.getSize();
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
-			final GC gc = new GC(image);
-			try {
-				// capture mode CONTROL_PRINT: Control.print(GC) renders the widget's own paint
-				if (!grid.print(gc)) {
-					throw new IllegalStateException("Control.print unsupported");
-				}
-			} finally {
-				gc.dispose();
-			}
+			paint(grid, image);
 			final String dump = System.getProperty("grid.pixels.dump");
 			if (dump != null) {
 				final org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
@@ -434,6 +436,23 @@ public class GridRowPermutation_Test {
 			return hex.toString();
 		} finally {
 			image.dispose();
+		}
+	}
+
+	/**
+	 * Runs the Grid's own paint into {@code image} (its paint listener with a GC on the image), the
+	 * deterministic capture used by the Grid pixel tests.
+	 */
+	static void paint(final Grid grid, final Image image) {
+		final GC gc = new GC(image);
+		try {
+			final org.eclipse.swt.widgets.Event event = new org.eclipse.swt.widgets.Event();
+			event.gc = gc;
+			event.width = image.getBounds().width;
+			event.height = image.getBounds().height;
+			grid.notifyListeners(SWT.Paint, event);
+		} finally {
+			gc.dispose();
 		}
 	}
 

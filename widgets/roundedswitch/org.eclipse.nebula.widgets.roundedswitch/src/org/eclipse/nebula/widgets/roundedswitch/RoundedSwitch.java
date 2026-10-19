@@ -149,8 +149,11 @@ public class RoundedSwitch extends Canvas {
 	}
 
 	private void drawOuterRoundedRectangle() {
-		final int width = getSize().x;
-		final int height = getSize().y;
+		// A stock Canvas has a stable, non-overriding size getter. Retain the
+		// original two calls for subclasses whose getter can have side effects.
+		final Point intrinsicSize = getClass() == RoundedSwitch.class ? getSize() : null;
+		final int width = intrinsicSize != null ? intrinsicSize.x : getSize().x;
+		final int height = intrinsicSize != null ? intrinsicSize.y : getSize().y;
 		gc.fillRoundRectangle(2, 2, width - 4, height - 4, height - 4, height - 4);
 	}
 
@@ -158,15 +161,21 @@ public class RoundedSwitch extends Canvas {
 		if (gc.getForeground().equals(gc.getBackground())) {
 			return;
 		}
-		final int width = getSize().x;
-		final int height = getSize().y;
+		// A stock Canvas has a stable, non-overriding size getter. Retain the
+		// original two calls for subclasses whose getter can have side effects.
+		final Point intrinsicSize = getClass() == RoundedSwitch.class ? getSize() : null;
+		final int width = intrinsicSize != null ? intrinsicSize.x : getSize().x;
+		final int height = intrinsicSize != null ? intrinsicSize.y : getSize().y;
 		gc.setLineWidth(borderWidth);
 		gc.drawRoundRectangle(2, 2, width - 4, height - 4, height - 4, height - 4);
 	}
 
 	private void drawCircle() {
-		final int width = getSize().x;
-		final int height = getSize().y;
+		// A stock Canvas has a stable, non-overriding size getter. Retain the
+		// original two calls for subclasses whose getter can have side effects.
+		final Point intrinsicSize = getClass() == RoundedSwitch.class ? getSize() : null;
+		final int width = intrinsicSize != null ? intrinsicSize.x : getSize().x;
+		final int height = intrinsicSize != null ? intrinsicSize.y : getSize().y;
 		int x;
 		if (selected) {
 			x = width - height + 4;

@@ -13,6 +13,7 @@
  *    Claes Rosell<claes.rosell@solme.se> - rowspan in bug 272384
  *    Stefan Widmaier<stefan.widmaier@faktorzehn.de> - rowspan in 304797
  *    Mirko Paturzo <mirko.paturzo@exeura.eu> - improvement (bug in 419928)
+ *    Hitesh Soliwal (Synexia) - row from the row tree, default-mode fixes of upstream defects
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.graphics.Color;
@@ -147,6 +149,12 @@ public class GridItem extends Item {
 
 	private int row = NO_ROW;
 
+	/* this item's slot in the Grid's row tree (GridRowTree), or -1 */
+	private int rowTreeSlot = -1;
+
+	/* this item's position in the Grid's selection (GridSelectionList), or -1 */
+	private int selectionPosition = -1;
+
 	private final Object ROW_LOCK = new Object();
 
 	/**
@@ -227,12 +235,55 @@ public class GridItem extends Item {
 	 * @return grid row index
 	 */
 	public int getRowIndex() {
+		if (rowTreeSlot >= 0) {
+			return parent.rowInTree(this);
+		}
 		synchronized (ROW_LOCK) {
             if (row != NO_ROW) {
                 return row;
             }
 		}
 		return parent.indexOf(this);
+	}
+
+	/**
+	 * @return the row index this item keeps, or -1 when it keeps none (no search)
+	 */
+	int knownRow() {
+		if (rowTreeSlot >= 0) {
+			return parent.rowInTree(this);
+		}
+		synchronized (ROW_LOCK) {
+			return row;
+		}
+	}
+
+	/** @return this item's position in the Grid's selection list, or -1 */
+	int selectionPosition() {
+		return selectionPosition;
+	}
+
+	/** The Grid's selection list keeps this item at {@code position} (-1: not selected). */
+	void markSelectionPosition(final int position) {
+		selectionPosition = position;
+	}
+
+	/** @return this item's slot in the Grid's row tree, or -1 */
+	int rowTreeSlot() {
+		return rowTreeSlot;
+	}
+
+	/** The Grid's row tree holds this item at {@code slot}; its row follows from the tree. */
+	void enteredRowTree(final int slot) {
+		rowTreeSlot = slot;
+	}
+
+	/** The Grid's row tree let this item go from {@code lastRow}, which it keeps as stock does. */
+	void leftRowTree(final int lastRow) {
+		rowTreeSlot = -1;
+		synchronized (ROW_LOCK) {
+			row = lastRow;
+		}
 	}
 
 	void increaseRow() {
@@ -319,6 +370,7 @@ public class GridItem extends Item {
 	 */
 	@Override
 	public void dispose() {
+		sendDisposeFirst();
 		if (!parent.isDisposing()) {
 			parent.removeItem(this);
 
@@ -467,6 +519,7 @@ public class GridItem extends Item {
 	 */
 	public Color getBackground() {
 		checkWidget();
+		handleVirtualData();
 
 		if (defaultBackground == null) {
 			return parent.getBackground();
@@ -647,6 +700,7 @@ public class GridItem extends Item {
 	 */
 	public boolean getChecked() {
 		checkWidget();
+		handleVirtualData();
 		final int packed = parent.packedCheck(this, 0, Grid.LANE_CHECKED);
 		return packed < 0 ? parent.getDataVisualizer().getChecked(this, 0) : packed == 1;
 	}
@@ -727,6 +781,7 @@ public class GridItem extends Item {
 	 *             </ul>
 	 */
 	public Font getFont() {
+		handleVirtualData();
 		if (defaultFont == null) {
 			return parent.getFont();
 		}
@@ -769,6 +824,7 @@ public class GridItem extends Item {
 	 *             </ul>
 	 */
 	public Color getForeground() {
+		handleVirtualData();
 		if (defaultForeground == null) {
 			return parent.getForeground();
 		}
@@ -856,6 +912,7 @@ public class GridItem extends Item {
 	@Override
 	public Image getImage() {
 		checkWidget();
+		handleVirtualData();
 		return parent.getDataVisualizer().getImage(this, 0);
 	}
 
@@ -1056,6 +1113,7 @@ public class GridItem extends Item {
 	@Override
 	public String getText() {
 		checkWidget();
+		handleVirtualData();
 		return parent.getDataVisualizer().getText(this, 0);
 	}
 
@@ -1575,6 +1633,9 @@ public class GridItem extends Item {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
 		height = newHeight;
+		if (parent.viewport != null) {
+			parent.viewport.rowChanged(this);
+		}
 		parent.hasDifferingHeights = true;
 		if (isVisible()) {
 			int myIndex = this.getRowIndex();
@@ -1633,6 +1694,12 @@ public class GridItem extends Item {
 	 */
 	@Override
 	public void setImage(Image image) {
+		if (GridViewport.UPSTREAM_FIXES) {
+			checkWidget();
+			if (image != null && image.isDisposed()) {
+				SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+			}
+		}
 		parent.getDataVisualizer().setImage(this, 0, image);
 		parent.redraw();
 	}
@@ -1717,7 +1784,11 @@ public class GridItem extends Item {
             throw new IllegalArgumentException("GridItem has no children!");
         }
 		children.remove(child);
-		parent.getDataVisualizer().clearRow(child);
+		// a row-addressed visualizer already removed the child's row (Grid.removeItem); clearing
+		// it by the child's old row index would clear the row that moved into its place
+		if (!parent.usesRowAddressedDataVisualizer()) {
+			parent.getDataVisualizer().clearRow(child);
+		}
 		hasChildren = !children.isEmpty();
 	}
 
@@ -1740,6 +1811,18 @@ public class GridItem extends Item {
 	 * @param index
 	 *            index
 	 */
+	/**
+	 * Removes a child from this item's children without disposing it (the Grid is shrinking its
+	 * rows and disposes the child itself).
+	 *
+	 * @param child the child
+	 */
+	void detachChild(GridItem child) {
+		if (children != null && children.remove(child)) {
+			hasChildren = !children.isEmpty();
+		}
+	}
+
 	void newItem(GridItem item, int index) {
 		setHasChildren(true);
         if (children == null) {
@@ -1776,6 +1859,9 @@ public class GridItem extends Item {
 		}
 
 		this.visible = visible;
+		if (parent.viewport != null) {
+			parent.viewport.rowChanged(this);
+		}
 
 		if (visible) {
 			parent.updateVisibleItems(1);
@@ -2114,6 +2200,17 @@ public class GridItem extends Item {
 		hasSetData = false;
 	}
 
+	/**
+	 * Requests the item's data for a getter without a column index: in the default mode they do
+	 * as the indexed getters (an SWT.VIRTUAL item answers its data, also after a clear); the
+	 * original mode answers without requesting, as stock Nebula Grid.
+	 */
+	private void handleVirtualData() {
+		if (GridViewport.UPSTREAM_FIXES) {
+			handleVirtual();
+		}
+	}
+
 	private void handleVirtual() {
 		if ((getParent().getStyle() & SWT.VIRTUAL) != 0 && !hasSetData) {
 			hasSetData = true;
@@ -2169,6 +2266,12 @@ public class GridItem extends Item {
 	 *            recursively, and <code>false</code> otherwise
 	 */
 	void clear(boolean allChildren) {
+		// Grid.clear promises that the text, icon and other attributes (also those the data
+		// visualizer keeps per column: texts, images, colours, fonts, check states, spans) return to
+		// their default values
+		if (GridViewport.UPSTREAM_FIXES) {
+			parent.getDataVisualizer().clearRow(this);
+		}
 
 		defaultForeground = null;
 		defaultBackground = null;
@@ -2193,6 +2296,7 @@ public class GridItem extends Item {
 	 * this method call only super.dispose, nothing else..
 	 */
 	public void disposeOnly() {
+		sendDisposeFirst();
         if (hasChildren) {
             for (int i = children.size() - 1; i >= 0; i--) {
                 children.get(i).disposeOnly();
@@ -2203,6 +2307,25 @@ public class GridItem extends Item {
 		}
 		noRow();
 		super.dispose();
+	}
+
+	/**
+	 * Sends the Dispose event while the item still has its row and data, as SWT's
+	 * {@code Widget.dispose} sends it before anything is released; the release later finds no
+	 * Dispose listener left. Stock Nebula removes the row and its data first, so a Dispose listener
+	 * reads an empty item (default mode, UPSTREAM_DEFECTS.tsv).
+	 */
+	void sendDisposeFirst() {
+		if (!GridViewport.UPSTREAM_FIXES || isDisposed() || !isListening(SWT.Dispose)) {
+			return;
+		}
+		final Listener[] listeners = getListeners(SWT.Dispose);
+		notifyListeners(SWT.Dispose, new Event());
+		if (!isDisposed()) {
+			for (final Listener listener : listeners) {
+				removeListener(SWT.Dispose, listener);
+			}
+		}
 	}
 
 	private void noRow() {

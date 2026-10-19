@@ -1,0 +1,14 @@
+JUnit version 4.13.2
+..E.
+Time: 0.039
+There was 1 failure:
+1) sparseFrontierFindsEarliestCoveringSpanAtDistantViewport(org.eclipse.nebula.widgets.grid.GridRowSpanIndex_Test)
+java.lang.AssertionError: expected:<500000> but was:<499995>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:647)
+	at org.junit.Assert.assertEquals(Assert.java:633)
+	at org.eclipse.nebula.widgets.grid.GridRowSpanIndex_Test.sparseFrontierFindsEarliestCoveringSpanAtDistantViewport(GridRowSpanIndex_Test.java:24)
+
+FAILURES!!!
+Tests run: 3,  Failures: 1

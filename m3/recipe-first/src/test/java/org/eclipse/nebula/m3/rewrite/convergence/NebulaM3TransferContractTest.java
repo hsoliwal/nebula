@@ -14,7 +14,24 @@ import org.junit.jupiter.api.Test;
 final class NebulaM3TransferContractTest {
     @Test
     void contractBindsCanonicalRecipeDagAndTargetRepositories() {
-        assertEquals("NEBULA_M3_RECIPE_TRANSFER_V1", NebulaM3TransferContract.SCHEMA);
+        assertEquals("NEBULA_M3_RECIPE_TRANSFER_V2", NebulaM3TransferContract.SCHEMA);
+        assertEquals("hsoliwal/nebula", NebulaM3TransferContract.PROOF_REPOSITORY);
+        assertEquals(
+                "m3/final-portable-recipe-transfer-v2-20261015",
+                NebulaM3TransferContract.PROOF_BRANCH);
+        assertEquals(
+                "org.eclipse.nebula.m3:nebula-m3-recipe-first:1.0.0-SNAPSHOT",
+                NebulaM3TransferContract.RECIPE_COORDINATE);
+        assertEquals("m3-nebula-file-convergence", NebulaM3TransferContract.ROOT_PROFILE);
+        assertTrue(NebulaM3TransferContract.DRY_RUN_COMMAND.contains("rewrite:dryRunNoFork"));
+        assertTrue(NebulaM3TransferContract.APPLY_COMMAND.contains("rewrite:runNoFork"));
+        assertEquals(
+                ".github/workflows/m3-one-build-openrewrite-convergence.yml",
+                NebulaM3TransferContract.ONE_BUILD_WORKFLOW);
+        assertEquals(
+                ".github/workflows/m3-portable-recipe-dag-java21.yml",
+                NebulaM3TransferContract.PORTABLE_WORKFLOW);
+        assertEquals("HOLD_UNTIL_PROVEN", NebulaM3TransferContract.TRANSFER_STATE);
         assertEquals(21, NebulaM3TransferContract.JAVA_RELEASE);
         assertEquals("8.90.4", NebulaM3TransferContract.OPENREWRITE_VERSION);
         assertEquals(
@@ -34,7 +51,7 @@ final class NebulaM3TransferContractTest {
                 NebulaM3TransferContract.CANONICAL_VIEWPORT_RECIPE);
         assertFalse(NebulaM3TransferContract.LOCAL_RECIPE_IMPLEMENTATION_AUTHORITY);
         assertEquals(
-                List.of("hsoliwal/M3jdk21", "hsoliwal/com.synexia"),
+                List.of("hsoliwal/com.synexia", "hsoliwal/M3jdk21"),
                 NebulaM3TransferContract.targets().stream()
                         .map(NebulaM3TransferContract.Target::repository)
                         .toList());
@@ -62,7 +79,20 @@ final class NebulaM3TransferContractTest {
                         .contains("canonicalRecipeRepository\thsoliwal/com.synexia"));
         assertTrue(
                 NebulaM3TransferContract.metadataTsv()
+                        .contains("proofRepository\thsoliwal/nebula"));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains(
+                                "proofBranch\tm3/final-portable-recipe-transfer-v2-20261015"));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains("transferState\tHOLD_UNTIL_PROVEN"));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
                         .contains("localRecipeImplementationAuthority\tfalse"));
+        assertTrue(
+                NebulaM3TransferContract.metadataTsv()
+                        .contains("backportPlanRoot\t" + NebulaM3BackportPlan.root()));
     }
 
     @Test
@@ -116,6 +146,15 @@ final class NebulaM3TransferContractTest {
                 NebulaM3TransferContract.targetsTsv(),
                 Files.readString(output.resolve("transfer-targets.tsv")));
         assertEquals(
+                NebulaM3BackportPlan.tsv(),
+                Files.readString(output.resolve("backport-plan.tsv")));
+        assertEquals(
+                NebulaM3BackportBundle.tsv(),
+                Files.readString(output.resolve("backport-bundle.tsv")));
+        assertEquals(
+                NebulaM3BackportBundle.root() + "\n",
+                Files.readString(output.resolve("backport-bundle.sha256")));
+        assertEquals(
                 NebulaM3UiBehaviorDonorCatalog.tsv(),
                 Files.readString(output.resolve("ui-behavior-donors.tsv")));
         assertEquals(
@@ -136,9 +175,30 @@ final class NebulaM3TransferContractTest {
         assertEquals(
                 NebulaM3OrchestratorPlans.root() + "\n",
                 Files.readString(output.resolve("orchestrator-plans.sha256")));
+        String javaGrade =
+                Files.readString(output.resolve("java-grade-qualification.tsv"));
+        assertEquals(NebulaM3JavaGradeQualification.pending().toTsv(), javaGrade);
+        assertTrue(javaGrade.contains("backportPlanRoot\t" + NebulaM3BackportPlan.root()));
+        assertTrue(javaGrade.contains("backportBundleRoot\t" + NebulaM3BackportBundle.root()));
+        assertTrue(javaGrade.contains("disposition\tHOLD"));
+        assertTrue(javaGrade.contains("mutationAuthority\tfalse"));
+        assertTrue(javaGrade.contains("promotionAuthority\tfalse"));
+
         assertEquals(
                 NebulaM3TransferContract.root() + "\n",
                 Files.readString(output.resolve("transfer.sha256")));
+
+        // The mere existence of a transfer bundle never grants proof or promotion.
+        var hold = NebulaM3ProofGate.pending(NebulaM3RecipeDagManifest.root());
+        String qualification =
+                Files.readString(output.resolve("transfer-qualification.tsv"));
+        assertEquals(hold.toTsv(), qualification);
+        assertFalse(hold.complete());
+        assertEquals("HOLD", hold.disposition());
+        assertTrue(qualification.contains("\tNOT_RUN\t-\tHOLD\tfalse\tfalse\t"));
+        assertEquals(
+                NebulaM3ProofGate.Stage.values().length + 1,
+                qualification.lines().count());
     }
     private static String sha256(String value) {
         try {

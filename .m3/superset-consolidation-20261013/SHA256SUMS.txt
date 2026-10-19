@@ -1,0 +1,11 @@
+da5f34433b8b62929a9b8998d852faeb1c7e53c09bbdf0b36e27b7cf23adc388 *org.eclipse.nebula.visualization.widgets-1.1.0-m3-20261013.2.jar
+b9232ae67edf3b3dfa874b2046ff6086d3128571b69fba4def64963255bcc319 *org.eclipse.nebula.visualization.xygraph-3.2.0-m3-20261013.2.jar
+189e3307294015f591ed2d948f9811b2c92d084ccd73b92923847da61e7806ff *org.eclipse.nebula.widgets.calendarcombo-1.1.0-m3-20261013.2.jar
+9081024ea2640922e9824d8e0d4d231f8a435d7c8b38fbac3558a33413199f2a *org.eclipse.nebula.widgets.compositetable-1.1.0-m3-20261013.2.jar
+ed58b8eb8de5366a605dce9cad8913e1d94caf36b8f5ac69e514ee4f6f917d3b *org.eclipse.nebula.widgets.ctree-0.9.0-m3-20261013.2.jar
+c349aa8d2d2cbbc44e048a017fe93a9d40d145b2ed7c187e41b0ac725dce77de *org.eclipse.nebula.widgets.ctreecombo-1.0.0-m3-20261013.2.jar
+75893bf8bc57617e39d4b1788e9befe93baafe8970a342b1e66948adce093251 *org.eclipse.nebula.widgets.grid-1.3.0-m3-20261013.2.jar
+be5f5ba6f04652889f0ccfdfd517e44bff1489082041c6a63036a613fe967774 *org.eclipse.nebula.widgets.oscilloscope-1.5.0-m3-20261013.2.jar
+9daec41c8f5c97a280b2569d2a18bc38eaef794050af24885a3bfd7940d2d7a7 *org.eclipse.nebula.widgets.tablecombo-1.3.0-m3-20261013.2.jar
+a282b5744c226d412d46c14059f14b02ee8044f46d5c3934856d5296bed73ef4 *org.eclipse.nebula.widgets.xviewer-1.1.0-m3-20261013.2.jar
+b40abda0606ffc9f9f68c448713449b90f963f6853213a85b91e33b5b8b6108d *org.eclipse.nebula.widgets.xviewer.core-1.0.0-m3-20261013.2.jar

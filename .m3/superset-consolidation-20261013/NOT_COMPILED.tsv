@@ -1,0 +1,3 @@
+bundle	source	reason
+org.eclipse.nebula.widgets.tablecombo.test	widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.test/src/org/eclipse/nebula/widgets/tablecombo/TableComboTests.java	SWTBot (org.eclipse.swtbot.go) not available locally
+org.eclipse.nebula.widgets.tablecombo.test	widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.test/src/org/eclipse/nebula/widgets/tablecombo/TableComboViewerTests.java	SWTBot (org.eclipse.swtbot.go) not available locally

@@ -12,6 +12,7 @@
  *    chris.gross@us.ibm.com - initial API and implementation
  *    mario.winterer@scch.at - bugfix in 244333
  *    Marty Jones<martybjones@gmail.com> - custom header/footer font in bug 293743
+ *    Hitesh Soliwal (Synexia) - viewport mode
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -22,6 +23,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.TreeListener;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Item;
@@ -437,6 +439,31 @@ public class GridColumnGroup extends Item
         checkWidget();
         headerRenderer.setWordWrap(wordWrap);
         parent.redraw();
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setText(String string) {
+        super.setText(string);
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setImage(Image image) {
+        super.setImage(image);
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
     }
     /**
      * Returns whether or not text is word-wrapped in the header for this column group.
@@ -473,10 +500,20 @@ public class GridColumnGroup extends Item
     /**
      * Sets the Font to be used when displaying the Header text.
      * @param font the font to set for the header
+     * @throws IllegalArgumentException
+     *             <ul>
+     *             <li>ERROR_INVALID_ARGUMENT - if the font has been disposed</li>
+     *             </ul>
      */
     public void setHeaderFont(Font font) {
     	checkWidget();
+		if (GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed()) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
     	this.headerFont = font;
+        if (GridViewport.UPSTREAM_FIXES) {
+            parent.headerContentChanged();
+        }
     }
 
 	/**

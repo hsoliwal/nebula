@@ -19,12 +19,20 @@ final class NebulaM3OrchestratorPlansTest {
             previous = position;
             assertTrue(yaml.contains("constant: \"" + node.recipeClass() + "\""));
         }
+        assertTrue(yaml.contains("name: m3RecipeWave"));
+        assertTrue(yaml.contains("name: m3DependsOn"));
+        for (NebulaM3RecipeDagManifest.Node node : NebulaM3RecipeDagManifest.nodes()) {
+            assertTrue(
+                    yaml.contains(
+                            "constant: \"" + String.join(",", node.dependsOn()) + "\""),
+                    node.id());
+        }
         assertTrue(yaml.contains("direct:nebula-m3-openrewrite-atom"));
         assertFalse(yaml.contains("rewrite:run"));
     }
 
     @Test
-    void airflowPlanIsOneSerialDagAndCarriesNoMutationOperator() {
+    void airflowPlanUsesDeclaredDagEdgesAndCarriesNoMutationOperator() {
         String python = NebulaM3OrchestratorPlans.airflowPython();
         var nodes = NebulaM3RecipeDagManifest.nodes();
 
@@ -32,30 +40,35 @@ final class NebulaM3OrchestratorPlansTest {
         assertTrue(python.contains("\"mutation_authority\": False"));
         assertTrue(python.contains("\"promotion_authority\": False"));
         assertEquals(nodes.size(), occurrences(python, " = EmptyOperator("));
-        for (int index = 1; index < nodes.size(); index++) {
-            String edge =
-                    nodes.get(index - 1).id().replace('-', '_')
-                            + " >> "
-                            + nodes.get(index).id().replace('-', '_');
-            assertTrue(python.contains(edge), edge);
+        for (NebulaM3RecipeDagManifest.Node node : nodes) {
+            for (String dependency : node.dependsOn()) {
+                String edge =
+                        dependency.replace('-', '_')
+                                + " >> "
+                                + node.id().replace('-', '_');
+                assertTrue(python.contains(edge), edge);
+            }
         }
         assertFalse(python.contains("BashOperator"));
         assertFalse(python.contains("rewrite:run"));
     }
 
     @Test
-    void droolsPlanEncodesPredecessorReadinessWithoutExecutingRecipes() {
+    void droolsPlanEncodesDeclaredDependencyReadinessWithoutExecutingRecipes() {
         String drl = NebulaM3OrchestratorPlans.droolsDrl();
         var nodes = NebulaM3RecipeDagManifest.nodes();
 
         assertEquals(nodes.size(), occurrences(drl, "rule \"m3-"));
         assertTrue(drl.contains("modify($current) { setReady(true) };"));
-        for (int index = 1; index < nodes.size(); index++) {
-            assertTrue(
-                    drl.contains(
-                            "$previous : M3RecipeNode(id == \""
-                                    + nodes.get(index - 1).id()
-                                    + "\", ready == true)"));
+        for (NebulaM3RecipeDagManifest.Node node : nodes) {
+            for (String dependency : node.dependsOn()) {
+                assertTrue(
+                        drl.contains(
+                                "M3RecipeNode(id == \""
+                                        + dependency
+                                        + "\", ready == true)"),
+                        node.id() + " <- " + dependency);
+            }
         }
         assertFalse(drl.contains("Runtime.getRuntime"));
         assertFalse(drl.contains("ProcessBuilder"));

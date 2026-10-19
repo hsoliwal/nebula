@@ -114,23 +114,36 @@ public class Chips extends Canvas {
 			final Color previousForeground = gc.getForeground();
 			final Color previousBackground = gc.getBackground();
 
-			int x = drawBackground(gc);
-			drawWidgetBorder(gc);
-			if (isCheck && selection) {
-				x = drawCheck(gc, x);
+			// SWT owns this GC; only paint-damage recovery is new.
+			try {
+				int x = drawBackground(gc);
+				drawWidgetBorder(gc);
+				if (isCheck && selection) {
+					x = drawCheck(gc, x);
+				}
+				if (image != null) {
+					x = drawImage(gc, x);
+				}
+				if (text != null) {
+					x = drawText(gc, x);
+				}
+				if (isClose) {
+					drawClose(gc, x);
+				}
+			} catch (RuntimeException | Error failure) {
+				try {
+					gc.setBackground(previousBackground);
+				} catch (RuntimeException | Error cleanup) {
+					if (cleanup != failure) failure.addSuppressed(cleanup);
+				}
+				try {
+					gc.setForeground(previousForeground);
+				} catch (RuntimeException | Error cleanup) {
+					if (cleanup != failure) failure.addSuppressed(cleanup);
+				}
+				throw failure;
 			}
-
-			if (image != null) {
-				x = drawImage(gc, x);
-			}
-
-			if (text != null) {
-				x = drawText(gc, x);
-			}
-
-			if (isClose) {
-				drawClose(gc, x);
-			}
+			// Keep the original successful-paint order and resulting GC flags.
 			gc.setBackground(previousBackground);
 			gc.setForeground(previousForeground);
 
@@ -296,7 +309,18 @@ public class Chips extends Canvas {
 
 		gc.setBackground(background);
 		gc.setForeground(foreground);
-		closeCenter = new Point(x + 4 + CLOSE_CIRCLE_RAY, (rect.height - 2 * CLOSE_CIRCLE_RAY) / 2 + CLOSE_CIRCLE_RAY);
+		// The existing widget owns its last painted close-center. Reuse the
+		// same private Point after its first allocation; do not add another
+		// viewport, SetData callback, native resource or item owner.
+		// Preserve Java int wrap, event coordinates and the prepaint null state.
+		final int centerX = x + 4 + CLOSE_CIRCLE_RAY;
+		final int centerY = (rect.height - 2 * CLOSE_CIRCLE_RAY) / 2 + CLOSE_CIRCLE_RAY;
+		if (closeCenter == null) {
+			closeCenter = new Point(centerX, centerY);
+		} else {
+			closeCenter.x = centerX;
+			closeCenter.y = centerY;
+		}
 		gc.fillOval(x + 4, (rect.height - 2 * CLOSE_CIRCLE_RAY) / 2, 2 * CLOSE_CIRCLE_RAY, 2 * CLOSE_CIRCLE_RAY);
 
 		// Cross
@@ -338,10 +362,14 @@ public class Chips extends Canvas {
 
 		if (text != null) {
 			final GC gc = new GC(this);
-			final Point textSize = gc.stringExtent(text);
-			width += 4 + textSize.x;
-			height = Math.max(height, textSize.y);
-			gc.dispose();
+			try {
+				final Point textSize = gc.stringExtent(text);
+				width += 4 + textSize.x;
+				height = Math.max(height, textSize.y);
+			} finally {
+				// This GC is owned by Chips.computeSize, even when SWT throws.
+				gc.dispose();
+			}
 		}
 
 		if (isCheck && selection || isClose) {

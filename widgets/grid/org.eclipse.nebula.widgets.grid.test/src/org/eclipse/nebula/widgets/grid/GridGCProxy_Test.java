@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Eclipse Nebula contributors.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
  * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -188,6 +192,58 @@ public class GridGCProxy_Test {
 		}
 	}
 
+
+	@Test
+	public void restoresExactDeviceClipUnderAffineTransform() {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 128, 128);
+		GC gc = new GC(image);
+		Region userClip = new Region(display);
+		Region expectedDevice = new Region(display);
+		Region actualDevice = new Region(display);
+		Transform original = new Transform(display, 1.5f, 0.25f, -0.2f, 1.25f, 7.5f, 9.25f);
+		Transform saved = new Transform(display);
+		try {
+			userClip.add(new Rectangle(4, 6, 70, 61));
+			userClip.subtract(new Rectangle(23, 19, 17, 13));
+			gc.setTransform(original);
+			gc.setClipping(userClip);
+			gc.getTransform(saved);
+			try {
+				gc.setTransform(null);
+				gc.getClipping(expectedDevice);
+			} finally {
+				gc.setTransform(saved);
+			}
+
+			try (GridGCProxy proxy = GridGCProxy.wrap(gc)) {
+				proxy.translate(11.25f, -3.5f);
+				proxy.gc();
+				proxy.clip(new Rectangle(12, 12, 31, 29));
+				gc.setClipping(new Rectangle(1, 1, 3, 3));
+			}
+
+			gc.getTransform(saved);
+			try {
+				gc.setTransform(null);
+				gc.getClipping(actualDevice);
+			} finally {
+				gc.setTransform(saved);
+			}
+			assertSameRegion("affine scope must restore exact device-space clipping",
+					expectedDevice, actualDevice, display);
+			assertArrayEquals(new float[] {1.5f, 0.25f, -0.2f, 1.25f, 7.5f, 9.25f},
+					elements(gc), 0.0001f);
+		} finally {
+			saved.dispose();
+			original.dispose();
+			actualDevice.dispose();
+			expectedDevice.dispose();
+			userClip.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
 
 	@Test
 	public void rejectsDisposedGcAndUseAfterClose() {

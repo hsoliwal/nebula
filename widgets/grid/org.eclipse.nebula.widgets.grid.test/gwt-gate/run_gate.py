@@ -1,5 +1,5 @@
-# Copyright (c) 2026 Contributors to the Eclipse Foundation.
-# SPDX-License-Identifier: EPL-2.0
+# Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
 """GWT compile gate for the Grid model package (pattern of the SWT viewport gate, SWT #117).
 
 Copies org.eclipse.nebula.widgets.grid.model into a scratch GWT module, compiles it with the GWT

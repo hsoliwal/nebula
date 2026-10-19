@@ -1,0 +1,18 @@
+import org.junit.runner.*;
+import org.junit.runner.manipulation.Filter;
+public class NebulaSelectionContractRunner20261017 {
+  public static void main(String[] args) throws Exception {
+    Request request = Request.aClass(Class.forName("org.eclipse.nebula.widgets.grid.Grid_Test"))
+      .filterWith(new Filter() {
+        public boolean shouldRun(Description description) {
+          if (description.getMethodName() != null) return description.getMethodName().toLowerCase(java.util.Locale.ROOT).contains("select");
+          return description.getChildren().stream().anyMatch(this::shouldRun);
+        }
+        public String describe() { return "Existing public Grid selection contracts"; }
+      });
+    Result result = new JUnitCore().run(request);
+    for (var failure : result.getFailures()) System.out.println(failure.getTrace());
+    System.out.println("run="+result.getRunCount()+" failed="+result.getFailureCount()+" ignored="+result.getIgnoreCount()+" assumptions="+result.getAssumptionFailureCount()+" elapsed_ms="+result.getRunTime());
+    if (!result.wasSuccessful() || result.getRunCount() == 0 || result.getIgnoreCount() != 0 || result.getAssumptionFailureCount() != 0) System.exit(1);
+  }
+}

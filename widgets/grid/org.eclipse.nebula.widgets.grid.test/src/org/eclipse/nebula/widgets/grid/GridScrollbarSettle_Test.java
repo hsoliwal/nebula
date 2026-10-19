@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
  * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -30,7 +34,11 @@ import org.junit.Test;
 public class GridScrollbarSettle_Test {
 
 	private Display display;
-	private Shell shell;
+	/*
+	 * one shell per Grid: Grid settles its bars when it paints, so neither may cover the other
+	 * (overlapping, the covered Grid never painted and kept the bars of its previous size)
+	 */
+	private Shell shell, measuredShell;
 
 	@Before
 	public void setUp() {
@@ -38,17 +46,21 @@ public class GridScrollbarSettle_Test {
 		shell = new Shell(display);
 		shell.setSize(800, 700);
 		shell.open();
+		measuredShell = new Shell(display);
+		measuredShell.setSize(800, 700);
+		measuredShell.open();
 	}
 
 	@After
 	public void tearDown() {
 		shell.dispose();
+		measuredShell.dispose();
 	}
 
 	@Test
 	public void resizeSweepMatchesTheTwoPassAlgorithm() {
-		final Grid settled = grid(true);
-		final Grid measured = grid(false);
+		final Grid settled = grid(shell, true);
+		final Grid measured = grid(measuredShell, false);
 		final Random random = new Random(5L);
 		for (int i = 0; i < 300; i++) {
 			// around both thresholds: content is 6 x 80 = 480 wide and 30 rows high
@@ -72,7 +84,7 @@ public class GridScrollbarSettle_Test {
 		}
 	}
 
-	private Grid grid(final boolean settleScrollbars) {
+	private static Grid grid(final Shell shell, final boolean settleScrollbars) {
 		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
 		grid.settleScrollbars = settleScrollbars;
 		grid.setHeaderVisible(true);

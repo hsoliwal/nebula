@@ -42,6 +42,11 @@
     </dependency>
     <dependency>
       <groupId>org.openrewrite</groupId>
+      <artifactId>rewrite-xml</artifactId>
+      <version>${rewrite.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openrewrite</groupId>
       <artifactId>rewrite-java-21</artifactId>
       <version>${rewrite.version}</version>
       <scope>runtime</scope>
@@ -229,6 +234,8 @@
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3DocumentPureIntAtomRecipe*</include>
                 <include>org/eclipse/nebula/m3/rewrite/atom/NebulaM3PureIntConvergenceRecipe*</include>
                 <include>org/eclipse/nebula/m3/rewrite/convergence/NebulaM3OrchestratorPlans*</include>
+                <include>org/eclipse/nebula/m3/rewrite/convergence/NebulaM3DagWavePlanner*</include>
+                <include>org/eclipse/nebula/m3/rewrite/convergence/NebulaM3JavaGradeQualification*</include>
               </includes>
             </configuration>
             <executions>
@@ -252,6 +259,11 @@
                       <limits>
                         <limit>
                           <counter>LINE</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>0.99</minimum>
+                        </limit>
+                        <limit>
+                          <counter>BRANCH</counter>
                           <value>COVEREDRATIO</value>
                           <minimum>0.99</minimum>
                         </limit>
@@ -287,5 +299,121 @@
       </build>
     </profile>
 
+    <!-- Opt-in, exact source-bound OpenRewrite proof repair; never lifecycle-applied. -->
+    <profile>
+      <id>reproof-header</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.CurrentMasterReproofHeader</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.eclipse.nebula.m3</groupId>
+                <artifactId>nebula-m3-recipe-first</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+
+    <!-- Explicit only: exact FILE Java-LST proof-gate candidate, no lifecycle mutation. -->
+    <profile>
+      <id>transfer-qualification</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.TransferQualification</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.eclipse.nebula.m3</groupId>
+                <artifactId>nebula-m3-recipe-first</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+
+    <!-- Opt-in, exact Java-LST backport-DAG integrity atom; never lifecycle-applied. -->
+    <profile>
+      <id>backport-dag-integrity</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3BackportIntegrityConvergenceRecipe</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.eclipse.nebula.m3</groupId>
+                <artifactId>nebula-m3-recipe-first</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- Candidate-only exact XML-LST rewrite of the semantic 99% line+branch gates. -->
+    <profile>
+      <id>m3-semantic-branch-coverage-recipe</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.openrewrite.maven</groupId>
+            <artifactId>rewrite-maven-plugin</artifactId>
+            <version>${rewrite.maven.plugin.version}</version>
+            <configuration>
+              <configLocation>${project.basedir}/rewrite.yml</configLocation>
+              <activeRecipes>
+                <recipe>org.eclipse.nebula.m3.rewrite.exact.NebulaM3SemanticCoverageGateRecipe</recipe>
+              </activeRecipes>
+              <failOnInvalidActiveRecipes>true</failOnInvalidActiveRecipes>
+              <failOnDryRunResults>false</failOnDryRunResults>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.eclipse.nebula.m3</groupId>
+                <artifactId>nebula-m3-recipe-first</artifactId>
+                <version>${project.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>

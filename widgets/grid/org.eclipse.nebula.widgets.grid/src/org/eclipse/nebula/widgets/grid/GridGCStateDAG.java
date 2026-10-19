@@ -1,11 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Eclipse Nebula contributors.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which accompanies this distribution,
- * and is available at https://www.eclipse.org/legal/epl-2.0/
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
+ * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -82,12 +87,14 @@ final class GridGCStateDAG {
 			transformDy = delta.dy;
 			transformPending = true;
 		} else {
-			float m11 = delta.m11 * transformM11 + delta.m21 * transformM12;
-			float m12 = delta.m12 * transformM11 + delta.m22 * transformM12;
-			float m21 = delta.m11 * transformM21 + delta.m21 * transformM22;
-			float m22 = delta.m12 * transformM21 + delta.m22 * transformM22;
-			float dx = delta.m11 * transformDx + delta.m21 * transformDy + delta.dx;
-			float dy = delta.m12 * transformDx + delta.m22 * transformDy + delta.dy;
+			// SWT's Transform.multiply prepends: a later operation applies to the points first, so
+			// the pending matrix maps the delta's result (scale then translate scales the translation)
+			float m11 = transformM11 * delta.m11 + transformM21 * delta.m12;
+			float m12 = transformM12 * delta.m11 + transformM22 * delta.m12;
+			float m21 = transformM11 * delta.m21 + transformM21 * delta.m22;
+			float m22 = transformM12 * delta.m21 + transformM22 * delta.m22;
+			float dx = transformM11 * delta.dx + transformM21 * delta.dy + transformDx;
+			float dy = transformM12 * delta.dx + transformM22 * delta.dy + transformDy;
 			transformM11 = m11;
 			transformM12 = m12;
 			transformM21 = m21;

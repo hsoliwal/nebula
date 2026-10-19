@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Eclipse Nebula contributors.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
  * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -32,6 +36,7 @@ final class GridGCProxy implements AutoCloseable {
 
 	private final GC gc;
 	private final Region originalClipping;
+	private final Region originalDeviceClipping;
 	private final boolean originalAdvanced;
 	private final Transform originalTransform;
 	private final LineAttributes originalLineAttributes;
@@ -58,23 +63,48 @@ final class GridGCProxy implements AutoCloseable {
 		}
 		this.gc = gc;
 		this.originalAdvanced = gc.getAdvanced();
-		this.originalClipping = new Region(gc.getDevice());
-		gc.getClipping(originalClipping);
-		this.originalTransform = new Transform(gc.getDevice());
-		gc.getTransform(originalTransform);
-		this.originalLineAttributes = copy(gc.getLineAttributes());
-		this.originalAlpha = gc.getAlpha();
-		this.originalAntialias = gc.getAntialias();
-		this.originalTextAntialias = gc.getTextAntialias();
-		this.originalInterpolation = gc.getInterpolation();
-		this.originalFillRule = gc.getFillRule();
-		this.originalXorMode = gc.getXORMode();
-		this.originalForeground = gc.getForeground();
-		this.originalBackground = gc.getBackground();
-		this.originalForegroundPattern = gc.getForegroundPattern();
-		this.originalBackgroundPattern = gc.getBackgroundPattern();
-		this.originalFont = gc.getFont();
-		this.stateDAG = new GridGCStateDAG(originalLineAttributes, originalAlpha);
+		Region clipping = new Region(gc.getDevice());
+		Region deviceClipping = null;
+		Transform transform = null;
+		try {
+			gc.getClipping(clipping);
+			transform = new Transform(gc.getDevice());
+			gc.getTransform(transform);
+			if (!transform.isIdentity()) {
+				deviceClipping = new Region(gc.getDevice());
+				try {
+					gc.setTransform(null);
+					gc.getClipping(deviceClipping);
+				} finally {
+					gc.setTransform(transform);
+				}
+			}
+			this.originalClipping = clipping;
+			this.originalDeviceClipping = deviceClipping;
+			this.originalTransform = transform;
+			this.originalLineAttributes = copy(gc.getLineAttributes());
+			this.originalAlpha = gc.getAlpha();
+			this.originalAntialias = gc.getAntialias();
+			this.originalTextAntialias = gc.getTextAntialias();
+			this.originalInterpolation = gc.getInterpolation();
+			this.originalFillRule = gc.getFillRule();
+			this.originalXorMode = gc.getXORMode();
+			this.originalForeground = gc.getForeground();
+			this.originalBackground = gc.getBackground();
+			this.originalForegroundPattern = gc.getForegroundPattern();
+			this.originalBackgroundPattern = gc.getBackgroundPattern();
+			this.originalFont = gc.getFont();
+			this.stateDAG = new GridGCStateDAG(originalLineAttributes, originalAlpha);
+		} catch (RuntimeException | Error failure) {
+			if (deviceClipping != null) {
+				deviceClipping.dispose();
+			}
+			if (transform != null) {
+				transform.dispose();
+			}
+			clipping.dispose();
+			throw failure;
+		}
 	}
 
 	static GridGCProxy wrap(GC gc) {
@@ -172,6 +202,9 @@ final class GridGCProxy implements AutoCloseable {
 		if (gc.isDisposed()) {
 			originalTransform.dispose();
 			originalClipping.dispose();
+			if (originalDeviceClipping != null) {
+				originalDeviceClipping.dispose();
+			}
 			return;
 		}
 		try {
@@ -183,7 +216,16 @@ final class GridGCProxy implements AutoCloseable {
 			if (originalAdvanced) {
 				gc.setAdvanced(true);
 				gc.setTransform(originalTransform);
-				gc.setClipping(originalClipping);
+				if (originalDeviceClipping == null) {
+					gc.setClipping(originalClipping);
+				} else {
+					try {
+						gc.setTransform(null);
+						gc.setClipping(originalDeviceClipping);
+					} finally {
+						gc.setTransform(originalTransform);
+					}
+				}
 				gc.setAlpha(originalAlpha);
 				gc.setAntialias(originalAntialias);
 				gc.setTextAntialias(originalTextAntialias);
@@ -206,9 +248,21 @@ final class GridGCProxy implements AutoCloseable {
 				gc.setBackgroundPattern(originalBackgroundPattern);
 			}
 			gc.setFont(originalFont);
+			if (!originalAdvanced && gc.getAdvanced()) {
+				/*
+				 * Restoring the line attributes switches SWT's GC to advanced (GDI+) mode, which
+				 * draws text with other pixels than the caller's GDI GC: end in the caller's mode,
+				 * and restore the device clip after that reset again.
+				 */
+				gc.setAdvanced(false);
+				gc.setClipping(originalClipping);
+			}
 		} finally {
 			originalTransform.dispose();
 			originalClipping.dispose();
+			if (originalDeviceClipping != null) {
+				originalDeviceClipping.dispose();
+			}
 		}
 	}
 

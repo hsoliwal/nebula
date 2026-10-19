@@ -41,16 +41,28 @@ public class PageListHelper {
 		int pageSize = controller.getPageSize();
 		int pageIndex = controller.getPageOffset();
 
-		int fromIndex = pageIndex;
+		int toIndex = pageEnd(pageIndex, pageSize, totalSize);
+		int fromIndex = pageStart(pageIndex, pageSize, totalSize);
+		List<?> content = list.subList(fromIndex, toIndex);
+		return new PageResult(content, totalSize);
+	}
+
+	/** Preserve the existing int-addition and upper-bound behavior. */
+	private static int pageEnd(int pageIndex, int pageSize, int totalSize) {
 		int toIndex = pageIndex + pageSize;
 		if (toIndex > totalSize) {
 			toIndex = totalSize;
 		}
+		return toIndex;
+	}
+
+	/** Preserve the existing overflow-page and division-by-zero behavior. */
+	private static int pageStart(int pageIndex, int pageSize, int totalSize) {
+		int fromIndex = pageIndex;
 		if (fromIndex > totalSize) {
-			fromIndex=totalSize - totalSize%pageSize;
+			fromIndex = totalSize - totalSize % pageSize;
 		}
-		List<?> content = list.subList(fromIndex, toIndex);
-		return new PageResult(content, totalSize);
+		return fromIndex;
 	}
 
 }

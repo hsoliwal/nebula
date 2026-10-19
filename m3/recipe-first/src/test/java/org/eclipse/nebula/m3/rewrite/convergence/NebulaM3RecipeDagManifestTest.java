@@ -28,14 +28,24 @@ final class NebulaM3RecipeDagManifestTest {
     }
 
     @Test
-    void dependenciesAreOneDeterministicSerialChain() {
+    void dependenciesFormDeterministicPhaseBarriers() {
         var nodes = NebulaM3RecipeDagManifest.nodes();
 
         assertTrue(nodes.getFirst().dependsOn().isEmpty());
-        for (int index = 1; index < nodes.size(); index++) {
-            assertEquals(
-                    List.of(nodes.get(index - 1).id()),
-                    nodes.get(index).dependsOn());
+        for (NebulaM3RecipeDagManifest.Node node : nodes) {
+            int phase = node.phase().ordinal();
+            if (phase == 0) {
+                assertTrue(node.dependsOn().isEmpty());
+                continue;
+            }
+            var expected =
+                    nodes.stream()
+                            .filter(
+                                    candidate ->
+                                            candidate.phase().ordinal() == phase - 1)
+                            .map(NebulaM3RecipeDagManifest.Node::id)
+                            .toList();
+            assertEquals(expected, node.dependsOn(), node.id());
         }
         assertTrue(nodes.stream().allMatch(node -> "FILE".equals(node.scope())));
         assertEquals("READ_ONLY", nodes.getFirst().authority());

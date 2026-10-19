@@ -83,6 +83,9 @@ public class PGroup extends Canvas
     private Color backgroundColor;
 
     private List toolitems = new ArrayList();
+    // Conservative parent-owned fast-path witness, no copied item array.
+    // A past derived item keeps the original snapshot path (safe false negative).
+    private boolean plainToolItemsOnly = true;
 
     private PGroupToolItem activeToolItem;
 
@@ -319,21 +322,37 @@ public class PGroup extends Canvas
         Color back = e.gc.getBackground();
         Color fore = e.gc.getForeground();
 
-        strategy.paint(e.gc);
+        try {
+            strategy.paint(e.gc);
 
-        e.gc.setBackground(back);
-        e.gc.setForeground(fore);
+            e.gc.setBackground(back);
+            e.gc.setForeground(fore);
 
-        if (toggleRenderer != null)
-        {
-            toggleRenderer.setExpanded(expanded);
-            toggleRenderer.setFocus(isFocusControl());
-            toggleRenderer.setHover(overToggle);
-            toggleRenderer.paint(e.gc, this);
-        }
+            if (toggleRenderer != null)
+            {
+                toggleRenderer.setExpanded(expanded);
+                toggleRenderer.setFocus(isFocusControl());
+                toggleRenderer.setHover(overToggle);
+                toggleRenderer.paint(e.gc, this);
+            }
 
-        if( toolItemRenderer != null && toolitems.size() > 0 ) {
-        	paintToolItems(e.gc);
+            if( toolItemRenderer != null && toolitems.size() > 0 ) {
+            	paintToolItems(e.gc);
+            }
+        } catch (RuntimeException | Error failure) {
+            // Recover the borrowed paint GC without masking the original
+            // strategy/toolitem exception. Successful paint is unchanged.
+            try {
+                e.gc.setBackground(back);
+            } catch (RuntimeException | Error cleanup) {
+                if (cleanup != failure) failure.addSuppressed(cleanup);
+            }
+            try {
+                e.gc.setForeground(fore);
+            } catch (RuntimeException | Error cleanup) {
+                if (cleanup != failure) failure.addSuppressed(cleanup);
+            }
+            throw failure;
         }
     }
 
@@ -850,7 +869,26 @@ public class PGroup extends Canvas
 
 	void addToolItem(PGroupToolItem toolitem) {
 		toolitems.add(toolitem);
+        // Detect any overriding tool-item class at the same mutation boundary.
+        // Keep the fallback even if it is subsequently removed.
+        if (toolitem == null || toolitem.getClass() != PGroupToolItem.class) {
+            plainToolItemsOnly = false;
+        }
 	}
+
+    /**
+     * Clear the original parent-owned items in their original order, with
+     * their original virtual setSelection(false) calls and redraw events.
+     * Never bypass getToolItems() for subclasses or custom ToolItems.
+     */
+    boolean clearToolItemSelectionsWithoutCopy() {
+        if (getClass() != PGroup.class || !plainToolItemsOnly) return false;
+        final int count = toolitems.size();
+        for (int i = 0; i < count; i++) {
+            ((PGroupToolItem) toolitems.get(i)).setSelection(false);
+        }
+        return true;
+    }
 
 	void removeToolItem(PGroupToolItem toolitem) {
 		toolitems.remove(toolitem);

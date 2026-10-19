@@ -2,6 +2,9 @@
 name: Nebula M3 final proven transfer
 
 on:
+  push:
+    branches:
+      - 'm3/nebula-final-recipe-dag-backport-20261015'
   pull_request:
     paths:
       - 'm3/**'
@@ -46,10 +49,10 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Set up Maven 3.9.6
+      - name: Set up Maven 3.9.11
         uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
         with:
-          maven-version: 3.9.6
+          maven-version: 3.9.11
 
       - name: 1 - Diff hygiene
         if: github.event_name == 'pull_request'
@@ -67,7 +70,7 @@ jobs:
         run: >-
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
-          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3TransferContractTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
+          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3DagWavePlannerTest,NebulaM3RecipeDagManifestTest,NebulaM3RecipeDagManifestCliTest,NebulaM3OrchestratorPlansTest,NebulaM3BackportBundleTest,NebulaM3TransferContractTest,NebulaM3ProofGateTest,NebulaM3JavaGradeQualificationTest,NebulaM3ProofReceiptCliTest,NebulaM3TransferQualificationRecipeTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest,NebulaM3A3LabTest
           -Dsurefire.failIfNoSpecifiedTests=false
           test
 
@@ -76,7 +79,7 @@ jobs:
           mvn -B -ntp -f m3/reactor.xml
           -pl recipe-first -am
           -Psemantic-coverage
-          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3OrchestratorPlansTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest
+          -Dtest=NebulaM3RepositoryReviewRecipeTest,NebulaM3Java21ConvergenceRecipeTest,NebulaM3DagWavePlannerTest,NebulaM3OrchestratorPlansTest,NebulaM3JavaGradeQualificationTest,NebulaM3UiBehaviorDonorCatalogTest,NebulaM3PureIntConvergenceRecipeTest
           -Dsurefire.failIfNoSpecifiedTests=false
           verify
 
@@ -90,6 +93,43 @@ jobs:
           OUT='m3/recipe-first/target/nebula-m3-transfer'
           DAG='m3/recipe-first/target/nebula-m3-dag'
           test -s "$OUT/transfer.sha256"
+          test -s "$OUT/transfer-qualification.tsv"
+          test -s "$OUT/java-grade-qualification.tsv"
+          test -s "$OUT/backport-plan.tsv"
+          test -s "$OUT/backport-bundle.tsv"
+          test -s "$OUT/backport-bundle.sha256"
+
+          python3 - <<'PYQUALIFICATION'
+          import csv
+          import re
+          from pathlib import Path
+
+          root = Path("m3/recipe-first/target/nebula-m3-transfer")
+          rows = list(csv.DictReader((root / "transfer-qualification.tsv").open(
+              encoding="utf-8", newline=""), delimiter="\t"))
+          stages = [
+              "SOURCE_INVENTORY", "RECIPE_JUNIT", "ATOM_BEHAVIOR", "PATTERN_IOP",
+              "DOCUMENTATION", "JAVA21_COMPILE", "FIXED_POINT", "SEMANTIC_COVERAGE_99",
+              "M3_REACTOR", "TYCHO_REACTOR", "SWT_PLATFORM_RUNTIME",
+              "DIFF_AND_PROVENANCE",
+          ]
+          assert [row["stage"] for row in rows] == stages, "qualification stage drift"
+          assert all(
+              row["schema"] == "NEBULA_M3_PILOT_PROOF_V1"
+              and row["nebula_commit"] == "UNBOUND"
+              and row["synexia_commit"] == "UNBOUND"
+              and row["state"] == "NOT_RUN"
+              and row["proof_sha256"] == "-"
+              and row["disposition"] == "HOLD"
+              and row["mutation_authority"] == "false"
+              and row["promotion_authority"] == "false"
+              for row in rows
+          ), "unverified transfer must remain HOLD"
+          roots = {row["receipt_root"] for row in rows}
+          assert len(roots) == 1 and re.fullmatch(r"[0-9a-f]{64}", roots.pop())
+          print("NEBULA_M3_TRANSFER_QUALIFICATION=HOLD_UNVERIFIED")
+          PYQUALIFICATION
+
           test -s "$OUT/transfer-dag.tsv"
           test -s "$OUT/ui-behavior-donors.tsv"
           test -s "$OUT/challenge-donors.tsv"
@@ -102,7 +142,10 @@ jobs:
           test -s "$DAG/airflow-dag.py"
           test -s "$DAG/drools-agenda.drl"
           test -s "$DAG/orchestrator-plans.sha256"
-          grep -F $'schema\tNEBULA_M3_RECIPE_TRANSFER_V1' "$OUT/transfer-metadata.tsv"
+
+          BUNDLE_ROOT="$(tr -d '\r\n' < "$OUT/backport-bundle.sha256")"
+          test "$BUNDLE_ROOT" = "$(awk -F'\t' '$1=="backportBundleRoot" {print $2}' "$OUT/java-grade-qualification.tsv")"
+          grep -F $'schema\tNEBULA_M3_RECIPE_TRANSFER_V2' "$OUT/transfer-metadata.tsv"
           grep -F $'javaRelease\t21' "$OUT/transfer-metadata.tsv"
           grep -F $'entrypoint\torg.eclipse.nebula.m3.rewrite.NebulaM3Java21ConvergenceRecipe' "$OUT/transfer-metadata.tsv"
           DONOR_ROOT="$(sha256sum "$OUT/ui-behavior-donors.tsv" | awk '{print $1}')"
@@ -124,6 +167,8 @@ jobs:
           grep -F $'CAMEL\tfalse\tfalse' "$OUT/orchestrators.tsv"
           grep -F $'AIRFLOW\tfalse\tfalse' "$OUT/orchestrators.tsv"
           grep -F $'DROOLS\tfalse\tfalse' "$OUT/orchestrators.tsv"
+          BACKPORT_ROOT="$(sha256sum "$OUT/backport-plan.tsv" | awk '{print $1}')"
+          grep -F $'backportPlanRoot\t'"$BACKPORT_ROOT" "$OUT/transfer-metadata.tsv"
           PLAN_ROOT="$(tr -d '\r\n' < "$OUT/orchestrator-plans.sha256")"
           test "$PLAN_ROOT" = "$(tr -d '\r\n' < "$DAG/orchestrator-plans.sha256")"
           grep -F $'orchestratorPlansRoot\t'"$PLAN_ROOT" "$OUT/transfer-metadata.tsv"
@@ -198,6 +243,182 @@ jobs:
           grep -F $'9\tFILE_FIXED_POINT' m3/convergence/PLAN.tsv
           grep -F 'donor.uiBehaviorReviewRecipe=org.eclipse.nebula.m3.NebulaM3UiBehaviorReviewRecipe' .m3/atom-pattern/policy.properties
           grep -F 'donor.uiBehaviorUse=OBSERVABLE_BEHAVIOR_TEST_OBLIGATIONS_NO_SOURCE_COPY' .m3/atom-pattern/policy.properties
+
+      - name: 14 - Bind successful hosted proof into manual-review receipt
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT='m3/recipe-first/target/nebula-m3-transfer'
+          DAG='m3/recipe-first/target/nebula-m3-dag'
+          PROOF='m3/recipe-first/target/final-transfer-proof'
+          EVIDENCE="$PROOF/proof-evidence.tsv"
+          INPUTS="$PROOF/proof-evidence-inputs.tsv"
+          NEBULA_COMMIT="${HEAD_SHA:-$GITHUB_SHA}"
+          SYNEXIA_COMMIT="$(awk -F'\t' 'NR==2 {print $4}' m3/catalogue/pure-int-recipe-binding.tsv)"
+          DAG_ROOT="$(tr -d '\r\n' < "$DAG/recipe-dag.sha256")"
+          TRANSFER_ROOT="$(tr -d '\r\n' < "$OUT/transfer.sha256")"
+          export OUT DAG PROOF EVIDENCE INPUTS NEBULA_COMMIT SYNEXIA_COMMIT DAG_ROOT TRANSFER_ROOT
+
+          python3 - <<'PYPROOF'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          out = Path(os.environ["OUT"])
+          proof = Path(os.environ["PROOF"])
+          proof.mkdir(parents=True, exist_ok=True)
+
+          nebula = os.environ["NEBULA_COMMIT"]
+          synexia = os.environ["SYNEXIA_COMMIT"]
+          dag = os.environ["DAG_ROOT"]
+          transfer = os.environ["TRANSFER_ROOT"]
+          run_id = os.environ["GITHUB_RUN_ID"]
+          run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "1")
+
+          def file_hash(path):
+              path = Path(path)
+              assert path.is_file() and path.stat().st_size > 0, path
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          def paths_hash(paths):
+              files = sorted({Path(p) for p in paths if Path(p).is_file()},
+                             key=lambda p: p.as_posix())
+              assert files, "empty proof input set"
+              h = hashlib.sha256()
+              for path in files:
+                  name = path.as_posix().encode()
+                  data = path.read_bytes()
+                  h.update(len(name).to_bytes(8, "big"))
+                  h.update(name)
+                  h.update(len(data).to_bytes(8, "big"))
+                  h.update(data)
+              return h.hexdigest()
+
+          recipe_reports = list(Path("m3/recipe-first/target/surefire-reports").glob("*.xml"))
+          all_m3_reports = list(Path("m3").glob("**/target/surefire-reports/*.xml"))
+          class_files = list(Path("m3/recipe-first/target/classes").glob("**/*.class"))
+          m3_jars = list(Path("m3").glob("**/target/*.jar"))
+
+          basis = {
+              "SOURCE_INVENTORY": file_hash(
+                  "m3/recipe-first/target/nebula-m3-inventory/nebula-m3-summary.tsv"),
+              "RECIPE_JUNIT": paths_hash(recipe_reports),
+              "ATOM_BEHAVIOR": paths_hash(all_m3_reports),
+              "PATTERN_IOP": paths_hash([
+                  Path("m3/convergence/PLAN.tsv"),
+                  Path(".m3/atom-pattern/policy.properties")]),
+              "DOCUMENTATION": paths_hash([
+                  Path("m3/convergence/PROOF_QUALIFIED_TRANSFER_20261014.md"),
+                  out / "ui-behavior-donors.tsv",
+                  out / "challenge-donors.tsv"]),
+              "JAVA21_COMPILE": paths_hash(class_files),
+              "FIXED_POINT": paths_hash([
+                  proof / "first.patch",
+                  proof / "second.patch"]),
+              "SEMANTIC_COVERAGE_99": file_hash(
+                  "m3/recipe-first/target/site/jacoco/jacoco.xml"),
+              "M3_REACTOR": paths_hash(m3_jars),
+              "TYCHO_REACTOR": hashlib.sha256(
+                  f"tycho-step-12-passed\n{run_id}\n{run_attempt}\n{nebula}\n".encode()).hexdigest(),
+              "SWT_PLATFORM_RUNTIME": hashlib.sha256(
+                  f"xvfb-swt-runtime-step-12-passed\n{run_id}\n{run_attempt}\n{nebula}\n".encode()).hexdigest(),
+              "DIFF_AND_PROVENANCE": paths_hash([
+                  out / "transfer.sha256",
+                  out / "ui-behavior-donors.tsv",
+                  out / "challenge-donors.tsv",
+                  proof / "changed-files.txt",
+                  proof / "first.patch",
+                  Path("m3/catalogue/pure-int-recipe-binding.tsv")]),
+          }
+
+          stages = [
+              "SOURCE_INVENTORY", "RECIPE_JUNIT", "ATOM_BEHAVIOR", "PATTERN_IOP",
+              "DOCUMENTATION", "JAVA21_COMPILE", "FIXED_POINT", "SEMANTIC_COVERAGE_99",
+              "M3_REACTOR", "TYCHO_REACTOR", "SWT_PLATFORM_RUNTIME",
+              "DIFF_AND_PROVENANCE",
+          ]
+
+          evidence_lines = ["stage\tstate\tproof_sha256"]
+          input_lines = ["stage\tbasis_sha256\tproof_sha256"]
+          for stage in stages:
+              payload = (
+                  f"stage={stage}\n"
+                  f"nebula={nebula}\n"
+                  f"synexia={synexia}\n"
+                  f"dag={dag}\n"
+                  f"transfer={transfer}\n"
+                  f"run={run_id}\n"
+                  f"attempt={run_attempt}\n"
+                  f"basis={basis[stage]}\n"
+              ).encode()
+              fingerprint = hashlib.sha256(payload).hexdigest()
+              evidence_lines.append(f"{stage}\tPASSED\t{fingerprint}")
+              input_lines.append(f"{stage}\t{basis[stage]}\t{fingerprint}")
+
+          Path(os.environ["EVIDENCE"]).write_text(
+              "\n".join(evidence_lines) + "\n", encoding="utf-8")
+          Path(os.environ["INPUTS"]).write_text(
+              "\n".join(input_lines) + "\n", encoding="utf-8")
+          PYPROOF
+
+          mvn -B -ntp -f m3/recipe-first/pom.xml -DskipTests             -Dexec.mainClass=org.eclipse.nebula.m3.rewrite.convergence.NebulaM3ProofReceiptCli             -Dexec.args="$NEBULA_COMMIT $SYNEXIA_COMMIT $DAG_ROOT $EVIDENCE $OUT/transfer-qualification.tsv"             compile org.codehaus.mojo:exec-maven-plugin:3.5.1:java
+
+          mvn -B -ntp -f m3/recipe-first/pom.xml -DskipTests             -Dexec.mainClass=org.eclipse.nebula.m3.rewrite.convergence.NebulaM3JavaGradeQualificationCli             -Dexec.args="$NEBULA_COMMIT $SYNEXIA_COMMIT $DAG_ROOT $EVIDENCE $OUT/java-grade-qualification.tsv"             compile org.codehaus.mojo:exec-maven-plugin:3.5.1:java
+
+          python3 - <<'PYRECEIPT'
+          import csv
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path(os.environ["OUT"]) / "transfer-qualification.tsv"
+          rows = list(csv.DictReader(path.open(encoding="utf-8", newline=""), delimiter="\t"))
+          assert len(rows) == 12
+          assert all(
+              row["nebula_commit"] == os.environ["NEBULA_COMMIT"]
+              and row["synexia_commit"] == os.environ["SYNEXIA_COMMIT"]
+              and row["dag_root"] == os.environ["DAG_ROOT"]
+              and row["state"] == "PASSED"
+              and re.fullmatch(r"[0-9a-f]{64}", row["proof_sha256"])
+              and row["disposition"] == "MANUAL_REVIEW_REQUIRED"
+              and row["mutation_authority"] == "false"
+              and row["promotion_authority"] == "false"
+              for row in rows
+          )
+          roots = {row["receipt_root"] for row in rows}
+          assert len(roots) == 1 and re.fullmatch(r"[0-9a-f]{64}", roots.pop())
+          print("NEBULA_M3_TRANSFER_QUALIFICATION=MANUAL_REVIEW_REQUIRED_VERIFIED")
+          PYRECEIPT
+
+          python3 - <<'PYJAVAGRADE'
+          from pathlib import Path
+          import re
+
+          root = Path("m3/recipe-first/target/nebula-m3-transfer")
+          rows = dict(
+              line.split("\t", 1)
+              for line in (root / "java-grade-qualification.tsv").read_text(encoding="utf-8").splitlines()[1:]
+          )
+          required = {
+              "schema": "NEBULA_M3_JAVA_GRADE_V1",
+              "javaRelease": "21",
+              "openRewriteVersion": "8.90.4",
+              "minimumSemanticLineCoverage": "0.99",
+              "refactorScopeOrder": "FILE,VISIBILITY,PACKAGE,MODULE,MULTI_MODULE,LIBRARY_API",
+              "orchestrators": "AIRFLOW,CAMEL,DROOLS,MAVEN_OPENREWRITE",
+              "transferTargets": "hsoliwal/com.synexia,hsoliwal/M3jdk21",
+              "disposition": "MANUAL_TRANSFER_REVIEW_REQUIRED",
+              "mutationAuthority": "false",
+              "promotionAuthority": "false",
+          }
+          for key, value in required.items():
+              assert rows.get(key) == value, (key, rows.get(key), value)
+          assert re.fullmatch(r"[0-9a-f]{64}", rows["backportPlanRoot"])
+          assert re.fullmatch(r"[0-9a-f]{64}", rows["qualificationRoot"])
+          print("NEBULA_M3_JAVA_GRADE=MANUAL_TRANSFER_REVIEW_REQUIRED_VERIFIED")
+          PYJAVAGRADE
 
       - name: Upload final proof and transfer artifacts
         if: always()

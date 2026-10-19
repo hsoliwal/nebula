@@ -23,6 +23,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
@@ -55,6 +56,12 @@ public class StarRating extends Canvas {
 	private static final int DEFAULT_MAX_NUMBERS_OF_STARS = 5;
 	private final List<Star> stars;
 	private int orientation;
+	/** CPU-owned implicit prefix bit mask; original Star.hover flags stay authoritative. */
+	private int intrinsicHoverPrefix;
+	private boolean intrinsicHoverReady;
+	/** Nested/failed paints cannot certify fresh live Star.bounds. */
+	private int intrinsicPaintDepth;
+	private long intrinsicHoverEpoch;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style
@@ -140,15 +147,45 @@ public class StarRating extends Canvas {
 	}
 
 	private void onMouseEnterOrMove(final Event event) {
-		for (final Star star : stars) {
-			star.hover = false;
+		boolean admitted = false;
+		if (getClass() == StarRating.class && intrinsicHoverReady
+				&& intrinsicHoverPrefix >= 0 && intrinsicHoverPrefix <= stars.size()) {
+			int nextPrefix = stars.size();
+			boolean boundsQualified = true;
+			for (int i = 0; i < stars.size(); i++) {
+				final Rectangle bounds = stars.get(i).bounds;
+				if (bounds == null || bounds.getClass() != Rectangle.class) {
+					boundsQualified = false;
+					break;
+				}
+				if (bounds.contains(event.x, event.y)) {
+					nextPrefix = i + 1;
+					break;
+				}
+			}
+			if (boundsQualified) {
+				// StarRating's original hover flags always form a prefix mask.
+				// Only its changed span needs rewriting; "no hit" means ALL hovered.
+				for (int i = Math.min(intrinsicHoverPrefix, nextPrefix);
+						i < Math.max(intrinsicHoverPrefix, nextPrefix); i++) {
+					stars.get(i).hover = nextPrefix > intrinsicHoverPrefix;
+				}
+				intrinsicHoverPrefix = nextPrefix;
+				admitted = true;
+			}
 		}
-
-		for (final Star star : stars) {
-			final boolean mouseHover = star.bounds.contains(event.x, event.y);
-			star.hover = true;
-			if (mouseHover) {
-				break;
+		if (!admitted) {
+			intrinsicHoverReady = false;
+			// Exact original side effects, including before-first-paint null bounds.
+			for (final Star star : stars) {
+				star.hover = false;
+			}
+			for (final Star star : stars) {
+				final boolean mouseHover = star.bounds.contains(event.x, event.y);
+				star.hover = true;
+				if (mouseHover) {
+					break;
+				}
 			}
 		}
 		redraw();
@@ -156,8 +193,17 @@ public class StarRating extends Canvas {
 	}
 
 	private void onMouseExit(final Event event) {
-		for (final Star star : stars) {
-			star.hover = false;
+		if (getClass() == StarRating.class && intrinsicHoverReady
+				&& intrinsicHoverPrefix >= 0 && intrinsicHoverPrefix <= stars.size()) {
+			for (int i = 0; i < intrinsicHoverPrefix; i++) {
+				stars.get(i).hover = false;
+			}
+			intrinsicHoverPrefix = 0;
+		} else {
+			intrinsicHoverReady = false;
+			for (final Star star : stars) {
+				star.hover = false;
+			}
 		}
 		redraw();
 		update();
@@ -182,13 +228,41 @@ public class StarRating extends Canvas {
 	private void onMousePaint(final Event event) {
 		final GC gc = event.gc;
 		int x = 0, y = 0;
-
-		for (final Star star : stars) {
-			star.draw(gc, x, y);
-			if (orientation == SWT.VERTICAL) {
-				y += sizeOfStars.equals(SIZE.BIG) ? SIZE_BIG : SIZE_SMALL;
-			} else {
-				x += sizeOfStars.equals(SIZE.BIG) ? SIZE_BIG : SIZE_SMALL;
+		intrinsicPaintDepth++;
+		final long epoch = intrinsicHoverEpoch;
+		intrinsicHoverReady = false;
+		int prefix = 0;
+		boolean afterPrefix = false;
+		boolean geometryQualified = true;
+		try {
+			for (final Star star : stars) {
+				star.draw(gc, x, y);
+				if (star.getClass() != Star.class || star.bounds == null
+						|| star.bounds.getClass() != Rectangle.class) {
+					geometryQualified = false;
+				}
+				if (star.hover) {
+					if (afterPrefix) geometryQualified = false;
+					else prefix++;
+				} else {
+					afterPrefix = true;
+				}
+				if (orientation == SWT.VERTICAL) {
+					y += sizeOfStars.equals(SIZE.BIG) ? SIZE_BIG : SIZE_SMALL;
+				} else {
+					x += sizeOfStars.equals(SIZE.BIG) ? SIZE_BIG : SIZE_SMALL;
+				}
+			}
+			if (getClass() == StarRating.class && intrinsicPaintDepth == 1
+					&& epoch == intrinsicHoverEpoch && geometryQualified) {
+				intrinsicHoverPrefix = prefix;
+				intrinsicHoverReady = true;
+			}
+		} finally {
+			intrinsicPaintDepth--;
+			if (intrinsicPaintDepth > 0) {
+				intrinsicHoverEpoch++;
+				intrinsicHoverReady = false;
 			}
 		}
 	}
@@ -371,6 +445,9 @@ public class StarRating extends Canvas {
 	}
 
 	private void reinitStars() {
+		intrinsicHoverReady = false;
+		intrinsicHoverEpoch++;
+		intrinsicHoverPrefix = 0;
 		for (final Star star : stars) {
 			star.dispose();
 		}

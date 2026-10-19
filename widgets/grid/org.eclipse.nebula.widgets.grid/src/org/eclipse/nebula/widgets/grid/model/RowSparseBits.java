@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
  * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid.model;
 
@@ -42,10 +46,15 @@ public final class RowSparseBits {
 	private int insertAt(int at, int key, int kind, int[] payload) {
 		if (n == keys.length) {
 			int next = HeapGrowth.capacity(keys.length, n + 1, 16);
-			keys = Arrays.copyOf(keys, next);
-			kinds = Arrays.copyOf(kinds, next);
-			sizes = Arrays.copyOf(sizes, next);
-			data = Arrays.copyOf(data, next);
+			// Publish only after all four allocations succeed; retain the existing heap policy.
+			int[] nextKeys = Arrays.copyOf(keys, next);
+			int[] nextKinds = Arrays.copyOf(kinds, next);
+			int[] nextSizes = Arrays.copyOf(sizes, next);
+			int[][] nextData = Arrays.copyOf(data, next);
+			keys = nextKeys;
+			kinds = nextKinds;
+			sizes = nextSizes;
+			data = nextData;
 		}
 		System.arraycopy(keys, at, keys, at + 1, n - at);
 		System.arraycopy(kinds, at, kinds, at + 1, n - at);
@@ -423,12 +432,13 @@ public final class RowSparseBits {
 			int next;
 			switch (kinds[c]) {
 				case BITMAP:
-					next = base + nextClearInBitmap(d, v);
+					// Clamp before addition, as in the canonical SWT ItemBitSet owner.
+					next = base + Math.min(nextClearInBitmap(d, v), limit - base);
 					break;
 				case RUN: {
 					next = end;
 					for (int i = 0; i < sizes[c]; i++) {
-						if (v >= d[2 * i] && v < d[2 * i + 1]) next = base + d[2 * i + 1];
+						if (v >= d[2 * i] && v < d[2 * i + 1]) next = base + Math.min(d[2 * i + 1], limit - base);
 					}
 					break;
 				}

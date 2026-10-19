@@ -1,0 +1,8 @@
+package org.eclipse.nebula.widgets.grid;
+import java.util.Arrays;
+import org.eclipse.swt.*;
+import org.eclipse.swt.widgets.*;
+public class ShowSelectionProbe20261017 {
+ static void state(String where,Grid g){ScrollBar b=g.getVerticalBar();System.out.println(where+": top="+g.getTopIndex()+" bar="+b.getSelection()+" max="+b.getMaximum()+" thumb="+b.getThumb()+" visible="+b.getVisible()+" client="+g.getClientArea()+" selected="+Arrays.toString(g.getSelectionIndices()));}
+ public static void main(String[]a)throws Exception{Display d=new Display();Shell s=new Shell(d);Grid g=new Grid(s,SWT.H_SCROLL|SWT.V_SCROLL);g.setSize(200,200);s.pack();s.open();while(d.readAndDispatch()){}g.dispose();g=new Grid(s,SWT.MULTI|SWT.H_SCROLL|SWT.V_SCROLL);g.setSize(200,200);GridTestUtil.createGridItems(g,20,3);g.setSelection(new int[]{4,8,24});g.redraw();g.update();while(d.readAndDispatch()){}state("immediate painted",g);g.setTopIndex(12);state("setTopIndex12",g);g.showSelection();state("showSelection",g);for(int i=0;i<10;i++){while(d.readAndDispatch()){}g.update();Thread.sleep(20);}state("settled",g);g.setTopIndex(12);state("settled setTopIndex12",g);g.showSelection();state("settled showSelection",g);s.dispose();d.dispose();}
+}

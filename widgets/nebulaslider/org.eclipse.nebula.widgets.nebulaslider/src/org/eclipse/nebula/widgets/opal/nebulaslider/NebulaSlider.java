@@ -257,8 +257,12 @@ public class NebulaSlider extends Canvas {
 				final int selectorHeight = renderer.getSelectorHeight();
 				
 				final int y = (getClientArea().height - selectorHeight) / 2;
-				final Rectangle rect = new Rectangle(xPosition + renderer.getHorizontalMargin(), y, selectorWidth, selectorHeight);
-				if (!rect.contains(e.x, e.y)) {
+				// This original Canvas owns its hit viewport. Rectangle.contains
+				// uses the same wrapped int bounds and half-open comparisons.
+				final int selectorLeft = xPosition + renderer.getHorizontalMargin();
+				if (!(e.x >= selectorLeft && e.y >= y
+						&& e.x < selectorLeft + selectorWidth
+						&& e.y < y + selectorHeight)) {
 					return;
 				}
 				moving = true;

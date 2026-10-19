@@ -36,6 +36,18 @@ public final class NebulaM3TransferContractCli {
                 NebulaM3TransferContract.targetsTsv(),
                 StandardCharsets.UTF_8);
         Files.writeString(
+                output.resolve("backport-plan.tsv"),
+                NebulaM3BackportPlan.tsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("backport-bundle.tsv"),
+                NebulaM3BackportBundle.tsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("backport-bundle.sha256"),
+                NebulaM3BackportBundle.root() + "\n",
+                StandardCharsets.UTF_8);
+        Files.writeString(
                 output.resolve("ui-behavior-donors.tsv"),
                 NebulaM3UiBehaviorDonorCatalog.tsv(),
                 StandardCharsets.UTF_8);
@@ -63,6 +75,14 @@ public final class NebulaM3TransferContractCli {
         Files.writeString(
                 output.resolve("orchestrator-plans.sha256"),
                 NebulaM3OrchestratorPlans.root() + "\n",
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("transfer-qualification.tsv"),
+                NebulaM3ProofGate.pending(NebulaM3RecipeDagManifest.root()).toTsv(),
+                StandardCharsets.UTF_8);
+        Files.writeString(
+                output.resolve("java-grade-qualification.tsv"),
+                NebulaM3JavaGradeQualification.pending().toTsv(),
                 StandardCharsets.UTF_8);
         Files.writeString(
                 output.resolve("transfer.sha256"),

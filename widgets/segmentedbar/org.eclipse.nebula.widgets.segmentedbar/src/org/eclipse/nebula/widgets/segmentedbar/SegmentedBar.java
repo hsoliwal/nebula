@@ -47,6 +47,8 @@ public class SegmentedBar extends Canvas {
 	private static final int HORIZONTAL_BORDER = 2;
 
 	private List<Segment> segments = new ArrayList<>();
+	/** Only the exact unescaped default list of exact Segment objects is indexable. */
+	private boolean intrinsicTotalIndexing = true;
 	private int spacing = DEFAULT_SPACING;
 	GC gc;
 	int currentX;
@@ -155,8 +157,19 @@ public class SegmentedBar extends Canvas {
 	public double getTotal() {
 		checkWidget();
 		double total = 0d;
-		for (Segment segment : segments) {
-			total += segment.getValue();
+		if (getClass() == SegmentedBar.class && intrinsicTotalIndexing
+				&& segments.getClass() == ArrayList.class) {
+			// Same left-to-right IEEE-754 accumulation, without an Iterator for
+			// the private original ArrayList of non-overriding Segment values.
+			for (int i = 0, count = segments.size(); i < count; i++) {
+				total += segments.get(i).getValue();
+			}
+		} else {
+			// Preserve original iterator/callback/fail-fast behavior whenever
+			// the List escaped, came from the caller, or holds subclasses.
+			for (Segment segment : segments) {
+				total += segment.getValue();
+			}
 		}
 		return total;
 	}
@@ -174,6 +187,7 @@ public class SegmentedBar extends Canvas {
 	 */
 	public List<Segment> getSegments() {
 		checkWidget();
+		intrinsicTotalIndexing = false;
 		return segments;
 	}
 
@@ -195,6 +209,7 @@ public class SegmentedBar extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		this.segments = segments;
+		intrinsicTotalIndexing = false;
 		redraw();
 		update();
 	}
@@ -275,6 +290,7 @@ public class SegmentedBar extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		segments.add(segment);
+		if (segment.getClass() != Segment.class) intrinsicTotalIndexing = false;
 		redraw();
 		update();
 	}

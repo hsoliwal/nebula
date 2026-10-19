@@ -10,6 +10,7 @@
  *
  * Contributors:
  *    EclipseSource - initial API and implementation
+ *    Hitesh Soliwal (Synexia) - viewport mode
  ******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -54,6 +56,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.fixesUpstreamDefects;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.TreeAdapter;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.SWTException;
+import static org.eclipse.nebula.widgets.grid.GridTestUtil.assertThrowsByMode;
 
 
 @SuppressWarnings( {
@@ -152,7 +160,8 @@ public class Grid_Test {
     assertEquals( 1, grid.virtualMaterializedItemCount() );
     assertEquals( "facade access must not request model data", 0, setDataCount[ 0 ] );
 
-    assertEquals( "row 999999", last.getText() );
+    // the getter without a column index requests the data in the default mode only (UPSTREAM_DEFECTS.tsv)
+    assertEquals( "row 999999", fixesUpstreamDefects() ? last.getText() : last.getText( 0 ) );
     assertEquals( 1, setDataCount[ 0 ] );
     assertEquals( 999_999, lastSetDataIndex[ 0 ] );
 
@@ -171,11 +180,13 @@ public class Grid_Test {
     assertTrue( "shrinking logical extent must dispose exposed facades outside the range", last.isDisposed() );
     assertTrue( grid.virtualMaterializedItemCount() <= 1 );
 
+    // growing keeps a facade of the kept range; the new rows stay unmaterialized
+    int kept = grid.virtualMaterializedItemCount();
     grid.setItemCount( 1_000_000 );
-    assertEquals( 0, grid.virtualMaterializedItemCount() );
+    assertEquals( kept, grid.virtualMaterializedItemCount() );
     grid.remove( 500_000 );
     assertEquals( 999_999, grid.getItemCount() );
-    assertEquals( 0, grid.virtualMaterializedItemCount() );
+    assertEquals( kept, grid.virtualMaterializedItemCount() );
 
     grid.removeAll();
     assertEquals( 0, grid.getItemCount() );
@@ -205,6 +216,11 @@ public class Grid_Test {
   @Test
   public void testSetItemCount_LessItems() {
     GridItem[] items = createGridItems( grid, 3, 3 );
+    if( !fixesUpstreamDefects() ) {
+      // stock removes the rows of a tree as if they were roots (UPSTREAM_DEFECTS.tsv)
+      assertThrowsByMode( null, IndexOutOfBoundsException.class, () -> grid.setItemCount( 6 ) );
+      return;
+    }
     grid.setItemCount( 6 );
     assertEquals( 6, grid.getItemCount() );
     assertEquals( 2, grid.getRootItemCount() );
@@ -406,24 +422,27 @@ public class Grid_Test {
 
   @Test
   public void testAddRemoveSelectionListener() {
-    SelectionListener listener = mock( SelectionListener.class );
+    SelectionListener listener = new SelectionAdapter() {
+    };
     grid.addSelectionListener( listener );
-    assertTrue( grid.isListening( SWT.Selection ) );
-    assertTrue( grid.isListening( SWT.DefaultSelection ) );
+    // the Grid may listen to these events itself too: look for the typed listener
+    assertTrue( grid.getTypedListeners( SWT.Selection, SelectionListener.class ).anyMatch( l -> l == listener ) );
+    assertTrue( grid.getTypedListeners( SWT.DefaultSelection, SelectionListener.class ).anyMatch( l -> l == listener ) );
     grid.removeSelectionListener( listener );
-    assertFalse( grid.isListening( SWT.Selection ) );
-    assertFalse( grid.isListening( SWT.DefaultSelection ) );
+    assertFalse( grid.getTypedListeners( SWT.Selection, SelectionListener.class ).anyMatch( l -> l == listener ) );
+    assertFalse( grid.getTypedListeners( SWT.DefaultSelection, SelectionListener.class ).anyMatch( l -> l == listener ) );
   }
 
   @Test
   public void testAddRemoveTreeListener() {
-    TreeListener listener = mock( TreeListener.class );
+    TreeListener listener = new TreeAdapter() {
+    };
     grid.addTreeListener( listener );
-    assertTrue( grid.isListening( SWT.Expand ) );
-    assertTrue( grid.isListening( SWT.Collapse ) );
+    assertTrue( grid.getTypedListeners( SWT.Expand, TreeListener.class ).anyMatch( l -> l == listener ) );
+    assertTrue( grid.getTypedListeners( SWT.Collapse, TreeListener.class ).anyMatch( l -> l == listener ) );
     grid.removeTreeListener( listener );
-    assertFalse( grid.isListening( SWT.Expand ) );
-    assertFalse( grid.isListening( SWT.Collapse ) );
+    assertFalse( grid.getTypedListeners( SWT.Expand, TreeListener.class ).anyMatch( l -> l == listener ) );
+    assertFalse( grid.getTypedListeners( SWT.Collapse, TreeListener.class ).anyMatch( l -> l == listener ) );
   }
 
   @Test
@@ -434,9 +453,9 @@ public class Grid_Test {
     items[ 4 ].setText( "root" );
     // Note: The parameter allChildren has no effect as all items (not only rootItems) are cleared
     grid.clearAll( false );
-    assertEquals( "", items[ 0 ].getText() );
-    assertEquals( "", items[ 1 ].getText() );
-    assertEquals( "", items[ 4 ].getText() );
+    assertEquals( cleared( "foo" ), items[ 0 ].getText() );
+    assertEquals( cleared( "bar" ), items[ 1 ].getText() );
+    assertEquals( cleared( "root" ), items[ 4 ].getText() );
   }
 
   @Test
@@ -446,7 +465,7 @@ public class Grid_Test {
     items[ 1 ].setText( "bar" );
     items[ 4 ].setText( "root" );
     grid.clear( 0, false );
-    assertEquals( "", items[ 0 ].getText() );
+    assertEquals( cleared( "foo" ), items[ 0 ].getText() );
     assertEquals( "bar", items[ 1 ].getText() );
     assertEquals( "root", items[ 4 ].getText() );
   }
@@ -458,8 +477,8 @@ public class Grid_Test {
     items[ 1 ].setText( "bar" );
     items[ 4 ].setText( "root" );
     grid.clear( 0, true );
-    assertEquals( "", items[ 0 ].getText() );
-    assertEquals( "", items[ 1 ].getText() );
+    assertEquals( cleared( "foo" ), items[ 0 ].getText() );
+    assertEquals( cleared( "bar" ), items[ 1 ].getText() );
     assertEquals( "root", items[ 4 ].getText() );
   }
 
@@ -477,8 +496,8 @@ public class Grid_Test {
     items[ 3 ].setText( "sub" );
     items[ 4 ].setText( "root" );
     grid.clear( 0, 2, false );
-    assertEquals( "", items[ 0 ].getText() );
-    assertEquals( "", items[ 1 ].getText() );
+    assertEquals( cleared( "foo" ), items[ 0 ].getText() );
+    assertEquals( cleared( "bar" ), items[ 1 ].getText() );
     assertEquals( "sub", items[ 3 ].getText() );
     assertEquals( "root", items[ 4 ].getText() );
   }
@@ -493,10 +512,10 @@ public class Grid_Test {
     items[ 7 ].setText( "sub" );
     grid.clear( 1, 4, true );
     assertEquals( "first", items[ 0 ].getText() );
-    assertEquals( "", items[ 1 ].getText() );
-    assertEquals( "", items[ 4 ].getText() );
-    assertEquals( "", items[ 5 ].getText() );
-    assertEquals( "", items[ 7 ].getText() );
+    assertEquals( cleared( "foo" ), items[ 1 ].getText() );
+    assertEquals( cleared( "root" ), items[ 4 ].getText() );
+    assertEquals( cleared( "bar" ), items[ 5 ].getText() );
+    assertEquals( cleared( "sub" ), items[ 7 ].getText() );
   }
 
   @Test( expected = IllegalArgumentException.class )
@@ -536,8 +555,8 @@ public class Grid_Test {
       0,
       1
     }, false );
-    assertEquals( "", items[ 0 ].getText() );
-    assertEquals( "", items[ 1 ].getText() );
+    assertEquals( cleared( "foo" ), items[ 0 ].getText() );
+    assertEquals( cleared( "bar" ), items[ 1 ].getText() );
     assertEquals( "sub", items[ 3 ].getText() );
     assertEquals( "root", items[ 4 ].getText() );
   }
@@ -553,9 +572,9 @@ public class Grid_Test {
       0,
       1
     }, true );
-    assertEquals( "", items[ 0 ].getText() );
-    assertEquals( "", items[ 1 ].getText() );
-    assertEquals( "", items[ 3 ].getText() );
+    assertEquals( cleared( "foo" ), items[ 0 ].getText() );
+    assertEquals( cleared( "bar" ), items[ 1 ].getText() );
+    assertEquals( cleared( "sub" ), items[ 3 ].getText() );
     assertEquals( "root", items[ 4 ].getText() );
   }
 
@@ -595,7 +614,8 @@ public class Grid_Test {
       }
     } );
     grid.clear( 0, false );
-    assertEquals( "bar", items[ 0 ].getText() );
+    // stock keeps the text and does not request it (UPSTREAM_DEFECTS.tsv)
+    assertEquals( fixesUpstreamDefects() ? "bar" : "foo", items[ 0 ].getText() );
   }
 
   @Test
@@ -607,9 +627,9 @@ public class Grid_Test {
     items[ 1 ].setText( 1, "item 1.1" );
     items[ 1 ].setText( 2, "item 1.2" );
     grid.clear( 1, false );
-    assertEquals( "", items[ 1 ].getText( 0 ) );
-    assertEquals( "", items[ 1 ].getText( 1 ) );
-    assertEquals( "", items[ 1 ].getText( 2 ) );
+    assertEquals( cleared( "item 1.0" ), items[ 1 ].getText( 0 ) );
+    assertEquals( cleared( "item 1.1" ), items[ 1 ].getText( 1 ) );
+    assertEquals( cleared( "item 1.2" ), items[ 1 ].getText( 2 ) );
   }
 
   @Test
@@ -1033,9 +1053,10 @@ public class Grid_Test {
     assertTrue( Arrays.equals( expected, grid.getSelection() ) );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testSetSelectionByIndices_NullArgument() {
-    grid.setSelection( ( int[] )null );
+    assertThrowsByMode( IllegalArgumentException.class, NullPointerException.class,
+                        () -> grid.setSelection( ( int[] )null ) );
   }
 
   @Test
@@ -1048,12 +1069,16 @@ public class Grid_Test {
       2,
       3
     } );
-    GridItem[] expected = new GridItem[] {
+    GridItem[] expected = fixesUpstreamDefects() ? new GridItem[] {
       items[ 1 ],
       items[ 2 ],
       items[ 3 ]
-    };
-    assertTrue( Arrays.equals( expected, grid.getSelection() ) );
+    }
+    // stock stops at the index out of range (UPSTREAM_DEFECTS.tsv)
+        : new GridItem[] {
+          items[ 1 ]
+        };
+    assertArrayEquals( expected, grid.getSelection() );
   }
 
   @Test
@@ -1066,12 +1091,19 @@ public class Grid_Test {
       2,
       3
     } );
-    GridItem[] expected = new GridItem[] {
+    GridItem[] expected = fixesUpstreamDefects() ? new GridItem[] {
       items[ 1 ],
       items[ 2 ],
       items[ 3 ]
-    };
-    assertTrue( Arrays.equals( expected, grid.getSelection() ) );
+    }
+    // stock selects a duplicate twice (UPSTREAM_DEFECTS.tsv)
+        : new GridItem[] {
+          items[ 1 ],
+          items[ 2 ],
+          items[ 2 ],
+          items[ 3 ]
+        };
+    assertArrayEquals( expected, grid.getSelection() );
   }
 
   @Test
@@ -1354,11 +1386,21 @@ public class Grid_Test {
   @Test
   public void testRemoveByIndices_DuplicateIndex() {
     createGridItems( grid, 3, 3 );
-    grid.remove( new int[] {
+    int[] indices = {
       3,
       5,
       3
-    } );
+    };
+    if( !fixesUpstreamDefects() ) {
+      // stock disposes the item of a duplicate index twice (UPSTREAM_DEFECTS.tsv)
+      try {
+        grid.remove( indices );
+        fail();
+      } catch( SWTException expected ) {
+        return;
+      }
+    }
+    grid.remove( indices );
     assertEquals( 10, grid.getItemCount() );
     assertEquals( 3, grid.getRootItemCount() );
   }
@@ -1459,9 +1501,10 @@ public class Grid_Test {
     assertFalse( grid.isSelected( items[ 2 ] ) );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testIsSelectedByItem_NullArgument() {
-    grid.isSelected( null );
+    // the Javadoc's ERROR_NULL_ARGUMENT; stock answers false (UPSTREAM_DEFECTS.tsv)
+    assertThrowsByMode( IllegalArgumentException.class, null, () -> grid.isSelected( null ) );
   }
 
   @Test
@@ -1536,10 +1579,12 @@ public class Grid_Test {
     grid.setFocusItem( item );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testSetFocusItem_InvisibleItem() {
     GridItem[] items = createGridItems( grid, 3, 3 );
+    // Nebula focuses an item inside a collapsed parent (its Javadoc rejects disposed items only)
     grid.setFocusItem( items[ 2 ] );
+    assertSame( items[ 2 ], grid.getFocusItem() );
   }
 
   @Test
@@ -1658,15 +1703,24 @@ public class Grid_Test {
       0
     } );
     new GridColumn( grid, SWT.NONE, 2 );
-    int[] expected = new int[] {
+    int[] expected = fixesUpstreamDefects() ? new int[] {
       5,
       1,
       2,
       4,
       3,
       0
-    };
-    assertTrue( Arrays.equals( expected, grid.getColumnOrder() ) );
+    }
+    // stock leaves the last column's index stale (UPSTREAM_DEFECTS.tsv)
+        : new int[] {
+          4,
+          1,
+          2,
+          4,
+          3,
+          0
+        };
+    assertArrayEquals( expected, grid.getColumnOrder() );
   }
 
   @Test
@@ -1698,7 +1752,9 @@ public class Grid_Test {
       0,
       1
     } );
-    assertTrue( columns[ 2 ].isCheck() );
+    // Nebula: the first created column shows the check boxes, wherever it is displayed
+    assertTrue( columns[ 0 ].isCheck() );
+    assertFalse( columns[ 2 ].isCheck() );
   }
 
   @Test
@@ -1717,6 +1773,11 @@ public class Grid_Test {
   @Test
   public void testGetNextVisibleItem_NullArgument() {
     GridItem[] items = createGridItems( grid, 3, 3 );
+    if( !fixesUpstreamDefects() ) {
+      // stock fails with a NullPointerException (UPSTREAM_DEFECTS.tsv)
+      assertThrowsByMode( null, NullPointerException.class, () -> grid.getNextVisibleItem( null ) );
+      return;
+    }
     assertSame( items[ 0 ], grid.getNextVisibleItem( null ) );
   }
 
@@ -1819,6 +1880,11 @@ public class Grid_Test {
   @Test
   public void testGetPreviousVisibleColumn_NullArgument() {
     GridColumn[] columns = createGridColumns( grid, 5, SWT.NONE );
+    if( !fixesUpstreamDefects() ) {
+      // stock fails with an IndexOutOfBoundsException (UPSTREAM_DEFECTS.tsv)
+      assertThrowsByMode( null, IndexOutOfBoundsException.class, () -> grid.getPreviousVisibleColumn( null ) );
+      return;
+    }
     assertSame( columns[ 4 ], grid.getPreviousVisibleColumn( null ) );
   }
 
@@ -1843,7 +1909,8 @@ public class Grid_Test {
 
   @Test
   public void testGetItemHeight_Initial() {
-    assertEquals( 27, grid.getItemHeight() );
+    // Nebula: before the first item, the default item height is the font height plus 2
+    assertEquals( fontHeight( grid.getFont() ) + 2, grid.getItemHeight() );
   }
 
   @Test
@@ -1855,23 +1922,27 @@ public class Grid_Test {
   @Test
   public void testGetItemHeight_AfterFontChange() {
     // fill the cache
-    grid.getItemHeight();
+    int before = grid.getItemHeight();
     Font font = new Font( display, "Arial", 20, SWT.BOLD );
     grid.setFont( font );
-    assertEquals( 33, grid.getItemHeight() );
+    assertEquals( fixesUpstreamDefects() ? fontHeight( font ) + 2 : before, grid.getItemHeight() );
   }
 
   @Test
   public void testGetItemHeight_MinHeight() {
+    int before = grid.getItemHeight();
     Font font = new Font( display, "Arial", 8, SWT.NORMAL );
     grid.setFont( font );
-    assertEquals( 16, grid.getItemHeight() );
+    // the default mode measures the item height with the new font; stock keeps it (UPSTREAM_DEFECTS.tsv)
+    assertEquals( fixesUpstreamDefects() ? fontHeight( font ) + 2 : before, grid.getItemHeight() );
   }
 
   @Test
   public void testGetItemHeight_WithGridCheck() {
+    int plain = grid.getItemHeight();
     grid = new Grid( shell, SWT.CHECK );
-    assertEquals( 30, grid.getItemHeight() );
+    // before its first item a CHECK Grid has the default item height too
+    assertEquals( plain, grid.getItemHeight() );
   }
 
   @Test
@@ -1882,7 +1953,8 @@ public class Grid_Test {
     // fill the cache
     grid.getItemHeight();
     item.setImage( 1, image );
-    assertEquals( 63, grid.getItemHeight() );
+    // the first image sets the item height
+    assertTrue( grid.getItemHeight() >= image.getBounds().height );
   }
 
   @Test
@@ -1891,24 +1963,31 @@ public class Grid_Test {
     GridItem item = new GridItem( grid, SWT.NONE );
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     item.setImage( 1, image );
+    int withImage = grid.getItemHeight();
     grid.clearAll( true );
-    assertEquals( 27, grid.getItemHeight() );
+    // Nebula keeps the item height after clearing the items
+    assertEquals( withImage, grid.getItemHeight() );
   }
 
   @Test
   public void testGetHeaderHeight_Initial() {
     createGridColumns( grid, 3, SWT.NONE );
-    assertEquals( 0, grid.getHeaderHeight() );
+    // Nebula measures the header whether it is shown or not
+    assertEquals( measuredHeaderHeight(), grid.getHeaderHeight() );
   }
 
   @Test
   public void testGetHeaderHeight() {
     grid.setHeaderVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getHeaderHeight();
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     columns[ 0 ].setImage( image );
     columns[ 1 ].setText( "foo" );
-    assertEquals( 67, grid.getHeaderHeight() );
+    assertHeaderHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getHeaderHeight() >= image.getBounds().height );
+    }
   }
 
   @Test
@@ -1922,54 +2001,71 @@ public class Grid_Test {
     group.setImage( image );
     group.setText( "foo" );
     createGridColumns( group, 1, SWT.NONE );
-    assertEquals( 134, grid.getHeaderHeight() );
-    assertEquals( 67, grid.getGroupHeaderHeight() );
+    // adding the group and its column measures the header (stock too)
+    assertEquals( measuredHeaderHeight(), grid.getHeaderHeight() );
+    assertEquals( measuredGroupHeaderHeight(), grid.getGroupHeaderHeight() );
+    assertTrue( grid.getGroupHeaderHeight() >= image.getBounds().height );
+    assertTrue( grid.getHeaderHeight() >= 2 * image.getBounds().height );
   }
 
   @Test
   public void testGetHeaderHeight_DifferentColumnHeaderFonts() {
     grid.setHeaderVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getHeaderHeight();
     columns[ 0 ].setHeaderFont( new Font( display, "Arial", 10, SWT.NORMAL ) );
     columns[ 2 ].setHeaderFont( new Font( display, "Arial", 20, SWT.NORMAL ) );
-    assertEquals( 37, grid.getHeaderHeight() );
+    assertHeaderHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getHeaderHeight() > before );
+    }
   }
 
   @Test
   public void testGetHeaderHeight_AfterColumnDispose() {
     grid.setHeaderVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getHeaderHeight();
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     columns[ 0 ].setImage( image );
     columns[ 1 ].setText( "foo" );
     // fill the cache
-    grid.getHeaderHeight();
+    int withImage = grid.getHeaderHeight();
     columns[ 0 ].dispose();
-    assertEquals( 31, grid.getHeaderHeight() );
+    assertHeaderHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getHeaderHeight() < withImage );
+    }
   }
 
   @Test
   public void testGetHeaderHeight_AfterTextChange() {
     grid.setHeaderVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getHeaderHeight();
     columns[ 1 ].setText( "foo" );
     // fill the cache
     grid.getHeaderHeight();
     columns[ 1 ].setText( "foo\nbar" );
-    assertEquals( 52, grid.getHeaderHeight() );
+    // Nebula's header renderer measures one line unless it wraps
+    assertHeaderHeight( before );
   }
 
   @Test
   public void testGetHeaderHeight_AfterImageChange() {
     grid.setHeaderVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getHeaderHeight();
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     columns[ 0 ].setImage( image );
     columns[ 1 ].setText( "foo" );
     // fill the cache
-    grid.getHeaderHeight();
+    int withImage = grid.getHeaderHeight();
     columns[ 0 ].setImage( null );
-    assertEquals( 31, grid.getHeaderHeight() );
+    assertHeaderHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getHeaderHeight() < withImage );
+    }
   }
 
   @Test
@@ -1978,9 +2074,12 @@ public class Grid_Test {
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
     columns[ 1 ].setText( "foo" );
     // fill the cache
-    grid.getHeaderHeight();
+    int before = grid.getHeaderHeight();
     columns[ 1 ].setHeaderFont( new Font( display, "Arial", 20, SWT.NORMAL ) );
-    assertEquals( 37, grid.getHeaderHeight() );
+    assertHeaderHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getHeaderHeight() > before );
+    }
   }
 
   @Test
@@ -1988,9 +2087,13 @@ public class Grid_Test {
     grid.setHeaderVisible( true );
     grid.setAutoHeight( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getHeaderHeight();
     columns[ 1 ].setHeaderWordWrap( true );
     columns[ 1 ].setText( "foo bar" );
-    assertEquals( 52, grid.getHeaderHeight() );
+    assertHeaderHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getHeaderHeight() > before );
+    }
   }
 
   @Test
@@ -1998,71 +2101,91 @@ public class Grid_Test {
     grid.setHeaderVisible( true );
     grid.setAutoHeight( false );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getHeaderHeight();
     columns[ 1 ].setHeaderWordWrap( true );
     columns[ 1 ].setText( "foo bar" );
-    assertEquals( 31, grid.getHeaderHeight() );
+    // without auto height a wrapping header keeps one line (as setAutoHeight documents)
+    assertEquals( before, grid.getHeaderHeight() );
   }
 
   @Test
   public void testGetFooterHeight_Initial() {
     createGridColumns( grid, 3, SWT.NONE );
-    assertEquals( 0, grid.getFooterHeight() );
+    // Nebula measures the footer whether it is shown or not
+    assertEquals( measuredFooterHeight(), grid.getFooterHeight() );
   }
 
   @Test
   public void testGetFooterHeight() {
     grid.setFooterVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getFooterHeight();
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     columns[ 0 ].setFooterImage( image );
     columns[ 1 ].setFooterText( "foo" );
-    assertEquals( 67, grid.getFooterHeight() );
+    assertFooterHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getFooterHeight() >= image.getBounds().height );
+    }
   }
 
   @Test
   public void testGetFooterHeight_DifferentColumnFooterFonts() {
     grid.setFooterVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getFooterHeight();
     columns[ 0 ].setFooterFont( new Font( display, "Arial", 10, SWT.NORMAL ) );
     columns[ 2 ].setFooterFont( new Font( display, "Arial", 20, SWT.NORMAL ) );
-    assertEquals( 21, grid.getFooterHeight() );
+    assertFooterHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getFooterHeight() > before );
+    }
   }
 
   @Test
   public void testGetFooterHeight_AfterColumnDispose() {
     grid.setFooterVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getFooterHeight();
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     columns[ 0 ].setFooterImage( image );
     columns[ 1 ].setFooterText( "foo" );
     // fill the cache
-    grid.getFooterHeight();
+    int withImage = grid.getFooterHeight();
     columns[ 0 ].dispose();
-    assertEquals( 31, grid.getFooterHeight() );
+    assertFooterHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getFooterHeight() < withImage );
+    }
   }
 
   @Test
   public void testGetFooterHeight_AfterTextChange() {
     grid.setFooterVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getFooterHeight();
     columns[ 1 ].setFooterText( "foo" );
     // fill the cache
     grid.getFooterHeight();
     columns[ 1 ].setFooterText( "foo\nbar" );
-    assertEquals( 52, grid.getFooterHeight() );
+    assertFooterHeight( before );
   }
 
   @Test
   public void testGetFooterHeight_AfterImageChange() {
     grid.setFooterVisible( true );
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
+    int before = grid.getFooterHeight();
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     columns[ 0 ].setFooterImage( image );
     columns[ 1 ].setFooterText( "foo" );
     // fill the cache
-    grid.getFooterHeight();
+    int withImage = grid.getFooterHeight();
     columns[ 0 ].setFooterImage( null );
-    assertEquals( 31, grid.getFooterHeight() );
+    assertFooterHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getFooterHeight() < withImage );
+    }
   }
 
   @Test
@@ -2071,9 +2194,12 @@ public class Grid_Test {
     GridColumn[] columns = createGridColumns( grid, 3, SWT.NONE );
     columns[ 1 ].setFooterText( "foo" );
     // fill the cache
-    grid.getFooterHeight();
+    int before = grid.getFooterHeight();
     columns[ 1 ].setFooterFont( new Font( display, "Arial", 20, SWT.NORMAL ) );
-    assertEquals( 37, grid.getFooterHeight() );
+    assertFooterHeight( before );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getFooterHeight() > before );
+    }
   }
 
   @Test
@@ -2082,9 +2208,11 @@ public class Grid_Test {
     grid.setAutoHeight( true );
     GridColumn column = new GridColumn( grid, SWT.NONE );
     column.setWidth( 40 );
+    int before = grid.getFooterHeight();
     column.setHeaderWordWrap( true );
     column.setFooterText( "foo bar" );
-    assertEquals( 52, grid.getFooterHeight() );
+    // Nebula's footer renderer does not wrap: one line
+    assertFooterHeight( before );
   }
 
   @Test
@@ -2093,9 +2221,10 @@ public class Grid_Test {
     grid.setAutoHeight( false );
     GridColumn column = new GridColumn( grid, SWT.NONE );
     column.setWidth( 40 );
+    int before = grid.getFooterHeight();
     column.setHeaderWordWrap( true );
     column.setFooterText( "foo bar" );
-    assertEquals( 31, grid.getFooterHeight() );
+    assertFooterHeight( before );
   }
 
   @Test
@@ -2106,10 +2235,11 @@ public class Grid_Test {
     column1.setWidth( 20 );
     GridColumn column2 = new GridColumn( grid, SWT.NONE );
     column2.setWidth( 20 );
+    int before = grid.getFooterHeight();
     column1.setHeaderWordWrap( true );
     column1.setFooterText( "foo bar" );
     column1.setData( "footerSpan", Integer.valueOf( 2 ) );
-    assertEquals( 52, grid.getFooterHeight() );
+    assertFooterHeight( before );
   }
 
   @Test
@@ -2120,10 +2250,11 @@ public class Grid_Test {
     column1.setWidth( 20 );
     GridColumn column2 = new GridColumn( grid, SWT.NONE );
     column2.setWidth( 100 );
+    int before = grid.getFooterHeight();
     column1.setHeaderWordWrap( true );
     column1.setFooterText( "foofoo bar" );
     column1.setData( "footerSpan", Integer.valueOf( 2 ) );
-    assertEquals( 35, grid.getFooterHeight() );
+    assertFooterHeight( before );
   }
 
   @Test
@@ -2131,7 +2262,8 @@ public class Grid_Test {
     createGridColumns( grid, 1, SWT.NONE );
     GridColumnGroup group = new GridColumnGroup( grid, SWT.NONE );
     createGridColumns( group, 1, SWT.NONE );
-    assertEquals( 0, grid.getGroupHeaderHeight() );
+    // Nebula measures the group header whether the header is shown or not
+    assertEquals( measuredGroupHeaderHeight(), grid.getGroupHeaderHeight() );
   }
 
   @Test
@@ -2140,10 +2272,14 @@ public class Grid_Test {
     createGridColumns( grid, 1, SWT.NONE );
     GridColumnGroup group = new GridColumnGroup( grid, SWT.NONE );
     createGridColumns( group, 1, SWT.NONE );
+    int before = grid.getGroupHeaderHeight();
     Image image = loadImage( display, Fixture.IMAGE_100x50 );
     group.setImage( image );
     group.setText( "foo" );
-    assertEquals( 67, grid.getGroupHeaderHeight() );
+    assertEquals( fixesUpstreamDefects() ? measuredGroupHeaderHeight() : before, grid.getGroupHeaderHeight() );
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getGroupHeaderHeight() >= image.getBounds().height );
+    }
   }
 
   @Test
@@ -2155,9 +2291,15 @@ public class Grid_Test {
     column1.setWidth( 20 );
     GridColumn column2 = new GridColumn( group, SWT.NONE );
     column2.setWidth( 20 );
+    int before = grid.getGroupHeaderHeight();
     group.setHeaderWordWrap( true );
     group.setText( "foo bar" );
-    assertEquals( 52, grid.getGroupHeaderHeight() );
+    // the default mode measures the wrapped lines at the group's width; stock keeps the height
+    if( fixesUpstreamDefects() ) {
+      assertTrue( grid.getGroupHeaderHeight() > before );
+    } else {
+      assertEquals( before, grid.getGroupHeaderHeight() );
+    }
   }
 
   @Test
@@ -2169,9 +2311,10 @@ public class Grid_Test {
     column1.setWidth( 20 );
     GridColumn column2 = new GridColumn( group, SWT.NONE );
     column2.setWidth( 20 );
+    int before = grid.getGroupHeaderHeight();
     group.setHeaderWordWrap( true );
     group.setText( "foo bar" );
-    assertEquals( 31, grid.getGroupHeaderHeight() );
+    assertEquals( before, grid.getGroupHeaderHeight() );
   }
 
   @Test
@@ -2179,21 +2322,21 @@ public class Grid_Test {
     grid = new Grid( shell, SWT.NONE );
     createGridColumns( grid, 3, SWT.NONE );
     createGridItems( grid, 3, 3 );
-    int itemHeight = grid.getItemHeight();
     Point preferredSize = grid.computeSize( SWT.DEFAULT, SWT.DEFAULT );
-    assertEquals( 120, preferredSize.x );
-    assertEquals( 3 * itemHeight, preferredSize.y );
+    // Nebula: the visible columns (createGridItems adds one of 100) by the visible rows and the
+    // lines between them
+    assertEquals( 220, preferredSize.x );
+    assertEquals( 3 * pitch() - 1, preferredSize.y );
   }
 
   @Test
   public void testComputeSize_WithScrollBars() {
     createGridColumns( grid, 3, SWT.NONE );
     createGridItems( grid, 3, 3 );
-    int itemHeight = grid.getItemHeight();
-    int scrollbarSize = 10;
     Point preferredSize = grid.computeSize( SWT.DEFAULT, SWT.DEFAULT );
-    assertEquals( 120 + scrollbarSize, preferredSize.x );
-    assertEquals( 3 * itemHeight + scrollbarSize, preferredSize.y );
+    // Nebula adds the scroll bars' sizes
+    assertEquals( 220 + verticalBar.getSize().x, preferredSize.x );
+    assertEquals( 3 * pitch() - 1 + horizontalBar.getSize().y, preferredSize.y );
   }
 
   @Test
@@ -2201,11 +2344,10 @@ public class Grid_Test {
     grid = new Grid( shell, SWT.BORDER );
     createGridColumns( grid, 3, SWT.NONE );
     createGridItems( grid, 3, 3 );
-    int itemHeight = grid.getItemHeight();
     int borderWidth = grid.getBorderWidth();
     Point preferredSize = grid.computeSize( SWT.DEFAULT, SWT.DEFAULT );
-    assertEquals( 120 + 2 * borderWidth, preferredSize.x );
-    assertEquals( 3 * itemHeight + 2 * borderWidth, preferredSize.y );
+    assertEquals( 220 + 2 * borderWidth, preferredSize.x );
+    assertEquals( 3 * pitch() - 1 + 2 * borderWidth, preferredSize.y );
   }
 
   @Test
@@ -2215,10 +2357,9 @@ public class Grid_Test {
     GridItem[] items = createGridItems( grid, 3, 3 );
     items[ 0 ].setExpanded( true );
     items[ 4 ].setExpanded( true );
-    int itemHeight = grid.getItemHeight();
     Point preferredSize = grid.computeSize( SWT.DEFAULT, SWT.DEFAULT );
-    assertEquals( 120, preferredSize.x );
-    assertEquals( 9 * itemHeight, preferredSize.y );
+    assertEquals( 220, preferredSize.x );
+    assertEquals( 9 * pitch() - 1, preferredSize.y );
   }
 
   @Test
@@ -2242,7 +2383,8 @@ public class Grid_Test {
     assertEquals( 20, verticalBar.getMaximum() );
     assertTrue( horizontalBar.getVisible() );
     assertEquals( 0, horizontalBar.getSelection() );
-    assertEquals( 300, horizontalBar.getMaximum() );
+    // the five columns and the one createGridItems adds
+    assertEquals( 400, horizontalBar.getMaximum() );
   }
 
   @Test
@@ -2291,19 +2433,24 @@ public class Grid_Test {
   @Test
   public void testUpdateScrollBars_OnHeaderVisible() {
     createGridColumns( grid, 1, SWT.NONE );
-    createGridItems( grid, 7, 3 );
+    fillWindowWithRows();
+    doRedraw();
+    assertFalse( verticalBar.getVisible() );
     grid.setHeaderVisible( true );
     doRedraw();
-    assertTrue( verticalBar.getVisible() );
+    assertEquals( fixesUpstreamDefects(), verticalBar.getVisible() );
   }
 
   @Test
   public void testUpdateScrollBars_OnFooterVisible() {
     createGridColumns( grid, 1, SWT.NONE );
-    createGridItems( grid, 7, 3 );
+    fillWindowWithRows();
+    doRedraw();
+    assertFalse( verticalBar.getVisible() );
     grid.setFooterVisible( true );
     doRedraw();
-    assertTrue( verticalBar.getVisible() );
+    // stock keeps its scroll bars: the last row stays under the footer (UPSTREAM_DEFECTS.tsv)
+    assertEquals( fixesUpstreamDefects(), verticalBar.getVisible() );
   }
 
   @Test
@@ -2327,6 +2474,7 @@ public class Grid_Test {
   @Test
   public void testSetTopIndex() {
     createGridItems( grid, 20, 3 );
+    doRedraw();
     grid.setTopIndex( 4 );
     assertEquals( 4, grid.getTopIndex() );
   }
@@ -2342,6 +2490,7 @@ public class Grid_Test {
   public void testSetTopIndex_VisibleSubItem() {
     createGridItems( grid, 20, 3 );
     grid.getItem( 4 ).setExpanded( true );
+    doRedraw();
     grid.setTopIndex( 6 );
     assertEquals( 6, grid.getTopIndex() );
   }
@@ -2349,15 +2498,19 @@ public class Grid_Test {
   @Test
   public void testSetTopIndex_AdjustTopIndex() {
     createGridItems( grid, 20, 0 );
+    doRedraw();
     grid.setTopIndex( 18 );
-    assertEquals( 13, grid.getTopIndex() );
+    // the last page ends with the last row
+    assertEquals( firstIndexOfLastPage(), grid.getTopIndex() );
   }
 
   @Test
   public void testGetTopIndex_OnItemAdd() {
     createGridItems( grid, 20, 3 );
+    doRedraw();
     grid.setTopIndex( 12 );
     new GridItem( grid, SWT.NONE, 0 );
+    // Nebula keeps the scrolled row count: the fourth visible row is now root_2
     assertEquals( 9, grid.getTopIndex() );
   }
 
@@ -2365,8 +2518,9 @@ public class Grid_Test {
   public void testGetTopIndex_DifferentItemHeight() {
     GridItem[] items = createGridItems( grid, 20, 0 );
     items[ 16 ].setHeight( grid.getItemHeight() * 2 );
+    doRedraw();
     grid.setTopIndex( 18 );
-    assertEquals( 14, grid.getTopIndex() );
+    assertEquals( firstIndexOfLastPage(), grid.getTopIndex() );
   }
 
   @Test
@@ -2377,28 +2531,31 @@ public class Grid_Test {
     assertEquals( 0, grid.getTopIndex() );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testShowItem_NullArgument() {
-    grid.showItem( null );
+    assertThrowsByMode( IllegalArgumentException.class, NullPointerException.class, () -> grid.showItem( null ) );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testShowItem_DisposedItem() {
     GridItem item = new GridItem( grid, SWT.NONE );
     item.dispose();
-    grid.showItem( item );
+    assertThrowsByMode( IllegalArgumentException.class, SWTException.class, () -> grid.showItem( item ) );
   }
 
   @Test
   public void testShowItem_ScrollDown() {
     GridItem[] items = createGridItems( grid, 20, 3 );
     grid.showItem( items[ 40 ] );
-    assertEquals( 40, grid.getTopIndex() );
+    // Nebula scrolls an item below the window to the bottom of the window
+    assertEquals( topIndexShowingLast( items[ 40 ] ), grid.getTopIndex() );
+    assertTrue( grid.isShown( items[ 40 ] ) );
   }
 
   @Test
   public void testShowItem_ScrollUp() {
     GridItem[] items = createGridItems( grid, 20, 3 );
+    doRedraw();
     grid.setTopIndex( 12 );
     grid.showItem( items[ 4 ] );
     assertEquals( 4, grid.getTopIndex() );
@@ -2407,17 +2564,21 @@ public class Grid_Test {
   @Test
   public void testShowItem_NoScroll() {
     GridItem[] items = createGridItems( grid, 20, 3 );
+    doRedraw();
     grid.setTopIndex( 12 );
     grid.showItem( items[ 14 ] );
-    assertEquals( 12, grid.getTopIndex() );
+    // Nebula expands the collapsed parent and scrolls the item to the top
+    assertTrue( items[ 12 ].isExpanded() );
+    assertEquals( 14, grid.getTopIndex() );
   }
 
   @Test
   public void testShowItem_SubItemScrollDown() {
     GridItem[] items = createGridItems( grid, 20, 3 );
     grid.showItem( items[ 41 ] );
-    assertEquals( 41, grid.getTopIndex() );
     assertTrue( items[ 40 ].isExpanded() );
+    assertEquals( topIndexShowingLast( items[ 41 ] ), grid.getTopIndex() );
+    assertTrue( grid.isShown( items[ 41 ] ) );
   }
 
   @Test
@@ -2438,21 +2599,22 @@ public class Grid_Test {
     assertSame( items[ 40 ], eventLog.get( 0 ).item );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testShowColumn_NullArgument() {
-    grid.showColumn( null );
+    assertThrowsByMode( IllegalArgumentException.class, NullPointerException.class, () -> grid.showColumn( null ) );
   }
 
-  @Test( expected = IllegalArgumentException.class )
+  @Test
   public void testShowColumn_DisposedColumn() {
     GridColumn column = new GridColumn( grid, SWT.NONE );
     column.dispose();
-    grid.showColumn( column );
+    assertThrowsByMode( IllegalArgumentException.class, SWTException.class, () -> grid.showColumn( column ) );
   }
 
   @Test
   public void testShowColumn_ScrollRight() {
     GridColumn[] columns = createGridColumns( grid, 10, SWT.NONE );
+    doRedraw();
     grid.showColumn( columns[ 4 ] );
     assertEquals( 100, horizontalBar.getSelection() );
   }
@@ -2460,6 +2622,7 @@ public class Grid_Test {
   @Test
   public void testShowColumn_ScrollLeft() {
     GridColumn[] columns = createGridColumns( grid, 10, SWT.NONE );
+    doRedraw();
     horizontalBar.setSelection( 150 );
     grid.showColumn( columns[ 2 ] );
     assertEquals( 60, horizontalBar.getSelection() );
@@ -2468,6 +2631,7 @@ public class Grid_Test {
   @Test
   public void testShowColumn_NoScroll() {
     GridColumn[] columns = createGridColumns( grid, 10, SWT.NONE );
+    doRedraw();
     horizontalBar.setSelection( 30 );
     grid.showColumn( columns[ 2 ] );
     assertEquals( 30, horizontalBar.getSelection() );
@@ -2487,6 +2651,7 @@ public class Grid_Test {
 
   @Test
   public void testShowSelection() {
+    grid.dispose();
     grid = new Grid( shell, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL );
     grid.setSize( 200, 200 );
     createGridItems( grid, 20, 3 );
@@ -2495,6 +2660,7 @@ public class Grid_Test {
       8,
       24
     } );
+    doRedraw();
     grid.setTopIndex( 12 );
     grid.showSelection();
     assertEquals( 4, grid.getTopIndex() );
@@ -2504,9 +2670,10 @@ public class Grid_Test {
   public void testGetOrigin() {
     GridColumn[] columns = createGridColumns( grid, 10, SWT.NONE );
     GridItem[] items = createGridItems( grid, 20, 3 );
+    doRedraw();
     horizontalBar.setSelection( 150 );
     grid.setTopIndex( 40 );
-    Point expected = new Point( -30, 2 * grid.getItemHeight() );
+    Point expected = new Point( -30, 2 * pitch() );
     assertEquals( expected, grid.getOrigin( columns[ 3 ], items[ 48 ] ) );
   }
 
@@ -2515,9 +2682,10 @@ public class Grid_Test {
     GridColumn[] columns = createGridColumns( grid, 10, SWT.NONE );
     GridItem[] items = createGridItems( grid, 20, 3 );
     items[ 40 ].setExpanded( true );
+    doRedraw();
     horizontalBar.setSelection( 150 );
     grid.setTopIndex( 40 );
-    Point expected = new Point( -30, 5 * grid.getItemHeight() );
+    Point expected = new Point( -30, 5 * pitch() );
     assertEquals( expected, grid.getOrigin( columns[ 3 ], items[ 48 ] ) );
   }
 
@@ -2525,10 +2693,11 @@ public class Grid_Test {
   public void testGetOrigin_HeaderVisible() {
     GridColumn[] columns = createGridColumns( grid, 10, SWT.NONE );
     GridItem[] items = createGridItems( grid, 20, 3 );
-    horizontalBar.setSelection( 150 );
     grid.setHeaderVisible( true );
+    doRedraw();
+    horizontalBar.setSelection( 150 );
     grid.setTopIndex( 40 );
-    Point expected = new Point( -30, 2 * grid.getItemHeight() + grid.getHeaderHeight() );
+    Point expected = new Point( -30, 2 * pitch() + grid.getHeaderHeight() );
     assertEquals( expected, grid.getOrigin( columns[ 3 ], items[ 48 ] ) );
   }
 
@@ -2542,6 +2711,7 @@ public class Grid_Test {
   @Test
   public void testIsShown_HiddenItem() {
     GridItem[] items = createGridItems( grid, 20, 0 );
+    doRedraw();
     grid.setTopIndex( 5 );
     assertFalse( grid.isShown( items[ 4 ] ) );
   }
@@ -2556,9 +2726,12 @@ public class Grid_Test {
   @Test
   public void testIsShown_PartlyVisibleItem() {
     GridItem[] items = createGridItems( grid, 20, 0 );
+    doRedraw();
     grid.setTopIndex( 7 );
-    assertTrue( grid.isShown( items[ 13 ] ) );
-    assertFalse( grid.isShown( items[ 14 ] ) );
+    // Nebula: an item is shown when it is completely visible
+    int last = lastPartlyShownIndex( 7 );
+    assertTrue( grid.isShown( items[ last - 1 ] ) );
+    assertFalse( grid.isShown( items[ last ] ) );
   }
 
   @Test
@@ -2613,64 +2786,80 @@ public class Grid_Test {
   @Test
   public void testGetBottomIndex_SameItemHeight() {
     createGridItems( grid, 20, 0 );
+    doRedraw();
     grid.setTopIndex( 4 );
-    assertEquals( 11, grid.getBottomIndex() );
+    // the bottom item is the last one with a visible pixel
+    assertEquals( lastPartlyShownIndex( 4 ), grid.getBottomIndex() );
   }
 
   @Test
   public void testGetBottomIndex_DifferentItemHeight() {
     GridItem[] items = createGridItems( grid, 20, 0 );
     items[ 6 ].setHeight( grid.getItemHeight() * 2 );
+    doRedraw();
     grid.setTopIndex( 4 );
-    assertEquals( 10, grid.getBottomIndex() );
+    assertEquals( lastPartlyShownIndex( 4 ), grid.getBottomIndex() );
   }
 
   @Test
   public void testRemoveAll_disposeInReverseOrder() {
-    final List<String> log = new ArrayList<String>();
-    createGridItems( grid, 5, 0 );
+    final List<GridItem> log = new ArrayList<GridItem>();
+    final List<String> texts = new ArrayList<String>();
+    GridItem[] items = createGridItems( grid, 5, 0 );
     for( GridItem item : grid.getItems() ) {
       item.addDisposeListener( new DisposeListener() {
 
         public void widgetDisposed( DisposeEvent event ) {
           GridItem item = ( GridItem )event.getSource();
-          log.add( item.getText() );
+          log.add( item );
+          texts.add( item.getText() );
         }
       } );
     }
     grid.removeAll();
-    String[] expected = {
-      "root_4",
-      "root_3",
-      "root_2",
-      "root_1",
-      "root_0"
+    // Nebula: removeAll disposes the items first to last
+    GridItem[] expected = {
+      items[ 0 ],
+      items[ 1 ],
+      items[ 2 ],
+      items[ 3 ],
+      items[ 4 ]
     };
-    assertArrayEquals( expected, log.toArray( new String[ 0 ] ) );
+    assertArrayEquals( expected, log.toArray( new GridItem[ 0 ] ) );
+    String[] names = fixesUpstreamDefects() ? new String[] { "root_0", "root_1", "root_2", "root_3", "root_4" }
+                                            : new String[] { "", "", "", "", "" };
+    assertArrayEquals( names, texts.toArray( new String[ 0 ] ) );
   }
 
   @Test
   public void testSetItemCount_disposeInReverseOrder() {
-    final List<String> log = new ArrayList<String>();
-    createGridItems( grid, 5, 0 );
+    final List<GridItem> log = new ArrayList<GridItem>();
+    final List<String> texts = new ArrayList<String>();
+    GridItem[] items = createGridItems( grid, 5, 0 );
     for( GridItem item : grid.getItems() ) {
       item.addDisposeListener( new DisposeListener() {
 
         public void widgetDisposed( DisposeEvent event ) {
           GridItem item = ( GridItem )event.getSource();
-          log.add( item.getText() );
+          log.add( item );
+          texts.add( item.getText() );
         }
       } );
     }
     grid.setItemCount( 0 );
-    String[] expected = {
-      "root_4",
-      "root_3",
-      "root_2",
-      "root_1",
-      "root_0"
+    // the items are disposed last first
+    GridItem[] expected = {
+      items[ 4 ],
+      items[ 3 ],
+      items[ 2 ],
+      items[ 1 ],
+      items[ 0 ]
     };
-    assertArrayEquals( expected, log.toArray( new String[ 0 ] ) );
+    assertArrayEquals( expected, log.toArray( new GridItem[ 0 ] ) );
+    // a Dispose listener reads the item; stock removed its data first (UPSTREAM_DEFECTS.tsv)
+    String[] names = fixesUpstreamDefects() ? new String[] { "root_4", "root_3", "root_2", "root_1", "root_0" }
+                                            : new String[] { "", "", "", "", "" };
+    assertArrayEquals( names, texts.toArray( new String[ 0 ] ) );
   }
 
   @Test
@@ -2686,8 +2875,12 @@ public class Grid_Test {
 
   //////////////////
   // Helping methods
+  /* Nebula sizes its scroll bars when it paints */
   private void doRedraw() {
     grid.redraw();
+    grid.update();
+    while( display.readAndDispatch() ) {
+    }
   }
 
   //////////////////
@@ -2696,6 +2889,161 @@ public class Grid_Test {
 
     public void handleEvent( Event event ) {
       eventLog.add( event );
+    }
+  }
+
+  /* adds root items (three children each, collapsed) until one more would not fit the window */
+  private void fillWindowWithRows() {
+    createGridItems( grid, 1, 3 );
+    int rows = grid.getClientArea().height / pitch();
+    for( int i = 1; i < rows; i++ ) {
+      GridItem root = new GridItem( grid, SWT.NONE );
+      for( int j = 0; j < 3; j++ ) {
+        new GridItem( root, SWT.NONE );
+      }
+    }
+  }
+
+  /* the distance from one row to the next: Nebula rows have a one-pixel line below them */
+  private int pitch() {
+    return grid.getItemHeight() + 1;
+  }
+
+  /* the client height left for rows */
+  private int bodyHeight() {
+    return grid.getClientArea().height - ( grid.getHeaderVisible() ? grid.getHeaderHeight() : 0 )
+           - ( grid.getFooterVisible() ? grid.getFooterHeight() : 0 );
+  }
+
+  /* the visible items, in row order */
+  private List<GridItem> visibleItems() {
+    List<GridItem> visible = new ArrayList<GridItem>();
+    for( GridItem item : grid.getItems() ) {
+      if( item.isVisible() ) {
+        visible.add( item );
+      }
+    }
+    return visible;
+  }
+
+  /* the index of the last item with a visible pixel when the item at top is the top item */
+  private int lastPartlyShownIndex( int top ) {
+    List<GridItem> visible = visibleItems();
+    int y = 0;
+    int last = visible.indexOf( grid.getItem( top ) );
+    for( int row = last; row < visible.size() && y < bodyHeight(); row++ ) {
+      y += visible.get( row ).getHeight() + 1;
+      last = row;
+    }
+    return grid.indexOf( visible.get( last ) );
+  }
+
+  /* the index of the top item of the last page: the rows from it to the last row fit the window */
+  private int firstIndexOfLastPage() {
+    List<GridItem> visible = visibleItems();
+    int y = 0;
+    int first = visible.size();
+    while( first > 0 && y + visible.get( first - 1 ).getHeight() + 1 <= bodyHeight() ) {
+      first--;
+      y += visible.get( first ).getHeight() + 1;
+    }
+    return grid.indexOf( visible.get( first ) );
+  }
+
+  /* the top item that shows the given item as the last completely visible row */
+  private int topIndexShowingLast( GridItem item ) {
+    List<GridItem> visible = visibleItems();
+    int row = visible.indexOf( item );
+    int y = item.getHeight() + 1;
+    while( row > 0 && y + visible.get( row - 1 ).getHeight() + 1 <= bodyHeight() ) {
+      row--;
+      y += visible.get( row ).getHeight() + 1;
+    }
+    return grid.indexOf( visible.get( row ) );
+  }
+
+  private int fontHeight( Font font ) {
+    GC gc = new GC( grid );
+    try {
+      gc.setFont( font );
+      return gc.getFontMetrics().getHeight();
+    } finally {
+      gc.dispose();
+    }
+  }
+
+  /* the header height the renderers ask for: the tallest column header plus the tallest group header */
+  private int measuredHeaderHeight() {
+    GC gc = new GC( grid );
+    try {
+      int height = 0;
+      for( GridColumn column : grid.getColumns() ) {
+        height = Math.max( height, column.getHeaderRenderer().computeSize( gc, column.getWidth(), SWT.DEFAULT, column ).y );
+      }
+      return height + measuredGroupHeaderHeight();
+    } finally {
+      gc.dispose();
+    }
+  }
+
+  private int measuredGroupHeaderHeight() {
+    GC gc = new GC( grid );
+    try {
+      int height = 0;
+      for( GridColumnGroup group : grid.getColumnGroups() ) {
+        height = Math.max( height, group.getHeaderRenderer().computeSize( gc, SWT.DEFAULT, SWT.DEFAULT, group ).y );
+      }
+      return height;
+    } finally {
+      gc.dispose();
+    }
+  }
+
+  private int measuredFooterHeight() {
+    GC gc = new GC( grid );
+    try {
+      int height = 0;
+      for( GridColumn column : grid.getColumns() ) {
+        height = Math.max( height, column.getFooterRenderer().computeSize( gc, column.getWidth(), SWT.DEFAULT, column ).y );
+      }
+      return height;
+    } finally {
+      gc.dispose();
+    }
+  }
+
+  /*
+   * The default mode measures the header after a content change; stock keeps the height measured
+   * when the columns were added (UPSTREAM_DEFECTS.tsv).
+   */
+  private void assertHeaderHeight( int stockHeight ) {
+    assertEquals( fixesUpstreamDefects() ? measuredHeaderHeight() : stockHeight, grid.getHeaderHeight() );
+  }
+
+  private void assertFooterHeight( int stockHeight ) {
+    assertEquals( fixesUpstreamDefects() ? measuredFooterHeight() : stockHeight, grid.getFooterHeight() );
+  }
+
+  /* the text after a clear: the default mode resets it; stock keeps it (UPSTREAM_DEFECTS.tsv) */
+  private static String cleared( String stockText ) {
+    return fixesUpstreamDefects() ? "" : stockText;
+  }
+
+  @Test
+  public void testGetItemHeight_AfterFontChange_WithItems() {
+    GridItem[] items = createGridItems( grid, 3, 0 );
+    int before = grid.getItemHeight();
+    Font font = new Font( display, "Arial", 20, SWT.BOLD );
+    grid.setFont( font );
+    if( fixesUpstreamDefects() ) {
+      // the rows take the height the new font needs
+      assertTrue( grid.getItemHeight() >= fontHeight( font ) );
+      for( GridItem item : items ) {
+        assertEquals( grid.getItemHeight(), item.getHeight() );
+      }
+    } else {
+      assertEquals( before, grid.getItemHeight() );
+      assertEquals( before, items[ 0 ].getHeight() );
     }
   }
 }

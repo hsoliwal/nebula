@@ -1,12 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Contributors to the Eclipse Foundation.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
- * This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License 2.0
- * which accompanies this distribution, and is available at
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
  * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid.model;
 
@@ -270,8 +274,32 @@ public final class RowStateLanes {
 			if (patternCount[lane] == 0) {
 				for (int i = value[lane].next(from, to); i >= 0; i = value[lane].next(i + 1, to)) out[i - from] |= bit;
 			} else {
-				for (int i = from; i < to; i++) if (get(lane, i)) out[i - from] |= bit;
+				gatherPatternLane(lane, from, to, out, bit);
 			}
+		}
+	}
+
+	/** Walks disjoint pattern records once, without a binary search for each visible item. */
+	private void gatherPatternLane(int lane, int from, int to, int[] out, int bit) {
+		int[] p = patterns[lane];
+		int n = patternCount[lane], low = 0, high = n;
+		while (low < high) {
+			int mid = (low + high) >>> 1;
+			if (p[mid * P + P_END] <= from) low = mid + 1;
+			else high = mid;
+		}
+		int k = low;
+		RowSparseBits exceptions = override[lane];
+		for (int item = from; item < to; item++) {
+			while (k < n && p[k * P + P_END] <= item) k++;
+			boolean on;
+			if (k == n || p[k * P + P_START] > item) {
+				on = value[lane].get(item);
+			} else {
+				on = exceptions != null && exceptions.get(item)
+						? value[lane].get(item) : patternBit(p, k, item);
+			}
+			if (on) out[item - from] |= bit;
 		}
 	}
 

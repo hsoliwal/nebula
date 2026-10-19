@@ -74,12 +74,30 @@ public final class NebulaM3JavaBeforeJniPolicy {
 
     public static Review review(NebulaM3InventoryRecipe.SourceFacts facts) {
         Objects.requireNonNull(facts, "facts");
-        if (facts.nativeMethodCount() > 0) {
+        return review(
+                facts.nativeMethodCount() > 0,
+                facts.loopCount(),
+                facts.fastSearchSignal());
+    }
+
+    public static Review review(NebulaM3InventoryRecipe.MethodFacts facts) {
+        Objects.requireNonNull(facts, "facts");
+        return review(
+                facts.nativeMethod(),
+                facts.loopCount(),
+                facts.fastSearchSignal());
+    }
+
+    private static Review review(
+            boolean nativeDeclaration,
+            int loopCount,
+            String fastSearchSignal) {
+        if (nativeDeclaration) {
             return candidate(
                     Decision.REVIEW_EXISTING_NATIVE_DECLARATION,
                     "EXISTING_NATIVE_DECLARATION_REQUIRES_PARITY_LIFECYCLE_FALLBACK_AND_BENCHMARK");
         }
-        if (facts.loopCount() > 0 && !"NONE".equals(facts.fastSearchSignal())) {
+        if (loopCount > 0 && !"NONE".equals(fastSearchSignal)) {
             return candidate(
                     Decision.PROFILE_JAVA_HOT_PATH_BEFORE_JNI,
                     "SEARCH_LOOP_IS_ONLY_A_PROFILE_CANDIDATE_NOT_NATIVE_AUTHORITY");
