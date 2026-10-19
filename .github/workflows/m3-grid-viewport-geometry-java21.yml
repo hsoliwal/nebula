@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+name: M3 Nebula Grid viewport geometry proof
+
+on:
+  push:
+    branches:
+      - converge/m3-nebula-viewport-20261019
+  pull_request:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowExtents.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.tests/viewport-geometry/**'
+      - '.github/workflows/m3-grid-viewport-geometry-java21.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile the actual Grid model, without substitutes
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC=widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid
+          PROOF=widgets/grid/org.eclipse.nebula.widgets.grid.tests/viewport-geometry
+          OUT="${RUNNER_TEMP}/m3-grid-geometry-classes"
+          mkdir -p "$OUT"
+          javac --release 21 -proc:none -encoding UTF-8 -Xlint:all -Werror -d "$OUT" \
+            "$SRC/GridRowIndex.java" \
+            "$SRC/model/HeapSampler.java" \
+            "$SRC/model/HeapGrowth.java" \
+            "$SRC/GridRowExtents.java" \
+            "$PROOF/GridRankPixelProof.java" \
+            "$PROOF/GridExtentBoundaryProof.java"
+      - name: Run differential rank and pixel proofs
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${RUNNER_TEMP}/m3-grid-geometry-classes"
+          java -cp "$OUT" org.eclipse.nebula.widgets.grid.GridRankPixelProof | tee "${RUNNER_TEMP}/grid-rank.txt"
+          java -cp "$OUT" org.eclipse.nebula.widgets.grid.GridExtentBoundaryProof | tee "${RUNNER_TEMP}/grid-boundary.txt"
+          grep -q '^NEBULA_RANK_PIXEL_PASS checks=' "${RUNNER_TEMP}/grid-rank.txt"
+          grep -q '^GRID_ENDPOINT_PASS checks=' "${RUNNER_TEMP}/grid-boundary.txt"
+      - name: Verify diff hygiene
+        run: git diff --check
