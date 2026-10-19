@@ -82,26 +82,6 @@ public class GridItem extends Item {
 	private Color defaultForeground;
 
 	/**
-	 * The height of this <code>GridItem</code>.
-	 */
-	private int height = 1;
-
-	/**
-	 * Is expanded?
-	 */
-	private boolean expanded = false;
-
-	/**
-	 * True if has children.
-	 */
-	private boolean hasChildren = false;
-
-	/**
-	 * Level of item in a tree.
-	 */
-	private int level = 0;
-
-	/**
 	 * Parent grid instance.
 	 */
 	private final Grid parent;
@@ -111,10 +91,15 @@ public class GridItem extends Item {
 	 */
 	private GridItem parentItem;
 
-	/**
-	 * Is visible?
+	/*
+	 * This item's id in the Grid's row state lanes (GridItemLanes): its height, tree level and the
+	 * flags visible, expanded, has children and data answered live there, not in this object (DOOP,
+	 * one store). After the item is disposed: RELEASED_VISIBLE or RELEASED_HIDDEN, which keep what
+	 * isVisible() answered (it does not check the widget, as stock).
 	 */
-	private boolean visible = true;
+	private int lane = RELEASED_HIDDEN;
+	private static final int RELEASED_HIDDEN = -1;
+	private static final int RELEASED_VISIBLE = -2;
 
 	/**
 	 * Row header text.
@@ -140,12 +125,6 @@ public class GridItem extends Item {
 	 * Font of the header
 	 */
 	private Font headerFont = null;
-
-	/**
-	 * (SWT.VIRTUAL only) Flag that specifies whether the client has already
-	 * been sent a SWT.SetData event.
-	 */
-	private boolean hasSetData = false;
 
 	private int row = NO_ROW;
 
