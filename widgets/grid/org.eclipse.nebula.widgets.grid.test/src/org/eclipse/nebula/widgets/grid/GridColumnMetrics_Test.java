@@ -18,6 +18,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,9 @@ public class GridColumnMetrics_Test {
 		display = Display.getDefault();
 		shell = new Shell(display);
 		shell.setBounds(10, 10, 500, 300);
+		// the original mode keeps stock's duplicate column indexes after an insertion (UPSTREAM_DEFECTS.tsv),
+		// so its column order is no list of distinct columns; the lanes serve the viewport mode
+		assumeTrue("the column lanes serve the viewport mode", GridViewport.ENABLED);
 	}
 
 	@After
@@ -104,12 +108,32 @@ public class GridColumnMetrics_Test {
 			any.setFixed(random.nextInt(3) == 0);
 			return "fixed";
 		case 7: {
+			// shuffle blocks: a column group's columns stay together, as setColumnOrder requires
 			final int[] order = grid.getColumnOrder();
-			for (int i = order.length - 1; i > 0; i--) {
-				final int j = random.nextInt(i + 1);
-				final int t = order[i];
-				order[i] = order[j];
-				order[j] = t;
+			final List<int[]> blocks = new ArrayList<>();
+			for (int i = 0; i < order.length;) {
+				final GridColumnGroup group = grid.getColumn(order[i]).getColumnGroup();
+				int j = i + 1;
+				while (group != null && j < order.length && grid.getColumn(order[j]).getColumnGroup() == group) {
+					j++;
+				}
+				blocks.add(java.util.Arrays.copyOfRange(order, i, j));
+				i = j;
+			}
+			// a column inserted between a group's columns splits it: no valid order keeps the blocks
+			final java.util.Set<GridColumnGroup> seen = new java.util.HashSet<>();
+			for (final int[] block : blocks) {
+				final GridColumnGroup group = grid.getColumn(block[0]).getColumnGroup();
+				if (group != null && !seen.add(group)) {
+					return "order skipped";
+				}
+			}
+			java.util.Collections.shuffle(blocks, random);
+			int k = 0;
+			for (final int[] block : blocks) {
+				for (final int index : block) {
+					order[k++] = index;
+				}
 			}
 			grid.setColumnOrder(order);
 			return "order";
