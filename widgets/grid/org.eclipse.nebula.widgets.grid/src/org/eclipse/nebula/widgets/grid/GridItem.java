@@ -390,7 +390,12 @@ public class GridItem extends Item {
 			}
             if (hasChildren) {
                 for (int i = children.size() - 1; i >= 0; i--) {
-                    children.get(i).dispose();
+                    final GridItem child = childIfMaterialized(i);
+                    if (child != null) {
+                        child.dispose();
+                    } else {
+                        removeUnreadChild(i);
+                    }
                 }
             }
 		}
@@ -399,6 +404,72 @@ public class GridItem extends Item {
 		}
 		noRow();
 		super.dispose();
+	}
+
+	/**
+	 * Creates the item of a child nobody has read (G4 step 2c): its row exists in the Grid's row
+	 * tree already, so nothing is inserted or counted.
+	 */
+	GridItem(GridItem parentItem, int rowTreeSlot, boolean rowFacade) {
+		super(parentItem, SWT.NONE);
+		this.parentItem = parentItem;
+		this.parent = parentItem.getParent();
+		this.level = parentItem.getLevel() + 1;
+		this.visible = parentItem.isVisible() && parentItem.isExpanded();
+		parent.initializeVirtualItemFacade(this);
+	}
+
+	/** @return the children as rows that may have no item (a virtual Grid in the viewport mode) */
+	GridChildList childList() {
+		return (GridChildList) children;
+	}
+
+	/* the child's item, or null when it has none yet (never makes one) */
+	private GridItem childIfMaterialized(int index) {
+		return children instanceof GridChildList ? ((GridChildList) children).materialized(index)
+				: children.get(index);
+	}
+
+	/* removes a child that has no item: its row only */
+	private void removeUnreadChild(int index) {
+		final GridChildList list = childList();
+		parent.removeVirtualRow(list.slot(index));
+		list.remove(index);
+		hasChildren = !list.isEmpty();
+	}
+
+	/** @return the row of the last row of this item's subtree (makes no item) */
+	int lastDescendantRow() {
+		GridItem last = this;
+		while (true) {
+			final int n = last.childCount();
+			if (n == 0) {
+				return last.getRowIndex();
+			}
+			final GridItem child = last.childIfMaterialized(n - 1);
+			if (child == null) {
+				return parent.rowOfSlot(last.childList().slot(n - 1));
+			}
+			last = child;
+		}
+	}
+
+	/** Appends children that have rows but no items (see {@link Grid#appendVirtualChildren}). */
+	void appendChildSlots(int[] slots) {
+		if (!(children instanceof GridChildList)) {
+			children = new GridChildList(this, children);
+		}
+		childList().appendSlots(slots);
+		hasChildren = !children.isEmpty();
+	}
+
+	/* the children that have items, in order (makes none) */
+	private GridItem[] materializedChildArray() {
+		if (!hasChildren) {
+			return new GridItem[0];
+		}
+		return children instanceof GridChildList ? childList().materializedArray()
+				: children.toArray(new GridItem[children.size()]);
 	}
 
 	/**
@@ -1065,7 +1136,9 @@ public class GridItem extends Item {
 		checkWidget();
 		final int target = Math.max(0, count);
 		final int current = childCount();
-		if (target < current) {
+		if (target < current && children instanceof GridChildList) {
+			removeSparseChildren(target, current);
+		} else if (target < current) {
 			// TreeItem disposes the removed children in order; each disposes its own subtree
 			final GridItem[] removed = children.subList(target, current).toArray(new GridItem[current - target]);
 			for (final GridItem child : removed) {
@@ -1074,8 +1147,37 @@ public class GridItem extends Item {
 				}
 			}
 		}
+		if (target > current && parent.sparseChildren()) {
+			// the viewport mode of a virtual Grid: rows only, items when they are read (G4 step 2c)
+			parent.appendVirtualChildren(this, target - current);
+			return;
+		}
 		for (int i = current; i < target; i++) {
 			new GridItem(this, SWT.NONE);
+		}
+	}
+
+	/*
+	 * Removes the children [from, to) of a list whose children may have no items: first the
+	 * Dispose events of those with items, in order and each with its subtree (as TreeItem, D34; a
+	 * child without an item has no listener), then the rows from the last
+	 */
+	private void removeSparseChildren(int from, int to) {
+		final GridChildList list = childList();
+		for (int i = from; i < to; i++) {
+			final GridItem child = list.materialized(i);
+			if (child != null && !child.isDisposed()) {
+				child.sendDisposeFirst();
+				child.sendDescendantDisposes();
+			}
+		}
+		for (int i = to - 1; i >= from; i--) {
+			final GridItem child = list.materialized(i);
+			if (child == null) {
+				removeUnreadChild(i);
+			} else if (!child.isDisposed()) {
+				child.dispose();
+			}
 		}
 	}
 
@@ -1109,7 +1211,11 @@ public class GridItem extends Item {
 		if (index < 0 || index >= childCount()) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
-		children.get(index).clearAsTreeItem(all);
+		// a child without an item was never answered: nothing to clear (as a virtual TreeItem)
+		final GridItem child = childIfMaterialized(index);
+		if (child != null) {
+			child.clearAsTreeItem(all);
+		}
 		parent.itemsCleared();
 	}
 
@@ -1136,7 +1242,7 @@ public class GridItem extends Item {
 		if (childCount() == 0) {
 			return;
 		}
-		for (final GridItem child : children) {
+		for (final GridItem child : materializedChildArray()) {
 			child.clearAsTreeItem(all);
 		}
 		parent.itemsCleared();
@@ -1149,7 +1255,7 @@ public class GridItem extends Item {
 		}
 		clear(false);
 		if (all && hasChildren) {
-			for (final GridItem child : children) {
+			for (final GridItem child : materializedChildArray()) {
 				child.clearAsTreeItem(true);
 			}
 		}
@@ -1555,7 +1661,18 @@ public class GridItem extends Item {
 		boolean unselected = false;
 
         if (hasChildren) {
-            for (GridItem item : children) {
+            for (int i = 0; i < children.size(); i++) {
+                final GridItem item = childIfMaterialized(i);
+                if (item == null) {
+                    // a child nobody has read: its row shows or hides; it can hold selected cells only
+                    final int slot = childList().slot(i);
+                    parent.setVirtualRowVisible(slot, expanded && visible);
+                    if (!expanded && getParent().getCellSelectionEnabled()
+                            && parent.deselectCellsOfRow(parent.rowOfSlot(slot))) {
+                        unselected = true;
+                    }
+                    continue;
+                }
                 item.setVisible(expanded && visible);
                 if (!expanded) {
                     if (!getParent().getCellSelectionEnabled()) {
@@ -1592,10 +1709,19 @@ public class GridItem extends Item {
 			}
 		}
 
-		GridItem[] kids = item.childArray();
+		GridItem[] kids = item.materializedChildArray();
 		for (int i = 0; i < kids.length; i++) {
 			if (deselectCells(kids[i])) {
 				flag = true;
+			}
+		}
+		if (item.children instanceof GridChildList && item.hasChildren) {
+			// children nobody has read hold no items, only rows that may have selected cells
+			final GridChildList list = item.childList();
+			for (int i = 0; i < list.size(); i++) {
+				if (list.materialized(i) == null && parent.deselectCellsOfRow(parent.rowOfSlot(list.slot(i)))) {
+					flag = true;
+				}
 			}
 		}
 
@@ -1611,7 +1737,8 @@ public class GridItem extends Item {
 	 */
 	private boolean deselectChildren(GridItem item) {
 		boolean flag = false;
-		GridItem[] kids = item.childArray();
+		// a child nobody has read cannot be selected (selecting a row makes its item)
+		GridItem[] kids = item.materializedChildArray();
 		for (int i = 0; i < kids.length; i++) {
 			if (getParent().isSelected(kids[i])) {
 				flag = true;
@@ -2101,8 +2228,13 @@ public class GridItem extends Item {
 			if (visible) {
 				childrenVisible = expanded;
 			}
-			for (GridItem item : children) {
-				item.setVisible(childrenVisible);
+			for (int i = 0; i < children.size(); i++) {
+				final GridItem item = childIfMaterialized(i);
+				if (item != null) {
+					item.setVisible(childrenVisible);
+				} else {
+					parent.setVirtualRowVisible(childList().slot(i), childrenVisible);
+				}
 			}
 		}
 	}
@@ -2515,7 +2647,10 @@ public class GridItem extends Item {
 		// Recursively clear children if requested.
 		if (allChildren && hasChildren) {
 			for (int i = children.size() - 1; i >= 0; i--) {
-				children.get(i).clear(true);
+				final GridItem child = childIfMaterialized(i);
+				if (child != null) {
+					child.clear(true);
+				}
 			}
 		}
 
@@ -2528,7 +2663,10 @@ public class GridItem extends Item {
 		sendDisposeFirst();
         if (hasChildren) {
             for (int i = children.size() - 1; i >= 0; i--) {
-                children.get(i).disposeOnly();
+                final GridItem child = childIfMaterialized(i);
+                if (child != null) {
+                    child.disposeOnly();
+                }
             }
         }
 		if (parent.getDataVisualizer() != null && !parent.usesRowAddressedDataVisualizer()) {
@@ -2548,7 +2686,7 @@ public class GridItem extends Item {
 		if (!hasChildren) {
 			return;
 		}
-		for (final GridItem child : childArray()) {
+		for (final GridItem child : materializedChildArray()) {
 			if (!child.isDisposed()) {
 				child.sendDescendantDisposes();
 				child.sendDisposeFirst();

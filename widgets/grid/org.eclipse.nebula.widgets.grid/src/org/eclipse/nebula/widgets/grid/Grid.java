@@ -2334,6 +2334,10 @@ public class Grid extends Canvas {
 		for (final GridItem item : materializedItems()) {
 			item.setHeight(height);
 		}
+		if (rowTree() != null) {
+			// the rows nobody has read have the Grid's item height too
+			rowTree().reweighUnread(height + 1);
+		}
 		hasDifferingHeights = false;
 		setScrollValuesObsolete();
 		redraw();
@@ -3721,8 +3725,10 @@ public class Grid extends Canvas {
 		if (usesSparseVirtualItems()) {
 			disposeSparseVirtualItems();
 		} else {
-			final GridItem[] items = getItems();
-			for (final GridItem gridItem : items) {
+			final List<GridItem> made = new ArrayList<>();
+			// the rows nobody has read have no item to dispose
+			materializedItems().forEach(made::add);
+			for (final GridItem gridItem : made) {
 				gridItem.disposeOnly();
 			}
 			clearItems();
@@ -9771,15 +9777,154 @@ public class Grid extends Canvas {
 	}
 
 	int virtualMaterializedItemCount() {
+		if (items instanceof GridRowTree) {
+			return ((GridRowTree) items).materializedCount();
+		}
 		return items instanceof GridVirtualItemList
 				? ((GridVirtualItemList) items).materializedCount()
 				: items.size();
 	}
 
 	private Iterable<GridItem> materializedItems() {
+		if (items instanceof GridRowTree && ((GridRowTree) items).hasUnread()) {
+			return ((GridRowTree) items).materialized();
+		}
 		return items instanceof GridVirtualItemList
 				? ((GridVirtualItemList) items).materializedSnapshot()
 				: items;
+	}
+
+	/**
+	 * @return whether {@link GridItem#setItemCount(int)} leaves the new children without items until
+	 *         they are read (G4 step 2c): a virtual Grid in the viewport mode
+	 */
+	boolean sparseChildren() {
+		return viewport != null && (getStyle() & SWT.VIRTUAL) != 0;
+	}
+
+	/*
+	 * The row tree's callback for a row nobody has read: the child of its owner it is, now with an
+	 * item (a facade on the row, no SetData yet)
+	 */
+	private GridItem materializeTreeRow(final int slot) {
+		final GridRowTree tree = rowTree();
+		final GridItem owner = tree.ownerOf(slot);
+		return materializeChild(owner, owner.childList().indexOfSlot(slot, tree), slot);
+	}
+
+	/**
+	 * Makes the item of a child nobody has read.
+	 *
+	 * @param owner its parent
+	 * @param index its index in the parent
+	 * @param slot  its row-tree slot
+	 * @return the item
+	 */
+	GridItem materializeChild(final GridItem owner, final int index, final int slot) {
+		final GridItem item = new GridItem(owner, slot, true);
+		owner.childList().bind(index, item);
+		rowTree().bind(slot, item);
+		return item;
+	}
+
+	/**
+	 * Appends children without items to an item ({@link GridItem#setItemCount(int)} of a virtual
+	 * Grid in the viewport mode): rows of the row tree, nothing else, until they are read.
+	 *
+	 * @param owner the parent item
+	 * @param count how many
+	 */
+	void appendVirtualChildren(final GridItem owner, final int count) {
+		dropResidentPayloads();
+		if (!isTree) {
+			materializeVirtualTableForTree();
+			isTree = true;
+		}
+		final GridRowTree tree = rowTree();
+		final int row = owner.lastDescendantRow() + 1;
+		final int weight = owner.isVisible() && owner.isExpanded() ? itemHeight + 1 : 0;
+		owner.appendChildSlots(tree.insertUnread(row, owner, count, weight));
+		for (int i = 0; i < count; i++) {
+			insertDataRow(row + i);
+		}
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
+		if (weight > 0) {
+			currentVisibleItems += count;
+		}
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		redraw();
+	}
+
+	/**
+	 * Removes a child nobody has read (its parent shrinks or is disposed): no item, so no event;
+	 * the row, its data row and its selected cells go.
+	 *
+	 * @param slot its row-tree slot
+	 */
+	void removeVirtualRow(final int slot) {
+		dropResidentPayloads();
+		final GridRowTree tree = rowTree();
+		final int row = tree.rowOfSlotIndex(slot);
+		final boolean wasVisible = tree.weightOf(slot) > 0;
+		tree.removeUnread(slot);
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
+		if (usesRowAddressedDataVisualizer()) {
+			removeDataRow(row);
+		}
+		if (disposing) {
+			return;
+		}
+		if (deselectCellsOfRow(row)) {
+			updateColumnSelection();
+		}
+		if (wasVisible) {
+			currentVisibleItems--;
+		}
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		redraw();
+	}
+
+	/**
+	 * Shows or hides a child nobody has read (its parent was expanded, collapsed, shown or hidden).
+	 *
+	 * @param slot    its row-tree slot
+	 * @param visible whether it shows
+	 */
+	void setVirtualRowVisible(final int slot, final boolean visible) {
+		final GridRowTree tree = rowTree();
+		if ((tree.weightOf(slot) > 0) == visible) {
+			return;
+		}
+		tree.reweighSlot(slot, visible ? itemHeight + 1 : 0);
+		updateVisibleItems(visible ? 1 : -1);
+	}
+
+	/**
+	 * Deselects the cells of a row without an item.
+	 *
+	 * @param row the row
+	 * @return whether a cell was selected
+	 */
+	boolean deselectCellsOfRow(final int row) {
+		if (selectedCells.isEmpty()) {
+			return false;
+		}
+		boolean deselected = false;
+		for (int column = 0; column < columns.size(); column++) {
+			if (selectedCells.remove(new Point(column, row))) {
+				deselected = true;
+			}
+		}
+		return deselected;
+	}
+
+	/** @return the row of a row-tree slot */
+	int rowOfSlot(final int slot) {
+		return rowTree().rowOfSlotIndex(slot);
 	}
 
 	private void materializeVirtualTableForTree() {
@@ -9799,6 +9944,7 @@ public class Grid extends Canvas {
 			for (final GridItem root : rootItems) {
 				tree.add(root);
 			}
+			tree.setFacades(this::materializeTreeRow);
 			items = tree;
 			viewport.itemsReplaced(tree);
 		}

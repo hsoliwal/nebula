@@ -145,6 +145,15 @@ final class GridChildList extends AbstractList<GridItem> {
 		if (!(o instanceof GridItem)) {
 			return -1;
 		}
+		// by the row of the item: O(log k log n), as a child's SetData asks for its index
+		final GridRowTree tree = owner.getParent().rowTree();
+		final int slot = ((GridItem) o).rowTreeSlot();
+		if (tree != null && slot >= 0) {
+			final int index = indexOfSlot(slot, tree);
+			if (index >= 0 && items[index] == o) {
+				return index;
+			}
+		}
 		for (int i = 0; i < size; i++) {
 			if (items[i] == o) {
 				return i;

@@ -36,11 +36,23 @@ import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
  * O(log n); nothing is rebuilt and no other item is touched, so no structural change costs O(n)
  * on the UI thread. An item's extent is its height plus the one-pixel line when it is visible, 0
  * when it is hidden; {@link #update(GridItem)} records a change of either.
+ * <p>
+ * In an {@code SWT.VIRTUAL} tree Grid a row may have no item yet (G4 step 2c): a child that
+ * {@link GridItem#setItemCount(int)} created and nobody has read. Its slot keeps its parent in the
+ * owner lane and its extent in the weight lane; {@link #get(int)} and the iterator make its item
+ * through the Grid ({@link #setFacades(java.util.function.IntFunction)}), {@link #materialized()}
+ * walks only the items made so far.
+ * </p>
  */
 final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	private static final int NONE = -1;
-	/* bytes per slot over the lanes: left, right, up, size, visible, weight (int), sum (long), height (byte), item */
-	private static final int SLOT_BYTES = 45;
+	/* bytes per slot over the lanes: left, right, up, size, visible, weight (int), sum (long), height (byte), item, owner */
+	private static final int SLOT_BYTES = 49;
+
+	/* the parent item of each row without an item (null for a row with one) */
+	private GridItem[] owners = new GridItem[0];
+	private int unread;
+	private java.util.function.IntFunction<GridItem> facades;
 
 	private int root = NONE;
 	private int[] left = new int[0];
@@ -64,7 +76,139 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	@Override
 	public GridItem get(final int index) {
 		checkIndex(index, size());
-		return items[slotAt(index)];
+		return itemOf(slotAt(index));
+	}
+
+	/* the item of a slot, made now for a row nobody has read */
+	private GridItem itemOf(final int slot) {
+		final GridItem item = items[slot];
+		return item != null ? item : facades.apply(slot);
+	}
+
+	/** @param facades makes the item of a row without one (the Grid), given the row's slot */
+	void setFacades(final java.util.function.IntFunction<GridItem> facades) {
+		this.facades = facades;
+	}
+
+	/**
+	 * Inserts rows without items: children of {@code owner} that nobody has read.
+	 *
+	 * @param index  the row of the first
+	 * @param owner  their parent item
+	 * @param count  how many
+	 * @param weight the extent of each (0 for hidden rows)
+	 * @return their slots, in row order
+	 */
+	int[] insertUnread(final int index, final GridItem owner, final int count, final int weight) {
+		if (index < 0 || index > size()) {
+			throw new IndexOutOfBoundsException("index " + index + ", size " + size());
+		}
+		ensureCapacity(nextSlot + count - Math.min(count, freeCount));
+		final int[] slots = new int[count];
+		for (int i = 0; i < count; i++) {
+			final int slot = allocate();
+			owners[slot] = owner;
+			weights[slot] = weight;
+			root = insertAt(root, index + i, slot);
+			up[root] = NONE;
+			slots[i] = slot;
+		}
+		unread += count;
+		modCount++;
+		return slots;
+	}
+
+	/** Gives a row without an item the item just made for it. */
+	void bind(final int slot, final GridItem item) {
+		items[slot] = item;
+		owners[slot] = null;
+		unread--;
+		item.enteredRowTree(slot);
+	}
+
+	/** @return the parent item of a row without an item, else {@code null} */
+	GridItem ownerOf(final int slot) {
+		return owners[slot];
+	}
+
+	/** @return whether some rows have no item yet */
+	boolean hasUnread() {
+		return unread > 0;
+	}
+
+	/** @return the number of rows with an item */
+	int materializedCount() {
+		return size() - unread;
+	}
+
+	/** @return the row of a slot, O(log n) */
+	int rowOfSlotIndex(final int slot) {
+		return rowOfSlot(slot);
+	}
+
+	/** @return the extent of a slot (0: hidden) */
+	int weightOf(final int slot) {
+		return weights[slot];
+	}
+
+	/** Sets the extent of a slot, O(log n). */
+	void reweighSlot(final int slot, final int weight) {
+		reweigh(slot, weight);
+	}
+
+	/** Removes a row without an item, O(log n). */
+	void removeUnread(final int slot) {
+		final int index = rowOfSlot(slot);
+		root = removeAt(root, index);
+		if (root != NONE) {
+			up[root] = NONE;
+		}
+		owners[slot] = null;
+		unread--;
+		release(slot);
+		modCount++;
+	}
+
+	/** Sets the extent of every visible row without an item (the Grid's item height changed). */
+	void reweighUnread(final int visibleWeight) {
+		if (unread == 0) {
+			return;
+		}
+		for (int slot = first(root); slot != NONE; slot = successor(slot)) {
+			if (items[slot] == null && weights[slot] > 0) {
+				reweigh(slot, visibleWeight);
+			}
+		}
+	}
+
+	/** @return the items made so far, in row order; walking it makes none */
+	Iterable<GridItem> materialized() {
+		return () -> new Iterator<GridItem>() {
+			private int next = skipUnread(first(root));
+
+			@Override
+			public boolean hasNext() {
+				return next != NONE;
+			}
+
+			@Override
+			public GridItem next() {
+				if (next == NONE) {
+					throw new NoSuchElementException();
+				}
+				final GridItem item = items[next];
+				next = skipUnread(successor(next));
+				return item;
+			}
+		};
+	}
+
+	private int skipUnread(final int from) {
+		int slot = from;
+		while (slot != NONE && items[slot] == null) {
+			slot = successor(slot);
+		}
+		return slot;
 	}
 
 	@Override
@@ -85,7 +229,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	public GridItem remove(final int index) {
 		checkIndex(index, size());
 		final int slot = slotAt(index);
-		final GridItem item = items[slot];
+		final GridItem item = itemOf(slot);
 		root = removeAt(root, index);
 		if (root != NONE) {
 			up[root] = NONE;
@@ -110,7 +254,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	public GridItem set(final int index, final GridItem item) {
 		checkIndex(index, size());
 		final int slot = slotAt(index);
-		final GridItem old = items[slot];
+		final GridItem old = itemOf(slot);
 		old.leftRowTree(index);
 		items[slot] = item;
 		item.enteredRowTree(slot);
@@ -139,10 +283,15 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	public void clear() {
 		int row = 0;
 		for (int slot = first(root); slot != NONE; slot = successor(slot)) {
-			items[slot].leftRowTree(row++);
+			if (items[slot] != null) {
+				items[slot].leftRowTree(row);
+			}
+			row++;
 		}
 		root = NONE;
 		Arrays.fill(items, 0, nextSlot, null);
+		Arrays.fill(owners, 0, nextSlot, null);
+		unread = 0;
 		nextSlot = 0;
 		freeCount = 0;
 		modCount++;
@@ -167,7 +316,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 				if (next == NONE) {
 					throw new NoSuchElementException();
 				}
-				final GridItem item = items[next];
+				final GridItem item = itemOf(next);
 				next = successor(next);
 				return item;
 			}
@@ -560,6 +709,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 
 	private void release(final int slot) {
 		items[slot] = null;
+		owners[slot] = null;
 		weights[slot] = 0;
 		if (freeCount == free.length) {
 			free = Arrays.copyOf(free, Math.max(8, free.length * 2));
@@ -582,6 +732,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		final int[] nextWeights = Arrays.copyOf(weights, capacity);
 		final long[] nextSums = Arrays.copyOf(sums, capacity);
 		final GridItem[] nextItems = Arrays.copyOf(items, capacity);
+		final GridItem[] nextOwners = Arrays.copyOf(owners, capacity);
 		left = nextLeft;
 		right = nextRight;
 		up = nextUp;
@@ -591,6 +742,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		weights = nextWeights;
 		sums = nextSums;
 		items = nextItems;
+		owners = nextOwners;
 	}
 
 	private static void checkIndex(final int index, final int size) {
