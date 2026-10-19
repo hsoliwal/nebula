@@ -379,6 +379,9 @@ public class Grid extends Canvas {
 	 */
 	private final List<GridColumn> displayOrderedColumns = new ArrayList<>();
 
+	/** The column lanes over {@link #displayOrderedColumns} (G6): widths and their prefix sums. */
+	private final GridColumnMetrics columnMetrics = new GridColumnMetrics();
+
 	private GridColumnGroup[] columnGroups = {};
 
 	/**
@@ -1507,7 +1510,11 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
-		GridColumn overThis = GridViewportProjection.columnAt(
+		final GridColumnMetrics lanes = columnLanes();
+		GridColumn overThis = lanes != null
+				? lanes.columnAt(point.x, rowHeaderVisible, rowHeaderWidth, isFixedOverlayActive(),
+						getHScrollSelectionInPixels())
+				: GridViewportProjection.columnAt(
 				displayOrderedColumns,
 				point.x,
 				rowHeaderVisible,
@@ -1526,7 +1533,7 @@ public class Grid extends Canvas {
 			}
 
 			if (item != null) {
-				final int displayColIndex = displayOrderedColumns.indexOf(overThis);
+				final int displayColIndex = displayPosition(overThis);
 
 				// track back all previous columns and check their spanning
 				for (int i = 0; i < displayColIndex; i++) {
@@ -1785,6 +1792,31 @@ public class Grid extends Canvas {
 	 */
 	private void clearDisplayOrderedCache() {
 		columnOrders = null;
+		columnMetrics.invalidate();
+	}
+
+	/** A column changed width, visibility, fixed state, detail or summary, or a group expanded. */
+	void columnGeometryChanged() {
+		columnMetrics.invalidate();
+	}
+
+	/** @return the column lanes (for tests; not rebuilt here) */
+	GridColumnMetrics columnMetrics() {
+		return columnMetrics;
+	}
+
+	/**
+	 * @return the column lanes when they answer the column questions (G6: the viewport mode, no
+	 *         negative width), else {@code null} for the stock scans
+	 */
+	private GridColumnMetrics columnLanes() {
+		return GridViewport.ENABLED && columnMetrics.ready(displayOrderedColumns) ? columnMetrics : null;
+	}
+
+	/* the display position of a column (-1: none), O(1) from the column lanes (G6) */
+	private int displayPosition(final GridColumn column) {
+		final GridColumnMetrics lanes = columnLanes();
+		return lanes != null ? lanes.positionOf(column) : displayOrderedColumns.indexOf(column);
 	}
 
 	/**
@@ -2225,7 +2257,7 @@ public class Grid extends Canvas {
 				final int itemIndex = getIndexOfItem(itemToReturn);
 
 				final GridColumn gridColumn = getColumn(itemToReturn, point);
-				final int displayColIndex = displayOrderedColumns.indexOf(gridColumn);
+				final int displayColIndex = displayPosition(gridColumn);
 
 				// track back all previous columns and check their spanning
 				int indexNextItemToCheck = 0;
@@ -2598,7 +2630,7 @@ public class Grid extends Canvas {
 
 		// stock fails with an IndexOutOfBoundsException for null (UPSTREAM_DEFECTS.tsv)
 		int index = column == null && GridViewport.UPSTREAM_FIXES ? displayOrderedColumns.size()
-				: displayOrderedColumns.indexOf(column);
+				: displayPosition(column);
 
 		if (index == 0) {
 			return null;
@@ -2637,7 +2669,7 @@ public class Grid extends Canvas {
 	public GridColumn getNextVisibleColumn(final GridColumn column) {
 		checkWidget();
 
-		int index = displayOrderedColumns.indexOf(column);
+		int index = displayPosition(column);
 
 		if (index == displayOrderedColumns.size() - 1) {
 			return null;
@@ -4772,7 +4804,7 @@ public class Grid extends Canvas {
 			}
 		} else {
 			if (x < firstVisibleX || col.getWidth() > getClientArea().width - firstVisibleX) {
-				final int sel = displayOrderedColumns.indexOf(col);
+				final int sel = displayPosition(col);
 				hScroll.setSelection(sel);
 			} else {
 				int availableWidth = getClientArea().width - firstVisibleX - col.getWidth();
@@ -4782,7 +4814,7 @@ public class Grid extends Canvas {
 
 				while (true) {
 					if (prevCol == null || prevCol.getWidth() > availableWidth) {
-						final int sel = displayOrderedColumns.indexOf(currentScrollTo);
+						final int sel = displayPosition(currentScrollTo);
 						hScroll.setSelection(sel);
 						break;
 					} else {
@@ -5125,6 +5157,12 @@ public class Grid extends Canvas {
 		if (!column.isVisible()) {
 			return -1;
 		}
+		final GridColumnMetrics lanes = columnLanes();
+		if (lanes != null) {
+			// G6: the prefix sums, O(1) after a change's O(c) rebuild
+			return lanes.headerX(column, column.isFixed() ? 0 : getHScrollSelectionInPixels(), rowHeaderVisible,
+					rowHeaderWidth);
+		}
 
 		int x = 0;
 
@@ -5166,6 +5204,10 @@ public class Grid extends Canvas {
 	 * @return width in pixels of the fixed-column overlay region; 0 if none
 	 */
 	private int getFixedColumnsWidth() {
+		final GridColumnMetrics lanes = columnLanes();
+		if (lanes != null) {
+			return lanes.fixedRunWidth();
+		}
 		int width = 0;
 		for (final GridColumn column : displayOrderedColumns) {
 			if (!column.isVisible()) {
@@ -5597,7 +5639,7 @@ public class Grid extends Canvas {
 	}
 
 	void fireColumnsMoved() {
-		for (int index = displayOrderedColumns.indexOf(columnBeingResized) + 1; index < displayOrderedColumns
+		for (int index = displayPosition(columnBeingResized) + 1; index < displayOrderedColumns
 				.size(); index++) {
 			final GridColumn col = displayOrderedColumns.get(index);
 			if (col.isVisible()) {
@@ -5611,7 +5653,7 @@ public class Grid extends Canvas {
 
 		if (getHorizontalBar() != null) {
 			if (!getHorizontalBar().isVisible()) {
-				index = displayOrderedColumns.indexOf(column);
+				index = displayPosition(column);
 			}
 		}
 
@@ -7190,8 +7232,8 @@ public class Grid extends Canvas {
 			if (group != previousPaintedGroup) {
 				int groupWidth = width;
 				GridColumn nextCol = null;
-				if (displayOrderedColumns.indexOf(column) + 1 < displayOrderedColumns.size()) {
-					nextCol = displayOrderedColumns.get(displayOrderedColumns.indexOf(column) + 1);
+				if (displayPosition(column) + 1 < displayOrderedColumns.size()) {
+					nextCol = displayOrderedColumns.get(displayPosition(column) + 1);
 				}
 
 				while (nextCol != null && nextCol.getColumnGroup() == group) {
@@ -7202,8 +7244,8 @@ public class Grid extends Canvas {
 						groupWidth += nextCol.getWidth(extraFill);
 					}
 
-					if (displayOrderedColumns.indexOf(nextCol) + 1 < displayOrderedColumns.size()) {
-						nextCol = displayOrderedColumns.get(displayOrderedColumns.indexOf(nextCol) + 1);
+					if (displayPosition(nextCol) + 1 < displayOrderedColumns.size()) {
+						nextCol = displayOrderedColumns.get(displayPosition(nextCol) + 1);
 					} else {
 						nextCol = null;
 					}
@@ -7744,7 +7786,7 @@ public class Grid extends Canvas {
 
 				do {
 					if (!firstLoop2) {
-						final int index = displayOrderedColumns.indexOf(currentColumn) + 1;
+						final int index = displayPosition(currentColumn) + 1;
 
 						if (index < displayOrderedColumns.size()) {
 							currentColumn = getVisibleColumn_DegradeRight(currentItem,
@@ -7754,7 +7796,7 @@ public class Grid extends Canvas {
 						}
 
 						if (currentColumn != null) {
-							if (displayOrderedColumns.indexOf(currentColumn) > displayOrderedColumns
+							if (displayPosition(currentColumn) > displayOrderedColumns
 									.indexOf(endColumn)) {
 								currentColumn = null;
 							}
@@ -8273,7 +8315,7 @@ public class Grid extends Canvas {
 		if (hoveringOnColumnResizer) {
 			columnBeingResized.pack();
 			columnBeingResized.fireResized();
-			for (int index = displayOrderedColumns.indexOf(columnBeingResized) + 1; index < displayOrderedColumns
+			for (int index = displayPosition(columnBeingResized) + 1; index < displayOrderedColumns
 					.size(); index++) {
 				final GridColumn col = displayOrderedColumns.get(index);
 				if (col.isVisible()) {
@@ -8532,7 +8574,7 @@ public class Grid extends Canvas {
 
 					final Vector<Point> newSelected = new Vector<>();
 
-					final boolean decreasing = displayOrderedColumns.indexOf(iterCol) > displayOrderedColumns
+					final boolean decreasing = displayPosition(iterCol) > displayOrderedColumns
 							.indexOf(focusColumn);
 
 					do {
@@ -8732,7 +8774,7 @@ public class Grid extends Canvas {
 				if (impliedFocusItem != null && impliedFocusColumn != null) {
 					newSelection = impliedFocusItem;
 
-					int index = displayOrderedColumns.indexOf(impliedFocusColumn);
+					int index = displayPosition(impliedFocusColumn);
 
 					int jumpAhead = impliedFocusItem.getColumnSpan(impliedFocusColumn.index);
 
@@ -8767,7 +8809,7 @@ public class Grid extends Canvas {
 				if (impliedFocusItem != null && impliedFocusColumn != null) {
 					newSelection = impliedFocusItem;
 
-					final int index = displayOrderedColumns.indexOf(impliedFocusColumn);
+					final int index = displayPosition(impliedFocusColumn);
 
 					if (index != 0) {
 						newColumnFocus = displayOrderedColumns.get(index - 1);
@@ -9295,19 +9337,25 @@ public class Grid extends Canvas {
 			x -= getHScrollSelectionInPixels();
 		}
 
-		for (final GridColumn colIter : displayOrderedColumns) {
+		final GridColumnMetrics lanes = columnLanes();
+		if (lanes != null) {
+			// G6: the prefix sums give what the loop adds, O(1) after a change's O(c) rebuild
+			x += lanes.originX(column, 0, false, 0);
+		} else {
+			for (final GridColumn colIter : displayOrderedColumns) {
 
-			if (colIter == column) {
-				break;
-			}
-
-			if (colIter.isVisible()) {
-				// When laying out a fixed column, only sum widths of
-				// preceding fixed columns; scrollable ones sit behind it.
-				if (column != null && column.isFixed() && !colIter.isFixed()) {
-					continue;
+				if (colIter == column) {
+					break;
 				}
-				x += colIter.getWidth();
+
+				if (colIter.isVisible()) {
+					// When laying out a fixed column, only sum widths of
+					// preceding fixed columns; scrollable ones sit behind it.
+					if (column != null && column.isFixed() && !colIter.isFixed()) {
+						continue;
+					}
+					x += colIter.getWidth();
+				}
 			}
 		}
 
@@ -9611,6 +9659,7 @@ public class Grid extends Canvas {
 			column.index = size;
 			columns.add(column);
 			displayOrderedColumns.add(column);
+			columnMetrics.invalidate();
 		} else {
 			column.index = index;
 			columns.add(index, column);
@@ -9621,6 +9670,7 @@ public class Grid extends Canvas {
 				columns.get(i).index = i;
 			}
 			displayOrderedColumns.add(index, column);
+			columnMetrics.invalidate();
 
 			dataVisualizer.addColumn(index);
 			for (int i = 0; i < renumbered; i++) {
@@ -9695,6 +9745,7 @@ public class Grid extends Canvas {
 			columns.get(i).index = i;
 		}
 		displayOrderedColumns.remove(column);
+		columnMetrics.invalidate();
 		dataVisualizer.clearColumn(index);
 
 		if (focusColumn == column) {
@@ -10420,7 +10471,7 @@ public class Grid extends Canvas {
 	 * @return the first visible unspanned column, or null if none exists
 	 */
 	GridColumn getVisibleColumn_DegradeLeft(final GridItem item, final GridColumn col) {
-		int index = displayOrderedColumns.indexOf(col);
+		int index = displayPosition(col);
 
 		GridColumn prevCol = col;
 
@@ -10434,7 +10485,7 @@ public class Grid extends Canvas {
 			prevCol = displayOrderedColumns.get(index - i);
 		}
 
-		index = displayOrderedColumns.indexOf(prevCol);
+		index = displayPosition(prevCol);
 
 		for (int j = 0; j < index; j++) {
 			final GridColumn tempCol = displayOrderedColumns.get(j);
@@ -10463,7 +10514,7 @@ public class Grid extends Canvas {
 	 * @return the first visible unspanned column, or null if none exists
 	 */
 	GridColumn getVisibleColumn_DegradeRight(final GridItem item, final GridColumn col) {
-		int index = displayOrderedColumns.indexOf(col);
+		int index = displayPosition(col);
 
 		int i = 0;
 		GridColumn nextCol = col;
@@ -10476,7 +10527,7 @@ public class Grid extends Canvas {
 			nextCol = displayOrderedColumns.get(index + i);
 		}
 
-		index = displayOrderedColumns.indexOf(nextCol);
+		index = displayPosition(nextCol);
 		final int startIndex = index;
 
 		while (index > 0) {
@@ -11059,7 +11110,7 @@ public class Grid extends Canvas {
 
 	void updateColumnFocus() {
 		if (!focusColumn.isVisible()) {
-			final int index = displayOrderedColumns.indexOf(focusColumn);
+			final int index = displayPosition(focusColumn);
 			if (index > 0) {
 				GridColumn prev = displayOrderedColumns.get(index - 1);
 				prev = getVisibleColumn_DegradeLeft(focusItem, prev);
@@ -11220,7 +11271,7 @@ public class Grid extends Canvas {
 	 * @return a point representing the selection range
 	 */
 	private Point getSelectionRange(GridItem fromItem, GridColumn fromColumn, GridItem toItem, GridColumn toColumn) {
-		if (displayOrderedColumns.indexOf(fromColumn) > displayOrderedColumns.indexOf(toColumn)) {
+		if (displayPosition(fromColumn) > displayPosition(toColumn)) {
 			final GridColumn temp = fromColumn;
 			fromColumn = toColumn;
 			toColumn = temp;
@@ -12910,7 +12961,11 @@ public class Grid extends Canvas {
 		final int bottomIndex = getBottomIndex();
 		final GridVisibleRange range = new GridVisibleRange();
 		range.items = GridViewportProjection.visibleItems(items, topIndex, bottomIndex);
-		range.columns = GridViewportProjection.visibleColumns(
+		final GridColumnMetrics lanes = columnLanes();
+		range.columns = lanes != null
+				? lanes.visibleColumns(getHScrollSelectionInPixels(), rowHeaderVisible ? rowHeaderWidth : 0,
+						getClientArea().width, isFixedOverlayActive())
+				: GridViewportProjection.visibleColumns(
 				displayOrderedColumns, getHScrollSelectionInPixels(),
 				rowHeaderVisible ? rowHeaderWidth : 0, getClientArea().width,
 				isFixedOverlayActive());
@@ -12924,8 +12979,10 @@ public class Grid extends Canvas {
 			return startColumnIndex;
 		}
 
-		startColumnIndex = GridViewportProjection.startColumnIndex(
-				displayOrderedColumns, hScroll.getVisible() ? getHScrollSelectionInPixels() : 0);
+		final int selection = hScroll.getVisible() ? getHScrollSelectionInPixels() : 0;
+		final GridColumnMetrics lanes = columnLanes();
+		startColumnIndex = lanes != null ? lanes.startColumnIndex(selection)
+				: GridViewportProjection.startColumnIndex(displayOrderedColumns, selection);
 
 		return startColumnIndex;
 	}
@@ -12947,7 +13004,9 @@ public class Grid extends Canvas {
 				// row header is actually painted later
 				x += rowHeaderWidth;
 			}
-			endColumnIndex = GridViewportProjection.endColumnIndex(
+			final GridColumnMetrics lanes = columnLanes();
+			endColumnIndex = lanes != null ? lanes.endColumnIndex(getStartColumnIndex(), x, getClientArea().width)
+					: GridViewportProjection.endColumnIndex(
 					displayOrderedColumns, getStartColumnIndex(), x, getClientArea().width);
 		}
 		return endColumnIndex;

@@ -487,6 +487,8 @@ public class GridColumn extends Item {
 			}
 		}
 		this.width = widthToSet;
+		// the Grid's column lanes (G6) follow width, visibility and the fixed state
+		parent.columnGeometryChanged();
 		if (redraw) {
 			parent.setScrollValuesObsolete();
 			parent.redraw();
@@ -655,6 +657,8 @@ public class GridColumn extends Item {
 		final boolean before = isVisible();
 
 		this.visible = visible;
+		// the Grid's column lanes (G6) follow width, visibility and the fixed state
+		parent.columnGeometryChanged();
 
 		if (isVisible() != before) {
 			if (visible) {
@@ -1199,6 +1203,8 @@ public class GridColumn extends Item {
 	public void setDetail(final boolean detail) {
 		checkWidget();
 		this.detail = detail;
+		// the Grid's column lanes (G6) follow width, visibility and the fixed state
+		parent.columnGeometryChanged();
 	}
 
 	/**
@@ -1237,6 +1243,8 @@ public class GridColumn extends Item {
 	public void setSummary(final boolean summary) {
 		checkWidget();
 		this.summary = summary;
+		// the Grid's column lanes (G6) follow width, visibility and the fixed state
+		parent.columnGeometryChanged();
 	}
 
 	/**
@@ -1725,6 +1733,8 @@ public class GridColumn extends Item {
 	public void setFixed(boolean fixed) {
 		checkWidget();
 		this.fixed = fixed;
+		// the Grid's column lanes (G6) follow width, visibility and the fixed state
+		parent.columnGeometryChanged();
 		parent.redraw();
 	}
 }
