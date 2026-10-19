@@ -1,0 +1,67 @@
+concept_id	m3_name	doop_data_plan
+STACK_LAYOUT	M3StackLayout	children as ids; one int lane of last-shown ticks; a bit set of materialized children; non-top children parked or released under an LRU budget, recreated through a factory
+TAB_FOLDER_RICH	M3TabList	tab text/image/tooltip/state in lanes; prefix sums of tab widths; tab facades created on API demand; overflow menu computed from the visible window
+EDITOR_VIEW_STACK	M3PartStack	part ids in lanes over M3TabList and M3StackLayout; only the selected part materialized
+AUTOCOMPLETE	M3AutoComplete	candidate ids filtered by a prefix index over interned tokens; popup list is a viewport over the match range
+CHART	M3Chart	series as primitive double lanes; min/max per pixel column (M4 decimation) over the visible x range only
+GALLERY	M3Gallery	item ids in groups as offsets; selection bit lanes with an ordered run list; item facades on demand
+TREE_TABLE	M3TreeTable	tree topology lanes (parent, first child, next sibling, expanded bits) and a flattening view; rows bound only in the window
+IMAGE_VIEW	M3ImageView	tile pyramid keyed by (level, tx, ty) longs; only visible tiles decoded; LRU tile residency
+FIND_BAR	M3FindBar	searches the model through an index-to-text function, never through item facades; match positions as an int run list
+GANTT_TIMELINE	M3Timeline	tasks as start/end long lanes sorted by start; interval index for the visible time window
+HEATMAP	M3HeatMap	cell values as one float lane (row-major); colour by lookup table; paints only the visible cell window
+DATE_PICKER	M3DatePicker	epoch-day ints; month grid computed, no per-day objects
+FILTER_ROW	M3FilterRow	per-column predicate over the sort-filter lane (permutation index plus pass bitmask)
+TASK_PANE	M3TaskPane	section ids with expanded bits; collapsed content not materialized
+PROPERTY_SHEET	M3PropertySheet	properties as (category, name, value-ref) lanes; rows bound in the window; editors on demand
+MAP_VIEW	M3MapView	tile pyramid as in M3ImageView; markers in a spatial grid index
+TABLE_COMBO	M3TableCombo	drop-down rows in lanes; popup table is a viewport built on first open
+BREADCRUMB	M3Breadcrumb	path segments as ids; overflow from measured prefix sums
+DATA_GRID	M3DataGrid	cells by (row, column) through lanes; cell selection as run sets
+CHECK_LIST	M3CheckList	check state bit lanes; rows bound in the window
+COLUMN_CONTROL	M3ColumnControl	column visibility bit set and saved widths lane; popup lists columns
+DUAL_LIST	M3DualList	two id lists over one source; moves are run edits
+TREEMAP	M3TreeMap	squarified layout over weight prefix sums; draws only rectangles intersecting the window
+BUSY_INDICATOR	M3BusyIndicator	one frame counter; repaints only its own bounds on a timer
+PROMPT_DECORATION	M3FieldDecoration	decoration kinds as bit flags per field
+SPLIT_BUTTON	M3SplitButton	arrow and body hit areas as two rectangles
+HEADER_PANEL	M3Header	title, description and icon only
+TOAST	M3Toast	queued notification ids; stacked windows reused
+PAGINATION	M3Pagination	page index arithmetic; only the visible page materialized
+COLOR_CHOOSER	M3ColorChooser	colours as packed ints (ARGB); swatches drawn, not widgets
+RANGE_SLIDER	M3RangeSlider	low and high as ints; thumbs as rectangles
+CALENDAR_VIEW	M3CalendarView	entries as start/end epoch-minute lanes; interval index for the visible days
+HYPERLINK	M3Hyperlink	text ranges and targets as int runs
+CODE_EDITOR	M3CodeArea	StyledText viewport (merged); Swing twin over the same line index
+MULTI_SPLIT	M3MultiSplit	split tree as parent/weight lanes; layout by prefix sums
+STATUS_BAR	M3StatusBar	slots as ids with widths
+TOGGLE_SWITCH	M3Switch	one state bit
+NODE_EDITOR	M3NodeEditor	nodes and edges in lanes; spatial grid index for culling and hit tests
+TERMINAL	M3Terminal	line ring buffer of cell runs; window over the ring
+TREE_COMBO	M3TreeCombo	drop-down tree is a viewport over the topology lanes
+FONT_CHOOSER	M3FontChooser	font family ids; preview rows bound in the window
+ERROR_PANE	M3ErrorPane	message plus collapsible details
+LOGIN_DIALOG	M3LoginDialog	fields only
+RADIO_GROUP	M3RadioGroup	selected index int
+RATING	M3Rating	value int; stars drawn
+FORMATTED_TEXT	M3FormattedText	format mask as a char-class lane
+SEARCH_FIELD	M3SearchField	history ring of interned strings
+CALCULATOR	M3Calculator	value as BigDecimal on demand; key grid drawn
+DOCKING	M3Docking	dock tree as parent/weight lanes over M3MultiSplit and M3TabList
+GAUGE_KNOB	M3Gauge	value double; drawn
+MEMORY_MONITOR	M3MemoryMonitor	sample ring buffer of longs
+SEGMENTED_BUTTON	M3SegmentedButton	selection bit set
+TIP_OF_DAY	M3TipOfTheDay	tip index
+VIRTUAL_LIST	M3VirtualList	M3WindowView over any indexed sequence
+GROUPABLE_HEADER	M3ColumnGroups	group spans as (first, last) int pairs
+BADGE	M3Badge	count int
+PREFERENCE_WINDOW	M3PreferenceWindow	pages by id; only the shown page materialized (M3StackLayout)
+RIBBON	M3Ribbon	command ids in bands; collapsed groups not materialized
+TOKEN_FIELD	M3TokenField	tokens as interned ids with run positions in the text
+POPOVER	M3Popover	one shell reused
+FLOATING_LABEL	M3FloatingLabel	label state bit
+WIZARD	M3Wizard	pages by id over M3StackLayout
+PRINT_PREVIEW	M3PrintPreview	pages laid out lazily; only visible pages rendered
+HORIZONTAL_SPINNER	M3ListSpinner	index into a value list
+PASSWORD_REVEAL	M3PasswordReveal	one reveal bit
+STEPPER	M3Stepper	current step int; step labels as ids

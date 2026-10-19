@@ -1,0 +1,41 @@
+slug	reason
+nebula-contrib/ngbatis	ORM for NebulaGraph, not a widget library
+alexyz/poker	application
+Kerr1Gan/ShareBox	application
+marvinjason/CPUScheduler	application
+pjandl/jgp4	book examples
+Hazrat-Ali9/Recipe-Backend-REST-API	application
+GustavoRolimSantos/Java	student projects
+Samuel-Amaro/Gerenciamento-Estoque	application
+barismeral/Java-JDK-1.0-src	historical JDK source
+shivamverma26/ATM_Simulator	application
+ewertondrigues02/calculadora-java	application
+alyrow/Nebula-Generator	image generator, not a widget library
+KelvenCassamo/java-language-system	i18n utility
+japplis/Joeffice	application
+ingStudiosOfficial/turtlebrowse	application
+LouisJenkinsCS/LLVM-Simple-GUI	application
+VRL-Studio/VRL-Studio	application (IDE)
+NicolaNardino/TradingMachine	application
+Dansoftowner/Restart4j	utility, no widgets
+Dansoftowner/jSystemThemeDetector	utility, no widgets
+manuel-mauky/FluxFX	architecture library, no widgets
+techsenger/patternfx	architecture templates, no widgets
+manuel-mauky/advanced-bindings	binding helpers, no widgets
+zeiss-digital-innovation/SynchronizeFX	data binding, no widgets
+Marcotrombino/FXRouter	scene router, no widgets
+Naoghuman/lib-i18n	i18n utility
+Naoghuman/lib-fxml	FXML loader utility
+othreecodes/APX	MVC framework, no widgets
+quarkiverse/quarkus-desktop	build integration, no widgets
+sshtools/icon-generator	icon utility
+techsenger/ansi4j	parser, no widgets
+javalovercn/j2se_for_android	Swing API on Android (runtime, not widgets)
+miho/JCSG	geometry library
+calimero-project/calimero-gui	application
+int4-org/FX	builder DSL, no widgets
+DaveVoorhis/Spoing	deployment helpers
+gleidsonmt/DashboardFx	application template
+VRL-Studio/VRL	visual programming runtime
+gbfragoso/JasperViewerFX	report viewer application component (single)
+TangoraBox/ComponentInspector	developer tool
