@@ -315,11 +315,21 @@ public class GridViewportDifferential_Test {
 	/* runs one seed; answers the pixel verdict (a difference fails unless grid.differential.pixelsAdvisory) */
 	private String run(final int seed, final int config, final Function<int[], Object> stock,
 			final Function<int[], Object> viewport) {
+		return run(seed, config, stock, viewport, 0);
+	}
+
+	/*
+	 * pixelEvery > 0: the pixels are also compared after every that many steps (a horizontal
+	 * scroll under a frozen column must paint alike at once, not only at the end)
+	 */
+	private String run(final int seed, final int config, final Function<int[], Object> stock,
+			final Function<int[], Object> viewport, final int pixelEvery) {
 		final Random random = new Random(0x6E1DL + seed);
 		final StringBuilder log = new StringBuilder("seed " + seed + " config " + config + "\n");
 		final int[] state = { GridDifferentialDriver.STATE, 0, 0, 0 };
 		drain();
 		compare(log, "initial", String.valueOf(stock.apply(state)), String.valueOf(viewport.apply(state)));
+		int captures = 0;
 		for (int step = 0; step < STEPS; step++) {
 			final int[] op = { random.nextInt(GridDifferentialDriver.KINDS), random.nextInt(1 << 20),
 					random.nextInt(1 << 20), random.nextInt(1 << 20) };
@@ -331,9 +341,22 @@ public class GridViewportDifferential_Test {
 			compare(log, "step " + step, stockState, actual + " | " + viewport.apply(state));
 			// the last agreed answers, so a divergence report shows the state it started from
 			log.append("   = ").append(stockState.length() > 240 ? stockState.substring(0, 240) : stockState).append('\n');
+			if (pixelEvery > 0 && step % pixelEvery == pixelEvery - 1) {
+				final String verdict = comparePixels(seed, "step " + step, stock, viewport, log);
+				if (verdict != null) {
+					return verdict;
+				}
+				captures++;
+			}
 		}
-		// each Grid is captured with its own shell active and its focus holder focused, so window
-		// activation (borders, scroll bars) is the same on both sides
+		final String verdict = comparePixels(seed, "the end", stock, viewport, log);
+		return verdict != null ? verdict : "pixels identical" + (captures > 0 ? " (" + (captures + 1) + " captures)" : "");
+	}
+
+	/* each Grid is captured with its own shell active and its focus holder focused, so window
+	 * activation (borders, scroll bars) is the same on both sides; null when identical */
+	private String comparePixels(final int seed, final String where, final Function<int[], Object> stock,
+			final Function<int[], Object> viewport, final StringBuilder log) {
 		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
 		activate(stockShell, stockFocusHolder);
 		final ImageData expected = (ImageData) stock.apply(pixels);
@@ -345,9 +368,39 @@ public class GridViewportDifferential_Test {
 			if (Boolean.getBoolean("grid.differential.pixelsAdvisory")) {
 				return "pixels differ: " + difference(expected, actual);
 			}
-			fail("printed pixels differ after seed " + seed + " " + difference(expected, actual) + "\nlog:\n" + log);
+			fail("printed pixels differ at " + where + " of seed " + seed + " " + difference(expected, actual) + "\nlog:\n" + log);
 		}
-		return "pixels identical";
+		return null;
+	}
+
+	/*
+	 * A frozen first column (GridColumn.setFixed; merged upstream as nebula#696 with #165): the
+	 * column and its header stay in place while the others scroll under it. Seeded scripts whose
+	 * scroll steps also move the horizontal bar, with cell selection and differing heights (a row
+	 * header) as variants: every answer (the hit tests getItem, getCell and getColumn at random
+	 * points, clicks, bounds) and the pixels after every 20 steps and at the end must equal stock.
+	 */
+	@Test
+	public void frozenFirstColumnScriptsPaintAndHitTestLikeTheStockGrid() throws Exception {
+		final ClassLoader stockBuild = gridBuild(oracleClasses(), "original");
+		final ClassLoader candidateBuild = gridBuild(location(Grid.class), CANDIDATE);
+		for (int seed = 30; seed < 34; seed++) {
+			final int config = GridDifferentialDriver.FIXED_COLUMN | seed % 4;
+			final Function<int[], Object> stock = driver(stockBuild, stockShell, config);
+			final Function<int[], Object> candidate = driver(candidateBuild, viewportShell, config);
+			stockShell.open();
+			viewportShell.open();
+			final String pixels = run(seed, config, stock, candidate, 20);
+			LOG.info("GridViewportDifferential_Test: frozen column seed " + seed + " config " + config + ", " + STEPS
+					+ " steps identical, " + pixels);
+			for (final Shell shell : new Shell[] { stockShell, viewportShell }) {
+				for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
+					if (!(child instanceof Button)) {
+						child.dispose();
+					}
+				}
+			}
+		}
 	}
 
 	/* number of differing pixels and their bounding box */

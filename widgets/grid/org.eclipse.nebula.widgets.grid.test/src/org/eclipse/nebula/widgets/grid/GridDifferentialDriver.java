@@ -102,6 +102,12 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	 * listener, which counts the requests per item.
 	 */
 	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4, VIRTUAL = 8;
+	/**
+	 * The first column is frozen ({@code GridColumn.setFixed}, nebula#696 and #165): it and its
+	 * header stay at their unscrolled place while the other columns scroll under it. The scroll
+	 * steps of this configuration also move the horizontal bar.
+	 */
+	static final int FIXED_COLUMN = 16;
 
 	private final Grid grid;
 	private final StringBuilder events = new StringBuilder();
@@ -109,6 +115,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	/* SetData requests per item label (VIRTUAL configurations) */
 	private final java.util.Map<String, Integer> setData = new java.util.TreeMap<>();
 	private final boolean virtual;
+	private final boolean fixedColumn;
 
 	/**
 	 * @param parent where the Grid is created
@@ -117,6 +124,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	 */
 	public GridDifferentialDriver(final Composite parent, final Integer x, final Integer config) {
 		virtual = (config.intValue() & VIRTUAL) != 0;
+		fixedColumn = (config.intValue() & FIXED_COLUMN) != 0;
 		final int style = SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.CHECK | (virtual ? SWT.VIRTUAL : 0);
 		// a large tree keeps its data in the items (the row-addressed default re-maps every row per insert)
 		grid = (config.intValue() & LARGE) != 0 ? new Grid(visualizer(parent), parent, style) : new Grid(parent, style);
@@ -130,6 +138,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			column.setText("c" + c);
 			column.setWidth(60 + 15 * c);
 			column.setTree(c == 0);
+			column.setFixed(fixedColumn && c == 0);
 		}
 		final boolean large = (config.intValue() & LARGE) != 0;
 		for (int r = 0; r < (large ? 1000 : ROOTS); r++) {
@@ -346,6 +355,20 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private String scroll(final int a, final int b) {
+		if (fixedColumn && b % 3 == 1) {
+			// the frozen column's configuration scrolls horizontally too: the other columns move
+			// under the frozen one, by any amount and to the end; the column under the first
+			// body pixels must stay the frozen one
+			final ScrollBar hbar = grid.getHorizontalBar();
+			if (!hbar.isVisible()) {
+				return "no hbar";
+			}
+			final int range = Math.max(0, hbar.getMaximum() - hbar.getThumb());
+			hbar.setSelection(b % 2 == 1 ? a % (range + 1) : range);
+			hbar.notifyListeners(SWT.Selection, new Event());
+			final GridColumn under = grid.getColumn(new Point(grid.getClientArea().x + 1, grid.getHeaderHeight() + 2));
+			return "hscrolled " + hbar.getSelection() + " under " + (under == null ? "none" : under.getText());
+		}
 		final ScrollBar bar = grid.getVerticalBar();
 		if (!bar.isVisible()) {
 			return "no bar";
