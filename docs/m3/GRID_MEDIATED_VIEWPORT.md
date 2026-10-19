@@ -481,6 +481,46 @@ viewport event and redraws, like stock.
 Step 2 (lead decision 2026-10-18): `GridItem.setItemCount(int)` and the TreeItem virtual contract as an additive
 API, backed by sparse child facades over the row tree in the viewport mode.
 
+## Leaf G4, step 2a: `GridItem.setItemCount`, `clear(int, boolean)`, `clearAll(boolean)` (2026-10-19)
+
+The additive API takes its contract from SWT's `TreeItem` (lead decision 2026-10-18,
+`grid-viewport/ENHANCED_API_MAP.tsv` row `GRID-SETITEMCOUNT`). A negative count is taken as 0. The removed
+children are disposed in order, each with its subtree, and new children are appended. `clear` and `clearAll`
+reset text, image, colours, font and check state, and an `SWT.VIRTUAL` Grid then asks for them again;
+`clear` throws `ERROR_INVALID_RANGE` like `TreeItem`. In this step both modes create the children up front; the
+original mode keeps stock behaviour for every existing call.
+
+`probe/TreeVirtualContractProbe` shows what stock SWT 3.135 does on win32 with a hidden `SWT.VIRTUAL` Tree:
+- `getItemCount`, `getItem` and `getItems` request the receiver's data first. That is how a lazy provider sets
+  the child count inside `SetData`. `getChecked` requests it too.
+- `setItemCount`, `getExpanded`, `indexOf`, `getParentItem` and `clear` request nothing.
+- A changed text, image, colour, font, check or grayed state marks the item as answered; an unchanged one does
+  not.
+- `dispose` sends the item's event, then its descendants' events, children before their parents and siblings
+  in order (A, A1, A2a, A2).
+
+`GridTreeItemContract_Test` runs seeded scripts against an SWT `Tree` and a Grid of the same style, three
+styles: VIRTUAL, plain, and VIRTUAL|CHECK and CHECK, with 400 steps per seed. Every step must give the same
+answer and raise the same `SetData` and `Dispose` events. Each item gets an id the first time the script holds
+it, and a `Dispose` listener sits on each of those items, because a virtual Tree has no object for the others.
+The final structure (counts and texts) must also match. The comparison found six default-mode defects, now
+fixed (`UPSTREAM_DEFECTS.tsv`):
+- **D30:** `getItem` out of range throws the documented `ERROR_INVALID_RANGE`.
+- **D31:** `indexOf` on an item without children returns -1.
+- **D32:** the child getters of a virtual item request its data first. Grid internals use non-requesting
+  helpers, so inserting, keyboard navigation and deselection still request nothing.
+- **D33:** a tree root's `SetData` index is its index among the roots.
+- **D34:** `Dispose` events come in TreeItem's order.
+- **D35:** an attribute set on a virtual item is its data.
+
+In the original mode the script asks for the data where TreeItem's getters would. It compares root indexes as
+"-" and `Dispose` events as a set, and it skips the set-attribute steps of virtual styles; each of these is a
+stock behaviour the mode keeps. The stock differential driver reads the parent's data before an insertion and
+before `setChecked`, so stock and the default mode ask alike.
+
+Step 2b next: in the viewport mode a virtual tree keeps its rows in the row tree. Step 2c after that: children
+nobody has read are row-tree slots with no `GridItem`.
+
 ## JaCoCo baseline (brief rule 15: 99% line and branch, 2026-10-18)
 
 [`grid-viewport/grid_coverage.sh`](grid-viewport/grid_coverage.sh) runs the Grid suite (614 tests) in one mode on
