@@ -313,9 +313,11 @@ public class Grid extends Canvas {
 	private boolean visibleLinesBasedColumnPack = false;
 
 	/**
-	 * All items in the table, not just root items.
+	 * All items in the table, not just root items. A virtual Grid starts with a sparse list; in the
+	 * viewport mode it moves to the row tree when it becomes a tree (see
+	 * {@link #materializeVirtualTableForTree()}).
 	 */
-	private final List<GridItem> items;
+	private List<GridItem> items;
 
 	/**
 	 * All root items.
@@ -9789,6 +9791,16 @@ public class Grid extends Canvas {
 		rootItems.clear();
 		for (int i = 0; i < sparse.size(); i++) {
 			rootItems.add(sparse.get(i));
+		}
+		if (viewport != null) {
+			// a virtual tree keeps its rows in the row tree, as a plain one: the sparse list moves
+			// every later item on each insertion (O(n)), the row tree none (O(log n))
+			final GridRowTree tree = new GridRowTree();
+			for (final GridItem root : rootItems) {
+				tree.add(root);
+			}
+			items = tree;
+			viewport.itemsReplaced(tree);
 		}
 	}
 

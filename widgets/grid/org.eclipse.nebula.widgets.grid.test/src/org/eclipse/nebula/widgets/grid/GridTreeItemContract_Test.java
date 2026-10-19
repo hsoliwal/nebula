@@ -77,6 +77,26 @@ public class GridTreeItemContract_Test {
 		}
 	}
 
+	/* G4 step 2b: a virtual Grid that becomes a tree moves its rows to the row tree (viewport mode) */
+	@Test
+	public void virtualTreeKeepsItsRowsInTheRowTree() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL);
+		final GridItem[] roots = new GridItem[5];
+		for (int i = 0; i < roots.length; i++) {
+			roots[i] = new GridItem(grid, SWT.NONE);
+		}
+		assertEquals(null, grid.rowTree());
+		roots[1].setItemCount(3);
+		roots[3].setItemCount(2);
+		assertEquals(GridViewport.ENABLED, grid.rowTree() != null);
+		assertEquals(10, grid.getItemCount());
+		assertEquals(9, roots[4].getRowIndex());
+		roots[1].setExpanded(true);
+		assertEquals(roots[1].getItem(2), grid.getItem(4));
+		assertEquals(4, grid.getItem(4).getRowIndex());
+		assertEquals(roots[3], grid.getItem(5));
+	}
+
 	@Test
 	public void negativeCountIsZeroAndDisposedReceiverThrows() {
 		final Grid grid = new Grid(shell, SWT.VIRTUAL);
