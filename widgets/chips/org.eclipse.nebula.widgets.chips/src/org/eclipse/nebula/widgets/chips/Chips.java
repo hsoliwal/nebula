@@ -114,23 +114,36 @@ public class Chips extends Canvas {
 			final Color previousForeground = gc.getForeground();
 			final Color previousBackground = gc.getBackground();
 
-			int x = drawBackground(gc);
-			drawWidgetBorder(gc);
-			if (isCheck && selection) {
-				x = drawCheck(gc, x);
+			// SWT owns this GC; only paint-damage recovery is new.
+			try {
+				int x = drawBackground(gc);
+				drawWidgetBorder(gc);
+				if (isCheck && selection) {
+					x = drawCheck(gc, x);
+				}
+				if (image != null) {
+					x = drawImage(gc, x);
+				}
+				if (text != null) {
+					x = drawText(gc, x);
+				}
+				if (isClose) {
+					drawClose(gc, x);
+				}
+			} catch (RuntimeException | Error failure) {
+				try {
+					gc.setBackground(previousBackground);
+				} catch (RuntimeException | Error cleanup) {
+					if (cleanup != failure) failure.addSuppressed(cleanup);
+				}
+				try {
+					gc.setForeground(previousForeground);
+				} catch (RuntimeException | Error cleanup) {
+					if (cleanup != failure) failure.addSuppressed(cleanup);
+				}
+				throw failure;
 			}
-
-			if (image != null) {
-				x = drawImage(gc, x);
-			}
-
-			if (text != null) {
-				x = drawText(gc, x);
-			}
-
-			if (isClose) {
-				drawClose(gc, x);
-			}
+			// Keep the original successful-paint order and resulting GC flags.
 			gc.setBackground(previousBackground);
 			gc.setForeground(previousForeground);
 
@@ -349,10 +362,14 @@ public class Chips extends Canvas {
 
 		if (text != null) {
 			final GC gc = new GC(this);
-			final Point textSize = gc.stringExtent(text);
-			width += 4 + textSize.x;
-			height = Math.max(height, textSize.y);
-			gc.dispose();
+			try {
+				final Point textSize = gc.stringExtent(text);
+				width += 4 + textSize.x;
+				height = Math.max(height, textSize.y);
+			} finally {
+				// This GC is owned by Chips.computeSize, even when SWT throws.
+				gc.dispose();
+			}
 		}
 
 		if (isCheck && selection || isClose) {

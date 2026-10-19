@@ -322,21 +322,37 @@ public class PGroup extends Canvas
         Color back = e.gc.getBackground();
         Color fore = e.gc.getForeground();
 
-        strategy.paint(e.gc);
+        try {
+            strategy.paint(e.gc);
 
-        e.gc.setBackground(back);
-        e.gc.setForeground(fore);
+            e.gc.setBackground(back);
+            e.gc.setForeground(fore);
 
-        if (toggleRenderer != null)
-        {
-            toggleRenderer.setExpanded(expanded);
-            toggleRenderer.setFocus(isFocusControl());
-            toggleRenderer.setHover(overToggle);
-            toggleRenderer.paint(e.gc, this);
-        }
+            if (toggleRenderer != null)
+            {
+                toggleRenderer.setExpanded(expanded);
+                toggleRenderer.setFocus(isFocusControl());
+                toggleRenderer.setHover(overToggle);
+                toggleRenderer.paint(e.gc, this);
+            }
 
-        if( toolItemRenderer != null && toolitems.size() > 0 ) {
-        	paintToolItems(e.gc);
+            if( toolItemRenderer != null && toolitems.size() > 0 ) {
+            	paintToolItems(e.gc);
+            }
+        } catch (RuntimeException | Error failure) {
+            // Recover the borrowed paint GC without masking the original
+            // strategy/toolitem exception. Successful paint is unchanged.
+            try {
+                e.gc.setBackground(back);
+            } catch (RuntimeException | Error cleanup) {
+                if (cleanup != failure) failure.addSuppressed(cleanup);
+            }
+            try {
+                e.gc.setForeground(fore);
+            } catch (RuntimeException | Error cleanup) {
+                if (cleanup != failure) failure.addSuppressed(cleanup);
+            }
+            throw failure;
         }
     }
 
