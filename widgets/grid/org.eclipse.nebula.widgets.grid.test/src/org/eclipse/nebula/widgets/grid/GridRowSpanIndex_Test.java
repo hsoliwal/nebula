@@ -112,7 +112,7 @@ public class GridRowSpanIndex_Test {
 		long[] prefix = new long[count];
 		long highest = Long.MIN_VALUE;
 		for (int i = 0; i < count; i++) {
-			if (i > 0) assertTrue(starts[i - 1] <= starts[i], "sorted row starts");
+			if (i > 0) assertTrue("sorted row starts", starts[i - 1] <= starts[i]);
 			highest = Math.max(highest, ends[i]);
 			prefix[i] = highest;
 		}
@@ -135,6 +135,33 @@ public class GridRowSpanIndex_Test {
 		GridRowSpanIndex.sortProjection(starts, ends, starts.length);
 		assertArrayEquals(new int[] {1, 1, 2, 4, 4, 4}, starts);
 		assertArrayEquals(new long[] {10, 11, 20, 40, 41, 42}, ends);
+	}
+
+	@Test
+	public void cacheMaskDistinguishesAllFromNoneAndOwnsItsSnapshot() throws Exception {
+		java.lang.reflect.Method compare = GridRowSpanIndex.class.getDeclaredMethod("sameVisibility", boolean[].class);
+		java.lang.reflect.Method copy = GridRowSpanIndex.class.getDeclaredMethod("copyVisibility", boolean[].class);
+		java.lang.reflect.Field cached = GridRowSpanIndex.class.getDeclaredField("projectedVisibleColumns");
+		compare.setAccessible(true);
+		copy.setAccessible(true);
+		cached.setAccessible(true);
+		GridRowSpanIndex index = new GridRowSpanIndex();
+		boolean[][] masks = {null, new boolean[0], {false}, {true}, {true, false}};
+		for (boolean[] a : masks) {
+			boolean[] snapshot = (boolean[]) copy.invoke(null, (Object) a);
+			assertArrayEquals(a, snapshot);
+			if (a != null) assertNotSame(a, snapshot);
+			cached.set(index, snapshot);
+			for (boolean[] c : masks) {
+				assertEquals(java.util.Arrays.equals(a, c), compare.invoke(index, (Object) c));
+			}
+		}
+		boolean[] caller = {true, false};
+		boolean[] snapshot = (boolean[]) copy.invoke(null, (Object) caller);
+		cached.set(index, snapshot);
+		caller[0] = false;
+		assertFalse((Boolean) compare.invoke(index, (Object) caller));
+		assertArrayEquals(new boolean[] {true, false}, snapshot);
 	}
 
 	private static int linear(int target, int[] starts, long[] ends) {
