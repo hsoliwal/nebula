@@ -12,6 +12,7 @@
  * Contributors:
  *     David Orme     - Initial API and implementation
  *     Elias Volanakis - 267316
+ *     Hitesh Soliwal (Synexia) - viewport mode switch: no row population while hidden (original mode populates as stock does)
  */
 package org.eclipse.nebula.widgets.compositetable;
 
@@ -20,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
+import org.eclipse.nebula.widgets.compositetable.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
@@ -83,6 +85,11 @@ class InternalCompositeTable extends Composite implements Listener {
 	private LinkedList<TableRow> rows = new LinkedList<TableRow>();
 	private LinkedList<TableRow> spareRows = new LinkedList<TableRow>();
 
+	/**
+	 * The CompositeTable viewport (docs/m3/custom-widgets/compositetable): no row population while the table is hidden,
+	 * unless the startup widget mode is original (-Dswt.widget.mode.CompositeTable=original or -Dswt.widget.mode=original).
+	 */
+	static final boolean VIEWPORT = WidgetMode.of("CompositeTable", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	/** a row update was requested while the table was not visible */
 	private boolean rowsDirty;
 	/** a refresh of all rows was requested while the table was not visible */
@@ -524,7 +531,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	void updateVisibleRows() {
 		// no row population while not effectively visible; caught up once on the
 		// first paint or on the first public read of rows
-		if (!isVisible() && !flushingRows) {
+		if (VIEWPORT && !isVisible() && !flushingRows) {
 			rowsDirty = true;
 			return;
 		}
@@ -762,7 +769,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * Fire the refresh event on all visible rows.
 	 */
 	void refreshAllRows() {
-		if (!isVisible() && !flushingRows) {
+		if (VIEWPORT && !isVisible() && !flushingRows) {
 			refreshDirty = true;
 			return;
 		}

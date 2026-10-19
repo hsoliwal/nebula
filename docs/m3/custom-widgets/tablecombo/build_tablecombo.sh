@@ -21,7 +21,7 @@ mkdir -p "$OUT"
 compile() { # <out> <classpath> <srcdir...>
   local o=$1 cp=$2; shift 2
   rm -rf "$o"; mkdir -p "$o"
-  find "$@" -name '*.java' > "$o.src"
+  find "$@" -name '*.java' | xargs grep -L 'org.eclipse.swtbot' > "$o.src"
   "$JDK/bin/javac" -J-Xmx768m --release 17 -encoding UTF-8 -nowarn -proc:none -Xmaxerrs 50 -cp "$cp" -d "$o" @"$o.src" > "$o.log" 2>&1
   for d in "$@"; do (cd "$d" && find . -type f ! -name '*.java' | while read -r f; do mkdir -p "$o/$(dirname "$f")"; cp "$f" "$o/$f"; done); done
   echo "$(basename "$o"): sources=$(wc -l < "$o.src") errors=$(grep -c ': error:' "$o.log")"
