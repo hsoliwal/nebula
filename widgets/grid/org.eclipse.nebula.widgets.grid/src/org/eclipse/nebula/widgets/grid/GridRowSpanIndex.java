@@ -148,6 +148,9 @@ final class GridRowSpanIndex {
 
 	private void rebuildProjection(boolean[] visibleColumns) {
 		if (!projectionDirty && sameVisibility(visibleColumns)) return;
+		// A visibility change can enter with a clean old cache. Invalidate before
+		// mutating any projection lane so a failed rebuild always retries.
+		projectionDirty = true;
 		ensureProjectionCapacity(size);
 		projectedCount = 0;
 
@@ -172,8 +175,9 @@ final class GridRowSpanIndex {
 			max = Math.max(max, ends[i]);
 			prefixMaxEnds[i] = max;
 		}
-		projectionDirty = false;
+		// Publish the copied cache key before marking the complete projection reusable.
 		projectedVisibleColumns = copyVisibility(visibleColumns);
+		projectionDirty = false;
 	}
 
 	private int indexOf(GridItem item) {
@@ -207,16 +211,12 @@ final class GridRowSpanIndex {
 	}
 
 	private boolean sameVisibility(boolean[] visibleColumns) {
-		if (visibleColumns == null) return projectedVisibleColumns.length == 0;
-		if (projectedVisibleColumns.length != visibleColumns.length) return false;
-		for (int i = 0; i < visibleColumns.length; i++) {
-			if (projectedVisibleColumns[i] != visibleColumns[i]) return false;
-		}
-		return true;
+		// Null means all columns; an empty mask means none. They are distinct cache keys.
+		return java.util.Arrays.equals(projectedVisibleColumns, visibleColumns);
 	}
 
 	private static boolean[] copyVisibility(boolean[] visibleColumns) {
-		if (visibleColumns == null || visibleColumns.length == 0) return new boolean[0];
+		if (visibleColumns == null) return null;
 		boolean[] copy = new boolean[visibleColumns.length];
 		System.arraycopy(visibleColumns, 0, copy, 0, visibleColumns.length);
 		return copy;

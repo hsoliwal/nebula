@@ -48,7 +48,14 @@ def require_frame_change(previous, current, scene, surface):
 
 def marker_matches(data, color, box):
     x, y, width, height = box
+    if (data.ndim != 3 or data.shape[2] != 3 or width <= 0 or height <= 0
+            or x < 0 or y < 0 or x + width > data.shape[1] or y + height > data.shape[0]):
+        return False
     mask = np.all(data == color, axis=2).astype(np.uint8)
+    # These canary frames contain exactly one solid marker. An exact component
+    # alone is insufficient: disconnected paint outside the clip must fail too.
+    if cv2.countNonZero(mask) != width * height:
+        return False
     count, labels, stats, centers = cv2.connectedComponentsWithStats(mask, connectivity=8)
     return any(tuple(row) == (x, y, width, height, width * height) for row in stats[1:])
 
@@ -120,6 +127,7 @@ def verify(directory, reports, receiver=None):
         require(contract[key] == expected, 'Capture ownership contract: ' + key)
     red = read_image(directory / 'capture-red.png', contract['red.sha256'])
     blue = read_image(directory / 'capture-blue.png', contract['blue.sha256'])
+    require(red.shape == blue.shape, 'Canary frame dimensions changed unexpectedly')
     box = tuple(int(contract['marker.' + key]) for key in ('x', 'y', 'width', 'height'))
     require(marker_matches(red, (0, 0, 255), box), 'Red geometry oracle')
     require(marker_matches(blue, (255, 0, 0), box), 'Blue repaint geometry oracle')
