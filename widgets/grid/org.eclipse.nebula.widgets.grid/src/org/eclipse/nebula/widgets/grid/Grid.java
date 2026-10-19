@@ -2342,7 +2342,7 @@ public class Grid extends Canvas {
 				// the rows nobody has read have the Grid's item height too
 				rowTree().reweighUnread(height + 1);
 			}
-			topIndex = -1;
+			// the top row stays, as stock keeps it; the bottom row follows from the new heights
 			bottomIndex = -1;
 		} else {
 			for (final GridItem item : materializedItems()) {
