@@ -386,6 +386,9 @@ public class Grid extends Canvas {
 	/** The column lanes over {@link #displayOrderedColumns} (G6): widths and their prefix sums. */
 	private final GridColumnMetrics columnMetrics = new GridColumnMetrics();
 
+	/** The row state of the items (height, level, flags): the one store, items hold lane ids. */
+	private final GridItemLanes itemLanes = new GridItemLanes();
+
 	private GridColumnGroup[] columnGroups = {};
 
 	/**
@@ -1807,6 +1810,11 @@ public class Grid extends Canvas {
 	/** @return the column lanes (for tests; not rebuilt here) */
 	GridColumnMetrics columnMetrics() {
 		return columnMetrics;
+	}
+
+	/** @return the row state lanes of this Grid's items */
+	GridItemLanes itemLanes() {
+		return itemLanes;
 	}
 
 	/**
