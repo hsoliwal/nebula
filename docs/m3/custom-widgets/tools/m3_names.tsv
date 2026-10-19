@@ -65,3 +65,5 @@ PRINT_PREVIEW	M3PrintPreview	pages laid out lazily; only visible pages rendered
 HORIZONTAL_SPINNER	M3ListSpinner	index into a value list
 PASSWORD_REVEAL	M3PasswordReveal	one reveal bit
 STEPPER	M3Stepper	current step int; step labels as ids
+PINNED_COLUMNS	M3PinnedColumns	pinned column count and row count as ints; the column window offset starts after the pinned prefix; one paint pass per region (pinned, scrolled), no duplicate cells
+VIRTUAL_COMPOSITE	M3VirtualComposite	child ids with bounds in int lanes; only children intersecting the viewport (plus a residency budget) exist as controls; children created through a factory, released LRU; the SWT.VIRTUAL Composite contract of eclipse.platform.swt#624

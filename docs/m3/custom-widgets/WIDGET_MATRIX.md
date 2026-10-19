@@ -8,7 +8,7 @@ Status: matrix v1, 2026-10-19. Owner: custom-widgets track. Every number below i
 | File | Rows | Content |
 |---|---|---|
 | `LIBRARIES.tsv` | 178 | every library considered: slug, licence, stars, last push, archived, toolkit, Java files listed, widget classes matched, source, licence route |
-| `WIDGET_MATRIX.tsv` | 66 | one row per widget concept, ranked: SwingX class, Nebula class, other library classes, stock SWT, stock Swing, stock JavaFX, virtualizable, library count, missing from stock, M3 plan, licence route, priority, owner |
+| `WIDGET_MATRIX.tsv` | 68 | one row per widget concept, ranked: SwingX class, Nebula class, other library classes, stock SWT, stock Swing, stock JavaFX, virtualizable, library count, missing from stock, M3 plan, licence route, priority, owner |
 | `SEARCH_HITS.tsv` | 1,312 | every repository the GitHub searches returned, with the queries that found it and why it was kept, excluded or filtered out |
 | `ENHANCED_API_MAP.tsv` | see file | Swing rows handed to the enhanced-API Swing track (same columns as that track's map) |
 | `tools/` | | `github_search.sh`, `filter_search.sh`, `harvest_libraries.sh`, `build_matrix.sh` and their inputs |
@@ -62,6 +62,7 @@ from one of them 2, from neither 1)`. The stack family is P0 by user decision (2
 
 | Concept | Plan | Owner |
 |---|---|---|
+| VIRTUAL_COMPOSITE | `M3VirtualComposite`: SWT.VIRTUAL on Composite as asked in eclipse-platform/eclipse.platform.swt#624; children materialized by the viewport, M3StackLayout pages being the one-child-at-a-time form | custom-widgets (after M3StackLayout) |
 | STACK_LAYOUT | `M3StackLayout`: only the top control is materialized; the other children are parked or released and recreated through a client factory under an LRU budget (M3BoundedCache pattern). Swing row `M3CardLayout` handed off | custom-widgets (first leaf) |
 | TAB_FOLDER_RICH | thousands of tabs: virtual tab list (lanes for text, image, state), chevron and overflow from the visible window, CTabItem facades on demand. Reuses the all-widgets CTabFolder mediation | all-widgets + custom-widgets |
 | EDITOR_VIEW_STACK | e4 StackRenderer part stacks ride on the two leaves above | jface-viewport agent (platform.ui); coordination only |
@@ -82,10 +83,11 @@ from one of them 2, from neither 1)`. The stack family is P0 by user decision (2
 | 10 | FILTER_ROW | 45 | 5 | NEW: M3FilterRow (with the sort-filter lane) | hand-off |
 | 11 | TASK_PANE | 36 | 18 | SWT ExpandBar, Nebula PGroup/PShelf | hand-off |
 | 12 | PROPERTY_SHEET | 36 | 6 | Nebula PropertyTable onto the viewport | hand-off |
+| 13 | PINNED_COLUMNS | 9 (P1 by owner) | 1 | Nebula Grid already has it (merged hsoliwal/nebula#696 and #165, frozen first column); SWT Table gets a column-window lane | hand-off |
 
 New SWT widgets in rank order (no stock SWT and no Nebula implementation): IMAGE_VIEW, FIND_BAR, HEATMAP, FILTER_ROW,
 COLUMN_CONTROL, then the P3 rows (MULTI_SPLIT, STATUS_BAR, NODE_EDITOR, TERMINAL, ERROR_PANE, DOCKING, RIBBON, ...).
-56 concepts are missing from stock Swing and become rows in `ENHANCED_API_MAP.tsv` for the Swing track.
+60 concepts are missing from stock Swing or P0 and become rows in `ENHANCED_API_MAP.tsv` for the Swing track.
 
 ## Work order (custom-widgets)
 

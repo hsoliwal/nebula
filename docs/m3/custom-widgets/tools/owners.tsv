@@ -6,3 +6,5 @@ DATA_GRID	-	nebula-grid agent	Nebula Grid is on the viewport (nebula#235); NatTa
 TREE_TABLE	-	SWT Tree track + nebula-grid agent	SWT Tree with columns is the tree-table; Swing gets M3TreeTable through the enhanced-API Swing track
 VIRTUAL_LIST	-	SWT List/Table tracks	SWT List/Table/Tree viewports exist; Swing JList viewport is M3jdk21 leaf 3
 CODE_EDITOR	-	StyledText viewport (merged)	StyledText viewport merged; nothing new here
+PINNED_COLUMNS	P1	nebula-grid agent (Grid) + custom-widgets (matrix row)	merged prior art: hsoliwal/nebula#696 and #165 (frozen first column in Grid); NatTable FreezeLayer and Glazed Lists are the other donors; the SWT Table side is a viewport lane (column window offset) on the Table track
+VIRTUAL_COMPOSITE	P0	custom-widgets (stack/residency leaf)	eclipse-platform/eclipse.platform.swt#624 (SWT.VIRTUAL on Composite): a virtual Composite materializes its children through the viewport; M3StackLayout pages are the first form (one child at a time), a scrolled virtual composite with a child window is the second

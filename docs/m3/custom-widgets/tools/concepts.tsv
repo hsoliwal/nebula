@@ -65,3 +65,5 @@ WIZARD	wizard	^Wizard(Pane|Dialog|Panel)?$	N	-	-
 CALCULATOR	calculator field	^Calculator(Combo|Field|Button|Panel|Dialog|Popup)?$	N	-	-
 MEMORY_MONITOR	heap / memory monitor	HeapManager|MemoryMonitor|MemoryBar	N	-	-
 PRINT_PREVIEW	print / report preview	^PrintPreview$|^PrintViewer$|^PrintPreviewDialog$	P	-	- (JTable.print: no preview)
+PINNED_COLUMNS	pinned / frozen columns and rows (first column stays while scrolling)	FrozenColumn|FixedColumn|FreezeColumn|PinnedColumn|FrozenRow|FixedRow|FreezeLayer|^Freeze|ColumnFreez|RowFreez|LockedColumn	Y	-	-
+VIRTUAL_COMPOSITE	virtual composite (children materialized by the viewport; SWT.VIRTUAL on Composite)	VirtualComposite|VirtualPane|VirtualPanel|LazyComposite|LazyPanel|LazyPane|VirtualContainer|^VirtualFlow$|^VirtualBox$|RecyclerView|^Recycler	Y	- (eclipse.platform.swt#624 asks for SWT.VIRTUAL on Composite)	-
