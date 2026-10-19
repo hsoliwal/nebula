@@ -1,0 +1,19 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------< com.synexia.verification:m3-recipe-qualification >----------
+[INFO] Building m3-recipe-qualification 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- exec:3.5.0:exec (default-cli) @ m3-recipe-qualification ---
+RECIPE base=c5f62dbabc643b40fbba56eada89cee3965d145c manifest=79912b8262aad9d1666a03c282a9c21579b426389a829013adb718b38f681187 changes=4 applied=true promotionAuthority=false
+m3/convergence/SYNEXIA_CANONICAL_RECIPE_HOME.tsv	9257a230fd60373c72f01f1ab10635a4ea4000ab486fc965b2602c99dcb39ea7	53c1e144b0ca3dc7de6d9726560385553e9c8f3dd701162518c50125cc2139d0
+m3/convergence/README.md	6e154e088af0c9b8817856cff7c76361be62f36ab521f193bf0b05aea3c7abe0	6b20fcb720de3d0975260be8ba5853496af2fad637c0889fab74d920ade037fc
+.m3/SYNEXIA_RECIPE_CUSTODY_INTAKE_20261017.md	6d712845612c3b0bbede5e86c70981a8e22adecb40dfa62d33281bf20b687f8d	66f1de33c85dfd8e7d3e2cb71db2cfd7f088898ef9621c52988e5ec4b4ad3902
+.m3/SYNEXIA_RECIPE_SOURCE_CUSTODY_20261018.json	ABSENT	6de00ff46ca1476f6ef80e3537ed6e40bd1528b3e8f2745a6881550da7cb329c
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.516 s
+[INFO] Finished at: 2026-10-18T00:55:08-07:00
+[INFO] ------------------------------------------------------------------------
