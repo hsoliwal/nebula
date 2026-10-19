@@ -34,7 +34,8 @@ Original-vs-candidate JDK21 model lives at
 The proof preserves the original normal call/GC color order and differentiates
 the old exceptional-path leak and failed borrowed-state restoration.
 Its deterministic corpus includes 80,000 seeded original/candidate phases,
-double-cleanup failures with suppression, nested paint state and
+double-cleanup failures with suppression, native Error identity and
+cleanup suppression, nested paint state and
 owned-measurement-GC exceptional disposal.
 
 Actual locally executed, strict Java 21 compilation:
@@ -42,11 +43,11 @@ Actual locally executed, strict Java 21 compilation:
 javac --release 21 -Xlint:all -Werror -d classes CanvasGcOwnershipProof.java
 java -Xmx128m -cp classes org.eclipse.nebula.widgets.proof.CanvasGcOwnershipProof
 java -Xint -Xmx128m -cp classes org.eclipse.nebula.widgets.proof.CanvasGcOwnershipProof
-# Both: M3_ORIGINAL_CANVAS_GC_PROOF_PASS assertions=224006
+# Both: M3_ORIGINAL_CANVAS_GC_PROOF_PASS assertions=224010
 ```
-Source Git blob `be0436229e67a86366f4e9bf209c56c8ee4362b8`,
-SHA-256 `550fffe4dc2c630ec9cec75f727384e9b8fa332ee54819296421d74cb68dbd4b`.
-**448,012 executed assertions across normal and interpreter modes**, with
+Source Git blob `61968a5c43a0b634d6b33b8d97585f70d4fab7f9`,
+SHA-256 `541893cfa76c08ae3917d0edadb39a178274fd0ebe12d6ff89f656bc94a4be5a`.
+**448,020 executed assertions across normal and interpreter modes**, with
 original failures deliberately recorded as defect counterexamples.
 This is a source-pattern MODEL, not a compiled SWT control or native display.
 

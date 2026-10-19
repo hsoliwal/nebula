@@ -39,7 +39,7 @@ public final class CanvasGcOwnershipProof {
     }
     @FunctionalInterface private interface Painter { void paint(FakeGc gc); }
     private static void restoreOnFailure(FakeGc gc, int back, int fore,
-                                         RuntimeException failure) {
+                                         Throwable failure) {
         try { gc.setBackground(back); }
         catch (RuntimeException | Error cleanup) {
             if (cleanup != failure) failure.addSuppressed(cleanup);
@@ -58,7 +58,7 @@ public final class CanvasGcOwnershipProof {
     private static void newChips(FakeGc gc, Painter painter) {
         int back = gc.background, fore = gc.foreground;
         try { painter.paint(gc); }
-        catch (RuntimeException failure) {
+        catch (RuntimeException | Error failure) {
             restoreOnFailure(gc, back, fore, failure);
             throw failure;
         }
@@ -83,7 +83,7 @@ public final class CanvasGcOwnershipProof {
             gc.setForeground(fore);
             toggle.paint(gc);
             toolitems.paint(gc);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException | Error failure) {
             restoreOnFailure(gc, back, fore, failure);
             throw failure;
         }
@@ -168,6 +168,36 @@ public final class CanvasGcOwnershipProof {
                   gc -> gc.setForeground(77), gc -> gc.setBackground(66));
         check(nested.background == 66 && nested.foreground == 77,
               "normal nested painter preserves last rendered GC state");
+        // SWTError and JVM Error are native paint failure types too; preserve
+        // original identity and attach both failed recovery attempts.
+        FakeGc nativeFailure = new FakeGc();
+        nativeFailure.failBackground = 1;
+        nativeFailure.failForeground = 1;
+        Error nativeError = new AssertionError("native GC failure");
+        try {
+            newPGroup(nativeFailure, gc -> {
+                gc.background = 99; // model a failure before setter callbacks
+                throw nativeError;
+            }, gc -> {}, gc -> {});
+            throw new AssertionError("native failure unexpectedly returned");
+        } catch (AssertionError seen) {
+            check(seen == nativeError, "native Error identity must be preserved");
+            check(seen.getSuppressed().length == 2,
+                  "both native GC cleanup failures suppressed");
+        }
+        FakeGc nativeChips = new FakeGc();
+        Error chipsError = new AssertionError("native drawing failure");
+        try {
+            newChips(nativeChips, gc -> {
+                gc.setForeground(91);
+                throw chipsError;
+            });
+            throw new AssertionError("Chips native failure unexpectedly returned");
+        } catch (AssertionError seen) {
+            check(seen == chipsError, "Chips native Error identity preserved");
+            check(nativeChips.background == 10 && nativeChips.foreground == 20,
+                  "Chips Error restores native borrowed GC colors");
+        }
         System.out.println("M3_ORIGINAL_CANVAS_GC_PROOF_PASS assertions=" + checks);
     }
 }
