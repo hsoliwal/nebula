@@ -27,10 +27,17 @@ public abstract class RwtExample {
 	public final String concept;
 	/** The class that the example shows. */
 	public final String widget;
+	/** Distinguishes two examples of one concept, or {@code null}. */
+	public final String variant;
 
 	protected RwtExample (String concept, String widget) {
+		this (concept, widget, null);
+	}
+
+	protected RwtExample (String concept, String widget, String variant) {
 		this.concept = concept;
 		this.widget = widget;
+		this.variant = variant;
 	}
 
 	/** Creates the widget in {@code parent} (a Shell with a FillLayout) and returns it. */
@@ -39,8 +46,13 @@ public abstract class RwtExample {
 	/** Applies one model change to the widget created by {@link #create(Composite)}. */
 	public abstract void change (Control control);
 
+	/** Concept id plus variant: unique per example. */
+	public String id () {
+		return variant == null ? concept : concept + "-" + variant;
+	}
+
 	/** URL path of the example's entry point. */
 	public String path () {
-		return "/" + concept.toLowerCase ().replace ('_', '-');
+		return "/" + id ().toLowerCase ().replace ('_', '-');
 	}
 }

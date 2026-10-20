@@ -8,6 +8,7 @@
  * Contributors:
  *     Innoopract Informationssysteme GmbH - initial API and implementation
  *     EclipseSource - ongoing development
+ *     Synexia - increment, page increment and setValues (kept on the server)
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
@@ -99,6 +100,9 @@ public class ScrollBar extends Widget {
   private int selection;
   private int minimum;
   private int maximum;
+  // Synexia: kept for the SWT API; the browser scrolls with its own steps
+  private int increment = 1;
+  private int pageIncrement = 10;
 
   /**
    * Constructs a new instance of this class given its parent
@@ -450,6 +454,109 @@ public class ScrollBar extends Widget {
   public int getSelection() {
     checkWidget();
     return selection;
+  }
+
+  /**
+   * Sets the amount that the selection changes when the user presses an arrow. The browser scrolls
+   * with its own steps; the value is kept and returned.
+   *
+   * @param value the new increment (must be greater than zero)
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public void setIncrement( int value ) {
+    checkWidget();
+    if( value >= 1 ) {
+      increment = value;
+    }
+  }
+
+  /**
+   * Returns the amount that the selection changes when the user presses an arrow, initially 1.
+   *
+   * @return the increment
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public int getIncrement() {
+    checkWidget();
+    return increment;
+  }
+
+  /**
+   * Sets the amount that the selection changes when the user pages. The browser scrolls with its
+   * own steps; the value is kept and returned.
+   *
+   * @param value the new page increment (must be greater than zero)
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public void setPageIncrement( int value ) {
+    checkWidget();
+    if( value >= 1 ) {
+      pageIncrement = value;
+    }
+  }
+
+  /**
+   * Returns the amount that the selection changes when the user pages, initially 10.
+   *
+   * @return the page increment
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public int getPageIncrement() {
+    checkWidget();
+    return pageIncrement;
+  }
+
+  /**
+   * Sets the selection, minimum, maximum, thumb, increment and page increment at once. Nothing
+   * changes if a value is out of range (minimum or maximum negative, thumb, increment or page
+   * increment below one); the thumb is limited to the range and the selection to the values the
+   * thumb allows.
+   *
+   * @param selection the new selection value
+   * @param minimum the new minimum value
+   * @param maximum the new maximum value
+   * @param thumb the new thumb value
+   * @param increment the new increment value
+   * @param pageIncrement the new page increment value
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public void setValues( int selection,
+                         int minimum,
+                         int maximum,
+                         int thumb,
+                         int increment,
+                         int pageIncrement )
+  {
+    checkWidget();
+    if( minimum < 0 || maximum < 0 || thumb < 1 || increment < 1 || pageIncrement < 1 ) {
+      return;
+    }
+    this.minimum = minimum;
+    this.maximum = Math.max( maximum, minimum );
+    this.thumb = Math.min( thumb, this.maximum - minimum );
+    this.selection = Math.max( minimum, Math.min( selection, this.maximum - this.thumb ) );
+    this.increment = increment;
+    this.pageIncrement = pageIncrement;
   }
 
   ////////////////////

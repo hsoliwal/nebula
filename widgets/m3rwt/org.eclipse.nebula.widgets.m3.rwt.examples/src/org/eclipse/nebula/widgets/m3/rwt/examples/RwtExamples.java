@@ -70,7 +70,7 @@ public final class RwtExamples implements ApplicationConfiguration {
 	@Override
 	public void configure (Application application) {
 		for (RwtExample example : all ()) {
-			application.addEntryPoint (example.path (), () -> new RwtExampleEntryPoint (example), Map.of (WebClient.PAGE_TITLE, example.concept));
+			application.addEntryPoint (example.path (), () -> new RwtExampleEntryPoint (example), Map.of (WebClient.PAGE_TITLE, example.id ()));
 		}
 		LOG.info (() -> "RWT examples: " + all ().size () + " entry points");
 	}

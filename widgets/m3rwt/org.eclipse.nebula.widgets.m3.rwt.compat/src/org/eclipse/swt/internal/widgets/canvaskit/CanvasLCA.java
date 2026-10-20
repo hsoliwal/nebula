@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    EclipseSource - initial API and implementation
+ *    Synexia - paints the damage recorded while hidden when the canvas is shown (M3CanvasPaint)
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.canvaskit;
 
@@ -65,6 +66,7 @@ public final class CanvasLCA extends WidgetLCA<Canvas> {
     WidgetLCAUtil.renderRoundedBorder( canvas );
     WidgetLCAUtil.renderCustomVariant( canvas );
     renderClientArea( canvas );
+    M3CanvasPaint.paintIfShown( canvas );
     writeGCOperations( canvas );
     renderClientListeners( canvas );
   }

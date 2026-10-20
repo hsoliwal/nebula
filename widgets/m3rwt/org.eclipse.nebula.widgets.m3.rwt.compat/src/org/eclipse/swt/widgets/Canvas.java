@@ -8,6 +8,7 @@
  * Contributors:
  *    Innoopract Informationssysteme GmbH - initial API and implementation
  *    EclipseSource - ongoing development
+ *    Synexia - scroll; damage accumulated per request and deferred while hidden (M3CanvasPaint)
  ******************************************************************************/
 package org.eclipse.swt.widgets;
 
@@ -20,6 +21,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.graphics.GCAdapter;
 import org.eclipse.swt.internal.widgets.canvaskit.CanvasLCA;
+import org.eclipse.swt.internal.widgets.canvaskit.M3CanvasPaint;
 
 
 /**
@@ -154,6 +156,32 @@ public class Canvas extends Composite {
     removeListener( SWT.Paint, listener );
   }
 
+  /**
+   * Scrolls a rectangular area of the receiver by first copying the source area to the destination
+   * and then causing the area of the source which is not covered by the destination to be repainted.
+   * The server keeps no pixels, so the union of source and destination is repainted.
+   *
+   * @param destX the x coordinate of the destination
+   * @param destY the y coordinate of the destination
+   * @param x the x coordinate of the source
+   * @param y the y coordinate of the source
+   * @param width the width of the area
+   * @param height the height of the area
+   * @param all <code>true</code> if children should be scrolled, and <code>false</code> otherwise
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+   *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
+   * </ul>
+   */
+  public void scroll( int destX, int destY, int x, int y, int width, int height, boolean all ) {
+    checkWidget();
+    Rectangle union = M3CanvasPaint.scrollDamage( destX, destY, x, y, width, height );
+    if( union != null ) {
+      redraw( union.x, union.y, union.width, union.height, all );
+    }
+  }
+
   /////////////
   // repainting
 
@@ -182,6 +210,11 @@ public class Canvas extends Composite {
   }
 
   private void repaint( Rectangle paintRect ) {
+    // Synexia: damage accumulates within a request and waits while the canvas is hidden
+    Rectangle damage = M3CanvasPaint.damage( this, getAdapter( GCAdapter.class ), paintRect );
+    if( damage == null ) {
+      return;
+    }
     if( gcAdapter != null ) {
       gcAdapter.clearGCOperations();
       gcAdapter.setForceRedraw( true );
@@ -189,11 +222,11 @@ public class Canvas extends Composite {
     GC gc = new GC( this );
     Event paintEvent = new Event();
     paintEvent.gc = gc;
-    paintEvent.setBounds( paintRect );
+    paintEvent.setBounds( damage );
     notifyListeners( SWT.Paint, paintEvent );
     gc.dispose();
     if( gcAdapter != null ) {
-      gcAdapter.setPaintRect( paintRect );
+      gcAdapter.setPaintRect( damage );
     }
   }
 

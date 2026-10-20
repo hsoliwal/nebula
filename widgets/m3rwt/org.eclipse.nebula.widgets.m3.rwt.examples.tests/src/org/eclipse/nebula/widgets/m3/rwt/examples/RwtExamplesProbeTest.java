@@ -56,7 +56,7 @@ class RwtExamplesProbeTest {
 		StringBuilder head = new StringBuilder ("concept\twidget\tcreates\tgc_draw_ops");
 		for (String round : ROUNDS) head.append ('\t').append (round).append ("_ops\t").append (round).append ("_bytes");
 		rows.add (head.toString ());
-		Stream<DynamicTest> tests = RwtExamples.all ().stream ().map (example -> DynamicTest.dynamicTest (example.concept, () -> {
+		Stream<DynamicTest> tests = RwtExamples.all ().stream ().map (example -> DynamicTest.dynamicTest (example.id (), () -> {
 			String row = probe (example);
 			synchronized (rows) {
 				rows.add (row);
@@ -75,7 +75,7 @@ class RwtExamplesProbeTest {
 			Control control = example.create (shell);
 			shell.layout ();
 			shell.open ();
-			StringBuilder row = new StringBuilder (example.concept).append ('\t').append (example.widget);
+			StringBuilder row = new StringBuilder (example.id ()).append ('\t').append (example.widget);
 			long[][] measured = new long[ROUNDS.length][];
 			measured[0] = round (display, () -> { });
 			int creates = lastCreates;

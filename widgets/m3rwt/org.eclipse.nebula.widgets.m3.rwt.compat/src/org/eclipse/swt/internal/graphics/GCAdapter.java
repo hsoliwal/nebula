@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    EclipseSource - initial API and implementation
+ *    Synexia - damage of a hidden canvas (M3CanvasPaint)
  ******************************************************************************/
 package org.eclipse.swt.internal.graphics;
 
@@ -21,6 +22,8 @@ public final class GCAdapter {
   private final List<GCOperation> gcOperations;
   private boolean forceRedraw;
   private Rectangle paintRect;
+  // Synexia: damage recorded while the canvas was hidden, painted when it is shown
+  private Rectangle hiddenDamage;
 
   public GCAdapter() {
     gcOperations = new LinkedList<>();
@@ -70,6 +73,17 @@ public final class GCAdapter {
 
   public Rectangle getPaintRect() {
     return paintRect;
+  }
+
+  /**
+   * The damage recorded while the canvas was hidden, or <code>null</code> (Synexia, M3CanvasPaint).
+   */
+  public Rectangle getHiddenDamage() {
+    return hiddenDamage;
+  }
+
+  public void setHiddenDamage( Rectangle hiddenDamage ) {
+    this.hiddenDamage = hiddenDamage;
   }
 
   private static boolean isDrawOperation( GCOperation operation ) {

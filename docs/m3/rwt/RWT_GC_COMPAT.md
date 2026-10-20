@@ -68,3 +68,22 @@ events or has no such class.
 - Compile: re-run the differential census with the patched jar (`census/rwt-4.8.0-m3`), compare per category.
 - Run: JUnit tests on RAP's test fixture (`org.eclipse.rap.rwt.testfixture` 4.8.0) render a `Canvas` through the RWT
   life cycle and read the `draw` operations of the protocol message, per method in the table above.
+
+## Canvas repaint as delta views, scroll and ScrollBar (rule 24)
+
+Added after the GC part, for the user's rule 24 ("all delta based view", "resize and layout change the port",
+"hidden viewports"):
+
+| file (RWT 4.8.0) | change |
+|---|---|
+| `org/eclipse/swt/widgets/Canvas.java` | `scroll (destX, destY, x, y, width, height, all)` (SWT API; repaints source and destination); `repaint` asks `M3CanvasPaint` for the damage |
+| `org/eclipse/swt/internal/graphics/GCAdapter.java` | holds the damage recorded while the canvas was hidden |
+| `org/eclipse/swt/internal/widgets/canvaskit/CanvasLCA.java` | at render time a canvas that became visible paints that damage once |
+| `org/eclipse/swt/widgets/ScrollBar.java` | `setIncrement`, `getIncrement`, `setPageIncrement`, `getPageIncrement`, `setValues` (kept on the server; the browser scrolls with its own steps) |
+
+`M3CanvasPaint` (new): partial redraws within one request accumulate into one damage rectangle. RWT 4.8.0 kept
+only the last one (`repaint` cleared the operations and replaced the paint rectangle), so earlier damage never
+reached the browser (`UPSTREAM_DEFECTS.tsv`). While the canvas or an ancestor is hidden, `redraw` and resize paint
+nothing and send nothing; the damage is united and painted once, at render time, after the canvas is visible
+again. A resize still repaints the visible window: the browser resets a canvas bitmap when its size changes
+(`rwt/widgets/GC.js:186-194`), so sending only the strips that enter would need client code.

@@ -23,3 +23,6 @@ WizardExample	-
 HeatMapExample	@m3
 BusyIndicatorExample	@m3
 StatusBarExample	@m3
+ChartExample	widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope/src
+GalleryExample	widgets/gallery/org.eclipse.nebula.widgets.gallery/src
+PGroupTaskPaneExample	widgets/pgroup/org.eclipse.nebula.widgets.pgroup/src
