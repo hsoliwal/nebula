@@ -1,0 +1,96 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
+ *******************************************************************************/
+package org.eclipse.nebula.widgets.m3.tests;
+
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+
+/**
+ * Shared helpers of the M3 widget tests: event pumping, timed spinning, paint recording and on-screen pixels.
+ */
+public final class M3TestSupport {
+
+	private M3TestSupport() {
+	}
+
+	/** dispatches everything queued */
+	public static void flush(Display display) {
+		while (display.readAndDispatch()) {
+			// dispatch everything queued
+		}
+	}
+
+	/** runs the event loop for about the given time (timers fire) */
+	public static void spin(Display display, int milliseconds) {
+		boolean[] done = new boolean[1];
+		display.timerExec(milliseconds, () -> done[0] = true);
+		while (!done[0]) {
+			if (!display.readAndDispatch()) {
+				display.sleep();
+			}
+		}
+		flush(display);
+	}
+
+	/** records the clip rectangle of every paint of a control */
+	public static List<Rectangle> recordPaints(Control control) {
+		List<Rectangle> paints = new ArrayList<>();
+		control.addListener(SWT.Paint, e -> paints.add(new Rectangle(e.x, e.y, e.width, e.height)));
+		return paints;
+	}
+
+	/** asserts that every recorded paint lies inside the allowed rectangle */
+	public static void assertPaintsInside(List<Rectangle> paints, Rectangle allowed) {
+		for (Rectangle paint : paints) {
+			assertTrue(paint + " outside " + allowed, allowed.contains(paint.x, paint.y)
+					&& allowed.contains(paint.x + paint.width - 1, paint.y + paint.height - 1));
+		}
+	}
+
+	/** asserts that at least one recorded paint covers the whole rectangle */
+	public static void assertSomePaintCovers(List<Rectangle> paints, Rectangle area) {
+		for (Rectangle paint : paints) {
+			if (paint.contains(area.x, area.y) && paint.contains(area.x + area.width - 1, area.y + area.height - 1)) {
+				return;
+			}
+		}
+		throw new AssertionError("no paint covers " + area + ": " + paints);
+	}
+
+	/** the on-screen pixels of a control's client area, after pending paints */
+	public static ImageData pixels(Control control) {
+		control.update();
+		Rectangle client = control instanceof org.eclipse.swt.widgets.Scrollable
+				? ((org.eclipse.swt.widgets.Scrollable) control).getClientArea()
+				: new Rectangle(0, 0, control.getSize().x, control.getSize().y);
+		Image image = new Image(control.getDisplay(), Math.max(1, client.width), Math.max(1, client.height));
+		GC gc = new GC(control);
+		gc.copyArea(image, client.x, client.y);
+		gc.dispose();
+		ImageData data = image.getImageData();
+		image.dispose();
+		return data;
+	}
+}
