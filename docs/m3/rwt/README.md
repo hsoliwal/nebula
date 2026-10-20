@@ -161,3 +161,13 @@ m3) have none. By cause (`tools/census_categories.sh`, `categories.tsv`):
     when its width or height changes (`GC.js:186-194`), so the cost of a resize is proportional to the visible window
     (if the painter culls to the paint rectangle), not to the model; sending only the strips that enter needs a
     retained client bitmap, which is client code.
+- **Hidden viewports** (`hidden_viewport` column, user rule 24 "Hidden viewports": while hidden, model changes send
+  nothing and only mark the window dirty; on becoming visible one window update is sent). RWT 4.8.0 as read:
+  - `PAINTS_WHILE_HIDDEN` (Canvas painters): `redraw` repaints at once with no visibility check
+    (`Canvas.java:169-181`), so a hidden canvas still sends its operations. Target: a dirty flag while the canvas or
+    an ancestor is hidden, one repaint on show.
+  - `DELTAS_WHILE_HIDDEN` (other RAP widgets and composites): RWT renders the changed properties of every widget in
+    the tree, visible or not. Target: hold the deltas of hidden widgets and render the net change on show.
+  - `ROW_DELTAS_WHILE_HIDDEN` (virtual rows): rows the client never asked for cost nothing; rows already on the client
+    are updated while hidden.
+  These are read from the RWT sources; the step 4 runs measure them per widget.

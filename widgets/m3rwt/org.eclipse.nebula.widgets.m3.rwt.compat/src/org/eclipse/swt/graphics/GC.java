@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    EclipseSource - initial API and implementation
+ *    Synexia - patterns, interpolation, fill rule, XOR mode, copyArea, drawing on images (M3GC)
  ******************************************************************************/
 package org.eclipse.swt.graphics;
 
@@ -78,6 +79,13 @@ public class GC extends Resource {
   private boolean advanced;
   private int antialias;
   private int textAntialias;
+  // Synexia: state of the methods added for M3 (docs/m3/rwt/RWT_GC_COMPAT.md)
+  private final Drawable drawable;
+  private Pattern backgroundPattern;
+  private Pattern foregroundPattern;
+  private int interpolation = SWT.DEFAULT;
+  private int fillRule = SWT.FILL_EVEN_ODD;
+  private boolean xorMode;
 
   /**
    * Constructs a new instance of this class which has been
@@ -135,6 +143,7 @@ public class GC extends Resource {
     if( drawable == null ) {
       SWT.error( SWT.ERROR_NULL_ARGUMENT );
     }
+    this.drawable = drawable;
     delegate = determineDelegate( drawable );
     antialias = SWT.DEFAULT;
     textAntialias = SWT.DEFAULT;
@@ -294,6 +303,10 @@ public class GC extends Resource {
       SWT.error( SWT.ERROR_INVALID_ARGUMENT );
     }
     delegate.setBackground( color );
+    if( backgroundPattern != null ) {
+      backgroundPattern = null;
+      M3GC.setPattern( delegate, false, null );
+    }
   }
 
   /**
@@ -333,6 +346,10 @@ public class GC extends Resource {
       SWT.error( SWT.ERROR_INVALID_ARGUMENT );
     }
     delegate.setForeground( color );
+    if( foregroundPattern != null ) {
+      foregroundPattern = null;
+      M3GC.setPattern( delegate, true, null );
+    }
   }
 
   /**
@@ -1518,6 +1535,9 @@ public class GC extends Resource {
     }
     Rectangle src = new Rectangle( 0, 0, -1, -1 );
     Rectangle dest = new Rectangle( x, y, -1, -1 );
+    if( M3GC.drawRecorded( delegate, image, src, dest ) ) {
+      return;
+    }
     delegate.drawImage( image, src, dest, true );
   }
 
@@ -1587,6 +1607,9 @@ public class GC extends Resource {
       }
       Rectangle src = new Rectangle( srcX, srcY, srcWidth, srcHeight );
       Rectangle dest = new Rectangle( destX, destY, destWidth, destHeight );
+      if( M3GC.drawRecorded( delegate, image, src, dest ) ) {
+        return;
+      }
       delegate.drawImage( image, src, dest, false );
     }
   }
@@ -1821,6 +1844,264 @@ public class GC extends Resource {
     return SWT.LEFT_TO_RIGHT;
   }
 
+  /**
+   * Sets the pattern that fills use, or <code>null</code> to fill with the background color again.
+   * Setting a background color also clears the pattern.
+   *
+   * @param pattern the new background pattern, or <code>null</code>
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if the pattern has been disposed</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void setBackgroundPattern( Pattern pattern ) {
+    checkDisposed();
+    if( pattern != null && pattern.isDisposed() ) {
+      SWT.error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    if( backgroundPattern != pattern ) {
+      backgroundPattern = pattern;
+      M3GC.setPattern( delegate, false, pattern );
+    }
+  }
+
+  /**
+   * Returns the pattern that fills use, or <code>null</code> if fills use the background color.
+   *
+   * @return the receiver's background pattern
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public Pattern getBackgroundPattern() {
+    checkDisposed();
+    return backgroundPattern;
+  }
+
+  /**
+   * Sets the pattern that lines and outlines use, or <code>null</code> to use the foreground color
+   * again. Setting a foreground color also clears the pattern.
+   *
+   * @param pattern the new foreground pattern, or <code>null</code>
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if the pattern has been disposed</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void setForegroundPattern( Pattern pattern ) {
+    checkDisposed();
+    if( pattern != null && pattern.isDisposed() ) {
+      SWT.error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    if( foregroundPattern != pattern ) {
+      foregroundPattern = pattern;
+      M3GC.setPattern( delegate, true, pattern );
+    }
+  }
+
+  /**
+   * Returns the pattern that lines and outlines use, or <code>null</code> if they use the foreground
+   * color.
+   *
+   * @return the receiver's foreground pattern
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public Pattern getForegroundPattern() {
+    checkDisposed();
+    return foregroundPattern;
+  }
+
+  /**
+   * Sets the interpolation used when images are scaled: <code>SWT.DEFAULT</code>,
+   * <code>SWT.NONE</code>, <code>SWT.LOW</code> or <code>SWT.HIGH</code>. In the browser scaled
+   * images are always smoothed; the value is kept and returned.
+   *
+   * @param interpolation the new interpolation
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if the value is not one of the four above</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void setInterpolation( int interpolation ) {
+    checkDisposed();
+    switch( interpolation ) {
+      case SWT.DEFAULT:
+      case SWT.NONE:
+      case SWT.LOW:
+      case SWT.HIGH:
+        this.interpolation = interpolation;
+      break;
+      default:
+        SWT.error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+  }
+
+  /**
+   * Returns the interpolation set with {@link #setInterpolation(int)}, initially <code>SWT.DEFAULT</code>.
+   *
+   * @return the receiver's interpolation
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public int getInterpolation() {
+    checkDisposed();
+    return interpolation;
+  }
+
+  /**
+   * Sets the rule that polygon and path fills use: <code>SWT.FILL_EVEN_ODD</code> (the default) or
+   * <code>SWT.FILL_WINDING</code>.
+   *
+   * @param rule the new fill rule
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if the rule is not one of the two above</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void setFillRule( int rule ) {
+    checkDisposed();
+    if( rule != SWT.FILL_EVEN_ODD && rule != SWT.FILL_WINDING ) {
+      SWT.error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    if( fillRule != rule ) {
+      fillRule = rule;
+      M3GC.setFillRule( delegate, rule );
+    }
+  }
+
+  /**
+   * Returns the fill rule, initially <code>SWT.FILL_EVEN_ODD</code>.
+   *
+   * @return the receiver's fill rule
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public int getFillRule() {
+    checkDisposed();
+    return fillRule;
+  }
+
+  /**
+   * Sets the XOR mode flag. In the browser drawing stays in source-over mode; the value is kept and
+   * returned.
+   *
+   * @param xor the new XOR mode flag
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void setXORMode( boolean xor ) {
+    checkDisposed();
+    xorMode = xor;
+  }
+
+  /**
+   * Returns the XOR mode flag set with {@link #setXORMode(boolean)}, initially <code>false</code>.
+   *
+   * @return the receiver's XOR mode flag
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public boolean getXORMode() {
+    checkDisposed();
+    return xorMode;
+  }
+
+  /**
+   * Copies the receiver's content at (x, y) into the image. A GC on an image copies its recorded
+   * drawing; a GC on a control leaves the image unchanged, because the server keeps no pixels.
+   *
+   * @param image the image to copy into
+   * @param x the x coordinate in the receiver of the area to be copied
+   * @param y the y coordinate in the receiver of the area to be copied
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if the image is null</li>
+   *    <li>ERROR_INVALID_ARGUMENT - if the image has been disposed</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void copyArea( Image image, int x, int y ) {
+    checkDisposed();
+    if( image == null ) {
+      SWT.error( SWT.ERROR_NULL_ARGUMENT );
+    }
+    if( image.isDisposed() ) {
+      SWT.error( SWT.ERROR_INVALID_ARGUMENT );
+    }
+    M3GC.copyArea( delegate, drawable, image, x, y );
+  }
+
+  /**
+   * Copies a rectangular area of the receiver to another position. On a control the destination and
+   * the source are redrawn after the current event, so the paint listener draws the moved content.
+   *
+   * @param srcX the x coordinate in the receiver of the area to be copied
+   * @param srcY the y coordinate in the receiver of the area to be copied
+   * @param width the width of the area to copy
+   * @param height the height of the area to copy
+   * @param destX the x coordinate in the receiver of the area to copy to
+   * @param destY the y coordinate in the receiver of the area to copy to
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void copyArea( int srcX, int srcY, int width, int height, int destX, int destY ) {
+    copyArea( srcX, srcY, width, height, destX, destY, true );
+  }
+
+  /**
+   * Copies a rectangular area of the receiver to another position. On a control the destination,
+   * and with <code>paint</code> the source, are redrawn after the current event.
+   *
+   * @param srcX the x coordinate in the receiver of the area to be copied
+   * @param srcY the y coordinate in the receiver of the area to be copied
+   * @param width the width of the area to copy
+   * @param height the height of the area to copy
+   * @param destX the x coordinate in the receiver of the area to copy to
+   * @param destY the y coordinate in the receiver of the area to copy to
+   * @param paint if <code>true</code> paint events will be generated for old and obscured areas
+   *
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public void copyArea( int srcX, int srcY, int width, int height, int destX, int destY, boolean paint ) {
+    checkDisposed();
+    M3GC.copyArea( drawable, srcX, srcY, width, height, destX, destY, paint );
+  }
+
+  @Override
+  void destroy() {
+    M3GC.dispose( delegate );
+  }
+
   GCDelegate getGCDelegate() {
     return delegate;
   }
@@ -1890,6 +2171,8 @@ public class GC extends Resource {
       result = new ControlGC( ( Control )drawable );
     } else if( drawable instanceof Device ) {
       result = new DeviceGC( ( Device )drawable );
+    } else if( drawable instanceof Image ) {
+      result = M3GC.imageDelegate( ( Image )drawable );
     }
     return result;
   }
@@ -1900,6 +2183,8 @@ public class GC extends Resource {
       result = ( ( Control )drawable ).getDisplay();
     } else if( drawable instanceof Device ) {
       result = ( Device )drawable;
+    } else if( drawable instanceof Image ) {
+      result = ( ( Image )drawable ).getDevice();
     }
     return result;
   }

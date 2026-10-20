@@ -24,7 +24,7 @@ CHECK_LIST	RAP_NATIVE	org.eclipse.swt.widgets.Table/Tree SWT.CHECK	-	-	NOT_RUN s
 COLUMN_CONTROL	RAP_NATIVE	(planned: Menu over TableColumn/TreeColumn setMoveable, setWidth)	-	-	NOT_RUN no implementation on any platform yet	PROPERTY_DELTA	-
 DUAL_LIST	REBUILD_AS_PAINTER	org.eclipse.nebula.widgets.opal.duallist.DualList	DualList	-	NOT_RUN step 4 not reached	CHILD_BOUNDS_DELTA	today: two RAP Tables and Buttons as DOM children
 TREEMAP	REBUILD_AS_PAINTER	org.eclipse.nebula.widgets.treemapper.TreeMapper	TreeMapper	-	NOT_RUN step 4 not reached	CHILD_BOUNDS_DELTA	TreeMapper maps two trees (not a treemap chart); TreeDragSourceEffect/TreeDropTargetEffect absent in RWT
-BUSY_INDICATOR	CANVAS_GC_REPLAY	org.eclipse.nebula.widgets.progresscircle.ProgressCircle	ProgressCircle	-	NOT_RUN step 4 not reached	CANVAS_DAMAGE_RECT	Path.addArc absent in RWT; each animation frame is a server round trip (needs ServerPushSession)
+BUSY_INDICATOR	CANVAS_GC_REPLAY	org.eclipse.nebula.widgets.m3.M3BusyLabel (Canvas; on m3/nebula-widgets-viewport-20261019)	-	ProgressCircle (Canvas; Path.addArc absent in RWT)	NOT_RUN step 4 not reached	CANVAS_DAMAGE_RECT	each timerExec frame redraws only the icon rectangle (a damage-rect delta) but costs a server round trip; needs a ServerPushSession to animate without user input
 PROMPT_DECORATION	RAP_NATIVE	Text.setMessage (Text.java:377); JFace ControlDecoration (RAP JFace)	-	PromptSupport (StyledText absent)	NOT_RUN step 4 not reached	PROPERTY_DELTA	-
 SPLIT_BUTTON	RAP_NATIVE	org.eclipse.swt.widgets.ToolItem SWT.DROP_DOWN	-	SplitButton BLOCKED(paints on a Button: RWT Button has no Paint event)	NOT_RUN step 4 not reached	PROPERTY_DELTA	-
 HEADER_PANEL	REBUILD_AS_PAINTER	org.eclipse.nebula.widgets.opal.header.Header	Header	TitledSeparator (Composite)	NOT_RUN step 4 not reached	CHILD_BOUNDS_DELTA	Header renders into an offscreen Image (new GC (Image) has no delegate in RWT)
@@ -36,7 +36,7 @@ CALENDAR_VIEW	RAP_NATIVE	org.eclipse.swt.widgets.DateTime SWT.CALENDAR	-	-	NOT_R
 HYPERLINK	RAP_NATIVE	org.eclipse.swt.widgets.Link	-	-	NOT_RUN step 4 not reached	PROPERTY_DELTA	-
 CODE_EDITOR	RAP_NATIVE	org.eclipse.nebula.widgets.richtext.RichTextEditor from org.eclipse.rap.nebula.widgets.richtext 4.8.0 (CKEditor)	-	StyledText BLOCKED(class absent in RWT)	NOT_RUN step 4 not reached	PROPERTY_DELTA	rich text only; the StyledText viewport (code editing) has no RWT equivalent
 MULTI_SPLIT	RAP_NATIVE	(planned M3MultiSplitPane; RAP Sash dividers)	-	-	NOT_RUN no implementation on any platform yet	CHILD_BOUNDS_DELTA	-
-STATUS_BAR	RAP_NATIVE	(planned M3StatusBar: Composite of Labels)	-	-	NOT_RUN no implementation on any platform yet	CHILD_BOUNDS_DELTA	-
+STATUS_BAR	CANVAS_GC_REPLAY	org.eclipse.nebula.widgets.m3.M3StatusBar (Canvas; on m3/nebula-widgets-viewport-20261019)	-	-	NOT_RUN step 4 not reached	CANVAS_DAMAGE_RECT	slots are drawn text (fillRectangle, drawText, drawLine, setClipping); grip drag needs MouseDown/Move/Up: setGrip(false) or a ClientListener on RWT; RWT Canvas ignores NO_REDRAW_RESIZE on resize (Canvas.java:160-165)
 TOGGLE_SWITCH	CANVAS_GC_REPLAY	org.eclipse.nebula.widgets.roundedswitch.RoundedSwitch	RoundedSwitch	SwitchButton (opal, Canvas)	NOT_RUN step 4 not reached	CANVAS_DAMAGE_RECT	-
 NODE_EDITOR	BLOCKED(draw2d absent on RWT)	(planned; GEF donor)	-	-	NOT_RUN no implementation on any platform yet	-	a plain Canvas painter would avoid draw2d
 TERMINAL	CANVAS_GC_REPLAY	(planned)	-	-	NOT_RUN no implementation on any platform yet	CANVAS_DAMAGE_RECT	keyboard and IME need a hidden RAP Text

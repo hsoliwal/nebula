@@ -20,7 +20,7 @@ awk -F'\t' -v OFS='\t' -v label="$LABEL" '
 	}
 	FNR == 1 {
 		print "rank", "concept_id", "concept", "rwt_route", "rwt_class", "rwt_status", "resize_layout_delta", \
-			"nebula_primary", "primary_file_rwt_errors", "primary_bundle_rwt_errors", "primary_missing_symbols", \
+			"hidden_viewport", "nebula_primary", "primary_file_rwt_errors", "primary_bundle_rwt_errors", "primary_missing_symbols", \
 			"other_candidates", "evidence", "note"
 		next
 	}
@@ -31,7 +31,9 @@ awk -F'\t' -v OFS='\t' -v label="$LABEL" '
 			fe = ferr[f] + 0; be = berr[b] + 0; sy = (f in syms) ? substr(syms[f], 1, 200) : "-"
 		}
 		ev = "docs/m3/rwt/" label "/rwt_only.tsv"
-		print rank[c], c, name[c], $2, $3, $6, $7, $4, fe, be, sy, $5, ev, $8
+		# hidden viewport behaviour of RWT 4.8.0 by resize/layout class (README section 3, rule 24 "Hidden viewports")
+		hv = ($7 == "CANVAS_DAMAGE_RECT") ? "PAINTS_WHILE_HIDDEN" : ($7 == "ROWS_ON_DEMAND") ? "ROW_DELTAS_WHILE_HIDDEN" : ($7 == "-") ? "-" : "DELTAS_WHILE_HIDDEN"
+		print rank[c], c, name[c], $2, $3, $6, $7, hv, $4, fe, be, sy, $5, ev, $8
 	}' "$MATRIX" "$HERE/PRIMARY_FILES.tsv" "$CENSUS" "$HERE/route_decisions.tsv" \
 	| { IFS= read -r head; echo "$head"; sort -t$'\t' -k1,1n; } > "$OUT"
 echo "rows: $(($(wc -l < "$OUT") - 1))"

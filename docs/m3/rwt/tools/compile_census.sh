@@ -10,7 +10,7 @@
 #   kind = PKG (package does not exist), SYM (cannot find symbol), OTHER (any other error)
 set -u
 ROOT=$1; OUT=$2; LABEL=$3; CP=$4; shift 4
-JAVAC="${JAVA_HOME:-C:/Program Files/Java/jdk-21}/bin/javac"
+JAVAC="${M3RWT_JDK:-C:/Program Files/Java/jdk-21}/bin/javac"
 D="$OUT/$LABEL"
 rm -rf "$D"; mkdir -p "$D/classes"
 cd "$ROOT" || exit 2

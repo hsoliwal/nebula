@@ -8,6 +8,7 @@
  * Contributors:
  *    Innoopract Informationssysteme GmbH - initial API and implementation
  *    EclipseSource - ongoing development
+ *    Synexia - device-less constructors of SWT 3.115 (no dispose needed, as in SWT)
  ******************************************************************************/
 package org.eclipse.swt.graphics;
 
@@ -31,6 +32,8 @@ public class Color extends Resource {
    * Holds the color values within one integer.
    */
   private int colorNr;
+  // Synexia: created by a device-less constructor; dispose() does nothing, as in SWT
+  private boolean deviceless;
 
   /**
    * Prevents uninitialized instances from being created outside the package.
@@ -189,6 +192,105 @@ public class Color extends Resource {
   public Color (Device device, int red, int green, int blue, int alpha) {
     super( checkDevice( device ) );
     colorNr = ColorUtil.computeColorNr( red, green, blue, alpha );
+  }
+
+  /**
+   * Constructs a new color with the given red, green and blue values, without a device. Such a color
+   * does not need to be disposed.
+   *
+   * @param red the amount of red in the color
+   * @param green the amount of green in the color
+   * @param blue the amount of blue in the color
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if the red, green or blue argument is not between 0 and 255</li>
+   * </ul>
+   */
+  public Color( int red, int green, int blue ) {
+    this( red, green, blue, 255 );
+  }
+
+  /**
+   * Constructs a new color with the given red, green, blue and alpha values, without a device. Such
+   * a color does not need to be disposed.
+   *
+   * @param red the amount of red in the color
+   * @param green the amount of green in the color
+   * @param blue the amount of blue in the color
+   * @param alpha the amount of alpha in the color
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_INVALID_ARGUMENT - if a value is not between 0 and 255</li>
+   * </ul>
+   */
+  public Color( int red, int green, int blue, int alpha ) {
+    this( ColorUtil.computeColorNr( red, green, blue, alpha ) );
+    deviceless = true;
+  }
+
+  /**
+   * Constructs a new color from an <code>RGB</code>, without a device. Such a color does not need to
+   * be disposed.
+   *
+   * @param rgb the RGB values of the color
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if the rgb argument is null</li>
+   *    <li>ERROR_INVALID_ARGUMENT - if a component is not between 0 and 255</li>
+   * </ul>
+   */
+  public Color( RGB rgb ) {
+    this( rgb, 255 );
+  }
+
+  /**
+   * Constructs a new color from an <code>RGB</code> and an alpha value, without a device. Such a color
+   * does not need to be disposed.
+   *
+   * @param rgb the RGB values of the color
+   * @param alpha the alpha value of the color
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if the rgb argument is null</li>
+   *    <li>ERROR_INVALID_ARGUMENT - if a value is not between 0 and 255</li>
+   * </ul>
+   */
+  public Color( RGB rgb, int alpha ) {
+    this( computeColorNr( rgb, alpha ) );
+    deviceless = true;
+  }
+
+  /**
+   * Constructs a new color from an <code>RGBA</code>, without a device. Such a color does not need to
+   * be disposed.
+   *
+   * @param rgba the RGBA values of the color
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if the rgba argument is null</li>
+   *    <li>ERROR_INVALID_ARGUMENT - if a value is not between 0 and 255</li>
+   * </ul>
+   */
+  public Color( RGBA rgba ) {
+    this( rgba == null ? null : rgba.rgb, rgba == null ? 255 : rgba.alpha );
+  }
+
+  private static int computeColorNr( RGB rgb, int alpha ) {
+    if( rgb == null ) {
+      SWT.error( SWT.ERROR_NULL_ARGUMENT );
+    }
+    return ColorUtil.computeColorNr( rgb.red, rgb.green, rgb.blue, alpha );
+  }
+
+  /**
+   * Disposes of the color. A color made without a device needs no disposal; the call then does
+   * nothing, as in SWT.
+   */
+  @Override
+  public void dispose() {
+    if( !deviceless ) {
+      super.dispose();
+    }
   }
 
   /**

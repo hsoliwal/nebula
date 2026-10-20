@@ -8,6 +8,7 @@
  * Contributors:
  *    Rüdiger Herrmann - initial API and implementation
  *    EclipseSource - ongoing development
+ *    Synexia - recording constructor for images (M3ImageGC), overridable drawable bounds
  ******************************************************************************/
 package org.eclipse.swt.graphics;
 
@@ -51,6 +52,21 @@ class ControlGC extends GCDelegate {
     background = control.getBackground();
     foreground = control.getForeground();
     font = control.getFont();
+    alpha = 255;
+    lineWidth = 0;
+    lineCap = SWT.CAP_FLAT;
+    lineJoin = SWT.JOIN_MITER;
+    lineStyle = SWT.LINE_SOLID;
+  }
+
+  /**
+   * Records into the GCAdapter that a subclass returns from getGCAdapter (Synexia, M3ImageGC).
+   */
+  ControlGC( Font font, Color background, Color foreground ) {
+    this.control = null;
+    this.background = background;
+    this.foreground = foreground;
+    this.font = font;
     alpha = 255;
     lineWidth = 0;
     lineCap = SWT.CAP_FLAT;
@@ -207,9 +223,13 @@ class ControlGC extends GCDelegate {
   @Override
   Rectangle getClipping() {
     if( clippingRect == null ) {
-      return control.getBounds();
+      return getDrawableBounds();
     }
     return new Rectangle( clippingRect.x, clippingRect.y, clippingRect.width, clippingRect.height );
+  }
+
+  Rectangle getDrawableBounds() {
+    return control.getBounds();
   }
 
   @Override

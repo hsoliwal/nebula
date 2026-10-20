@@ -8,6 +8,7 @@
  * Contributors:
  *    Innoopract Informationssysteme GmbH - initial API and implementation
  *    EclipseSource - ongoing development
+ *    Synexia - constants LOW, HIGH, FILL_EVEN_ODD, FILL_WINDING for the GC methods added for M3
  ******************************************************************************/
 package org.eclipse.swt;
 
@@ -815,6 +816,30 @@ public class SWT {
    * Indicates that a default should be used (value is -1).
    */
   public static final int DEFAULT = -1;
+
+  /**
+   * Interpolation (and other quality) setting: low quality (value is 1).
+   * @see org.eclipse.swt.graphics.GC#setInterpolation(int)
+   */
+  public static final int LOW = 1;
+
+  /**
+   * Interpolation (and other quality) setting: high quality (value is 2).
+   * @see org.eclipse.swt.graphics.GC#setInterpolation(int)
+   */
+  public static final int HIGH = 2;
+
+  /**
+   * Fill rule: a point is inside when a ray from it crosses the outline an odd number of times (value is 1).
+   * @see org.eclipse.swt.graphics.GC#setFillRule(int)
+   */
+  public static final int FILL_EVEN_ODD = 1;
+
+  /**
+   * Fill rule: a point is inside when the outline winds around it a non-zero number of times (value is 2).
+   * @see org.eclipse.swt.graphics.GC#setFillRule(int)
+   */
+  public static final int FILL_WINDING = 2;
 
   /**
    * Indicates that a property is off (value is 0).

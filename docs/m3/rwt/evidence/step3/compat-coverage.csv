@@ -1,0 +1,14 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+JaCoCo Coverage Report,org.eclipse.swt.internal.graphics,M3GCOperation.EndReplay,0,3,0,0,0,2,0,1,0,1
+JaCoCo Coverage Report,org.eclipse.swt.internal.graphics,M3GCOperation.SetPattern,0,43,0,0,0,12,0,2,0,2
+JaCoCo Coverage Report,org.eclipse.swt.internal.graphics,M3GCOperation.SetFillRule,0,6,0,0,0,3,0,1,0,1
+JaCoCo Coverage Report,org.eclipse.swt.internal.graphics,M3GCOperation,0,3,0,0,0,2,0,1,0,1
+JaCoCo Coverage Report,org.eclipse.swt.internal.graphics,M3GCOperation.BeginReplay,0,18,0,0,0,7,0,1,0,1
+JaCoCo Coverage Report,org.eclipse.swt.internal.widgets.canvaskit,M3GCWriterSupport.Frame,0,24,0,0,0,9,0,1,0,1
+JaCoCo Coverage Report,org.eclipse.swt.internal.widgets.canvaskit,M3GCWriterSupport,125,1380,38,148,6,181,35,84,0,23
+JaCoCo Coverage Report,org.eclipse.swt.internal.widgets.canvaskit,M3GradientMath,99,772,7,23,9,55,8,18,2,9
+JaCoCo Coverage Report,org.eclipse.swt.graphics,M3GC,38,154,17,23,4,34,16,14,1,9
+JaCoCo Coverage Report,org.eclipse.swt.graphics,M3ImageGC,109,165,35,15,16,28,31,8,6,8
+JaCoCo Coverage Report,org.eclipse.swt.graphics,Pattern,34,129,10,6,3,24,9,5,1,5
+JaCoCo Coverage Report,org.eclipse.swt.graphics,M3DisplayLists,38,366,10,12,4,51,8,13,1,9
+JaCoCo Coverage Report,org.eclipse.swt.graphics,M3DisplayLists.Entry,0,8,0,0,0,2,0,1,0,1

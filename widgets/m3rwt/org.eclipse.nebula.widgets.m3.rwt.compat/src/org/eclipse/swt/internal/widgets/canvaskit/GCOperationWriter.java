@@ -7,6 +7,7 @@
  *
  * Contributors:
  *    EclipseSource - initial API and implementation
+ *    Synexia - M3 operations: patterns, fill rule, replay of recorded images (M3GCWriterSupport)
  ******************************************************************************/
 package org.eclipse.swt.internal.widgets.canvaskit;
 
@@ -50,9 +51,12 @@ final class GCOperationWriter {
   private int lineWidth;
   private RGB foreground;
   private RGB background;
+  // Synexia: patterns, fill rule and image replay (docs/m3/rwt/RWT_GC_COMPAT.md)
+  private final M3GCWriterSupport m3;
 
   GCOperationWriter( Control control ) {
     this.control = control;
+    m3 = new M3GCWriterSupport( control );
   }
 
   void initialize() {
@@ -77,6 +81,29 @@ final class GCOperationWriter {
 
   void write( GCOperation operation ) {
     initialize();
+    GCOperation[] replaced = m3.handle( operation, operations );
+    if( replaced != null ) {
+      for( GCOperation next : replaced ) {
+        write( next );
+      }
+      return;
+    }
+    int passes = m3.beginShape( operation, operations );
+    for( int pass = 0; pass < passes; pass++ ) {
+      int start = operations.size();
+      m3.beginPass( pass, operations );
+      writeOperation( operation );
+      m3.endPass( pass, start, operation, operations );
+    }
+    for( GCOperation next : m3.endShape( operation, operations ) ) {
+      write( next );
+    }
+  }
+
+  /**
+   * The operations of RWT 4.8.0; write() adds the M3 handling around it (Synexia).
+   */
+  private void writeOperation( GCOperation operation ) {
     if( operation instanceof DrawLine ) {
       drawLine( ( DrawLine )operation );
     } else if( operation instanceof DrawPoint ) {
