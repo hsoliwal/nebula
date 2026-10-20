@@ -65,6 +65,7 @@ import org.eclipse.swt.accessibility.AccessibleAdapter;
 import org.eclipse.swt.accessibility.AccessibleControlAdapter;
 import org.eclipse.swt.accessibility.AccessibleControlEvent;
 import org.eclipse.swt.accessibility.AccessibleEvent;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.DropTargetListener;
@@ -3016,6 +3017,12 @@ public class Grid extends Canvas {
 			topIndex = viewport.getTopIndex(isTree);
 			return topIndex;
 		}
+		if (hiddenViewport && scrollValuesObsolete && frozenPlanes == 0) {
+			// a client asks while hidden: the scroll values the deltas left for the show settle now
+			// (stock's eager update after a removal, 375327, keeps the top row in range)
+			updateScrollbars();
+			scrollValuesObsolete = false;
+		}
 
 		if (!vScroll.getVisible()) {
 			topIndex = 0;
@@ -3828,7 +3835,7 @@ public class Grid extends Canvas {
 		selectedItems.clear();
 		redraw();
 		// Need to update the scrollbars see see 375327
-		updateScrollbars();
+		scrollbarsAfterDelta();
 	}
 
 	/**
@@ -5932,6 +5939,10 @@ public class Grid extends Canvas {
 	 * @param event paint event
 	 */
 	private void onPaint(final PaintEvent event) {
+		paintPasses++;
+		// brief rule 24, hidden viewports: a paint means visible; deltas made while hidden are applied
+		// here as one window patch (scroll values, window), then this one pass paints them
+		applyHiddenPatch();
 		painting = true;
 		try {
 			paintNow(event);
@@ -7469,6 +7480,7 @@ public class Grid extends Canvas {
 	}
 
 	private void updateScrollbars() {
+		nativeOps++;
 		final Point preferredSize = getTableSize();
 
 		Rectangle clientArea = getClientArea();
@@ -7968,6 +7980,10 @@ public class Grid extends Canvas {
 		addPaintListener(this::onPaint);
 
 		addListener(SWT.Resize, e -> onResize());
+		// brief rule 24, hidden viewports: hidden at once; shown, the next delta probes again and the
+		// paint the show brings applies the deltas made meanwhile
+		addListener(SWT.Hide, e -> hiddenViewport = viewport != null);
+		addListener(SWT.Show, e -> hiddenViewport = false);
 
 		if (getVerticalBar() != null) {
 			getVerticalBar().addListener(SWT.Selection, e -> onScrollBarEvent(false, e.detail));
@@ -8097,6 +8113,10 @@ public class Grid extends Canvas {
 		// have been
 		// listening to the dispose has had a chance to do whatever.
 		removeListener(SWT.Dispose, disposeListener);
+		if (deiconifyListener != null) {
+			getShell().removeListener(SWT.Deiconify, deiconifyListener);
+			deiconifyListener = null;
+		}
 		notifyListeners(SWT.Dispose, event);
 		event.type = SWT.None;
 
@@ -9120,6 +9140,17 @@ public class Grid extends Canvas {
 		bottomIndex = -1;
 		invalidateVisibleColumnCache();
 		fireViewportChanged();
+		if (viewport != null) {
+			// brief rule 24, hidden viewports: an empty client area is hidden, and a resize may show it
+			clientEmpty = getClientArea().isEmpty();
+			hiddenViewport = false;
+			if (viewportHidden()) {
+				// the paint that showing brings covers the client area: no bands now
+				markHiddenDirty();
+				resizedArea = null;
+				return;
+			}
+		}
 		if ((getStyle() & SWT.NO_REDRAW_RESIZE) != 0) {
 			resizeDamage();
 		}
@@ -9184,6 +9215,130 @@ public class Grid extends Canvas {
 		}
 	}
 
+	/*
+	 * Brief rule 24, hidden viewports (user 2026-10-20: "if the viewport becomes visible from hidden
+	 * it should paint; while it is hidden the model may make changes and the viewport is dirty and
+	 * renders on becoming visible"). In the viewport mode a Grid that is not visible (itself or an
+	 * ancestor: an unselected tab or stack page, a collapsed section), has an empty client area,
+	 * sits in a minimized shell or lies wholly outside a ScrolledComposite ancestor's client area is
+	 * hidden. A delta then still updates the model and its lanes, but issues no invalidation, no
+	 * scroll bar update and no measurement: it sets a flag and widens the dirty row range (O(1)).
+	 * Becoming visible (shown, resized, restored, scrolled into view) brings one paint, which
+	 * settles the scroll values and the window against the current model first: one window patch,
+	 * one paint pass.
+	 */
+	private boolean hiddenViewport;
+	private boolean hiddenDirty;
+	private boolean clientEmpty;
+	private Listener deiconifyListener;
+	private ScrolledComposite[] scrolledAncestors;
+	/** Deltas coalesced while hidden (for tests and benches). */
+	int hiddenDeltas;
+	/** Window patches applied by the first paint after deltas made while hidden. */
+	int hiddenPatches;
+	/** Native work the Grid issued: invalidations, scroll bar updates and measuring GCs. */
+	int nativeOps;
+	/** Paint events the Grid handled. */
+	int paintPasses;
+
+	/**
+	 * @return whether the viewport is hidden; once found hidden it stays so (a flag check, no
+	 *         native call) until it paints, is shown, resized or restored
+	 */
+	boolean viewportHidden() {
+		if (hiddenViewport) {
+			return true;
+		}
+		if (viewport == null || isDisposed()) {
+			return false;
+		}
+		if (clientEmpty || !isVisible() || minimized() || outsideScrolledAncestor()) {
+			hiddenViewport = true;
+			return true;
+		}
+		return false;
+	}
+
+	/* a minimized shell paints nothing; its restore repaints what the deltas left dirty */
+	private boolean minimized() {
+		final org.eclipse.swt.widgets.Shell shell = getShell();
+		if (!shell.getMinimized()) {
+			return false;
+		}
+		if (deiconifyListener == null) {
+			deiconifyListener = e -> {
+				shell.removeListener(SWT.Deiconify, deiconifyListener);
+				deiconifyListener = null;
+				if (!isDisposed()) {
+					hiddenViewport = false;
+					if (hiddenDirty) {
+						redraw();
+					}
+				}
+			};
+			shell.addListener(SWT.Deiconify, deiconifyListener);
+		}
+		return true;
+	}
+
+	/* wholly outside the client area of a ScrolledComposite ancestor (found once) */
+	private boolean outsideScrolledAncestor() {
+		if (scrolledAncestors == null) {
+			final List<ScrolledComposite> found = new ArrayList<>(1);
+			for (Composite p = getParent(); p != null; p = p.getParent()) {
+				if (p instanceof ScrolledComposite) {
+					found.add((ScrolledComposite) p);
+				}
+			}
+			scrolledAncestors = found.toArray(new ScrolledComposite[0]);
+		}
+		if (scrolledAncestors.length == 0) {
+			return false;
+		}
+		final Point size = getSize();
+		for (final ScrolledComposite scrolled : scrolledAncestors) {
+			final Rectangle mine = getDisplay().map(this, scrolled, new Rectangle(0, 0, size.x, size.y));
+			if (!mine.intersects(scrolled.getClientArea())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/*
+	 * a delta while hidden: the flag, O(1). The dirty window is the whole window: the paint that
+	 * showing brings covers the client area (the system invalidates a window that becomes visible),
+	 * and it measures the window against the current model, so no row range is kept
+	 */
+	private void markHiddenDirty() {
+		hiddenDeltas++;
+		hiddenDirty = true;
+	}
+
+	/* the first paint after hidden deltas: one window patch against the current model */
+	private void applyHiddenPatch() {
+		hiddenViewport = false;
+		if (!hiddenDirty) {
+			return;
+		}
+		hiddenDirty = false;
+		hiddenPatches++;
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		invalidateVisibleColumnCache();
+	}
+
+	/* stock brings the scroll bars up to date at once after a removal (375327); hidden, the paint on show does */
+	private void scrollbarsAfterDelta() {
+		if (viewportHidden()) {
+			markHiddenDirty();
+			scrollValuesObsolete = true;
+			return;
+		}
+		updateScrollbars();
+	}
+
 	private void invalidateVisibleColumnCache() {
 		startColumnIndex = -1;
 		endColumnIndex = -1;
@@ -9202,7 +9357,13 @@ public class Grid extends Canvas {
 	@Override
 	public void redraw() {
 		checkWidget();
+		if (viewportHidden()) {
+			// brief rule 24, hidden viewports: marked dirty, painted when it becomes visible
+			markHiddenDirty();
+			return;
+		}
 		if (frozenPlanes == 0) {
+			nativeOps++;
 			super.redraw();
 			return;
 		}
@@ -9220,7 +9381,12 @@ public class Grid extends Canvas {
 	@Override
 	public void redraw(final int x, final int y, final int width, final int height, final boolean all) {
 		checkWidget();
+		if (viewportHidden()) {
+			markHiddenDirty();
+			return;
+		}
 		if (frozenPlanes == 0) {
+			nativeOps++;
 			super.redraw(x, y, width, height, all);
 			return;
 		}
@@ -9234,6 +9400,7 @@ public class Grid extends Canvas {
 				if ((frozenPlanes & plane) != 0) {
 					pendingPlanes |= plane;
 				} else {
+					nativeOps++;
 					super.redraw(part.x, part.y, part.width, part.height, all);
 				}
 			}
@@ -9280,7 +9447,12 @@ public class Grid extends Canvas {
 		if (mask == 0 || isDisposed()) {
 			return;
 		}
+		if (viewportHidden()) {
+			markHiddenDirty();
+			return;
+		}
 		if (mask == (PLANE_BODY | PLANE_CHROME)) {
+			nativeOps++;
 			super.redraw();
 			return;
 		}
@@ -9288,6 +9460,7 @@ public class Grid extends Canvas {
 			if ((mask & plane) != 0) {
 				for (final Rectangle r : planeRects(plane)) {
 					if (!r.isEmpty()) {
+						nativeOps++;
 						super.redraw(r.x, r.y, r.width, r.height, false);
 					}
 				}
@@ -10150,7 +10323,7 @@ public class Grid extends Canvas {
 		bottomIndex = -1;
 		redraw();
 		// as removeItem: the scrollbars now (see 375327)
-		updateScrollbars();
+		scrollbarsAfterDelta();
 	}
 
 	/**
@@ -10423,7 +10596,7 @@ public class Grid extends Canvas {
 
 		redraw();
 		// Need to update the scrollbars see see 375327
-		updateScrollbars();
+		scrollbarsAfterDelta();
 	}
 
 	/**
@@ -12272,6 +12445,11 @@ public class Grid extends Canvas {
 	 * @return whether the change was handled ({@code false}: the caller repaints the Grid)
 	 */
 	private boolean redrawRow(final GridItem item) {
+		if (viewport != null && viewportHidden()) {
+			// brief rule 24, hidden viewports: the row paints with the window when it is shown
+			markHiddenDirty();
+			return true;
+		}
 		if (!rowDeltaPossible(item) || autoHeight) {
 			return false;
 		}
@@ -12305,7 +12483,7 @@ public class Grid extends Canvas {
 	/* a row delta can be applied alone: the viewport mode's row index, no spans, pinned planes or frozen paint */
 	private boolean rowDeltaPossible(final GridItem item) {
 		return viewport != null && !usesSparseVirtualItems() && !hasSpanning && frozenPlanes == 0
-				&& pinnedTopRows + pinnedBottomRows == 0 && !item.isDisposed() && isVisible();
+				&& pinnedTopRows + pinnedBottomRows == 0 && !item.isDisposed();
 	}
 
 	/**
@@ -12319,6 +12497,14 @@ public class Grid extends Canvas {
 	 * @return whether the change was handled ({@code false}: the caller repaints as stock)
 	 */
 	boolean rowExtentChanged(final GridItem item) {
+		if (viewport != null && viewportHidden()) {
+			// brief rule 24, hidden viewports: the extents are in the row index already; the scroll
+			// values and the window settle in the paint that showing brings
+			markHiddenDirty();
+			scrollValuesObsolete = true;
+			bottomIndex = -1;
+			return true;
+		}
 		if (!rowDeltaPossible(item)) {
 			return false;
 		}
@@ -13523,6 +13709,7 @@ public class Grid extends Canvas {
 	}
 
 	private int estimateWithResult(final ToIntFunction<GC> function) {
+		nativeOps++;
 		final GC gc = new GC(Grid.this);
 		try {
 			return function.applyAsInt(gc);

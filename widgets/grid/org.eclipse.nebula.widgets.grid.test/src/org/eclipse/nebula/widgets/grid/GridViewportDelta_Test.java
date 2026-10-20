@@ -150,9 +150,10 @@ public class GridViewportDelta_Test {
 		final GridColumn[] columns = grid.getColumns();
 		int steps = 0;
 		for (int round = 0; round < 3; round++) {
+			final int pixels = 150 * (round + 1);
 			for (int c = 0; c < columns.length; c++) {
 				final GridColumn column = columns[c];
-				steps += step("width " + c, () -> column.setWidth(column.getWidth() + (c % 2 == 0 ? 37 : -29)), rebuilds,
+				steps += step("width " + c, () -> column.setWidth(column.getWidth() + (column.index % 2 == 0 ? 37 : -29)), rebuilds,
 						replans);
 				steps += step("hide " + c, () -> column.setVisible(false), rebuilds, replans);
 				steps += step("show " + c, () -> column.setVisible(true), rebuilds, replans);
@@ -172,7 +173,7 @@ public class GridViewportDelta_Test {
 			swapped[0] = swapped[1];
 			swapped[1] = first;
 			steps += step("swap first two", () -> grid.setColumnOrder(swapped), rebuilds, replans);
-			steps += step("scroll right", () -> scroll(grid.getHorizontalBar(), 150 * (round + 1)), rebuilds, replans);
+			steps += step("scroll right", () -> scroll(grid.getHorizontalBar(), pixels), rebuilds, replans);
 		}
 		LOG.info("GridViewportDelta_Test: " + steps
 				+ " column resizes, hides, shows, fixed changes and moves; full re-plans 0, window equal to the paint");
