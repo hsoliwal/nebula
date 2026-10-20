@@ -318,13 +318,27 @@ final class GridViewport {
 		}
 	}
 
+	/* rule 24 (delta-only views): rebuilds of the row index after its first build; 0 is the gate */
+	private int fullRebuilds;
+	private boolean rowsBuilt;
+
+	/** @return O(n) rebuilds of the row index made after a change (the differential requires 0) */
+	int fullRebuilds() {
+		return fullRebuilds;
+	}
+
 	private GridRowIndex rows() {
 		if (tree != null) {
 			return tree;
 		}
 		final int count = items.size();
 		if (!rows.isValid(count)) {
+			if (rowsBuilt) {
+				// rule 24: a change path left the index stale, so it is rebuilt from every item (O(n))
+				fullRebuilds++;
+			}
 			rows.rebuild(count, position -> extentOf(items.get(position)));
+			rowsBuilt = true;
 			LOG.debug(() -> "row extent index rebuilt for " + count + " items");
 		}
 		return rows;

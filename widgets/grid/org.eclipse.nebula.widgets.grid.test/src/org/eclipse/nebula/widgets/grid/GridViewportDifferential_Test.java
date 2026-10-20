@@ -350,7 +350,14 @@ public class GridViewportDifferential_Test {
 			}
 		}
 		final String verdict = comparePixels(seed, "the end", stock, viewport, log);
-		return verdict != null ? verdict : "pixels identical" + (captures > 0 ? " (" + (captures + 1) + " captures)" : "");
+		// rule 24 (delta-only views): every change of the script was applied as a delta, no index
+		// was rebuilt from all the items (-1: a build without the counter)
+		final Object rebuilds = viewport.apply(new int[] { GridDifferentialDriver.REBUILDS, 0, 0, 0 });
+		if (!"0".equals(String.valueOf(rebuilds)) && !"-1".equals(String.valueOf(rebuilds))) {
+			throw new AssertionError("full rebuilds after changes: " + rebuilds + "\n" + log);
+		}
+		return verdict != null ? verdict
+				: "pixels identical" + (captures > 0 ? " (" + (captures + 1) + " captures)" : "") + ", full rebuilds " + rebuilds;
 	}
 
 	/* each Grid is captured with its own shell active and its focus holder focused, so window

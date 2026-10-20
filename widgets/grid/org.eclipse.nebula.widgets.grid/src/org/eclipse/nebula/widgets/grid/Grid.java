@@ -12133,6 +12133,17 @@ public class Grid extends Canvas {
 	int rowDeltaSkips;
 
 	/**
+	 * Rule 24 (delta-only views): O(n) rebuilds of a model-sized index made by a change path. The
+	 * row tree and the cell selection apply every change as a delta, so this stays 0; the
+	 * differential checks it after each script.
+	 *
+	 * @return the number of such rebuilds since the Grid was made
+	 */
+	int fullRebuildCount() {
+		return viewport == null ? 0 : viewport.fullRebuilds();
+	}
+
+	/**
 	 * One cell's selection changed (G7 and the optimization pass): in the viewport mode its row is
 	 * repainted when it is on screen, nothing when it is not, and the column headers only when a
 	 * column gained its first or lost its last selected cell (their selected look); stock repaints

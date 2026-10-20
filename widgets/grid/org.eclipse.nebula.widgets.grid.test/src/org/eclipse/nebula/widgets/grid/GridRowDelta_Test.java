@@ -80,7 +80,8 @@ public class GridRowDelta_Test {
 		assertDelta("background off screen", () -> far.setBackground(1, display.getSystemColor(SWT.COLOR_YELLOW)), 0, 1);
 		final GridItem hidden = grid.getRootItem(1).getItem(0);
 		assertDelta("text of a hidden row", () -> hidden.setText(1, "hidden changed"), 0, 1);
-		final GridItem shown = grid.getItem(4);
+		// row 6 is root 2 (root 1, rows 3 to 5, is collapsed: rows 4 and 5 are hidden)
+		final GridItem shown = grid.getItem(6);
 		assertDelta("text on screen", () -> shown.setText(1, "visible changed"), 1, 1);
 		assertDelta("background on screen", () -> shown.setBackground(2, display.getSystemColor(SWT.COLOR_CYAN)), 1, 1);
 		assertDelta("checked on screen", () -> shown.setChecked(true), 1, 1);

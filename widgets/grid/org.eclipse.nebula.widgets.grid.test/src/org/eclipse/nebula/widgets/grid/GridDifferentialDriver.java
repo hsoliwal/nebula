@@ -41,7 +41,7 @@ import org.eclipse.swt.widgets.ScrollBar;
 public class GridDifferentialDriver implements Function<int[], Object> {
 
 	/** Operation kinds. */
-	static final int STATE = -1, PIXELS = -2, MODE = -3, KINDS = 26;
+	static final int STATE = -1, PIXELS = -2, MODE = -3, REBUILDS = -4, KINDS = 26;
 
 	static final int ROOTS = 120, CHILDREN = 12, GRANDCHILDREN = 3, COLUMNS = 4;
 
@@ -207,6 +207,8 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				return pixels();
 			case MODE:
 				return mode();
+			case REBUILDS:
+				return rebuilds();
 			default:
 				return step(op[0], op[1], op[2], op[3]);
 			}
@@ -517,6 +519,17 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	/* "viewport", "original", or "stock" for a Grid build without the mode switch */
+	/* rule 24: the Grid's full rebuilds after changes; -1 for a build without the counter (stock) */
+	private Integer rebuilds() {
+		try {
+			final java.lang.reflect.Method method = Grid.class.getDeclaredMethod("fullRebuildCount");
+			method.setAccessible(true);
+			return (Integer) method.invoke(grid);
+		} catch (final ReflectiveOperationException e) {
+			return Integer.valueOf(-1);
+		}
+	}
+
 	private String mode() {
 		try {
 			final java.lang.reflect.Field field = Grid.class.getDeclaredField("viewport");
