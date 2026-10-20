@@ -22,7 +22,7 @@ while read -r dir; do find "$dir" -name '*.java'; done < "$D/src_dirs.txt" | sor
 	-implicit:none -d "$D/classes" -cp "$CP" @"$D/sources.txt" > "$D/javac.log" 2>&1
 echo "javac exit $? for $(wc -l < "$D/sources.txt") files"
 tr -d '\r' < "$D/javac.log" | awk -v OFS='\t' '
-	function flush() { if (file != "") print file, line, fam, kind, detail, sym, loc; file = "" }
+	function flush() { if (file != "") print file, line, fam, kind, detail, (sym == "" ? "-" : sym), (loc == "" ? "-" : loc); file = "" }
 	/^[^ ].*\.java:[0-9]+: error: / {
 		flush()
 		p = index($0, ": error: "); head = substr($0, 1, p - 1); detail = substr($0, p + 9)
