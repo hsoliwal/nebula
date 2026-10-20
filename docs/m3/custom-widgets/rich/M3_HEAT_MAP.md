@@ -11,7 +11,7 @@ GC4S `JHeatMap`, WebLaF `HeatMap`, fireplace `FlamegraphView`, chartx). Licence 
 
 | Member | Meaning |
 |---|---|
-| `setSize(int rows, int columns)` | the grid; values are zero until set |
+| `setGridSize(int rows, int columns)` | the grid; values are zero until set (named apart from `Control.setSize(int, int)`, which it used to hide: a layout calling setSize resized the grid) |
 | `setValues(float[] rowMajor)` / `setValue(int row, int column, float v)` / `getValue` | the data, one float lane |
 | `setRange(float min, float max)` / `setAutoRange(boolean)` | the value range mapped onto the palette |
 | `setPalette(RGB[] stops)` | palette stops; a 256-entry lookup table is derived once |

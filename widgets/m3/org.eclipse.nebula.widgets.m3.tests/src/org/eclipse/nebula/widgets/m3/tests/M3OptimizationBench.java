@@ -144,7 +144,7 @@ public class M3OptimizationBench {
 		shell.setLayout(new FillLayout());
 		M3HeatMap map = new M3HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
 		map.setCellSize(4, 4);
-		map.setSize(side, side);
+		map.setGridSize(side, side);
 		float[] values = new float[side * side];
 		Random random = new Random(3);
 		for (int i = 0; i < values.length; i++) {

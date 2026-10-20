@@ -80,24 +80,24 @@ public class M3HeatMapTest {
 
 	@Test
 	public void sizeKeepsValuesInsideTheNewGrid() {
-		map.setSize(3, 4);
+		map.setGridSize(3, 4);
 		assertEquals(3, map.getRowCount());
 		assertEquals(4, map.getColumnCount());
 		map.setValue(1, 2, 5f);
 		map.setValue(2, 3, 7f);
-		map.setSize(2, 3);
+		map.setGridSize(2, 3);
 		assertEquals(5f, map.getValue(1, 2), 0f);
 		assertEquals(0f, map.getValue(0, 0), 0f);
-		map.setSize(4, 5);
+		map.setGridSize(4, 5);
 		assertEquals(5f, map.getValue(1, 2), 0f);
 		assertEquals(0f, map.getValue(3, 4), 0f);
-		map.setSize(0, 0);
+		map.setGridSize(0, 0);
 		assertEquals(0, map.getRowCount());
 	}
 
 	@Test
 	public void autoRangeFollowsTheValuesAndSetRangeTurnsItOff() {
-		map.setSize(2, 2);
+		map.setGridSize(2, 2);
 		assertTrue(map.isAutoRange());
 		assertEquals(0f, map.getMinimum(), 0f);
 		assertEquals(1f, map.getMaximum(), 0f);
@@ -134,7 +134,8 @@ public class M3HeatMapTest {
 		lut = map.getLookupTable();
 		assertEquals(0xff0000, lut[0]);
 		assertEquals(0x0000ff, lut[255]);
-		assertEquals(0x00ff00 & 0x00ff00, lut[128] & 0x00ff00);
+		// the middle stop sits at t = 0.5, between indices 127 and 128 (t = i / 255): both are within one step of pure green
+		assertTrue(((lut[127] >> 8) & 0xff) >= 0xfe && ((lut[128] >> 8) & 0xff) >= 0xfe);
 		map.setRange(0f, 1f);
 		assertEquals(lut[255], map.colorOf(2f));
 		assertEquals(lut[0], map.colorOf(0f));
@@ -142,7 +143,7 @@ public class M3HeatMapTest {
 
 	@Test
 	public void geometryAndHitTest() {
-		map.setSize(10, 20);
+		map.setGridSize(10, 20);
 		map.setCellSize(10, 5);
 		assertEquals(new Point(10, 5), map.getCellSize());
 		assertEquals(new Rectangle(30, 10, 10, 5), map.getCellBounds(2, 3));
@@ -157,7 +158,7 @@ public class M3HeatMapTest {
 
 	@Test
 	public void scrollingMovesTheOrigin() {
-		map.setSize(100, 100);
+		map.setGridSize(100, 100);
 		map.setCellSize(10, 10);
 		map.setOrigin(50, 70);
 		assertEquals(new Point(50, 70), map.getOrigin());
@@ -183,7 +184,7 @@ public class M3HeatMapTest {
 
 	@Test
 	public void selectionEventsAndKeys() {
-		map.setSize(5, 5);
+		map.setGridSize(5, 5);
 		map.setCellSize(20, 20);
 		assertEquals(new Point(-1, -1), map.getSelection());
 		map.setSelection(2, 3);
@@ -198,7 +199,7 @@ public class M3HeatMapTest {
 		key(SWT.ARROW_UP);
 		key(SWT.HOME);
 		assertEquals(new Point(2, 1), map.getSelection());
-		assertEquals(5, selections.size());
+		assertEquals("setSelection, click and four arrow moves", 6, selections.size());
 		map.setSelection(0, 0);
 		key(SWT.ARROW_UP);
 		key(SWT.ARROW_LEFT);
@@ -216,7 +217,7 @@ public class M3HeatMapTest {
 		map.notifyListeners(SWT.MouseDown, right);
 		assertEquals(new Point(-1, -1), map.getSelection());
 		map.setSelection(4, 4);
-		map.setSize(3, 3);
+		map.setGridSize(3, 3);
 		assertEquals(new Point(-1, -1), map.getSelection());
 	}
 
@@ -236,7 +237,7 @@ public class M3HeatMapTest {
 
 	@Test
 	public void deltaRepaintsOnlyTheRowsOnScreen() {
-		map.setSize(1000, 10);
+		map.setGridSize(1000, 10);
 		map.setCellSize(10, 10);
 		map.setRange(0f, 1f);
 		flush();
@@ -262,25 +263,26 @@ public class M3HeatMapTest {
 		map.update(3, 2);
 		flush();
 		assertEquals(1, paints.size());
-		map.setSize(0, 0);
+		map.setGridSize(0, 0);
 		map.update(0, 0);
-		map.setSize(2, 2);
+		map.setGridSize(2, 2);
 		map.setAutoRange(true);
 		map.update(0, 1);
 	}
 
 	@Test
 	public void pixelsMatchACellByCellReference() {
-		map.setSize(12, 16);
+		map.setGridSize(40, 50);
 		map.setCellSize(9, 7);
 		Random random = new Random(7);
-		float[] values = new float[12 * 16];
+		float[] values = new float[40 * 50];
 		for (int i = 0; i < values.length; i++) {
 			values[i] = random.nextInt(5) * 0.25f;
 		}
 		map.setValues(values);
 		map.setRange(0f, 1f);
 		map.setOrigin(13, 9);
+		assertEquals("a grid larger than the client scrolls", new Point(13, 9), map.getOrigin());
 		flush();
 		map.update();
 		Rectangle client = map.getClientArea();
@@ -293,9 +295,9 @@ public class M3HeatMapTest {
 		gc.setBackground(map.getBackground());
 		gc.fillRectangle(0, 0, client.width, client.height);
 		int[] lut = map.getLookupTable();
-		for (int row = 0; row < 12; row++) {
-			for (int column = 0; column < 16; column++) {
-				int rgb = lut[map.indexOf(values[row * 16 + column])];
+		for (int row = 0; row < 40; row++) {
+			for (int column = 0; column < 50; column++) {
+				int rgb = lut[map.indexOf(values[row * 50 + column])];
 				org.eclipse.swt.graphics.Color color = new org.eclipse.swt.graphics.Color(display, (rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
 				gc.setBackground(color);
 				gc.fillRectangle(column * 9 - 13, row * 7 - 9, 9, 7);
@@ -314,7 +316,7 @@ public class M3HeatMapTest {
 		if (!VIEWPORT) {
 			return;
 		}
-		map.setSize(12, 16);
+		map.setGridSize(12, 16);
 		map.setCellSize(9, 7);
 		map.setRange(0f, 1f);
 		float[] values = new float[12 * 16];
@@ -326,7 +328,7 @@ public class M3HeatMapTest {
 		});
 		M3HeatMap fresh = new M3HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
 		fresh.setBounds(0, 0, 300, 200);
-		fresh.setSize(12, 16);
+		fresh.setGridSize(12, 16);
 		fresh.setCellSize(9, 7);
 		fresh.setValues(values);
 		fresh.setRange(0f, 1f);
@@ -340,7 +342,7 @@ public class M3HeatMapTest {
 
 	@Test
 	public void resizeSweepIsAViewportDelta() {
-		map.setSize(400, 400);
+		map.setGridSize(400, 400);
 		map.setCellSize(4, 4);
 		map.setOrigin(100, 100);
 		flush();
@@ -362,9 +364,9 @@ public class M3HeatMapTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setSize(-1, 2));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setSize(2, -1));
-		map.setSize(2, 2);
+		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(-1, 2));
+		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(2, -1));
+		map.setGridSize(2, 2);
 		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setValues(null));
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setValues(new float[3]));
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.setValue(2, 0, 1f));

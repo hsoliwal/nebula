@@ -150,7 +150,7 @@ public class M3HeatMap extends Canvas {
 	 * @param columns at least 0
 	 * @exception IllegalArgumentException ERROR_INVALID_ARGUMENT - if a size is negative
 	 */
-	public void setSize(int rows, int columns) {
+	public void setGridSize(int rows, int columns) {
 		checkWidget();
 		if (rows < 0 || columns < 0) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);

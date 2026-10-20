@@ -38,7 +38,7 @@ public class M3HeatMapSnippet {
 		map.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		map.setCellSize(4, 4);
 		long start = System.nanoTime();
-		map.setSize(side, side);
+		map.setGridSize(side, side);
 		float[] values = new float[side * side];
 		for (int row = 0; row < side; row++) {
 			for (int column = 0; column < side; column++) {

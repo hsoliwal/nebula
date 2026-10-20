@@ -81,7 +81,7 @@ public class M3ErrorPaneTest {
 		assertNotNull(text);
 		assertTrue(text.getText().contains("IllegalStateException"));
 		assertTrue(text.getText().contains("Caused by"));
-		assertTrue(text.getSize().y > 0);
+		assertTrue("text " + text.getBounds() + " content " + text.getParent().getBounds() + " visible " + text.getParent().getVisible() + " pane " + text.getParent().getParent().getBounds() + " error pane " + pane.getBounds(), text.getSize().y > 0);
 		pane.setDetailsVisible(false);
 		pane.setDetailsVisible(true);
 		assertSame("the details control is reused", text, pane.getDetailsText());

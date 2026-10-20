@@ -399,7 +399,7 @@ public class M3MultiSplitPane extends Canvas {
 			return;
 		}
 		Rectangle client = getClientArea();
-		place(0, client.x, client.y, client.width, client.height, !VIEWPORT);
+		place(0, client.x, client.y, client.width, client.height, !VIEWPORT, !VIEWPORT);
 		if (!VIEWPORT) {
 			fullRepaint();
 		}
@@ -409,7 +409,7 @@ public class M3MultiSplitPane extends Canvas {
 	private void layoutAll() {
 		M3Counters.fullLayouts++;
 		Rectangle client = getClientArea();
-		place(0, client.x, client.y, client.width, client.height, true);
+		place(0, client.x, client.y, client.width, client.height, true, true);
 	}
 
 	/* lays out one split's children inside its current bounds (a weight or divider delta) */
@@ -420,7 +420,7 @@ public class M3MultiSplitPane extends Canvas {
 			return;
 		}
 		M3Counters.layouts++;
-		place(split, bx[split], by[split], bw[split], bh[split], true);
+		place(split, bx[split], by[split], bw[split], bh[split], true, false);
 	}
 
 	/*
@@ -429,9 +429,9 @@ public class M3MultiSplitPane extends Canvas {
 	 * and a change of two adjacent weights with the same sum moves only those two. Unchanged subtrees are skipped. A
 	 * divider whose position changed is damaged at its old and new place.
 	 */
-	private void place(int node, int x, int y, int width, int height, boolean force) {
+	private void place(int node, int x, int y, int width, int height, boolean force, boolean all) {
 		boolean changed = x != bx[node] || y != by[node] || width != bw[node] || height != bh[node];
-		if (!changed && !force) {
+		if (!changed && !force && !all) {
 			return;
 		}
 		bx[node] = x;
@@ -439,7 +439,7 @@ public class M3MultiSplitPane extends Canvas {
 		bw[node] = width;
 		bh[node] = height;
 		if (kind[node] == LEAF) {
-			if (controls[node] != null && !controls[node].isDisposed() && changed) {
+			if (controls[node] != null && !controls[node].isDisposed() && (changed || all)) {
 				controls[node].setBounds(x, y, width, height);
 				M3Counters.moves++;
 			}
@@ -465,9 +465,9 @@ public class M3MultiSplitPane extends Canvas {
 				damageDivider(row, start - divider, node);
 			}
 			if (row) {
-				place(c, start, y, size, height, false);
+				place(c, start, y, size, height, false, all);
 			} else {
-				place(c, x, start, width, size, false);
+				place(c, x, start, width, size, false, all);
 			}
 			given = end;
 			start += size + divider;

@@ -104,6 +104,9 @@ public final class M3HiddenGate {
 	private final Control control;
 	private final Runnable reveal;
 	private boolean hidden, dirty, zero;
+	/* true while the reveal action runs: the control is becoming visible (a Show event arrives before the window is
+	 * shown, so a probe would still see it hidden) */
+	private boolean revealing;
 
 	/**
 	 * @param control the viewport control
@@ -142,6 +145,9 @@ public final class M3HiddenGate {
 	 *         been folded into the dirty window and the control renders when it becomes visible
 	 */
 	public boolean visible() {
+		if (revealing) {
+			return true;
+		}
 		if (hidden || zero || dirty) {
 			dirty = true;
 			M3Counters.hiddenDeltas++;
@@ -159,6 +165,9 @@ public final class M3HiddenGate {
 	public boolean probe() {
 		if (!visible()) {
 			return false;
+		}
+		if (revealing) {
+			return true;
 		}
 		if (PART_HIDDEN >= 0) {
 			return true;
@@ -189,7 +198,12 @@ public final class M3HiddenGate {
 		dirty = false;
 		M3Counters.reveals++;
 		if (reveal != null) {
-			reveal.run();
+			revealing = true;
+			try {
+				reveal.run();
+			} finally {
+				revealing = false;
+			}
 		}
 		Point size = control.getSize();
 		int width = size.x, height = size.y;

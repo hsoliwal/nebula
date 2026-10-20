@@ -111,7 +111,7 @@ public class M3MultiSplitPaneTest {
 		assertEquals(97, pane.getNodeBounds(a).width);
 		assertEquals(194, pane.getNodeBounds(column).width);
 		assertEquals(97, pane.getNodeBounds(d).width);
-		assertEquals(5, pane.getNodeCount());
+		assertEquals("root, A, column, B, C, D", 6, pane.getNodeCount());
 		assertEquals(M3MultiSplitPane.COLUMN, pane.getKind(column));
 		assertEquals(column, pane.getParent(b));
 		assertEquals(new Rectangle(97, 0, 6, 300), pane.getDividerBounds(column));

@@ -177,7 +177,7 @@ public class M3CollapsiblePaneTest {
 		M3Counters.reset();
 		for (int width : M3TestSupport.sweepWidths(280)) {
 			pane.setSize(width, height);
-			assertEquals(width, pane.getContent().getSize().x);
+			assertEquals("pane " + pane.getBounds() + " client " + pane.getClientArea() + " content " + pane.getContent().getBounds(), width, pane.getContent().getSize().x);
 		}
 		assertEquals("a resize never measures the content", 0, counting.measures);
 		assertEquals(M3Counters.line(), 0, M3Counters.fullRepaints + M3Counters.fullLayouts);
