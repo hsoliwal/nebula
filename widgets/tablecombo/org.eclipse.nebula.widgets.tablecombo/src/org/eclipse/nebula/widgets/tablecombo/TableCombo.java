@@ -2431,7 +2431,7 @@ public class TableCombo extends Composite {
 		if (totalColumnsToBeCreated > 0) {
 
 			for (int index = 0; index < totalColumnsToBeCreated; index++) {
-				final TableColumn column = new TableColumn(table, SWT.NONE);
+				final TableColumn column = new TableColumn(table(), SWT.NONE);
 
 				if (index < totalColumnHeaders) {
 					column.setText(columnHeaders[index]);
