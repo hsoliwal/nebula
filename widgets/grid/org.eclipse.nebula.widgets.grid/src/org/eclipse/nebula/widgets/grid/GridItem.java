@@ -1709,7 +1709,19 @@ public class GridItem extends Item {
 
 		// We must unselect any items that are becoming invisible
 		// and thus if we change the selection we have to fire a selection event
-		boolean unselected = doUnselect(expanded);
+		// the children's rows change extent in one batch: the row tree fixes its sums once (O(k + log n))
+		final GridRowTree tree = parent.rowTree();
+		if (tree != null) {
+			tree.beginBatch();
+		}
+		boolean unselected;
+		try {
+			unselected = doUnselect(expanded);
+		} finally {
+			if (tree != null) {
+				tree.endBatch();
+			}
+		}
 
 		this.getParent().topIndex = NO_ROW;
 		this.getParent().bottomIndex = NO_ROW;

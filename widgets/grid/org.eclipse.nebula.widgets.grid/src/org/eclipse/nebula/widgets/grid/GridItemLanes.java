@@ -105,6 +105,11 @@ final class GridItemLanes {
 		return (flags[id] & bit) != 0;
 	}
 
+	/** Gives every id the height {@code height} (the Grid's item height for all rows), O(ids). */
+	void fillHeights(final int height) {
+		Arrays.fill(heights, 0, next, height);
+	}
+
 	void setFlag(final int id, final int bit, final boolean on) {
 		flags[id] = (byte) (on ? flags[id] | bit : flags[id] & ~bit);
 	}

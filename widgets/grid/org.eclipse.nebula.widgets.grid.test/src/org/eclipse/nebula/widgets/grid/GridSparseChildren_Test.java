@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
@@ -22,8 +21,6 @@ import static org.junit.Assume.assumeTrue;
 import java.util.Random;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
@@ -66,12 +63,12 @@ public class GridSparseChildren_Test {
 	@Test
 	public void sparseAndEagerChildrenAnswerAndPaintAlike() {
 		for (int seed = 0; seed < 4; seed++) {
-			final Side sparse = new Side(true, 5);
-			final Side eager = new Side(false, 345);
-			shell.open();
-			// neither Grid has the focus, which would draw a focus rectangle in one of them
-			focusSink.setFocus();
-			flush();
+			// one shell per Grid, both at the same place: a Grid reads the real cursor position (hover
+			// state after a scroll), so both must see it at the same relative position
+			final Shell sparseShell = sideShell();
+			final Shell eagerShell = sideShell();
+			final Side sparse = new Side(sparseShell, true);
+			final Side eager = new Side(eagerShell, false);
 			final Random random = new Random(0x5BA75EL + seed);
 			final StringBuilder log = new StringBuilder("seed " + seed + "\n");
 			for (int step = 0; step < 120; step++) {
@@ -84,12 +81,30 @@ public class GridSparseChildren_Test {
 				assertEquals("step " + step + "\n" + log, expectedState, actual + " | " + sparse.state());
 				log.append("   = ").append(expectedState, 0, Math.min(200, expectedState.length())).append('\n');
 				if (step % 10 == 9) {
-					assertArrayEquals("pixels after step " + step + "\n" + log, eager.pixels(), sparse.pixels());
+					final ImageData expectedPixels = eager.pixels();
+					final ImageData actualPixels = sparse.pixels();
+					if (!java.util.Arrays.equals(expectedPixels.data, actualPixels.data)) {
+						GridViewportDifferential_Test.save(expectedPixels, "sparse-eager-seed" + seed);
+						GridViewportDifferential_Test.save(actualPixels, "sparse-sparse-seed" + seed);
+						throw new AssertionError("pixels after step " + step + ": "
+								+ GridViewportDifferential_Test.difference(expectedPixels, actualPixels) + "\n" + log);
+					}
 				}
 			}
-			sparse.grid.dispose();
-			eager.grid.dispose();
+			sparseShell.dispose();
+			eagerShell.dispose();
 		}
+	}
+
+	/* a shell for one side, with a button that keeps the focus away from the Grid */
+	private Shell sideShell() {
+		final Shell side = new Shell(display);
+		side.setBounds(10, 10, 360, 430);
+		final Button sink = new Button(side, SWT.PUSH);
+		sink.setBounds(340, 400, 10, 10);
+		side.open();
+		sink.setFocus();
+		return side;
 	}
 
 	@Test
@@ -155,10 +170,10 @@ public class GridSparseChildren_Test {
 		final boolean sparse;
 		final StringBuilder events = new StringBuilder();
 
-		Side(final boolean sparse, final int x) {
+		Side(final Shell parent, final boolean sparse) {
 			this.sparse = sparse;
-			grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI);
-			grid.setBounds(x, 5, 330, 380);
+			grid = new Grid(parent, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI);
+			grid.setBounds(5, 5, 330, 380);
 			grid.setHeaderVisible(true);
 			final GridColumn column = new GridColumn(grid, SWT.NONE);
 			column.setTree(true);
@@ -247,14 +262,9 @@ public class GridSparseChildren_Test {
 			return result;
 		}
 
-		byte[] pixels() {
-			final Image image = new Image(display, grid.getSize().x, grid.getSize().y);
-			final GC gc = new GC(image);
-			grid.print(gc);
-			gc.dispose();
-			final ImageData data = image.getImageData();
-			image.dispose();
-			return data.data;
+		/* the Grid's own paint into an image (deterministic, unlike Control.print) */
+		ImageData pixels() {
+			return GridScrollPaint_Test.print(grid);
 		}
 	}
 }

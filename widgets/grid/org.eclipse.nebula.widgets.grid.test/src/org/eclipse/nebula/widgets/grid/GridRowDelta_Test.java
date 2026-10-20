@@ -46,7 +46,7 @@ public class GridRowDelta_Test {
 		shell.setBounds(10, 10, 460, 420);
 		// the focus stays here: a focused Grid paints a focus rectangle that is not part of print()
 		new Text(shell, SWT.SINGLE).setBounds(5, 390, 60, 22);
-		grid = new Grid(shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+		grid = new Grid(shell, SWT.MULTI | SWT.CHECK | SWT.V_SCROLL | SWT.H_SCROLL);
 		grid.setBounds(5, 5, 440, 370);
 		grid.setHeaderVisible(true);
 		for (int c = 0; c < 3; c++) {
@@ -82,7 +82,8 @@ public class GridRowDelta_Test {
 		assertDelta("text of a hidden row", () -> hidden.setText(1, "hidden changed"), 0, 1);
 		final GridItem shown = grid.getItem(4);
 		assertDelta("text on screen", () -> shown.setText(1, "visible changed"), 1, 1);
-		assertDelta("checked on screen", () -> shown.setBackground(2, display.getSystemColor(SWT.COLOR_CYAN)), 1, 1);
+		assertDelta("background on screen", () -> shown.setBackground(2, display.getSystemColor(SWT.COLOR_CYAN)), 1, 1);
+		assertDelta("checked on screen", () -> shown.setChecked(true), 1, 1);
 		// the changes are there when their rows come into view
 		grid.getRootItem(1).setExpanded(true);
 		assertScreenIsPaint("after expanding the hidden row's parent");
@@ -92,20 +93,19 @@ public class GridRowDelta_Test {
 	}
 
 	@Test
-	public void heightChangesOffScreenLeaveTheWindowAndTheScrollBarAlone() {
-		final ScrollBar bar = grid.getVerticalBar();
-		final int selection = bar.getSelection();
-		final int maximum = bar.getMaximum();
-		final int thumb = bar.getThumb();
+	public void heightChangesOffScreenRepaintNothingAndKeepTheScrollBarsCurrent() {
 		final int bottom = grid.getBottomIndex();
 		final GridItem far = grid.getItem(grid.getItemCount() - 10);
+		// the first height that differs switches the Grid to variable heights: the scroll bars change
+		// shape (stock repaints for that), so the deltas start with the second
+		grid.getItem(grid.getItemCount() - 1).setHeight(20);
+		flush();
 		assertDelta("height off screen", () -> far.setHeight(40), 0, 1);
-		assertEquals(selection, bar.getSelection());
-		assertEquals(maximum, bar.getMaximum());
-		assertEquals(thumb, bar.getThumb());
+		assertScrollBarsCurrent("height off screen");
 		assertEquals(bottom, grid.getBottomIndex());
 		final GridItem hidden = grid.getRootItem(1).getItem(1);
 		assertDelta("height of a hidden row", () -> hidden.setHeight(30), 0, 1);
+		assertScrollBarsCurrent("height of a hidden row");
 		grid.showItem(far);
 		assertScreenIsPaint("after showing the taller far row");
 		assertEquals(40, far.getHeight());
@@ -113,6 +113,7 @@ public class GridRowDelta_Test {
 		flush();
 		final GridItem shown = grid.getItem(3);
 		assertDelta("height on screen", () -> shown.setHeight(45), 1, 1);
+		assertScrollBarsCurrent("height on screen");
 		assertTrue("the bottom row moved up", grid.getBottomIndex() < bottom);
 		grid.getRootItem(1).setExpanded(true);
 		assertScreenIsPaint("after expanding the taller hidden row's parent");
@@ -126,11 +127,29 @@ public class GridRowDelta_Test {
 		change.run();
 		grid.update();
 		flush();
-		assertEquals(step + ": body paints", GridViewport.ENABLED ? paintsIfDelta : stockPaints, grid.bodyPaintCount - before);
+		assertEquals(step + ": body paints (window " + grid.getTopIndex() + ".." + grid.getBottomIndex() + ", row deltas painted "
+				+ grid.rowDeltaPaints + " skipped " + grid.rowDeltaSkips + ")", GridViewport.ENABLED ? paintsIfDelta : stockPaints,
+				grid.bodyPaintCount - before);
 		if (GridViewport.ENABLED) {
 			assertEquals(step + ": handled as a row delta", deltas + 1, grid.rowDeltaPaints + grid.rowDeltaSkips);
 		}
 		assertScreenIsPaint(step);
+	}
+
+	/* the scroll bars equal what a full recomputation gives (a delta must not leave them stale) */
+	private void assertScrollBarsCurrent(final String step) {
+		final String now = bars();
+		grid.setScrollValuesObsolete();
+		grid.update();
+		flush();
+		assertEquals(step + ": scroll bars", bars(), now);
+	}
+
+	private String bars() {
+		final ScrollBar v = grid.getVerticalBar();
+		final ScrollBar h = grid.getHorizontalBar();
+		return v.isVisible() + " " + v.getSelection() + "/" + v.getMaximum() + "/" + v.getThumb() + " | " + h.isVisible()
+				+ " " + h.getSelection() + "/" + h.getMaximum() + "/" + h.getThumb() + " | top " + grid.getTopIndex();
 	}
 
 	private void assertScreenIsPaint(final String step) {

@@ -2378,13 +2378,16 @@ public class Grid extends Canvas {
 		if (GridViewport.UPSTREAM_FIXES) {
 			// every row gets the same height at once; stock's setHeight per item asked for the
 			// visible range with half the rows updated and kept that bottom index (D36), O(n) each
-			for (final GridItem item : materializedItems()) {
-				item.initializeHeight(height);
-				viewport.rowChanged(item);
-			}
 			if (rowTree() != null) {
-				// the rows nobody has read have the Grid's item height too
-				rowTree().reweighUnread(height + 1);
+				// the lanes: every item's height in one fill, every visible row's extent (rows nobody
+				// has read included) in one pass over the row tree; no call per item (O(n), tight)
+				itemLanes.fillHeights(height);
+				rowTree().setVisibleExtent(height + 1);
+			} else {
+				for (final GridItem item : materializedItems()) {
+					item.initializeHeight(height);
+					viewport.rowChanged(item);
+				}
 			}
 			// the top row stays, as stock keeps it; the bottom row follows from the new heights
 			bottomIndex = -1;
@@ -7902,6 +7905,17 @@ public class Grid extends Canvas {
 	void updateColumnSelection() {
 		// Update the list of which columns have all their cells selected
 		selectedColumns.clear();
+		if (selectedCells instanceof GridCellSelectionList) {
+			// the list counts its cells per column: O(columns), not a pass over the selection (an
+			// O(n) pass per ctrl+click made one toggle in 200,000 selected cells cost milliseconds)
+			final GridCellSelectionList cells = (GridCellSelectionList) selectedCells;
+			for (int x = 0; x < columns.size(); x++) {
+				if (cells.columnHasCells(x)) {
+					selectedColumns.add(columns.get(x));
+				}
+			}
+			return;
+		}
 
 		for (final Point cell : selectedCells) {
 			final GridColumn column = getColumn(cell.x);
@@ -12058,9 +12072,18 @@ public class Grid extends Canvas {
 		if (row < 0) {
 			return false;
 		}
-		// the window: cached by the last paint or scroll, else measured now (the row index, O(log n))
+		// the window: cached by the last paint or scroll, else measured now (the row index, O(log n)) and
+		// left uncached again, as stock leaves it for the next paint
+		final boolean topCached = topIndex >= 0;
+		final boolean bottomCached = bottomIndex >= 0;
 		final int top = getTopIndex();
 		final int bottom = getBottomIndex();
+		if (!topCached) {
+			topIndex = -1;
+		}
+		if (!bottomCached) {
+			bottomIndex = -1;
+		}
 		if (row < top || row > bottom || !item.isVisible()) {
 			rowDeltaSkips++;
 			return true;
@@ -12096,6 +12119,9 @@ public class Grid extends Canvas {
 		if (row < 0) {
 			return false;
 		}
+		// what stock had cached stays cached; what it had not is measured again later, as stock does
+		final boolean topCached = topIndex >= 0;
+		final boolean bottomCached = bottomIndex >= 0;
 		final int top = getTopIndex();
 		final int bottom = getBottomIndex();
 		final boolean onScreen = row >= top && row <= bottom && item.isVisible();
@@ -12104,10 +12130,14 @@ public class Grid extends Canvas {
 		final int selectionBefore = vScroll.getSelection();
 		updateScrollbars();
 		scrollValuesObsolete = false;
-		topIndex = -1;
-		bottomIndex = -1;
+		if (!topCached) {
+			topIndex = -1;
+		}
+		if (!bottomCached || onScreen) {
+			bottomIndex = -1;
+		}
 		if (vScroll.getVisible() != vBefore || hScroll.getVisible() != hBefore || !getClientArea().equals(before)
-				|| vScroll.getSelection() != selectionBefore || getTopIndex() != top) {
+				|| vScroll.getSelection() != selectionBefore) {
 			redraw();
 			return true;
 		}
