@@ -13,7 +13,7 @@ M2=C:/Users/hsoliwal/.m2/repository
 AGENT=$M2/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar
 JFACE="$D/org.eclipse.jface-3.40.0.jar;$D/org.eclipse.core.commands-3.13.0.jar;$D/org.eclipse.equinox.common-3.21.0.jar;$D/org.eclipse.ui.workbench-3.140.0.jar;$D/org.eclipse.ui-3.209.100.jar;$D/org.eclipse.core.runtime-3.35.0.jar;$D/org.eclipse.osgi-3.24.300.jar;$D/org.eclipse.equinox.registry-3.12.600.jar;$D/org.eclipse.core.jobs-3.15.900.jar"
 BUDGET=$1; LOG=$2; MODE=$3; EXEC=$4; shift 4
-CP="$OUT/test-classes;$OUT/snippet-classes;$OUT/example-classes;$OUT/m3-classes;$SWT;$JFACE;$M2/junit/junit/4.13.2/junit-4.13.2.jar;$M2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
+CP="$OUT/test-classes;$OUT/snippet-classes;$OUT/example-classes;$OUT/m3jface-classes;$OUT/m3-classes;$SWT;$JFACE;$M2/junit/junit/4.13.2/junit-4.13.2.jar;$M2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
 OPTS=(-Xmx1g "-Dswt.widget.mode.M3StackLayout=$MODE")
 [ "$EXEC" != - ] && OPTS+=("-javaagent:$AGENT=destfile=$EXEC,append=true,includes=org.eclipse.nebula.widgets.m3.*")
 while [ "${1:-}" != "${1#-D}" ]; do OPTS+=("$1"); shift; done

@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula M3 Widgets JFace Bindings
+Bundle-SymbolicName: org.eclipse.nebula.widgets.m3.jface
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: org.eclipse.jface,
+ org.eclipse.core.runtime,
+ org.eclipse.nebula.widgets.m3;bundle-version="1.0.0"
+Export-Package: org.eclipse.nebula.widgets.m3.jface
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-Vendor: Eclipse Nebula
+Automatic-Module-Name: org.eclipse.nebula.widgets.m3.jface
