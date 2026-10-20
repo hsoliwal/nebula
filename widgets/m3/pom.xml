@@ -16,6 +16,7 @@
 
 	<modules>
 		<module>org.eclipse.nebula.widgets.m3</module>
+		<module>org.eclipse.nebula.widgets.m3.jface</module>
 		<module>org.eclipse.nebula.widgets.m3.example</module>
 		<module>org.eclipse.nebula.widgets.m3.snippets</module>
 		<module>org.eclipse.nebula.widgets.m3.tests</module>
