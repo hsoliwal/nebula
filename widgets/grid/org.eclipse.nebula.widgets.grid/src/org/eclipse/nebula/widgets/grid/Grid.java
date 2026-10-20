@@ -9173,7 +9173,8 @@ public class Grid extends Canvas {
 	 * paint would), and when the rows and columns on screen keep their places the system's
 	 * invalidation of the exposed strips (NO_REDRAW_RESIZE) is completed by the bands at the old and
 	 * new right and bottom edges: the filler header, cells and footer reach the right edge, the
-	 * footer sits on the bottom one. A scroll value that moved, pinned rows, a focus outline, column
+	 * footer sits on the bottom one. A scroll value that moved, pinned rows, a focus outline, a fill
+	 * column (its width follows the client width), column
 	 * scrolling or right-to-left mirroring repaint the whole client area, as stock.
 	 */
 	private void resizeDamage() {
@@ -9195,7 +9196,8 @@ public class Grid extends Canvas {
 			if (before == null || before.isEmpty() || now.isEmpty() || frozenPlanes != 0
 					|| vScroll.getSelection() != vBefore || hScroll.getSelection() != hBefore
 					|| pinnedTopRows + pinnedBottomRows > 0 || columnScrolling
-					|| (getStyle() & SWT.RIGHT_TO_LEFT) != 0 || isFocusControl() && focusItem != null) {
+					|| (getStyle() & SWT.RIGHT_TO_LEFT) != 0 || isFocusControl() && focusItem != null
+					|| now.width != before.width && getExtraFill(new Point(1 << 20, 0)) > 0) {
 				redraw();
 				resizeFullRepaints++;
 				return;

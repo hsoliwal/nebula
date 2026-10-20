@@ -179,6 +179,34 @@ public class GridViewportDelta_Test {
 				+ " column resizes, hides, shows, fixed changes and moves; full re-plans 0, window equal to the paint");
 	}
 
+	/* a fill column follows the client width: a width change repaints the whole client area */
+	@Test
+	public void resizeSweepWithAFillColumnKeepsTheWindowExact() {
+		for (final GridColumn column : grid.getColumns()) {
+			column.dispose();
+		}
+		for (int c = 0; c < 3; c++) {
+			final GridColumn column = new GridColumn(grid, c == 1 ? SWT.FILL : SWT.NONE);
+			column.setText("c" + c);
+			column.setFooterText("f" + c);
+			column.setWidth(120);
+		}
+		flush();
+		final int rebuilds = grid.fullRebuildCount();
+		final int replans = grid.fullReplanCount();
+		int width = 600;
+		int height = 400;
+		for (int step = 0; step < 20; step++) {
+			width = step % 2 == 0 ? width + 53 : width - 31;
+			height = step % 3 == 0 ? height + 29 : height - 11;
+			grid.setSize(width, height);
+			flush();
+			assertScreenIsPaint("fill column, resize step " + step + " to " + width + "x" + height);
+			assertEquals("row index rebuilds after resize step " + step, rebuilds, grid.fullRebuildCount());
+			assertEquals("column re-plans after resize step " + step, replans, grid.fullReplanCount());
+		}
+	}
+
 	private int step(final String what, final Runnable change, final int rebuilds, final int replans) {
 		change.run();
 		flush();
