@@ -26,3 +26,4 @@ Snippets live in `widgets/m3/org.eclipse.nebula.widgets.m3.snippets/src/org/ecli
 | M3Hyperlink | SwingX `JXHyperlink` | `M3HyperlinkSnippet` | three stand-alone link actions with visited state | `S:/m3-scratch/custom-widgets/screenshots/M3HyperlinkSnippet.png` |
 | M3MonthView | SwingX `JXMonthView` | `M3MonthViewSnippet` | three months, interval selection, flagged 15th, unselectable weekends | `S:/m3-scratch/custom-widgets/screenshots/M3MonthViewSnippet.png` |
 | M3DatePicker | SwingX `JXDatePicker` | `M3DatePickerSnippet` | start and end pickers; the end drop-down flags the start date | `S:/m3-scratch/custom-widgets/screenshots/M3DatePickerSnippet.png` |
+| M3ImageView | SwingX `JXImageView`, `JXImagePanel` | `M3ImageViewSnippet` | 4000 x 3000 generated image: drag to pan, Ctrl+wheel to zoom around the pointer | `S:/m3-scratch/custom-widgets/screenshots/M3ImageViewSnippet.png` |

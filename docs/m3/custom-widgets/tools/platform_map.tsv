@@ -18,7 +18,7 @@ SWINGX-JXGraph	swingx	JXGraph	CHART	org.eclipse.nebula.visualization.xygraph.fig
 SWINGX-JXHeader	swingx	JXHeader	HEADER_PANEL	org.eclipse.nebula.widgets.opal.header.Header	NEBULA	-	Swing: javax.swing.M3Header	Swing track
 SWINGX-JXHyperlink	swingx	JXHyperlink	HYPERLINK	org.eclipse.nebula.widgets.m3.M3Hyperlink;org.eclipse.swt.widgets.Link	M3	-	SWT: M3Hyperlink (stand-alone drawn link with visited state; Link stays for links inside text); Swing: javax.swing.M3Hyperlink	custom-widgets + Swing track
 SWINGX-JXImagePanel	swingx	JXImagePanel	IMAGE_VIEW	org.eclipse.nebula.widgets.picture.PictureControl	NEBULA	-	Swing: javax.swing.M3ImageView covers it	Swing track
-SWINGX-JXImageView	swingx	JXImageView	IMAGE_VIEW	org.eclipse.nebula.widgets.m3.M3ImageView	M3	-	SWT: M3ImageView (tile pyramid, zoom anchor, LRU tiles); Swing twin	custom-widgets + Swing track
+SWINGX-JXImageView	swingx	JXImageView	IMAGE_VIEW	org.eclipse.nebula.widgets.m3.M3ImageView	M3	-	SWT: M3ImageView (scale + integer screen offset; one clipped drawImage per paint; pan by Control.scroll); Swing twin	custom-widgets + Swing track
 SWINGX-JXLabel	swingx	JXLabel	-	org.eclipse.swt.custom.CLabel	STOCK	javax.swing.JLabel	text rotation and painters through the theme seam	all-widgets
 SWINGX-JXList	swingx	JXList	VIRTUAL_LIST	org.eclipse.swt.widgets.List	STOCK	javax.swing.JList	sort and filter: SWT sort-filter track (permutation index plus pass bitmask); Swing: RowSorter-like M3 lane	sort-filter
 SWINGX-JXLoginPane	swingx	JXLoginPane	LOGIN_DIALOG	org.eclipse.nebula.widgets.opal.logindialog.LoginDialog	NEBULA	-	Swing: javax.swing.M3LoginPane	Swing track
