@@ -349,16 +349,17 @@ public class M3BusyLabel extends Canvas {
 		}
 	}
 
-	/* point centres on a ring inside the icon square; computed when the point count or icon size changes */
+	/* top-left corners of the points on a ring, every point inside the icon square (0 .. iconSize - dot), so an icon
+	 * repaint covers every pixel a point can touch; computed when the point count or icon size changes */
 	private void geometry() {
 		dot = Math.max(2, iconSize / 5);
-		double radius = (iconSize - dot) / 2.0, centre = iconSize / 2.0;
+		double radius = (iconSize - dot) / 2.0;
 		xs = new int[points];
 		ys = new int[points];
 		for (int i = 0; i < points; i++) {
 			double angle = 2 * Math.PI * i / points - Math.PI / 2;
-			xs[i] = (int) Math.round(centre + radius * Math.cos(angle));
-			ys[i] = (int) Math.round(centre + radius * Math.sin(angle));
+			xs[i] = (int) Math.round(radius + radius * Math.cos(angle));
+			ys[i] = (int) Math.round(radius + radius * Math.sin(angle));
 		}
 	}
 
@@ -398,7 +399,7 @@ public class M3BusyLabel extends Canvas {
 			for (int i = 0; i < points; i++) {
 				int distance = (frame - i + points) % points;
 				gc.setBackground(busy && distance < trail ? colors[distance] : colors[trail]);
-				gc.fillOval(icon.x + xs[i] - dot / 2, icon.y + ys[i] - dot / 2, dot, dot);
+				gc.fillOval(icon.x + xs[i], icon.y + ys[i], dot, dot);
 			}
 		}
 		Rectangle strip = getTextBounds();

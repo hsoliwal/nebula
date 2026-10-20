@@ -35,6 +35,9 @@ import org.eclipse.swt.widgets.Layout;
  * and slides the content (a move, never a resize): the content is measured once when the animation starts and is not
  * laid out again until the pane's own size across the axis changes. A resize of the pane moves or resizes the content
  * only; nothing is measured on a resize.
+ * Collapsing hides the content with setVisible(false), so the viewports inside it see a hidden ancestor: on SWT with
+ * part visibility (rule 25) they receive SWT.PartHidden and SWT.PartVisible; otherwise their gates find it with one
+ * probe. They take model deltas without native work and paint once on expand.
  * </p>
  * <p>
  * Styles: <code>VERTICAL</code> (default, collapses the height) or <code>HORIZONTAL</code> (collapses the width).

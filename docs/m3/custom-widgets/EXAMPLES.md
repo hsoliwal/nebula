@@ -19,3 +19,4 @@ Snippets live in `widgets/m3/org.eclipse.nebula.widgets.m3.snippets/src/org/ecli
 | M3BusyLabel | SwingX `JXBusyLabel` | `M3BusyLabelSnippet` | three rings (16/24/32 px, 8/12/16 points), start/stop | `S:/m3-scratch/custom-widgets/screenshots/M3BusyLabelSnippet.png` |
 | M3StatusBar | SwingX `JXStatusBar` | `M3StatusBarSnippet` | fixed, preferred (timer-updated row counter), weighted and progress-bar slots, resize grip | `S:/m3-scratch/custom-widgets/screenshots/M3StatusBarSnippet.png` |
 | M3CollapsiblePane | SwingX `JXCollapsiblePane` | `M3CollapsiblePaneSnippet` | a vertical options pane and a horizontal side panel, animated toggles | `S:/m3-scratch/custom-widgets/screenshots/M3CollapsiblePaneSnippet.png` |
+| M3ErrorPane | SwingX `JXErrorPane` | `M3ErrorPaneSnippet` | embedded pane with an expanded stack trace, and the modal dialog form | `S:/m3-scratch/custom-widgets/screenshots/M3ErrorPaneSnippet.png` |

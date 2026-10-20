@@ -24,6 +24,7 @@ import java.util.Set;
 import org.eclipse.nebula.widgets.m3.M3CollapsiblePane;
 import org.eclipse.nebula.widgets.m3.M3StatusBar;
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -233,7 +234,7 @@ public class M3CollapsiblePaneTest {
 		}
 		M3TestSupport.flush(display);
 		assertEquals("no paint inside a collapsed pane", 0, paints.size());
-		assertEquals("one probe found the hidden ancestor: " + M3Counters.line(), 1, M3Counters.probes);
+		assertEquals("hidden ancestor found by one probe, or by PartHidden: " + M3Counters.line(), M3HiddenGate.hasPartVisibility() ? 0 : 1, M3Counters.probes);
 		assertEquals(M3Counters.line(), 0, M3Counters.measures);
 		pane.setCollapsed(false);
 		M3TestSupport.flush(display);

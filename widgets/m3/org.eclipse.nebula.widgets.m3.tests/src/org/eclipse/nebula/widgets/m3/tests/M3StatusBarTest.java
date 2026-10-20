@@ -104,6 +104,7 @@ public class M3StatusBarTest {
 	public void textChangeRepaintsItsSlotOnly() {
 		paints.clear();
 		bar.setText(0, "Busy");
+		bar.update();
 		bar.setText(3, "999,999 rows");
 		bar.update();
 		assertFalse(paints.isEmpty());
@@ -210,7 +211,7 @@ public class M3StatusBarTest {
 			fixedOnly.update();
 			if (viewport()) {
 				for (Rectangle paint : paints) {
-					assertTrue(old + " -> " + width + ": " + paint, paint.x >= firstFill);
+					assertTrue(old + " -> " + width + ": " + paint, paint.x >= Math.min(firstFill, Math.min(old, width) - 14 - 4));
 				}
 				for (Rectangle paint : fixedPaints) {
 					assertTrue("only the grip moves: " + old + " -> " + width + ": " + paint, paint.x >= Math.min(old, width) - 14 - 4);

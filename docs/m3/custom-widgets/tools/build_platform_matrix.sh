@@ -55,7 +55,7 @@ awk -F'\t' -v OFS='\t' '
     if (s ~ /^org\.eclipse\.nebula\.widgets\.opal\./) { sub(/^org\.eclipse\.nebula\.widgets\.opal\./, "", s); sub(/\..*/, "", s); return "opal/" s }
     if (s ~ /^org\.eclipse\.nebula\./) { sub(/^org\.eclipse\.nebula\.(widgets\.)?/, "", s); sub(/\..*/, "", s); return s }
     return (s in nebbundle) ? nebbundle[s] : "" }
-  function emit(id, fam, w, concept, kind, cls, swing, plan, owner, evidence,   rr, rs, rz, s, b, rd, fr) {
+  function emit(id, fam, w, concept, kind, cls, swing, plan, owner, evidence,   rr, rs, rz, s, b, rd, fr, hd) {
     swtcells(kind, cls, plan)
     s = simple(cls); rr = "-"; rs = "-"; rz = "-"
     if (id in rroute) { rr = rroute[id]; rs = rstatus[id]; rz = rresize[id]; evidence = evidence "; RWT: " revid[id]
@@ -71,13 +71,14 @@ awk -F'\t' -v OFS='\t' '
     else if (kind == "NEBULA") rd = "AUDIT (Nebula widget; full-rebuild census " fr ")"
     else if (kind == "STOCK") rd = "SWT viewport track"
     else rd = "-"
-    print id, fam, w, concept, sw, sw, sw, swing, i3, rw, (cls == "" ? "-" : cls), "-", rr, plan, owner, evidence, rs, rz, rd, fr }
+    hd = (s in hgate) ? hgate[s] : (kind == "M3") ? "PENDING" : (kind == "NEBULA") ? "AUDIT" : (kind == "STOCK") ? "SWT viewport track" : "-"
+    print id, fam, w, concept, sw, sw, sw, swing, i3, rw, (cls == "" ? "-" : cls), "-", rr, plan, owner, evidence, rs, rz, rd, fr, hd }
   FILENAME ~ /\.rwt$/ { rwt[$1] = 1; next }
   FILENAME ~ /\.i31$/ { i31[$1] = 1; next }
   FILENAME ~ /\.m3done$/ { m3done[$1] = 1; next }
   FILENAME ~ /rwt_rows/ { if (FNR > 1 && $1 != "") { rroute[$1] = $2; rstatus[$1] = $3; rclass[$1] = $4; rresize[$1] = $5; revid[$1] = $6 } next }
   FILENAME ~ /\.census$/ { census[$1] = $2; next }
-  FILENAME ~ /DELTA_GATE/ { if (FNR > 1) { g = $2; sub(/.*\./, "", g); gate[g] = $NF } next }
+  FILENAME ~ /DELTA_GATE/ { if (FNR > 1) { g = $2; sub(/.*\./, "", g); gate[g] = $(NF - 1); hgate[g] = $NF } next }
   FILENAME ~ /m3_names/ { if (FNR > 1) m3n[$1] = $2; next }
   FILENAME ~ /platform_map/ { if (FNR == 1) next; seen[$1] = 1; if ($2 == "nebula") nebkey[$5] = 1
     split($5, parts, ";"); bas = ($2 == "swingx") ? "re-derived from the SwingX API shape, LGPL pattern only" : "Swing track"
@@ -95,7 +96,7 @@ awk -F'\t' -v OFS='\t' '
     sg = ($10 !~ /^-/) ? "AVAILABLE " $10 " (JDK)" : (($14 + 0) > 0 ? "ADAPTER_NEEDED javax.swing." nm " over the shared model (" basis ")" : "MISSING")
     crow[c] = "CONCEPT-" c SUBSEP "concept" SUBSEP $4 SUBSEP c SUBSEP kind SUBSEP cls SUBSEP sg SUBSEP $16 SUBSEP $19 SUBSEP "WIDGET_MATRIX rank " $1; corder[++cn] = c; next }
   END {
-    print "widget_id", "family", "widget", "concept_id", "swt_win32", "swt_gtk", "swt_cocoa", "swing_m3jdk", "initiative31", "rwt_rap", "swt_class", "swing_class", "rwt_route", "gap_plan", "owner", "evidence", "rwt_status", "rwt_resize_delta", "resize_delta", "full_rebuild_sites"
+    print "widget_id", "family", "widget", "concept_id", "swt_win32", "swt_gtk", "swt_cocoa", "swing_m3jdk", "initiative31", "rwt_rap", "swt_class", "swing_class", "rwt_route", "gap_plan", "owner", "evidence", "rwt_status", "rwt_resize_delta", "resize_delta", "full_rebuild_sites", "hidden_gate"
     for (i = 1; i <= rows; i++) { split(emitargs[i], a, SUBSEP); emit(a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]) }
     for (i = 1; i <= cn; i++) { split(crow[corder[i]], a, SUBSEP); emit(a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]) } }' \
   "$OUT/.rwt" "$OUT/.i31" "$OUT/.m3done" "$HERE/rwt_rows.tsv" "$OUT/.census" "$HERE/../DELTA_GATE.tsv" "$HERE/m3_names.tsv" "$HERE/../WIDGET_MATRIX.tsv" "$HERE/platform_map.tsv" "$OUT/.nebula.tsv" \

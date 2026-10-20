@@ -14,6 +14,10 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.m3.internal;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
@@ -32,11 +36,70 @@ import org.eclipse.swt.widgets.Scrollable;
  * once (a paint that already covers the client area is that one paint).
  * </p>
  * <p>
+ * On SWT with part visibility (rule 25: SWT.PartVisible / SWT.PartHidden, which cover ancestors, tabs, stack pages,
+ * collapsed sections, zero size and minimized shells) the gate listens to those events and never probes.
+ * </p>
+ * <p>
  * Create the gate in the widget constructor before the widget adds its own Paint listener, so the patch is applied
  * before the paint.
  * </p>
  */
 public final class M3HiddenGate {
+
+	/*
+	 * Part visibility (brief rule 25): SWT.PartVisible / SWT.PartHidden, Control.isPartVisible() and
+	 * Control.setPartHidden(boolean), present in the M3 SWT fork (docs/m3/visibility/PART_VISIBLE.md) and absent in
+	 * stock SWT 3.135.0. Bound once by reflection so the bundle runs on both; -1 and null when absent.
+	 */
+	private static final int PART_VISIBLE, PART_HIDDEN;
+	private static final MethodHandle IS_PART_VISIBLE, SET_PART_HIDDEN;
+
+	static {
+		int visible = -1, hidden = -1;
+		MethodHandle is = null, set = null;
+		try {
+			visible = SWT.class.getField("PartVisible").getInt(null); //$NON-NLS-1$
+			hidden = SWT.class.getField("PartHidden").getInt(null); //$NON-NLS-1$
+			MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+			is = lookup.findVirtual(Control.class, "isPartVisible", MethodType.methodType(boolean.class)); //$NON-NLS-1$
+			set = lookup.findVirtual(Control.class, "setPartHidden", MethodType.methodType(void.class, boolean.class)); //$NON-NLS-1$
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			visible = hidden = -1;
+			is = set = null;
+		}
+		PART_VISIBLE = visible;
+		PART_HIDDEN = hidden;
+		IS_PART_VISIBLE = is;
+		SET_PART_HIDDEN = set;
+	}
+
+	/** @return true when the running SWT has the part visibility events (rule 25) */
+	public static boolean hasPartVisibility() {
+		return PART_HIDDEN >= 0;
+	}
+
+	/**
+	 * Reports that a container hid or showed content by other means than setVisible or a zero size (a drawn
+	 * collapsible section, a drawn stack page, an overlay): Control.setPartHidden on SWT with part visibility, nothing
+	 * otherwise (the gates of the content then rely on Hide/Show, zero size and one probe).
+	 */
+	public static void setPartHidden(Control content, boolean hidden) {
+		if (SET_PART_HIDDEN != null) {
+			try {
+				SET_PART_HIDDEN.invoke(content, hidden);
+			} catch (Throwable e) {
+				throw new IllegalStateException(e);
+			}
+		}
+	}
+
+	private static boolean isPartVisible(Control control) {
+		try {
+			return (boolean) IS_PART_VISIBLE.invoke(control);
+		} catch (Throwable e) {
+			throw new IllegalStateException(e);
+		}
+	}
 
 	private final Control control;
 	private final Runnable reveal;
@@ -64,6 +127,14 @@ public final class M3HiddenGate {
 			}
 		});
 		control.addListener(SWT.Paint, this::paint);
+		if (PART_HIDDEN >= 0) {
+			control.addListener(PART_HIDDEN, e -> hidden = true);
+			control.addListener(PART_VISIBLE, e -> {
+				hidden = false;
+				reveal(null);
+			});
+			hidden = !isPartVisible(control);
+		}
 	}
 
 	/**
@@ -88,6 +159,9 @@ public final class M3HiddenGate {
 	public boolean probe() {
 		if (!visible()) {
 			return false;
+		}
+		if (PART_HIDDEN >= 0) {
+			return true;
 		}
 		M3Counters.probes++;
 		if (!control.isVisible()) {
