@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.m3.M3BusyLabel;
+import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -153,6 +154,26 @@ public class M3BusyLabelTest {
 		label.setBusy(true);
 		label.dispose();
 		M3TestSupport.spin(display, 50);
+	}
+
+	@Test
+	public void resizeSweepIsAViewportDelta() {
+		int height = label.getSize().y, old = label.getSize().x;
+		M3Counters.reset();
+		for (int width : M3TestSupport.sweepWidths(200)) {
+			paints.clear();
+			label.setSize(width, height);
+			label.update();
+			if (viewport()) {
+				for (Rectangle paint : paints) {
+					assertTrue(old + " -> " + width + ": " + paint, paint.x >= Math.min(old, width));
+				}
+			}
+			old = width;
+		}
+		assertEquals(M3Counters.line(), viewport() ? 0 : 50, M3Counters.fullRepaints);
+		label.setSize(old, height + 10);
+		assertEquals("a height change re-centres the content", viewport() ? 1 : 51, M3Counters.fullRepaints);
 	}
 
 	@Test

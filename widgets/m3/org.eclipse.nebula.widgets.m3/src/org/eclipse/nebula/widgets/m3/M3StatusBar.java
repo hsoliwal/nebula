@@ -16,6 +16,7 @@ package org.eclipse.nebula.widgets.m3;
 
 import java.util.Arrays;
 
+import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
@@ -34,15 +35,16 @@ import org.eclipse.swt.widgets.Shell;
  * SwingX <code>JXStatusBar</code>, re-derived from its documented behaviour). A slot shows drawn text or hosts a child
  * control (a progress bar, a button); its width is fixed, its preferred width, or a weighted share of the rest.
  * <p>
- * Slots are int lanes (mode, value, measured text width, x, width) plus a text lane and a control lane; there is no
- * object per slot. Positions are prefix sums; weighted shares are split by cumulative rounding so the slots tile the
- * bar without gaps. A text change repaints its slot only; when a preferred-width slot changes width the bar repaints
- * from that slot to its end and moves only the controls whose slot moved. Text of fixed and weighted slots is not
- * measured at all.
+ * Slots are int lanes (mode, value, measured width, x, width) plus a text lane and a control lane; there is no object
+ * per slot. Positions are prefix sums; weighted shares are split by cumulative rounding so the slots tile the bar
+ * without gaps. Every change is a delta: a text change repaints its slot; a preferred slot that changes width
+ * repaints from itself on; a width-only resize repaints from the first slot whose edge moved (or the grip) to the end
+ * and moves only the controls whose slot changed. Content is measured when it changes, never on a resize; text of
+ * fixed and weighted slots is not measured at all.
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3StatusBar=original</code> lays out every
- * slot and repaints the whole bar on every change, as a plain implementation would.
+ * slot and repaints the whole bar on every change and resize, as a plain implementation would.
  * </p>
  */
 public class M3StatusBar extends Canvas {
@@ -61,11 +63,12 @@ public class M3StatusBar extends Canvas {
 	private static final int PAD = 4, SEPARATOR = 5, GRIP = 14;
 
 	private int count;
-	private int[] mode = new int[4], value = new int[4], textWidth = new int[4], xs = new int[4], widths = new int[4];
+	/* measured: content width of preferred slots (text + padding, or the control's preferred width) */
+	private int[] mode = new int[4], value = new int[4], measured = new int[4], xs = new int[4], widths = new int[4];
 	private String[] texts = new String[4];
 	private Control[] controls = new Control[4];
 	private boolean grip = true;
-	private int fontHeight = -1;
+	private int fontHeight = -1, clientWidth = -1, clientHeight = -1;
 	/* left edge of the area the last layout changed, or Integer.MAX_VALUE when nothing moved */
 	private int changedFrom;
 	private int dragX = -1, dragY, dragWidth, dragHeight;
@@ -77,12 +80,9 @@ public class M3StatusBar extends Canvas {
 	 * @param style BORDER
 	 */
 	public M3StatusBar(Composite parent, int style) {
-		super(parent, style | SWT.DOUBLE_BUFFERED);
+		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
 		addListener(SWT.Paint, this::paint);
-		addListener(SWT.Resize, e -> {
-			layoutSlots();
-			redraw();
-		});
+		addListener(SWT.Resize, e -> resized());
 		addListener(SWT.MouseDown, this::mouse);
 		addListener(SWT.MouseMove, this::mouse);
 		addListener(SWT.MouseUp, this::mouse);
@@ -105,7 +105,7 @@ public class M3StatusBar extends Canvas {
 			int n = count * 2;
 			this.mode = Arrays.copyOf(this.mode, n);
 			this.value = Arrays.copyOf(this.value, n);
-			textWidth = Arrays.copyOf(textWidth, n);
+			measured = Arrays.copyOf(measured, n);
 			xs = Arrays.copyOf(xs, n);
 			widths = Arrays.copyOf(widths, n);
 			texts = Arrays.copyOf(texts, n);
@@ -115,9 +115,11 @@ public class M3StatusBar extends Canvas {
 		this.mode[slot] = mode;
 		this.value[slot] = value;
 		texts[slot] = ""; //$NON-NLS-1$
-		xs[slot] = widths[slot] = textWidth[slot] = 0;
+		measured[slot] = 2 * PAD;
+		widths[slot] = 0;
+		xs[slot] = slot == 0 ? 0 : xs[slot - 1] + widths[slot - 1] + SEPARATOR;
 		controls[slot] = null;
-		relayout(xs[Math.max(0, slot - 1)]);
+		relayout(xs[slot]);
 		return slot;
 	}
 
@@ -131,7 +133,7 @@ public class M3StatusBar extends Canvas {
 		int from = xs[slot], tail = count - slot - 1;
 		System.arraycopy(mode, slot + 1, mode, slot, tail);
 		System.arraycopy(value, slot + 1, value, slot, tail);
-		System.arraycopy(textWidth, slot + 1, textWidth, slot, tail);
+		System.arraycopy(measured, slot + 1, measured, slot, tail);
 		System.arraycopy(xs, slot + 1, xs, slot, tail);
 		System.arraycopy(widths, slot + 1, widths, slot, tail);
 		System.arraycopy(texts, slot + 1, texts, slot, tail);
@@ -173,14 +175,12 @@ public class M3StatusBar extends Canvas {
 			return;
 		}
 		texts[slot] = text;
-		if (mode[slot] == PREFERRED) {
-			int width = measure(text);
-			if (width != textWidth[slot]) {
-				textWidth[slot] = width;
-				if (controls[slot] == null) {
-					relayout(xs[slot]);
-					return;
-				}
+		if (mode[slot] == PREFERRED && controls[slot] == null) {
+			int width = measure(text) + 2 * PAD;
+			if (width != measured[slot]) {
+				measured[slot] = width;
+				relayout(xs[slot]);
+				return;
 			}
 		}
 		if (VIEWPORT) {
@@ -188,7 +188,7 @@ public class M3StatusBar extends Canvas {
 			redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
 		} else {
 			layoutSlots();
-			redraw();
+			fullRepaint();
 		}
 	}
 
@@ -199,7 +199,8 @@ public class M3StatusBar extends Canvas {
 	}
 
 	/**
-	 * Places a child control in a slot (its text is then not drawn), or clears the slot's control.
+	 * Places a child control in a slot (its text is then not drawn), or clears the slot's control. A preferred slot
+	 * takes the control's preferred width, measured now; call {@link #updateSlot(int)} when that width changes.
 	 *
 	 * @param control a child of this bar, or null
 	 * @exception IllegalArgumentException
@@ -214,10 +215,12 @@ public class M3StatusBar extends Canvas {
 			SWT.error(SWT.ERROR_INVALID_PARENT);
 		}
 		controls[slot] = control;
+		remeasure(slot);
 		relayout(xs[slot]);
 		Rectangle bounds = getSlotBounds(slot);
 		if (control != null) {
 			control.setBounds(bounds);
+			M3Counters.moves++;
 		}
 		redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
 	}
@@ -226,6 +229,18 @@ public class M3StatusBar extends Canvas {
 	public Control getControl(int slot) {
 		checkSlot(slot);
 		return controls[slot];
+	}
+
+	/**
+	 * Measures a preferred slot's content again (after its control's preferred width changed) and lays out from it.
+	 *
+	 * @exception IllegalArgumentException ERROR_INVALID_RANGE - if the slot does not exist
+	 */
+	public void updateSlot(int slot) {
+		checkSlot(slot);
+		if (remeasure(slot)) {
+			relayout(xs[slot]);
+		}
 	}
 
 	/** @return the bounds of a slot in client coordinates */
@@ -240,8 +255,8 @@ public class M3StatusBar extends Canvas {
 		checkWidget();
 		if (this.grip != grip) {
 			this.grip = grip;
-			layoutSlots();
-			redraw();
+			Rectangle client = getClientArea();
+			relayout(client.x + client.width - GRIP - PAD);
 		}
 	}
 
@@ -264,10 +279,10 @@ public class M3StatusBar extends Canvas {
 		super.setFont(font);
 		fontHeight = -1;
 		for (int i = 0; i < count; i++) {
-			textWidth[i] = mode[i] == PREFERRED ? measure(texts[i]) : 0;
+			remeasure(i);
 		}
 		layoutSlots();
-		redraw();
+		fullRepaint();
 	}
 
 	@Override
@@ -276,7 +291,7 @@ public class M3StatusBar extends Canvas {
 		int width = 2 * PAD + (grip ? GRIP : 0) + Math.max(0, count - 1) * SEPARATOR;
 		int height = fontHeight() + 6;
 		for (int i = 0; i < count; i++) {
-			width += mode[i] == FILL ? 0 : minimum(i);
+			width += minimum(i);
 			if (controls[i] != null) {
 				height = Math.max(height, controls[i].computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 			}
@@ -290,6 +305,17 @@ public class M3StatusBar extends Canvas {
 		if (slot < 0 || slot >= count) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
+	}
+
+	/* measures a preferred slot's content; @return true when its width changed */
+	private boolean remeasure(int slot) {
+		if (mode[slot] != PREFERRED) {
+			return false;
+		}
+		int width = controls[slot] != null ? controls[slot].computeSize(SWT.DEFAULT, SWT.DEFAULT).x : measure(texts[slot]) + 2 * PAD;
+		boolean changed = width != measured[slot];
+		measured[slot] = width;
+		return changed;
 	}
 
 	private int measure(String text) {
@@ -312,18 +338,49 @@ public class M3StatusBar extends Canvas {
 	}
 
 	private int minimum(int slot) {
-		if (mode[slot] == FIXED) {
+		switch (mode[slot]) {
+		case FIXED:
 			return value[slot];
+		case PREFERRED:
+			return Math.max(value[slot], measured[slot]);
+		default:
+			return 0;
 		}
-		int preferred = controls[slot] != null ? controls[slot].computeSize(SWT.DEFAULT, SWT.DEFAULT).x : textWidth[slot] + 2 * PAD;
-		return mode[slot] == PREFERRED ? Math.max(value[slot], preferred) : 0;
+	}
+
+	private void fullRepaint() {
+		M3Counters.fullRepaints++;
+		redraw();
+	}
+
+	/*
+	 * A resize is a delta of the bar's viewport: a height change moves every text baseline (whole repaint); a
+	 * width-only change repaints from the first slot edge that moved, or from the grip, to the end. The newly exposed
+	 * strip of a growing bar is damaged by the window system (NO_REDRAW_RESIZE).
+	 */
+	private void resized() {
+		Rectangle client = getClientArea();
+		boolean heightChanged = client.height != clientHeight;
+		int oldRight = client.x + (clientWidth < 0 ? client.width : clientWidth);
+		clientWidth = client.width;
+		clientHeight = client.height;
+		layoutSlots();
+		if (!VIEWPORT || heightChanged) {
+			fullRepaint();
+			return;
+		}
+		int right = client.x + client.width;
+		int left = Math.max(client.x, Math.min(changedFrom, Math.min(oldRight, right) - (grip ? GRIP : 0) - PAD));
+		if (left < right) {
+			redraw(left, client.y, right - left, client.height, false);
+		}
 	}
 
 	/* lays out and repaints from the first slot that moved (viewport) or everything (original) */
 	private void relayout(int from) {
 		layoutSlots();
 		if (!VIEWPORT) {
-			redraw();
+			fullRepaint();
 			return;
 		}
 		int left = Math.min(from, changedFrom);
@@ -335,11 +392,13 @@ public class M3StatusBar extends Canvas {
 	}
 
 	/*
-	 * Prefix-sum layout: fixed and preferred widths first, then the rest split among weighted slots by cumulative
-	 * rounding (slot i ends at rest * (w0 + .. + wi) / W), so the slots tile the bar exactly. Records the left edge of
-	 * the first slot whose bounds changed and moves only the controls whose slot changed.
+	 * Prefix-sum layout over the slot lanes (no measuring): fixed and preferred widths first, then the rest split
+	 * among weighted slots by cumulative rounding (slot i ends at rest * (w0 + .. + wi) / W), so the slots tile the
+	 * bar exactly. Records the left edge of the first change (a moved slot's old or new x, or the nearer right edge
+	 * of a slot that only changed width) and moves only the controls whose slot changed.
 	 */
 	private void layoutSlots() {
+		M3Counters.layouts++;
 		Rectangle client = getClientArea();
 		int available = client.width - 2 * PAD - (grip ? GRIP : 0) - Math.max(0, count - 1) * SEPARATOR;
 		long weights = 0;
@@ -365,11 +424,13 @@ public class M3StatusBar extends Canvas {
 				width = minimum(i);
 			}
 			if (x != xs[i] || width != widths[i]) {
-				changedFrom = Math.min(changedFrom, Math.min(x, xs[i]));
+				int edge = x != xs[i] ? Math.min(x, xs[i]) : x + Math.min(width, widths[i]);
+				changedFrom = Math.min(changedFrom, edge);
 				xs[i] = x;
 				widths[i] = width;
 				if (controls[i] != null && !controls[i].isDisposed()) {
 					controls[i].setBounds(x, client.y, width, client.height);
+					M3Counters.moves++;
 				}
 			}
 			x += width + SEPARATOR;
@@ -417,7 +478,7 @@ public class M3StatusBar extends Canvas {
 		if (fontHeight < 0) {
 			fontHeight = gc.getFontMetrics().getHeight();
 		}
-		int textY = client.y + Math.max(0, (client.height - fontHeight()) / 2);
+		int textY = client.y + Math.max(0, (client.height - fontHeight) / 2);
 		for (int i = 0; i < count; i++) {
 			if (controls[i] == null && !texts[i].isEmpty() && xs[i] < clip.x + clip.width && xs[i] + widths[i] > clip.x) {
 				gc.setClipping(new Rectangle(xs[i], client.y, widths[i], client.height).intersection(clip));

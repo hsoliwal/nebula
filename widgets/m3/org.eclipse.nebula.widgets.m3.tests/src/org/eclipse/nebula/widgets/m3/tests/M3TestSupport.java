@@ -79,6 +79,25 @@ public final class M3TestSupport {
 		throw new AssertionError("no paint covers " + area + ": " + paints);
 	}
 
+	/**
+	 * The resize sweep of the viewport-delta gate (brief rule 24): 50 widths, 20 one-pixel steps up from the base, 20
+	 * down back to it, then 10 large jumps; consecutive widths always differ.
+	 */
+	public static int[] sweepWidths(int base) {
+		int[] widths = new int[50];
+		int i = 0;
+		for (int k = 1; k <= 20; k++) {
+			widths[i++] = base + k;
+		}
+		for (int k = 19; k >= 0; k--) {
+			widths[i++] = base + k;
+		}
+		for (int jump : new int[] { base * 2, base / 2, base * 3 / 2, base + 7, base - 13, base * 2 + 1, base / 3, base, base + 100, base }) {
+			widths[i++] = jump;
+		}
+		return widths;
+	}
+
 	/** the on-screen pixels of a control's client area, after pending paints */
 	public static ImageData pixels(Control control) {
 		control.update();

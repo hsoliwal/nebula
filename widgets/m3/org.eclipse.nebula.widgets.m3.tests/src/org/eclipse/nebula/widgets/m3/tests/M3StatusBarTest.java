@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.m3.M3StatusBar;
+import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -181,6 +182,47 @@ public class M3StatusBarTest {
 		fresh.setText(3, "12 rows");
 		M3TestSupport.flush(display);
 		assertArrayEquals(M3TestSupport.pixels(fresh).data, M3TestSupport.pixels(bar).data);
+	}
+
+	@Test
+	public void resizeSweepIsAViewportDelta() {
+		Label pinned = new Label(bar, SWT.NONE);
+		pinned.setText("*");
+		bar.setControl(0, pinned);
+		int[] moves = new int[1];
+		pinned.addListener(SWT.Move, e -> moves[0]++);
+		pinned.addListener(SWT.Resize, e -> moves[0]++);
+		M3StatusBar fixedOnly = new M3StatusBar(shell, SWT.NONE);
+		fixedOnly.setBounds(0, 40, 400, 24);
+		fixedOnly.addSlot(M3StatusBar.FIXED, 60);
+		fixedOnly.addSlot(M3StatusBar.PREFERRED, 0);
+		fixedOnly.setText(1, "no weighted slot");
+		List<Rectangle> fixedPaints = M3TestSupport.recordPaints(fixedOnly);
+		M3TestSupport.flush(display);
+		int firstFill = bar.getSlotBounds(2).x, height = bar.getSize().y, old = bar.getSize().x;
+		M3Counters.reset();
+		for (int width : M3TestSupport.sweepWidths(400)) {
+			paints.clear();
+			fixedPaints.clear();
+			bar.setSize(width, height);
+			fixedOnly.setSize(width, height);
+			bar.update();
+			fixedOnly.update();
+			if (viewport()) {
+				for (Rectangle paint : paints) {
+					assertTrue(old + " -> " + width + ": " + paint, paint.x >= firstFill);
+				}
+				for (Rectangle paint : fixedPaints) {
+					assertTrue("only the grip moves: " + old + " -> " + width + ": " + paint, paint.x >= Math.min(old, width) - 14 - 4);
+				}
+			}
+			assertEquals(bar.getSlotBounds(0), pinned.getBounds());
+			old = width;
+		}
+		assertEquals("fixed slot control never moves", 0, moves[0]);
+		assertEquals(M3Counters.line(), viewport() ? 0 : 100, M3Counters.fullRepaints);
+		bar.setSize(old, height + 6);
+		assertEquals("a height change moves every baseline", viewport() ? 1 : 101, M3Counters.fullRepaints);
 	}
 
 	@Test

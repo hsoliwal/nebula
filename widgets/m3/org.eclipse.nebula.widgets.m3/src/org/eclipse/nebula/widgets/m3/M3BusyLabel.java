@@ -14,6 +14,7 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.m3;
 
+import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
@@ -36,7 +37,8 @@ import org.eclipse.swt.widgets.Event;
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3BusyLabel=original</code> repaints the whole
- * control on every frame, as a plain implementation would.
+ * control on every frame and resize, as a plain implementation would. A width-only resize repaints nothing but the
+ * newly exposed strip; a height change re-centres the content (whole repaint).
  * </p>
  */
 public class M3BusyLabel extends Canvas {
@@ -51,7 +53,7 @@ public class M3BusyLabel extends Canvas {
 	private boolean busy;
 	private int points = 8, trail = 4, delay = 100, frame, iconSize = 16;
 	private int[] xs = new int[0], ys = new int[0];
-	private int dot;
+	private int dot, clientHeight = -1;
 	/* shades[0] is the head, shades[trail] the idle point colour; null until the next paint after a colour change */
 	private Color[] shades;
 	private final Runnable tick = this::tick;
@@ -63,9 +65,10 @@ public class M3BusyLabel extends Canvas {
 	 * @param style BORDER
 	 */
 	public M3BusyLabel(Composite parent, int style) {
-		super(parent, style | SWT.DOUBLE_BUFFERED);
+		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
 		geometry();
 		addListener(SWT.Paint, this::paint);
+		addListener(SWT.Resize, e -> resized());
 		addListener(SWT.Dispose, e -> {
 			getDisplay().timerExec(-1, tick);
 			disposeShades();
@@ -205,7 +208,7 @@ public class M3BusyLabel extends Canvas {
 		}
 		iconSize = pixels;
 		geometry();
-		redraw();
+		fullRepaint();
 	}
 
 	/** @return the side of the icon square */
@@ -256,14 +259,14 @@ public class M3BusyLabel extends Canvas {
 	public void setForeground(Color color) {
 		super.setForeground(color);
 		disposeShades();
-		redraw();
+		fullRepaint();
 	}
 
 	@Override
 	public void setBackground(Color color) {
 		super.setBackground(color);
 		disposeShades();
-		redraw();
+		fullRepaint();
 	}
 
 	@Override
@@ -287,12 +290,30 @@ public class M3BusyLabel extends Canvas {
 		return new Point(trim.width, trim.height);
 	}
 
+	private void fullRepaint() {
+		M3Counters.fullRepaints++;
+		redraw();
+	}
+
+	/*
+	 * A resize is a delta of the label viewport: the icon and the text are centred vertically, so a height change
+	 * repaints everything; a width-only change repaints nothing (left-aligned content does not move; the window
+	 * system damages the newly exposed strip, NO_REDRAW_RESIZE).
+	 */
+	private void resized() {
+		int height = getClientArea().height;
+		if (height != clientHeight || !VIEWPORT) {
+			clientHeight = height;
+			fullRepaint();
+		}
+	}
+
 	private void redrawIcon() {
 		if (VIEWPORT) {
 			Rectangle icon = getIconBounds();
 			redraw(icon.x, icon.y, icon.width, icon.height, false);
 		} else {
-			redraw();
+			fullRepaint();
 		}
 	}
 
