@@ -38,7 +38,7 @@ git -C "$WT" grep -c -P -e "$PAT" -- ':(glob)widgets/**/*.java' 2>/dev/null | gr
   | awk -F: -v OFS='\t' '{ split($1, a, "/"); b = (a[2] == "opal") ? "opal/" a[3] : a[2]; c[b] += $NF; t += $NF } END { for (k in c) print k, c[k]; print "TOTAL", t }' > "$OUT/.census"
 echo "full-rebuild sites in Nebula main code: $(awk -F'	' '$1 == "TOTAL" { print $2 }' "$OUT/.census")"
 # JFace viewers shipped per Nebula bundle (eclipse_ready column)
-git -C "$WT" grep -E 'class [A-Za-z0-9_]+(<[^>]*>)? extends (Abstract)?(Column|Structured|Table|Tree|Content|List)Viewer\b' --name-only -- ':(glob)widgets/**/*.java' 2>/dev/null | grep -vE '/(test|tests|example|examples|snippets?|demo)/|\.tests?/|\.examples?/|\.snippets?/' \
+git -C "$WT" grep --name-only -E 'class [A-Za-z0-9_]+(<[^>]*>)? extends (Abstract)?(Column|Structured|Table|Tree|Content|List)Viewer\b' -- ':(glob)widgets/**/*.java' 2>/dev/null | grep -vE '/(test|tests|example|examples|snippets?|demo)/|\.tests?/|\.examples?/|\.snippets?/' \
   | sed -E 's#^widgets/([^/]+)/([^/]+)/.*/([A-Za-z0-9_]+)\.java$#\1\t\2\t\3#' | awk -F'\t' -v OFS='\t' '{ b = ($1 == "opal") ? "opal/" $2 : $1; v[b] = (b in v) ? v[b] "," $3 : $3 } END { for (k in v) print k, v[k] }' > "$OUT/.viewers"
 awk -F'\t' -v OFS='\t' '
   function simple(c) { sub(/;.*/, "", c); sub(/[+ \/|].*/, "", c); sub(/.*\./, "", c); return c }
