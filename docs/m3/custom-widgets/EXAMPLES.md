@@ -21,3 +21,4 @@ Snippets live in `widgets/m3/org.eclipse.nebula.widgets.m3.snippets/src/org/ecli
 | M3CollapsiblePane | SwingX `JXCollapsiblePane` | `M3CollapsiblePaneSnippet` | a vertical options pane and a horizontal side panel, animated toggles | `S:/m3-scratch/custom-widgets/screenshots/M3CollapsiblePaneSnippet.png` |
 | M3ErrorPane | SwingX `JXErrorPane` | `M3ErrorPaneSnippet` | embedded pane with an expanded stack trace, and the modal dialog form | `S:/m3-scratch/custom-widgets/screenshots/M3ErrorPaneSnippet.png` |
 | M3MultiSplitPane | SwingX `JXMultiSplitPane` | `M3MultiSplitPaneSnippet` | IDE layout: navigator, editor over console, outline; drag any divider | `S:/m3-scratch/custom-widgets/screenshots/M3MultiSplitPaneSnippet.png` |
+| M3FindBar | SwingX `JXFindBar`, `JXFindPanel`, `JXSearchPanel` | `M3FindBarSnippet` | find bar over a virtual table of 10^6 rows (texts from the model array, never from items) | `S:/m3-scratch/custom-widgets/screenshots/M3FindBarSnippet.png` |

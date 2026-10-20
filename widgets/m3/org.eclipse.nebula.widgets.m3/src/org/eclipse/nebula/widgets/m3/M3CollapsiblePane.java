@@ -58,6 +58,9 @@ public class M3CollapsiblePane extends Composite {
 	private boolean collapsed, animated = true, animating;
 	private int extent = -1, target, fullWidth = -1, fullHeight = -1, steps = 8, delay = 15;
 	private final Runnable frame = this::frame;
+	/* the width hint of the last content measure in computeSize; a layout pass without a flush and with the same hint
+	 * reuses the measure */
+	private int measuredHint = Integer.MIN_VALUE;
 
 	/**
 	 * Creates an expanded pane with an empty content composite.
@@ -206,8 +209,8 @@ public class M3CollapsiblePane extends Composite {
 	}
 
 	private void relayoutParent() {
-		Composite parent = getParent();
-		parent.layout(new Control[] { this });
+		// every ancestor up to the shell re-lays out along this path only (their layouts flush this child alone)
+		getShell().layout(new Control[] { this });
 	}
 
 	/*
@@ -218,7 +221,9 @@ public class M3CollapsiblePane extends Composite {
 
 		@Override
 		protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-			if (fullWidth < 0 || !animating && !collapsed) {
+			int hint = vertical ? wHint : hHint;
+			if (fullWidth < 0 || !animating && !collapsed && (flushCache || hint != measuredHint)) {
+				measuredHint = hint;
 				Point size = content.computeSize(vertical ? wHint : SWT.DEFAULT, vertical ? SWT.DEFAULT : hHint, flushCache);
 				fullWidth = size.x;
 				fullHeight = size.y;
