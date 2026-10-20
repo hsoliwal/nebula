@@ -167,7 +167,7 @@ public class M3GridRowBinding_Test {
 		M3GridSortHeader.install(grid, other);
 		click(grid.getColumn(0), false);
 		assertEquals(1, other.getSortKeyCount());
-		assertEquals(1, sort.getSortKeyCount());
+		assertEquals(0, sort.getSortKeyCount());
 		assertNotSame(sort, other);
 		binding.setSelectedRows();
 		assertEquals(0, grid.getSelectionCount());
