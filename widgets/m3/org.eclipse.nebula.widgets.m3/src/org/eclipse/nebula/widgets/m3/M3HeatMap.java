@@ -63,6 +63,7 @@ public class M3HeatMap extends Canvas {
 	private float min = 0f, max = 1f;
 	private boolean autoRange = true;
 	private int[] lut = new int[LUT_SIZE];
+	private final Color[] colors = new Color[LUT_SIZE];
 	private int cellWidth = 8, cellHeight = 8;
 	private int originX, originY;
 	private int selectedRow = -1, selectedColumn = -1;
@@ -83,6 +84,7 @@ public class M3HeatMap extends Canvas {
 		addListener(SWT.Resize, listener);
 		addListener(SWT.MouseDown, listener);
 		addListener(SWT.KeyDown, listener);
+		addListener(SWT.Dispose, e -> disposeColors());
 		ScrollBar h = getHorizontalBar(), v = getVerticalBar();
 		if (h != null) {
 			h.addListener(SWT.Selection, e -> scrollTo(h.getSelection(), originY));
@@ -371,7 +373,27 @@ public class M3HeatMap extends Canvas {
 			next[i] = (red << 16) | (green << 8) | blue;
 		}
 		lut = next;
+		disposeColors();
 		repaint();
+	}
+
+	/* the colour of a LUT index, created on first use and kept until the palette changes or the map is disposed */
+	private Color color(int index) {
+		Color color = colors[index];
+		if (color == null) {
+			int rgb = lut[index];
+			color = colors[index] = new Color(getDisplay(), (rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff);
+		}
+		return color;
+	}
+
+	private void disposeColors() {
+		for (int i = 0; i < colors.length; i++) {
+			if (colors[i] != null) {
+				colors[i].dispose();
+				colors[i] = null;
+			}
+		}
 	}
 
 	/**
@@ -619,32 +641,28 @@ public class M3HeatMap extends Canvas {
 			final int fr = firstRow, lr = lastRow, fc = firstColumn, lc = lastColumn;
 			LOG.trace(() -> "paint rows " + fr + ".." + lr + " columns " + fc + ".." + lc); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 		}
-		Color color = null;
+		// runs of equal colour, one fill each; colours come from a per-LUT-index cache, so a paint allocates nothing
 		int current = -1;
 		for (int row = firstRow; row <= lastRow; row++) {
 			int y = row * cellHeight - originY;
 			int base = row * columns;
 			int runStart = firstColumn;
-			int runColor = lut[lutIndex(values[base + firstColumn])];
+			int runIndex = lutIndex(values[base + firstColumn]);
+			int runColor = lut[runIndex];
 			for (int column = firstColumn + 1; column <= lastColumn + 1; column++) {
-				int rgb = column <= lastColumn ? lut[lutIndex(values[base + column])] : -1;
+				int index = column <= lastColumn ? lutIndex(values[base + column]) : -1;
+				int rgb = index >= 0 ? lut[index] : -1;
 				if (rgb != runColor) {
 					if (runColor != current) {
-						if (color != null) {
-							color.dispose();
-						}
-						color = new Color(getDisplay(), (runColor >> 16) & 0xff, (runColor >> 8) & 0xff, runColor & 0xff);
-						gc.setBackground(color);
+						gc.setBackground(color(runIndex));
 						current = runColor;
 					}
 					gc.fillRectangle(runStart * cellWidth - originX, y, (column - runStart) * cellWidth, cellHeight);
 					runStart = column;
 					runColor = rgb;
+					runIndex = index;
 				}
 			}
-		}
-		if (color != null) {
-			color.dispose();
 		}
 		if (selectedRow >= 0 && selectedRow >= firstRow && selectedRow <= lastRow && selectedColumn >= firstColumn
 				&& selectedColumn <= lastColumn) {
