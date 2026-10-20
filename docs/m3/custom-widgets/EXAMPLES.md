@@ -17,3 +17,4 @@ Snippets live in `widgets/m3/org.eclipse.nebula.widgets.m3.snippets/src/org/ecli
 | M3StackLayout | SWT `StackLayout`, `java.awt.CardLayout` | `M3StackLayoutSnippet` | 10^6 declared pages, only the top page and an LRU budget resident | `S:/m3-scratch/custom-widgets/screenshots/M3StackLayoutSnippet.png` |
 | M3HeatMap | WIDGET_MATRIX HEATMAP (matrix view; no SwingX or stock SWT counterpart) | `M3HeatMapSnippet` | 1000 x 1000 cells in one float lane; scroll, select, arrow keys | `S:/m3-scratch/custom-widgets/screenshots/M3HeatMapSnippet.png` |
 | M3BusyLabel | SwingX `JXBusyLabel` | `M3BusyLabelSnippet` | three rings (16/24/32 px, 8/12/16 points), start/stop | `S:/m3-scratch/custom-widgets/screenshots/M3BusyLabelSnippet.png` |
+| M3StatusBar | SwingX `JXStatusBar` | `M3StatusBarSnippet` | fixed, preferred (timer-updated row counter), weighted and progress-bar slots, resize grip | `S:/m3-scratch/custom-widgets/screenshots/M3StatusBarSnippet.png` |
