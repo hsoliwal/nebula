@@ -53,6 +53,8 @@ public class GridSnippetVariableHeightScroll {
 	private static final int ROWS = 10_000;
 	private static final int FRAME_MS = 16;
 	private static final int STEPS = 300;
+	private static final String[] TAILS = { "", " wraps onto a second line in this narrow column",
+			" wraps onto a second and then a third line in this narrow column of text" };
 
 	public static void main(String[] args) {
 		Display display = new Display();
@@ -73,11 +75,8 @@ public class GridSnippetVariableHeightScroll {
 			GridItem item = new GridItem(grid, SWT.NONE);
 			int lines = 1 + r % 3;
 			item.setText(0, Integer.toString(r));
-			StringBuilder words = new StringBuilder("Row " + r);
-			for (int l = 1; l < lines; l++) {
-				words.append("\nline ").append(l + 1).append(" of ").append(lines);
-			}
-			item.setText(1, words.toString());
+			// long enough to wrap onto 1, 2 or 3 lines in the 260 pixel column (word wrap)
+			item.setText(1, "Row " + r + TAILS[r % 3]);
 			item.setHeight(2 + 18 * lines);
 		}
 

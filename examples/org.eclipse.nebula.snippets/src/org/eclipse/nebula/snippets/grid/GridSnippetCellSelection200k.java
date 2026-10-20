@@ -33,9 +33,9 @@ import org.eclipse.swt.widgets.Shell;
 /**
  * Cell selection over many columns: 50,000 rows x 4 columns, all 200,000 cells selected with
  * {@link Grid#selectAllCells()}, then single cells toggled in the middle of that selection, as a
- * user's ctrl+click would. In the viewport mode (the default) the Grid keeps the selected cells in
- * a hash set with per-column counts, so a toggle and a membership test cost O(1); the stock Grid
- * ({@code -Dswt.widget.mode.Grid=original}) scans its list of selected cells.
+ * user's ctrl+click would. In the viewport mode (the default) the Grid keeps per-cell counts beside
+ * its list of selected cells, so the paint's membership test is O(1) and selectAllCells is fast; a
+ * single toggle still updates the list, as in the stock Grid ({@code -Dswt.widget.mode.Grid=original}).
  * <p>
  * The times go to the {@code org.eclipse.nebula.snippets.grid} logger. With
  * {@code -Dnebula.snippet.screenshot=<file.png>} the snippet saves the Grid's window to that file and

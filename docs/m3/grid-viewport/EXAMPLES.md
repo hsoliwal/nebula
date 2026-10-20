@@ -26,5 +26,21 @@ javac -d S:/m3-scratch/grid/examples-classes -cp "<grid classes>;<SWT jar>" \
 
 ## Results
 
-Pending: the runs need the hidden desktop. They have not run yet, because slot locks left over from the
-2026-10-19 15:08 reboot block the desktop queue. The screenshots will be in `S:/m3-scratch/grid/examples/`.
+Run 2026-10-19 on the hidden desktop (win32, JDK 21, SWT 3.135); screenshots in `S:/m3-scratch/grid/examples/`
+(`<snippet>-viewport.png`, `<snippet>-original.png`), logs beside them.
+
+| Snippet | viewport mode | original mode (stock) |
+|---|---|---|
+| `GridSnippetMillionTreeRows` | 1,000,000 rows built in 1.45 s, heap +48 MB; 24 `SetData` requests after the first paint, 47 after jumping to the middle | 152.4 s, heap +277 MB; 23 and 45 |
+| `GridSnippetCellSelection200k` | `selectAllCells` of 200,000 cells: 238 ms; one cell toggle inside them: 4.1 ms | 30.6 s; 3.7 ms |
+| `GridSnippetVariableHeightScroll` | 12.5 ms per one-row scroll step, scroll and paint | 31.1 ms |
+
+Notes:
+- The viewport mode paints with the native look, whose rows fit one more on the page than stock's classic look. That
+  is the one and two extra `SetData` requests: one more row is on screen each time.
+- A single cell toggle costs milliseconds in both modes. The per-cell counts make the paint's membership test and
+  `selectAllCells` fast, but a toggle still updates the stock list. That is the target of the optimization pass's
+  cell selection leaf.
+- The first variable-height screenshot showed newline characters on one line: the default cell renderer wraps words
+  but does not break at `\n`. The snippet now uses texts long enough to wrap onto 2 and 3 lines; its screenshot is
+  taken again with the next desktop run.
