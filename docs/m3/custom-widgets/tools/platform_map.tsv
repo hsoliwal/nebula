@@ -5,7 +5,7 @@ SWINGX-JXButton	swingx	JXButton	-	org.eclipse.swt.widgets.Button	STOCK	javax.swi
 SWINGX-JXCollapsiblePane	swingx	JXCollapsiblePane	TASK_PANE	org.eclipse.nebula.widgets.m3.M3CollapsiblePane	M3	-	SWT: M3CollapsiblePane (any content, animated height, content not laid out while collapsed); Swing twin	custom-widgets + Swing track
 SWINGX-JXColorSelectionButton	swingx	JXColorSelectionButton	COLOR_CHOOSER	org.eclipse.nebula.widgets.m3.M3ColorButton	M3	javax.swing.JColorChooser	SWT: M3ColorButton (drawn swatch button opening ColorDialog)	custom-widgets
 SWINGX-JXComboBox	swingx	JXComboBox	-	org.eclipse.swt.widgets.Combo	STOCK	javax.swing.JComboBox	renderer and highlighter support through the theme seam	all-widgets
-SWINGX-JXDatePicker	swingx	JXDatePicker	DATE_PICKER	org.eclipse.swt.widgets.DateTime;org.eclipse.nebula.widgets.cdatetime.CDateTime	STOCK	-	Swing: javax.swing.M3DatePicker (epoch-day ints, drawn month grid)	Swing track
+SWINGX-JXDatePicker	swingx	JXDatePicker	DATE_PICKER	org.eclipse.nebula.widgets.m3.M3DatePicker;org.eclipse.swt.widgets.DateTime	M3	-	SWT: M3DatePicker (field + reused M3MonthView drop-down); Swing: javax.swing.M3DatePicker	custom-widgets + Swing track
 SWINGX-JXDialog	swingx	JXDialog	-	org.eclipse.swt.widgets.Shell	STOCK	javax.swing.JDialog	-	-
 SWINGX-JXEditorPane	swingx	JXEditorPane	CODE_EDITOR	org.eclipse.swt.custom.StyledText	STOCK	javax.swing.JEditorPane	find support through M3FindBar	-
 SWINGX-JXErrorPane	swingx	JXErrorPane	ERROR_PANE	org.eclipse.nebula.widgets.m3.M3ErrorPane	M3	-	SWT: M3ErrorPane (message, collapsible details, copy); Swing twin	custom-widgets + Swing track
@@ -22,7 +22,7 @@ SWINGX-JXImageView	swingx	JXImageView	IMAGE_VIEW	org.eclipse.nebula.widgets.m3.M
 SWINGX-JXLabel	swingx	JXLabel	-	org.eclipse.swt.custom.CLabel	STOCK	javax.swing.JLabel	text rotation and painters through the theme seam	all-widgets
 SWINGX-JXList	swingx	JXList	VIRTUAL_LIST	org.eclipse.swt.widgets.List	STOCK	javax.swing.JList	sort and filter: SWT sort-filter track (permutation index plus pass bitmask); Swing: RowSorter-like M3 lane	sort-filter
 SWINGX-JXLoginPane	swingx	JXLoginPane	LOGIN_DIALOG	org.eclipse.nebula.widgets.opal.logindialog.LoginDialog	NEBULA	-	Swing: javax.swing.M3LoginPane	Swing track
-SWINGX-JXMonthView	swingx	JXMonthView	CALENDAR_VIEW	org.eclipse.swt.widgets.DateTime;org.eclipse.nebula.widgets.datechooser.DateChooser	STOCK	-	Swing: javax.swing.M3MonthView	Swing track
+SWINGX-JXMonthView	swingx	JXMonthView	CALENDAR_VIEW	org.eclipse.nebula.widgets.m3.M3MonthView;org.eclipse.swt.widgets.DateTime	M3	-	SWT: M3MonthView (drawn months, epoch-day lanes, flagged/unselectable days, intervals); Swing: javax.swing.M3MonthView	custom-widgets + Swing track
 SWINGX-JXMultiSplitPane	swingx	JXMultiSplitPane	MULTI_SPLIT	org.eclipse.nebula.widgets.m3.M3MultiSplitPane	M3	-	SWT: M3MultiSplitPane (split tree as parent/weight lanes, layout by prefix sums, drawn dividers); Swing twin	custom-widgets + Swing track
 SWINGX-JXMultiThumbSlider	swingx	JXMultiThumbSlider	RANGE_SLIDER	org.eclipse.nebula.widgets.opal.rangeslider.RangeSlider	NEBULA	-	two thumbs on SWT; n thumbs: M3RangeSlider later; Swing: javax.swing.M3RangeSlider	Swing track
 SWINGX-JXPanel	swingx	JXPanel	-	org.eclipse.swt.widgets.Composite	STOCK	javax.swing.JPanel	alpha and painters through the theme seam	-
