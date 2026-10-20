@@ -59,7 +59,7 @@ awk -F'\t' -v OFS='\t' '
     nm = (substr($3, 1, 2) == "JX") ? "M3" substr($3, 3) : "M3" simple($5)
     sg = ($7 != "-") ? "AVAILABLE " $7 " (JDK)" : "ADAPTER_NEEDED javax.swing." nm " over the shared model (" bas ")"
     if ($6 == "NA") sg = "MISSING (not applicable)"
-    ev = ($6 == "NA") ? "-" : ($6 == "M3") ? (( simple($5) in m3done) ? "implemented in widgets/m3; compile_platforms.sh" : "planned") : ($6 == "STOCK" ? "SWT stock" : "Nebula source")
+    ev = ($6 == "NA") ? "-" : ($6 == "M3") ? (( simple($5) in m3done) ? "implemented in widgets/m3; docs/m3/custom-widgets/compile_platforms.sh (win32/gtk/cocoa 0 errors)" : "planned") : ($6 == "STOCK" ? "SWT stock" : "Nebula source")
     row[++rows] = $1; emitargs[rows] = $1 SUBSEP $2 SUBSEP $3 SUBSEP $4 SUBSEP $6 SUBSEP $5 SUBSEP sg SUBSEP $8 SUBSEP $9 SUBSEP ev; next }
   FILENAME ~ /\.nebula\.tsv$/ { id = "NEBULA-" $1 "-" $2; if (id in seen) next; seen[id] = 1
     row[++rows] = id; emitargs[rows] = id SUBSEP "nebula" SUBSEP $2 SUBSEP (($2 in nebconcept) ? nebconcept[$2] : "-") SUBSEP "NEBULA" SUBSEP $2 SUBSEP "ADAPTER_NEEDED javax.swing.M3" $2 " over the shared model (Swing track)" SUBSEP "Swing twin" SUBSEP "Swing track" SUBSEP "Nebula source (widgets/" $1 ")"; next }
