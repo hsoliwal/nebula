@@ -99,6 +99,44 @@ public class M3GridRowBinding_Test {
 		column.notifyListeners(SWT.Selection, event);
 	}
 
+	/*
+	 * Brief rule 24, hidden viewports: while the grid is hidden, 10^4 model deltas update the view's lanes but the
+	 * grid is not touched; showing it redoes it once, and its rows equal the view.
+	 */
+	@Test
+	public void hiddenGridIsRedoneOnceOnShow() {
+		final Grid grid = grid();
+		final M3ColumnFilter filter = new M3ColumnFilter(2, ROWS, this::cell);
+		filter.setText(1, "n1", M3TextMatch.CONTAINS);
+		final M3ColumnSort sort = new M3ColumnSort(2, filter);
+		sort.setKey(0, M3ColumnKey.ofInts(r -> numbers[r]));
+		sort.setSortKeys(new int[] { 0 }, new int[] { SWT.UP });
+		final M3GridRowBinding binding = M3GridRowBinding.bind(grid, sort, (item, row) -> {
+			item.setText(0, cell(row, 0));
+			item.setText(1, cell(row, 1));
+		});
+		shell.open();
+		drain();
+		final int refreshes = binding.refreshes;
+		grid.setVisible(false);
+		final Random random = new Random(24);
+		for (int k = 0; k < 10_000; k++) {
+			final int row = random.nextInt(ROWS);
+			numbers[row] = random.nextInt(50);
+			names[row] = "n" + random.nextInt(1000);
+			sort.rowsChanged(row);
+		}
+		drain();
+		assertEquals("grid refreshes while hidden", refreshes, binding.refreshes);
+		grid.setVisible(true);
+		assertEquals("grid refreshes on show", refreshes + 1, binding.refreshes);
+		drain();
+		assertEquals(sort.size(), grid.getItemCount());
+		for (int i = 0; i < Math.min(40, sort.size()); i++) {
+			assertEquals("row " + i, cell(sort.map(i), 1), grid.getItem(i).getText(1));
+		}
+	}
+
 	@Test
 	public void bindingSortsFiltersAndKeepsTheSelection() {
 		final Grid grid = grid();
