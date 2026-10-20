@@ -280,6 +280,9 @@ public class M3StackLayoutDifferentialTest {
 	/* the top control's text, bounds and the composite's pixels */
 	static String top(Side side) {
 		Control top = side.layout.topControl;
+		if (top == null) {
+			return "no top control " + pixels(side.composite);
+		}
 		String text = top instanceof Label ? ((Label) top).getText() : ((Button) top).getText();
 		return text + " " + top.getBounds() + " " + top.getVisible() + " " + pixels(side.composite);
 	}

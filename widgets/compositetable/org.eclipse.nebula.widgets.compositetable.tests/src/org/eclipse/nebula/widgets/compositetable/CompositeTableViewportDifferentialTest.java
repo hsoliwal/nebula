@@ -182,7 +182,7 @@ public class CompositeTableViewportDifferentialTest {
 		table.addScrollListener(new ScrollListener() {
 			@Override
 			public void tableScrolled(ScrollEvent scrollEvent) {
-				events.append("Scr:").append(scrollEvent.currentTopRow).append(' ');
+				events.append("Scr:").append(scrollEvent.userScrollDirection).append(' ');
 			}
 		});
 		table.addRowFocusListener(new RowFocusAdapter() {
