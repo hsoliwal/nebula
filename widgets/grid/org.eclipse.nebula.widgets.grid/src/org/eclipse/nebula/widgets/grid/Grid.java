@@ -3013,15 +3013,15 @@ public class Grid extends Canvas {
 		if (topIndex != -1) {
 			return topIndex;
 		}
-		if (rowsIndexed()) {
-			topIndex = viewport.getTopIndex(isTree);
-			return topIndex;
-		}
 		if (hiddenViewport && scrollValuesObsolete && frozenPlanes == 0) {
 			// a client asks while hidden: the scroll values the deltas left for the show settle now
 			// (stock's eager update after a removal, 375327, keeps the top row in range)
 			updateScrollbars();
 			scrollValuesObsolete = false;
+		}
+		if (rowsIndexed()) {
+			topIndex = viewport.getTopIndex(isTree);
+			return topIndex;
 		}
 
 		if (!vScroll.getVisible()) {
@@ -9540,7 +9540,9 @@ public class Grid extends Canvas {
 	 */
 	private boolean blitBodyHorizontally(final Rectangle area) {
 		final int oldOffset = paintedHScroll;
-		if (!blitScroll || oldOffset < 0 || !isVisible() || columnScrolling || !blitSafe()
+		// the viewport mode only: stock's paint under a frozen column is not the same pixels moved
+		// (GridScrollPaint_Test, original mode: 18,666 pixels differ after a blit to 200)
+		if (viewport == null || !blitScroll || oldOffset < 0 || !isVisible() || columnScrolling || !blitSafe()
 				|| isFocusControl() && focusItem != null) {
 			return false;
 		}

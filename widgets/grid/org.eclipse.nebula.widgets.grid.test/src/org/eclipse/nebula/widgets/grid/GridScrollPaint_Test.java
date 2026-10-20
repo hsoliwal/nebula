@@ -332,8 +332,8 @@ public class GridScrollPaint_Test {
 	 * Optimization pass, frozen columns (nebula#696, #165): a horizontal scroll moves the pixels
 	 * right of the frozen column and repaints the exposed strip and the header row. Steps to the
 	 * right and left by odd and even amounts, one across the overlay's activation and one of more
-	 * than the scrolled width (no blit); the window equals the Grid's paint right after each blit
-	 * and once settled, in both modes.
+	 * than the scrolled width (no blit); the window equals the Grid's paint right after each blit (the
+	 * viewport mode; the original mode repaints, as stock) and once settled, in both modes.
 	 */
 	@Test
 	public void horizontalBlitUnderAFrozenColumn() {
@@ -370,7 +370,9 @@ public class GridScrollPaint_Test {
 		}
 		LOG.info("GridScrollPaint_Test: " + (grid.hBlitScrollCount - blits) + " of " + values.length
 				+ " horizontal steps were blits (frozen column), window identical to the Grid's paint");
-		assertTrue("horizontal blit scrolls", grid.hBlitScrollCount > blits);
+		if (GridViewport.ENABLED) {
+			assertTrue("horizontal blit scrolls", grid.hBlitScrollCount > blits);
+		}
 	}
 
 	private void scrollScript(final Grid grid, final String label, final boolean expectBlits) {
