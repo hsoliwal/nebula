@@ -33,7 +33,7 @@ RANGE_SLIDER	M3RangeSlider	low and high as ints; thumbs as rectangles
 CALENDAR_VIEW	M3CalendarView	entries as start/end epoch-minute lanes; interval index for the visible days
 HYPERLINK	M3Hyperlink	text ranges and targets as int runs
 CODE_EDITOR	M3CodeArea	StyledText viewport (merged); Swing twin over the same line index
-MULTI_SPLIT	M3MultiSplit	split tree as parent/weight lanes; layout by prefix sums
+MULTI_SPLIT	M3MultiSplitPane	split tree as parent/weight lanes; layout by prefix sums
 STATUS_BAR	M3StatusBar	slots as ids with widths
 TOGGLE_SWITCH	M3Switch	one state bit
 NODE_EDITOR	M3NodeEditor	nodes and edges in lanes; spatial grid index for culling and hit tests
