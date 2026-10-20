@@ -1040,6 +1040,11 @@ public class Grid extends Canvas {
 				| SWT.MULTI | SWT.NO_FOCUS | SWT.CHECK | SWT.VIRTUAL;
 		int newStyle = style & mask;
 		newStyle |= SWT.DOUBLE_BUFFERED;
+		if (GridViewport.ENABLED) {
+			// a resize is a viewport delta (brief rule 24): the system keeps the pixels that stay and
+			// invalidates what the resize exposes; onResize adds the bands anchored to an edge
+			newStyle |= SWT.NO_REDRAW_RESIZE;
+		}
 		return newStyle;
 	}
 
@@ -1798,7 +1803,7 @@ public class Grid extends Canvas {
 		for (final int element : order) {
 			displayOrderedColumns.add(cols[element]);
 		}
-		clearDisplayOrderedCache();
+		columnOrderChanged();
 	}
 
 	/**
@@ -1809,7 +1814,23 @@ public class Grid extends Canvas {
 		columnMetrics.invalidate();
 	}
 
-	/** A column changed width, visibility, fixed state, detail or summary, or a group expanded. */
+	/* the display order changed (setColumnOrder, a header drag): the column lanes apply it as a delta */
+	private void columnOrderChanged() {
+		columnOrders = null;
+		columnMetrics.reordered(displayOrderedColumns);
+	}
+
+	/**
+	 * A column changed width, visibility, fixed state, detail or summary, or its group expanded or
+	 * collapsed: the column lanes apply it as a delta (brief rule 24, viewport deltas).
+	 *
+	 * @param column the column
+	 */
+	void columnGeometryChanged(final GridColumn column) {
+		columnMetrics.columnChanged(column);
+	}
+
+	/** The column set changed in a way the lanes cannot follow: rebuilt when next read. */
 	void columnGeometryChanged() {
 		columnMetrics.invalidate();
 	}
@@ -5479,7 +5500,7 @@ public class Grid extends Canvas {
 			for (int i = notifyFrom; i <= notifyTo; i++) {
 				displayOrderedColumns.get(i).fireMoved();
 			}
-			clearDisplayOrderedCache();
+			columnOrderChanged();
 		}
 		redraw();
 	}
@@ -5934,6 +5955,7 @@ public class Grid extends Canvas {
 		paintCulledRows = 0;
 
 		final GC gc = event.gc;
+		paintedPixels += (long) event.width * event.height;
 		final Rectangle originalClipping = gc.getClipping();
 
 		gc.setBackground(getBackground());
@@ -12141,6 +12163,17 @@ public class Grid extends Canvas {
 	 */
 	int fullRebuildCount() {
 		return viewport == null ? 0 : viewport.fullRebuilds();
+	}
+
+	/**
+	 * Brief rule 24, viewport deltas: rebuilds of every column lane after the first build. A column
+	 * resize, hide, show, move, fixed change or group expansion is a delta, so only a column added
+	 * or removed counts here; the column sweep checks it stays 0.
+	 *
+	 * @return the number of such rebuilds since the Grid was made
+	 */
+	int fullReplanCount() {
+		return columnMetrics.fullReplans();
 	}
 
 	/**

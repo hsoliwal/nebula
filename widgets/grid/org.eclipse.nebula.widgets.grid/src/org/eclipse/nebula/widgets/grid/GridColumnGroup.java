@@ -320,7 +320,10 @@ public class GridColumnGroup extends Item
 
         this.expanded = expanded;
         // the columns shown change (detail or summary): the Grid's column lanes (G6)
-        parent.columnGeometryChanged();
+        for (final GridColumn column : columns)
+        {
+            parent.columnGeometryChanged(column);
+        }
 
         if (!expanded && getParent().getCellSelectionEnabled())
         {

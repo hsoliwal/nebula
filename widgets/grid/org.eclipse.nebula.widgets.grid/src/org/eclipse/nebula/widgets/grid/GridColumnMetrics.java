@@ -21,8 +21,9 @@ import java.util.List;
  * Column geometry of a Grid in display order (leaf G6, the viewport mode). Lanes per display
  * position: the column, its width when visible (0 when hidden), the prefix sums of those widths,
  * whether it is visible, and how many pinned columns (visible and fixed) come before it; and the
- * prefix sums of the pinned widths. The lanes are rebuilt in O(c) after any change of a column's
- * width, visibility, fixed state or order, or of the column set ({@link #invalidate()}). The column
+ * prefix sums of the pinned widths. A change of one column's width, visibility or fixed state and a
+ * change of the order are applied as deltas ({@link #columnChanged}, {@link #reordered}); the lanes
+ * are rebuilt in O(c) only after a change of the column set ({@link #invalidate()}). The column
  * at an x, the x of a column, the first and last column on screen and the columns a paint covers
  * are then binary searches or lookups (O(log c), O(1) or O(log c + k)) instead of a walk over
  * every column.
@@ -49,10 +50,130 @@ final class GridColumnMetrics {
 	private int fixedRun;
 	/* display position by GridColumn.index (the column's place in the creation order) */
 	private int[] positionOfIndex = new int[0];
+	/* the fixed state per display position, as last read */
+	private boolean[] fixed = new boolean[0];
 
-	/** A column changed width, visibility, fixed state or order, or the column set changed. */
+	/* brief rule 24, viewport deltas: rebuilds from every column after the first build */
+	private boolean built;
+	private int fullReplans;
+
+	/** The column set changed (a column added or removed): the lanes are rebuilt when next read. */
 	void invalidate() {
 		valid = false;
+	}
+
+	/** @return rebuilds of every lane after the first build (a column added or removed) */
+	int fullReplans() {
+		return fullReplans;
+	}
+
+	/**
+	 * One column changed width, visibility or fixed state (a column resize, hide or show, a group
+	 * expanded or collapsed, detail or summary): only that column is read again, the offsets after
+	 * it move by the change of its width (O(columns after it), no other column read), and the pinned
+	 * lanes follow from the lanes when its pinned share changed (brief rule 24, viewport deltas).
+	 *
+	 * @param column the column that changed
+	 */
+	void columnChanged(final GridColumn column) {
+		if (!valid) {
+			return;
+		}
+		final int position = positionOf(column);
+		if (position < 0) {
+			valid = false;
+			return;
+		}
+		final boolean shown = column.isVisible();
+		final int width = shown ? column.getWidth() : 0;
+		final boolean fixedNow = column.isFixed();
+		if (width < 0 || !exact) {
+			// a negative width leaves the answers to the linear scans: rebuild when next read
+			valid = false;
+			return;
+		}
+		final int delta = width - widths[position];
+		final boolean pinnedShare = visible[position] != shown || fixed[position] != fixedNow
+				|| delta != 0 && shown && fixedNow;
+		widths[position] = width;
+		visible[position] = shown;
+		fixed[position] = fixedNow;
+		if (delta != 0) {
+			for (int i = position + 1; i <= count; i++) {
+				prefix[i] += delta;
+			}
+		}
+		if (pinnedShare) {
+			replanPinned();
+		}
+	}
+
+	/**
+	 * The display order changed (setColumnOrder, a header drag): the run of positions whose column
+	 * changed is found from both ends (two pointers) and only its columns are read again; the
+	 * offsets before and after the run keep their values (a permutation of the run keeps its sum).
+	 *
+	 * @param displayOrdered the Grid's columns in their new display order
+	 */
+	void reordered(final List<GridColumn> displayOrdered) {
+		if (!valid || displayOrdered.size() != count) {
+			valid = false;
+			return;
+		}
+		int first = 0;
+		while (first < count && columns[first] == displayOrdered.get(first)) {
+			first++;
+		}
+		if (first == count) {
+			return;
+		}
+		int last = count - 1;
+		while (columns[last] == displayOrdered.get(last)) {
+			last--;
+		}
+		for (int i = first; i <= last; i++) {
+			final GridColumn column = displayOrdered.get(i);
+			final boolean shown = column.isVisible();
+			final int width = shown ? column.getWidth() : 0;
+			if (width < 0) {
+				valid = false;
+				return;
+			}
+			columns[i] = column;
+			visible[i] = shown;
+			widths[i] = width;
+			fixed[i] = column.isFixed();
+			prefix[i + 1] = prefix[i] + width;
+			if (column.index >= 0 && column.index < positionOfIndex.length) {
+				positionOfIndex[column.index] = i;
+			} else {
+				valid = false;
+				return;
+			}
+		}
+		replanPinned();
+	}
+
+	/* the pinned lanes and the first visible scrolled column, from the lanes alone (O(columns)) */
+	private void replanPinned() {
+		fixedRun = -1;
+		pinnedCount = 0;
+		long pinnedSum = 0;
+		for (int i = 0; i < count; i++) {
+			pinnedBefore[i] = pinnedCount;
+			if (visible[i] && fixed[i]) {
+				pinned[pinnedCount] = i;
+				pinnedPrefix[pinnedCount++] = pinnedSum;
+				pinnedSum += widths[i];
+			} else if (visible[i] && fixedRun < 0) {
+				fixedRun = i;
+			}
+		}
+		pinnedBefore[count] = pinnedCount;
+		pinnedPrefix[pinnedCount] = pinnedSum;
+		if (fixedRun < 0) {
+			fixedRun = count;
+		}
 	}
 
 	/**
@@ -67,11 +188,16 @@ final class GridColumnMetrics {
 	}
 
 	private void rebuild(final List<GridColumn> displayOrdered) {
+		if (built) {
+			fullReplans++;
+		}
+		built = true;
 		count = displayOrdered.size();
 		if (columns.length < count) {
 			columns = new GridColumn[count];
 			widths = new int[count];
 			visible = new boolean[count];
+			fixed = new boolean[count];
 			pinned = new int[count];
 			prefix = new long[count + 1];
 			pinnedBefore = new int[count + 1];
@@ -92,6 +218,7 @@ final class GridColumnMetrics {
 			visible[i] = shown;
 			widths[i] = width;
 			prefix[i] = sum;
+			fixed[i] = column.isFixed();
 			pinnedBefore[i] = pinnedCount;
 			sum += width;
 			if (shown && column.isFixed()) {

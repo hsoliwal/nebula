@@ -62,18 +62,27 @@ public class GridColumnMetrics_Test {
 	@Test
 	public void lanesAnswerAsTheLinearScans() {
 		int checks = 0;
+		int deltas = 0;
 		for (int seed = 0; seed < 16; seed++) {
 			final Grid grid = new Grid(shell, SWT.H_SCROLL | SWT.V_SCROLL);
 			grid.setBounds(0, 0, 480, 280);
 			final List<GridColumnGroup> groups = new ArrayList<>();
 			final Random random = new Random(0xC0L + seed);
 			for (int step = 0; step < 120; step++) {
+				final int replans = grid.fullReplanCount();
 				final String op = apply(grid, groups, random);
 				checks += check(grid, random, "seed " + seed + " step " + step + " (" + op + ")");
+				// brief rule 24, viewport deltas: only a column added or removed rebuilds the lanes
+				if (!op.startsWith("add") && !op.equals("remove")) {
+					assertEquals("full re-plans after " + op + " (seed " + seed + " step " + step + ")", replans,
+							grid.fullReplanCount());
+					deltas++;
+				}
 			}
 			grid.dispose();
 		}
-		LOG.info("GridColumnMetrics_Test: " + checks + " answers equal to the linear scans");
+		LOG.info("GridColumnMetrics_Test: " + checks + " answers equal to the linear scans; " + deltas
+				+ " width, visibility, fixed, order and group changes applied as deltas (0 full re-plans)");
 	}
 
 	private static String apply(final Grid grid, final List<GridColumnGroup> groups, final Random random) {
@@ -176,6 +185,7 @@ public class GridColumnMetrics_Test {
 			total += column.isVisible() ? column.getWidth() : 0;
 		}
 		int checks = 0;
+		int deltas = 0;
 		for (final GridColumn column : columns) {
 			assertEquals(where, columns.indexOf(column), metrics.positionOf(column));
 		}
