@@ -16,6 +16,8 @@ package org.eclipse.nebula.widgets.m3;
 
 import java.util.Arrays;
 
+import org.eclipse.nebula.widgets.m3.internal.M3Counters;
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
@@ -36,6 +38,9 @@ import org.eclipse.swt.widgets.ScrollBar;
  * column, cell width and height). There is no object per cell. Painting covers only the cells inside the clip and
  * draws runs of equally coloured cells with one fill each; a value change repaints its cell when the cell is on
  * screen and nothing otherwise.
+ * While the map is hidden (its own Hide, a zero size, a hidden ancestor) value changes only update the lane: no
+ * repaint, no scroll bar update; on becoming visible it updates the scroll bars and paints once. A resize repaints
+ * only the newly exposed strips (NO_REDRAW_RESIZE), or scrolls when the origin is clamped.
  * <p>
  * Styles: <code>H_SCROLL</code>, <code>V_SCROLL</code>, <code>BORDER</code>. Events: <code>Selection</code> when the
  * selected cell changes (<code>Event.x</code> the column, <code>Event.y</code> the row).
@@ -61,6 +66,7 @@ public class M3HeatMap extends Canvas {
 	private int cellWidth = 8, cellHeight = 8;
 	private int originX, originY;
 	private int selectedRow = -1, selectedColumn = -1;
+	private final M3HiddenGate gate;
 
 	/**
 	 * Creates a heat map with an empty grid and a blue-to-red palette.
@@ -69,7 +75,8 @@ public class M3HeatMap extends Canvas {
 	 * @param style H_SCROLL, V_SCROLL, BORDER
 	 */
 	public M3HeatMap(Composite parent, int style) {
-		super(parent, style | SWT.NO_BACKGROUND | SWT.DOUBLE_BUFFERED);
+		super(parent, style | SWT.NO_BACKGROUND | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
+		gate = new M3HiddenGate(this, this::updateScrollBars);
 		setPalette(new RGB[] { new RGB(0, 0, 160), new RGB(0, 200, 220), new RGB(255, 230, 0), new RGB(200, 0, 0) });
 		Listener listener = this::handle;
 		addListener(SWT.Paint, listener);
@@ -161,7 +168,7 @@ public class M3HeatMap extends Canvas {
 		}
 		rangeChanged();
 		updateScrollBars();
-		redraw();
+		repaint();
 	}
 
 	/** @return the number of rows */
@@ -196,7 +203,7 @@ public class M3HeatMap extends Canvas {
 		}
 		System.arraycopy(rowMajor, 0, values, 0, rowMajor.length);
 		rangeChanged();
-		redraw();
+		repaint();
 	}
 
 	/**
@@ -210,13 +217,16 @@ public class M3HeatMap extends Canvas {
 		values[row * columns + column] = value;
 		if (autoRange && (value < min || value > max)) {
 			rangeChanged();
-			redraw();
+			repaint();
+			return;
+		}
+		if (!showing()) {
 			return;
 		}
 		Rectangle bounds = getCellBounds(row, column);
 		Rectangle client = getClientArea();
 		if (bounds.intersects(client)) {
-			redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
+			repaint(bounds.x, bounds.y, bounds.width, bounds.height);
 		}
 	}
 
@@ -249,11 +259,14 @@ public class M3HeatMap extends Canvas {
 		if (autoRange) {
 			rangeChanged();
 		}
+		if (!showing()) {
+			return;
+		}
 		Rectangle client = getClientArea();
 		int top = Math.max(client.y, fromRow * cellHeight - originY);
 		int bottom = Math.min(client.y + client.height, (toRow + 1) * cellHeight - originY);
 		if (top < bottom) {
-			redraw(client.x, top, client.width, bottom - top, false);
+			repaint(client.x, top, client.width, bottom - top);
 		}
 	}
 
@@ -270,7 +283,7 @@ public class M3HeatMap extends Canvas {
 		this.min = min;
 		this.max = max;
 		autoRange = false;
-		redraw();
+		repaint();
 	}
 
 	/** @return the lower bound of the range */
@@ -292,7 +305,7 @@ public class M3HeatMap extends Canvas {
 		checkWidget();
 		this.autoRange = autoRange;
 		rangeChanged();
-		redraw();
+		repaint();
 	}
 
 	/** @return whether the range follows the values */
@@ -358,7 +371,7 @@ public class M3HeatMap extends Canvas {
 			next[i] = (red << 16) | (green << 8) | blue;
 		}
 		lut = next;
-		redraw();
+		repaint();
 	}
 
 	/**
@@ -404,7 +417,7 @@ public class M3HeatMap extends Canvas {
 		cellWidth = width;
 		cellHeight = height;
 		updateScrollBars();
-		redraw();
+		repaint();
 	}
 
 	/** @return the cell size in pixels */
@@ -476,7 +489,7 @@ public class M3HeatMap extends Canvas {
 		}
 		Rectangle bounds = getCellBounds(row, column);
 		if (bounds.intersects(getClientArea())) {
-			redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
+			repaint(bounds.x, bounds.y, bounds.width, bounds.height);
 		}
 	}
 
@@ -526,6 +539,9 @@ public class M3HeatMap extends Canvas {
 		int dx = originX - x, dy = originY - y;
 		originX = x;
 		originY = y;
+		if (!showing()) {
+			return;
+		}
 		ScrollBar h = getHorizontalBar(), v = getVerticalBar();
 		if (h != null) {
 			h.setSelection(x);
@@ -536,11 +552,32 @@ public class M3HeatMap extends Canvas {
 		if (VIEWPORT) {
 			scroll(dx, dy, 0, 0, client.width, client.height, false);
 		} else {
+			repaint();
+		}
+	}
+
+	/* a hidden map does no native work: deltas fold into the gate; on reveal the scroll bars are updated and the map paints once */
+	private boolean showing() {
+		return !VIEWPORT || gate.probe();
+	}
+
+	private void repaint() {
+		if (showing()) {
+			M3Counters.fullRepaints++;
 			redraw();
 		}
 	}
 
+	private void repaint(int x, int y, int width, int height) {
+		if (showing()) {
+			redraw(x, y, width, height, false);
+		}
+	}
+
 	private void updateScrollBars() {
+		if (!showing()) {
+			return;
+		}
 		Rectangle client = getClientArea();
 		int width = columns * cellWidth, height = rows * cellHeight;
 		ScrollBar h = getHorizontalBar(), v = getVerticalBar();

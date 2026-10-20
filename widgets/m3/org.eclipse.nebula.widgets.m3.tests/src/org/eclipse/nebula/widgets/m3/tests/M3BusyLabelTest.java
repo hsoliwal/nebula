@@ -177,6 +177,44 @@ public class M3BusyLabelTest {
 	}
 
 	@Test
+	public void hiddenLabelFoldsDeltasAndPaintsOnceOnShow() {
+		if (!viewport()) {
+			return;
+		}
+		label.setDelay(100_000);
+		label.setBusy(true);
+		M3TestSupport.assertHiddenGate(label, paints, i -> {
+			label.setFrame(i % 8);
+			label.setText("t" + i);
+		});
+		M3BusyLabel fresh = new M3BusyLabel(shell, SWT.NONE);
+		fresh.setBounds(0, 40, 200, 30);
+		fresh.setText("t9999");
+		fresh.setDelay(100_000);
+		fresh.setBusy(true);
+		fresh.setFrame(7);
+		M3TestSupport.flush(display);
+		assertArrayEquals(M3TestSupport.pixels(fresh).data, M3TestSupport.pixels(label).data);
+	}
+
+	@Test
+	public void hiddenLabelParksItsTimer() {
+		if (!viewport()) {
+			return;
+		}
+		label.setDelay(10);
+		label.setBusy(true);
+		label.setVisible(false);
+		M3TestSupport.spin(display, 100);
+		int frame = label.getFrame();
+		M3TestSupport.spin(display, 100);
+		assertEquals("parked while hidden", frame, label.getFrame());
+		label.setVisible(true);
+		M3TestSupport.spin(display, 150);
+		assertTrue("resumed", label.getFrame() != frame || paints.size() > 2);
+	}
+
+	@Test
 	public void errors() {
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setPointCount(2));
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> label.setFrame(-1));

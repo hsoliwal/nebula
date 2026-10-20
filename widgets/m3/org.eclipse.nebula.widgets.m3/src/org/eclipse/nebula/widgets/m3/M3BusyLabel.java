@@ -15,6 +15,7 @@
 package org.eclipse.nebula.widgets.m3;
 
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
@@ -34,6 +35,8 @@ import org.eclipse.swt.widgets.Event;
  * The model is a few ints (frame, point count, trail length, delay, icon size) and two int lanes with the point
  * centres; the trail shades are computed once per colour change. A frame step repaints the icon square only and
  * allocates nothing; a text change repaints the text strip only.
+ * While the label is hidden (its own Hide, a zero size, a hidden ancestor) frames and text changes do no native work
+ * and the timer parks; on becoming visible it paints once and the timer resumes.
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3BusyLabel=original</code> repaints the whole
@@ -57,6 +60,8 @@ public class M3BusyLabel extends Canvas {
 	/* shades[0] is the head, shades[trail] the idle point colour; null until the next paint after a colour change */
 	private Color[] shades;
 	private final Runnable tick = this::tick;
+	private final M3HiddenGate gate;
+	private boolean parked;
 
 	/**
 	 * Creates an idle busy label with eight points.
@@ -66,6 +71,7 @@ public class M3BusyLabel extends Canvas {
 	 */
 	public M3BusyLabel(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
+		gate = new M3HiddenGate(this, this::revealed);
 		geometry();
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.Resize, e -> resized());
@@ -99,6 +105,10 @@ public class M3BusyLabel extends Canvas {
 
 	private void tick() {
 		if (isDisposed() || !busy) {
+			return;
+		}
+		if (!showing()) {
+			parked = true;
 			return;
 		}
 		setFrame((frame + 1) % points);
@@ -229,6 +239,9 @@ public class M3BusyLabel extends Canvas {
 		}
 		if (!this.text.equals(text)) {
 			this.text = text;
+			if (!showing()) {
+				return;
+			}
 			Rectangle strip = getTextBounds();
 			redraw(strip.x, strip.y, strip.width, strip.height, false);
 		}
@@ -290,7 +303,23 @@ public class M3BusyLabel extends Canvas {
 		return new Point(trim.width, trim.height);
 	}
 
+	/* a hidden label does no native work: the delta is folded into the gate and painted on reveal */
+	private boolean showing() {
+		return !VIEWPORT || gate.probe();
+	}
+
+	/* the one window patch on becoming visible: restart a timer parked while hidden */
+	private void revealed() {
+		if (busy && parked) {
+			parked = false;
+			getDisplay().timerExec(delay, tick);
+		}
+	}
+
 	private void fullRepaint() {
+		if (!showing()) {
+			return;
+		}
 		M3Counters.fullRepaints++;
 		redraw();
 	}
@@ -309,6 +338,9 @@ public class M3BusyLabel extends Canvas {
 	}
 
 	private void redrawIcon() {
+		if (!showing()) {
+			return;
+		}
 		if (VIEWPORT) {
 			Rectangle icon = getIconBounds();
 			redraw(icon.x, icon.y, icon.width, icon.height, false);

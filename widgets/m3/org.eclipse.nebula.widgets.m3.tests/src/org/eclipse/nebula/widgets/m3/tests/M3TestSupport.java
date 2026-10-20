@@ -14,11 +14,14 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.m3.tests;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 
+import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -96,6 +99,31 @@ public final class M3TestSupport {
 			widths[i++] = jump;
 		}
 		return widths;
+	}
+
+	/**
+	 * The hidden-viewport gate (brief rule 24, "Hidden viewports"): hides the control, applies 10^4 model deltas,
+	 * checks that they caused no paint, no visibility probe, no measure, move, creation or full repaint, shows the
+	 * control and checks for exactly one paint pass and one reveal.
+	 */
+	public static void assertHiddenGate(Control control, List<Rectangle> paints, IntConsumer delta) {
+		Display display = control.getDisplay();
+		control.setVisible(false);
+		flush(display);
+		paints.clear();
+		M3Counters.reset();
+		for (int i = 0; i < 10_000; i++) {
+			delta.accept(i);
+		}
+		flush(display);
+		assertEquals("paints while hidden", 0, paints.size());
+		assertEquals(M3Counters.line(), 0, M3Counters.probes + M3Counters.measures + M3Counters.moves + M3Counters.creates + M3Counters.fullRepaints);
+		assertTrue(M3Counters.line(), M3Counters.hiddenDeltas >= 10_000);
+		control.setVisible(true);
+		flush(display);
+		control.update();
+		assertEquals("one paint pass after show: " + paints, 1, paints.size());
+		assertEquals(M3Counters.line(), 1, M3Counters.reveals);
 	}
 
 	/** the on-screen pixels of a control's client area, after pending paints */

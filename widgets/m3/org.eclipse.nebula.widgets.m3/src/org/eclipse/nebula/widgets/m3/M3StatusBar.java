@@ -17,6 +17,7 @@ package org.eclipse.nebula.widgets.m3;
 import java.util.Arrays;
 
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
@@ -41,6 +42,9 @@ import org.eclipse.swt.widgets.Shell;
  * repaints from itself on; a width-only resize repaints from the first slot whose edge moved (or the grip) to the end
  * and moves only the controls whose slot changed. Content is measured when it changes, never on a resize; text of
  * fixed and weighted slots is not measured at all.
+ * While the bar is hidden (its own Hide, a zero size, a hidden ancestor) changes do no native work: texts and
+ * controls are stored, preferred slots are marked stale; on becoming visible the bar measures the stale slots, lays
+ * out once and paints once.
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3StatusBar=original</code> lays out every
@@ -72,6 +76,9 @@ public class M3StatusBar extends Canvas {
 	/* left edge of the area the last layout changed, or Integer.MAX_VALUE when nothing moved */
 	private int changedFrom;
 	private int dragX = -1, dragY, dragWidth, dragHeight;
+	private final M3HiddenGate gate;
+	/* preferred slots whose content changed while the bar was hidden; measured on reveal */
+	private boolean[] stale = new boolean[4];
 
 	/**
 	 * Creates an empty status bar with a resize grip.
@@ -81,6 +88,7 @@ public class M3StatusBar extends Canvas {
 	 */
 	public M3StatusBar(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
+		gate = new M3HiddenGate(this, this::revealed);
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.Resize, e -> resized());
 		addListener(SWT.MouseDown, this::mouse);
@@ -110,6 +118,7 @@ public class M3StatusBar extends Canvas {
 			widths = Arrays.copyOf(widths, n);
 			texts = Arrays.copyOf(texts, n);
 			controls = Arrays.copyOf(controls, n);
+			stale = Arrays.copyOf(stale, n);
 		}
 		int slot = count++;
 		this.mode[slot] = mode;
@@ -118,6 +127,7 @@ public class M3StatusBar extends Canvas {
 		measured[slot] = 2 * PAD;
 		widths[slot] = 0;
 		xs[slot] = slot == 0 ? 0 : xs[slot - 1] + widths[slot - 1] + SEPARATOR;
+		stale[slot] = false;
 		controls[slot] = null;
 		relayout(xs[slot]);
 		return slot;
@@ -138,6 +148,7 @@ public class M3StatusBar extends Canvas {
 		System.arraycopy(widths, slot + 1, widths, slot, tail);
 		System.arraycopy(texts, slot + 1, texts, slot, tail);
 		System.arraycopy(controls, slot + 1, controls, slot, tail);
+		System.arraycopy(stale, slot + 1, stale, slot, tail);
 		count--;
 		texts[count] = null;
 		controls[count] = null;
@@ -175,6 +186,10 @@ public class M3StatusBar extends Canvas {
 			return;
 		}
 		texts[slot] = text;
+		if (VIEWPORT && !gate.probe()) {
+			stale[slot] = mode[slot] == PREFERRED;
+			return;
+		}
 		if (mode[slot] == PREFERRED && controls[slot] == null) {
 			int width = measure(text) + 2 * PAD;
 			if (width != measured[slot]) {
@@ -215,6 +230,10 @@ public class M3StatusBar extends Canvas {
 			SWT.error(SWT.ERROR_INVALID_PARENT);
 		}
 		controls[slot] = control;
+		if (VIEWPORT && !gate.probe()) {
+			stale[slot] = mode[slot] == PREFERRED;
+			return;
+		}
 		remeasure(slot);
 		relayout(xs[slot]);
 		Rectangle bounds = getSlotBounds(slot);
@@ -319,6 +338,7 @@ public class M3StatusBar extends Canvas {
 	}
 
 	private int measure(String text) {
+		M3Counters.measures++;
 		if (text.isEmpty()) {
 			return 0;
 		}
@@ -348,6 +368,26 @@ public class M3StatusBar extends Canvas {
 		}
 	}
 
+	/*
+	 * The one window patch when the bar becomes visible after deltas while hidden: measure the preferred slots whose
+	 * content changed, lay out once and give every slot control its slot (the gate then repaints once).
+	 */
+	private void revealed() {
+		for (int i = 0; i < count; i++) {
+			if (stale[i]) {
+				stale[i] = false;
+				remeasure(i);
+			}
+		}
+		layoutSlots();
+		Rectangle client = getClientArea();
+		for (int i = 0; i < count; i++) {
+			if (controls[i] != null && !controls[i].isDisposed()) {
+				controls[i].setBounds(xs[i], client.y, widths[i], client.height);
+			}
+		}
+	}
+
 	private void fullRepaint() {
 		M3Counters.fullRepaints++;
 		redraw();
@@ -364,6 +404,9 @@ public class M3StatusBar extends Canvas {
 		int oldRight = client.x + (clientWidth < 0 ? client.width : clientWidth);
 		clientWidth = client.width;
 		clientHeight = client.height;
+		if (VIEWPORT && !gate.visible()) {
+			return;
+		}
 		layoutSlots();
 		if (!VIEWPORT || heightChanged) {
 			fullRepaint();
@@ -378,6 +421,9 @@ public class M3StatusBar extends Canvas {
 
 	/* lays out and repaints from the first slot that moved (viewport) or everything (original) */
 	private void relayout(int from) {
+		if (VIEWPORT && !gate.probe()) {
+			return;
+		}
 		layoutSlots();
 		if (!VIEWPORT) {
 			fullRepaint();

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.eclipse.nebula.widgets.m3.M3HeatMap;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -44,6 +45,8 @@ import org.junit.Test;
  * reference painted cell by cell. Runs in both startup modes.
  */
 public class M3HeatMapTest {
+
+	static final boolean VIEWPORT = WidgetMode.of("M3HeatMap", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	Display display;
 	Shell shell;
@@ -304,6 +307,57 @@ public class M3HeatMapTest {
 		actual.dispose();
 		expected.dispose();
 		assertArrayEquals(e.data, a.data);
+	}
+
+	@Test
+	public void hiddenMapFoldsDeltasAndPaintsOnceOnShow() {
+		if (!VIEWPORT) {
+			return;
+		}
+		map.setSize(12, 16);
+		map.setCellSize(9, 7);
+		map.setRange(0f, 1f);
+		float[] values = new float[12 * 16];
+		Random random = new Random(11);
+		M3TestSupport.assertHiddenGate(map, paints, i -> {
+			int cell = random.nextInt(values.length);
+			values[cell] = random.nextInt(5) * 0.25f;
+			map.setValue(cell / 16, cell % 16, values[cell]);
+		});
+		M3HeatMap fresh = new M3HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+		fresh.setBounds(0, 0, 300, 200);
+		fresh.setSize(12, 16);
+		fresh.setCellSize(9, 7);
+		fresh.setValues(values);
+		fresh.setRange(0f, 1f);
+		fresh.moveAbove(map);
+		M3TestSupport.flush(display);
+		org.eclipse.swt.graphics.ImageData expected = M3TestSupport.pixels(fresh);
+		fresh.dispose();
+		M3TestSupport.flush(display);
+		assertArrayEquals(expected.data, M3TestSupport.pixels(map).data);
+	}
+
+	@Test
+	public void resizeSweepIsAViewportDelta() {
+		map.setSize(400, 400);
+		map.setCellSize(4, 4);
+		map.setOrigin(100, 100);
+		flush();
+		int height = map.getSize().y, old = map.getSize().x;
+		org.eclipse.nebula.widgets.m3.internal.M3Counters.reset();
+		for (int width : M3TestSupport.sweepWidths(300)) {
+			paints.clear();
+			map.setSize(width, height);
+			map.update();
+			if (VIEWPORT) {
+				for (Rectangle paint : paints) {
+					assertTrue(old + " -> " + width + ": " + paint, paint.x >= Math.min(old, width) - 20);
+				}
+			}
+			old = width;
+		}
+		assertEquals(org.eclipse.nebula.widgets.m3.internal.M3Counters.line(), 0, org.eclipse.nebula.widgets.m3.internal.M3Counters.fullRepaints);
 	}
 
 	@Test

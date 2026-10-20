@@ -226,6 +226,25 @@ public class M3StatusBarTest {
 	}
 
 	@Test
+	public void hiddenBarFoldsDeltasAndPaintsOnceOnShow() {
+		if (!viewport()) {
+			return;
+		}
+		M3TestSupport.assertHiddenGate(bar, paints, i -> {
+			bar.setText(1, "row " + i);
+			bar.setText(0, i % 2 == 0 ? "Busy" : "Ready");
+			bar.setText(3, i + " rows");
+		});
+		M3StatusBar fresh = build(shell, 40);
+		fresh.setText(1, "row 9999");
+		fresh.setText(0, "Ready");
+		fresh.setText(3, "9999 rows");
+		M3TestSupport.flush(display);
+		assertEquals(fresh.getSlotBounds(1), bar.getSlotBounds(1));
+		assertArrayEquals(M3TestSupport.pixels(fresh).data, M3TestSupport.pixels(bar).data);
+	}
+
+	@Test
 	public void errors() {
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(3, 0));
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(M3StatusBar.FIXED, -1));

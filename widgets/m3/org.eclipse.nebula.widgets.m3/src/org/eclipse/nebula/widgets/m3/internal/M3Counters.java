@@ -34,18 +34,26 @@ public final class M3Counters {
 	public static long creates;
 	/** child controls or items released */
 	public static long releases;
+	/** model deltas folded into a hidden viewport's dirty window (no native work, no paint) */
+	public static long hiddenDeltas;
+	/** native visibility probes (Control.isVisible) made by the hidden gates */
+	public static long probes;
+	/** hidden viewports that became visible and applied their one window patch */
+	public static long reveals;
+	/** content measurements (text extents, preferred sizes) */
+	public static long measures;
 
 	private M3Counters() {
 	}
 
 	/** zeroes every counter */
 	public static void reset() {
-		fullRepaints = fullLayouts = layouts = moves = creates = releases = 0;
+		fullRepaints = fullLayouts = layouts = moves = creates = releases = hiddenDeltas = probes = reveals = measures = 0;
 	}
 
 	/** @return the counters as one line, for test messages and logs */
 	public static String line() {
 		return "fullRepaints=" + fullRepaints + " fullLayouts=" + fullLayouts + " layouts=" + layouts + " moves=" + moves //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-				+ " creates=" + creates + " releases=" + releases; //$NON-NLS-1$ //$NON-NLS-2$
+				+ " creates=" + creates + " releases=" + releases + " hiddenDeltas=" + hiddenDeltas + " probes=" + probes + " reveals=" + reveals + " measures=" + measures; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
 	}
 }

@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.nebula.widgets.m3.M3CollapsiblePane;
+import org.eclipse.nebula.widgets.m3.M3StatusBar;
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
@@ -207,6 +208,39 @@ public class M3CollapsiblePaneTest {
 		side.setCollapsed(false);
 		assertEquals(full, side.getSize().x);
 		other.dispose();
+	}
+
+	@Test
+	public void collapsedContentIsAHiddenViewport() {
+		if (!viewport()) {
+			return;
+		}
+		M3StatusBar bar = new M3StatusBar(pane.getContent(), SWT.NONE);
+		bar.addSlot(M3StatusBar.PREFERRED, 0);
+		bar.addSlot(M3StatusBar.FILL, 1);
+		bar.setText(0, "row 0");
+		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = M3TestSupport.recordPaints(bar);
+		shell.layout(true, true);
+		M3TestSupport.flush(display);
+		pane.setAnimated(false);
+		pane.setCollapsed(true);
+		M3TestSupport.flush(display);
+		paints.clear();
+		M3Counters.reset();
+		for (int i = 0; i < 10_000; i++) {
+			bar.setText(0, "row " + i);
+			bar.setText(1, "filter " + i);
+		}
+		M3TestSupport.flush(display);
+		assertEquals("no paint inside a collapsed pane", 0, paints.size());
+		assertEquals("one probe found the hidden ancestor: " + M3Counters.line(), 1, M3Counters.probes);
+		assertEquals(M3Counters.line(), 0, M3Counters.measures);
+		pane.setCollapsed(false);
+		M3TestSupport.flush(display);
+		bar.update();
+		assertEquals("one paint pass on expand: " + paints, 1, paints.size());
+		assertEquals(M3Counters.line(), 1, M3Counters.reveals);
+		assertEquals("row 9999", bar.getText(0));
 	}
 
 	@Test
