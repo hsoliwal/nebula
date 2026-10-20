@@ -837,6 +837,13 @@ public class Grid extends Canvas {
 	/** Test switch: false restores the full body redraw on vertical scrolling. */
 	boolean blitScroll = true;
 
+	/** Horizontal offset and frozen overlay drawn by the last body paint (origin of a horizontal blit). */
+	private int paintedHScroll = -1;
+	private boolean paintedOverlay;
+
+	/** Horizontal scrolls served by a blit (package-private, for tests and benches). */
+	int hBlitScrollCount;
+
 	/** Vertical scrolls served by a blit (package-private, for tests and benches). */
 	int blitScrollCount;
 
@@ -6100,6 +6107,8 @@ public class Grid extends Canvas {
 		// Z1: scrolling body.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
 			paintedTopIndex = firstVisibleIndex;
+			paintedHScroll = hscroll;
+			paintedOverlay = fixedOverlayActive;
 			bodyPaintCount++;
 			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
 			try (GridGCProxy bodyGc = GridGCProxy.wrap(gc).clip(bodyClipping)) {
@@ -9253,11 +9262,78 @@ public class Grid extends Canvas {
 				columnFootersVisible ? footerHeight() : 0,
 				horizontal);
 		if (damage.width > 0 && damage.height > 0) {
-			if (!horizontal && blitBody(oldTop, damage)) {
+			if (horizontal ? blitBodyHorizontally(damage) : blitBody(oldTop, damage)) {
 				return;
 			}
 			redraw(damage.x, damage.y, damage.width, damage.height, false);
 		}
+	}
+
+	/**
+	 * Scrolls the body horizontally by copying the pixels that stay visible (optimization pass,
+	 * frozen columns, nebula#696 and #165): the part right of the row header and of the frozen
+	 * overlay moves by the change of the horizontal offset; the exposed strip and the header and
+	 * footer rows (the column headers move too, their frozen part does not) are repainted. Under
+	 * the conditions of {@link #blitBody(int, Rectangle)}, with pixel scrolling, the same frozen
+	 * overlay before and after, and no focus outline on screen (the focused row's outline spans the
+	 * visible width); otherwise the caller repaints the whole client area.
+	 *
+	 * @param area the client area (the horizontal scroll damage)
+	 * @return whether the blit served the scroll
+	 */
+	private boolean blitBodyHorizontally(final Rectangle area) {
+		final int oldOffset = paintedHScroll;
+		if (!blitScroll || oldOffset < 0 || !isVisible() || columnScrolling || !blitSafe()
+				|| isFocusControl() && focusItem != null) {
+			return false;
+		}
+		final int newOffset = getHScrollSelectionInPixels();
+		final FixedGridColumns fixed = getFixedGridColumns();
+		final boolean overlay = fixed.hasColumns() && newOffset > fixed.offset();
+		if (overlay != paintedOverlay) {
+			return false;
+		}
+		final int dx = oldOffset - newOffset;
+		final int header = columnHeadersVisible ? headerHeight() : 0;
+		final int footer = columnFootersVisible ? footerHeight() : 0;
+		final int left = (rowHeaderVisible ? rowHeaderWidth : 0) + (overlay ? getFixedColumnsWidth() : 0);
+		final int width = area.width - left;
+		final int top = area.y + header;
+		final int height = area.height - header - footer;
+		if (dx == 0 || width <= 0 || height <= 0 || Math.abs(dx) >= width) {
+			return false;
+		}
+		// the classic tree column's dotted lines take their phase from the absolute pixel column
+		if ((dx & 1) != 0 && hasDottedBranches()) {
+			return false;
+		}
+		// each damaged part gets its own paint: the paint clip is the bounding box of what is
+		// invalid, so the strip and the header rows painted together would repaint the whole body
+		if (dx > 0) {
+			scroll(left + dx, top, left, top, width - dx, height, false);
+			redraw(left, top, dx, height, false);
+		} else {
+			scroll(left, top, left - dx, top, width + dx, height, false);
+			redraw(area.x + area.width + dx, top, -dx, height, false);
+		}
+		update();
+		// the first body rows also show the header's overflow (HEADER_OVERFLOW), painted by the header
+		final int band = columnHeadersVisible ? Math.min(headerOverflowBelow(getExtraFill(), area.width), height) : 0;
+		if (band > 0) {
+			redraw(area.x, top, area.width, band, false);
+			update();
+		}
+		if (header > 0) {
+			redraw(area.x, area.y, area.width, header, false);
+			update();
+		}
+		if (footer > 0) {
+			redraw(area.x, area.y + area.height - footer, area.width, footer, false);
+			update();
+		}
+		paintedHScroll = newOffset;
+		hBlitScrollCount++;
+		return true;
 	}
 
 	/**
@@ -10685,9 +10761,10 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
+		final int columnsBefore = selectedColumns.size();
 		selectedCells.remove(cell);
 		updateColumnSelection();
-		redraw();
+		redrawCell(cell, selectedColumns.size() != columnsBefore);
 	}
 
 	/**
@@ -10780,9 +10857,10 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
+		final int columnsBefore = selectedColumns.size();
 		addToCellSelection(cell);
 		updateColumnSelection();
-		redraw();
+		redrawCell(cell, selectedColumns.size() != columnsBefore);
 	}
 
 	/**
@@ -12053,6 +12131,29 @@ public class Grid extends Canvas {
 	/* paints of one row's rectangle, and changes left to the next paint (package-private counters) */
 	int rowDeltaPaints;
 	int rowDeltaSkips;
+
+	/**
+	 * One cell's selection changed (G7 and the optimization pass): in the viewport mode its row is
+	 * repainted when it is on screen, nothing when it is not, and the column headers only when a
+	 * column gained its first or lost its last selected cell (their selected look); stock repaints
+	 * the whole Grid per ctrl+click.
+	 *
+	 * @param cell           the cell
+	 * @param columnsChanged whether the set of columns with a selected cell changed
+	 */
+	private void redrawCell(final Point cell, final boolean columnsChanged) {
+		if (cell.y < 0 || cell.y >= items.size() || usesSparseVirtualItems() || !(selectedCells instanceof GridCellSelectionList)) {
+			redraw();
+			return;
+		}
+		if (!redrawRow(items.get(cell.y))) {
+			redraw();
+			return;
+		}
+		if (columnsChanged && columnHeadersVisible) {
+			redraw(0, 0, getClientArea().width, headerHeight(), false);
+		}
+	}
 
 	/**
 	 * One row's data changed (G7, one model with deltas): on screen, that row's rectangle is

@@ -328,6 +328,51 @@ public class GridScrollPaint_Test {
 		scrollScript(grid, "tree", GridViewport.ENABLED);
 	}
 
+	/*
+	 * Optimization pass, frozen columns (nebula#696, #165): a horizontal scroll moves the pixels
+	 * right of the frozen column and repaints the exposed strip and the header row. Steps to the
+	 * right and left by odd and even amounts, one across the overlay's activation and one of more
+	 * than the scrolled width (no blit); the window equals the Grid's paint right after each blit
+	 * and once settled, in both modes.
+	 */
+	@Test
+	public void horizontalBlitUnderAFrozenColumn() {
+		final Grid grid = new Grid(shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(5, 5, 400, 370);
+		grid.setHeaderVisible(true);
+		grid.setLinesVisible(true);
+		for (int c = 0; c < 12; c++) {
+			final GridColumn column = new GridColumn(grid, SWT.NONE);
+			column.setText("c" + c);
+			column.setWidth(90);
+			column.setFixed(c == 0);
+		}
+		for (int r = 0; r < 2000; r++) {
+			final GridItem item = new GridItem(grid, SWT.NONE);
+			for (int c = 0; c < 12; c++) {
+				item.setText(c, r + ":" + c);
+			}
+		}
+		shell.open();
+		settle();
+		final ScrollBar bar = grid.getHorizontalBar();
+		final int blits = grid.hBlitScrollCount;
+		final int[] values = { 37, 74, 73, 200, 160, 10, 0, 150, 151, 700 };
+		for (final int value : values) {
+			final int before = grid.hBlitScrollCount;
+			bar.setSelection(value);
+			bar.notifyListeners(SWT.Selection, new Event());
+			if (grid.hBlitScrollCount > before) {
+				assertScreenIsPaint(grid, "hbar " + value + ", right after the blit");
+			}
+			settle();
+			assertScreenIsPaint(grid, "hbar " + value + ", settled");
+		}
+		LOG.info("GridScrollPaint_Test: " + (grid.hBlitScrollCount - blits) + " of " + values.length
+				+ " horizontal steps were blits (frozen column), window identical to the Grid's paint");
+		assertTrue("horizontal blit scrolls", grid.hBlitScrollCount > blits);
+	}
+
 	private void scrollScript(final Grid grid, final String label, final boolean expectBlits) {
 		shell.open();
 		settle();
