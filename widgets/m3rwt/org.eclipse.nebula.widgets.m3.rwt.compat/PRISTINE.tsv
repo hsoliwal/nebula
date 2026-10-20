@@ -1,0 +1,6 @@
+path	sha256_rwt_4.8.0_sources	source
+src/org/eclipse/swt/SWT.java	08fb3ea24c7f4178d73284474c3a941813b435c3678e1cadb492044a56f1d497	org.eclipse.rap.rwt-4.8.0-sources.jar!/org/eclipse/swt/SWT.java
+src/org/eclipse/swt/graphics/Color.java	46e90823ce0cb279d5e9cb991314b4d0dc5157f09c2434b87daa341f98ee0712	org.eclipse.rap.rwt-4.8.0-sources.jar!/org/eclipse/swt/graphics/Color.java
+src/org/eclipse/swt/graphics/ControlGC.java	8d5b4834a5e3e524a87035eaa9278febd63a0cbc6645e5db1a1bda16604695c5	org.eclipse.rap.rwt-4.8.0-sources.jar!/org/eclipse/swt/graphics/ControlGC.java
+src/org/eclipse/swt/graphics/GC.java	f5a28262cdf7051bfb60dc7e8721b73957b6314617b954fe31014541d2fd306a	org.eclipse.rap.rwt-4.8.0-sources.jar!/org/eclipse/swt/graphics/GC.java
+src/org/eclipse/swt/internal/widgets/canvaskit/GCOperationWriter.java	18e956ed04bd69df7e607852f0512824ee549a0c660fda2949b3094cc91a7c86	org.eclipse.rap.rwt-4.8.0-sources.jar!/org/eclipse/swt/internal/widgets/canvaskit/GCOperationWriter.java
