@@ -21,9 +21,9 @@ differential() { # <widget dir> <runner> <candidate classes> <property prefix> <
 for step in $STEPS; do
   case $step in
   m3)
-    bash "$HERE/coverage_m3.sh" M3BusyLabelTest M3CollapsiblePaneTest M3ColorButtonTest M3DatePickerTest M3ErrorPaneTest M3FindBarTest M3GradientChooserTest M3HeatMapTest M3HyperlinkTest M3ImageViewTest M3InfoPopupTest M3JFaceBindingsTest M3MonthViewTest M3MultiSplitPaneTest M3ResidentPagesTest M3StackLayoutDifferentialTest M3StackLayoutTest M3StatusBarTest M3TaskPaneTest M3ToastsTest ;;
+    bash "$HERE/coverage_m3.sh" M3AutocompleteTest M3BusyLabelTest M3CollapsiblePaneTest M3ColorButtonTest M3DatePickerTest M3ErrorPaneTest M3FindBarTest M3GradientChooserTest M3HeatMapTest M3HyperlinkTest M3ImageViewTest M3InfoPopupTest M3JFaceBindingsTest M3MonthViewTest M3MultiSplitPaneTest M3ResidentPagesTest M3StackLayoutDifferentialTest M3StackLayoutTest M3StatusBarTest M3TaskPaneTest M3ToastsTest ;;
   shots)
-    for c in M3BusyLabelSnippet M3CollapsiblePaneSnippet M3ColorButtonSnippet M3DatePickerSnippet M3ErrorPaneSnippet M3FindBarSnippet M3GradientChooserSnippet M3HeatMapSnippet M3HyperlinkSnippet M3ImageViewSnippet M3InfoPopupSnippet M3MonthViewSnippet M3MultiSplitPaneSnippet M3StackLayoutSnippet M3StatusBarSnippet M3TaskPaneSnippet M3ToastsSnippet; do
+    for c in M3AutocompleteSnippet M3BusyLabelSnippet M3CollapsiblePaneSnippet M3ColorButtonSnippet M3DatePickerSnippet M3ErrorPaneSnippet M3FindBarSnippet M3GradientChooserSnippet M3HeatMapSnippet M3HyperlinkSnippet M3ImageViewSnippet M3InfoPopupSnippet M3MonthViewSnippet M3MultiSplitPaneSnippet M3StackLayoutSnippet M3StatusBarSnippet M3TaskPaneSnippet M3ToastsSnippet; do
       bash "$HERE/run_m3.sh" 180 "$L/shot-$c.log" viewport - "-Dm3.snippet.screenshot=$SHOT/$c.png" "main:org.eclipse.nebula.widgets.m3.snippets.$c"
     done
     bash "$HERE/gallery/run_gallery.sh" 300 "$L/shot-gallery.log" gallery-classes "-Dm3.snippet.screenshot=$SHOT/GalleryMillionSnippet.png" -- main:org.eclipse.nebula.snippets.gallery.GalleryMillionSnippet

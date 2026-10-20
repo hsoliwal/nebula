@@ -33,3 +33,4 @@ Snippets live in `widgets/m3/org.eclipse.nebula.widgets.m3.snippets/src/org/ecli
 | M3Toasts | toasts (behaviours catalogue); Nebula Opal Notifier | `M3ToastsSnippet` | info, warning and error toasts in one corner overlay; click to dismiss, hover to pause | `S:/m3-scratch/custom-widgets/screenshots/M3ToastsSnippet.png` |
 | M3FindBar over a JFace TableViewer | `M3ViewerSearchable` (bundle `org.eclipse.nebula.widgets.m3.jface`) | `M3FindBarExampleTab` (Nebula Examples view) | 10^5-element TableViewer searched in its shown order | - |
 | M3ErrorPane for an IStatus | `M3StatusPane` (bundle `org.eclipse.nebula.widgets.m3.jface`) | `M3ErrorPaneExampleTab` (Nebula Examples view) | MultiStatus with a failing child, dialog form | - |
+| M3Autocomplete | autocomplete (behaviours catalogue); JFace ContentProposalAdapter | `M3AutocompleteSnippet` | proposals over 10^6 generated class names | `S:/m3-scratch/custom-widgets/screenshots/M3AutocompleteSnippet.png` |
