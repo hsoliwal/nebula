@@ -12051,54 +12051,73 @@ public class Grid extends Canvas {
 	 * @return whether the change was handled ({@code false}: the caller repaints the Grid)
 	 */
 	private boolean redrawRow(final GridItem item) {
-		if (viewport == null || usesSparseVirtualItems() || hasSpanning || autoHeight || frozenPlanes != 0
-				|| pinnedTopRows + pinnedBottomRows > 0 || topIndex < 0 || bottomIndex < 0 || item.isDisposed()) {
+		if (!rowDeltaPossible(item) || autoHeight) {
 			return false;
 		}
 		final int row = item.getRowIndex();
 		if (row < 0) {
 			return false;
 		}
-		if (row < topIndex || row > bottomIndex || !item.isVisible()) {
+		// the window: cached by the last paint or scroll, else measured now (the row index, O(log n))
+		final int top = getTopIndex();
+		final int bottom = getBottomIndex();
+		if (row < top || row > bottom || !item.isVisible()) {
 			rowDeltaSkips++;
 			return true;
 		}
 		final Rectangle area = getClientArea();
-		final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(topIndex, row);
+		final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(top, row);
 		redraw(area.x, y, area.width, item.getHeight() + 1, false);
 		rowDeltaPaints++;
 		return true;
 	}
 
+	/* a row delta can be applied alone: the viewport mode's row index, no spans, pinned planes or frozen paint */
+	private boolean rowDeltaPossible(final GridItem item) {
+		return viewport != null && !usesSparseVirtualItems() && !hasSpanning && frozenPlanes == 0
+				&& pinnedTopRows + pinnedBottomRows == 0 && !item.isDisposed() && isVisible();
+	}
+
 	/**
-	 * One row's height changed (G7): on screen, the rows from it down repaint and the bottom row
-	 * is recomputed; off screen or hidden, only the row index's extents change (already done by
-	 * the caller) and the scroll values are left to the next paint, since the rows on screen and
-	 * the row-based scroll bar do not move.
+	 * One row's height changed (G7). The scroll extents change wherever the row is, so the scroll
+	 * bars are brought up to date at once (as the paint stock asks for would). If that moves what
+	 * is on screen (top row, a scroll bar shown or hidden, the client area), the Grid repaints as
+	 * stock; otherwise a row on screen repaints from its top down, and a row off screen or hidden
+	 * repaints nothing.
 	 *
 	 * @param item the item whose height changed
 	 * @return whether the change was handled ({@code false}: the caller repaints as stock)
 	 */
 	boolean rowExtentChanged(final GridItem item) {
-		if (viewport == null || usesSparseVirtualItems() || hasSpanning || frozenPlanes != 0
-				|| pinnedTopRows + pinnedBottomRows > 0 || topIndex < 0 || bottomIndex < 0 || item.isDisposed()) {
+		if (!rowDeltaPossible(item)) {
 			return false;
 		}
 		final int row = item.getRowIndex();
 		if (row < 0) {
 			return false;
 		}
-		if (row < topIndex || row > bottomIndex || !item.isVisible()) {
-			scrollValuesObsolete = true;
-			rowDeltaSkips++;
+		final int top = getTopIndex();
+		final int bottom = getBottomIndex();
+		final boolean onScreen = row >= top && row <= bottom && item.isVisible();
+		final Rectangle before = getClientArea();
+		final boolean vBefore = vScroll.getVisible(), hBefore = hScroll.getVisible();
+		final int selectionBefore = vScroll.getSelection();
+		updateScrollbars();
+		scrollValuesObsolete = false;
+		topIndex = -1;
+		bottomIndex = -1;
+		if (vScroll.getVisible() != vBefore || hScroll.getVisible() != hBefore || !getClientArea().equals(before)
+				|| vScroll.getSelection() != selectionBefore || getTopIndex() != top) {
+			redraw();
 			return true;
 		}
-		final Rectangle area = getClientArea();
-		final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(topIndex, row);
-		bottomIndex = -1;
-		scrollValuesObsolete = true;
-		redraw(area.x, y, area.width, area.height - y, false);
-		rowDeltaPaints++;
+		if (onScreen) {
+			final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(top, row);
+			redraw(before.x, y, before.width, before.height - y, false);
+			rowDeltaPaints++;
+		} else {
+			rowDeltaSkips++;
+		}
 		return true;
 	}
 
