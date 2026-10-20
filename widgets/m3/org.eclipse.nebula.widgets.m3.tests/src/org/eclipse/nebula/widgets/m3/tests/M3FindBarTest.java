@@ -122,8 +122,12 @@ public class M3FindBarTest {
 		bar.setText("item 99");
 		bar.setText("Needle");
 		waitForSearch();
-		assertEquals("only the last generation revealed: " + selections, 1, selections.size());
-		assertEquals(Integer.valueOf(7), selections.get(0));
+		if (viewport()) {
+			assertEquals("only the last generation revealed: " + selections, 1, selections.size());
+		} else {
+			assertEquals("original mode searches each keystroke at once: " + selections, 3, selections.size());
+		}
+		assertEquals(Integer.valueOf(7), selections.get(selections.size() - 1));
 		assertEquals(1000, bar.getMatchCount());
 	}
 

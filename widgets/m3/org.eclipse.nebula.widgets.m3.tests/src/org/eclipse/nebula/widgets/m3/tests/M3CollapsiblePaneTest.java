@@ -172,6 +172,9 @@ public class M3CollapsiblePaneTest {
 
 	@Test
 	public void resizeSweepIsAViewportDelta() {
+		// room for every swept width inside the shell
+		shell.setSize(700, 400);
+		M3TestSupport.flush(display);
 		int height = pane.getSize().y;
 		counting.measures = counting.layouts = 0;
 		M3Counters.reset();

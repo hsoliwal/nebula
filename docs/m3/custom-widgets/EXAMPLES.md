@@ -28,3 +28,4 @@ Snippets live in `widgets/m3/org.eclipse.nebula.widgets.m3.snippets/src/org/ecli
 | M3DatePicker | SwingX `JXDatePicker` | `M3DatePickerSnippet` | start and end pickers; the end drop-down flags the start date | `S:/m3-scratch/custom-widgets/screenshots/M3DatePickerSnippet.png` |
 | M3ImageView | SwingX `JXImageView`, `JXImagePanel` | `M3ImageViewSnippet` | 4000 x 3000 generated image: drag to pan, Ctrl+wheel to zoom around the pointer | `S:/m3-scratch/custom-widgets/screenshots/M3ImageViewSnippet.png` |
 | M3ColorButton | SwingX `JXColorSelectionButton` | `M3ColorButtonSnippet` | three swatches opening the system colour dialog | `S:/m3-scratch/custom-widgets/screenshots/M3ColorButtonSnippet.png` |
+| M3GradientChooser | SwingX `JXGradientChooser` | `M3GradientChooserSnippet` | gradient stops driving an M3HeatMap palette (toLookupTable) | `S:/m3-scratch/custom-widgets/screenshots/M3GradientChooserSnippet.png` |

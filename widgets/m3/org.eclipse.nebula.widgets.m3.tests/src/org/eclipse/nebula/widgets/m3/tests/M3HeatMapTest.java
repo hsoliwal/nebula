@@ -308,7 +308,7 @@ public class M3HeatMapTest {
 		ImageData a = actual.getImageData(), e = expected.getImageData();
 		actual.dispose();
 		expected.dispose();
-		assertArrayEquals(e.data, a.data);
+		M3TestSupport.assertSamePixels("heatmap-cells", e, a);
 	}
 
 	@Test

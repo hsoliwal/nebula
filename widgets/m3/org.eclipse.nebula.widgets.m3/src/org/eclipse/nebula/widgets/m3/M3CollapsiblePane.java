@@ -204,6 +204,13 @@ public class M3CollapsiblePane extends Composite {
 			content.setVisible(!collapsed);
 		}
 		relayoutParent();
+		if (!collapsed) {
+			// the one patch on expand: place the content even when the pane kept its size (a pane that fills its cell),
+			// then lay the content out once, so children added or changed while it was hidden take their place
+			layout(false);
+			content.layout(true);
+			M3Counters.layouts++;
+		}
 		Event event = new Event();
 		notifyListeners(collapsed ? SWT.Collapse : SWT.Expand, event);
 	}

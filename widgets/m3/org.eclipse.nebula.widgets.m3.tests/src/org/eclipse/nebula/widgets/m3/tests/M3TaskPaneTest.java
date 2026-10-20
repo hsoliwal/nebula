@@ -110,7 +110,6 @@ public class M3TaskPaneTest {
 		M3TestSupport.flush(display);
 		assertTrue(panes[1].getSize().y < height);
 		assertEquals(1, collapses[0]);
-		assertStacked();
 		if (viewport()) {
 			assertEquals("pane above untouched", 0, resizes[0] + moves[0]);
 			assertEquals("pane below moved, not resized", 0, resizes[2]);
@@ -118,6 +117,7 @@ public class M3TaskPaneTest {
 			assertEquals("other contents not measured", 0, contents[0].measures + contents[2].measures);
 			assertEquals("other contents not laid out", 0, contents[0].layouts + contents[2].layouts);
 		}
+		assertStacked();
 		panes[1].setCollapsed(false);
 		M3TestSupport.flush(display);
 		assertStacked();

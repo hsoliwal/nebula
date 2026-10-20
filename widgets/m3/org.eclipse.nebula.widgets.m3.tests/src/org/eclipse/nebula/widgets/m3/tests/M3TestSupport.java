@@ -26,6 +26,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -124,6 +126,36 @@ public final class M3TestSupport {
 		control.update();
 		assertEquals("one paint pass after show: " + paints, 1, paints.size());
 		assertEquals(M3Counters.line(), 1, M3Counters.reveals);
+	}
+
+	/**
+	 * Asserts two images have the same pixels; on a mismatch saves both as PNG under
+	 * S:/m3-scratch/custom-widgets/logs/pixels-&lt;name&gt;-{expected,actual}.png and reports the first differing pixel.
+	 */
+	public static void assertSamePixels(String name, ImageData expected, ImageData actual) {
+		if (expected.width == actual.width && expected.height == actual.height) {
+			for (int y = 0; y < expected.height; y++) {
+				for (int x = 0; x < expected.width; x++) {
+					RGB e = expected.palette.getRGB(expected.getPixel(x, y)), a = actual.palette.getRGB(actual.getPixel(x, y));
+					if (!e.equals(a)) {
+						save(name, expected, actual);
+						throw new AssertionError(name + ": first difference at (" + x + "," + y + "): expected " + e + " but was " + a);
+					}
+				}
+			}
+			return;
+		}
+		save(name, expected, actual);
+		throw new AssertionError(name + ": size " + expected.width + "x" + expected.height + " vs " + actual.width + "x" + actual.height);
+	}
+
+	private static void save(String name, ImageData expected, ImageData actual) {
+		String dir = System.getProperty("m3.test.pixels.dir", "S:/m3-scratch/custom-widgets/logs"); //$NON-NLS-1$ //$NON-NLS-2$
+		ImageLoader loader = new ImageLoader();
+		loader.data = new ImageData[] { expected };
+		loader.save(dir + "/pixels-" + name + "-expected.png", SWT.IMAGE_PNG); //$NON-NLS-1$ //$NON-NLS-2$
+		loader.data = new ImageData[] { actual };
+		loader.save(dir + "/pixels-" + name + "-actual.png", SWT.IMAGE_PNG); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	/** the on-screen pixels of a control's client area, after pending paints */
