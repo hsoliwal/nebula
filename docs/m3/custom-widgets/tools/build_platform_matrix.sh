@@ -10,7 +10,8 @@
 # rwt_rows.tsv (rows sent by the RWT column owner: widget_id, rwt_route, rwt_status, rwt_class, resize_layout_delta,
 # evidence); ../WIDGET_MATRIX.tsv; ../DELTA_GATE.tsv (resize_sweep column, rule 24 "resize and layout change the port").
 # Extra columns: rwt_status and rwt_resize_delta (RWT owner), resize_delta (SWT gate), full_rebuild_sites (census
-# patterns of C:/m3-superset/tools/delta_census.sh over the widget bundle main code).
+# patterns of C:/m3-superset/tools/delta_census.sh over the widget bundle main code), hidden_gate and delta_gate
+# (DELTA_GATE.tsv), eclipse_ready (PASS rows in eclipse_ready.tsv: a JFace viewer binding plus an Eclipse view example).
 set -u
 export LC_ALL=C
 HERE=$(cd "$(dirname "$0")" && pwd); WT=$1; CACHE=$2; OUT=$3; mkdir -p "$OUT"
@@ -36,6 +37,9 @@ PAT='\.refresh\(\s*(true|false)?\s*\)|\.setInput\(|\.removeAll\(\s*\)|\.clearAll
 git -C "$WT" grep -c -P -e "$PAT" -- ':(glob)widgets/**/*.java' 2>/dev/null | grep -vE '/(test|tests|example|examples|snippets?|demo)/|\.tests?/|\.examples?/|\.snippets?/' \
   | awk -F: -v OFS='\t' '{ split($1, a, "/"); b = (a[2] == "opal") ? "opal/" a[3] : a[2]; c[b] += $NF; t += $NF } END { for (k in c) print k, c[k]; print "TOTAL", t }' > "$OUT/.census"
 echo "full-rebuild sites in Nebula main code: $(awk -F'	' '$1 == "TOTAL" { print $2 }' "$OUT/.census")"
+# JFace viewers shipped per Nebula bundle (eclipse_ready column)
+git -C "$WT" grep -E 'class [A-Za-z0-9_]+(<[^>]*>)? extends (Abstract)?(Column|Structured|Table|Tree|Content|List)Viewer\b' --name-only -- ':(glob)widgets/**/*.java' 2>/dev/null | grep -vE '/(test|tests|example|examples|snippets?|demo)/|\.tests?/|\.examples?/|\.snippets?/' \
+  | sed -E 's#^widgets/([^/]+)/([^/]+)/.*/([A-Za-z0-9_]+)\.java$#\1\t\2\t\3#' | awk -F'\t' -v OFS='\t' '{ b = ($1 == "opal") ? "opal/" $2 : $1; v[b] = (b in v) ? v[b] "," $3 : $3 } END { for (k in v) print k, v[k] }' > "$OUT/.viewers"
 awk -F'\t' -v OFS='\t' '
   function simple(c) { sub(/;.*/, "", c); sub(/[+ \/|].*/, "", c); sub(/.*\./, "", c); return c }
   function custom(c) { return c ~ /^(StyledText|CTabFolder|CLabel|CCombo|SashForm|StackLayout|ScrolledComposite|ViewForm|CBanner|TableEditor|TreeEditor)$/ }
@@ -55,7 +59,7 @@ awk -F'\t' -v OFS='\t' '
     if (s ~ /^org\.eclipse\.nebula\.widgets\.opal\./) { sub(/^org\.eclipse\.nebula\.widgets\.opal\./, "", s); sub(/\..*/, "", s); return "opal/" s }
     if (s ~ /^org\.eclipse\.nebula\./) { sub(/^org\.eclipse\.nebula\.(widgets\.)?/, "", s); sub(/\..*/, "", s); return s }
     return (s in nebbundle) ? nebbundle[s] : "" }
-  function emit(id, fam, w, concept, kind, cls, swing, plan, owner, evidence,   rr, rs, rz, s, b, rd, fr, hd) {
+  function emit(id, fam, w, concept, kind, cls, swing, plan, owner, evidence,   rr, rs, rz, s, b, rd, fr, hd, dg, er) {
     swtcells(kind, cls, plan)
     s = simple(cls); rr = "-"; rs = "-"; rz = "-"
     if (id in rroute) { rr = rroute[id]; rs = rstatus[id]; rz = rresize[id]; evidence = evidence "; RWT: " revid[id]
@@ -72,13 +76,21 @@ awk -F'\t' -v OFS='\t' '
     else if (kind == "STOCK") rd = "SWT viewport track"
     else rd = "-"
     hd = (s in hgate) ? hgate[s] : (kind == "M3") ? "PENDING" : (kind == "NEBULA") ? "AUDIT" : (kind == "STOCK") ? "SWT viewport track" : "-"
-    print id, fam, w, concept, sw, sw, sw, swing, i3, rw, (cls == "" ? "-" : cls), "-", rr, plan, owner, evidence, rs, rz, rd, fr, hd }
+    dg = (s in dgate) ? dgate[s] : (kind == "M3") ? "PENDING (port)" : (kind == "NEBULA") ? "AUDIT (census " fr ")" : (kind == "STOCK") ? "SWT viewport track" : "-"
+    if (s in ready) er = "PASS " ready[s]
+    else if (kind == "M3") er = (s in m3done) ? "PENDING: JFace binding (org.eclipse.nebula.widgets.m3.jface) + Eclipse view example" : "PENDING (port)"
+    else if (kind == "NEBULA") er = (b in viewers) ? "PARTIAL: JFace viewer " viewers[b] "; M3Viewers delta binding + Eclipse view example pending" : "MISSING: no JFace binding"
+    else if (kind == "STOCK") er = (s ~ /^(Tree|Table|List|Combo|CCombo)$/) ? "PARTIAL: stock JFace viewer; delta via M3Viewers (JFace track)" : "N/A (no viewer contract)"
+    else er = "-"
+    print id, fam, w, concept, sw, sw, sw, swing, i3, rw, (cls == "" ? "-" : cls), "-", rr, plan, owner, evidence, rs, rz, rd, fr, hd, dg, er }
   FILENAME ~ /\.rwt$/ { rwt[$1] = 1; next }
   FILENAME ~ /\.i31$/ { i31[$1] = 1; next }
   FILENAME ~ /\.m3done$/ { m3done[$1] = 1; next }
   FILENAME ~ /rwt_rows/ { if (FNR > 1 && $1 != "") { rroute[$1] = $2; rstatus[$1] = $3; rclass[$1] = $4; rresize[$1] = $5; revid[$1] = $6 } next }
   FILENAME ~ /\.census$/ { census[$1] = $2; next }
-  FILENAME ~ /DELTA_GATE/ { if (FNR > 1) { g = $2; sub(/.*\./, "", g); gate[g] = $(NF - 1); hgate[g] = $NF } next }
+  FILENAME ~ /DELTA_GATE/ { if (FNR > 1) { g = $2; sub(/.*\./, "", g); gate[g] = $(NF - 1); hgate[g] = $NF; dgate[g] = $9 } next }
+  FILENAME ~ /\.viewers$/ { viewers[$1] = $2; next }
+  FILENAME ~ /eclipse_ready/ { if (FNR > 1) { g = $1; sub(/.*\./, "", g); ready[g] = $2 "; " $3 } next }
   FILENAME ~ /m3_names/ { if (FNR > 1) m3n[$1] = $2; next }
   FILENAME ~ /platform_map/ { if (FNR == 1) next; seen[$1] = 1; if ($2 == "nebula") nebkey[$5] = 1
     split($5, parts, ";"); bas = ($2 == "swingx") ? "re-derived from the SwingX API shape, LGPL pattern only" : "Swing track"
@@ -96,12 +108,12 @@ awk -F'\t' -v OFS='\t' '
     sg = ($10 !~ /^-/) ? "AVAILABLE " $10 " (JDK)" : (($14 + 0) > 0 ? "ADAPTER_NEEDED javax.swing." nm " over the shared model (" basis ")" : "MISSING")
     crow[c] = "CONCEPT-" c SUBSEP "concept" SUBSEP $4 SUBSEP c SUBSEP kind SUBSEP cls SUBSEP sg SUBSEP $16 SUBSEP $19 SUBSEP "WIDGET_MATRIX rank " $1; corder[++cn] = c; next }
   END {
-    print "widget_id", "family", "widget", "concept_id", "swt_win32", "swt_gtk", "swt_cocoa", "swing_m3jdk", "initiative31", "rwt_rap", "swt_class", "swing_class", "rwt_route", "gap_plan", "owner", "evidence", "rwt_status", "rwt_resize_delta", "resize_delta", "full_rebuild_sites", "hidden_gate"
+    print "widget_id", "family", "widget", "concept_id", "swt_win32", "swt_gtk", "swt_cocoa", "swing_m3jdk", "initiative31", "rwt_rap", "swt_class", "swing_class", "rwt_route", "gap_plan", "owner", "evidence", "rwt_status", "rwt_resize_delta", "resize_delta", "full_rebuild_sites", "hidden_gate", "delta_gate", "eclipse_ready"
     for (i = 1; i <= rows; i++) { split(emitargs[i], a, SUBSEP); emit(a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]) }
     for (i = 1; i <= cn; i++) { split(crow[corder[i]], a, SUBSEP); emit(a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]) } }' \
-  "$OUT/.rwt" "$OUT/.i31" "$OUT/.m3done" "$HERE/rwt_rows.tsv" "$OUT/.census" "$HERE/../DELTA_GATE.tsv" "$HERE/m3_names.tsv" "$HERE/../WIDGET_MATRIX.tsv" "$HERE/platform_map.tsv" "$OUT/.nebula.tsv" \
+  "$OUT/.rwt" "$OUT/.i31" "$OUT/.m3done" "$HERE/rwt_rows.tsv" "$OUT/.census" "$OUT/.viewers" "$HERE/eclipse_ready.tsv" "$HERE/../DELTA_GATE.tsv" "$HERE/m3_names.tsv" "$HERE/../WIDGET_MATRIX.tsv" "$HERE/platform_map.tsv" "$OUT/.nebula.tsv" \
   | awk -F'\t' -v OFS='\t' 'NR == 1 { print; next } { split($8, s, " "); $12 = (s[1] == "AVAILABLE" || s[1] == "ADAPTER_NEEDED") ? s[2] : "-"; print }' > "$OUT/WIDGET_PLATFORM_MATRIX.tsv"
-rm -f "$OUT/.rwt" "$OUT/.i31" "$OUT/.m3done" "$OUT/.census"
+rm -f "$OUT/.rwt" "$OUT/.i31" "$OUT/.m3done" "$OUT/.census" "$OUT/.viewers"
 awk -F'\t' 'NR > 1 { n++; for (c = 5; c <= 10; c++) { split($c, s, " "); k[c, s[1]]++ } }
   END { printf "rows=%d\n", n; split("swt_win32 swt_gtk swt_cocoa swing_m3jdk initiative31 rwt_rap", h, " ");
     for (c = 5; c <= 10; c++) printf "%-13s AVAILABLE %3d  ADAPTER_NEEDED %3d  MISSING %3d\n", h[c - 4], k[c, "AVAILABLE"], k[c, "ADAPTER_NEEDED"], k[c, "MISSING"] }' "$OUT/WIDGET_PLATFORM_MATRIX.tsv"
