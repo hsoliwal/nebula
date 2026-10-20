@@ -17,7 +17,14 @@ status=0
 for p in win32 gtk cocoa; do
   swt=C:/m3-superset/build-check-$p-wt
   o=$OUT/platform-$p
-  if [ ! -f "$swt/org/eclipse/swt/widgets/Canvas.class" ]; then echo "$p: no SWT classes at $swt"; status=1; continue; fi
+  snap=$OUT/swt-$p
+  # the shared class directory is rebuilt by other tracks: keep the last complete copy (0 errors) and use it
+  if [ -f "$swt/org/eclipse/swt/widgets/Canvas.class" ] && [ "$(grep -c ': error:' "$swt.log" 2>/dev/null)" = 0 ] && [ "$swt.log" -nt "$snap.stamp" ]; then
+    rm -rf "$snap" && cp -r "$swt" "$snap" && cp "$swt.log" "$snap.stamp"
+  fi
+  if [ ! -f "$snap/org/eclipse/swt/widgets/Canvas.class" ]; then echo "$p: no SWT classes at $swt"; status=1; continue; fi
+  echo "$p: SWT classes of $swt as of $(date -r "$snap.stamp" '+%F %T')"
+  swt=$snap
   rm -rf "$o"; mkdir -p "$o"
   find "${ROOTS[@]}" -name '*.java' > "$o.src"
   "$JDK/bin/javac" -J-Xmx768m --release 21 -encoding UTF-8 -nowarn -proc:none -Xmaxerrs 50 -cp "$swt" -d "$o" @"$o.src" > "$o.log" 2>&1
