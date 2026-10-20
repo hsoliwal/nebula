@@ -1,0 +1,7 @@
+paradigm	rwt_status	evidence	route	decision
+tap / double tap	AVAILABLE in source (mouse emulation; NOT_RUN on a touch device)	rwt/runtime/MobileWebkitSupport.js:293-324	RAP_NATIVE	-
+touch scroll of Tree/Table/Grid	AVAILABLE in source (virtual scroll, rows on demand; NOT_RUN on a touch device)	MobileWebkitSupport.js:326-353	RAP_NATIVE	-
+long-press menu	BLOCKED no timed hold in the client; a held tap ends as a click	MobileWebkitSupport.js:293-324	client recogniser emits MenuDetect	GWT-compiled Java or RAP client patch (JavaScript)
+swipe actions	BLOCKED horizontal row drags are virtual scrolling; no event reaches server or ClientListener	MobileWebkitSupport.js:326-349; rwt/scripting/EventBinding.js:112-257	client recogniser emits Selection with a detail	same
+pull-to-refresh	BLOCKED over-scroll at the top is not reported	MobileWebkitSupport.js:353 (_initVirtualScroll)	client recogniser emits one refresh event	same
+pinch zoom	BLOCKED iOS gesture events stay in the client; server GestureListener never fires (no LCA renders Gesture)	MobileWebkitSupport.js:145-147,500-512; RWT Control.java:2386-2478	client recogniser + GestureEvent rendering in the RWT compat bundle	same
