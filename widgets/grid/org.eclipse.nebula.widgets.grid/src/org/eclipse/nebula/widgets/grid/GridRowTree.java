@@ -142,6 +142,12 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		return size() - unread;
 	}
 
+	/** @return the slot of a row, O(log n) (rows without items included) */
+	int slotAtRow(final int row) {
+		checkIndex(row, size());
+		return slotAt(row);
+	}
+
 	/** @return the row of a slot, O(log n) */
 	int rowOfSlotIndex(final int slot) {
 		return rowOfSlot(slot);
