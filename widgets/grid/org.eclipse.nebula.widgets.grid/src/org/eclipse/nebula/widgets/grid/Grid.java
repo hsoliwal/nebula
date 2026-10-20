@@ -9120,6 +9120,68 @@ public class Grid extends Canvas {
 		bottomIndex = -1;
 		invalidateVisibleColumnCache();
 		fireViewportChanged();
+		if ((getStyle() & SWT.NO_REDRAW_RESIZE) != 0) {
+			resizeDamage();
+		}
+	}
+
+	/* brief rule 24, viewport deltas: the client area the last resize left (origin of the next one's damage) */
+	private Rectangle resizedArea;
+	private boolean inResizeDamage;
+	/* pixels on each side of an old and a new edge that a resize repaints (themed borders, focus lines) */
+	private static final int RESIZE_EDGE = 16;
+	/** Resizes that repainted only the bands at the moved edges (for tests and benches). */
+	int resizeDeltas;
+	/** Resizes that repainted the whole client area (the content moved, or no delta applies). */
+	int resizeFullRepaints;
+	/** Pixels painted by all paints so far (the clip of each paint event; for tests and benches). */
+	long paintedPixels;
+
+	/**
+	 * A resize as a viewport delta (brief rule 24): the scroll values are settled now (as the next
+	 * paint would), and when the rows and columns on screen keep their places the system's
+	 * invalidation of the exposed strips (NO_REDRAW_RESIZE) is completed by the bands at the old and
+	 * new right and bottom edges: the filler header, cells and footer reach the right edge, the
+	 * footer sits on the bottom one. A scroll value that moved, pinned rows, a focus outline, column
+	 * scrolling or right-to-left mirroring repaint the whole client area, as stock.
+	 */
+	private void resizeDamage() {
+		if (inResizeDamage) {
+			// a scroll bar shown or hidden by the settling below resizes the client area again
+			return;
+		}
+		inResizeDamage = true;
+		try {
+			final Rectangle before = resizedArea;
+			final int vBefore = vScroll.getSelection();
+			final int hBefore = hScroll.getSelection();
+			if (frozenPlanes == 0) {
+				updateScrollbars();
+				scrollValuesObsolete = false;
+			}
+			final Rectangle now = getClientArea();
+			resizedArea = now;
+			if (before == null || before.isEmpty() || now.isEmpty() || frozenPlanes != 0
+					|| vScroll.getSelection() != vBefore || hScroll.getSelection() != hBefore
+					|| pinnedTopRows + pinnedBottomRows > 0 || columnScrolling
+					|| (getStyle() & SWT.RIGHT_TO_LEFT) != 0 || isFocusControl() && focusItem != null) {
+				redraw();
+				resizeFullRepaints++;
+				return;
+			}
+			if (now.width != before.width) {
+				final int x = Math.max(0, Math.min(before.width, now.width) - RESIZE_EDGE);
+				redraw(x, 0, now.width - x, now.height, false);
+			}
+			if (now.height != before.height) {
+				final int footer = columnFootersVisible ? footerHeight() : 0;
+				final int y = Math.max(0, Math.min(before.height, now.height) - footer - RESIZE_EDGE);
+				redraw(0, y, now.width, now.height - y, false);
+			}
+			resizeDeltas++;
+		} finally {
+			inResizeDamage = false;
+		}
 	}
 
 	private void invalidateVisibleColumnCache() {
