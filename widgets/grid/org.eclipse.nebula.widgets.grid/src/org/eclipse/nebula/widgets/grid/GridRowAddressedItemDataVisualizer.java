@@ -470,12 +470,7 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 			for (int j = 0; j < index.size(); j++) {
 				final int id = index.idAt(j);
 				if (id < rows.length && rows[id] != null) {
-					for (final Object value : rows[id]) {
-						if (value != null) {
-							count++;
-							break;
-						}
-					}
+					count++;
 				}
 			}
 			return count;
