@@ -171,3 +171,23 @@ m3) have none. By cause (`tools/census_categories.sh`, `categories.tsv`):
   - `ROW_DELTAS_WHILE_HIDDEN` (virtual rows): rows the client never asked for cost nothing; rows already on the client
     are updated while hidden.
   These are read from the RWT sources; the step 4 runs measure them per widget.
+
+## 4. Rules 25-29 on RWT
+
+- **25, we own the implementation.** The RWT changes are inside RWT's own classes (patched `Canvas`, `GC`,
+  `ScrollBar`, `CanvasLCA`, ...), not wrappers. The hidden-viewport gate of rule 24 lives in RWT's `Canvas.repaint`
+  and `CanvasLCA` (`M3CanvasPaint`). `SWT.PartVisible`, `SWT.PartHidden` and `SWT.Viewport` are not yet defined on
+  the SWT fork master (checked 2026-10-20); RWT takes the same constant values once the SWT track defines them and
+  fires them from the same places (setVisible of a control or an ancestor, CTabFolder selection, StackLayout top
+  control, ExpandItem, Shell minimize). The browser already reports Show/Hide to client scripting
+  (`rwt/scripting/EventBinding.js`: "appear"/"disappear").
+- **26, public model API.** `M3ListModel`/`M3TableModel`/`M3TreeModel`/`M3Patch` are not on the SWT fork master
+  yet. RWT's virtual Tree/Table/List and RAP's Grid use `setItemCount` + `SWT.SetData`, the stock path the rule maps
+  onto the model, so the RWT examples keep working when the model arrives.
+- **28, threads.** RWT runs one UI thread per session and `Display.asyncExec`/`timerExec` are delivered with the
+  next request; an animation (M3BusyLabel, ProgressCircle) or a model thread pushing patches needs a
+  `ServerPushSession` per session. The Synchronizer rewrite of rule 28 is SWT's; RWT's `Synchronizer` is a separate
+  class and is not touched here.
+- **29, behaviours: touch paradigms for the tablet case.** `TOUCH_TABLET.md`, `TOUCH_RWT.tsv`: tap, double tap and
+  virtual touch scrolling work through RAP's mouse emulation; long press, swipe, pull-to-refresh and pinch zoom are
+  BLOCKED until a client-side recogniser exists (user decision: GWT-compiled Java or a RAP client patch).
