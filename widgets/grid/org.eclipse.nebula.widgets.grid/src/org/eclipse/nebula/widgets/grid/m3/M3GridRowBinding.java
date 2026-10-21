@@ -21,7 +21,10 @@ import org.eclipse.nebula.widgets.grid.GridItem;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.m3.M3RowChange;
 import org.eclipse.swt.m3.M3RowView;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
 
 /**
  * Drives a virtual {@link Grid} from an {@link M3RowView} (enhanced M3 API for the Grid).
@@ -29,7 +32,8 @@ import org.eclipse.swt.widgets.Listener;
  * The grid's item count follows the view and each <code>SWT.SetData</code> request fills the item
  * from the source row the view maps it to. A change of the view reaches the grid as a patch: the
  * item count carries the extent (scroll bar) and only the damaged rows are cleared, so only
- * resident, damaged rows are asked again. The selection is kept by source row: the rows the user
+ * resident, damaged rows are asked again. While the grid is hidden (it or an ancestor), changes
+ * only mark it dirty, and it is redone once when it shows. The selection is kept by source row: the rows the user
  * selected stay selected wherever the view moves them, as long as the view shows them. The
  * binding keeps no copy of the rows (one model: the view's lanes).
  * </p>
@@ -54,9 +58,15 @@ public final class M3GridRowBinding {
 
 	private final Grid grid;
 	private final M3RowView view;
-	private final Listener setData, selection;
-	private final M3RowView.Listener changed = this::refresh;
+	private final Listener setData, selection, visibility = this::visibility;
+	private final M3RowView.Listener changed = this::viewChanged;
 	private int[] selected = NONE;
+	/* the grid and its ancestors up to the shell, whose Show and Hide events tell when the viewport shows */
+	private Control[] path = {};
+	/* shown: the viewport is visible; dirty: the view changed while it was hidden */
+	private boolean shown, dirty;
+	/* grid refresh passes (read by the hidden-viewport test) */
+	int refreshes;
 
 	private M3GridRowBinding(final Grid grid, final M3RowView view, final RowFill fill) {
 		this.grid = grid;
@@ -70,8 +80,66 @@ public final class M3GridRowBinding {
 		grid.addListener(SWT.SetData, setData);
 		grid.addListener(SWT.Selection, selection);
 		grid.addListener(SWT.DefaultSelection, selection);
-		grid.addListener(SWT.Dispose, event -> view.removeListener(changed));
+		grid.addListener(SWT.Dispose, event -> unhook());
 		view.addListener(changed);
+		for (Control c = grid; c != null; c = c instanceof Shell ? null : c.getParent()) {
+			c.addListener(SWT.Show, visibility);
+			c.addListener(SWT.Hide, visibility);
+			path = Arrays.copyOf(path, path.length + 1);
+			path[path.length - 1] = c;
+		}
+		shown = grid.isVisible();
+	}
+
+	private void unhook() {
+		view.removeListener(changed);
+		for (final Control c : path) {
+			if (!c.isDisposed()) {
+				c.removeListener(SWT.Show, visibility);
+				c.removeListener(SWT.Hide, visibility);
+			}
+		}
+	}
+
+	/*
+	 * A change of the view: a patch of the grid while it shows; while it is hidden the view's lanes are already up to
+	 * date, so the grid is only marked dirty and redone once when it shows (brief rule 24).
+	 */
+	private void viewChanged(final M3RowChange change) {
+		if (grid.isDisposed()) {
+			return;
+		}
+		if (shown) {
+			refreshes++;
+			refresh(change);
+			return;
+		}
+		dirty = true;
+		renumber(change);
+	}
+
+	/* Show and Hide of the grid or an ancestor (both are sent before the visibility changes) */
+	private void visibility(final Event event) {
+		if (event.type == SWT.Hide) {
+			shown = false;
+			return;
+		}
+		if (shown) {
+			return;
+		}
+		for (final Control c : path) {
+			if (c != event.widget && !c.getVisible()) {
+				return;
+			}
+		}
+		shown = true;
+		if (dirty && !grid.isDisposed()) {
+			dirty = false;
+			refreshes++;
+			grid.setItemCount(view.size());
+			grid.clearAll(false);
+			restore();
+		}
 	}
 
 	/**
@@ -203,7 +271,7 @@ public final class M3GridRowBinding {
 
 	/** Stops driving the grid; the grid keeps its items. */
 	public void dispose() {
-		view.removeListener(changed);
+		unhook();
 		if (grid.isDisposed()) {
 			return;
 		}
