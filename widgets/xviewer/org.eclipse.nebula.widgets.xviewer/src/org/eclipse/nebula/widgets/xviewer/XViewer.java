@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -357,7 +356,7 @@ public class XViewer extends TreeViewer {
    }
 
    private List<Object> getInputObjects(Object input) {
-      List<Object> objects = new LinkedList<>();
+      List<Object> objects = new ArrayList<>();
       if (input instanceof Collection) {
          Collection<?> collection = (Collection<?>) input;
          for (Object obj : collection) {
@@ -1058,12 +1057,19 @@ public class XViewer extends TreeViewer {
    }
 
    private TreePath viewportPath(Object element) {
-      LinkedList<Object> segments = new LinkedList<>();
+      // Reverse only the temporary path directory, not the model or native TreeItems.
+      List<Object> segments = new ArrayList<>();
       Object input = getInput();
       for (Object e = element; e != null && e != input && !e.equals(input); e = viewport.getParent(e)) {
-         segments.addFirst(e);
+         segments.add(e);
       }
-      return new TreePath(segments.toArray());
+      Object[] path = segments.toArray();
+      for (int left = 0, right = path.length - 1; left < right; left++, right--) {
+         Object saved = path[left];
+         path[left] = path[right];
+         path[right] = saved;
+      }
+      return new TreePath(path);
    }
 
    @Override
