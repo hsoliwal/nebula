@@ -1,0 +1,8 @@
+category	case	selected owner/approach	decision	provenance
+stored-row membership	non-null row[] with null cells	IdStore.count count non-null row object	SELECT EXISTING	Nebula #267, Synexia #12745; first-party dual SPDX master input
+empty-column rows	row[] length zero still allocated	retain row membership, no value scan	SELECT EXISTING	Synexia #12745 owner oracle
+value presence	count non-null values	NOT EQUIVALENT	documented row-count contract distinguishes rows from populated cells
+index operations	RowIndex.idAt and stable slots	PRESERVE	current Nebula master owns logical-to-physical row addressing
+LeetCode category	array filtering/counting	REFERENCE ONLY	no challenge solution copied
+HackerRank category	arrays and state accounting	REFERENCE ONLY	no solution or editorial copied
+GeeksforGeeks category	index/mask counts	REFERENCE ONLY	no solution or editorial copied

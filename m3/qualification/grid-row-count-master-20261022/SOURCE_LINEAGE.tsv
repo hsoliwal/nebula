@@ -1,0 +1,11 @@
+kind	canonical_path	git_blob	canonical_commit
+engine	synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3HashPinnedJavaSnapshotRecipe.java	79ed66fc4547d30f0e74392f2963f9b30c4a33f8	c45c97ca929289d88075f0327ad8dfb4fdcdf3e2
+scope	synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3ScopeInference.java	50b4b9c129a88f930fca450981e492ae0c60b77e	c45c97ca929289d88075f0327ad8dfb4fdcdf3e2
+scope_enum	synexia-openrewrite-recipes/src/main/java/com/synexia/rewrite/M3EditScope.java	274360816db1e44a2f1796a3bc5cdeff6b0ce6db	c45c97ca929289d88075f0327ad8dfb4fdcdf3e2
+m3/qualification/grid-row-count-master-20261022/src/main/resources/com/synexia/rewrite/hash-pinned-java/grid-row-count-master-20261022/before.java.txt	a08d253f1ea9cdcc29f84368f6701c3fe4b4a373	a8ba41d012751389304fbfce82dab4d370bd4198
+m3/qualification/grid-row-count-master-20261022/src/main/resources/com/synexia/rewrite/hash-pinned-java/grid-row-count-master-20261022/GridRowAddressedItemDataVisualizer.java.txt	a45a7efcfc48c9d17e418afec41272a0b27c9cbb	a8ba41d012751389304fbfce82dab4d370bd4198
+m3/qualification/grid-row-count-master-20261022/src/main/resources/com/synexia/rewrite/hash-pinned-java/grid-row-count-master-20261022/manifest.tsv	01fe71afb00a9dc72c215de1ac65b7d18812b17e	a8ba41d012751389304fbfce82dab4d370bd4198
+m3/qualification/grid-row-count-master-20261022/src/main/resources/META-INF/rewrite/grid-row-count-master-20261022.yml	b39fb840aa89320052c4a7f8bb9f070d129afdb9	a8ba41d012751389304fbfce82dab4d370bd4198
+m3/qualification/grid-row-count-master-20261022/pom.xml	e96c079eeac0e3417842a5f97d7b8a810a55f5d7	a8ba41d012751389304fbfce82dab4d370bd4198
+m3/qualification/grid-row-count-master-20261022/src/test/java/com/synexia/rewrite/GridRowCountMaster20261022RecipeTest.java	35322ee420c95143b67709bcb4cf96ad71a2c0e1	a8ba41d012751389304fbfce82dab4d370bd4198
+m3/qualification/grid-row-count-master-20261022/CATEGORY_DECISIONS.tsv	65fae515747d6278c9c954a19820c6f79fcf082f	a8ba41d012751389304fbfce82dab4d370bd4198
