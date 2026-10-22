@@ -22,6 +22,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.m3.M3RowChange;
 import org.eclipse.swt.m3.M3RowView;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
@@ -57,11 +58,12 @@ public final class M3GridRowBinding {
 	private static final int[] NONE = {};
 
 	private final Grid grid;
+	private final Display display;
 	private final M3RowView view;
-	private final Listener setData, selection, visibility = this::visibility;
+	private final Listener setData, selection, visibility = this::visibility, paint = this::paint;
 	private final M3RowView.Listener changed = this::viewChanged;
 	private int[] selected = NONE;
-	/* the grid and its ancestors up to the shell, whose Show and Hide events tell when the viewport shows */
+	/* ancestry snapshot for detecting reparenting only; visibility always walks the current parents */
 	private Control[] path = {};
 	/* shown: the viewport is visible; dirty: the view changed while it was hidden */
 	private boolean shown, dirty;
@@ -70,6 +72,7 @@ public final class M3GridRowBinding {
 
 	private M3GridRowBinding(final Grid grid, final M3RowView view, final RowFill fill) {
 		this.grid = grid;
+		display = grid.getDisplay();
 		this.view = view;
 		setData = event -> {
 			if (event.index < view.size()) {
@@ -82,23 +85,42 @@ public final class M3GridRowBinding {
 		grid.addListener(SWT.DefaultSelection, selection);
 		grid.addListener(SWT.Dispose, event -> unhook());
 		view.addListener(changed);
-		for (Control c = grid; c != null; c = c instanceof Shell ? null : c.getParent()) {
-			c.addListener(SWT.Show, visibility);
-			c.addListener(SWT.Hide, visibility);
-			path = Arrays.copyOf(path, path.length + 1);
-			path[path.length - 1] = c;
-		}
+		updatePath();
 		shown = grid.isVisible();
+		display.addFilter(SWT.Show, visibility);
+		display.addFilter(SWT.Hide, visibility);
+		display.addFilter(SWT.Paint, paint);
 	}
 
 	private void unhook() {
 		view.removeListener(changed);
-		for (final Control c : path) {
-			if (!c.isDisposed()) {
-				c.removeListener(SWT.Show, visibility);
-				c.removeListener(SWT.Hide, visibility);
-			}
+		if (!display.isDisposed()) {
+			display.removeFilter(SWT.Show, visibility);
+			display.removeFilter(SWT.Hide, visibility);
+			display.removeFilter(SWT.Paint, paint);
 		}
+		path = new Control[0];
+	}
+
+	/* No array is allocated unless setParent changed the grid's ancestry. Stop at its own shell. */
+	private boolean updatePath() {
+		int length = 0;
+		boolean same = true;
+		for (Control c = grid; c != null; c = c instanceof Shell ? null : c.getParent()) {
+			if (length >= path.length || path[length] != c) {
+				same = false;
+			}
+			length++;
+		}
+		if (same && length == path.length) {
+			return false;
+		}
+		path = new Control[length];
+		int index = 0;
+		for (Control c = grid; c != null; c = c instanceof Shell ? null : c.getParent()) {
+			path[index++] = c;
+		}
+		return true;
 	}
 
 	/*
@@ -109,31 +131,58 @@ public final class M3GridRowBinding {
 		if (grid.isDisposed()) {
 			return;
 		}
+		/* Keep Show/Hide's requested state during callbacks unless the ancestry actually changed. */
+		if (updatePath()) {
+			shown = grid.isVisible();
+		}
 		if (shown) {
-			refreshes++;
-			refresh(change);
+			if (dirty) {
+				renumber(change);
+				refreshDirty();
+			} else {
+				refreshes++;
+				refresh(change);
+			}
 			return;
 		}
 		dirty = true;
 		renumber(change);
 	}
 
-	/* Show and Hide of the grid or an ancestor (both are sent before the visibility changes) */
+	/* Show and Hide are sent before visibility changes; only the current ancestry is relevant. */
 	private void visibility(final Event event) {
-		if (event.type == SWT.Hide) {
-			shown = false;
+		if (grid.isDisposed()) {
 			return;
 		}
-		if (shown) {
-			return;
-		}
-		for (final Control c : path) {
-			if (c != event.widget && !c.getVisible()) {
-				return;
+		boolean related = false, visible = true;
+		for (Control c = grid; c != null; c = c instanceof Shell ? null : c.getParent()) {
+			if (c == event.widget) {
+				related = true;
+				if (event.type == SWT.Hide) {
+					visible = false;
+				}
+			} else if (!c.getVisible()) {
+				visible = false;
 			}
 		}
-		shown = true;
-		if (dirty && !grid.isDisposed()) {
+		if (!related) {
+			return;
+		}
+		updatePath();
+		shown = visible;
+		refreshDirty();
+	}
+
+	/* setParent can reveal dirty rows without Show. Filters run before Grid's existing paint listener. */
+	private void paint(final Event event) {
+		if (event.widget == grid && !grid.isDisposed() && updatePath()) {
+			shown = grid.isVisible();
+			refreshDirty();
+		}
+	}
+
+	private void refreshDirty() {
+		if (shown && dirty && !grid.isDisposed()) {
 			dirty = false;
 			refreshes++;
 			grid.setItemCount(view.size());
