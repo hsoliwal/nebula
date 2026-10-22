@@ -1,0 +1,3 @@
+# Isolated CPU-only atom qualification — 2026-10-22
+
+Debian x86_64, OpenJDK 21.0.12.1. Executed with `javac --release 21 -proc:none -Xlint:all -Werror` and `java -ea`. Result: `M3_GRID_COUNT_ATOM_PASS trials=100000 checks=100005 legacy_discrepancies=72943`. Source file SHA-256 `72c0723b0aeaeeac3219eeec8827a1686a4e29b0d1af1910de01597f9b29dd8e`. This compares simple row-membership algorithms and is **not** compilation or execution of actual SWT/Nebula Grid, nor a recipe SDK or native pass. Canonical generation and receiver remain separate CI gates; do not infer platform acceptance from this finite oracle.

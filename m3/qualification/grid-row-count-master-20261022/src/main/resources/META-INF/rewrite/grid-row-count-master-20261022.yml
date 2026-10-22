@@ -1,0 +1,7 @@
+# Copyright 2026 Hitesh Soliwal and contributors. SPDX-License-Identifier: Apache-2.0
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.m3.GridRowCountMaster20261022
+displayName: Restore retained-row counting in Nebula current master source
+recipeList:
+  - com.synexia.rewrite.M3HashPinnedJavaSnapshotRecipe:
+      crateName: grid-row-count-master-20261022
