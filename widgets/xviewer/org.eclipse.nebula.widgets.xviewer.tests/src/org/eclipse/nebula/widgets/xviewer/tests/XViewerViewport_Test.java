@@ -166,6 +166,70 @@ public class XViewerViewport_Test {
       assertEquals(pixels, pixels(tree));
    }
 
+
+   /**
+    * The original XViewer must capture encounter order without retaining a LinkedList
+    * node for every input occurrence. One-shot callers and null/duplicate identity
+    * have the same source semantics as the previous implementation.
+    */
+   @Test
+   public void densePrecomputeStagingPreservesInputOccurrenceIdentity() throws Exception {
+      XViewer viewer = viewer(SWT.NONE, 4, 0);
+      java.lang.reflect.Method copy = XViewer.class.getDeclaredMethod("getInputObjects", Object.class); //$NON-NLS-1$
+      copy.setAccessible(true);
+      Object first = new Object();
+      Object second = new Object();
+      Object[] entries = {first, null, first, second};
+      @SuppressWarnings("unchecked")
+      List<Object> captured = (List<Object>) copy.invoke(viewer, (Object) entries);
+      assertTrue("the precompute snapshot uses an indexed dynamic array", captured instanceof ArrayList<?>); //$NON-NLS-1$
+      assertEquals(entries.length, captured.size());
+      for (int i = 0; i < entries.length; i++) {
+         assertSame(entries[i], captured.get(i));
+      }
+      java.util.Collection<Object> oneShot = new java.util.AbstractCollection<>() {
+         private boolean consumed;
+         @Override public int size() {
+            throw new AssertionError("the source size is not a prepass"); //$NON-NLS-1$
+         }
+         @Override public java.util.Iterator<Object> iterator() {
+            if (consumed) {
+               throw new AssertionError("the input was visited twice"); //$NON-NLS-1$
+            }
+            consumed = true;
+            return java.util.Arrays.asList(entries).iterator();
+         }
+      };
+      @SuppressWarnings("unchecked")
+      List<Object> fromCollection = (List<Object>) copy.invoke(viewer, oneShot);
+      for (int i = 0; i < entries.length; i++) {
+         assertSame(entries[i], fromCollection.get(i));
+      }
+      assertTrue(((List<?>) copy.invoke(viewer, new Object())).isEmpty());
+   }
+
+   @Test
+   public void arrayIndexedViewportPathKeepsRootFirstAndCallerIdentity() throws Exception {
+      XViewer viewer = viewer(SWT.VIRTUAL, 7, 2);
+      Integer[] roots = Model.roots(7);
+      viewer.setInputXViewer(roots);
+      shell.open();
+      pump();
+      assertTrue(viewer.isViewport());
+      java.lang.reflect.Method path = XViewer.class.getDeclaredMethod("viewportPath", Object.class); //$NON-NLS-1$
+      path.setAccessible(true);
+      Integer child = Integer.valueOf(7 + 4 * 2 + 1);
+      org.eclipse.jface.viewers.TreePath result =
+         (org.eclipse.jface.viewers.TreePath) path.invoke(viewer, child);
+      assertEquals(2, result.getSegmentCount());
+      assertEquals(Integer.valueOf(4), result.getSegment(0));
+      assertSame(child, result.getSegment(1));
+      org.eclipse.jface.viewers.TreePath rootPath =
+         (org.eclipse.jface.viewers.TreePath) path.invoke(viewer, roots[3]);
+      assertEquals(1, rootPath.getSegmentCount());
+      assertSame(roots[3], rootPath.getSegment(0));
+   }
+
    private static String state(XViewer viewer) {
       Tree tree = viewer.getTree();
       StringBuilder s = new StringBuilder();
