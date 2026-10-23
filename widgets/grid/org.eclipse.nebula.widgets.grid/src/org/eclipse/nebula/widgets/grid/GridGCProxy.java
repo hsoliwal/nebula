@@ -123,6 +123,41 @@ final class GridGCProxy implements AutoCloseable {
             throw new IllegalArgumentException("clipping");
         }
 		flushTransform();
+		if (GridViewport.UPSTREAM_FIXES) {
+			Region next = new Region(gc.getDevice());
+			try {
+				next.add(clipping);
+				Region entryDeviceClipping = originalDeviceClipping == null ? originalClipping : originalDeviceClipping;
+				if (!gc.getAdvanced()) {
+					next.intersect(entryDeviceClipping);
+					gc.setClipping(next);
+				} else {
+					Transform currentTransform = new Transform(gc.getDevice());
+					try {
+						gc.getTransform(currentTransform);
+						if (currentTransform.isIdentity()) {
+							next.intersect(entryDeviceClipping);
+							gc.setClipping(next);
+						} else {
+							gc.setClipping(next);
+							try {
+								gc.setTransform(null);
+								gc.getClipping(next);
+								next.intersect(entryDeviceClipping);
+								gc.setClipping(next);
+							} finally {
+								gc.setTransform(currentTransform);
+							}
+						}
+					} finally {
+						currentTransform.dispose();
+					}
+				}
+			} finally {
+				next.dispose();
+			}
+			return this;
+		}
 		Region next = new Region(gc.getDevice());
 		try {
 			next.add(clipping);

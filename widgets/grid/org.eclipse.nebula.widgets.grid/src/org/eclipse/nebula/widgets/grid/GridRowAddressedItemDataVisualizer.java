@@ -216,6 +216,18 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 	}
 
 	@Override
+	public void insertRows(Grid grid, int index, int count) {
+		final RowIndex rows = indexes.get(grid);
+		if (rows != null) rows.inserted(index, count);
+	}
+
+	@Override
+	public void removeRows(Grid grid, int index, int count) {
+		final RowIndex rows = indexes.get(grid);
+		if (rows != null) rows.removed(index, count, id -> forEachStore(store -> store.clear(grid, id)));
+	}
+
+	@Override
 	public void truncateRows(Grid grid, int count) {
 		final RowIndex rows = indexes.get(grid);
 		if (rows != null) rows.truncate(count, id -> forEachStore(store -> store.clear(grid, id)));
@@ -315,6 +327,25 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 			}
 			for (int j = at; j < size; j++) rows[j]--;
 			return id;
+		}
+
+		/** {@code count} rows were inserted at {@code row}: the stored rows at or after it move down. */
+		void inserted(int row, int count) {
+			for (int j = lowerBound(row); j < size; j++) rows[j] += count;
+		}
+
+		/** The rows [{@code row}, {@code row + count}) were removed: their ids go, the rows after move up. */
+		void removed(int row, int count, java.util.function.IntConsumer released) {
+			final int at = lowerBound(row);
+			final int end = lowerBound(row + count);
+			for (int j = at; j < end; j++) {
+				released.accept(ids[j]);
+				release(ids[j]);
+			}
+			System.arraycopy(rows, end, rows, at, size - end);
+			System.arraycopy(ids, end, ids, at, size - end);
+			size -= end - at;
+			for (int j = at; j < size; j++) rows[j] -= count;
 		}
 
 		/** Forgets the data of the row at {@code row} (the row stays); returns its id or -1. */
@@ -443,12 +474,7 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 			for (int j = 0; j < index.size(); j++) {
 				final int id = index.idAt(j);
 				if (id < rows.length && rows[id] != null) {
-					for (final Object value : rows[id]) {
-						if (value != null) {
-							count++;
-							break;
-						}
-					}
+					count++;
 				}
 			}
 			return count;

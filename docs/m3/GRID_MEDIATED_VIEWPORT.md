@@ -218,6 +218,29 @@ Findings (pre-existing, both modes, recorded for their own fixes):
   Grids at the same screen position: the harness gives each Grid its own shell at the same bounds, and parks
   the cursor before pixel captures. Side by side, seed 2 diverged once on a click (hover state).
 
+## Nebula bug harvest (lead directive 2026-10-17: every Nebula bug gets fixed)
+
+[`grid-viewport/NEBULA_BUGS.tsv`](grid-viewport/NEBULA_BUGS.tsv) (working copy K:/m3-work/runs/bugs/nebula-BUGS.tsv) lists every reachable Nebula Grid report: the open GitHub tracker
+(13 open issues, one about Grid) and the archived Eclipse Bugzilla (181 Grid-matching reports, closed in bulk
+2021-07-05; the 46 that were not FIXED/DUPLICATE triaged one by one). Per row: source, fork status, priority
+(P1 crashes, P2 behaviour, P3 cosmetic/platform, E enhancements), plan. P1 state, verified by
+`GridArchivedBugs_Test` and `GridIssue700_Test` on both modes and on stock `5d0bcbb9` classes:
+
+| Report | State |
+|---|---|
+| GH #700 (getCellSize crash via GridEditor during removal) | fixed earlier, both modes; kept unconditional, since the stock crash needs a real `WM_SIZE` editor layout the hidden harness cannot deliver (no observable mode difference) |
+| Bugzilla 455474 (disposing an item colour kills the whole paint with `ERROR_INVALID_ARGUMENT`) | fixed, default mode (D23): `GridItem` reads a disposed colour or font as unset, so renderers fall back to the defaults, as the native Table keeps painting; the original mode keeps stock's crash |
+| Bugzilla 218708 (header click on an empty Grid crashed the focus renderer) | not reproducible on stock `5d0bcbb9`; the test documents it and guards the Selection event |
+| Bugzilla 454575 (`disposeAllItems` kept stale state) | verified fixed on the fork and on stock: selection, focus and scroll reset like `removeAll` |
+
+P2 done (D24-D27, GridArchivedBugs_Test, stock behaviour asserted in the original mode): 377617 (a hidden or
+0-width column no longer counts in the header height), 259087 (pack widens the column by the group header
+deficit), 382376 (a spanning cell counts only the part the spanned columns do not cover), 238601/218713 (the
+push release selects the clicked column cells; the column Selection event already fires in current stock).
+P2 rest: 202517 fixed (D28: cell renderers get the row index, stock passed the 1-based window position), 330224
+fixed (D29: a group of one column no longer breaks valid column orders), 360798, 273923 (win32) and 385351
+verified fixed. Every P1 and P2 row of the harvest is closed; P3 next.
+
 ## Regression triage (coordinator item 1, 2026-10-16)
 
 `grid-viewport/REGRESSION_TRIAGE.tsv` lists every failing test of the Grid suite (34 classes plus the
@@ -425,6 +448,191 @@ DOOP note (rule 18): the selection position and the row-tree slot are two ints p
 text, colours, fonts, height, visibility and expansion still live in `GridItem` fields. Moving them into lanes of
 the row tree is the next DOOP leaf (the data visualizer already holds the cell data).
 
+## Leaf G4, step 1: SWT.VIRTUAL tree Grids on the existing API (2026-10-18)
+
+Stock Nebula has no lazy child count: a VIRTUAL tree Grid builds every item, and only the data comes lazily
+through `SWT.SetData`. The differential driver has a `VIRTUAL` configuration bit: the Grid is `SWT.VIRTUAL`, items
+carry a label only, and a SetData listener sets their texts and counts the requests per item. The report of each
+compared state carries the requests (total, items asked, items asked more than once), so the candidate must ask
+exactly the items stock asks, as often. The driver reads texts and check states by column (`getText(0)`,
+`getChecked(0)`), which request data in both modes alike (the no-argument getters request it only in the default
+mode, D13).
+
+`virtualTreeScriptsRequestDataLikeTheStockGrid`: 4 seeds x 160 steps (VIRTUAL with the cell-selection and
+differing-heights bits) identical in answers, pixels and SetData requests against stock `5d0bcbb9`, candidates
+`viewport` and `original`; every item is asked once (185-257 requests per seed, none repeated).
+
+It found one original-mode deviation from stock, fixed in both modes: `showColumn` ended with
+`onScrollSelection(true)`, which also recomputes the top row from the vertical bar. Stock ends with `redraw()` and
+keeps its top row (it recomputes only for a user scroll), so after `setItemHeight` had clamped the bar the two
+showed different rows (seed 22, step 13). `showColumn` now invalidates the visible-column cache, fires the
+viewport event and redraws, like stock.
+
+`probe/VirtualTreeProbe` (hidden desktop; roots x 99 children, eager items as the API requires):
+
+| | stock `5d0bcbb9` | original | viewport |
+|---|---|---|---|
+| heap per item | 262 B | 288 B | 287 B |
+| SetData after the first paint / 40 scroll steps / expanding every tenth root | 20 / 78 / 97 | 20 / 78 / 97 | 21 / 80 / 100 (the native look's shorter rows show one more row) |
+| scroll step, 100,000 items | 13.4 ms | 19.4 ms | 10.7 ms |
+| scroll step, 1,000,000 items | - | 129.5 ms | 10.9 ms |
+| build, 1,000,000 items | - | 35.3 s | 58.2 s (to investigate: the row tree appends cost more per item than the list) |
+
+Step 2 (lead decision 2026-10-18): `GridItem.setItemCount(int)` and the TreeItem virtual contract as an additive
+API, backed by sparse child facades over the row tree in the viewport mode.
+
+## Leaf G4, step 2a: `GridItem.setItemCount`, `clear(int, boolean)`, `clearAll(boolean)` (2026-10-19)
+
+The additive API takes its contract from SWT's `TreeItem` (lead decision 2026-10-18,
+`grid-viewport/ENHANCED_API_MAP.tsv` row `GRID-SETITEMCOUNT`). A negative count is taken as 0. The removed
+children are disposed in order, each with its subtree, and new children are appended. `clear` and `clearAll`
+reset text, image, colours, font and check state, and an `SWT.VIRTUAL` Grid then asks for them again;
+`clear` throws `ERROR_INVALID_RANGE` like `TreeItem`. In this step both modes create the children up front; the
+original mode keeps stock behaviour for every existing call.
+
+`probe/TreeVirtualContractProbe` shows what stock SWT 3.135 does on win32 with a hidden `SWT.VIRTUAL` Tree:
+- `getItemCount`, `getItem` and `getItems` request the receiver's data first. That is how a lazy provider sets
+  the child count inside `SetData`. `getChecked` requests it too.
+- `setItemCount`, `getExpanded`, `indexOf`, `getParentItem` and `clear` request nothing.
+- A changed text, image, colour, font, check or grayed state marks the item as answered; an unchanged one does
+  not.
+- `dispose` sends the item's event, then its descendants' events, children before their parents and siblings
+  in order (A, A1, A2a, A2).
+
+`GridTreeItemContract_Test` runs seeded scripts against an SWT `Tree` and a Grid of the same style, three
+styles: VIRTUAL, plain, and VIRTUAL|CHECK and CHECK, with 400 steps per seed. Every step must give the same
+answer and raise the same `SetData` and `Dispose` events. Each item gets an id the first time the script holds
+it, and a `Dispose` listener sits on each of those items, because a virtual Tree has no object for the others.
+The final structure (counts and texts) must also match. The comparison found six default-mode defects, now
+fixed (`UPSTREAM_DEFECTS.tsv`):
+- **D30:** `getItem` out of range throws the documented `ERROR_INVALID_RANGE`.
+- **D31:** `indexOf` on an item without children returns -1.
+- **D32:** the child getters of a virtual item request its data first. Grid internals use non-requesting
+  helpers, so inserting, keyboard navigation and deselection still request nothing.
+- **D33:** a tree root's `SetData` index is its index among the roots.
+- **D34:** `Dispose` events come in TreeItem's order.
+- **D35:** an attribute set on a virtual item is its data.
+
+In the original mode the script asks for the data where TreeItem's getters would. It compares root indexes as
+"-" and `Dispose` events as a set, and it skips the set-attribute steps of virtual styles; each of these is a
+stock behaviour the mode keeps. The stock differential driver reads the parent's data before an insertion and
+before `setChecked`, so stock and the default mode ask alike.
+
+Steps 2b and 2c follow below.
+
+## Leaf G4, steps 2b and 2c: virtual tree rows in the row tree, items only for rows that are read (2026-10-19)
+
+**Step 2b.** When an `SWT.VIRTUAL` Grid gets its first child item, the viewport mode moves its rows from the
+sparse list (`GridVirtualItemList`) to the row tree (`GridRowTree`, `GridViewport.itemsReplaced`). The sparse
+list moved every later item on each insertion; the row tree moves none. `Grid.newItem` also opens no `GC` in the
+viewport mode when there is nothing to measure (not the first item, no auto-width row header); stock opens a
+native device context per item. `probe/VirtualTreeProbe`, 1,000,000 items under 1,000 roots: build 58.2 s
+before the step, 1.3 s after (original mode 10.0 s in the same run); a scroll step 3.1 ms (original 66 ms);
+the `SetData` counts are unchanged (21 after the first paint, 80 after 40 scroll steps, 100 after expanding
+the 1,000 roots).
+
+**Step 2c.** In the viewport mode `GridItem.setItemCount` on a virtual Grid appends rows to the row tree and
+makes no item. The row tree gains an owner lane: a row without an item remembers its parent, and `get(int)`
+or the iterator makes its item (a facade on the row, with no `SetData` yet) when the row is first read.
+`GridChildList` keeps a parent's children in two lanes, row-tree slot and item; it finds a child's index by a
+binary search over the children's rows, so a child's `SetData` index costs O(log k log n). The internal walks
+make no item: expand and collapse, deselection, `clear`/`clearAll`, dispose, `setItemHeight` and the row a
+new child goes to (`lastDescendantRow`, `childRowAt`). A run of children without items is removed in one
+step, and the row-addressed cell data moves once (`GridRowAddressedDataVisualizer.insertRows`/`removeRows`).
+`Dispose` events go only to children that have items, in TreeItem's order (D34).
+
+The comparison of the two ways to build a tree found D36 (default mode): `Grid.setItemHeight` sets every row's
+height at once and then recomputes the bottom index. Stock called `GridItem.setHeight` per item, and each call
+asked for the visible range while only some rows had the new height; the bottom index computed then was kept.
+The top row stays where stock keeps it.
+
+`GridSparseChildren_Test` (viewport mode) covers step 2c:
+- 4 seeds × 120 steps. A Grid whose children come from `setItemCount` and a Grid with one constructor call per
+  child run the same script: expand and collapse, set the top index, show an item, change the child count of
+  a root or of a child, select, clear, set the item height. They give the same answers, `SetData` events, top
+  and bottom index, scroll bar and selection, and the same pixels every 10 steps.
+- 1,000,000 children make no item until they are read. Painting makes fewer than 40. The last child's text,
+  index and row are right. Shrinking to 10 children and disposing the parent leave the right row count.
+- Shrinking removes children; only the ones that have items get `Dispose` events, in TreeItem's order.
+
+Grid suite: 630 tests, 0 failures in both modes. Stock differential: 8/8 seeds, both scenes and 4 virtual seeds,
+candidates viewport and original.
+
+## Leaf G5: blit scroll for variable row heights and trees (2026-10-19)
+
+A vertical scroll moves the body's pixels when the rows that stay visible paint the same at their new place
+(`Grid.blitBody`); the exposed strip is repainted. Until now the blit needed rows of one height in a flat
+Grid, because the move was `(old top - new top) × (item height + 1)`. In the viewport mode the move is now the
+row index's pixel difference between the two top rows (`GridViewport.offsetBetween`): hidden rows add nothing,
+and each visible row adds its own height and line. Variable heights and trees therefore blit too. The other
+conditions are unchanged: default renderers, no spans, pinned rows, insert mark, column drag, cell hover or
+child controls, and even moves only under the classic tree column's dotted lines.
+
+`GridScrollPaint_Test` sets the scroll bar to 1, 6, 5, 2, 30, 29, 40, 42 and 38: moves of 1 to 11 rows up and down and one
+jump of more than a page (2 to 30). After each blit, and again once the event loop is idle,
+it compares the window with the Grid's own paint:
+- variable heights (14, 21 and 28 px, so moves are odd and even): 8 of 9 steps blit in the viewport mode;
+- a tree of 300 roots with collapsed and expanded parents: 8 of 9 steps blit;
+- the original mode repaints those bodies (0 of 9);
+- the window equals the paint after every step in both modes.
+
+## Leaf G6: column metrics in lanes (2026-10-19)
+
+`GridColumnMetrics` keeps the Grid's columns in display order as lanes. For each display position it holds:
+- the column and whether it is visible;
+- its width when visible, 0 when hidden, and the prefix sums of those widths;
+- how many pinned columns (visible and fixed) come before it.
+
+A separate lane holds the prefix sums of the pinned widths. The lanes are rebuilt in O(c) after a change of
+a column's width, visibility, fixed state, detail or summary flag, of a group's expansion, of the column
+order, or of the column set; each of those places calls `Grid.columnGeometryChanged` or
+`clearDisplayOrderedCache`. In the viewport mode the Grid then answers its column questions from the lanes:
+
+| question | stock | lanes |
+|---|---|---|
+| column at an x (`getColumn(Point)`, fixed overlay first) | O(c) walk | binary search, O(log c) |
+| first and last column on screen (`getStartColumnIndex`, `getEndColumnIndex`) | O(c) | O(log c) |
+| columns a paint covers (`getVisibleRange`) | O(c) | O(log c + k) |
+| x of a column header, origin of a cell, width of the fixed run | O(c) | O(1) |
+| display position of a column (`getPreviousVisibleColumn`, `getNextVisibleColumn`, `showColumn`, keyboard and drag code) | `List.indexOf`, O(c) | O(1) |
+
+A negative width breaks the prefix order. Column scrolling in a client area narrower than the row header can
+produce one, and then the lanes leave every answer to the stock scans. The original mode always uses the
+stock scans.
+
+`GridColumnMetrics_Test` (viewport mode) runs 16 seeds × 120 steps of random column operations: add at any
+index, add to a group, remove, set the width (zero included) or the minimum width, show and hide, fix and unfix,
+reorder (group blocks stay together), expand and collapse groups, set detail and summary. The test never
+invalidates the lanes itself, so the Grid's own hooks have to. After every step, for several horizontal scroll
+positions, with and without the row header and the fixed overlay, it compares every lane answer with the stock
+linear scan: the column at each column edge ±1 in both planes and at random points, the first and last column,
+the covered columns for several viewports, every header x and origin x, the fixed-run width and every display
+position. It found no difference in 22.8 million comparisons (the first, longer run).
+
+## JaCoCo baseline (brief rule 15: 99% line and branch, 2026-10-18)
+
+[`grid-viewport/grid_coverage.sh`](grid-viewport/grid_coverage.sh) runs the Grid suite (614 tests) in one mode on
+the hidden desktop with the JaCoCo 0.8.15 agent and reports line and branch coverage of the viewport classes
+(`GridViewport*`, `GridRow*`, the selection lists, the native look, `GridGC*`, `GridPaintDAG`,
+`GridVirtualItemList`, `GridModelJobs`, `GridLazyIntPriorityFrontier`, `UpstreamFixes`, `WidgetMode`, the `model`
+package). Baseline, viewport mode, head 55492f26: 38 classes, **line 88.3 % (3,301 / 3,740), branch 77.1 %
+(1,883 / 2,442)**. That run left the anonymous iterators of the selection list out of the agent's include
+pattern (fixed in the script); the largest gaps:
+
+| Class | Line | Branch |
+|---|---|---|
+| GridRowSpanIndex | 58.9 % | 49.2 % |
+| GridNativeCellRenderer | 75.3 % | 66.9 % |
+| GridModelJobs | 43.3 % | 25.0 % |
+| RowStateLanes | 86.4 % | 68.0 % |
+| GridCellSelectionList | 68.4 % | 59.1 % |
+| GridSelectionList | 79.5 % | 76.7 % |
+| GridViewport | 84.9 % | 65.8 % |
+
+The changed code inside the upstream classes (`Grid`, `GridItem`, `GridColumn`) is not in this measure yet:
+those classes are mostly stock code, so their own percentage says little; their viewport hooks are measured
+through the classes above and the differential.
+
 ## Leaves
 
 | Leaf | Scope | Acceptance |
@@ -433,8 +641,8 @@ the row tree is the next DOOP leaf (the data visualizer already holds the cell d
 | G2 | done (see Leaf G2): the item list is a counted tree with row lanes (row, visible rows, pixel extents), O(log n) insert, remove, row of item and every row question; no rebuild | differential; no O(n) on the UI thread after insert/remove |
 | G3 | done (see Leaf G3): O(1) row and cell selection membership, one column entry per column, focus by item | differential; probes |
 | G4 | tree Grids with `SWT.VIRTUAL` children: sparse child facades through the same lanes, `SetData` once per row | differential vs non-virtual tree; SetData counts |
-| G5 | variable-height blit scroll using the index's pixel delta; row-rect damage | pixels vs stock after scroll sequences |
-| G6 | column metrics: prefix sums for column x, binary search for column at x, `showColumn` O(log c) | differential on column order/width/visibility |
+| G5 | done (see Leaf G5): variable-height and tree blit scroll by the row index's pixel delta; exposed strip repainted | window equals paint after scroll sequences |
+| G6 | done (see Leaf G6): column lanes with prefix sums; column at x by binary search, x of a column and display position O(1) | lane answers equal the stock scans under seeded column scripts |
 
 ## Non-claims
 

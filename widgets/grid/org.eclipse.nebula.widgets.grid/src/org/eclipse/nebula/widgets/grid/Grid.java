@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
+import java.util.logging.Logger;
 
 import org.eclipse.nebula.widgets.grid.internal.DefaultBottomLeftRenderer;
 import org.eclipse.nebula.widgets.grid.internal.DefaultColumnGroupHeaderRenderer;
@@ -64,6 +65,7 @@ import org.eclipse.swt.accessibility.AccessibleAdapter;
 import org.eclipse.swt.accessibility.AccessibleControlAdapter;
 import org.eclipse.swt.accessibility.AccessibleControlEvent;
 import org.eclipse.swt.accessibility.AccessibleEvent;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.DropTargetListener;
@@ -110,6 +112,9 @@ import org.eclipse.swt.widgets.ScrollBar;
  *
  */
 public class Grid extends Canvas {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final Logger LOG = Logger.getLogger("org.eclipse.nebula.widgets.grid");
+
 
 	/**
 	 * Cached default font of Control.getFont.
@@ -313,9 +318,11 @@ public class Grid extends Canvas {
 	private boolean visibleLinesBasedColumnPack = false;
 
 	/**
-	 * All items in the table, not just root items.
+	 * All items in the table, not just root items. A virtual Grid starts with a sparse list; in the
+	 * viewport mode it moves to the row tree when it becomes a tree (see
+	 * {@link #materializeVirtualTableForTree()}).
 	 */
-	private final List<GridItem> items;
+	private List<GridItem> items;
 
 	/**
 	 * All root items.
@@ -376,6 +383,12 @@ public class Grid extends Canvas {
 	 * List of the table columns in the order they are displayed.
 	 */
 	private final List<GridColumn> displayOrderedColumns = new ArrayList<>();
+
+	/** The column lanes over {@link #displayOrderedColumns} (G6): widths and their prefix sums. */
+	private final GridColumnMetrics columnMetrics = new GridColumnMetrics();
+
+	/** The row state of the items (height, level, flags): the one store, items hold lane ids. */
+	private final GridItemLanes itemLanes = new GridItemLanes();
 
 	private GridColumnGroup[] columnGroups = {};
 
@@ -825,6 +838,13 @@ public class Grid extends Canvas {
 	/** Test switch: false restores the full body redraw on vertical scrolling. */
 	boolean blitScroll = true;
 
+	/** Horizontal offset and frozen overlay drawn by the last body paint (origin of a horizontal blit). */
+	private int paintedHScroll = -1;
+	private boolean paintedOverlay;
+
+	/** Horizontal scrolls served by a blit (package-private, for tests and benches). */
+	int hBlitScrollCount;
+
 	/** Vertical scrolls served by a blit (package-private, for tests and benches). */
 	int blitScrollCount;
 
@@ -1021,6 +1041,11 @@ public class Grid extends Canvas {
 				| SWT.MULTI | SWT.NO_FOCUS | SWT.CHECK | SWT.VIRTUAL;
 		int newStyle = style & mask;
 		newStyle |= SWT.DOUBLE_BUFFERED;
+		if (GridViewport.ENABLED) {
+			// a resize is a viewport delta (brief rule 24): the system keeps the pixels that stay and
+			// invalidates what the resize exposes; onResize adds the bands anchored to an edge
+			newStyle |= SWT.NO_REDRAW_RESIZE;
+		}
 		return newStyle;
 	}
 
@@ -1505,7 +1530,11 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
-		GridColumn overThis = GridViewportProjection.columnAt(
+		final GridColumnMetrics lanes = columnLanes();
+		GridColumn overThis = lanes != null
+				? lanes.columnAt(point.x, rowHeaderVisible, rowHeaderWidth, isFixedOverlayActive(),
+						getHScrollSelectionInPixels())
+				: GridViewportProjection.columnAt(
 				displayOrderedColumns,
 				point.x,
 				rowHeaderVisible,
@@ -1524,7 +1553,7 @@ public class Grid extends Canvas {
 			}
 
 			if (item != null) {
-				final int displayColIndex = displayOrderedColumns.indexOf(overThis);
+				final int displayColIndex = displayPosition(overThis);
 
 				// track back all previous columns and check their spanning
 				for (int i = 0; i < displayColIndex; i++) {
@@ -1727,7 +1756,25 @@ public class Grid extends Canvas {
 			seen[order[i]] = true;
 		}
 
-		if (columnGroups.length != 0) {
+		if (columnGroups.length != 0 && GridViewport.UPSTREAM_FIXES) {
+			// stock lets a finished group swallow the first column of the next one, so a group
+			// of one column followed by another group fails a valid order (archived bug 330224,
+			// UPSTREAM_DEFECTS.tsv D29): each group's columns must only be contiguous
+			GridColumnGroup currentGroup = null;
+			int colsInGroup = 0;
+			for (final int element : order) {
+				final GridColumn col = getColumn(element);
+				if (colsInGroup > 0) {
+					if (col.getColumnGroup() != currentGroup) {
+						SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+					}
+					colsInGroup--;
+					continue;
+				}
+				currentGroup = col.getColumnGroup();
+				colsInGroup = currentGroup == null ? 0 : currentGroup.getColumns().length - 1;
+			}
+		} else if (columnGroups.length != 0) {
 			GridColumnGroup currentGroup = null;
 			int colsInGroup = 0;
 
@@ -1757,7 +1804,7 @@ public class Grid extends Canvas {
 		for (final int element : order) {
 			displayOrderedColumns.add(cols[element]);
 		}
-		clearDisplayOrderedCache();
+		columnOrderChanged();
 	}
 
 	/**
@@ -1765,6 +1812,52 @@ public class Grid extends Canvas {
 	 */
 	private void clearDisplayOrderedCache() {
 		columnOrders = null;
+		columnMetrics.invalidate();
+	}
+
+	/* the display order changed (setColumnOrder, a header drag): the column lanes apply it as a delta */
+	private void columnOrderChanged() {
+		columnOrders = null;
+		columnMetrics.reordered(displayOrderedColumns);
+	}
+
+	/**
+	 * A column changed width, visibility, fixed state, detail or summary, or its group expanded or
+	 * collapsed: the column lanes apply it as a delta (brief rule 24, viewport deltas).
+	 *
+	 * @param column the column
+	 */
+	void columnGeometryChanged(final GridColumn column) {
+		columnMetrics.columnChanged(column);
+	}
+
+	/** The column set changed in a way the lanes cannot follow: rebuilt when next read. */
+	void columnGeometryChanged() {
+		columnMetrics.invalidate();
+	}
+
+	/** @return the column lanes (for tests; not rebuilt here) */
+	GridColumnMetrics columnMetrics() {
+		return columnMetrics;
+	}
+
+	/** @return the row state lanes of this Grid's items */
+	GridItemLanes itemLanes() {
+		return itemLanes;
+	}
+
+	/**
+	 * @return the column lanes when they answer the column questions (G6: the viewport mode, no
+	 *         negative width), else {@code null} for the stock scans
+	 */
+	private GridColumnMetrics columnLanes() {
+		return GridViewport.ENABLED && columnMetrics.ready(displayOrderedColumns) ? columnMetrics : null;
+	}
+
+	/* the display position of a column (-1: none), O(1) from the column lanes (G6) */
+	private int displayPosition(final GridColumn column) {
+		final GridColumnMetrics lanes = columnLanes();
+		return lanes != null ? lanes.positionOf(column) : displayOrderedColumns.indexOf(column);
 	}
 
 	/**
@@ -2205,7 +2298,7 @@ public class Grid extends Canvas {
 				final int itemIndex = getIndexOfItem(itemToReturn);
 
 				final GridColumn gridColumn = getColumn(itemToReturn, point);
-				final int displayColIndex = displayOrderedColumns.indexOf(gridColumn);
+				final int displayColIndex = displayPosition(gridColumn);
 
 				// track back all previous columns and check their spanning
 				int indexNextItemToCheck = 0;
@@ -2311,8 +2404,26 @@ public class Grid extends Canvas {
 			viewport.rowsChanged();
 		}
 		userModifiedItemHeight = true;
-		for (final GridItem item : materializedItems()) {
-			item.setHeight(height);
+		if (GridViewport.UPSTREAM_FIXES) {
+			// every row gets the same height at once; stock's setHeight per item asked for the
+			// visible range with half the rows updated and kept that bottom index (D36), O(n) each
+			if (rowTree() != null) {
+				// the lanes: every item's height in one fill, every visible row's extent (rows nobody
+				// has read included) in one pass over the row tree; no call per item (O(n), tight)
+				itemLanes.fillHeights(height);
+				rowTree().setVisibleExtent(height + 1);
+			} else {
+				for (final GridItem item : materializedItems()) {
+					item.initializeHeight(height);
+					viewport.rowChanged(item);
+				}
+			}
+			// the top row stays, as stock keeps it; the bottom row follows from the new heights
+			bottomIndex = -1;
+		} else {
+			for (final GridItem item : materializedItems()) {
+				item.setHeight(height);
+			}
 		}
 		hasDifferingHeights = false;
 		setScrollValuesObsolete();
@@ -2563,7 +2674,7 @@ public class Grid extends Canvas {
 
 		// stock fails with an IndexOutOfBoundsException for null (UPSTREAM_DEFECTS.tsv)
 		int index = column == null && GridViewport.UPSTREAM_FIXES ? displayOrderedColumns.size()
-				: displayOrderedColumns.indexOf(column);
+				: displayPosition(column);
 
 		if (index == 0) {
 			return null;
@@ -2602,7 +2713,7 @@ public class Grid extends Canvas {
 	public GridColumn getNextVisibleColumn(final GridColumn column) {
 		checkWidget();
 
-		int index = displayOrderedColumns.indexOf(column);
+		int index = displayPosition(column);
 
 		if (index == displayOrderedColumns.size() - 1) {
 			return null;
@@ -2901,6 +3012,12 @@ public class Grid extends Canvas {
 
 		if (topIndex != -1) {
 			return topIndex;
+		}
+		if (hiddenViewport && scrollValuesObsolete && frozenPlanes == 0) {
+			// a client asks while hidden: the scroll values the deltas left for the show settle now
+			// (stock's eager update after a removal, 375327, keeps the top row in range)
+			updateScrollbars();
+			scrollValuesObsolete = false;
 		}
 		if (rowsIndexed()) {
 			topIndex = viewport.getTopIndex(isTree);
@@ -3701,8 +3818,10 @@ public class Grid extends Canvas {
 		if (usesSparseVirtualItems()) {
 			disposeSparseVirtualItems();
 		} else {
-			final GridItem[] items = getItems();
-			for (final GridItem gridItem : items) {
+			final List<GridItem> made = new ArrayList<>();
+			// the rows nobody has read have no item to dispose
+			materializedItems().forEach(made::add);
+			for (final GridItem gridItem : made) {
 				gridItem.disposeOnly();
 			}
 			clearItems();
@@ -3716,7 +3835,7 @@ public class Grid extends Canvas {
 		selectedItems.clear();
 		redraw();
 		// Need to update the scrollbars see see 375327
-		updateScrollbars();
+		scrollbarsAfterDelta();
 	}
 
 	/**
@@ -4735,7 +4854,7 @@ public class Grid extends Canvas {
 			}
 		} else {
 			if (x < firstVisibleX || col.getWidth() > getClientArea().width - firstVisibleX) {
-				final int sel = displayOrderedColumns.indexOf(col);
+				final int sel = displayPosition(col);
 				hScroll.setSelection(sel);
 			} else {
 				int availableWidth = getClientArea().width - firstVisibleX - col.getWidth();
@@ -4745,7 +4864,7 @@ public class Grid extends Canvas {
 
 				while (true) {
 					if (prevCol == null || prevCol.getWidth() > availableWidth) {
-						final int sel = displayOrderedColumns.indexOf(currentScrollTo);
+						final int sel = displayPosition(currentScrollTo);
 						hScroll.setSelection(sel);
 						break;
 					} else {
@@ -4757,7 +4876,12 @@ public class Grid extends Canvas {
 			}
 		}
 
-		onScrollSelection(true);
+		// a programmatic column scroll: the visible columns change, the top row does not. Stock ends with
+		// redraw() and keeps its top row; onScrollSelection would recompute it from the vertical bar,
+		// which stock does only for a user scroll (found by the virtual-tree differential, seed 22)
+		invalidateVisibleColumnCache();
+		fireViewportChanged();
+		redraw();
 	}
 
 	/**
@@ -4797,8 +4921,9 @@ public class Grid extends Canvas {
 
 		// An item being disposed is already out of the item list but still holds its old row
 		// (Grid.removeItem may resize the scrollbars, which lays out a GridEditor on it): it
-		// is not shown (issue #700; default mode, UPSTREAM_DEFECTS.tsv D22).
-		if (GridViewport.UPSTREAM_FIXES && !isRowOf(item, itemIndex)) {
+		// is not shown (issue #700). Both modes: stock crashes only via a real WM_SIZE layout of a
+		// GridEditor, which the hidden harness cannot deliver, so the differential cannot see it.
+		if (!isRowOf(item, itemIndex)) {
 			return false;
 		}
 
@@ -4976,6 +5101,12 @@ public class Grid extends Canvas {
 
 		int colHeaderHeight = 0;
 		for (final GridColumn column : columns) {
+			// a hidden or zero-width column shows no header: its measure does not count (a wrapping
+			// header at width zero wraps per character and got very tall; archived bug 377617,
+			// UPSTREAM_DEFECTS.tsv D24); the original mode keeps stock's measure
+			if (GridViewport.UPSTREAM_FIXES && (!column.isVisible() || column.getWidth() == 0)) {
+				continue;
+			}
 			colHeaderHeight = Math.max(column.getHeaderHeight(gc), colHeaderHeight);
 		}
 
@@ -5076,6 +5207,12 @@ public class Grid extends Canvas {
 		if (!column.isVisible()) {
 			return -1;
 		}
+		final GridColumnMetrics lanes = columnLanes();
+		if (lanes != null) {
+			// G6: the prefix sums, O(1) after a change's O(c) rebuild
+			return lanes.headerX(column, column.isFixed() ? 0 : getHScrollSelectionInPixels(), rowHeaderVisible,
+					rowHeaderWidth);
+		}
 
 		int x = 0;
 
@@ -5117,6 +5254,10 @@ public class Grid extends Canvas {
 	 * @return width in pixels of the fixed-column overlay region; 0 if none
 	 */
 	private int getFixedColumnsWidth() {
+		final GridColumnMetrics lanes = columnLanes();
+		if (lanes != null) {
+			return lanes.fixedRunWidth();
+		}
 		int width = 0;
 		for (final GridColumn column : displayOrderedColumns) {
 			if (!column.isVisible()) {
@@ -5366,7 +5507,7 @@ public class Grid extends Canvas {
 			for (int i = notifyFrom; i <= notifyTo; i++) {
 				displayOrderedColumns.get(i).fireMoved();
 			}
-			clearDisplayOrderedCache();
+			columnOrderChanged();
 		}
 		redraw();
 	}
@@ -5548,7 +5689,7 @@ public class Grid extends Canvas {
 	}
 
 	void fireColumnsMoved() {
-		for (int index = displayOrderedColumns.indexOf(columnBeingResized) + 1; index < displayOrderedColumns
+		for (int index = displayPosition(columnBeingResized) + 1; index < displayOrderedColumns
 				.size(); index++) {
 			final GridColumn col = displayOrderedColumns.get(index);
 			if (col.isVisible()) {
@@ -5562,7 +5703,7 @@ public class Grid extends Canvas {
 
 		if (getHorizontalBar() != null) {
 			if (!getHorizontalBar().isVisible()) {
-				index = displayOrderedColumns.indexOf(column);
+				index = displayPosition(column);
 			}
 		}
 
@@ -5798,6 +5939,10 @@ public class Grid extends Canvas {
 	 * @param event paint event
 	 */
 	private void onPaint(final PaintEvent event) {
+		paintPasses++;
+		// brief rule 24, hidden viewports: a paint means visible; deltas made while hidden are applied
+		// here as one window patch (scroll values, window), then this one pass paints them
+		applyHiddenPatch();
 		painting = true;
 		try {
 			paintNow(event);
@@ -5821,6 +5966,7 @@ public class Grid extends Canvas {
 		paintCulledRows = 0;
 
 		final GC gc = event.gc;
+		paintedPixels += (long) event.width * event.height;
 		final Rectangle originalClipping = gc.getClipping();
 
 		gc.setBackground(getBackground());
@@ -5994,6 +6140,8 @@ public class Grid extends Canvas {
 		// Z1: scrolling body.
 		if (GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
 			paintedTopIndex = firstVisibleIndex;
+			paintedHScroll = hscroll;
+			paintedOverlay = fixedOverlayActive;
 			bodyPaintCount++;
 			final Rectangle bodyClipping = originalClipping.intersection(bodyRect);
 			try (GridGCProxy bodyGc = GridGCProxy.wrap(gc).clip(bodyClipping)) {
@@ -6607,7 +6755,7 @@ public class Grid extends Canvas {
 								gc.setClipping(originalClipping.intersection(cellRect));
 							}
 
-							column.getCellRenderer().setRow(i + 1);
+							column.getCellRenderer().setRow(GridViewport.UPSTREAM_FIXES ? row : i + 1); // D28: the row index (stock: 1-based window position)
 
 							column.getCellRenderer().setSelected(selectedItems.contains(item));
 							column.getCellRenderer().setFocus(isFocusControl());
@@ -6683,7 +6831,7 @@ public class Grid extends Canvas {
 					if (!fixed) {
 						emptyCellRenderer.setSelected(selectedItems.contains(item));
 						emptyCellRenderer.setFocus(isFocusControl());
-						emptyCellRenderer.setRow(i + 1);
+						emptyCellRenderer.setRow(GridViewport.UPSTREAM_FIXES ? row : i + 1); // D28: the row index (stock: 1-based window position)
 						emptyCellRenderer.setBounds(x, y, clientArea.width - x + 1, item.getHeight());
 						emptyCellRenderer.setColumn(columnCount);
 						emptyCellRenderer.paint(gc, item);
@@ -6738,7 +6886,7 @@ public class Grid extends Canvas {
 					emptyCellRenderer.setBounds(x, y, clientArea.width - x, itemHeight);
 					emptyCellRenderer.setFocus(false);
 					emptyCellRenderer.setSelected(false);
-					emptyCellRenderer.setRow(i + 1);
+					emptyCellRenderer.setRow(GridViewport.UPSTREAM_FIXES ? row : i + 1); // D28: the row index (stock: 1-based window position)
 				}
 
 				x += windowLeft;
@@ -6791,6 +6939,41 @@ public class Grid extends Canvas {
 	 * @param y mouse y
 	 * @return column reference which mouse is over, or null.
 	 */
+	/**
+	 * A header click with cell selection enabled selects the column's cells, as a header click
+	 * selects the column in the native Table. Stock has a branch for exactly this in its mouse-down
+	 * handler, but the column-header push swallows the click before it, so the cells were never
+	 * selected (archived bugs 218713 and 238601, UPSTREAM_DEFECTS.tsv D27); the original mode keeps
+	 * stock's behaviour (the column Selection event alone).
+	 */
+	private void selectPushedColumnCells(final GridColumn column, final Event e) {
+		if (!GridViewport.UPSTREAM_FIXES || !cellSelectionEnabled || getItemCount() == 0
+				|| column != getColumn(new Point(e.x, e.y))) {
+			return;
+		}
+		final Vector<Point> cells = new Vector<>();
+		getCells(column, cells);
+		final Event selectionEvent = updateCellSelection(cells, e.stateMask, false, true);
+		cellColumnSelectedOnLastMouseDown = getCellSelectionCount() > 0;
+		GridItem newFocusItem = getItem(0);
+		while (newFocusItem != null && getSpanningColumn(newFocusItem, column) != null) {
+			newFocusItem = getNextVisibleItem(newFocusItem);
+		}
+		if (newFocusItem != null) {
+			focusColumn = column;
+			focusItem = newFocusItem;
+		}
+		showColumn(column);
+		redraw();
+		if (selectionEvent != null) {
+			selectionEvent.stateMask = e.stateMask;
+			selectionEvent.button = e.button;
+			selectionEvent.x = e.x;
+			selectionEvent.y = e.y;
+			notifyListeners(SWT.Selection, selectionEvent);
+		}
+	}
+
 	private GridColumn overColumnHeader(final int x, final int y) {
 		GridColumn col = null;
 
@@ -7043,7 +7226,9 @@ public class Grid extends Canvas {
 		if (group == null || !warnedFixedGroups.add(group)) {
 			return;
 		}
-		System.err.println("[nebula.grid] Fixed column belongs to column group '" + group.getText()
+		// brief rule 22: java.util.logging (the package's logger), once per group, built only when logged
+		final String groupText = group.getText();
+		LOG.warning(() -> "Fixed column belongs to column group '" + groupText
 				+ "' that also contains scrollable columns; the group header is omitted from the frozen overlay. "
 				+ "Place the fixed column outside any multi-column group.");
 	}
@@ -7106,8 +7291,8 @@ public class Grid extends Canvas {
 			if (group != previousPaintedGroup) {
 				int groupWidth = width;
 				GridColumn nextCol = null;
-				if (displayOrderedColumns.indexOf(column) + 1 < displayOrderedColumns.size()) {
-					nextCol = displayOrderedColumns.get(displayOrderedColumns.indexOf(column) + 1);
+				if (displayPosition(column) + 1 < displayOrderedColumns.size()) {
+					nextCol = displayOrderedColumns.get(displayPosition(column) + 1);
 				}
 
 				while (nextCol != null && nextCol.getColumnGroup() == group) {
@@ -7118,8 +7303,8 @@ public class Grid extends Canvas {
 						groupWidth += nextCol.getWidth(extraFill);
 					}
 
-					if (displayOrderedColumns.indexOf(nextCol) + 1 < displayOrderedColumns.size()) {
-						nextCol = displayOrderedColumns.get(displayOrderedColumns.indexOf(nextCol) + 1);
+					if (displayPosition(nextCol) + 1 < displayOrderedColumns.size()) {
+						nextCol = displayOrderedColumns.get(displayPosition(nextCol) + 1);
 					} else {
 						nextCol = null;
 					}
@@ -7295,6 +7480,7 @@ public class Grid extends Canvas {
 	}
 
 	private void updateScrollbars() {
+		nativeOps++;
 		final Point preferredSize = getTableSize();
 
 		Rectangle clientArea = getClientArea();
@@ -7660,7 +7846,7 @@ public class Grid extends Canvas {
 
 				do {
 					if (!firstLoop2) {
-						final int index = displayOrderedColumns.indexOf(currentColumn) + 1;
+						final int index = displayPosition(currentColumn) + 1;
 
 						if (index < displayOrderedColumns.size()) {
 							currentColumn = getVisibleColumn_DegradeRight(currentItem,
@@ -7670,7 +7856,7 @@ public class Grid extends Canvas {
 						}
 
 						if (currentColumn != null) {
-							if (displayOrderedColumns.indexOf(currentColumn) > displayOrderedColumns
+							if (displayPosition(currentColumn) > displayOrderedColumns
 									.indexOf(endColumn)) {
 								currentColumn = null;
 							}
@@ -7762,6 +7948,17 @@ public class Grid extends Canvas {
 	void updateColumnSelection() {
 		// Update the list of which columns have all their cells selected
 		selectedColumns.clear();
+		if (selectedCells instanceof GridCellSelectionList) {
+			// the list counts its cells per column: O(columns), not a pass over the selection (an
+			// O(n) pass per ctrl+click made one toggle in 200,000 selected cells cost milliseconds)
+			final GridCellSelectionList cells = (GridCellSelectionList) selectedCells;
+			for (int x = 0; x < columns.size(); x++) {
+				if (cells.columnHasCells(x)) {
+					selectedColumns.add(columns.get(x));
+				}
+			}
+			return;
+		}
 
 		for (final Point cell : selectedCells) {
 			final GridColumn column = getColumn(cell.x);
@@ -7783,6 +7980,10 @@ public class Grid extends Canvas {
 		addPaintListener(this::onPaint);
 
 		addListener(SWT.Resize, e -> onResize());
+		// brief rule 24, hidden viewports: hidden at once; shown, the next delta probes again and the
+		// paint the show brings applies the deltas made meanwhile
+		addListener(SWT.Hide, e -> hiddenViewport = viewport != null);
+		addListener(SWT.Show, e -> hiddenViewport = false);
 
 		if (getVerticalBar() != null) {
 			getVerticalBar().addListener(SWT.Selection, e -> onScrollBarEvent(false, e.detail));
@@ -7912,6 +8113,10 @@ public class Grid extends Canvas {
 		// have been
 		// listening to the dispose has had a chance to do whatever.
 		removeListener(SWT.Dispose, disposeListener);
+		if (deiconifyListener != null) {
+			getShell().removeListener(SWT.Deiconify, deiconifyListener);
+			deiconifyListener = null;
+		}
 		notifyListeners(SWT.Dispose, event);
 		event.type = SWT.None;
 
@@ -8189,7 +8394,7 @@ public class Grid extends Canvas {
 		if (hoveringOnColumnResizer) {
 			columnBeingResized.pack();
 			columnBeingResized.fireResized();
-			for (int index = displayOrderedColumns.indexOf(columnBeingResized) + 1; index < displayOrderedColumns
+			for (int index = displayPosition(columnBeingResized) + 1; index < displayOrderedColumns
 					.size(); index++) {
 				final GridColumn col = displayOrderedColumns.get(index);
 				if (col.isVisible()) {
@@ -8232,7 +8437,7 @@ public class Grid extends Canvas {
 				newEvent.item = item;
 
 				notifyListeners(SWT.DefaultSelection, newEvent);
-			} else if (item.getItemCount() > 0) {
+			} else if (item.childCount() > 0) {
 				item.setExpanded(!item.isExpanded());
 
 				if (item.isExpanded()) {
@@ -8272,6 +8477,7 @@ public class Grid extends Canvas {
 			redraw();
 			if (pushingAndHovering) {
 				columnBeingPushed.fireListeners();
+				selectPushedColumnCells(columnBeingPushed, e);
 			}
 			setCapture(false);
 			return;
@@ -8447,7 +8653,7 @@ public class Grid extends Canvas {
 
 					final Vector<Point> newSelected = new Vector<>();
 
-					final boolean decreasing = displayOrderedColumns.indexOf(iterCol) > displayOrderedColumns
+					final boolean decreasing = displayPosition(iterCol) > displayOrderedColumns
 							.indexOf(focusColumn);
 
 					do {
@@ -8647,7 +8853,7 @@ public class Grid extends Canvas {
 				if (impliedFocusItem != null && impliedFocusColumn != null) {
 					newSelection = impliedFocusItem;
 
-					int index = displayOrderedColumns.indexOf(impliedFocusColumn);
+					int index = displayPosition(impliedFocusColumn);
 
 					int jumpAhead = impliedFocusItem.getColumnSpan(impliedFocusColumn.index);
 
@@ -8673,7 +8879,7 @@ public class Grid extends Canvas {
 				intendedFocusColumn = newColumnFocus;
 			} else {
 				if (impliedFocusItem != null && impliedFocusItem.hasChildren()) {
-					newSelection = impliedFocusItem.getItem(0);
+					newSelection = impliedFocusItem.childAt(0);
 				}
 			}
 			break;
@@ -8682,7 +8888,7 @@ public class Grid extends Canvas {
 				if (impliedFocusItem != null && impliedFocusColumn != null) {
 					newSelection = impliedFocusItem;
 
-					final int index = displayOrderedColumns.indexOf(impliedFocusColumn);
+					final int index = displayPosition(impliedFocusColumn);
 
 					if (index != 0) {
 						newColumnFocus = displayOrderedColumns.get(index - 1);
@@ -8934,6 +9140,205 @@ public class Grid extends Canvas {
 		bottomIndex = -1;
 		invalidateVisibleColumnCache();
 		fireViewportChanged();
+		if (viewport != null) {
+			// brief rule 24, hidden viewports: an empty client area is hidden, and a resize may show it
+			clientEmpty = getClientArea().isEmpty();
+			hiddenViewport = false;
+			if (viewportHidden()) {
+				// the paint that showing brings covers the client area: no bands now
+				markHiddenDirty();
+				resizedArea = null;
+				return;
+			}
+		}
+		if ((getStyle() & SWT.NO_REDRAW_RESIZE) != 0) {
+			resizeDamage();
+		}
+	}
+
+	/* brief rule 24, viewport deltas: the client area the last resize left (origin of the next one's damage) */
+	private Rectangle resizedArea;
+	private boolean inResizeDamage;
+	/* pixels on each side of an old and a new edge that a resize repaints (themed borders, focus lines) */
+	private static final int RESIZE_EDGE = 16;
+	/** Resizes that repainted only the bands at the moved edges (for tests and benches). */
+	int resizeDeltas;
+	/** Resizes that repainted the whole client area (the content moved, or no delta applies). */
+	int resizeFullRepaints;
+	/** Pixels painted by all paints so far (the clip of each paint event; for tests and benches). */
+	long paintedPixels;
+
+	/**
+	 * A resize as a viewport delta (brief rule 24): the scroll values are settled now (as the next
+	 * paint would), and when the rows and columns on screen keep their places the system's
+	 * invalidation of the exposed strips (NO_REDRAW_RESIZE) is completed by the bands at the old and
+	 * new right and bottom edges: the filler header, cells and footer reach the right edge, the
+	 * footer sits on the bottom one. A scroll value that moved, pinned rows, a focus outline, a fill
+	 * column (its width follows the client width), column
+	 * scrolling or right-to-left mirroring repaint the whole client area, as stock.
+	 */
+	private void resizeDamage() {
+		if (inResizeDamage) {
+			// a scroll bar shown or hidden by the settling below resizes the client area again
+			return;
+		}
+		inResizeDamage = true;
+		try {
+			final Rectangle before = resizedArea;
+			final int vBefore = vScroll.getSelection();
+			final int hBefore = hScroll.getSelection();
+			if (frozenPlanes == 0) {
+				updateScrollbars();
+				scrollValuesObsolete = false;
+			}
+			final Rectangle now = getClientArea();
+			resizedArea = now;
+			if (before == null || before.isEmpty() || now.isEmpty() || frozenPlanes != 0
+					|| vScroll.getSelection() != vBefore || hScroll.getSelection() != hBefore
+					|| pinnedTopRows + pinnedBottomRows > 0 || columnScrolling
+					|| (getStyle() & SWT.RIGHT_TO_LEFT) != 0 || isFocusControl() && focusItem != null
+					|| now.width != before.width && getExtraFill(new Point(1 << 20, 0)) > 0) {
+				redraw();
+				resizeFullRepaints++;
+				return;
+			}
+			if (now.width != before.width) {
+				final int x = Math.max(0, Math.min(before.width, now.width) - RESIZE_EDGE);
+				redraw(x, 0, now.width - x, now.height, false);
+			}
+			if (now.height != before.height) {
+				final int footer = columnFootersVisible ? footerHeight() : 0;
+				final int y = Math.max(0, Math.min(before.height, now.height) - footer - RESIZE_EDGE);
+				redraw(0, y, now.width, now.height - y, false);
+			}
+			resizeDeltas++;
+		} finally {
+			inResizeDamage = false;
+		}
+	}
+
+	/*
+	 * Brief rule 24, hidden viewports (user 2026-10-20: "if the viewport becomes visible from hidden
+	 * it should paint; while it is hidden the model may make changes and the viewport is dirty and
+	 * renders on becoming visible"). In the viewport mode a Grid that is not visible (itself or an
+	 * ancestor: an unselected tab or stack page, a collapsed section), has an empty client area,
+	 * sits in a minimized shell or lies wholly outside a ScrolledComposite ancestor's client area is
+	 * hidden. A delta then still updates the model and its lanes, but issues no invalidation, no
+	 * scroll bar update and no measurement: it sets a flag and widens the dirty row range (O(1)).
+	 * Becoming visible (shown, resized, restored, scrolled into view) brings one paint, which
+	 * settles the scroll values and the window against the current model first: one window patch,
+	 * one paint pass.
+	 */
+	private boolean hiddenViewport;
+	private boolean hiddenDirty;
+	private boolean clientEmpty;
+	private Listener deiconifyListener;
+	private ScrolledComposite[] scrolledAncestors;
+	/** Deltas coalesced while hidden (for tests and benches). */
+	int hiddenDeltas;
+	/** Window patches applied by the first paint after deltas made while hidden. */
+	int hiddenPatches;
+	/** Native work the Grid issued: invalidations, scroll bar updates and measuring GCs. */
+	int nativeOps;
+	/** Paint events the Grid handled. */
+	int paintPasses;
+
+	/**
+	 * @return whether the viewport is hidden; once found hidden it stays so (a flag check, no
+	 *         native call) until it paints, is shown, resized or restored
+	 */
+	boolean viewportHidden() {
+		if (hiddenViewport) {
+			return true;
+		}
+		if (viewport == null || isDisposed()) {
+			return false;
+		}
+		if (clientEmpty || !isVisible() || minimized() || outsideScrolledAncestor()) {
+			hiddenViewport = true;
+			return true;
+		}
+		return false;
+	}
+
+	/* a minimized shell paints nothing; its restore repaints what the deltas left dirty */
+	private boolean minimized() {
+		final org.eclipse.swt.widgets.Shell shell = getShell();
+		if (!shell.getMinimized()) {
+			return false;
+		}
+		if (deiconifyListener == null) {
+			deiconifyListener = e -> {
+				shell.removeListener(SWT.Deiconify, deiconifyListener);
+				deiconifyListener = null;
+				if (!isDisposed()) {
+					hiddenViewport = false;
+					if (hiddenDirty) {
+						redraw();
+					}
+				}
+			};
+			shell.addListener(SWT.Deiconify, deiconifyListener);
+		}
+		return true;
+	}
+
+	/* wholly outside the client area of a ScrolledComposite ancestor (found once) */
+	private boolean outsideScrolledAncestor() {
+		if (scrolledAncestors == null) {
+			final List<ScrolledComposite> found = new ArrayList<>(1);
+			for (Composite p = getParent(); p != null; p = p.getParent()) {
+				if (p instanceof ScrolledComposite) {
+					found.add((ScrolledComposite) p);
+				}
+			}
+			scrolledAncestors = found.toArray(new ScrolledComposite[0]);
+		}
+		if (scrolledAncestors.length == 0) {
+			return false;
+		}
+		final Point size = getSize();
+		for (final ScrolledComposite scrolled : scrolledAncestors) {
+			final Rectangle mine = getDisplay().map(this, scrolled, new Rectangle(0, 0, size.x, size.y));
+			if (!mine.intersects(scrolled.getClientArea())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/*
+	 * a delta while hidden: the flag, O(1). The dirty window is the whole window: the paint that
+	 * showing brings covers the client area (the system invalidates a window that becomes visible),
+	 * and it measures the window against the current model, so no row range is kept
+	 */
+	private void markHiddenDirty() {
+		hiddenDeltas++;
+		hiddenDirty = true;
+	}
+
+	/* the first paint after hidden deltas: one window patch against the current model */
+	private void applyHiddenPatch() {
+		hiddenViewport = false;
+		if (!hiddenDirty) {
+			return;
+		}
+		hiddenDirty = false;
+		hiddenPatches++;
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		invalidateVisibleColumnCache();
+	}
+
+	/* stock brings the scroll bars up to date at once after a removal (375327); hidden, the paint on show does */
+	private void scrollbarsAfterDelta() {
+		if (viewportHidden()) {
+			markHiddenDirty();
+			scrollValuesObsolete = true;
+			return;
+		}
+		updateScrollbars();
 	}
 
 	private void invalidateVisibleColumnCache() {
@@ -8954,7 +9359,13 @@ public class Grid extends Canvas {
 	@Override
 	public void redraw() {
 		checkWidget();
+		if (viewportHidden()) {
+			// brief rule 24, hidden viewports: marked dirty, painted when it becomes visible
+			markHiddenDirty();
+			return;
+		}
 		if (frozenPlanes == 0) {
+			nativeOps++;
 			super.redraw();
 			return;
 		}
@@ -8972,7 +9383,12 @@ public class Grid extends Canvas {
 	@Override
 	public void redraw(final int x, final int y, final int width, final int height, final boolean all) {
 		checkWidget();
+		if (viewportHidden()) {
+			markHiddenDirty();
+			return;
+		}
 		if (frozenPlanes == 0) {
+			nativeOps++;
 			super.redraw(x, y, width, height, all);
 			return;
 		}
@@ -8986,6 +9402,7 @@ public class Grid extends Canvas {
 				if ((frozenPlanes & plane) != 0) {
 					pendingPlanes |= plane;
 				} else {
+					nativeOps++;
 					super.redraw(part.x, part.y, part.width, part.height, all);
 				}
 			}
@@ -9032,7 +9449,12 @@ public class Grid extends Canvas {
 		if (mask == 0 || isDisposed()) {
 			return;
 		}
+		if (viewportHidden()) {
+			markHiddenDirty();
+			return;
+		}
 		if (mask == (PLANE_BODY | PLANE_CHROME)) {
+			nativeOps++;
 			super.redraw();
 			return;
 		}
@@ -9040,6 +9462,7 @@ public class Grid extends Canvas {
 			if ((mask & plane) != 0) {
 				for (final Rectangle r : planeRects(plane)) {
 					if (!r.isEmpty()) {
+						nativeOps++;
 						super.redraw(r.x, r.y, r.width, r.height, false);
 					}
 				}
@@ -9098,7 +9521,7 @@ public class Grid extends Canvas {
 				columnFootersVisible ? footerHeight() : 0,
 				horizontal);
 		if (damage.width > 0 && damage.height > 0) {
-			if (!horizontal && blitBody(oldTop, damage)) {
+			if (horizontal ? blitBodyHorizontally(damage) : blitBody(oldTop, damage)) {
 				return;
 			}
 			redraw(damage.x, damage.y, damage.width, damage.height, false);
@@ -9106,8 +9529,78 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * Scrolls the body horizontally by copying the pixels that stay visible (optimization pass,
+	 * frozen columns, nebula#696 and #165): the part right of the row header and of the frozen
+	 * overlay moves by the change of the horizontal offset; the exposed strip and the header and
+	 * footer rows (the column headers move too, their frozen part does not) are repainted. Under
+	 * the conditions of {@link #blitBody(int, Rectangle)}, with pixel scrolling, the same frozen
+	 * overlay before and after, and no focus outline on screen (the focused row's outline spans the
+	 * visible width); otherwise the caller repaints the whole client area.
+	 *
+	 * @param area the client area (the horizontal scroll damage)
+	 * @return whether the blit served the scroll
+	 */
+	private boolean blitBodyHorizontally(final Rectangle area) {
+		final int oldOffset = paintedHScroll;
+		// the viewport mode only: stock's paint under a frozen column is not the same pixels moved
+		// (GridScrollPaint_Test, original mode: 18,666 pixels differ after a blit to 200)
+		if (viewport == null || !blitScroll || oldOffset < 0 || !isVisible() || columnScrolling || !blitSafe()
+				|| isFocusControl() && focusItem != null) {
+			return false;
+		}
+		final int newOffset = getHScrollSelectionInPixels();
+		final FixedGridColumns fixed = getFixedGridColumns();
+		final boolean overlay = fixed.hasColumns() && newOffset > fixed.offset();
+		if (overlay != paintedOverlay) {
+			return false;
+		}
+		final int dx = oldOffset - newOffset;
+		final int header = columnHeadersVisible ? headerHeight() : 0;
+		final int footer = columnFootersVisible ? footerHeight() : 0;
+		final int left = (rowHeaderVisible ? rowHeaderWidth : 0) + (overlay ? getFixedColumnsWidth() : 0);
+		final int width = area.width - left;
+		final int top = area.y + header;
+		final int height = area.height - header - footer;
+		if (dx == 0 || width <= 0 || height <= 0 || Math.abs(dx) >= width) {
+			return false;
+		}
+		// the classic tree column's dotted lines take their phase from the absolute pixel column
+		if ((dx & 1) != 0 && hasDottedBranches()) {
+			return false;
+		}
+		// each damaged part gets its own paint: the paint clip is the bounding box of what is
+		// invalid, so the strip and the header rows painted together would repaint the whole body
+		if (dx > 0) {
+			scroll(left + dx, top, left, top, width - dx, height, false);
+			redraw(left, top, dx, height, false);
+		} else {
+			scroll(left, top, left - dx, top, width + dx, height, false);
+			redraw(area.x + area.width + dx, top, -dx, height, false);
+		}
+		update();
+		// the first body rows also show the header's overflow (HEADER_OVERFLOW), painted by the header
+		final int band = columnHeadersVisible ? Math.min(headerOverflowBelow(getExtraFill(), area.width), height) : 0;
+		if (band > 0) {
+			redraw(area.x, top, area.width, band, false);
+			update();
+		}
+		if (header > 0) {
+			redraw(area.x, area.y, area.width, header, false);
+			update();
+		}
+		if (footer > 0) {
+			redraw(area.x, area.y + area.height - footer, area.width, footer, false);
+			update();
+		}
+		paintedHScroll = newOffset;
+		hBlitScrollCount++;
+		return true;
+	}
+
+	/**
 	 * Scrolls the body by copying the pixels that stay visible and invalidating only the
-	 * exposed strip. Only when every row has the same height and the painted rows depend on
+	 * exposed strip. Only when the row index gives the pixels between two rows (every row the same
+	 * height, or the viewport mode's row index: variable heights and trees, G5) and the painted rows depend on
 	 * nothing but their absolute index (default renderers, no spans, pinned planes, insert mark,
 	 * column drag, cell hover feedback or child controls such as open cell editors); otherwise
 	 * the caller repaints the whole body.
@@ -9117,7 +9610,9 @@ public class Grid extends Canvas {
 			return false;
 		}
 		final int newTop = getTopIndex();
-		final int dy = (oldTop - newTop) * (itemHeight + 1);
+		// G5: the pixels between the two top rows, from the row index when rows differ in height or
+		// hide (a tree): hidden rows add nothing, each visible row its height and line
+		final int dy = rowsIndexed() ? viewport.offsetBetween(newTop, oldTop) : (oldTop - newTop) * (itemHeight + 1);
 		if (dy == 0 || Math.abs(dy) >= body.height) {
 			return false;
 		}
@@ -9173,7 +9668,7 @@ public class Grid extends Canvas {
 	}
 
 	private boolean blitSafe() {
-		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
+		if ((!rowsIndexed() && (hasDifferingHeights || isTree)) || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
 				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
 				|| !blitSafeRenderer(emptyCellRenderer, DefaultEmptyCellRenderer.class)
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
@@ -9207,19 +9702,25 @@ public class Grid extends Canvas {
 			x -= getHScrollSelectionInPixels();
 		}
 
-		for (final GridColumn colIter : displayOrderedColumns) {
+		final GridColumnMetrics lanes = columnLanes();
+		if (lanes != null) {
+			// G6: the prefix sums give what the loop adds, O(1) after a change's O(c) rebuild
+			x += lanes.originX(column, 0, false, 0);
+		} else {
+			for (final GridColumn colIter : displayOrderedColumns) {
 
-			if (colIter == column) {
-				break;
-			}
-
-			if (colIter.isVisible()) {
-				// When laying out a fixed column, only sum widths of
-				// preceding fixed columns; scrollable ones sit behind it.
-				if (column != null && column.isFixed() && !colIter.isFixed()) {
-					continue;
+				if (colIter == column) {
+					break;
 				}
-				x += colIter.getWidth();
+
+				if (colIter.isVisible()) {
+					// When laying out a fixed column, only sum widths of
+					// preceding fixed columns; scrollable ones sit behind it.
+					if (column != null && column.isFixed() && !colIter.isFixed()) {
+						continue;
+					}
+					x += colIter.getWidth();
+				}
 			}
 		}
 
@@ -9523,6 +10024,7 @@ public class Grid extends Canvas {
 			column.index = size;
 			columns.add(column);
 			displayOrderedColumns.add(column);
+			columnMetrics.invalidate();
 		} else {
 			column.index = index;
 			columns.add(index, column);
@@ -9533,6 +10035,7 @@ public class Grid extends Canvas {
 				columns.get(i).index = i;
 			}
 			displayOrderedColumns.add(index, column);
+			columnMetrics.invalidate();
 
 			dataVisualizer.addColumn(index);
 			for (int i = 0; i < renumbered; i++) {
@@ -9607,6 +10110,7 @@ public class Grid extends Canvas {
 			columns.get(i).index = i;
 		}
 		displayOrderedColumns.remove(column);
+		columnMetrics.invalidate();
 		dataVisualizer.clearColumn(index);
 
 		if (focusColumn == column) {
@@ -9703,15 +10207,166 @@ public class Grid extends Canvas {
 	}
 
 	int virtualMaterializedItemCount() {
+		if (items instanceof GridRowTree) {
+			return ((GridRowTree) items).materializedCount();
+		}
 		return items instanceof GridVirtualItemList
 				? ((GridVirtualItemList) items).materializedCount()
 				: items.size();
 	}
 
 	private Iterable<GridItem> materializedItems() {
+		if (items instanceof GridRowTree && ((GridRowTree) items).hasUnread()) {
+			return ((GridRowTree) items).materialized();
+		}
 		return items instanceof GridVirtualItemList
 				? ((GridVirtualItemList) items).materializedSnapshot()
 				: items;
+	}
+
+	/**
+	 * @return whether {@link GridItem#setItemCount(int)} leaves the new children without items until
+	 *         they are read (G4 step 2c): a virtual Grid in the viewport mode
+	 */
+	boolean sparseChildren() {
+		return viewport != null && (getStyle() & SWT.VIRTUAL) != 0;
+	}
+
+	/*
+	 * The row tree's callback for a row nobody has read: the child of its owner it is, now with an
+	 * item (a facade on the row, no SetData yet)
+	 */
+	private GridItem materializeTreeRow(final int slot) {
+		final GridRowTree tree = rowTree();
+		final GridItem owner = tree.ownerOf(slot);
+		return materializeChild(owner, owner.childList().indexOfSlot(slot, tree), slot);
+	}
+
+	/**
+	 * Makes the item of a child nobody has read.
+	 *
+	 * @param owner its parent
+	 * @param index its index in the parent
+	 * @param slot  its row-tree slot
+	 * @return the item
+	 */
+	GridItem materializeChild(final GridItem owner, final int index, final int slot) {
+		final GridItem item = new GridItem(owner, slot, true);
+		owner.childList().bind(index, item);
+		rowTree().bind(slot, item);
+		return item;
+	}
+
+	/**
+	 * Appends children without items to an item ({@link GridItem#setItemCount(int)} of a virtual
+	 * Grid in the viewport mode): rows of the row tree, nothing else, until they are read.
+	 *
+	 * @param owner the parent item
+	 * @param count how many
+	 */
+	void appendVirtualChildren(final GridItem owner, final int count) {
+		dropResidentPayloads();
+		if (!isTree) {
+			materializeVirtualTableForTree();
+			isTree = true;
+		}
+		final GridRowTree tree = rowTree();
+		final int row = owner.lastDescendantRow() + 1;
+		final int weight = owner.isVisible() && owner.isExpanded() ? itemHeight + 1 : 0;
+		owner.appendChildSlots(tree.insertUnread(row, owner, count, weight));
+		final GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.insertRows(this, row, count);
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
+		if (weight > 0) {
+			currentVisibleItems += count;
+		}
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		redraw();
+	}
+
+	/**
+	 * Removes children nobody has read (their parent shrinks or is disposed): no item, so no
+	 * event; the rows, their data rows and their selected cells go. Such children have no
+	 * descendants, so siblings next to each other have rows next to each other.
+	 *
+	 * @param list the parent's children
+	 * @param from the first child to remove
+	 * @param to   the child after the last to remove; [from, to) all have no item
+	 */
+	void removeVirtualRows(final GridChildList list, final int from, final int to) {
+		dropResidentPayloads();
+		final GridRowTree tree = rowTree();
+		final int row = tree.rowOfSlotIndex(list.slot(from));
+		final int count = to - from;
+		int visibleRows = 0;
+		for (int i = to - 1; i >= from; i--) {
+			final int slot = list.slot(i);
+			if (tree.weightOf(slot) > 0) {
+				visibleRows++;
+			}
+			tree.removeUnread(slot);
+		}
+		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
+		final GridRowAddressedDataVisualizer rows = rowAddressedDataVisualizer();
+		if (rows != null) rows.removeRows(this, row, count);
+		if (disposing) {
+			return;
+		}
+		boolean deselected = false;
+		for (int r = row; r < row + count; r++) {
+			deselected |= deselectCellsOfRow(r);
+		}
+		if (deselected) {
+			updateColumnSelection();
+		}
+		currentVisibleItems -= visibleRows;
+		scrollValuesObsolete = true;
+		topIndex = -1;
+		bottomIndex = -1;
+		redraw();
+		// as removeItem: the scrollbars now (see 375327)
+		scrollbarsAfterDelta();
+	}
+
+	/**
+	 * Shows or hides a child nobody has read (its parent was expanded, collapsed, shown or hidden).
+	 *
+	 * @param slot    its row-tree slot
+	 * @param visible whether it shows
+	 */
+	void setVirtualRowVisible(final int slot, final boolean visible) {
+		final GridRowTree tree = rowTree();
+		if ((tree.weightOf(slot) > 0) == visible) {
+			return;
+		}
+		tree.reweighSlot(slot, visible ? itemHeight + 1 : 0);
+		updateVisibleItems(visible ? 1 : -1);
+	}
+
+	/**
+	 * Deselects the cells of a row without an item.
+	 *
+	 * @param row the row
+	 * @return whether a cell was selected
+	 */
+	boolean deselectCellsOfRow(final int row) {
+		if (selectedCells.isEmpty()) {
+			return false;
+		}
+		boolean deselected = false;
+		for (int column = 0; column < columns.size(); column++) {
+			if (selectedCells.remove(new Point(column, row))) {
+				deselected = true;
+			}
+		}
+		return deselected;
+	}
+
+	/** @return the row of a row-tree slot */
+	int rowOfSlot(final int slot) {
+		return rowTree().rowOfSlotIndex(slot);
 	}
 
 	private void materializeVirtualTableForTree() {
@@ -9723,6 +10378,17 @@ public class Grid extends Canvas {
 		rootItems.clear();
 		for (int i = 0; i < sparse.size(); i++) {
 			rootItems.add(sparse.get(i));
+		}
+		if (viewport != null) {
+			// a virtual tree keeps its rows in the row tree, as a plain one: the sparse list moves
+			// every later item on each insertion (O(n)), the row tree none (O(log n))
+			final GridRowTree tree = new GridRowTree();
+			for (final GridItem root : rootItems) {
+				tree.add(root);
+			}
+			tree.setFacades(this::materializeTreeRow);
+			items = tree;
+			viewport.itemsReplaced(tree);
 		}
 	}
 
@@ -9807,16 +10473,12 @@ public class Grid extends Canvas {
 				index = rootItems.get(index).getRowIndex();
 			}
 		} else if (!root) {
-			if (index == -1 || index >= item.getParentItem().getItemCount()) {
-				GridItem rightMostDescendent = item.getParentItem();
-
-				while (rightMostDescendent.getItemCount() > 0) {
-					rightMostDescendent = rightMostDescendent.getItem(rightMostDescendent.getItemCount() - 1);
-				}
-
-				index = rightMostDescendent.getRowIndex() + 1;
+			// the rows of the right-most descendant and of a sibling, without making the item of a
+			// child nobody has read (G4 step 2c); the same rows as stock's walk
+			if (index == -1 || index >= item.getParentItem().childCount()) {
+				index = item.getParentItem().lastDescendantRow() + 1;
 			} else {
-				index = item.getParentItem().getItem(index).getRowIndex();
+				index = item.getParentItem().childRowAt(index);
 			}
 		}
 
@@ -9836,22 +10498,29 @@ public class Grid extends Canvas {
 		}
 		if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 
-		estimate(sizingGC -> {
-			if (items.size() == 1 && !userModifiedItemHeight) {
-				itemHeight = computeItemHeight(item, sizingGC);
-				// virtual problems here
-				if ((getStyle() & SWT.VIRTUAL) != 0) {
-					item.setHasSetData(false);
-				}
-			}
-
+		if (GridViewport.ENABLED && !(items.size() == 1 && !userModifiedItemHeight)
+				&& !(isRowHeaderVisible() && isAutoWidth())) {
+			// nothing to measure: stock still opens a GC per item, a native device context that
+			// dominated building a large tree (1,000,000 items: tens of seconds)
 			item.initializeHeight(itemHeight);
+		} else {
+			estimate(sizingGC -> {
+				if (items.size() == 1 && !userModifiedItemHeight) {
+					itemHeight = computeItemHeight(item, sizingGC);
+					// virtual problems here
+					if ((getStyle() & SWT.VIRTUAL) != 0) {
+						item.setHasSetData(false);
+					}
+				}
 
-			if (isRowHeaderVisible() && isAutoWidth()) {
-				rowHeaderWidth = Math.max(rowHeaderWidth, //
-						rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x);
-			}
-		});
+				item.initializeHeight(itemHeight);
+
+				if (isRowHeaderVisible() && isAutoWidth()) {
+					rowHeaderWidth = Math.max(rowHeaderWidth, //
+							rowHeaderRenderer.computeSize(sizingGC, SWT.DEFAULT, SWT.DEFAULT, item).x);
+				}
+			});
+		}
 
 		scrollValuesObsolete = true;
 		topIndex = -1;
@@ -9931,7 +10600,7 @@ public class Grid extends Canvas {
 
 		redraw();
 		// Need to update the scrollbars see see 375327
-		updateScrollbars();
+		scrollbarsAfterDelta();
 	}
 
 	/**
@@ -10167,7 +10836,7 @@ public class Grid extends Canvas {
 	 * @return the first visible unspanned column, or null if none exists
 	 */
 	GridColumn getVisibleColumn_DegradeLeft(final GridItem item, final GridColumn col) {
-		int index = displayOrderedColumns.indexOf(col);
+		int index = displayPosition(col);
 
 		GridColumn prevCol = col;
 
@@ -10181,7 +10850,7 @@ public class Grid extends Canvas {
 			prevCol = displayOrderedColumns.get(index - i);
 		}
 
-		index = displayOrderedColumns.indexOf(prevCol);
+		index = displayPosition(prevCol);
 
 		for (int j = 0; j < index; j++) {
 			final GridColumn tempCol = displayOrderedColumns.get(j);
@@ -10210,7 +10879,7 @@ public class Grid extends Canvas {
 	 * @return the first visible unspanned column, or null if none exists
 	 */
 	GridColumn getVisibleColumn_DegradeRight(final GridItem item, final GridColumn col) {
-		int index = displayOrderedColumns.indexOf(col);
+		int index = displayPosition(col);
 
 		int i = 0;
 		GridColumn nextCol = col;
@@ -10223,7 +10892,7 @@ public class Grid extends Canvas {
 			nextCol = displayOrderedColumns.get(index + i);
 		}
 
-		index = displayOrderedColumns.indexOf(nextCol);
+		index = displayPosition(nextCol);
 		final int startIndex = index;
 
 		while (index > 0) {
@@ -10353,9 +11022,10 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
+		final int columnsBefore = selectedColumns.size();
 		selectedCells.remove(cell);
 		updateColumnSelection();
-		redraw();
+		redrawCell(cell, selectedColumns.size() != columnsBefore);
 	}
 
 	/**
@@ -10448,9 +11118,10 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 
+		final int columnsBefore = selectedColumns.size();
 		addToCellSelection(cell);
 		updateColumnSelection();
-		redraw();
+		redrawCell(cell, selectedColumns.size() != columnsBefore);
 	}
 
 	/**
@@ -10806,7 +11477,7 @@ public class Grid extends Canvas {
 
 	void updateColumnFocus() {
 		if (!focusColumn.isVisible()) {
-			final int index = displayOrderedColumns.indexOf(focusColumn);
+			final int index = displayPosition(focusColumn);
 			if (index > 0) {
 				GridColumn prev = displayOrderedColumns.get(index - 1);
 				prev = getVisibleColumn_DegradeLeft(focusItem, prev);
@@ -10967,7 +11638,7 @@ public class Grid extends Canvas {
 	 * @return a point representing the selection range
 	 */
 	private Point getSelectionRange(GridItem fromItem, GridColumn fromColumn, GridItem toItem, GridColumn toColumn) {
-		if (displayOrderedColumns.indexOf(fromColumn) > displayOrderedColumns.indexOf(toColumn)) {
+		if (displayPosition(fromColumn) > displayPosition(toColumn)) {
 			final GridColumn temp = fromColumn;
 			fromColumn = toColumn;
 			toColumn = temp;
@@ -11713,7 +12384,168 @@ public class Grid extends Canvas {
 		if (prefetching) {
 			return;
 		}
-		redraw();
+		if (!redrawRow(item)) {
+			redraw();
+		}
+	}
+
+	/* paints of one row's rectangle, and changes left to the next paint (package-private counters) */
+	int rowDeltaPaints;
+	int rowDeltaSkips;
+
+	/**
+	 * Rule 24 (delta-only views): O(n) rebuilds of a model-sized index made by a change path. The
+	 * row tree and the cell selection apply every change as a delta, so this stays 0; the
+	 * differential checks it after each script.
+	 *
+	 * @return the number of such rebuilds since the Grid was made
+	 */
+	int fullRebuildCount() {
+		return viewport == null ? 0 : viewport.fullRebuilds();
+	}
+
+	/**
+	 * Brief rule 24, viewport deltas: rebuilds of every column lane after the first build. A column
+	 * resize, hide, show, move, fixed change or group expansion is a delta, so only a column added
+	 * or removed counts here; the column sweep checks it stays 0.
+	 *
+	 * @return the number of such rebuilds since the Grid was made
+	 */
+	int fullReplanCount() {
+		return columnMetrics.fullReplans();
+	}
+
+	/**
+	 * One cell's selection changed (G7 and the optimization pass): in the viewport mode its row is
+	 * repainted when it is on screen, nothing when it is not, and the column headers only when a
+	 * column gained its first or lost its last selected cell (their selected look); stock repaints
+	 * the whole Grid per ctrl+click.
+	 *
+	 * @param cell           the cell
+	 * @param columnsChanged whether the set of columns with a selected cell changed
+	 */
+	private void redrawCell(final Point cell, final boolean columnsChanged) {
+		if (cell.y < 0 || cell.y >= items.size() || usesSparseVirtualItems() || !(selectedCells instanceof GridCellSelectionList)) {
+			redraw();
+			return;
+		}
+		if (!redrawRow(items.get(cell.y))) {
+			redraw();
+			return;
+		}
+		if (columnsChanged && columnHeadersVisible) {
+			redraw(0, 0, getClientArea().width, headerHeight(), false);
+		}
+	}
+
+	/**
+	 * One row's data changed (G7, one model with deltas): on screen, that row's rectangle is
+	 * repainted; off screen or hidden, nothing is, since the painted rows and the scroll extents
+	 * do not change. Only in the viewport mode with the window known, and when a row can paint
+	 * nothing outside its rectangle (no spans, pinned planes or auto height) and no body paint is
+	 * frozen.
+	 *
+	 * @param item the item whose row changed
+	 * @return whether the change was handled ({@code false}: the caller repaints the Grid)
+	 */
+	private boolean redrawRow(final GridItem item) {
+		if (viewport != null && viewportHidden()) {
+			// brief rule 24, hidden viewports: the row paints with the window when it is shown
+			markHiddenDirty();
+			return true;
+		}
+		if (!rowDeltaPossible(item) || autoHeight) {
+			return false;
+		}
+		final int row = item.getRowIndex();
+		if (row < 0) {
+			return false;
+		}
+		// the window: cached by the last paint or scroll, else measured now (the row index, O(log n)) and
+		// left uncached again, as stock leaves it for the next paint
+		final boolean topCached = topIndex >= 0;
+		final boolean bottomCached = bottomIndex >= 0;
+		final int top = getTopIndex();
+		final int bottom = getBottomIndex();
+		if (!topCached) {
+			topIndex = -1;
+		}
+		if (!bottomCached) {
+			bottomIndex = -1;
+		}
+		if (row < top || row > bottom || !item.isVisible()) {
+			rowDeltaSkips++;
+			return true;
+		}
+		final Rectangle area = getClientArea();
+		final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(top, row);
+		redraw(area.x, y, area.width, item.getHeight() + 1, false);
+		rowDeltaPaints++;
+		return true;
+	}
+
+	/* a row delta can be applied alone: the viewport mode's row index, no spans, pinned planes or frozen paint */
+	private boolean rowDeltaPossible(final GridItem item) {
+		return viewport != null && !usesSparseVirtualItems() && !hasSpanning && frozenPlanes == 0
+				&& pinnedTopRows + pinnedBottomRows == 0 && !item.isDisposed();
+	}
+
+	/**
+	 * One row's height changed (G7). The scroll extents change wherever the row is, so the scroll
+	 * bars are brought up to date at once (as the paint stock asks for would). If that moves what
+	 * is on screen (top row, a scroll bar shown or hidden, the client area), the Grid repaints as
+	 * stock; otherwise a row on screen repaints from its top down, and a row off screen or hidden
+	 * repaints nothing.
+	 *
+	 * @param item the item whose height changed
+	 * @return whether the change was handled ({@code false}: the caller repaints as stock)
+	 */
+	boolean rowExtentChanged(final GridItem item) {
+		if (viewport != null && viewportHidden()) {
+			// brief rule 24, hidden viewports: the extents are in the row index already; the scroll
+			// values and the window settle in the paint that showing brings
+			markHiddenDirty();
+			scrollValuesObsolete = true;
+			bottomIndex = -1;
+			return true;
+		}
+		if (!rowDeltaPossible(item)) {
+			return false;
+		}
+		final int row = item.getRowIndex();
+		if (row < 0) {
+			return false;
+		}
+		// what stock had cached stays cached; what it had not is measured again later, as stock does
+		final boolean topCached = topIndex >= 0;
+		final boolean bottomCached = bottomIndex >= 0;
+		final int top = getTopIndex();
+		final int bottom = getBottomIndex();
+		final boolean onScreen = row >= top && row <= bottom && item.isVisible();
+		final Rectangle before = getClientArea();
+		final boolean vBefore = vScroll.getVisible(), hBefore = hScroll.getVisible();
+		final int selectionBefore = vScroll.getSelection();
+		updateScrollbars();
+		scrollValuesObsolete = false;
+		if (!topCached) {
+			topIndex = -1;
+		}
+		if (!bottomCached || onScreen) {
+			bottomIndex = -1;
+		}
+		if (vScroll.getVisible() != vBefore || hScroll.getVisible() != hBefore || !getClientArea().equals(before)
+				|| vScroll.getSelection() != selectionBefore) {
+			redraw();
+			return true;
+		}
+		if (onScreen) {
+			final int y = (columnHeadersVisible ? headerHeight() : 0) + viewport.offsetBetween(top, row);
+			redraw(before.x, y, before.width, before.height - y, false);
+			rowDeltaPaints++;
+		} else {
+			rowDeltaSkips++;
+		}
+		return true;
 	}
 
 	/**
@@ -12602,6 +13434,21 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * @param item a root item
+	 * @return the {@code SWT.SetData} index of a root: its index among the roots of a tree Grid,
+	 *         its row in a flat one (the same there)
+	 */
+	int rootIndexForSetData(final GridItem item) {
+		return isTree ? rootItems.indexOf(item) : item.getRowIndex();
+	}
+
+	/** After {@link GridItem#clear(int, boolean)} or {@link GridItem#clearAll(boolean)}. */
+	void itemsCleared() {
+		dropResidentPayloads();
+		redraw();
+	}
+
+	/**
 	 * Recalculate the height of the header
 	 */
 	public void recalculateHeader() {
@@ -12642,7 +13489,11 @@ public class Grid extends Canvas {
 		final int bottomIndex = getBottomIndex();
 		final GridVisibleRange range = new GridVisibleRange();
 		range.items = GridViewportProjection.visibleItems(items, topIndex, bottomIndex);
-		range.columns = GridViewportProjection.visibleColumns(
+		final GridColumnMetrics lanes = columnLanes();
+		range.columns = lanes != null
+				? lanes.visibleColumns(getHScrollSelectionInPixels(), rowHeaderVisible ? rowHeaderWidth : 0,
+						getClientArea().width, isFixedOverlayActive())
+				: GridViewportProjection.visibleColumns(
 				displayOrderedColumns, getHScrollSelectionInPixels(),
 				rowHeaderVisible ? rowHeaderWidth : 0, getClientArea().width,
 				isFixedOverlayActive());
@@ -12656,8 +13507,10 @@ public class Grid extends Canvas {
 			return startColumnIndex;
 		}
 
-		startColumnIndex = GridViewportProjection.startColumnIndex(
-				displayOrderedColumns, hScroll.getVisible() ? getHScrollSelectionInPixels() : 0);
+		final int selection = hScroll.getVisible() ? getHScrollSelectionInPixels() : 0;
+		final GridColumnMetrics lanes = columnLanes();
+		startColumnIndex = lanes != null ? lanes.startColumnIndex(selection)
+				: GridViewportProjection.startColumnIndex(displayOrderedColumns, selection);
 
 		return startColumnIndex;
 	}
@@ -12679,7 +13532,9 @@ public class Grid extends Canvas {
 				// row header is actually painted later
 				x += rowHeaderWidth;
 			}
-			endColumnIndex = GridViewportProjection.endColumnIndex(
+			final GridColumnMetrics lanes = columnLanes();
+			endColumnIndex = lanes != null ? lanes.endColumnIndex(getStartColumnIndex(), x, getClientArea().width)
+					: GridViewportProjection.endColumnIndex(
 					displayOrderedColumns, getStartColumnIndex(), x, getClientArea().width);
 		}
 		return endColumnIndex;
@@ -12858,6 +13713,7 @@ public class Grid extends Canvas {
 	}
 
 	private int estimateWithResult(final ToIntFunction<GC> function) {
+		nativeOps++;
 		final GC gc = new GC(Grid.this);
 		try {
 			return function.applyAsInt(gc);

@@ -21,6 +21,10 @@ package org.eclipse.nebula.widgets.grid;
 interface GridRowAddressedDataVisualizer {
 	void insertRow(Grid grid, int index);
 	void removeRow(Grid grid, int index);
+	/** {@code count} rows were inserted at {@code index}: one shift of the rows after them. */
+	void insertRows(Grid grid, int index, int count);
+	/** The rows [{@code index}, {@code index + count}) were removed: one shift of the rows after them. */
+	void removeRows(Grid grid, int index, int count);
 	void truncateRows(Grid grid, int count);
 	void clearRows(Grid grid);
 }

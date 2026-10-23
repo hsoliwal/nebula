@@ -16,9 +16,11 @@ package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -111,6 +113,209 @@ public class GridArchivedBugs_Test {
 		assertEquals(5, grid.getItemCount());
 		assertEquals(0, grid.getSelectionCount());
 		assertEquals(4, grid.getItem(4).getRowIndex());
+	}
+
+	/* bug 377617: a 0-width column with a wrapping header made the whole header very tall */
+	@Test
+	public void bug377617_zeroWidthWrappingHeaderKeepsTheHeaderHeight() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		grid.setHeaderVisible(true);
+		grid.setAutoHeight(true);
+		final GridColumn plain = new GridColumn(grid, SWT.NONE);
+		plain.setText("plain");
+		plain.setWidth(100);
+		flush(grid);
+		final int before = grid.getHeaderHeight();
+		final GridColumn empty = new GridColumn(grid, SWT.NONE);
+		empty.setHeaderWordWrap(true);
+		empty.setText("a header text long enough to wrap once per character at width zero");
+		empty.setWidth(0);
+		// a further column makes stock measure the header again (its only trigger, D14)
+		new GridColumn(grid, SWT.NONE).setWidth(60);
+		flush(grid);
+		if (GridTestUtil.fixesUpstreamDefects()) {
+			// a zero-width column shows no header: it does not count (D24)
+			assertEquals(before, grid.getHeaderHeight());
+		} else {
+			assertTrue(before + " -> " + grid.getHeaderHeight(), grid.getHeaderHeight() > 2 * before);
+		}
+	}
+
+	/* bug 259087: packing the column of a group ignored the group header text */
+	@Test
+	public void bug259087_packFitsTheGroupHeaderText() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		grid.setHeaderVisible(true);
+		final GridColumnGroup group = new GridColumnGroup(grid, SWT.NONE);
+		group.setText("A column group header text far wider than its single short column");
+		final GridColumn column = new GridColumn(group, SWT.NONE);
+		column.setText("c");
+		column.setWidth(40);
+		new GridItem(grid, SWT.NONE).setText("x");
+		flush(grid);
+		column.pack();
+		final GC gc = new GC(grid);
+		final int groupWidth;
+		try {
+			groupWidth = group.getHeaderRenderer().computeSize(gc, SWT.DEFAULT, SWT.DEFAULT, group).x;
+		} finally {
+			gc.dispose();
+		}
+		if (GridTestUtil.fixesUpstreamDefects()) {
+			// the group header spans its columns: the pack makes its text fit (D25)
+			assertTrue(column.getWidth() + " >= " + groupWidth, column.getWidth() >= groupWidth);
+		} else {
+			assertTrue(column.getWidth() < groupWidth / 2);
+		}
+	}
+
+	/* bug 382376: packing a column attributed the whole content of a spanning cell to it */
+	@Test
+	public void bug382376_packHonoursTheColumnSpan() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		grid.setHeaderVisible(true);
+		final String text = "cell content measured across the span of two columns";
+		final int spanned = packedWidth(grid, text, 1);
+		final Grid plain = new Grid(shell, SWT.V_SCROLL);
+		plain.setBounds(0, 0, 300, 200);
+		plain.setHeaderVisible(true);
+		final int unspanned = packedWidth(plain, text, 0);
+		if (GridTestUtil.fixesUpstreamDefects()) {
+			// the next column already covers 120 px of the spanning cell (D26)
+			assertEquals(Math.max(0, unspanned - 120), spanned);
+		} else {
+			assertEquals(unspanned, spanned);
+		}
+	}
+
+	private int packedWidth(final Grid grid, final String text, final int span) {
+		final GridColumn first = new GridColumn(grid, SWT.NONE);
+		first.setText("c0");
+		first.setWidth(40);
+		final GridColumn second = new GridColumn(grid, SWT.NONE);
+		second.setText("c1");
+		second.setWidth(120);
+		final GridItem item = new GridItem(grid, SWT.NONE);
+		item.setText(0, text);
+		if (span > 0) {
+			item.setColumnSpan(0, span);
+		}
+		flush(grid);
+		first.pack();
+		return first.getWidth();
+	}
+
+	/* bugs 218713 and 238601: with cell selection a header click fired no column Selection event */
+	@Test
+	public void bug238601_headerClickWithCellSelectionFiresTheColumnEvent() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		grid.setHeaderVisible(true);
+		grid.setCellSelectionEnabled(true);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setText("c");
+		column.setWidth(100);
+		for (int i = 0; i < 3; i++) {
+			new GridItem(grid, SWT.NONE).setText("row " + i);
+		}
+		final int[] selections = { 0 };
+		column.addListener(SWT.Selection, e -> selections[0]++);
+		flush(grid);
+		mouse(grid, SWT.MouseDown, 50, 2);
+		mouse(grid, SWT.MouseUp, 50, 2);
+		flush(grid);
+		assertEquals("column Selection events", 1, selections[0]);
+		// stock's own header branch for this is unreachable: no cell gets selected (D27)
+		assertEquals("cells of the clicked column", GridTestUtil.fixesUpstreamDefects() ? 3 : 0,
+				grid.getCellSelectionCount());
+	}
+
+	/* bug 202517: GridCellRenderer.getRow() was the 1-based position in the painted window */
+	@Test
+	public void bug202517_cellRendererGetsTheRowIndex() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setWidth(100);
+		final java.util.Map<String, Integer> rows = new java.util.HashMap<>();
+		column.setCellRenderer(new DefaultCellRenderer() {
+			@Override
+			public void paint(final GC gc, final Object value) {
+				rows.put(((GridItem) value).getText(), Integer.valueOf(getRow()));
+				super.paint(gc, value);
+			}
+		});
+		for (int i = 0; i < 100; i++) {
+			new GridItem(grid, SWT.NONE).setText("row " + i);
+		}
+		// the scroll bar exists only after a first paint
+		flush(grid);
+		rows.clear();
+		grid.setTopIndex(40);
+		flush(grid);
+		final Integer painted = rows.get("row 42");
+		// the default mode passes the item's row index (D28); stock its 1-based window position
+		assertEquals(rows.toString(), Integer.valueOf(GridTestUtil.fixesUpstreamDefects() ? 42 : 3), painted);
+	}
+
+	/* bug 360798: getVisibleRange() listed every logically visible column, scrolled out or not */
+	@Test
+	public void bug360798_visibleRangeListsTheShownColumns() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 0, 300, 200);
+		for (int c = 0; c < 20; c++) {
+			new GridColumn(grid, SWT.NONE).setWidth(100);
+		}
+		new GridItem(grid, SWT.NONE).setText("row");
+		flush(grid);
+		final int shown = grid.getVisibleRange().getColumns().length;
+		assertTrue(shown + " columns in the range of a 300-pixel window", shown <= 4);
+	}
+
+	/* bug 330224: setColumnOrder threw when the first group held a single column */
+	@Test
+	public void bug330224_columnOrderWithSingleColumnGroups() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		final GridColumnGroup first = new GridColumnGroup(grid, SWT.NONE);
+		new GridColumn(first, SWT.NONE).setWidth(50);
+		final GridColumnGroup middle = new GridColumnGroup(grid, SWT.NONE);
+		for (int c = 0; c < 3; c++) {
+			new GridColumn(middle, SWT.NONE).setWidth(50);
+		}
+		final GridColumnGroup last = new GridColumnGroup(grid, SWT.NONE);
+		new GridColumn(last, SWT.NONE).setWidth(50);
+		// the groups in reverse order, each group's columns kept together
+		final int[] order = { 4, 1, 2, 3, 0 };
+		if (!GridTestUtil.fixesUpstreamDefects()) {
+			// stock rejects the valid order (UPSTREAM_DEFECTS.tsv D29)
+			GridTestUtil.assertThrowsByMode(null, IllegalArgumentException.class, () -> grid.setColumnOrder(order));
+			return;
+		}
+		grid.setColumnOrder(order);
+		assertEquals(java.util.Arrays.toString(order), java.util.Arrays.toString(grid.getColumnOrder()));
+		// a column of a group placed apart from the rest of its group is still rejected
+		GridTestUtil.assertThrowsByMode(IllegalArgumentException.class, IllegalArgumentException.class,
+				() -> grid.setColumnOrder(new int[] { 1, 0, 2, 3, 4 }));
+	}
+
+	/* bug 273923: computeSize left no room for the last row when a horizontal scroll bar shows */
+	@Test
+	public void bug273923_preferredHeightShowsTheLastRowWithTheScrollBar() {
+		final Grid grid = new Grid(shell, SWT.H_SCROLL);
+		final GridColumn tree = new GridColumn(grid, SWT.NONE);
+		tree.setTree(true);
+		tree.setWidth(400);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		root.setText("root");
+		new GridItem(root, SWT.NONE).setText("child");
+		final org.eclipse.swt.graphics.Point size = grid.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+		grid.setBounds(0, 0, 150, size.y);
+		flush(grid);
+		assertTrue("horizontal bar shown", grid.getHorizontalBar().getVisible());
+		assertTrue("the last row is shown completely", grid.isShown(root));
 	}
 
 	private static void mouse(final Grid grid, final int type, final int x, final int y) {

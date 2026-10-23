@@ -14,11 +14,17 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid.model;
 
-/** JVM side of the gate: prints the same workload digests. */
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+/**
+ * JVM side of the gate: writes the same workload digests, one line each, to the file named by the
+ * first argument (no console output, brief rule 22; {@code run_gate.py} reads the file).
+ */
 public final class GateJava {
-	public static void main(final String[] args) {
-		for (final String line : GateWorkload.run()) {
-			System.out.println(line);
-		}
+	public static void main(final String[] args) throws IOException {
+		Files.write(Paths.get(args[0]), GateWorkload.run(), StandardCharsets.UTF_8);
 	}
 }

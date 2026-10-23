@@ -153,10 +153,25 @@ public class GridItem_Test {
     assertSame( items[ 5 ], items[ 0 ].getItem( 4 ) );
   }
 
-  @Test( expected = IndexOutOfBoundsException.class )
+  @Test
   public void testGetItem_InvalidIndex() {
     GridItem[] items = createGridItems( grid, 1, 10 );
-    items[ 0 ].getItem( 100 );
+    // the documented ERROR_INVALID_RANGE in the default mode (UPSTREAM_DEFECTS.tsv D30)
+    assertThrowsByMode( IllegalArgumentException.class, IndexOutOfBoundsException.class,
+                        () -> items[ 0 ].getItem( 100 ) );
+    assertThrowsByMode( IllegalArgumentException.class, IllegalArgumentException.class,
+                        () -> items[ 1 ].getItem( 0 ) );
+  }
+
+  @Test
+  public void testIndexOf_NoChildren() {
+    GridItem[] items = createGridItems( grid, 2, 0 );
+    // the documented -1 in the default mode; stock throws (UPSTREAM_DEFECTS.tsv D31)
+    if( fixesUpstreamDefects() ) {
+      assertEquals( -1, items[ 0 ].indexOf( items[ 1 ] ) );
+    } else {
+      assertThrowsByMode( null, IllegalArgumentException.class, () -> items[ 0 ].indexOf( items[ 1 ] ) );
+    }
   }
 
   @Test
@@ -396,10 +411,10 @@ public class GridItem_Test {
     GridItem item = new GridItem( grid, SWT.NONE );
     grid.addListener( SWT.SetData, new LoggingListener() );
     item.setText( "foo" );
-    // Nebula: setting a text does not mark the item as answered: its data is still requested once
+    // the text is the item's data, as TreeItem; stock still requests it once (D35)
     assertEquals( "foo", item.getText( 0 ) );
     item.getText( 0 );
-    assertEquals( 1, eventLog.size() );
+    assertEquals( fixesUpstreamDefects() ? 0 : 1, eventLog.size() );
   }
 
   @Test
@@ -413,8 +428,8 @@ public class GridItem_Test {
     Event event = eventLog.get( 0 );
     assertSame( grid, event.widget );
     assertSame( items[ 4 ], event.item );
-    // Nebula: the index of a root item is its row index (the index of a child is its index in its parent)
-    assertEquals( 4, event.index );
+    // the index among the roots, as for a child in its parent and as TreeItem; stock gives the row (D33)
+    assertEquals( fixesUpstreamDefects() ? 1 : 4, event.index );
   }
 
   @Test

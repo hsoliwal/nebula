@@ -1,0 +1,13 @@
+leaf	operation	size	before	after	unit	method	catalogue_id	commit	evidence_path
+L1 row-tree batch	expand one root (eager children)	100000	15456	31852	us	GridOptimizationBench expand-eager, median of 5, hidden desktop, -Xmx3g, same JVM flags; machine under load (build 1.4 s vs 4.5 s), re-measured in ab2	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L1 row-tree batch	expand one root (eager children)	1000000	212672	124483	us	same	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L1 row-tree batch	collapse one root (eager children)	1000000	222396	122551	us	same	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L1 row-tree batch	expand one root (setItemCount children, no items)	100000	15823	18739	us	same	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L1 row-tree batch	expand one root (setItemCount children, no items)	1000000	291121	59466	us	same	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L1 row-tree batch	collapse one root (setItemCount children, no items)	1000000	234305	92513	us	same	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L1b uniform height	setItemHeight (all rows)	100000	28357	26949	us	GridOptimizationBench row-height, median of 5	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L1b uniform height	setItemHeight (all rows)	1000000	190455	45892	us	same	ALG-GRID-LAZY-AGGREGATE	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L3 cell toggle	deselectCell+selectCell inside all cells selected (4 columns)	100000	23015	15	us	GridOptimizationBench cell-toggle, median of 50 toggles	ALG-GRID-CELL-OPEN-ADDRESS	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L3 cell toggle	deselectCell+selectCell inside all cells selected (4 columns)	1000000	47314	51	us	same	ALG-GRID-CELL-OPEN-ADDRESS	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L3 cell toggle	bytes allocated per toggle	1000000	232584	1072	bytes	ThreadMXBean.getCurrentThreadAllocatedBytes around the toggle and its paint	ALG-GRID-CELL-OPEN-ADDRESS	72a24514	S:/m3-scratch/grid/opt/ab-base.tsv;S:/m3-scratch/grid/opt/ab-l13.tsv
+L3 cell toggle (headless)	remove+add+column pass inside n selected cells	1000000	14679	26	us	CellToggleMicro (list only, 200 toggles, median)	ALG-GRID-CELL-OPEN-ADDRESS	72a24514	S:/m3-scratch/grid/opt/micro

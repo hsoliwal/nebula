@@ -82,26 +82,6 @@ public class GridItem extends Item {
 	private Color defaultForeground;
 
 	/**
-	 * The height of this <code>GridItem</code>.
-	 */
-	private int height = 1;
-
-	/**
-	 * Is expanded?
-	 */
-	private boolean expanded = false;
-
-	/**
-	 * True if has children.
-	 */
-	private boolean hasChildren = false;
-
-	/**
-	 * Level of item in a tree.
-	 */
-	private int level = 0;
-
-	/**
 	 * Parent grid instance.
 	 */
 	private final Grid parent;
@@ -111,10 +91,15 @@ public class GridItem extends Item {
 	 */
 	private GridItem parentItem;
 
-	/**
-	 * Is visible?
+	/*
+	 * This item's id in the Grid's row state lanes (GridItemLanes): its height, tree level and the
+	 * flags visible, expanded, has children and data answered live there, not in this object (DOOP,
+	 * one store). After the item is disposed: RELEASED_VISIBLE or RELEASED_HIDDEN, which keep what
+	 * isVisible() answered (it does not check the widget, as stock).
 	 */
-	private boolean visible = true;
+	private int lane = RELEASED_HIDDEN;
+	private static final int RELEASED_HIDDEN = -1;
+	private static final int RELEASED_VISIBLE = -2;
 
 	/**
 	 * Row header text.
@@ -141,12 +126,6 @@ public class GridItem extends Item {
 	 */
 	private Font headerFont = null;
 
-	/**
-	 * (SWT.VIRTUAL only) Flag that specifies whether the client has already
-	 * been sent a SWT.SetData event.
-	 */
-	private boolean hasSetData = false;
-
 	private int row = NO_ROW;
 
 	/* this item's slot in the Grid's row tree (GridRowTree), or -1 */
@@ -156,6 +135,79 @@ public class GridItem extends Item {
 	private int selectionPosition = -1;
 
 	private final Object ROW_LOCK = new Object();
+
+	/* the row state, read and written in the Grid's lanes */
+
+	/* takes a lane id with stock's initial state: height 1, level 0, visible */
+	private void takeLane() {
+		lane = parent.itemLanes().allocate(1, 0, GridItemLanes.VISIBLE);
+	}
+
+	/* gives the lane id back once the item is disposed (twice is harmless) */
+	private void releaseLane() {
+		if (lane >= 0) {
+			final boolean shown = flag(GridItemLanes.VISIBLE);
+			parent.itemLanes().release(lane);
+			lane = shown ? RELEASED_VISIBLE : RELEASED_HIDDEN;
+		}
+	}
+
+	private boolean flag(final int bit) {
+		if (lane < 0) {
+			return bit == GridItemLanes.VISIBLE && lane == RELEASED_VISIBLE;
+		}
+		return parent.itemLanes().flag(lane, bit);
+	}
+
+	private void flag(final int bit, final boolean on) {
+		if (lane >= 0) {
+			parent.itemLanes().setFlag(lane, bit, on);
+		}
+	}
+
+	private int height() {
+		return lane >= 0 ? parent.itemLanes().height(lane) : 1;
+	}
+
+	private void height(final int height) {
+		if (lane >= 0) {
+			parent.itemLanes().setHeight(lane, height);
+		}
+	}
+
+	private int level() {
+		return lane >= 0 ? parent.itemLanes().level(lane) : 0;
+	}
+
+	private void level(final int level) {
+		if (lane >= 0) {
+			parent.itemLanes().setLevel(lane, level);
+		}
+	}
+
+	private boolean expanded() {
+		return flag(GridItemLanes.EXPANDED);
+	}
+
+	private boolean visible() {
+		return flag(GridItemLanes.VISIBLE);
+	}
+
+	private boolean hasChildrenFlag() {
+		return flag(GridItemLanes.HAS_CHILDREN);
+	}
+
+	private void hasChildrenFlag(final boolean on) {
+		flag(GridItemLanes.HAS_CHILDREN, on);
+	}
+
+	private boolean hasSetDataFlag() {
+		return flag(GridItemLanes.HAS_SET_DATA);
+	}
+
+	private void hasSetDataFlag(final boolean on) {
+		flag(GridItemLanes.HAS_SET_DATA, on);
+	}
 
 	/**
 	 * Creates a new instance of this class and places the item at the end of
@@ -207,6 +259,7 @@ public class GridItem extends Item {
 		super(parent, style, index);
 
 		this.parent = parent;
+		takeLane();
 
 		row = parent.newItem(this, index, true);
 		parent.newRootItem(this, index);
@@ -222,6 +275,7 @@ public class GridItem extends Item {
 	GridItem(Grid parent, int style, int index, boolean materializedVirtualFacade) {
 		super(parent, style, index);
 		this.parent = parent;
+		takeLane();
 		if (!materializedVirtualFacade) {
 			row = parent.newItem(this, index, true);
 			parent.newRootItem(this, index);
@@ -349,14 +403,19 @@ public class GridItem extends Item {
 
 		parentItem = parent;
 		this.parent = parentItem.getParent();
+		takeLane();
 
 		row = this.parent.newItem(this, index, false);
 
-		level = parentItem.getLevel() + 1;
+		level(parentItem.getLevel() + 1);
 
 		parentItem.newItem(this, index);
 
-		parentItem.indexOf(this);
+		if (!GridViewport.ENABLED) {
+			// stock's call has no effect but a linear search of the siblings, which made appending
+			// n children O(n^2); the viewport mode skips it
+			parentItem.indexOf(this);
+		}
 
 		if (parent.isVisible() && parent.isExpanded()) {
 			setVisible(true);
@@ -371,6 +430,11 @@ public class GridItem extends Item {
 	@Override
 	public void dispose() {
 		sendDisposeFirst();
+		if (GridViewport.UPSTREAM_FIXES && !isDisposed()) {
+			// as TreeItem: the item, then its descendants children first, siblings in order
+			// (UPSTREAM_DEFECTS.tsv D34); the removal below sends nothing more
+			sendDescendantDisposes();
+		}
 		if (!parent.isDisposing()) {
 			parent.removeItem(this);
 
@@ -379,7 +443,9 @@ public class GridItem extends Item {
 			} else {
 				parent.removeRootItem(this);
 			}
-            if (hasChildren) {
+            if (hasChildrenFlag() && children instanceof GridChildList) {
+                disposeChildrenBackwards(0, children.size());
+            } else if (hasChildrenFlag()) {
                 for (int i = children.size() - 1; i >= 0; i--) {
                     children.get(i).dispose();
                 }
@@ -390,6 +456,98 @@ public class GridItem extends Item {
 		}
 		noRow();
 		super.dispose();
+		// after the Dispose event: a listener still reads the row state
+		releaseLane();
+	}
+
+	/**
+	 * Creates the item of a child nobody has read (G4 step 2c): its row exists in the Grid's row
+	 * tree already, so nothing is inserted or counted.
+	 */
+	GridItem(GridItem parentItem, int rowTreeSlot, boolean rowFacade) {
+		super(parentItem, SWT.NONE);
+		this.parentItem = parentItem;
+		this.parent = parentItem.getParent();
+		takeLane();
+		level(parentItem.getLevel() + 1);
+		flag(GridItemLanes.VISIBLE, parentItem.isVisible() && parentItem.isExpanded());
+		parent.initializeVirtualItemFacade(this);
+	}
+
+	/** @return the children as rows that may have no item (a virtual Grid in the viewport mode) */
+	GridChildList childList() {
+		return (GridChildList) children;
+	}
+
+	/* the child's item, or null when it has none yet (never makes one) */
+	private GridItem childIfMaterialized(int index) {
+		return children instanceof GridChildList ? ((GridChildList) children).materialized(index)
+				: children.get(index);
+	}
+
+	/*
+	 * Disposes the children [from, to) from the last (each row removal then moves no row of a
+	 * sibling still to go): an item with its subtree, a run of children without items at once
+	 */
+	private void disposeChildrenBackwards(int from, int to) {
+		final GridChildList list = childList();
+		int end = to;
+		while (end > from) {
+			final GridItem child = list.materialized(end - 1);
+			if (child != null) {
+				child.dispose();
+				end--;
+				continue;
+			}
+			int start = end - 1;
+			while (start > from && list.materialized(start - 1) == null) {
+				start--;
+			}
+			parent.removeVirtualRows(list, start, end);
+			list.removeRange(start, end);
+			hasChildrenFlag(!list.isEmpty());
+			end = start;
+		}
+	}
+
+	/** @return the row of the last row of this item's subtree (makes no item) */
+	int lastDescendantRow() {
+		GridItem last = this;
+		while (true) {
+			final int n = last.childCount();
+			if (n == 0) {
+				return last.getRowIndex();
+			}
+			final GridItem child = last.childIfMaterialized(n - 1);
+			if (child == null) {
+				return parent.rowOfSlot(last.childList().slot(n - 1));
+			}
+			last = child;
+		}
+	}
+
+	/** @return the row of the child at {@code index} (makes no item) */
+	int childRowAt(int index) {
+		final GridItem child = childIfMaterialized(index);
+		return child != null ? child.getRowIndex() : parent.rowOfSlot(childList().slot(index));
+	}
+
+	/** Appends children that have rows but no items (see {@link Grid#appendVirtualChildren}). */
+	void appendChildSlots(int[] slots) {
+		if (!(children instanceof GridChildList)) {
+			children = new GridChildList(this, children);
+		}
+		childList().appendSlots(slots);
+		hasChildrenFlag(!children.isEmpty());
+	}
+
+	/* the children that have items, in order (makes none) */
+	private GridItem[] materializedChildArray() {
+		if (!hasChildrenFlag()) {
+			return new GridItem[0];
+		}
+		return children instanceof GridChildList ? childList().materializedArray()
+				: children.toArray(new GridItem[children.size()]);
 	}
 
 	/**
@@ -521,7 +679,7 @@ public class GridItem extends Item {
 		checkWidget();
 		handleVirtualData();
 
-		if (defaultBackground == null) {
+		if (liveColor(defaultBackground) == null) {
 			return parent.getBackground();
 		}
 		return defaultBackground;
@@ -546,8 +704,22 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getBackground(this, index);
+		return liveColor(parent.getDataVisualizer().getBackground(this, index));
 
+	}
+
+	/*
+	 * A colour the caller disposed after setting it reads as unset in the default mode, so the
+	 * renderers fall back to the defaults instead of failing the whole paint with ERROR_INVALID_ARGUMENT
+	 * (archived bug 455474, UPSTREAM_DEFECTS.tsv D23); the original mode keeps stock's value.
+	 */
+	private static Color liveColor(final Color color) {
+		return GridViewport.UPSTREAM_FIXES && color != null && color.isDisposed() ? null : color;
+	}
+
+	/* as {@link #liveColor(Color)}, for a font (D23) */
+	private static Font liveFont(final Font font) {
+		return GridViewport.UPSTREAM_FIXES && font != null && font.isDisposed() ? null : font;
 	}
 
 	/**
@@ -782,7 +954,7 @@ public class GridItem extends Item {
 	 */
 	public Font getFont() {
 		handleVirtualData();
-		if (defaultFont == null) {
+		if (liveFont(defaultFont) == null) {
 			return parent.getFont();
 		}
 		return defaultFont;
@@ -808,7 +980,7 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getFont(this, index);
+		return liveFont(parent.getDataVisualizer().getFont(this, index));
 	}
 
 	/**
@@ -825,7 +997,7 @@ public class GridItem extends Item {
 	 */
 	public Color getForeground() {
 		handleVirtualData();
-		if (defaultForeground == null) {
+		if (liveColor(defaultForeground) == null) {
 			return parent.getForeground();
 		}
 		return defaultForeground;
@@ -850,7 +1022,7 @@ public class GridItem extends Item {
 
 		handleVirtual();
 
-		return parent.getDataVisualizer().getForeground(this, index);
+		return liveColor(parent.getDataVisualizer().getForeground(this, index));
 	}
 
 	/**
@@ -903,7 +1075,7 @@ public class GridItem extends Item {
 	 */
 	public int getHeight() {
 		checkWidget();
-		return height;
+		return height();
 	}
 
 	/**
@@ -961,7 +1133,19 @@ public class GridItem extends Item {
 	 */
 	public GridItem getItem(int index) {
 		checkWidget();
-        if (!hasChildren) {
+		if (GridViewport.UPSTREAM_FIXES) {
+			// documented above; stock throws IndexOutOfBoundsException, or an IllegalArgumentException
+			// without the SWT code when there are no children (UPSTREAM_DEFECTS.tsv D30). As TreeItem,
+			// a virtual item answers its own data before its children are reached (D32)
+			if (index < 0) {
+				SWT.error(SWT.ERROR_INVALID_RANGE);
+			}
+			handleVirtual();
+			if (index >= childCount()) {
+				SWT.error(SWT.ERROR_INVALID_RANGE);
+			}
+		}
+        if (!hasChildrenFlag()) {
             throw new IllegalArgumentException("GridItem has no children!");
         }
 		return children.get(index);
@@ -983,10 +1167,170 @@ public class GridItem extends Item {
 	 */
 	public int getItemCount() {
 		checkWidget();
-        if (!hasChildren) {
-            return 0;
-        }
-		return children.size();
+		if (GridViewport.UPSTREAM_FIXES) {
+			// as TreeItem: a virtual item answers its data (where a lazy provider sets the child
+			// count) before its children are counted (UPSTREAM_DEFECTS.tsv D32)
+			handleVirtual();
+		}
+		return childCount();
+	}
+
+	/** The number of children, without requesting data. */
+	int childCount() {
+		return hasChildrenFlag() ? children.size() : 0;
+	}
+
+	/** The child at an index, without requesting data. */
+	GridItem childAt(int index) {
+		return children.get(index);
+	}
+
+	/** The children, without requesting data. */
+	GridItem[] childArray() {
+		return hasChildrenFlag() ? children.toArray(new GridItem[children.size()]) : new GridItem[0];
+	}
+
+	/**
+	 * Sets the number of child items contained in the receiver, with the contract of
+	 * {@code TreeItem.setItemCount}: the children past the count are disposed, first to last, and
+	 * new children are appended after the last one. In an {@code SWT.VIRTUAL} Grid a new child
+	 * requests its data with {@code SWT.SetData} when it is first painted or its data is read;
+	 * otherwise its attributes are the defaults.
+	 *
+	 * @param count
+	 *            the number of child items (a negative count is taken as 0)
+	 * @throws SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 *             </li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *             thread that created the receiver</li>
+	 *             </ul>
+	 * @see SWT#VIRTUAL
+	 * @see SWT#SetData
+	 * @since 1.3
+	 */
+	public void setItemCount(int count) {
+		checkWidget();
+		final int target = Math.max(0, count);
+		final int current = childCount();
+		if (target < current && children instanceof GridChildList) {
+			removeSparseChildren(target, current);
+		} else if (target < current) {
+			// TreeItem disposes the removed children in order; each disposes its own subtree
+			final GridItem[] removed = children.subList(target, current).toArray(new GridItem[current - target]);
+			for (final GridItem child : removed) {
+				if (!child.isDisposed()) {
+					child.dispose();
+				}
+			}
+		}
+		if (target > current && parent.sparseChildren()) {
+			// the viewport mode of a virtual Grid: rows only, items when they are read (G4 step 2c)
+			parent.appendVirtualChildren(this, target - current);
+			return;
+		}
+		for (int i = current; i < target; i++) {
+			new GridItem(this, SWT.NONE);
+		}
+	}
+
+	/*
+	 * Removes the children [from, to) of a list whose children may have no items: first the
+	 * Dispose events of those with items, in order and each with its subtree (as TreeItem, D34; a
+	 * child without an item has no listener), then the rows from the last
+	 */
+	private void removeSparseChildren(int from, int to) {
+		final GridChildList list = childList();
+		for (int i = from; i < to; i++) {
+			final GridItem child = list.materialized(i);
+			if (child != null && !child.isDisposed()) {
+				child.sendDisposeFirst();
+				child.sendDescendantDisposes();
+			}
+		}
+		// a listener may have disposed some of them meanwhile
+		disposeChildrenBackwards(Math.min(from, list.size()), Math.min(to, list.size()));
+	}
+
+	/**
+	 * Clears the child item at the given zero-relative index in the receiver, with the contract of
+	 * {@code TreeItem.clear(int, boolean)}: its text, image, colours, font and check state return to
+	 * their defaults; in an {@code SWT.VIRTUAL} Grid they are requested again as needed.
+	 *
+	 * @param index
+	 *            the index of the child item to clear
+	 * @param all
+	 *            {@code true} to clear the child's own children recursively
+	 * @throws IllegalArgumentException
+	 *             <ul>
+	 *             <li>ERROR_INVALID_RANGE - if the index is not between 0 and
+	 *             the number of child items minus 1 (inclusive)</li>
+	 *             </ul>
+	 * @throws SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 *             </li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *             thread that created the receiver</li>
+	 *             </ul>
+	 * @see SWT#VIRTUAL
+	 * @see SWT#SetData
+	 * @since 1.3
+	 */
+	public void clear(int index, boolean all) {
+		checkWidget();
+		if (index < 0 || index >= childCount()) {
+			SWT.error(SWT.ERROR_INVALID_RANGE);
+		}
+		// a child without an item was never answered: nothing to clear (as a virtual TreeItem)
+		final GridItem child = childIfMaterialized(index);
+		if (child != null) {
+			child.clearAsTreeItem(all);
+		}
+		parent.itemsCleared();
+	}
+
+	/**
+	 * Clears all child items of the receiver, with the contract of
+	 * {@code TreeItem.clearAll(boolean)}: their text, image, colours, font and check state return
+	 * to their defaults; in an {@code SWT.VIRTUAL} Grid they are requested again as needed.
+	 *
+	 * @param all
+	 *            {@code true} to clear the children's own children recursively
+	 * @throws SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 *             </li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *             thread that created the receiver</li>
+	 *             </ul>
+	 * @see SWT#VIRTUAL
+	 * @see SWT#SetData
+	 * @since 1.3
+	 */
+	public void clearAll(boolean all) {
+		checkWidget();
+		if (childCount() == 0) {
+			return;
+		}
+		for (final GridItem child : materializedChildArray()) {
+			child.clearAsTreeItem(all);
+		}
+		parent.itemsCleared();
+	}
+
+	/* the TreeItem clear: the per-column data too, which the original mode's clear(boolean) keeps */
+	private void clearAsTreeItem(boolean all) {
+		if (!GridViewport.UPSTREAM_FIXES) {
+			parent.getDataVisualizer().clearRow(this);
+		}
+		clear(false);
+		if (all && hasChildrenFlag()) {
+			for (final GridItem child : materializedChildArray()) {
+				child.clearAsTreeItem(true);
+			}
+		}
 	}
 
 	/**
@@ -1020,7 +1364,11 @@ public class GridItem extends Item {
         if (item.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (!hasChildren) {
+        if (!hasChildrenFlag()) {
+            if (GridViewport.UPSTREAM_FIXES) {
+                // documented above: no item found is -1 (UPSTREAM_DEFECTS.tsv D31)
+                return -1;
+            }
             throw new IllegalArgumentException("GridItem has no children!");
         }
 
@@ -1045,10 +1393,11 @@ public class GridItem extends Item {
 	 *             </ul>
 	 */
 	public GridItem[] getItems() {
-        if (!hasChildren) {
-            return new GridItem[0];
-        }
-		return children.toArray(new GridItem[children.size()]);
+		if (GridViewport.UPSTREAM_FIXES) {
+			// as getItemCount (UPSTREAM_DEFECTS.tsv D32)
+			handleVirtual();
+		}
+		return childArray();
 	}
 
 	/**
@@ -1065,7 +1414,7 @@ public class GridItem extends Item {
 	 */
 	public int getLevel() {
 		checkWidget();
-		return level;
+		return level();
 	}
 
 	/**
@@ -1154,7 +1503,7 @@ public class GridItem extends Item {
 	 */
 	public boolean hasChildren() {
 		checkWidget();
-		return hasChildren;
+		return hasChildrenFlag();
 	}
 
 	/**
@@ -1173,7 +1522,7 @@ public class GridItem extends Item {
 	 */
 	public boolean isExpanded() {
 		checkWidget();
-		return expanded;
+		return expanded();
 	}
 
 	/**
@@ -1207,6 +1556,7 @@ public class GridItem extends Item {
 		}
 		defaultBackground = background;
 		parent.redraw();
+		dataSet();
 	}
 
 	/**
@@ -1238,6 +1588,7 @@ public class GridItem extends Item {
 		}
 		parent.getDataVisualizer().setBackground(this, index, background);
 		parent.redrawForItemData(this);
+		dataSet();
 	}
 
 	/**
@@ -1255,10 +1606,14 @@ public class GridItem extends Item {
 	 */
 	public void setChecked(boolean checked) {
 		checkWidget();
+		final boolean changed = GridViewport.UPSTREAM_FIXES && rawCheck(0, Grid.LANE_CHECKED) != checked;
 		if (!parent.setPackedCheck(this, 0, Grid.LANE_CHECKED, checked)) {
 			parent.getDataVisualizer().setChecked(this, 0, checked);
 		}
 		parent.redrawForItemData(this);
+		if (changed) {
+			dataSet();
+		}
 	}
 
 	/**
@@ -1278,10 +1633,14 @@ public class GridItem extends Item {
 	 */
 	public void setChecked(int index, boolean checked) {
 		checkWidget();
+		final boolean changed = GridViewport.UPSTREAM_FIXES && rawCheck(index, Grid.LANE_CHECKED) != checked;
 		if (!parent.setPackedCheck(this, index, Grid.LANE_CHECKED, checked)) {
 			parent.getDataVisualizer().setChecked(this, index, checked);
 		}
 		parent.redrawForItemData(this);
+		if (changed) {
+			dataSet();
+		}
 	}
 
 	/**
@@ -1346,11 +1705,23 @@ public class GridItem extends Item {
 	 */
 	public void setExpanded(boolean expanded) {
 		checkWidget();
-		this.expanded = expanded;
+		flag(GridItemLanes.EXPANDED, expanded);
 
 		// We must unselect any items that are becoming invisible
 		// and thus if we change the selection we have to fire a selection event
-		boolean unselected = doUnselect(expanded);
+		// the children's rows change extent in one batch: the row tree fixes its sums once (O(k + log n))
+		final GridRowTree tree = parent.rowTree();
+		if (tree != null) {
+			tree.beginBatch();
+		}
+		boolean unselected;
+		try {
+			unselected = doUnselect(expanded);
+		} finally {
+			if (tree != null) {
+				tree.endBatch();
+			}
+		}
 
 		this.getParent().topIndex = NO_ROW;
 		this.getParent().bottomIndex = NO_ROW;
@@ -1373,9 +1744,20 @@ public class GridItem extends Item {
 	private boolean doUnselect(boolean expanded) {
 		boolean unselected = false;
 
-        if (hasChildren) {
-            for (GridItem item : children) {
-                item.setVisible(expanded && visible);
+        if (hasChildrenFlag()) {
+            for (int i = 0; i < children.size(); i++) {
+                final GridItem item = childIfMaterialized(i);
+                if (item == null) {
+                    // a child nobody has read: its row shows or hides; it can hold selected cells only
+                    final int slot = childList().slot(i);
+                    parent.setVirtualRowVisible(slot, expanded && visible());
+                    if (!expanded && getParent().getCellSelectionEnabled()
+                            && parent.deselectCellsOfRow(parent.rowOfSlot(slot))) {
+                        unselected = true;
+                    }
+                    continue;
+                }
+                item.setVisible(expanded && visible());
                 if (!expanded) {
                     if (!getParent().getCellSelectionEnabled()) {
                         if (getParent().isSelected(item)) {
@@ -1411,10 +1793,19 @@ public class GridItem extends Item {
 			}
 		}
 
-		GridItem[] kids = item.getItems();
+		GridItem[] kids = item.materializedChildArray();
 		for (int i = 0; i < kids.length; i++) {
 			if (deselectCells(kids[i])) {
 				flag = true;
+			}
+		}
+		if (item.children instanceof GridChildList && item.hasChildrenFlag()) {
+			// children nobody has read hold no items, only rows that may have selected cells
+			final GridChildList list = item.childList();
+			for (int i = 0; i < list.size(); i++) {
+				if (list.materialized(i) == null && parent.deselectCellsOfRow(parent.rowOfSlot(list.slot(i)))) {
+					flag = true;
+				}
 			}
 		}
 
@@ -1430,7 +1821,8 @@ public class GridItem extends Item {
 	 */
 	private boolean deselectChildren(GridItem item) {
 		boolean flag = false;
-		GridItem[] kids = item.getItems();
+		// a child nobody has read cannot be selected (selecting a row makes its item)
+		GridItem[] kids = item.materializedChildArray();
 		for (int i = 0; i < kids.length; i++) {
 			if (getParent().isSelected(kids[i])) {
 				flag = true;
@@ -1470,6 +1862,7 @@ public class GridItem extends Item {
 		}
 		defaultFont = f;
 		parent.redraw();
+		dataSet();
 	}
 
 	/**
@@ -1501,6 +1894,7 @@ public class GridItem extends Item {
 		}
 		parent.getDataVisualizer().setFont(this, index, font);
 		parent.redraw();
+		dataSet();
 	}
 
 	/**
@@ -1533,6 +1927,7 @@ public class GridItem extends Item {
 		}
 		defaultForeground = foreground;
 		parent.redraw();
+		dataSet();
 	}
 
 	/**
@@ -1564,6 +1959,7 @@ public class GridItem extends Item {
 		}
 		parent.getDataVisualizer().setForeground(this, index, foreground);
 		parent.redrawForItemData(this);
+		dataSet();
 	}
 
 	/**
@@ -1583,10 +1979,14 @@ public class GridItem extends Item {
 	 */
 	public void setGrayed(boolean grayed) {
 		checkWidget();
+		final boolean changed = GridViewport.UPSTREAM_FIXES && rawCheck(0, Grid.LANE_GRAYED) != grayed;
 		if (!parent.setPackedCheck(this, 0, Grid.LANE_GRAYED, grayed)) {
 			parent.getDataVisualizer().setGrayed(this, 0, grayed);
 		}
 		parent.redrawForItemData(this);
+		if (changed) {
+			dataSet();
+		}
 	}
 
 	/**
@@ -1608,10 +2008,14 @@ public class GridItem extends Item {
 	 */
 	public void setGrayed(int index, boolean grayed) {
 		checkWidget();
+		final boolean changed = GridViewport.UPSTREAM_FIXES && rawCheck(index, Grid.LANE_GRAYED) != grayed;
 		if (!parent.setPackedCheck(this, index, Grid.LANE_GRAYED, grayed)) {
 			parent.getDataVisualizer().setGrayed(this, index, grayed);
 		}
 		parent.redrawForItemData(this);
+		if (changed) {
+			dataSet();
+		}
 	}
 
 	/**
@@ -1632,11 +2036,15 @@ public class GridItem extends Item {
         if (newHeight < 1) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-		height = newHeight;
+		height(newHeight);
 		if (parent.viewport != null) {
 			parent.viewport.rowChanged(this);
 		}
 		parent.hasDifferingHeights = true;
+		if (parent.rowExtentChanged(this)) {
+			// G7: the row on screen repainted from its top, or nothing for a row off screen
+			return;
+		}
 		if (isVisible()) {
 			int myIndex = this.getRowIndex();
             // note: cannot use Grid#isShown() here, because that returns false
@@ -1702,6 +2110,7 @@ public class GridItem extends Item {
 		}
 		parent.getDataVisualizer().setImage(this, 0, image);
 		parent.redraw();
+		dataSet();
 	}
 
 	/**
@@ -1734,6 +2143,7 @@ public class GridItem extends Item {
 		parent.imageSetOnItem(index, this);
 
 		parent.redraw();
+		dataSet();
 	}
 
 	/**
@@ -1760,8 +2170,14 @@ public class GridItem extends Item {
 		if (text == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
+		// TreeItem leaves an unchanged text, and the item unanswered, alone
+		final boolean changed = GridViewport.UPSTREAM_FIXES
+				&& !text.equals(parent.getDataVisualizer().getText(this, index));
 		parent.getDataVisualizer().setText(this, index, text);
 		parent.redrawForItemData(this);
+		if (changed) {
+			dataSet();
+		}
 	}
 
 	/**
@@ -1769,8 +2185,34 @@ public class GridItem extends Item {
 	 */
 	@Override
 	public void setText(String string) {
+		final boolean changed = GridViewport.UPSTREAM_FIXES && string != null
+				&& !string.equals(parent.getDataVisualizer().getText(this, 0));
 		parent.getDataVisualizer().setText(this, 0, string);
 		parent.redrawForItemData(this);
+		if (changed) {
+			dataSet();
+		}
+	}
+
+	/*
+	 * As TreeItem and TableItem: a text, image, colour, font, check or grayed state set on an item
+	 * of an SWT.VIRTUAL Grid is its data, so no SWT.SetData asks for it again until a clear
+	 * (UPSTREAM_DEFECTS.tsv D35); stock asks anyway, and the listener overwrites what was set
+	 */
+	private void dataSet() {
+		if (GridViewport.UPSTREAM_FIXES && (parent.getStyle() & SWT.VIRTUAL) != 0) {
+			hasSetDataFlag(true);
+		}
+	}
+
+	/* a check or grayed state as stored, without requesting data */
+	private boolean rawCheck(int index, int lane) {
+		final int packed = parent.packedCheck(this, index, lane);
+		if (packed >= 0) {
+			return packed == 1;
+		}
+		return lane == Grid.LANE_CHECKED ? parent.getDataVisualizer().getChecked(this, index)
+				: parent.getDataVisualizer().getGrayed(this, index);
 	}
 
 	/**
@@ -1780,7 +2222,7 @@ public class GridItem extends Item {
 	 *            child to remove
 	 */
 	private void remove(GridItem child) {
-        if (!hasChildren) {
+        if (!hasChildrenFlag()) {
             throw new IllegalArgumentException("GridItem has no children!");
         }
 		children.remove(child);
@@ -1789,7 +2231,7 @@ public class GridItem extends Item {
 		if (!parent.usesRowAddressedDataVisualizer()) {
 			parent.getDataVisualizer().clearRow(child);
 		}
-		hasChildren = !children.isEmpty();
+		hasChildrenFlag(!children.isEmpty());
 	}
 
 	/**
@@ -1800,7 +2242,7 @@ public class GridItem extends Item {
 	 * @return Returns the visible.
 	 */
 	public boolean isVisible() {
-		return visible;
+		return visible();
 	}
 
 	/**
@@ -1819,7 +2261,7 @@ public class GridItem extends Item {
 	 */
 	void detachChild(GridItem child) {
 		if (children != null && children.remove(child)) {
-			hasChildren = !children.isEmpty();
+			hasChildrenFlag(!children.isEmpty());
 		}
 	}
 
@@ -1842,7 +2284,7 @@ public class GridItem extends Item {
 	 *            true if this item has children
 	 */
 	void setHasChildren(boolean hasChildren) {
-		this.hasChildren = hasChildren;
+		hasChildrenFlag(hasChildren);
 	}
 
 	/**
@@ -1854,11 +2296,11 @@ public class GridItem extends Item {
 	 *            The visible to set.
 	 */
 	void setVisible(boolean visible) {
-		if (this.visible == visible) {
+		if (visible() == visible) {
 			return;
 		}
 
-		this.visible = visible;
+		flag(GridItemLanes.VISIBLE, visible);
 		if (parent.viewport != null) {
 			parent.viewport.rowChanged(this);
 		}
@@ -1869,13 +2311,18 @@ public class GridItem extends Item {
 			parent.updateVisibleItems(NO_ROW);
 		}
 
-		if (hasChildren) {
+		if (hasChildrenFlag()) {
 			boolean childrenVisible = visible;
 			if (visible) {
-				childrenVisible = expanded;
+				childrenVisible = expanded();
 			}
-			for (GridItem item : children) {
-				item.setVisible(childrenVisible);
+			for (int i = 0; i < children.size(); i++) {
+				final GridItem item = childIfMaterialized(i);
+				if (item != null) {
+					item.setVisible(childrenVisible);
+				} else {
+					parent.setVirtualRowVisible(childList().slot(i), childrenVisible);
+				}
 			}
 		}
 	}
@@ -2197,7 +2644,7 @@ public class GridItem extends Item {
 	}
 
 	void columnAdded(int index) {
-		hasSetData = false;
+		hasSetDataFlag(false);
 	}
 
 	/**
@@ -2212,12 +2659,14 @@ public class GridItem extends Item {
 	}
 
 	private void handleVirtual() {
-		if ((getParent().getStyle() & SWT.VIRTUAL) != 0 && !hasSetData) {
-			hasSetData = true;
+		if ((getParent().getStyle() & SWT.VIRTUAL) != 0 && !hasSetDataFlag()) {
+			hasSetDataFlag(true);
 			Event event = new Event();
 			event.item = this;
 			if (parentItem == null) {
-				event.index = getRowIndex();
+				// a root of a tree Grid: stock gives its row, counting every item above it, where
+				// children (and TreeItem) give the index in the parent (UPSTREAM_DEFECTS.tsv D33)
+				event.index = GridViewport.UPSTREAM_FIXES ? parent.rootIndexForSetData(this) : getRowIndex();
 			} else {
 				event.index = parentItem.indexOf(this);
 			}
@@ -2232,30 +2681,30 @@ public class GridItem extends Item {
 	 *            initial height.
 	 */
 	void initializeHeight(int height) {
-		this.height = height;
+		height(height);
 	}
 
 	/** Row-level fields for a residency release (opaque; see {@link #putResidentState(Object[])}). */
 	Object[] takeResidentState() {
-		return new Object[] { defaultBackground, defaultForeground, defaultFont, Integer.valueOf(height), headerText,
-				headerImage, headerBackground, headerForeground, headerFont, Boolean.valueOf(hasSetData) };
+		return new Object[] { defaultBackground, defaultForeground, defaultFont, Integer.valueOf(height()), headerText,
+				headerImage, headerBackground, headerForeground, headerFont, Boolean.valueOf(hasSetDataFlag()) };
 	}
 
 	void putResidentState(Object[] state) {
 		defaultBackground = (Color) state[0];
 		defaultForeground = (Color) state[1];
 		defaultFont = (Font) state[2];
-		height = ((Integer) state[3]).intValue();
+		height(((Integer) state[3]).intValue());
 		headerText = (String) state[4];
 		headerImage = (Image) state[5];
 		headerBackground = (Color) state[6];
 		headerForeground = (Color) state[7];
 		headerFont = (Font) state[8];
-		hasSetData = ((Boolean) state[9]).booleanValue();
+		hasSetDataFlag(((Boolean) state[9]).booleanValue());
 	}
 
 	void setHasSetData(boolean hasSetData) {
-		this.hasSetData = hasSetData;
+		hasSetDataFlag(hasSetData);
 	}
 
 	/**
@@ -2277,16 +2726,19 @@ public class GridItem extends Item {
 		defaultBackground = null;
 		defaultFont = null;
 
-		hasSetData = false;
+		hasSetDataFlag(false);
 		headerText = null;
 		headerImage = null;
 		headerBackground = null;
 		headerForeground = null;
 
 		// Recursively clear children if requested.
-		if (allChildren && hasChildren) {
+		if (allChildren && hasChildrenFlag()) {
 			for (int i = children.size() - 1; i >= 0; i--) {
-				children.get(i).clear(true);
+				final GridItem child = childIfMaterialized(i);
+				if (child != null) {
+					child.clear(true);
+				}
 			}
 		}
 
@@ -2297,9 +2749,12 @@ public class GridItem extends Item {
 	 */
 	public void disposeOnly() {
 		sendDisposeFirst();
-        if (hasChildren) {
+        if (hasChildrenFlag()) {
             for (int i = children.size() - 1; i >= 0; i--) {
-                children.get(i).disposeOnly();
+                final GridItem child = childIfMaterialized(i);
+                if (child != null) {
+                    child.disposeOnly();
+                }
             }
         }
 		if (parent.getDataVisualizer() != null && !parent.usesRowAddressedDataVisualizer()) {
@@ -2307,6 +2762,8 @@ public class GridItem extends Item {
 		}
 		noRow();
 		super.dispose();
+		// after the Dispose event: a listener still reads the row state
+		releaseLane();
 	}
 
 	/**
@@ -2315,6 +2772,18 @@ public class GridItem extends Item {
 	 * Dispose listener left. Stock Nebula removes the row and its data first, so a Dispose listener
 	 * reads an empty item (default mode, UPSTREAM_DEFECTS.tsv).
 	 */
+	private void sendDescendantDisposes() {
+		if (!hasChildrenFlag()) {
+			return;
+		}
+		for (final GridItem child : materializedChildArray()) {
+			if (!child.isDisposed()) {
+				child.sendDescendantDisposes();
+				child.sendDisposeFirst();
+			}
+		}
+	}
+
 	void sendDisposeFirst() {
 		if (!GridViewport.UPSTREAM_FIXES || isDisposed() || !isListening(SWT.Dispose)) {
 			return;

@@ -46,7 +46,7 @@ import org.eclipse.swt.widgets.ScrollBar;
 public class GridDifferentialDriver implements Function<int[], Object> {
 
 	/** Operation kinds. */
-	static final int STATE = -1, PIXELS = -2, MODE = -3, KINDS = 26;
+	static final int STATE = -1, PIXELS = -2, MODE = -3, REBUILDS = -4, KINDS = 26;
 
 	static final int ROOTS = 120, CHILDREN = 12, GRANDCHILDREN = 3, COLUMNS = 4;
 
@@ -101,12 +101,26 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		}
 	}
 
-	/** Configuration bits; {@link #LARGE} builds 1,000 roots with 99 children each instead. */
-	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4;
+	/**
+	 * Configuration bits; {@link #LARGE} builds 1,000 roots with 99 children each instead;
+	 * {@link #VIRTUAL} makes an {@code SWT.VIRTUAL} Grid whose items get their texts from a SetData
+	 * listener, which counts the requests per item.
+	 */
+	static final int CELL_SELECTION = 1, DIFFERING_HEIGHTS = 2, LARGE = 4, VIRTUAL = 8;
+	/**
+	 * The first column is frozen ({@code GridColumn.setFixed}, nebula#696 and #165): it and its
+	 * header stay at their unscrolled place while the other columns scroll under it. The scroll
+	 * steps of this configuration also move the horizontal bar.
+	 */
+	static final int FIXED_COLUMN = 16;
 
 	private final Grid grid;
 	private final StringBuilder events = new StringBuilder();
 	private int added;
+	/* SetData requests per item label (VIRTUAL configurations) */
+	private final java.util.Map<String, Integer> setData = new java.util.TreeMap<>();
+	private final boolean virtual;
+	private final boolean fixedColumn;
 
 	/**
 	 * @param parent where the Grid is created
@@ -114,7 +128,9 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	 * @param config {@link #CELL_SELECTION} and {@link #DIFFERING_HEIGHTS} bits
 	 */
 	public GridDifferentialDriver(final Composite parent, final Integer x, final Integer config) {
-		final int style = SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.CHECK;
+		virtual = (config.intValue() & VIRTUAL) != 0;
+		fixedColumn = (config.intValue() & FIXED_COLUMN) != 0;
+		final int style = SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.CHECK | (virtual ? SWT.VIRTUAL : 0);
 		// a large tree keeps its data in the items (the row-addressed default re-maps every row per insert)
 		grid = (config.intValue() & LARGE) != 0 ? new Grid(visualizer(parent), parent, style) : new Grid(parent, style);
 		grid.setBounds(x.intValue(), 5, 300, 330);
@@ -127,6 +143,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			column.setText("c" + c);
 			column.setWidth(60 + 15 * c);
 			column.setTree(c == 0);
+			column.setFixed(fixedColumn && c == 0);
 		}
 		final boolean large = (config.intValue() & LARGE) != 0;
 		for (int r = 0; r < (large ? 1000 : ROOTS); r++) {
@@ -143,6 +160,14 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				root.setHeight(root.getHeight() + 9);
 			}
 		}
+		if (virtual) {
+			grid.addListener(SWT.SetData, e -> {
+				final GridItem item = (GridItem) e.item;
+				final String label = String.valueOf(item.getData(LABEL));
+				setData.merge(label, Integer.valueOf(1), Integer::sum);
+				texts(item, label);
+			});
+		}
 		grid.addListener(SWT.Selection, e -> record("Selection", e));
 		grid.addListener(SWT.DefaultSelection, e -> record("DefaultSelection", e));
 		grid.addListener(SWT.Expand, e -> record("Expand", e));
@@ -154,7 +179,18 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				parent.getDisplay().getSystemColor(SWT.COLOR_BLACK), null);
 	}
 
-	private static GridItem item(final GridItem item, final String text) {
+	private GridItem item(final GridItem item, final String text) {
+		if (virtual) {
+			// the SetData listener gives the texts, as a lazy content provider does
+			item.setData(LABEL, text);
+			return item;
+		}
+		return texts(item, text);
+	}
+
+	private static final String LABEL = "label";
+
+	private static GridItem texts(final GridItem item, final String text) {
 		for (int c = 0; c < COLUMNS; c++) {
 			item.setText(c, c == 0 ? text : text + ":" + c);
 		}
@@ -162,7 +198,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private void record(final String type, final Event e) {
-		events.append(type).append('(').append(e.item instanceof GridItem ? ((GridItem) e.item).getText() : "-")
+		events.append(type).append('(').append(e.item instanceof GridItem ? ((GridItem) e.item).getText(0) : "-")
 				.append(' ').append(e.detail).append(") ");
 	}
 
@@ -176,6 +212,8 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				return pixels();
 			case MODE:
 				return mode();
+			case REBUILDS:
+				return rebuilds();
 			default:
 				return step(op[0], op[1], op[2], op[3]);
 			}
@@ -196,10 +234,10 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		switch (kind) {
 		case 0:
 			item.setExpanded(true);
-			return "expanded " + item.getText();
+			return "expanded " + item.getText(0);
 		case 1:
 			item.setExpanded(false);
-			return "collapsed " + item.getText();
+			return "collapsed " + item.getText(0);
 		case 2:
 			grid.setTopIndex(index);
 			return "top " + grid.getTopIndex();
@@ -247,8 +285,11 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			item.setHeight(8 + c % 30);
 			return "height " + item.getHeight();
 		case 16:
+			// the item's data first: a changed check state is its data in the default mode only (D35)
+			item.getText(0);
 			item.setChecked(c % 2 == 0);
-			return "checked " + item.getChecked();
+			// by column: getChecked() requests SetData only in the default mode (D13), getChecked(0) in both
+			return "checked " + item.getChecked(0);
 		case 17:
 			return probe(b, c);
 		case 18:
@@ -265,7 +306,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			return insert(item, b);
 		case 24:
 			if (items.length > 20) {
-				final String text = item.getText();
+				final String text = item.getText(0);
 				item.dispose();
 				return "disposed " + text;
 			}
@@ -321,6 +362,20 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private String scroll(final int a, final int b) {
+		if (fixedColumn && b % 3 == 1) {
+			// the frozen column's configuration scrolls horizontally too: the other columns move
+			// under the frozen one, by any amount and to the end; the column under the first
+			// body pixels must stay the frozen one
+			final ScrollBar hbar = grid.getHorizontalBar();
+			if (!hbar.isVisible()) {
+				return "no hbar";
+			}
+			final int range = Math.max(0, hbar.getMaximum() - hbar.getThumb());
+			hbar.setSelection(b % 2 == 1 ? a % (range + 1) : range);
+			hbar.notifyListeners(SWT.Selection, new Event());
+			final GridColumn under = grid.getColumn(new Point(grid.getClientArea().x + 1, grid.getHeaderHeight() + 2));
+			return "hscrolled " + hbar.getSelection() + " under " + (under == null ? "none" : under.getText());
+		}
 		final ScrollBar bar = grid.getVerticalBar();
 		if (!bar.isVisible()) {
 			return "no bar";
@@ -349,6 +404,14 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 		event.button = 1;
 		event.x = b % Math.max(1, area.width);
 		event.y = c % Math.max(1, area.height);
+		// With cell selection, a header click selects the clicked column's cells in the default
+		// mode (UPSTREAM_DEFECTS.tsv D27, archived bugs 218713/238601) and nothing in stock: a
+		// listed divergence, asserted per mode by GridArchivedBugs_Test. The seeded scripts stay a
+		// strict parity oracle, so they park such clicks below the header, deterministically and
+		// identically on both sides; configs without cell selection keep clicking headers.
+		if (grid.getCellSelectionEnabled() && grid.getHeaderVisible() && event.y <= grid.getHeaderHeight()) {
+			event.y = Math.min(area.height - 1, grid.getHeaderHeight() + 1 + event.y);
+		}
 		event.stateMask = c % 4 == 0 ? SWT.MOD1 : 0;
 		grid.notifyListeners(SWT.MouseDown, event);
 		final Event up = new Event();
@@ -366,6 +429,8 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 			item(new GridItem(grid, SWT.NONE, b % (grid.getRootItemCount() + 1)), text);
 		} else {
 			final GridItem parent = item.getParentItem() != null ? item.getParentItem() : item;
+			// the parent's data first: its getItemCount requests it in the default mode only (D32)
+			parent.getText(0);
 			item(new GridItem(parent, SWT.NONE, b % (parent.getItemCount() + 1)), text);
 		}
 		return "inserted " + text;
@@ -380,17 +445,41 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	private static String text(final GridItem item) {
-		return item == null ? "null" : item.getText();
+		return item == null ? "null" : item.getText(0);
 	}
 
 	private static String bar(final ScrollBar bar) {
 		return bar == null ? "-" : bar.isVisible() + " " + bar.getSelection() + "/" + bar.getMaximum() + " thumb " + bar.getThumb();
 	}
 
+	/*
+	 * VIRTUAL configurations: the SetData requests so far, as a total, the number of items asked and
+	 * every item asked more than once (the SWT contract asks each item once until it is cleared)
+	 */
+	private String setDataReport() {
+		if (!virtual) {
+			return "";
+		}
+		int total = 0;
+		final StringBuilder repeated = new StringBuilder();
+		for (final java.util.Map.Entry<String, Integer> entry : setData.entrySet()) {
+			total += entry.getValue().intValue();
+			if (entry.getValue().intValue() > 1) {
+				repeated.append(' ').append(entry.getKey()).append('x').append(entry.getValue());
+			}
+		}
+		return " | setdata " + total + " items " + setData.size() + " repeated[" + repeated + "]";
+	}
+
+	/** @return the SetData requests per item label so far (VIRTUAL configurations) */
+	java.util.Map<String, Integer> setDataCounts() {
+		return setData;
+	}
+
 	private String state() {
 		final List<String> selection = new ArrayList<>();
 		for (final GridItem item : grid.getSelection()) {
-			selection.add(item.getText());
+			selection.add(item.getText(0));
 		}
 		final List<String> cells = new ArrayList<>();
 		for (final Point cell : grid.getCellSelection()) {
@@ -402,7 +491,7 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 				+ " | sel " + Arrays.toString(grid.getSelectionIndices()) + selection
 				+ " | cells " + cells
 				+ " | focus " + text(grid.getFocusItem()) + " " + grid.getFocusCell()
-				+ " | header " + grid.getHeaderHeight() + " footer " + grid.getFooterHeight()
+				+ " | header " + grid.getHeaderHeight() + " footer " + grid.getFooterHeight() + setDataReport()
 				+ " | events " + events;
 		events.setLength(0);
 		return answer;
@@ -435,6 +524,17 @@ public class GridDifferentialDriver implements Function<int[], Object> {
 	}
 
 	/* "viewport", "original", or "stock" for a Grid build without the mode switch */
+	/* rule 24: the Grid's full rebuilds after changes; -1 for a build without the counter (stock) */
+	private Integer rebuilds() {
+		try {
+			final java.lang.reflect.Method method = Grid.class.getDeclaredMethod("fullRebuildCount");
+			method.setAccessible(true);
+			return (Integer) method.invoke(grid);
+		} catch (final ReflectiveOperationException e) {
+			return Integer.valueOf(-1);
+		}
+	}
+
 	private String mode() {
 		try {
 			final java.lang.reflect.Field field = Grid.class.getDeclaredField("viewport");

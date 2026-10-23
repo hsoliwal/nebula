@@ -28,7 +28,8 @@ import org.junit.Test;
 /**
  * {@link GridCellSelectionList} answers as the stock {@code ArrayList<Point>}: random adds (with
  * duplicates), removals by value and index, bulk removals, removeIf, in-place shifts followed by
- * {@code reindex}, clears and contains, compared after every step.
+ * {@code reindex}, insertions and replacements by index, bursts of removals by value (holes),
+ * clears, contains, indexOf, get and the per-column counts, compared after every step.
  */
 public class GridCellSelectionList_Test {
 
@@ -39,7 +40,7 @@ public class GridCellSelectionList_Test {
 		final Random random = new Random(0xCE11L);
 		for (int step = 0; step < 30_000; step++) {
 			final Point p = new Point(random.nextInt(6), random.nextInt(40));
-			switch (random.nextInt(10)) {
+			switch (random.nextInt(13)) {
 			case 0:
 			case 1:
 			case 2:
@@ -79,6 +80,26 @@ public class GridCellSelectionList_Test {
 				}
 				list.reindex();
 				break;
+			case 10:
+				if (!reference.isEmpty()) {
+					final int index = random.nextInt(reference.size() + 1);
+					list.add(index, p);
+					reference.add(index, new Point(p.x, p.y));
+				}
+				break;
+			case 11:
+				if (!reference.isEmpty()) {
+					final int index = random.nextInt(reference.size());
+					assertEquals(reference.set(index, new Point(p.x, p.y)), list.set(index, p));
+				}
+				break;
+			case 12:
+				// ctrl+click toggles: many removals by value leave holes that the list closes later
+				for (int k = 0; k < 8; k++) {
+					final Point q = new Point(random.nextInt(6), random.nextInt(40));
+					assertEquals(reference.remove(q), list.remove(q));
+				}
+				break;
 			default:
 				if (random.nextInt(80) == 0) {
 					list.clear();
@@ -87,6 +108,16 @@ public class GridCellSelectionList_Test {
 			}
 			assertEquals(reference.size(), list.size());
 			assertEquals(reference.contains(p), list.contains(p));
+			assertEquals(reference.indexOf(p), list.indexOf(p));
+			for (int x = 0; x < 8; x++) {
+				final int column = x;
+				assertEquals(reference.stream().anyMatch(c -> c.x == column), list.columnHasCells(x));
+			}
+			if (!reference.isEmpty()) {
+				final int index = random.nextInt(reference.size());
+				assertEquals(reference.get(index), list.get(index));
+				assertEquals(reference.get(0), list.get(0));
+			}
 			if (step % 101 == 0) {
 				assertArrayEquals(reference.toArray(new Point[0]), list.toArray(new Point[0]));
 				assertEquals(reference.containsAll(Arrays.asList(p)), list.containsAll(Arrays.asList(p)));

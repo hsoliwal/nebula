@@ -44,6 +44,8 @@ import org.eclipse.swt.widgets.Shell;
  * One TSV row per metric: label, driver, metric, value, unit.</p>
  */
 public final class GridModelBench {
+	/** The package's logger (brief rule 22: java.util.logging only). */
+	private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger("org.eclipse.nebula.widgets.grid.bench");
 
 	/** Sort/filter/group strategy under test. */
 	public interface Driver {
@@ -84,7 +86,7 @@ public final class GridModelBench {
 		final Report report = (metric, value, unit) -> {
 			tsv.println(label + "\t" + driverName + "\t" + metric + "\t" + value + "\t" + unit);
 			tsv.flush();
-			System.out.println(label + " " + driverName + " " + metric + "=" + value + " " + unit);
+			LOG.info(label + " " + driverName + " " + metric + "=" + value + " " + unit);
 		};
 
 		report.put("cpu_load_start", cpuLoad(), "percent");

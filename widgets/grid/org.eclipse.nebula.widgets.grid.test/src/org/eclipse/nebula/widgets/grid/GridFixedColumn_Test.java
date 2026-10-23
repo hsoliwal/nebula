@@ -18,9 +18,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
@@ -254,21 +251,33 @@ public class GridFixedColumn_Test {
 
     scrollHorizontallyTo( 150 );
 
-    PrintStream originalErr = System.err;
-    ByteArrayOutputStream captured = new ByteArrayOutputStream();
-    System.setErr( new PrintStream( captured ) );
+    // the warning goes to the package's java.util.logging logger (brief rule 22)
+    final java.util.List<String> warnings = new java.util.ArrayList<>();
+    final java.util.logging.Handler handler = new java.util.logging.Handler() {
+      @Override
+      public void publish( java.util.logging.LogRecord record ) {
+        if( record.getMessage().contains( "Fixed column belongs to column group" ) ) {
+          warnings.add( record.getMessage() );
+        }
+      }
+      @Override
+      public void flush() {
+      }
+      @Override
+      public void close() {
+      }
+    };
+    java.util.logging.Logger logger = java.util.logging.Logger.getLogger( "org.eclipse.nebula.widgets.grid" );
+    logger.addHandler( handler );
     try {
       flushPaint();
       // Trigger a second paint to ensure the warning only fires once.
       flushPaint();
     } finally {
-      System.setErr( originalErr );
+      logger.removeHandler( handler );
     }
 
-    String stderr = captured.toString();
-    int firstOccurrence = stderr.indexOf( "[nebula.grid]" );
-    int lastOccurrence = stderr.lastIndexOf( "[nebula.grid]" );
-    assertEquals( "Warning should be emitted exactly once across multiple paints",
-                  firstOccurrence, lastOccurrence );
+    assertTrue( "Warning should be emitted at most once across multiple paints: " + warnings,
+                warnings.size() <= 1 );
   }
 }
