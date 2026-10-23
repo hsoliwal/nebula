@@ -36,7 +36,7 @@ public final class ChartExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Oscilloscope) control).setValue (0, 10);
+		((Oscilloscope) control).setValue (0, next () % 50);
 		control.redraw ();
 	}
 }

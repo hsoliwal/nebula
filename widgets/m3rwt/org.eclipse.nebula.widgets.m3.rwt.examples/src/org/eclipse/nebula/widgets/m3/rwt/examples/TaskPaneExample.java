@@ -45,6 +45,7 @@ public final class TaskPaneExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((ExpandBar) control).getItem (1).setExpanded (true);
+		ExpandItem item = ((ExpandBar) control).getItem (next () % 3);
+		item.setExpanded (!item.getExpanded ());
 	}
 }

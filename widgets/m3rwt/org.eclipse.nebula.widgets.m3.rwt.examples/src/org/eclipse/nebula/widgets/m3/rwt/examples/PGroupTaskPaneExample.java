@@ -45,6 +45,7 @@ public final class PGroupTaskPaneExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((PGroup) ((Composite) control).getChildren ()[1]).setExpanded (true);
+		PGroup group = (PGroup) ((Composite) control).getChildren ()[1];
+		group.setExpanded (!group.getExpanded ());
 	}
 }

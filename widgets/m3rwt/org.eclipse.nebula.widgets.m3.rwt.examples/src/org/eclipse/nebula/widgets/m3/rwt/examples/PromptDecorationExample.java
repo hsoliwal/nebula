@@ -35,6 +35,6 @@ public final class PromptDecorationExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Text) control).setMessage ("Enter a phone number");
+		((Text) control).setMessage ("Enter a phone number " + next ());
 	}
 }

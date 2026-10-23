@@ -43,6 +43,6 @@ public final class PopoverExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((ToolTip) control.getData ()).setMessage ("Changed message");
+		((ToolTip) control.getData ()).setMessage ("Changed message " + next ());
 	}
 }

@@ -30,6 +30,7 @@ import org.eclipse.rap.json.JsonValue;
 import org.eclipse.rap.rwt.internal.protocol.Operation;
 import org.eclipse.rap.rwt.internal.protocol.Operation.CallOperation;
 import org.eclipse.rap.rwt.internal.protocol.Operation.CreateOperation;
+import org.eclipse.rap.rwt.internal.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.testfixture.internal.Fixture;
 import org.eclipse.rap.rwt.testfixture.internal.TestMessage;
 import org.eclipse.swt.SWT;
@@ -67,6 +68,7 @@ class RwtExamplesProbeTest {
 
 	private static String probe (RwtExample example) {
 		Fixture.setUp ();
+		Fixture.fakePhase (PhaseId.PROCESS_ACTION);
 		try {
 			Display display = new Display ();
 			Shell shell = new Shell (display, SWT.NO_TRIM);
@@ -106,7 +108,12 @@ class RwtExamplesProbeTest {
 		Fixture.fakeNewRequest ();
 		DisplayLCA lca = new DisplayLCA ();
 		lca.preserveValues (display);
+		Fixture.fakePhase (PhaseId.PROCESS_ACTION);
 		change.run ();
+		while (display.readAndDispatch ()) {
+			// dispatch queued events
+		}
+		Fixture.fakePhase (PhaseId.RENDER);
 		try {
 			lca.render (display);
 		} catch (IOException failure) {
@@ -114,9 +121,14 @@ class RwtExamplesProbeTest {
 		}
 		lca.clearPreserved (display);
 		TestMessage message = Fixture.getProtocolMessage ();
-		int creates = 0, draws = 0;
+		int creates = 0, draws = 0, count = 0;
+		long bytes = 0;
 		for (int i = 0; i < message.getOperationCount (); i++) {
 			Operation operation = message.getOperation (i);
+			// client services (text size measurement, ...) answer only in a browser, so the fixture would repeat them
+			if (operation.getTarget ().startsWith ("rwt.client.")) continue;
+			count++;
+			bytes += operation.toJson ().toString ().getBytes (StandardCharsets.UTF_8).length;
 			if (operation instanceof CreateOperation) creates++;
 			if (operation instanceof CallOperation && "draw".equals (((CallOperation) operation).getMethodName ())) {
 				JsonValue ops = ((CallOperation) operation).getParameters ().get ("operations");
@@ -125,7 +137,7 @@ class RwtExamplesProbeTest {
 		}
 		lastCreates = creates;
 		lastDraws = draws;
-		return new long[] {message.getOperationCount (), message.toString ().getBytes (StandardCharsets.UTF_8).length};
+		return new long[] {count, bytes};
 	}
 
 	private static void write (List<String> rows) throws IOException {

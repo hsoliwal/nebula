@@ -44,6 +44,6 @@ public final class AutocompleteExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Text) control).setText ("Berlin");
+		((Text) control).setText ("Berlin " + next ());
 	}
 }

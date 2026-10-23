@@ -35,6 +35,6 @@ public final class DatePickerExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((DateTime) control).setDate (2026, 11, 31);
+		((DateTime) control).setDate (2026, 11, next () % 28 + 1);
 	}
 }

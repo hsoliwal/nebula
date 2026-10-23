@@ -38,6 +38,6 @@ public final class SplitButtonExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((ToolBar) control).getItem (0).setText ("Run again");
+		((ToolBar) control).getItem (0).setText ("Run " + next ());
 	}
 }

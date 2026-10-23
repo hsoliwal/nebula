@@ -60,6 +60,6 @@ public final class WizardExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Button) control).setText ("Wizard again");
+		((Button) control).setText ("Wizard again " + next ());
 	}
 }

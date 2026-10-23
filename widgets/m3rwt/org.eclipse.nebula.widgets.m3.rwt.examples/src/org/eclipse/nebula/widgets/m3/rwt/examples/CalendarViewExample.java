@@ -35,6 +35,6 @@ public final class CalendarViewExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((DateTime) control).setDay (21);
+		((DateTime) control).setDay (next () % 28 + 1);
 	}
 }

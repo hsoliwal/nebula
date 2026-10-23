@@ -39,6 +39,6 @@ public final class ColorChooserExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Button) control).setText ("Choose again");
+		((Button) control).setText ("Choose again " + next ());
 	}
 }

@@ -35,6 +35,6 @@ public final class SearchFieldExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Text) control).setText ("viewport");
+		((Text) control).setText ("viewport " + next ());
 	}
 }

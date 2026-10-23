@@ -35,6 +35,6 @@ public final class CodeEditorExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((RichTextEditor) control).setText ("<p>Changed</p>");
+		((RichTextEditor) control).setText ("<p>Changed " + next () + "</p>");
 	}
 }

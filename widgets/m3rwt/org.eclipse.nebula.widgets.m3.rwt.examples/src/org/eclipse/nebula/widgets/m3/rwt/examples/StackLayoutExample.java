@@ -41,7 +41,7 @@ public final class StackLayoutExample extends RwtExample {
 	@Override
 	public void change (Control control) {
 		Composite stack = (Composite) control;
-		((StackLayout) stack.getLayout ()).topControl = stack.getChildren ()[1];
+		((StackLayout) stack.getLayout ()).topControl = stack.getChildren ()[next () % 50];
 		stack.layout ();
 	}
 }

@@ -264,6 +264,35 @@ public class GC extends Resource {
   }
 
   /**
+   * Returns the extent of the given string with the given flags: <code>SWT.DRAW_DELIMITER</code>
+   * (line delimiters start new lines), <code>SWT.DRAW_TAB</code>, <code>SWT.DRAW_MNEMONIC</code> (an
+   * ampersand marks a mnemonic and is not measured) and <code>SWT.DRAW_TRANSPARENT</code> (no effect
+   * on the extent). Without <code>SWT.DRAW_DELIMITER</code> the string is measured as one line.
+   *
+   * @param string the string to measure
+   * @param flags the flags specifying how to process the text
+   * @return a point containing the extent of the string
+   *
+   * @exception IllegalArgumentException <ul>
+   *    <li>ERROR_NULL_ARGUMENT - if the string is null</li>
+   * </ul>
+   * @exception SWTException <ul>
+   *    <li>ERROR_GRAPHIC_DISPOSED - if the receiver has been disposed</li>
+   * </ul>
+   */
+  public Point textExtent( String string, int flags ) {
+    checkDisposed();
+    if( string == null ) {
+      SWT.error( SWT.ERROR_NULL_ARGUMENT );
+    }
+    String text = M3GC.textForExtent( string, flags );
+    if( ( flags & SWT.DRAW_DELIMITER ) != 0 ) {
+      return delegate.textExtent( text, 0 );
+    }
+    return delegate.stringExtent( text );
+  }
+
+  /**
    * Returns a FontMetrics which contains information
    * about the font currently being used by the receiver
    * to draw and measure text.

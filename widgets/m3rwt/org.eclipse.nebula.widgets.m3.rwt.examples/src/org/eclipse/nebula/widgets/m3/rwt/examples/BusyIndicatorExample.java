@@ -36,6 +36,6 @@ public final class BusyIndicatorExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((M3BusyLabel) control).setFrame (4);
+		((M3BusyLabel) control).setFrame (next () % 8);
 	}
 }

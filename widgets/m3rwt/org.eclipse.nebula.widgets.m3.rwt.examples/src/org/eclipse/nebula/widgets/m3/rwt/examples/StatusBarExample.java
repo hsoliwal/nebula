@@ -38,6 +38,6 @@ public final class StatusBarExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((M3StatusBar) control).setText (0, "Saved");
+		((M3StatusBar) control).setText (0, "Saved " + next ());
 	}
 }

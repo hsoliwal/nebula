@@ -55,6 +55,6 @@ public final class GalleryExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Gallery) control).getItem (0).setText ("All items");
+		((Gallery) control).getItem (0).setText ("All items " + next ());
 	}
 }

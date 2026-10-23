@@ -29,6 +29,7 @@ public abstract class RwtExample {
 	public final String widget;
 	/** Distinguishes two examples of one concept, or {@code null}. */
 	public final String variant;
+	private final java.util.concurrent.atomic.AtomicInteger changes = new java.util.concurrent.atomic.AtomicInteger ();
 
 	protected RwtExample (String concept, String widget) {
 		this (concept, widget, null);
@@ -45,6 +46,11 @@ public abstract class RwtExample {
 
 	/** Applies one model change to the widget created by {@link #create(Composite)}. */
 	public abstract void change (Control control);
+
+	/** A new number on every call: model changes made with it are never no-ops. */
+	protected final int next () {
+		return changes.incrementAndGet ();
+	}
 
 	/** Concept id plus variant: unique per example. */
 	public String id () {

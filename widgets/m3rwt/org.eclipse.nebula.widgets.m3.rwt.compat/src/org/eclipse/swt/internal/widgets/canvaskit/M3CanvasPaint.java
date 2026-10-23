@@ -14,6 +14,8 @@
  *******************************************************************************/
 package org.eclipse.swt.internal.widgets.canvaskit;
 
+import org.eclipse.rap.rwt.internal.lifecycle.CurrentPhase;
+import org.eclipse.rap.rwt.internal.lifecycle.PhaseId;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.graphics.GCAdapter;
 import org.eclipse.swt.widgets.Canvas;
@@ -49,11 +51,22 @@ public final class M3CanvasPaint {
 		return result;
 	}
 
-	/** Called by the canvas renderer: a canvas that became visible paints the damage recorded while it was hidden. */
+	/**
+	 * Called by the canvas renderer: a canvas that became visible paints the damage recorded while it was hidden. The
+	 * render phase only queues events, so the paint is dispatched in the event-processing phase and the phase is
+	 * restored afterwards; the operations then go out with this response.
+	 */
 	static void paintIfShown (Canvas canvas) {
 		GCAdapter adapter = canvas.getAdapter (GCAdapter.class);
 		Rectangle hidden = adapter.getHiddenDamage ();
-		if (hidden != null && canvas.isVisible ()) canvas.redraw (hidden.x, hidden.y, hidden.width, hidden.height, false);
+		if (hidden == null || !canvas.isVisible ()) return;
+		PhaseId phase = CurrentPhase.get ();
+		CurrentPhase.set (PhaseId.PROCESS_ACTION);
+		try {
+			canvas.redraw (hidden.x, hidden.y, hidden.width, hidden.height, false);
+		} finally {
+			CurrentPhase.set (phase);
+		}
 	}
 
 	/** {@code Canvas.scroll}: the union of source and destination, or {@code null} if the area is empty. */

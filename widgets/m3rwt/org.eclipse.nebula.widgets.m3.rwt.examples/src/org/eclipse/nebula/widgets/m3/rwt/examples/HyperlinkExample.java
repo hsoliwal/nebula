@@ -35,6 +35,6 @@ public final class HyperlinkExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((Link) control).setText ("<a>Changed link</a>");
+		((Link) control).setText ("<a>Changed link " + next () + "</a>");
 	}
 }

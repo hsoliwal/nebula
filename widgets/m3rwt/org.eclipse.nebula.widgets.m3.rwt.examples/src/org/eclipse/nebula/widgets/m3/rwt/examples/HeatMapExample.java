@@ -41,6 +41,6 @@ public final class HeatMapExample extends RwtExample {
 
 	@Override
 	public void change (Control control) {
-		((M3HeatMap) control).setValue (0, 0, 0.5f);
+		((M3HeatMap) control).setValue (0, 0, (next () % 100) / 100f);
 	}
 }

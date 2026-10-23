@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.rap.rwt.internal.lifecycle.PhaseId;
 import org.eclipse.rap.rwt.testfixture.internal.Fixture;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
@@ -50,6 +51,7 @@ class M3CanvasPaintTest {
 	void setUp () {
 		Fixture.setUp ();
 		Fixture.fakeResponseWriter ();
+		Fixture.fakePhase (PhaseId.PROCESS_ACTION);
 		display = new Display ();
 		shell = new Shell (display);
 		shell.setSize (300, 300);
@@ -85,7 +87,9 @@ class M3CanvasPaintTest {
 		assertTrue (paints.isEmpty (), paints.toString ());
 		assertNotNull (canvas.getAdapter (GCAdapter.class).getHiddenDamage ());
 		canvas.setVisible (true);
+		Fixture.fakePhase (PhaseId.RENDER);
 		CanvasLCA.INSTANCE.renderChanges (canvas);
+		Fixture.fakePhase (PhaseId.PROCESS_ACTION);
 		assertEquals (1, paints.size (), paints.toString ());
 		assertNull (canvas.getAdapter (GCAdapter.class).getHiddenDamage ());
 		assertNotNull (Fixture.getProtocolMessage ().findCallOperation (GCOperationWriter.getGcId (canvas), "draw"));
@@ -96,10 +100,14 @@ class M3CanvasPaintTest {
 		shell.setVisible (false);
 		canvas.redraw ();
 		assertTrue (paints.isEmpty ());
+		Fixture.fakePhase (PhaseId.RENDER);
 		CanvasLCA.INSTANCE.renderChanges (canvas);
+		Fixture.fakePhase (PhaseId.PROCESS_ACTION);
 		assertTrue (paints.isEmpty (), "still hidden: nothing painted at render time");
 		shell.setVisible (true);
+		Fixture.fakePhase (PhaseId.RENDER);
 		CanvasLCA.INSTANCE.renderChanges (canvas);
+		Fixture.fakePhase (PhaseId.PROCESS_ACTION);
 		assertEquals (1, paints.size ());
 	}
 
