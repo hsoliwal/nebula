@@ -1,0 +1,5 @@
+repo	head	files	tsx	ts	md	java	pom_manifest_gradle	package_json_name	build	verdict
+hsoliwal/Rapwt	24f51ace	311	133	79	69	0	0	m3-scale-universal-platform	vite build	React/Vite TypeScript app; no Java, no RWT jar, no RAP build
+hsoliwal/Eclipserapui	4e56208b	464	203	58	141	0	0	@figma/my-make-file	vite build	React/Vite TypeScript app; no Java, no RWT jar, no RAP build
+hsoliwal/Eclipserapui1	655d63e8	166	94	22	27	0	0	@figma/my-make-file	vite build	React/Vite TypeScript app; no Java, no RWT jar, no RAP build
+hsoliwal/Eclipserapui3	16135329	166	94	22	27	0	0	@figma/my-make-file	vite build	React/Vite TypeScript app; no Java, no RWT jar, no RAP build

@@ -18,6 +18,7 @@
  *    Thomas Halm <thha@fernbach.com> - bugfix in 315397
  *    Cserveny Tamas <cserveny.tamas@gmail.com> - bugfix in 318984
  *    Mirko Paturzo <mirko.paturzo@yahoo.it> - bugfix in 248388, 525390
+ *    Hitesh Soliwal (Synexia) - viewport mode, visibility gate
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 

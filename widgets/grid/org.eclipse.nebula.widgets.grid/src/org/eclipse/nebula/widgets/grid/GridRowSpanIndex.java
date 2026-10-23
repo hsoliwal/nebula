@@ -1,11 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
  *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which accompanies this distribution,
- * and is available at https://www.eclipse.org/legal/epl-2.0/
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
+ * https://www.eclipse.org/legal/epl-2.0/
  *
- * SPDX-License-Identifier: EPL-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -143,6 +148,9 @@ final class GridRowSpanIndex {
 
 	private void rebuildProjection(boolean[] visibleColumns) {
 		if (!projectionDirty && sameVisibility(visibleColumns)) return;
+		// A visibility change can enter with a clean old cache. Invalidate before
+		// mutating any projection lane so a failed rebuild always retries.
+		projectionDirty = true;
 		ensureProjectionCapacity(size);
 		projectedCount = 0;
 
@@ -158,27 +166,18 @@ final class GridRowSpanIndex {
 			projectedCount++;
 		}
 
-		// Sparse insertion sort avoids boxing and is cheap for the expected small frontier.
-		for (int i = 1; i < projectedCount; i++) {
-			int start = starts[i];
-			long end = ends[i];
-			int j = i - 1;
-			while (j >= 0 && starts[j] > start) {
-				starts[j + 1] = starts[j];
-				ends[j + 1] = ends[j];
-				j--;
-			}
-			starts[j + 1] = start;
-			ends[j + 1] = end;
-		}
+		// Small frontiers retain the stable insertion sort; dense span-owner frontiers
+		// use an in-place bounded heap so one rebuild cannot become quadratic.
+		sortProjection(starts, ends, projectedCount);
 
 		long max = Long.MIN_VALUE;
 		for (int i = 0; i < projectedCount; i++) {
 			max = Math.max(max, ends[i]);
 			prefixMaxEnds[i] = max;
 		}
-		projectionDirty = false;
+		// Publish the copied cache key before marking the complete projection reusable.
 		projectedVisibleColumns = copyVisibility(visibleColumns);
+		projectionDirty = false;
 	}
 
 	private int indexOf(GridItem item) {
@@ -212,16 +211,12 @@ final class GridRowSpanIndex {
 	}
 
 	private boolean sameVisibility(boolean[] visibleColumns) {
-		if (visibleColumns == null) return projectedVisibleColumns.length == 0;
-		if (projectedVisibleColumns.length != visibleColumns.length) return false;
-		for (int i = 0; i < visibleColumns.length; i++) {
-			if (projectedVisibleColumns[i] != visibleColumns[i]) return false;
-		}
-		return true;
+		// Null means all columns; an empty mask means none. They are distinct cache keys.
+		return java.util.Arrays.equals(projectedVisibleColumns, visibleColumns);
 	}
 
 	private static boolean[] copyVisibility(boolean[] visibleColumns) {
-		if (visibleColumns == null || visibleColumns.length == 0) return new boolean[0];
+		if (visibleColumns == null) return null;
 		boolean[] copy = new boolean[visibleColumns.length];
 		System.arraycopy(visibleColumns, 0, copy, 0, visibleColumns.length);
 		return copy;
@@ -250,6 +245,62 @@ final class GridRowSpanIndex {
 		starts = nextStarts;
 		ends = nextEnds;
 		prefixMaxEnds = nextPrefix;
+	}
+
+
+	/**
+	 * Orders the primitive span-owner lanes by logical row index. The small path retains
+	 * the original stable insertion order (including ties). Large frontiers use a binary
+	 * max-heap: O(n log n) comparisons, O(1) scratch, no entries, boxing or per-owner
+	 * allocation. Equal starts may change order, but the interval prefix maximum and
+	 * earliest covering start are identical for all permutations of such ties.
+	 */
+	static void sortProjection(int[] starts, long[] ends, int count) {
+		if (count < 0 || count > starts.length || count > ends.length) {
+			throw new IllegalArgumentException("span frontier count");
+		}
+		if (count < 2) return;
+		if (count <= 32) {
+			for (int i = 1; i < count; i++) {
+				int start = starts[i];
+				long end = ends[i];
+				int j = i - 1;
+				while (j >= 0 && starts[j] > start) {
+					starts[j + 1] = starts[j];
+					ends[j + 1] = ends[j];
+					j--;
+				}
+				starts[j + 1] = start;
+				ends[j + 1] = end;
+			}
+			return;
+		}
+		for (int i = (count >>> 1) - 1; i >= 0; i--) {
+			siftDown(starts, ends, i, count);
+		}
+		for (int last = count - 1; last > 0; last--) {
+			swap(starts, ends, 0, last);
+			siftDown(starts, ends, 0, last);
+		}
+	}
+
+	private static void siftDown(int[] starts, long[] ends, int root, int count) {
+		while (root < (count >>> 1)) {
+			int child = (root << 1) + 1;
+			if (child + 1 < count && starts[child] < starts[child + 1]) child++;
+			if (starts[root] >= starts[child]) return;
+			swap(starts, ends, root, child);
+			root = child;
+		}
+	}
+
+	private static void swap(int[] starts, long[] ends, int left, int right) {
+		int start = starts[left];
+		starts[left] = starts[right];
+		starts[right] = start;
+		long end = ends[left];
+		ends[left] = ends[right];
+		ends[right] = end;
 	}
 
 	private static int upperBound(int[] values, int length, int key) {

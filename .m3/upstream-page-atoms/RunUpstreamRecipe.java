@@ -16,7 +16,7 @@ public final class RunUpstreamRecipe {
     static final String BASE = "887cf8256ab471425bc631334d9e23d24726d34e";
     static final String PREFIX = "widgets/pagination/org.eclipse.nebula.widgets.pagination/src/org/eclipse/nebula/widgets/pagination/";
     static final String RECIPE = "com.synexia.NebulaPageBoundaryAtoms";
-    static final String YAML_HASH = "f0d6565526e08e275e646a173536e8bf727a294808b47fb69a9dfa0b9d6e9fda";
+    static final String YAML_HASH = "8516e2c3b79a455b089dfbc771c01b6eda4e2e9dfcfe348ad54a2c1c4cdf13b1";
     static final Map<String, List<String>> SEALS = Map.of(
         PREFIX + "collections/PageListHelper.java", List.of("4d57e51cc1050b8cbf4f24221297cd521196d90b6239bffb073fe04320383688", "d8c8311c8e54355fd0fccaf439608b3d7142c4938f4d118c8dfdd14f205637d6"),
         PREFIX + "collections/BeanComparator.java", List.of("19564a6f6d4612788356333c306db4d2a80de46cb24bb4e05bbb90782cf11b8a", "40b75e386fec078f139b74ee3af6d1cd857a28aa312813b3008d716eaa526eca"));

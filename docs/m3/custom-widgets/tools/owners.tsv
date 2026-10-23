@@ -1,0 +1,8 @@
+concept_id	priority_override	owner	plan_note
+STACK_LAYOUT	P0	custom-widgets	M3StackLayout residency: only the top control materialized; other children parked (setVisible false, no layout) or released and recreated through a client factory under an LRU budget (M3BoundedCache pattern); parallel Swing row M3CardLayout
+TAB_FOLDER_RICH	P0	all-widgets (CTabFolder mediated) + custom-widgets (virtual tab list leaf)	reuse the all-widgets CTabFolder mediation; add a virtual tab list for thousands of tabs: lanes for text/image/state, chevron and overflow computed from the visible window, CTabItem facades on demand
+EDITOR_VIEW_STACK	P0	jface-viewport agent (platform.ui)	e4 StackRenderer part stacks ride on the CTabFolder virtual tab list and StackLayout residency; coordination only, no duplicate work here
+DATA_GRID	-	nebula-grid agent	Nebula Grid is on the viewport (nebula#235); NatTable is a pattern and adapt donor (EPL-2.0)
+TREE_TABLE	-	SWT Tree track + nebula-grid agent	SWT Tree with columns is the tree-table; Swing gets M3TreeTable through the enhanced-API Swing track
+VIRTUAL_LIST	-	SWT List/Table tracks	SWT List/Table/Tree viewports exist; Swing JList viewport is M3jdk21 leaf 3
+CODE_EDITOR	-	StyledText viewport (merged)	StyledText viewport merged; nothing new here

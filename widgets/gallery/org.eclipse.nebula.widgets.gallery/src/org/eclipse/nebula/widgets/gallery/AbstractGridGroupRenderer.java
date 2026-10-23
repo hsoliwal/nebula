@@ -11,6 +11,7 @@
  * Contributors :
  *    Nicolas Richeton (nicolas.richeton@gmail.com) - initial API and implementation
  *    Richard Michalsky - bug 197959
+ *    Hitesh Soliwal (Synexia) - visible item window paints the rows stock paints for an empty clip
  *******************************************************************************/
 package org.eclipse.nebula.widgets.gallery;
 
@@ -285,7 +286,9 @@ public abstract class AbstractGridGroupRenderer
 			int clipY, int clipWidth, int clipHeight, int offset) {
 		// One CPU index vector per visible child interval; offscreen child
 		// facades remain absent and the GalleryItem API is unchanged.
-		if (clipWidth <= 0 || clipHeight <= 0) return new int[0];
+		// An empty clip still yields the first row, as stock: drawing an item
+		// stores its bounds (GalleryItem.getBounds), so the same rows must be
+		// drawn (recorded differential against stock Nebula, seed 0).
 		boolean vertical = gallery.isVertical();
 		int perLine = ((Integer) group.getData(vertical ? H_COUNT : V_COUNT)).intValue();
 		long stride = (long) (vertical ? itemHeight : itemWidth) + minMargin;

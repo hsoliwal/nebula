@@ -1,9 +1,16 @@
 /*******************************************************************************
- * SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+ *
  * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0, available at
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
  * https://www.eclipse.org/legal/epl-2.0/
- * SPDX-License-Identifier: EPL-2.0
+ *
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
@@ -71,6 +78,90 @@ public class GridRowSpanIndex_Test {
 					linear(target, starts, ends),
 					GridRowSpanIndex.earliestCovering(target, starts, prefix, count));
 		}
+	}
+
+	@Test
+	public void largeDescendingProjectionKeepsEveryPrimitivePair() {
+		final int count = 65_536;
+		int[] starts = new int[count];
+		long[] ends = new long[count];
+		for (int i = 0; i < count; i++) {
+			starts[i] = count - i;
+			ends[i] = (long) starts[i] * 3L + 5L;
+		}
+		GridRowSpanIndex.sortProjection(starts, ends, count);
+		for (int i = 0; i < count; i++) {
+			assertEquals(i + 1, starts[i]);
+			assertEquals((long) (i + 1) * 3L + 5L, ends[i]);
+		}
+	}
+
+	@Test
+	public void sortedOverlapsAndDuplicateRowsMatchIndependentLinearOracle() {
+		Random random = new Random(0x475249445350414EL);
+		final int count = 2_048;
+		int[] starts = new int[count];
+		long[] ends = new long[count];
+		for (int i = 0; i < count; i++) {
+			starts[i] = random.nextInt(5_000);
+			ends[i] = (long) starts[i] + random.nextInt(3_000);
+		}
+		int[] originalStarts = starts.clone();
+		long[] originalEnds = ends.clone();
+		GridRowSpanIndex.sortProjection(starts, ends, count);
+		long[] prefix = new long[count];
+		long highest = Long.MIN_VALUE;
+		for (int i = 0; i < count; i++) {
+			if (i > 0) assertTrue("sorted row starts", starts[i - 1] <= starts[i]);
+			highest = Math.max(highest, ends[i]);
+			prefix[i] = highest;
+		}
+		for (int row = 1; row < 8_000; row += 7) {
+			int expected = row;
+			for (int i = 0; i < count; i++) {
+				if (originalStarts[i] < row && originalEnds[i] >= row) {
+					expected = Math.min(expected, originalStarts[i]);
+				}
+			}
+			assertEquals("row " + row, expected,
+					GridRowSpanIndex.earliestCovering(row, starts, prefix, count));
+		}
+	}
+
+	@Test
+	public void smallProjectionKeepsOriginalStableTieOrder() {
+		int[] starts = {4, 1, 4, 2, 4, 1};
+		long[] ends = {40, 10, 41, 20, 42, 11};
+		GridRowSpanIndex.sortProjection(starts, ends, starts.length);
+		assertArrayEquals(new int[] {1, 1, 2, 4, 4, 4}, starts);
+		assertArrayEquals(new long[] {10, 11, 20, 40, 41, 42}, ends);
+	}
+
+	@Test
+	public void cacheMaskDistinguishesAllFromNoneAndOwnsItsSnapshot() throws Exception {
+		java.lang.reflect.Method compare = GridRowSpanIndex.class.getDeclaredMethod("sameVisibility", boolean[].class);
+		java.lang.reflect.Method copy = GridRowSpanIndex.class.getDeclaredMethod("copyVisibility", boolean[].class);
+		java.lang.reflect.Field cached = GridRowSpanIndex.class.getDeclaredField("projectedVisibleColumns");
+		compare.setAccessible(true);
+		copy.setAccessible(true);
+		cached.setAccessible(true);
+		GridRowSpanIndex index = new GridRowSpanIndex();
+		boolean[][] masks = {null, new boolean[0], {false}, {true}, {true, false}};
+		for (boolean[] a : masks) {
+			boolean[] snapshot = (boolean[]) copy.invoke(null, (Object) a);
+			assertArrayEquals(a, snapshot);
+			if (a != null) assertNotSame(a, snapshot);
+			cached.set(index, snapshot);
+			for (boolean[] c : masks) {
+				assertEquals(java.util.Arrays.equals(a, c), compare.invoke(index, (Object) c));
+			}
+		}
+		boolean[] caller = {true, false};
+		boolean[] snapshot = (boolean[]) copy.invoke(null, (Object) caller);
+		cached.set(index, snapshot);
+		caller[0] = false;
+		assertFalse((Boolean) compare.invoke(index, (Object) caller));
+		assertArrayEquals(new boolean[] {true, false}, snapshot);
 	}
 
 	private static int linear(int target, int[] starts, long[] ends) {

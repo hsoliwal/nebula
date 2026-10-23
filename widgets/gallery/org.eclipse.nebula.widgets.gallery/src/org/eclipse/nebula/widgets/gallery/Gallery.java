@@ -11,6 +11,7 @@
  * Contributors :
  *    Nicolas Richeton (nicolas.richeton@gmail.com) - initial API and implementation
  *    Tom Schindl      (tom.schindl@bestsolution.at) - fix for bug 174933
+ *    Hitesh Soliwal (Synexia) - viewport mode: scroll bar values set only when they change, one client area per layout
  *******************************************************************************/
 
 package org.eclipse.nebula.widgets.gallery;
@@ -18,6 +19,7 @@ package org.eclipse.nebula.widgets.gallery;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 
+import org.eclipse.nebula.widgets.gallery.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.SelectionEvent;
@@ -1266,6 +1268,13 @@ public class Gallery extends Canvas {
 	private static final int[] EMPTY_PAINT_WINDOW = new int[0];
 
 	/**
+	 * The Gallery viewport (docs/m3/GALLERY_VIEWPORT.md in hsoliwal/eclipse.platform.swt: scroll bar values set only
+	 * when they change, one client area per layout) unless the startup widget mode of Gallery is original
+	 * (-Dswt.widget.mode.Gallery=original or -Dswt.widget.mode=original).
+	 */
+	static final boolean VIEWPORT = WidgetMode.of("Gallery", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+
+	/**
 	 * Project only groups intersecting the GC clip. The Gallery remains the sole
 	 * owner of its GalleryItem identities, SWT.SetData, selection and scrollbars.
 	 * A verified, ordered DefaultGalleryGroupRenderer permits a logarithmic
@@ -1560,6 +1569,9 @@ public class Gallery extends Canvas {
 	 * @return
 	 */
 	private int calculateSize(GalleryItem onlyUpdateGroup) {
+		if (VIEWPORT) {
+			return calculateSizeOnce(onlyUpdateGroup);
+		}
 		monotoneGroupGeometry = false;
 
         if (groupRenderer == null) {
@@ -1636,6 +1648,90 @@ public class Gallery extends Canvas {
 		return currentHeight;
 	}
 
+	/*
+	 * VIEWPORT: calculateSize with the client area read once. The original reads it (a native call and a Rectangle)
+	 * two or three times per group; laying out a group does not change it (no scroll bar is touched until the size is
+	 * known), so every read answers the same rectangle.
+	 */
+	//FLLDCIM: VIEWPORT - one client area per layout, not per group
+	private int calculateSizeOnce(GalleryItem onlyUpdateGroup) {
+		monotoneGroupGeometry = false;
+
+        if (groupRenderer == null) {
+            return 0;
+        }
+
+		groupRenderer.preLayout(null);
+
+		int currentHeight = 0;
+		// Preserve all virtual SetData callbacks and any custom-renderer behavior.
+		boolean searchable = !virtual && !virtualGroups
+				&& groupRenderer.getClass() == DefaultGalleryGroupRenderer.class;
+		long previousStart = Long.MIN_VALUE;
+		long previousEnd = Long.MIN_VALUE;
+
+		int mainItemCount = getItemCount();
+		Rectangle clientArea = getClientArea();
+
+		for (int i = 0; i < mainItemCount; i++) {
+			GalleryItem item = null;
+			if (virtualGroups) {
+				item = this._getItem(i, false);
+			} else {
+				item = this._getItem(i);
+			}
+
+			if (onlyUpdateGroup != null && !onlyUpdateGroup.equals(item)) {
+				// Item has not changed : no layout.
+				if (vertical) {
+					item.y = currentHeight;
+					item.x = clientArea.x;
+					currentHeight += item.height;
+				} else {
+					item.y = clientArea.y;
+					item.x = currentHeight;
+					currentHeight += item.width;
+				}
+			} else {
+				this.groupRenderer.setExpanded(item.isExpanded());
+				// TODO: Not used ATM
+				// int groupItemCount = item.getItemCount();
+				if (vertical) {
+					item.y = currentHeight;
+					item.x = clientArea.x;
+					item.width = clientArea.width;
+					item.height = -1;
+					this.groupRenderer.layout(null, item);
+					currentHeight += item.height;
+				} else {
+					item.y = clientArea.y;
+					item.x = currentHeight;
+					item.width = -1;
+					item.height = clientArea.height;
+					this.groupRenderer.layout(null, item);
+					currentHeight += item.width;
+				}
+			}
+
+			if (searchable) {
+				long origin = vertical ? item.y : item.x;
+				long extent = vertical ? item.height : item.width;
+				long far = origin + extent;
+				if (extent < 0 || far < Integer.MIN_VALUE || far > Integer.MAX_VALUE
+						|| origin < previousStart || far < previousEnd) {
+					searchable = false;
+				}
+				previousStart = origin;
+				previousEnd = far;
+			}
+		}
+
+		groupRenderer.postLayout(null);
+		monotoneGroupGeometry = searchable;
+
+		return currentHeight;
+	}
+
 	/**
 	 * Move the scrollbar to reflect the current visible items position. <br/>
 	 * The bar which is moved depends of the current gallery scrolling :
@@ -1669,6 +1765,10 @@ public class Gallery extends Canvas {
         if (bar == null) {
             return;
         }
+		if (VIEWPORT && bar.getVisible() && totalSize > clientSize) {
+			updateScrollBarChanges(bar, clientSize, totalSize);
+			return;
+		}
 
 		bar.setMinimum(0);
 		bar.setPageIncrement(clientSize);
@@ -1702,6 +1802,39 @@ public class Gallery extends Canvas {
 			translate = 0;
 		}
 
+	}
+
+	/*
+	 * VIEWPORT: updateScrollBarProperties for a bar that is visible and stays visible, calling each setter only when
+	 * the bar does not already answer the value, in the same order. Given the value it already has, a setter of a
+	 * visible bar leaves the bar as it is, so the bar ends in the same state; what is saved is the native
+	 * SetScrollInfo (which redraws the bar) that every appended item paid for each value, although usually none had
+	 * changed. A hidden bar, or one about to be hidden, takes the stock sequence: there the repeated calls also
+	 * trigger the Windows side effects ScrollBar.SetScrollInfo works around (the opposite bar's area), and the
+	 * recorded differential shows the client area depends on them.
+	 */
+	//FLLDCIM: VIEWPORT - scroll bar values set only when they change (visible bar)
+	private void updateScrollBarChanges(ScrollBar bar, int clientSize, int totalSize) {
+		if (bar.getMinimum() != 0) {
+			bar.setMinimum(0);
+		}
+		bar.setPageIncrement(clientSize);
+		if (bar.getMaximum() != totalSize) {
+			bar.setMaximum(totalSize);
+		}
+		if (bar.getThumb() != clientSize) {
+			bar.setThumb(clientSize);
+		}
+		if (groupRenderer != null) {
+			bar.setIncrement(groupRenderer.getScrollBarIncrement());
+		}
+		if (!bar.getEnabled()) {
+			bar.setEnabled(true);
+		}
+		if (bar.getSelection() != translate) {
+			bar.setSelection(translate);
+		}
+		validateTranslation();
 	}
 
 	/**

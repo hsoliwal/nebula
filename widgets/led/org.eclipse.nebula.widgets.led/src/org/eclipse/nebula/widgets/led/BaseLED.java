@@ -35,6 +35,8 @@ public abstract class BaseLED extends Canvas {
 	protected Color idleColor;
 	protected Color selectedColor;
 	protected GC gc;
+	// Nested paints must not overwrite the outer widget's current native GC.
+	private int paintDepth;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -84,12 +86,22 @@ public abstract class BaseLED extends Canvas {
 
 
 	private  void onPaint(Event e) {
+		// The outermost callback deliberately keeps its old postpaint GC value.
+		// Only nested callbacks borrow and then restore this widget-owned field.
+		final GC previous = gc;
+		final boolean nested = paintDepth != 0;
+		paintDepth++;
 		gc = e.gc;
-		gc.setBackground(getBackground());
-		gc.fillRectangle(getClientArea());
-		gc.setAdvanced(true);
-		gc.setAntialias(SWT.ON);
-		paintInternal();
+		try {
+			gc.setBackground(getBackground());
+			gc.fillRectangle(getClientArea());
+			gc.setAdvanced(true);
+			gc.setAntialias(SWT.ON);
+			paintInternal();
+		} finally {
+			paintDepth--;
+			if (nested) gc = previous;
+		}
 	}
 
 	/**

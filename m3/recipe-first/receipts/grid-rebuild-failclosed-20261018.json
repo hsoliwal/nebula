@@ -1,0 +1,110 @@
+{
+  "SPDX-FileCopyrightText": "2026 Hitesh Soliwal and Contributors to the Synexia Project",
+  "SPDX-License-Identifier": "Apache-2.0",
+  "kind": "PUBLISHED_CANONICAL_SOURCE_BOUND_SDK_EXECUTION",
+  "target": {
+    "repository": "hsoliwal/nebula",
+    "base_commit": "c5f62dbabc643b40fbba56eada89cee3965d145c",
+    "base_tree": "0c3a49620786d6047da2b5fa76ab3f984c0a06dd",
+    "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowExtents.java",
+    "before_git_blob": "ec2aab7b1bc4c7c4e96e602d0645309f779af58f",
+    "before_sha256": "bd7e1faecff1d077242ac5c8098f36578b35fd832bc2817f053ab316f183cc9f",
+    "after_git_blob": "c9c1db07f34ce877f8105b8f2609d6dddb6204c1",
+    "after_sha256": "d5650465c5001bbda7ab6cf1039df9a4f9ba22d23dd7bfbe61479f3afd52a144",
+    "source_rights": "Original Apache-2.0 OR EPL-2.0 header and attribution preserved byte-for-byte"
+  },
+  "canonical": {
+    "repository": "hsoliwal/com.synexia",
+    "commit": "3291858a52a6da7e74d4c5122752ce6bf63c381b",
+    "crate": "synexia-openrewrite-recipes/crates/m3-viewport-catalogue-recipes",
+    "recipe": "com.synexia.openrewrite.viewport.NebulaGridExtentRebuildFailClosed",
+    "source_readback": "24 complete files exactly match the qualified byte/SHA256/Git-blob manifest",
+    "source_manifest_sha256": "39fd1794e2d92d2b14b69bd325d24497382e10580ece870485e3ac3d6770e9bc",
+    "atom_sha256": "c19320b4c349a4aced367257df18ab9af739df05522c3d76df17444bc81108c2",
+    "source_readback_receipt_sha256": "eeb6c9ab8a5a98bfc3a37d9e7727fecff6aa6981fb29c3b9929dcf4cf882487c"
+  },
+  "policy": {
+    "root_agents_git_blob": "17d7f17e4f4904c9f35d01f87d0c2650a7805c2d",
+    "target_and_receipt_ancestors": "Root AGENTS.md only; complete 9312-entry tree contains no nested AGENTS.md or CLAUDE.md",
+    "receipt_admission": "ABSENT_BEFORE"
+  },
+  "qualification": {
+    "toolchain": "Publisher-verified Java21.0.12.1+1 and Apache Maven3.9.16; actual OpenRewrite8.90.4 SDK",
+    "recipe_compile": "PASS -Xlint:all -Werror",
+    "corrected_recipe_junit": {
+      "methods": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "historical_recipe_counterexample": {
+      "methods_run": 25,
+      "failed_methods": 1,
+      "adversarial_cases_in_that_failed_method": 6,
+      "classification": "Real JUnit counterexample, separate from earlier zero-test dependency refusals"
+    },
+    "source_fixture_scope": "Exact-source fixture tests have interface-only stubs; actual product evidence is separately enumerated below",
+    "serial_sdk_runs": [
+      {
+        "run": 1,
+        "first_changes": 1,
+        "second_changes": 0,
+        "product_classes": 4,
+        "product_compile": "PASS -Xlint:all -Werror",
+        "original_junit4_methods": 4,
+        "independent_failure_oracle_methods": 2,
+        "product_test_failures": 0,
+        "descriptor_parity": "PASS all4 real product owners"
+      },
+      {
+        "run": 2,
+        "first_changes": 1,
+        "second_changes": 0,
+        "product_classes": 4,
+        "product_compile": "PASS -Xlint:all -Werror",
+        "original_junit4_methods": 4,
+        "independent_failure_oracle_methods": 2,
+        "product_test_failures": 0,
+        "descriptor_parity": "PASS all4 real product owners"
+      }
+    ],
+    "actual_product_sources": [
+      "GridRowExtents.java",
+      "GridRowIndex.java",
+      "model/HeapGrowth.java",
+      "model/HeapSampler.java"
+    ],
+    "independent_failure_oracle_git_blob": "cae8bdfd7cd297c28487d9ea049a57852be2affa",
+    "product_baseline": "Original4 tests PASS; independent2 failure-oracle tests FAIL before the canonical recipe change",
+    "source_fixedpoint": "PASS exact byte identity after each independent second SDK pass",
+    "serial_replay": "PASS exact output bytes across two fresh source inputs",
+    "recipe_public_api": "PASS unchanged public descriptors",
+    "source_binding_refusals": {
+      "target": "PASS",
+      "canonical_atom": "PASS",
+      "yaml": "PASS",
+      "stage": "EXTERNAL_BINDING_BEFORE_SDK"
+    }
+  },
+  "proof_custody": {
+    "application_receipt_sha256": "8bcf2b87cca0428e808470fa2b13c4869873860dfa397d78e538a0a3a654fe2f",
+    "archive_name": "nebula-grid-proof-20261018.tar.gz",
+    "archive_files": 271,
+    "archive_sha256": "79a788253630a1e905071cb87577844aaee217f04b407802f276dfc362adbb40",
+    "archive_scope": "Exact sources, protected tests, manifests, full tree inventories, retained diagnostics, SDK/JUnit/compiler/API receipts; external dependency binaries excluded and identified by hash"
+  },
+  "unexecuted_gates": {
+    "full_original_Maven_Tycho": "NOT_RUN",
+    "SWT_visible_screen_pixel_validators": "NOT_RUN",
+    "combined_SWT_Nebula_resource_gate": "NOT_RUN",
+    "native_events_lifetime": "NOT_RUN",
+    "Windows_macOS_WSL_other_Unix": "NOT_RUN",
+    "CPU_heap_native_memory_performance_budgets": "NOT_RUN",
+    "separate_SwtImageQualificationTest_methods": {
+      "status": "NOT_RUN_NOT_SELECTED",
+      "methods": 2
+    }
+  },
+  "promotion": "HOLD_FOR_EXISTING_PRODUCT_NATIVE_PLATFORM_AND_RESOURCE_GATES",
+  "changes": "One SDK-generated valid=false statement at rebuild entry plus this proof receipt; no competing Nebula recipe owner"
+}

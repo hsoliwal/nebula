@@ -1,0 +1,18 @@
+slug	licence	evidence
+swt-initiative31/prototype-swing	EPL-2.0	DONOR_CATALOGUE.tsv (SWT fork, EPL file headers; GitHub detects none)
+swt-initiative31/prototype-skija	EPL-2.0	DONOR_CATALOGUE.tsv (SWT fork, EPL file headers)
+swt-initiative31/custom-drawn-controls	EPL-2.0	DONOR_CATALOGUE.tsv (SWT fork, EPL file headers)
+swt-initiative31/skija-canvas	EPL-2.0	DONOR_CATALOGUE.tsv (SWT fork, EPL file headers)
+swt-initiative31/prototype-skiavcl	EPL-2.0	DONOR_CATALOGUE.tsv (SWT fork, EPL file headers)
+swt-initiative31/prototype-gtk	EPL-2.0	SWT fork (EPL file headers, same lineage as the other Initiative 31 prototypes)
+JetBrains/intellij-community	Apache-2.0	DONOR_CATALOGUE.tsv (file headers; LICENSE.txt build terms over Apache-2.0 sources)
+jidesoft/jide-oss	GPL-2.0-only WITH Classpath-exception-2.0	DONOR_CATALOGUE.tsv (dual: free commercial licence)
+glazedlists/glazedlists	LGPL-2.1 OR MPL-1.1	DONOR_CATALOGUE.tsv
+arotenberg/swingx	LGPL-2.1	DONOR_CATALOGUE.tsv
+wumpz/swingx	LGPL-2.1	SWINGX_LINEAGE.tsv (com.synexia PR #12398), successor of arotenberg/swingx
+javagl/JTreeTable	BSD-3-Clause	DONOR_CATALOGUE.tsv (Sun 1998 notice)
+Chrriis/DJ-Native-Swing	LGPL-2.1-or-later	DONOR_CATALOGUE.tsv (README; no LICENSE file)
+sxhdroid/SwingWT	CPL-1.0 OR LGPL-2.0-or-later	DONOR_CATALOGUE.tsv
+eclipse-rap/org.eclipse.rap	EPL-1.0	DONOR_CATALOGUE.tsv
+openjdk/jdk	GPL-2.0-only WITH Classpath-exception-2.0	DONOR_CATALOGUE.tsv
+openjdk/jfx	GPL-2.0-only WITH Classpath-exception-2.0	DONOR_CATALOGUE.tsv

@@ -1,0 +1,5 @@
+baseline errors: 3798
+rwt errors: 4750
+rwt-only errors: 953
+files with rwt-only errors: 191
+families with rwt-only errors: 40

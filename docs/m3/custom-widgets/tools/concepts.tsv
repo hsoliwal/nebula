@@ -1,0 +1,67 @@
+concept_id	concept	class_regex	virt	swt_stock	swing_stock
+STACK_LAYOUT	stack / card layout (one top control of many)	^StackLayout$|^CardLayout$|^StackPane$|^DeckPane$|^CardPanel$|CardStack|^StackedPane$|^PageBook$|^JXCardPanel$|^CardLayoutPanel$	Y	StackLayout	CardLayout
+EDITOR_VIEW_STACK	editor / view part stack (workbench part stacks)	StackRenderer|PartStack|EditorStack|ViewStack|TabbedEditor|EditorTabs$|^JBEditorTabs$|^EditorWindow$|DockingStack|^TabbedContainer$	Y	- (e4 StackRenderer over CTabFolder, platform.ui)	-
+TREE_TABLE	tree-table (tree with columns)	TreeTable|^Outline(View)?$|^XViewer$|TreeGrid|^CTree$|TreeTableView|^JXTreeTable$	Y	Tree+TreeColumn	-
+DATA_GRID	data grid / spreadsheet (cell selection, frozen rows and columns, spans)	^Grid$|^NatTable$|Spreadsheet(View|Grid)?$|^KTable$|^JXTable$|^CompositeTable$|^JideTable$|^JBTable$|SortableTable$|HierarchicalTable$|^GridTable$|^CellSpanTable$	Y	Table (row selection only)	JTable
+VIRTUAL_LIST	virtual list / virtual flow (millions of rows)	VirtualFlow|^VirtualList|^Virtualized(List|Grid|Table|ScrollPane)|^VirtualTable$|^Flowless$|^VirtualGrid$|LazyList|PaginatedList$	Y	List/Table/Tree SWT.VIRTUAL	JList (fixed cell height)
+GALLERY	gallery / image grid / icon view	Gallery|^GridView$|ThumbnailView|ImageGrid|^IconView$|ThumbnailPanel|ImageList(View|Panel)$|^Tiles$|TileView$|TilePane$|TilesView$	Y	-	-
+TREE_COMBO	tree combo (tree drop-down)	TreeCombo|ComboTree|TreeComboBox|TreeChooser$|TreeSelectCombo	Y	-	-
+TABLE_COMBO	table / multi-column / check combo	TableCombo|MultiColumnCombo|ComboTable|TableComboBox|CheckComboBox|CheckTableCombo|^MultiChoice$|CheckCombo$|^CheckedComboBox$|MultiSelect(Combo|ComboBox)$	Y	-	-
+CHECK_LIST	check list / check tree	^CheckList(Box|View)?$|CheckBoxList$|^CheckTreeView$|CheckBoxTree$|CheckboxTree$|^CheckTree$|^JXCheckList$|^CheckTreeViewer$	Y	Table/Tree SWT.CHECK	-
+DUAL_LIST	dual list / list selection view (shuttle)	DualList|ListSelectionView|DualListBox|^ListBuilder$|SwapList|TwinList|Shuttle(List|Box)?$	Y	-	-
+FILTER_ROW	filter row / column filter header	Filter(Row|Header|Bar)$|^TableFilter|ColumnFilter$|FilterRow|AutoFilter|^FilterField$|^JXFilterBar$|^TableFilterHeader$	Y	-	- (RowFilter API, no UI)
+COLUMN_CONTROL	column control (show/hide/reorder columns popup)	ColumnControl|ColumnChooser|ColumnSelector|ColumnHide|ColumnVisibility|TableColumnChooser|ColumnsDialog|ColumnPopup|ColumnCustomization	P	-	-
+GROUPABLE_HEADER	grouped / multi-level column header	GroupableHeader|^ColumnGroup$|GroupableTableHeader|ColumnGroupHeader|MultiLevelHeader|^GridColumnGroup$|HeaderGroup$	P	-	-
+FIND_BAR	find bar / speed search over items	FindBar|FindPanel|SpeedSearch|QuickSearch|^Searchable$|IncrementalSearch|TypeAhead|SearchHighlighter|^JXFindBar$|^JXFindPanel$|FindReplace(Bar|Panel|Dialog)$|SearchPopup$	Y	- (native type-ahead in Table/Tree only)	- (JTree/JList prefix navigation only)
+AUTOCOMPLETE	autocomplete / content proposal	AutoComplet|ContentProposal|TextAssist|Suggest(ion)?(Box|Field|Popup|Picker|List)$|Completion(Popup|Field|List)$|AutocompleteCombo|SuggestionPicker$|AutoCompletionTextField	Y	-	-
+SEARCH_FIELD	search field (icon, clear, history, prompt)	Search(Text)?Field$|SearchTextField|^JXSearchField$|SearchBox$|SearchPanel$|^CustomTextField$|SearchableComboBox|^SearchBar$	N	Text SWT.SEARCH|ICON_SEARCH|ICON_CANCEL	-
+TOKEN_FIELD	token / tag / chips input field	Token(Field|Input|Text|Pane)$|Tags?(Field|Input|View|Pane|Editor)$|^Chips?$|ChipsView|ChipView|ChipGroup|^ChipField$	N	-	-
+DATE_PICKER	date / time picker	(Date|Time|DateTime|Calendar|Month|Duration)(Time)?(Picker|Chooser|Combo|Field|Spinner|Selector|Edit)$|^CDateTime$|^JXDatePicker$|^DateTime$|^JDateChooser$|DateChooser|DatePicker|TimePicker|CalendarPicker|LocalDatePicker|^CalendarCombo$	N	DateTime	- (JSpinner date model)
+CALENDAR_VIEW	calendar / agenda view (day, week, month with entries)	^(Agenda|CalendarView|DayView|WeekView|MonthView|YearView|MonthPage|DayPage|WeekPage|YearPage|DetailedDayView|AllDayView)$|^JXMonthView$|^JCalendar$	P	DateTime SWT.CALENDAR	-
+TASK_PANE	task pane / collapsible section / accordion / shelf	TaskPane|Collapsible(Pane|Panel|Section|Composite)$|^PShelf$|^PGroup$|Accordion|ExpandableComposite|^Section$|OutlookBar|^JButtonBar$|^ExpandBar$|CollapsibleButtons|^TitledPane$|^Drawer$|DrawersStack|ExpandablePanel	N	ExpandBar	-
+MULTI_SPLIT	multi split pane (layout tree of splits)	MultiSplit|JideSplitPane|ThreeComponentsSplitter|OnePixelSplitter|^Splitter$|^JBSplitter$|SplitLayout$|^SplitPane$|MasterDetailPane	N	- (SashForm: one orientation)	- (JSplitPane: two children)
+DOCKING	docking framework	Dock(able|ing|Station|ingPane|ingDesktop|ingWindow|Node|Panel)$|^Dock$|DockPane$|^DockingFrame$|^CControl$|ToolWindow(Pane|Manager)?$	N	- (Eclipse e4 workbench only)	-
+TAB_FOLDER_RICH	tab stack (close, drag, overflow, thousands of tabs)	^CTabFolder$|JideTabbedPane|^JBTabs|TabPanePro|ClosableTab|DraggableTab|^JhromeTabbedPane$|^DnDTabbedPane$|^TabbedPane$|^TabFolder$|^TabPane$	Y	CTabFolder	JTabbedPane (no close/drag)
+HYPERLINK	hyperlink	Hyperlink|LinkLabel|ActionLink|^JXHyperlink$|LinkButton|ImageHyperlink	N	Link	-
+SPLIT_BUTTON	split / drop-down / menu button	SplitButton|DropDownButton|^MenuButton$|SplitMenuButton|^JSplitButton$|^DropDownMenuButton$	N	ToolItem SWT.DROP_DOWN	-
+TOGGLE_SWITCH	toggle switch	^Switch(Button)?$|ToggleSwitch|RoundedSwitch|OnOff(Switch|Button)$|^JToggleSwitch$|^SwitchButton$	N	-	-
+SEGMENTED_BUTTON	segmented button / segmented bar	Segmented(Button|Bar|Control)$|^ButtonStrip$|SegmentButton	N	-	-
+RATING	rating	Rating$|StarRat|StarRater|RatingBar$	N	-	-
+RANGE_SLIDER	range slider (two thumbs)	RangeSlider|MultiThumbSlider|DualSlider|RangeSelector$	N	-	-
+GAUGE_KNOB	gauge / knob / dial / LED	Gauge$|Knob$|^Dial$|^Led$|^LED$|Meter$|^Clock$	N	-	-
+BREADCRUMB	breadcrumb bar	Bread[Cc]rumb	N	-	-
+STEPPER	stepper / wizard step bar	^Step(Bar|per|Indicator|Progress)$|^Stepbar$|WizardSteps|^StepView$	N	-	-
+PAGINATION	pagination / carousel	^Carousel$|Pagination|^Pager$|^PageControl$|^PageNavigation$	P	-	-
+PROPERTY_SHEET	property sheet / property grid	Property(Sheet|Table|Grid|EditorPane|EditorPanel|Pane|Panel|View|SheetPanel)$|^PropertySheet|BeanEditor$|ObjectInspector$	P	-	-
+FORMATTED_TEXT	formatted / masked / numeric text	Formatted(Text|Field)$|Masked(Text|Field|TextField)$|^NumberField$|^IntegerField$|^DecimalField$|^CurrencyField$|ValidatedTextField|^NumericTextField$|^JXFormattedTextField$	N	-	JFormattedTextField
+PROMPT_DECORATION	prompt / placeholder / field decoration and validation	PromptSupport|Placeholder|Water[Mm]ark|HintText|FieldDecoration|ControlDecoration|InputValidator|ValidationDecoration|ValidationSupport|^BuddySupport$	N	Text.setMessage	-
+PASSWORD_REVEAL	password reveal	PasswordRevealer|RevealPassword|ShowPassword	N	-	-
+COLOR_CHOOSER	colour chooser / picker	Colou?r(Chooser|Picker|Selector|Wheel|Palette|Combo|Button|Well|Swatch|ComboBox|ChooserButton)$|^JXColorSelectionButton$	N	ColorDialog	JColorChooser
+FONT_CHOOSER	font chooser	Font(Chooser|Picker|Selector|Combo|ComboBox|ChooserPanel)$	N	FontDialog	-
+TOAST	toast / notification popup	Toast|^Notifier$|Notification(Pane|Popup|Window|Balloon|Bar)$|^Notifications$|^Balloon$|Snackbar|PopupNotification|^InfoBar$|^Alert(Pane|Popup)$	N	- (ToolTip SWT.BALLOON only)	-
+POPOVER	popover / rich tooltip / balloon tip	^PopOver$|^Popover$|BalloonTip|^Callout$|HelpTooltip|RichTooltip|^GotItTooltip$	N	ToolTip	JToolTip
+BUSY_INDICATOR	busy indicator / throbber / masker	Busy(Label|Indicator|Painter|Icon|Pane)$|Throbber|AsyncProcessIcon|ProgressCircle|^ProgressIndicator$|RingProgress|MaskerPane|LoadingPanel|InfiniteProgress|ActivityIndicator|LoadingIndicator|^Spinner(Icon|Animation)$	N	- (BusyIndicator: cursor only)	JProgressBar indeterminate
+STATUS_BAR	status bar	StatusBar$|^StatusLine$	N	-	-
+HEADER_PANEL	header / titled panel / titled separator	^JXHeader$|^Header$|TitledPanel$|TitledSeparator|BannerPanel|^TitlePanel$|^HeaderPanel$|^TitledBorderPanel$	N	-	- (TitledBorder: border only)
+LOGIN_DIALOG	login dialog	Login(Dialog|Pane|Panel)$	N	-	-
+TIP_OF_DAY	tip of the day	TipOfTheDay|TipOfDay	N	-	-
+ERROR_PANE	error / exception details pane	^JXErrorPane$|ErrorPane$|ExceptionDialog$|ExceptionPane$|^ErrorInfo$	N	-	- (JOptionPane: no details)
+IMAGE_VIEW	image view (zoom, pan, crop)	Image(View|Viewer|Panel|Canvas|Pane|Box)$|^Picture$|ZoomPane$|PhotoView$|ZoomableImage|^SnapshotView$|^GesturePane$	P	-	-
+CHART	chart / plot / sparkline	(^|[a-z])Chart(Panel|Composite|View|Viewer|Canvas|Widget|Control)?$|XYGraph|^Plot(Panel|Canvas)?$|Graph(Panel|View)$|Sparkline|Oscilloscope	Y	-	-
+GANTT_TIMELINE	Gantt / timeline	Gantt|Timeline$|TimeLine$	Y	-	-
+TREEMAP	treemap	Tree[Mm]ap(per|Panel|View|Widget|Canvas)?$	Y	-	-
+HEATMAP	heat map / flame graph	Heat[Mm]ap|FlameGraph|Flamegraph|IcicleGraph	Y	-	-
+MAP_VIEW	geographic map view	GeoMap|MapViewer$|^JXMapViewer|^MapView$|MapKit$|WorldMapView|^MapPane$|^GoogleMapView$	Y	-	-
+CODE_EDITOR	code / rich text editor	SyntaxTextArea|^RichText|^StyledText$|^CodeArea$|InlineCssTextArea|^StyleClassedTextArea$|^GenericStyledArea$|RichTextEditor|^MateText$	Y	StyledText	JEditorPane/JTextPane
+TERMINAL	terminal view	^Terminal(Widget|Panel|View|Pane)?$|JediTerm	Y	-	-
+NODE_EDITOR	node / diagram editor	NodeEditor|^Diagram(View|Canvas|Panel)?$|GraphEditor|FlowChart|^GraphViewer$	Y	-	-
+RIBBON	ribbon / command bar	Ribbon|^CommandBar$|^CommandButton$|^JCommandButton$	N	-	-
+BADGE	badge	Badge	N	-	-
+FLOATING_LABEL	floating label text	FloatingText|FloatingLabel	N	-	-
+RADIO_GROUP	radio / check box group widget	RadioGroup|CheckBoxGroup|CheckboxGroup|^ButtonGroupPanel$|RadioButtonGroup|RadioButtonPanel	N	-	- (ButtonGroup: no widget)
+HORIZONTAL_SPINNER	list / horizontal spinner	HorizontalSpinner|^ListSpinner$|ArrowSpinner	N	Spinner	JSpinner
+PREFERENCE_WINDOW	preference window / settings pane	PreferenceWindow|^PreferencesFx$|^Preferences(Pane|Panel|View)$|SettingsPane$	N	-	-
+WIZARD	wizard	^Wizard(Pane|Dialog|Panel)?$	N	-	-
+CALCULATOR	calculator field	^Calculator(Combo|Field|Button|Panel|Dialog|Popup)?$	N	-	-
+MEMORY_MONITOR	heap / memory monitor	HeapManager|MemoryMonitor|MemoryBar	N	-	-
+PRINT_PREVIEW	print / report preview	^PrintPreview$|^PrintViewer$|^PrintPreviewDialog$	P	-	- (JTable.print: no preview)

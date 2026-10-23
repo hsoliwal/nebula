@@ -1,0 +1,8 @@
+SWT SessionManagerDBus: Failed to connect to org.gnome.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+SWT SessionManagerDBus: Failed to connect to org.xfce.SessionManager: Failed to execute child process “dbus-launch” (No such file or directory)
+immediate painted: top=0 bar=0 max=20 thumb=9 visible=true client=Rectangle {0, 0, 200, 200} selected=[4, 8, 24]
+setTopIndex12: top=12 bar=3 max=20 thumb=9 visible=true client=Rectangle {0, 0, 200, 200} selected=[4, 8, 24]
+showSelection: top=4 bar=1 max=20 thumb=9 visible=true client=Rectangle {0, 0, 200, 200} selected=[4, 8, 24]
+settled: top=4 bar=1 max=20 thumb=9 visible=true client=Rectangle {0, 0, 200, 200} selected=[4, 8, 24]
+settled setTopIndex12: top=12 bar=3 max=20 thumb=9 visible=true client=Rectangle {0, 0, 200, 200} selected=[4, 8, 24]
+settled showSelection: top=4 bar=1 max=20 thumb=9 visible=true client=Rectangle {0, 0, 200, 200} selected=[4, 8, 24]

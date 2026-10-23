@@ -8,6 +8,9 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors: Laurent Caron <laurent dot caron at gmail dot com> - initial API and implementation
+ *
+ * Contributors:
+ *     Hitesh Soliwal (Synexia) - fork changes (see the Git history)
  ******************************************************************************/
 package org.eclipse.nebula.widgets.grid.css;
 

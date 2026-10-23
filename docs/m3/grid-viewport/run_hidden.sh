@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
 # Run Grid JUnit 4 test classes on the hidden test desktop.
 # Usage: run_hidden.sh <budget-seconds> <log> <extra JVM options...> -- <test classes...>
 OUT=K:/m3-work/agents/nebula-grid/out
