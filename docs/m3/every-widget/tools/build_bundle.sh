@@ -7,7 +7,7 @@
 # manifests, in one javac run against the 2026-09 platform jars of the p2 pool. --tests adds the test plugins of the
 # requested folders (JUnit 4.13.2, hamcrest 1.3, the JUnit console launcher and every jar inside the test plugins).
 # Output: $OUT/<label>/classes (+ resources), javac.log, sources.txt, classpath.txt, plugins.txt, index.tsv.
-# Usage: [NEBULA_WT=<worktree>] [OUT=<dir>] [LABEL=<name>] build_bundle.sh [--tests] <widget folder>...
+# Usage: [NEBULA_WT=<worktree>] [OUT=<dir>] [LABEL=<name>] [EXCLUDE=<regex>] build_bundle.sh [--tests] <widget folder>...
 # Example: build_bundle.sh --tests led opal
 set -uo pipefail; export LC_ALL=C MSYS_NO_PATHCONV=1
 TESTS=""; [ "${1:-}" = --tests ] && { TESTS=1; shift; }
@@ -78,11 +78,16 @@ done
 if [ -n "$TESTS" ]; then
 	cp="$cp;$M2/junit/junit/4.13.2/junit-4.13.2.jar;$M2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
 	cp="$cp;$M2/org/junit/platform/junit-platform-console-standalone/1.11.4/junit-platform-console-standalone-1.11.4.jar"
+	# Objenesis for the Mockito 1.8.4 jar some test plugins carry (Grid_Test.testDispose_fireDisposeEventOnlyOnce)
+	o=$(ls "$POOL" | grep '^org.objenesis_[0-9]' | sort | tail -n 1); [ -n "$o" ] && cp="$cp;$POOL/$o"
 	for d in $plugins; do for j in $(find "$d" -maxdepth 2 -name '*.jar' 2>/dev/null); do cp="$cp;$j"; done; done
 fi
 cp=${cp#;}
 : > "$O/sources.txt"
 for d in $plugins; do find "$d/src" -name '*.java' | sed 's#.*#"&"#' >> "$O/sources.txt"; done
+# EXCLUDE=<extended regex> drops sources that are red by design (for example the Grid receiver test
+# GridViewportItemRange_Test, waiting for its recipe: docs/m3/grid-viewport/GRID_VIEWPORT_ITEM_RANGE_API_RECEIVER.md)
+if [ -n "${EXCLUDE:-}" ]; then grep -v -E "$EXCLUDE" "$O/sources.txt" > "$O/sources.kept" || true; echo "excluded: $(($(wc -l < "$O/sources.txt") - $(wc -l < "$O/sources.kept"))) sources matching $EXCLUDE"; mv "$O/sources.kept" "$O/sources.txt"; fi
 printf '%s\n' "$cp" > "$O/classpath.txt"; printf '%s\n' $plugins > "$O/plugins.txt"
 "$JDK/bin/javac" -J-Xmx1g --release 17 -encoding UTF-8 -nowarn -proc:none -Xmaxerrs 100 -cp "$cp" -d "$O/classes" @"$O/sources.txt" > "$O/javac.log" 2>&1
 rc=$?
