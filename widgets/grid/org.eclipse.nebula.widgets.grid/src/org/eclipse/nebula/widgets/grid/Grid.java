@@ -9117,10 +9117,17 @@ public class Grid extends Canvas {
 			return false;
 		}
 		final int newTop = getTopIndex();
-		final int dy = (oldTop - newTop) * (itemHeight + 1);
-		if (dy == 0 || Math.abs(dy) >= body.height) {
+		/*
+		 * The pixel delta of the scroll: one row height per row when every row has the same height, otherwise the
+		 * difference of the row tree's pixel prefix sums (leaf G5: an item's extent is its height plus the line when
+		 * it is visible, 0 when hidden, so trees and differing heights give the exact delta in O(log n)).
+		 */
+		final long delta = rowsIndexed() ? rowTree().extentBefore(oldTop) - rowTree().extentBefore(newTop)
+				: (long) (oldTop - newTop) * (itemHeight + 1);
+		if (delta == 0 || Math.abs(delta) >= body.height) {
 			return false;
 		}
+		final int dy = (int) delta;
 		// the classic tree column's dotted branch lines take their phase from the absolute pixel
 		// row (BranchRenderer): an odd move would shift the dots of every moved row
 		if ((dy & 1) != 0 && hasDottedBranches()) {
