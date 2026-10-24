@@ -433,7 +433,7 @@ the row tree is the next DOOP leaf (the data visualizer already holds the cell d
 | G2 | done (see Leaf G2): the item list is a counted tree with row lanes (row, visible rows, pixel extents), O(log n) insert, remove, row of item and every row question; no rebuild | differential; no O(n) on the UI thread after insert/remove |
 | G3 | done (see Leaf G3): O(1) row and cell selection membership, one column entry per column, focus by item | differential; probes |
 | G4 | tree Grids with `SWT.VIRTUAL` children: sparse child facades through the same lanes, `SetData` once per row | differential vs non-virtual tree; SetData counts |
-| G5 | variable-height blit scroll using the index's pixel delta; row-rect damage | pixels vs stock after scroll sequences |
+| G5 | done (2026-10-24): variable-height and tree blit scroll by the row tree's exact pixel delta (5f9c698c delta, step 2 blitSafe) | GridBlitScrollVariable_Test: screen after each blit equals the full repaint, mixed heights and tree rows |
 | G6 | column metrics: prefix sums for column x, binary search for column at x, `showColumn` O(log c) | differential on column order/width/visibility |
 
 ## Non-claims
@@ -464,3 +464,14 @@ one-pixel line when it is visible, 0 when hidden), so the delta of a scroll is e
 
 Scaffold: worktree S:/m3-scratch/worktrees/nebula-grid-g5 (branch m3/nebula-widgets-viewport-20261019 at 78522c7b);
 build with docs/m3/grid-viewport/build_grid.sh under build_lock.sh, run with run_hidden.sh on the test desktop.
+
+Status 2026-10-24: G5 done. Step 1 (5f9c698c) computes the blit delta from `GridRowTree.extentBefore` when the rows are
+indexed; step 2 lets `blitSafe` accept rows of differing heights and tree rows when `rowsIndexed()` (a sparse virtual
+list without the index keeps the full repaint; an odd delta with dotted tree branches still repaints, the dots take their
+phase from the absolute pixel row). Gate: `build_bundle.sh --tests grid` 176 sources, 0 errors (the receiver test
+`GridViewportItemRange_Test` is red by design and excluded); on the hidden desktop `GridBlitScrollVariable_Test` 2 of 2
+(rows every 7th 9 px taller and every 11th twice as tall; 400 tree roots with 4 children, every third expanded; 11 scroll
+steps each, screen hash after the blit equal to the hash after a full repaint, blit path used), and with it
+GridBlitScroll_Test, GridScrollPaint_Test, GridVirtualHeights_Test, GridRowTree_Test, GridRowExtents_Test,
+GridViewport_Test, GridViewportDifferential_Test, GridBodyDefer_Test, GridScrollbarSettle_Test and Grid_Test: 287 tests,
+all green (Grid_Test's two Mockito 1.8.4 tests need `JVM_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED"` on JDK 21).

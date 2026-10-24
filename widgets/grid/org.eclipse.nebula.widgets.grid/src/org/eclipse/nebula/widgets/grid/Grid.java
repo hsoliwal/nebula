@@ -9107,10 +9107,11 @@ public class Grid extends Canvas {
 
 	/**
 	 * Scrolls the body by copying the pixels that stay visible and invalidating only the
-	 * exposed strip. Only when every row has the same height and the painted rows depend on
-	 * nothing but their absolute index (default renderers, no spans, pinned planes, insert mark,
-	 * column drag, cell hover feedback or child controls such as open cell editors); otherwise
-	 * the caller repaints the whole body.
+	 * exposed strip. Only when the rows move by a known pixel delta (every row the same height,
+	 * or rows of differing heights and tree rows indexed by the row tree) and the painted rows
+	 * depend on nothing but their own item (default renderers, no spans, pinned planes, insert
+	 * mark, column drag, cell hover feedback or child controls such as open cell editors);
+	 * otherwise the caller repaints the whole body.
 	 */
 	private boolean blitBody(final int oldTop, final Rectangle body) {
 		if (!blitScroll || oldTop < 0 || !isVisible() || !blitSafe()) {
@@ -9180,7 +9181,14 @@ public class Grid extends Canvas {
 	}
 
 	private boolean blitSafe() {
-		if (hasDifferingHeights || isTree || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
+		/*
+		 * Rows of differing heights and tree rows move by the exact pixel delta of the row tree (blitBody, leaf G5) when
+		 * the rows are indexed; a sparse virtual list without the index keeps the full repaint.
+		 */
+		if ((hasDifferingHeights || isTree) && !rowsIndexed()) {
+			return false;
+		}
+		if (hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
 				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
 				|| !blitSafeRenderer(emptyCellRenderer, DefaultEmptyCellRenderer.class)
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
