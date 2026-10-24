@@ -441,3 +441,26 @@ the row tree is the next DOOP leaf (the data visualizer already holds the cell d
 - No GTK or Cocoa runs on this host.
 - No accessibility change (the accessible children are still all items).
 - Scroll metrics are in rows; more than 2^31 rows is not supported by `ScrollBar` and is not claimed.
+
+## Leaf G5 (design, 2026-10-24): variable-height blit scroll from the row tree's pixel extents
+
+Today `blitBody (oldTop, body)` moves the body by `dy = (oldTop - newTop) * (itemHeight + 1)`: one row height for
+every row, so a Grid whose rows differ in height (`GridItem.setHeight`, word-wrapped cells, tree rows with taller
+renderers) must fall back to the full body repaint on every vertical scroll. The row tree already keeps the pixel
+extent of every row (`GridRowTree.extentAt`, `extentBefore`, `totalExtent`: an item's extent is its height plus the
+one-pixel line when it is visible, 0 when hidden), so the delta of a scroll is exact in O(log n):
+
+- `dy = extentBefore (oldTop) - extentBefore (newTop)` (a `long`, clamped to the body), the same sign convention as
+  today; the uniform case gives `(oldTop - newTop) * (itemHeight + 1)` back, so the fixed-height differential stays
+  identical by construction.
+- The exposed strip is `|dy|` pixels at the top (scroll down) or the bottom (scroll up), as today; the header overflow
+  band and the dotted-branch phase rule stay (an odd `dy` with dotted branches still repaints everything: the dots take
+  their phase from the absolute pixel row).
+- A scroll that lands inside a tall row (a partial top row) is allowed by the pixel delta; the top index is the row that
+  starts at or before the new origin, which `GridRowTree` answers by prefix search over the extents.
+- Acceptance (the G5 row of the leaf table): pixels equal to stock after seeded scroll sequences on a Grid with mixed
+  row heights (`GridItem.setHeight` on every seventh row, a wrapped multi-line cell every eleventh), the same 12 seeds
+  x 150 steps as the Grid differential, plus `blitScrollCount` > 0 on those sequences (today it is 0 for mixed heights).
+
+Scaffold: worktree S:/m3-scratch/worktrees/nebula-grid-g5 (branch m3/nebula-widgets-viewport-20261019 at 78522c7b);
+build with docs/m3/grid-viewport/build_grid.sh under build_lock.sh, run with run_hidden.sh on the test desktop.
