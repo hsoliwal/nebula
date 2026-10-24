@@ -5,7 +5,7 @@
 # official SWT 3.135.0 jar of the build's class path or a given SWT jar first (SWT_JAR, for example the M3 fork jar with
 # SWT.PartVisible), through the JUnit console launcher (Jupiter and Vintage engines). Prints a heartbeat every 30 s while
 # it waits for a desktop slot or runs, then the tests found, successful, failed and aborted, and the failures.
-# Usage: [OUT=<dir>] [SWT_JAR=<jar>] [MODE=viewport|original] [BUDGET=<s>] run_bundle_tests.sh <label> <test class>...
+# Usage: [OUT=<dir>] [SWT_JAR=<jar>] [MODE=viewport|original] [BUDGET=<s>] [JVM_OPTS=<opts>] run_bundle_tests.sh <label> <test class>...
 set -uo pipefail; export LC_ALL=C MSYS_NO_PATHCONV=1
 LABEL="${1:?label of a build_bundle.sh --tests output}"; shift; [ $# -gt 0 ] || { echo "no test classes"; exit 1; }
 O=${OUT:-S:/m3-scratch/every-widget/out}/$LABEL; [ -d "$O/classes" ] || { echo "no build $O"; exit 1; }
@@ -15,7 +15,8 @@ cp="$O/classes;$(cat "$O/classpath.txt")"
 SEL=""; for c in "$@"; do SEL="$SEL --select-class $c"; done
 LOG="$O/tests-$(date -u +%Y%m%dT%H%M%S).log"
 ( while sleep 30; do echo "[heartbeat $(date -u +%H:%M:%S)] waiting or running: $LABEL"; done ) & hb=$!
-bash C:/m3-superset/tools/ui_lock.sh nebula-every-widget bash C:/m3-superset/tools/hidden_java.sh "${BUDGET:-900}" "$LOG" -Xmx1g \
+# JVM_OPTS: extra JVM options, for example --add-opens java.base/java.lang=ALL-UNNAMED for the cglib of Mockito 1.8.4
+bash C:/m3-superset/tools/ui_lock.sh nebula-every-widget bash C:/m3-superset/tools/hidden_java.sh "${BUDGET:-900}" "$LOG" -Xmx1g ${JVM_OPTS:-} \
 	-Dswt.widget.mode="${MODE:-viewport}" -jar "$CS" execute -cp "$cp" $SEL --disable-banner --details=tree > /dev/null 2>&1
 kill $hb 2>/dev/null; wait $hb 2>/dev/null
 sed 's/\x1b\[[0-9;]*m//g' "$LOG" | grep -E "tests (found|successful|failed|aborted)" | sed 's/^[[ ]*//; s/ *\]$//'
