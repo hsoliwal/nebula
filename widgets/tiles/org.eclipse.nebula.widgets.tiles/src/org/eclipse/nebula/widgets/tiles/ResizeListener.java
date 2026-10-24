@@ -55,6 +55,9 @@ abstract class ResizeListener extends ControlAdapter implements Runnable {
 	 */
 	@Override
 	public void run() {
+		if (TilesViewport.ENABLED && tiles.isDisposed()) {
+			return; // stock defect: the debounce timer outlives the widget and throws Widget is disposed
+		}
 		if (timestamp + OFFSET < System.currentTimeMillis()) {
 			tiles.getDisplay().timerExec(-1, this);
 			controlResized();

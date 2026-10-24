@@ -18,6 +18,7 @@
 		<module>org.eclipse.nebula.widgets.tiles</module>
 		<module>org.eclipse.nebula.widgets.tiles.feature</module>
 		<module>org.eclipse.nebula.widgets.tiles.snippets</module>
+		<module>org.eclipse.nebula.widgets.tiles.tests</module>
 	</modules>
 
 </project>
