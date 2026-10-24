@@ -100,7 +100,37 @@ public class Tiles<T> extends Canvas {
 		addMouseMoveListener(mouseMoveListener);
 		addControlListener(resizeListener);
 		this.black = new Color(0, 0, 0);
+		viewport = TilesViewport.ENABLED ? new TilesViewport<>(this) : null;
+		if (viewport != null) {
+			return; // the viewport arms the animation timer per transition
+		}
 		getDisplay().timerExec(settings.getDelta(), animation);
+	}
+
+	/** Viewport (aspect H): the animation timer runs only during a transition while shown; null in the original mode. */
+	TilesViewport<T> viewport;
+
+	/** @return true while a transition frame is current (TilesViewport) */
+	boolean m3Animating() {
+		return current instanceof FrameDynamic;
+	}
+
+	/** One animation step, as the stock timer runnable takes it (TilesViewport) */
+	void m3Tick() {
+		final Frame<T> frame = current;
+		if (frame instanceof FrameDynamic) {
+			((FrameDynamic<T>) frame).tick();
+			frame.update();
+			redraw();
+		}
+	}
+
+	/** Starts the wall clock of the current transition without a frame update or a redraw (TilesViewport, when it parks a hidden transition) */
+	void m3Anchor() {
+		final Frame<T> frame = current;
+		if (frame instanceof FrameDynamic) {
+			((FrameDynamic<T>) frame).tick();
+		}
 	}
 
 	/**
@@ -421,6 +451,9 @@ public class Tiles<T> extends Canvas {
 			target.update();
 			current.update();
 			this.current = new FrameDynamic<>(this, (FrameStatic<T>)current, target);
+			if (viewport != null) {
+				viewport.animationStarted();
+			}
 			this.current.update();
 		}
 	}
