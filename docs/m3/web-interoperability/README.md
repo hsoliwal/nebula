@@ -84,7 +84,10 @@ view.setTexts(java.util.Map.of("status", "Loaded")); // one browser request
 `setTrustedHtml` deliberately requires application-trusted documents.
 It does **not** sanitize HTML, isolate hostile scripts, guarantee CSP,
 authenticate RPCs or safely embed arbitrary third-party pages. Avoid
-untrusted remote scripts and navigation. `BrowserFunction` and
+untrusted remote scripts and navigation. Post-load navigation is
+denied in the fallback, including URL-changing SPA routers; choose a
+separate vetted route when navigation is part of the contract.
+`BrowserFunction` and
 `Browser.evaluate` may each involve a network request in RAP.
 JavaScript output is constructed with escaped string literals, an
 exact-id attribute match and `textContent`/`value` (never
