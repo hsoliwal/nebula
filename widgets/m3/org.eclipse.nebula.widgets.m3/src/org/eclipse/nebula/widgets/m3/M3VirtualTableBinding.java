@@ -252,8 +252,12 @@ public final class M3VirtualTableBinding implements AutoCloseable {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
             }
         }
-        selectedKeys = keys.clone();
-        restoreSelection();
+        String[] nextKeys = keys.clone();
+        // Resolve every key before committing selection changes. A faulty
+        // provider must not partially replace the stored selected-key state.
+        int[] visible = resolveSelection(rows, table.getItemCount(), nextKeys);
+        selectedKeys = nextKeys;
+        applySelection(visible);
     }
 
     private void captureSelection() {
@@ -277,12 +281,11 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         selectedKeys = keys;
     }
 
-    private void restoreSelection() {
-        int count = table.getItemCount();
-        int[] indices = new int[selectedKeys.length];
+    private static int[] resolveSelection(Rows candidate, int count, String[] keys) {
+        int[] indices = new int[keys.length];
         int kept = 0;
-        for (String key : selectedKeys) {
-            int index = rows.indexOfKey(key);
+        for (String key : keys) {
+            int index = candidate.indexOfKey(key);
             if (index < -1 || index >= count) {
                 throw new IllegalArgumentException("Invalid key-to-index mapping");
             }
@@ -290,9 +293,14 @@ public final class M3VirtualTableBinding implements AutoCloseable {
                 indices[kept++] = index;
             }
         }
+        return Arrays.copyOf(indices, kept);
+    }
+
+    private void applySelection(int[] indices) {
         table.deselectAll();
-        for (int i = 0; i < kept; i++) {
-            table.select(indices[i]);
+        // One SWT/RWT selection operation instead of one per selected row.
+        if (indices.length != 0) {
+            table.select(indices);
         }
     }
 
@@ -311,11 +319,13 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         }
         verifyColumns(table, next);
         int count = checkedSize(next);
+        // Reject bad reverse-key mappings before mutating SWT state or row owners.
+        int[] visible = resolveSelection(next, count, selectedKeys);
         rows = next;
         clearCache();
         table.setItemCount(count);
         table.clearAll();
-        restoreSelection();
+        applySelection(visible);
     }
 
     /** Invalidate a damaged inclusive logical range, without clearing other pages. */
