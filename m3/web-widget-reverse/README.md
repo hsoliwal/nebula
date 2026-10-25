@@ -24,3 +24,11 @@ Direct generation into existing SWT/Nebula controls remains preferred.
 The opt-in `org.eclipse.nebula.widgets.m3.M3BrowserWidget` is only a
 bounded dynamic-web fallback; no new recipe, full DOM compiler or
 RWT runtime-equivalence claim is introduced.
+
+The 2026-10-25 additive native-source receiver from Synexia #13402
+is compiled into the existing Nebula M3 plugin as
+`org.eclipse.nebula.widgets.m3.generated.OrdersNativeSwt` and is
+tracked by Nebula #274. It constructs SWT Label/Button controls directly
+from the admitted static JSX grammar, while preserving this existing
+single-Canvas semantic-row receiver. This is **not** a broader
+React/framework transpiler and has no runtime Synexia dependency.
