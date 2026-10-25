@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+# This is a source/AST-to-existing-native-owner mapping catalogue, NOT a claim of full framework transpilation.
+source_family	source_declaration_or_component	semantic_signal	swt_java_receiver	nebula_java_receiver	rap_rwt_route	owner_of_transformation	status	acceptance_gap
+GWT_UiBinder	g:VerticalPanel	child-order+layout	Composite+GridLayout	M3StackLayout for deferred pages	RWT Composite	Synexia typed UiBinder compiler	CANDIDATE	layout sizing;responsive
+GWT_UiBinder	g:Label	ui:field+text	Label	BadgedLabel if decorated	RWT Label	Synexia typed UiBinder compiler	STATIC_IMPLEMENTED_ORDERS	mnemonics;locale;BiDi
+GWT_UiBinder	g:Button	ui:field+enabled+click	Button(SWT.PUSH)	SplitButton if popup semantics	RWT Button	Synexia typed UiBinder compiler	STATIC_IMPLEMENTED_ORDERS	event lifecycle;keyboard
+GWT_UiBinder	g:TextBox	editing+selection	Text(SWT.SINGLE)	TextAssist for proposals	RWT Text	Synexia pending typed recipe	HOLD_INPUT	IME;Verify;selection
+GWT_UiBinder	g:CellTable	rows+columns+cell-formatter	Table(SWT.VIRTUAL)	Grid	RAP Nebula Grid	Synexia pending typed recipe	HOLD_VIRTUAL	data provider;sort;filter
+GWT_UiBinder	g:CellTree	tree+expansion	Tree(SWT.VIRTUAL)	CTree;XViewer	RWT Tree(SWT.VIRTUAL)	Synexia pending typed recipe	HOLD_VIRTUAL	identity;expand;collapse
+React_static	M3VerticalPanel	layout+ordered children	Composite+GridLayout	M3StackLayout if independently qualified	RWT Composite	Synexia native-static-to-swt.mjs	IMPLEMENTED_STATIC_SUBSET	dynamic state excluded
+React_static	M3Label	id+literal text	Label	BadgedLabel optional	RWT Label	Synexia native-static-to-swt.mjs	IMPLEMENTED_STATIC_SUBSET	SWT text/HTML differ
+React_static	M3Button	id+literal text+disabled	Button(SWT.PUSH)	SplitButton optional	RWT Button	Synexia native-static-to-swt.mjs	IMPLEMENTED_STATIC_SUBSET	button type/form semantics excluded
+React_dynamic	useState/useEffect/onClick expression	effect DAG+closure captures	no automatic receiver	no automatic receiver	Browser or RWT Remote API	Synexia hold for effect recipe	HOLD_EFFECT	React lifecycle;cleanup;async state
+DOM_static	span|button with literal id/text	element-order+text	via admitted M3 JSX to Label/Button	BadgedLabel optional	RWT Label/Button	Synexia dom-static-to-m3.mjs	PARTIAL_TYPED_ROUTE	not arbitrary DOM/CSS
+DOM_dynamic	custom-elements|ShadowDOM	slots+composed-event+element lifecycle	Browser opt-in	not native until typed mapping	RWT RemoteObject or Browser	Synexia typed recipe proposed	HOLD_SHADOW_DOM	shadow slots;custom event contracts
+Apache_Wicket	Label(id,IModel)	component path+model value	Label	BadgedLabel	RWT Label	Synexia Java+markup AST required	HOLD_MODEL	dynamic model;markup id
+Apache_Wicket	Button|AjaxButton	submit/callback+form state	Button(SWT.PUSH)	SplitButton	RWT Button	Synexia Java+markup AST required	HOLD_EVENTS	Ajax target;validation;CSRF
+Apache_Wicket	TextField|PasswordTextField	form value+conversion	Text(SWT.SINGLE|PASSWORD)	FormattedText	RWT Text	Synexia Java+markup AST required	HOLD_MODEL	converters;validation
+Apache_Wicket	ListView|DataTable	item provider+row identity	Table(SWT.VIRTUAL)	Grid;CompositeTable	RWT Table;RAP Grid	Synexia Java+markup AST required	HOLD_VIRTUAL	model detach;pagination
+Apache_Wicket	Tree|NestedTree	hierarchical data	Tree(SWT.VIRTUAL)	CTree;XViewer	RWT Tree	Synexia Java+markup AST required	HOLD_VIRTUAL	model detach;expansion
+Apache_Tapestry	t:label|t:output	form field+message	Label	BadgedLabel	RWT Label	Synexia template+page AST required	HOLD_TEMPLATE	component mixins;messages
+Apache_Tapestry	t:form|t:submit	form submission	Composite+Button	M3StackLayout for stages	RWT Composite+Button	Synexia template+page AST required	HOLD_TEMPLATE	validate phases;request lifecycle
+Apache_Tapestry	t:textfield	field binding+errors	Text+Label	FormattedText	RWT Text	Synexia template+page AST required	HOLD_TEMPLATE	field encoding;validation
+Apache_Tapestry	t:loop	rows+component tree	Table(SWT.VIRTUAL)	Grid	RWT Table	Synexia template+page AST required	HOLD_VIRTUAL	server iterator;page activation
+Apache_MyFaces	h:outputText	EL value+converter	Label	BadgedLabel	RWT Label	Synexia JSF/Facelets AST required	HOLD_EL	escape;converter;EL
+Apache_MyFaces	h:commandButton	action+navigation	Button(SWT.PUSH)	SplitButton	RWT Button	Synexia JSF/Facelets AST required	HOLD_EL	postback phases;action
+Apache_MyFaces	h:inputText	binding+converter+validator	Text(SWT.SINGLE)	FormattedText	RWT Text	Synexia JSF/Facelets AST required	HOLD_EL	JSF lifecycle+converter
+Apache_MyFaces	h:dataTable	rows+column keys	Table(SWT.VIRTUAL)	Grid	RWT Table;RAP Grid	Synexia JSF/Facelets AST required	HOLD_VIRTUAL	state saving;sorting;pagination
+Apache_Royale	MXML Label	static/dynamic text	Label	BadgedLabel	RWT Label	Synexia MXML AST required	HOLD_MXML	ActionScript binding
+Apache_Royale	MXML Button	event binding	Button(SWT.PUSH)	SplitButton	RWT Button	Synexia MXML AST required	HOLD_MXML	event phases;skins
+Apache_Royale	MXML DataGrid	row data+selection	Table(SWT.VIRTUAL)	Grid	RAP Nebula Grid	Synexia MXML AST required	HOLD_VIRTUAL	selection;renderer;skin
+JWt	WText	Java widget+format/markup	Label	RichText when true markup	RWT Label/Richtext	Synexia JWt Java AST required	HOLD_JWT	text format;markup
+JWt	WPushButton	Java widget+clicked signal	Button(SWT.PUSH)	SplitButton	RWT Button	Synexia JWt Java AST required	HOLD_JWT	callback order;URLs
+JWt	WLineEdit	Java widget+text/validator	Text(SWT.SINGLE)	FormattedText	RWT Text	Synexia JWt Java AST required	HOLD_JWT	validator;selection
+JWt	WTableView	model+rows+columns	Table(SWT.VIRTUAL)	Grid	RAP Nebula Grid	Synexia JWt Java AST required	HOLD_VIRTUAL	delegates;selection;sort
+JWt	WTreeView	model+hierarchy	Tree(SWT.VIRTUAL)	XViewer;CTree	RWT Tree	Synexia JWt Java AST required	HOLD_VIRTUAL	detach;expand
+Spring_Thymeleaf	span th:text	model expression	Label	BadgedLabel	RWT Label	Synexia HTML+Spring model AST required	HOLD_EXPRESSION	server model types
+Spring_Thymeleaf	button|form th:action	submission+request binding	Button(SWT.PUSH)	SplitButton	RWT Button	Synexia HTML+Spring model AST required	HOLD_REQUEST	method;CSRF;validation
+Spring_Thymeleaf	input th:field	BindingResult+validator	Text	FormattedText	RWT Text	Synexia HTML+Spring model AST required	HOLD_REQUEST	validation+encoding
+Spring_Thymeleaf	tr th:each	collection/loop	Table(SWT.VIRTUAL)	Grid	RWT Table;RAP Grid	Synexia HTML+Spring model AST required	HOLD_VIRTUAL	loop variables;backpressure
+Spring_WebFlux	Flux<Row> data feed	backpressure+cancellation	virtual Table/Grid data provider	GridViewport binding	RAP row-on-demand service	Synexia data-binding recipe required	HOLD_ASYNC	UI threading;server push
+Vaadin_Flow	Span|H1|Text	component+text	Label	BadgedLabel	RWT Label	Synexia Vaadin Java AST required	HOLD_VAADIN	properties;DOM attachments
+Vaadin_Flow	Button	text+ClickListener	Button(SWT.PUSH)	SplitButton	RWT Button	Synexia Vaadin Java AST required	HOLD_VAADIN	event detach;keyboard
+Vaadin_Flow	TextField	value+ValueChangeListener	Text(SWT.SINGLE)	FormattedText	RWT Text	Synexia Vaadin Java AST required	HOLD_VAADIN	value timing;validation
+Vaadin_Flow	Grid<T>	lazy DataProvider+columns	Table(SWT.VIRTUAL)	Grid	RAP Nebula Grid	Synexia Vaadin Java AST required	HOLD_VIRTUAL	row virtualization;selection
+Vaadin_Flow	TreeGrid<T>	hierarchy+lazy children	Tree(SWT.VIRTUAL)	XViewer;CTree	RWT Tree	Synexia Vaadin Java AST required	HOLD_VIRTUAL	expansion;lazy fetching
+Vaadin_Flow	Tabs+Tab	index+active view	CTabFolder	M3StackLayout	RWT CTabFolder	Synexia Vaadin Java AST required	HOLD_VAADIN	navigation;detach
