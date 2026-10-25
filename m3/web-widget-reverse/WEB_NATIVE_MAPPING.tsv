@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+# Product names are receiver APIs, never names for runtime wrappers. All paths are static unless otherwise stated.
+source	concept	native_java_receiver	rwt_route	status	contract_or_refusal
+GWT_UiBinder	VerticalPanel	org.eclipse.swt.widgets.Composite + GridLayout(1,false)	RWT_Composite	EXECUTED_STATIC_RECIPE	layout ordering only; no CSS or dynamic resizes beyond standard SWT layout
+GWT_UiBinder	HorizontalPanel	org.eclipse.swt.widgets.Composite + GridLayout(childCount,false)	RWT_Composite	EXECUTED_STATIC_RECIPE	static child count bounded; no GWT alignment or wrapping semantics
+GWT_UiBinder	Label	org.eclipse.swt.widgets.Label	RWT_Label	EXECUTED_STATIC_RECIPE	literal plain text and enabled; markup expressly refused
+GWT_UiBinder	Button	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	EXECUTED_STATIC_RECIPE	literal text and enabled; event handlers expressly refused
+GWT_UiBinder	TextBox	org.eclipse.swt.widgets.Text SWT.BORDER	RWT_Text	EXECUTED_STATIC_RECIPE	literal text readOnly enabled; no live model binding/IME equivalence claim
+GWT_UiBinder	CheckBox	org.eclipse.swt.widgets.Button SWT.CHECK	RWT_Button	EXECUTED_STATIC_RECIPE	literal text checked enabled; event handlers refused
+NEBULA_STATIC_UIBINDER	Grid	org.eclipse.nebula.widgets.grid.Grid	RAP_NEBULA_GRID_PORT	EXECUTED_STATIC_RECIPE	max 32 columns 64 rows; no eager Control per cell; RWT/native runtime not run
+NEBULA_STATIC_UIBINDER	Column	org.eclipse.nebula.widgets.grid.GridColumn	RAP_NEBULA_GRID_PORT	EXECUTED_STATIC_RECIPE	plain header label width 1..4096 only
+NEBULA_STATIC_UIBINDER	Row_Cell	org.eclipse.nebula.widgets.grid.GridItem.setText(int,String)	RAP_NEBULA_GRID_PORT	EXECUTED_STATIC_RECIPE	exact row arity; static tabular data only
+HTML	button	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	SEMANTIC_CANDIDATE_NO_HTML_PARSER	form submit/accessibility/ARIA events not transformed
+HTML	input_type_text	org.eclipse.swt.widgets.Text SWT.BORDER	RWT_Text	SEMANTIC_CANDIDATE_NO_HTML_PARSER	validation autofocus input and IME must be separately proven
+HTML	input_type_checkbox	org.eclipse.swt.widgets.Button SWT.CHECK	RWT_Button	SEMANTIC_CANDIDATE_NO_HTML_PARSER	HTML default-value and form submission not transformed
+HTML	table	org.eclipse.nebula.widgets.grid.Grid	RAP_NEBULA_GRID_PORT	SEMANTIC_CANDIDATE_NO_HTML_PARSER	virtual rows and selection provider need native model
+JWt	WPushButton	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	SEMANTIC_CANDIDATE_NO_JWT_PARSER	JWt Signal event ordering and server session need separate proof
+JWt	WTableView	org.eclipse.nebula.widgets.grid.Grid	RAP_NEBULA_GRID_PORT	SEMANTIC_CANDIDATE_NO_JWT_PARSER	JWt model index/view and sort translation not implemented
+Apache_Wicket	Button	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	SEMANTIC_CANDIDATE_NO_WICKET_PARSER	Wicket Form onSubmit validation request cycle not equivalent
+Apache_Wicket	DataTable	org.eclipse.nebula.widgets.grid.Grid	RAP_NEBULA_GRID_PORT	SEMANTIC_CANDIDATE_NO_WICKET_PARSER	Ajax behaviors and provider paging not implemented
+Vaadin_Flow	Button	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	SEMANTIC_CANDIDATE_NO_FLOW_PARSER	DOM/Flow server state and click listeners not implemented
+Vaadin_Flow	Grid	org.eclipse.nebula.widgets.grid.Grid	RAP_NEBULA_GRID_PORT	SEMANTIC_CANDIDATE_NO_FLOW_PARSER	Flow virtual scrolling/filter/sort callbacks not implemented
+Spring_Thymeleaf	form_input	org.eclipse.swt.widgets.Text	RWT_Text	SEMANTIC_CANDIDATE_NO_TEMPLATE_PARSER	Spring model binding and security/validation do not map automatically
+Apache_Pivot	TableView	org.eclipse.nebula.widgets.grid.Grid	RAP_NEBULA_GRID_PORT	SEMANTIC_CANDIDATE_NO_PIVOT_PARSER	Pivot skin/layout/selection contracts require dedicated qualifier
+React_JSX	M3Button	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	SEMANTIC_CANDIDATE_EXISTING_CANVAS_RECEIVER	prior static compiler targets one Canvas; this new pass does not parse JSX
+Browser_Embed	arbitrary_html_js	org.eclipse.swt.browser.Browser	RWT_Browser_IFRAME	REFUSED_FOR_NATIVE_TRANSLATION	iframe origin/HTTP round trip/dynamic DOM are different semantics
