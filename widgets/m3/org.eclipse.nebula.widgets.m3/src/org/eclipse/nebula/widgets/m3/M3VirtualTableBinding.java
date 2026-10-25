@@ -103,10 +103,6 @@ public final class M3VirtualTableBinding implements AutoCloseable {
             return text[relativeRow * columns + column];
         }
 
-        private String[] cellTexts(int relativeRow) {
-            return Arrays.copyOfRange(text, relativeRow * columns,
-                    (relativeRow + 1) * columns);
-        }
     }
 
     public static final int PAGE_ROWS = 64;
@@ -196,7 +192,9 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         int relative = index - page.offset();
         TableItem item = (TableItem) event.item;
         item.setData(ROW_KEY, page.keyAt(relative));
-        item.setText(page.cellTexts(relative));
+        for (int column = 0; column < page.columns(); column++) {
+            item.setText(column, page.textAt(relative, column));
+        }
     }
 
     private Page pageAt(int index) {
