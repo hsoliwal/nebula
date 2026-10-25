@@ -63,6 +63,68 @@ HTML/CSS DOM translator. See `m3/web-widget-reverse/examples/react-native`
 for the source-sealed static React→existing SWT Canvas example and its
 explicit gaps; see `docs/m3/rwt/RWT_COLUMN.tsv` for the real RWT census.
 
+## Executable static JSX → original SWT controls (Synexia #13402)
+
+The canonical first-party compiler now has a **second receiving route**
+for its *bounded static* `M3VerticalPanel/M3Label/M3Button` grammar:
+
+```text
+Original Orders.jsx (source SHA-256 pinned)
+  -> Microsoft TypeScript 5.8.3 real AST, existing inspectJsx
+  -> Synexia native-static-to-swt.mjs (compile time only)
+  -> generated OrdersNativeSwt.java
+  -> original Composite/GridLayout + Label + Button (Nebula plugin)
+  -> ordinary SWT and RWT API-subset compilation, independently qualified
+```
+
+Native product source:
+`widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/generated/OrdersNativeSwt.java`.
+It constructs **two Labels and two Buttons**, with `setData("m3.web.id",id)`
+for stable source IDs; only the enabled button has a `Selection`
+listener. All web `&` literals are translated to SWT `&&` mnemonic
+escapes, including `&amp;` decoded by the canonical JSX entity rule.
+
+```java
+Composite form = OrdersNativeSwt.create(parent, SWT.NONE, id -> {
+    if ("refresh".equals(id)) {
+        refreshOrders();
+    }
+});
+```
+
+The *runtime* depends only on SWT, not on TypeScript, UiBinder, a
+Browser, React, a Synexia runtime JAR or a new M3 UI object hierarchy.
+For million-row data widgets, retain original Grid/Gallery/Tree
+virtualization and viewport mediation; this static four-control form
+does **not** imply that per-row controls are appropriate for data grids.
+
+**Source recipe and negative tests:** [Synexia #13402](https://github.com/hsoliwal/com.synexia/pull/13402).
+**Target review:** [Nebula #274](https://github.com/hsoliwal/nebula/pull/274).
+Generated source SHA-256:
+`e89d464a0c5590d08d7b12fad35d22f4a5c0423e742fac6e7ad107d1136fe7f0`.
+Original JSX SHA-256:
+`df940377e71bc653171be91778d2b21ae8c5f93623e755010826f59a28abb28f`.
+
+The generated Java and six pre-existing Browser-helper regression methods
+are in Nebula's M3 product/test plugin source trees. An additional
+`OrdersNativeSwtTest` asserts real SWT control types, order, IDs,
+enabled state and selection routing; it requires a real SWT display.
+Headless synthetic Java11-signature compilation **passed locally**
+and 5 generator test groups (including 512 static permutations)
+**passed locally** against an equivalent reconstructed admission
+gate. **Actual target Tycho/JUnit, real SWT and RWT are still NOT_RUN**.
+
+The existing static JSX → immutable semantic rows → *one Canvas*
+route is preserved untouched as an alternative. It is not an
+arbitrary React/CSS/Shadow DOM compiler. Avoid claiming framework
+equivalence until each framework's state, lifecycle, event, model,
+security and accessibility contract passes its own gates.
+
+For concrete framework-source symbols rather than generic categories,
+see `SOURCE_AST_RECEIVERS.tsv`: GWT UiBinder, JWt, Apache Wicket,
+Tapestry, MyFaces, Royale, Spring MVC/Thymeleaf/WebFlux and Vaadin
+Flow, with explicit HOLD statuses wherever no implementation exists.
+
 ## Example: opt-in Browser fallback for dynamic web components
 
 ```java
@@ -117,11 +179,13 @@ For a high-frequency input/graphics device choose RWT Remote API.
 
 ## Current proof state (2026-10-25)
 
-The change implements the narrow Browser helper and headless script
-contracts; its Java and JUnit test sources are in the active Nebula M3
-Tycho plugin/test plugin. **Native SWT, RWT, platform, pixel and
-third-party framework conformance gates remain NOT_RUN.** No RWT
-widget-port or arbitrary web-to-native compiler is claimed here.
+The change implements the narrow Browser helper **and** the generated
+original-SWT static Orders control factory; Java/JUnit test sources live
+in Nebula's M3 Tycho product/test plugins. The local native-code
+compilation used test-only SWT signatures, not a real UI session.
+**Full Tycho/native SWT/RWT, platform pixels and third-party framework
+conformance gates remain NOT_RUN.** No RWT custom-widget port or
+arbitrary web-to-native compiler is claimed here.
 
 ### Existing receiver evidence
 
