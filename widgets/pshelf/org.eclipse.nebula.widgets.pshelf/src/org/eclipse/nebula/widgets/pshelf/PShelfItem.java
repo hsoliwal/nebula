@@ -172,6 +172,9 @@ public class PShelfItem extends Item {
 	public void setText(String string)
     {
         super.setText(string);
+        if (parent.viewport != null && parent.viewport.damageHeader(this)) {
+            return; // only this header changes (PShelfViewport)
+        }
         parent.redraw();
     }
 

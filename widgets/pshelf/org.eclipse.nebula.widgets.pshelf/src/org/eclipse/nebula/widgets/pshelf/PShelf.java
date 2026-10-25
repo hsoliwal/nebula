@@ -98,6 +98,7 @@ public class PShelf extends Canvas {
 	public PShelf(Composite parent, int style) {
 		super(parent, checkStyle(style));
 		setRenderer(new PaletteShelfRenderer());
+		viewport = PShelfViewport.ENABLED ? new PShelfViewport(this) : null;
 
 		this.addPaintListener(event -> onPaint(event.gc));
 
@@ -262,6 +263,10 @@ public class PShelf extends Canvas {
             renderer.setSelected(item == openItem);
             renderer.setFocus(this.isFocusControl() && focusItem == item);
             renderer.setHover(item == hoverItem);
+            if (viewport != null && viewport.skips(y, itemHeight, renderer.isFocus(), !iter.hasNext())) {
+                index++;
+                continue; // a header outside the clip (PShelfViewport, exact built-in renderers)
+            }
             renderer.paint(gc,item);
 
 			index ++;
@@ -361,6 +366,9 @@ public class PShelf extends Canvas {
     private void animateOpen(PShelfItem previousItem, PShelfItem newItem, boolean openFromBottom)
     {
         double percentOfWork = 0;
+        if (viewport != null && viewport.jumpsToFinalFrame(previousItem, newItem, itemHeight, animationSpeed, openFromBottom)) {
+            percentOfWork = 1; // hidden: the body parents hold the final frame (PShelfViewport)
+        }
         while (percentOfWork < 1)
         {
             Rectangle client = getClientArea();
@@ -555,6 +563,55 @@ public class PShelf extends Canvas {
     {
         checkWidget();
         return items.toArray(new PShelfItem[items.size()]);
+    }
+
+    /** Viewport (aspects H, D and R): a hidden open jumps to the final frame, header damage, header cull; null in the original mode. */
+    PShelfViewport viewport;
+
+    /** @return the items in order, not a copy (PShelfViewport) */
+    ArrayList<PShelfItem> m3Items() {
+        return items;
+    }
+
+    /** @return the header y lane the next paint uses (PShelfViewport) */
+    int[] m3Lane() {
+        return yCoordinates;
+    }
+
+    /** @return the header height (PShelfViewport) */
+    int m3ItemHeight() {
+        return itemHeight;
+    }
+
+    /** @return the item under the mouse, or null (PShelfViewport) */
+    PShelfItem m3Hover() {
+        return hoverItem;
+    }
+
+    /** @return the open item, or null (PShelfViewport) */
+    PShelfItem m3Open() {
+        return openItem;
+    }
+
+    /** @return the item that draws the focus ring while the shelf has focus, or null (PShelfViewport) */
+    PShelfItem m3Focus() {
+        return focusItem;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * In the viewport mode the full redraw of a hover change (MouseMove, MouseExit) becomes the damage of the header
+     * rects that change (PShelfViewport#redrawsHover).
+     * </p>
+     */
+    @Override
+    public void redraw() {
+        checkWidget();
+        if (viewport != null && viewport.redrawsHover()) {
+            return;
+        }
+        super.redraw();
     }
 
     /**
