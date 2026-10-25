@@ -12,6 +12,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.BrowserFunction;
+import org.eclipse.swt.browser.LocationAdapter;
+import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.ProgressAdapter;
 import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.layout.FillLayout;
@@ -73,6 +75,16 @@ public final class M3BrowserWidget extends Composite {
                 return Boolean.valueOf(!listeners.isEmpty());
             }
         };
+        // A trusted setText is the only supported navigation entrypoint.
+        // Do not hand the per-session BrowserFunction to an arbitrary URL.
+        browser.addLocationListener(new LocationAdapter() {
+            @Override
+            public void changing(LocationEvent event) {
+                if (!documentRequested) {
+                    event.doit = false;
+                }
+            }
+        });
         browser.addProgressListener(new ProgressAdapter() {
             @Override
             public void completed(ProgressEvent event) {
@@ -82,6 +94,8 @@ public final class M3BrowserWidget extends Composite {
                     } catch (SWTException exception) {
                         ready = false;
                         bridgeFailure = exception;
+                    } finally {
+                        documentRequested = false;
                     }
                 }
             }
@@ -102,7 +116,11 @@ public final class M3BrowserWidget extends Composite {
         documentRequested = true;
         ready = false;
         bridgeFailure = null;
-        return browser.setText(html);
+        boolean accepted = browser.setText(html);
+        if (!accepted) {
+            documentRequested = false;
+        }
+        return accepted;
     }
 
     /**
