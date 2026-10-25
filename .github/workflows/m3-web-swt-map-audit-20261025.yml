@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 web-to-SWT inventory
+on:
+  pull_request:
+    paths:
+      - 'm3/web-widget-reverse/**'
+      - 'docs/m3/rwt/RWT_COLUMN.tsv'
+      - 'docs/m3/custom-widgets/WIDGET_MATRIX.tsv'
+      - '.github/workflows/m3-web-swt-map-audit-20261025.yml'
+  workflow_dispatch:
+jobs:
+  inventory-only:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refusal unit tests
+        run: python3 m3/web-widget-reverse/tools/verify_web_swt.py --self-test
+      - name: Current Nebula and RAP concept crosswalk
+        run: python3 m3/web-widget-reverse/tools/verify_web_swt.py

@@ -1,0 +1,3 @@
+concept_id	rwt_route	rwt_status	disposition	native_matrix_status
+PINNED_COLUMNS	RAP_NATIVE	NOT_RUN step 4 not reached	EXPLICIT_RWT_ONLY_HOLD	NOT_IN_66_CONCEPT_BASELINE
+VIRTUAL_COMPOSITE	RAP_NATIVE	NOT_RUN no implementation on any platform yet (eclipse.platform.swt#624 plan)	EXPLICIT_RWT_ONLY_HOLD	NOT_IN_66_CONCEPT_BASELINE
