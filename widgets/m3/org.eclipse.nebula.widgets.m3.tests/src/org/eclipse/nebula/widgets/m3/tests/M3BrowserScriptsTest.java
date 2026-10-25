@@ -90,6 +90,12 @@ public class M3BrowserScriptsTest {
         }
         assertRejected(
                 () -> M3BrowserScripts.patch(oversizedTransport, false));
+        Map<String, String> multibyte = new HashMap<>();
+        for (int i = 0; i < 3; i++) {
+            multibyte.put("unicode" + i, "\u00e9".repeat(60000));
+        }
+        // UTF-16 script size fits; real UTF-8 payload exceeds 256 KiB.
+        assertRejected(() -> M3BrowserScripts.patch(multibyte, false));
         assertEquals("(function(){return 0;})()", M3BrowserScripts.patch(Map.of(), false));
     }
 
