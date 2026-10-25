@@ -16,6 +16,7 @@ public final class M3BrowserScripts {
     public static final int MAX_EVENT_ID = 256;
     public static final int MAX_EVENT_VALUE = 65536;
     public static final int MAX_PATCH_ITEMS = 1024;
+    public static final int MAX_PATCH_SCRIPT_CHARS = 262144;
 
     private M3BrowserScripts() {
     }
@@ -64,6 +65,9 @@ public final class M3BrowserScripts {
         if (values == null || values.size() > MAX_PATCH_ITEMS) {
             throw new IllegalArgumentException("Null or oversized widget patch");
         }
+        if (values.isEmpty()) {
+            return "(function(){return 0;})()";
+        }
         StringBuilder out = new StringBuilder(128 + values.size() * 64);
         out.append("(function(){var patch=Object.create(null);");
         for (Map.Entry<String, String> entry : values.entrySet()) {
@@ -75,6 +79,9 @@ public final class M3BrowserScripts {
             }
             out.append("patch[").append(jsString(id)).append("]=")
                     .append(jsString(value)).append(';');
+            if (out.length() > MAX_PATCH_SCRIPT_CHARS) {
+                throw new IllegalArgumentException("Browser patch exceeds transport budget");
+            }
         }
         out.append("var nodes=document.querySelectorAll('[data-nebula-id]');")
                 .append("var n=0;for(var i=0;i<nodes.length;i++){")
