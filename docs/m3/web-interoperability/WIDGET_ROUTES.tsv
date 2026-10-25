@@ -9,7 +9,7 @@ SWITCH	role:switch	Button(SWT.CHECK)	RoundedSwitch	RWT Button(SWT.CHECK)	check s
 TEXT_INPUT	input:text|email|search	Text(SWT.SINGLE)	FormattedText;TextAssist	RWT Text	value;modify;verify;selection	IME;caret;validation;input mode	STATIC_DOM_FORM_SOURCE_COMMITTED_RWT_NOT_RUN
 PASSWORD	input:password	Text(SWT.PASSWORD)	PasswordRevealer	RWT Text(SWT.PASSWORD)	password flags;show/hide	clipboard;security;focus	STATIC_CANDIDATE
 TEXTAREA	textarea	Text(SWT.MULTI)	RichText when rich text needed	RWT Text(SWT.MULTI);not StyledText	value;modify;scroll	large text;newline;caret	STATIC_CANDIDATE
-COMBO	select|datalist	Combo|CCombo	TableCombo;CalendarCombo	RWT Combo|CCombo	Selection;items;index	popup;virtual list;search	STATIC_CANDIDATE
+COMBO	select|datalist	Combo|CCombo	TableCombo;CalendarCombo	RWT Combo|CCombo	Selection;items;index	popup;virtual list;search	STATIC_SELECT_COMBO_CODE_COMMITTED_RWT_NOT_RUN
 DATE_TIME	input:date|time	DateTime	CDateTime;DateChooser	RWT DateTime	time zone;format;selection	locale;DST;format	STATIC_CANDIDATE
 NUMBER_SLIDER	input:range	Scale	NebulaSlider	RWT Scale	value;minimum;maximum;step	snapping;pointer;keyboard	STATIC_CANDIDATE
 PROGRESS	progress|meter	ProgressBar	ProgressCircle;LED	RWT ProgressBar	value;indeterminate	timer;animation;server requests	STATIC_CANDIDATE
