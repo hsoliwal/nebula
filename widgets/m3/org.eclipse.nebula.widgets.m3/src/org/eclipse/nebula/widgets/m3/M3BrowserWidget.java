@@ -116,11 +116,17 @@ public final class M3BrowserWidget extends Composite {
         documentRequested = true;
         ready = false;
         bridgeFailure = null;
-        boolean accepted = browser.setText(html);
-        if (!accepted) {
+        try {
+            boolean accepted = browser.setText(html);
+            if (!accepted) {
+                documentRequested = false;
+            }
+            return accepted;
+        } catch (RuntimeException failed) {
+            // Failed loads must not leave navigation temporarily authorized.
             documentRequested = false;
+            throw failed;
         }
-        return accepted;
     }
 
     /**
@@ -129,6 +135,8 @@ public final class M3BrowserWidget extends Composite {
      */
     public boolean installBridge() {
         checkWidget();
+        // If evaluation throws, a previous successful bridge must not remain ready.
+        ready = false;
         ready = Boolean.TRUE.equals(browser.evaluate(M3BrowserScripts.install()));
         bridgeFailure = null;
         return ready;
