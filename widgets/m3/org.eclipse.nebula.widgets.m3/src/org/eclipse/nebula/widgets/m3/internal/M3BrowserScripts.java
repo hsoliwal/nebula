@@ -4,6 +4,7 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.m3.internal;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -17,6 +18,7 @@ public final class M3BrowserScripts {
     public static final int MAX_EVENT_VALUE = 65536;
     public static final int MAX_PATCH_ITEMS = 1024;
     public static final int MAX_PATCH_SCRIPT_CHARS = 262144;
+    public static final int MAX_PATCH_UTF8_BYTES = 262144;
 
     private M3BrowserScripts() {
     }
@@ -92,7 +94,11 @@ public final class M3BrowserScripts {
         } else {
             out.append("node.textContent=patch[id];n++;");
         }
-        return out.append("}}return n;})()").toString();
+        String script = out.append("}}return n;})()").toString();
+        if (script.getBytes(StandardCharsets.UTF_8).length > MAX_PATCH_UTF8_BYTES) {
+            throw new IllegalArgumentException("Browser patch exceeds UTF-8 transport budget");
+        }
+        return script;
     }
 
     /** Produces a single safe JavaScript string literal, not executable input. */
