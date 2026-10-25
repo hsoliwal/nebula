@@ -42,7 +42,8 @@ jobs:
             "$ROOT/generated/ContactFormNativeSwt.java" \
             "$ROOT/generated/PreferencesNativeSwt.java" \
             "$ROOT/internal/M3BrowserScripts.java" \
-            "$ROOT/M3BrowserWidget.java"
+            "$ROOT/M3BrowserWidget.java" \
+            "$ROOT/M3VirtualTableBinding.java"
       - name: Explicit remaining qualification status
         run: |
           echo 'RWT Java source/API compatibility is not RAP browser/session execution.'
