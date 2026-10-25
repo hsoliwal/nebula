@@ -137,6 +137,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
             closed = true;
             clearCache();
             selectedKeys = EMPTY;
+            rows = null; // release the application snapshot on native SWT disposal
         };
         table.addListener(SWT.SetData, setData);
         table.addListener(SWT.Selection, selected);
@@ -384,6 +385,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         closed = true;
         clearCache();
         selectedKeys = EMPTY;
+        rows = null;
         if (!table.isDisposed()) {
             table.removeListener(SWT.SetData, setData);
             table.removeListener(SWT.Selection, selected);
