@@ -14,3 +14,7 @@ b543dc35727c68e623e5738603796d80b8780721040775c85811bdd5d8fa683e  m3/web-widget-
 668210113122b29bd6f31bcdc698a025f221e3e26674f771832634eb11ba06c0  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeWebControlsSnippet.java
 cb6f731eb3dff0d6ac58a415e9f68ae94823b71c5a221e1525c48858c1821811  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeTreeWebSwt.java
 ef990ab380ee2c62ddeea3abd62c3ef5eaeceaa97a705c2527e34a4473e8b435  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeTreeWebSnippet.java
+594f1ac0421ef5f7c477c85534c7da7ba1e715788cfc60a44fef1c8d699596f3  widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml
+b2bd3abcf4979ab6d7f31650327b0cad08c0390667e65454b39f95f1a5aeec29  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridNativeWebUiBinder.java
+b4d6dfdc631c2919f815b9b65303ec16faadb6561eb7ee4637f444b548e06b5c  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/TreeNativeWebUiBinder.java
+da12809127838f4d8c364ab40de0cade242431f2637fe8204943c52e177b6462  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridWebNativeMapping_Test.java

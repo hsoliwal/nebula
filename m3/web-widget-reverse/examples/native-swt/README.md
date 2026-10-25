@@ -58,3 +58,12 @@ reuses original native SWT names and constructors. It is not a GWT DOM runtime,
 a selection model, or an RWT server-session admission. TreeItem is an SWT
 Item/Widget, not a child Control. 14 source seals PASS locally; original native
 plugin, RAP/RWT and native screen tests remain unexecuted.
+
+
+For real native acceptance, the original Grid Tycho test fragment, rather than
+this example directory or the separate snippets folder, now owns generated
+`GridNativeWebUiBinder`, `TreeNativeWebUiBinder` and
+`GridWebNativeMapping_Test` under
+`widgets/grid/org.eclipse.nebula.widgets.grid.test/src`. The original Grid test
+POM selects the JUnit4 test by default. Its original SWT/GTK native execution
+still requires a passing hosted/native Tycho run.

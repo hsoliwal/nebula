@@ -43,6 +43,7 @@
 					</systemProperties>
 					<failIfNoTests>true</failIfNoTests>
 					<includes>
+						<include>**/GridWebNativeMapping_Test.java</include>
 						<include>**/GridFixedColumn_Test.java</include>
 						<include>**/GridVisibleRangeSupport_Test.java</include>
 						<include>**/GridViewportCoordinates_Test.java</include>
