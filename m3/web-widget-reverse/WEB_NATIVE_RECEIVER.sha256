@@ -1,10 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-# SHA-256 checks for unchanged original input + current executed Synexia receiver outputs.
+# Source SHA-256 only; NOT native SWT/Tycho or RWT runtime acceptance.
 c4207dd4fe6c238a6128d493f1e65519ab87cf90eb9cb40137990e4ed645215d  m3/web-widget-reverse/examples/react-static/Orders.ui.xml
 cae78b468cefe56d1b15e9d1d2389f5efc990a0f684266e42c4acdea8a90469a  m3/web-widget-reverse/examples/native-swt/NativeControls.ui.xml
 64885a95f86e4690f3f90894fc7cc732ecc98b58923b10deb2a941b3bf5455d5  m3/web-widget-reverse/examples/native-swt/StaticOrders.xhtml
-71f2eac8672ffc0b5289e26cbcd074522e7a704d4a7dbbe0d05bd6f86dc6b520  m3/web-widget-reverse/examples/native-swt/OrdersSwt.java
-ffc4ce2f961e8ed2da9d557a26f319607fe6adde32c6cde1234c7b41b5e5b2f6  m3/web-widget-reverse/examples/native-swt/NativeControlsSwt.java
-08adfb7bf7d7c1db10db1b321585925e86b4dd05487166f50a1a3f9bb0b99fc4  m3/web-widget-reverse/examples/native-swt/StaticOrdersSwt.java
-618b71a68444bd4baf480931eeefb6561bf8321caf50727b5d27e5f751c6d6b2  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeControlsWebSwt.java
+1a68efb851e2abc62f72cbf160efc20039dd9867ad0958a43579a9a7f83b8b57  m3/web-widget-reverse/examples/native-swt/TreeHierarchy.ui.xml
+0254d2282e311dd4564cf249c6eebef8913dea99d755bc623f7afc0b9ce0f5bc  m3/web-widget-reverse/examples/native-swt/TreeHierarchy.xhtml
+aecefbeb3b0e735cdb57bc8d464c300895415e32f06366b8eda66f6db2e48e84  m3/web-widget-reverse/examples/native-swt/OrdersSwt.java
+f626db46a25bc68c270c4362663696301010e4a051bdcf77c89a31a5e26cd265  m3/web-widget-reverse/examples/native-swt/NativeControlsSwt.java
+dd9c6a631593221c0fa26cd30b6c8f1cac99b4e4969d89a0ad155f6806a1e56e  m3/web-widget-reverse/examples/native-swt/StaticOrdersSwt.java
+b543dc35727c68e623e5738603796d80b8780721040775c85811bdd5d8fa683e  m3/web-widget-reverse/examples/native-swt/TreeHierarchySwt.java
+9e19a1bbb8971338c43cfd583c3ceee6ad0662f02b0097b43ae6d83426995a56  m3/web-widget-reverse/examples/native-swt/TreeHierarchyHtmlSwt.java
+3799deb1e1b154e6a05dc085a5b7d1d9101147ae83c6ff8feb7d8d117a3997c6  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeControlsWebSwt.java
 668210113122b29bd6f31bcdc698a025f221e3e26674f771832634eb11ba06c0  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeWebControlsSnippet.java
+cb6f731eb3dff0d6ac58a415e9f68ae94823b71c5a221e1525c48858c1821811  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeTreeWebSwt.java
+ef990ab380ee2c62ddeea3abd62c3ef5eaeceaa97a705c2527e34a4473e8b435  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeTreeWebSnippet.java

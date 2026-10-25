@@ -117,3 +117,30 @@ references. It does not replace them with spaces; the generated multiline SWT
 `Text.setText` now preserves the source characters. This correction was replayed
 through the canonical Synexia generator and tracked with a new SHA-256 receipt.
 Other HTML whitespace/CSS layout and semantics remain explicitly unqualified.
+
+## Hierarchical Tree source atom (25 October 2026)
+
+The Synexia-only UiBinder source generator accepts a bounded literal `<g:Tree>`
+with nested `<g:TreeItem text="...">` and optional explicit `expanded="true"`
+state. The same canonical emitter receives static XHTML `<ul>` / `<li>` trees
+from the XML adapter, preserving nested parent identity, text, and `li id` as
+`web.field` metadata. Nested HTML lists are initially visible; the generated
+SWT `TreeItem` branches are expanded after their children are created.
+
+Two reproducible inputs (`examples/native-swt/TreeHierarchy.ui.xml` and
+`TreeHierarchy.xhtml`) emit `TreeHierarchySwt.java` and
+`TreeHierarchyHtmlSwt.java`. Two generated classes are also in the original
+Nebula snippets package: `NativeTreeWebSwt` plus `NativeTreeWebSnippet` with
+SWT Display/Shell ownership. **There is one Tree Control, plus TreeItem
+nodes, not a Control per node.** The exact input and output bytes are sealed
+in `WEB_NATIVE_RECEIVER.sha256` and Synexia's source-generated receipt.
+
+Refusal gates: unknown properties, scripts/events/ARIA/CSS, empty item titles,
+unsupported item nesting, XML DTDs/entities, multiple child lists, mixed
+text after a nested list, multiline TreeItem labels and source depth limits.
+No dynamic DOM/node sorting/selection, keyboard/IME/accessibility or HTML list
+styling conversion is claimed. Existing native SWT and RWT `Tree` runtime
+implementations retain their own ownership and licensing; no third-party
+Java source was copied. Native SWT/Tycho and RAP/RWT session/display checks
+remain **NOT RUN**. The local exact Java 21/Java 11-stub test suite covers
+source semantics only, not installed widget behavior.

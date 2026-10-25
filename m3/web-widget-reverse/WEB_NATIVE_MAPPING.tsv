@@ -41,3 +41,6 @@ Apache_Royale	MXML_Component	POTENTIAL_SWT_CONTROL_OR_NEBULA_NATIVE	NONE	SEMANTI
 Apache_Tapestry	Component_RenderPhase	POTENTIAL_SWT_COMPOSITE	NONE	SEMANTIC_CANDIDATE_NO_TAPESTRY_FRONTEND	render phase state machine not equivalent to SWT synchronous UI lifecycle
 Apache_MyFaces	JSF_Component	POTENTIAL_SWT_CONTROL	NONE	SEMANTIC_CANDIDATE_NO_JSF_FRONTEND	decode validate update-model render phases/session state require explicit mapping
 Spring_WebFlow	view_form_model_binding	POTENTIAL_SWT_COMPOSITE	NONE	SEMANTIC_CANDIDATE_NO_SPRING_FRONTEND	flow transitions and server validation actions are not SWT listeners
+GWT_UiBinder	Tree	org.eclipse.swt.widgets.Tree SWT.BORDER SWT.V_SCROLL	RWT_Tree	EXECUTED_STATIC_RECIPE_PASS_SOURCE_JAVAC	SWT Tree is one Control; static roots only; listeners/data-provider/selection not lowered
+GWT_UiBinder	TreeItem	org.eclipse.swt.widgets.TreeItem	RWT_TreeItem	EXECUTED_STATIC_RECIPE_PASS_SOURCE_JAVAC	nested parent identity and literal text; explicit expanded state; no Control per node
+XHTML_XML_STATIC	ul_li_nested	org.eclipse.swt.widgets.Tree TreeItem	RWT_Tree_TreeItem	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	nested ul initially expanded; HTML bullets/css/aria/list semantics not guaranteed; li must have literal text
