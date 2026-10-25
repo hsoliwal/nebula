@@ -7,5 +7,6 @@ Bundle-Vendor: Eclipse Nebula
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: org.eclipse.swt;bundle-version="[3.126.0,4.0.0)"
 Export-Package: org.eclipse.nebula.widgets.m3,
+ org.eclipse.nebula.widgets.m3.generated,
  org.eclipse.nebula.widgets.m3.internal;x-internal:=true
 Automatic-Module-Name: org.eclipse.nebula.widgets.m3
