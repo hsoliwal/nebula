@@ -28,7 +28,8 @@ remains SWT/Nebula, not a second generic UI object hierarchy.
 4. **Opt-in SWT/RWT Browser fallback (implemented here).** For untranslatable
    JavaScript/custom elements, `M3BrowserWidget` wraps ONE `Browser`,
    delegates `click/input/change` from `data-nebula-id` to Java and
-   applies up to 1024 text or form-value deltas in one evaluated script.
+   applies up to 1024 text or form-value deltas in one evaluated script,
+   capped by a 256-KiB generated-script transport budget.
    This is explicitly *not* a native SWT widget transpilation and not a
    substitute for the scalable original Grid/Canvas/virtual widget owners.
 
