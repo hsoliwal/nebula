@@ -11,3 +11,16 @@ The first reverse donor extraction is SWT_CONSTRUCTION_SEEDS.tsv. It extracts ac
 Canonical recipe: com.synexia.rewrite.M3NebulaWebWidgetReverseScaffold20261015 in hsoliwal/com.synexia. Apply it to a Nebula source set to generate these absent metadata owners; drift and duplicate ownership must refuse, and replay must reach a fixed point. It creates no runtime wrapper classes and changes no product APIs.
 
 Next passes bind exact SWT/Nebula receiver sources, classify donor declarations and effects, qualify literal text versus HTML/mnemonics, constructor/style and parent ownership, event ordering/removal/reentrancy, theme, localization/Unicode and accessibility. RWT session/lifecycle and GWT composition remain separate. Compiler, native screen, resource, performance, platform and source-aware review gates remain open.
+
+## 2026-10-25: native-first web/RWT interoperability
+
+The additional framework and widget route decisions live in
+`docs/m3/web-interoperability/` (`README.md`, `WIDGET_ROUTES.tsv`,
+`FRAMEWORK_ROUTES.tsv`). These extend the original reverse scaffold
+without treating GWT, J2CL, TeaVM, JWt, Wicket, Tapestry, MyFaces,
+Apache Royale or Spring/Vaadin as arbitrary SWT transpilers.
+
+Direct generation into existing SWT/Nebula controls remains preferred.
+The opt-in `org.eclipse.nebula.widgets.m3.M3BrowserWidget` is only a
+bounded dynamic-web fallback; no new recipe, full DOM compiler or
+RWT runtime-equivalence claim is introduced.
