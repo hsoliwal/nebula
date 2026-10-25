@@ -84,6 +84,13 @@ public class M3BrowserScriptsTest {
             tooMany.put("id" + i, "text");
         }
         assertThrows(IllegalArgumentException.class, () -> M3BrowserScripts.patch(tooMany, false));
+        Map<String, String> oversizedTransport = new HashMap<>();
+        for (int i = 0; i < 8; i++) {
+            oversizedTransport.put("f" + i, "z".repeat(M3BrowserScripts.MAX_EVENT_VALUE));
+        }
+        assertThrows(IllegalArgumentException.class,
+                () -> M3BrowserScripts.patch(oversizedTransport, false));
+        assertEquals("(function(){return 0;})()", M3BrowserScripts.patch(Map.of(), false));
     }
 
     @Test
