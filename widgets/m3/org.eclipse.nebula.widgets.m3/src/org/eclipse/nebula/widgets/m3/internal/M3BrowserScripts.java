@@ -26,7 +26,7 @@ public final class M3BrowserScripts {
     /** Delegates ordinary DOM events; the BrowserFunction belongs to one Browser/session. */
     public static String install() {
         return "(function(){"
-                + "if(window.__m3NebulaInstalled){return true;}"
+                + "if(document.__m3NebulaInstalled){return true;}"
                 + "if(typeof window.m3NebulaEvent!=='function'){return false;}"
                 + "var relay=function(event){var node=event.target;"
                 + "while(node&&node.nodeType===1&&!node.hasAttribute('data-nebula-id')){node=node.parentElement;}"
@@ -39,7 +39,7 @@ public final class M3BrowserScripts {
                 + "document.addEventListener('click',relay,true);"
                 + "document.addEventListener('input',relay,true);"
                 + "document.addEventListener('change',relay,true);"
-                + "window.__m3NebulaInstalled=true;return true;"
+                + "document.__m3NebulaInstalled=true;return true;"
                 + "})()";
     }
 
