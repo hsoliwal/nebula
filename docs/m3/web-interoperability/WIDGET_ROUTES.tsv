@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# Classification only; not a claim of executed SWT/RWT equivalence.
+concept	web_input	swt_receiver	nebula_receiver	rap_rwt_receiver	reverse_route	acceptance_gap	status
+LABEL	label|span|p	Label|CLabel	BadgedLabel	RWT Label|CLabel	plain-text+mnemonic+BiDi	whitespace;markup;RTL;focus	STATIC_CANDIDATE
+BUTTON	button|input:button	Button(SWT.PUSH)	SplitButton;RoundedButton-style donors	RWT Button	Selection;enabled;tooltip	enter-space;disabled;pointer	STATIC_CANDIDATE
+CHECKBOX	input:checkbox	Button(SWT.CHECK)	RoundedCheckbox	RWT Button(SWT.CHECK)	selection;checked;disabled	tri-state;aria;event order	STATIC_CANDIDATE
+RADIO	input:radio	Button(SWT.RADIO)	RadioGroup	RWT Button(SWT.RADIO)	selection;group	roving focus;group state	STATIC_CANDIDATE
+SWITCH	role:switch	Button(SWT.CHECK)	RoundedSwitch	RWT Button(SWT.CHECK)	check state;keyboard	ARIA switch state;label	STATIC_CANDIDATE
+TEXT_INPUT	input:text|email|search	Text(SWT.SINGLE)	FormattedText;TextAssist	RWT Text	value;modify;verify;selection	IME;caret;validation;input mode	STATIC_CANDIDATE
+PASSWORD	input:password	Text(SWT.PASSWORD)	PasswordRevealer	RWT Text(SWT.PASSWORD)	password flags;show/hide	clipboard;security;focus	STATIC_CANDIDATE
+TEXTAREA	textarea	Text(SWT.MULTI)	RichText when rich text needed	RWT Text(SWT.MULTI);not StyledText	value;modify;scroll	large text;newline;caret	STATIC_CANDIDATE
+COMBO	select|datalist	Combo|CCombo	TableCombo;CalendarCombo	RWT Combo|CCombo	Selection;items;index	popup;virtual list;search	STATIC_CANDIDATE
+DATE_TIME	input:date|time	DateTime	CDateTime;DateChooser	RWT DateTime	time zone;format;selection	locale;DST;format	STATIC_CANDIDATE
+NUMBER_SLIDER	input:range	Scale	NebulaSlider	RWT Scale	value;minimum;maximum;step	snapping;pointer;keyboard	STATIC_CANDIDATE
+PROGRESS	progress|meter	ProgressBar	ProgressCircle;LED	RWT ProgressBar	value;indeterminate	timer;animation;server requests	STATIC_CANDIDATE
+TABS	role:tablist|tabs	CTabFolder|TabFolder	M3StackLayout for deferred pages	RWT CTabFolder	active index;selection	lazy pages;overflow;focus	STATIC_CANDIDATE
+ACCORDION	details|accordion	ExpandBar	PGroup;PShelf	RWT ExpandBar	collapsed;expanded;content	toggle ordering;paint	STATIC_CANDIDATE
+MENU	menu|contextmenu	Menu|MenuItem	NebulaToolbar|SplitButton	RWT Menu|MenuItem	item activation;visibility	focus;keyboard;popup origin	STATIC_CANDIDATE
+DIALOG	dialog	Shell;Dialog	Paperclips/Opal dialogs as applicable	RWT dialog/session facilities	open;modal;close	dialog semantics;focus trap	STATIC_CANDIDATE
+TABLE	table|grid	Table(SWT.VIRTUAL)	Grid;CompositeTable	RAP Nebula Grid;RWT Table(SWT.VIRTUAL)	virtual rows;selection;sort	filter;frozen columns;cell spans	STATIC_CANDIDATE
+TREE	tree|treegrid	Tree(SWT.VIRTUAL)	CTree;Grid;XViewer	RWT Tree(SWT.VIRTUAL);RAP Grid	expansion;selection;row keys	large tree;virtual state	STATIC_CANDIDATE
+GALLERY	card grid|image gallery	Canvas;ScrolledComposite	Gallery;Tiles	Canvas repaint path	viewport;overscan;selection	offscreen GC incompatibility	RWT_BLOCKED
+CHART	canvas chart|svg plot	Canvas;GC	Oscilloscope;Visualization	RWT Canvas	series data;viewport damage	GC differences;high-frequency events	RWT_PARTIAL
+GANTT	Gantt|timeline	Canvas	GanttChart;Timeline	Canvas replay proposed	row range;column range	offscreen GC;mouse events	RWT_BLOCKED
+MAP	map component	Browser|Canvas	GeoMap	RWT Browser|Canvas	lat/lon;zoom;selection	tile service;pointer;licensing	NEEDS_PORT
+RICH_TEXT	contenteditable|editor	StyledText;Browser	RichText	RAP richtext add-on	selection;formatting;undo	StyledText missing in RWT	NEEDS_PORT
+TOOLTIP	title|popover	ToolTip;Shell	Breadcrumb;Opal popups	RWT ToolTip	hover;focus;dismiss	mouse hover gaps;ARIA	STATIC_CANDIDATE
+BREADCRUMB	nav|breadcrumb	Composite|Link	Opal Breadcrumb	RWT Composite|Link	path;selection;focus	pointer;hover	STATIC_CANDIDATE
+VIRTUAL_LIST	repeater|infinite scroll	List|Table(SWT.VIRTUAL)	Grid;Gallery;XViewer	RWT List|Table(SWT.VIRTUAL)	SetData;row key;visible range	server requests;overscan;stable identity	STATIC_CANDIDATE
+FILES	file input	FileDialog	Paperclips attachment UI	RWT FileUpload	permission;upload state	local file vs server bytes	NOT_EQUIVALENT
+BROWSER_FALLBACK	custom-element|dynamic JS	Browser	M3BrowserWidget	Browser+BrowserFunction	limited click/input/change;batch text/value	same origin;latency;native GUI qualification	CODE_ADDED_NATIVE_UNQUALIFIED
+WEB_COMPONENT	shadowslots|custom elements	Browser opt-in	only static admitted subtree maps natively	RWT RemoteObject|Browser	attributes;slots;composed events	ShadowDOM;custom lifecycle	NOT_AUTOMATIC
+REACT_DYNAMIC	React hooks|effects|component state	Browser opt-in	existing static JSX Canvas route is narrower	Browser or RWT custom client	requires proven model+event lowering	async effects;diff reconciliation	NOT_AUTOMATIC
