@@ -19,3 +19,31 @@ jobs:
         run: python3 m3/web-widget-reverse/tools/verify_web_swt.py --self-test
       - name: Current Nebula and RAP concept crosswalk
         run: python3 m3/web-widget-reverse/tools/verify_web_swt.py
+  swt-linux-native:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Display dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0
+      - name: Compile and test original native SWT owner
+        run: xvfb-run -a mvn -B -ntp -f m3/web-widget-reverse/examples/native-form/pom.xml test
+  rwt-api-compile:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile identical Java with RAP RWT (no browser session)
+        run: mvn -B -ntp -f m3/web-widget-reverse/examples/native-form/pom.xml -Prwt -Dmaven.test.skip=true package

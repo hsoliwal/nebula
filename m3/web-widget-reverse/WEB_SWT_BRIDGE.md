@@ -53,3 +53,19 @@ https://help.eclipse.org/latest/topic/org.eclipse.rap.doc/guide/articles/custom-
 https://www.gwtproject.org/doc/latest/DevGuideCompilingAndDebugging
 https://apache.github.io/royale-docs/compiler
 The existing RAP gap census is docs/m3/rwt/README.md.
+
+## JWt and native toolkit execution (2026-10-25)
+
+JWt is Emweb's Java Web Toolkit: widget-oriented Java emits browser HTML/Ajax;
+it is not a JSX/DOM-to-SWT transpiler. Upstream offers GPL and commercial
+licensing, so this route remains comparison-only; no source is imported.
+https://www.webtoolkit.eu/jwt/download
+
+The optional standalone `examples/native-form/pom.xml` compiles the same
+existing OrdersNativeForm against actual SWT 3.135.0 (Linux) and, in a
+separate profile, RWT 4.8.0. Original SWT native JUnit tests require a real
+Display/XVFB and validate child identities, text, enabled state, ownership
+and disposal. The RWT gate **only compiles**, not runs a RAP session or web
+browser. Neither gate qualifies a general React compiler or all widgets.
+All catalogue entries remain HOLD_UNQUALIFIED independently of the small
+static form tests.
