@@ -11,3 +11,12 @@ The first reverse donor extraction is SWT_CONSTRUCTION_SEEDS.tsv. It extracts ac
 Canonical recipe: com.synexia.rewrite.M3NebulaWebWidgetReverseScaffold20261015 in hsoliwal/com.synexia. Apply it to a Nebula source set to generate these absent metadata owners; drift and duplicate ownership must refuse, and replay must reach a fixed point. It creates no runtime wrapper classes and changes no product APIs.
 
 Next passes bind exact SWT/Nebula receiver sources, classify donor declarations and effects, qualify literal text versus HTML/mnemonics, constructor/style and parent ownership, event ordering/removal/reentrancy, theme, localization/Unicode and accessibility. RWT session/lifecycle and GWT composition remain separate. Compiler, native screen, resource, performance, platform and source-aware review gates remain open.
+
+## Cross-framework semantic mapping candidate (2026-10-25; NOT IMPLEMENTED)
+
+The additive, review-only proposal is defined by:
+- `FRAMEWORK_DONORS_20261025.tsv` — source-pinned forward compiler / server widget / template donors and legal reuse route.
+- `WEB_SEMANTIC_CROSSWALK_20261025.tsv` — conditional web semantics to original SWT/Nebula receiver ownership; all rows are unqualified candidates.
+- `WEB_MAPPING_CONTRACT_20261025.md` — typed AST admission, original viewport and protocol invariants, refusal and verification sequence.
+
+These files **do not** amend `WEB_COMPONENT_SOURCES.tsv`, `IMPLEMENTATION_BINDINGS.tsv` or `docs/m3/rwt/RWT_COLUMN.tsv`, and do not claim another widget is implemented. A canonical Synexia Maven/OpenRewrite recipe must be admitted and executed before a product receiver is promoted. Never infer web↔native event equivalence from matching widget names.
