@@ -102,7 +102,9 @@ public class M3BrowserScriptsTest {
     @Test
     public void bootstrapInstallsExactlyOneDelegatedHandlerPerEventType() {
         String js = M3BrowserScripts.install();
-        assertTrue(js.contains("window.__m3NebulaInstalled"));
+        assertTrue(js.contains("document.__m3NebulaInstalled"));
+        // Per-document idempotency: replacing document while retaining window installs anew.
+        assertFalse(js.contains("window.__m3NebulaInstalled"));
         assertTrue(js.contains("document.addEventListener('click',relay,true)"));
         assertTrue(js.contains("document.addEventListener('input',relay,true)"));
         assertTrue(js.contains("document.addEventListener('change',relay,true)"));
