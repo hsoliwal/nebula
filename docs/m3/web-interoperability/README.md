@@ -147,6 +147,8 @@ For the **bounded admitted static JSX DOM grammar** (bare root
 | `input type="text"` | `Text(SWT.SINGLE)` | `Modify` to `BiConsumer<String,String>` |
 | `input type="checkbox"` | `Button(SWT.CHECK)` | `Selection` to checked-state callback |
 
+The checkbox `label` attribute in this admitted JSX profile is a **build-time annotation** and does not replace HTML `<label for>` semantics; accessible labelling remains a qualification gate.
+
 Initial text and selection are written **before** listeners
 attach. Disabled controls do not get action listeners. Java
 `Text` values keep literal ampersands; `Button` and `Label`
