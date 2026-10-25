@@ -90,8 +90,14 @@ public class M3VirtualTableBindingTest {
                     assertEquals("Name 62", table.getItem(62).getText(0));
                     assertEquals("Name 128", table.getItem(128).getText(0));
                     assertEquals("Name 999999", table.getItem(999999).getText(0));
-                    assertTrue(binding.getResidentPageCount() <= M3VirtualTableBinding.HOT_PAGES);
-                    assertTrue("Only requested pages should be fetched", source.calls <= 8);
+                    // More than four disjoint page requests force bounded LRU eviction.
+                    for (int page = 0; page < 12; page++) {
+                        int first = page * M3VirtualTableBinding.PAGE_ROWS;
+                        assertEquals("Name " + first, table.getItem(first).getText(0));
+                    }
+                    assertEquals(M3VirtualTableBinding.HOT_PAGES,
+                            binding.getResidentPageCount());
+                    assertTrue("Paged source should be used", source.calls >= 12);
 
                     binding.setSelectedKeys("row-7", "row-128");
                     assertArrayEquals(new String[] {"row-7", "row-128"}, binding.getSelectedKeys());
