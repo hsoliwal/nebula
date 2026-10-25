@@ -330,3 +330,42 @@ for RAP's live browser transport and actual SWT/Skija native pixels.
 This API surface is appropriate for small, static choice menus.
 Large/lazy collections should use original virtual Table/Grid,
 not allocate a giant Combo or Controls for logical rows.
+
+## Virtual web data tables: original SWT/RWT Table rather than per-row Controls
+
+The fourth receiver in this PR is **`M3VirtualTableBinding`**, using
+the existing `org.eclipse.swt.widgets.Table` with `SWT.VIRTUAL`.
+It accepts a bounded, already-indexed Java row provider and populates
+`TableItem` cells exclusively through `SWT.SetData`. Native Table
+owns the viewport and scrollbar. There are no generated `Control`
+objects per logical row or cell and no competing Nebula Grid state.
+
+A typical web `DataTable`/Vaadin `Grid`/GWT `CellTable`/Spring
+`Pageable` producer **requires its own typed source/model recipe**
+before its data can supply this receiver. This change implements the
+**product-side receiving contract only**, not those source compilers or
+their session/transaction semantics. For rich spans/frozen columns,
+retain the existing Nebula Grid (or RAP's separately ported Grid).
+
+`M3VirtualTableBinding.Page` keeps row-major flat cell lanes,
+unique keys per page, defensive copies and a strict memory budget.
+A fixed four-slot LRU caches 64-row pages, even with 1,000,000
+logical rows. Stable selection keys are retained across sort/filter
+snapshots; `replaceRows` invalidates stale cache and re-resolves
+visible selection, while `invalidate(first,last)` clears only
+damaged rows. No per-row entry objects are used.
+
+**Mandatory nonblocking rule:** `SWT.SetData` runs on the SWT/RWT
+UI thread. Its provider must read an already-resident indexed
+snapshot, not synchronously fetch from Wicket, Vaadin, Spring,
+HTTP, SQL or remote services. Any background fetch must be
+completed and safely published before the UI callback.
+
+Detailed API example, limits and original framework contracts:
+[`VIRTUAL_TABLE_BINDING.md`](VIRTUAL_TABLE_BINDING.md).
+The native `M3VirtualTableBindingTest` and pure Java
+`M3VirtualTablePageTest` have been added to Nebula's existing
+JUnit test bundle. The original RWT 4.8 API compilation workflow
+includes the binding source. **Full Tycho, Win32/GTK/Cocoa pixel
+tests, RAP browser sessions and latency/resource acceptance are
+still NOT_RUN; no successful real-RWT result is claimed.**
