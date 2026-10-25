@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 import unittest
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[3]
 BASE = "m3/web-widget-reverse/"
 VALID_ROUTES = {"RAP_NATIVE", "CANVAS_GC_REPLAY", "REBUILD_AS_PAINTER",
                 "BLOCKED(draw2d absent on RWT)",
