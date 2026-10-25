@@ -63,7 +63,7 @@ public final class M3BrowserWidget extends Composite {
         function = new BrowserFunction(browser, "m3NebulaEvent") {
             @Override
             public Object function(Object[] arguments) {
-                if (isDisposed() || !M3BrowserScripts.validEvent(arguments)) {
+                if (isDisposed() || !ready || !M3BrowserScripts.validEvent(arguments)) {
                     return Boolean.FALSE;
                 }
                 String type = (String) arguments[0];
