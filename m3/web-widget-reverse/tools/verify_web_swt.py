@@ -7,6 +7,8 @@ from pathlib import Path
 import sys
 import unittest
 
+from build_web_swt_concept_map import build as build_full_map
+
 ROOT = Path(__file__).resolve().parents[3]
 BASE = "m3/web-widget-reverse/"
 VALID_ROUTES = {"RAP_NATIVE", "CANVAS_GC_REPLAY", "REBUILD_AS_PAINTER",
@@ -152,6 +154,13 @@ def main():
         tests = unittest.defaultTestLoader.loadTestsFromTestCase(AuditTests)
         return 0 if unittest.TextTestRunner(verbosity=2).run(tests).wasSuccessful() else 1
     try:
+        current_full = build_full_map(
+            load(ROOT / "docs/m3/custom-widgets/WIDGET_MATRIX.tsv", "concept_id"),
+            load(ROOT / "docs/m3/rwt/RWT_COLUMN.tsv", "concept_id"))
+        with (ROOT / BASE / "WEB_SWT_CONCEPT_MAP.tsv").open(
+                encoding="utf-8", newline="") as stream:
+            need(stream.read() == current_full,
+                 "full 68-concept mapping stale versus native/RWT inventories")
         result = audit(
             load(ROOT / "docs/m3/custom-widgets/WIDGET_MATRIX.tsv", "concept_id"),
             load(ROOT / "docs/m3/rwt/RWT_COLUMN.tsv", "concept_id"),
