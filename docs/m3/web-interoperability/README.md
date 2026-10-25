@@ -125,6 +125,80 @@ see `SOURCE_AST_RECEIVERS.tsv`: GWT UiBinder, JWt, Apache Wicket,
 Tapestry, MyFaces, Royale, Spring MVC/Thymeleaf/WebFlux and Vaadin
 Flow, with explicit HOLD statuses wherever no implementation exists.
 
+
+## Typed static DOM form → original SWT Text and CHECK controls
+
+The additive second source-compiled receiver is
+`widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/generated/ContactFormNativeSwt.java`.
+Canonical build-time sources and tests remain in
+[Synexia #13402](https://github.com/hsoliwal/com.synexia/pull/13402)
+(`static-dom-form-to-swt.mjs`). The generated Java is compiled into
+the **existing Nebula M3 SWT bundle** and has no runtime React, DOM,
+TypeScript, or Synexia dependency.
+
+For the **bounded admitted static JSX DOM grammar** (bare root
+`<div>`, literal direct `span`, `button`, `input type=text` and
+`input type=checkbox`), the actual Java code uses:
+
+| Source | Native SWT result | Outgoing Java event |
+| --- | --- | --- |
+| Static `span` | `Label` | None |
+| Static `button` | `Button(SWT.PUSH)` | `Selection` to `Consumer<String>` |
+| `input type="text"` | `Text(SWT.SINGLE)` | `Modify` to `BiConsumer<String,String>` |
+| `input type="checkbox"` | `Button(SWT.CHECK)` | `Selection` to checked-state callback |
+
+Initial text and selection are written **before** listeners
+attach. Disabled controls do not get action listeners. Java
+`Text` values keep literal ampersands; `Button` and `Label`
+escape SWT mnemonic ampersands as `&&`. Stable original element IDs
+are kept in `Control.setData("m3.web.id", id)`.
+
+```java
+Composite form = ContactFormNativeSwt.create(parent, SWT.NONE,
+    actionId -> invokeAction(actionId),
+    (inputId, value) -> onFormValueChanged(inputId, value));
+```
+
+The generated static fixture contains **five actual Controls**:
+`Label`, `Text`, `Button(SWT.CHECK)`, and two
+`Button(SWT.PUSH)`; there are no per-element wrappers beyond
+these original controls and the one parent composite. This is not
+an endorsement of one SWT control per logical row in a million-row
+data table; use `SWT.VIRTUAL` and existing Grid/Tree viewports for
+large collections.
+
+**Source SHA-256:**
+`c1b4118fa3656d28e307710bd97dbf009a388964d9d87db89e379a484f63893e`.
+**Generated Java SHA-256:**
+`2b0b6f1340d828fdc300d759406eae9e23ae6093e3cce8bf4089de5c9cfd7126`.
+
+Local AST tests and Java11-signature compilation passed. A real
+`ContactFormNativeSwtTest` is committed under the existing Nebula
+tests bundle, but **full Tycho/native display, RAP 4.8.0 browser
+execution, focus/IME/ARIA/RTL and pixel comparisons remain NOT_RUN**.
+No claim is made for dynamic React hooks/CSS, HTML forms submitting
+to a server, JSF/Wicket/Spring request behavior or arbitrary DOM.
+
+### Framework-specific conversion is a separate semantic proof
+
+Official Apache Wicket documentation separates cached markup from
+per-request Java models and component resolution. An SWT receiver
+cannot be generated correctly from Wicket HTML alone; both
+Java component ownership and `wicket:id` resolution must be
+accounted for. Wicket Ajax also requires the original render/visibility
+and request lifecycle to be mapped, not merely button click handlers.
+
+Likewise, Vaadin Flow/Grid and Spring services may feed a native
+virtual Grid through stable IDs and pageable back-end queries, but
+server push, UI-thread confinement, sorting/filtering,
+`DataProvider` lifecycle, authentication and cancellation require
+distinct qualified recipes. Apache Tapestry, MyFaces, JWt and Royale
+remain inventoried **HOLD** sources, not implemented transpilers.
+
+Sources: https://wicket.apache.org/docs/auto-components.html ,
+https://wicket.apache.org/docs/how-ajax-works.html ,
+https://vaadin.com/docs/latest/flow/binding-data/data-provider .
+
 ## Example: opt-in Browser fallback for dynamic web components
 
 ```java
