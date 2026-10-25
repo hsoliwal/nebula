@@ -152,6 +152,29 @@ public class M3VirtualTableBindingTest {
                     assertEquals(0, table.getSelectionCount());
                     binding.setSelectedKeys("row-12");
                     assertEquals(1, table.getSelectionCount());
+
+                    Rows badReverseIndex = new Rows() {
+                        @Override public int size() { return 201; }
+                        @Override public int columns() { return 2; }
+                        @Override public Page fetch(int offset, int length) {
+                            throw new AssertionError("No page fetch on rejected snapshot");
+                        }
+                        @Override public int indexOfKey(String key) {
+                            return 201; // out of range for the candidate view
+                        }
+                    };
+                    int countBefore = table.getItemCount();
+                    boolean invalidViewRejected = false;
+                    try {
+                        binding.replaceRows(badReverseIndex);
+                    } catch (IllegalArgumentException expected) {
+                        invalidViewRejected = true;
+                    }
+                    assertTrue("Invalid snapshot should fail before Table mutation",
+                            invalidViewRejected);
+                    assertEquals(countBefore, table.getItemCount());
+                    assertArrayEquals(new String[] {"row-12"}, binding.getSelectedKeys());
+                    assertTrue(table.isSelected(12));
                 }
             } finally {
                 shell.dispose();
