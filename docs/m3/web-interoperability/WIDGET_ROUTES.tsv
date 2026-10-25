@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Classification only; not a claim of executed SWT/RWT equivalence.
 concept	web_input	swt_receiver	nebula_receiver	rap_rwt_receiver	reverse_route	acceptance_gap	status
-LABEL	label|span|p	Label|CLabel	BadgedLabel	RWT Label|CLabel	plain-text+mnemonic+BiDi	whitespace;markup;RTL;focus	STATIC_CANDIDATE
-BUTTON	button|input:button	Button(SWT.PUSH)	SplitButton;RoundedButton-style donors	RWT Button	Selection;enabled;tooltip	enter-space;disabled;pointer	STATIC_CANDIDATE
+LABEL	label|span|p	Label|CLabel	BadgedLabel	RWT Label|CLabel	plain-text+mnemonic+BiDi	whitespace;markup;RTL;focus	STATIC_NATIVE_ORDERS_CODE_ADDED_RWT_NOT_RUN
+BUTTON	button|input:button	Button(SWT.PUSH)	SplitButton;RoundedButton-style donors	RWT Button	Selection;enabled;tooltip	enter-space;disabled;pointer	STATIC_NATIVE_ORDERS_CODE_ADDED_RWT_NOT_RUN
 CHECKBOX	input:checkbox	Button(SWT.CHECK)	RoundedCheckbox	RWT Button(SWT.CHECK)	selection;checked;disabled	tri-state;aria;event order	STATIC_CANDIDATE
 RADIO	input:radio	Button(SWT.RADIO)	RadioGroup	RWT Button(SWT.RADIO)	selection;group	roving focus;group state	STATIC_CANDIDATE
 SWITCH	role:switch	Button(SWT.CHECK)	RoundedSwitch	RWT Button(SWT.CHECK)	check state;keyboard	ARIA switch state;label	STATIC_CANDIDATE
