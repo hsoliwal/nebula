@@ -286,3 +286,47 @@ arbitrary web-to-native compiler is claimed here.
 - Vaadin with Spring: https://vaadin.com/docs/latest/flow/integrations/spring
 - TeaVM restrictions: https://teavm.org/docs/intro/overview.html
 - Native Web Components: https://developer.mozilla.org/en-US/docs/Web/API/Web_components
+
+## Select/option → one native SWT Combo (third receiver)
+
+Canonical source transformation: [Synexia #13402](https://github.com/hsoliwal/com.synexia/pull/13402).
+Original Nebula runtime receiver:
+`org.eclipse.nebula.widgets.m3.generated.PreferencesNativeSwt`.
+The static HTML-like JSX `<select>` and direct `<option>`
+children produce **one** `Combo(SWT.READ_ONLY)`, never a new
+`Control` for each option. Labels and values are kept separate
+so Java callbacks retain the original `option.value`.
+
+```java
+Composite screen = PreferencesNativeSwt.create(parent, SWT.NONE,
+    actionId -> handleAction(actionId),
+    (widgetId, originalOptionValue) ->
+        handleChangedValue(widgetId, originalOptionValue));
+```
+
+`SWT.Selection` looks up `Combo.getSelectionIndex()` in one
+indexed `String[]` of source option values; it checks bounds
+before dispatching. `setItems` and `select(initialIndex)`
+run before listener registration. A static disabled `select`
+has no listener. Explicit multiple selected options, `multiple`,
+`optgroup`, per-option disabled state, arbitrary DOM attributes,
+dynamic JSX and HTML form submission are refused—not approximated.
+
+**Proof:** static source SHA-256
+`c4901e803686d6a66df7cf1d5e41729474d2911ca74e022b5ed49c2dfc43fad1`,
+generated original Java SHA-256
+`fe54d1b0387b4c09526f51efb021f0c3711cabe339424cbf9e5cf0483655250c`.
+The canonical generator passed Node/TypeScript source tests
+(17 total across the selected suites, including 1024 selection
+permutations) and Java11-target synthetic SWT API compilation
+with action/change smoke. Old ContactForm receiver SHA remained
+unchanged. Native `PreferencesNativeSwtTest` is committed
+as an SWT display-backed qualification test, **NOT_RUN**.
+
+**New hosted gate:** generated code compiled with `javac` against
+real, SHA-256-verified RWT 4.8.0 JAR in the Synexia workflow.
+That cross-compilation has not yet completed and cannot substitute
+for RAP's live browser transport and actual SWT/Skija native pixels.
+This API surface is appropriate for small, static choice menus.
+Large/lazy collections should use original virtual Table/Grid,
+not allocate a giant Combo or Controls for logical rows.
