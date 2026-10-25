@@ -17,7 +17,7 @@ import sys
 def first_line(text, limit=240):
     text = (text or "").strip().replace("\t", " ").replace("\r", " ")
     line = text.split("\n", 1)[0]
-    return line[:limit]
+    return line[:limit].rstrip()
 
 
 def main():
@@ -65,12 +65,12 @@ def main():
     with open(out + "/LEDGER.tsv", "w", encoding="utf-8", newline="") as f:
         f.write("\t".join(head) + "\n")
         for row in rows:
-            f.write("\t".join(c.replace("\t", " ").replace("\n", " ") for c in row) + "\n")
+            f.write("\t".join(c.replace("\t", " ").replace("\n", " ").rstrip() for c in row) + "\n")
     missing = [u for u in expected if u not in cards]
     with open(out + "/UNITS.tsv", "w", encoding="utf-8", newline="") as f:
         f.write("unit\tcards\tverified\tnotes\n")
         for u in units:
-            f.write("\t".join(str(c) for c in u) + "\n")
+            f.write("\t".join(str(c).replace("\t", " ").replace("\n", " ").rstrip() for c in u) + "\n")
         for u in missing:
             f.write(u + "\t0\tno\tinventory not run (account session limit, 2026-10-24 12:00 UTC); resume the workflow\n")
     by_status = {}
