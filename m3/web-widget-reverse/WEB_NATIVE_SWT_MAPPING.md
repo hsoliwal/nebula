@@ -165,3 +165,14 @@ no native test PASS, pixel/resource budget or product-equivalence assertion is
 claimed. The detached historical `examples/org.eclipse.nebula.snippets` is not
 shown to be a Tycho module; its source is only a reference example. The original
 Grid test bundle's inclusion is the required executable qualification seam.
+
+## Generated factory rollback contract
+
+The Synexia source generator now encloses initialization after the root
+`Composite` constructor in a native SWT `try`/`catch` boundary. If a child
+widget construction or property setter throws `RuntimeException`/`Error`,
+the generated factory disposes the root, adds a cleanup failure as suppressed
+when necessary, and rethrows the original exception. No new runtime layer,
+control hierarchy or per-row Control is introduced. The Java-only injected
+failure oracle passed locally. Native GTK/Win32/Cocoa and RAP/RWT session
+behavior still require separate proof; this is not a native acceptance receipt.

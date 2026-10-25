@@ -11,20 +11,29 @@ public final class OrdersSwt {
       org.eclipse.swt.widgets.Composite parent) {
     if (parent == null) throw new IllegalArgumentException("parent");
     org.eclipse.swt.widgets.Composite w0 = new org.eclipse.swt.widgets.Composite(parent, org.eclipse.swt.SWT.NONE);
-    w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
-    org.eclipse.swt.widgets.Label w1 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
-    w1.setData("web.field", "title");
-    w1.setText("Orders && shipping");
-    org.eclipse.swt.widgets.Label w2 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
-    w2.setData("web.field", "description");
-    w2.setText("A browser && native viewport candidate");
-    org.eclipse.swt.widgets.Button w3 = new org.eclipse.swt.widgets.Button(w0, org.eclipse.swt.SWT.PUSH);
-    w3.setData("web.field", "refresh");
-    w3.setText("Refresh orders");
-    org.eclipse.swt.widgets.Button w4 = new org.eclipse.swt.widgets.Button(w0, org.eclipse.swt.SWT.PUSH);
-    w4.setData("web.field", "cancel");
-    w4.setText("Cancel");
-    w4.setEnabled(false);
-    return w0;
+    try {
+      w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+      org.eclipse.swt.widgets.Label w1 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
+      w1.setData("web.field", "title");
+      w1.setText("Orders && shipping");
+      org.eclipse.swt.widgets.Label w2 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
+      w2.setData("web.field", "description");
+      w2.setText("A browser && native viewport candidate");
+      org.eclipse.swt.widgets.Button w3 = new org.eclipse.swt.widgets.Button(w0, org.eclipse.swt.SWT.PUSH);
+      w3.setData("web.field", "refresh");
+      w3.setText("Refresh orders");
+      org.eclipse.swt.widgets.Button w4 = new org.eclipse.swt.widgets.Button(w0, org.eclipse.swt.SWT.PUSH);
+      w4.setData("web.field", "cancel");
+      w4.setText("Cancel");
+      w4.setEnabled(false);
+      return w0;
+    } catch (RuntimeException | Error failure) {
+      try {
+        if (!w0.isDisposed()) w0.dispose();
+      } catch (RuntimeException | Error cleanup) {
+        if (cleanup != failure) failure.addSuppressed(cleanup);
+      }
+      throw failure;
+    }
   }
 }

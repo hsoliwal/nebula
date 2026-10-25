@@ -11,31 +11,40 @@ public final class TreeHierarchyHtmlSwt {
       org.eclipse.swt.widgets.Composite parent) {
     if (parent == null) throw new IllegalArgumentException("parent");
     org.eclipse.swt.widgets.Composite w0 = new org.eclipse.swt.widgets.Composite(parent, org.eclipse.swt.SWT.NONE);
-    w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
-    org.eclipse.swt.widgets.Composite w1 = new org.eclipse.swt.widgets.Composite(w0, org.eclipse.swt.SWT.NONE);
-    w1.setData("web.field", "filesPane");
-    w1.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
-    org.eclipse.swt.widgets.Label w2 = new org.eclipse.swt.widgets.Label(w1, org.eclipse.swt.SWT.NONE);
-    w2.setText("Files && folders");
-    org.eclipse.swt.widgets.Tree w3 = new org.eclipse.swt.widgets.Tree(w1, org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.V_SCROLL);
-    w3.setData("web.field", "folders");
-    w3.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.FILL, true, true));
-    org.eclipse.swt.widgets.TreeItem w4 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
-    w4.setData("web.field", "projects");
-    w4.setText("Projects & documents");
-    org.eclipse.swt.widgets.TreeItem w5 = new org.eclipse.swt.widgets.TreeItem(w4, org.eclipse.swt.SWT.NONE);
-    w5.setData("web.field", "readme");
-    w5.setText("README.md");
-    org.eclipse.swt.widgets.TreeItem w6 = new org.eclipse.swt.widgets.TreeItem(w4, org.eclipse.swt.SWT.NONE);
-    w6.setText("Archives");
-    org.eclipse.swt.widgets.TreeItem w7 = new org.eclipse.swt.widgets.TreeItem(w6, org.eclipse.swt.SWT.NONE);
-    w7.setText("2026");
-    org.eclipse.swt.widgets.TreeItem w8 = new org.eclipse.swt.widgets.TreeItem(w6, org.eclipse.swt.SWT.NONE);
-    w8.setText("2025");
-    w6.setExpanded(true);
-    w4.setExpanded(true);
-    org.eclipse.swt.widgets.TreeItem w9 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
-    w9.setText("Downloads");
-    return w0;
+    try {
+      w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+      org.eclipse.swt.widgets.Composite w1 = new org.eclipse.swt.widgets.Composite(w0, org.eclipse.swt.SWT.NONE);
+      w1.setData("web.field", "filesPane");
+      w1.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+      org.eclipse.swt.widgets.Label w2 = new org.eclipse.swt.widgets.Label(w1, org.eclipse.swt.SWT.NONE);
+      w2.setText("Files && folders");
+      org.eclipse.swt.widgets.Tree w3 = new org.eclipse.swt.widgets.Tree(w1, org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.V_SCROLL);
+      w3.setData("web.field", "folders");
+      w3.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.FILL, true, true));
+      org.eclipse.swt.widgets.TreeItem w4 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
+      w4.setData("web.field", "projects");
+      w4.setText("Projects & documents");
+      org.eclipse.swt.widgets.TreeItem w5 = new org.eclipse.swt.widgets.TreeItem(w4, org.eclipse.swt.SWT.NONE);
+      w5.setData("web.field", "readme");
+      w5.setText("README.md");
+      org.eclipse.swt.widgets.TreeItem w6 = new org.eclipse.swt.widgets.TreeItem(w4, org.eclipse.swt.SWT.NONE);
+      w6.setText("Archives");
+      org.eclipse.swt.widgets.TreeItem w7 = new org.eclipse.swt.widgets.TreeItem(w6, org.eclipse.swt.SWT.NONE);
+      w7.setText("2026");
+      org.eclipse.swt.widgets.TreeItem w8 = new org.eclipse.swt.widgets.TreeItem(w6, org.eclipse.swt.SWT.NONE);
+      w8.setText("2025");
+      w6.setExpanded(true);
+      w4.setExpanded(true);
+      org.eclipse.swt.widgets.TreeItem w9 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
+      w9.setText("Downloads");
+      return w0;
+    } catch (RuntimeException | Error failure) {
+      try {
+        if (!w0.isDisposed()) w0.dispose();
+      } catch (RuntimeException | Error cleanup) {
+        if (cleanup != failure) failure.addSuppressed(cleanup);
+      }
+      throw failure;
+    }
   }
 }

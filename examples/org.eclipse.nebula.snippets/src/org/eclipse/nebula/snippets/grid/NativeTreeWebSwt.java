@@ -11,26 +11,35 @@ public final class NativeTreeWebSwt {
       org.eclipse.swt.widgets.Composite parent) {
     if (parent == null) throw new IllegalArgumentException("parent");
     org.eclipse.swt.widgets.Composite w0 = new org.eclipse.swt.widgets.Composite(parent, org.eclipse.swt.SWT.NONE);
-    w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
-    org.eclipse.swt.widgets.Label w1 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
-    w1.setData("web.field", "title");
-    w1.setText("Archive && tools");
-    org.eclipse.swt.widgets.Tree w2 = new org.eclipse.swt.widgets.Tree(w0, org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.V_SCROLL);
-    w2.setData("web.field", "folders");
-    w2.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.FILL, true, true));
-    org.eclipse.swt.widgets.TreeItem w3 = new org.eclipse.swt.widgets.TreeItem(w2, org.eclipse.swt.SWT.NONE);
-    w3.setData("web.field", "root");
-    w3.setText("Projects & files");
-    org.eclipse.swt.widgets.TreeItem w4 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
-    w4.setData("web.field", "docs");
-    w4.setText("Documents");
-    org.eclipse.swt.widgets.TreeItem w5 = new org.eclipse.swt.widgets.TreeItem(w4, org.eclipse.swt.SWT.NONE);
-    w5.setText("Report.txt");
-    org.eclipse.swt.widgets.TreeItem w6 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
-    w6.setText("Images");
-    w3.setExpanded(true);
-    org.eclipse.swt.widgets.TreeItem w7 = new org.eclipse.swt.widgets.TreeItem(w2, org.eclipse.swt.SWT.NONE);
-    w7.setText("Recent");
-    return w0;
+    try {
+      w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
+      org.eclipse.swt.widgets.Label w1 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
+      w1.setData("web.field", "title");
+      w1.setText("Archive && tools");
+      org.eclipse.swt.widgets.Tree w2 = new org.eclipse.swt.widgets.Tree(w0, org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.V_SCROLL);
+      w2.setData("web.field", "folders");
+      w2.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.FILL, true, true));
+      org.eclipse.swt.widgets.TreeItem w3 = new org.eclipse.swt.widgets.TreeItem(w2, org.eclipse.swt.SWT.NONE);
+      w3.setData("web.field", "root");
+      w3.setText("Projects & files");
+      org.eclipse.swt.widgets.TreeItem w4 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
+      w4.setData("web.field", "docs");
+      w4.setText("Documents");
+      org.eclipse.swt.widgets.TreeItem w5 = new org.eclipse.swt.widgets.TreeItem(w4, org.eclipse.swt.SWT.NONE);
+      w5.setText("Report.txt");
+      org.eclipse.swt.widgets.TreeItem w6 = new org.eclipse.swt.widgets.TreeItem(w3, org.eclipse.swt.SWT.NONE);
+      w6.setText("Images");
+      w3.setExpanded(true);
+      org.eclipse.swt.widgets.TreeItem w7 = new org.eclipse.swt.widgets.TreeItem(w2, org.eclipse.swt.SWT.NONE);
+      w7.setText("Recent");
+      return w0;
+    } catch (RuntimeException | Error failure) {
+      try {
+        if (!w0.isDisposed()) w0.dispose();
+      } catch (RuntimeException | Error cleanup) {
+        if (cleanup != failure) failure.addSuppressed(cleanup);
+      }
+      throw failure;
+    }
   }
 }

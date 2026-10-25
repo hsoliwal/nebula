@@ -67,3 +67,8 @@ this example directory or the separate snippets folder, now owns generated
 `widgets/grid/org.eclipse.nebula.widgets.grid.test/src`. The original Grid test
 POM selects the JUnit4 test by default. Its original SWT/GTK native execution
 still requires a passing hosted/native Tycho run.
+
+New generated native factories dispose their partially constructed root on
+child initialization failure while preserving the original throwable (and
+suppressing any cleanup failure). The recipe-first source and injectable
+Java-only tests remain in Synexia; do not manually edit these emitted files.
