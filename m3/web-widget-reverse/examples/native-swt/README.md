@@ -1,36 +1,47 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Native SWT output: bounded UiBinder source translation
+# Native SWT and Nebula receivers from static web markup
 
-The committed `OrdersSwt.java` is generated from the **existing**
-`../react-static/Orders.ui.xml`; `NativeControlsSwt.java` is generated from
-`NativeControls.ui.xml`. They are generated outputs, not independently edited
-widget code. The generator belongs solely to Synexia, in Maven recipe crate
-`synexia-java-web-workbench/recipes/nebula-uibinder-swt-20261025`.
+The recipe is in Synexia only (`hsoliwal/com.synexia` PR #13396), not this
+Nebula fork. These are source-generation artifacts; they do **not** reimplement
+SWT, ship a browser runtime, or replace the original Grid model.
 
-Generation command (JDK 21; `$RECIPE_CLASSES` is the compiled Synexia recipe):
+| Source | Generated Java | Qualified semantic subset |
+| --- | --- | --- |
+| Existing `../react-static/Orders.ui.xml` | `OrdersSwt.java` | labels and push buttons; decoded literal `&` escaped as SWT `&&` |
+| `NativeControls.ui.xml` | `NativeControlsSwt.java` | nested panels, text, checkbox and original Nebula Grid |
+| `StaticOrders.xhtml` | `StaticOrdersSwt.java` | plain XHTML, text/checkbox/password, Combo select, multiline Text, static table to Grid |
+
+The XHTML frontend lowers its strict markup into the **same UiBinder source
+recipe**; there is no second backend or Java widget hierarchy. Existing HTML
+forms, bindings, client events, script, CSS and ARIA are not reinterpreted.
+HTML heading rank, label association, layout and accessibility parity are
+explicitly unproved.
+
+With the Synexia Maven crate's compiled classes on `$RECIPE_CLASSES`:
 
 ```sh
 java -cp "$RECIPE_CLASSES" com.synexia.web.recipe.UiBinderSwtRecipe \
   ../react-static/Orders.ui.xml OrdersSwt.java org.eclipse.nebula.examples.web OrdersSwt
 java -cp "$RECIPE_CLASSES" com.synexia.web.recipe.UiBinderSwtRecipe \
   NativeControls.ui.xml NativeControlsSwt.java org.eclipse.nebula.examples.web NativeControlsSwt
+java -cp "$RECIPE_CLASSES" com.synexia.web.recipe.StaticXhtmlUiBinderFrontend \
+  StaticOrders.xhtml StaticOrdersSwt.java org.eclipse.nebula.examples.web StaticOrdersSwt
 ```
 
-`create(Composite parent)` must run on the owning Display thread. It returns a
-normal SWT Composite. The caller retains the owner and disposes it on the
-usual SWT lifecycle; these generated classes manage no background thread,
-HTTP session, native allocation or secondary collection of controls.
+The public original-repo `org.eclipse.nebula.snippets.grid` also receives two
+generated sources: `NativeControlsWebSwt.java` and `NativeWebControlsSnippet.java`.
+The latter owns the SWT Display/Shell event loop. This makes the generated
+control hierarchy a **runnable plugin snippet candidate** (not a mock-API
+example), pending native plugin compile and actual SWT display tests.
 
-`OrdersSwt` renders two SWT Labels and two SWT Buttons; the disabled Cancel
-state and decoded `&amp;` text are retained. `NativeControlsSwt` shows native
-SWT Text and CheckBox plus a **real Nebula Grid**, two GridColumns and two
-GridItems. The static Grid cells do **not** each allocate a Control.
+The Synexia receipt contains exact SHA-256 original/fixture/generated source
+identities and refusal/fixed-point tests. Native construction must run on the
+owning Display thread and the parent Shell must be disposed normally. No
+background worker, M3 runtime wrapper, control per Grid cell or native JNI
+resource allocation is introduced by the generated Java.
 
-This source is deliberately outside the active Tycho bundle. To execute in an
-Eclipse SWT/Nebula application, compile it against SWT and the Nebula Grid
-bundle and create it on a Display thread. Local proof used Java 11 API-shaped
-stubs, not actual SWT jars or real RAP/Grid running sessions. No implicit
-claim of native, RAP, callback or visual equivalence is made.
-
-See [`../../WEB_NATIVE_MAPPING.tsv`](../../WEB_NATIVE_MAPPING.tsv) for native
-receiver names and explicitly unimplemented Wicket/JWt/Flow/HTML mappings.
+Local 98-contract test evidence includes Java 11 strict source compilation
+**against stubs**, not real installed original SWT/Nebula classes. Tycho,
+OSGi, RAP/RWT, visual/pixel, keyboard/IME, accessibility and benchmarks are
+explicitly NOT_RUN. Keep receiver draft and separately qualify the native
+plugin, screenshot and resource gates before release.

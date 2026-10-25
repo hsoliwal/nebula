@@ -24,3 +24,20 @@ Spring_Thymeleaf	form_input	org.eclipse.swt.widgets.Text	RWT_Text	SEMANTIC_CANDI
 Apache_Pivot	TableView	org.eclipse.nebula.widgets.grid.Grid	RAP_NEBULA_GRID_PORT	SEMANTIC_CANDIDATE_NO_PIVOT_PARSER	Pivot skin/layout/selection contracts require dedicated qualifier
 React_JSX	M3Button	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	SEMANTIC_CANDIDATE_EXISTING_CANVAS_RECEIVER	prior static compiler targets one Canvas; this new pass does not parse JSX
 Browser_Embed	arbitrary_html_js	org.eclipse.swt.browser.Browser	RWT_Browser_IFRAME	REFUSED_FOR_NATIVE_TRANSLATION	iframe origin/HTTP round trip/dynamic DOM are different semantics
+GWT_UiBinder	TextArea	org.eclipse.swt.widgets.Text SWT.MULTI SWT.V_SCROLL	RWT_Text	EXECUTED_STATIC_RECIPE_PASS_SOURCE_JAVAC	literal multi-line text and readonly; no live model/validation callback
+GWT_UiBinder	PasswordTextBox	org.eclipse.swt.widgets.Text SWT.PASSWORD	RWT_Text	EXECUTED_STATIC_RECIPE_PASS_SOURCE_JAVAC	construction only; any compile-time text/password value refused
+GWT_UiBinder	ListBox_Item	org.eclipse.swt.widgets.Combo SWT.DROP_DOWN SWT.READ_ONLY	RWT_Combo	EXECUTED_STATIC_RECIPE_PASS_SOURCE_JAVAC	literal option labels; exactly one selected or first default; nontext values/multiselect refused
+XHTML_XML_STATIC	section_div_main_article	org.eclipse.swt.widgets.Composite GridLayout	RWT_Composite	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	static block order only; CSS display flex/grid/HTML layout not reproduced
+XHTML_XML_STATIC	p_span_label_h1_h6	org.eclipse.swt.widgets.Label	RWT_Label	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	literal text only; heading ranks, associated labels, accessibility semantics not implemented
+XHTML_XML_STATIC	button_type_button	org.eclipse.swt.widgets.Button SWT.PUSH	RWT_Button	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	literal text disabled; default submit/reset and event listeners refused
+XHTML_XML_STATIC	input_type_text	org.eclipse.swt.widgets.Text SWT.BORDER	RWT_Text	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	literal value readonly disabled; form binding autofill validation refused
+XHTML_XML_STATIC	input_type_checkbox	org.eclipse.swt.widgets.Button SWT.CHECK	RWT_Button	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	checked disabled; input value/name/form association refused
+XHTML_XML_STATIC	input_type_password	org.eclipse.swt.widgets.Text SWT.PASSWORD	RWT_Text	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	no default password literals; form/auth/security semantics refused
+XHTML_XML_STATIC	textarea	org.eclipse.swt.widgets.Text SWT.MULTI	RWT_Text	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	literal text/readOnly only; no spellcheck selection/IME parity
+XHTML_XML_STATIC	select_option	org.eclipse.swt.widgets.Combo SWT.DROP_DOWN SWT.READ_ONLY	RWT_Combo	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	literal item text and selected index; value/options groups/multiple refused
+XHTML_XML_STATIC	thead_tbody_tr_th_td	org.eclipse.nebula.widgets.grid.Grid GridColumn GridItem	RAP_NEBULA_GRID_PORT	EXECUTED_XML_FRONTEND_TO_EXISTING_RECIPE	static rectangular data; column/row spans, browser table layout, semantics/accessibility refused
+XHTML_DYNAMIC	form_submit_js_css_aria_bindings	NONE	NONE	REFUSED	server request cycle DOM JS CSS ARIA named labels event ordering and client-state not mapped
+Apache_Royale	MXML_Component	POTENTIAL_SWT_CONTROL_OR_NEBULA_NATIVE	NONE	SEMANTIC_CANDIDATE_NO_MXML_COMPILER	Royale AS3/MXML source->JS/SWF direction only; no Java/SWT converter admitted
+Apache_Tapestry	Component_RenderPhase	POTENTIAL_SWT_COMPOSITE	NONE	SEMANTIC_CANDIDATE_NO_TAPESTRY_FRONTEND	render phase state machine not equivalent to SWT synchronous UI lifecycle
+Apache_MyFaces	JSF_Component	POTENTIAL_SWT_CONTROL	NONE	SEMANTIC_CANDIDATE_NO_JSF_FRONTEND	decode validate update-model render phases/session state require explicit mapping
+Spring_WebFlow	view_form_model_binding	POTENTIAL_SWT_COMPOSITE	NONE	SEMANTIC_CANDIDATE_NO_SPRING_FRONTEND	flow transitions and server validation actions are not SWT listeners

@@ -14,7 +14,7 @@ public final class NativeControlsSwt {
     w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
     org.eclipse.swt.widgets.Label w1 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
     w1.setData("web.field", "heading");
-    w1.setText("Orders & inventory — 日本語");
+    w1.setText("Orders && inventory — 日本語");
     org.eclipse.swt.widgets.Composite w2 = new org.eclipse.swt.widgets.Composite(w0, org.eclipse.swt.SWT.NONE);
     w2.setLayout(new org.eclipse.swt.layout.GridLayout(2, false));
     org.eclipse.swt.widgets.Text w3 = new org.eclipse.swt.widgets.Text(w2, org.eclipse.swt.SWT.BORDER);
@@ -26,6 +26,7 @@ public final class NativeControlsSwt {
     w4.setSelection(true);
     org.eclipse.nebula.widgets.grid.Grid w5 = new org.eclipse.nebula.widgets.grid.Grid(w0, org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.V_SCROLL | org.eclipse.swt.SWT.H_SCROLL);
     w5.setData("web.field", "orders");
+    w5.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.FILL, true, true));
     w5.setHeaderVisible(true);
     org.eclipse.nebula.widgets.grid.GridColumn w6 = new org.eclipse.nebula.widgets.grid.GridColumn(w5, org.eclipse.swt.SWT.NONE);
     w6.setText("Order");

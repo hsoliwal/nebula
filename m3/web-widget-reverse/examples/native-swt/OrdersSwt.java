@@ -14,10 +14,10 @@ public final class OrdersSwt {
     w0.setLayout(new org.eclipse.swt.layout.GridLayout(1, false));
     org.eclipse.swt.widgets.Label w1 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
     w1.setData("web.field", "title");
-    w1.setText("Orders & shipping");
+    w1.setText("Orders && shipping");
     org.eclipse.swt.widgets.Label w2 = new org.eclipse.swt.widgets.Label(w0, org.eclipse.swt.SWT.NONE);
     w2.setData("web.field", "description");
-    w2.setText("A browser & native viewport candidate");
+    w2.setText("A browser && native viewport candidate");
     org.eclipse.swt.widgets.Button w3 = new org.eclipse.swt.widgets.Button(w0, org.eclipse.swt.SWT.PUSH);
     w3.setData("web.field", "refresh");
     w3.setText("Refresh orders");
