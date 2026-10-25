@@ -3,10 +3,10 @@
 concept	web_input	swt_receiver	nebula_receiver	rap_rwt_receiver	reverse_route	acceptance_gap	status
 LABEL	label|span|p	Label|CLabel	BadgedLabel	RWT Label|CLabel	plain-text+mnemonic+BiDi	whitespace;markup;RTL;focus	STATIC_NATIVE_ORDERS_CODE_ADDED_RWT_NOT_RUN
 BUTTON	button|input:button	Button(SWT.PUSH)	SplitButton;RoundedButton-style donors	RWT Button	Selection;enabled;tooltip	enter-space;disabled;pointer	STATIC_NATIVE_ORDERS_CODE_ADDED_RWT_NOT_RUN
-CHECKBOX	input:checkbox	Button(SWT.CHECK)	RoundedCheckbox	RWT Button(SWT.CHECK)	selection;checked;disabled	tri-state;aria;event order	STATIC_CANDIDATE
+CHECKBOX	input:checkbox	Button(SWT.CHECK)	RoundedCheckbox	RWT Button(SWT.CHECK)	selection;checked;disabled	tri-state;aria;event order	STATIC_DOM_FORM_SOURCE_COMMITTED_RWT_NOT_RUN
 RADIO	input:radio	Button(SWT.RADIO)	RadioGroup	RWT Button(SWT.RADIO)	selection;group	roving focus;group state	STATIC_CANDIDATE
 SWITCH	role:switch	Button(SWT.CHECK)	RoundedSwitch	RWT Button(SWT.CHECK)	check state;keyboard	ARIA switch state;label	STATIC_CANDIDATE
-TEXT_INPUT	input:text|email|search	Text(SWT.SINGLE)	FormattedText;TextAssist	RWT Text	value;modify;verify;selection	IME;caret;validation;input mode	STATIC_CANDIDATE
+TEXT_INPUT	input:text|email|search	Text(SWT.SINGLE)	FormattedText;TextAssist	RWT Text	value;modify;verify;selection	IME;caret;validation;input mode	STATIC_DOM_FORM_SOURCE_COMMITTED_RWT_NOT_RUN
 PASSWORD	input:password	Text(SWT.PASSWORD)	PasswordRevealer	RWT Text(SWT.PASSWORD)	password flags;show/hide	clipboard;security;focus	STATIC_CANDIDATE
 TEXTAREA	textarea	Text(SWT.MULTI)	RichText when rich text needed	RWT Text(SWT.MULTI);not StyledText	value;modify;scroll	large text;newline;caret	STATIC_CANDIDATE
 COMBO	select|datalist	Combo|CCombo	TableCombo;CalendarCombo	RWT Combo|CCombo	Selection;items;index	popup;virtual list;search	STATIC_CANDIDATE
