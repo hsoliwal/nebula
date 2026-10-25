@@ -110,6 +110,10 @@ lifecycle, model-detach, query, selection and security contracts.
   hidden/removed keys return -1 but are retained for later reappearance.
 - On a snapshot replacement, clear the four hot pages, set logical
   item count, clear stale TableItem data and restore visible selection.
+  Reverse key lookup is **preflighted** before any Table mutation so an
+  out-of-range source mapping cannot leave a half-installed snapshot.
+  Restored selections use one `Table.select(int[])` batch rather than
+  one UI/RWT request per key.
   On a bounded mutation, evict only intersecting pages and
   `Table.clear(first,last)`, never copy all rows.
 - All SWT calls, selection and cache mutation happen on the SWT UI thread.
