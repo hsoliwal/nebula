@@ -10,6 +10,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,8 @@ final class OrdersNativeFormGeneratedTest {
                 Control[] controls = form.getChildren();
                 assertEquals(4, controls.length);
                 assertEquals("title", controls[0].getData("m3.id"));
+                assertEquals("Orders & shipping", controls[0].getData("m3.text"));
+                assertEquals("Orders && shipping", ((Label) controls[0]).getText());
                 assertEquals("description", controls[1].getData("m3.id"));
                 assertEquals("refresh", controls[2].getData("m3.id"));
                 assertEquals("cancel", controls[3].getData("m3.id"));
