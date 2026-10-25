@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Hitesh Soliwal and Contributors to the Synexia Project
 package org.eclipse.nebula.widgets.m3.qualification;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -32,6 +33,19 @@ import java.util.stream.Stream;
  */
 public final class M3WebWidgetMappingAudit {
     private static final int MAX_BYTES = 1_048_576;
+    private static final Counts PRODUCT_COUNTS = new Counts(16, 47, 45, 369, 68);
+    // Pinned to the exact target PR #277 input byte streams, not to row-count inference.
+    private static final String DONOR_SHA256 =
+            "92c31ca254c60feb7f78a236fea8189a5a7b9206cdac1f09d6e2c58765434064";
+    private static final String SEMANTIC_SHA256 =
+            "4fcff6da7c967284762879334e168bf7abc136e5fa3aef90a1285dbbd48fabe6";
+    private static final String WEB_SOURCES_SHA256 =
+            "e7ea639b08424cafdc8f59575ee650aef85e284e0cf96d9f287ecbbb9cca9233";
+    private static final String RWT_COLUMN_SHA256 =
+            "5d700c1d4064ab47b8251b7d1a591cf85befdf416f75e6d7cfae29ae5b7164b0";
+    // Official Git tree object: all 45 property files have mode 100644.
+    private static final String FAMILIES_GIT_TREE =
+            "54942ccf0f9eb3253def12dfcae13dd528681ba0";
     private static final String PREFIX = "m3/web-widget-reverse/";
     private static final String RWT = "docs/m3/rwt/RWT_COLUMN.tsv";
     private static final Set<String> PROFILES = Set.of(
@@ -64,13 +78,16 @@ public final class M3WebWidgetMappingAudit {
     /** Provenance-only outcome; never a statement of widget compatibility. */
     record Receipt(Counts counts, String sha256) {}
 
+    /** Source identity for the exact family set, independent of widget behavior. */
+    record FamilyEvidence(int count, String gitTreeSha1) {}
+
     private M3WebWidgetMappingAudit() {}
 
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
             throw new IllegalArgumentException("usage: M3WebWidgetMappingAudit <Nebula repository root>");
         }
-        Counts expected = new Counts(16, 47, 45, 369, 68);
+        Counts expected = PRODUCT_COUNTS;
         Receipt receipt = audit(Path.of(args[0]), expected);
         System.out.println("schema=m3-web-widget-mapping-audit/1");
         System.out.println("donors=" + receipt.counts().donors());
@@ -88,17 +105,23 @@ public final class M3WebWidgetMappingAudit {
             throw new IllegalStateException("repository root is not a directory");
         }
         MessageDigest sha = sha256();
+        boolean product = PRODUCT_COUNTS.equals(expected);
         List<String[]> donors = table(root, sha, PREFIX + "FRAMEWORK_DONORS_20261025.tsv",
-                DONOR_HEADER, 9, false);
+                DONOR_HEADER, 9, false, product ? DONOR_SHA256 : null);
         List<String[]> semantics = table(root, sha, PREFIX + "WEB_SEMANTIC_CROSSWALK_20261025.tsv",
-                SEMANTIC_HEADER, 7, false);
+                SEMANTIC_HEADER, 7, false, product ? SEMANTIC_SHA256 : null);
         List<String[]> sources = table(root, sha, PREFIX + "WEB_COMPONENT_SOURCES.tsv",
-                SOURCE_HEADER, 9, false);
-        List<String[]> rwt = table(root, sha, RWT, RWT_HEADER, 14, true);
-        int families = inspectFamilies(root, sha);
-        Counts actual = new Counts(donors.size(), semantics.size(), families, sources.size(), rwt.size());
+                SOURCE_HEADER, 9, false, product ? WEB_SOURCES_SHA256 : null);
+        List<String[]> rwt = table(root, sha, RWT, RWT_HEADER, 14, true,
+                product ? RWT_COLUMN_SHA256 : null);
+        FamilyEvidence families = inspectFamilies(root, sha);
+        Counts actual = new Counts(donors.size(), semantics.size(), families.count(),
+                sources.size(), rwt.size());
         if (!actual.equals(expected)) {
             throw new IllegalStateException("baseline counts drift: expected=" + expected + ", got=" + actual);
+        }
+        if (product && !FAMILIES_GIT_TREE.equals(families.gitTreeSha1())) {
+            throw new IllegalStateException("Nebula family Git tree changed: " + families.gitTreeSha1());
         }
         verifyDonors(donors);
         verifySemantics(semantics);
@@ -108,8 +131,11 @@ public final class M3WebWidgetMappingAudit {
     }
 
     private static List<String[]> table(Path root, MessageDigest sha, String name,
-            String header, int columns, boolean allowBlank) throws IOException {
+            String header, int columns, boolean allowBlank, String expectedSha256) throws IOException {
         String text = read(root, sha, name);
+        if (expectedSha256 != null && !expectedSha256.equals(sha256Text(text))) {
+            throw new IllegalStateException("source SHA-256 drift: " + name);
+        }
         String[] lines = text.split("\n", -1);
         List<String[]> records = new ArrayList<>();
         boolean seenHeader = false;
@@ -189,8 +215,9 @@ public final class M3WebWidgetMappingAudit {
     private static void verifyRwt(List<String[]> rows, boolean baseline) {
         Set<String> ids = new HashSet<>();
         Map<String, Integer> routes = new HashMap<>();
+        int nextRank = 1;
         for (String[] row : rows) {
-            if (!ids.add(row[1]) || !row[0].matches("[1-9][0-9]*")) {
+            if (!ids.add(row[1]) || !row[0].equals(Integer.toString(nextRank++))) {
                 throw new IllegalStateException("RWT rank/concept identity drift");
             }
             String route = row[3].startsWith("BLOCKED(") ? "BLOCKED" : row[3];
@@ -208,7 +235,7 @@ public final class M3WebWidgetMappingAudit {
         }
     }
 
-    private static int inspectFamilies(Path root, MessageDigest sha) throws IOException {
+    static FamilyEvidence inspectFamilies(Path root, MessageDigest sha) throws IOException {
         Path directory = root.resolve(PREFIX + "families");
         if (Files.isSymbolicLink(directory) || !Files.isDirectory(directory)) {
             throw new IllegalStateException("missing real Nebula family directory");
@@ -218,6 +245,7 @@ public final class M3WebWidgetMappingAudit {
             paths = entries.sorted(Comparator.comparing(p -> p.getFileName().toString())).toList();
         }
         int count = 0;
+        ByteArrayOutputStream gitTreeEntries = new ByteArrayOutputStream();
         for (Path path : paths) {
             if (Files.isSymbolicLink(path) || !Files.isRegularFile(path)
                     || !path.getFileName().toString().matches("[a-z0-9]+[.]properties")) {
@@ -225,13 +253,37 @@ public final class M3WebWidgetMappingAudit {
             }
             String expected = path.getFileName().toString().replace(".properties", "");
             String value = read(root, sha, PREFIX + "families/" + path.getFileName());
+            byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+            gitTreeEntries.writeBytes(("100644 " + path.getFileName() + "\0")
+                    .getBytes(StandardCharsets.UTF_8));
+            gitTreeEntries.writeBytes(gitObjectSha1("blob", bytes));
             if (Arrays.stream(value.split("\n")).filter(s -> s.startsWith("family="))
                     .filter(s -> s.equals("family=" + expected)).count() != 1L) {
                 throw new IllegalStateException("family identity drift: " + expected);
             }
             count++;
         }
-        return count;
+        return new FamilyEvidence(count, HexFormat.of().formatHex(
+                gitObjectSha1("tree", gitTreeEntries.toByteArray())));
+    }
+
+    /** Canonical Git object bytes, used only as an identity witness, not a security grant. */
+    private static byte[] gitObjectSha1(String type, byte[] content) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            digest.update((type + " " + content.length + "\0")
+                    .getBytes(StandardCharsets.US_ASCII));
+            digest.update(content);
+            return digest.digest();
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new ExceptionInInitializerError(impossible);
+        }
+    }
+
+    /** Package-local deterministic SHA-256 oracle, also tested without production fixtures. */
+    static String sha256Text(String source) {
+        return HexFormat.of().formatHex(sha256().digest(
+                source.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static String read(Path root, MessageDigest sha, String relative) throws IOException {

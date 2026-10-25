@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
@@ -30,6 +31,27 @@ public final class M3WebWidgetMappingAuditTest {
             var b = M3WebWidgetMappingAudit.audit(root, ONE);
             check(a.equals(b), "fixed-point source digest");
             check(a.sha256().matches("[0-9a-f]{64}"), "source digest shape");
+            check(M3WebWidgetMappingAudit.sha256Text("abc").equals(
+                    "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"),
+                    "independent SHA-256 oracle");
+            check(!M3WebWidgetMappingAudit.sha256Text("abc").equals(
+                    M3WebWidgetMappingAudit.sha256Text("abd")), "same-shape content drift");
+            var baselineTree = M3WebWidgetMappingAudit.inspectFamilies(
+                    root, MessageDigest.getInstance("SHA-256"));
+            check(baselineTree.count() == 1 && baselineTree.gitTreeSha1().equals(
+                    "da78345b2b47f0d37fa65f5ccc28aff0aef94949"),
+                    "independent Git tree fixture oracle");
+            Path family = root.resolve(PREFIX + "families/grid.properties");
+            String oldFamily = Files.readString(family);
+            try {
+                Files.writeString(family, oldFamily + "note=foreign\n");
+                check(!baselineTree.gitTreeSha1().equals(
+                        M3WebWidgetMappingAudit.inspectFamilies(
+                                root, MessageDigest.getInstance("SHA-256")).gitTreeSha1()),
+                        "family mutation changes pinned Git tree");
+            } finally {
+                Files.writeString(family, oldFamily);
+            }
             reject(root, CROSSWALK, "PROPOSED_NOT_RUN", "QUALIFIED", "false semantic promotion");
             reject(root, CROSSWALK, "STATIC_TEXT", "UNKNOWN_PROFILE", "unknown profile");
             reject(root, CROSSWALK, "LABEL", "INVALID ID", "invalid identity");
@@ -38,6 +60,7 @@ public final class M3WebWidgetMappingAuditTest {
             reject(root, SOURCE, "NOT_IMPLEMENTED", "IMPLEMENTED", "unproven implementation");
             reject(root, RWT, "NOT_RUN test", "PASS", "unrun RWT promotion");
             reject(root, RWT, "RAP_NATIVE", "FOREIGN_RENDERER", "foreign RWT route");
+            reject(root, RWT, "1\tLABEL", "2\tLABEL", "nonconsecutive RWT rank");
             reject(root, CROSSWALK, "LABEL\tspan", "LABEL\tspan\tEXTRA", "TSV column mutation");
             reject(root, CROSSWALK, "STATIC_TEXT", "STATIC_TEXT\r", "CRLF encoding");
             checkReject(() -> M3WebWidgetMappingAudit.audit(root,

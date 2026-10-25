@@ -30,3 +30,20 @@ never transformation, behavior, browser render or widget parity accepted.
 Order: inventory -> documentation -> recipe -> diff -> lint -> Java compile
 -> qualification test -> canonical OpenRewrite fixed point -> original Tycho
 build/tests -> actual SWT/RWT runtime. Keep each missing stage NOT_RUN.
+
+## Follow-up: original source-baseline seals
+
+The source inventory and RWT route count alone do not authorize equivalence.
+The follow-up source-sealed Java21 qualification gate additionally pins all
+four catalogue input payloads with exact SHA-256 and reconstructs the original
+45-family Git tree object SHA-1 (`54942ccf0f9eb3253def12dfcae13dd528681ba0`)
+from its sorted, mode-100644 members. These properties files are unchanged;
+no family runtime type is modified. It also refuses rank gaps and repeated
+RWT positions. Git tree SHA-1 is provenance compatibility with Git's existing
+object identity; the four TSV source seals and all changed Java source receipts
+remain SHA-256. Any changed baseline requires a new source/version review.
+
+The canonical follow-up recipe is
+`com.synexia.rewrite.M3NebulaWebSourceSeal20261025` in the Synexia
+convergence workspace. The standalone native product acceptance gate remains
+HOLD until actual SWT/RAP/Tycho tests execute.
