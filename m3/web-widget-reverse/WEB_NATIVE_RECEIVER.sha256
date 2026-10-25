@@ -5,6 +5,6 @@ cae78b468cefe56d1b15e9d1d2389f5efc990a0f684266e42c4acdea8a90469a  m3/web-widget-
 64885a95f86e4690f3f90894fc7cc732ecc98b58923b10deb2a941b3bf5455d5  m3/web-widget-reverse/examples/native-swt/StaticOrders.xhtml
 71f2eac8672ffc0b5289e26cbcd074522e7a704d4a7dbbe0d05bd6f86dc6b520  m3/web-widget-reverse/examples/native-swt/OrdersSwt.java
 ffc4ce2f961e8ed2da9d557a26f319607fe6adde32c6cde1234c7b41b5e5b2f6  m3/web-widget-reverse/examples/native-swt/NativeControlsSwt.java
-dcb84e2014bd2a434c0a16345440987e7626e56da9611763375ac595954d82b0  m3/web-widget-reverse/examples/native-swt/StaticOrdersSwt.java
+08adfb7bf7d7c1db10db1b321585925e86b4dd05487166f50a1a3f9bb0b99fc4  m3/web-widget-reverse/examples/native-swt/StaticOrdersSwt.java
 618b71a68444bd4baf480931eeefb6561bf8321caf50727b5d27e5f751c6d6b2  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeControlsWebSwt.java
 668210113122b29bd6f31bcdc698a025f221e3e26674f771832634eb11ba06c0  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeWebControlsSnippet.java

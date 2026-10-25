@@ -36,7 +36,7 @@ public final class StaticOrdersSwt {
     w7.select(1);
     org.eclipse.swt.widgets.Text w8 = new org.eclipse.swt.widgets.Text(w1, org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.MULTI | org.eclipse.swt.SWT.V_SCROLL | org.eclipse.swt.SWT.READ_ONLY);
     w8.setData("web.field", "notes");
-    w8.setText("line1 line2");
+    w8.setText("line1\nline2");
     org.eclipse.nebula.widgets.grid.Grid w9 = new org.eclipse.nebula.widgets.grid.Grid(w1, org.eclipse.swt.SWT.BORDER | org.eclipse.swt.SWT.V_SCROLL | org.eclipse.swt.SWT.H_SCROLL);
     w9.setData("web.field", "data");
     w9.setLayoutData(new org.eclipse.swt.layout.GridData(org.eclipse.swt.SWT.FILL, org.eclipse.swt.SWT.FILL, true, true));

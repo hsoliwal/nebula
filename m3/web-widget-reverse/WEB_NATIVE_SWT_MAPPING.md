@@ -108,3 +108,12 @@ platform event/IME, visual theme/font/RTL, accessibility/ARIA parity, memory,
 performance, resource disposal and M3JDK21 native integration. The screenshot,
 GC/resource and CI gate authorities stay with SWT/Nebula/RAP; do not mark
 unrun gates PASSED or merge the receiving PR without their evidence.
+
+### XHTML multiline data correction
+
+The source generator retains XHTML `textarea` LF, CR and TAB characters when
+creating the intermediate UiBinder XML attributes using XML numeric character
+references. It does not replace them with spaces; the generated multiline SWT
+`Text.setText` now preserves the source characters. This correction was replayed
+through the canonical Synexia generator and tracked with a new SHA-256 receipt.
+Other HTML whitespace/CSS layout and semantics remain explicitly unqualified.
