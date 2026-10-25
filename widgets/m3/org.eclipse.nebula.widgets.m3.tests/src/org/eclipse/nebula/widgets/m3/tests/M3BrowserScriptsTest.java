@@ -71,24 +71,24 @@ public class M3BrowserScriptsTest {
 
     @Test
     public void refusesInvalidAndOversizedPatches() {
-        assertThrows(IllegalArgumentException.class, () -> M3BrowserScripts.patch(null, false));
-        assertThrows(IllegalArgumentException.class,
+        assertRejected(() -> M3BrowserScripts.patch(null, false));
+        assertRejected(
                 () -> M3BrowserScripts.patch(Collections.singletonMap("", "x"), false));
-        assertThrows(IllegalArgumentException.class,
+        assertRejected(
                 () -> M3BrowserScripts.patch(Collections.singletonMap("x", null), false));
-        assertThrows(IllegalArgumentException.class,
+        assertRejected(
                 () -> M3BrowserScripts.patch(Collections.singletonMap("x",
                         "x".repeat(M3BrowserScripts.MAX_EVENT_VALUE + 1)), false));
         Map<String, String> tooMany = new HashMap<>();
         for (int i = 0; i <= M3BrowserScripts.MAX_PATCH_ITEMS; i++) {
             tooMany.put("id" + i, "text");
         }
-        assertThrows(IllegalArgumentException.class, () -> M3BrowserScripts.patch(tooMany, false));
+        assertRejected(() -> M3BrowserScripts.patch(tooMany, false));
         Map<String, String> oversizedTransport = new HashMap<>();
         for (int i = 0; i < 8; i++) {
             oversizedTransport.put("f" + i, "z".repeat(M3BrowserScripts.MAX_EVENT_VALUE));
         }
-        assertThrows(IllegalArgumentException.class,
+        assertRejected(
                 () -> M3BrowserScripts.patch(oversizedTransport, false));
         assertEquals("(function(){return 0;})()", M3BrowserScripts.patch(Map.of(), false));
     }
@@ -101,5 +101,14 @@ public class M3BrowserScriptsTest {
         assertTrue(js.contains("document.addEventListener('input',relay,true)"));
         assertTrue(js.contains("document.addEventListener('change',relay,true)"));
         assertTrue(js.contains("node.getAttribute('data-nebula-id')"));
+    }
+    private static void assertRejected(Runnable operation) {
+        boolean rejected = false;
+        try {
+            operation.run();
+        } catch (IllegalArgumentException expected) {
+            rejected = true;
+        }
+        assertTrue("Expected IllegalArgumentException", rejected);
     }
 }
