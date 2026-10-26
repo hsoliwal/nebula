@@ -152,6 +152,39 @@ final class GwtAttributedJavaInventoryTest {
         }
     }
 
+    @Test void verifiedBinarySnapshotsAreCleanedAfterSuccessAndRefusal() throws Exception {
+        long initial = snapshotDirectoryCount();
+        inspect(classWith("Label title = new Label(\"Hello\");"));
+        assertEquals(initial, snapshotDirectoryCount());
+        assertThrows(IllegalArgumentException.class, () -> inspect(classWith(
+                "Label title = new Label(System.getProperty(\"effect\"));")));
+        assertEquals(initial, snapshotDirectoryCount());
+
+        Path forged = Files.createTempFile("m3-untrusted-gwt-", ".jar");
+        try {
+            Files.write(forged, Files.readAllBytes(SIGNATURE_JAR));
+            Files.writeString(forged, "unsealed suffix", java.nio.file.StandardOpenOption.APPEND);
+            byte[] javaSource = classWith("Label title = new Label(\"Hello\");")
+                    .getBytes(StandardCharsets.UTF_8);
+            var receipt = new WebWidgetUiBinderProjection.SourceReceipt(
+                    "demo/Orders.java", digest(javaSource));
+            var falseReceipt = new GwtAttributedJavaInventory.ClasspathJar(
+                    forged, digest(SIGNATURE_JAR));
+            assertThrows(IllegalArgumentException.class, () ->
+                    GwtAttributedJavaInventory.inspect(receipt, javaSource, List.of(falseReceipt)));
+            assertEquals(initial, snapshotDirectoryCount());
+        } finally {
+            Files.deleteIfExists(forged);
+        }
+    }
+
+    private static long snapshotDirectoryCount() throws IOException {
+        try (var children = Files.list(Path.of(System.getProperty("java.io.tmpdir")))) {
+            return children.filter(path -> path.getFileName().toString()
+                    .startsWith("m3-gwt-ast-classpath-")).count();
+        }
+    }
+
     private static Path testOnlySignatureJar() {
         try {
             Path root = Files.createTempDirectory("m3-typed-gwt-test-only-");
