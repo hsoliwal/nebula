@@ -186,6 +186,32 @@ final class GwtAttributedJavaInventoryTest {
         expectArchiveRefusal(traversal, "JAR_NON_CANONICAL_OR_DUPLICATE_ENTRY");
         Path backslash = archiveWithOne("com\\forged.class", new byte[] {1});
         expectArchiveRefusal(backslash, "JAR_NON_CANONICAL_OR_DUPLICATE_ENTRY");
+        Path duplicate = Files.createTempFile("m3-duplicate-archive-", ".jar");
+        try (var out = new JarOutputStream(Files.newOutputStream(duplicate))) {
+            for (String entryName : new String[] {"first.class", "other.class"}) {
+                out.putNextEntry(new JarEntry(entryName));
+                out.write(1);
+                out.closeEntry();
+            }
+        }
+        byte[] zip = Files.readAllBytes(duplicate);
+        byte[] before = "other.class".getBytes(StandardCharsets.US_ASCII);
+        byte[] after = "first.class".getBytes(StandardCharsets.US_ASCII);
+        int replaces = 0;
+        for (int i = 0; i <= zip.length - before.length; i++) {
+            boolean match = true;
+            for (int j = 0; j < before.length; j++) {
+                if (zip[i + j] != before[j]) { match = false; break; }
+            }
+            if (match) {
+                System.arraycopy(after, 0, zip, i, after.length);
+                i += before.length - 1;
+                replaces++;
+            }
+        }
+        assertEquals(2, replaces); // both ZIP local header and central-directory entry
+        Files.write(duplicate, zip);
+        expectArchiveRefusal(duplicate, "JAR_NON_CANONICAL_OR_DUPLICATE_ENTRY");
         Path empty = Files.createTempFile("m3-empty-archive-", ".jar");
         try (var out = new JarOutputStream(Files.newOutputStream(empty))) { out.flush(); }
         expectArchiveRefusal(empty, "EMPTY_JAR");
@@ -227,6 +253,19 @@ final class GwtAttributedJavaInventoryTest {
         all[at] ^= 1; // preserve central-directory CRC, alter actual data
         Files.write(jar, all);
         expectArchiveRefusal(jar, "JAR_ENTRY_CRC_MISMATCH");
+    }
+
+    @Test void rejectsAggregateExpandedJarBudget() throws Exception {
+        Path jar = Files.createTempFile("m3-total-expanded-archive-", ".jar");
+        byte[] block = new byte[16 * 1024 * 1024];
+        try (var stream = new JarOutputStream(Files.newOutputStream(jar))) {
+            for (int i = 0; i < 9; i++) {
+                stream.putNextEntry(new JarEntry("uncompressed-" + i + ".bin"));
+                stream.write(block);
+                stream.closeEntry();
+            }
+        }
+        expectArchiveRefusal(jar, "JAR_ENTRY_SIZE_OR_RATIO_BUDGET");
     }
 
     @Test void rejectsPathologicalJarDirectoryEntryCount() throws Exception {
