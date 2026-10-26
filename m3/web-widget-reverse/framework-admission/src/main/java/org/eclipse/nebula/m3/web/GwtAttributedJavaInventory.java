@@ -16,6 +16,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -235,6 +236,7 @@ public final class GwtAttributedJavaInventory {
      * access the archive. This is a cold compile-time proof, not a native hot path.
      */
     private static Set<String> validateBinaryArchive(Path snapshot) throws IOException {
+        preflightZipDirectory(snapshot);
         try (JarFile archive = new JarFile(snapshot.toFile(), false)) {
             long storedBytes = Files.size(snapshot);
             Enumeration<JarEntry> entries = archive.entries();
@@ -289,6 +291,65 @@ public final class GwtAttributedJavaInventory {
         } catch (java.util.zip.ZipException invalidArchive) {
             throw new IllegalArgumentException("M3_GWT_AST_JAR_INVALID_ARCHIVE", invalidArchive);
         }
+    }
+
+    /**
+     * Reject unbounded central-directory claims before JarFile builds an entry
+     * index. Reading at most the final 65557 bytes avoids ZIP-header-sized
+     * memory allocations for oversized/untrusted JAR entry directories.
+     * ZIP64 and multidisk containers exceed this deliberately bounded profile.
+     */
+    private static void preflightZipDirectory(Path archive) throws IOException {
+        final int minEndRecord = 22;
+        final int maxComment = 65_535;
+        long fileBytes = Files.size(archive);
+        if (fileBytes < minEndRecord) throw refuse("JAR_INVALID_ARCHIVE");
+        int suffixSize = (int) Math.min(fileBytes, minEndRecord + maxComment);
+        byte[] suffix = new byte[suffixSize];
+        try (RandomAccessFile input = new RandomAccessFile(archive.toFile(), "r")) {
+            input.seek(fileBytes - suffixSize);
+            input.readFully(suffix);
+        }
+        // EOCD may carry a comment containing the same PK signature. The
+        // comment length must reach exactly the actual file end.
+        int end = -1;
+        for (int i = suffix.length - minEndRecord; i >= 0; i--) {
+            if ((suffix[i] & 255) == 0x50 && (suffix[i + 1] & 255) == 0x4b
+                    && (suffix[i + 2] & 255) == 0x05 && (suffix[i + 3] & 255) == 0x06
+                    && i + minEndRecord + zipU16(suffix, i + 20) == suffix.length) {
+                end = i;
+                break;
+            }
+        }
+        if (end < 0) throw refuse("JAR_INVALID_ARCHIVE");
+        int thisDisk = zipU16(suffix, end + 4);
+        int centralDisk = zipU16(suffix, end + 6);
+        int entriesHere = zipU16(suffix, end + 8);
+        int entriesAll = zipU16(suffix, end + 10);
+        long centralBytes = zipU32(suffix, end + 12);
+        long centralOffset = zipU32(suffix, end + 16);
+        if (thisDisk != 0 || centralDisk != 0 || entriesHere != entriesAll) {
+            throw refuse("JAR_SPANNED_DIRECTORY_UNSUPPORTED");
+        }
+        if (entriesAll > MAX_JAR_ENTRIES) throw refuse("JAR_ENTRY_COUNT_BUDGET");
+        if (centralBytes == 0xffff_ffffL || centralOffset == 0xffff_ffffL
+                || entriesAll == 0xffff) {
+            throw refuse("JAR_ZIP64_UNSUPPORTED");
+        }
+        long endOffset = fileBytes - suffix.length + end;
+        if (centralOffset > endOffset || centralBytes > endOffset - centralOffset
+                || (entriesAll > 0 && centralBytes == 0)) {
+            throw refuse("JAR_CENTRAL_DIRECTORY_BOUNDS");
+        }
+    }
+
+    private static int zipU16(byte[] bytes, int at) {
+        return (bytes[at] & 255) | ((bytes[at + 1] & 255) << 8);
+    }
+
+    private static long zipU32(byte[] bytes, int at) {
+        return (zipU16(bytes, at) & 65_535L)
+                | ((zipU16(bytes, at + 2) & 65_535L) << 16);
     }
 
     /** Normalize Java 21 MR-JAR class variants to one source-level owner. */
