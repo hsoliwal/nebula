@@ -35,7 +35,7 @@ jobs:
           curl -fLSs --retry 3 --max-time 60 -o rwt-4.8.0.jar \
             https://repo.maven.apache.org/maven2/org/eclipse/rap/org.eclipse.rap.rwt/4.8.0/org.eclipse.rap.rwt-4.8.0.jar
           echo 'b61f95c6f93ee8c507934bfa7c2001936da2e24f645b041e04ba83587e22647c  rwt-4.8.0.jar' | sha256sum -c -
-      - name: Compile generated original SWT controls and optional Browser receiver
+      - name: Compile native controls and virtual Table/Tree receivers
         shell: bash
         run: |
           set -euo pipefail
@@ -47,18 +47,27 @@ jobs:
             "$ROOT/generated/OrdersNativeSwt.java" \
             "$ROOT/generated/ContactFormNativeSwt.java" \
             "$ROOT/generated/PreferencesNativeSwt.java" \
-            "$ROOT/internal/M3BrowserScripts.java" \
-            "$ROOT/M3BrowserWidget.java" \
             "$ROOT/M3VirtualTableBinding.java" \
             "$ROOT/M3VirtualTreeBinding.java"
       - name: Compile and execute no-display original Java page proofs
         shell: bash
         run: |
           set -euo pipefail
-          javac --release 21 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+          javac --release 11 -proc:none -Xlint:all -Werror -encoding UTF-8 \
             -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" \
             -d build/m3-native-rwt-api m3/proof/OriginalVirtualPageProof.java
           java -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" OriginalVirtualPageProof
+      - name: Compile optional Browser fallback separately
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3
+          # Browser support cannot mask a passed native Table/Tree page proof.
+          javac --release 11 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+            -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" \
+            -d build/m3-native-rwt-api \
+            "$ROOT/internal/M3BrowserScripts.java" \
+            "$ROOT/M3BrowserWidget.java"
       - name: Explicit remaining qualification status
         run: |
           echo 'RWT Java source/API compatibility is not RAP browser/session execution.'
