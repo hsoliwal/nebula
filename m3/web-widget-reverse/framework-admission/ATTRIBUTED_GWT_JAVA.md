@@ -55,6 +55,17 @@ deliberately strict: a larger or atypical official donor JAR must
 remain held until separately evaluated, rather than silently bypassing
 a security gate.
 
+Binary class ownership is also checked **across** all admitted JARs:
+two independently hashed JARs must not define the same `.class` owner.
+Java 21 multi-release entries under `META-INF/versions/9..21/` are normalized
+to their source-level owner for conflict checks. A caller cannot make
+constructor attribution dependent on classpath order by supplying multiple
+JARs with colliding types; such inputs refuse as
+`M3_GWT_AST_AMBIGUOUS_BINARY_CLASS_OWNER`. Future-version class entries are
+ignored by this Java 21 check, and module descriptors are not treated as
+ordinary class owners. This proves deterministic owner selection within the
+bounded candidate grammar, **not** authenticity of the donor's signatures.
+
 `javac` rewrites its own AST during `analyze()`: the inventory snapshots the
 source-written class members and `var` declarations **before attribution**.
 This explicitly blocks two dangerous false admissions: a synthetic implicit
@@ -82,13 +93,14 @@ source inventory's complete syntax contract; local JUnit creates minimal
 ## Proof boundaries
 
 Executed locally: strict Java 21 `javac --release 21 -Xlint:all -Werror`
-against the previous two exact public inputs, plus fifteen adversarial test
+against the previous two exact public inputs, plus seventeen adversarial test
 groups through a temporary JUnit-compatible assertion shim. The groups
 exercise positive typed GWT constructors, source-written constructors and
 static initializers, control flow, callbacks, `var`, Unicode, foreign
 symbols, source/hash errors, binary JAR hash, temporary-snapshot cleanup, ZIP traversal and duplicate
 entries, compression and total-size bombs, corrupt CRC and entry-count limits,
-256-row limits, comment and string decoys, and deterministic parallel inspections. **This is not a
+256-row limits, duplicate class owners including Java 21 multi-release paths,
+comment and string decoys, and deterministic parallel inspections. **This is not a
 real Maven/JUnit receipt.** The committed Synexia Maven/OpenRewrite recipe
 and Nebula Java 21 JUnit workflow are the actual hosted qualification owners.
 
