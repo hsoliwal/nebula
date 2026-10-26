@@ -155,8 +155,14 @@ public class M3VirtualTreeBindingTest {
                     assertArrayEquals(new String[] {"root-7", "child-9"},
                             binding.getSelectedKeys());
                     assertEquals(2, tree.getSelectionCount());
-                    tree.setSelection(new TreeItem[] {tree.getItem(7)});
+                    TreeItem seventh = tree.getItem(7);
+                    seventh.getText(0); // materialize virtual node
+                    seventh.setData(M3VirtualTreeBinding.ROW_KEY, "stale-metadata");
+                    binding.invalidateRoots(7, 7);
+                    tree.setSelection(new TreeItem[] {seventh});
                     tree.notifyListeners(SWT.Selection, new Event());
+                    // Must force SetData after clear, not capture the old
+                    // application-defined TreeItem.setData property.
                     assertArrayEquals(new String[] {"root-7"}, binding.getSelectedKeys());
 
                     FakeHierarchy reverse = new FakeHierarchy(100_000, true);
