@@ -350,6 +350,29 @@ final class GwtAttributedJavaInventoryTest {
         }
     }
 
+    @Test void sourceClasspathDigestReceiptMustNotChangeBetweenAttributionAndProof() throws Exception {
+        byte[] source = classWith("Label title = new Label(\"Hello\");")
+                .getBytes(StandardCharsets.UTF_8);
+        var receipt = new WebWidgetUiBinderProjection.SourceReceipt(
+                "demo/Orders.java", digest(source));
+        var legitimate = JARS.getFirst();
+        var forged = new GwtAttributedJavaInventory.ClasspathJar(
+                SIGNATURE_JAR, "0".repeat(64));
+        // Deliberately mutable on subsequent reads. The first read supplies the
+        // legitimate compiler classpath, while a second read poisons receipts.
+        var changing = new java.util.AbstractList<GwtAttributedJavaInventory.ClasspathJar>() {
+            private int reads;
+            @Override public int size() { return 1; }
+            @Override public GwtAttributedJavaInventory.ClasspathJar get(int index) {
+                if (index != 0) throw new IndexOutOfBoundsException(index);
+                return reads++ == 0 ? legitimate : forged;
+            }
+        };
+        var inspected = GwtAttributedJavaInventory.inspect(receipt, source, changing);
+        assertEquals(List.of(legitimate.sha256()), inspected.classpathDigests());
+        assertEquals(1, inspected.declarations().size());
+    }
+
     private static Path testOnlySignatureJar() {
         try {
             Path root = Files.createTempDirectory("m3-typed-gwt-test-only-");
