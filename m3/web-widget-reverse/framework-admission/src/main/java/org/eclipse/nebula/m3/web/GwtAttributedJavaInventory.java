@@ -223,6 +223,7 @@ public final class GwtAttributedJavaInventory {
      */
     private static void validateBinaryArchive(Path snapshot) throws IOException {
         try (JarFile archive = new JarFile(snapshot.toFile(), false)) {
+            long storedBytes = Files.size(snapshot);
             Enumeration<JarEntry> entries = archive.entries();
             Set<String> names = new HashSet<>();
             byte[] buffer = new byte[16_384];
@@ -241,11 +242,12 @@ public final class GwtAttributedJavaInventory {
                     if (declared > 0) throw refuse("JAR_DIRECTORY_HAS_CONTENT");
                     continue;
                 }
-                if (declared < 0 || compressed < 0 || entry.getCrc() < 0
+                if (declared < 0 || compressed < 0 || compressed > storedBytes
+                        || entry.getCrc() < 0
                         || declared > MAX_JAR_ENTRY_BYTES
                         || expanded > MAX_JAR_EXPANDED_BYTES - declared
                         || (compressed == 0 && declared > 0)
-                        || (compressed > 0 && declared / compressed > MAX_COMPRESSION_RATIO)) {
+                        || (compressed > 0 && declared > compressed * MAX_COMPRESSION_RATIO)) {
                     throw refuse("JAR_ENTRY_SIZE_OR_RATIO_BUDGET");
                 }
                 // The central directory is not sufficient evidence: stream
