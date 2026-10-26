@@ -277,6 +277,10 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
         }
         String[] keys = new String[selected.length];
         for (int i = 0; i < selected.length; i++) {
+            // TreeItem.getData does not guarantee fresh application metadata
+            // after Tree.clear(index,true). Resolve the virtual item's
+            // content first so SWT.SetData repopulates a cleared item.
+            selected[i].getText(0);
             Object key = selected[i].getData(ROW_KEY);
             if (!(key instanceof String)) {
                 throw new IllegalStateException("Selected TreeItem has no stable key");
