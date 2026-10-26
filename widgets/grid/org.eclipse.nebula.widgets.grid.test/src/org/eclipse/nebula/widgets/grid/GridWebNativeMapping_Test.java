@@ -12,6 +12,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
@@ -90,15 +91,39 @@ public class GridWebNativeMapping_Test {
         assertFalse(tree.isDisposed());
     }
 
+@Test
+public void staticProgressUsesNativeRwtCompatibleIntegerRange() {
+    Composite root = StaticProgressNativeWebUiBinder.create(shell);
+    assertEquals(1, root.getChildren().length);
+    assertTrue(root.getChildren()[0] instanceof Composite);
+    Composite section = (Composite) root.getChildren()[0];
+    assertEquals(4, section.getChildren().length);
+    assertTrue(section.getChildren()[1] instanceof ProgressBar);
+    ProgressBar sync = (ProgressBar) section.getChildren()[1];
+    assertSame(section, sync.getParent());
+    assertEquals("sync", sync.getData("web.field"));
+    assertEquals(100, sync.getMaximum());
+    assertEquals(63, sync.getSelection());
+    ProgressBar completed = (ProgressBar) section.getChildren()[2];
+    assertEquals(1, completed.getMaximum());
+    assertEquals(1, completed.getSelection());
+    ProgressBar empty = (ProgressBar) section.getChildren()[3];
+    assertEquals(999999, empty.getMaximum());
+    assertEquals(0, empty.getSelection());
+    assertFalse(root.isDisposed());
+}
+
     @Test
     public void parentDisposalReleasesBothNativeWidgetTrees() {
         Composite gridRoot = GridNativeWebUiBinder.create(shell);
         Composite treeRoot = TreeNativeWebUiBinder.create(shell);
+        Composite progressRoot = StaticProgressNativeWebUiBinder.create(shell);
         Grid grid = (Grid) gridRoot.getChildren()[2];
         Tree tree = (Tree) treeRoot.getChildren()[1];
         shell.dispose();
         assertTrue(gridRoot.isDisposed());
         assertTrue(treeRoot.isDisposed());
+        assertTrue(progressRoot.isDisposed());
         assertTrue(grid.isDisposed());
         assertTrue(tree.isDisposed());
     }

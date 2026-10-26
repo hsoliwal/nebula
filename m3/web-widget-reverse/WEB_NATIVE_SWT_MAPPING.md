@@ -176,3 +176,23 @@ when necessary, and rethrows the original exception. No new runtime layer,
 control hierarchy or per-row Control is introduced. The Java-only injected
 failure oracle passed locally. Native GTK/Win32/Cocoa and RAP/RWT session
 behavior still require separate proof; this is not a native acceptance receipt.
+
+## Static HTML progress to SWT/RWT ProgressBar (26 October 2026)
+
+The Synexia-owned recipe additionally lowers a bounded XHTML `<progress>`
+whose `value` and `max` are exact nonnegative integers (positive max) into
+**the existing** SWT `ProgressBar(parent, SWT.HORIZONTAL)`, `setMaximum`,
+`setSelection`, with `id` preserved as `web.field`. The same Java API is declared
+in RWT 4.8.0. HTML omitted `max` means 1. The implemented domain is at most
+999999, canonical decimal integers only; out-of-range, float/fraction, missing
+value (indeterminate), click events, nested fallback contents, `meter`, styling
+and unrecognized properties fail rather than truncate or approximate.
+
+The generated `StaticProgressSwt.java` is an example;
+`StaticProgressNativeWebUiBinder.java` and the updated
+`GridWebNativeMapping_Test` live in the existing original Tycho test bundle,
+selected by its already-admitted POM. A native Nebula snippets-bundle factory
+and runnable Display example are also generated. The canonical Java 21 recipe
+and strict Java 11 API-shaped stub behavior tests remain **exclusively** in
+Synexia. Java source generation and offline stubs are not native SWT or RAP
+session equivalence proof; GTK/Win32/Cocoa/RAP acceptance stays open.

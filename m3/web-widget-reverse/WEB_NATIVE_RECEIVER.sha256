@@ -17,4 +17,9 @@ ef990ab380ee2c62ddeea3abd62c3ef5eaeceaa97a705c2527e34a4473e8b435  examples/org.e
 594f1ac0421ef5f7c477c85534c7da7ba1e715788cfc60a44fef1c8d699596f3  widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml
 400bedc7b5386be1794237bf9ea9964fa6cd6ec9852ffa16faed71581fb0cd91  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridNativeWebUiBinder.java
 3c092fb440e4aa7acb23cfe6fa3243cedeee374d2ecedcd708ff7f41ee0dffa4  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/TreeNativeWebUiBinder.java
-da12809127838f4d8c364ab40de0cade242431f2637fe8204943c52e177b6462  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridWebNativeMapping_Test.java
+3b46962a8989c1246869f6370e05a677979de11fbea3d087118146fd1a47691e  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridWebNativeMapping_Test.java
+35a4db6d748593b1a3cf9e4398b275518cb3d43c8b10f231e54459188de54ac8  m3/web-widget-reverse/examples/native-swt/StaticProgress.xhtml
+544bd3c8ba93469067dbd66c83fa46e6762355b352fd3b480b132c9d97a08b19  m3/web-widget-reverse/examples/native-swt/StaticProgressSwt.java
+fe942d6955275ff5b313ddcbb953ccc175586d9589b6e33b34a87f3d6792ae1a  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeProgressWebSwt.java
+07a7e4d31491954a7534b097e99fdf2be83d1c3c4085dc1a81014cb66c449e62  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeProgressWebSnippet.java
+058c927840f155101c3f63c23d8271ab53b3628b4cbc5baa4b5c8ace3513985d  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/StaticProgressNativeWebUiBinder.java

@@ -72,3 +72,14 @@ New generated native factories dispose their partially constructed root on
 child initialization failure while preserving the original throwable (and
 suppressing any cleanup failure). The recipe-first source and injectable
 Java-only tests remain in Synexia; do not manually edit these emitted files.
+
+### ProgressBar source-only receiver
+
+`StaticProgress.xhtml` is the source of `StaticProgressSwt.java`, emitted by
+Synexia's same strict XHTML -> bounded UiBinder -> SWT Java pipeline. The
+product result reuses SWT `ProgressBar`; it does not introduce a browser
+renderer, duplicate selection model or Java/SWT adapter framework. Original
+Nebula Grid test and snippets bundles also receive the generated native
+progress factories. An added JUnit4 original-owner test checks `getMaximum`,
+`getSelection`, owner, `web.field`, and shell disposal when native CI executes.
+The currently unavailable hosted runners leave that native test unproven.
