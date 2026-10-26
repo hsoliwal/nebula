@@ -83,7 +83,12 @@ a stable snapshot before the SWT callback.
   discover an ID and no forced expansion of hidden subtrees.
 - `replaceNodes` preflights the next root size, column count
   and path geometry before mutating SWT. It invalidates old
-  sibling-page cache and calls `Tree.clearAll(true)`.
+  sibling-page cache and resets the root item count through zero,
+  recreating the original TreeItem identity space. A mere
+  `Tree.clearAll(true)` could retain **stale expansion state
+  by index** after a sort, causing the wrong logical node to expand.
+  Existing expansion is intentionally reset on a structural snapshot
+  change; preserving it by stable key is a separate future contract.
 - `invalidateRoots(first,last)` is bounded to at most 256 roots,
   evicts intersecting root pages and uses the original Tree clear
   API. Structural changes should use `replaceNodes`.
