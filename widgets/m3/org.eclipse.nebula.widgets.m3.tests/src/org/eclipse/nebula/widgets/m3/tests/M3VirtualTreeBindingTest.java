@@ -133,6 +133,16 @@ public class M3VirtualTreeBindingTest {
                     first.setExpanded(true);
                     assertEquals("Grandchild 2", first.getItem(2).getText(0));
 
+                    // Logical keys survive a collapsed ancestor without
+                    // forcing SWT/RWT to expand or realize its descendants.
+                    root.setExpanded(false);
+                    binding.setSelectedKeys("child-9");
+                    assertArrayEquals(new String[] {"child-9"}, binding.getSelectedKeys());
+                    assertEquals(0, tree.getSelectionCount());
+                    root.setExpanded(true);
+                    binding.setSelectedKeys("child-9");
+                    assertEquals(1, tree.getSelectionCount());
+
                     for (int page = 0; page < 12; page++) {
                         int index = page * M3VirtualTreeBinding.PAGE_ROWS;
                         assertEquals("Root " + index, tree.getItem(index).getText(0));
