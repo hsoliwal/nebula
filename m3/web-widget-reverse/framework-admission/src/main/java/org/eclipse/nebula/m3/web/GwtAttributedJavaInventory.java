@@ -27,8 +27,13 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.zip.CRC32;
 import java.util.Objects;
 import java.util.Set;
 import javax.lang.model.element.Element;
@@ -57,6 +62,10 @@ import javax.tools.ToolProvider;
 public final class GwtAttributedJavaInventory {
     private static final int MAX_SOURCE_BYTES = 1_048_576;
     private static final int MAX_JARS = 8;
+    private static final int MAX_JAR_ENTRIES = 12_000;
+    private static final long MAX_JAR_ENTRY_BYTES = 16L * 1024 * 1024;
+    private static final long MAX_JAR_EXPANDED_BYTES = 128L * 1024 * 1024;
+    private static final long MAX_COMPRESSION_RATIO = 512;
     private static final long MAX_JAR_BYTES = 100L * 1024 * 1024;
     private static final String LABEL = "com.google.gwt.user.client.ui.Label";
     private static final String BUTTON = "com.google.gwt.user.client.ui.Button";
@@ -147,6 +156,7 @@ public final class GwtAttributedJavaInventory {
                     throw refuse("JAR_FILE_BUDGET_OR_SYMLINK");
                 }
                 if (!sha256(snapshot).equals(jar.sha256())) throw refuse("JAR_DIGEST_DRIFT");
+                validateBinaryArchive(snapshot);
                 classpath.add(snapshot);
             }
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -205,6 +215,73 @@ public final class GwtAttributedJavaInventory {
             for (Path staged : stagedBinaryFiles) Files.deleteIfExists(staged);
             Files.deleteIfExists(binarySnapshotRoot);
         }
+    }
+
+    /**
+     * Bound both ZIP directory claims and actual decoded bytes before javac can
+     * access the archive. This is a cold compile-time proof, not a native hot path.
+     */
+    private static void validateBinaryArchive(Path snapshot) throws IOException {
+        try (JarFile archive = new JarFile(snapshot.toFile(), false)) {
+            Enumeration<JarEntry> entries = archive.entries();
+            Set<String> names = new HashSet<>();
+            byte[] buffer = new byte[16_384];
+            int count = 0;
+            long expanded = 0;
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                if (++count > MAX_JAR_ENTRIES) throw refuse("JAR_ENTRY_COUNT_BUDGET");
+                String name = entry.getName();
+                if (!validArchiveName(name, entry.isDirectory()) || !names.add(name)) {
+                    throw refuse("JAR_NON_CANONICAL_OR_DUPLICATE_ENTRY");
+                }
+                long declared = entry.getSize();
+                long compressed = entry.getCompressedSize();
+                if (entry.isDirectory()) {
+                    if (declared > 0) throw refuse("JAR_DIRECTORY_HAS_CONTENT");
+                    continue;
+                }
+                if (declared < 0 || compressed < 0 || entry.getCrc() < 0
+                        || declared > MAX_JAR_ENTRY_BYTES
+                        || expanded > MAX_JAR_EXPANDED_BYTES - declared
+                        || (compressed == 0 && declared > 0)
+                        || (compressed > 0 && declared / compressed > MAX_COMPRESSION_RATIO)) {
+                    throw refuse("JAR_ENTRY_SIZE_OR_RATIO_BUDGET");
+                }
+                // The central directory is not sufficient evidence: stream
+                // the bytes to enforce limits even if its lengths are forged.
+                long read = 0;
+                CRC32 crc = new CRC32();
+                try (InputStream stream = archive.getInputStream(entry)) {
+                    for (int n; (n = stream.read(buffer)) != -1;) {
+                        read += n;
+                        crc.update(buffer, 0, n);
+                        if (read > declared || read > MAX_JAR_ENTRY_BYTES
+                                || expanded > MAX_JAR_EXPANDED_BYTES - read) {
+                            throw refuse("JAR_ACTUAL_EXPANSION_BUDGET");
+                        }
+                    }
+                }
+                if (read != declared) throw refuse("JAR_ENTRY_LENGTH_MISMATCH");
+                if (crc.getValue() != entry.getCrc()) throw refuse("JAR_ENTRY_CRC_MISMATCH");
+                expanded += read;
+            }
+            if (count == 0) throw refuse("EMPTY_JAR");
+        } catch (java.util.zip.ZipException invalidArchive) {
+            throw new IllegalArgumentException("M3_GWT_AST_JAR_INVALID_ARCHIVE", invalidArchive);
+        }
+    }
+
+    private static boolean validArchiveName(String name, boolean directory) {
+        if (name == null || name.isEmpty() || name.charAt(0) == '/'
+                || name.indexOf('\\') >= 0 || name.indexOf('\0') >= 0) return false;
+        if (directory != name.endsWith("/")) return false;
+        String part = directory ? name.substring(0, name.length() - 1) : name;
+        if (part.isEmpty()) return false;
+        for (String segment : part.split("/", -1)) {
+            if (segment.isEmpty() || segment.equals(".") || segment.equals("..")) return false;
+        }
+        return true;
     }
 
     private static List<WebWidgetUiBinderProjection.Declaration> readExactClass(
