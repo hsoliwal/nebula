@@ -122,6 +122,10 @@ rather than assuming all desktop Grid methods exist in RWT.
   now compiles `M3VirtualTreeBinding` alongside the virtual Table
   and generated static controls using the checksum-pinned
   Eclipse RAP/RWT 4.8.0 JAR.
+- The display-free `m3/proof/OriginalVirtualPageProof.java` now compiles
+  and exercises actual product Tree and Table page classes (defensive
+  copies, row-major layouts and invalid-page refusals) in the
+  checksum-pinned RWT API workflow, independently of native displays.
 - Source has been committed to draft Nebula #274. **Actual CI,
   native SWT display, RWT browser/session, screenshots, memory/
   latency measurements and full Tycho are NOT QUALIFIED** by
