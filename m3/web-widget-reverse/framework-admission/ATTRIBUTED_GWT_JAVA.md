@@ -41,6 +41,16 @@ against mutable caller-owned JAR paths; it does not establish the provenance
 or correctness of a caller-supplied binary. Neither arbitrary donor source nor
 constructors, annotation processors, JavaScript, or compiler output are run.
 
+The caller's `List<ClasspathJar>` request is itself frozen with
+`List.copyOf` **once at method entry**. That single ordered immutable list
+drives JAR selection, immutable binary snapshot verification and the final
+`Inventory.classpathDigests` receipt. A stateful or concurrently modified
+caller-supplied list therefore cannot cause the reported fingerprints to
+describe different JARs than `javac` analyzed. A recorded negative test uses
+a list whose second read returns a forged all-zero hash; the pre-fix
+implementation incorrectly reported the forged hash, whereas this version
+reports the verified binary digest.
+
 Each immutable snapshot also passes bounded **ZIP/JAR content admission**
 before `javac` opens it. The inventory rejects noncanonical and duplicate
 archive entry names, ZIP traversal, empty/corrupt archives, inconsistent
@@ -93,7 +103,7 @@ source inventory's complete syntax contract; local JUnit creates minimal
 ## Proof boundaries
 
 Executed locally: strict Java 21 `javac --release 21 -Xlint:all -Werror`
-against the previous two exact public inputs, plus seventeen adversarial test
+against the previous two exact public inputs, plus eighteen adversarial test
 groups through a temporary JUnit-compatible assertion shim. The groups
 exercise positive typed GWT constructors, source-written constructors and
 static initializers, control flow, callbacks, `var`, Unicode, foreign
