@@ -178,6 +178,96 @@ final class GwtAttributedJavaInventoryTest {
         }
     }
 
+    @Test void rejectsCorruptAndNoncanonicalClasspathArchives() throws Exception {
+        Path broken = Files.createTempFile("m3-invalid-archive-", ".jar");
+        Files.writeString(broken, "not a ZIP archive");
+        expectArchiveRefusal(broken, "JAR_INVALID_ARCHIVE");
+        Path traversal = archiveWithOne("../escaping.class", new byte[] {1});
+        expectArchiveRefusal(traversal, "JAR_NON_CANONICAL_OR_DUPLICATE_ENTRY");
+        Path backslash = archiveWithOne("com\\forged.class", new byte[] {1});
+        expectArchiveRefusal(backslash, "JAR_NON_CANONICAL_OR_DUPLICATE_ENTRY");
+        Path empty = Files.createTempFile("m3-empty-archive-", ".jar");
+        try (var out = new JarOutputStream(Files.newOutputStream(empty))) { out.flush(); }
+        expectArchiveRefusal(empty, "EMPTY_JAR");
+    }
+
+    @Test void rejectsLargeCompressedEntryAndExtremeCompressionRatio() throws Exception {
+        byte[] zeros = new byte[16 * 1024 * 1024 + 1];
+        Path tooLarge = archiveWithOne("compressed-over-budget.bin", zeros);
+        expectArchiveRefusal(tooLarge, "JAR_ENTRY_SIZE_OR_RATIO_BUDGET");
+        Path extremeRatio = archiveWithOne("highly-compressible.bin", new byte[2 * 1024 * 1024]);
+        expectArchiveRefusal(extremeRatio, "JAR_ENTRY_SIZE_OR_RATIO_BUDGET");
+    }
+
+    @Test void rejectsStoredEntryWithCorruptedPayloadCrc() throws Exception {
+        Path jar = Files.createTempFile("m3-bad-archive-crc-", ".jar");
+        byte[] payload = "CRC_ORIGINAL_SENTINEL".getBytes(StandardCharsets.US_ASCII);
+        var crc = new java.util.zip.CRC32();
+        crc.update(payload);
+        try (var stream = new JarOutputStream(Files.newOutputStream(jar))) {
+            var entry = new JarEntry("payload.bin");
+            entry.setMethod(JarEntry.STORED);
+            entry.setSize(payload.length);
+            entry.setCompressedSize(payload.length);
+            entry.setCrc(crc.getValue());
+            stream.putNextEntry(entry);
+            stream.write(payload);
+            stream.closeEntry();
+        }
+        byte[] all = Files.readAllBytes(jar);
+        int at = -1;
+        for (int i = 0; i <= all.length - payload.length; i++) {
+            boolean same = true;
+            for (int j = 0; j < payload.length; j++) {
+                if (all[i + j] != payload[j]) { same = false; break; }
+            }
+            if (same) { at = i; break; }
+        }
+        assertTrue(at >= 0);
+        all[at] ^= 1; // preserve central-directory CRC, alter actual data
+        Files.write(jar, all);
+        expectArchiveRefusal(jar, "JAR_ENTRY_CRC_MISMATCH");
+    }
+
+    @Test void rejectsPathologicalJarDirectoryEntryCount() throws Exception {
+        Path crowd = Files.createTempFile("m3-too-many-entries-", ".jar");
+        try (var stream = new JarOutputStream(Files.newOutputStream(crowd))) {
+            for (int i = 0; i <= 12_000; i++) {
+                stream.putNextEntry(new JarEntry("class-" + i + ".class"));
+                stream.write(1);
+                stream.closeEntry();
+            }
+        }
+        expectArchiveRefusal(crowd, "JAR_ENTRY_COUNT_BUDGET");
+    }
+
+    private static Path archiveWithOne(String name, byte[] payload) throws IOException {
+        Path jar = Files.createTempFile("m3-archive-candidate-", ".jar");
+        try (var stream = new JarOutputStream(Files.newOutputStream(jar))) {
+            stream.putNextEntry(new JarEntry(name));
+            stream.write(payload);
+            stream.closeEntry();
+        }
+        return jar;
+    }
+
+    private static void expectArchiveRefusal(Path jar, String reason) throws Exception {
+        long before = snapshotDirectoryCount();
+        try {
+            byte[] bytes = classWith("Label title = new Label(\"Hello\");")
+                    .getBytes(StandardCharsets.UTF_8);
+            var source = new WebWidgetUiBinderProjection.SourceReceipt(
+                    "demo/Orders.java", digest(bytes));
+            var binary = new GwtAttributedJavaInventory.ClasspathJar(jar, digest(jar));
+            var failure = assertThrows(IllegalArgumentException.class, () ->
+                    GwtAttributedJavaInventory.inspect(source, bytes, List.of(binary)));
+            assertTrue(failure.getMessage().contains(reason));
+            assertEquals(before, snapshotDirectoryCount());
+        } finally {
+            Files.deleteIfExists(jar);
+        }
+    }
+
     private static long snapshotDirectoryCount() throws IOException {
         try (var children = Files.list(Path.of(System.getProperty("java.io.tmpdir")))) {
             return children.filter(path -> path.getFileName().toString()
