@@ -332,6 +332,24 @@ final class GwtAttributedJavaInventoryTest {
         }
     }
 
+    @Test void refusesClassShadowViaJava21MultiReleaseEntry() throws Exception {
+        Path versioned = archiveWithOne(
+                "META-INF/versions/21/com/google/gwt/user/client/ui/Label.class",
+                new byte[] {0x01, 0x02});
+        try {
+            byte[] source = classWith("Label title = new Label(\"Hello\");")
+                    .getBytes(StandardCharsets.UTF_8);
+            var receipt = new WebWidgetUiBinderProjection.SourceReceipt(
+                    "demo/Orders.java", digest(source));
+            var jar = new GwtAttributedJavaInventory.ClasspathJar(versioned, digest(versioned));
+            var rejected = assertThrows(IllegalArgumentException.class, () ->
+                    GwtAttributedJavaInventory.inspect(receipt, source, List.of(JARS.getFirst(), jar)));
+            assertTrue(rejected.getMessage().contains("AMBIGUOUS_BINARY_CLASS_OWNER"));
+        } finally {
+            Files.deleteIfExists(versioned);
+        }
+    }
+
     private static Path testOnlySignatureJar() {
         try {
             Path root = Files.createTempDirectory("m3-typed-gwt-test-only-");
