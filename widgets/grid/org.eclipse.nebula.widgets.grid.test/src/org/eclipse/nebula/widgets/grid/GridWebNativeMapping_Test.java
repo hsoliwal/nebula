@@ -8,6 +8,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -17,6 +19,7 @@ import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.Text;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,6 +134,34 @@ public void staticProgressUsesNativeRwtCompatibleIntegerRange() {
         assertEquals("options", options.getData("web.field"));
         assertEquals(1, options.getChildren().length);
         assertEquals("tracking", options.getChildren()[0].getData("web.field"));
+    }
+
+    @Test
+    public void staticNormalFlowTextMatchesNativeSwtPresentation() {
+        Composite root = NormalFlowNativeWebUiBinder.create(shell);
+        assertEquals(1, root.getChildren().length);
+        assertTrue(root.getChildren()[0] instanceof Composite);
+        Composite section = (Composite) root.getChildren()[0];
+        assertEquals("normalFlow", section.getData("web.field"));
+        Control[] children = section.getChildren();
+        assertEquals(4, children.length);
+        assertTrue(children[0] instanceof Label);
+        assertEquals("Shipping && returns", ((Label) children[0]).getText());
+        assertEquals("headline", children[0].getData("web.field"));
+        assertTrue(children[1] instanceof Combo);
+        Combo region = (Combo) children[1];
+        assertEquals("regions", region.getData("web.field"));
+        assertEquals("North & West", region.getItem(0));
+        assertEquals("South hub", region.getItem(1));
+        assertEquals(1, region.getSelectionIndex());
+        assertTrue(children[2] instanceof Text);
+        assertEquals("  KEEP\nraw   spaces  ", ((Text) children[2]).getText());
+        assertEquals("notes", children[2].getData("web.field"));
+        assertTrue(children[3] instanceof Button);
+        assertEquals("Refresh now", ((Button) children[3]).getText());
+        assertSame(root, section.getParent());
+        shell.dispose();
+        assertTrue(root.isDisposed());
     }
 
     @Test

@@ -223,3 +223,33 @@ JUnit4 generator adds a fifth, source-only tested original-owner Group contract.
 nested parenting, labels, identity and shell disposal. GTK/Win32/Cocoa native
 Tycho and RAP browser/session checks remain NOT_RUN; the source admission
 cannot be promoted until those independent gates pass.
+
+## Static XHTML normal-flow text qualification (26 October 2026)
+
+`StaticXhtmlUiBinderFrontend` in canonical **Synexia** source normalizes only
+text-only default-flow nodes (`p`, `span`, headings, `label`, `button`, `option`,
+`legend`, `li`, `th`, and `td`) before emitting the **existing** SWT/Nebula
+Java constructors. XML preserves tabs, line breaks and repeated spaces while
+normal CSS rendering collapses them; SWT `Label`/`Button`/`Combo` cannot apply
+CSS whitespace processing themselves. Non-breaking spaces (U+00A0) and other
+Unicode spaces are **not** collapsed. A segment break adjacent to non-ASCII
+text refuses until per-script line-break semantics are independently proven.
+Source code never expands dynamic CSS, browser DOM, form events or bindings.
+
+Data remains different from presentation: `textarea` newlines/tabs/repeated
+spaces and `input.value` are preserved exactly, while `Label`/`Button`/`Group`
+continue to escape mnemonic ampersands for SWT (`&&`). The `NormalFlow.xhtml`
+fixture produces the product `NormalFlowSwt.java`, original Nebula native
+snippet `NativeNormalFlowWebSwt`/`NativeNormalFlowWebSnippet`, and
+`NormalFlowNativeWebUiBinder` in the existing Grid test fragment. Its
+`GridWebNativeMapping_Test` method verifies original widget ownership,
+Combo options/selection, display text, and unchanged raw textarea content.
+
+Synexia's JDK21 strict standalone suite executed **563 checks PASS**, including
+Java 11 source compilation and native API-*shaped* JUnit4/stub execution; the
+**33/33 receiver input/output SHA-256 checks** passed locally. This does **not**
+claim actual SWT/Tycho/PDE, RAP/RWT server/client/session, GTK/Win32/Cocoa,
+IME/accessibility, pixel equivalence, resource or performance admission.
+
+Reference: [CSS Text Level 3 white-space:normal](https://www.w3.org/TR/css-text-3/).
+No upstream implementation source was copied or relicensed.

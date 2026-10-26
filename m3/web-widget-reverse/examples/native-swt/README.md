@@ -101,3 +101,18 @@ fieldset cascade, legend accessibility, style, event, keyboard or cross-platform
 pixel equivalence has been established. Original native tests remain **NOT_RUN**
 while CI runners are unavailable; source-only Java 11 stub compilation is not
 native SWT or RAP acceptance. All transformation code stays in Synexia.
+
+### Native default-flow XHTML text fixture
+
+`NormalFlow.xhtml` is admitted by the **existing Synexia** XHTML-to-UiBinder
+recipe; `NormalFlowSwt.java` is its generated native product output.
+`<h2>`/`<button>` labels and `<select><option>` text collapse ordinary HTML
+whitespace before they become SWT `Label`/`Button`/`Combo`, while raw `<textarea>`
+content remains untouched. The same generator emits the actual Grid-test
+fragment `NormalFlowNativeWebUiBinder` and the normal SWT snippet
+`NativeNormalFlowWebSwt`/`NativeNormalFlowWebSnippet`.
+
+Expected UI: heading `Shipping & returns`, Combo `North & West` /
+`South hub` (South selected), multiline notes with their original spaces,
+and a `Refresh now` Button. Native  GTK/Win32/Cocoa screenshots, browser
+session/event equivalence, and resources are still **NOT VERIFIED**.
