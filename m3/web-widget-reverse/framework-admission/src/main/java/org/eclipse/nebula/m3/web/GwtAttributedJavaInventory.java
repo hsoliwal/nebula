@@ -136,6 +136,9 @@ public final class GwtAttributedJavaInventory {
         try {
             var classpath = new ArrayList<Path>();
             var originalPaths = new ArrayList<Path>();
+            // A valid digest on each archive does not resolve FQN collisions:
+            // classpath order would otherwise choose a different constructor owner.
+            Set<String> attributedClassOwners = new HashSet<>();
             for (ClasspathJar jar : jars) {
                 Path path = jar.path();
                 if (Files.isSymbolicLink(path)
@@ -156,7 +159,12 @@ public final class GwtAttributedJavaInventory {
                     throw refuse("JAR_FILE_BUDGET_OR_SYMLINK");
                 }
                 if (!sha256(snapshot).equals(jar.sha256())) throw refuse("JAR_DIGEST_DRIFT");
-                validateBinaryArchive(snapshot);
+                Set<String> jarOwners = validateBinaryArchive(snapshot);
+                for (String owner : jarOwners) {
+                    if (!attributedClassOwners.add(owner)) {
+                        throw refuse("AMBIGUOUS_BINARY_CLASS_OWNER");
+                    }
+                }
                 classpath.add(snapshot);
             }
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -221,11 +229,12 @@ public final class GwtAttributedJavaInventory {
      * Bound both ZIP directory claims and actual decoded bytes before javac can
      * access the archive. This is a cold compile-time proof, not a native hot path.
      */
-    private static void validateBinaryArchive(Path snapshot) throws IOException {
+    private static Set<String> validateBinaryArchive(Path snapshot) throws IOException {
         try (JarFile archive = new JarFile(snapshot.toFile(), false)) {
             long storedBytes = Files.size(snapshot);
             Enumeration<JarEntry> entries = archive.entries();
             Set<String> names = new HashSet<>();
+            Set<String> binaryOwners = new HashSet<>();
             byte[] buffer = new byte[16_384];
             int count = 0;
             long expanded = 0;
@@ -267,11 +276,31 @@ public final class GwtAttributedJavaInventory {
                 if (read != declared) throw refuse("JAR_ENTRY_LENGTH_MISMATCH");
                 if (crc.getValue() != entry.getCrc()) throw refuse("JAR_ENTRY_CRC_MISMATCH");
                 expanded += read;
+                String binaryOwner = classFileOwner(name);
+                if (binaryOwner != null) binaryOwners.add(binaryOwner);
             }
             if (count == 0) throw refuse("EMPTY_JAR");
+            return Set.copyOf(binaryOwners);
         } catch (java.util.zip.ZipException invalidArchive) {
             throw new IllegalArgumentException("M3_GWT_AST_JAR_INVALID_ARCHIVE", invalidArchive);
         }
+    }
+
+    /** Normalize Java 21 MR-JAR class variants to one source-level owner. */
+    private static String classFileOwner(String path) {
+        if (!path.endsWith(".class")) return null;
+        final String versions = "META-INF/versions/";
+        if (path.startsWith(versions)) {
+            int slash = path.indexOf('/', versions.length());
+            if (slash < 0) throw refuse("JAR_VERSIONED_CLASS_PATH");
+            String part = path.substring(versions.length(), slash);
+            if (!part.matches("[0-9]{1,2}")) throw refuse("JAR_VERSIONED_CLASS_PATH");
+            int major = Integer.parseInt(part);
+            if (major < 9) throw refuse("JAR_VERSIONED_CLASS_PATH");
+            if (major > 21) return null; // future JVM class; not visible to --release 21
+            path = path.substring(slash + 1);
+        }
+        return path.equals("module-info.class") ? null : path;
     }
 
     private static boolean validArchiveName(String name, boolean directory) {
