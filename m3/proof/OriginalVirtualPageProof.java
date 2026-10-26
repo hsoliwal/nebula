@@ -29,6 +29,67 @@ public final class OriginalVirtualPageProof {
         throw new AssertionError("Expected invalid argument: " + detail);
     }
 
+    /** Serial, deterministic geometry and copy-contract sweep, no SWT display. */
+    private static void deterministicPagePermutations() {
+        long state = 0x10262026L;
+        for (int trial = 0; trial < 2048; trial++) {
+            state = (state * 1664525L + 1013904223L) & 0xffffffffL;
+            int count = 1 + (int) (state % M3VirtualTreeBinding.PAGE_ROWS);
+            int columns = 1 + (int) ((state >>> 8) % 8);
+            int offset = (trial % 1024) * 64;
+            String parent = "parent-" + (trial % 13);
+            String[] keys = new String[count];
+            int[] descendants = new int[count];
+            String[] cells = new String[count * columns];
+            for (int row = 0; row < count; row++) {
+                keys[row] = "key-" + trial + "-" + row;
+                descendants[row] = (trial + row) % 7;
+                for (int column = 0; column < columns; column++) {
+                    cells[row * columns + column] = "value-" + row + "-" + column;
+                }
+            }
+            M3VirtualTreeBinding.Page tree = new M3VirtualTreeBinding.Page(
+                    parent, offset, columns, keys, descendants, cells);
+            M3VirtualTableBinding.Page table = new M3VirtualTableBinding.Page(
+                    offset, columns, keys, cells);
+            String firstKey = keys[0];
+            int firstChildCount = descendants[0];
+            String firstText = cells[0];
+            keys[0] = "mutated-key";
+            descendants[0] = -1;
+            cells[0] = "mutated-text";
+            require(tree.offset() == offset && table.offset() == offset,
+                    "Page alignment trial " + trial);
+            require(tree.size() == count && table.size() == count,
+                    "Page size trial " + trial);
+            require(tree.columns() == columns && table.columns() == columns,
+                    "Column count trial " + trial);
+            require(firstKey.equals(tree.keyAt(0)) && firstKey.equals(table.keyAt(0)),
+                    "Stable key defensive copy trial " + trial);
+            require(firstChildCount == tree.childCountAt(0),
+                    "Child count defensive copy trial " + trial);
+            require(firstText.equals(tree.textAt(0, 0))
+                    && firstText.equals(table.textAt(0, 0)),
+                    "Cell defensive copy trial " + trial);
+            require(("value-" + (count - 1) + "-" + (columns - 1))
+                    .equals(tree.textAt(count - 1, columns - 1)),
+                    "Tree row-major terminal cell trial " + trial);
+            require(("value-" + (count - 1) + "-" + (columns - 1))
+                    .equals(table.textAt(count - 1, columns - 1)),
+                    "Table row-major terminal cell trial " + trial);
+            if (trial % 31 == 0) {
+                mustReject(() -> new M3VirtualTreeBinding.Page(parent, offset, 1,
+                        new String[] {"duplicate", "duplicate"},
+                        new int[] {0, 0}, new String[] {"a", "b"}),
+                        "duplicate sibling key trial " + trial);
+                mustReject(() -> new M3VirtualTableBinding.Page(offset, 1,
+                        new String[] {"duplicate", "duplicate"},
+                        new String[] {"a", "b"}),
+                        "duplicate Table key trial " + trial);
+            }
+        }
+    }
+
     public static void main(String[] arguments) {
         String[] keys = {"root/a", "root/b"};
         int[] children = {3, 0};
@@ -82,6 +143,7 @@ public final class OriginalVirtualPageProof {
         mustReject(() -> new M3VirtualTableBinding.Page(0, 1,
                 new String[] {"key"}, new String[] {null}), "null table text");
 
+        deterministicPagePermutations();
         System.out.println("PASS original SWT/RWT virtual Table+Tree page contracts");
     }
 }
