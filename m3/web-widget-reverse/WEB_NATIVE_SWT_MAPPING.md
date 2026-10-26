@@ -196,3 +196,30 @@ and runnable Display example are also generated. The canonical Java 21 recipe
 and strict Java 11 API-shaped stub behavior tests remain **exclusively** in
 Synexia. Java source generation and offline stubs are not native SWT or RAP
 session equivalence proof; GTK/Win32/Cocoa/RAP acceptance stays open.
+
+## Static fieldset and nested Group receiver (26 October 2026)
+
+The Synexia-owned generator now accepts a *source-sealed, static, form-free*
+XHTML `<fieldset>` whose **first child** is one literal `<legend>`. The
+original SWT/RWT `org.eclipse.swt.widgets.Group` constructor, `setText`,
+`GridLayout`, and child-control parentage are emitted directly. This is not
+an HTML form semantic implementation: `form`, `fieldset disabled`, `name`,
+ARIA, JS/events, style/CSS, nested rich legend markup, multiple legends,
+empty or multiline titles all fail closed. Native Group mnemonic syntax is
+escaped (`&` becomes `&&`) without introducing access-key actions.
+
+The same bounded UiBinder Java emitter accepts `urn:import:org.eclipse.swt.widgets`
+`Group` with explicit static `text` and nested child widgets. The `web.field`
+identity is retained; **explicitly empty** `ui:field=""` now refuses instead
+of silently disappearing. Shared child dispatch means `Group` and `Composite`
+use the same Grid, Tree, ProgressBar, nested Group and standard SWT control
+constructors. No new owner, renderer, browser or public API is introduced.
+
+The first-party `StaticGroup.xhtml` generates `StaticGroupSwt.java`, an
+existing-Grid-test-fragment receiver (`StaticGroupNativeWebUiBinder`) plus a
+native SWT snippet factory and Display example. The canonical Synexia
+JUnit4 generator adds a fifth, source-only tested original-owner Group contract.
+**Local test-only stubs, not real SWT binaries**, verified factory structure,
+nested parenting, labels, identity and shell disposal. GTK/Win32/Cocoa native
+Tycho and RAP browser/session checks remain NOT_RUN; the source admission
+cannot be promoted until those independent gates pass.

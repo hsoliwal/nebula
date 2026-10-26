@@ -11,6 +11,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Shell;
@@ -114,16 +115,37 @@ public void staticProgressUsesNativeRwtCompatibleIntegerRange() {
 }
 
     @Test
+    public void staticFieldsetUsesOriginalGroupAndPreservesHierarchy() {
+        Composite root = StaticGroupNativeWebUiBinder.create(shell);
+        assertEquals(2, root.getChildren().length);
+        Control child = root.getChildren()[1];
+        assertTrue(child instanceof Group);
+        Group shipping = (Group) child;
+        assertSame(root, shipping.getParent());
+        assertEquals("shipping", shipping.getData("web.field"));
+        assertEquals("Rates && delivery", shipping.getText());
+        assertEquals(3, shipping.getChildren().length);
+        assertTrue(shipping.getChildren()[2] instanceof Group);
+        Group options = (Group) shipping.getChildren()[2];
+        assertEquals("Additional && options", options.getText());
+        assertEquals("options", options.getData("web.field"));
+        assertEquals(1, options.getChildren().length);
+        assertEquals("tracking", options.getChildren()[0].getData("web.field"));
+    }
+
+    @Test
     public void parentDisposalReleasesBothNativeWidgetTrees() {
         Composite gridRoot = GridNativeWebUiBinder.create(shell);
         Composite treeRoot = TreeNativeWebUiBinder.create(shell);
         Composite progressRoot = StaticProgressNativeWebUiBinder.create(shell);
+        Composite groupRoot = StaticGroupNativeWebUiBinder.create(shell);
         Grid grid = (Grid) gridRoot.getChildren()[2];
         Tree tree = (Tree) treeRoot.getChildren()[1];
         shell.dispose();
         assertTrue(gridRoot.isDisposed());
         assertTrue(treeRoot.isDisposed());
         assertTrue(progressRoot.isDisposed());
+        assertTrue(groupRoot.isDisposed());
         assertTrue(grid.isDisposed());
         assertTrue(tree.isDisposed());
     }

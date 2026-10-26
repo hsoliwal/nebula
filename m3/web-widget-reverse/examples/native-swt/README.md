@@ -83,3 +83,21 @@ Nebula Grid test and snippets bundles also receive the generated native
 progress factories. An added JUnit4 original-owner test checks `getMaximum`,
 `getSelection`, owner, `web.field`, and shell disposal when native CI executes.
 The currently unavailable hosted runners leave that native test unproven.
+
+### Static Group / fieldset candidate
+
+`StaticGroup.xhtml` contains a first-party `<fieldset>` with a literal
+`<legend>` and a nested, form-free fieldset. The canonical Synexia recipe
+emits `StaticGroupSwt.java` with original `Group`, `Label`, `Text`, `Button`
+and `GridLayout` classes. `Group` titles escape literal `&` to `&&` for
+SWT/RWT mnemonic parity. The same Java source is separately generated as
+`StaticGroupNativeWebUiBinder.java` within the original Grid Tycho test fragment
+and `NativeGroupWebSwt.java` in the examples/snippets tree, with
+`NativeGroupWebSnippet.java` as an SWT Display owner. No new custom control,
+Browser, reflection-based transformer or per-item listener is created.
+
+Accepted subset is *static presentation only*. No DOM form behavior, disabled
+fieldset cascade, legend accessibility, style, event, keyboard or cross-platform
+pixel equivalence has been established. Original native tests remain **NOT_RUN**
+while CI runners are unavailable; source-only Java 11 stub compilation is not
+native SWT or RAP acceptance. All transformation code stays in Synexia.
