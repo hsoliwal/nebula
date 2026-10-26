@@ -32,7 +32,13 @@ in the existing `WebWidgetUiBinderProjection` owner.
 The compiler is invoked with `--release 21 -proc:none -implicit:none`, an
 **empty source path** and an explicitly provided binary-only, SHA-256 checked
 classpath. Each JAR must be a regular, non-symlink file, within the size/count
-budgets, with no duplicates. Neither arbitrary caller source nor donor
+budgets, with no duplicates. Before attribution, the intake copies each JAR
+without following links into a **private temporary snapshot**, checks the
+**copied bytes' SHA-256** against its receipt, and gives `javac` *only* the
+verified snapshot paths. Snapshot files are deleted after both successful
+and rejected analyses. This closes the earlier digest-to-class-loading race
+against mutable caller-owned JAR paths; it does not establish the provenance
+or correctness of a caller-supplied binary. Neither arbitrary donor source nor
 constructors, annotation processors, JavaScript, or compiler output are run.
 
 `javac` rewrites its own AST during `analyze()`: the inventory snapshots the
@@ -62,11 +68,11 @@ source inventory's complete syntax contract; local JUnit creates minimal
 ## Proof boundaries
 
 Executed locally: strict Java 21 `javac --release 21 -Xlint:all -Werror`
-against the previous two exact public inputs, plus nine adversarial test
+against the previous two exact public inputs, plus ten adversarial test
 groups through a temporary JUnit-compatible assertion shim. The groups
 exercise positive typed GWT constructors, source-written constructors and
 static initializers, control flow, callbacks, `var`, Unicode, foreign
-symbols, source/hash errors, binary JAR hash checks, 256-row limits, comment
+symbols, source/hash errors, binary JAR hash and temporary-snapshot cleanup checks, 256-row limits, comment
 and string decoys, and deterministic parallel inspections. **This is not a
 real Maven/JUnit receipt.** The committed Synexia Maven/OpenRewrite recipe
 and Nebula Java 21 JUnit workflow are the actual hosted qualification owners.
