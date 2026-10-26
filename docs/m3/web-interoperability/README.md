@@ -369,3 +369,35 @@ JUnit test bundle. The original RWT 4.8 API compilation workflow
 includes the binding source. **Full Tycho, Win32/GTK/Cocoa pixel
 tests, RAP browser sessions and latency/resource acceptance are
 still NOT_RUN; no successful real-RWT result is claimed.**
+
+## Parent-indexed virtual trees
+
+`M3VirtualTreeBinding` is now an additive **original SWT/RWT
+`Tree(SWT.VIRTUAL)` product receiver**. It accepts a bounded
+`Nodes.fetch(parentKey, siblingOffset, length)` from an
+already-resident indexed snapshot, and uses SWT's documented
+**parent-relative** `SWT.SetData` event index. Each loaded
+node supplies a key, flat text cells and `TreeItem.setItemCount`
+for its lazy children. No additional SWT `Control` is allocated
+per logical descendant.
+
+It retains at most four 64-sibling pages, keyed by parent and
+offset, with stable selection keys restored by indexed root-to-leaf
+paths without automatically expanding collapsed branches.
+Native rendering, expansion, scrollbars, keyboard and disposal
+belong to the original `Tree`. Rich tree-grid semantics with
+spans/frozen columns still belong to the separate original
+Nebula Grid / RAP Grid owners.
+
+See [`VIRTUAL_TREE_BINDING.md`](VIRTUAL_TREE_BINDING.md) for
+the API and contracts, and
+[Synexia's source-convergence receipt](https://github.com/hsoliwal/com.synexia/blob/m3/nebula-native-static-swt-20261025/synexia-openrewrite-recipes/recipes/m3-nebula-jsx-to-swt-20261022/VIRTUAL_TREE_RECEIVER_20261026.md)
+for Vaadin TreeGrid, GWT CellTree, Wicket, MyFaces Trinidad and
+Spring source-model mapping and explicit unimplemented stages.
+
+New source tests:
+`M3VirtualTreePageTest` (headless page lanes) and
+`M3VirtualTreeBindingTest` (100,000 roots, three levels,
+selected-key retention and LRU eviction). RWT 4.8.0
+cross-compilation has been added to the existing workflow.
+**Real SWT/RAP platform and browser qualification remains NOT_RUN.**
