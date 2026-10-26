@@ -51,6 +51,15 @@ a list whose second read returns a forged all-zero hash; the pre-fix
 implementation incorrectly reported the forged hash, whereas this version
 reports the verified binary digest.
 
+Before constructing \`JarFile\`, the intake also performs a **bounded ZIP
+end-of-central-directory preflight** on the verified snapshot. It inspects
+no more than 65,557 trailing bytes, rejects forged counts exceeding 12,000
+entries, unsupported multi-disk/ZIP64 containers and out-of-bounds central
+directory offsets. This bounds entry-index admission **before Java's ZIP
+reader allocates its directory index**, rather than imposing the count only
+after \`JarFile\` has opened. The source receipt and public widget APIs remain
+unchanged; oversized or atypical binary archives are held, not repaired.
+
 Each immutable snapshot also passes bounded **ZIP/JAR content admission**
 before `javac` opens it. The inventory rejects noncanonical and duplicate
 archive entry names, ZIP traversal, empty/corrupt archives, inconsistent
@@ -103,7 +112,7 @@ source inventory's complete syntax contract; local JUnit creates minimal
 ## Proof boundaries
 
 Executed locally: strict Java 21 `javac --release 21 -Xlint:all -Werror`
-against the previous two exact public inputs, plus eighteen adversarial test
+against the previous two exact public inputs, plus twenty adversarial test
 groups through a temporary JUnit-compatible assertion shim. The groups
 exercise positive typed GWT constructors, source-written constructors and
 static initializers, control flow, callbacks, `var`, Unicode, foreign
