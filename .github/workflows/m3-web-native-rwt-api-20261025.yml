@@ -11,6 +11,7 @@ on:
       - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTreeBinding.java'
       - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3VirtualTree*.java'
       - '.github/workflows/m3-web-native-rwt-api-20261025.yml'
+      - 'm3/proof/OriginalVirtualPageProof.java'
   workflow_dispatch:
 
 permissions:
@@ -49,6 +50,14 @@ jobs:
             "$ROOT/M3BrowserWidget.java" \
             "$ROOT/M3VirtualTableBinding.java" \
             "$ROOT/M3VirtualTreeBinding.java"
+      - name: Compile and execute no-display original Java page proofs
+        shell: bash
+        run: |
+          set -euo pipefail
+          javac --release 21 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+            -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" \
+            -d build/m3-native-rwt-api m3/proof/OriginalVirtualPageProof.java
+          java -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" OriginalVirtualPageProof
       - name: Explicit remaining qualification status
         run: |
           echo 'RWT Java source/API compatibility is not RAP browser/session execution.'
