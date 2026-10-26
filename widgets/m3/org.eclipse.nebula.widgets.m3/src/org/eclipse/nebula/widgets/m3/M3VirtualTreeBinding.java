@@ -332,6 +332,9 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
             }
             TreeItem item = tree.getItem(path[0]);
             for (int depth = 1; item != null && depth < path.length; depth++) {
+                // Ensure parent has received SetData before requesting a child;
+                // otherwise its stable key and child count may still be absent.
+                item.getText(0);
                 if (!item.getExpanded() || path[depth] >= item.getItemCount()) {
                     item = null; // collapsed or removed: retain logical selection.
                 } else {
