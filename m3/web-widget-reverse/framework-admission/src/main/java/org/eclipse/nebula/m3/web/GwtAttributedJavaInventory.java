@@ -119,19 +119,37 @@ public final class GwtAttributedJavaInventory {
             throw new IllegalArgumentException("SOURCE_INVALID_UTF8", invalid);
         }
         if (jars.isEmpty() || jars.size() > MAX_JARS) throw refuse("BINARY_CLASSPATH_REQUIRED");
-        var classpath = new ArrayList<Path>();
-        for (ClasspathJar jar : jars) {
-            Path path = jar.path();
-            if (Files.isSymbolicLink(path) || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
-                    || Files.size(path) > MAX_JAR_BYTES || Files.size(path) == 0) {
-                throw refuse("JAR_FILE_BUDGET_OR_SYMLINK");
+        // Never hand javac the mutable caller-owned JAR after fingerprinting it:
+        // the path could be replaced between the SHA check and class loading.
+        // Javac sees only private, checksum-verified snapshots throughout analyze().
+        Path binarySnapshotRoot = Files.createTempDirectory("m3-gwt-ast-classpath-");
+        var stagedBinaryFiles = new ArrayList<Path>();
+        try {
+            var classpath = new ArrayList<Path>();
+            var originalPaths = new ArrayList<Path>();
+            for (ClasspathJar jar : jars) {
+                Path path = jar.path();
+                if (Files.isSymbolicLink(path)
+                        || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
+                        || Files.size(path) > MAX_JAR_BYTES || Files.size(path) == 0) {
+                    throw refuse("JAR_FILE_BUDGET_OR_SYMLINK");
+                }
+                Path canonical = path.toRealPath(LinkOption.NOFOLLOW_LINKS);
+                if (originalPaths.contains(canonical)) throw refuse("DUPLICATE_BINARY_JAR");
+                originalPaths.add(canonical);
+                Path snapshot = binarySnapshotRoot.resolve("classpath-" + classpath.size() + ".jar");
+                stagedBinaryFiles.add(snapshot);
+                // Copy links themselves instead of following them. A swapped
+                // source link fails the post-copy regular-file check below.
+                Files.copy(path, snapshot, LinkOption.NOFOLLOW_LINKS);
+                if (!Files.isRegularFile(snapshot, LinkOption.NOFOLLOW_LINKS)
+                        || Files.size(snapshot) == 0 || Files.size(snapshot) > MAX_JAR_BYTES) {
+                    throw refuse("JAR_FILE_BUDGET_OR_SYMLINK");
+                }
+                if (!sha256(snapshot).equals(jar.sha256())) throw refuse("JAR_DIGEST_DRIFT");
+                classpath.add(snapshot);
             }
-            if (!sha256(path).equals(jar.sha256())) throw refuse("JAR_DIGEST_DRIFT");
-            Path canonical = path.toRealPath(LinkOption.NOFOLLOW_LINKS);
-            if (classpath.contains(canonical)) throw refuse("DUPLICATE_BINARY_JAR");
-            classpath.add(canonical);
-        }
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) throw new IllegalStateException("JDK21_COMPILER_REQUIRED");
         var diagnostics = new DiagnosticCollector<JavaFileObject>();
         try (StandardJavaFileManager manager = compiler.getStandardFileManager(
@@ -181,6 +199,11 @@ public final class GwtAttributedJavaInventory {
         } catch (RuntimeException failure) {
             if (failure instanceof IllegalArgumentException) throw failure;
             throw new IllegalArgumentException("JAVA_SOURCE_AST_UNQUALIFIED", failure);
+        }
+        } finally {
+            // No staged bytecode leaks into later compiler inventories.
+            for (Path staged : stagedBinaryFiles) Files.deleteIfExists(staged);
+            Files.deleteIfExists(binarySnapshotRoot);
         }
     }
 
