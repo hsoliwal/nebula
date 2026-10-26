@@ -271,13 +271,13 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         }
         String[] keys = new String[selected.length];
         for (int i = 0; i < selected.length; i++) {
-            TableItem item = table.getItem(selected[i]);
-            Object key = item.getData(ROW_KEY);
-            if (!(key instanceof String)) {
-                Page page = pageAt(selected[i]);
-                key = page.keyAt(selected[i] - page.offset());
-            }
-            keys[i] = (String) key;
+            // SWT.clear does not promise to erase application-defined
+            // Widget.setData(key,value) properties. Therefore never trust
+            // a retained TableItem's old ROW_KEY after page invalidation.
+            // The provider's indexed snapshot is the authority here.
+            int row = selected[i];
+            Page page = pageAt(row);
+            keys[i] = page.keyAt(row - page.offset());
         }
         selectedKeys = keys;
     }
