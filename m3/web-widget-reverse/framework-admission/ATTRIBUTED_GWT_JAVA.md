@@ -13,13 +13,13 @@ code or generate new SWT, JNI or HTML runtimes.
 
 A single `public final` class, with package/path agreement and exactly one
 `public static void build()` method. Its complete body consists of 1–256 local
-variables initialized directly by `new GWT Label("literal")` or
-`new GWT Button("literal")`. The constructor and variable types must resolve
+variables initialized directly by `new Label("literal")` or
+`new Button("literal")`. The constructor and variable types must resolve
 to **exactly** `com.google.gwt.user.client.ui.Label` or `Button` using the
 supplied, checksum-pinned binary JARs. Both overload and single-String
 parameter are checked from `ExecutableElement`, not source spelling.
 
-Everything else is refused: explicit/implicit constructors, class fields,
+Everything else is refused: additional source-written constructors, class fields,
 static initializers, nested classes, imports other than exact GWT types,
 annotations, callbacks, form handlers, branches, loops, assignments,
 `setText`/`setEnabled` mutations, `var`, expressions, other imports or type
