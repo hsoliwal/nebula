@@ -148,6 +148,9 @@ transactions, security, renderer or model lifecycle.
 - `.github/workflows/m3-web-native-rwt-api-20261025.yml`:
   real SHA-256-pinned Eclipse RAP/RWT 4.8.0 Java API compile;
   includes `M3VirtualTableBinding.java`. **PENDING**.
+- `m3/proof/OriginalVirtualPageProof.java` adds a display-free,
+  no-JUnit executable of the actual compiled SWT/RWT Table and Tree
+  page owners; the RWT API workflow runs it if that job can start.
 - Full native SWT Win32/GTK/Cocoa screen, RWT browser session,
   memory/GC/latency and Tycho reactor qualification **NOT_RUN**.
 
