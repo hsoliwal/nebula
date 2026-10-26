@@ -314,6 +314,24 @@ final class GwtAttributedJavaInventoryTest {
         }
     }
 
+    @Test void refusesShadowedGwtClassOwnersAcrossIndividuallySealedJars() throws Exception {
+        Path cloned = Files.createTempFile("m3-shadowed-gwt-", ".jar");
+        try {
+            Files.copy(SIGNATURE_JAR, cloned, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            byte[] source = classWith("Label title = new Label(\"Hello\");")
+                    .getBytes(StandardCharsets.UTF_8);
+            var receipt = new WebWidgetUiBinderProjection.SourceReceipt(
+                    "demo/Orders.java", digest(source));
+            var duplicate = new GwtAttributedJavaInventory.ClasspathJar(cloned, digest(cloned));
+            var rejected = assertThrows(IllegalArgumentException.class, () ->
+                    GwtAttributedJavaInventory.inspect(receipt, source,
+                            List.of(JARS.getFirst(), duplicate)));
+            assertTrue(rejected.getMessage().contains("AMBIGUOUS_BINARY_CLASS_OWNER"));
+        } finally {
+            Files.deleteIfExists(cloned);
+        }
+    }
+
     private static Path testOnlySignatureJar() {
         try {
             Path root = Files.createTempDirectory("m3-typed-gwt-test-only-");
