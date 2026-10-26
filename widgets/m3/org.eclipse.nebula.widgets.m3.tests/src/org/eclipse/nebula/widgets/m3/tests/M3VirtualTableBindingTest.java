@@ -143,6 +143,12 @@ public class M3VirtualTableBindingTest {
                 new TableColumn(table, SWT.NONE);
                 try (M3VirtualTableBinding binding =
                         M3VirtualTableBinding.bind(table, new FakeRows(100, false))) {
+                    table.getItem(12).getText(0); // materialize real SWT.SetData
+                    // Simulate an old application-owned metadata sidecar.
+                    // The indexed source page, not TableItem.setData, must
+                    // determine the selected stable key.
+                    table.getItem(12).setData(M3VirtualTableBinding.ROW_KEY,
+                            "stale-before-invalidation");
                     table.select(12);
                     table.notifyListeners(SWT.Selection, new Event());
                     assertArrayEquals(new String[] {"row-12"}, binding.getSelectedKeys());
