@@ -161,6 +161,9 @@ public class M3VirtualTreeBindingTest {
 
                     FakeHierarchy reverse = new FakeHierarchy(100_000, true);
                     binding.replaceNodes(reverse);
+                    // The formerly expanded first root now has a different
+                    // stable key; expansion must not migrate by index.
+                    assertTrue(!tree.getItem(0).getExpanded());
                     assertEquals("Root 7", tree.getItem(99_992).getText(0));
                     assertArrayEquals(new String[] {"root-7"}, binding.getSelectedKeys());
                     assertEquals(1, tree.getSelectionCount());
