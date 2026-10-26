@@ -127,7 +127,12 @@ public final class GwtAttributedJavaInventory {
         } catch (CharacterCodingException invalid) {
             throw new IllegalArgumentException("SOURCE_INVALID_UTF8", invalid);
         }
-        if (jars.isEmpty() || jars.size() > MAX_JARS) throw refuse("BINARY_CLASSPATH_REQUIRED");
+        // Seal the caller-owned list once: the same exact ordered JAR receipts
+        // must drive attribution, snapshot validation and the output proof.
+        List<ClasspathJar> stableJars = List.copyOf(jars);
+        if (stableJars.isEmpty() || stableJars.size() > MAX_JARS) {
+            throw refuse("BINARY_CLASSPATH_REQUIRED");
+        }
         // Never hand javac the mutable caller-owned JAR after fingerprinting it:
         // the path could be replaced between the SHA check and class loading.
         // Javac sees only private, checksum-verified snapshots throughout analyze().
@@ -139,7 +144,7 @@ public final class GwtAttributedJavaInventory {
             // A valid digest on each archive does not resolve FQN collisions:
             // classpath order would otherwise choose a different constructor owner.
             Set<String> attributedClassOwners = new HashSet<>();
-            for (ClasspathJar jar : jars) {
+            for (ClasspathJar jar : stableJars) {
                 Path path = jar.path();
                 if (Files.isSymbolicLink(path)
                         || !Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
@@ -212,7 +217,7 @@ public final class GwtAttributedJavaInventory {
             List<WebWidgetUiBinderProjection.Declaration> rows = readExactClass(
                     units.getFirst(), Trees.instance(task), relativePath, originalMembers);
             var candidate = WebWidgetUiBinderProjection.project(receipt, sourceUtf8, rows);
-            return new Inventory(receipt, jars.stream().map(ClasspathJar::sha256).toList(),
+            return new Inventory(receipt, stableJars.stream().map(ClasspathJar::sha256).toList(),
                     rows, candidate);
         } catch (RuntimeException failure) {
             if (failure instanceof IllegalArgumentException) throw failure;
