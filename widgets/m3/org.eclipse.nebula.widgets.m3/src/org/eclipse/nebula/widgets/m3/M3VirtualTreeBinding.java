@@ -371,8 +371,11 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
         verifyPaths(next, count, selectedKeys); // preflight before Tree mutation
         nodes = next;
         clearCache();
+        // Clear original TreeItem identity/expansion state, not merely text.
+        // Reusing old item indices after a sorted snapshot can incorrectly
+        // expand a *different* logical node in the new model.
+        tree.setItemCount(0);
         tree.setItemCount(count);
-        tree.clearAll(true);
         tree.setSelection(findVisible(selectedKeys));
     }
 
