@@ -41,7 +41,8 @@ jobs:
           set -euo pipefail
           ROOT=widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3
           mkdir -p build/m3-native-rwt-api
-          javac --release 21 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+          # Product bundle declares JavaSE-11; do not silently raise its bytecode floor.
+          javac --release 11 -proc:none -Xlint:all -Werror -encoding UTF-8 \
             -cp rwt-4.8.0.jar -d build/m3-native-rwt-api \
             "$ROOT/generated/OrdersNativeSwt.java" \
             "$ROOT/generated/ContactFormNativeSwt.java" \
