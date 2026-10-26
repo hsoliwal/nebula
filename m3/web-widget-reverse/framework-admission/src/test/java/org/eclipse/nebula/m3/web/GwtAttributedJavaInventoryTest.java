@@ -280,6 +280,39 @@ final class GwtAttributedJavaInventoryTest {
         expectArchiveRefusal(crowd, "JAR_ENTRY_COUNT_BUDGET");
     }
 
+    @Test void refusesForgedDirectoryCountBeforeOpeningJarIndex() throws Exception {
+        Path jar = archiveWithOne("one.class", new byte[] {1});
+        corruptZipEndRecord(jar, 12_001, false);
+        expectArchiveRefusal(jar, "JAR_ENTRY_COUNT_BUDGET");
+    }
+
+    @Test void refusesSpannedDirectoryBeforeOpeningJarIndex() throws Exception {
+        Path jar = archiveWithOne("one.class", new byte[] {1});
+        corruptZipEndRecord(jar, 1, true);
+        expectArchiveRefusal(jar, "JAR_SPANNED_DIRECTORY_UNSUPPORTED");
+    }
+
+    private static void corruptZipEndRecord(Path jar, int count, boolean spanned) throws IOException {
+        byte[] bytes = Files.readAllBytes(jar);
+        int end = -1;
+        for (int i = bytes.length - 22; i >= 0; i--) {
+            if (bytes[i] == 0x50 && bytes[i + 1] == 0x4b
+                    && bytes[i + 2] == 0x05 && bytes[i + 3] == 0x06) {
+                end = i;
+                break;
+            }
+        }
+        if (end == -1) throw new AssertionError("EOCD missing from fixture");
+        if (spanned) bytes[end + 4] = 1;
+        else {
+            bytes[end + 8] = (byte) count;
+            bytes[end + 9] = (byte) (count >>> 8);
+            bytes[end + 10] = (byte) count;
+            bytes[end + 11] = (byte) (count >>> 8);
+        }
+        Files.write(jar, bytes);
+    }
+
     private static Path archiveWithOne(String name, byte[] payload) throws IOException {
         Path jar = Files.createTempFile("m3-archive-candidate-", ".jar");
         try (var stream = new JarOutputStream(Files.newOutputStream(jar))) {
