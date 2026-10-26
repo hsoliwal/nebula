@@ -41,6 +41,20 @@ against mutable caller-owned JAR paths; it does not establish the provenance
 or correctness of a caller-supplied binary. Neither arbitrary donor source nor
 constructors, annotation processors, JavaScript, or compiler output are run.
 
+Each immutable snapshot also passes bounded **ZIP/JAR content admission**
+before `javac` opens it. The inventory rejects noncanonical and duplicate
+archive entry names, ZIP traversal, empty/corrupt archives, inconsistent
+uncompressed lengths and CRC-32, more than 12,000 entries per JAR,
+individual entries expanded beyond 16 MiB, aggregate expansion beyond
+128 MiB per JAR, or declared compression ratios above 512:1. Every
+entry is streamed and checked; trusting only the ZIP central directory
+would not prevent forged expanded-length claims. These cold
+compiler-phase checks use JDK facilities, add O(actual expanded bytes)
+work, and do not create JNI or a second source parser. Bounds are
+deliberately strict: a larger or atypical official donor JAR must
+remain held until separately evaluated, rather than silently bypassing
+a security gate.
+
 `javac` rewrites its own AST during `analyze()`: the inventory snapshots the
 source-written class members and `var` declarations **before attribution**.
 This explicitly blocks two dangerous false admissions: a synthetic implicit
@@ -68,12 +82,13 @@ source inventory's complete syntax contract; local JUnit creates minimal
 ## Proof boundaries
 
 Executed locally: strict Java 21 `javac --release 21 -Xlint:all -Werror`
-against the previous two exact public inputs, plus ten adversarial test
+against the previous two exact public inputs, plus fifteen adversarial test
 groups through a temporary JUnit-compatible assertion shim. The groups
 exercise positive typed GWT constructors, source-written constructors and
 static initializers, control flow, callbacks, `var`, Unicode, foreign
-symbols, source/hash errors, binary JAR hash and temporary-snapshot cleanup checks, 256-row limits, comment
-and string decoys, and deterministic parallel inspections. **This is not a
+symbols, source/hash errors, binary JAR hash, temporary-snapshot cleanup, ZIP traversal and duplicate
+entries, compression and total-size bombs, corrupt CRC and entry-count limits,
+256-row limits, comment and string decoys, and deterministic parallel inspections. **This is not a
 real Maven/JUnit receipt.** The committed Synexia Maven/OpenRewrite recipe
 and Nebula Java 21 JUnit workflow are the actual hosted qualification owners.
 
