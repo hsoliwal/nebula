@@ -87,11 +87,11 @@ public final class M3BrowserScripts {
             }
         }
         // NodeList is a static snapshot. An earlier ancestor textContent patch
-        // may detach a later descendant: do not count a detached node as updated.
+        // may detach later descendants or replace the document root: refuse stale nodes.
         out.append("var root=document.documentElement;")
                 .append("var nodes=document.querySelectorAll('[data-nebula-id]');")
                 .append("var n=0;for(var i=0;i<nodes.length;i++){")
-                .append("var node=nodes[i];if(!root||!root.contains(node)){continue;}")
+                .append("var node=nodes[i];if(!root||document.documentElement!==root||!root.contains(node)){continue;}")
                 .append("var id=node.getAttribute('data-nebula-id');")
                 .append("if(Object.prototype.hasOwnProperty.call(patch,id)){");
         if (inputValues) {

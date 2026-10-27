@@ -139,11 +139,11 @@ public class M3BrowserScriptsTest {
     @Test
     public void refusesDetachedSnapshotNodesAfterAncestorTextPatch() {
         // Java generates one bounded script; JS execution is tested separately
-        // against the source-owned DOM snapshot proof and the real Browser gate.
+        // against detached-child and replaced-document-root fixtures; real Browser separate.
         String script = M3BrowserScripts.patch(Map.of(
                 "parent", "replacement", "child", "detached"), false);
         assertTrue(script.contains("var root=document.documentElement;"));
-        assertTrue(script.contains("if(!root||!root.contains(node)){continue;}"));
+        assertTrue(script.contains("if(!root||document.documentElement!==root||!root.contains(node)){continue;}"));
         assertTrue(script.contains("node.textContent=patch[id];n++;"));
         String values = M3BrowserScripts.patch(Map.of("parent", "x"), true);
         assertTrue(values.contains("root.contains(node)"));
