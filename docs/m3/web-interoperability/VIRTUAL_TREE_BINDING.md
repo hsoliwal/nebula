@@ -89,9 +89,14 @@ a stable snapshot before the SWT callback.
   by index** after a sort, causing the wrong logical node to expand.
   Existing expansion is intentionally reset on a structural snapshot
   change; preserving it by stable key is a separate future contract.
-- `invalidateRoots(first,last)` is bounded to at most 256 roots,
-  evicts intersecting root pages and uses the original Tree clear
-  API. Structural changes should use `replaceNodes`.
+- `invalidateRoots(first,last)` is bounded to at most 256 roots.
+  Original `Tree.clear(root,true)` recursively invalidates child and
+  grandchild items, so the binding must evict **all four cached pages**,
+  not only intersecting root pages. Descendant pages are indexed by
+  parent key and sibling offset; preserving them would replay old
+  child data after a parent refresh. Four pages are a constant-sized
+  cache, not the complete source tree. Structural changes should use
+  `replaceNodes`.
 - SWT/OS rendering, scrollbars, keyboard/focus events, expansion
   notifications and widget disposal remain owned by the
   **existing Tree**, not a new canvas renderer.
@@ -142,3 +147,32 @@ Primary references:
 - https://help.eclipse.org/latest/topic/org.eclipse.rap.doc/guide/reference/api/org/eclipse/swt/widgets/Tree.html
 - https://vaadin.com/docs/latest/components/tree-grid/data-binding
 - https://wicket.apache.org/docs/about-models.html
+
+## 2026-10-27 recursive clear qualification
+
+Source-level correction in the original `M3VirtualTreeBinding`:
+
+1. Clear all four in-process sibling-page cache slots before
+   `Tree.clear(rootIndex, true)` rather than only root-keyed pages.
+2. Resolve a virtual item's parent content through
+   `parent.getText(0)` before consulting its stable
+   `parent.getData("m3.web.id")`. SWT does not promise to clear
+   application-owned Widget metadata alongside visual text; stale
+   parent keys must never address child pages.
+3. Regression source in `M3VirtualTreeBindingTest` first loads
+   a root, child and grandchild, changes values without changing
+   keys, calls `invalidateRoots(0,0)`, and verifies all three
+   source pages are fetched anew. The old implementation would
+   replay stale descendant content.
+
+SWT's documented `Tree.clear(int,boolean)` contract explicitly
+specifies recursive item invalidation when `all` is true and
+re-requesting virtual item attributes as needed. This fix
+aligns the four-page cache with that contract.
+
+**Qualification status:** product fix and SWT display-backed test
+source committed; native SWT/RWT execution and full Tycho/OS
+pixel tests remain pending. Do not infer platform pass from source
+review alone.
+
+Official API: https://help.eclipse.org/latest/topic/org.eclipse.platform.doc.isv/reference/api/org/eclipse/swt/widgets/Tree.html
