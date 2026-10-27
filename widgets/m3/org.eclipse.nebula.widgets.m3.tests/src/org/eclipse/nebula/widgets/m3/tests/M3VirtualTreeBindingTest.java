@@ -32,6 +32,8 @@ public class M3VirtualTreeBindingTest {
         private final int roots;
         private final boolean reversed;
         int fetches;
+        String childTextPrefix = "Child ";
+        String grandchildTextPrefix = "Grandchild ";
 
         FakeHierarchy(int roots, boolean reversed) {
             this.roots = roots;
@@ -62,12 +64,12 @@ public class M3VirtualTreeBindingTest {
                 } else if ("root-0".equals(parentKey)) {
                     keys[i] = "child-" + item;
                     children[i] = item == 0 ? 3 : 0;
-                    text[2 * i] = "Child " + item;
+                    text[2 * i] = childTextPrefix + item;
                     text[2 * i + 1] = "Nested";
                 } else if ("child-0".equals(parentKey)) {
                     keys[i] = "grandchild-" + item;
                     children[i] = 0;
-                    text[2 * i] = "Grandchild " + item;
+                    text[2 * i] = grandchildTextPrefix + item;
                     text[2 * i + 1] = "Leaf";
                 } else {
                     throw new AssertionError("Unexpected requested parent " + parentKey);
@@ -179,6 +181,55 @@ public class M3VirtualTreeBindingTest {
                             <= M3VirtualTreeBinding.HOT_PAGES);
                 }
                 assertEquals(100_000, tree.getItemCount());
+            } finally {
+                shell.dispose();
+            }
+        } finally {
+            display.dispose();
+        }
+    }
+
+    @Test
+    public void clearingRootInvalidatesCachedChildrenAndGrandchildren() {
+        Display display = new Display();
+        try {
+            Shell shell = new Shell(display);
+            try {
+                Tree tree = createTree(shell);
+                FakeHierarchy source = new FakeHierarchy(2, false);
+                try (M3VirtualTreeBinding binding =
+                        M3VirtualTreeBinding.bind(tree, source)) {
+                    TreeItem root = tree.getItem(0);
+                    assertEquals("Root 0", root.getText(0));
+                    root.setExpanded(true);
+                    TreeItem child = root.getItem(0);
+                    assertEquals("Child 0", child.getText(0));
+                    child.setExpanded(true);
+                    assertEquals("Grandchild 2", child.getItem(2).getText(0));
+                    assertTrue(binding.getResidentPageCount() >= 3);
+                    int before = source.fetches;
+
+                    // Same globally stable keys, updated resident snapshot.
+                    // The prior implementation evicted only the root page:
+                    // the child and grandchild pages remained erroneously
+                    // cached by (parentKey, offset) after clear(...,true).
+                    source.childTextPrefix = "Updated child ";
+                    source.grandchildTextPrefix = "Updated grandchild ";
+                    binding.invalidateRoots(0, 0);
+
+                    TreeItem updatedRoot = tree.getItem(0);
+                    assertEquals("Root 0", updatedRoot.getText(0));
+                    updatedRoot.setExpanded(true);
+                    TreeItem updatedChild = updatedRoot.getItem(0);
+                    assertEquals("Updated child 0", updatedChild.getText(0));
+                    updatedChild.setExpanded(true);
+                    assertEquals("Updated grandchild 2",
+                            updatedChild.getItem(2).getText(0));
+                    assertTrue("Recursive SWT invalidation must fetch descendant pages",
+                            source.fetches >= before + 3);
+                    assertTrue(binding.getResidentPageCount()
+                            <= M3VirtualTreeBinding.HOT_PAGES);
+                }
             } finally {
                 shell.dispose();
             }
