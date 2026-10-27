@@ -86,9 +86,13 @@ public final class M3BrowserScripts {
                 throw new IllegalArgumentException("Browser patch exceeds transport budget");
             }
         }
-        out.append("var nodes=document.querySelectorAll('[data-nebula-id]');")
+        // NodeList is a static snapshot. An earlier ancestor textContent patch
+        // may detach a later descendant: do not count a detached node as updated.
+        out.append("var root=document.documentElement;")
+                .append("var nodes=document.querySelectorAll('[data-nebula-id]');")
                 .append("var n=0;for(var i=0;i<nodes.length;i++){")
-                .append("var node=nodes[i];var id=node.getAttribute('data-nebula-id');")
+                .append("var node=nodes[i];if(!root||!root.contains(node)){continue;}")
+                .append("var id=node.getAttribute('data-nebula-id');")
                 .append("if(Object.prototype.hasOwnProperty.call(patch,id)){");
         if (inputValues) {
             out.append("if('value' in node){node.value=patch[id];n++;}");
