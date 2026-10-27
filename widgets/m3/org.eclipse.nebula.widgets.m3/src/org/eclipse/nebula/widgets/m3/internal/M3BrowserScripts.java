@@ -56,7 +56,8 @@ public final class M3BrowserScripts {
         String value = (String) arguments[2];
         return ("click".equals(type) || "input".equals(type) || "change".equals(type))
                 && !id.isEmpty() && id.length() <= MAX_EVENT_ID
-                && value.length() <= MAX_EVENT_VALUE;
+                && value.length() <= MAX_EVENT_VALUE
+                && validUtf16(id) && validUtf16(value);
     }
 
     /**
@@ -117,10 +118,34 @@ public final class M3BrowserScripts {
                 for (int shift = 12; shift >= 0; shift -= 4) {
                     out.append(Character.forDigit((ch >>> shift) & 0xf, 16));
                 }
+            } else if (Character.isHighSurrogate(ch)) {
+                if (i + 1 >= text.length()
+                        || !Character.isLowSurrogate(text.charAt(i + 1))) {
+                    throw new IllegalArgumentException("Malformed UTF-16 string");
+                }
+                out.append(ch).append(text.charAt(++i));
+            } else if (Character.isLowSurrogate(ch)) {
+                throw new IllegalArgumentException("Malformed UTF-16 string");
             } else {
                 out.append(ch);
             }
         }
         return out.append('"').toString();
+    }
+
+    /** Reject unpaired UTF-16 units without changing valid browser text. */
+    private static boolean validUtf16(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (Character.isHighSurrogate(ch)) {
+                if (i + 1 >= text.length()
+                        || !Character.isLowSurrogate(text.charAt(++i))) {
+                    return false;
+                }
+            } else if (Character.isLowSurrogate(ch)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

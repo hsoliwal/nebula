@@ -110,6 +110,32 @@ public class M3BrowserScriptsTest {
         assertTrue(js.contains("document.addEventListener('change',relay,true)"));
         assertTrue(js.contains("node.getAttribute('data-nebula-id')"));
     }
+    @Test
+    public void malformedSurrogatesFailClosedBeforeBrowserTransport() {
+        String high = String.valueOf(Character.MIN_HIGH_SURROGATE);
+        String low = String.valueOf(Character.MIN_LOW_SURROGATE);
+        assertFalse(M3BrowserScripts.validEvent(new Object[] { "input", high, "ok" }));
+        assertFalse(M3BrowserScripts.validEvent(new Object[] { "input", low, "ok" }));
+        assertFalse(M3BrowserScripts.validEvent(new Object[] { "change", "id", high }));
+        assertFalse(M3BrowserScripts.validEvent(new Object[] { "click", "id", low }));
+        assertRejected(() -> M3BrowserScripts.jsString(high));
+        assertRejected(() -> M3BrowserScripts.jsString(low));
+        assertRejected(() -> M3BrowserScripts.jsString("a" + high + "b"));
+        assertRejected(() -> M3BrowserScripts.jsString(low + high));
+        assertRejected(() -> M3BrowserScripts.patch(Map.of(high, "x"), false));
+        assertRejected(() -> M3BrowserScripts.patch(Map.of("x", low), true));
+    }
+
+    @Test
+    public void validSupplementaryPairsAndOriginalLiteralSemanticsRemain() {
+        String emoji = new String(Character.toChars(0x1f642));
+        assertEquals("\"" + emoji + "\"", M3BrowserScripts.jsString(emoji));
+        assertTrue(M3BrowserScripts.validEvent(new Object[] { "input", "key" + emoji, emoji }));
+        String script = M3BrowserScripts.patch(Map.of("key" + emoji, emoji), false);
+        assertTrue(script.contains(emoji));
+        assertFalse(script.contains("innerHTML"));
+    }
+
     private static void assertRejected(Runnable operation) {
         boolean rejected = false;
         try {

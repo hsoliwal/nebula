@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 Nebula Browser Unicode qualification
+on:
+  pull_request:
+    paths:
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3BrowserScriptsTest.java'
+      - 'm3/web-widget-reverse/qualification/browser-utf16/**'
+      - '.github/workflows/m3-browser-utf16-20261027.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-literal-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Inventory original source and strict Java 21 compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain --untracked-files=normal)"
+          src=widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java
+          proof=m3/web-widget-reverse/qualification/browser-utf16/src/test/java/M3BrowserUnicodeProof.java
+          mkdir -p "$RUNNER_TEMP/browser-utf16-classes"
+          javac --release 21 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+            -d "$RUNNER_TEMP/browser-utf16-classes" "$src" "$proof"
+      - name: Execute Java scalar/event/patch refusal corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -cp "$RUNNER_TEMP/browser-utf16-classes" M3BrowserUnicodeProof \
+            "$RUNNER_TEMP" | tee "$RUNNER_TEMP/java-proof.log"
+          grep -Fx 'M3_BROWSER_UTF16_JAVA_PASS accepted=150000 rejected=8192' \
+            "$RUNNER_TEMP/java-proof.log"
+      - name: Execute generated JavaScript on Node with mock DOM semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          sh m3/web-widget-reverse/qualification/browser-utf16/browser-dom-replay.sh \
+            "$RUNNER_TEMP" | tee "$RUNNER_TEMP/node-proof.log"
+          grep -Fx 'NODE_DOM_REPLAY_PASS updated=3 delegatedEvents=1 handlers=3' \
+            "$RUNNER_TEMP/node-proof.log"
+          test -z "$(git status --porcelain --untracked-files=normal)"
+      - name: Preserve actual proof logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-browser-utf16-evidence
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/java-proof.log
+            ${{ runner.temp }}/node-proof.log
