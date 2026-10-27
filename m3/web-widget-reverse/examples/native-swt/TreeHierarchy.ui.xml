@@ -1,0 +1,15 @@
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+    xmlns:g="urn:import:com.google.gwt.user.client.ui">
+  <g:VerticalPanel>
+    <g:Label ui:field="title" text="Archive &amp; tools"/>
+    <g:Tree ui:field="folders">
+      <g:TreeItem ui:field="root" text="Projects &amp; files" expanded="true">
+        <g:TreeItem ui:field="docs" text="Documents">
+          <g:TreeItem text="Report.txt"/>
+        </g:TreeItem>
+        <g:TreeItem text="Images"/>
+      </g:TreeItem>
+      <g:TreeItem text="Recent"/>
+    </g:Tree>
+  </g:VerticalPanel>
+</ui:UiBinder>

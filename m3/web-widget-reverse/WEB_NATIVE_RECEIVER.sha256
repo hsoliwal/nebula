@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Source SHA-256 only; NOT native SWT/Tycho or RWT runtime acceptance.
+c4207dd4fe6c238a6128d493f1e65519ab87cf90eb9cb40137990e4ed645215d  m3/web-widget-reverse/examples/react-static/Orders.ui.xml
+cae78b468cefe56d1b15e9d1d2389f5efc990a0f684266e42c4acdea8a90469a  m3/web-widget-reverse/examples/native-swt/NativeControls.ui.xml
+64885a95f86e4690f3f90894fc7cc732ecc98b58923b10deb2a941b3bf5455d5  m3/web-widget-reverse/examples/native-swt/StaticOrders.xhtml
+1a68efb851e2abc62f72cbf160efc20039dd9867ad0958a43579a9a7f83b8b57  m3/web-widget-reverse/examples/native-swt/TreeHierarchy.ui.xml
+0254d2282e311dd4564cf249c6eebef8913dea99d755bc623f7afc0b9ce0f5bc  m3/web-widget-reverse/examples/native-swt/TreeHierarchy.xhtml
+46eb4ab4f022dac0836ad2a300917fd44a67d705f7df24753aaa85ffb87dd54c  m3/web-widget-reverse/examples/native-swt/OrdersSwt.java
+eae47b6909f49f71aec8307b6deb2f23ee21efc0dc0deebb1701ccac7bf06ae1  m3/web-widget-reverse/examples/native-swt/NativeControlsSwt.java
+795574835f2f2e350a704adc888213cd2478ea65b0f3145e03b53682be7ae1d7  m3/web-widget-reverse/examples/native-swt/StaticOrdersSwt.java
+0a4235c230349ad4a77140dd88d303e0d5e6cc8b3bee2c4eb73569478cd62e27  m3/web-widget-reverse/examples/native-swt/TreeHierarchySwt.java
+cc9d9c18d175b6a5efa29b29c8941b031c407550c667f9ca6bd42f6868423054  m3/web-widget-reverse/examples/native-swt/TreeHierarchyHtmlSwt.java
+86b0030501ab3eb0adbbd2e066bcb5537f95495957cf43e96e80612097984b07  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeControlsWebSwt.java
+668210113122b29bd6f31bcdc698a025f221e3e26674f771832634eb11ba06c0  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeWebControlsSnippet.java
+ea099641b361b5901d47ca619cad577cf033eb243e4a70a7160bd871791ad11a  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeTreeWebSwt.java
+ef990ab380ee2c62ddeea3abd62c3ef5eaeceaa97a705c2527e34a4473e8b435  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeTreeWebSnippet.java
+594f1ac0421ef5f7c477c85534c7da7ba1e715788cfc60a44fef1c8d699596f3  widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml
+400bedc7b5386be1794237bf9ea9964fa6cd6ec9852ffa16faed71581fb0cd91  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridNativeWebUiBinder.java
+3c092fb440e4aa7acb23cfe6fa3243cedeee374d2ecedcd708ff7f41ee0dffa4  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/TreeNativeWebUiBinder.java
+5c546dea59ebf312715e5662abddb759fd476eec257473b3131bad401b0749f2  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridWebNativeMapping_Test.java
+35a4db6d748593b1a3cf9e4398b275518cb3d43c8b10f231e54459188de54ac8  m3/web-widget-reverse/examples/native-swt/StaticProgress.xhtml
+544bd3c8ba93469067dbd66c83fa46e6762355b352fd3b480b132c9d97a08b19  m3/web-widget-reverse/examples/native-swt/StaticProgressSwt.java
+fe942d6955275ff5b313ddcbb953ccc175586d9589b6e33b34a87f3d6792ae1a  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeProgressWebSwt.java
+07a7e4d31491954a7534b097e99fdf2be83d1c3c4085dc1a81014cb66c449e62  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeProgressWebSnippet.java
+058c927840f155101c3f63c23d8271ab53b3628b4cbc5baa4b5c8ace3513985d  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/StaticProgressNativeWebUiBinder.java
+ee3628f3b8453c93dd81302a9b6d9f785679613f9ecd9c640423b7b65565ae5c  m3/web-widget-reverse/examples/native-swt/StaticGroup.xhtml
+88a3c448fbcbebf0d935394ed68f408081638c11146bb179a792265223b12a82  m3/web-widget-reverse/examples/native-swt/StaticGroupSwt.java
+44f53a24e0ff2f7ba4244b678e64bbc70ff8bffd59ed044316fe0798d26b3561  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/StaticGroupNativeWebUiBinder.java
+1d388a0b8b5d69c9117032c0a98907017d9b1173060215c252e55903c373a413  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeGroupWebSwt.java
+f66accf35b43bd37c55b3e8ddfd6b0c2a75e4ab4d4cc62d8db34b817df068579  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeGroupWebSnippet.java
+2f288ac212addd70fa453e847d70d7afe437111b9c13d53dce6a54f809bc6ad5  m3/web-widget-reverse/examples/native-swt/NormalFlow.xhtml
+8577433bb2d7f91bd7e4e5f7cf340847e5695978f2501017d0ce1cba60d027c8  m3/web-widget-reverse/examples/native-swt/NormalFlowSwt.java
+e63048aeb291627559bd0715f5330b31f08133ee730c7ef76cbce3b08863082e  widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/NormalFlowNativeWebUiBinder.java
+cd59dcdd059f8f5a1335c028d0585e94b0886d75a55125e809c71d10953bb7ec  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeNormalFlowWebSwt.java
+f6de5c9fb16b99d5160f0cb0dd6580209582b7fc3b80fde8407fd859f8db1ccf  examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeNormalFlowWebSnippet.java

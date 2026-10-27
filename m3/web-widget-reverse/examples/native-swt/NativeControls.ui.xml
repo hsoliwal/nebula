@@ -1,0 +1,18 @@
+<ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
+    xmlns:g="urn:import:com.google.gwt.user.client.ui"
+    xmlns:n="urn:import:org.eclipse.nebula.widgets.grid">
+  <g:VerticalPanel>
+    <g:Label ui:field="heading" text="Orders &amp; inventory — 日本語"/>
+    <g:HorizontalPanel>
+      <g:TextBox ui:field="query" text="A-01"/>
+      <g:CheckBox ui:field="active" text="Active only" checked="true"/>
+    </g:HorizontalPanel>
+    <n:Grid ui:field="orders" headerVisible="true">
+      <n:Column text="Order" width="160"/>
+      <n:Column text="Status" width="120"/>
+      <n:Row><n:Cell text="A-01"/><n:Cell text="Queued"/></n:Row>
+      <n:Row><n:Cell text="B-02"/><n:Cell text="Shipped"/></n:Row>
+    </n:Grid>
+    <g:Button ui:field="refresh" text="Refresh" enabled="false"/>
+  </g:VerticalPanel>
+</ui:UiBinder>

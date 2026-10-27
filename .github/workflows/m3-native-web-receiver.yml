@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 native web receiver source-seal
+on:
+  pull_request:
+    paths:
+      - 'm3/web-widget-reverse/**'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/**'
+      - 'examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/Native*Web*.java'
+      - 'examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeWebControlsSnippet.java'
+      - '.github/workflows/m3-native-web-receiver.yml'
+  push:
+    paths:
+      - 'm3/web-widget-reverse/**'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/**'
+      - 'examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/Native*Web*.java'
+      - 'examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/NativeWebControlsSnippet.java'
+      - '.github/workflows/m3-native-web-receiver.yml'
+  workflow_dispatch:
+jobs:
+  generated-source-identity:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject absent or drifted source receivers
+        run: sha256sum --check --strict m3/web-widget-reverse/WEB_NATIVE_RECEIVER.sha256
+      - name: Reject whitespace conflicts
+        run: git diff --check
+      - name: Native gate remains separate
+        run: |
+          echo 'Source hashes verified only; no Java plugin/Tycho/native SWT/RWT proof in this job.'
