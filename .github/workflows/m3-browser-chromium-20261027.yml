@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 original Java Browser scripts in actual Chromium
+on:
+  pull_request:
+    paths:
+      - 'm3/web-widget-reverse/qualification/browser-chromium/**'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java'
+      - '.github/workflows/m3-browser-chromium-20261027.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium-real-dom:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded browser driver
+        run: python3 -m pip install --disable-pip-version-check 'playwright==1.57.0'
+      - name: Require actual Chromium binary, never mock
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Compile original Java 11 API and execute Chromium DOM regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash m3/web-widget-reverse/qualification/browser-chromium/run.sh \
+            "$RUNNER_TEMP/m3-browser-chromium-proof"
+          grep -F '"result": "REAL_CHROMIUM_DOM_GATE_PASS"' \
+            "$RUNNER_TEMP/m3-browser-chromium-proof/CHROMIUM_RECEIPT.json"
+      - name: Publish immutable test receipt
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-nebula-actual-chromium-dom-receipt
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/m3-browser-chromium-proof/CHROMIUM_RECEIPT.json
+            ${{ runner.temp }}/m3-browser-chromium-proof/js/*.js
