@@ -96,13 +96,20 @@ public final class M3BrowserWidget extends Composite {
             @Override
             public void completed(ProgressEvent event) {
                 if (documentRequested && !isDisposed() && !browser.isDisposed()) {
+                    long completingRevision = documentRevision;
                     try {
                         installBridge();
                     } catch (SWTException exception) {
-                        ready = false;
-                        bridgeFailure = exception;
+                        if (!isDisposed() && documentRevision == completingRevision) {
+                            ready = false;
+                            bridgeFailure = exception;
+                        }
                     } finally {
-                        documentRequested = false;
+                        // A synchronous reload can start an asynchronous successor
+                        // while the previous document is finishing its bridge.
+                        if (documentRevision == completingRevision) {
+                            documentRequested = false;
+                        }
                     }
                 }
             }
@@ -123,18 +130,21 @@ public final class M3BrowserWidget extends Composite {
         // Refuse exhaustion before changing widget state; failed loads also retire
         // the preceding document event generation.
         documentRevision = Math.addExact(documentRevision, 1);
+        long sourceRevision = documentRevision;
         documentRequested = true;
         ready = false;
         bridgeFailure = null;
         try {
             boolean accepted = browser.setText(html);
-            if (!accepted) {
+            if (!accepted && documentRevision == sourceRevision) {
                 documentRequested = false;
             }
-            return accepted;
+            return accepted && !isDisposed() && documentRevision == sourceRevision;
         } catch (RuntimeException failed) {
-            // Failed loads must not leave navigation temporarily authorized.
-            documentRequested = false;
+            // A stale failed request must not cancel a newer pending document.
+            if (documentRevision == sourceRevision) {
+                documentRequested = false;
+            }
             throw failed;
         }
     }
@@ -146,8 +156,15 @@ public final class M3BrowserWidget extends Composite {
     public boolean installBridge() {
         checkWidget();
         // If evaluation throws, a previous successful bridge must not remain ready.
+        long sourceRevision = documentRevision;
         ready = false;
-        ready = Boolean.TRUE.equals(browser.evaluate(M3BrowserScripts.install()));
+        Object result = browser.evaluate(M3BrowserScripts.install());
+        // Browser.evaluate may reenter Java and synchronously replace the
+        // document. Never authorize a stale evaluation as the new bridge.
+        if (isDisposed() || documentRevision != sourceRevision) {
+            return false;
+        }
+        ready = Boolean.TRUE.equals(result);
         bridgeFailure = null;
         return ready;
     }
@@ -199,7 +216,12 @@ public final class M3BrowserWidget extends Composite {
         if (!ready) {
             return -1;
         }
+        long sourceRevision = documentRevision;
         Object result = browser.evaluate(script);
+        // A reentrant load or disposal retires this patch's old document.
+        if (isDisposed() || !ready || documentRevision != sourceRevision) {
+            return -1;
+        }
         return result instanceof Number ? ((Number) result).intValue() : -1;
     }
 }
