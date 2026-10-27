@@ -49,3 +49,25 @@ JUnit4 and Node behavior -> Tycho/native SWT/RWT browser/session proof.
 Local Maven/OpenRewrite dependency closure and native SWT/RWT are unavailable;
 those gates must remain `NOT_RUN` until actual execution. No existing master or
 develop history is rewritten or auto-merged.
+
+## Synchronous metadata-read reentrancy (2026-10-27)
+
+The original `NodeList` snapshot is static, but a DOM node can synchronously
+remove itself or replace the document root while `root.contains(node)` or
+`node.getAttribute('data-nebula-id')` is executing (e.g., an overridden method
+on application-trusted DOM). An initial containment check alone is therefore
+insufficient: the old candidate could mutate and count a disconnected node.
+
+The refined original `M3BrowserScripts.patch` checks the initial root and
+containment as before, then **only for IDs present in the patch**, rechecks
+both root identity and containment immediately before the text/value setter.
+This preserves ordinary sparse scans, connected order, duplicate-ID results,
+return counts for successfully applied updates, Unicode admission and the
+previous early exit on root replacement. If the setter itself replaces the
+root, that completed update is counted; the next iteration exits.
+
+The canonical Node.js model executes the actual Java-emitted **text and value**
+scripts through three historical counterexamples plus ordinary and
+setter-induced root-replacement controls. A real Chromium engine, SWT Browser
+function, RAP/RWT session, Maven/OpenRewrite and Tycho are separate unrun gates.
+No new public API, Control, Browser, VM, renderer or JNI owner is introduced.
