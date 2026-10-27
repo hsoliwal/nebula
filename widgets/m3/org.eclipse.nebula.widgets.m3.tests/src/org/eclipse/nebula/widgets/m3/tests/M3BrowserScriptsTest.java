@@ -166,7 +166,8 @@ public class M3BrowserScriptsTest {
         // again before either textContent or value mutation.
         String expected = "if(Object.prototype.hasOwnProperty.call(patch,id)){"
                 + "if(document.documentElement!==root){return n;}"
-                + "if(!root.contains(node)){continue;}";
+                + "if(!root.contains(node)){continue;}"
+                + "if(document.documentElement!==root){return n;}";
         assertTrue(M3BrowserScripts.patch(Map.of("parent", "x"), false).contains(expected));
         assertTrue(M3BrowserScripts.patch(Map.of("parent", "x"), true).contains(expected));
     }

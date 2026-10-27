@@ -71,3 +71,17 @@ scripts through three historical counterexamples plus ordinary and
 setter-induced root-replacement controls. A real Chromium engine, SWT Browser
 function, RAP/RWT session, Maven/OpenRewrite and Tycho are separate unrun gates.
 No new public API, Control, Browser, VM, renderer or JNI owner is introduced.
+
+## Second containment-read reentrancy guard (27 October 2026)
+
+An application-supplied/patched `root.contains(node)` implementation can
+synchronously replace `document.documentElement` **during the second**
+containment check, returning a stale `true`. The original read-phase candidate
+then mutated a detached node after the nominal final guard. The final
+original-owner Java emitter checks root identity again after that containment
+call and before a matched node's setter. This adds at most one root read per
+matched node; the 16,384-node aborted scan remains constant-time after root
+replacement. Existing text, value, sparse ID matching, and non-reentrant
+behavior remain unchanged. The bounded test records the old candidate's stale
+update and the refined refusal for both text and value. Adversarial mutable DOM
+methods are tested with Node.js VM, not a real browser engine, SWT or RWT.

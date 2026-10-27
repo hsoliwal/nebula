@@ -96,7 +96,8 @@ public final class M3BrowserScripts {
                 .append("var id=node.getAttribute('data-nebula-id');")
                 .append("if(Object.prototype.hasOwnProperty.call(patch,id)){")
                 .append("if(document.documentElement!==root){return n;}")
-                .append("if(!root.contains(node)){continue;}");
+                .append("if(!root.contains(node)){continue;}")
+                .append("if(document.documentElement!==root){return n;}");
         if (inputValues) {
             out.append("if('value' in node){node.value=patch[id];n++;}");
         } else {

@@ -36,7 +36,7 @@ const scenario=largeRootReplacement();
 check(scenario.count===1,'root change must retain successful prefix count');
 check(scenario.first.text==='ROOT_REPLACEMENT','first update applied');
 check(scenario.children[1].text==='OLD','stale sibling not updated');
-check(expectsAbort?scenario.rootReads<=4:scenario.rootReads>COUNT,
+check(expectsAbort?scenario.rootReads<=5:scenario.rootReads>COUNT,
   'root-change counter distinguishes 16k traversal from early return');
 
 const docRoot=new Node(null),body=new Node(null,docRoot),ancestor=new Node('parent',body),
@@ -74,6 +74,9 @@ function readPhaseMutation(emitted, mode, inputValues) {
   const root = {contains(node) {
     containsReads++;
     if (mode === 'contains-root-replace') document.documentElement = {contains() {return false;}};
+    if (mode === 'contains-second-root-replace' && containsReads === 2) {
+      document.documentElement = {contains() {return false;}};
+    }
     return node.parent === root;
   }};
   const element = {
@@ -103,7 +106,8 @@ function readPhaseMutation(emitted, mode, inputValues) {
 for (const inputValues of [false, true]) {
   const emitted = inputValues ? valueScript : script;
   for (const mode of ['ordinary', 'attribute-detach',
-      'attribute-root-replace', 'contains-root-replace', 'setter-root-replace']) {
+      'attribute-root-replace', 'contains-root-replace',
+      'contains-second-root-replace', 'setter-root-replace']) {
     const observed = readPhaseMutation(emitted, mode, inputValues);
     const expected = (mode === 'ordinary' || mode === 'setter-root-replace')
       ? 1 : (expectsAbort ? 0 : 1);
