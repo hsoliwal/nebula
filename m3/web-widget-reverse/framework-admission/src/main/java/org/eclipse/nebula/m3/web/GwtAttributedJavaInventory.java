@@ -118,13 +118,16 @@ public final class GwtAttributedJavaInventory {
         if (sourceUtf8.length == 0 || sourceUtf8.length > MAX_SOURCE_BYTES) {
             throw refuse("SOURCE_BUDGET");
         }
-        if (!sha256(sourceUtf8).equals(receipt.sha256())) throw refuse("SOURCE_DIGEST_DRIFT");
+        // The source is caller-owned and mutable. Hash, javac attribution, and
+        // the downstream UiBinder proof must all consume these same bytes.
+        byte[] stableSource = sourceUtf8.clone();
+        if (!sha256(stableSource).equals(receipt.sha256())) throw refuse("SOURCE_DIGEST_DRIFT");
         String source;
         try {
             source = StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(sourceUtf8)).toString();
+                    .decode(ByteBuffer.wrap(stableSource)).toString();
         } catch (CharacterCodingException invalid) {
             throw new IllegalArgumentException("SOURCE_INVALID_UTF8", invalid);
         }
@@ -217,7 +220,7 @@ public final class GwtAttributedJavaInventory {
                     d.getKind() == Diagnostic.Kind.ERROR)) throw refuse("ATTRIBUTION_DIAGNOSTIC");
             List<WebWidgetUiBinderProjection.Declaration> rows = readExactClass(
                     units.getFirst(), Trees.instance(task), relativePath, originalMembers);
-            var candidate = WebWidgetUiBinderProjection.project(receipt, sourceUtf8, rows);
+            var candidate = WebWidgetUiBinderProjection.project(receipt, stableSource, rows);
             return new Inventory(receipt, stableJars.stream().map(ClasspathJar::sha256).toList(),
                     rows, candidate);
         } catch (RuntimeException failure) {
