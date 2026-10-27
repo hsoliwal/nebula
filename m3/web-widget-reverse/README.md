@@ -20,3 +20,24 @@ The additive, review-only proposal is defined by:
 - `WEB_MAPPING_CONTRACT_20261025.md` — typed AST admission, original viewport and protocol invariants, refusal and verification sequence.
 
 These files **do not** amend `WEB_COMPONENT_SOURCES.tsv`, `IMPLEMENTATION_BINDINGS.tsv` or `docs/m3/rwt/RWT_COLUMN.tsv`, and do not claim another widget is implemented. A canonical Synexia Maven/OpenRewrite recipe must be admitted and executed before a product receiver is promoted. Never infer web↔native event equivalence from matching widget names.
+
+## 2026-10-25: native-first web/RWT interoperability
+
+The additional framework and widget route decisions live in
+`docs/m3/web-interoperability/` (`README.md`, `WIDGET_ROUTES.tsv`,
+`FRAMEWORK_ROUTES.tsv`). These extend the original reverse scaffold
+without treating GWT, J2CL, TeaVM, JWt, Wicket, Tapestry, MyFaces,
+Apache Royale or Spring/Vaadin as arbitrary SWT transpilers.
+
+Direct generation into existing SWT/Nebula controls remains preferred.
+The opt-in `org.eclipse.nebula.widgets.m3.M3BrowserWidget` is only a
+bounded dynamic-web fallback; no new recipe, full DOM compiler or
+RWT runtime-equivalence claim is introduced.
+
+The 2026-10-25 additive native-source receiver from Synexia #13402
+is compiled into the existing Nebula M3 plugin as
+`org.eclipse.nebula.widgets.m3.generated.OrdersNativeSwt` and is
+tracked by Nebula #274. It constructs SWT Label/Button controls directly
+from the admitted static JSX grammar, while preserving this existing
+single-Canvas semantic-row receiver. This is **not** a broader
+React/framework transpiler and has no runtime Synexia dependency.

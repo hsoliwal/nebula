@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 Nebula web/native RWT API receiving
+on:
+  pull_request:
+    paths:
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/generated/**'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3BrowserWidget.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTableBinding.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3VirtualTable*.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTreeBinding.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3VirtualTree*.java'
+      - '.github/workflows/m3-web-native-rwt-api-20261025.yml'
+      - 'm3/proof/OriginalVirtualPageProof.java'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-rwt-48-source-api:
+    name: Compile original SWT receivers against real RWT 4.8.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Retrieve checksum-pinned Eclipse RWT API JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLSs --retry 3 --max-time 60 -o rwt-4.8.0.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/rap/org.eclipse.rap.rwt/4.8.0/org.eclipse.rap.rwt-4.8.0.jar
+          echo 'b61f95c6f93ee8c507934bfa7c2001936da2e24f645b041e04ba83587e22647c  rwt-4.8.0.jar' | sha256sum -c -
+      - name: Compile native controls and virtual Table/Tree receivers
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3
+          mkdir -p build/m3-native-rwt-api
+          # Product bundle declares JavaSE-11; do not silently raise its bytecode floor.
+          javac --release 11 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+            -cp rwt-4.8.0.jar -d build/m3-native-rwt-api \
+            "$ROOT/generated/OrdersNativeSwt.java" \
+            "$ROOT/generated/ContactFormNativeSwt.java" \
+            "$ROOT/generated/PreferencesNativeSwt.java" \
+            "$ROOT/M3VirtualTableBinding.java" \
+            "$ROOT/M3VirtualTreeBinding.java"
+      - name: Compile and execute no-display original Java page proofs
+        shell: bash
+        run: |
+          set -euo pipefail
+          javac --release 11 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+            -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" \
+            -d build/m3-native-rwt-api m3/proof/OriginalVirtualPageProof.java
+          java -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" OriginalVirtualPageProof
+      - name: Compile optional Browser fallback separately
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3
+          # Browser support cannot mask a passed native Table/Tree page proof.
+          javac --release 11 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+            -cp "rwt-4.8.0.jar:build/m3-native-rwt-api" \
+            -d build/m3-native-rwt-api \
+            "$ROOT/internal/M3BrowserScripts.java" \
+            "$ROOT/M3BrowserWidget.java"
+      - name: Explicit remaining qualification status
+        run: |
+          echo 'RWT Java source/API compatibility is not RAP browser/session execution.'
+          echo 'Nebula Tycho full reactor: NOT_RUN.'
+          echo 'Win32/GTK/Cocoa display, pixels, resource and event screenshots: NOT_RUN.'
+          echo 'RAP web protocol, accessibility, IME and bidirectional text: NOT_RUN.'
