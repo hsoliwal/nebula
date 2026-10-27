@@ -159,6 +159,18 @@ public class M3BrowserScriptsTest {
         assertFalse(script.contains("innerHTML"));
     }
 
+    @Test
+    public void rechecksConnectedNodeAfterIdLookupBeforeMutation() {
+        // Custom element method or a patched DOM method can synchronously
+        // detach or replace the root during getAttribute/contains. Read it
+        // again before either textContent or value mutation.
+        String expected = "if(Object.prototype.hasOwnProperty.call(patch,id)){"
+                + "if(document.documentElement!==root){return n;}"
+                + "if(!root.contains(node)){continue;}";
+        assertTrue(M3BrowserScripts.patch(Map.of("parent", "x"), false).contains(expected));
+        assertTrue(M3BrowserScripts.patch(Map.of("parent", "x"), true).contains(expected));
+    }
+
     private static void assertRejected(Runnable operation) {
         boolean rejected = false;
         try {
