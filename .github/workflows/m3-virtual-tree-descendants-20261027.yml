@@ -7,12 +7,33 @@ on:
       - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3VirtualTreeBindingTest.java'
       - 'docs/m3/web-interoperability/VIRTUAL_TREE_BINDING.md'
       - '.github/workflows/m3-virtual-tree-descendants-20261027.yml'
+      - 'm3/web-widget-reverse/qualification/virtual-tree-recursive/**'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  headless-original-binding-event-smoke:
+    name: Compile actual Tree binding and simulate SetData red-green contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile actual JavaSE-11 source with test-only SWT event shapes
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash m3/web-widget-reverse/qualification/virtual-tree-recursive/run.sh
+      - name: Explicitly separate simulation and native qualification
+        run: echo 'Simulation is NOT SWT GTK or RAP browser acceptance.'
+
   gtk-original-tycho:
     name: Original SWT JUnit under GTK/Xvfb
     runs-on: ubuntu-24.04
