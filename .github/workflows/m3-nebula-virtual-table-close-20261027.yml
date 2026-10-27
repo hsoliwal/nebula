@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 Nebula Virtual Table Close During Fetch
+on:
+  pull_request:
+    paths:
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTableBinding.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3VirtualTableCloseDuringFetchTest.java'
+      - 'm3/web-widget-reverse/qualification/virtual-table-close/**'
+      - '.github/workflows/m3-nebula-virtual-table-close-20261027.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-nebula-tycho:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Native SWT display dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0
+      - name: Run original Nebula Tycho SWT JUnit test plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a mvn -B -ntp -f widgets/m3/pom.xml \
+            -pl :org.eclipse.nebula.widgets.m3.tests -am verify
+          python3 - <<'PY_JUNIT'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          report_dir=Path('widgets/m3/org.eclipse.nebula.widgets.m3.tests/target/surefire-reports')
+          files=list(report_dir.glob('TEST-*M3VirtualTableCloseDuringFetchTest*.xml'))
+          if len(files) != 1:
+              raise SystemExit('BLOCK: original Tycho regression report missing or duplicated')
+          suite=ET.parse(files[0]).getroot()
+          counters={k:int(suite.get(k,'0')) for k in ('tests','failures','errors','skipped')}
+          if counters['tests'] < 2 or any(counters[k] for k in ('failures','errors','skipped')):
+              raise SystemExit(f'BLOCK: original SWT JUnit4 result {counters}')
+          print('NATIVE_TYCHO_SWT_JUNIT4_PASS',counters)
+          PY_JUNIT
+      - name: Do not infer RAP/Win32/Cocoa acceptance from GTK
+        shell: bash
+        run: |
+          echo 'RAP/RWT sessions, Win32/Cocoa pixels and original JVM/JNI ABI remain NOT_RUN.'
