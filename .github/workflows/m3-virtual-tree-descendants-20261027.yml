@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 original SWT virtual Tree recursive refresh
+on:
+  pull_request:
+    paths:
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTreeBinding.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3VirtualTreeBindingTest.java'
+      - 'docs/m3/web-interoperability/VIRTUAL_TREE_BINDING.md'
+      - '.github/workflows/m3-virtual-tree-descendants-20261027.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gtk-original-tycho:
+    name: Original SWT JUnit under GTK/Xvfb
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Native GTK display dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0
+      - name: Run original Nebula SWT plugin and JUnit test bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a mvn -B -ntp -f widgets/m3/pom.xml \
+            -pl :org.eclipse.nebula.widgets.m3.tests -am verify
+      - name: Require the original native regression to execute
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY_JUNIT'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          reports=Path('widgets/m3/org.eclipse.nebula.widgets.m3.tests/target/surefire-reports')
+          files=list(reports.glob('TEST-*M3VirtualTreeBindingTest*.xml'))
+          if len(files) != 1:
+              raise SystemExit('BLOCK: SWT Tree regression result missing or duplicated')
+          suite=ET.parse(files[0]).getroot()
+          counts={k:int(suite.get(k,'0')) for k in ('tests','failures','errors','skipped')}
+          if counts['tests'] < 3 or any(counts[k] for k in ('failures','errors','skipped')):
+              raise SystemExit(f'BLOCK: SWT Tree regression not qualified: {counts}')
+          cases={x.get('name','') for x in suite.findall('.//testcase')}
+          wanted='clearingRootInvalidatesCachedChildrenAndGrandchildren'
+          if wanted not in cases:
+              raise SystemExit(f'BLOCK: recursive descendant test did not execute: {sorted(cases)}')
+          print('ORIGINAL_SWT_TREE_DESCENDANT_REFRESH_PASS',counts)
+          PY_JUNIT
+      - name: Explicit platform boundaries
+        run: |
+          echo 'GTK SWT-native JUnit does not qualify RAP/RWT browser sessions.'
+          echo 'Win32/Cocoa pixels, accessibility, IME/RTL and full model conversion: NOT_RUN.'
+
+  rwt-java-source-api:
+    name: Original virtual Tree against RAP/RWT 4.8.0 Java API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Download and verify exact previously inventoried RAP/RWT JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fLSs --retry 3 --max-time 60 -o rwt-4.8.0.jar \
+            https://repo.maven.apache.org/maven2/org/eclipse/rap/org.eclipse.rap.rwt/4.8.0/org.eclipse.rap.rwt-4.8.0.jar
+          echo 'b61f95c6f93ee8c507934bfa7c2001936da2e24f645b041e04ba83587e22647c  rwt-4.8.0.jar' | sha256sum --check --strict
+      - name: Compile the original product binding for JavaSE-11
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p rwt-tree-classes
+          javac --release 11 -proc:none -Xlint:all -Werror \
+            -cp rwt-4.8.0.jar -d rwt-tree-classes \
+            widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTreeBinding.java
+      - name: Keep RAP session testing independent
+        run: echo 'RWT Java API compile is not a live RAP browser or wire-protocol test.'
