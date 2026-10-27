@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+# Review candidate; no semantic equivalence or implementation claimed.
+semantic_id	web_source_hint	native_swt_nebula_owner	rwt_browser_owner	admission_profile	blocking_contract	status
+LABEL	span|label|static-text	org.eclipse.swt.widgets.Label	org.eclipse.swt.widgets.Label	STATIC_TEXT	TextContent escaping|mnemonics|RTL|accessibility	PROPOSED_NOT_RUN
+BADGE	status-chip|badge	Nebula BadgedLabel	RWT Label plus styling	STATIC_TEXT	Only literal status and color semantics; no inferred status meanings	PROPOSED_NOT_RUN
+BUTTON	button|input:type=button	org.eclipse.swt.widgets.Button	org.eclipse.swt.widgets.Button	STATIC_DISABLED_ONLY	DOM default action and keyboard focus NOT equivalent	PROPOSED_NOT_RUN
+SPLIT_BUTTON	button:menu-trigger	Nebula SplitButton or SWT ToolItem DROP_DOWN	RWT ToolItem DROP_DOWN	DECLARATIVE_CONDITIONAL	Menu invocation and focus order need proof	PROPOSED_NOT_RUN
+TEXT_INPUT	input:type=text	org.eclipse.swt.widgets.Text	org.eclipse.swt.widgets.Text	DECLARATIVE_CONDITIONAL	IME|Verify|selection|caret|input modes need proof	PROPOSED_NOT_RUN
+MULTILINE_INPUT	textarea	SWT Text MULTI or StyledText	RWT Text MULTI	DECLARATIVE_CONDITIONAL	StyledText absent from RWT; styled spans refused	PROPOSED_NOT_RUN
+AUTOCOMPLETE	combobox:autocomplete|listbox:popup	Nebula TextAssist	RAP JFace ContentProposalAdapter	DECLARATIVE_CONDITIONAL	Popup selection and caret/IME semantics differ	PROPOSED_NOT_RUN
+PASSWORD	input:type=password	SWT Text PASSWORD / Nebula PasswordRevealer	RWT Text PASSWORD	DECLARATIVE_CONDITIONAL	Never export password values into static receipts	PROPOSED_NOT_RUN
+CHECKBOX	input:type=checkbox	SWT Button CHECK / Nebula RoundedCheckbox	RWT Button CHECK	STATIC_STATE_ONLY	Indeterminate|click|focus|group event order	PROPOSED_NOT_RUN
+RADIO_GROUP	input:type=radio|radiogroup	SWT Button RADIO / Nebula RadioGroup	RWT Button RADIO	STATIC_STATE_ONLY	Mutual exclusion|keyboard traversal|name scope	PROPOSED_NOT_RUN
+TOGGLE_SWITCH	role=switch|checked	Nebula RoundedSwitch	RWT Canvas or Button CHECK	DECLARATIVE_CONDITIONAL	ARIA checked and keyboard semantics require proof	PROPOSED_NOT_RUN
+COMBO	select|role=combobox	SWT Combo / Nebula TableCombo	RWT Combo / Table plus popup	DECLARATIVE_CONDITIONAL	Options collection|filter|selection|list virtualization	PROPOSED_NOT_RUN
+TREE_COMBO	combobox:treepopup	Nebula CTreeCombo	RWT Tree plus popup	DECLARATIVE_CONDITIONAL	Tree expansion and transient parent ownership	PROPOSED_NOT_RUN
+DATE_PICKER	input:type=date|datetime	SWT DateTime / Nebula CDateTime	RWT DateTime	DECLARATIVE_CONDITIONAL	Locale|time zone|calendar parsing	PROPOSED_NOT_RUN
+PROGRESS	progress|role=progressbar	SWT ProgressBar / Nebula ProgressCircle	RWT ProgressBar	STATIC_STATE_ONLY	Indeterminate animation and device frame rate	PROPOSED_NOT_RUN
+RANGE_SLIDER	input:type=range|role=slider	SWT Scale / Nebula RangeSlider	RWT Scale or Canvas	DECLARATIVE_CONDITIONAL	Multi-thumb and drag sequence	PROPOSED_NOT_RUN
+STACK_LAYOUT	single-visible-card|tabpanel-panel	Nebula M3StackLayout	RWT StackLayout	DECLARATIVE_CONDITIONAL	Reuse existing page residency|release callbacks	PROPOSED_NOT_RUN
+TAB_FOLDER_RICH	role=tablist|tab|tabpanel	SWT CTabFolder / Nebula M3StackLayout	RWT CTabFolder	DECLARATIVE_CONDITIONAL	Large tab virtualisation not equivalent by default	PROPOSED_NOT_RUN
+TASK_PANE	details|accordion	SWT ExpandBar / Nebula PGroup PShelf	RWT ExpandBar / Canvas	DECLARATIVE_CONDITIONAL	Disclosure events|expansion and focus identity	PROPOSED_NOT_RUN
+DATA_GRID	role=grid|table:editable	Nebula Grid	RAP Nebula Grid port	VIRTUAL_COLLECTION_CONDITIONAL	Stable row IDs|SetData|sort|filter|column spans	PROPOSED_NOT_RUN
+TREE_TABLE	role=treegrid	Nebula Grid / JFace XViewer	RWT Tree / RAP Grid	VIRTUAL_COLLECTION_CONDITIONAL	Expansion|selection|viewer delta|virtual rows	PROPOSED_NOT_RUN
+GALLERY	image-grid|role=grid:list	Nebula Gallery	RWT Canvas GC replay	VIRTUAL_COLLECTION_CONDITIONAL	Visible image decode and damage only	PROPOSED_NOT_RUN
+TILES	tile-grid|card-gallery	Nebula Tiles	RWT Canvas or Composite	VIRTUAL_COLLECTION_CONDITIONAL	No one Control per logical tile	PROPOSED_NOT_RUN
+PAGINATION	nav:pagination	Nebula PageableController	existing RwtPageWindow	DECLARATIVE_CONDITIONAL	Retain controller and revision token as sole authority	PROPOSED_NOT_RUN
+BREADCRUMB	nav:breadcrumb	Nebula Breadcrumb	RWT Canvas or Link components	DECLARATIVE_CONDITIONAL	Tab order and navigation must not be invented	PROPOSED_NOT_RUN
+CHART	svg:chart|canvas:chart	Nebula Oscilloscope	RWT Canvas GC replay	PAINT_OPERATION_GATED	Only admitted drawing op list and hit semantics	PROPOSED_NOT_RUN
+GANTT_TIMELINE	role=timeline|gantt	Nebula GanttChart / Timeline	RWT Canvas GC replay	PAINT_OPERATION_GATED	Offscreen GC|mouse capture|layout events incomplete	PROPOSED_NOT_RUN
+MAP_VIEW	map:panzoom	Nebula GeoMap / SWT Browser	RWT Browser or Canvas	BROWSER_OPT_IN_ONLY	No silent network and GIS behavior conversion	PROPOSED_NOT_RUN
+PROPERTY_SHEET	role=grid:property|property-editor	Nebula PropertyTable	RWT Table plus editors	VIRTUAL_COLLECTION_CONDITIONAL	Typed editor validation and change events	PROPOSED_NOT_RUN
+RICH_TEXT	contenteditable:richtext	Nebula RichText	RAP RichTextEditor	HOLD_DYNAMIC	HTML sanitization and CKEditor parity unproved	PROPOSED_NOT_RUN
+CODE_EDITOR	code-editor|contenteditable:code	SWT StyledText / original viewport	NO_EQUIVALENT_RWT	HOLD_DYNAMIC	StyledText absent from RWT; IME syntax semantics	PROPOSED_NOT_RUN
+GENERIC_HTML	arbitrary-html|custom-element	SWT Browser opt-in	RWT Browser iframe opt-in	BROWSER_OPT_IN_ONLY	Not a native transpilation; document security origin	PROPOSED_NOT_RUN
+CANVAS_DRAW	canvas:script|svg:dynamic	Original SWT Canvas with GC	RWT Canvas GC operation replay	HOLD_DYNAMIC	Arbitrary Canvas API has no admitted SWT mapping	PROPOSED_NOT_RUN
+IMAGE_VIEW	img:panzoom|image-viewport	SWT Canvas image painter candidate	RWT Canvas image painter candidate	PAINT_OPERATION_GATED	Image residency|zoom and compositing parity	PROPOSED_NOT_RUN
+TOAST	role=alert|notification	SWT ToolTip / Nebula Notifier	RWT ToolTip	DECLARATIVE_CONDITIONAL	Timeout|focus and screen reader events	PROPOSED_NOT_RUN
+FIND_BAR	role=search|search-input	SWT Text + original viewer search	RWT Text + viewer search	DECLARATIVE_CONDITIONAL	Input debounce and ranking effects remain held	PROPOSED_NOT_RUN
+FILTER_ROW	column-filter	Nebula Grid column sort/filter owner	RAP Grid visible-column controls	VIRTUAL_COLLECTION_CONDITIONAL	No duplicate model sorting/filtering	PROPOSED_NOT_RUN
+HEATMAP	svg:heatmap|canvas:heatmap	Canvas painter candidate	RWT Canvas painter candidate	PAINT_OPERATION_GATED	Missing production owner means refuse emission	PROPOSED_NOT_RUN
+VIRTUAL_COMPOSITE	virtual-list|windowed-subtree	Original SWT viewport owner	RWT virtual controls / existing row pool	VIRTUAL_COLLECTION_CONDITIONAL	Bound visible plus overscan|identity stable	PROPOSED_NOT_RUN
+FILE_UPLOAD	input:type=file	SWT FileDialog on user action	RWT ClientFileUpload	HOLD_DYNAMIC	Browser file permission not a local filesystem path	PROPOSED_NOT_RUN
+DRAG_DROP	draggable|dropzone	SWT DND on owning widget	RWT DND / ClientListener	HOLD_DYNAMIC	Payload and interaction order differ	PROPOSED_NOT_RUN
+CSS_LAYOUT	display:flex|display:grid	SWT GridLayout / RowLayout candidate	RWT GridLayout / RowLayout candidate	HOLD_DYNAMIC	CSS sizing|flex-wrap|font metrics non-invertible	PROPOSED_NOT_RUN
+ARIA_STATE	aria-*|focus|keyboard	SWT Accessible on original owner	RWT accessibility support	HOLD_DYNAMIC	ARIA roles alone do not imply application behavior	PROPOSED_NOT_RUN
+REACTIVE_EVENTS	react:hooks|onClick|two-way-binding	NO_DIRECT_NATIVE_OWNER	NO_DIRECT_RWT_OWNER	HOLD_DYNAMIC	No hook/state/effect translation without typed proof	PROPOSED_NOT_RUN
+PRINT_PREVIEW	iframe:print|window.print	Nebula PaperClips PrintPreview	NO_RWT_PRINTING	BLOCKED	RWT printing API absent; no silent fallback	PROPOSED_NOT_RUN
+NODE_EDITOR	canvas:nodes|diagram	Candidate SWT Canvas painter	RWT Canvas alternative not implemented	BLOCKED	RWT draw2d absent; event/layout controls unknown	PROPOSED_NOT_RUN
+MULTI_SPLIT	nested-split|grid-sash	SWT SashForm / candidate	RWT SashForm	DECLARATIVE_CONDITIONAL	Min sizes and reflow differ	PROPOSED_NOT_RUN

@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 Nebula web widget source seals
+on:
+  pull_request:
+    paths:
+      - 'm3/web-widget-reverse/qualification/**'
+      - 'm3/web-widget-reverse/FRAMEWORK_DONORS_20261025.tsv'
+      - 'm3/web-widget-reverse/WEB_SEMANTIC_CROSSWALK_20261025.tsv'
+      - 'm3/web-widget-reverse/WEB_COMPONENT_SOURCES.tsv'
+      - 'm3/web-widget-reverse/families/**'
+      - 'docs/m3/rwt/RWT_COLUMN.tsv'
+      - '.github/workflows/m3-nebula-web-source-seal-20261025.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  product-source-inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Check original source tree is clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain --untracked-files=normal)"
+      - name: Strict compile, negative controls, and whole source tree audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=m3/web-widget-reverse/qualification/src
+          classes="$RUNNER_TEMP/m3-web-source-seal-classes"
+          mkdir -p "$classes"
+          javac --release 21 -proc:none -Xlint:all -Werror -d "$classes" \
+            "$src/main/java/org/eclipse/nebula/widgets/m3/qualification/M3WebWidgetMappingAudit.java" \
+            "$src/test/java/org/eclipse/nebula/widgets/m3/qualification/M3WebWidgetMappingAuditTest.java"
+          java -cp "$classes" org.eclipse.nebula.widgets.m3.qualification.M3WebWidgetMappingAuditTest \
+            | tee "$RUNNER_TEMP/m3-web-source-seal-negative-controls.log"
+          java -cp "$classes" org.eclipse.nebula.widgets.m3.qualification.M3WebWidgetMappingAudit . \
+            | tee "$RUNNER_TEMP/m3-web-source-seal-product-inventory.log"
+          grep -Fx 'result=PASS_METADATA_ONLY' "$RUNNER_TEMP/m3-web-source-seal-negative-controls.log"
+          grep -Fx 'result=CANDIDATE_HOLD' "$RUNNER_TEMP/m3-web-source-seal-product-inventory.log"
+          test -z "$(git status --porcelain --untracked-files=normal)"
+      - name: Export immutable source and test receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-nebula-web-source-seals
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/m3-web-source-seal-negative-controls.log
+            ${{ runner.temp }}/m3-web-source-seal-product-inventory.log
