@@ -137,7 +137,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
             closed = true;
             clearCache();
             selectedKeys = EMPTY;
-            rows = null; // release the application snapshot on native SWT disposal
+            this.rows = null; // release the application snapshot on native SWT disposal
         };
         table.addListener(SWT.SetData, setData);
         table.addListener(SWT.Selection, selected);
@@ -220,6 +220,11 @@ public final class M3VirtualTableBinding implements AutoCloseable {
             page = rows.fetch(offset, length);
         } finally {
             fetching = false;
+        }
+        // close() can run synchronously inside a provider callback. Never
+        // publish its returned page into a binding whose owner was released.
+        if (closed) {
+            throw new IllegalStateException("Virtual Table binding closed during SetData");
         }
         if (page == null || page.offset() != offset || page.size() != length
                 || page.columns() != Math.max(1, table.getColumnCount())) {
