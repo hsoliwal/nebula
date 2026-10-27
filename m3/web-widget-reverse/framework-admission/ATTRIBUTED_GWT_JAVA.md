@@ -51,6 +51,21 @@ a list whose second read returns a forged all-zero hash; the pre-fix
 implementation incorrectly reported the forged hash, whereas this version
 reports the verified binary digest.
 
+A separate immutable source-byte rule now freezes caller-owned `byte[]`
+storage once at entry using `sourceUtf8.clone()`. The same private
+`sealedSourceBytes` buffer supplies SHA-256 receipt verification, strict
+UTF-8 decoding for `javac`, and the existing UiBinder projection. Neither
+compiler analysis nor projection rereads the mutable caller array.
+
+This prevents a real digest/AST/projection time-of-check/time-of-use
+inconsistency. The first-party regression detects the private JAR-snapshot
+phase, mutates the caller's `Hello` input to `Jello`, and requires the
+verified `Hello` source, original source digest and projected XML to
+remain consistent. The pre-fix implementation rejects at projection with
+`SOURCE_DIGEST_DRIFT`, even though it had already attributed the original
+source. The fix changes no public Java/JNI interface, original widget
+viewport, or runtime behavior outside the source-provenance contract.
+
 Before constructing \`JarFile\`, the intake also performs a **bounded ZIP
 end-of-central-directory preflight** on the verified snapshot. It inspects
 no more than 65,557 trailing bytes, rejects forged counts exceeding 12,000
