@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 original Browser lifecycle source qualification
+on:
+  pull_request:
+    paths:
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3BrowserWidget.java'
+      - 'm3/web-widget-reverse/qualification/browser-lifecycle/**'
+      - '.github/workflows/m3-browser-lifecycle-20261027.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-java11-lifecycle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: hsoliwal/com.synexia
+          ref: d07adac502f5d283541893af680a55cc81b88150
+          path: .m3-synexia-proof
+          persist-credentials: false
+          sparse-checkout: |
+            synexia-openrewrite-recipes/recipes/m3-nebula-browser-lifecycle-20261027/proof
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify original product preimage and reviewed generated postimage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .m3-synexia-proof rev-parse HEAD)" = d07adac502f5d283541893af680a55cc81b88150
+          target=widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3BrowserWidget.java
+          echo 'dfb42db81163444a54078d724c949792e8b29ec7b8b03119d91cbe25b577e80d  '"$target" | sha256sum -c -
+          # A second, exact-SHA Synexia checkout is intentionally untracked.
+          # Reject every other source change or addition.
+          test -z "$(git status --porcelain --untracked-files=normal -- . ':(exclude).m3-synexia-proof')"
+      - name: Strict Java11 source compile and real JVM counterexample execution
+        shell: bash
+        run: |
+          set -euo pipefail
+          proof=.m3-synexia-proof/synexia-openrewrite-recipes/recipes/m3-nebula-browser-lifecycle-20261027/proof
+          bash "$proof/run-proof.sh" "$GITHUB_WORKSPACE" "$RUNNER_TEMP/m3-browser-lifecycle" \
+            | tee "$RUNNER_TEMP/m3-browser-lifecycle-run.log"
+          grep -Fx 'M3_BROWSER_LIFECYCLE_PUBLIC_API_IDENTICAL' "$RUNNER_TEMP/m3-browser-lifecycle-run.log"
+          # A second, exact-SHA Synexia checkout is intentionally untracked.
+          # Reject every other source change or addition.
+          test -z "$(git status --porcelain --untracked-files=normal -- . ':(exclude).m3-synexia-proof')"
+      - name: Archive actual verifier evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-browser-lifecycle-java11
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/m3-browser-lifecycle-run.log
+            ${{ runner.temp }}/m3-browser-lifecycle/*.log
+            ${{ runner.temp }}/m3-browser-lifecycle/public-api-*.txt
+      - name: Native toolkit gate remains separate
+        run: |
+          echo 'Original SWT native Browser Win32/GTK/Cocoa: NOT_RUN'
+          echo 'RAP/RWT browser and session callbacks: NOT_RUN'
+          echo 'Tycho, pixels, GC and resource acceptance: NOT_RUN'
