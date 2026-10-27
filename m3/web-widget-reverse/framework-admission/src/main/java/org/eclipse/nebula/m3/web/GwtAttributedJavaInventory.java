@@ -341,6 +341,56 @@ public final class GwtAttributedJavaInventory {
                 || (entriesAll > 0 && centralBytes == 0)) {
             throw refuse("JAR_CENTRAL_DIRECTORY_BOUNDS");
         }
+        // EOCD entry counts are untrusted. Count the actual central-directory
+        // records *before* JarFile allocates its entry index. A forged count of
+        // one can otherwise conceal many thousands of entry headers here.
+        long centralEnd = centralOffset + centralBytes;
+        byte[] header = new byte[46];
+        byte[] signature = new byte[6];
+        int actualEntries = 0;
+        try (RandomAccessFile input = new RandomAccessFile(archive.toFile(), "r")) {
+            long cursor = centralOffset;
+            while (cursor < centralEnd) {
+                long remaining = centralEnd - cursor;
+                if (remaining < 4) throw refuse("JAR_CENTRAL_DIRECTORY_HEADER");
+                input.seek(cursor);
+                input.readFully(signature, 0, 4);
+                // The standard optional ZIP digital-signature record can
+                // follow entries; its bounded length is independently checked.
+                if ((signature[0] & 255) == 0x50 && (signature[1] & 255) == 0x4b
+                        && (signature[2] & 255) == 0x05 && (signature[3] & 255) == 0x05) {
+                    if (remaining < 6) throw refuse("JAR_CENTRAL_DIRECTORY_HEADER");
+                    input.readFully(signature, 4, 2);
+                    if (6L + zipU16(signature, 4) != remaining) {
+                        throw refuse("JAR_CENTRAL_DIRECTORY_HEADER");
+                    }
+                    cursor = centralEnd;
+                    break;
+                }
+                if (remaining < header.length) throw refuse("JAR_CENTRAL_DIRECTORY_HEADER");
+                input.seek(cursor);
+                input.readFully(header);
+                if ((header[0] & 255) != 0x50 || (header[1] & 255) != 0x4b
+                        || (header[2] & 255) != 0x01 || (header[3] & 255) != 0x02) {
+                    throw refuse("JAR_CENTRAL_DIRECTORY_HEADER");
+                }
+                if (++actualEntries > MAX_JAR_ENTRIES) throw refuse("JAR_ENTRY_COUNT_BUDGET");
+                if (actualEntries > entriesAll) {
+                    throw refuse("JAR_CENTRAL_DIRECTORY_COUNT_MISMATCH");
+                }
+                if (zipU16(header, 34) != 0) throw refuse("JAR_SPANNED_DIRECTORY_UNSUPPORTED");
+                if (zipU32(header, 20) == 0xffff_ffffL
+                        || zipU32(header, 24) == 0xffff_ffffL
+                        || zipU32(header, 42) == 0xffff_ffffL) {
+                    throw refuse("JAR_ZIP64_UNSUPPORTED");
+                }
+                long headerBytes = header.length + (long) zipU16(header, 28)
+                        + zipU16(header, 30) + zipU16(header, 32);
+                if (headerBytes > remaining) throw refuse("JAR_CENTRAL_DIRECTORY_BOUNDS");
+                cursor += headerBytes;
+            }
+        }
+        if (actualEntries != entriesAll) throw refuse("JAR_CENTRAL_DIRECTORY_COUNT_MISMATCH");
     }
 
     private static int zipU16(byte[] bytes, int at) {
