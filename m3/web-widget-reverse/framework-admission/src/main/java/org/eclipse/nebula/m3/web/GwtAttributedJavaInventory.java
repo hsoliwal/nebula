@@ -115,12 +115,13 @@ public final class GwtAttributedJavaInventory {
         Objects.requireNonNull(receipt, "receipt");
         Objects.requireNonNull(sourceUtf8, "sourceUtf8");
         Objects.requireNonNull(jars, "jars");
+        // Enforce the budget before allocating any snapshot of untrusted bytes.
+        if (sourceUtf8.length == 0 || sourceUtf8.length > MAX_SOURCE_BYTES) {
+            throw refuse("SOURCE_BUDGET");
+        }
         // Freeze the caller-owned mutable byte[] once, before SHA admission.
         // The same immutable snapshot drives UTF-8 decoding and candidate XML.
         byte[] stableSourceUtf8 = sourceUtf8.clone();
-        if (stableSourceUtf8.length == 0 || stableSourceUtf8.length > MAX_SOURCE_BYTES) {
-            throw refuse("SOURCE_BUDGET");
-        }
         if (!sha256(stableSourceUtf8).equals(receipt.sha256())) throw refuse("SOURCE_DIGEST_DRIFT");
         String source;
         try {
