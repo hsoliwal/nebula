@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: Apache-2.0
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import vm from 'node:vm';
+
+const out = process.argv[2];
+if (!out) throw Error('usage: root-short-circuit.mjs <Java-emitted scripts directory>');
+const script = readFileSync(join(out,'nested-text.js'),'utf8');
+const siblings = readFileSync(join(out,'siblings.js'),'utf8');
+const valueScript = readFileSync(join(out,'nested-values.js'),'utf8');
+const COUNT = 16384;
+const expectsAbort=process.env.M3_EXPECT_ABORT==='true';
+let checks = 0;
+const check=(condition,label)=>{assert.ok(condition,label);checks++};
+
+class Node {
+  constructor(id,parent=null){this.id=id;this.parent=parent;this.text='OLD';this.value='OLD';this.children=[];this.onText=null;}
+  getAttribute(name){return name==='data-nebula-id'?this.id:null;}
+  contains(node){for(let n=node;n;n=n.parent)if(n===this)return true;return false;}
+  set textContent(value){this.text=value;for(const ch of this.children)ch.parent=null;this.children=[];this.onText?.();}
+  get textContent(){return this.text;}
+}
+function largeRootReplacement() {
+  const root=new Node(null),parent=new Node(null,root),first=new Node('parent',parent);
+  let rootReads=0;
+  const children=[first];
+  for(let i=1;i<COUNT;i++)children.push(new Node(i===1?'child':'other'+i,parent));
+  const document={querySelectorAll(s){assert.equal(s,'[data-nebula-id]');return children;},
+    get documentElement(){rootReads++;return this.currentRoot;},currentRoot:root};
+  first.onText=()=>{document.currentRoot=new Node(null);};
+  const count=vm.runInNewContext(script,{document},{timeout:10000});
+  return {count,rootReads,first,children,document};
+}
+const scenario=largeRootReplacement();
+check(scenario.count===1,'root change must retain successful prefix count');
+check(scenario.first.text==='ROOT_REPLACEMENT','first update applied');
+check(scenario.children[1].text==='OLD','stale sibling not updated');
+check(expectsAbort?scenario.rootReads<=4:scenario.rootReads>COUNT,
+  'root-change counter distinguishes 16k traversal from early return');
+
+const docRoot=new Node(null),body=new Node(null,docRoot),ancestor=new Node('parent',body),
+  descendant=new Node('child',ancestor),sibling=new Node('other',body);
+ancestor.children.push(descendant);body.children.push(ancestor,sibling);
+let normalRootReads=0;
+const document={get documentElement(){normalRootReads++;return docRoot;},
+  querySelectorAll(s){assert.equal(s,'[data-nebula-id]');return [ancestor,descendant,sibling];}};
+const nestedCount=vm.runInNewContext(script,{document},{timeout:10000});
+check(nestedCount===1,'nested descendant detached, only parent requested');
+check(descendant.parent===null,'child detached');
+check(descendant.text==='OLD','detached descendant not mutated');
+check(sibling.parent===body,'unrelated sibling remains connected');
+check(normalRootReads>=2,'normal-root check executed');
+
+const rowA=new Node('left'),rowB=new Node('right');
+const siblingsDoc={documentElement:new Node(null),querySelectorAll(s){assert.equal(s,'[data-nebula-id]');return [rowA,rowB];}};
+rowA.parent=siblingsDoc.documentElement;rowB.parent=siblingsDoc.documentElement;
+check(vm.runInNewContext(siblings,{document:siblingsDoc},{timeout:10000})===2,'two connected sibling updates');
+check(rowA.text==='L&<','left literal retained');
+check(rowB.text===['R',String.fromCharCode(92),'"',String.fromCharCode(39),'🙂'].join(''),'right unicode literal retained');
+
+const rowC=new Node('parent'),rowD=new Node('child');
+const valuesDoc={documentElement:new Node(null),querySelectorAll(){return [rowC,rowD];}};
+rowC.parent=valuesDoc.documentElement;rowD.parent=valuesDoc.documentElement;
+check(vm.runInNewContext(valueScript,{document:valuesDoc},{timeout:10000})===2,'value patches preserve two updates');
+check(rowC.value==='ROOT_REPLACEMENT','parent value patch');
+check(rowD.value==='CHILD_REPLACEMENT','child value patch');
+console.log('M3_SHORT_CIRCUIT_MODEL_PASS checks='+checks+' snapshot='+COUNT+' rootReads='+scenario.rootReads);

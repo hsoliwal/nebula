@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 Nebula original Browser DOM short circuit
+on:
+  pull_request:
+    paths:
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3BrowserScriptsTest.java'
+      - 'm3/web-widget-reverse/qualification/browser-dom-snapshot/**'
+      - '.github/workflows/m3-nebula-browser-dom-short-circuit-20261027.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-browser-source-and-node-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile original Java 11 and run same-contract DOM proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java
+          dir="$RUNNER_TEMP/m3-browser-short-circuit"
+          mkdir -p "$dir/classes" "$dir/scripts"
+          javac --release 11 -proc:none -Xlint:all -Werror -d "$dir/classes" \
+            "$src" \
+            m3/web-widget-reverse/qualification/browser-dom-snapshot/src/test/java/BrowserPatchEmit.java
+          java -cp "$dir/classes" BrowserPatchEmit "$dir/scripts"
+          M3_EXPECT_ABORT=true node --input-type=module - "$dir/scripts" < m3/web-widget-reverse/qualification/browser-dom-snapshot/root-short-circuit.js.txt
