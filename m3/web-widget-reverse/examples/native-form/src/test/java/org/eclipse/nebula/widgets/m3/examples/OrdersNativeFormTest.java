@@ -31,9 +31,11 @@ final class OrdersNativeFormTest {
                 assertTrue(children[1] instanceof Label);
                 assertTrue(children[2] instanceof Button);
                 assertTrue(children[3] instanceof Button);
-                assertEquals("Orders & shipping", ((Label) children[0]).getText());
-                assertEquals("A browser & native viewport candidate",
+                assertEquals("Orders && shipping", ((Label) children[0]).getText());
+                assertEquals("Orders & shipping", children[0].getData("m3.text"));
+                assertEquals("A browser && native viewport candidate",
                         ((Label) children[1]).getText());
+                assertEquals("A browser & native viewport candidate", children[1].getData("m3.text"));
                 assertEquals("Refresh orders", ((Button) children[2]).getText());
                 assertEquals("Cancel", ((Button) children[3]).getText());
                 assertTrue(children[2].getEnabled());
