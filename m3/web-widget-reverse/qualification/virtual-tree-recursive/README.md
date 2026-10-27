@@ -50,3 +50,29 @@ those independent platform gates pass.
 
 Source authorities: [SWT Tree.clear API](https://help.eclipse.org/latest/topic/org.eclipse.platform.doc.isv/reference/api/org/eclipse/swt/widgets/Tree.html)
 and [Virtual Tree and Table in SWT](https://www.eclipse.org/articles/Article-SWT-Virtual/Virtual-in-SWT.html).
+
+## Independent mutation controls (local only)
+
+## Independent mutation controls (local only)
+
+The same local Java 21 `--release 11 -Xlint:all -Werror`
+test was executed against the current original product binding and
+two **single-fix-reversed** copies. These copies were temporary
+analysis files, not pushed to Nebula or made into source recipes:
+
+| Test source | Result | Failure signature |
+| --- | --- | --- |
+| Current PR #296 product binding, both corrections | **PASS** | 8 indexed page fetches |
+| Only descendant-cache eviction reverted | **Expected FAIL** | `expected=UPDATED child 0 actual=Child 0` |
+| Only parent re-materialization reverted | **Expected FAIL** | `unexpected parent root-0` after switching to `root-replacement` |
+
+This distinguishes both contracts: invalidating the root's visual
+attributes is insufficient without evicting cached descendant
+sibling pages, and clearing page references is insufficient without
+re-materializing a parent before resolving its current stable ID.
+
+**Authority limitation:** test-only event-shaped SWT stubs, with
+the actual product Java binding's executable code recovered from
+GitHub (non-executable comments stripped for local transfer). These
+results do not substitute for the unrun native SWT Tycho JUnit,
+RWT 4.8.0 Java API compile or real RAP browser sessions.
