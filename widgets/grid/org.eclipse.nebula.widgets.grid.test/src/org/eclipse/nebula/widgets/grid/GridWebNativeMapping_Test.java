@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ProgressBar;
+import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
@@ -137,6 +138,33 @@ public void staticProgressUsesNativeRwtCompatibleIntegerRange() {
     }
 
     @Test
+    public void staticXhtmlRangeUsesOriginalSwtScale() {
+        Composite root = StaticRangeNativeWebUiBinder.create(shell);
+        assertEquals(1, root.getChildren().length);
+        assertTrue(root.getChildren()[0] instanceof Composite);
+        Composite section = (Composite) root.getChildren()[0];
+        assertEquals("ranges", section.getData("web.field"));
+        assertEquals(3, section.getChildren().length);
+        Control[] children = section.getChildren();
+        assertTrue(children[1] instanceof Scale);
+        assertTrue(children[2] instanceof Scale);
+        Scale brightness = (Scale) children[1];
+        Scale zoom = (Scale) children[2];
+        assertSame(section, brightness.getParent());
+        assertSame(section, zoom.getParent());
+        assertEquals("brightness", brightness.getData("web.field"));
+        assertEquals(0, brightness.getMinimum());
+        assertEquals(100, brightness.getMaximum());
+        assertEquals(35, brightness.getSelection());
+        assertEquals(1, brightness.getIncrement());
+        assertEquals("zoom", zoom.getData("web.field"));
+        assertEquals(150, zoom.getMinimum());
+        assertEquals(800, zoom.getMaximum());
+        assertEquals(430, zoom.getSelection());
+        assertFalse(zoom.getEnabled());
+    }
+
+    @Test
     public void staticNormalFlowTextMatchesNativeSwtPresentation() {
         Composite root = NormalFlowNativeWebUiBinder.create(shell);
         assertEquals(1, root.getChildren().length);
@@ -170,6 +198,7 @@ public void staticProgressUsesNativeRwtCompatibleIntegerRange() {
         Composite treeRoot = TreeNativeWebUiBinder.create(shell);
         Composite progressRoot = StaticProgressNativeWebUiBinder.create(shell);
         Composite groupRoot = StaticGroupNativeWebUiBinder.create(shell);
+        Composite rangeRoot = StaticRangeNativeWebUiBinder.create(shell);
         Grid grid = (Grid) gridRoot.getChildren()[2];
         Tree tree = (Tree) treeRoot.getChildren()[1];
         shell.dispose();
@@ -177,6 +206,7 @@ public void staticProgressUsesNativeRwtCompatibleIntegerRange() {
         assertTrue(treeRoot.isDisposed());
         assertTrue(progressRoot.isDisposed());
         assertTrue(groupRoot.isDisposed());
+        assertTrue(rangeRoot.isDisposed());
         assertTrue(grid.isDisposed());
         assertTrue(tree.isDisposed());
     }
