@@ -14,9 +14,11 @@ contains those JavaScript object references. The previous implementation
 counted updates to detached descendants even though their text was no longer
 in the current document. This is observable through `M3BrowserWidget.setTexts`.
 
-The original Java owner now uses its existing script builder to record
-`document.documentElement` before the loop and skip elements not contained
-by that root when visited. A disconnected node is **not** a successful DOM
+The original Java owner now uses its existing script builder to pin the
+initial `document.documentElement` identity and skip nodes that are not
+contained by that root **or whose current document root has changed**.
+This also refuses stale snapshot nodes when synchronous application code
+replaces the entire document root during a text patch. A disconnected node is **not** a successful DOM
 update. Sibling patches, child-only patches, duplicate IDs, value patches,
 JavaScript string-literal safety, budget checks, event behavior and existing
 public Java descriptors are unchanged. The original `Browser`, `BrowserFunction`,
