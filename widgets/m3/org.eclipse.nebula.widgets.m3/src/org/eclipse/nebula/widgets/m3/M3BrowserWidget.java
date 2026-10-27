@@ -53,6 +53,8 @@ public final class M3BrowserWidget extends Composite {
     private final BrowserFunction function;
     private final CopyOnWriteArrayList<WebEventListener> listeners = new CopyOnWriteArrayList<>();
     private boolean documentRequested;
+    // A callback belongs to the document that originally emitted it.
+    private long documentRevision;
     private boolean ready;
     private SWTException bridgeFailure;
 
@@ -66,13 +68,18 @@ public final class M3BrowserWidget extends Composite {
                 if (isDisposed() || !ready || !M3BrowserScripts.validEvent(arguments)) {
                     return Boolean.FALSE;
                 }
+                long sourceRevision = documentRevision;
                 String type = (String) arguments[0];
                 String id = (String) arguments[1];
                 String value = (String) arguments[2];
                 for (WebEventListener listener : listeners) {
+                    if (isDisposed() || !ready || documentRevision != sourceRevision) {
+                        return Boolean.FALSE;
+                    }
                     listener.onEvent(type, id, value);
                 }
-                return Boolean.valueOf(!listeners.isEmpty());
+                return Boolean.valueOf(!isDisposed() && ready
+                        && documentRevision == sourceRevision && !listeners.isEmpty());
             }
         };
         // A trusted setText is the only supported navigation entrypoint.
@@ -113,6 +120,9 @@ public final class M3BrowserWidget extends Composite {
         if (html == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+        // Refuse exhaustion before changing widget state; failed loads also retire
+        // the preceding document event generation.
+        documentRevision = Math.addExact(documentRevision, 1);
         documentRequested = true;
         ready = false;
         bridgeFailure = null;
