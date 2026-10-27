@@ -189,6 +189,11 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
         if (parent == null) {
             siblingCount = tree.getItemCount();
         } else {
+            // Tree.clear(root,true) invalidates item content recursively,
+            // but SWT need not discard application-defined Widget data.
+            // Materialize the parent from its *current* page before using
+            // its key to address a child sibling page.
+            parent.getText(0);
             Object key = parent.getData(ROW_KEY);
             if (!(key instanceof String)) {
                 throw new IllegalStateException("Parent must be initialized before child");
@@ -396,15 +401,12 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
                 || (long) last - first >= PAGE_ROWS * HOT_PAGES) {
             SWT.error(SWT.ERROR_INVALID_RANGE);
         }
-        for (int slot = 0; slot < pages.length; slot++) {
-            Page page = pages[slot];
-            if (page != null && page.parentKey() == null
-                    && page.offset() <= last
-                    && (long) page.offset() + page.size() > first) {
-                pages[slot] = null;
-                ages[slot] = 0;
-            }
-        }
+        // Recursive SWT.clear resets descendant TreeItems as well as roots.
+        // A cached descendant page is addressed by (parentKey, offset),
+        // not by its root index. Evicting only intersecting root pages
+        // would replay stale child/grandchild text from a previous snapshot.
+        // This is bounded: exactly HOT_PAGES (four) cache references.
+        clearCache();
         for (int i = first; i <= last; i++) {
             tree.clear(i, true);
         }
