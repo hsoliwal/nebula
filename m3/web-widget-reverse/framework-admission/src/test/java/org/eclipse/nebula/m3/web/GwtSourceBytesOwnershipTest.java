@@ -86,6 +86,14 @@ final class GwtSourceBytesOwnershipTest {
                 GwtAttributedJavaInventory.inspect(receipt, bytes, List.of()));
     }
 
+    @Test void overBudgetInputRefusesBeforeAnySourceSnapshot() throws Exception {
+        byte[] oversized = new byte[1_048_577];
+        var receipt = new WebWidgetUiBinderProjection.SourceReceipt("demo/Orders.java", "0".repeat(64));
+        var rejection = assertThrows(IllegalArgumentException.class, () ->
+                GwtAttributedJavaInventory.inspect(receipt, oversized, List.of()));
+        assertTrue(rejection.getMessage().contains("SOURCE_BUDGET"));
+    }
+
     @Test void theOriginalCallerByteArrayStillBelongsToTheCaller() throws Exception {
         byte[] bytes = SOURCE.getBytes(StandardCharsets.UTF_8);
         String expected = sha(bytes);
