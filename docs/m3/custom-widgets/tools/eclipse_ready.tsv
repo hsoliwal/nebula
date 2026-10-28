@@ -1,0 +1,3 @@
+class	jface_binding	eclipse_view_example
+org.eclipse.nebula.widgets.m3.M3FindBar	JFace binding org.eclipse.nebula.widgets.m3.jface.M3ViewerSearchable (StructuredViewer model in shown order: filters, comparator, label provider; reveal through the viewer)	M3FindBarExampleTab in the Nebula Examples view (plugin.xml); M3JFaceBindingsTest; workbench run pending
+org.eclipse.nebula.widgets.m3.M3ErrorPane	JFace/Eclipse binding org.eclipse.nebula.widgets.m3.jface.M3StatusPane (IStatus and MultiStatus, details formatted on first show; the ErrorDialog form)	M3ErrorPaneExampleTab in the Nebula Examples view (plugin.xml); M3JFaceBindingsTest; workbench run pending

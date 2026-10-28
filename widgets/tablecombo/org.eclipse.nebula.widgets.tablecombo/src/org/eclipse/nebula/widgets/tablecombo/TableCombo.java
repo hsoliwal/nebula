@@ -17,6 +17,7 @@
  *  Andreas Ehret <> - patch for bug 334786
  *  Thorsten Hake <mail@thorsten-hake.com> - fix for bug 415868
  *  Stefan Dirix <sdirix@eclipsesource.com> - offer popup to keep open bug 480298
+ *  Hitesh Soliwal (Synexia) - viewport mode switch: lazy drop-down and virtual row bit set, original mode builds the drop-down at once
  *****************************************************************************/
 
 package org.eclipse.nebula.widgets.tablecombo;
@@ -25,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.nebula.widgets.tablecombo.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.ACC;
@@ -97,6 +99,13 @@ public class TableCombo extends Composite {
 	private Label selectedImage;
 	private Text text;
 	private Table table;
+
+	/**
+	 * The TableCombo viewport (docs/m3/custom-widgets/tablecombo): the drop-down is built on first use and a
+	 * SWT.VIRTUAL drop-down keeps a packed bit set of the rows it bound, unless the startup widget mode is original
+	 * (-Dswt.widget.mode.TableCombo=original or -Dswt.widget.mode=original), which builds the drop-down at once, as stock does.
+	 */
+	static final boolean VIEWPORT = WidgetMode.of("TableCombo", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	private Font font;
 	private boolean hasFocus;
 	private int visibleItemCount = 7;
@@ -219,7 +228,10 @@ public class TableCombo extends Composite {
 			arrow.addListener(arrowEvent, listener);
 		}
 
-		// the drop-down shell and table are built on first open or first table API use
+		// the drop-down shell and table are built on first open or first table API use; the original mode builds them now
+		if (!VIEWPORT) {
+			createPopup(-1);
+		}
 
 		initAccessible();
 
@@ -2419,7 +2431,7 @@ public class TableCombo extends Composite {
 		if (totalColumnsToBeCreated > 0) {
 
 			for (int index = 0; index < totalColumnsToBeCreated; index++) {
-				final TableColumn column = new TableColumn(table, SWT.NONE);
+				final TableColumn column = new TableColumn(table(), SWT.NONE);
 
 				if (index < totalColumnHeaders) {
 					column.setText(columnHeaders[index]);

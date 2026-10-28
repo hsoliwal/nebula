@@ -36,6 +36,7 @@ same as ten.
 |---|---|---|
 | bounds of a hidden child | updated on every layout | updated when the child becomes the top control |
 | Move/Resize events of a hidden child | on every layout that changes its bounds | when the child becomes the top control |
+| a hidden child that the client shows with `setVisible(true)` between layouts | shown at the stack area | shown at its last bounds (none if it was never on top) until the next layout hides it again |
 | Show/Hide events, visibility, top bounds, computeSize, pixels | | identical (recorded differential) |
 | pages (page mode only) | every child is a live control | only resident pages exist; `getChildren()` lists the resident pages; `computeSize` is the maximum over resident pages |
 

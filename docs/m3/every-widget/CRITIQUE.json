@@ -1,0 +1,811 @@
+{
+ "missing_classes": [
+  {
+   "cls": "org.eclipse.swt.widgets.Control",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Base of every native control and owner of the shared gate: the redrawInPixels deferral at Control.java:2742, the WM_PAINT deferral at 5787 and WM_ERASEBKGND at 5989. The H of every native FIXED card rests on it, but only Composite and Canvas have cards."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.Widget",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Abstract root of all SWT widgets. It needs at least a NOT_APPLICABLE row for the SWT denominator to close."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.TableItem",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Row facade of Table. Facade residency is the R aspect, and TableViewport keeps data-carrying facades strongly (TableViewport.java:684), yet TableItem is cited only inside the Table card."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.TreeItem",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Row facade of Tree. getBounds probes off-window rows through TreeViewport.offWindowBounds (TreeItem.java:598/625). TreeCursor and TreeEditor depend on it, but it has no card of its own."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.TableColumn",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Header plane of Table. A column resize sends SWT.Move to every column to its right (Table.java:8083-8091), and that cascade lays out every CompositeTable row again. No card."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.TreeColumn",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Header plane of Tree, with the same Move/Resize cascade as TableColumn. No card."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.ToolItem",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "setText and setImage send WM_SETFONT and lay out the whole bar again (ToolItem.java:1056-1086, 1251-1257). The ToolBar leaf hooks these methods, but ToolItem has no card."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.TabItem",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Carries the lazy page content that TabFolder.fillLazyTab and catchUpLazyTab manage. Its setControl and setText paths are not inventoried."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.ExpandItem",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Its header redraw (ExpandItem.redraw 390-417) and the layout of its item control are folded by the ExpandBar leaf, but the item has no card."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.CoolItem",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Band facade of CoolBar (RBN_CHILDSIZE combo band re-set). No card."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.MenuItem",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "wmDrawChild calls getParent().redraw() inside every owner-drawn bar item paint (Menu verdict, MenuItem 1419). That may form a self-sustaining DrawMenuBar loop. No card."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.TaskBar",
+   "source": "SWT win32 widgets dir (denominator)",
+   "reason": "Widget parent of TaskItem, which has a card. Its NOT_APPLICABLE row is missing."
+  },
+  {
+   "cls": "org.eclipse.swt.custom.CTabItem",
+   "source": "SWT custom widgets dir (denominator)",
+   "reason": "Item facade of CTabFolder. The CTabFolder H leaf adds a flush hook in CTabItem.isShowing (351), and item text or image changes drive CTabFolder.updateFolder, but there is no card."
+  },
+  {
+   "cls": "org.eclipse.swt.browser.Browser",
+   "source": "SWT bundle outside the two listed dirs",
+   "reason": "Composite (Browser.java:50). RichTextEditor defers its R/G/D to an 'SWT Browser card' that does not exist, and the fork Edge 100 ms poll timer (Edge.java:996-1008) is audited only inside that wrapper card."
+  },
+  {
+   "cls": "org.eclipse.swt.awt.Java2DCanvas",
+   "source": "SWT bundle outside the two listed dirs",
+   "reason": "A new Synexia M3 Canvas (retained Java2D raster; callers must redraw) with no card."
+  },
+  {
+   "cls": "org.eclipse.swt.opengl.GLCanvas",
+   "source": "SWT bundle outside the two listed dirs",
+   "reason": "Canvas subclass. No card."
+  },
+  {
+   "cls": "org.eclipse.swt.ole.win32.OleFrame / OleClientSite",
+   "source": "SWT bundle outside the two listed dirs",
+   "reason": "Composite subclasses. No cards."
+  },
+  {
+   "cls": "org.eclipse.swt.widgets.Tray",
+   "source": "SWT common widgets folder (outside the two listed dirs)",
+   "reason": "Widget container of TrayItem, which has a card. No card."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.AbstractPaginationWidget",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "Abstract Composite, through AbstractPageControllerComposite, that owns a JFace TableViewer or TreeViewer plus the page renderers. Base of PageableTable and PageableTree."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.table.PageableTable",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "ROWS wrapper: a page window over a JFace TableViewer. The AbstractPageControllerComposite card names it, but it has no card."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.tree.PageableTree",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "ROWS wrapper: a page window over a JFace TreeViewer. No card."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.table.forms.FormPageableTable / tree.forms.FormPageableTree",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "Forms variants of PageableTable and PageableTree. No cards."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.renderers.navigation.ResultAndNavigationPageGraphicsRenderer",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "Hosts NavigationPageGraphics. Its pageIndexChanged calls update(), a full rebuild and redraw that defeats the two-item damage in the NavigationPageGraphics leaf (per that verdict)."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.renderers.navigation.ResultAndNavigationPageLinksRenderer",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "Links renderer Composite. Its pageLinks stay empty until the first page event (AbstractPageControllerComposite verdict). No card."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.renderers.navigation.NavigationPageComboRenderer",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "populateCombo (70-81) builds totalPages MessageFormat strings and calls Combo.setItems, which is O(totalPages): 5e8 strings for 5e9 elements at pageSize 10. A ROWS gap with no card."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.pagination.renderers.navigation.NavigationPageScaleRenderer / renderers.pagesize.PageSizeComboRenderer",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "Renderer Composites that are not inventoried."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.calendarcombo.FlatCalendarCombo",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "CustomCombo subclass used by CalendarCombo with SWT.FLAT. It inherits the CustomCombo Modify/list() popup-builder defect but has no card."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.xviewer.util.internal.XViewerFilteredTree",
+   "source": "Nebula extends closure (outside nebula_widget_files.rel.txt)",
+   "reason": "FilteredTreeComposite subclass with a plain SWT.BORDER|SWT.MULTI Tree (28-29). It inherits the filter-refresh H leaf and the plain-Tree R gap (T4)."
+  },
+  {
+   "cls": "org.eclipse.nebula.cwt.v.VControl",
+   "source": "Nebula cwt lightweight controls (outside the denominator)",
+   "reason": "Base of the CWT drawn controls. redraw is a rectangle damage (697-702) and paint culls children to the event rectangle (641-643). The DatePicker, AnalogTimePicker and DiscreteTimePicker cards build on it and the VCanvas VViewport leaf hooks it, but it has no card."
+  },
+  {
+   "cls": "org.eclipse.nebula.cwt.v.VPanel",
+   "source": "Nebula cwt lightweight controls (outside the denominator)",
+   "reason": "Lightweight container whose layout(true) always redraws (VPanel.java:188-191). The cdatetime pickers extend it. No card."
+  },
+  {
+   "cls": "org.eclipse.nebula.cwt.v.VButton",
+   "source": "Nebula cwt lightweight controls (outside the denominator)",
+   "reason": "setText always redraws (997-1000), while setSelection redraws only on change (174-180). It drives the DatePicker and DiscreteTimePicker damage. No card."
+  },
+  {
+   "cls": "org.eclipse.nebula.cwt.v.VLabel / VNative / VCustom / VSpacer",
+   "source": "Nebula cwt lightweight controls (outside the denominator)",
+   "reason": "The remaining CWT controls. VNative hosts BaseCombo's native Text. No cards."
+  },
+  {
+   "cls": "org.eclipse.nebula.visualization.widgets.figures.GaugeFigure",
+   "source": "Nebula visualization draw2d figure widgets (outside the denominator)",
+   "reason": "A user-facing widget of the visualization bundle. Sibling figures IntensityGraphFigure and AlphaLabel have cards; this one does not. Its D and H come from the draw2d host gate."
+  },
+  {
+   "cls": "org.eclipse.nebula.visualization.widgets.figures.KnobFigure",
+   "source": "Nebula visualization draw2d figure widgets (outside the denominator)",
+   "reason": "A user-facing figure widget with 4 full repaints and a thumb dragger. No card."
+  },
+  {
+   "cls": "org.eclipse.nebula.visualization.widgets.figures.MeterFigure / TankFigure / ThermometerFigure",
+   "source": "Nebula visualization draw2d figure widgets (outside the denominator)",
+   "reason": "User-facing figure widgets (the bases AbstractScaledWidgetFigure and AbstractMarkedWidgetFigure hold 7 and 13 full repaints). No cards."
+  },
+  {
+   "cls": "org.eclipse.nebula.visualization.widgets.figures.ProgressBarFigure / ScaledSliderFigure",
+   "source": "Nebula visualization draw2d figure widgets (outside the denominator)",
+   "reason": "User-facing figure widgets with 8 and 9 full repaints. No cards."
+  },
+  {
+   "cls": "org.eclipse.nebula.visualization.xygraph.figures.Axis",
+   "source": "Nebula visualization draw2d figure (outside the denominator)",
+   "reason": "Repeating zoom timerExec(ZOOM_SPEED) (Axis.java:1025-1032), like PlotArea's. The XYGraph leaf hooks Axis 1028, and removed traces keep running performAutoScale on both axes (removeTrace 520-525 never detaches), yet Axis has no card while its sibling figures Trace and PlotArea do."
+  },
+  {
+   "cls": "org.eclipse.nebula.visualization.xygraph.figures.Annotation",
+   "source": "Nebula visualization draw2d figure (outside the denominator)",
+   "reason": "dataChanged posts an asyncExec (Annotation.java:800) on every data change. Annotations removed from the graph or created by a cancelled AddAnnotationDialog stay registered forever, because remove (182-192) never detaches the data-provider listener. The fix is proposed on another card."
+  },
+  {
+   "cls": "org.eclipse.nebula.animation.AnimationRunner / ScrollingSmoother (gallery bundle copy)",
+   "source": "Nebula gallery bundle, a copy of cwt.animation",
+   "reason": "A second copy of the animation engine inside the gallery bundle; the 20 ms runner and 2000 ms smoother appear in Gallery's hidden_work. The cwt copies have NOT_A_WIDGET cards whose EffectGate leaf does not reach this copy."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.opal.notifier.Notifier",
+   "source": "Nebula opal, same kind as the carded M3Toasts",
+   "reason": "Popup Shell with fade-in, display and fade-out timerExec chains (Notifier.java:263-330) and no hidden check. The opal counterpart of M3Toasts, which has a card."
+  },
+  {
+   "cls": "org.eclipse.nebula.widgets.opal.dialog.FooterArea",
+   "source": "Nebula opal dialog, same kind as the carded timer owners",
+   "reason": "The opal Dialog countdown re-arms timerExec(1000) (FooterArea.java:192-211) with no visibility check. No card."
+  },
+  {
+   "cls": "org.eclipse.jface.viewers.ColumnViewerEditor",
+   "source": "JFace viewers package",
+   "reason": "Editor plane of every ColumnViewer. Each tab-traversal activation brackets setRedraw(false/true) (ColumnViewerEditor.java:553/557), a full repaint per Tab that the ColumnViewer verdict flags. No card."
+  },
+  {
+   "cls": "javax.swing.table.JTableHeader",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "JComponent and JTable's header plane (header.repaint at JTable 3912; column resize and drag repaint it). The J*-only denominator misses it."
+  },
+  {
+   "cls": "javax.swing.Box / Box.Filler",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "JComponent containers (BoxLayout and fillers). SH1 would cover their hidden layout, but they have no card."
+  },
+  {
+   "cls": "javax.swing.JInternalFrame.JDesktopIcon",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "The component shown for an iconified internal frame inside JDesktopPane. It is not covered by the IF1 or LP1 leaves."
+  },
+  {
+   "cls": "javax.swing.JSpinner.DefaultEditor (NumberEditor, DateEditor, ListEditor)",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "JPanel editors that host the JFormattedTextField. JSpinner's H claim depends on them (ST-H1)."
+  },
+  {
+   "cls": "javax.swing.JScrollPane.ScrollBar",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "The UIResource bar every JScrollPane creates. SWG1 projects the logical origin into it. No card."
+  },
+  {
+   "cls": "javax.swing.JToolBar.Separator / javax.swing.JPopupMenu.Separator",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "JSeparator subclasses. They should be NOT_APPLICABLE like JSeparator, but have no rows."
+  },
+  {
+   "cls": "javax.swing.CellRendererPane",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "Container that hosts the rubber-stamp renderers for JList, JTable, JTree and JComboBox paints. A NOT_APPLICABLE row is missing."
+  },
+  {
+   "cls": "javax.swing.plaf.basic.BasicSplitPaneDivider",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "Divider component of every JSplitPane, repainted by drag feedback and one-touch buttons. No card."
+  },
+  {
+   "cls": "javax.swing.plaf.basic.BasicInternalFrameTitlePane",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "The title bar repaints on IS_SELECTED (587) and other property changes (620), which is part of the activation damage that IF1 targets. No card."
+  },
+  {
+   "cls": "javax.swing.plaf.basic.BasicArrowButton",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "Arrow buttons of JSpinner, JScrollBar, JComboBox and JTabbedPane. No card."
+  },
+  {
+   "cls": "javax.swing.plaf.basic.BasicTabbedPaneUI.ScrollableTabViewport / ScrollableTabPanel",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "The SIMPLE_SCROLL_MODE tab strip (3943) that the TP2 leaf targets, with cropped-edge paint state. No card."
+  },
+  {
+   "cls": "javax.swing.colorchooser.DefaultSwatchChooserPanel",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "Paints every swatch (358-363) and holds 12 repaint calls. Only DiagramComponent among the chooser panels has a card."
+  },
+  {
+   "cls": "javax.swing.colorchooser.ColorChooserPanel / ColorPanel / DefaultPreviewPanel",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "ColorPanel.colorChanged (145-153) repaints the whole panel, and the JColorChooser leaf folds updates into these panels, but they have no cards."
+  },
+  {
+   "cls": "javax.swing.DefaultListCellRenderer / table.DefaultTableCellRenderer / tree.DefaultTreeCellRenderer / plaf.basic.BasicComboBoxRenderer",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "Rubber-stamp JLabel renderers that need explicit NOT_APPLICABLE rows. M3ListMeasure gates on the exact DefaultListCellRenderer class."
+  },
+  {
+   "cls": "javax.swing.plaf.metal.MetalTitlePane",
+   "source": "Swing extends closure (outside swing_components.txt)",
+   "reason": "Title bar of look-and-feel-decorated root panes. Not inventoried."
+  }
+ ],
+ "not_widgets": [
+  "TreeViewport (swt-native-rows): win32 mediator for VIRTUAL Trees, extends Object",
+  "TableViewport (swt-native-rows): win32 mediator for plain Tables, extends Object",
+  "ListViewport (swt-native-rows): win32 mediator for plain Lists, extends Object",
+  "ComboViewport (swt-native-rows): win32 mediator for Combo lists, extends Object",
+  "ViewportPlane (swt-native-rows): child-plane mediator; its DONE is a mechanism status, not a widget status",
+  "WidgetMode (swt-native-rows): enum in org.eclipse.swt.internal",
+  "ControlEditor (swt-custom): helper that extends Object",
+  "TableEditor (swt-custom): ControlEditor helper",
+  "TreeEditor (swt-custom): ControlEditor helper",
+  "PopupList (swt-custom): Object that owns a Shell and a List",
+  "BusyIndicator (swt-custom): static cursor utility",
+  "MouseNavigator (swt-custom): package-private helper (REFUTED)",
+  "StructuredViewer (jface-viewers): JFace viewer over an SWT widget",
+  "ColumnViewer (jface-viewers): JFace viewer",
+  "AbstractTableViewer (jface-viewers): JFace viewer",
+  "TableViewer (jface-viewers): JFace viewer",
+  "CheckboxTableViewer (jface-viewers): JFace viewer",
+  "AbstractTreeViewer (jface-viewers): JFace viewer",
+  "TreeViewer (jface-viewers): JFace viewer",
+  "CheckboxTreeViewer (jface-viewers): JFace viewer",
+  "AbstractListViewer (jface-viewers): JFace viewer",
+  "ListViewer (jface-viewers): JFace viewer",
+  "ComboViewer (jface-viewers): JFace viewer",
+  "M3Viewers (jface-viewers): delta-queue helper",
+  "StructuredViewerInternals (jface-viewers): access bridge",
+  "M3ViewerPaths (jface-viewers): hook target",
+  "M3ViewerDelta (jface-viewers): delta lanes",
+  "M3ViewSpec (jface-viewers): view spec parser",
+  "CTreeCell (nebula-ctree-ctreecombo): cell object (extends Object) carded as ROWS",
+  "CTreeLayout (nebula-ctree-ctreecombo): SWT Layout carded as ROWS",
+  "PTWidgetTable (nebula-opal-b): AbstractPTWidget strategy that owns a Table",
+  "PTWidgetTree (nebula-opal-b): AbstractPTWidget strategy that owns a Tree",
+  "GeoMapViewer (nebula-geomap-tiles-treemapper): JFace ContentViewer",
+  "TreeMapper (nebula-geomap-tiles-treemapper): Object (ISelectionProvider) that builds a SashForm",
+  "XViewer (nebula-rows-xviewer-tablecombo-gallery): JFace TreeViewer subclass",
+  "XViewerViewportContentProvider (nebula-rows-xviewer-tablecombo-gallery): content provider",
+  "WidgetMode, gallery internal (nebula-rows-xviewer-tablecombo-gallery): enum",
+  "WidgetMode, tablecombo internal (nebula-rows-xviewer-tablecombo-gallery): enum",
+  "CompoundViewPortHandler (nebula-ganttchart-timeline): scroll-contract object",
+  "IViewPortHandler (nebula-ganttchart-timeline): interface",
+  "IViewPortHandler2 (nebula-ganttchart-timeline): interface",
+  "ViewPortHandler (nebula-ganttchart-timeline): package-private stepper (REFUTED)",
+  "HorizontalScrollbarHandler (nebula-ganttchart-timeline): ScrollBar listener (REFUTED)",
+  "PrintViewer (nebula-paperclips-grid): Object (REFUTED)",
+  "M3Toasts (nebula-m3-b): final Object that owns an overlay Shell and Canvas, carded FIXED",
+  "M3InfoPopup (nebula-m3-b): final Object attached to an owner control",
+  "M3Autocomplete (nebula-m3-b): final Object attached to a Text",
+  "AnimationRunner (nebula-small-b): animation engine",
+  "ScrollingSmoother (nebula-small-b): animation engine",
+  "Transition (nebula-small-b): STW transition engine",
+  "TransitionManager (nebula-small-b): Object controller carded as WRAPPER (its verifier says NOT_A_WIDGET)",
+  "FontAwesome (nebula-small-b): font utility",
+  "FormattedText (nebula-text): decorator of an SWT Text",
+  "RichTextCellLabelProvider (nebula-text): JFace label provider",
+  "AddAnnotationDialog (nebula-visualization-oscilloscope): JFace Dialog, although listed in nebula_widget_files.rel.txt",
+  "RemoveAnnotationDialog (nebula-visualization-oscilloscope): JFace Dialog, although listed in nebula_widget_files.rel.txt",
+  "XYGraphConfigDialog (nebula-visualization-oscilloscope): JFace Dialog, although listed in nebula_widget_files.rel.txt",
+  "BasicListUI (swing-rows): UI delegate",
+  "BasicTreeUI (swing-rows): UI delegate",
+  "BasicTableUI (swing-rows): UI delegate",
+  "BasicComboBoxUI (swing-rows): UI delegate",
+  "BasicFileChooserUI (swing-rows): UI delegate",
+  "M3VariableHeightLayoutCache (swing-rows): lane store",
+  "M3FixedHeightLayoutCache (swing-rows): lane store",
+  "M3ListRows (swing-rows): lane store",
+  "M3ListMeasure (swing-rows): measure lanes",
+  "M3ExpandedState (swing-rows): Hashtable subclass",
+  "M3SorterLanes (swing-rows): lane store",
+  "M3SparseSizes (swing-rows): lane store",
+  "BasicTextUI (swing-text): UI delegate",
+  "DefaultCaret (swing-text): caret (extends Rectangle)",
+  "DefaultHighlighter (swing-text): highlighter",
+  "PlainView (swing-text): text View",
+  "WrappedPlainView (swing-text): text View",
+  "FieldView (swing-text): text View",
+  "BoxView (swing-text): text View",
+  "ParagraphView (swing-text): text View",
+  "AsyncBoxView (swing-text): text View"
+ ],
+ "inconsistencies": [
+  "Duplicate rows for one file with contradictory verdicts. CalculatorButtonsComposite is FIXED D+H PARTIAL in nebula-opal-a, with the leaf 'covered by CalculatorViewport_Test' (that test does not exist in the worktree), and FIXED with nothing required, NOT_APPLICABLE, in nebula-opal-c. LauncherLabel is MISSING in nebula-opal-b (retired in viewport mode by the Launcher leaf, size NONE) and MISSING in nebula-opal-c (its own size-S leaf). Key the ledger on file path and keep one row each.",
+  "Same shape, different required aspects (FIXED): 98 FIXED cards require D+H, but TableCursor and TreeCursor require R+G+D+H. They are overlays on the Table and Tree viewports and should be WRAPPERs that inherit R+G and own D+H.",
+  "Same shape, different required aspects (CHILDREN): 30 cards require G+D+H, but CTabFolder and ColumnBrowserWidget require R+G+D+H. Tab folders disagree with each other: CTabFolder requires R+G+D+H, TabFolder and JTabbedPane G+D+H, although TabFolder and CTabFolder both have lazy page content.",
+  "Same shape, different required aspects (AXIS): AbstractEventEditor requires only H. Month grids are split: M3MonthView requires R+G+D+H, while CalendarComposite, MonthPick, DatePicker and DateChooser require G+D+H. Plotters are split: XYGraph, Trace and IntensityGraphFigure require R+G+D+H, Oscilloscope and Plotter G+D+H. PlotArea (G+D+H) also differs from its parent XYGraph. Every AXIS card that adds R should state its event-window reason.",
+  "NOT_A_WIDGET cards still carry required aspects and a non-NA status: AnimationRunner and ScrollingSmoother (H, MISSING), Transition and M3Viewers (D+H, MISSING), JComponent (D+H, PARTIAL). Either they are shared-mechanism rows with no widget status, or their aspects belong to the widgets that use them. Mixing the two inflates the MISSING count.",
+  "The shape column mixes what a class composes with what it is. Real SWT widgets are shaped NOT_A_WIDGET: Tracker, ToolTip, Caret and IME extend Widget; TrayItem and TaskItem extend Item. Meanwhile Menu and ScrollBar, also non-Control Widgets, and Nebula's GridToolTip are FIXED. In the other direction, Object controllers carry widget shapes: TransitionManager, PopupList, TreeMapper, GeoMapViewer, XViewer and the 11 JFace viewers are WRAPPER, M3Toasts is FIXED, and CTreeCell and CTreeLayout are ROWS. JComponent, the Swing component base, is NOT_A_WIDGET, while SWT's Control and Widget bases have no card at all.",
+  "Item facades get five different shapes for one role. GridItem, GridColumn, GridColumnGroup, RadioItem, CTreeComboItem and CTreeComboColumn are WRAPPER; CTreeItem and CTreeColumn are ROWS; GalleryItem is TILES; PShelfItem, RoundedToolItem, BreadcrumbItem, ToolbarItem, PGroupToolItem and NavigationPageGraphicsItem are FIXED. SWT TableItem, TreeItem, TableColumn, TreeColumn, ToolItem, TabItem, ExpandItem, CoolItem, MenuItem and CTabItem have no card. One rule is needed, for example: an item inherits its parent's aspects and owns its D.",
+  "Mechanism rows double-count with widget rows. TreeViewport, TableViewport, ListViewport and ComboViewport are ROWS cards and ViewportPlane is CHILDREN DONE, next to the Tree, Table, List, Combo and Composite cards. The pairs disagree because aspects depend on style: Tree has G while TreeViewport has R+G+H+P (VIRTUAL only); Combo has G while ComboViewport has R+G; List has R+G while ListViewport has R+G+H. Use one row per widget per style or mode (plain, VIRTUAL, SIMPLE).",
+  "Cross-unit references to cards that do not exist. SWT Text has a single LINES row (R+G+D+H), yet the PasswordRevealer and FormattedText cards cite 'the SWT Text card (FIXED: D+H)', and the Text card has no single-line style split. RichTextEditor defers R, G and D to an 'SWT Browser card', and no Browser card exists.",
+  "The SWT WidgetMode verdict notes that M3Mode.of(Canvas) answers ORIGINAL (pinned by Test_M3ItemSelection.java:440) and that the Table mode mismatch is also pinned (419). Yet Composite.setBoundsInPixels mediates every Composite subclass through ViewportPlane, and the Canvas and CHILDREN cards credit G on that basis. The realized-mode API and the ledger contradict each other.",
+  "P is required only by M3InfoPopup and M3Autocomplete (R+P+H), although no shape requires P. CDatePanel's present set (R+G) contains R, which its AXIS requirement (G+D+H) does not include.",
+  "PARTIAL with no aspect present: ToolBar (its verifier removed D but kept PARTIAL on account of a partial H that is not recorded), JTextPane, JEditorPane, JTextComponent, BoxView, ParagraphView, WrappedPlainView and AsyncBoxView. The swing-fixed verifier demoted JColorChooser to MISSING for exactly this reason. Apply that rule to the whole ledger: 8 cards become MISSING.",
+  "DONE is contradicted for RemoveAnnotationDialog, which is DONE with R+G+D+H 'by inheritance'. (a) Its three tests are SWT fork Combo and HiddenViewport tests, and none of them constructs the dialog. (b) The wrapped ComboViewport is PARTIAL with only R+G: its verifier removed H because select() and removing the selected row patch the native window while hidden. Combo itself is PARTIAL with only G. (c) Its notes describe an Annotation listener leak in the dialog's own flow. It should be PARTIAL, which leaves 6 DONE cards in the ledger.",
+  "WRAPPERs claim aspects that their wrapped widget lacks. ReadOnlyStyledText (R+G+D+H) and BidiLayout (G+D+H, with H 'by delegation') wrap StyledText, whose H is missing. PopupList (R+G+D+H) and CCombo (G+D+H) wrap ListViewport, whose D is missing. TableCursor (R+G+D+H) wraps Table and TableViewport, whose H is missing. TreeCursor (G+D+H), XViewer (R+G+D), FilteredTreeComposite and XFilteredTree (G+D) wrap TreeViewport or a plain Tree, and both lack D. AddAnnotationDialog (R+G+D) wraps ComboViewport, which has only R+G.",
+  "More inherited-aspect contradictions. Calculator and CalculatorButtonsComposite (opal-a) claim D+H from native Labels and Buttons 'and the fork gate', but the SWT Button and Label cards have H missing because of direct draws on WM_UPDATEUISTATE and SetWindowText. PasswordRevealer claims H while the wrapped Text lacks H. JSpinner claims D+H while its editor JFormattedTextField lacks H until ST-H1. M3TaskPane claims H while its body M3CollapsiblePane lacks it; the 15 ms frame timer appears in M3TaskPane's own hidden_work. The deprecated Oscilloscope inherits G+H from the multichannel card, whose H leaves out zero size, scrolled-out and occluded states.",
+  "No WRAPPER wraps a DONE widget. All 79 open WRAPPER cards sit on PARTIAL or MISSING wrapped widgets, so every wrapper status is provisional and must be re-graded once its wrapped widget closes.",
+  "H is recorded as present while hidden work is still live. Tiles: the ResizeListener 500 ms debounce still rebuilds frames and starts a transition at HEAD with no visibility check. Oscilloscope (multichannel): the dispatcher keeps ticking at zero size, when scrolled out, or when occluded. M3TaskPane: the pane's frame timer keeps running. EmptyTablePlaceholder: setBounds runs on every parent resize while hidden. ListViewport: one RedrawWindow per burst, plus prefetch and observer calls while stale. XYGraphConfigDialog: H holds only on the fork, and stock SWT re-lays out 50 hidden pages.",
+  "Units grade H differently for identical redraw-only drawn controls. Breadcrumb, EyeButton, M3Hyperlink, TimeSlot, DayEditorCalendarableItemControl, MonthCalendarableItemControl, CustomButton and PGroupToolItem get H because SWT drops redraws of hidden windows. Structurally identical SwitchButton, TriStateSwitchButton, RoundedToolbar, RoundedSwitch, RoundedCheckbox, FlatButton, BaseLED, LED, DotsLed, SegmentedBar, Stepbar, NebulaSlider, BadgedLabel, ImageSelector, HeaderControl and TitleControl do not; the opal-c and small-a verifiers both flagged this. Grade H by one rule: a counted hidden fold plus an assertHiddenGate test.",
+  "Native SWT H is graded by different rules. Link and Scale get H on unmeasured assumptions that SysLink and the trackbar do not paint on WM_SETTEXT, WM_UPDATEUISTATE or WM_ERASEBKGND. Button and Label are refused H on the same question. The native-paint oracle from the Button leaf should grade all four.",
+  "G is graded by different rules. CHILDREN cards get G from the win32-fork-only ViewportPlane without a far-content test (CheckBoxGroup, RadioGroup, PGroup, CollapsibleButtons, ColumnBrowserWidget, CBanner, SashForm, ViewForm, PageContainer). M3CollapsiblePane and M3TaskPaneContainer are refused G because they lack such a test. RadioGroup counts the fork-only G but refuses the fork-only H (EffectiveVisibility.deferLayout).",
+  "The ledger has no platform qualifier, although many credits hold only on the M3 SWT win32 fork, where ComboViewport, TableViewport, ListViewport, ViewportPlane and EffectiveVisibility live. Affected: RemoveAnnotationDialog's DONE, DualList's G, XYGraphConfigDialog's H, every CHILDREN G credit, and the JFace and Nebula wrappers' inherited aspects. The Nebula gates must also run on the official SWT jar and on GTK and Cocoa, where none of these aspects exist.",
+  "hidden_work counts leave out entries the verifiers added. ToolTip: 0, yet the verifier found a periodic SetTimer at ToolTip.java:545 for non-autoHide tips, which also runs after dispose. PrintPieceCanvas: 0, yet PrintViewer's BackgroundUpdater and resize relayout were moved here. Also missing: JList's DnD autoscroll Timer, Tree's DrawnPlane 500 ms overlay timer, entries for M3DatePicker, TextAssist and ColumnBrowserWidget, two more for XYGraph, and the default-button pulse for JButton and JDialog. The 223 recorded entries on 133 cards understate the real hidden work.",
+  "The SWT ToolTip status contradicts its notes. The card is NOT_APPLICABLE with no requirements, size NONE and hidden_work 0, but the verifier found real hidden work (an autopop timer that runs while the owner is minimized and after dispose) and wrote a size-S code leaf. It should be FIXED with H required and status MISSING.",
+  "Size NONE on leaves that change code: ToolTip; M3DatePicker (its leaf says 'H, size S'); AddAnnotationDialog (changes to close() and Annotation.remove); JButton (pulse rows in AnimationController and AquaRootPaneUI).",
+  "Some cited tests do not exercise the claim. CalculatorViewport_Test does not exist. JMenu cites test/jdk/javax/swing/JMenu/WrongSelectionOnMouseOver.java at a wrong path. M3FindBar cites M3AutocompleteTest, which never references it. Grid's GridViewportItemRange_Test calls a method that does not exist and is excluded from the build. CTreeViewport_Test never ran (its log holds only 'ui-lock busy'). Canvas's hidden test measures a probe that defers its own invalidations.",
+  "Both denominators are incomplete. nebula_widget_files.rel.txt holds only direct subclasses. It misses 22 widgets that do have cards (GeoMap, LED, DotsLed, CDateTime, DayEditor, MonthCalendar, InternalCompositeTable, EmptyTablePlaceholder, EyeButton, FlatButton, PWTabContainer, ImageContainer, ImageSelector, CalendarComposite, MonthPick, LauncherLabel, CalculatorButtonsComposite, AbstractPictureControl, PictureControl, FormPictureControl, XCheckedFilteredTree, the deprecated Oscilloscope) and 12 SWT widgets that have none. It also lists three JFace Dialogs, and two draw2d figures while leaving out the other figure widgets of the same bundle. swing_components.txt lists only top-level javax.swing J* classes and misses JTableHeader, Box and the public nested components. Regenerate both from an extends closure.",
+  "Leaves bundle aspects, against the programme's one-aspect-per-pass rule (the M3HeatMap verifier split its leaf for this reason). RangeSlider, StarRating, SwitchButton, TriStateSwitchButton, the LED family, SegmentedBar, Stepbar, ProgressCircle, NebulaSlider, Chips, NebulaToolbar, NavigationPageGraphics, InternalCompositeTable and PShelf mix D with H. Group mixes G with H. Waves 2 and 4 split them.",
+  "Units package the shared gate differently. Some Nebula leaves add Require-Bundle org.eclipse.nebula.widgets.m3 (PShelf, Chips, the LED family and the rest of small-a). Others use opal.commons copies (OpalHiddenGate), or per-bundle copies of WidgetMode and the gate (Tiles 1ea68f80, WAVES.md step 2). Tests also land in m3.tests in some leaves and in <bundle>.tests fragments in others. widgets/m3 is not a module of the nebula-parent reactor, so the Require-Bundle leaves do not resolve under Tycho.",
+  "Mode names have drifted: the gallery and tiles copies of internal/WidgetMode still declare SKIJA where every other copy declares M3, so the grep gate proposed on the gallery card would fail on tiles.",
+  "Gallery carries its own org.eclipse.nebula.animation copy (AnimationRunner, ScrollingSmoother, effects), which has no card. The cwt EffectGate leaf therefore does not reach the 20 ms runner and the 2000 ms smoother listed in Gallery's hidden_work.",
+  "Stock defects are fixed only under the viewport flag. MonthPick's non-daemon auto-scroll thread leak is fixed only when MonthStrip.ENABLED, and AbstractCombo's redraw NullPointerException only when AbstractComboViewport.ENABLED. The ledger has no upstream-defect column, so it cannot show which defects remain in original mode."
+ ],
+ "waves": [
+  {
+   "wave": 1,
+   "title": "Shared gate core for each toolkit, plus the generic gate rows every control inherits",
+   "mechanism": "Land each toolkit's hidden gate once, plus the rows that every control of that toolkit inherits.\n- SWT win32 fork:\n  - EffectiveVisibility.deferPaintMessage absorbs the WM_ERASEBKGND of a deferred WM_PAINT, together with the Control.WM_ERASEBKGND row at 5989.\n  - ScrollBar.SetScrollInfo folds frame repaints behind a per-control RDW_FRAME bit that VisibilityCatchUp.catchUpOne consumes.\n  - Spinner routes the WM_PAINT of its EDIT and UPDOWN windows (1242-1244) through the gate.\n  - Menu.redraw, at METHOD_START, folds bar redraws while the menu shell is hidden or minimized.\n  - ToolTip arms its autopop SetTimer only for autoHide tips and always kills it in releaseWidget.\n  - OcclusionTracker parks while no shell of the display is visible.\n- Nebula:\n  - Ship one gate package per bundle: copies of internal/WidgetMode, M3HiddenGate, M3Counters and SwtLog, following the Tiles 1ea68f80 pattern, because widgets/m3 is not in the nebula-parent reactor.\n  - Align the gallery and tiles WidgetMode copies from SKIJA to M3, and make M3Mode answer the realized mode.\n- Swing:\n  - sun.swing.M3HiddenGate core, with owned-window roots and layout deferral for iconified roots (RepaintManager 471, 807, 1507).\n  - SH1: a JComponent.validateTree member before isValidateRoot (4989), and M3HiddenGate.revealed after super.show() in JInternalFrame.show (1741).\n  - imageUpdate METHOD_START rows in AbstractButton (2164), JLabel (893) and JSlider (767).\n- draw2d: an M3HostVisibilityGate on the canvas's DeferredUpdateManager. It parks sendUpdateRequest (245-253) while the host is hidden or minimized, and drops the dirty regions that the reveal paint covers.\n- CWT:\n  - EffectGate at AbstractEffect.doEffect METHOD_START (115); apply the same row to the gallery copy.\n  - VViewport per top-level VPanel, folding VControl.redraw, VPanel.layout and setBounds.\n- JFace:\n  - J1: foldIfHidden before M3Viewers.flush in the four StructuredViewer.refresh overloads, in TableViewer.refresh(Object,boolean,boolean) (365) and in AbstractTreeViewer.labelProviderChanged (2474).\n  - J2: gate the M3Viewers post and enqueue timers.",
+   "classes": [
+    "Sash",
+    "ScrollBar",
+    "Spinner",
+    "Menu",
+    "ToolTip",
+    "Shell",
+    "JComponent",
+    "JFrame",
+    "JDialog",
+    "JWindow",
+    "JPanel",
+    "JRootPane",
+    "JSplitPane",
+    "JToolBar",
+    "JMenuBar",
+    "AbstractButton",
+    "JToggleButton",
+    "JCheckBox",
+    "JRadioButton",
+    "JLabel",
+    "AlphaLabel",
+    "GrayableButton",
+    "AnimationRunner",
+    "ScrollingSmoother",
+    "VCanvas",
+    "BaseCombo",
+    "StructuredViewer",
+    "M3Viewers"
+   ],
+   "rationale": "About 25 hook rows and 6 small new files, all size S, close or unblock H for 28 cards, and every later wave depends on them. None of them touches a single widget's paint code. Several uncarded classes close here too: Box and Box.Filler (through SH1), the CWT V-controls (VViewport), the visualization figure widgets (host gate), and the gallery animation copy (EffectGate). The Nebula packaging decision settles the Require-Bundle versus copy conflict between unit leaves before about 60 Nebula leaves depend on it."
+  },
+  {
+   "wave": 2,
+   "title": "Hidden-gate rollout, H only: every FIXED drawn widget, every timer owner, every popup owner",
+   "mechanism": "Each class gets only rows on the wave-1 gates. No damage changes in this wave, so each pass carries one aspect.\n- Install the gate in the constructor, before the Paint listener.\n- Fold hidden measure, layout, rebuild and native setText/setItems into a dirty flag; getters flush it.\n- Park every timerExec, javax.swing.Timer, thread, poll and animation while hidden, and resume once on reveal. Stop on dispose unconditionally.\n- Close drop-downs and overlays when the owner or any ancestor hides: Hide listeners on the ancestor chain, PartHidden on the fork.\n- On the SWT fork, fold the direct native draws (WM_UPDATEUISTATE, WM_SETTEXT, Slider fRedraw, the PBM marquee, MonthCal ticks) into DIRTY_PAINT and replay them on CATCH_UP.\n- Count hiddenDeltas and reveals.\nPer-class acceptance: assertHiddenGate, run on the official jar and on the fork. 10^4 hidden deltas must give 0 native work and 0 ticks, then 1 reveal and 1 paint.",
+   "classes": [
+    "Button",
+    "Label",
+    "Slider",
+    "ProgressBar",
+    "DateTime",
+    "Group",
+    "CoolBar",
+    "ToolBar",
+    "ExpandBar",
+    "TabFolder",
+    "Table",
+    "TableViewport",
+    "List",
+    "ComboViewport",
+    "Text",
+    "StyledText",
+    "CTabFolder",
+    "AnimatedProgress",
+    "TableEditor",
+    "TreeEditor",
+    "BasicTextUI",
+    "DefaultCaret",
+    "FieldView",
+    "PlainView",
+    "WrappedPlainView",
+    "JTextComponent",
+    "JTextArea",
+    "JTextField",
+    "JPasswordField",
+    "JFormattedTextField",
+    "JTextPane",
+    "JEditorPane",
+    "AsyncBoxView",
+    "JButton",
+    "JProgressBar",
+    "JTree",
+    "BasicTableUI",
+    "BasicComboPopup",
+    "BasicFileChooserUI",
+    "JFileChooser",
+    "JLayer",
+    "JColorChooser",
+    "ChoiceWidget",
+    "Header",
+    "HeapManager",
+    "TitledSeparator",
+    "PWTabContainer",
+    "FlatButton",
+    "RoundedToolbar",
+    "StarRating",
+    "SwitchButton",
+    "TriStateSwitchButton",
+    "RangeSlider",
+    "BaseLED",
+    "LED",
+    "DotsLed",
+    "RoundedCheckbox",
+    "RoundedSwitch",
+    "SegmentedBar",
+    "Stepbar",
+    "ProgressCircle",
+    "NebulaSlider",
+    "Carousel",
+    "ImageContainer",
+    "ImageSelector",
+    "Chips",
+    "HeaderControl",
+    "TitleControl",
+    "ToolbarComposite",
+    "NebulaToolbar",
+    "NavigationPageGraphics",
+    "M3FindBar",
+    "M3Toasts",
+    "Grid",
+    "Gallery",
+    "Tiles",
+    "PrintPreview",
+    "M3HeatMap",
+    "CTree",
+    "PropertyTable",
+    "M3CollapsiblePane",
+    "M3ErrorPane",
+    "M3TaskPaneContainer",
+    "M3StatusBar",
+    "PageContainer",
+    "GeoMapBrowser",
+    "XYGraph",
+    "Oscilloscope (multichannel)",
+    "TimelineComposite",
+    "GanttComposite",
+    "GanttControlParent",
+    "CDateTime",
+    "AnalogTimePicker",
+    "DiscreteTimePicker",
+    "CDatePanel",
+    "MonthPick",
+    "Transition",
+    "TransitionManager",
+    "AddAnnotationDialog",
+    "AbstractPictureControl",
+    "PictureControl",
+    "FormPictureControl",
+    "AbstractCombo",
+    "DateChooserCombo",
+    "CalendarCombo",
+    "CustomCombo",
+    "CalculatorCombo",
+    "TextAssist",
+    "HorizontalSpinner",
+    "FloatingText",
+    "RichTextEditor",
+    "M3DatePicker",
+    "M3InfoPopup",
+    "M3Autocomplete",
+    "TableCombo",
+    "CheckTableCombo",
+    "XViewer",
+    "FilteredTreeComposite",
+    "XFilteredTree",
+    "AbstractPageControllerComposite"
+   ],
+   "rationale": "Each class needs 1 to 6 mechanical rows on a shared gate. This converts most of the ledger's H gaps in one sweep: about 120 classes, including the FIXED controls with timers and the popup owners. The list order puts every wrapped widget before its wrapper:\n- Table before TableCombo.\n- M3CollapsiblePane before M3ErrorPane.\n- AbstractCombo before DateChooserCombo.\n- CDateTime before its pickers.\n- GanttComposite leaf 1 before GanttControlParent.\n- Transition before TransitionManager.\n- PageContainer and ProgressBar before GeoMapBrowser.\n- The BasicTextUI, DefaultCaret, FieldView, PlainView and WrappedPlainView rows of ST-H1 before the text widgets.\nThe multichannel Oscilloscope dispatcher and the Tiles ResizeListener get probe-based parks, because their H is recorded but incomplete. Card and include in this wave: Notifier and opal FooterArea (timers), FlatCalendarCombo, XViewerFilteredTree, and Annotation and Axis (the XYGraph data fold and zoom timers)."
+  },
+  {
+   "wave": 3,
+   "title": "Test-only promotions for aspects already in code",
+   "mechanism": "Write only the missing acceptance test, with no production change: assertHiddenGate plus a damage or pixel oracle. The oracle asserts recorded damage requests or the GC clip region, never PaintEvent bounds.\n- Merge the duplicate CalculatorButtonsComposite row and write the missing CalculatorViewport_Test.\n- Give RemoveAnnotationDialog its first own test. Keep it PARTIAL until the ComboViewport H leaf and the Annotation listener fix have landed.",
+   "classes": [
+    "Link",
+    "Scale",
+    "CLabel",
+    "CBanner",
+    "SashForm",
+    "ViewForm",
+    "CustomButton",
+    "AbstractSelectableRow",
+    "AbstractSortableHeader",
+    "CheckBoxGroup",
+    "CalculatorButtonsComposite",
+    "Calculator",
+    "ReadOnlyStyledText",
+    "TableCursor",
+    "JMenu",
+    "JMenuItem",
+    "JCheckBoxMenuItem",
+    "JRadioButtonMenuItem",
+    "JPopupMenu",
+    "JScrollBar",
+    "JSpinner",
+    "RemoveAnnotationDialog"
+   ],
+   "rationale": "22 cards can reach DONE with no production lines, but only after wave 2 has closed the H of what they wrap:\n- CheckBoxGroup, Calculator and CalculatorButtonsComposite need Button and Label H.\n- ReadOnlyStyledText needs StyledText H.\n- TableCursor needs Table H.\n- JSpinner needs ST-H1 (JFormattedTextField).\n- RemoveAnnotationDialog needs ComboViewport H.\nLink and Scale also need the native-paint and erase oracle from waves 1 and 2."
+  },
+  {
+   "wave": 4,
+   "title": "FIXED damage: exact rectangles, clip-culled paint, same-value skips behind a stale bit",
+   "mechanism": "For each drawn control:\n- Damage only the changed part (knob span, switch section, glyph/segment/dot box, item strip, focus ring, text band), inflated for antialiased strokes. Item strips come from a painted lane of x, width and input signature.\n- Paint loops cull against the GC clip region.\n- A same-value setter skips its repaint only while a stale bit is clear. Setters that never repaint (colours, fonts, borders, setEnabled) set that bit.\n- Width-changing item setters damage up to the right edge.\n- Item facades damage through their parent's lane.\nTests assert recorded damage requests, because win32 merges damage into one bounding PaintEvent.",
+   "classes": [
+    "Breadcrumb",
+    "BreadcrumbItem",
+    "RoundedToolbar",
+    "RoundedToolItem",
+    "NebulaToolbar",
+    "ToolbarItem",
+    "NavigationPageGraphics",
+    "NavigationPageGraphicsItem",
+    "StarRating",
+    "SwitchButton",
+    "TriStateSwitchButton",
+    "FlatButton",
+    "RangeSlider",
+    "BaseLED",
+    "LED",
+    "DotsLed",
+    "RoundedCheckbox",
+    "RoundedSwitch",
+    "SegmentedBar",
+    "Stepbar",
+    "ProgressCircle",
+    "BadgedLabel",
+    "NebulaSlider",
+    "ImageContainer",
+    "ImageSelector",
+    "Chips",
+    "EyeButton",
+    "PasswordRevealer",
+    "M3Hyperlink",
+    "M3TaskPane",
+    "EmptyTablePlaceholder",
+    "TimeSlot",
+    "DayEditorCalendarableItemControl",
+    "MonthCalendarableItemControl",
+    "SplitButton",
+    "ToolBar",
+    "BasicComboBoxUI",
+    "DiagramComponent",
+    "AlphaLabel",
+    "GrayableButton"
+   ],
+   "rationale": "Builds on the wave-2 gate in the same classes. Item facades land with their parent: BreadcrumbItem after Breadcrumb, RoundedToolItem after RoundedToolbar, ToolbarItem after NebulaToolbar, NavigationPageGraphicsItem after NavigationPageGraphics. PasswordRevealer follows EyeButton and Text; M3TaskPane follows M3CollapsiblePane. The uncarded VButton and VLabel (CWT damage) and the visualization figure widgets also belong here. Re-pin the NebulaM3RoundedToolbarStreamRecipe AFTER hash and the RoundedToolItem contract hash in the same commits."
+  },
+  {
+   "wave": 5,
+   "title": "ROWS: resident row window, logical row lanes, blit scroll, row damage",
+   "mechanism": "- Only rows on screen plus overscan exist natively or as painted state.\n- Row offsets, heights and selection or check state live in lanes (long prefix sums, bitsets); facades outside the window are released.\n- A scroll is a blit plus the exposed strip, and the model moves only after the blit.\n- A row or cell change damages its projected rectangle.\n- refresh, pack, computeSize and selection restore never walk all items.\nOrder: SWT mediators first, then the row widgets, then the row wrappers.",
+   "classes": [
+    "TreeViewport",
+    "ListViewport",
+    "ComboViewport",
+    "Combo",
+    "Tree",
+    "TreeCursor",
+    "PopupList",
+    "CCombo",
+    "JList",
+    "BasicListUI",
+    "JComboBox",
+    "JTable",
+    "BasicTableUI",
+    "BasicTreeUI",
+    "FilePane",
+    "Grid",
+    "GridItem",
+    "GridColumn",
+    "GridColumnGroup",
+    "InternalCompositeTable",
+    "CompositeTable",
+    "AbstractNativeHeader",
+    "CTreeLayout",
+    "CTree",
+    "CTreeItem",
+    "CTreeCell",
+    "CTreeColumn",
+    "PShelf",
+    "PShelfItem",
+    "MultiChoice",
+    "PTWidgetTable",
+    "PTWidgetTree",
+    "PropertyTable",
+    "DualList",
+    "CTreeCombo",
+    "CTreeComboItem",
+    "CTreeComboColumn",
+    "AbstractTableViewer",
+    "TableViewer",
+    "CheckboxTableViewer",
+    "AbstractTreeViewer",
+    "TreeViewer",
+    "CheckboxTreeViewer",
+    "ColumnViewer",
+    "AbstractListViewer",
+    "ListViewer",
+    "ComboViewer"
+   ],
+   "rationale": "Dependencies:\n- D in TreeViewport, ListViewport and ComboViewport before PopupList, CCombo, TreeCursor and the JFace viewers J3-J11.\n- Tree T4 (plain trees, size L) before the R of FilteredTreeComposite, XFilteredTree and TreeMapper.\n- InternalCompositeTable before CompositeTable and AbstractNativeHeader.\n- CTreeLayout (setOrigin routing) before CTreeItem and CTreeCell.\n- PTWidgetTable before PTWidgetTree and before PropertyTable's R/D.\n- JList before JComboBox and FilePane.\nComboViewer stays blocked until the SWT Combo gains a SetData/setItemCount API. Card first: TableItem, TreeItem, TableColumn, TreeColumn, JTableHeader, PageableTable, PageableTree and NavigationPageComboRenderer (O(totalPages) populateCombo)."
+  },
+  {
+   "wave": 6,
+   "title": "LINES: line lanes, paint window, damage from the edited line down",
+   "mechanism": "- Longest-line and line-offset lanes are updated from document ElementChange deltas.\n- Paint and layout run from the clip's first line to its last.\n- Damage starts at the edited line's top and goes down; no whole-host repaints.\n- Wrapped rows are counted per line.\n- Text widgets inherit all of this through their views.",
+   "classes": [
+    "PlainView",
+    "WrappedPlainView",
+    "BoxView",
+    "ParagraphView",
+    "DefaultHighlighter",
+    "JTextArea",
+    "JTextPane",
+    "JEditorPane",
+    "JTextComponent",
+    "Text",
+    "RichTextViewer",
+    "PrintPieceCanvas",
+    "BidiLayout"
+   ],
+   "rationale": "Runs after the wave-2 text gates (ST-H1, StyledText H, Text H). The views come before the widgets that inherit from them. Text R needs an owner decision, because docs/m3/TEXT_VIEWPORT.md deliberately keeps the native EDIT. BidiLayout follows StyledText. PrintPieceCanvas also takes PrintViewer's relayout rows."
+  },
+  {
+   "wave": 7,
+   "title": "TILES: tile window over a logical origin, tile damage, blit pan",
+   "mechanism": "- Only on-screen tiles exist natively or as painted state; native tile images outside the window are released.\n- Damage is the tile rectangle.\n- A pan is a blit plus the exposed strips, with the model moved after the blit.\n- The logical origin is long, and scroll bars are projections of it.",
+   "classes": [
+    "InternalGeoMap",
+    "GeoMap",
+    "GeoMapViewer",
+    "MapFigure",
+    "Tiles",
+    "Gallery",
+    "GalleryItem",
+    "M3HeatMap",
+    "M3ImageView",
+    "Launcher",
+    "LauncherLabel",
+    "PrintPreview"
+   ],
+   "rationale": "InternalGeoMap comes before GeoMap and GeoMapViewer, and Gallery before the GalleryItem residency. Launcher retires LauncherLabel in viewport mode, which also resolves the duplicate LauncherLabel rows. MapFigure and M3HeatMap leaf 2 use the wave-1 host gate and logical origins. M3ImageView must blit before it moves the model, fixing the defect its verifier found."
+  },
+  {
+   "wave": 8,
+   "title": "AXIS: long logical axis, window of visible cells, ticks and events, strip damage, blit paging",
+   "mechanism": "- The axis uses long logical coordinates, and only the visible cells, ticks and events are materialized.\n- Sweep and append damage covers only the new strips, culled against the clip region.\n- Paging and time-axis steps blit, with a full-redraw fallback when the calendar step does not match the pixel delta.\n- Event editors use pooled event controls.\n- Mappings stay overflow-free past 2^15 and 2^31.",
+   "classes": [
+    "GanttComposite",
+    "GanttChart",
+    "TimelineComposite",
+    "M3MonthView",
+    "DatePicker",
+    "CalendarComposite",
+    "MonthPick",
+    "DateChooser",
+    "DateChooserCombo",
+    "AbstractEventEditor",
+    "DayEditor",
+    "MonthCalendar",
+    "Day",
+    "TimeSlice",
+    "Oscilloscope (multichannel)",
+    "Oscilloscope (deprecated)",
+    "Plotter",
+    "XYGraph",
+    "Trace",
+    "PlotArea",
+    "IntensityGraphFigure",
+    "JSlider"
+   ],
+   "rationale": "Order inside the wave:\n- GanttComposite leaves 2-5 before GanttChart.\n- The AbstractEventEditor EventEditorGate before DayEditor, MonthCalendar, Day and TimeSlice. These also need InternalCompositeTable from wave 5.\n- The DateChooser beforeDrop flush before DateChooserCombo.\n- The multichannel Oscilloscope before the deprecated facade.\n- XYGraph's wave-2 H before Trace and PlotArea.\nAxis and Annotation need cards in this wave."
+  },
+  {
+   "wave": 9,
+   "title": "CHILDREN: planes beyond the native range, strip damage on resize, damage only for what moved",
+   "mechanism": "- Children beyond the 16-bit or int range become planes: ViewportPlane on win32, including child Decorations; a logical-origin band with projected bars in JViewport.\n- A resize damages only the exposed strips.\n- Divider, z-order and selection changes damage only what moved or what the stacking change exposed.\n- Hidden layouts fold into one layout on reveal.",
+   "classes": [
+    "Decorations",
+    "Group",
+    "ScrolledComposite",
+    "M3CollapsiblePane",
+    "M3TaskPaneContainer",
+    "M3MultiSplitPane",
+    "M3StatusBar",
+    "PGroup",
+    "PGroupToolItem",
+    "CollapsibleButtons",
+    "RadioGroup",
+    "RadioItem",
+    "ColumnBrowserWidget",
+    "JViewport",
+    "JScrollPane",
+    "JTabbedPane",
+    "JLayeredPane",
+    "JInternalFrame",
+    "JDesktopPane"
+   ],
+   "rationale": "Group and Decorations need only fork-file rows; JViewport (SWG1) comes before JScrollPane. LP1 on JLayeredPane and IF1 on JInternalFrame come before JDesktopPane. PGroupToolItem lands with PGroup and RadioItem with RadioGroup. ColumnBrowserWidget waits for the Table leaves. M3CollapsiblePane and M3TaskPaneContainer need a far-content test, so their G is graded like the other CHILDREN cards. Card first: JInternalFrame.JDesktopIcon, BasicSplitPaneDivider, BasicInternalFrameTitlePane, ScrollableTabViewport and ScrollableTabPanel, and CTabItem."
+  },
+  {
+   "wave": 10,
+   "title": "Wrapper tail and re-grading",
+   "mechanism": "Three wrappers have a leaf of their own that needs their wrapped widgets closed first:\n- TreeMapper: a pooled link window over two plain Trees, after T4 and the host gate.\n- XCheckedFilteredTree: check marks restored from JFace item updates instead of paint, after XFilteredTree and the viewer leaves.\n- XYGraphConfigDialog: config pages built lazily.\nThen re-grade every WRAPPER's present aspects from its wrapped cards, and drop inherited claims that do not hold.",
+   "classes": [
+    "TreeMapper",
+    "XCheckedFilteredTree",
+    "XYGraphConfigDialog"
+   ],
+   "rationale": "All 79 open WRAPPER cards wrap PARTIAL or MISSING widgets. Re-grading after waves 2-9 removes the inherited-aspect contradictions in ReadOnlyStyledText, BidiLayout, PopupList, CCombo, TableCursor, TreeCursor, XViewer, FilteredTreeComposite, XFilteredTree, AddAnnotationDialog, Calculator, PasswordRevealer, JSpinner and M3TaskPane."
+  }
+ ],
+ "summary": "The inventory has 327 cards in 25 units: DONE 7, PARTIAL 221, MISSING 55, NOT_APPLICABLE 40, REFUTED 4. I rebuilt the cards from the workflow journal (subagents/workflows/wf_14c3f677-472/journal.jsonl) with the same merge rules as the workflow script, and checked them against the denominators with comm and a script that follows each class's extends chain. All reads were read-only.\n\nCoverage:\n- Nebula: all 126 denominator classes have cards.\n- Swing: all 46 denominator classes have cards.\n- SWT win32: 32 of the 44 Widget subclasses have cards. Missing: Control, Widget, TableItem, TreeItem, TableColumn, TreeColumn, ToolItem, TabItem, ExpandItem, CoolItem, MenuItem, TaskBar.\n- SWT custom: 11 of 12. Missing: CTabItem.\n\nBoth denominator lists are incomplete. Following the extends chains finds:\n- 12 more SWT widgets in Nebula with no card (PageableTable, PageableTree and the pagination renderers, FlatCalendarCombo, XViewerFilteredTree).\n- The CWT V-controls.\n- The visualization figure widgets, plus Axis and Annotation, both of which run hidden work.\n- Swing JTableHeader, Box and the public nested components.\n- SWT Browser, GLCanvas, the OLE frames, Java2DCanvas and Tray.\n\n78 cards are not widgets: 12 SWT mediators and helpers, 16 JFace classes, 29 Nebula classes, 21 Swing classes. I count draw2d figures and CWT V-controls as lightweight widgets.\n\nMain inconsistencies:\n- Two files have duplicate rows with contradictory verdicts (CalculatorButtonsComposite, LauncherLabel).\n- RemoveAnnotationDialog is DONE with no test of its own, over a ComboViewport that is still PARTIAL.\n- Wrappers claim aspects their wrapped widget lacks, and no wrapper wraps a DONE widget.\n- Units grade H and G by different rules.\n- 8 PARTIAL cards have no aspect present.\n- Text, Tree, Combo and List behave differently by style but have one widget row plus a mediator row.\n- There is no platform column, although many credits hold only on the win32 fork.\n- hidden_work counts leave out entries the verifiers added.\n\nTen waves, split first by aspect, then by shape:\n1. Shared gate cores per toolkit: 28 classes, all size S.\n2. H rollout for every FIXED drawn widget, timer owner and popup owner: 120 classes.\n3. Test-only promotions: 22.\n4. FIXED damage: 40.\n5. ROWS: 47.\n6. LINES: 13.\n7. TILES: 12.\n8. AXIS: 22.\n9. CHILDREN: 19.\n10. Wrapper tail and re-grading: 3.\n\nScratch files are in K:\\codex-work\\agent-temp\\claude\\e--ws2-com-synexia\\a6de83fe-6489-4056-8689-f1217602e9cc\\scratchpad\\critic: cards.tsv, cards_full.json, neb_closure.tsv, swing_closure.tsv, parse_cards.py, closure.py, waves.py."
+}

@@ -6,7 +6,8 @@ Bundle-Version: 1.3.0.qualifier
 Export-Package: org.eclipse.nebula.jface.checktablecomboviewer,
  org.eclipse.nebula.jface.tablecomboviewer,
  org.eclipse.nebula.widgets.checktablecombo,
- org.eclipse.nebula.widgets.tablecombo
+ org.eclipse.nebula.widgets.tablecombo,
+ org.eclipse.nebula.widgets.tablecombo.internal;x-internal:=true
 Automatic-Module-Name: org.eclipse.nebula.widgets.tablecombo
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: org.eclipse.swt;bundle-version="[3.126.0,4.0.0)",

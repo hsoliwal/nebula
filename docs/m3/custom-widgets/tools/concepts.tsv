@@ -34,7 +34,7 @@ STEPPER	stepper / wizard step bar	^Step(Bar|per|Indicator|Progress)$|^Stepbar$|W
 PAGINATION	pagination / carousel	^Carousel$|Pagination|^Pager$|^PageControl$|^PageNavigation$	P	-	-
 PROPERTY_SHEET	property sheet / property grid	Property(Sheet|Table|Grid|EditorPane|EditorPanel|Pane|Panel|View|SheetPanel)$|^PropertySheet|BeanEditor$|ObjectInspector$	P	-	-
 FORMATTED_TEXT	formatted / masked / numeric text	Formatted(Text|Field)$|Masked(Text|Field|TextField)$|^NumberField$|^IntegerField$|^DecimalField$|^CurrencyField$|ValidatedTextField|^NumericTextField$|^JXFormattedTextField$	N	-	JFormattedTextField
-PROMPT_DECORATION	prompt / placeholder / field decoration and validation	PromptSupport|Placeholder|Water[Mm]ark|HintText|FieldDecoration|ControlDecoration|InputValidator|ValidationDecoration|ValidationSupport|^BuddySupport$	N	Text.setMessage	-
+PROMPT_DECORATION	prompt / placeholder / field decoration and validation	PromptSupport|Placeholder|Water[Mm]ark|HintText|FieldDecoration|ControlDecoration|InputValidator|ValidationDecoration|ValidationSupport|^BuddySupport$	N	Text (setMessage)	-
 PASSWORD_REVEAL	password reveal	PasswordRevealer|RevealPassword|ShowPassword	N	-	-
 COLOR_CHOOSER	colour chooser / picker	Colou?r(Chooser|Picker|Selector|Wheel|Palette|Combo|Button|Well|Swatch|ComboBox|ChooserButton)$|^JXColorSelectionButton$	N	ColorDialog	JColorChooser
 FONT_CHOOSER	font chooser	Font(Chooser|Picker|Selector|Combo|ComboBox|ChooserPanel)$	N	FontDialog	-
@@ -65,3 +65,5 @@ WIZARD	wizard	^Wizard(Pane|Dialog|Panel)?$	N	-	-
 CALCULATOR	calculator field	^Calculator(Combo|Field|Button|Panel|Dialog|Popup)?$	N	-	-
 MEMORY_MONITOR	heap / memory monitor	HeapManager|MemoryMonitor|MemoryBar	N	-	-
 PRINT_PREVIEW	print / report preview	^PrintPreview$|^PrintViewer$|^PrintPreviewDialog$	P	-	- (JTable.print: no preview)
+PINNED_COLUMNS	pinned / frozen columns and rows (first column stays while scrolling)	FrozenColumn|FixedColumn|FreezeColumn|PinnedColumn|FrozenRow|FixedRow|FreezeLayer|^Freeze|ColumnFreez|RowFreez|LockedColumn	Y	-	-
+VIRTUAL_COMPOSITE	virtual composite (children materialized by the viewport; SWT.VIRTUAL on Composite)	VirtualComposite|VirtualPane|VirtualPanel|LazyComposite|LazyPanel|LazyPane|VirtualContainer|^VirtualFlow$|^VirtualBox$|RecyclerView|^Recycler	Y	- (eclipse.platform.swt#624 asks for SWT.VIRTUAL on Composite)	-

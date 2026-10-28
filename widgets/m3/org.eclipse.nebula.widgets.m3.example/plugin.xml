@@ -6,5 +6,11 @@
       <tab
             class="org.eclipse.nebula.widgets.m3.example.M3StackLayoutExampleTab"
             name="M3StackLayout"/>
+      <tab
+            class="org.eclipse.nebula.widgets.m3.example.M3FindBarExampleTab"
+            name="M3FindBar"/>
+      <tab
+            class="org.eclipse.nebula.widgets.m3.example.M3ErrorPaneExampleTab"
+            name="M3ErrorPane"/>
    </extension>
 </plugin>

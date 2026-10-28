@@ -4,6 +4,9 @@ Bundle-Name: Nebula M3 Widgets Tests
 Bundle-SymbolicName: org.eclipse.nebula.widgets.m3.tests
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.eclipse.nebula.widgets.m3,
+ org.eclipse.nebula.widgets.m3.jface,
+ org.eclipse.jface,
+ org.eclipse.core.runtime,
  org.junit,
  org.eclipse.swt
 Bundle-RequiredExecutionEnvironment: JavaSE-11

@@ -1,0 +1,64 @@
+widget_id	family	widget	concept_id	swt_class	swt_kind	swing_class	gap_plan	owner
+SWINGX-JXApplet	swingx	JXApplet	-	-	NA	-	not applicable: applets are gone from the JDK; no counterpart	-
+SWINGX-JXBusyLabel	swingx	JXBusyLabel	BUSY_INDICATOR	org.eclipse.nebula.widgets.m3.M3BusyLabel	M3	-	SWT: M3BusyLabel (Canvas, timer-driven, paints only its bounds); Swing: javax.swing.M3BusyLabel over the same frame model	custom-widgets (SWT) + Swing track
+SWINGX-JXButton	swingx	JXButton	-	org.eclipse.swt.widgets.Button	STOCK	javax.swing.JButton	painters map to the theme seam (LF1/LF2)	all-widgets
+SWINGX-JXCollapsiblePane	swingx	JXCollapsiblePane	TASK_PANE	org.eclipse.nebula.widgets.m3.M3CollapsiblePane	M3	-	SWT: M3CollapsiblePane (any content, animated height, content not laid out while collapsed); Swing twin	custom-widgets + Swing track
+SWINGX-JXColorSelectionButton	swingx	JXColorSelectionButton	COLOR_CHOOSER	org.eclipse.nebula.widgets.m3.M3ColorButton	M3	javax.swing.JColorChooser	SWT: M3ColorButton (drawn swatch button opening ColorDialog)	custom-widgets
+SWINGX-JXComboBox	swingx	JXComboBox	-	org.eclipse.swt.widgets.Combo	STOCK	javax.swing.JComboBox	renderer and highlighter support through the theme seam	all-widgets
+SWINGX-JXDatePicker	swingx	JXDatePicker	DATE_PICKER	org.eclipse.nebula.widgets.m3.M3DatePicker;org.eclipse.swt.widgets.DateTime	M3	-	SWT: M3DatePicker (field + reused M3MonthView drop-down); Swing: javax.swing.M3DatePicker	custom-widgets + Swing track
+SWINGX-JXDialog	swingx	JXDialog	-	org.eclipse.swt.widgets.Shell	STOCK	javax.swing.JDialog	-	-
+SWINGX-JXEditorPane	swingx	JXEditorPane	CODE_EDITOR	org.eclipse.swt.custom.StyledText	STOCK	javax.swing.JEditorPane	find support through M3FindBar	-
+SWINGX-JXErrorPane	swingx	JXErrorPane	ERROR_PANE	org.eclipse.nebula.widgets.m3.M3ErrorPane	M3	-	SWT: M3ErrorPane (message, collapsible details, copy); Swing twin	custom-widgets + Swing track
+SWINGX-JXFindBar	swingx	JXFindBar	FIND_BAR	org.eclipse.nebula.widgets.m3.M3FindBar	M3	-	SWT: M3FindBar over M3Searchable (Table/Tree/List bindings, sliced search with generation supersession); Swing twin	custom-widgets + Swing track
+SWINGX-JXFindPanel	swingx	JXFindPanel	FIND_BAR	org.eclipse.nebula.widgets.m3.M3FindBar	M3	-	same widget as JXFindBar, dialog form	custom-widgets
+SWINGX-JXFormattedTextField	swingx	JXFormattedTextField	FORMATTED_TEXT	org.eclipse.nebula.widgets.formattedtext.FormattedText	NEBULA	javax.swing.JFormattedTextField	-	-
+SWINGX-JXFrame	swingx	JXFrame	-	org.eclipse.swt.widgets.Shell	STOCK	javax.swing.JFrame	-	-
+SWINGX-JXGradientChooser	swingx	JXGradientChooser	COLOR_CHOOSER	org.eclipse.nebula.widgets.m3.M3GradientChooser	M3	-	SWT: M3GradientChooser (stops as packed ints, drawn bar); Swing twin	custom-widgets + Swing track
+SWINGX-JXGraph	swingx	JXGraph	CHART	org.eclipse.nebula.visualization.xygraph.figures.XYGraph	NEBULA	-	Swing: javax.swing.M3Chart (double lanes, per-pixel min/max decimation)	Swing track
+SWINGX-JXHeader	swingx	JXHeader	HEADER_PANEL	org.eclipse.nebula.widgets.opal.header.Header	NEBULA	-	Swing: javax.swing.M3Header	Swing track
+SWINGX-JXHyperlink	swingx	JXHyperlink	HYPERLINK	org.eclipse.nebula.widgets.m3.M3Hyperlink;org.eclipse.swt.widgets.Link	M3	-	SWT: M3Hyperlink (stand-alone drawn link with visited state; Link stays for links inside text); Swing: javax.swing.M3Hyperlink	custom-widgets + Swing track
+SWINGX-JXImagePanel	swingx	JXImagePanel	IMAGE_VIEW	org.eclipse.nebula.widgets.picture.PictureControl	NEBULA	-	Swing: javax.swing.M3ImageView covers it	Swing track
+SWINGX-JXImageView	swingx	JXImageView	IMAGE_VIEW	org.eclipse.nebula.widgets.m3.M3ImageView	M3	-	SWT: M3ImageView (scale + integer screen offset; one clipped drawImage per paint; pan by Control.scroll); Swing twin	custom-widgets + Swing track
+SWINGX-JXLabel	swingx	JXLabel	-	org.eclipse.swt.custom.CLabel	STOCK	javax.swing.JLabel	text rotation and painters through the theme seam	all-widgets
+SWINGX-JXList	swingx	JXList	VIRTUAL_LIST	org.eclipse.swt.widgets.List	STOCK	javax.swing.JList	sort and filter: SWT sort-filter track (permutation index plus pass bitmask); Swing: RowSorter-like M3 lane	sort-filter
+SWINGX-JXLoginPane	swingx	JXLoginPane	LOGIN_DIALOG	org.eclipse.nebula.widgets.opal.logindialog.LoginDialog	NEBULA	-	Swing: javax.swing.M3LoginPane	Swing track
+SWINGX-JXMonthView	swingx	JXMonthView	CALENDAR_VIEW	org.eclipse.nebula.widgets.m3.M3MonthView;org.eclipse.swt.widgets.DateTime	M3	-	SWT: M3MonthView (drawn months, epoch-day lanes, flagged/unselectable days, intervals); Swing: javax.swing.M3MonthView	custom-widgets + Swing track
+SWINGX-JXMultiSplitPane	swingx	JXMultiSplitPane	MULTI_SPLIT	org.eclipse.nebula.widgets.m3.M3MultiSplitPane	M3	-	SWT: M3MultiSplitPane (split tree as parent/weight lanes, layout by prefix sums, drawn dividers); Swing twin	custom-widgets + Swing track
+SWINGX-JXMultiThumbSlider	swingx	JXMultiThumbSlider	RANGE_SLIDER	org.eclipse.nebula.widgets.opal.rangeslider.RangeSlider	NEBULA	-	two thumbs on SWT; n thumbs: M3RangeSlider later; Swing: javax.swing.M3RangeSlider	Swing track
+SWINGX-JXPanel	swingx	JXPanel	-	org.eclipse.swt.widgets.Composite	STOCK	javax.swing.JPanel	alpha and painters through the theme seam	-
+SWINGX-JXRadioGroup	swingx	JXRadioGroup	RADIO_GROUP	org.eclipse.nebula.widgets.radiogroup.RadioGroup	NEBULA	-	Swing: javax.swing.M3RadioGroup	Swing track
+SWINGX-JXRendererHyperlink	swingx	JXRendererHyperlink	HYPERLINK	org.eclipse.swt.widgets.Link	STOCK	-	renderer form: link-styled cells through Table custom draw (theme seam)	all-widgets
+SWINGX-JXRootPane	swingx	JXRootPane	STATUS_BAR	org.eclipse.swt.widgets.Shell	STOCK	javax.swing.JRootPane	status bar slot: M3StatusBar	-
+SWINGX-JXSearchField	swingx	JXSearchField	SEARCH_FIELD	org.eclipse.swt.widgets.Text	STOCK	-	SWT: Text SWT.SEARCH, ICON_SEARCH, ICON_CANCEL; Swing: javax.swing.M3SearchField	Swing track
+SWINGX-JXSearchPanel	swingx	JXSearchPanel	FIND_BAR	org.eclipse.nebula.widgets.m3.M3FindBar	M3	-	same as JXFindBar	custom-widgets
+SWINGX-JXStatusBar	swingx	JXStatusBar	STATUS_BAR	org.eclipse.nebula.widgets.m3.M3StatusBar	M3	-	SWT: M3StatusBar (slots with fixed, fill and percent widths, drawn separators, resize grip); Swing twin	custom-widgets + Swing track
+SWINGX-JXTable	swingx	JXTable	DATA_GRID	org.eclipse.swt.widgets.Table	STOCK	javax.swing.JTable	sort/filter: sort-filter track; highlighters: M3TableHighlighter (row predicates to colours, custom draw); column control: M3ColumnControl	sort-filter + custom-widgets
+SWINGX-JXTableHeader	swingx	JXTableHeader	COLUMN_CONTROL	org.eclipse.swt.widgets.TableColumn	STOCK	javax.swing.table.JTableHeader	column control popup: M3ColumnControl	custom-widgets
+SWINGX-JXTaskPane	swingx	JXTaskPane	TASK_PANE	org.eclipse.nebula.widgets.m3.M3TaskPane;org.eclipse.nebula.widgets.pgroup.PGroup	M3	-	SWT: M3TaskPane (drawn title bar over M3CollapsiblePane; PGroup is the Nebula alternative); Swing: javax.swing.M3TaskPane	custom-widgets + Swing track
+SWINGX-JXTaskPaneContainer	swingx	JXTaskPaneContainer	TASK_PANE	org.eclipse.nebula.widgets.m3.M3TaskPaneContainer;org.eclipse.swt.widgets.ExpandBar	M3	-	SWT: M3TaskPaneContainer (measures only the changed pane); Swing: javax.swing.M3TaskPaneContainer	custom-widgets + Swing track
+SWINGX-JXTextArea	swingx	JXTextArea	PROMPT_DECORATION	org.eclipse.swt.widgets.Text	STOCK	javax.swing.JTextArea	prompt: Text.setMessage; Swing prompt support: M3FieldDecoration	Swing track
+SWINGX-JXTextField	swingx	JXTextField	PROMPT_DECORATION	org.eclipse.swt.widgets.Text	STOCK	javax.swing.JTextField	prompt: Text.setMessage; Swing prompt support: M3FieldDecoration	Swing track
+SWINGX-JXTipOfTheDay	swingx	JXTipOfTheDay	TIP_OF_DAY	org.eclipse.nebula.widgets.opal.tipoftheday.TipOfTheDay	NEBULA	-	Swing: javax.swing.M3TipOfTheDay	Swing track
+SWINGX-JXTitledPanel	swingx	JXTitledPanel	HEADER_PANEL	org.eclipse.nebula.widgets.pgroup.PGroup	NEBULA	-	PGroup without a toggle is the titled panel; Swing: javax.swing.M3TitledPanel	Swing track
+SWINGX-JXTitledSeparator	swingx	JXTitledSeparator	HEADER_PANEL	org.eclipse.nebula.widgets.opal.titledseparator.TitledSeparator	NEBULA	-	Swing: javax.swing.M3TitledSeparator	Swing track
+SWINGX-JXTree	swingx	JXTree	TREE_TABLE	org.eclipse.swt.widgets.Tree	STOCK	javax.swing.JTree	viewport Tree (SWT), M3 layout caches (M3JDK leaf 1-2)	SWT Tree + Swing tracks
+SWINGX-JXTreeTable	swingx	JXTreeTable	TREE_TABLE	org.eclipse.swt.widgets.Tree	STOCK	-	SWT: Tree with TreeColumns is the tree-table; Swing: javax.swing.M3TreeTable over the M3 tree layout caches	Swing track
+SWINGX-JXMapViewer	swingx	JXMapViewer (jxmapviewer2)	MAP_VIEW	org.eclipse.nebula.widgets.geomap.GeoMap	NEBULA	-	Swing: javax.swing.M3MapView (tile pyramid shared with M3ImageView)	Swing track
+STACK-StackLayout	stack	StackLayout	STACK_LAYOUT	org.eclipse.nebula.widgets.m3.M3StackLayout	M3	java.awt.CardLayout	SWT: M3StackLayout done (only the top control materialized, pages under a residency budget); Swing: javax.swing.M3StackLayout	custom-widgets + Swing track
+STACK-CTabFolder	stack	CTabFolder	TAB_FOLDER_RICH	org.eclipse.swt.custom.CTabFolder	STOCK	javax.swing.JTabbedPane	SWT: viewport CTabFolder (all-widgets L5); Swing: M3TabList	all-widgets
+STACK-PartStack	stack	e4 part stack (StackRenderer)	EDITOR_VIEW_STACK	org.eclipse.e4.ui.workbench.renderers.swt.StackRenderer	STOCK	-	platform.ui, jface-viewport agent	jface-viewport
+STACK-VirtualComposite	stack	SWT.VIRTUAL Composite (swt#624)	VIRTUAL_COMPOSITE	org.eclipse.nebula.widgets.m3.M3StackLayout	M3	-	pages form done in M3StackLayout; scrolled form M3VirtualComposite next	custom-widgets
+NEBULA-formattedtext-FormattedText	nebula	FormattedText	FORMATTED_TEXT	org.eclipse.nebula.widgets.formattedtext.FormattedText	NEBULA	javax.swing.JFormattedTextField	-	-
+NEBULA-geomap-GeoMap	nebula	GeoMap	MAP_VIEW	org.eclipse.nebula.widgets.geomap.GeoMap	NEBULA	-	Swing: javax.swing.M3MapView	Swing track
+NEBULA-pagination-PageableTable	nebula	PageableTable	PAGINATION	org.eclipse.nebula.widgets.pagination.table.PageableTable	NEBULA	-	Swing: javax.swing.M3Pagination	Swing track
+NEBULA-picture-PictureControl	nebula	PictureControl	IMAGE_VIEW	org.eclipse.nebula.widgets.picture.PictureControl	NEBULA	-	Swing: javax.swing.M3ImageView	Swing track
+NEBULA-treemapper-TreeMapper	nebula	TreeMapper	TREEMAP	org.eclipse.nebula.widgets.treemapper.TreeMapper	NEBULA	-	Swing: javax.swing.M3TreeMap	Swing track
+NEBULA-xviewer-XViewer	nebula	XViewer	TREE_TABLE	org.eclipse.nebula.widgets.xviewer.XViewer	NEBULA	-	JFace tree viewer with customization; Swing: M3TreeTable plus customization	Swing track
+NEBULA-visualization-XYGraph	nebula	XYGraph	CHART	org.eclipse.nebula.visualization.xygraph.figures.XYGraph	NEBULA	-	Draw2d figure; Swing: javax.swing.M3Chart	Swing track
+NEBULA-opal-Notifier	nebula	Notifier	TOAST	org.eclipse.nebula.widgets.opal.notifier.Notifier	NEBULA	-	Swing: javax.swing.M3Toast	Swing track
+NEBULA-opal-LoginDialog	nebula	LoginDialog	LOGIN_DIALOG	org.eclipse.nebula.widgets.opal.logindialog.LoginDialog	NEBULA	-	Swing: javax.swing.M3LoginPane	Swing track
+NEBULA-opal-TipOfTheDay	nebula	TipOfTheDay	TIP_OF_DAY	org.eclipse.nebula.widgets.opal.tipoftheday.TipOfTheDay	NEBULA	-	Swing: javax.swing.M3TipOfTheDay	Swing track
+NEBULA-opal-PreferenceWindow	nebula	PreferenceWindow	PREFERENCE_WINDOW	org.eclipse.nebula.widgets.opal.preferencewindow.PreferenceWindow	NEBULA	-	Swing: javax.swing.M3PreferenceWindow (pages over M3StackLayout)	Swing track
+NEBULA-opal-PromptSupport	nebula	PromptSupport	PROMPT_DECORATION	org.eclipse.nebula.widgets.opal.promptsupport.PromptSupport	NEBULA	-	Swing: javax.swing.M3FieldDecoration	Swing track
+NEBULA-opal-Dialog	nebula	Dialog (opal)	ERROR_PANE	org.eclipse.nebula.widgets.opal.dialog.Dialog	NEBULA	javax.swing.JOptionPane	details area covers the error pane form	-
+NEBULA-opal-Panels	nebula	DarkPanel / BlurredPanel	-	org.eclipse.nebula.widgets.opal.panels.DarkPanel	NEBULA	-	glass pane overlays; Swing: JLayer	-

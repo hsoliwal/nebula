@@ -11,6 +11,7 @@
  * Contributors:
  *  Olivier Titillon  - Initial PR
  *  Laurent CARON <laurent dot caron at gmail dot ccom> - Port to Nebula
+ *  Hitesh Soliwal (Synexia) - viewport mode switch: lazy drop-down, original mode builds the drop-down at once
  *****************************************************************************/
 package org.eclipse.nebula.widgets.checktablecombo;
 
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.eclipse.nebula.widgets.tablecombo.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.accessibility.ACC;
@@ -90,6 +92,12 @@ public class CheckTableCombo extends Composite {
 	private Label selectedImage;
 	private Text text;
 	private Table table;
+
+	/**
+	 * The CheckTableCombo viewport (docs/m3/custom-widgets/tablecombo): the drop-down is built on first use, unless the
+	 * startup widget mode is original (-Dswt.widget.mode.CheckTableCombo=original or -Dswt.widget.mode=original).
+	 */
+	static final boolean VIEWPORT = WidgetMode.of("CheckTableCombo", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	private Font font;
 	private boolean hasFocus;
 	private int visibleItemCount = 7;
@@ -246,7 +254,10 @@ public class CheckTableCombo extends Composite {
 			arrow.addListener(arrowEvent, listener);
 		}
 
-		// the drop-down shell and table are built on first open or first table API use
+		// the drop-down shell and table are built on first open or first table API use; the original mode builds them now
+		if (!VIEWPORT) {
+			createPopup(-1);
+		}
 
 		initAccessible();
 	}

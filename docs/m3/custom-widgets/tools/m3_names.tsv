@@ -33,7 +33,7 @@ RANGE_SLIDER	M3RangeSlider	low and high as ints; thumbs as rectangles
 CALENDAR_VIEW	M3CalendarView	entries as start/end epoch-minute lanes; interval index for the visible days
 HYPERLINK	M3Hyperlink	text ranges and targets as int runs
 CODE_EDITOR	M3CodeArea	StyledText viewport (merged); Swing twin over the same line index
-MULTI_SPLIT	M3MultiSplit	split tree as parent/weight lanes; layout by prefix sums
+MULTI_SPLIT	M3MultiSplitPane	split tree as parent/weight lanes; layout by prefix sums
 STATUS_BAR	M3StatusBar	slots as ids with widths
 TOGGLE_SWITCH	M3Switch	one state bit
 NODE_EDITOR	M3NodeEditor	nodes and edges in lanes; spatial grid index for culling and hit tests
@@ -65,3 +65,5 @@ PRINT_PREVIEW	M3PrintPreview	pages laid out lazily; only visible pages rendered
 HORIZONTAL_SPINNER	M3ListSpinner	index into a value list
 PASSWORD_REVEAL	M3PasswordReveal	one reveal bit
 STEPPER	M3Stepper	current step int; step labels as ids
+PINNED_COLUMNS	M3PinnedColumns	pinned column count and row count as ints; the column window offset starts after the pinned prefix; one paint pass per region (pinned, scrolled), no duplicate cells
+VIRTUAL_COMPOSITE	M3VirtualComposite	child ids with bounds in int lanes; only children intersecting the viewport (plus a residency budget) exist as controls; children created through a factory, released LRU; the SWT.VIRTUAL Composite contract of eclipse.platform.swt#624

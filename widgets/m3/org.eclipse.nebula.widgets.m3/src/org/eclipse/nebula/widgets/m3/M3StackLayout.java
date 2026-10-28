@@ -196,6 +196,15 @@ public class M3StackLayout extends StackLayout {
 		return slot < 0 ? null : resident.control(slot);
 	}
 
+	/**
+	 * @param index the page index
+	 * @return <code>true</code> when the page exists as a control
+	 * @exception IllegalArgumentException ERROR_INVALID_RANGE - if the index is not between 0 and the page count - 1
+	 */
+	public boolean isResident(int index) {
+		return getPage(index) != null;
+	}
+
 	/** @return the number of pages that exist as controls */
 	public int getResidentCount() {
 		purge();
