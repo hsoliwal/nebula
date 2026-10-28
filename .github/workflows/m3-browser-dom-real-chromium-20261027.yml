@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+name: M3 original Browser DOM snapshot real Chromium
+on:
+  pull_request:
+    paths:
+      - 'm3/web-widget-reverse/qualification/browser-dom-snapshot/**'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java'
+      - '.github/workflows/m3-browser-dom-real-chromium-20261027.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-java-real-chromium:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install actual Chromium browser test dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install playwright==1.56.0
+          python3 -m playwright install --with-deps chromium
+      - name: Execute exact-original-Java real Chromium proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash m3/web-widget-reverse/qualification/browser-dom-snapshot/run-chromium.sh \
+            "$RUNNER_TEMP/m3-original-dom-chromium"
+      - name: Export real browser execution evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-original-browser-dom-chromium
+          if-no-files-found: error
+          path: ${{ runner.temp }}/m3-original-dom-chromium/DOM_RECEIPT.json
