@@ -347,8 +347,6 @@ public final class GwtAttributedJavaInventory {
     private static void preflightZipDirectory(Path archive) throws IOException {
         final int minEndRecord = 22;
         final int maxComment = 65_535;
-        final int minCentralFileHeader = 46;
-        final long centralFileSignature = 0x02014b50L;
         long fileBytes = Files.size(archive);
         if (fileBytes < minEndRecord) throw refuse("JAR_INVALID_ARCHIVE");
         int suffixSize = (int) Math.min(fileBytes, minEndRecord + maxComment);
@@ -356,72 +354,37 @@ public final class GwtAttributedJavaInventory {
         try (RandomAccessFile input = new RandomAccessFile(archive.toFile(), "r")) {
             input.seek(fileBytes - suffixSize);
             input.readFully(suffix);
-            // EOCD may carry a comment containing the same PK signature.
-            // Its comment length must reach exactly the actual file end.
-            int end = -1;
-            for (int i = suffix.length - minEndRecord; i >= 0; i--) {
-                if ((suffix[i] & 255) == 0x50 && (suffix[i + 1] & 255) == 0x4b
-                        && (suffix[i + 2] & 255) == 0x05 && (suffix[i + 3] & 255) == 0x06
-                        && i + minEndRecord + zipU16(suffix, i + 20) == suffix.length) {
-                    end = i;
-                    break;
-                }
+        }
+        // EOCD may carry a comment containing the same PK signature. The
+        // comment length must reach exactly the actual file end.
+        int end = -1;
+        for (int i = suffix.length - minEndRecord; i >= 0; i--) {
+            if ((suffix[i] & 255) == 0x50 && (suffix[i + 1] & 255) == 0x4b
+                    && (suffix[i + 2] & 255) == 0x05 && (suffix[i + 3] & 255) == 0x06
+                    && i + minEndRecord + zipU16(suffix, i + 20) == suffix.length) {
+                end = i;
+                break;
             }
-            if (end < 0) throw refuse("JAR_INVALID_ARCHIVE");
-            int thisDisk = zipU16(suffix, end + 4);
-            int centralDisk = zipU16(suffix, end + 6);
-            int entriesHere = zipU16(suffix, end + 8);
-            int entriesAll = zipU16(suffix, end + 10);
-            long centralBytes = zipU32(suffix, end + 12);
-            long centralOffset = zipU32(suffix, end + 16);
-            if (thisDisk != 0 || centralDisk != 0 || entriesHere != entriesAll) {
-                throw refuse("JAR_SPANNED_DIRECTORY_UNSUPPORTED");
-            }
-            if (entriesAll > MAX_JAR_ENTRIES) throw refuse("JAR_ENTRY_COUNT_BUDGET");
-            if (centralBytes == 0xffff_ffffL || centralOffset == 0xffff_ffffL
-                    || entriesAll == 0xffff) {
-                throw refuse("JAR_ZIP64_UNSUPPORTED");
-            }
-            long endOffset = fileBytes - suffix.length + end;
-            if (centralOffset > endOffset || centralBytes > endOffset - centralOffset
-                    || (entriesAll > 0 && centralBytes == 0)) {
-                throw refuse("JAR_CENTRAL_DIRECTORY_BOUNDS");
-            }
-            // The EOCD count is untrusted: it may say "1" even when the
-            // physical central directory contains 12001 entries. JarFile
-            // indexes the *actual* records before our iterator can count
-            // them. Walk each fixed-size CEN header with bounded reads first.
-            // No names, compressed payloads or untrusted entry-sized objects
-            // are materialized during this pre-index gate.
-            long centralEnd = centralOffset + centralBytes;
-            long cursor = centralOffset;
-            int actualEntries = 0;
-            byte[] header = new byte[minCentralFileHeader];
-            while (cursor < centralEnd) {
-                if (centralEnd - cursor < minCentralFileHeader) {
-                    throw refuse("JAR_CENTRAL_DIRECTORY_BOUNDS");
-                }
-                input.seek(cursor);
-                input.readFully(header);
-                if (zipU32(header, 0) != centralFileSignature) {
-                    throw refuse("JAR_CENTRAL_DIRECTORY_HEADER");
-                }
-                int nameLength = zipU16(header, 28);
-                int extraLength = zipU16(header, 30);
-                int commentLength = zipU16(header, 32);
-                long entryBytes = minCentralFileHeader + (long) nameLength
-                        + extraLength + commentLength;
-                if (entryBytes > centralEnd - cursor) {
-                    throw refuse("JAR_CENTRAL_DIRECTORY_BOUNDS");
-                }
-                cursor += entryBytes;
-                if (++actualEntries > MAX_JAR_ENTRIES) {
-                    throw refuse("JAR_ENTRY_COUNT_BUDGET");
-                }
-            }
-            if (actualEntries != entriesAll) {
-                throw refuse("JAR_CENTRAL_DIRECTORY_ENTRY_COUNT_MISMATCH");
-            }
+        }
+        if (end < 0) throw refuse("JAR_INVALID_ARCHIVE");
+        int thisDisk = zipU16(suffix, end + 4);
+        int centralDisk = zipU16(suffix, end + 6);
+        int entriesHere = zipU16(suffix, end + 8);
+        int entriesAll = zipU16(suffix, end + 10);
+        long centralBytes = zipU32(suffix, end + 12);
+        long centralOffset = zipU32(suffix, end + 16);
+        if (thisDisk != 0 || centralDisk != 0 || entriesHere != entriesAll) {
+            throw refuse("JAR_SPANNED_DIRECTORY_UNSUPPORTED");
+        }
+        if (entriesAll > MAX_JAR_ENTRIES) throw refuse("JAR_ENTRY_COUNT_BUDGET");
+        if (centralBytes == 0xffff_ffffL || centralOffset == 0xffff_ffffL
+                || entriesAll == 0xffff) {
+            throw refuse("JAR_ZIP64_UNSUPPORTED");
+        }
+        long endOffset = fileBytes - suffix.length + end;
+        if (centralOffset > endOffset || centralBytes > endOffset - centralOffset
+                || (entriesAll > 0 && centralBytes == 0)) {
+            throw refuse("JAR_CENTRAL_DIRECTORY_BOUNDS");
         }
         // EOCD entry counts are untrusted. Count the actual central-directory
         // records *before* JarFile allocates its entry index. A forged count of

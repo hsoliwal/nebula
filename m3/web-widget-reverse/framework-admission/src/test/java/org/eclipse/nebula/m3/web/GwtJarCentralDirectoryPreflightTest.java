@@ -21,7 +21,7 @@ final class GwtJarCentralDirectoryPreflightTest {
         Path jar = archive(12_001);
         try {
             forgeCount(jar, 1);
-            assertPreflightRefuses(jar, "JAR_ENTRY_COUNT_BUDGET");
+            assertPreflightRefuses(jar, "JAR_CENTRAL_DIRECTORY_COUNT_MISMATCH");
         } finally {
             Files.deleteIfExists(jar);
         }
@@ -31,7 +31,7 @@ final class GwtJarCentralDirectoryPreflightTest {
         Path jar = archive(2);
         try {
             forgeCount(jar, 1);
-            assertPreflightRefuses(jar, "JAR_CENTRAL_DIRECTORY_ENTRY_COUNT_MISMATCH");
+            assertPreflightRefuses(jar, "JAR_CENTRAL_DIRECTORY_COUNT_MISMATCH");
         } finally {
             Files.deleteIfExists(jar);
         }
