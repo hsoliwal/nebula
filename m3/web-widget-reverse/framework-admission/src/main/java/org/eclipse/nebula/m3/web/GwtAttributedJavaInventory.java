@@ -120,20 +120,20 @@ public final class GwtAttributedJavaInventory {
         Objects.requireNonNull(receipt, "receipt");
         Objects.requireNonNull(sourceUtf8, "sourceUtf8");
         Objects.requireNonNull(jars, "jars");
-        // Freeze caller-owned mutable source once for digest, compiler AST and projection.
-        byte[] sealedSourceBytes = sourceUtf8.clone();
-        if (sealedSourceBytes.length == 0 || sealedSourceBytes.length > MAX_SOURCE_BYTES) {
+        // Enforce the budget before allocating any snapshot of untrusted bytes.
+        if (sourceUtf8.length == 0 || sourceUtf8.length > MAX_SOURCE_BYTES) {
             throw refuse("SOURCE_BUDGET");
         }
-        // The source is caller-owned and mutable. Hash, javac attribution, and
-        // the downstream UiBinder proof must all consume these same bytes.
-        if (!sha256(sealedSourceBytes).equals(receipt.sha256())) throw refuse("SOURCE_DIGEST_DRIFT");
+        // Freeze the caller-owned mutable byte[] once, before SHA admission.
+        // The same immutable snapshot drives UTF-8 decoding and candidate XML.
+        byte[] stableSourceUtf8 = sourceUtf8.clone();
+        if (!sha256(stableSourceUtf8).equals(receipt.sha256())) throw refuse("SOURCE_DIGEST_DRIFT");
         String source;
         try {
             source = StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(sealedSourceBytes)).toString();
+                    .decode(ByteBuffer.wrap(stableSourceUtf8)).toString();
         } catch (CharacterCodingException invalid) {
             throw new IllegalArgumentException("SOURCE_INVALID_UTF8", invalid);
         }
@@ -182,7 +182,7 @@ public final class GwtAttributedJavaInventory {
                 }
                 classpath.add(snapshot);
             }
-            return attribute(receipt, sealedSourceBytes, source, stableJars, classpath);
+            return attribute(receipt, stableSourceUtf8, source, stableJars, classpath);
         } finally {
             // No staged bytecode leaks into later compiler inventories.
             for (Path staged : stagedBinaryFiles) deleteStaged(staged);
@@ -195,7 +195,7 @@ public final class GwtAttributedJavaInventory {
      * task, its compilation units and its file manager are unreachable once it returns, before inspect deletes the
      * snapshots ({@link #deleteStaged}).
      */
-    private static Inventory attribute(WebWidgetUiBinderProjection.SourceReceipt receipt, byte[] sealedSourceBytes,
+    private static Inventory attribute(WebWidgetUiBinderProjection.SourceReceipt receipt, byte[] stableSourceUtf8,
                                        String source, List<ClasspathJar> stableJars, List<Path> classpath)
             throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -242,7 +242,7 @@ public final class GwtAttributedJavaInventory {
                     d.getKind() == Diagnostic.Kind.ERROR)) throw refuse("ATTRIBUTION_DIAGNOSTIC");
             List<WebWidgetUiBinderProjection.Declaration> rows = readExactClass(
                     units.getFirst(), Trees.instance(task), relativePath, originalMembers);
-            var candidate = WebWidgetUiBinderProjection.project(receipt, sealedSourceBytes, rows);
+            var candidate = WebWidgetUiBinderProjection.project(receipt, stableSourceUtf8, rows);
             return new Inventory(receipt, stableJars.stream().map(ClasspathJar::sha256).toList(),
                     rows, candidate);
         } catch (RuntimeException failure) {
