@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -67,6 +68,10 @@ public final class GwtAttributedJavaInventory {
     private static final long MAX_JAR_ENTRY_BYTES = 16L * 1024 * 1024;
     private static final long MAX_JAR_EXPANDED_BYTES = 128L * 1024 * 1024;
     private static final long MAX_COMPRESSION_RATIO = 512;
+    /** Delete attempts for one staged snapshot path before its last failure is rethrown (see deleteStaged). */
+    private static final int STAGED_DELETE_ATTEMPTS = 8;
+    /** Back-off between staged-delete attempts, after a collection request (milliseconds). */
+    private static final long STAGED_DELETE_BACKOFF_MILLIS = 25;
     private static final long MAX_JAR_BYTES = 100L * 1024 * 1024;
     private static final String LABEL = "com.google.gwt.user.client.ui.Label";
     private static final String BUTTON = "com.google.gwt.user.client.ui.Button";
@@ -177,7 +182,23 @@ public final class GwtAttributedJavaInventory {
                 }
                 classpath.add(snapshot);
             }
-            JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+            return attribute(receipt, sealedSourceBytes, source, stableJars, classpath);
+        } finally {
+            // No staged bytecode leaks into later compiler inventories.
+            for (Path staged : stagedBinaryFiles) deleteStaged(staged);
+            deleteStaged(binarySnapshotRoot);
+        }
+    }
+
+    /**
+     * The javac phase of {@link #inspect}: attribution over the verified snapshots. It runs in its own frame, so the
+     * task, its compilation units and its file manager are unreachable once it returns, before inspect deletes the
+     * snapshots ({@link #deleteStaged}).
+     */
+    private static Inventory attribute(WebWidgetUiBinderProjection.SourceReceipt receipt, byte[] sealedSourceBytes,
+                                       String source, List<ClasspathJar> stableJars, List<Path> classpath)
+            throws IOException {
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) throw new IllegalStateException("JDK21_COMPILER_REQUIRED");
         var diagnostics = new DiagnosticCollector<JavaFileObject>();
         try (StandardJavaFileManager manager = compiler.getStandardFileManager(
@@ -228,10 +249,30 @@ public final class GwtAttributedJavaInventory {
             if (failure instanceof IllegalArgumentException) throw failure;
             throw new IllegalArgumentException("JAVA_SOURCE_AST_UNQUALIFIED", failure);
         }
-        } finally {
-            // No staged bytecode leaks into later compiler inventories.
-            for (Path staged : stagedBinaryFiles) Files.deleteIfExists(staged);
-            Files.deleteIfExists(binarySnapshotRoot);
+    }
+
+    /**
+     * Deletes one staged snapshot path. On Windows an in-process javac task keeps a class-path JAR open in an
+     * unreachable archive object after its file manager is closed, until a garbage collection runs its cleaner, so
+     * the first delete fails with "being used by another process" (JDK 21, with and without --release). A bounded
+     * number of collection requests releases it; the last failure is rethrown unchanged, so a real lock still
+     * surfaces and no staged bytecode is silently left behind.
+     */
+    private static void deleteStaged(Path staged) throws IOException {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                Files.deleteIfExists(staged);
+                return;
+            } catch (FileSystemException locked) {
+                if (attempt >= STAGED_DELETE_ATTEMPTS) throw locked;
+                System.gc();
+                try {
+                    Thread.sleep(STAGED_DELETE_BACKOFF_MILLIS);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw locked;
+                }
+            }
         }
     }
 
