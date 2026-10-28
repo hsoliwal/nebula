@@ -36,4 +36,4 @@ jobs:
             "$src" \
             m3/web-widget-reverse/qualification/browser-dom-snapshot/src/test/java/BrowserPatchEmit.java
           java -cp "$dir/classes" BrowserPatchEmit "$dir/scripts"
-          M3_EXPECT_ABORT=true node --input-type=module - "$dir/scripts" < m3/web-widget-reverse/qualification/browser-dom-snapshot/root-short-circuit.js.txt
+          M3_EXPECT_ABORT=true M3_EXPECT_FINAL_GUARD=true node --input-type=module - "$dir/scripts" < m3/web-widget-reverse/qualification/browser-dom-snapshot/root-short-circuit.js.txt

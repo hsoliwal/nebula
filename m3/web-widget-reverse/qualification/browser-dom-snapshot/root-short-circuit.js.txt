@@ -11,6 +11,7 @@ const siblings = readFileSync(join(out,'siblings.js'),'utf8');
 const valueScript = readFileSync(join(out,'nested-values.js'),'utf8');
 const COUNT = 16384;
 const expectsAbort=process.env.M3_EXPECT_ABORT==='true';
+const expectsFinalGuard=process.env.M3_EXPECT_FINAL_GUARD==='true';
 let checks = 0;
 const check=(condition,label)=>{assert.ok(condition,label);checks++};
 
@@ -109,8 +110,11 @@ for (const inputValues of [false, true]) {
       'attribute-root-replace', 'contains-root-replace',
       'contains-second-root-replace', 'setter-root-replace']) {
     const observed = readPhaseMutation(emitted, mode, inputValues);
+    // Both staged images already short-circuit root replacement in the loop.
+    // Only the reviewed postimage detects a replacement *inside the second*
+    // contains() call, immediately before the DOM write.
     const expected = (mode === 'ordinary' || mode === 'setter-root-replace')
-      ? 1 : (expectsAbort ? 0 : 1);
+      ? 1 : (mode === 'contains-second-root-replace' && !expectsFinalGuard ? 1 : 0);
     check(observed.count === expected,
       `${inputValues ? 'value' : 'text'}:${mode}: count after metadata lookup`);
     check(observed.applied === (expected === 1),
