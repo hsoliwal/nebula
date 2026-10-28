@@ -136,6 +136,42 @@ public class M3BrowserScriptsTest {
         assertFalse(script.contains("innerHTML"));
     }
 
+    @Test
+    public void refusesDetachedSnapshotNodesAfterAncestorTextPatch() {
+        // Java generates one bounded script; JS execution is tested separately
+        // against detached-child and replaced-document-root fixtures; real Browser separate.
+        String script = M3BrowserScripts.patch(Map.of(
+                "parent", "replacement", "child", "detached"), false);
+        assertTrue(script.contains("var root=document.documentElement;"));
+        assertTrue(script.contains("if(!root||document.documentElement!==root){return n;}"));
+        assertTrue(script.contains("node.textContent=patch[id];n++;"));
+        String values = M3BrowserScripts.patch(Map.of("parent", "x"), true);
+        assertTrue(values.contains("root.contains(node)"));
+        assertTrue(values.contains("node.value=patch[id];n++;"));
+    }
+
+    @Test
+    public void rootReplacementShortCircuitsTheRemainingSnapshot() {
+        String script = M3BrowserScripts.patch(Map.of("parent", "x"), false);
+        assertTrue(script.contains("if(!root||document.documentElement!==root){return n;}"));
+        assertTrue(script.contains("if(!root.contains(node)){continue;}"));
+        assertFalse(script.contains("document.documentElement!==root||!root.contains(node)"));
+        assertFalse(script.contains("innerHTML"));
+    }
+
+    @Test
+    public void rechecksConnectedNodeAfterIdLookupBeforeMutation() {
+        // Custom element method or a patched DOM method can synchronously
+        // detach or replace the root during getAttribute/contains. Read it
+        // again before either textContent or value mutation.
+        String expected = "if(Object.prototype.hasOwnProperty.call(patch,id)){"
+                + "if(document.documentElement!==root){return n;}"
+                + "if(!root.contains(node)){continue;}"
+                + "if(document.documentElement!==root){return n;}";
+        assertTrue(M3BrowserScripts.patch(Map.of("parent", "x"), false).contains(expected));
+        assertTrue(M3BrowserScripts.patch(Map.of("parent", "x"), true).contains(expected));
+    }
+
     private static void assertRejected(Runnable operation) {
         boolean rejected = false;
         try {

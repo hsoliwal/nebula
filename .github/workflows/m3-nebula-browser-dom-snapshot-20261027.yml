@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Nebula original Browser DOM snapshot test
+on:
+  pull_request:
+    paths:
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3BrowserScriptsTest.java'
+      - 'm3/web-widget-reverse/qualification/browser-dom-snapshot/**'
+      - '.github/workflows/m3-nebula-browser-dom-snapshot-20261027.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-java11-junit4:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Strict Java 11 API and real original JUnit4 regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f m3/web-widget-reverse/qualification/browser-dom-snapshot/pom.xml \
+            -Dtest=M3BrowserScriptsTest test
+          test -z "$(git status --porcelain --untracked-files=normal)"
+      - name: Keep native/browser acceptance explicitly separate
+        run: |
+          echo 'Real JUnit4 original Java source != native SWT/RAP/RWT runtime proof.'
+          echo 'Native GTK/Win32/Cocoa Browser/IME/pixels/Tycho: NOT_RUN.'
