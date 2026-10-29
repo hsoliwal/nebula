@@ -251,7 +251,7 @@ public class GridViewportDifferential_Test {
 				{ GridDifferentialDriver.FOOTER_VISIBLE, 0, 0, 0 }, // scroll bars after footer visibility
 				{ 1, 3, 0, 0 } };
 		final boolean fixes = !"original".equals(CANDIDATE);
-		final java.util.Set<Integer> accepted = fixes ? java.util.Set.of(0, 2, 4, 6, 9) : java.util.Set.of();
+		final java.util.Set<Integer> accepted = fixes ? java.util.Set.of(java.lang.Integer.valueOf(0), java.lang.Integer.valueOf(2), java.lang.Integer.valueOf(4), java.lang.Integer.valueOf(6), java.lang.Integer.valueOf(9)) : java.util.Set.of();
 		final int[] state = { GridDifferentialDriver.STATE, 0, 0, 0 };
 		final int[] pixels = { GridDifferentialDriver.PIXELS, 0, 0, 0 };
 		drain();
@@ -266,7 +266,7 @@ public class GridViewportDifferential_Test {
 					((ImageData) candidate.apply(pixels)).data);
 			final boolean same = expected.equals(actual) && samePixels;
 			verdicts.append(step).append(same ? " identical" : " differs").append('\n');
-			if (same == accepted.contains(step)) {
+			if (same == accepted.contains(java.lang.Integer.valueOf(step))) {
 				fail("step " + step + " " + Arrays.toString(scene[step]) + (same ? " is identical but listed"
 						: " differs but is not listed") + "\n  stock:     " + expected + "\n  candidate: " + actual
 						+ "\n  pixels " + (samePixels ? "identical" : "differ") + "\n" + verdicts);

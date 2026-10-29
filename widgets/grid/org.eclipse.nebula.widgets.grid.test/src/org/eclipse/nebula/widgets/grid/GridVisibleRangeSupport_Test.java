@@ -708,17 +708,17 @@ public class GridVisibleRangeSupport_Test {
 		List<RangeChangedEvent> changes = new ArrayList<>();
 		GridVisibleRange previous = publishedRange();
 		support.addRangeChangeListener(event -> {
-			order.add(1);
+			order.add(java.lang.Integer.valueOf(1));
 			changes.add(event);
 			assertSame("Publish occurs after all listeners", previous, publishedRangeUnchecked());
 		});
 		support.addRangeChangeListener(event -> {
-			order.add(2);
+			order.add(java.lang.Integer.valueOf(2));
 			changes.add(event);
 			assertSame(previous, publishedRangeUnchecked());
 		});
 		calculate();
-		assertEquals(Arrays.asList(1, 2), order);
+		assertEquals(Arrays.asList(java.lang.Integer.valueOf(1), java.lang.Integer.valueOf(2)), order);
 		assertSame(changes.get(0), changes.get(1));
 		assertSame(grid, changes.get(0).getSource());
 		assertSame(changes.get(0).visibleRange, publishedRange());

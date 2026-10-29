@@ -2438,7 +2438,7 @@ public class Grid_Test {
     assertFalse( verticalBar.getVisible() );
     grid.setHeaderVisible( true );
     doRedraw();
-    assertEquals( fixesUpstreamDefects(), verticalBar.getVisible() );
+    assertEquals( java.lang.Boolean.valueOf(fixesUpstreamDefects()), java.lang.Boolean.valueOf(verticalBar.getVisible()) );
   }
 
   @Test
@@ -2450,7 +2450,7 @@ public class Grid_Test {
     grid.setFooterVisible( true );
     doRedraw();
     // stock keeps its scroll bars: the last row stays under the footer (UPSTREAM_DEFECTS.tsv)
-    assertEquals( fixesUpstreamDefects(), verticalBar.getVisible() );
+    assertEquals( java.lang.Boolean.valueOf(fixesUpstreamDefects()), java.lang.Boolean.valueOf(verticalBar.getVisible()) );
   }
 
   @Test

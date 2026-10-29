@@ -44,12 +44,12 @@ public final class ClassicDriver implements GridModelBench.Driver {
 	public void sort(final int[] keys, final boolean descending) {
 		final Integer[] boxed = new Integer[rows];
 		for (int i = 0; i < rows; i++) {
-			boxed[i] = i;
+			boxed[i] = java.lang.Integer.valueOf(i);
 		}
-		Arrays.sort(boxed, descending ? (a, b) -> Integer.compare(keys[b], keys[a]) : (a, b) -> Integer.compare(keys[a], keys[b]));
+		Arrays.sort(boxed, descending ? (a, b) -> Integer.compare(keys[(b).intValue()], keys[(a).intValue()]) : (a, b) -> Integer.compare(keys[(a).intValue()], keys[(b).intValue()]));
 		order = new int[rows];
 		for (int i = 0; i < rows; i++) {
-			order[i] = boxed[i];
+			order[i] = (boxed[i]).intValue();
 		}
 		apply(order);
 	}
@@ -78,7 +78,7 @@ public final class ClassicDriver implements GridModelBench.Driver {
 			if (firstSeen[g] < 0) {
 				firstSeen[g] = seen++;
 				lists[g] = new int[16];
-				buckets.put(g, lists[g]);
+				buckets.put(java.lang.Integer.valueOf(g), lists[g]);
 			}
 			if (sizes[g] == lists[g].length) {
 				lists[g] = Arrays.copyOf(lists[g], sizes[g] * 2);
@@ -88,16 +88,16 @@ public final class ClassicDriver implements GridModelBench.Driver {
 		final Integer[] groupOrder = new Integer[seen];
 		for (int g = 0; g < groups; g++) {
 			if (firstSeen[g] >= 0) {
-				groupOrder[firstSeen[g]] = g;
+				groupOrder[firstSeen[g]] = java.lang.Integer.valueOf(g);
 			}
 		}
 		// one header row (code ~g) per group, then its rows
 		final int[] grouped = new int[view.length + seen];
 		int k = 0;
 		for (final Integer g : groupOrder) {
-			grouped[k++] = ~g;
-			System.arraycopy(lists[g], 0, grouped, k, sizes[g]);
-			k += sizes[g];
+			grouped[k++] = ~(g).intValue();
+			System.arraycopy(lists[(g).intValue()], 0, grouped, k, sizes[(g).intValue()]);
+			k += sizes[(g).intValue()];
 		}
 		apply(grouped);
 		return seen;

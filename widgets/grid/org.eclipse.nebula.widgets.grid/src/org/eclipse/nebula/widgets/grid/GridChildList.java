@@ -24,7 +24,7 @@ import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
  * The children of an item of an {@code SWT.VIRTUAL} tree Grid in the viewport mode (G4 step 2c):
  * two lanes in child order, the row-tree slot of every child and its {@link GridItem}, which is
  * {@code null} until the child is first read. A child nobody has read is a row of the row tree and
- * nothing else; {@link #get(int)} makes its item (a facade on that row). The list never drops an
+ * nothing else; {@code get(int)} makes its item (a facade on that row). The list never drops an
  * item it made, so a child without one was never asked for its data.
  */
 final class GridChildList extends AbstractList<GridItem> {

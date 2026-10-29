@@ -71,7 +71,7 @@ public class GridSelectionList_Test {
 				break;
 			case 3:
 			case 4:
-				assertEquals(reference.remove(item), list.remove(item));
+				assertEquals(java.lang.Boolean.valueOf(reference.remove(item)), java.lang.Boolean.valueOf(list.remove(item)));
 				break;
 			case 5:
 				if (!reference.isEmpty()) {
@@ -105,7 +105,7 @@ public class GridSelectionList_Test {
 				}
 			}
 			assertEquals(reference.size(), list.size());
-			assertEquals(reference.contains(item), list.contains(item));
+			assertEquals(java.lang.Boolean.valueOf(reference.contains(item)), java.lang.Boolean.valueOf(list.contains(item)));
 			if (step % 97 == 0) {
 				assertArrayEquals(reference.toArray(new GridItem[0]), list.toArray(new GridItem[0]));
 				final List<GridItem> iterated = new ArrayList<>();

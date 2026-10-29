@@ -76,7 +76,7 @@ public class GridScrollbarSettle_Test {
 	}
 
 	private static void assertBars(final String msg, final ScrollBar expected, final ScrollBar actual) {
-		assertEquals(msg + " visible", expected.getVisible(), actual.getVisible());
+		assertEquals(msg + " visible", java.lang.Boolean.valueOf(expected.getVisible()), java.lang.Boolean.valueOf(actual.getVisible()));
 		if (expected.getVisible()) {
 			assertEquals(msg + " max", expected.getMaximum(), actual.getMaximum());
 			assertEquals(msg + " thumb", expected.getThumb(), actual.getThumb());

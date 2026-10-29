@@ -36,7 +36,7 @@ import org.eclipse.swt.widgets.Control;
  * on Windows the themed parts the Explorer list view, tree view, header and check box draw (the
  * same {@code uxtheme} calls SWT's own {@code Table} and {@code Tree} use). The Grid bundle is
  * platform independent, so SWT's Windows internals are reached reflectively; on other platforms,
- * or when they are missing, {@link #isAvailable()} is {@code false} and the renderers fall back to
+ * or when they are missing, {@code isAvailable()} is {@code false} and the renderers fall back to
  * system colours.
  * <p>
  * Theme handles are opened per Grid and closed when it is disposed.
@@ -107,7 +107,7 @@ final class GridNativeTheme {
 	boolean draw(final GC gc, final String themeClass, final int part, final int state, final Rectangle bounds,
 			final Rectangle clip) {
 		final long theme = theme(themeClass);
-		return theme != 0 && API.draw(theme, gc.handle, part, state, bounds, clip);
+		return theme != 0 && API.draw(theme, gc, part, state, bounds, clip);
 	}
 
 	/**
@@ -193,7 +193,7 @@ final class GridNativeTheme {
 			try {
 				imageGc.setBackground(control.getDisplay().getSystemColor(fill));
 				imageGc.fillRectangle(0, 0, width, height);
-				API.draw(theme, imageGc.handle, part, state, new Rectangle(0, 0, width, height), null);
+				API.draw(theme, imageGc, part, state, new Rectangle(0, 0, width, height), null);
 			} finally {
 				imageGc.dispose();
 			}
@@ -222,7 +222,7 @@ final class GridNativeTheme {
 	 */
 	Point size(final GC gc, final String themeClass, final int part, final int state) {
 		final long theme = theme(themeClass);
-		return theme == 0 ? null : API.size(theme, gc.handle, part, state);
+		return theme == 0 ? null : API.size(theme, gc, part, state);
 	}
 
 	private long theme(final String themeClass) {
@@ -257,7 +257,7 @@ final class GridNativeTheme {
 	private static final class Api {
 		private final Method open, close, draw, partSize, text, send;
 		private final Constructor<?> rect, size;
-		private final Field left, top, right, bottom, cx, cy, handle;
+		private final Field left, top, right, bottom, cx, cy, handle, gcHandle;
 
 		private Api(final Class<?> os, final Class<?> rectClass, final Class<?> sizeClass) throws ReflectiveOperationException {
 			open = os.getMethod("OpenThemeData", long.class, char[].class, int.class);
@@ -277,6 +277,8 @@ final class GridNativeTheme {
 			cx = sizeClass.getField("cx");
 			cy = sizeClass.getField("cy");
 			handle = Control.class.getField("handle");
+			// GC.handle is platform-specific (a Cocoa object, a Win32 HDC). Resolve it only in this Win32 bridge.
+			gcHandle = GC.class.getField("handle");
 		}
 
 		static Api load() {
@@ -321,10 +323,10 @@ final class GridNativeTheme {
 			}
 		}
 
-		boolean draw(final long theme, final long hdc, final int part, final int state, final Rectangle bounds,
+		boolean draw(final long theme, final GC gc, final int part, final int state, final Rectangle bounds,
 				final Rectangle clip) {
 			try {
-				draw.invoke(null, Long.valueOf(theme), Long.valueOf(hdc), Integer.valueOf(part), Integer.valueOf(state),
+				draw.invoke(null, Long.valueOf(theme), Long.valueOf(gcHandle.getLong(gc)), Integer.valueOf(part), Integer.valueOf(state),
 						rect(bounds), clip == null ? null : rect(clip));
 				return true;
 			} catch (final ReflectiveOperationException e) {
@@ -336,7 +338,7 @@ final class GridNativeTheme {
 				final Rectangle bounds) {
 			try {
 				final char[] chars = string.toCharArray();
-				text.invoke(null, Long.valueOf(theme), Long.valueOf(gc.handle), Integer.valueOf(part), Integer.valueOf(state),
+				text.invoke(null, Long.valueOf(theme), Long.valueOf(gcHandle.getLong(gc)), Integer.valueOf(part), Integer.valueOf(state),
 						chars, Integer.valueOf(chars.length), Integer.valueOf(TEXT_FLAGS), Integer.valueOf(0), rect(bounds));
 				return true;
 			} catch (final ReflectiveOperationException e) {
@@ -344,10 +346,10 @@ final class GridNativeTheme {
 			}
 		}
 
-		Point size(final long theme, final long hdc, final int part, final int state) {
+		Point size(final long theme, final GC gc, final int part, final int state) {
 			try {
 				final Object result = size.newInstance();
-				partSize.invoke(null, Long.valueOf(theme), Long.valueOf(hdc), Integer.valueOf(part), Integer.valueOf(state),
+				partSize.invoke(null, Long.valueOf(theme), Long.valueOf(gcHandle.getLong(gc)), Integer.valueOf(part), Integer.valueOf(state),
 						null, Integer.valueOf(TRUE_SIZE), result);
 				return new Point(cx.getInt(result), cy.getInt(result));
 			} catch (final ReflectiveOperationException e) {

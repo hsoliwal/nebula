@@ -57,7 +57,7 @@ public class GridModelJobs_Test {
 			throw new AssertionError("no worker below the threshold");
 		});
 		assertTrue(done.isDone());
-		assertTrue(done.join());
+		assertTrue((done.join()).booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(keys, 1000, true), view(grid.getRowPermutation()));
 	}
 
@@ -78,7 +78,7 @@ public class GridModelJobs_Test {
 				display.sleep();
 			}
 		}
-		assertTrue(done.join());
+		assertTrue((done.join()).booleanValue());
 		assertArrayEquals(expected, view(grid.getRowPermutation()));
 		assertEquals(rows, grid.getItemCount());
 	}
@@ -95,7 +95,7 @@ public class GridModelJobs_Test {
 		while (!done.isDone()) {
 			display.readAndDispatch();
 		}
-		assertFalse(done.join());
+		assertFalse((done.join()).booleanValue());
 		assertFalse(grid.getRowPermutation().isSorted());
 		assertEquals(rows / 2, grid.getItemCount());
 	}

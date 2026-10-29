@@ -132,7 +132,7 @@ public class RowBitLanes_Test {
 		assertEquals(msg, rows, lanes.getRowCount());
 		assertEquals(msg + " cardinality", ref.cardinality(), lanes.cardinality(lane));
 		for (int r = 0; r < rows; r++) {
-			assertEquals(msg + " row " + r, ref.get(r), lanes.get(lane, r));
+			assertEquals(msg + " row " + r, java.lang.Boolean.valueOf(ref.get(r)), java.lang.Boolean.valueOf(lanes.get(lane, r)));
 		}
 		final int from = random.nextInt(rows + 2);
 		final int expected = ref.nextSetBit(from);

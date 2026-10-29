@@ -88,7 +88,7 @@ public class GridPinnedContextMatrix_Test {
    gc.setFont(display.getSystemFont());gc.setLineWidth(3);gc.setLineStyle(SWT.LINE_DASH);
    if(currentMode!=0)gc.setAlpha(137);
    if(explicit)gc.setClipping(caller);else gc.setClipping((Region)null);
-   assertEquals(name+" current mode",currentMode!=0,gc.getAdvanced());
+   assertEquals(name+" current mode",java.lang.Boolean.valueOf(currentMode!=0),java.lang.Boolean.valueOf(gc.getAdvanced()));
    before=new State(gc);
    Rectangle request=new Rectangle(13,17,139,101);
    reference=new Image(display,224,176);oracle=new GC(reference);configure(oracle,entryMode);
@@ -127,13 +127,13 @@ public class GridPinnedContextMatrix_Test {
    clip=new Region(gc.getDevice());captureDevice(gc,clip);
   }
   void assertRestored(String name,GC gc,boolean explicit) {
-   assertEquals(name+" advanced",advanced,gc.getAdvanced());
+   assertEquals(name+" advanced",java.lang.Boolean.valueOf(advanced),java.lang.Boolean.valueOf(gc.getAdvanced()));
    assertArrayEquals(name+" transform",transform,elements(gc),.0001f);
    assertEquals(name+" fillRule",fill,gc.getFillRule());assertEquals(name+" alpha",alpha,gc.getAlpha());
    assertEquals(name+" width",width,gc.getLineWidth());assertEquals(name+" style",style,gc.getLineStyle());
    assertEquals(name+" foreground",foreground,gc.getForeground());
    assertEquals(name+" background",background,gc.getBackground());assertEquals(name+" font",font,gc.getFont());
-   if(explicit)assertEquals(name+" explicit clipping precondition",clipped,gc.isClipped());
+   if(explicit)assertEquals(name+" explicit clipping precondition",java.lang.Boolean.valueOf(clipped),java.lang.Boolean.valueOf(gc.isClipped()));
    Region actual=new Region(gc.getDevice());
    try {captureDevice(gc,actual);assertSameRegion(name+" current device clipping",clip,actual,Display.getDefault());}
    finally {actual.dispose();}

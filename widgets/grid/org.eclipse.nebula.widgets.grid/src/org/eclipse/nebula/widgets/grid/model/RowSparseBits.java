@@ -25,8 +25,25 @@ import java.util.Arrays;
  * is O(set state), not O(positions). {@code int} only (GWT).
  */
 public final class RowSparseBits {
-	public static final int ARRAY = 0, BITMAP = 1, RUN = 2;
-	public static final int CHUNK = 1 << 16, ARRAY_MAX = 4096, RUN_MAX = 2048, BITMAP_WORDS = CHUNK / 32;
+	/**
+	 * Container kind identifiers: sorted position array, bitmap, and interval run list.
+	 */
+	public static final int ARRAY = 0;
+	/** Bitmap container kind. */
+	public static final int BITMAP = 1;
+	/** Interval-run container kind. */
+	public static final int RUN = 2;
+	/**
+	 * Container sizing: positions per chunk, maximum array entries, maximum runs,
+	 * and 32-bit words per bitmap, respectively.
+	 */
+	public static final int CHUNK = 1 << 16;
+	/** Maximum entries in an array container. */
+	public static final int ARRAY_MAX = 4096;
+	/** Maximum intervals in a run container. */
+	public static final int RUN_MAX = 2048;
+	/** Number of 32-bit words in a bitmap container. */
+	public static final int BITMAP_WORDS = CHUNK / 32;
 
 	int[] keys = new int[0], kinds = new int[0], sizes = new int[0];
 	int[][] data = new int[0][];
@@ -262,11 +279,23 @@ public final class RowSparseBits {
 
 	// ---- set operations ---------------------------------------------------------------------------
 
+	/**
+	 * Reads a bit.
+	 *
+	 * @param position non-negative bit position
+	 * @return whether the bit is set
+	 */
 	public boolean get(int position) {
 		int c = find(position >>> 16);
 		return c >= 0 && contains(c, position & 0xFFFF);
 	}
 
+	/**
+	 * Sets or clears a bit.
+	 *
+	 * @param position non-negative bit position
+	 * @param on the new bit value
+	 */
 	public void set(int position, boolean on) {
 		int key = position >>> 16, v = position & 0xFFFF;
 		int c = find(key);
@@ -365,6 +394,13 @@ public final class RowSparseBits {
 		optimize(c);
 	}
 
+	/**
+	 * Counts set bits in a half-open range.
+	 *
+	 * @param from inclusive non-negative start position
+	 * @param to exclusive end position
+	 * @return number of set bits, or zero when the range is empty
+	 */
 	public int count(int from, int to) {
 		if (from >= to) return 0;
 		int first = from >>> 16, last = (to - 1) >>> 16, total = 0;
@@ -470,6 +506,11 @@ public final class RowSparseBits {
 		}
 	}
 
+	/**
+	 * Returns whether no bits are set.
+	 *
+	 * @return whether the set is empty
+	 */
 	public boolean isEmpty() {
 		return n == 0;
 	}

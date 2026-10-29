@@ -53,7 +53,7 @@ public class RowSelection_Test {
 				final int col = random.nextInt(100);
 				final boolean on = random.nextBoolean();
 				selection.setCellSelected(a % 500, col, on);
-				cells.put(((long) (a % 500) << 32) | col, on);
+				cells.put(java.lang.Long.valueOf(((long) (a % 500) << 32) | col), java.lang.Boolean.valueOf(on));
 				break;
 			}
 			default: {
@@ -67,14 +67,14 @@ public class RowSelection_Test {
 		assertEquals(ref.cardinality(), selection.getSelectionCount());
 		for (int probe = 0; probe < 20_000; probe++) {
 			final int r = random.nextInt(n);
-			assertEquals(ref.get(r), selection.isSelected(r));
+			assertEquals(java.lang.Boolean.valueOf(ref.get(r)), java.lang.Boolean.valueOf(selection.isSelected(r)));
 		}
 		int selectedCells = 0;
 		for (final Map.Entry<Long, Boolean> e : cells.entrySet()) {
-			final int row = (int) (e.getKey() >>> 32);
-			final int col = (int) (e.getKey() & 0xffffffffL);
-			assertEquals(e.getValue(), selection.isCellSelected(row, col));
-			selectedCells += e.getValue() ? 1 : 0;
+			final int row = (int) ((e.getKey()).longValue() >>> 32);
+			final int col = (int) ((e.getKey()).longValue() & 0xffffffffL);
+			assertEquals(e.getValue(), java.lang.Boolean.valueOf(selection.isCellSelected(row, col)));
+			selectedCells += (e.getValue()).booleanValue() ? 1 : 0;
 		}
 		assertEquals(selectedCells, selection.getCellCount());
 		final int first = ref.nextSetBit(0);
@@ -100,7 +100,7 @@ public class RowSelection_Test {
 		for (int m = 0; m < n; m++) {
 			if (selection.isSelected(m) && p.passes(m)) {
 				expectedDisplayed++;
-				views.add(p.viewIndex(m));
+				views.add(java.lang.Integer.valueOf(p.viewIndex(m)));
 			}
 		}
 		views.sort(null);

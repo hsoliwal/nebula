@@ -725,17 +725,6 @@ public class GridColumn extends Item {
 		headerChanged();
 	}
 
-	/**
-	 * Causes the receiver to be resized to its preferred size.
-	 *
-	 * @throws org.eclipse.swt.SWTException
-	 *             <ul>
-	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
-	 *             </li>
-	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
-	 *             thread that created the receiver</li>
-	 *             </ul>
-	 */
 	/*
 	 * The width this column needs for the item's cell. A cell that spans further columns counts
 	 * only the part those columns do not already cover: stock attributed the whole spanned content
@@ -760,6 +749,17 @@ public class GridColumn extends Item {
 		return Math.max(0, width - covered);
 	}
 
+	/**
+	 * Causes the receiver to be resized to its preferred size.
+	 *
+	 * @throws org.eclipse.swt.SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed
+	 *             </li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the
+	 *             thread that created the receiver</li>
+	 *             </ul>
+	 */
 	public void pack() {
 		checkWidget();
 

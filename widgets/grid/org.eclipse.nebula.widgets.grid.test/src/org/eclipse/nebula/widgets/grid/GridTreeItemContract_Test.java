@@ -88,7 +88,7 @@ public class GridTreeItemContract_Test {
 		assertEquals(null, grid.rowTree());
 		roots[1].setItemCount(3);
 		roots[3].setItemCount(2);
-		assertEquals(GridViewport.ENABLED, grid.rowTree() != null);
+		assertEquals(java.lang.Boolean.valueOf(GridViewport.ENABLED), java.lang.Boolean.valueOf(grid.rowTree() != null));
 		assertEquals(10, grid.getItemCount());
 		assertEquals(9, roots[4].getRowIndex());
 		roots[1].setExpanded(true);

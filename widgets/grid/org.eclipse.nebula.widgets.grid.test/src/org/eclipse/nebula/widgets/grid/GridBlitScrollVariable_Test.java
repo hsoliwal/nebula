@@ -135,16 +135,18 @@ public class GridBlitScrollVariable_Test {
 		final Point size = grid.getSize();
 		final Image image = new Image(display, size.x, size.y);
 		try {
-			final GC gc = new GC(grid);
+			GridSwtScreenshotCapture.screenBounds(grid);
+			final GC gc = new GC(display);
 			try {
-				gc.copyArea(image, 0, 0);
+				final Point origin = grid.toDisplay(0, 0);
+				gc.copyArea(image, origin.x, origin.y);
 			} finally {
 				gc.dispose();
 			}
 			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(image.getImageData().data);
 			final StringBuilder hex = new StringBuilder();
 			for (final byte b : digest) {
-				hex.append(String.format("%02x", b & 0xff));
+				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
 			}
 			return hex.toString();
 		} finally {
@@ -153,10 +155,20 @@ public class GridBlitScrollVariable_Test {
 	}
 
 	private void settle() {
-		for (int i = 0; i < 5; i++) {
-			while (display.readAndDispatch()) {
-				// drain
-			}
-		}
-	}
+        // GTK paints at frame boundaries; an empty event queue is not a settled frame.
+        long idleSince = System.nanoTime();
+        final long deadline = idleSince + 5_000_000_000L;
+        while (System.nanoTime() - idleSince < 200_000_000L) {
+            assertTrue("native paint queue did not settle", System.nanoTime() < deadline);
+            if (display.readAndDispatch()) {
+                idleSince = System.nanoTime();
+            } else {
+                try { Thread.sleep(5L); }
+                catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("interrupted while settling native paint", failure);
+                }
+            }
+        }
+    }
 }

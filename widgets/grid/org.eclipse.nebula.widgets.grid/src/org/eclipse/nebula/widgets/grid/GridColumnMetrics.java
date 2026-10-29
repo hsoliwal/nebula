@@ -23,15 +23,15 @@ import java.util.List;
  * whether it is visible, and how many pinned columns (visible and fixed) come before it; and the
  * prefix sums of the pinned widths. A change of one column's width, visibility or fixed state and a
  * change of the order are applied as deltas ({@link #columnChanged}, {@link #reordered}); the lanes
- * are rebuilt in O(c) only after a change of the column set ({@link #invalidate()}). The column
+ * are rebuilt in O(c) only after a change of the column set ({@code invalidate()}). The column
  * at an x, the x of a column, the first and last column on screen and the columns a paint covers
  * are then binary searches or lookups (O(log c), O(1) or O(log c + k)) instead of a walk over
  * every column.
  * <p>
- * Each answer equals the linear scan it replaces ({@link GridViewportProjection} and Grid's column
+ * Each answer equals the linear scan it replaces ({@code GridViewportProjection} and Grid's column
  * loops; GridColumnMetrics_Test compares them under seeded scripts). A negative width (column
  * scrolling in a client area narrower than the row header) breaks the prefix order, so
- * {@link #ready(List)} then leaves the answers to those scans.
+ * {@code ready(List)} then leaves the answers to those scans.
  * </p>
  */
 final class GridColumnMetrics {

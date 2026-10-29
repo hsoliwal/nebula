@@ -31,7 +31,21 @@ import java.util.Arrays;
  * O(exceptions + patterns + non-default runs), not O(items). {@code int} only (GWT).
  */
 public final class RowStateLanes {
-	public static final int P_START = 0, P_END = 1, P_STRIDE = 2, P_MASK = 3, P_PHASE = 4, P = 5;
+	/**
+	 * Packed pattern offsets for the inclusive start, exclusive end, stride,
+	 * repeat mask, and phase; P is the number of integers per pattern.
+	 */
+	public static final int P_START = 0;
+	/** Packed offset of the exclusive pattern end. */
+	public static final int P_END = 1;
+	/** Packed offset of the pattern stride. */
+	public static final int P_STRIDE = 2;
+	/** Packed offset of the repeating bit mask. */
+	public static final int P_MASK = 3;
+	/** Packed offset of the pattern phase. */
+	public static final int P_PHASE = 4;
+	/** Number of integers per packed pattern. */
+	public static final int P = 5;
 
 	final int laneCount;
 	final RowSparseBits[] value, override;
@@ -40,6 +54,11 @@ public final class RowStateLanes {
 	int count;
 	private final int[][] scratch = {new int[16]};
 
+	/**
+	 * Creates empty state lanes.
+	 *
+	 * @param laneCount non-negative number of independent lanes
+	 */
 	public RowStateLanes(int laneCount) {
 		this.laneCount = laneCount;
 		value = new RowSparseBits[laneCount];
@@ -166,6 +185,13 @@ public final class RowStateLanes {
 
 	// ---- lane operations --------------------------------------------------------------------------
 
+	/**
+	 * Reads a lane value, applying explicit exceptions before patterns and defaults.
+	 *
+	 * @param lane zero-based lane index
+	 * @param item non-negative item index
+	 * @return the effective value
+	 */
 	public boolean get(int lane, int item) {
 		if (patternCount[lane] == 0) return value[lane].get(item);
 		int k = pattern(lane, item);
@@ -174,6 +200,13 @@ public final class RowStateLanes {
 		return o != null && o.get(item) ? value[lane].get(item) : patternBit(patterns[lane], k, item);
 	}
 
+	/**
+	 * Sets an item value and retains only the required pattern exception.
+	 *
+	 * @param lane zero-based lane index
+	 * @param item non-negative item index
+	 * @param on the new value
+	 */
 	public void set(int lane, int item, boolean on) {
 		int k = patternCount[lane] == 0 ? -1 : pattern(lane, item);
 		if (k < 0) {
@@ -197,6 +230,14 @@ public final class RowStateLanes {
 		value[lane].setRange(from, to, on);
 	}
 
+	/**
+	 * Counts effective set values in a half-open item range.
+	 *
+	 * @param lane zero-based lane index
+	 * @param from inclusive non-negative start item
+	 * @param to exclusive end item
+	 * @return number of set values, or zero when the range is empty
+	 */
 	public int countRange(int lane, int from, int to) {
 		if (from >= to) return 0;
 		if (patternCount[lane] == 0) return value[lane].count(from, to);
@@ -303,6 +344,11 @@ public final class RowStateLanes {
 		}
 	}
 
+	/**
+	 * Sets the item count and clears values removed by a shrink.
+	 *
+	 * @param items non-negative new item count
+	 */
 	public void setCount(int items) {
 		if (items < count) {
 			for (int lane = 0; lane < laneCount; lane++) setRange(lane, items, count, false);

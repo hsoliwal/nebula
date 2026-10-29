@@ -124,7 +124,7 @@ public class GridCheckLanes_Test {
 		for (int v = 0; v < classic.getItemCount(); v++) {
 			// getChecked(int) fires SetData first; the no-argument getChecked() of the classic Grid
 			// would read a recycled item's stale state
-			assertEquals(step + " v=" + v, classic.getItem(v).getChecked(0), packed.getItem(v).getChecked(0));
+			assertEquals(step + " v=" + v, java.lang.Boolean.valueOf(classic.getItem(v).getChecked(0)), java.lang.Boolean.valueOf(packed.getItem(v).getChecked(0)));
 			displayedChecked += classic.getItem(v).getChecked(0) ? 1 : 0;
 		}
 		assertEquals(step + " count", displayedChecked, packed.getCheckedCount(0, true));
