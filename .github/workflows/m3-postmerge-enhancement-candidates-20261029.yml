@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: EPL-2.0
+name: M3 Nebula postmerge enhancement decision proof
+on:
+  pull_request:
+    paths:
+      - 'docs/m3/merge-recovery-20261029/POSTMERGE_ENHANCEMENT_IDEAS.tsv'
+      - 'docs/m3/merge-recovery-20261029/tools/M3PostmergeEnhancementAudit.java'
+      - 'docs/m3/merge-recovery-20261029/POSTMERGE_ENHANCEMENT_IDEAS.md'
+      - '.github/workflows/m3-postmerge-enhancement-candidates-20261029.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-only-history-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile original Java21 audit with warnings as errors
+        shell: bash
+        run: |
+          set -euo pipefail
+          javac --release 21 -Xlint:all -Werror \
+            docs/m3/merge-recovery-20261029/tools/M3PostmergeEnhancementAudit.java
+      - name: Reject unsafe restoration and malformed candidate rows
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -cp docs/m3/merge-recovery-20261029/tools \
+            M3PostmergeEnhancementAudit --self-test
+          java -cp docs/m3/merge-recovery-20261029/tools \
+            M3PostmergeEnhancementAudit \
+            docs/m3/merge-recovery-20261029/POSTMERGE_ENHANCEMENT_IDEAS.tsv
+      - name: No product-code admission implied
+        run: |
+          echo 'Audit/source evidence only: original Grid/RWT/JNI code NOT restored.'
+          echo 'Native SWT, RAP browser and canonical Synexia OpenRewrite recipe gates: NOT_RUN.'
