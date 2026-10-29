@@ -8,7 +8,7 @@ repo="$(git rev-parse --show-toplevel)"
 here="$(cd -- "$(dirname -- "$0")" && pwd)"
 original="$repo/widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java"
 emitter="$here/src/main/java/org/eclipse/nebula/widgets/m3/qualification/M3BrowserChromiumFixture.java"
-expected='dadedf428c28efd95e56ff102f153c2d925963aa'
+expected='f5b31661f721dbe8908045c5716f6973143c9291'
 observed="$(git -C "$repo" hash-object "$original")"
 if [[ "$observed" != "$expected" ]]; then
   echo "BROWSER_SOURCE_DRIFT expected=$expected observed=$observed" >&2

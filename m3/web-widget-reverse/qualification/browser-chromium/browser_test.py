@@ -38,7 +38,7 @@ async def main() -> None:
     js = {p.stem: p.read_text(encoding="utf-8") for p in sorted(scripts.glob("*.js"))}
     check(set(js), {"install", "text", "values"}, "exact scripts")
     METRICS["script_sha256"] = {k: hashlib.sha256(v.encode()).hexdigest() for k, v in js.items()}
-    METRICS["source_git_blob"] = "dadedf428c28efd95e56ff102f153c2d925963aa"
+    METRICS["source_git_blob"] = "f5b31661f721dbe8908045c5716f6973143c9291"
     start = time.monotonic()
     async with async_playwright() as p:
         chromium = (os.environ.get("M3_CHROMIUM") or shutil.which("chromium")
