@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: EPL-2.0
 # Each row is a GitHub PR-head snapshot; compare the exact SHA to pinned master before interpreting lineage.
 number	base_ref	head_ref	pr_head_sha	master_head_sha	ahead	behind	compare_status	classification	url
-12	m3/visible-range-runtime-gates-20261004	m3/visible-range-screenshot-acceptance-20261004	6e369ce69435467d1e0d71dd4e73c738208c798a	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/12
-28	m3/a3-file-materializer-20261004	master	1c7132f74c5b1a4c9b0dbf087cbdf06000a8c6cd	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/28
-31	m3/cdatetime-css-api-compat-20261004	master	db212cd3096fc31145353e39e2d374554c5b8cd1	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/31
-51	m3/second-pass-signal-chain-20261004	master	f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/51
-84	m3/sealed-offline-owner-20261004	codex/m3-nebula-checkout-uri-20261006	d9bb89e3f6bf602117a4e31a753ae4dfaffa06d6	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/84
-107	m3/sealed-offline-owner-20261004	codex/m3-standard-openrewrite-output-20261007	000560f4022250a720d22b716504f6b532ba451f	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/107
+12	m3/visible-range-runtime-gates-20261004	m3/visible-range-screenshot-acceptance-20261004	6e369ce69435467d1e0d71dd4e73c738208c798a	82b7a52c756e26d6075293043766df23291c00a5	0	1717	behind	NO_UNIQUE_PR_HEAD_COMMITS	https://github.com/hsoliwal/nebula/pull/12
+28	m3/a3-file-materializer-20261004	master	1c7132f74c5b1a4c9b0dbf087cbdf06000a8c6cd	82b7a52c756e26d6075293043766df23291c00a5	0	1600	behind	NO_UNIQUE_PR_HEAD_COMMITS	https://github.com/hsoliwal/nebula/pull/28
+31	m3/cdatetime-css-api-compat-20261004	master	db212cd3096fc31145353e39e2d374554c5b8cd1	82b7a52c756e26d6075293043766df23291c00a5	0	1579	behind	NO_UNIQUE_PR_HEAD_COMMITS	https://github.com/hsoliwal/nebula/pull/31
+51	m3/second-pass-signal-chain-20261004	master	f4ebfe7edcc1f953d4dd76312f3a7bc6fbce645b	82b7a52c756e26d6075293043766df23291c00a5	0	1523	behind	NO_UNIQUE_PR_HEAD_COMMITS	https://github.com/hsoliwal/nebula/pull/51
+84	m3/sealed-offline-owner-20261004	codex/m3-nebula-checkout-uri-20261006	d9bb89e3f6bf602117a4e31a753ae4dfaffa06d6	82b7a52c756e26d6075293043766df23291c00a5	0	1554	behind	NO_UNIQUE_PR_HEAD_COMMITS	https://github.com/hsoliwal/nebula/pull/84
+107	m3/sealed-offline-owner-20261004	codex/m3-standard-openrewrite-output-20261007	000560f4022250a720d22b716504f6b532ba451f	82b7a52c756e26d6075293043766df23291c00a5	1	1553	diverged	UNRECEIVED_PR_HEAD_ANCESTRY_HOLD	https://github.com/hsoliwal/nebula/pull/107
 148	m3/viewport-bounds-20261013	m3/grid-row-span-index-20261013	d716ac622137fddf2d38aac67d996b810e5ddb9b	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/148
 209	m3/sparse-state-safety-20261014	m3/run-search-20261015	d529cbcb3b0e4ffe8f165e73d4f49cf19617b9ee	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/209
 210	m3/carousel-empty-damage-20261015	m3/carousel-image-container-viewport-20261015	648ba48c5827425e3aae58fbd185ac87e518bc49	82b7a52c756e26d6075293043766df23291c00a5	-	-	NOT_CHECKED	PENDING_COMMIT_ANCESTRY	https://github.com/hsoliwal/nebula/pull/210
