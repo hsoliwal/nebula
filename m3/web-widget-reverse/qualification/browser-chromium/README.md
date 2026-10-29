@@ -3,7 +3,7 @@
 
 This is a **test-only executable qualification lane**. It builds the original
 `org.eclipse.nebula.widgets.m3.internal.M3BrowserScripts` from the current
-Nebula source tree (Git blob sealed to `dadedf428c28efd95e56ff102f153c2d925963aa`),
+Nebula source tree (Git blob sealed to `f5b31661f721dbe8908045c5716f6973143c9291`),
 then uses that **actual Java owner** to generate its install/text/value JavaScript.
 It does not copy a JavaScript implementation, provide a new widget, or depend
 on any browser integration library in the shipped M3 widget plugin.
@@ -39,3 +39,13 @@ behavior of the **emitted scripts**, not SWT Browser Java callbacks, RAP/RWT
 server/session protocol, Java/JNI ABI, real native SWT painting, IME,
 accessibility, resource lifetimes or cross-platform pixels. Those remain HOLD
 until their original owning platform tests run.
+
+## Requalified source revision (29 October 2026)
+
+The original Browser owner was refined by the separately merged short-circuit
+recipe, changing only JavaScript guard behavior and preserving its Java API.
+This receiver explicitly pins `f5b31661f721dbe8908045c5716f6973143c9291`, rather than silently accepting
+arbitrary revisions. The exact original Java emitter and 34-test Chromium
+suite were re-executed against that source on Chromium 144 with Java 11
+`-Xlint:all -Werror` compilation. This remains browser-side proof only;
+SWT BrowserFunction, RAP/RWT sessions and native Tycho remain unqualified.
