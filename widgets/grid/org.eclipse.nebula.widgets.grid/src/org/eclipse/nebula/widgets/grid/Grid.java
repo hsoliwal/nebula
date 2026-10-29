@@ -310,6 +310,8 @@ public class Grid extends Canvas {
 	 * unnecessary.
 	 */
 	private boolean scrollValuesObsolete = false;
+	/* A native scrollbar update may reenter row queries through resize listeners. */
+	private boolean updatingScrollbars;
 
 	/**
 	 * When this variable is true, the pack is based only on the visible lines on
@@ -3010,14 +3012,9 @@ public class Grid extends Canvas {
 	public int getTopIndex() {
 		checkWidget();
 
+		settleScrollbarsForRowQuery();
 		if (topIndex != -1) {
 			return topIndex;
-		}
-		if (hiddenViewport && scrollValuesObsolete && frozenPlanes == 0) {
-			// a client asks while hidden: the scroll values the deltas left for the show settle now
-			// (stock's eager update after a removal, 375327, keeps the top row in range)
-			updateScrollbars();
-			scrollValuesObsolete = false;
 		}
 		if (rowsIndexed()) {
 			topIndex = viewport.getTopIndex(isTree);
@@ -3082,6 +3079,7 @@ public class Grid extends Canvas {
 	 */
 	int getBottomIndex() {
 		checkWidget();
+		settleScrollbarsForRowQuery();
 
 		if (bottomIndex != -1) {
 			return bottomIndex;
@@ -7500,7 +7498,44 @@ public class Grid extends Canvas {
 				&& settled.height == bareHeight - (h2 ? barHeight : 0);
 	}
 
+	/* Resolve pending model changes before a row query can cache a stale native rank.
+	 * Frozen planes retain their existing deferred native-work boundary. */
+	private void settleScrollbarsForRowQuery() {
+		if (viewport == null || !scrollValuesObsolete || frozenPlanes != 0 || updatingScrollbars) {
+			return;
+		}
+		// Clear before calling native code: a reentrant model change must remain pending.
+		scrollValuesObsolete = false;
+		try {
+			updateScrollbars();
+		} catch (RuntimeException | Error failure) {
+			scrollValuesObsolete = true;
+			throw failure;
+		}
+	}
+
 	private void updateScrollbars() {
+		final boolean wasUpdating = updatingScrollbars;
+		updatingScrollbars = true;
+		try {
+			final int selectionBefore = vScroll.getSelection();
+			final boolean visibleBefore = vScroll.getVisible();
+			final int heightBefore = getClientArea().height;
+			try {
+				updateScrollbarsNow();
+			} finally {
+				if (!isDisposed() && viewport != null && (vScroll.getSelection() != selectionBefore
+						|| vScroll.getVisible() != visibleBefore || getClientArea().height != heightBefore)) {
+					topIndex = -1;
+					bottomIndex = -1;
+				}
+			}
+		} finally {
+			updatingScrollbars = wasUpdating;
+		}
+	}
+
+	private void updateScrollbarsNow() {
 		nativeOps++;
 		final Point preferredSize = getTableSize();
 

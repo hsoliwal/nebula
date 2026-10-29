@@ -4,11 +4,11 @@ Bundle-Name: %Bundle-Name
 Bundle-Vendor: %Bundle-Vendor
 Bundle-SymbolicName: org.eclipse.nebula.widgets.grid.test
 Bundle-Version: 0.4.0.qualifier
-Require-Bundle: org.junit;bundle-version="4.8.2"
+Require-Bundle: org.junit;bundle-version="4.8.2",
+ org.mockito.mockito-core;bundle-version="[5.10.0,5.10.0]"
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: org.eclipse.nebula.widgets.grid
 Fragment-Host: org.eclipse.nebula.widgets.grid;bundle-version="1.0.0.qualifier"
-Bundle-ClassPath: mockito-core-1.8.4.jar,
- .
+Bundle-ClassPath: .
 Automatic-Module-Name: org.eclipse.nebula.widgets.grid.test

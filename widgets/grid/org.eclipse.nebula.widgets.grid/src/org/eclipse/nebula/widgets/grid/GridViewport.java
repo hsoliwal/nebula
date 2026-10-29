@@ -124,8 +124,17 @@ final class GridViewport {
 			return selection;
 		}
 		final GridRowIndex index = rows();
-		// past the last visible row the selection itself is kept, as the item walk does
-		return selection < index.visibleCount() ? items.get(index.positionOfRank(selection)).getRowIndex() : selection;
+		final int visible = index.visibleCount();
+		if (visible == 0) {
+			return selection;
+		}
+		// During frozen or reentrant settlement, a stale scrollbar rank can exceed the
+		// new visible domain. Keep it a visible rank; it is never an item-list position.
+		if (selection >= visible) {
+			// The index already owns the row coordinate; a cold endpoint needs no item.
+			return index.positionOfRank(visible - 1);
+		}
+		return items.get(index.positionOfRank(selection)).getRowIndex();
 	}
 
 	/**
