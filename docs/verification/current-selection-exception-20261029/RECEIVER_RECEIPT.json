@@ -1,0 +1,131 @@
+{
+  "schema": "NEBULA_GRID_SELECTION_RESULT_RECEIPT_1",
+  "status": "DRAFT_CANDIDATE_PRODUCT_GATES_OPEN",
+  "license_id": "Apache-2.0",
+  "copyright": "2026 Hitesh Soliwal and Contributors to the Synexia Project",
+  "canonicalRepository": "https://github.com/hsoliwal/com.synexia",
+  "canonicalBaseCommit": "2b262532c683f026e121ba7b93fd0c5881d66296",
+  "recipe": "com.synexia.rewrite.NebulaSelectionException20261029",
+  "recipeDescriptor": {
+    "path": "synexia-openrewrite-recipes/src/main/resources/META-INF/rewrite/nebula-selection-exception-20261029.yml",
+    "git_blob": "4493d52594fb594135f4fe02ed369e6e757532c3",
+    "sha256": "bd82be0f3d22e374ae46e233b0096915e2f77166577b188d1f09811d2f6c48c9",
+    "bytes": 478
+  },
+  "recipeManifest": {
+    "path": "synexia-openrewrite-recipes/src/main/resources/com/synexia/rewrite/hash-pinned-java/nebula-selection-exception-20261029/manifest.tsv",
+    "git_blob": "4ae71145231e02ae2f98a5ff2cd912137face66d",
+    "sha256": "1c7bc850ceb1aa7eaf98d5d292c1c8d22612329212b88623846cfe26896d9628",
+    "bytes": 377
+  },
+  "execution": {
+    "kind": "ACTUAL_MAVEN_OPENREWRITE_SDK",
+    "sdk": "OpenRewrite 8.17.1",
+    "crate": "synexia-openrewrite-recipes/recipe-crates/viewport-presentation-20261021",
+    "evidence": [
+      {
+        "path": "synexia-openrewrite-recipes/recipe-crates/viewport-presentation-20261021/evidence/small-selection-20261029/SDK_REPORT.xml",
+        "sha256": "9682d107842a41fa1eaabc38c9cc0e912410e7f86c3a106ba4a2c54b8bcdb222"
+      },
+      {
+        "path": "synexia-openrewrite-recipes/recipe-crates/viewport-presentation-20261021/evidence/small-selection-20261029/QUALIFICATION.json",
+        "sha256": "4cf68c0f305b4035708a3794a8bc598fcf3abdf71fd0a12f392392155f9975dc"
+      },
+      {
+        "path": "synexia-openrewrite-recipes/recipe-crates/viewport-presentation-20261021/evidence/small-selection-20261029/ORIGINAL_TESTS.json",
+        "sha256": "74fd117648b0eb6e51bfbc84f534eb983c81486c68bd5bdd3bb03621d8134fb9"
+      },
+      {
+        "path": "synexia-openrewrite-recipes/recipe-crates/viewport-presentation-20261021/evidence/small-selection-20261029/SUMMARY.json",
+        "sha256": "f7437ca891f02809e50c05626ca28a1990d5268bcd78822e1adb3c26fa12ae2d"
+      },
+      {
+        "path": "synexia-openrewrite-recipes/recipe-crates/viewport-presentation-20261021/evidence/small-selection-20261029/INPUTS.json",
+        "sha256": "141cc150ecc56e082e9f29c79fc7a438e017ea8b62ca52ab8cb824cfb27aa6d6"
+      }
+    ]
+  },
+  "receiving": {
+    "repository": "https://github.com/hsoliwal/nebula",
+    "base_branch": "master",
+    "base_revision": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+    "base_tree": "6c7356394a38cf6d5ad5063ece52a9e0adb42a70",
+    "preflight_utc": "2026-10-29 10:39:15 UTC",
+    "root_agents_blob": "17d7f17e4f4904c9f35d01f87d0c2650a7805c2d",
+    "branch_head_must_be_rechecked_before_write": true
+  },
+  "outputs": [
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridCellSelectionList.java",
+      "before_git_blob": "a5131193df9cbb247a0866fbb74d12e33f188f16",
+      "before_sha256": "055c1672328dacd669cac922fbb278ae12de78e7050bb89d88ed5c10a6a3179f",
+      "before_bytes": 11076,
+      "after_git_blob": "c6db2c521215a7799f7f9203cc65d611b9eb3823",
+      "after_sha256": "83db9b311fcb22cf4602cece67d911df0e4ced00c4b693cb421438414b748511",
+      "after_bytes": 11747,
+      "license_id": "Apache-2.0 OR EPL-2.0",
+      "existing_notices_preserved": true
+    }
+  ],
+  "verified_gates": {
+    "new_recipe_sdk_suite": {
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "scope": "shared SwingX/Nebula task suite; includes exact replay, fixed point, drift refusal and parallel/serial determinism"
+    },
+    "java21_strict_owner_compilation": "PASS --release 21 -proc:none -Xlint:all -Werror",
+    "java21_strict_new_test_compilation": "PASS",
+    "new_nebula_tests": {
+      "baseline": {
+        "tests": 9,
+        "failures": 7,
+        "errors": 0,
+        "skipped": 0
+      },
+      "candidate_mixed": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "candidate_Xint": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "unchanged_current_master_tests": {
+      "git_blob": "a6555cc0fe714470d04774d17eaf58813c68202d",
+      "sha256": "e576ca2d7d5a5f8e066c8e2c5e7a5ef2ded406e4ac70e730acf2feb0b94f28ca",
+      "tests_per_run": 2,
+      "baseline_and_candidate_mixed_and_Xint": "PASS",
+      "random_operation_steps_per_run": 30000
+    },
+    "public_protected_jvm_surface": {
+      "status": "UNCHANGED",
+      "javap_sha256": "5f51584e96b957bff32f8a71037b62f912fb8f5e072d0bc995c4348c821e0f8d"
+    }
+  },
+  "open_gates": {
+    "full_nebula_maven_tycho_build": "NOT_RUN",
+    "native_swt_nebula_pixels_and_resource_gates": "NOT_RUN",
+    "other_platforms": "NOT_RUN",
+    "performance_and_memory_benchmarks": "NOT_MEASURED",
+    "canonical_parent_provenance": "FAIL: three unchanged parent cputools shards lack required SPDX headers; no waiver",
+    "final_result_only_handoff_gate": "NOT_RUN",
+    "hosted_target_ci": "NOT_RUN",
+    "merge_release_or_complete_toolkit_superset": "NOT_QUALIFIED"
+  },
+  "delivery_policy": {
+    "product_paths": [
+      "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridCellSelectionList.java"
+    ],
+    "passive_receipt_path": "docs/verification/current-selection-exception-20261029/RECEIVER_RECEIPT.json",
+    "recipe_source_templates_yaml_harness_or_executable_receiver_shipped": false,
+    "canonical_recipe_and_full_evidence_stay_in_synexia": true
+  },
+  "receiving_tree_readback": "NOT_RUN"
+}

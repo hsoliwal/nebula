@@ -17,6 +17,8 @@ package org.eclipse.nebula.widgets.grid;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.function.Predicate;
 
@@ -284,9 +286,10 @@ final class GridCellSelectionList extends AbstractList<Point> implements RandomA
 		if (index < 0 || index > live) {
 			throw new IndexOutOfBoundsException("index " + index + ", size " + live);
 		}
+		final Point copy = new Point(p.x, p.y);
 		ensureCapacity(end + 1);
 		System.arraycopy(cells, index, cells, index + 1, end - index);
-		cells[index] = new Point(p.x, p.y);
+		cells[index] = copy;
 		end++;
 		live++;
 		modCount++;
@@ -389,15 +392,32 @@ final class GridCellSelectionList extends AbstractList<Point> implements RandomA
 
 	@Override
 	public boolean removeIf(final Predicate<? super Point> filter) {
+		Objects.requireNonNull(filter);
 		compact();
-		int to = 0;
-		for (int i = 0; i < end; i++) {
-			if (!filter.test(cells[i])) {
-				cells[to++] = cells[i];
+		final int expectedModCount = modCount;
+		final int limit = end;
+		long[] removed = null;
+		// Finish callbacks before publishing a compaction that would invalidate the indexes.
+		for (int i = 0; i < limit; i++) {
+			final boolean remove = filter.test(cells[i]);
+			if (modCount != expectedModCount) {
+				throw new ConcurrentModificationException();
+			}
+			if (remove) {
+				if (removed == null) {
+					removed = new long[((limit - 1) >>> 6) + 1];
+				}
+				removed[i >>> 6] |= 1L << (i & 63);
 			}
 		}
-		if (to == end) {
+		if (removed == null) {
 			return false;
+		}
+		int to = 0;
+		for (int i = 0; i < limit; i++) {
+			if ((removed[i >>> 6] & (1L << (i & 63))) == 0) {
+				cells[to++] = cells[i];
+			}
 		}
 		Arrays.fill(cells, to, end, null);
 		end = to;
