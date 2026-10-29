@@ -23,8 +23,6 @@ import java.security.MessageDigest;
 
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -38,7 +36,7 @@ import org.junit.Test;
 /**
  * Pinned rows are a fixed plane of the same Grid: unscrolled they paint exactly like the
  * unpinned Grid, scrolled the plane keeps its pixels while rows scroll beneath, and hit
- * testing returns the pinned items. Capture mode CONTROL_PRINT.
+ * testing returns the pinned items. Capture mode DISPLAY_COPY_AREA; compare client pixels without native scroll bars.
  */
 public class GridPinnedRows_Test {
 
@@ -53,7 +51,9 @@ public class GridPinnedRows_Test {
 		shell = new Shell(display);
 		new Text(shell, SWT.SINGLE).setBounds(0, 0, 40, 20);
 		shell.setSize(1000, 480);
+		shell.setLocation(20, 20);
 		shell.open();
+		shell.forceActive();
 	}
 
 	@After
@@ -67,7 +67,8 @@ public class GridPinnedRows_Test {
 		final Grid pinned = grid(470);
 		pinned.setPinnedRowCount(3, 0);
 		flush();
-		assertEquals(GridRowPermutation_Test.pixels(plain), GridRowPermutation_Test.pixels(pinned));
+		assertEquals(plain.getClientArea(), pinned.getClientArea());
+		assertEquals(region(plain, plain.getClientArea()), region(pinned, pinned.getClientArea()));
 	}
 
 	@Test
@@ -81,8 +82,10 @@ public class GridPinnedRows_Test {
 		final String bottom0 = region(grid, bottom);
 		final String body0 = region(grid, new Rectangle(0, top.y + top.height, top.width, 40));
 		for (final int index : new int[] { 1, 37, 250, 480 }) {
+			final int before = grid.paintPasses;
 			grid.setTopIndex(index);
-			flush();
+			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, before + 1,
+					"pinned-row scroll paint did not settle");
 			assertEquals("top plane at " + index, top0, region(grid, top));
 			assertEquals("bottom plane at " + index, bottom0, region(grid, bottom));
 		}
@@ -179,34 +182,35 @@ public class GridPinnedRows_Test {
 	}
 
 	private static String region(final Grid grid, final Rectangle r) throws Exception {
-		final Point size = grid.getSize();
-		final Image image = new Image(grid.getDisplay(), size.x, size.y);
-		try {
-			// the Grid's own paint: Control.print can return the window's last presented surface
-			GridRowPermutation_Test.paint(grid, image);
-			final ImageData data = image.getImageData();
-			final MessageDigest md = MessageDigest.getInstance("SHA-256");
-			for (int y = r.y; y < r.y + r.height; y++) {
-				for (int x = r.x; x < r.x + r.width; x++) {
-					final int pixel = data.getPixel(x, y);
-					md.update((byte) pixel);
-					md.update((byte) (pixel >>> 8));
-					md.update((byte) (pixel >>> 16));
-				}
-			}
-			final StringBuilder hex = new StringBuilder();
-			for (final byte b : md.digest()) {
-				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
-			}
-			return hex.toString();
-		} finally {
-			image.dispose();
+		final ImageData data = GridSwtScreenshotCapture.captureScreenData(grid, "pinned-rows");
+		final int border = grid.getBorderWidth();
+		if (r.x < 0 || r.y < 0 || border + r.x + r.width > data.width
+				|| border + r.y + r.height > data.height) {
+			throw new AssertionError("pinned-plane region is outside the visible Grid capture: " + r);
 		}
+		final MessageDigest md = MessageDigest.getInstance("SHA-256");
+		for (int y = r.y; y < r.y + r.height; y++) {
+			for (int x = r.x; x < r.x + r.width; x++) {
+				final int pixel = data.getPixel(border + x, border + y);
+				md.update((byte) pixel);
+				md.update((byte) (pixel >>> 8));
+				md.update((byte) (pixel >>> 16));
+			}
+		}
+		final StringBuilder hex = new StringBuilder();
+		for (final byte b : md.digest()) {
+			hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
+		}
+		return hex.toString();
 	}
 
 	private void flush() {
-		while (display.readAndDispatch()) {
-			// drain
+		for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
+			if (child instanceof Grid) {
+				final Grid target = (Grid) child;
+				GridSwtScreenshotCapture.awaitStableCounter(display, () -> target.paintPasses, 1,
+						"pinned-row Grid paint did not settle");
+			}
 		}
 	}
 }

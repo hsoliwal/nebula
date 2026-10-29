@@ -94,17 +94,21 @@ public class GridResidency_Test {
 		final String pixels = GridRowPermutation_Test.pixels(grid);
 
 		for (final int top : new int[] { 1000, 2000, 3000, 4000, 6000, 8000, 9000 }) {
+			final int beforeScroll = grid.paintPasses;
 			grid.setTopIndex(top);
 			grid.update();
-			flush();
+			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, beforeScroll + 1,
+					"residency scroll paint did not settle");
 		}
 		assertTrue("cold rows were released: " + grid.residencyReleased, grid.residencyReleased > 0);
 		assertTrue("resident items bounded: " + grid.virtualMaterializedItemCount(),
 				grid.virtualMaterializedItemCount() <= CAPACITY + 30);
 
+		final int beforeReturn = grid.paintPasses;
 		grid.setTopIndex(0);
 		grid.update();
-		flush();
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, beforeReturn + 1,
+				"restored-row paint did not settle");
 		assertArrayEquals(before, snapshot(0, 25));
 		assertEquals(pixels, GridRowPermutation_Test.pixels(grid));
 		assertTrue(grid.residencyRestored > 0);
@@ -130,8 +134,7 @@ public class GridResidency_Test {
 	}
 
 	private void flush() {
-		while (display.readAndDispatch()) {
-			// drain
-		}
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, 1,
+				"residency Grid paint did not settle");
 	}
 }
