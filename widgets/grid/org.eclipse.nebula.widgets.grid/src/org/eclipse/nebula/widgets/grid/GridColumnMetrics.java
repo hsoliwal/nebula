@@ -192,7 +192,12 @@ final class GridColumnMetrics {
 			fullReplans++;
 		}
 		built = true;
-		count = displayOrdered.size();
+		final int newCount = displayOrdered.size();
+		if (newCount < count) {
+			// Keep capacity, but release references removed from the occupied prefix.
+			Arrays.fill(columns, newCount, count, null);
+		}
+		count = newCount;
 		if (columns.length < count) {
 			columns = new GridColumn[count];
 			widths = new int[count];

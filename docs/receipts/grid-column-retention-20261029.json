@@ -1,0 +1,60 @@
+{
+  "schema": "SYNEXIA_PASSIVE_QUALIFICATION_RECEIPT_V1",
+  "target_repository": "hsoliwal/nebula",
+  "qualified_target_base": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+  "canonical_repository": "hsoliwal/com.synexia",
+  "canonical_commit": "73c2f572db2100926ba3b63e6de93f0015fb8d4b",
+  "canonical_evidence_url": "https://github.com/hsoliwal/com.synexia/tree/73c2f572db2100926ba3b63e6de93f0015fb8d4b/synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs",
+  "canonical_engine_commit": "3cda7fa7fb30c9d4d75089265e73bbef3417bba7",
+  "datasets": [
+    {
+      "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-retention-current-20261029",
+      "manifests": [
+        {
+          "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-retention-current-20261029/resources/com/synexia/rewrite/hash-pinned-java/m3-ast-build-reverse-20261017-grid-retention-current-20261029/manifest.tsv",
+          "sha256": "cd73697c138567e0632d0a54c89e2e07eb8609815a0b90b7091fa4f4e588a493"
+        },
+        {
+          "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-retention-current-20261029/resources/com/synexia/rewrite/hash-pinned-text/m3-ast-build-reverse-20261017-grid-retention-current-20261029/manifest.tsv",
+          "sha256": "41883ed13b6b7645dabde5834984ad01fbe446afbf4e94f0b30ad1a3ac74c2c6"
+        }
+      ],
+      "actual_sdk_tests": 5,
+      "input_sealing_tests": 12,
+      "receiver_integrity_cases": 15,
+      "receiver_fixed_point_changes": 0
+    }
+  ],
+  "generated_results": [
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml",
+      "pre_sha256": "594f1ac0421ef5f7c477c85534c7da7ba1e715788cfc60a44fef1c8d699596f3",
+      "sha256": "2f297ae44a7670c39736a5c3172a9d2c27d417307f5310b7ad51cd08d596a570"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridColumnMetricsRetention_Test.java",
+      "pre_sha256": "ABSENT",
+      "sha256": "b2ca05117fdd8aea4bef0caf4d2c91dc3509140c594b232c8c3a197424000fd7"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridColumnMetrics.java",
+      "pre_sha256": "ad6cb311335a985fd1e4fed8352d7c40747239f94c7e1db40dc0929dcf1aa09d",
+      "sha256": "11d6fe7044bdb017b6935e1c9674aea24d7fdfb3e97d058ed899cc84f2920901"
+    }
+  ],
+  "product_gate": {
+    "actual_native_tests": 5,
+    "baseline_expected_failures": 4,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "public_api_preservation": "Existing public JVM descriptors retained; additions recorded in canonical proof",
+  "scope": "Qualified component increment; complete toolkit parity and full distribution release are not claimed",
+  "remaining_gates": [
+    "full owning distribution and installed-image integration",
+    "Windows/Cocoa and cross-platform pixel acceptance",
+    "performance and memory benchmarks"
+  ],
+  "passive": true
+}
