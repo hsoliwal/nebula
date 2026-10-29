@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: EPL-2.0
+name: M3 Nebula Merge History and Source-Loss Map
+
+on:
+  pull_request:
+    paths:
+      - 'docs/m3/merge-recovery-20261029/**'
+      - '.github/workflows/m3-merge-recovery-history-20261029.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source-history-ledger:
+    name: Execute source-only Java21 merge-recovery proof
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out the reviewed PR branch, not the remote donor tips
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configure original Java21 catalogue compiler
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile source-only evidence checker and reject bad fixture shapes
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=docs/m3/merge-recovery-20261029
+          mkdir -p "$RUNNER_TEMP/m3-merge-audit"
+          javac --release 21 -proc:none -Xlint:all -Werror -encoding UTF-8 \
+            -d "$RUNNER_TEMP/m3-merge-audit" \
+            "$ROOT/tools/M3NebulaMergeRecoveryAudit.java"
+          java -cp "$RUNNER_TEMP/m3-merge-audit" M3NebulaMergeRecoveryAudit --self-test
+      - name: Verify full 297-PR history, all 26 non-master merge heads and 82 path receipts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=docs/m3/merge-recovery-20261029
+          java -cp "$RUNNER_TEMP/m3-merge-audit" M3NebulaMergeRecoveryAudit \
+            "$ROOT/PR_HISTORY.tsv" "$ROOT/STACK_MERGES.tsv" \
+            "$ROOT/BRANCH_SOURCE_RECEIPTS.tsv" "$ROOT/RECOVERY_MAP.tsv"
+      - name: Do not treat a history audit as SWT/RAP source qualification
+        run: |
+          echo 'This verifies source snapshot metadata only; no CWT/SWT/RWT runtime code is restored.'
+          echo 'Actual original SWT JUnit, RAP browser and JNI ABI gates: NOT_RUN.'
