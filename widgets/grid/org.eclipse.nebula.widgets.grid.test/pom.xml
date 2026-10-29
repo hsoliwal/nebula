@@ -53,6 +53,7 @@
 						<include>**/GridBodyDefer_Test.java</include>
 						<include>**/GridCheckLanes_Test.java</include>
 						<include>**/GridColumnWindow_Test.java</include>
+						<include>**/GridColumnMetricsRetention_Test.java</include>
 						<include>**/GridIssue700_Test.java</include>
 						<include>**/GridModelJobs_Test.java</include>
 						<include>**/GridPinnedRows_Test.java</include>
