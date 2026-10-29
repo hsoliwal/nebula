@@ -36,9 +36,9 @@ import org.eclipse.swt.graphics.Point;
  * <li>whether a column has a selected cell (the column header's selected look) is a count lookup,
  * so the Grid's column selection costs O(columns), not a pass over the selection.</li>
  * </ul>
- * The list keeps its own points: added points are copied and {@link #toArray(Object[])} hands out
+ * The list keeps its own points: added points are copied and {@code toArray(Object[])} hands out
  * copies, so no caller can change a cell behind the table; the Grid that shifts cells in place
- * calls {@link #reindex()}. Catalogue: ALG-GRID-CELL-COUNT, ALG-GRID-SELECTION-POSITION.
+ * calls {@code reindex()}. Catalogue: ALG-GRID-CELL-COUNT, ALG-GRID-SELECTION-POSITION.
  */
 final class GridCellSelectionList extends AbstractList<Point> implements RandomAccess {
 	private static final long MIX = 0x9E3779B97F4A7C15L;

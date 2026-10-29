@@ -3466,6 +3466,19 @@ public class Grid extends Canvas {
 		return column.index;
 	}
 
+	/** @return the item list when it is a row tree (the viewport mode), else {@code null} */
+	GridRowTree rowTree() {
+		return items instanceof GridRowTree ? (GridRowTree) items : null;
+	}
+
+	/**
+	 * @param item an item of the row tree ({@link GridRowTree})
+	 * @return its row, O(log n)
+	 */
+	int rowInTree(final GridItem item) {
+		return items.indexOf(item);
+	}
+
 	/**
 	 * Searches the receiver's list starting at the first item (index 0) until an
 	 * item is found that is equal to the argument, and returns the index of that
@@ -3487,19 +3500,6 @@ public class Grid extends Canvas {
 	 *                                      receiver</li>
 	 *                                      </ul>
 	 */
-	/** @return the item list when it is a row tree (the viewport mode), else {@code null} */
-	GridRowTree rowTree() {
-		return items instanceof GridRowTree ? (GridRowTree) items : null;
-	}
-
-	/**
-	 * @param item an item of the row tree ({@link GridRowTree})
-	 * @return its row, O(log n)
-	 */
-	int rowInTree(final GridItem item) {
-		return items.indexOf(item);
-	}
-
 	public int indexOf(final GridItem item) {
 		checkWidget();
 
@@ -6591,6 +6591,27 @@ public class Grid extends Canvas {
 		}
 	}
 
+	/**
+	 * Sets the numbers of leading and trailing items painted in fixed rows below
+	 * the column header and above the column footer. Counts are limited to the
+	 * available items when painting, with leading rows taking precedence. This
+	 * operation is supported for flat grids only.
+	 *
+	 * @param top number of leading items to pin, or zero to disable leading pins
+	 * @param bottom number of trailing items to pin, or zero to disable trailing pins
+	 * @throws IllegalArgumentException
+	 *             <ul>
+	 *             <li>ERROR_INVALID_ARGUMENT - if either count is negative or the
+	 *             receiver contains a tree</li>
+	 *             </ul>
+	 * @throws org.eclipse.swt.SWTException
+	 *             <ul>
+	 *             <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
+	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
+	 *             that created the receiver</li>
+	 *             </ul>
+	 * @since 1.2
+	 */
 	public void setPinnedRowCount(final int top, final int bottom) {
 		checkWidget();
 		if (top < 0 || bottom < 0 || isTree) {
@@ -13473,6 +13494,41 @@ public class Grid extends Canvas {
 			fireViewportChanged();
 			redraw();
 		}
+	}
+
+	/**
+	 * Copies the zero-based half-open item-index interval of the current vertical viewport
+	 * into two consecutive slots of a caller-owned array. The first slot is inclusive and
+	 * the second is exclusive; an empty viewport writes [0, 0].
+	 *
+	 * <p>Unlike {@link #getVisibleRange()}, this method never creates a
+	 * {@code GridItem[]} and does not enumerate the interval. In a tree Grid the
+	 * interval can contain hidden item positions; it is a position window, not
+	 * an enumeration of visible tree nodes. As with other SWT queries, callers
+	 * must invoke it from the owning UI thread.</p>
+	 *
+	 * @param target the output array, with two slots starting at {@code offset}
+	 * @param offset index of the first output slot
+	 * @throws IllegalArgumentException when target is null or the output interval is invalid
+	 * @throws org.eclipse.swt.SWTException if this Grid is disposed or called from another thread
+	 */
+	public void getViewportItemRange(final int[] target, final int offset) {
+		checkWidget();
+		if (target == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (offset < 0 || offset > target.length - 2) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		final int count = items.size();
+		int first = 0;
+		int endExclusive = 0;
+		if (count > 0 && getVisibleGridHeight() > 0) {
+			final int top = getTopIndex();
+			final int bottom = getBottomIndex();
+			if (top >= 0 && top < count && bottom >= top) {
+				first = top;
+				endExclusive = (int) Math.min((long) count, (long) bottom + 1L);
+			}
+		}
+		target[offset] = first;
+		target[offset + 1] = endExclusive;
 	}
 
 	/**

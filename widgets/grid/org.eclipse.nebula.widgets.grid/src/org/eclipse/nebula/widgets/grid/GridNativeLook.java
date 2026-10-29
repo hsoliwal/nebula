@@ -35,7 +35,7 @@ import org.eclipse.swt.widgets.TreeItem;
  * The native look of a Grid: the metrics of the platform's own list (SWT {@code Table}) and tree
  * ({@code Tree}) for the Grid's font, measured once per display and font from hidden native
  * controls through their public API, plus the platform colours and visual styles
- * ({@link GridNativeTheme}).
+ * ({@code GridNativeTheme}).
  * <p>
  * A Grid in the viewport mode uses this look by default; start with
  * {@code -Dorg.eclipse.nebula.widgets.grid.look=classic} for Grid's classic renderers (they also

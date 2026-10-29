@@ -32,15 +32,15 @@ import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
  * The item list of a Grid in the viewport mode: a height-balanced tree ordered by row, whose nodes
  * are lane slots (one per item) and whose subtrees count their items, their visible rows and the
  * pixel extent of those rows. Inserting or removing a row anywhere, finding the row of an item,
- * the item of a row, and every rank, select and pixel prefix question of {@link GridRowIndex} are
+ * the item of a row, and every rank, select and pixel prefix question of {@code GridRowIndex} are
  * O(log n); nothing is rebuilt and no other item is touched, so no structural change costs O(n)
  * on the UI thread. An item's extent is its height plus the one-pixel line when it is visible, 0
- * when it is hidden; {@link #update(GridItem)} records a change of either.
+ * when it is hidden; {@code update(GridItem)} records a change of either.
  * <p>
  * In an {@code SWT.VIRTUAL} tree Grid a row may have no item yet (G4 step 2c): a child that
  * {@link GridItem#setItemCount(int)} created and nobody has read. Its slot keeps its parent in the
- * owner lane and its extent in the weight lane; {@link #get(int)} and the iterator make its item
- * through the Grid ({@link #setFacades(java.util.function.IntFunction)}), {@link #materialized()}
+ * owner lane and its extent in the weight lane; {@code get(int)} and the iterator make its item
+ * through the Grid ({@code setFacades(java.util.function.IntFunction)}), {@code materialized()}
  * walks only the items made so far.
  * </p>
  */

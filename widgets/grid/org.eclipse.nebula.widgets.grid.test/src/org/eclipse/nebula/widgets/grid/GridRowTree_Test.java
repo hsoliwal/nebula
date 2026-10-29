@@ -111,7 +111,7 @@ public class GridRowTree_Test {
 			before[i + 1] = before[i] + extent;
 			rankBefore[i + 1] = rankBefore[i] + (extent > 0 ? 1 : 0);
 			if (extent > 0) {
-				visibleRows.add(i);
+				visibleRows.add(java.lang.Integer.valueOf(i));
 			}
 		}
 		assertEquals(visibleRows.size(), tree.visibleCount());
@@ -120,12 +120,12 @@ public class GridRowTree_Test {
 			final int position = random.nextInt(items.length + 1);
 			assertEquals(rankBefore[position], tree.rankOf(position));
 			assertEquals(before[position], tree.extentBefore(position));
-			final int next = rankBefore[position] < visibleRows.size() ? visibleRows.get(rankBefore[position]) : -1;
+			final int next = rankBefore[position] < visibleRows.size() ? (visibleRows.get(rankBefore[position])).intValue() : -1;
 			assertEquals(next, tree.nextVisible(position));
 			if (!visibleRows.isEmpty()) {
 				final int rank = random.nextInt(visibleRows.size());
-				assertEquals((int) visibleRows.get(rank), tree.positionOfRank(rank));
-				assertEquals(before[visibleRows.get(rank)], tree.extentOfRank(rank));
+				assertEquals((int) (visibleRows.get(rank)).intValue(), tree.positionOfRank(rank));
+				assertEquals(before[(visibleRows.get(rank)).intValue()], tree.extentOfRank(rank));
 			}
 			final long offset = random.nextInt((int) Math.max(1, before[items.length] + 10)) - 1;
 			int rank = 0;

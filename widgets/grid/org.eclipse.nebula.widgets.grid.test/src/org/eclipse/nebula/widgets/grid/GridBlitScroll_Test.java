@@ -105,7 +105,7 @@ public class GridBlitScroll_Test {
 			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(image.getImageData().data);
 			final StringBuilder hex = new StringBuilder();
 			for (final byte b : digest) {
-				hex.append(String.format("%02x", b & 0xff));
+				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
 			}
 			return hex.toString();
 		} finally {

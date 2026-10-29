@@ -24,7 +24,7 @@ import org.eclipse.swt.SWT;
 
 /**
  * Viewport mediation of a {@link Grid}: answers the Grid's row geometry (top row, rows that fit a
- * height, row at a point, row origin, next and previous visible row) from a {@link GridRowExtents}
+ * height, row at a point, row origin, next and previous visible row) from a {@code GridRowExtents}
  * index instead of walking the items, so a scroll step or a paint visits only the rows on screen.
  * <p>
  * Every answer equals the one of the item walk it replaces, edge cases included; the Grid calls

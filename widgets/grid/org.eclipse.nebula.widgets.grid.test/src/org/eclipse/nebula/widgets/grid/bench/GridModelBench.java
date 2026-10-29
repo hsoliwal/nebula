@@ -134,16 +134,16 @@ public final class GridModelBench {
 		}
 		report.put("first_paint", ms(lastPaint[0] - open0), "ms");
 		drain(display);
-		report.put("materialized_after_first_paint", materialized(grid), "items");
+		report.put("materialized_after_first_paint", java.lang.Integer.valueOf(materialized(grid)), "items");
 
 		timed(report, "sort_asc", () -> driver.sort(keys, false), display, grid);
 		timed(report, "sort_desc", () -> driver.sort(keys, true), display, grid);
 		final long alloc0 = allocated();
 		driver.sort(keys, false);
-		report.put("sort_repeat_allocated", allocated() - alloc0, "bytes");
+		report.put("sort_repeat_allocated", java.lang.Long.valueOf(allocated() - alloc0), "bytes");
 		drain(display);
 		timed(report, "filter_mod3", () -> driver.filter(keys, 3), display, grid);
-		report.put("view_rows_after_filter", grid.getItemCount(), "rows");
+		report.put("view_rows_after_filter", java.lang.Integer.valueOf(grid.getItemCount()), "rows");
 		drain(display);
 		final long g0 = System.nanoTime();
 		final int groups = driver.group(keys, 1000);
@@ -153,21 +153,21 @@ public final class GridModelBench {
 		drain(display);
 		busySort(report, driver, grid, keys, display);
 		timed(report, "check_all", () -> driver.checkAll(grid), display, grid);
-		report.put("materialized_after_check_all", materialized(grid), "items");
+		report.put("materialized_after_check_all", java.lang.Integer.valueOf(materialized(grid)), "items");
 		timed(report, "clear_view", driver::clear, display, grid);
-		report.put("materialized_after_model_ops", materialized(grid), "items");
+		report.put("materialized_after_model_ops", java.lang.Integer.valueOf(materialized(grid)), "items");
 
 		scroll(report, "vscroll", grid, display, true);
 		scroll(report, "vscroll_bar", grid, display, true);
 		scroll(report, "hscroll", grid, display, false);
-		report.put("materialized_after_scroll", materialized(grid), "items");
-		report.put("setdata_events", setData[0], "events");
+		report.put("materialized_after_scroll", java.lang.Integer.valueOf(materialized(grid)), "items");
+		report.put("setdata_events", java.lang.Integer.valueOf(setData[0]), "events");
 
 		System.gc();
 		System.gc();
 		final Runtime rt = Runtime.getRuntime();
-		report.put("heap_used_after_gc", (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024), "MiB");
-		report.put("private_bytes", privateBytes() / (1024 * 1024), "MiB");
+		report.put("heap_used_after_gc", java.lang.Long.valueOf((rt.totalMemory() - rt.freeMemory()) / (1024 * 1024)), "MiB");
+		report.put("private_bytes", java.lang.Long.valueOf(privateBytes() / (1024 * 1024)), "MiB");
 		shell.dispose();
 		display.dispose();
 		tsv.close();
@@ -236,7 +236,7 @@ public final class GridModelBench {
 			return;
 		}
 		report.put("busy_sort", ms(t1 - t0), "ms");
-		report.put("busy_sort_ticks", ticks[0], "ticks");
+		report.put("busy_sort_ticks", java.lang.Integer.valueOf(ticks[0]), "ticks");
 		final long[] l = Arrays.copyOf(lateness, ticks[0]);
 		final long[] th = Arrays.copyOf(thumb, ticks[1]);
 		Arrays.sort(l);
@@ -245,7 +245,7 @@ public final class GridModelBench {
 		report.put("busy_input_latency_max", l.length == 0 ? "NO_TICKS" : ms(l[l.length - 1]), "ms");
 		report.put("busy_thumb_handle_p50", th.length == 0 ? "NO_TICKS" : ms(th[th.length / 2]), "ms");
 		report.put("busy_thumb_handle_max", th.length == 0 ? "NO_TICKS" : ms(th[th.length - 1]), "ms");
-		report.put("busy_body_paints", intField(grid, "bodyPaintCount") - paints0, "paints");
+		report.put("busy_body_paints", java.lang.Long.valueOf(intField(grid, "bodyPaintCount") - paints0), "paints");
 	}
 
 	private static void scroll(final Report report, final String name, final Grid grid, final Display display,
@@ -280,9 +280,9 @@ public final class GridModelBench {
 			cpuFrames[i] = cpu() - c0;
 			cells += intField(grid, "paintCellCount");
 		}
-		report.put(name + "_moved", vertical ? grid.getTopIndex() - startTop
-				: grid.getHorizontalBar().getSelection() - startH, vertical ? "rows" : "units");
-		report.put(name + "_bar_max", max, "units");
+		report.put(name + "_moved", java.lang.Integer.valueOf(vertical ? grid.getTopIndex() - startTop
+				: grid.getHorizontalBar().getSelection() - startH), vertical ? "rows" : "units");
+		report.put(name + "_bar_max", java.lang.Integer.valueOf(max), "units");
 		Arrays.sort(frames);
 		Arrays.sort(cpuFrames);
 		report.put(name + "_cpu_p50", ms(cpuFrames[FRAMES / 2]), "ms");
@@ -301,7 +301,7 @@ public final class GridModelBench {
 	}
 
 	private static String ms(final long nanos) {
-		return String.format(java.util.Locale.ROOT, "%.3f", nanos / 1e6);
+		return String.format(java.util.Locale.ROOT, "%.3f", java.lang.Double.valueOf(nanos / 1e6));
 	}
 
 	private static long cpu() {
@@ -342,7 +342,7 @@ public final class GridModelBench {
 		try {
 			final Method m = Grid.class.getDeclaredMethod("virtualMaterializedItemCount");
 			m.setAccessible(true);
-			return (Integer) m.invoke(grid);
+			return ((Integer) m.invoke(grid)).intValue();
 		} catch (final ReflectiveOperationException e) {
 			return -1;
 		}

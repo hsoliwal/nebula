@@ -134,17 +134,17 @@ public class GridRowPermutation_Test {
 
 		permutation.sortByIntKeys(keys, false);
 		packed.refreshRowPermutation();
-		classicApply(reference(false, null));
+		classicApply(reference(java.lang.Boolean.valueOf(false), null));
 		assertEquivalent("sort asc");
 
 		permutation.sortByIntKeys(keys, true);
 		packed.refreshRowPermutation();
-		classicApply(reference(true, null));
+		classicApply(reference(java.lang.Boolean.valueOf(true), null));
 		assertEquivalent("sort desc");
 
 		permutation.setFilter(m -> keys[m] % 3 != 0);
 		packed.refreshRowPermutation();
-		classicApply(reference(true, m -> keys[m] % 3 != 0));
+		classicApply(reference(java.lang.Boolean.valueOf(true), m -> keys[m] % 3 != 0));
 		assertEquivalent("filter");
 
 		permutation.clearSort();
@@ -167,7 +167,7 @@ public class GridRowPermutation_Test {
 		select(3, 10, 57);
 		permutation.sortByIntKeys(keys, true);
 		packed.refreshRowPermutation();
-		int[] base = reference(true, null);
+		int[] base = reference(java.lang.Boolean.valueOf(true), null);
 		classicApply(base);
 		assertEquivalent("sorted");
 
@@ -184,7 +184,7 @@ public class GridRowPermutation_Test {
 		classicApply(grouped(base, groupKeys, collapsed));
 		assertEquivalent("grouped");
 
-		collapsed.add(grouping.getGroupKey(1));
+		collapsed.add(java.lang.Integer.valueOf(grouping.getGroupKey(1)));
 		grouping.setExpanded(1, false);
 		packed.refreshRowPermutation();
 		classicApply(grouped(base, groupKeys, collapsed));
@@ -192,7 +192,7 @@ public class GridRowPermutation_Test {
 
 		permutation.setFilter(m -> keys[m] % 3 != 0);
 		packed.refreshRowPermutation();
-		base = reference(true, m -> keys[m] % 3 != 0);
+		base = reference(java.lang.Boolean.valueOf(true), m -> keys[m] % 3 != 0);
 		classicApply(grouped(base, groupKeys, collapsed));
 		assertEquivalent("filtered groups");
 
@@ -214,7 +214,7 @@ public class GridRowPermutation_Test {
 		flush();
 		permutation.sortByIntKeys(keys, true);
 		packed.refreshRowPermutation();
-		classicApply(reference(true, null));
+		classicApply(reference(java.lang.Boolean.valueOf(true), null));
 		assertEquivalent("scrolled sort");
 	}
 
@@ -226,7 +226,7 @@ public class GridRowPermutation_Test {
 		packed.addViewportChangeListener(() -> notified[0]++);
 		permutation.sortByIntKeys(keys, false);
 		packed.refreshRowPermutation();
-		classicApply(reference(false, null));
+		classicApply(reference(java.lang.Boolean.valueOf(false), null));
 		assertEquals("no viewport work while hidden", 0, notified[0]);
 		assertEquals(classic.getItemCount(), packed.getItemCount());
 		for (int v = 0; v < ROWS; v += 37) {
@@ -283,7 +283,7 @@ public class GridRowPermutation_Test {
 		final List<Integer> selectedModels = new ArrayList<>();
 		for (final int v : classic.getSelectionIndices()) {
 			if (appView[v] >= 0) {
-				selectedModels.add(appView[v]);
+				selectedModels.add(java.lang.Integer.valueOf(appView[v]));
 			}
 		}
 		final int focusModel = classic.getFocusItem() == null ? -1 : appView[classic.indexOf(classic.getFocusItem())];
@@ -311,10 +311,10 @@ public class GridRowPermutation_Test {
 	private int[] reference(final Boolean descending, final java.util.function.IntPredicate filter) {
 		final Integer[] boxed = new Integer[ROWS];
 		for (int i = 0; i < ROWS; i++) {
-			boxed[i] = i;
+			boxed[i] = java.lang.Integer.valueOf(i);
 		}
 		if (descending != null) {
-			Arrays.sort(boxed, (a, b) -> descending ? Integer.compare(keys[b], keys[a]) : Integer.compare(keys[a], keys[b]));
+			Arrays.sort(boxed, (a, b) -> (descending).booleanValue() ? Integer.compare(keys[(b).intValue()], keys[(a).intValue()]) : Integer.compare(keys[(a).intValue()], keys[(b).intValue()]));
 		}
 		return Arrays.stream(boxed).mapToInt(Integer::intValue).filter(m -> filter == null || filter.test(m)).toArray();
 	}
@@ -366,13 +366,13 @@ public class GridRowPermutation_Test {
 	private int[] grouped(final int[] rows, final int[] groupKeys, final Set<Integer> collapsedKeys) {
 		final Map<Integer, List<Integer>> groups = new LinkedHashMap<>();
 		for (final int m : rows) {
-			groups.computeIfAbsent(groupKeys[m], k -> new ArrayList<>()).add(m);
+			groups.computeIfAbsent(java.lang.Integer.valueOf(groupKeys[m]), k -> new ArrayList<>()).add(java.lang.Integer.valueOf(m));
 		}
 		classicHeaders.clear();
 		final List<Integer> out = new ArrayList<>();
 		for (final Map.Entry<Integer, List<Integer>> e : groups.entrySet()) {
-			out.add(~classicHeaders.size());
-			classicHeaders.add(headerText(e.getKey(), e.getValue().size()));
+			out.add(java.lang.Integer.valueOf(~classicHeaders.size()));
+			classicHeaders.add(headerText((e.getKey()).intValue(), e.getValue().size()));
 			if (!collapsedKeys.contains(e.getKey())) {
 				out.addAll(e.getValue());
 			}
@@ -431,7 +431,7 @@ public class GridRowPermutation_Test {
 			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(image.getImageData().data);
 			final StringBuilder hex = new StringBuilder();
 			for (final byte b : digest) {
-				hex.append(String.format("%02x", b & 0xff));
+				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
 			}
 			return hex.toString();
 		} finally {

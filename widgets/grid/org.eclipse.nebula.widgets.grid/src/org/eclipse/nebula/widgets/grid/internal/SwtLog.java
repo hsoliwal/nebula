@@ -56,22 +56,50 @@ public final class SwtLog {
 		return new SwtLog (name);
 	}
 
+	/**
+	 * Returns whether trace messages are enabled.
+	 *
+	 * @return whether the JUL FINEST level is enabled
+	 */
 	public boolean isTraceEnabled () {
 		return logger.isLoggable (Level.FINEST);
 	}
 
+	/**
+	 * Returns whether debug messages are enabled.
+	 *
+	 * @return whether the JUL FINE level is enabled
+	 */
 	public boolean isDebugEnabled () {
 		return logger.isLoggable (Level.FINE);
 	}
 
+	/**
+	 * Queues a trace message when that level is enabled.
+	 * The supplier runs on the calling thread; publication uses the bounded log queue.
+	 *
+	 * @param message supplies the message text when the level is enabled
+	 */
 	public void trace (Supplier<String> message) {
 		write (Level.FINEST, message);
 	}
 
+	/**
+	 * Queues a debug message when that level is enabled.
+	 * The supplier runs on the calling thread; publication uses the bounded log queue.
+	 *
+	 * @param message supplies the message text when the level is enabled
+	 */
 	public void debug (Supplier<String> message) {
 		write (Level.FINE, message);
 	}
 
+	/**
+	 * Queues a info message when that level is enabled.
+	 * The supplier runs on the calling thread; publication uses the bounded log queue.
+	 *
+	 * @param message supplies the message text when the level is enabled
+	 */
 	public void info (Supplier<String> message) {
 		write (Level.INFO, message);
 	}

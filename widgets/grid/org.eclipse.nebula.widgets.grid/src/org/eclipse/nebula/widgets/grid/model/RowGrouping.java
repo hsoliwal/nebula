@@ -109,11 +109,17 @@ public final class RowGrouping implements RowView {
 		return keys != null;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int getModelCount() {
 		return source.getModelCount();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int getViewCount() {
 		ensure();
@@ -155,6 +161,9 @@ public final class RowGrouping implements RowView {
 		return groupAt(displayIndex);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int modelRow(final int displayIndex) {
 		ensure();
@@ -166,6 +175,9 @@ public final class RowGrouping implements RowView {
 		return offset == 0 ? -1 : leafRows[groupStart[g] + offset - 1];
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int viewIndex(final int modelRow) {
 		ensure();
@@ -290,6 +302,9 @@ public final class RowGrouping implements RowView {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public int getVersion() {
 		ensure();

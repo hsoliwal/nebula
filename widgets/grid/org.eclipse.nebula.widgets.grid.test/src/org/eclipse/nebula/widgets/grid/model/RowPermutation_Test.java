@@ -91,7 +91,7 @@ public class RowPermutation_Test {
 			final RowPermutation p = new RowPermutation(n);
 			p.sort((a, b) -> text[a].compareTo(text[b]));
 			final Integer[] boxed = boxedIdentity(n);
-			Arrays.sort(boxed, Comparator.comparing((Integer i) -> text[i]));
+			Arrays.sort(boxed, Comparator.comparing((Integer i) -> text[(i).intValue()]));
 			assertArrayEquals("n=" + n, unbox(boxed), view(p));
 		}
 	}
@@ -249,14 +249,14 @@ public class RowPermutation_Test {
 			p.sortByIntKeys(keys, true);
 			p.setFilter(m -> m % 3 != 1);
 			final java.util.List<Integer> expected = new java.util.ArrayList<>();
-			expected.add(n - 1);
-			expected.add(0);
+			expected.add(java.lang.Integer.valueOf(n - 1));
+			expected.add(java.lang.Integer.valueOf(0));
 			for (final int m : referenceOrder(keys, n, true)) {
 				if (m != n - 1 && m != 0 && m != n / 2 && m % 3 != 1) {
-					expected.add(m);
+					expected.add(java.lang.Integer.valueOf(m));
 				}
 			}
-			expected.add(n / 2);
+			expected.add(java.lang.Integer.valueOf(n / 2));
 			assertArrayEquals("n=" + n, expected.stream().mapToInt(Integer::intValue).toArray(), view(p));
 			assertInverse(p);
 			assertEquals(2, p.getPinnedTopCount());
@@ -324,7 +324,7 @@ public class RowPermutation_Test {
 
 	static int[] referenceOrder(final int[] keys, final int n, final boolean descending) {
 		final Integer[] boxed = boxedIdentity(n);
-		final Comparator<Integer> byKey = (a, b) -> Integer.compare(keys[a], keys[b]);
+		final Comparator<Integer> byKey = (a, b) -> Integer.compare(keys[(a).intValue()], keys[(b).intValue()]);
 		Arrays.sort(boxed, descending ? (a, b) -> byKey.compare(b, a) : byKey);
 		return unbox(boxed);
 	}
@@ -332,7 +332,7 @@ public class RowPermutation_Test {
 	private static Integer[] boxedIdentity(final int n) {
 		final Integer[] boxed = new Integer[n];
 		for (int i = 0; i < n; i++) {
-			boxed[i] = i;
+			boxed[i] = java.lang.Integer.valueOf(i);
 		}
 		return boxed;
 	}
@@ -340,7 +340,7 @@ public class RowPermutation_Test {
 	private static int[] unbox(final Integer[] boxed) {
 		final int[] out = new int[boxed.length];
 		for (int i = 0; i < out.length; i++) {
-			out[i] = boxed[i];
+			out[i] = (boxed[i]).intValue();
 		}
 		return out;
 	}

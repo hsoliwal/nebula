@@ -34,7 +34,7 @@ public class GridGCProxyDeviceRegion_Test {
  public static void main(String[] args) {
   boolean original=args.length==1&&"original".equals(args[0]);
   assertTrue("Only the original suite selector is accepted",args.length==0||original);
-  assertEquals("startup mode",!original,GridViewport.UPSTREAM_FIXES);
+  assertEquals("startup mode",java.lang.Boolean.valueOf(!original),java.lang.Boolean.valueOf(GridViewport.UPSTREAM_FIXES));
   System.out.println("MODE\t"+(original?"original":"viewport")+"\t"+GridViewport.UPSTREAM_FIXES);
   System.out.println("PROXY_CLASS_ORIGIN\t"+GridGCProxy.class.getProtectionDomain().getCodeSource().getLocation());
   Display display=null;int exit=1;
@@ -266,12 +266,12 @@ public class GridGCProxyDeviceRegion_Test {
     changes.accept(proxy);proxy.clip(request);
     captureDevice(gc,live);checkRegion(name,"live",expected,live,display);
     boolean liveAdvanced=gc.getAdvanced();
-    check(name,"live-mode",()->assertEquals("clip must preserve the renderer mode",expectedLiveAdvanced,liveAdvanced));
+    check(name,"live-mode",()->assertEquals("clip must preserve the renderer mode",java.lang.Boolean.valueOf(expectedLiveAdvanced),java.lang.Boolean.valueOf(liveAdvanced)));
    }
    captureDevice(gc,restored);checkRegion(name,"restored",entry,restored,display);
    GC observed=gc;
    check(name,"state",()->{
-    assertEquals(savedAdvanced,observed.getAdvanced());
+    assertEquals(java.lang.Boolean.valueOf(savedAdvanced),java.lang.Boolean.valueOf(observed.getAdvanced()));
     assertEquals(savedForeground,observed.getForeground());
     assertEquals(savedBackground,observed.getBackground());
     assertEquals(savedFont,observed.getFont());

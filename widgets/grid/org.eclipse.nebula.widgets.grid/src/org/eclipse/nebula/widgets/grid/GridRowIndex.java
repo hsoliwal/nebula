@@ -17,8 +17,8 @@ package org.eclipse.nebula.widgets.grid;
 /**
  * Rank, select and pixel prefix questions over the rows of a Grid, in item order: positions are
  * item indices, a visible row counts once and adds its extent (height plus the one-pixel line),
- * a hidden row counts neither. Answered by {@link GridRowExtents} (Fenwick trees, rebuilt after a
- * structural change) and by {@link GridRowTree} (the item list itself, never rebuilt).
+ * a hidden row counts neither. Answered by {@code GridRowExtents} (Fenwick trees, rebuilt after a
+ * structural change) and by {@code GridRowTree} (the item list itself, never rebuilt).
  */
 interface GridRowIndex {
 	/** @return the number of visible rows */

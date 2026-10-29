@@ -153,14 +153,14 @@ public class GridRowSpanIndex_Test {
 			if (a != null) assertNotSame(a, snapshot);
 			cached.set(index, snapshot);
 			for (boolean[] c : masks) {
-				assertEquals(java.util.Arrays.equals(a, c), compare.invoke(index, (Object) c));
+				assertEquals(java.lang.Boolean.valueOf(java.util.Arrays.equals(a, c)), compare.invoke(index, (Object) c));
 			}
 		}
 		boolean[] caller = {true, false};
 		boolean[] snapshot = (boolean[]) copy.invoke(null, (Object) caller);
 		cached.set(index, snapshot);
 		caller[0] = false;
-		assertFalse((Boolean) compare.invoke(index, (Object) caller));
+		assertFalse(((Boolean) compare.invoke(index, (Object) caller)).booleanValue());
 		assertArrayEquals(new boolean[] {true, false}, snapshot);
 	}
 

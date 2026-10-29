@@ -49,7 +49,7 @@ public class GridCellSelectionList_Test {
 				break;
 			case 3:
 			case 4:
-				assertEquals(reference.remove(p), list.remove(p));
+				assertEquals(java.lang.Boolean.valueOf(reference.remove(p)), java.lang.Boolean.valueOf(list.remove(p)));
 				break;
 			case 5:
 				if (!reference.isEmpty()) {
@@ -59,11 +59,11 @@ public class GridCellSelectionList_Test {
 				break;
 			case 6:
 				final List<Point> some = Arrays.asList(p, new Point(p.x, (p.y + 1) % 40));
-				assertEquals(reference.removeAll(some), list.removeAll(some));
+				assertEquals(java.lang.Boolean.valueOf(reference.removeAll(some)), java.lang.Boolean.valueOf(list.removeAll(some)));
 				break;
 			case 7:
 				final int column = random.nextInt(6);
-				assertEquals(reference.removeIf(c -> c.x == column), list.removeIf(c -> c.x == column));
+				assertEquals(java.lang.Boolean.valueOf(reference.removeIf(c -> c.x == column)), java.lang.Boolean.valueOf(list.removeIf(c -> c.x == column)));
 				break;
 			case 8:
 				// the Grid's shift after a column removal: in place, then reindex
@@ -97,7 +97,7 @@ public class GridCellSelectionList_Test {
 				// ctrl+click toggles: many removals by value leave holes that the list closes later
 				for (int k = 0; k < 8; k++) {
 					final Point q = new Point(random.nextInt(6), random.nextInt(40));
-					assertEquals(reference.remove(q), list.remove(q));
+					assertEquals(java.lang.Boolean.valueOf(reference.remove(q)), java.lang.Boolean.valueOf(list.remove(q)));
 				}
 				break;
 			default:
@@ -107,11 +107,11 @@ public class GridCellSelectionList_Test {
 				}
 			}
 			assertEquals(reference.size(), list.size());
-			assertEquals(reference.contains(p), list.contains(p));
+			assertEquals(java.lang.Boolean.valueOf(reference.contains(p)), java.lang.Boolean.valueOf(list.contains(p)));
 			assertEquals(reference.indexOf(p), list.indexOf(p));
 			for (int x = 0; x < 8; x++) {
 				final int column = x;
-				assertEquals(reference.stream().anyMatch(c -> c.x == column), list.columnHasCells(x));
+				assertEquals(java.lang.Boolean.valueOf(reference.stream().anyMatch(c -> c.x == column)), java.lang.Boolean.valueOf(list.columnHasCells(x)));
 			}
 			if (!reference.isEmpty()) {
 				final int index = random.nextInt(reference.size());
@@ -120,7 +120,7 @@ public class GridCellSelectionList_Test {
 			}
 			if (step % 101 == 0) {
 				assertArrayEquals(reference.toArray(new Point[0]), list.toArray(new Point[0]));
-				assertEquals(reference.containsAll(Arrays.asList(p)), list.containsAll(Arrays.asList(p)));
+				assertEquals(java.lang.Boolean.valueOf(reference.containsAll(Arrays.asList(p))), java.lang.Boolean.valueOf(list.containsAll(Arrays.asList(p))));
 			}
 		}
 	}
@@ -133,6 +133,6 @@ public class GridCellSelectionList_Test {
 		p.x = 5;
 		list.toArray(new Point[0])[0].y = 9;
 		assertEquals(new Point(1, 2), list.get(0));
-		assertEquals(true, list.contains(new Point(1, 2)));
+		assertEquals(java.lang.Boolean.valueOf(true), java.lang.Boolean.valueOf(list.contains(new Point(1, 2))));
 	}
 }

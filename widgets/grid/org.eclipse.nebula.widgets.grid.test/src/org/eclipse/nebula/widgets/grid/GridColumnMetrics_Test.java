@@ -243,8 +243,8 @@ public class GridColumnMetrics_Test {
 		int fixed = rowHeaderWidth;
 		for (final GridColumn column : columns) {
 			for (int d = -1; d <= 1; d++) {
-				xs.add(scrolled + d);
-				xs.add(fixed + d);
+				xs.add(java.lang.Integer.valueOf(scrolled + d));
+				xs.add(java.lang.Integer.valueOf(fixed + d));
 			}
 			if (column.isVisible()) {
 				scrolled += column.getWidth();
@@ -254,16 +254,16 @@ public class GridColumnMetrics_Test {
 			}
 		}
 		for (int d = -1; d <= 1; d++) {
-			xs.add(scrolled + d);
-			xs.add(fixed + d);
-			xs.add(rowHeaderWidth + d);
+			xs.add(java.lang.Integer.valueOf(scrolled + d));
+			xs.add(java.lang.Integer.valueOf(fixed + d));
+			xs.add(java.lang.Integer.valueOf(rowHeaderWidth + d));
 		}
 		for (int i = 0; i < 10; i++) {
-			xs.add(random.nextInt(scrolled + hsel + 50) - 20);
+			xs.add(java.lang.Integer.valueOf(random.nextInt(scrolled + hsel + 50) - 20));
 		}
 		final int[] result = new int[xs.size()];
 		for (int i = 0; i < result.length; i++) {
-			result[i] = xs.get(i);
+			result[i] = (xs.get(i)).intValue();
 		}
 		return result;
 	}

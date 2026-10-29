@@ -29,12 +29,12 @@ import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
  * and the extents, so every question is answered in O(log n) and no item is visited:
  * </p>
  * <ul>
- * <li>{@link #rankOf(int)}: visible rows before a position (the vertical scroll selection of a
+ * <li>{@code rankOf(int)}: visible rows before a position (the vertical scroll selection of a
  * visible item);</li>
- * <li>{@link #positionOfRank(int)}: the position of the k-th visible row;</li>
- * <li>{@link #extentBefore(int)} and {@link #extentOfRank(int)}: pixels above a position or a
+ * <li>{@code positionOfRank(int)}: the position of the k-th visible row;</li>
+ * <li>{@code extentBefore(int)} and {@code extentOfRank(int)}: pixels above a position or a
  * visible row;</li>
- * <li>{@link #rankAtExtent(long)}: the visible row that holds a pixel offset.</li>
+ * <li>{@code rankAtExtent(long)}: the visible row that holds a pixel offset.</li>
  * </ul>
  * <p>
  * Changing one extent is O(log n), appending a position is O(log n), and {@link #rebuild} is a
@@ -242,7 +242,7 @@ final class GridRowExtents implements GridRowIndex {
 	/**
 	 * @param offset a pixel offset from the first visible row
 	 * @return the largest number of visible rows whose total extent is at most {@code offset}, that
-	 *         is the visible row holding {@code offset} ({@link #visibleCount()} when the offset lies
+	 *         is the visible row holding {@code offset} ({@code visibleCount()} when the offset lies
 	 *         past the last row), or -1 when {@code offset} is negative
 	 */
 	@Override

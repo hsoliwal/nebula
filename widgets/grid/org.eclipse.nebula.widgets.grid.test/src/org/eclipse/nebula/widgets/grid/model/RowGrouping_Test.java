@@ -59,7 +59,7 @@ public class RowGrouping_Test {
 
 				if (grouping.getGroupCount() > 0) {
 					final int g = random.nextInt(grouping.getGroupCount());
-					collapsedKeys.add(grouping.getGroupKey(g));
+					collapsedKeys.add(java.lang.Integer.valueOf(grouping.getGroupKey(g)));
 					grouping.setExpanded(g, false);
 					assertSame("collapsed n=" + n, p, grouping, groupKeys, collapsedKeys, values);
 				}
@@ -72,7 +72,7 @@ public class RowGrouping_Test {
 
 				grouping.setExpanded(0, grouping.getGroupCount(), false);
 				for (int g = 0; g < grouping.getGroupCount(); g++) {
-					collapsedKeys.add(grouping.getGroupKey(g));
+					collapsedKeys.add(java.lang.Integer.valueOf(grouping.getGroupKey(g)));
 				}
 				assertEquals(grouping.getGroupCount(), grouping.getCollapsedCount());
 				assertSame("all collapsed n=" + n, p, grouping, groupKeys, collapsedKeys, values);
@@ -109,7 +109,7 @@ public class RowGrouping_Test {
 		final Map<Integer, List<Integer>> reference = new LinkedHashMap<>();
 		for (int v = 0; v < p.getViewCount(); v++) {
 			final int m = p.modelRow(v);
-			reference.computeIfAbsent(groupKeys[m], k -> new ArrayList<>()).add(m);
+			reference.computeIfAbsent(java.lang.Integer.valueOf(groupKeys[m]), k -> new ArrayList<>()).add(java.lang.Integer.valueOf(m));
 		}
 		assertEquals(msg + " groups", reference.size(), grouping.getGroupCount());
 		final List<Integer> display = new ArrayList<>();
@@ -122,10 +122,10 @@ public class RowGrouping_Test {
 		for (final Map.Entry<Integer, List<Integer>> e : reference.entrySet()) {
 			assertEquals(msg, e.getKey().intValue(), grouping.getGroupKey(g));
 			assertEquals(msg, e.getValue().size(), grouping.getGroupSize(g));
-			assertEquals(msg, !collapsedKeys.contains(e.getKey()), grouping.isExpanded(g));
+			assertEquals(msg, java.lang.Boolean.valueOf(!collapsedKeys.contains(e.getKey())), java.lang.Boolean.valueOf(grouping.isExpanded(g)));
 			assertEquals(msg + " header", display.size(), grouping.headerIndex(g));
-			display.add(-1);
-			displayGroup.add(g);
+			display.add(java.lang.Integer.valueOf(-1));
+			displayGroup.add(java.lang.Integer.valueOf(g));
 			long s = 0;
 			int lo = Integer.MAX_VALUE;
 			int hi = Integer.MIN_VALUE;
@@ -134,8 +134,8 @@ public class RowGrouping_Test {
 				lo = Math.min(lo, values[m]);
 				hi = Math.max(hi, values[m]);
 				if (!collapsedKeys.contains(e.getKey())) {
-					display.add(m);
-					displayGroup.add(g);
+					display.add(java.lang.Integer.valueOf(m));
+					displayGroup.add(java.lang.Integer.valueOf(g));
 				}
 			}
 			assertEquals(msg + " sum", s, sum[g]);
@@ -146,11 +146,11 @@ public class RowGrouping_Test {
 		assertEquals(msg + " display count", display.size(), grouping.getViewCount());
 		for (int d = 0; d < display.size(); d++) {
 			assertEquals(msg + " d=" + d, display.get(d).intValue(), grouping.modelRow(d));
-			assertEquals(msg + " header d=" + d, display.get(d) < 0, grouping.isGroupHeader(d));
+			assertEquals(msg + " header d=" + d, java.lang.Boolean.valueOf((display.get(d)).intValue() < 0), java.lang.Boolean.valueOf(grouping.isGroupHeader(d)));
 			assertEquals(msg + " group d=" + d, displayGroup.get(d).intValue(), grouping.groupOf(d));
 		}
 		for (int m = 0; m < p.getModelCount(); m++) {
-			final int expected = display.indexOf(m);
+			final int expected = display.indexOf(java.lang.Integer.valueOf(m));
 			assertEquals(msg + " m=" + m, expected, grouping.viewIndex(m));
 		}
 		assertTrue(grouping.getVersion() >= 0);

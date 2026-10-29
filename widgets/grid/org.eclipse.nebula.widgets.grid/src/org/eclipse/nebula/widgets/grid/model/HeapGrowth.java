@@ -28,7 +28,7 @@ package org.eclipse.nebula.widgets.grid.model;
  * required length is always returned, nothing is evicted and no GC is forced.</p>
  *
  * <p>{@link #choose} is pure (GWT-safe). {@link #capacity} samples the heap through
- * {@link HeapSampler}, which a GWT build replaces with a sampler that reports no information.</p>
+ * {@code HeapSampler}, which a GWT build replaces with a sampler that reports no information.</p>
  */
 public final class HeapGrowth {
 

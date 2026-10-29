@@ -31,8 +31,8 @@ import org.eclipse.swt.graphics.Image;
  * no GridItem is retained as a map key. This lets the Grid parent own payload
  * independently from an optional SWT.VIRTUAL facade.</p>
  *
- * <p>Each Grid has one {@link RowIndex}: the rows that hold data, as sorted positions with a
- * stable id each; every kind of value is an {@link IdStore} addressed by that id. Inserting or
+ * <p>Each Grid has one {@code RowIndex}: the rows that hold data, as sorted positions with a
+ * stable id each; every kind of value is an {@code IdStore} addressed by that id. Inserting or
  * removing a row shifts the positions after it by one, so building a Grid row by row is linear,
  * not quadratic as with one hash map per kind re-keyed on every insert.</p>
  */

@@ -111,8 +111,20 @@ public class GridSetDataRedraw_Test {
 	}
 
 	private void flush() {
-		while (display.readAndDispatch()) {
-			// drain
-		}
-	}
+        // GTK paints at frame boundaries; an empty event queue is not a settled frame.
+        long idleSince = System.nanoTime();
+        final long deadline = idleSince + 5_000_000_000L;
+        while (System.nanoTime() - idleSince < 200_000_000L) {
+            assertTrue("native paint queue did not settle", System.nanoTime() < deadline);
+            if (display.readAndDispatch()) {
+                idleSince = System.nanoTime();
+            } else {
+                try { Thread.sleep(5L); }
+                catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("interrupted while settling native paint", failure);
+                }
+            }
+        }
+    }
 }

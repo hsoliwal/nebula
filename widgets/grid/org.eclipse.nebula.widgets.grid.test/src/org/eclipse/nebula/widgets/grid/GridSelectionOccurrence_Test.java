@@ -88,7 +88,7 @@ public class GridSelectionOccurrence_Test {
 		assertEquals(4, actual.lastIndexOf(rows[0]));
 		assertSame(expected.remove(4), actual.remove(4));
 		assertArrayEquals(expected.toArray(), actual.toArray());
-		assertEquals(expected.remove(rows[0]), actual.remove(rows[0]));
+		assertEquals(java.lang.Boolean.valueOf(expected.remove(rows[0])), java.lang.Boolean.valueOf(actual.remove(rows[0])));
 		assertTrue(actual.contains(rows[0]));
 		assertArrayEquals(expected.toArray(), actual.toArray());
 		assertEquals(expected.indexOf(rows[0]), actual.indexOf(rows[0]));
@@ -185,7 +185,7 @@ public class GridSelectionOccurrence_Test {
 				break;
 			case 4:
 			case 5:
-				assertEquals(expected.remove(item), actual.remove(item));
+				assertEquals(java.lang.Boolean.valueOf(expected.remove(item)), java.lang.Boolean.valueOf(actual.remove(item)));
 				break;
 			case 6:
 				if (!expected.isEmpty()) {
@@ -194,7 +194,7 @@ public class GridSelectionOccurrence_Test {
 				}
 				break;
 			case 7:
-				assertEquals(expected.removeIf(row -> row == item), actual.removeIf(row -> row == item));
+				assertEquals(java.lang.Boolean.valueOf(expected.removeIf(row -> row == item)), java.lang.Boolean.valueOf(actual.removeIf(row -> row == item)));
 				break;
 			case 8:
 				final List<GridItem> some = Arrays.asList(item, rows[random.nextInt(rows.length)], item);
@@ -208,7 +208,7 @@ public class GridSelectionOccurrence_Test {
 				}
 			}
 			assertEquals("size at step " + step, expected.size(), actual.size());
-			assertEquals("membership at step " + step, expected.contains(item), actual.contains(item));
+			assertEquals("membership at step " + step, java.lang.Boolean.valueOf(expected.contains(item)), java.lang.Boolean.valueOf(actual.contains(item)));
 			assertEquals("first at step " + step, expected.indexOf(item), actual.indexOf(item));
 			assertEquals("last at step " + step, expected.lastIndexOf(item), actual.lastIndexOf(item));
 			if (step % 37 == 0) {
@@ -257,7 +257,7 @@ public class GridSelectionOccurrence_Test {
 		for (int y = 0; y < expected.height; y++) {
 			for (int x = 0; x < expected.width; x++) {
 				final int pixel = actual.getPixel(x, y);
-				colors.add(pixel);
+				colors.add(java.lang.Integer.valueOf(pixel));
 				if (pixel != expected.getPixel(x, y)) {
 					differences++;
 				}

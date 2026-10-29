@@ -19,8 +19,8 @@ import java.util.NoSuchElementException;
 /**
  * Primitive max-priority frontier for Grid-local ordered work.
  *
- * <p>The frontier heapifies a defensive copy in linear time. {@link #peek()}
- * observes the current highest priority without removal; {@link #poll()}
+ * <p>The frontier heapifies a defensive copy in linear time. {@code peek()}
+ * observes the current highest priority without removal; {@code poll()}
  * removes only that top entry and repairs the frontier in logarithmic time.
  * It deliberately does not promise a fully sorted retained representation.</p>
  */

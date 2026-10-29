@@ -111,9 +111,11 @@ public class GridScrollPaint_Test {
 		final Point size = grid.getSize();
 		final Image image = new Image(grid.getDisplay(), size.x, size.y);
 		try {
-			final GC gc = new GC(grid);
+			GridSwtScreenshotCapture.screenBounds(grid);
+			final GC gc = new GC(grid.getDisplay());
 			try {
-				gc.copyArea(image, 0, 0);
+				final Point origin = grid.toDisplay(0, 0);
+				gc.copyArea(image, origin.x, origin.y);
 			} finally {
 				gc.dispose();
 			}
@@ -205,10 +207,14 @@ public class GridScrollPaint_Test {
 
 	static boolean sameClientArea(final Grid grid, final ImageData a, final ImageData b) {
 		final org.eclipse.swt.graphics.Rectangle area = grid.getClientArea();
-		final int dx = (grid.getSize().x - grid.getClientArea().width - (grid.getVerticalBar().isVisible() ? grid.getVerticalBar().getSize().x : 0)) / 2;
+		// Both images start at client (0, 0). GTK overlay scrollbars do not consume
+		// client width; subtracting their size again produces negative pixel indices.
+		assertTrue("captured client must fit both images", area.x >= 0 && area.y >= 0
+				&& (long) area.x + area.width <= Math.min(a.width, b.width)
+				&& (long) area.y + area.height <= Math.min(a.height, b.height));
 		for (int y = area.y; y < area.y + area.height; y++) {
 			for (int x = area.x; x < area.x + area.width; x++) {
-				if (a.getPixel(x + dx, y + dx) != b.getPixel(x + dx, y + dx)) {
+				if (a.getPixel(x, y) != b.getPixel(x, y)) {
 					return false;
 				}
 			}

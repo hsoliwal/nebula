@@ -128,7 +128,7 @@ public class RowStateLanes_Test {
 		int total = 0;
 		int first = -1;
 		for (int i = 0; i < n; i++) {
-			assertEquals("row " + i, ref[i], lanes.get(0, i));
+			assertEquals("row " + i, java.lang.Boolean.valueOf(ref[i]), java.lang.Boolean.valueOf(lanes.get(0, i)));
 			if (ref[i]) {
 				total++;
 				if (first < 0) {
@@ -150,7 +150,7 @@ public class RowStateLanes_Test {
 		for (int probe = 0; probe < 2000; probe++) {
 			final int a = random.nextInt(limit);
 			final int b = Math.min(limit, a + random.nextInt(70_000));
-			assertEquals(ref.get(a), set.get(a));
+			assertEquals(java.lang.Boolean.valueOf(ref.get(a)), java.lang.Boolean.valueOf(set.get(a)));
 			assertEquals(ref.get(a, b).cardinality(), set.count(a, b));
 		}
 	}

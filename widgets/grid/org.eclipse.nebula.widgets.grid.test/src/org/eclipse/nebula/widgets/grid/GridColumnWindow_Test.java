@@ -117,7 +117,7 @@ public class GridColumnWindow_Test {
 			assertTrue(grid.paintColumnVisits <= fullVisits);
 			fewer |= grid.paintColumnVisits < fullVisits;
 		}
-		assertEquals("column visits drop when the window is active", expectFewerVisits, fewer);
+		assertEquals("column visits drop when the window is active", java.lang.Boolean.valueOf(expectFewerVisits), java.lang.Boolean.valueOf(fewer));
 	}
 
 	private Grid grid(final int style, final boolean fixedAndHidden, final boolean groups) {

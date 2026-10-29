@@ -24,7 +24,7 @@ import org.eclipse.swt.graphics.Rectangle;
 /**
  * A Grid cell that looks like a cell of the platform's list or tree: native row height, text
  * position, full-row selection and hot-track styles, column lines, tree expander glyphs and check
- * boxes ({@link GridNativeLook}, {@link GridNativeTheme}). Without visual styles the selection uses
+ * boxes ({@code GridNativeLook}, {@code GridNativeTheme}). Without visual styles the selection uses
  * the system selection colours.
  * <p>
  * The row's one-pixel separator belongs to the row, as in the native controls: the renderer paints

@@ -196,7 +196,7 @@ public class GridPinnedRows_Test {
 			}
 			final StringBuilder hex = new StringBuilder();
 			for (final byte b : md.digest()) {
-				hex.append(String.format("%02x", b & 0xff));
+				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
 			}
 			return hex.toString();
 		} finally {
