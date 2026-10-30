@@ -18,7 +18,7 @@ package org.eclipse.nebula.widgets.m3web.model;
 /**
  * API of the M3 code-block widget (concept {@code code-block}, family TOKEN, pattern M3P-TOKEN-1).
  * <p>
- * Viewport form: 
+ * Viewport form: the family pattern (see CONCEPTS.tsv)
  * </p>
  * TODO M3P-TOKEN-1: concept-specific operations beyond the family API.
  */
