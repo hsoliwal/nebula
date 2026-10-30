@@ -12,7 +12,7 @@ TEXTAREA	textarea	Text(SWT.MULTI)	RichText when rich text needed	RWT Text(SWT.MU
 COMBO	select|datalist	Combo|CCombo	TableCombo;CalendarCombo	RWT Combo|CCombo	Selection;items;index	popup;virtual list;search	STATIC_SELECT_COMBO_CODE_COMMITTED_RWT_NOT_RUN
 DATE_TIME	input:date|time	DateTime	CDateTime;DateChooser	RWT DateTime	time zone;format;selection	locale;DST;format	STATIC_CANDIDATE
 NUMBER_SLIDER	input:range	Scale	NebulaSlider	RWT Scale	value;minimum;maximum;step	snapping;pointer;keyboard	STATIC_CANDIDATE
-PROGRESS	progress|meter	ProgressBar	ProgressCircle;LED	RWT ProgressBar	value;indeterminate	timer;animation;server requests	STATIC_CANDIDATE
+PROGRESS	progress	ProgressBar(SWT.HORIZONTAL)	ProgressCircle;LED	RWT ProgressBar	determinate integer value/max;stable id	indeterminate/fractional/dynamic values;RAP browser	STATIC_PROGRESS_RECEIVER_COMMITTED_RWT_NOT_RUN
 TABS	role:tablist|tabs	CTabFolder|TabFolder	M3StackLayout for deferred pages	RWT CTabFolder	active index;selection	lazy pages;overflow;focus	STATIC_CANDIDATE
 ACCORDION	details|accordion	ExpandBar	PGroup;PShelf	RWT ExpandBar	collapsed;expanded;content	toggle ordering;paint	STATIC_CANDIDATE
 MENU	menu|contextmenu	Menu|MenuItem	NebulaToolbar|SplitButton	RWT Menu|MenuItem	item activation;visibility	focus;keyboard;popup origin	STATIC_CANDIDATE
@@ -33,3 +33,4 @@ WEB_COMPONENT	shadowslots|custom elements	Browser opt-in	only static admitted su
 REACT_DYNAMIC	React hooks|effects|component state	Browser opt-in	existing static JSX Canvas route is narrower	Browser or RWT custom client	requires proven model+event lowering	async effects;diff reconciliation	NOT_AUTOMATIC
 VIRTUAL_TABLE	repeater|table|Vaadin Grid|Wicket DataTable|Spring Pageable	Table(SWT.VIRTUAL)	M3VirtualTableBinding with original SWT Table; richer Grid remains separately owned	RWT Table(SWT.VIRTUAL)	SWT.SetData; 4x64 keyed hot pages; bounded invalidation; stable selection	app adapters; live RAP/browser; native screen; backend async	CONTRACT_RECEIVER_COMMITTED_NATIVE_NOT_RUN
 VIRTUAL_TREE	tree|treegrid|Vaadin TreeGrid|Wicket nested tree|GWT CellTree	Tree(SWT.VIRTUAL)	M3VirtualTreeBinding with original SWT Tree; Nebula Grid for rich columns	RWT Tree(SWT.VIRTUAL);RAP Nebula Grid	SetData parent-relative;4x64 sibling pages;lazy children;stable selected keys	framework source AST;live RAP;native pixels;accessibility	TARGET_BINDING_COMMITTED_NATIVE_NOT_RUN
+METER	meter	HOLD semantic mapping	ProgressCircle/LED candidates	RWT ProgressBar insufficient alone	min/max/low/high/optimum	threshold and quality semantics	HOLD_UNQUALIFIED_METER

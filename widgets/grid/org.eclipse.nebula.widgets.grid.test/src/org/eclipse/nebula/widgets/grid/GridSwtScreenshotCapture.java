@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TabFolder;
 import java.util.Objects;
+import java.util.function.IntSupplier;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
@@ -68,6 +69,37 @@ final class GridSwtScreenshotCapture {
 	}
 
 	private GridSwtScreenshotCapture() {
+	}
+
+	/**
+	 * Awaits the required native observation and then a quiet interval for that
+	 * counter. GTK can deliver a frame after the current event queue becomes empty;
+	 * unrelated workbench events must not extend the Grid's settling interval.
+	 * This only pumps events: it does not request paints or synthesize callbacks.
+	 */
+	static void awaitStableCounter(final Display display, final IntSupplier counter,
+			final int minimum, final String message) {
+		final long start = System.nanoTime();
+		long unchangedSince = start;
+		int observed = counter.getAsInt();
+		while (observed < minimum || System.nanoTime() - unchangedSince < 200_000_000L) {
+			if (System.nanoTime() - start >= 5_000_000_000L) {
+				throw new AssertionError(message + ": observed " + observed + ", required " + minimum);
+			}
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(5L);
+				} catch (final InterruptedException failure) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted while awaiting native observation", failure);
+				}
+			}
+			final int current = counter.getAsInt();
+			if (current != observed) {
+				observed = current;
+				unchangedSince = System.nanoTime();
+			}
+		}
 	}
 
 	static Result captureControl(final Control control, final Path path) throws IOException {
@@ -201,6 +233,32 @@ final class GridSwtScreenshotCapture {
 			savePng (image, path);
 		} finally { image.dispose (); }
 		return new Result (path, Method.DISPLAY_COPY_AREA, sha256 (path));
+	}
+
+	/** Captures strict display pixels and retains the PNG for native-oracle diagnostics. */
+	static ImageData captureScreenData(final Control control, final String label) throws IOException {
+		final Path output = Path.of(System.getProperty("nebula.grid.native.oracle.evidence.dir",
+				"target/m3-native-oracle-screenshots"));
+		final Path path = output.resolve(label + "-" + System.nanoTime() + ".png");
+		final Result result = captureScreenControl(control, path);
+		if (result.method() != Method.DISPLAY_COPY_AREA) {
+			throw new AssertionError("native oracle requires display-copy pixels");
+		}
+		final ImageData data = new ImageLoader().load(path.toString())[0];
+		final Point size = control.getSize();
+		if (data.width != size.x || data.height != size.y) {
+			throw new AssertionError("screen-capture dimensions changed");
+		}
+		final java.util.Set<Integer> colors = new java.util.HashSet<>();
+		for (int y = 0; y < data.height && colors.size() <= 4; y++) {
+			for (int x = 0; x < data.width && colors.size() <= 4; x++) {
+				colors.add(Integer.valueOf(data.getPixel(x, y)));
+			}
+		}
+		if (colors.size() <= 4) throw new AssertionError("blank or incomplete native Grid capture");
+		System.out.println("GRID_SCREEN_CAPTURE method=DISPLAY_COPY_AREA path=" + path
+				+ " sha256=" + result.sha256());
+		return data;
 	}
 
 	private static void savePng(final Image image, final Path path) throws IOException {

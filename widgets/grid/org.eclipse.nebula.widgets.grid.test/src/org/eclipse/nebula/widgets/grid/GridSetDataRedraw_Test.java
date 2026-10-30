@@ -103,28 +103,17 @@ public class GridSetDataRedraw_Test {
 		flush();
 		paints = 0;
 		for (int i = 1; i <= 20; i++) {
+			final int before = paints;
 			grid.setTopIndex(base + i * 25);
 			grid.update();
-			flush();
+			GridSwtScreenshotCapture.awaitStableCounter(display, () -> paints, before + 1,
+					"scroll paint did not settle");
 		}
 		return paints;
 	}
 
 	private void flush() {
-        // GTK paints at frame boundaries; an empty event queue is not a settled frame.
-        long idleSince = System.nanoTime();
-        final long deadline = idleSince + 5_000_000_000L;
-        while (System.nanoTime() - idleSince < 200_000_000L) {
-            assertTrue("native paint queue did not settle", System.nanoTime() < deadline);
-            if (display.readAndDispatch()) {
-                idleSince = System.nanoTime();
-            } else {
-                try { Thread.sleep(5L); }
-                catch (InterruptedException failure) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("interrupted while settling native paint", failure);
-                }
-            }
-        }
-    }
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> paints, 1,
+				"Grid paint queue did not settle");
+	}
 }

@@ -234,7 +234,8 @@ public class GridRowPermutation_Test {
 		}
 		packed.setVisible(true);
 		classic.setVisible(true);
-		flush();
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> notified[0], 1,
+				"viewport notification did not settle after showing the Grid");
 		assertEquals("one catch-up notification after becoming visible", 1, notified[0]);
 		assertEquivalent("after show");
 	}

@@ -70,6 +70,8 @@ public class GridBodyDefer_Test {
 		shell.setSize(660, 480);
 		shell.open();
 		flush();
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.bodyPaintCount, 1,
+				"initial Grid body paint did not settle");
 	}
 
 	@After
@@ -110,7 +112,10 @@ public class GridBodyDefer_Test {
 		bar.notifyListeners(SWT.Selection, new Event());
 		grid.update();
 		flush();
+		// Keep the work interval fixed: observing a completed frame must not enlarge its budget.
 		final long frames = (System.nanoTime() - t0) / 16_000_000L + 2;
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.bodyPaintCount, before + 1,
+				"drag completion did not paint the Grid body");
 		final int paints = grid.bodyPaintCount - before;
 		assertTrue("body paints " + paints + " <= frames " + frames + " and < drag events", paints <= frames && paints < 60);
 		assertEquals(3000, grid.getTopIndex());
@@ -121,7 +126,8 @@ public class GridBodyDefer_Test {
 		final int before = grid.bodyPaintCount;
 		op.run();
 		grid.update();
-		flush();
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.bodyPaintCount, before + expected,
+				"bulk-operation body paint did not settle");
 		assertEquals(expected, grid.bodyPaintCount - before);
 	}
 
