@@ -19,6 +19,66 @@ permissions:
   contents: read
 
 jobs:
+  native-progressbar-gtk-junit:
+    name: Real original SWT ProgressBar JUnit on GTK/Xvfb
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install native GTK display and virtual framebuffer
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0
+      - name: Run the original SWT/M3 Tycho test plugin with a display
+        shell: bash
+        run: |
+          set -euo pipefail
+          xvfb-run -a mvn -B -ntp -f widgets/m3/pom.xml \
+            -pl :org.eclipse.nebula.widgets.m3.tests -am verify
+      - name: Require a completed, non-skipped real SWT ProgressBar test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY_SWT'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          reports = Path('widgets/m3/org.eclipse.nebula.widgets.m3.tests/target/surefire-reports')
+          if not reports.is_dir():
+              raise SystemExit('BLOCK: no original SWT Tycho JUnit report directory')
+          cases = []
+          for xml in reports.glob('TEST-*.xml'):
+              suite = ET.parse(xml).getroot()
+              for case in suite.findall('.//testcase'):
+                  if case.get('classname', '').endswith('TransferProgressNativeSwtTest'):
+                      cases.append(case)
+          if len(cases) != 1:
+              raise SystemExit('BLOCK: expected exactly one native ProgressBar testcase, got ' + str(len(cases)))
+          case = cases[0]
+          if case.get('name') != 'determinateProgressUsesOneOriginalSwtWidgetAndNoInputListener':
+              raise SystemExit('BLOCK: original ProgressBar regression did not execute')
+          if any(case.find(tag) is not None for tag in ('failure', 'error', 'skipped')):
+              raise SystemExit('BLOCK: native ProgressBar test failed or was skipped')
+          print('PASS real SWT ProgressBar GTK/Xvfb JUnit:', case.get('classname'), case.get('name'))
+          PY_SWT
+      - name: Preserve original JUnit XML as reviewable evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3-original-progressbar-gtk-junit
+          path: widgets/m3/org.eclipse.nebula.widgets.m3.tests/target/surefire-reports/TEST-*.xml
+          if-no-files-found: ignore
+      - name: Separate native SWT and live RAP web browser qualification
+        run: |
+          echo 'GTK/Xvfb JUnit does not qualify Win32/Cocoa, RAP web sessions, accessibility or pixel parity.'
   real-rwt-48-source-api:
     name: Compile original SWT receivers against real RWT 4.8.0
     runs-on: ubuntu-latest
