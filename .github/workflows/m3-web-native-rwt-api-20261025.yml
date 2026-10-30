@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/generated/**'
+      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/TransferProgressNativeSwtTest.java'
       - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3BrowserWidget.java'
       - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/internal/M3BrowserScripts.java'
       - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTableBinding.java'
@@ -47,6 +48,7 @@ jobs:
             "$ROOT/generated/OrdersNativeSwt.java" \
             "$ROOT/generated/ContactFormNativeSwt.java" \
             "$ROOT/generated/PreferencesNativeSwt.java" \
+            "$ROOT/generated/TransferProgressNativeSwt.java" \
             "$ROOT/M3VirtualTableBinding.java" \
             "$ROOT/M3VirtualTreeBinding.java"
       - name: Compile and execute no-display original Java page proofs
