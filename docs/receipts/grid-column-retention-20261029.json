@@ -1,14 +1,17 @@
 {
   "schema": "SYNEXIA_PASSIVE_QUALIFICATION_RECEIPT_V1",
   "target_repository": "hsoliwal/nebula",
-  "qualified_target_base": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+  "qualified_target_base": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+  "followup_target_base": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
   "canonical_repository": "hsoliwal/com.synexia",
-  "canonical_commit": "73c2f572db2100926ba3b63e6de93f0015fb8d4b",
-  "canonical_evidence_url": "https://github.com/hsoliwal/com.synexia/tree/73c2f572db2100926ba3b63e6de93f0015fb8d4b/synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs",
+  "canonical_commit": "de15f8ab6fa20fb826a00d10a1572adad5d3d78e",
   "canonical_engine_commit": "3cda7fa7fb30c9d4d75089265e73bbef3417bba7",
+  "canonical_evidence_url": "https://github.com/hsoliwal/com.synexia/tree/de15f8ab6fa20fb826a00d10a1572adad5d3d78e/synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs",
   "datasets": [
     {
+      "dataset": "grid-retention-current-20261029",
       "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-retention-current-20261029",
+      "baseline_ref": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
       "manifests": [
         {
           "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-retention-current-20261029/resources/com/synexia/rewrite/hash-pinned-java/m3-ast-build-reverse-20261017-grid-retention-current-20261029/manifest.tsv",
@@ -19,6 +22,52 @@
           "sha256": "41883ed13b6b7645dabde5834984ad01fbe446afbf4e94f0b30ad1a3ac74c2c6"
         }
       ],
+      "sdk_results": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-reciprocal-20261029/grid-retention-current/SDK_RESULTS.tsv",
+      "sdk_results_sha256": "d2bea5249088416a515b82f0284e6f0ef4827155aee8a89bb260773e1c7f4385",
+      "sdk_inputs": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-reciprocal-20261029/grid-retention-current/SDK_INPUTS.tsv",
+      "sdk_inputs_sha256": "0dff0341710529024b734dbe0d88db63ec9e34f4cd72303afb466d67b5f73ab4",
+      "actual_sdk_tests": 5,
+      "input_sealing_tests": 12,
+      "receiver_integrity_cases": 15,
+      "receiver_fixed_point_changes": 0
+    },
+    {
+      "dataset": "grid-selection-current-20261029",
+      "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-selection-current-20261029",
+      "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+      "manifests": [
+        {
+          "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-selection-current-20261029/resources/com/synexia/rewrite/hash-pinned-java/m3-ast-build-reverse-20261017-grid-selection-current-20261029/manifest.tsv",
+          "sha256": "9cade9239db669e743bff757706f575bd6ca217bf08b53e10e3d08500f63fb3b"
+        },
+        {
+          "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-selection-current-20261029/resources/com/synexia/rewrite/hash-pinned-text/m3-ast-build-reverse-20261017-grid-selection-current-20261029/manifest.tsv",
+          "sha256": "ecc5116269a4a254444577612c131f332be80082e350f5bbe16ebd54f154d245"
+        }
+      ],
+      "sdk_results": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/sdk/candidate/SDK_RESULTS.tsv",
+      "sdk_results_sha256": "6b0a463160919aa0728476fdb9cb963cd5e48e7a754f3b5a4f865d828402b4dd",
+      "sdk_inputs": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/sdk/candidate/SDK_INPUTS.tsv",
+      "sdk_inputs_sha256": "b02df223e86f2c2cc3bd2e6ff9d26d27c7864e0205723c2a29b948c5d8f518d1",
+      "actual_sdk_tests": 5,
+      "input_sealing_tests": 12,
+      "receiver_integrity_cases": 15,
+      "receiver_fixed_point_changes": 0
+    },
+    {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "manifests": [
+        {
+          "path": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/datasets/grid-native-oracles-v3-20261029/resources/com/synexia/rewrite/hash-pinned-java/m3-ast-build-reverse-20261017-grid-native-oracles-v3-20261029/manifest.tsv",
+          "sha256": "35b6334d67536b8e3bcc1e9a560a4c95200db2e1e4ad539bf731d9624a082baf"
+        }
+      ],
+      "sdk_results": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/grid-native-oracles-followup-20261029/SDK_RESULTS.tsv",
+      "sdk_results_sha256": "fbbd45afdca84cbd0753cc3be80c8ef8b99f64d75a453ce9b92336527e4ed497",
+      "sdk_inputs": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/grid-native-oracles-followup-20261029/SDK_INPUTS.tsv",
+      "sdk_inputs_sha256": "a76eade07adc6dd3193429bf14466dc3d8fa75ef0ce65b3e68cd0c610b19c0b8",
       "actual_sdk_tests": 5,
       "input_sealing_tests": 12,
       "receiver_integrity_cases": 15,
@@ -27,34 +76,365 @@
   ],
   "generated_results": [
     {
+      "dataset": "grid-selection-current-20261029",
+      "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+      "pre_sha256": "2f297ae44a7670c39736a5c3172a9d2c27d417307f5310b7ad51cd08d596a570",
+      "sha256": "e0baf4454d652a0a8acb1b6da1223b4244749d07d93cda1ec197a12458a51684",
       "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml",
-      "pre_sha256": "594f1ac0421ef5f7c477c85534c7da7ba1e715788cfc60a44fef1c8d699596f3",
-      "sha256": "2f297ae44a7670c39736a5c3172a9d2c27d417307f5310b7ad51cd08d596a570"
+      "execution_steps": [
+        {
+          "dataset": "grid-retention-current-20261029",
+          "baseline_ref": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+          "pre_sha256": "594f1ac0421ef5f7c477c85534c7da7ba1e715788cfc60a44fef1c8d699596f3",
+          "sha256": "2f297ae44a7670c39736a5c3172a9d2c27d417307f5310b7ad51cd08d596a570"
+        },
+        {
+          "dataset": "grid-selection-current-20261029",
+          "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+          "pre_sha256": "2f297ae44a7670c39736a5c3172a9d2c27d417307f5310b7ad51cd08d596a570",
+          "sha256": "e0baf4454d652a0a8acb1b6da1223b4244749d07d93cda1ec197a12458a51684"
+        }
+      ]
     },
     {
-      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridColumnMetricsRetention_Test.java",
+      "dataset": "grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "pre_sha256": "e038c2eec586aa9ce9e563fe19f07c879d2c3cd232a8dfb83c17f918ffb4aaaf",
+      "sha256": "cc7c4dc00b38ba1b49a9154b3a02644b363785a7ea56b655e24009578009bb69",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridBlitScroll_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-native-oracles-v3-20261029",
+          "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+          "pre_sha256": "e038c2eec586aa9ce9e563fe19f07c879d2c3cd232a8dfb83c17f918ffb4aaaf",
+          "sha256": "cc7c4dc00b38ba1b49a9154b3a02644b363785a7ea56b655e24009578009bb69"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "pre_sha256": "15ab3483991b49680890adbff6ac4471108eb4ea896dbe0eedf2c43e24ab84b7",
+      "sha256": "bdca7144f6da2b89262380868a296d97a0112520c82e813bccf21e08614c4255",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridBodyDefer_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-native-oracles-v3-20261029",
+          "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+          "pre_sha256": "15ab3483991b49680890adbff6ac4471108eb4ea896dbe0eedf2c43e24ab84b7",
+          "sha256": "bdca7144f6da2b89262380868a296d97a0112520c82e813bccf21e08614c4255"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-selection-current-20261029",
+      "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
       "pre_sha256": "ABSENT",
-      "sha256": "b2ca05117fdd8aea4bef0caf4d2c91dc3509140c594b232c8c3a197424000fd7"
+      "sha256": "0556142b78a4c41383f0a8311c1dacf3622671e0e48db960bcd2dccf1726b13a",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridCellSelectionMode_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-selection-current-20261029",
+          "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+          "pre_sha256": "ABSENT",
+          "sha256": "0556142b78a4c41383f0a8311c1dacf3622671e0e48db960bcd2dccf1726b13a"
+        }
+      ]
     },
     {
-      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridColumnMetrics.java",
+      "dataset": "grid-retention-current-20261029",
+      "baseline_ref": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+      "pre_sha256": "ABSENT",
+      "sha256": "b2ca05117fdd8aea4bef0caf4d2c91dc3509140c594b232c8c3a197424000fd7",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridColumnMetricsRetention_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-retention-current-20261029",
+          "baseline_ref": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+          "pre_sha256": "ABSENT",
+          "sha256": "b2ca05117fdd8aea4bef0caf4d2c91dc3509140c594b232c8c3a197424000fd7"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "pre_sha256": "7cd21e8e6c9994a0544615529937c9b6049fae4aedf3b103314f2ef9dedda011",
+      "sha256": "46f1c37b8bc01f89dd23af9a2ac3422397a293ca8fc9009437d9854cbcc9dfc1",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridPinnedRows_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-native-oracles-v3-20261029",
+          "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+          "pre_sha256": "7cd21e8e6c9994a0544615529937c9b6049fae4aedf3b103314f2ef9dedda011",
+          "sha256": "46f1c37b8bc01f89dd23af9a2ac3422397a293ca8fc9009437d9854cbcc9dfc1"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "pre_sha256": "9950414d2e6c9c1c50bf941d0fe836ff83de8a4cb39fc20b19c8517cbdd655d3",
+      "sha256": "46d309a8a99d61c294bd8420bf4ce77e0aad7061e51fe142d28989fb1e0cc18d",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridResidency_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-native-oracles-v3-20261029",
+          "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+          "pre_sha256": "9950414d2e6c9c1c50bf941d0fe836ff83de8a4cb39fc20b19c8517cbdd655d3",
+          "sha256": "46d309a8a99d61c294bd8420bf4ce77e0aad7061e51fe142d28989fb1e0cc18d"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "pre_sha256": "8487bc90dde545d38672f3a3b6a4e89c7ef799f72d5b95459f18674ab3c84ee4",
+      "sha256": "d92b76747083ebae60570e50a036e0fd84d057cdca7da1faccc7d78fd573f8d1",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridRowPermutation_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-native-oracles-v3-20261029",
+          "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+          "pre_sha256": "8487bc90dde545d38672f3a3b6a4e89c7ef799f72d5b95459f18674ab3c84ee4",
+          "sha256": "d92b76747083ebae60570e50a036e0fd84d057cdca7da1faccc7d78fd573f8d1"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "pre_sha256": "47ed3d9bf4bd642fa49929dbcc41ee409bfbd3349fbf9e0ee7663983502ec5e1",
+      "sha256": "ed79d06fb6bc4166ffd469260eb7dff2c03591973859f45ccbc411a40603a655",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridSetDataRedraw_Test.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-native-oracles-v3-20261029",
+          "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+          "pre_sha256": "47ed3d9bf4bd642fa49929dbcc41ee409bfbd3349fbf9e0ee7663983502ec5e1",
+          "sha256": "ed79d06fb6bc4166ffd469260eb7dff2c03591973859f45ccbc411a40603a655"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "pre_sha256": "c3daf18f7ac69d70d80ca36813de5b3faa84da1c761f7454a9106497a3015d55",
+      "sha256": "39ee42f28999b2517466ef75ba9a0a898a4b9e741a5efc47fd68921c204ceb35",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridSwtScreenshotCapture.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-native-oracles-v3-20261029",
+          "baseline_ref": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+          "pre_sha256": "c3daf18f7ac69d70d80ca36813de5b3faa84da1c761f7454a9106497a3015d55",
+          "sha256": "39ee42f28999b2517466ef75ba9a0a898a4b9e741a5efc47fd68921c204ceb35"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-selection-current-20261029",
+      "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+      "pre_sha256": "b510400c2709c3d2e1070825a154afa0ad1ed691011bd1819df7dd3140788ba4",
+      "sha256": "c977bb34e161f584f934b3abbfd23593d34af797855528147c6d3862f1d910e3",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-selection-current-20261029",
+          "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+          "pre_sha256": "b510400c2709c3d2e1070825a154afa0ad1ed691011bd1819df7dd3140788ba4",
+          "sha256": "c977bb34e161f584f934b3abbfd23593d34af797855528147c6d3862f1d910e3"
+        }
+      ]
+    },
+    {
+      "dataset": "grid-retention-current-20261029",
+      "baseline_ref": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
       "pre_sha256": "ad6cb311335a985fd1e4fed8352d7c40747239f94c7e1db40dc0929dcf1aa09d",
-      "sha256": "11d6fe7044bdb017b6935e1c9674aea24d7fdfb3e97d058ed899cc84f2920901"
+      "sha256": "11d6fe7044bdb017b6935e1c9674aea24d7fdfb3e97d058ed899cc84f2920901",
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridColumnMetrics.java",
+      "execution_steps": [
+        {
+          "dataset": "grid-retention-current-20261029",
+          "baseline_ref": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+          "pre_sha256": "ad6cb311335a985fd1e4fed8352d7c40747239f94c7e1db40dc0929dcf1aa09d",
+          "sha256": "11d6fe7044bdb017b6935e1c9674aea24d7fdfb3e97d058ed899cc84f2920901"
+        }
+      ]
     }
   ],
+  "preimage_semantics": "Each result names its immediate last executed preimage; ordered execution_steps retain the full per-file chain and exact dataset baselines.",
   "product_gate": {
-    "actual_native_tests": 5,
-    "baseline_expected_failures": 4,
-    "failures": 0,
-    "errors": 0,
-    "skipped": 0
+    "qualification": "PASSED",
+    "qualified_receiving_base": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+    "scope": "Complete default owning Grid Tycho reactor plus independent source-built native Grid acceptance on the complete current runtime closure; execution counts overlap and must not be added.",
+    "platform": "Linux GTK3/X11 on isolated Xvfb displays",
+    "owning_default_tycho": {
+      "tests": 142,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "selection": "owning-default-includes",
+      "swt_version": "3.135.0.v20260819-1952",
+      "swt_origin": "upstream pinned GTK x86_64 bundle",
+      "swt_jar_sha256": "0799e4475b8937e05a0f13c6cbeadbf066ca56dd3622bfd8c7a4ba133b2db2e2",
+      "gc_class_sha256": "ca53c017ba4fb9fb7a4ebce4261b22b255af3e2b084855127baa9145441da383",
+      "grid_runtime_java_sources_compiled": 118,
+      "all_source_hashes_unchanged_during_run": true,
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/executions/current-owning-tycho-05/RECEIPT.json"
+    },
+    "independent_source_built_native": {
+      "tests": 39,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "swt_version": "3.138.0-SNAPSHOT",
+      "swt_origin": "source-built GTK x86_64 binary",
+      "swt_jar_sha256": "90aed514c0f6a7882cc61bf35c36ff6af6e1b05c6a5d83dac48831ac0da82e7f",
+      "grid_runtime_java_sources_compiled": 118,
+      "upstream_scroll_anchor_cases": 8,
+      "retained_display_copy_pngs": 36,
+      "all_source_hashes_unchanged_during_run": true,
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/executions/current-native-39-02/RECEIPT.json"
+    },
+    "current_baseline_regression_reproduction": {
+      "tests": 8,
+      "failures": 7,
+      "errors": 0,
+      "skipped": 0,
+      "regression_class": "GridCellSelectionMode_Test",
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/executions/baseline-mode-current-01/RECEIPT.json"
+    },
+    "current_source_closure": {
+      "owning_baseline_files": 405,
+      "generated_files": 406,
+      "new_source_test_outputs": 10,
+      "non_target_baseline_files_byte_identical": 396,
+      "runtime_java_files": 118,
+      "runtime_java_files_byte_identical": 117,
+      "upstream_owner_preservation": [
+        {
+          "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java",
+          "current_base_sha256": "b510400c2709c3d2e1070825a154afa0ad1ed691011bd1819df7dd3140788ba4",
+          "generated_sha256": "c977bb34e161f584f934b3abbfd23593d34af797855528147c6d3862f1d910e3",
+          "preservation": "Current upstream changes retained; only the three selection/header atoms added."
+        },
+        {
+          "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridViewport.java",
+          "current_base_sha256": "97fdd96e4025a8a0060b634c88fda0e9922ebaf87a9cdfbb102a93569116b204",
+          "generated_sha256": "97fdd96e4025a8a0060b634c88fda0e9922ebaf87a9cdfbb102a93569116b204",
+          "preservation": "Byte-identical to current master."
+        },
+        {
+          "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridCellSelectionList.java",
+          "current_base_sha256": "83db9b311fcb22cf4602cece67d911df0e4ced00c4b693cb421438414b748511",
+          "generated_sha256": "83db9b311fcb22cf4602cece67d911df0e4ced00c4b693cb421438414b748511",
+          "preservation": "Byte-identical to current master."
+        }
+      ],
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/CURRENT_PRODUCT_CLOSURE.json"
+    },
+    "current_source_recipe": {
+      "dataset": "grid-selection-current-20261029",
+      "baseline_ref": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+      "actual_sdk_tests": 5,
+      "input_sealing_tests": 12,
+      "receiver_integrity_cases": 15,
+      "exact_sdk_inputs": 22,
+      "unchanged_canonical_files": 11,
+      "exact_packaged_resources": 8,
+      "actual_sdk_result_targets": 3,
+      "receiver_changes": [
+        3,
+        0
+      ],
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/CANONICAL_CLOSURE_AUDIT.json",
+      "sdk_results": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/sdk/candidate/SDK_RESULTS.tsv"
+    },
+    "oracle_phase_preservation": {
+      "dataset": "grid-native-oracles-v3-20261029",
+      "immutable_recipe_baseline": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+      "current_receiving_base": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+      "all_seven_current_preimages_exact": true,
+      "receiver_changes": [
+        7,
+        0
+      ],
+      "changed_existing_test_helper_files": 7,
+      "existing_test_methods_retained": 18,
+      "runtime_source_changes_in_oracle_phase": 0,
+      "behavioral_expectations": "Original behavioral count, equality, inequality, bounds and identity assertions retained; bounded waits observe target-owned paint completion and new pixel oracles capture GC(display).copyArea.",
+      "drag_oracle": "Requires a completed post-drag body paint and preserves the original frame-budget endpoint before the added observation wait.",
+      "assertion_evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/grid-native-oracles-followup-20261029/ASSERTION_PRESERVATION.json",
+      "current_receiver_evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/RECEIVER_RESULTS.json"
+    },
+    "previously_merged_column_metrics_retention": {
+      "status": "PREVIOUSLY_MERGED_IN_PR303_AND_INHERITED_BY_CURRENT_BASE",
+      "pull_request": "https://github.com/hsoliwal/nebula/pull/303",
+      "merge_commit": "440840baff35e3b7c5e4552482bb0a775ed2ef2e",
+      "dataset": "grid-retention-current-20261029",
+      "immutable_recipe_baseline": "98a2da4a71ced5bd9a5bac1cff7b0e8c10376043",
+      "historical_baseline_tests": 4,
+      "historical_baseline_failures": 4,
+      "historical_candidate_tests": 5,
+      "historical_candidate_failures": 0,
+      "historical_candidate_errors": 0,
+      "historical_candidate_skipped": 0,
+      "current_status": "Retention controls are also executed in the current independent 39-case native suite; the original retention change is not a new change in this follow-up PR.",
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-reciprocal-20261029/grid-retention-current/SUMMARY.json"
+    },
+    "public_api_preservation": {
+      "comparison": "javap -protected -s",
+      "public_and_protected_descriptors": 188,
+      "identical": true,
+      "baseline_source_sha256": "b510400c2709c3d2e1070825a154afa0ad1ed691011bd1819df7dd3140788ba4",
+      "generated_source_sha256": "c977bb34e161f584f934b3abbfd23593d34af797855528147c6d3862f1d910e3",
+      "descriptor_dump_sha256": "943faceac462a0e28e7f9fd59270f28dc4e4e0f7088b28f7f4a3187be66a2d28",
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/execution-context/Grid-current-public-api-comparison.json"
+    },
+    "screenshot_evidence": {
+      "total_pngs": 91,
+      "method_counts": {
+        "DISPLAY_COPY_AREA": 82,
+        "CONTROL_PRINT": 8,
+        "MIXED_CAPTURE_RESOURCE_PROBE": 1
+      },
+      "evidence": "synexia-openrewrite-recipes/recipe-crates/m3-ast-build-reverse-20261017/proofs/ui-grid-current-master-20261029/SCREEN_CAPTURES.json"
+    }
   },
-  "public_api_preservation": "Existing public JVM descriptors retained; additions recorded in canonical proof",
-  "scope": "Qualified component increment; complete toolkit parity and full distribution release are not claimed",
-  "remaining_gates": [
-    "full owning distribution and installed-image integration",
-    "Windows/Cocoa and cross-platform pixel acceptance",
-    "performance and memory benchmarks"
+  "evidence_corrections": [
+    "Current qualification is pinned to Nebula b0710654e188187ecfb0b332dc4c1ef358c65c1f. Earlier 99d0ab-based selection/oracle executions and passive-receipt datasets retain their original baselines and remain historical; they are not relabeled as current.",
+    "The final current owning receipt is current-owning-tycho-05: 142 tests, 0 failures, 0 errors, 0 skips. The final current independent receipt is current-native-39-02: 39 tests, 0 failures, 0 errors, 0 skips. The eight current upstream GridScrollAnchor_Test cases execute in the independent suite because the unchanged default owning POM does not select that class. The execution counts overlap and are not additive.",
+    "Current owning attempts 01 through 04 stopped before any tests executed while exact Mockito-transitive Maven descriptor, binary P2 or source-bundle cache entries were absent. They are preserved as DEPENDENCY_BEFORE_TESTS, not executed product-test failures. Exact official artifacts were restored using fixed Eclipse R-4.41-202608281142 descriptors and checksums; product sources, POM, target versions, test inclusions and assertions were unchanged during cache repair.",
+    "A Maven source-JAR cache attempt was refused on descriptor-size mismatch before artifact or index writes. The exact published Eclipse source bundles were subsequently fetched and verified against both SHA-256 and SHA-512. The refusal is retained as historical cache evidence.",
+    "Current native attempt 01 compiled the source closure but encountered screenshot-output I/O failure and produced no valid JUnit result. It remains INCOMPLETE_IO and is not counted as a passing suite or an established product failure; the valid final 39-case receipt is retained separately.",
+    "The original 134/6 owning baseline, 142/7 selection-only owning candidate and 31/3 independent pre-oracle control remain historical observations. The extra earlier Residency failure did not reproduce in an isolated pair; that isolated pass did not determine the suite-level cause. Earlier final 99d oracle qualification 142/0 and 31/0 remains historical alongside the new current 142/0 and 39/0 qualification.",
+    "The current screenshot registry labels 82 display-copy images, 8 existing control-print images and 1 mixed resource-lifetime probe. Only the appropriate display-capture evidence supports the new visible-pixel assertions; copied static image fixtures are excluded from this registry.",
+    "The Grid API check reports 188 public and protected descriptors because it uses javap -protected -s. Earlier 178-public-only counts used a narrower comparison and are not a claim that ten APIs were added.",
+    "PR303 already merged the initial GridColumnMetrics retention fix. This follow-up preserves it and the current upstream Grid, GridViewport and GridCellSelectionList work, then adds the selection/header state repair and seven test-oracle repairs across ten source/test outputs."
   ],
-  "passive": true
+  "public_api_preservation": "Prior public JVM descriptors retained; explicit additions and behavior corrections are recorded in the canonical proof.",
+  "scope": "Qualified component increment; complete toolkit parity and full release qualification are not claimed.",
+  "remaining_gates": [
+    "The legacy full-grid-contracts opt-in profile was not included in the qualified default owning Grid reactor.",
+    "Full Nebula distribution and installed-image integration beyond the owning Grid reactor remain unqualified by these runs.",
+    "Windows, Cocoa and GTK4 native/pixel acceptance remain unqualified; these executions cover Linux GTK3/X11.",
+    "Performance and memory benchmark improvements are not established by the correctness and reference-lifetime regressions."
+  ],
+  "passive": true,
+  "receiving_preimage_equivalence": {
+    "current_mode_baseline": "b0710654e188187ecfb0b332dc4c1ef358c65c1f",
+    "existing_oracle_baseline": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+    "all_seven_oracle_current_preimages_exact": true,
+    "full_current_source_test_build_files_before": 405,
+    "full_current_source_test_build_files_after": 406,
+    "unchanged_non_target_baseline_files": 396,
+    "receipt_preimage_sha256": "7da0729f7eee8124fdf01663caed96db3bb34d85a0fd04135caa9c0484bde5e2"
+  },
+  "previous_qualification": {
+    "merged_pr": 303,
+    "qualified_head": "99d0ab1ebfc9f79b72c77dca49af12331a202dea",
+    "merge_commit": "440840baff35e3b7c5e4552482bb0a775ed2ef2e",
+    "previous_receipt_sha256": "7da0729f7eee8124fdf01663caed96db3bb34d85a0fd04135caa9c0484bde5e2",
+    "historical_withheld_receipt_sha256": "cc9c83c220d927803cb125675d6820d9958af0739d0bc01ec2e73c0d647491b4"
+  }
 }

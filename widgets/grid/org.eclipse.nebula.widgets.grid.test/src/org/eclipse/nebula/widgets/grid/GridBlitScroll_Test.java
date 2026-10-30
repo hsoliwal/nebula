@@ -15,14 +15,12 @@
 package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.security.MessageDigest;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ScrollBar;
@@ -63,6 +61,7 @@ public class GridBlitScroll_Test {
 		grid.setItemCount(5000);
 		grid.select(new int[] { 3, 9, 40 });
 		shell.setSize(560, 420);
+		shell.setLocation(20, 20);
 		shell.open();
 		shell.forceActive();
 		settle();
@@ -77,47 +76,39 @@ public class GridBlitScroll_Test {
 	public void blitScrollEqualsFullRepaintOnScreen() throws Exception {
 		final ScrollBar bar = grid.getVerticalBar();
 		final int before = grid.blitScrollCount;
+		final String initial = screen();
 		for (final int step : new int[] { 1, 2, 5, 3, 17, 1, 9, 30, 2 }) {
+			final int beforeScroll = grid.paintPasses;
 			bar.setSelection(bar.getSelection() + step);
 			bar.notifyListeners(SWT.Selection, new Event());
 			grid.update();
-			settle();
+			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses,
+					beforeScroll + 1, "blit-scroll paint did not settle");
 			final String blitted = screen();
+			final int beforeRepaint = grid.paintPasses;
 			grid.redraw();
 			grid.update();
-			settle();
+			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses,
+					beforeRepaint + 1, "full repaint did not settle");
 			assertEquals("after +" + step + " rows", screen(), blitted);
 		}
 		assertTrue("blit path used: " + (grid.blitScrollCount - before), grid.blitScrollCount > before);
+		assertNotEquals("scrolling must change the visible Grid pixels", initial, screen());
 	}
 
-	/** SHA-256 of the Grid's on-screen pixels (display copy). */
+	/** SHA-256 of the Grid's actual on-screen pixels (DISPLAY_COPY_AREA). */
 	private String screen() throws Exception {
-		final Point size = grid.getSize();
-		final Image image = new Image(display, size.x, size.y);
-		try {
-			final GC gc = new GC(grid);
-			try {
-				gc.copyArea(image, 0, 0);
-			} finally {
-				gc.dispose();
-			}
-			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(image.getImageData().data);
-			final StringBuilder hex = new StringBuilder();
-			for (final byte b : digest) {
-				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
-			}
-			return hex.toString();
-		} finally {
-			image.dispose();
+		final byte[] pixels = GridSwtScreenshotCapture.captureScreenData(grid, "blit-scroll").data;
+		final byte[] digest = MessageDigest.getInstance("SHA-256").digest(pixels);
+		final StringBuilder hex = new StringBuilder();
+		for (final byte b : digest) {
+			hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
 		}
+		return hex.toString();
 	}
 
 	private void settle() {
-		for (int i = 0; i < 5; i++) {
-			while (display.readAndDispatch()) {
-				// drain
-			}
-		}
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, 1,
+				"initial blit-scrolling Grid paint did not settle");
 	}
 }

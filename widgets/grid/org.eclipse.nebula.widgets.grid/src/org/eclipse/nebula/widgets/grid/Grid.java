@@ -7270,9 +7270,7 @@ public class Grid extends Canvas {
 		}
 		renderer.setHoverDetail(hoveringDetail);
 		renderer.setBounds(x, y, width, height);
-		if (cellSelectionEnabled) {
-			renderer.setSelected(selectedColumns.contains(column));
-		}
+		renderer.setSelected(cellSelectionEnabled && selectedColumns.contains(column));
 		if (x + width >= 0) {
 			paintHeaderPart(renderer, gc, column);
 		}
@@ -7367,9 +7365,7 @@ public class Grid extends Canvas {
 		renderer.setHoverDetail(hoveringDetail);
 		renderer.setBounds(x, y, width, height);
 
-		if (cellSelectionEnabled) {
-			renderer.setSelected(selectedColumns.contains(column));
-		}
+		renderer.setSelected(cellSelectionEnabled && selectedColumns.contains(column));
 
 		if (x + width >= 0) {
 			paintHeaderPart(renderer, gc, column);
@@ -11005,6 +11001,7 @@ public class Grid extends Canvas {
 		checkWidget();
 		if (!cellSelection) {
 			selectedCells.clear();
+			updateColumnSelection();
 			redraw();
 		} else {
 			if ((getStyle() & SWT.SINGLE) == 0) {
