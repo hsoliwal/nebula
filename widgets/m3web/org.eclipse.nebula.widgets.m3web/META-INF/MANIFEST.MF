@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula M3 Web Widgets
+Bundle-SymbolicName: org.eclipse.nebula.widgets.m3web
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Eclipse Nebula
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.eclipse.swt;bundle-version="[3.126.0,4.0.0)"
+Export-Package: org.eclipse.nebula.widgets.m3web,
+ org.eclipse.nebula.widgets.m3web.model
+Automatic-Module-Name: org.eclipse.nebula.widgets.m3web

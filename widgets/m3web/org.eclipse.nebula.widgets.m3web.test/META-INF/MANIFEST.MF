@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula M3 Web Widgets Tests
+Bundle-SymbolicName: org.eclipse.nebula.widgets.m3web.test
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Eclipse Nebula
+Fragment-Host: org.eclipse.nebula.widgets.m3web
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.junit;bundle-version="4.13.0"
+Automatic-Module-Name: org.eclipse.nebula.widgets.m3web.test
