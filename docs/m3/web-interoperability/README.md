@@ -401,3 +401,51 @@ New source tests:
 selected-key retention and LRU eviction). RWT 4.8.0
 cross-compilation has been added to the existing workflow.
 **Real SWT/RAP platform and browser qualification remains NOT_RUN.**
+
+## Bounded determinate web progress → original SWT/RWT ProgressBar
+
+The source-compiled `TransferProgressNativeSwt.java` is a fourth,
+additive native receiver under the existing M3 SWT bundle. The
+canonical TypeScript AST transformation, source-sealed JSX fixture,
+negative grammar tests and exact Java golden remain in Synexia.
+`<progress id="upload" value="65" max="100"></progress>` produces
+exactly one `ProgressBar(content, SWT.HORIZONTAL)` with:
+
+- `setData("m3.web.id", "upload")` for source identity,
+- `setMinimum(0)`, `setMaximum(100)`, `setSelection(65)`,
+- no synthetic `Selection`, `Modify` or HTML event runtime.
+
+The compiler admits **determinate literal integers only**: mandatory
+`value` and `max`, positive maximum up to 1,000,000, source value
+in range, canonical decimal notation without leading zeroes.
+Indeterminate/fractional progress, HTML fallback markup, CSS,
+dynamic React state and `<meter>` quality thresholds are **HOLD**,
+not silently quantized or treated as equivalent.
+
+Example direct original SWT invocation:
+
+```java
+Composite transfer = TransferProgressNativeSwt.create(parent, SWT.NONE,
+    actionId -> handleAction(actionId),
+    (id, value) -> handleValueChange(id, value));
+```
+
+The fixed fixture generates three children: original `Label`,
+`ProgressBar` and `Button(SWT.PUSH)`. Native progress has no
+user-input callback. Future progress changes can update the existing
+SWT/RWT `ProgressBar` on its owning UI thread; no second widget or
+DOM hierarchy is necessary.
+
+Source SHA-256:
+`51cecf7300c4ea1e507641e1f8198b51150e06d52603a1794e53728b4fc75686`.
+Exact Java SHA-256:
+`6217ecca17261034fda1b3824fe93737eca77411012ab13e1e85567974331e25`.
+JDK21 `javac --release 11 -Xlint:all -Werror` compiled the
+generated Java against **test-only SWT API signatures**; a local
+three-Control initial-state and Cancel-action smoke passed.
+Real SWT display JUnit source `TransferProgressNativeSwtTest`
+and the RWT 4.8.0 API gate were committed, but their hosted
+native/browser results remain **NOT_RUN**.
+
+Official original API:
+https://help.eclipse.org/latest/topic/org.eclipse.rap.doc/guide/reference/api/org/eclipse/swt/widgets/ProgressBar.html
