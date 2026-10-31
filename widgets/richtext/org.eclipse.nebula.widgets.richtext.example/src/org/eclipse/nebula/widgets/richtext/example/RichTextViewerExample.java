@@ -16,6 +16,7 @@ package org.eclipse.nebula.widgets.richtext.example;
 
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.nebula.widgets.richtext.RichTextEditor;
+import org.eclipse.nebula.widgets.richtext.RichTextEditorConfiguration;
 import org.eclipse.nebula.widgets.richtext.RichTextViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -29,6 +30,19 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class RichTextViewerExample {
+
+	// @formatter:off
+	private static final String TOOLBAR_GROUP_CONFIGURATION = "[" //$NON-NLS-1$
+			+ "{ name: 'clipboard', groups: [ 'undo', 'clipboard'] }," //$NON-NLS-1$
+			+ "{ name: 'colors' }," //$NON-NLS-1$
+			+ "{ name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] }," //$NON-NLS-1$
+			+ "{ name: 'styles' }," //$NON-NLS-1$
+			+ "{ name: 'paragraph', groups: [ 'align', 'list', 'indent' ] }," //$NON-NLS-1$
+			+ "{ name: 'find'}," //$NON-NLS-1$
+			+ "{ name: 'insert' },"
+			+ "{ name: 'uploadImage' }," //$NON-NLS-1$
+			+ "{ name: 'base64image' }]"; //$NON-NLS-1$
+	// @formatter:on
 
 	public static void main(String[] args) {
 		Display display = new Display();
@@ -54,11 +68,17 @@ public class RichTextViewerExample {
 	public void createControls(Composite parent) {
 		parent.setLayout(new GridLayout(2, true));
 
-		final RichTextEditor editor = new RichTextEditor(parent);
+		final RichTextEditorConfiguration editorConfig = new RichTextEditorConfiguration();
+
+		editorConfig.setOption("toolbarGroups", TOOLBAR_GROUP_CONFIGURATION); //$NON-NLS-1$
+		editorConfig.removeDefaultToolbarButton("Flash", "Table", "HorizontalRule", "SpecialChar" + "", "Smiley", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$//$NON-NLS-5$ //$NON-NLS-6$
+				"PageBreak", "Iframe"); //$NON-NLS-1$ //$NON-NLS-2$
+		final RichTextEditor editor = new RichTextEditor(parent, editorConfig);
+
 		GridDataFactory.fillDefaults().grab(true, true).applyTo(editor);
 
 		final RichTextViewer viewer = new RichTextViewer(parent, SWT.BORDER | SWT.WRAP);
-		viewer.setWordSplitRegex("\\s|\\-");//wrap after whitespace characters and delimiter
+		viewer.setWordSplitRegex("\\s|\\-");// wrap after whitespace characters and delimiter
 		GridDataFactory.fillDefaults().grab(true, true).span(1, 2).applyTo(viewer);
 
 		final Text htmlOutput = new Text(parent,
