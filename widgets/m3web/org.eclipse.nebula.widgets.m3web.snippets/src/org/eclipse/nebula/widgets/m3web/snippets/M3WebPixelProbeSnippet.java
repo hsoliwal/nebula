@@ -40,22 +40,54 @@ public final class M3WebPixelProbeSnippet {
 		Display display = new Display();
 		Shell shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
 		M3WebCanvas<?>[] widgets = {
-			probe(new M3Card(shell, SWT.NONE), "Quarterly revenue~Up 12% on last quarter"),
-			probe(new M3Avatar(shell, SWT.NONE), "Ada Lovelace"),
-			probe(new M3Skeleton(shell, SWT.NONE), "title;line;line"),
-			probe(new M3Drawer(shell, SWT.NONE), "Navigation~Inbox"),
-			probe(new M3Autocomplete(shell, SWT.NONE), "Apple;Apricot;Banana;Blueberry;Cherry"),
-			probe(new M3KanbanBoard(shell, SWT.NONE), "0~Write spec;1~Build;2~Ship"),
-			probe(new M3VideoPlayer(shell, SWT.NONE), "intro.mp4~90"),
-			probe(new M3Cascader(shell, SWT.NONE), "Asia/India/Pune;Asia/Japan/Tokyo;Europe/France/Paris"),
-			probe(new M3QrCode(shell, SWT.NONE), "https://example.org"),
-			probe(new M3Ribbon(shell, SWT.NONE), "0~Paste~L;0~Cut;0~Copy;1~Bold;1~Italic;1~Underline"),
-			probe(new M3Navigation(shell, SWT.NONE), "Home;Projects;Settings")
+			probe(new M3Card(shell, SWT.NONE), "Quarterly revenue~Up 12% on last quarter", "CONTAINER"),
+			probe(new M3Avatar(shell, SWT.NONE), "", "TOKEN"),
+			probe(new M3Icon(shell, SWT.NONE), "", "TOKEN"),
+			probe(new M3Skeleton(shell, SWT.NONE), "title;line;line", "ANIMVALUE"),
+			probe(new M3Drawer(shell, SWT.NONE), "Navigation~Inbox", "OVERLAY"),
+			probe(new M3Autocomplete(shell, SWT.NONE), "Apple;Apricot;Banana;Blueberry;Cherry", "INPUT"),
+			probe(new M3Kbd(shell, SWT.NONE), "", "TOKEN"),
+			probe(new M3KanbanBoard(shell, SWT.NONE), "0~Write spec;1~Build;2~Ship", "COLLECTION"),
+			probe(new M3BottomSheet(shell, SWT.NONE), "Share~Copy link", "OVERLAY"),
+			probe(new M3EmptyState(shell, SWT.NONE), "No results~Try another search", "CONTAINER"),
+			probe(new M3Affix(shell, SWT.NONE), "Back to top", "OVERLAY"),
+			probe(new M3PullToRefresh(shell, SWT.NONE), "Mail 1;Mail 2;Mail 3", "COLLECTION"),
+			probe(new M3SwipeActions(shell, SWT.NONE), "Meeting notes;Invoice;Photos", "COLLECTION"),
+			probe(new M3HighlightMark(shell, SWT.NONE), "", "TOKEN"),
+			probe(new M3Fab(shell, SWT.NONE), "Create", "OVERLAY"),
+			probe(new M3OtpInput(shell, SWT.NONE), "6", "INPUT"),
+			probe(new M3TagInput(shell, SWT.NONE), "java;swt;swing", "INPUT"),
+			probe(new M3StatKpi(shell, SWT.NONE), "Active users~1284~12", "CONTAINER"),
+			probe(new M3VideoPlayer(shell, SWT.NONE), "intro.mp4~90", "EMBED"),
+			probe(new M3Cascader(shell, SWT.NONE), "Asia/India/Pune;Asia/Japan/Tokyo;Europe/France/Paris", "PICKER"),
+			probe(new M3InfiniteScroll(shell, SWT.NONE), "Item 1;Item 2;Item 3", "COLLECTION"),
+			probe(new M3HoverCard(shell, SWT.NONE), "@synexia~Profile card", "OVERLAY"),
+			probe(new M3Tour(shell, SWT.NONE), "Welcome;Create a project;Invite your team", "OVERLAY"),
+			probe(new M3QrCode(shell, SWT.NONE), "https://example.org", "PLOT"),
+			probe(new M3MarkdownRender(shell, SWT.NONE), "# Title;- one;- two;plain text", "EMBED"),
+			probe(new M3DateRange(shell, SWT.NONE), "20260101~20260110", "PICKER"),
+			probe(new M3Sparkline(shell, SWT.NONE), "3;5;2;8;6;9;4", "PLOT"),
+			probe(new M3Ribbon(shell, SWT.NONE), "0~Paste~L;0~Cut;0~Copy;1~Bold;1~Italic;1~Underline", "COMMANDS"),
+			probe(new M3Backdrop(shell, SWT.NONE), "scrim", "OVERLAY"),
+			probe(new M3CodeBlock(shell, SWT.NONE), "", "TOKEN"),
+			probe(new M3CaptchaSecurity(shell, SWT.NONE), "", "TOKEN"),
+			probe(new M3Popover(shell, SWT.NONE), "Filters~Status and owner", "OVERLAY"),
+			probe(new M3Navigation(shell, SWT.NONE), "Home;Projects;Settings", "SEGMENTS"),
+			probe(new M3AppBar(shell, SWT.NONE), "0~Synexia~L;1~Search;1~Settings", "COMMANDS"),
+			probe(new M3AlertBanner(shell, SWT.NONE), "Update available~Restart to apply", "CONTAINER"),
+			probe(new M3FileUpload(shell, SWT.NONE), "report.pdf~40;photo.png~100", "EMBED"),
+			probe(new M3SpinnerLoading(shell, SWT.NONE), "Loading", "ANIMVALUE"),
+			probe(new M3MessageList(shell, SWT.NONE), "0~Hi there;1~Hello!;0~How are you?", "COLLECTION"),
+			probe(new M3CommandPalette(shell, SWT.NONE), "Open file;Save all;Toggle theme;Go to line", "COLLECTION"),
+			probe(new M3ReorderDrag(shell, SWT.NONE), "First;Second;Third", "COLLECTION"),
+			probe(new M3EmojiPicker(shell, SWT.NONE), "Smileys/grinning;Smileys/wink;Animals/cat;Food/pizza", "PICKER"),
+			probe(new M3SignaturePad(shell, SWT.NONE), "Sign here", "EMBED"),
+			probe(new M3SplashScreen(shell, SWT.NONE), "Synexia~Loading workspace", "OVERLAY")
 		};
 		for (int i = 0; i < widgets.length; i++) {
-			widgets[i].setBounds(10 + (i % 4) * 300, 10 + (i / 4) * 200, 280, 180);
+			widgets[i].setBounds(4 + (i % 8) * 236, 4 + (i / 8) * 156, 230, 150);
 		}
-		shell.setBounds(20, 20, 1220, 640);
+		shell.setBounds(0, 0, 1900, 1400);
 		shell.open();
 		settle(display, 900);
 		int failed = report(display, widgets);
@@ -63,7 +95,8 @@ public final class M3WebPixelProbeSnippet {
 		System.exit(failed == 0 ? 0 : 1);
 	}
 
-	private static M3WebCanvas<?> probe(M3WebCanvas<?> widget, String sample) {
+	private static M3WebCanvas<?> probe(M3WebCanvas<?> widget, String sample, String family) {
+		widget.setData("m3.family", family);
 		widget.getModel().load(sample);
 		if (widget.getModel() instanceof org.eclipse.nebula.widgets.m3web.model.M3OverlayModel) {
 			((org.eclipse.nebula.widgets.m3web.model.M3OverlayModel) widget.getModel()).open();
@@ -89,9 +122,13 @@ public final class M3WebPixelProbeSnippet {
 		boolean blank = blank(data, widgets);
 		int failed = 0;
 		System.out.println("concept	x	y	expected	screen	screen_result	print	print_result");
+		java.util.Map<String, Integer> families = new java.util.LinkedHashMap<>();
 		for (M3WebCanvas<?> w : widgets) {
-			failed += row(w, data, printed(display, w), blank) ? 0 : 1;
+			int code = row(w, data, printed(display, w), blank);
+			failed += code == 2 ? 1 : 0;
+			families.merge(String.valueOf(w.getData("m3.family")), code, Math::max);
 		}
+		families.forEach((f, c) -> System.out.println("FAMILY	" + f + "	" + (c == 2 ? "FAIL" : c == 1 ? "PASS" : "NO_PROBE")));
 		screen.dispose();
 		return failed;
 	}
@@ -123,19 +160,19 @@ public final class M3WebPixelProbeSnippet {
 		return data;
 	}
 
-	private static boolean row(M3WebCanvas<?> w, ImageData screen, ImageData print, boolean blank) {
+	private static int row(M3WebCanvas<?> w, ImageData screen, ImageData print, boolean blank) {
 		M3WebModel m = w.getModel();
 		int[] probe = M3WebPixelProbe.probe(m, w.getSize().x, w.getSize().y);
 		if (probe.length != 4) {
 			System.out.println(m.concept() + "	-	-	-	-	NO_PROBE	-	NO_PROBE");
-			return true;
+			return 0;
 		}
 		Point at = w.toDisplay(probe[0], probe[1]);
 		int s = rgb(screen, at.x, at.y), q = rgb(print, probe[0], probe[1]);
 		boolean okPrint = M3WebPixelProbe.close(q, probe[2], probe[3]), ok = blank ? okPrint : M3WebPixelProbe.close(s, probe[2], probe[3]);
 		System.out.println(m.concept() + "	" + at.x + "	" + at.y + "	" + hex(probe[2]) + "	" + hex(s) + "	" + (blank ? "BLANK_FRAME" : ok ? "PASS" : "FAIL")
 				+ "	" + hex(q) + "	" + (okPrint ? "PASS" : "FAIL"));
-		return ok;
+		return ok ? 1 : 2;
 	}
 
 	private static int rgb(ImageData data, int x, int y) {
