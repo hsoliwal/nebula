@@ -14,6 +14,7 @@ package org.eclipse.nebula.widgets.timeline.jface;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.draw2d.Border;
+import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.geometry.Insets;
 import org.eclipse.nebula.widgets.timeline.figures.detail.track.lane.EventFigure;
 import org.eclipse.swt.graphics.Color;
@@ -120,6 +121,15 @@ public interface ITimelineStyleProvider {
 	 * @return cursor color
 	 */
 	Color getCursorColor();
+
+	/**
+	 * Get the color for annotations.
+	 *
+	 * @return annotation color
+	 */
+	default Color getAnnotationColor() {
+		return ColorConstants.white;
+	}
 
 	/**
 	 * Get the color for a selected cursor.

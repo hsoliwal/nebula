@@ -347,7 +347,8 @@ public class TimelineViewer extends StructuredViewer {
 				}
 
 			} else if (figure instanceof LaneFigure) {
-				unregisterFigures(figure.getChildren());
+				//FLLDCIM: BCP — donor merge NPKompleet: lane children are layers now, unregister the event figures themselves
+				unregisterFigures(((LaneFigure) figure).getEventFigures());
                 for (final EventFigure eventFigure : ((LaneFigure) figure).getEventFigures()) {
                     getControl().getRootFigure().deleteEventFigure(eventFigure);
                 }
