@@ -89,6 +89,8 @@ public class RichTextPainter {
 
 	public static final String TAG_BR = "br";
 
+	public static final String TAG_IMG = "img";
+
 	public static final String ATTRIBUTE_STYLE = "style";
 	public static final String ATTRIBUTE_STYLE_COLOR = "color";
 	public static final String ATTRIBUTE_STYLE_BACKGROUND_COLOR = "background-color";
