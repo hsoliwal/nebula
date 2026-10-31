@@ -43,6 +43,7 @@ public class PropertyTable extends Composite {
 	boolean showDescription;
 	boolean sorted;
 	int styleOfView;
+	List<PTProperty> propertiesOrigin;
 	final List<PTProperty> properties;
 	private boolean hasBeenBuilt = false;
 	private final List<PTPropertyChangeListener> changeListeners;
@@ -207,6 +208,21 @@ public class PropertyTable extends Composite {
 	}
 
 	/**
+	 * Show only the given properties. The properties held before the first call
+	 * stay available through {@link #getPropertiesOrigin()}.
+	 *
+	 * @param pattern properties to display
+	 */
+	public void filter(List<PTProperty> pattern) {
+		if (getPropertiesOrigin() == null) {
+			propertiesOrigin = getPropertiesAsList();
+		}
+		properties.clear();
+		properties.addAll(pattern);
+		rebuild();
+	}
+
+	/**
 	 * Remove a change listener
 	 *
 	 * @param listener listener to remove
@@ -305,5 +321,16 @@ public class PropertyTable extends Composite {
 		}
 		bulkUpdateInProgress = false;
 		return rebuild();
+	}
+
+	/**
+	 * @return the properties held before the first call to {@link #filter(List)}
+	 *         (snapshot taken on first access)
+	 */
+	public List<PTProperty> getPropertiesOrigin() {
+		if (propertiesOrigin == null) {
+			propertiesOrigin = getPropertiesAsList();
+		}
+		return propertiesOrigin;
 	}
 }
