@@ -377,6 +377,7 @@ Contributors:
 		<module>../../widgets/pagination</module>
 		<module>../../widgets/picture</module>
 		<module>../../widgets/timeline</module>
+		<module>../../widgets/m3web</module>
 
 		<module>../../examples/org.eclipse.nebula.examples</module>
 		<module>../../examples/org.eclipse.nebula.examples.feature</module>
