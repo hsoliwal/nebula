@@ -37,6 +37,7 @@ import org.eclipse.nebula.widgets.timeline.figures.detail.track.TrackFigure;
 import org.eclipse.nebula.widgets.timeline.figures.detail.track.TracksLayer;
 import org.eclipse.nebula.widgets.timeline.figures.detail.track.lane.EventFigure;
 import org.eclipse.nebula.widgets.timeline.figures.detail.track.lane.LaneFigure;
+import org.eclipse.nebula.widgets.timeline.figures.detail.track.lane.annotation.IAnnotationFigure;
 import org.eclipse.nebula.widgets.timeline.figures.overview.OverviewCursorFigure;
 import org.eclipse.nebula.widgets.timeline.figures.overview.OverviewCursorLayer;
 import org.eclipse.nebula.widgets.timeline.figures.overview.OverviewEventFigure;
@@ -127,7 +128,12 @@ public class RootFigure extends Figure implements IStyledFigure {
 	 */
 	public static int getLaneIndex(EventFigure figure) {
 		final List<LaneFigure> lanes = getLanes(figure);
-		return lanes.indexOf(figure.getParent());
+		//FLLDCIM: BCP — donor merge NPKompleet: event figures live in the lane's EventLayer, resolve the enclosing lane
+		IFigure lane = figure.getParent();
+		while ((lane != null) && !(lane instanceof LaneFigure)) {
+			lane = lane.getParent();
+		}
+		return lanes.indexOf(lane);
 	}
 
 	private final TimeBaseConverter fTimeViewDetails;
@@ -228,6 +234,7 @@ public class RootFigure extends Figure implements IStyledFigure {
 
 		getFigure(this, CursorLayer.class).removeAll();
 		getFigure(this, OverviewCursorLayer.class).removeAll();
+		fSelection = null;
 	}
 
 	public TimeBaseConverter getTimeViewDetails() {
@@ -241,7 +248,7 @@ public class RootFigure extends Figure implements IStyledFigure {
 
         // fresh layout for the detail area
         for (final LaneFigure lane : getLanes(this)) {
-            lane.revalidate();
+            lane.revalidateChildren();
         }
 
 		getFigure(this, CursorLayer.class).revalidate();
@@ -372,7 +379,7 @@ public class RootFigure extends Figure implements IStyledFigure {
 	public EventFigure createEventFigure(LaneFigure parent, ITimelineEvent event) {
 
 		final EventFigure eventFigure = new EventFigure(event);
-		parent.add(eventFigure, event);
+		parent.addEventFigure(eventFigure, event);
 
 		Color eventColor = parent.getForegroundColor();
         if (event.getColorCode() != null) {
@@ -389,6 +396,18 @@ public class RootFigure extends Figure implements IStyledFigure {
 		fDetailToOverviewMap.put(eventFigure, overviewEventFigure);
 
 		return eventFigure;
+	}
+
+	/**
+	 * Creates and adds a new Annotation.
+	 *
+	 * @param parent
+	 *            Parent figure that the annotation will be added to.
+	 * @param figure
+	 *            The Annotation to be added.
+	 */
+	public void addAnnotationFigure(LaneFigure parent, IAnnotationFigure figure) {
+		parent.annotate(figure);
 	}
 
 	/**
@@ -413,7 +432,7 @@ public class RootFigure extends Figure implements IStyledFigure {
 
 			for (final LaneFigure lane : getLanes(this)) {
 				// event figures are sorted, so we only need to get the first and last event
-				final List children = lane.getChildren();
+				final List children = lane.getEventLayer().getChildren();
                 if (children.size() >= 2) {
                     getTimeViewDetails().addEvent(((EventFigure) children.get(children.size() - 1)).getEvent());
                 }

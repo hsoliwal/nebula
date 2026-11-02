@@ -207,12 +207,14 @@ public class FloatingText extends Composite {
 			return;
 		}
 
-		if (fLabelFont != null) {
-			fLabelFont.dispose();
-		}
+		final Font oldFont = fLabelFont;
 		fLabelFont = findFittingFont(fLabel);
 
 		fLabel.setFont(fLabelFont);
+		// Dispose the old font only after the label stopped using it: the next font is derived from the label's current font
+		if (oldFont != null && !oldFont.isDisposed()) {
+			oldFont.dispose();
+		}
 		fLabel.setText(message);
 	}
 
