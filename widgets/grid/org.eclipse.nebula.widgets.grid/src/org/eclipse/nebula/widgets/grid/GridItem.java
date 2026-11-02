@@ -839,9 +839,11 @@ public class GridItem extends Item {
 		// "Index out of bounds" while the receiver was being removed (issue #700).
 		GridItem item = this;
 		int height = item.getHeight();
-		span = getRowSpan(columnIndex);
-
 		int itemCount = parent.getItemCount();
+		if (indexOfCurrentItem < 0 || indexOfCurrentItem >= itemCount) {
+			return new Point(width, height);
+		}
+		span = getRowSpan(columnIndex);
 
 		for (int i = 1; i <= span; i++) {
 			/* We will probably need another escape condition here */
