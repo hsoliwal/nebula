@@ -506,3 +506,64 @@ OpenRewrite Java-LST fixed point remain in Synexia.
 Primary authoritative API contracts:
 - https://help.eclipse.org/latest/topic/org.eclipse.rap.doc/guide/reference/api/org/eclipse/swt/widgets/Scale.html
 - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/range
+
+## Static HTML numeric input → original SWT/RWT Spinner
+
+A canonical, source-sealed JSX input:
+
+```jsx
+<input id="quantity" type="number"
+       min="0" max="500" value="12" step="1" />
+```
+
+generates one **original** `org.eclipse.swt.widgets.Spinner` in
+Nebula M3's existing SWT bundle:
+
+```java
+Spinner widget = new Spinner(content, SWT.BORDER);
+widget.setData("m3.web.id", "quantity");
+widget.setValues(12, 0, 500, 0, 1, 10);
+widget.addListener(SWT.Selection,
+    e -> onChange.accept("quantity", Integer.toString(widget.getSelection())));
+```
+
+The single `setValues` call configures the value, bounds, zero
+fractional digits, increment 1 and page increment 10 atomically.
+There is no parallel DOM node, JavaScript execution or Synexia
+runtime dependency. The original `Spinner` and its event loop own
+rendering, text input and selection. The generator deliberately
+admits **only** explicit, canonical, nonnegative integer
+`min < max <= 1,000,000`, a value within those bounds and step 1.
+A disabled input is initialized but has no selection listener.
+
+**Explicit HOLDS:** floating-point/negative values, arbitrary steps,
+browser-native validation/placeholder/required, intermediate
+partially typed text, detailed keyboard/IME semantics, RTL,
+dynamic React state and RAP browser event parity. The SWT
+`Selection` callback is qualified only as a committed integer
+selection, not a full HTML `input` event stream.
+
+First-party fixture SHA-256:
+`dbc244b199f9a3e4b0df8207004225ccbc1c96cbda29b95ca75b5871127333ae`.
+Generated Java SHA-256:
+`18ed44892371b7e245670a4f4360e08e84abdeffc88ab7569263e47aaadfa81f`.
+Exact generated Java Git blob shared by Nebula/Synexia:
+`773a6ab5608f6ea7a0308b52077a3a8a5ff380df`.
+
+The local JDK21 compiler targeting Java11 passed
+`javac --release 11 -Xlint:all -Werror` against
+**test-only SWT signatures**. A synthetic three-Control
+numeric-state/selection/Save callback smoke passed.
+The original Synexia static-form source tests, including 1,024
+number cases and prior range tests, passed locally.
+This is not a real SWT/RWT JAR compilation.
+
+`QuantityNumberNativeSwtTest` uses the real SWT
+`Display`, `Shell`, `Spinner` and JUnit. The existing
+GTK/Xvfb Tycho and checksum-pinned RWT 4.8.0 API gates now
+include it, but their executions are not yet verified.
+OpenRewrite's create-only six-source Java-LST fixed point,
+first-party AST source seals and comprehensive source tests
+remain in Synexia.
+
+Original API: https://help.eclipse.org/latest/topic/org.eclipse.rap.doc/guide/reference/api/org/eclipse/swt/widgets/Spinner.html
