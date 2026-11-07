@@ -30,7 +30,7 @@ selection **inside** the first event's item-population atom.
 New `populating` state covers the entire original `SetData`
 callback. It uses `try/finally` so exceptions cannot permanently
 latch the guard. The same check stops snapshot mutation,
-bounded invalidation and selected-key changes during any
+bounded invalidation selected-key changes and SWT.Selection capture during any
 in-progress Table item population.
 
 ## Local red/green receipt — 7 November 2026
@@ -39,7 +39,7 @@ Original `master` source: exact Git blob
 `b47f2397d1919cd037b1e331ae7ada9e0fdfbcd8`.
 
 Corrected source: exact Git blob
-`7e4667ef3e23fc1c738c9e6c17fd78485aaf7515`.
+`0c1f652b6e3df51b4624e8c9b5a854361de93c37`.
 Both blobs were recovered byte-for-byte from the connected
 repository; the previous source was also reconstructed by reversing
 only the proposed PR edits, then its exact original blob was verified.
@@ -55,7 +55,7 @@ only the proposed PR edits, then its exact original blob was verified.
 - Executed with JDK 21.0.12.1, `javac --release 11 -proc:none
   -Xlint:all -Werror`.
 - Console: `PASS original virtual Table SetData atomicity +
-  4 reentrant mutation refusals; indexed fetches=1`.
+  5 reentrant event/mutation refusals; indexed fetches=1`.
 
 **This proves a source-level control-flow contract with test-only
 SWT event shapes**, not genuine SWT/GTK/RWT runtime reentrancy.
