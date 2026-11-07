@@ -174,7 +174,7 @@ The additional, private `populating` flag now covers the **entire
 `onSetData` atom**, including cache hits and each original
 `TableItem` setter. It uses `try/finally` so an exception cannot
 permanently latch the guard. `replaceRows`, `invalidate` and
-`setSelectedKeys` also refuse to mutate the binding while that
+`setSelectedKeys` and SWT.Selection capture also refuse to mutate the binding while that
 atom is active. Public `Rows`, `Page`, `bind` and SWT APIs remain
 unchanged; no new runtime layer or extra row objects are added.
 
@@ -182,10 +182,10 @@ unchanged; no new runtime layer or extra row objects are added.
 Git blob `b47f2397d1919cd037b1e331ae7ada9e0fdfbcd8`
 accepted a nested `SetData` dispatched from `TableItem.setText`
 and **failed** the same negative test. The corrected product Java,
-Git blob `7e4667ef3e23fc1c738c9e6c17fd78485aaf7515`,
+Git blob `0c1f652b6e3df51b4624e8c9b5a854361de93c37`,
 compiled with JDK 21 targeting Java 11 and passed the test:
 nested `SetData`, invalidation, snapshot replacement and
-selection mutation were refused, with successful subsequent
+selection mutation and SWT.Selection capture were refused, with successful subsequent
 normal item population and bounded page cache. The exact Java
 sources were validated against their Git blobs before local
 compilation. **Only test-only SWT event signatures were used**, not
