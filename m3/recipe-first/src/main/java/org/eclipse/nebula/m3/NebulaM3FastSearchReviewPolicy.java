@@ -81,19 +81,32 @@ public final class NebulaM3FastSearchReviewPolicy {
 
     public static List<Category> categoriesFor(NebulaM3InventoryRecipe.SourceFacts facts) {
         Objects.requireNonNull(facts, "facts");
+        return categoriesFor(
+                facts.binarySearchCalls(),
+                facts.sortCalls(),
+                facts.indexOfCalls(),
+                facts.containsCalls());
+    }
+
+    public static List<Category> categoriesFor(NebulaM3InventoryRecipe.MethodFacts facts) {
+        Objects.requireNonNull(facts, "facts");
+        return categoriesFor(
+                facts.binarySearchCalls(),
+                facts.sortCalls(),
+                facts.indexOfCalls(),
+                facts.containsCalls());
+    }
+
+    private static List<Category> categoriesFor(
+            int binarySearchCalls,
+            int sortCalls,
+            int indexOfCalls,
+            int containsCalls) {
         LinkedHashSet<Category> categories = new LinkedHashSet<>();
-        if (facts.binarySearchCalls() > 0) {
-            categories.add(Category.BINARY_SEARCH);
-        }
-        if (facts.sortCalls() > 0) {
-            categories.add(Category.ADAPTIVE_ORDER);
-        }
-        if (facts.indexOfCalls() > 0) {
-            categories.add(Category.PREFIX_FUZZY_SEARCH);
-        }
-        if (facts.containsCalls() > 0) {
-            categories.add(Category.PRIMITIVE_LOOKUP);
-        }
+        if (binarySearchCalls > 0) categories.add(Category.BINARY_SEARCH);
+        if (sortCalls > 0) categories.add(Category.ADAPTIVE_ORDER);
+        if (indexOfCalls > 0) categories.add(Category.PREFIX_FUZZY_SEARCH);
+        if (containsCalls > 0) categories.add(Category.PRIMITIVE_LOOKUP);
         return List.copyOf(categories);
     }
 

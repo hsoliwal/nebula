@@ -52,12 +52,37 @@ class NebulaM3InventoryRecipeTest {
                 "REVIEW_LINEAR_SEARCH_FOR_PRECOMPUTED_INDEX",
                 facts.recommendedNextPass());
 
+        List<NebulaM3InventoryRecipe.MethodFacts> methods =
+                NebulaM3InventoryRecipe.analyzeMethods(unit);
+        assertEquals(2, methods.size());
+        NebulaM3InventoryRecipe.MethodFacts nativeMethod =
+                methods.stream()
+                        .filter(NebulaM3InventoryRecipe.MethodFacts::nativeMethod)
+                        .findFirst()
+                        .orElseThrow();
+        assertEquals("JNI_CONTRACT", nativeMethod.contractSurface());
+        assertEquals("NONE", nativeMethod.fastSearchSignal());
+        NebulaM3InventoryRecipe.MethodFacts find =
+                methods.stream()
+                        .filter(method -> method.methodName().equals("find"))
+                        .findFirst()
+                        .orElseThrow();
+        assertEquals(1, find.loopCount());
+        assertEquals(1, find.indexOfCalls());
+        assertEquals(1, find.containsCalls());
+        assertTrue(find.structuralPatterns().contains("ITERATION"));
+        assertTrue(find.structuralPatterns().contains("INVOCATION"));
+        assertTrue(find.fastSearchSignal().contains("REPEATED_SCAN_CANDIDATE"));
+
         var run =
                 new NebulaM3InventoryRecipe()
                         .run(
                                 new InMemoryLargeSourceSet(List.of(unit)),
                                 new InMemoryExecutionContext());
         assertTrue(run.getChangeset().getAllResults().isEmpty());
+        assertEquals(
+                2,
+                run.getDataTableRows(NebulaM3MethodInventoryTable.class).size());
     }
 
     @Test
@@ -87,6 +112,12 @@ class NebulaM3InventoryRecipeTest {
                 Files.readString(output.resolve("nebula-m3-java-inventory.tsv"));
         assertTrue(inventory.contains("widgets/demo/src/p/Candidate.java"));
         assertTrue(inventory.contains("REVIEW_LINEAR_SEARCH_CONTRACT"));
+        String methods = Files.readString(output.resolve("nebula-m3-java-methods.tsv"));
+        assertTrue(methods.contains("widgets/demo/src/p/Candidate.java"));
+        assertTrue(methods.contains("find"));
+        assertTrue(methods.contains("LINEAR_INDEX_SEARCH"));
+        assertTrue(Files.readString(output.resolve("nebula-m3-summary.tsv"))
+                .contains("methodRows\t1"));
         assertTrue(Files.readString(output.resolve("nebula-m3-parse-failures.tsv"))
                 .equals("sourcePath\treason\n"));
     }

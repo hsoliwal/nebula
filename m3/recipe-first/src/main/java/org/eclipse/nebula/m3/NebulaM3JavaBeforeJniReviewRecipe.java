@@ -12,6 +12,8 @@ import org.openrewrite.java.tree.J;
 public final class NebulaM3JavaBeforeJniReviewRecipe extends Recipe {
     private final transient NebulaM3JavaBeforeJniReviewTable review =
             new NebulaM3JavaBeforeJniReviewTable(this);
+    private final transient NebulaM3MethodJavaBeforeJniReviewTable methodReview =
+            new NebulaM3MethodJavaBeforeJniReviewTable(this);
 
     @Override
     public String getDisplayName() {
@@ -56,6 +58,14 @@ public final class NebulaM3JavaBeforeJniReviewRecipe extends Recipe {
                         new NebulaM3JavaBeforeJniReviewTable.Row(
                                 facts,
                                 NebulaM3JavaBeforeJniPolicy.review(facts)));
+                for (NebulaM3InventoryRecipe.MethodFacts method :
+                        NebulaM3InventoryRecipe.analyzeMethods(result)) {
+                    methodReview.insertRow(
+                            context,
+                            new NebulaM3MethodJavaBeforeJniReviewTable.Row(
+                                    method,
+                                    NebulaM3JavaBeforeJniPolicy.review(method)));
+                }
                 return result;
             }
         };

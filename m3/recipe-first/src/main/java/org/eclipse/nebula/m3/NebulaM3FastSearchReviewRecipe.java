@@ -12,6 +12,8 @@ import org.openrewrite.java.tree.J;
 public final class NebulaM3FastSearchReviewRecipe extends Recipe {
     private final transient NebulaM3FastSearchReviewTable review =
             new NebulaM3FastSearchReviewTable(this);
+    private final transient NebulaM3MethodFastSearchReviewTable methodReview =
+            new NebulaM3MethodFastSearchReviewTable(this);
 
     @Override
     public String getDisplayName() {
@@ -60,6 +62,19 @@ public final class NebulaM3FastSearchReviewRecipe extends Recipe {
                                 context,
                                 new NebulaM3FastSearchReviewTable.Row(
                                         facts.sourcePath(), pass));
+                    }
+                }
+                for (NebulaM3InventoryRecipe.MethodFacts method :
+                        NebulaM3InventoryRecipe.analyzeMethods(result)) {
+                    for (NebulaM3FastSearchReviewPolicy.Category category :
+                            NebulaM3FastSearchReviewPolicy.categoriesFor(method)) {
+                        for (NebulaM3FastSearchReviewPolicy.ReviewPass pass :
+                                NebulaM3FastSearchReviewPolicy.passes(category)) {
+                            methodReview.insertRow(
+                                    context,
+                                    new NebulaM3MethodFastSearchReviewTable.Row(
+                                            method, pass));
+                        }
                     }
                 }
                 return result;
