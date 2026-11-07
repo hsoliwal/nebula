@@ -285,6 +285,9 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         if (closed) {
             return;
         }
+        if (fetching || populating) {
+            throw new IllegalStateException("Cannot capture virtual selection during SetData");
+        }
         int[] selected = table.getSelectionIndices();
         if (selected.length > MAX_SELECTION_KEYS) {
             throw new IllegalStateException("Selection exceeds bounded key budget");
