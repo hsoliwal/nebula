@@ -30,7 +30,7 @@ selection **inside** the first event's item-population atom.
 New `populating` state covers the entire original `SetData`
 callback. It uses `try/finally` so exceptions cannot permanently
 latch the guard. The same check stops snapshot mutation,
-bounded invalidation selected-key changes and SWT.Selection capture during any
+bounded invalidation, selected-key changes and SWT.Selection capture during any
 in-progress Table item population.
 
 ## Local red/green receipt — 7 November 2026
@@ -49,7 +49,7 @@ only the proposed PR edits, then its exact original blob was verified.
   binding wrongly allows it. The identical no-display test
   **fails** with `Expected reentrant refusal`.
 - **Fixed original**: nested `SetData`, invalidation, snapshot
-  replacement, and selected-key mutation during a native item
+  replacement, selected-key mutation and SWT.Selection capture during a native item
   write are all **refused**; subsequent normal row population
   succeeds; resident cache remains bounded.
 - Executed with JDK 21.0.12.1, `javac --release 11 -proc:none
