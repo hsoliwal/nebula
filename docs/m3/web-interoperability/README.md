@@ -449,3 +449,60 @@ native/browser results remain **NOT_RUN**.
 
 Official original API:
 https://help.eclipse.org/latest/topic/org.eclipse.rap.doc/guide/reference/api/org/eclipse/swt/widgets/ProgressBar.html
+
+## Bounded numeric range → original SWT/RWT Scale
+
+A canonical, source-sealed JSX
+`<input id="volume" type="range" min="0" max="100" value="42" step="1" />`
+now produces one original `Scale(content, SWT.HORIZONTAL)`. The fifth
+generated Java receiver, `VolumeRangeNativeSwt.java`, lives in the
+existing Nebula M3 SWT bundle, not a new browser/runtime layer.
+
+```java
+Scale widget1 = new Scale(content, SWT.HORIZONTAL);
+widget1.setData("m3.web.id", "volume");
+widget1.setMaximum(100); // before minimum: SWT ignores an invalid minimum
+widget1.setMinimum(0);
+widget1.setIncrement(1);
+widget1.setSelection(42);
+widget1.addListener(SWT.Selection,
+    e -> onChange.accept("volume", Integer.toString(widget1.getSelection())));
+```
+
+This is the **strict, static integer** subset of HTML range. The source
+requires explicit nonnegative, canonical-decimal `min`, `max`, and
+`value`, a positive-width range no greater than 1,000,000, and only
+the HTML default step of 1 (omitted or literal `step="1"`).
+Disabled ranges retain bounds/initial selection but receive no
+callback. Fractional/negative ranges, custom steps, `step="any"`,
+default-inferred values, CSS, reactive handlers and DOM state are held.
+Mouse/keyboard/touch, RTL and live RAP event parity have **not**
+been qualified across SWT and browser platforms.
+
+Source fixture SHA-256:
+`925b03773423a03ff2d97cec9823d36de1fef78e433ee1d3a5208695368fc097`.
+Native Java SHA-256:
+`c311c3b16dd9e55bd05c01ecf1a5aee1291358a6b7c9c0ba111e325bb396bf4f`.
+
+**Local checks:** the exact Git-blob-verified Synexia source compiler,
+with only its two original helper functions extracted locally,
+passed 1,024 accepted range permutations and 26 reject cases,
+including unsupported step sizes, out-of-range values, source
+expressions and attributes. Existing ContactForm, Preferences and
+TransferProgress Java digests were reproduced unchanged. The actual
+generated Java compiled on JDK21 targeting Java 11 against **test-only
+SWT API shapes** and passed initial state, selected value callback
+and Apply action smoke. These are not real RWT API, native SWT or
+RAP browser passes.
+
+The new `VolumeRangeNativeSwtTest` uses an actual SWT `Display`,
+`Shell` and `Scale` for native JUnit acceptance. The existing
+GTK/Xvfb Tycho and checksum-pinned real RWT 4.8.0 workflow
+have been extended, but their execution remains **NOT VERIFIED**.
+The canonical source recipe, hash-sealed Java postimage,
+full TypeScript tests, Java AST identity checker and
+OpenRewrite Java-LST fixed point remain in Synexia.
+
+Primary authoritative API contracts:
+- https://help.eclipse.org/latest/topic/org.eclipse.rap.doc/guide/reference/api/org/eclipse/swt/widgets/Scale.html
+- https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/input/range
