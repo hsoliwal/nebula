@@ -126,6 +126,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
     private String[] selectedKeys = EMPTY;
     private long clock;
     private boolean fetching;
+    private boolean populating;
     private boolean closed;
 
     private M3VirtualTableBinding(Table table, Rows rows) {
@@ -181,20 +182,31 @@ public final class M3VirtualTableBinding implements AutoCloseable {
     }
 
     private void onSetData(Event event) {
-        if (closed || fetching || !(event.item instanceof TableItem)) {
+        if (closed || fetching || populating || !(event.item instanceof TableItem)) {
             throw new IllegalStateException("Invalid or reentrant SWT.SetData");
         }
-        int index = event.index;
-        int count = table.getItemCount();
-        if (index < 0 || index >= count) {
-            throw new IllegalArgumentException("Stale virtual table item");
-        }
-        Page page = pageAt(index);
-        int relative = index - page.offset();
-        TableItem item = (TableItem) event.item;
-        item.setData(ROW_KEY, page.keyAt(relative));
-        for (int column = 0; column < page.columns(); column++) {
-            item.setText(column, page.textAt(relative, column));
+        // fetching guards the provider callback only. Widget.setData/text
+        // can dispatch nested SetData *after* pageAt clears fetching.
+        // Keep the complete item-population atom non-reentrant, including
+        // the retained-page hit path and all native cell setter callbacks.
+        populating = true;
+        try {
+            int index = event.index;
+            int count = table.getItemCount();
+            if (index < 0 || index >= count) {
+                throw new IllegalArgumentException("Stale virtual table item");
+            }
+            Page page = pageAt(index);
+            int relative = index - page.offset();
+            TableItem item = (TableItem) event.item;
+            item.setData(ROW_KEY, page.keyAt(relative));
+            for (int column = 0; column < page.columns(); column++) {
+                item.setText(column, page.textAt(relative, column));
+            }
+        } finally {
+            // Reset after both successful and exceptional native callbacks.
+            // A failed SetData must not permanently disable the binding.
+            populating = false;
         }
     }
 
