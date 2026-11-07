@@ -51,11 +51,13 @@ public final class VirtualTablePopulationSmoke {
             refuses(()->table.fireSetData(1),"snapshot replacement during SetData");
             table.hookOneTextWrite(()->binding.setSelectedKeys("row-1"));
             refuses(()->table.fireSetData(1),"selected-key mutation during SetData");
+            table.hookOneTextWrite(()->table.fireSelection());
+            refuses(()->table.fireSetData(1),"SWT.Selection capture during SetData");
             table.fireSetData(3);
             eq("status-3",table.getItem(3).getText(1));
             if(binding.getResidentPageCount()>M3VirtualTableBinding.HOT_PAGES)
                 throw new AssertionError("Cache budget exceeded");
-            System.out.println("PASS original virtual Table SetData atomicity + 4 reentrant mutation refusals; indexed fetches="+rows.fetches);
+            System.out.println("PASS original virtual Table SetData atomicity + 5 reentrant event/mutation refusals; indexed fetches="+rows.fetches);
         }
     }
 }
