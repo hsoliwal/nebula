@@ -117,7 +117,7 @@ lifecycle, model-detach, query, selection and security contracts.
   On a bounded mutation, evict only intersecting pages and
   `Table.clear(first,last)`, never copy all rows.
 - All SWT calls, selection and cache mutation happen on the SWT UI thread.
-  Nested/reentrant `SetData` and mutation during fetch are refused.
+  Nested/reentrant `SetData` is refused throughout entire TableItem population (provider fetch, stable-key assignment and cell text writes). Snapshot replacement, bounded invalidation and selected-key changes during the atom are refused.
   Closing detaches handlers. The binding never disposes the Table.
 - `Table` cell/text native behavior, wide DPI, accessibility, sorting,
   keyboard and RAP browser session must be measured before qualification.
@@ -161,3 +161,44 @@ Primary API documentation:
 - https://wicket.apache.org/docs/about-models.html
 - https://wicket.apache.org/docs/detachable-models.html
 - https://eclipse.dev/rap/developers-guide/rwt.html
+
+## 2026-11-07 full Table SetData atom correction
+
+Previously, `fetching` covered only the application `Rows.fetch`
+callback and was reset when that page returned, **before** the
+original `TableItem.setData` and `setText` calls. A nested
+`SWT.SetData` dispatched during those native item writes could
+reenter the receiver mid-population.
+
+The additional, private `populating` flag now covers the **entire
+`onSetData` atom**, including cache hits and each original
+`TableItem` setter. It uses `try/finally` so an exception cannot
+permanently latch the guard. `replaceRows`, `invalidate` and
+`setSelectedKeys` and SWT.Selection capture also refuse to mutate the binding while that
+atom is active. Public `Rows`, `Page`, `bind` and SWT APIs remain
+unchanged; no new runtime layer or extra row objects are added.
+
+**Locally executed exact-source red/green:** the original master
+Git blob `b47f2397d1919cd037b1e331ae7ada9e0fdfbcd8`
+accepted a nested `SetData` dispatched from `TableItem.setText`
+and **failed** the same negative test. The corrected product Java,
+Git blob `0c1f652b6e3df51b4624e8c9b5a854361de93c37`,
+compiled with JDK 21 targeting Java 11 and passed the test:
+nested `SetData`, invalidation, snapshot replacement and
+selection mutation and SWT.Selection capture were refused, with successful subsequent
+normal item population and bounded page cache. The exact Java
+sources were validated against their Git blobs before local
+compilation. **Only test-only SWT event signatures were used**, not
+the genuine desktop/RAP toolkit.
+
+The runnable no-display test and its artificial SWT event shapes
+are located under `m3/web-widget-reverse/qualification/virtual-table-atomic/`.
+The new GitHub workflow independently checks this exact product
+Java, the SHA-256-pinned real RWT 4.8 API compilation and genuine
+GTK/Xvfb Tycho JUnit. These hosted platform jobs remain separate
+qualification gates and are not claimed passing before execution.
+
+**Tree is not equivalent:** its child event may legitimately
+initialize a parent through `parent.getText(0)`, so applying a
+blanket Table reentrancy guard to the original Tree would incorrectly
+reject valid parent-relative initialization.
