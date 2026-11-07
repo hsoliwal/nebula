@@ -11,7 +11,7 @@ PASSWORD	input:password	Text(SWT.PASSWORD)	PasswordRevealer	RWT Text(SWT.PASSWOR
 TEXTAREA	textarea	Text(SWT.MULTI)	RichText when rich text needed	RWT Text(SWT.MULTI);not StyledText	value;modify;scroll	large text;newline;caret	STATIC_CANDIDATE
 COMBO	select|datalist	Combo|CCombo	TableCombo;CalendarCombo	RWT Combo|CCombo	Selection;items;index	popup;virtual list;search	STATIC_SELECT_COMBO_CODE_COMMITTED_RWT_NOT_RUN
 DATE_TIME	input:date|time	DateTime	CDateTime;DateChooser	RWT DateTime	time zone;format;selection	locale;DST;format	STATIC_CANDIDATE
-NUMBER_SLIDER	input:range	Scale	NebulaSlider	RWT Scale	value;minimum;maximum;step	snapping;pointer;keyboard	STATIC_CANDIDATE
+NUMBER_SLIDER	input:range	Scale(SWT.HORIZONTAL)	NebulaSlider	RWT Scale	integer min/max/value;step1;source id;SWT.Selection	fractional/negative/dynamic;pointer and keyboard RAP parity	STATIC_RANGE_RECEIVER_COMMITTED_RWT_NOT_RUN
 PROGRESS	progress	ProgressBar(SWT.HORIZONTAL)	ProgressCircle;LED	RWT ProgressBar	determinate integer value/max;stable id	indeterminate/fractional/dynamic values;RAP browser	STATIC_PROGRESS_RECEIVER_COMMITTED_RWT_NOT_RUN
 TABS	role:tablist|tabs	CTabFolder|TabFolder	M3StackLayout for deferred pages	RWT CTabFolder	active index;selection	lazy pages;overflow;focus	STATIC_CANDIDATE
 ACCORDION	details|accordion	ExpandBar	PGroup;PShelf	RWT ExpandBar	collapsed;expanded;content	toggle ordering;paint	STATIC_CANDIDATE
