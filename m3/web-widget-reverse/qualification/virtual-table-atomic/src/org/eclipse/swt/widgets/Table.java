@@ -29,6 +29,9 @@ public final class Table {
         Event e=new Event(index,items.get(index));
         for(Listener l:List.copyOf(listeners.getOrDefault(SWT.SetData,List.of())))l.handleEvent(e);
     }
+    public void fireSelection(){
+        for(Listener l:List.copyOf(listeners.getOrDefault(SWT.Selection,List.of())))l.handleEvent(new Event(-1,null));
+    }
     public void hookOneTextWrite(Runnable action){duringTextWrite=action;}
     void onTextWrite(){
         Runnable run=duringTextWrite;
