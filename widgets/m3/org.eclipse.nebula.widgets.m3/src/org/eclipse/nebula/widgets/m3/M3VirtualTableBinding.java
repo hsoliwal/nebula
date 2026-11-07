@@ -262,6 +262,9 @@ public final class M3VirtualTableBinding implements AutoCloseable {
     /** Update the selected stable keys without materializing the complete view. */
     public void setSelectedKeys(String... keys) {
         checkOpen();
+        if (fetching || populating) {
+            throw new IllegalStateException("Cannot change virtual selection during SetData");
+        }
         if (keys == null || keys.length > MAX_SELECTION_KEYS) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -332,7 +335,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         if (next == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
-        if (fetching) {
+        if (fetching || populating) {
             throw new IllegalStateException("Cannot mutate virtual rows during SetData");
         }
         verifyColumns(table, next);
@@ -349,7 +352,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
     /** Invalidate a damaged inclusive logical range, without clearing other pages. */
     public void invalidate(int first, int last) {
         checkOpen();
-        if (fetching) {
+        if (fetching || populating) {
             throw new IllegalStateException("Cannot invalidate during SetData");
         }
         int count = table.getItemCount();
