@@ -139,8 +139,10 @@ public class M3InfoPopupTest {
 		assertTrue(popup.isVisible());
 		Event outside = new Event();
 		outside.button = 1;
-		outside.x = 5;
-		outside.y = 270;
+		// the header right of the last column (3 x 110 px): no anchor at any row height; a body point is a cell
+		// whenever the 20 rows overflow the table, as they do at 96 dpi with the default font
+		outside.x = 340;
+		outside.y = 2;
 		table.notifyListeners(SWT.MouseDown, outside);
 		assertFalse("a click on no anchor closes it", popup.isVisible());
 	}

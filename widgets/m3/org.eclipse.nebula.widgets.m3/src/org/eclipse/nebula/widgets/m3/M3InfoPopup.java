@@ -409,6 +409,10 @@ public final class M3InfoPopup {
 		if (!isVisible() || openedBy != HOVER) {
 			return;
 		}
+		if (pending != NONE && pending != anchor) {
+			// the pointer moved on to another anchor: its pending show replaces this popup; hide() would cancel it
+			return; //FLLDCIM: BCP — hover from one anchor to the next keeps the pending show
+		}
 		Display display = owner.getDisplay();
 		Point pointer = display.getCursorLocation();
 		if (shell.getBounds().contains(pointer)) {

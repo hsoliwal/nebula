@@ -6,10 +6,10 @@
 # snippets with javac. Run under C:/m3-superset/tools/build_lock.sh. Output: $M3_OUT (default S:/m3-scratch/custom-widgets/out/m3).
 set -u
 export MSYS_NO_PATHCONV=1
-WT=S:/m3-scratch/worktrees/nebula-widgets
+WT=${WT:-S:/m3-scratch/worktrees/nebula-widgets}
 OUT=${M3_OUT:-S:/m3-scratch/custom-widgets/out/m3}
 JDK="C:/Program Files/Java/jdk-21"
-SWT=C:/Users/hsoliwal/.m2/repository/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.135.0/org.eclipse.swt.win32.win32.x86_64-3.135.0.jar
+SWT=${SWT_JAR:-C:/Users/hsoliwal/.m2/repository/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.135.0/org.eclipse.swt.win32.win32.x86_64-3.135.0.jar}
 D=C:/m3-work-c/showcase-build/platform-deps
 M2=C:/Users/hsoliwal/.m2/repository
 JFACE="$D/org.eclipse.jface-3.40.0.jar;$D/org.eclipse.core.commands-3.13.0.jar;$D/org.eclipse.equinox.common-3.21.0.jar;$D/org.eclipse.ui.workbench-3.140.0.jar;$D/org.eclipse.ui-3.209.100.jar;$D/org.eclipse.core.runtime-3.35.0.jar;$D/org.eclipse.osgi-3.24.300.jar;$D/org.eclipse.equinox.registry-3.12.600.jar;$D/org.eclipse.core.jobs-3.15.900.jar"

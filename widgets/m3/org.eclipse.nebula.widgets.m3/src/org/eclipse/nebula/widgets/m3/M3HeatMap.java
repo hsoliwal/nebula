@@ -559,9 +559,15 @@ public class M3HeatMap extends Canvas {
 			return;
 		}
 		int dx = originX - x, dy = originY - y;
+		boolean showing = showing();
+		if (showing && VIEWPORT) {
+			// Canvas.scroll flushes outstanding paints before it copies: they must paint at the old origin, or the copy
+			// moves them a second time
+			update(); //FLLDCIM: BCP — pending damage painted at the old origin before the scroll
+		}
 		originX = x;
 		originY = y;
-		if (!showing()) {
+		if (!showing) {
 			return;
 		}
 		ScrollBar h = getHorizontalBar(), v = getVerticalBar();

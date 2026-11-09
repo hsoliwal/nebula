@@ -34,7 +34,8 @@ import org.eclipse.swt.widgets.Text;
  * behaviour).
  * <p>
  * Search is incremental and sliced: typing starts a new generation that supersedes the running one (catalogue:
- * superseding-generation debounce); the first match at or after the current row is found and revealed, then the
+ * superseding-generation debounce); the first match at or after the anchor (the match last reached by findNext or
+ * findPrevious, else the first row) is found and revealed, then the
  * matches are counted, each step scanning at most {@link #SLICE} rows per event loop turn, so 10^6 rows never block the
  * UI. Matching allocates nothing per row (String.regionMatches / indexOf on the row text). Rows are read from the
  * model through the searchable, never from widget items.
@@ -63,6 +64,12 @@ public class M3FindBar extends Composite {
 	private String pattern = ""; //$NON-NLS-1$
 	/* the revealed match row, the match count (-1 while counting) and the superseding generation */
 	private int current = -1, count = -1, generation;
+	/*
+	 * Where a search starts: the match last reached by findNext/findPrevious, -1 for the first row. Matches found by
+	 * text edits do not move it, so the result of an edit does not depend on typing speed (a superseded search never
+	 * reveals) or on the mode.
+	 */
+	private int anchor = -1;
 	private boolean searching, pending, settingText;
 	/* sorted rows of all matches, filled by the counting slices; valid when count >= 0 */
 	private int[] hits = new int[16];
@@ -118,7 +125,7 @@ public class M3FindBar extends Composite {
 	public void setSearchable(M3Searchable searchable) {
 		checkWidget();
 		target = searchable;
-		current = -1;
+		current = anchor = -1;
 		search(pattern);
 	}
 
@@ -129,7 +136,8 @@ public class M3FindBar extends Composite {
 	}
 
 	/**
-	 * Sets the search text and searches from the current match.
+	 * Sets the search text and searches from the match last reached by {@link #findNext()} or
+	 * {@link #findPrevious()}, or from the first row.
 	 *
 	 * @exception IllegalArgumentException ERROR_NULL_ARGUMENT - if the text is null
 	 */
@@ -233,7 +241,9 @@ public class M3FindBar extends Composite {
 			return -1;
 		}
 		if (count >= 0) {
-			return stepHits(direction);
+			int row = stepHits(direction);
+			anchor = current;
+			return row;
 		}
 		int rows = target.getRowCount();
 		int found = scan(current + direction, direction, rows);
@@ -243,6 +253,7 @@ public class M3FindBar extends Composite {
 		if (found >= 0) {
 			reveal(found);
 		}
+		anchor = current;
 		return found;
 	}
 
@@ -314,7 +325,7 @@ public class M3FindBar extends Composite {
 			return;
 		}
 		if (!VIEWPORT) {
-			int found = scan(Math.max(0, current), 1, target.getRowCount());
+			int found = scan(Math.max(0, anchor), 1, target.getRowCount());
 			if (found < 0 && getWrap()) {
 				found = scan(0, 1, target.getRowCount());
 			}
@@ -333,7 +344,7 @@ public class M3FindBar extends Composite {
 		}
 		searching = true;
 		LOG.debug(() -> "search generation " + mine + " for '" + text + "'"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		int start = Math.max(0, current);
+		int start = Math.max(0, anchor);
 		getDisplay().asyncExec(() -> findSlice(mine, start, start, false));
 	}
 

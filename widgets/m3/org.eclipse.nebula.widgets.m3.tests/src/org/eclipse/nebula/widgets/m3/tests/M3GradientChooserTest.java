@@ -101,6 +101,9 @@ public class M3GradientChooserTest {
 		}
 		chooser.moveStop(1, 0.9f);
 		assertEquals("clamped at the right neighbour", 0.5f, chooser.getStopPosition(1), 0f);
+		// the clamped move's own damage (left of 0.5) is painted here: Windows reports one bounding rectangle per paint,
+		// so damage still pending would merge with the colour change below into one full-width paint
+		chooser.update();
 		paints.clear();
 		chooser.setStopColor(3, new RGB(120, 0, 120));
 		chooser.update();
