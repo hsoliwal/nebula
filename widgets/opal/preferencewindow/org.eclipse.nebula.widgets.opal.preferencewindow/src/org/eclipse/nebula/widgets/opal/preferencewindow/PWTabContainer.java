@@ -18,8 +18,6 @@ import java.util.List;
 import org.eclipse.nebula.widgets.opal.commons.SWTGraphicUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -100,17 +98,11 @@ class PWTabContainer extends Composite {
 	 * Create the background of the container
 	 */
 	private void createButtonsContainerBackground() {
-		buttonContainer.addListener(SWT.Resize, event -> {
+		// the line is painted, not baked into a background image per resize (hidden resizes cost nothing) //FLLDCIM: MARK — every-widget opal PWTabContainer H
+		buttonContainer.addListener(SWT.Paint, event -> {
 			final Rectangle rect = buttonContainer.getClientArea();
-			final Image image = new Image(getDisplay(), Math.max(1, rect.width), Math.max(1, rect.height));
-			final GC gc = new GC(image);
-			gc.setForeground(grey);
-			gc.drawLine(0, rect.height - 1, rect.width, rect.height - 1);
-			gc.dispose();
-			if (buttonContainer.getBackgroundImage() != null && !buttonContainer.getBackgroundImage().isDisposed()) {
-				buttonContainer.getBackgroundImage().dispose();
-			}
-			buttonContainer.setBackgroundImage(image);
+			event.gc.setForeground(grey);
+			event.gc.drawLine(0, rect.height - 1, rect.width, rect.height - 1);
 		});
 	}
 
