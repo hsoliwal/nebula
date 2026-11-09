@@ -348,6 +348,9 @@ class InternalCompositeTable extends Composite implements Listener {
 		vSliderHolder.setLayoutData(getVSliderGridData());
 		if (visible) {
 			Display.getCurrent().addFilter(SWT.KeyDown, displayKeyDownFilter);
+			// the filter is display-wide: it leaves with the table, also when a parent disposes it //FLLDCIM: MARK — every-widget compositetable key filter H
+			removeListener(SWT.Dispose, removeKeyDownFilter);
+			addListener(SWT.Dispose, removeKeyDownFilter);
 		} else {
 			Display.getCurrent().removeFilter(SWT.KeyDown, displayKeyDownFilter);
 		}
@@ -1179,9 +1182,24 @@ class InternalCompositeTable extends Composite implements Listener {
 
 	private boolean needToRequestRC = true;
 
+	/* removes the display-wide KeyDown filter when the table is disposed, by itself or by a parent */
+	private final Listener removeKeyDownFilter = event -> event.display.removeFilter(SWT.KeyDown,
+			InternalCompositeTable.this.displayKeyDownFilter);
+
+	/* a key press in another table's row (the same row class) must not scroll this table or take its focus */
+	private boolean isOwnRow(Widget widget) {
+		for (Control control = widget instanceof Control ? (Control) widget : null; control != null; control = control
+				.getParent()) {
+			if (control == this) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private Listener displayKeyDownFilter = new Listener() {
 		public void handleEvent(Event event) {
-			if (rowControl.getClass().isAssignableFrom(event.widget.getClass())) {
+			if (rowControl.getClass().isAssignableFrom(event.widget.getClass()) && isOwnRow(event.widget)) {
 				doMakeFocusedRowVisible();
 			}
 		}
