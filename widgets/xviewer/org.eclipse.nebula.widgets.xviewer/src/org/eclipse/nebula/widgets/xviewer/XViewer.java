@@ -102,7 +102,9 @@ public class XViewer extends TreeViewer {
    private final FilterDataUI filterDataUI;
    private final SearchDataUI searchDataUI;
    private final ColumnFilterDataUI columnFilterDataUI;
-   private static boolean ctrlKeyListenersSet = false;
+   /* live XViewers sharing the Display-wide Ctrl/Alt key filters: the first installs them, the last removes them */
+   private static int keyFilterUsers;
+   private boolean usesKeyFilters;
    private XViewerGradient xViewerGradient = null;
    private XViewerEditAdapter editAdapter = null;
    private boolean columnMultiEditEnabled = false;
@@ -218,10 +220,15 @@ public class XViewer extends TreeViewer {
          searchComp.dispose();
       }
 
-      //Remote Display filter
-      Display.getCurrent().removeFilter(SWT.KeyDown, displayKeysListener);
-      Display.getCurrent().removeFilter(SWT.KeyUp, displayKeysListener);
-      Display.getCurrent().removeFilter(SWT.FocusOut, displayFocusListener);
+      // the shared Display filters leave with the last live XViewer, not with the first one //FLLDCIM: MARK — every-widget XViewer key filters
+      if (usesKeyFilters) {
+         usesKeyFilters = false;
+         if (--keyFilterUsers == 0) {
+            Display.getCurrent().removeFilter(SWT.KeyDown, displayKeysListener);
+            Display.getCurrent().removeFilter(SWT.KeyUp, displayKeysListener);
+            Display.getCurrent().removeFilter(SWT.FocusOut, displayFocusListener);
+         }
+      }
 
       //Dispose Menu
       if (menuManager != null) {
@@ -515,14 +522,16 @@ public class XViewer extends TreeViewer {
 
    // Only create one listener for all XViewers
    private void setupCtrlKeyListener() {
-      if (ctrlKeyListenersSet == false) {
-         ctrlKeyListenersSet = true;
-         Display.getCurrent().addFilter(SWT.KeyDown, displayKeysListener);
-         Display.getCurrent().addFilter(SWT.KeyUp, displayKeysListener);
-         Display.getCurrent().addFilter(SWT.FocusOut, displayFocusListener);
+      if (!usesKeyFilters) {
+         usesKeyFilters = true;
+         if (keyFilterUsers++ == 0) {
+            Display.getCurrent().addFilter(SWT.KeyDown, displayKeysListener);
+            Display.getCurrent().addFilter(SWT.KeyUp, displayKeysListener);
+            Display.getCurrent().addFilter(SWT.FocusOut, displayFocusListener);
+         }
       }
    }
-   Listener displayKeysListener = event -> {
+   static final Listener displayKeysListener = event -> {
       if (event.keyCode == SWT.CTRL) {
          if (event.type == SWT.KeyDown) {
             ctrlKeyDown = true;
@@ -538,7 +547,7 @@ public class XViewer extends TreeViewer {
          }
       }
    };
-   Listener displayFocusListener = event -> {
+   static final Listener displayFocusListener = event -> {
       // Clear when focus is lost
       ctrlKeyDown = false;
       altKeyDown = false;
