@@ -69,6 +69,8 @@ public class FloatingText extends Composite {
 	private int fStyle;
 	private int fLabelToTextRatio = 90;
 	private Font fLabelFont;
+	/* a label fit waits for the label's first non-zero height (its Resize), instead of polling the event loop */
+	private boolean fFitPending;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -134,6 +136,11 @@ public class FloatingText extends Composite {
 		fLabel.setBackground(fText.getBackground());
 		fLabel.setForeground(fText.getForeground());
 		fLabel.setLayoutData(getLabelLayoutData());
+		fLabel.addListener(SWT.Resize, e -> { //FLLDCIM: MARK — every-widget FloatingText H
+			if (fFitPending && fLabel.getSize().y > 0) {
+				doSetLabelText();
+			}
+		});
 		fText.addListener(SWT.FocusIn, e -> setLabelText(true));
 		fText.addListener(SWT.FocusOut, e -> setLabelText(false));
 		fText.addListener(SWT.Modify, e -> {
@@ -192,18 +199,14 @@ public class FloatingText extends Composite {
 	}
 
 	private void doSetLabelText() {
+		fFitPending = false;
 		String message = getMessage();
 		if (message.isEmpty()) {
 			return;
 		}
 		if (fLabel.getSize().y <= 0) {
-			getDisplay().asyncExec(new Runnable() {
-
-				@Override
-				public void run() {
-					doSetLabelText();
-				}
-			});
+			// fit once the label gets a height (the label's Resize listener), no asyncExec poll meanwhile
+			fFitPending = true;
 			return;
 		}
 
@@ -338,6 +341,7 @@ public class FloatingText extends Composite {
 	}
 
 	private void setLabelText(boolean pFocus) {
+		fFitPending = false;
 		fLabel.setText("");
 		String prompt = fText.getMessage();
 		if (pFocus) {
