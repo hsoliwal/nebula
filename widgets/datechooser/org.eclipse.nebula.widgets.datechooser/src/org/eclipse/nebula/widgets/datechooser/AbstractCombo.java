@@ -69,6 +69,8 @@ public abstract class AbstractCombo extends Composite {
 	protected Text text;
 	/** Popup shell for the selection */
 	protected Shell popup;
+	/** Viewport (aspect H): the popup closes when the combo or an ancestor hides; null in the original mode. */
+	AbstractComboViewport viewport;
 	/** Button opening the popup */
 	protected Button button;
 	/** Content of the popup */
@@ -95,6 +97,7 @@ public abstract class AbstractCombo extends Composite {
 	public AbstractCombo(Composite parent, int style) {
 		super(parent, style = checkStyle(style));
 		_shell = super.getShell();
+		viewport = AbstractComboViewport.ENABLED ? new AbstractComboViewport(this) : null;
 		GridLayout layout = new GridLayout(2, false);
 		layout.horizontalSpacing = layout.marginWidth = layout.marginHeight = 0;
 		super.setLayout(layout);
@@ -507,6 +510,9 @@ public abstract class AbstractCombo extends Composite {
         if (!isVisible()) {
             return;
         }
+		if (viewport != null && !viewport.mayOpen()) {
+			return; // visible but not shown (zero size, minimized, part-hidden): a popup would show over nothing
+		}
 		if (popup == null || getShell() != popup.getParent()) {
 			if (popup != null) {
 				popup.dispose();
@@ -518,6 +524,9 @@ public abstract class AbstractCombo extends Composite {
 		setPopupLocation();
 		beforeDrop();
 		popup.setVisible(true);
+		if (viewport != null) {
+			viewport.opened();
+		}
         if (isFocusControl()) {
             popupContent.setFocus();
         }
@@ -793,6 +802,9 @@ public abstract class AbstractCombo extends Composite {
 		super.redraw();
 		text.redraw();
 		button.redraw();
+		if (viewport != null && (popup == null || popup.isDisposed())) {
+			return; // no popup built yet, or disposed by a close (AbstractComboViewport); stock throws here
+		}
         if (popup.isVisible()) {
             popupContent.redraw();
         }
