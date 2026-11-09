@@ -57,6 +57,8 @@ public class InfoPage extends AbstractPage
 	private final GeoMapBrowser mapBrowser;
 	private Table table;
 	private Spec[] specs;
+	/* the info table missed updates while another page was on top; refreshed when the page shows */
+	private boolean stale;
 
 	public InfoPage(GeoMapBrowser mapBrowser) {
 		this.mapBrowser = mapBrowser;
@@ -121,6 +123,16 @@ public class InfoPage extends AbstractPage
 		if (table == null) {
 			return;
 		}
+		// another page is on top of the stack: refresh when this page shows, not on every map event //FLLDCIM: MARK — every-widget GeoMapBrowser InfoPage H
+		if (!table.getParent().getVisible()) {
+			stale = true;
+			return;
+		}
+		refreshInfos();
+	}
+
+	private void refreshInfos() {
+		stale = false;
 		for (int i = 0; i < specs.length; ++i) {
 			Spec spec = specs[i];
 			TableItem item = table.getItem(i);
@@ -165,6 +177,11 @@ public class InfoPage extends AbstractPage
 			TableItem item = new TableItem(table, SWT.NONE);
 			item.setText(0, spec.key);
 		}
+		composite.addListener(SWT.Show, e -> {
+			if (stale) {
+				refreshInfos();
+			}
+		});
 
 		addHeaderRow(container, composite, "Authors Remarks");
 		addInfoText(container, composite,
