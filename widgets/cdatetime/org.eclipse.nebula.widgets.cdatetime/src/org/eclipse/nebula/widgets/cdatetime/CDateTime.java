@@ -242,6 +242,9 @@ public class CDateTime extends BaseCombo {
 
 	VPanel picker;
 
+	/** Viewport (aspect H): the drop-down closes when the combo hides and the picker is not refreshed unseen; null in the original mode. */
+	CDateTimeViewport viewport;
+
 	VNative<Spinner> spinner;
 	boolean internalFocusShift = false;
 	boolean rightClick = false;
@@ -391,6 +394,7 @@ public class CDateTime extends BaseCombo {
 	public CDateTime(Composite parent, int style) {
 		super(parent, convertStyle(style));
 		init(style);
+		viewport = CDateTimeViewport.ENABLED ? new CDateTimeViewport(this) : null;
 	}
 
 	/**
@@ -1729,6 +1733,9 @@ public class CDateTime extends BaseCombo {
 			// no-op for text-only style (may be triggered by CTRL+Space)
 			return;
 		}
+		if (open && viewport != null && !viewport.mayOpen()) {
+			return; // the combo is hidden: a drop-down would show over nothing (CDateTimeViewport)
+		}
 		if (open) {
 			setActiveField(FIELD_NONE); // commit currently active edit field
 			cancelDate = getSelection();
@@ -1740,6 +1747,18 @@ public class CDateTime extends BaseCombo {
 		if (hasSelection()) {
 			show(getSelection());
 		}
+		if (viewport != null) {
+			viewport.openChanged();
+		}
+	}
+
+	/** The combo or an ancestor hid with the drop-down open: the drop-down shell goes at once, then the stock close (CDateTimeViewport). */
+	void m3CloseHidden() {
+		Shell shell = getContentShell();
+		if (shell != null && !shell.isDisposed()) {
+			shell.setVisible(false);
+		}
+		setOpen(false);
 	}
 
 	/**
@@ -2016,6 +2035,14 @@ public class CDateTime extends BaseCombo {
 	 * tell the picker to update its view of the selection and reference time
 	 */
 	private void updatePicker() {
+		if (viewport != null && viewport.holdPickerRefresh()) {
+			return; // the drop-down is closed or the combo hidden (CDateTimeViewport)
+		}
+		m3RefreshPicker();
+	}
+
+	/** The stock picker refresh; CDateTimeViewport also calls it once for a SIMPLE combo whose refresh was held. */
+	void m3RefreshPicker() {
 		if (picker != null) {
 			if (picker instanceof DatePicker) {
 				((DatePicker) picker).updateView();
