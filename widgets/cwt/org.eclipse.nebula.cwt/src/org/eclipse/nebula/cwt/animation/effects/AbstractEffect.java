@@ -15,6 +15,9 @@
 package org.eclipse.nebula.cwt.animation.effects;
 
 import org.eclipse.nebula.cwt.animation.movement.IMovement;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.ScrollBar;
+import org.eclipse.swt.widgets.Widget;
 
 /**
  * Abstract implementation for IEffect.
@@ -101,6 +104,29 @@ public abstract class AbstractEffect implements IEffect {
 	 * 
 	 * @see org.eclipse.nebula.cwt.animation.effects.IEffect#cancel()
 	 */
+	/**
+	 * The control, shell or scroll bar this effect animates, or null when unknown (effects of other packages keep
+	 * running their frames whatever the visibility).
+	 */
+	Widget target() {
+		return null;
+	}
+
+	private boolean targetHidden() {
+		final Widget target = target();
+		if (target == null || target.isDisposed()) {
+			return false;
+		}
+		final Control control = target instanceof ScrollBar ? ((ScrollBar) target).getParent()
+				: target instanceof Control ? (Control) target : null;
+		return control != null && (!control.isVisible() || control.getShell().getMinimized());
+	}
+
+	private long skipToEnd() {
+		startTime = System.currentTimeMillis() - length;
+		return length;
+	}
+
 	public void cancel() {
 		done = true;
 		doCancel();
@@ -112,7 +138,8 @@ public abstract class AbstractEffect implements IEffect {
 	 * @see org.eclipse.nebula.cwt.animation.effects.IEffect#doEffect()
 	 */
 	public void doEffect() {
-		final long currentTime = getCurrentTime();
+		// a target nobody can see takes its end state now: no frame loop against a hidden control //FLLDCIM: MARK — every-widget cwt EffectGate H
+		final long currentTime = targetHidden() ? skipToEnd() : getCurrentTime();
 
 		applyEffect(currentTime);
 

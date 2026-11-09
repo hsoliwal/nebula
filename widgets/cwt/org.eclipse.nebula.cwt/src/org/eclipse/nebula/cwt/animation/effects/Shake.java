@@ -47,6 +47,11 @@ public class Shake extends AbstractEffect {
 
 	Control control = null;
 
+	@Override
+	Control target() {
+		return control;
+	}
+
 	public Shake(Control control, Point src, Point dest,
 			long lengthMilli, IMovement movement, Runnable onStop,
 			Runnable onCancel) {

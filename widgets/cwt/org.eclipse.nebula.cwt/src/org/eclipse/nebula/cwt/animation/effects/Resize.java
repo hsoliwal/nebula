@@ -42,6 +42,11 @@ public class Resize extends AbstractEffect {
 	Point src, dest, diff;
 	Control control = null;
 
+	@Override
+	Control target() {
+		return control;
+	}
+
 	public Resize(Control control, Point src, Point dest,
 			long lengthMilli, IMovement movement, Runnable onStop,
 			Runnable onCancel) {

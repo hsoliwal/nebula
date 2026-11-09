@@ -42,6 +42,11 @@ public class Grow extends AbstractEffect {
 
 	Control control = null;
 
+	@Override
+	Control target() {
+		return control;
+	}
+
 	public Grow(Control control, Rectangle src, Rectangle dest,
 			long lengthMilli, IMovement movement, Runnable onStop,
 			Runnable onCancel) {
