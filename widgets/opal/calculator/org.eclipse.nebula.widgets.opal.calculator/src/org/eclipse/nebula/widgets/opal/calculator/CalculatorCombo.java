@@ -59,6 +59,17 @@ public class CalculatorCombo extends Composite {
 	private boolean hasFocus;
 	private Listener keyListener;
 	private CalculatorButtonsComposite composite;
+	/* closes the popup when the combo can no longer be seen; registered on the combo and on its shell */
+	private final Listener hider = event -> {
+		if (event.type == SWT.Deiconify) {
+			// Windows hid the owned popup with the minimized shell and shows it again on restore: keep it closed
+			getDisplay().asyncExec(this::closePopup);
+		} else {
+			closePopup();
+		}
+	};
+	/* SWT.PartHidden of SWT with part visibility (the M3 fork), else -1 */
+	private static final int PART_HIDDEN = partHiddenEvent();
 
 	/**
 	 * Constructs a new instance of this class given its parent.
@@ -134,6 +145,28 @@ public class CalculatorCombo extends Composite {
 		};
 
 		createPopupShell();
+		// the popup closes with the combo: its Hide, its shell's Hide or Iconify, a hidden ancestor (PartHidden) //FLLDCIM: MARK — every-widget CalculatorCombo H
+		addListener(SWT.Hide, hider);
+		getShell().addListener(SWT.Hide, hider);
+		getShell().addListener(SWT.Iconify, hider);
+		getShell().addListener(SWT.Deiconify, hider);
+		if (PART_HIDDEN >= 0) {
+			addListener(PART_HIDDEN, hider);
+		}
+	}
+
+	private void closePopup() {
+		if (!isDisposed() && popup != null && isPopupVisible()) {
+			hidePopupWindow(false);
+		}
+	}
+
+	private static int partHiddenEvent() {
+		try {
+			return SWT.class.getField("PartHidden").getInt(null); //$NON-NLS-1$
+		} catch (final ReflectiveOperationException e) {
+			return -1;
+		}
 	}
 
 	/**
@@ -279,6 +312,9 @@ public class CalculatorCombo extends Composite {
 				}
 				final Shell shell = getShell();
 				shell.removeListener(SWT.Deactivate, listener);
+				shell.removeListener(SWT.Hide, hider);
+				shell.removeListener(SWT.Iconify, hider);
+				shell.removeListener(SWT.Deiconify, hider);
 				final Display display = getDisplay();
 				display.removeFilter(SWT.FocusIn, filter);
 				popup = null;
