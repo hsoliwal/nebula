@@ -28,6 +28,7 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +55,12 @@ public class M3ColorButtonTest {
 		button.setBounds(0, 0, 60, 30);
 		button.addListener(SWT.Selection, e -> selections++);
 		paints = M3TestSupport.recordPaints(button);
+		// the focus goes to a field away from the compared buttons: a focused button draws its focus ring, and when
+		// the shell happened to be active the first button had it and the fresh one compared with it did not
+		Text focusSink = new Text(shell, SWT.NONE);
+		focusSink.setBounds(200, 90, 100, 20);
 		shell.open();
+		focusSink.setFocus();
 		M3TestSupport.flush(display);
 	}
 
