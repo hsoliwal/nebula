@@ -166,6 +166,18 @@ public class TimelineDataBinding extends AdapterImpl implements ICursorListener,
 			setSystem(true);
 		}
 
+		/** Viewport (aspect H): not scheduled while the timeline is hidden; the reveal schedules it once (TimelineViewport). */
+		@Override
+		public boolean shouldSchedule() {
+			return TimelineViewport.admit(fViewer.getControl(), this);
+		}
+
+		/** Viewport (aspect H): a job that falls due while the timeline is hidden does not run; the reveal schedules it once (TimelineViewport). */
+		@Override
+		public boolean shouldRun() {
+			return TimelineViewport.admit(fViewer.getControl(), this);
+		}
+
 		public void forceSelectionUpdate() {
 			fSelectionUpdate = true;
 			schedule(fDisplayUpdateDelay);

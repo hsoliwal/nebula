@@ -41,7 +41,12 @@ public class TimelineComposite extends Composite {
 
 		final Canvas canvas = new Canvas(this, SWT.DOUBLE_BUFFERED);
 		canvas.setBackground(ColorConstants.black);
+		// viewport (aspect H): its canvas listeners run before the LightweightSystem's
+		viewport = TimelineViewport.ENABLED ? new TimelineViewport(this, canvas) : null;
 		final LightweightSystem lightWeightSystem = new LightweightSystem(canvas);
+		if (viewport != null) {
+			viewport.install(lightWeightSystem); // the gated update manager parks Draw2D layout and painting while hidden
+		}
 
 		fRootFigure = new RootFigure(fResourceManager);
 		fRootFigure.setFont(parent.getFont());
@@ -50,6 +55,9 @@ public class TimelineComposite extends Composite {
 		// draw2d does not directly support mouseWheelEvents, so register on canvas
 		canvas.addMouseWheelListener(new TimelineScaler(this));
 	}
+
+	/** Viewport (aspect H): no binding refresh, Draw2D layout or painting while hidden; null in the original mode. */
+	final TimelineViewport viewport;
 
 	public RootFigure getRootFigure() {
 		return fRootFigure;
