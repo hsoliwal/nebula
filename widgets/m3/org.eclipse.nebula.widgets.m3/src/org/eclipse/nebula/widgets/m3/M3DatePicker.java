@@ -18,6 +18,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -27,6 +29,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
@@ -39,8 +42,14 @@ import org.eclipse.swt.widgets.Text;
  * is restored to the current date.
  * </p>
  * <p>
+ * While the picker is hidden (its own Hide, a hidden ancestor, a minimized shell, or SWT.PartHidden where SWT has part
+ * visibility) the drop-down is closed and does not open, and a new date is not pushed into the native field: the field
+ * gets the latest date once when the picker is shown (or when {@link #getTextField()} is called).
+ * </p>
+ * <p>
  * Styles: <code>BORDER</code>. Events: <code>Selection</code> when the date changes (<code>Event.index</code> the
- * epoch day).
+ * epoch day). Startup switch: <code>-Dswt.widget.mode.M3DatePicker=original</code> pushes every date into the field
+ * and leaves the drop-down to the shell.
  * </p>
  */
 public class M3DatePicker extends Composite {
@@ -48,12 +57,18 @@ public class M3DatePicker extends Composite {
 	/** The value of {@link #getDate()} when no date is set. */
 	public static final long NO_DATE = Long.MIN_VALUE;
 
+	static final boolean VIEWPORT = WidgetMode.of("M3DatePicker", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget M3DatePicker H
+
 	private final Text field;
 	private final Button button;
 	private DateTimeFormatter format = DateTimeFormatter.ISO_LOCAL_DATE;
 	private long date = NO_DATE;
 	private Shell popup;
 	private M3MonthView monthView;
+	/* null in original mode */
+	private final M3HiddenGate gate;
+	/* the date changed while the picker was hidden: the field shows an older date until the reveal */
+	private boolean staleField;
 
 	/**
 	 * Creates a picker with no date.
@@ -63,6 +78,7 @@ public class M3DatePicker extends Composite {
 	 */
 	public M3DatePicker(Composite parent, int style) {
 		super(parent, style);
+		gate = VIEWPORT ? new M3HiddenGate(this, this::pushField) : null;
 		GridLayout layout = new GridLayout(2, false);
 		layout.marginWidth = layout.marginHeight = 0;
 		layout.horizontalSpacing = 1;
@@ -81,7 +97,25 @@ public class M3DatePicker extends Composite {
 				setPopupVisible(true);
 			}
 		});
+		Listener closer = e -> {
+			if (!isDisposed()) {
+				setPopupVisible(false); // the picker hides: so does its drop-down
+			}
+		};
+		Shell shell = getShell();
+		if (VIEWPORT) {
+			addListener(SWT.Hide, closer);
+			shell.addListener(SWT.Hide, closer);
+			shell.addListener(SWT.Iconify, closer);
+			if (M3HiddenGate.partHiddenEvent() >= 0) {
+				addListener(M3HiddenGate.partHiddenEvent(), closer);
+			}
+		}
 		addListener(SWT.Dispose, e -> {
+			if (!shell.isDisposed()) {
+				shell.removeListener(SWT.Hide, closer);
+				shell.removeListener(SWT.Iconify, closer);
+			}
 			if (popup != null && !popup.isDisposed()) {
 				popup.dispose();
 			}
@@ -97,7 +131,12 @@ public class M3DatePicker extends Composite {
 		checkWidget();
 		boolean changed = epochDay != date;
 		date = epochDay;
-		field.setText(epochDay == NO_DATE ? "" : format.format(LocalDate.ofEpochDay(epochDay))); //$NON-NLS-1$
+		if (gate != null && !gate.probe()) {
+			staleField = true; // hidden: the field gets the date on reveal //FLLDCIM: MARK — every-widget M3DatePicker H
+		} else {
+			staleField = true;
+			pushField();
+		}
 		if (monthView != null && epochDay != NO_DATE) {
 			monthView.setFirstDisplayedDay(epochDay);
 			monthView.setSelection(epochDay);
@@ -131,9 +170,10 @@ public class M3DatePicker extends Composite {
 		setDate(current);
 	}
 
-	/** @return the text field */
+	/** @return the text field, showing the current date */
 	public Text getTextField() {
 		checkWidget();
+		pushField();
 		return field;
 	}
 
@@ -152,6 +192,9 @@ public class M3DatePicker extends Composite {
 				popup.setVisible(false);
 			}
 			return;
+		}
+		if (VIEWPORT && !M3HiddenGate.shown(this)) {
+			return; // a hidden picker opens no drop-down
 		}
 		ensurePopup();
 		if (date != NO_DATE) {
@@ -195,7 +238,19 @@ public class M3DatePicker extends Composite {
 		});
 	}
 
+	/* the one patch on becoming visible: the latest date into the native field */
+	private void pushField() {
+		if (staleField) {
+			staleField = false;
+			field.setText(date == NO_DATE ? "" : format.format(LocalDate.ofEpochDay(date))); //$NON-NLS-1$
+		}
+	}
+
 	private void commitText() {
+		if (staleField) {
+			pushField(); // the field holds an older date nobody typed: show the current one, parse nothing
+			return;
+		}
 		String text = field.getText().trim();
 		if (text.isEmpty()) {
 			setDate(NO_DATE);

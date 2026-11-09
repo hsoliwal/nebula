@@ -171,6 +171,28 @@ public class M3TaskPaneTest {
 	}
 
 	@Test
+	public void hiddenContainerStacksNothingAndLaysOutOnceOnShow() {
+		if (WidgetMode.of("M3TaskPaneContainer", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+			return;
+		}
+		container.setVisible(false);
+		M3TestSupport.flush(display);
+		java.util.Arrays.fill(resizes, 0);
+		java.util.Arrays.fill(moves, 0);
+		for (int i = 0; i < 20; i++) {
+			panes[i % 3].setCollapsed(i % 2 == 0);
+			container.setSpacing(8, 4 + i % 3);
+		}
+		shell.layout(true, true);
+		M3TestSupport.flush(display);
+		assertEquals("no pane moved or resized while hidden", 0, resizes[0] + resizes[1] + resizes[2] + moves[0] + moves[1] + moves[2]);
+		container.setVisible(true);
+		M3TestSupport.flush(display);
+		assertEquals(5, container.getSpacing());
+		assertStacked();
+	}
+
+	@Test
 	public void errors() {
 		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> panes[0].setTitle(null));
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> container.setSpacing(-1, 0));

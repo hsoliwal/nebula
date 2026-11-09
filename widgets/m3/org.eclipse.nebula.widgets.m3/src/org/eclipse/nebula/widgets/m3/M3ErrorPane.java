@@ -75,6 +75,8 @@ public class M3ErrorPane extends Composite {
 	private final M3HiddenGate gate;
 	/* model changes made while the pane was hidden, applied to the controls on reveal */
 	private boolean staleMessage, staleIcon, staleDetails;
+	/* details changed while the details were collapsed: formatted and pushed when they are next shown */
+	private boolean collapsedDetails;
 
 	/**
 	 * Creates an error pane with an empty message and no details.
@@ -265,6 +267,10 @@ public class M3ErrorPane extends Composite {
 		checkWidget();
 		if (visible) {
 			materialize();
+			if (collapsedDetails) {
+				collapsedDetails = false;
+				detailsText.setText(getDetails());
+			}
 		}
 		detailsPane.setCollapsed(!visible);
 		updateDetailsButton();
@@ -297,7 +303,11 @@ public class M3ErrorPane extends Composite {
 			return;
 		}
 		if (detailsText != null) {
-			detailsText.setText(getDetails());
+			if (VIEWPORT && detailsPane.isCollapsed()) {
+				collapsedDetails = true; // collapsed: no stack trace formatted, no text pushed //FLLDCIM: MARK — every-widget M3ErrorPane H
+			} else {
+				detailsText.setText(getDetails());
+			}
 		}
 		updateDetailsButton();
 	}

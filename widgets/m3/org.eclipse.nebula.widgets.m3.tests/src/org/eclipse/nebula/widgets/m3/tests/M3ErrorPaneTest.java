@@ -154,6 +154,40 @@ public class M3ErrorPaneTest {
 	}
 
 	@Test
+	public void collapsedDetailsFormatAndPushNothingUntilShown() {
+		if (!viewport()) {
+			return;
+		}
+		int[] formats = new int[1];
+		IllegalStateException counted = new IllegalStateException("counted") {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void printStackTrace(java.io.PrintWriter writer) {
+				formats[0]++;
+				super.printStackTrace(writer);
+			}
+		};
+		pane.setDetails("first");
+		pane.setDetailsVisible(true);
+		Text text = pane.getDetailsText();
+		assertEquals("first", text.getText());
+		pane.setDetailsVisible(false);
+		for (int i = 0; i < 1000; i++) {
+			pane.setError(counted);
+			pane.setDetails("details " + i);
+		}
+		pane.setError(counted);
+		assertEquals("collapsed: no stack trace formatted", 0, formats[0]);
+		assertEquals("collapsed: nothing pushed", "first", text.getText());
+		pane.setDetailsVisible(true);
+		assertEquals("formatted once when shown", 1, formats[0]);
+		assertTrue(text.getText().contains("counted"));
+		pane.setDetails("shown");
+		assertEquals("shown details are pushed at once", "shown", text.getText());
+	}
+
+	@Test
 	public void errors() {
 		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setMessage(null));
 		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setDetails(null));

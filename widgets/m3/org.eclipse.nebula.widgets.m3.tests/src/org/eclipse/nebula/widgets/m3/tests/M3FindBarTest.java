@@ -29,6 +29,7 @@ import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -167,6 +168,35 @@ public class M3FindBarTest {
 		assertEquals(1, M3Counters.reveals);
 		assertEquals(1000, bar.getMatchCount());
 		assertEquals("needle", bar.getText());
+	}
+
+	@Test
+	public void searchHiddenMidwayParksAndRestartsOnceOnShow() {
+		if (!viewport()) {
+			return;
+		}
+		bar.setText("needle");
+		for (int i = 0; i < 50 && bar.getCurrentMatch() != 7; i++) {
+			display.readAndDispatch(); // one slice per turn
+		}
+		assertEquals(7, bar.getCurrentMatch());
+		assertTrue("still counting", bar.isSearching());
+		bar.setVisible(false);
+		reads = 0;
+		M3TestSupport.spin(display, 100);
+		assertEquals("no row read after the bar hid", 0, reads);
+		assertFalse("parked", bar.isSearching());
+		bar.setText("Needle");
+		Text field = (Text) bar.getChildren()[1];
+		assertEquals("the field text is folded while hidden", "needle", field.getText());
+		assertEquals("Needle", bar.getText());
+		M3TestSupport.spin(display, 50);
+		assertEquals(0, reads);
+		bar.setVisible(true);
+		waitForSearch();
+		assertEquals("Needle", field.getText());
+		assertEquals(1000, bar.getMatchCount());
+		assertEquals(7, bar.getCurrentMatch());
 	}
 
 	@Test
