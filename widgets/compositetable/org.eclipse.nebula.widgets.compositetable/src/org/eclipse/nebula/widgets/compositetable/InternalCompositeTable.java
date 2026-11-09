@@ -96,6 +96,8 @@ class InternalCompositeTable extends Composite implements Listener {
 	private boolean refreshDirty;
 	/** a deferred row update or refresh is being caught up */
 	private boolean flushingRows;
+	/** The hidden gate of the content pane (CompositeTableViewport, docs/m3/every-widget); null in original mode. */
+	CompositeTableViewport viewport; //FLLDCIM: MARK — every-widget wave 1 compositetable: viewport member
 
 	// the focused editor's caret, kept as ints by collection position
 	private final java.util.IdentityHashMap<Control, Integer> shownPosition = new java.util.IdentityHashMap<>();
@@ -129,6 +131,9 @@ class InternalCompositeTable extends Composite implements Listener {
 		initialize();
 
 		this.parent = (CompositeTable) parentControl;
+		if (VIEWPORT) {
+			viewport = new CompositeTableViewport(this, parent, hScroller, controlHolder, displayKeyDownFilter);
+		}
 
 		setBackground(parentControl.getBackground());
 		controlHolder.addListener(SWT.MouseWheel, this);
@@ -230,6 +235,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	
 	ControlAdapter scrollerResizeHandler = new ControlAdapter() {
 		public void controlResized(ControlEvent e) {
+			if (viewport != null && viewport.deferScrollerResize()) {
+				return; // hidden: the controlHolder bounds wait for the catch-up
+			}
             Point size = hScroller.getSize();
 
 			int preferredWidth = controlHolder.computeSize(SWT.DEFAULT, 
@@ -351,6 +359,9 @@ class InternalCompositeTable extends Composite implements Listener {
 		} else {
 			Display.getCurrent().removeFilter(SWT.KeyDown, displayKeyDownFilter);
 		}
+		if (viewport != null) {
+			viewport.keyFilterChanged(visible); // the key filter is on the Display only while the table is shown
+		}
 		Display.getCurrent().asyncExec(new Runnable() {
 			public void run() {
 				if (!InternalCompositeTable.this.isDisposed() &&
@@ -447,6 +458,10 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * Layout the child controls within the controlHolder Composite.
 	 */
 	protected void layoutControlHolder() {
+		if (viewport != null && viewport.deferLayout()) {
+			rowsDirty |= !flushingRows; // the row update places and lays out every row at the catch-up
+			return;
+		}
 		if (myHeader != null) {
             layoutHeaderOrRow(myHeader);
         }
@@ -531,7 +546,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	void updateVisibleRows() {
 		// no row population while not effectively visible; caught up once on the
 		// first paint or on the first public read of rows
-		if (VIEWPORT && !isVisible() && !flushingRows) {
+		if (!flushingRows && (viewport != null ? viewport.deferRows() : VIEWPORT && !isVisible())) {
 			rowsDirty = true;
 			return;
 		}
@@ -539,8 +554,22 @@ class InternalCompositeTable extends Composite implements Listener {
 		updateVisibleRowsNow();
 	}
 
-	/** Runs a row update that was deferred while the table was not visible. */
+	/** Runs the work deferred while the table was not visible: with the viewport, also the scroller, placeholder and header. */
 	void flushRows() {
+		if (viewport != null) {
+			viewport.catchUp();
+		} else {
+			flushRowsNow();
+		}
+	}
+
+	/** @return true while a row update or a refresh of all rows waits (CompositeTableViewport) */
+	boolean m3RowsDirty() {
+		return rowsDirty || refreshDirty;
+	}
+
+	/** Runs a row update that was deferred while the table was not visible. */
+	void flushRowsNow() {
 		if ((rowsDirty || refreshDirty) && !isDisposed()) {
 			flushingRows = true;
 			try {
@@ -769,7 +798,7 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * Fire the refresh event on all visible rows.
 	 */
 	void refreshAllRows() {
-		if (VIEWPORT && !isVisible() && !flushingRows) {
+		if (!flushingRows && (viewport != null ? viewport.deferRefreshAll() : VIEWPORT && !isVisible())) {
 			refreshDirty = true;
 			return;
 		}
@@ -784,6 +813,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	}
 
     void refreshRow(int row) {
+        if (viewport != null && viewport.deferRefreshRow(row, topRow)) {
+            return; // hidden: the collection position waits for the catch-up
+        }
         if (topRow > -1) {
             if (isRowVisible(row)) {
                 fireRefreshEvent(row + topRow, ((TableRow) rows.get(row)).getRowControl());
@@ -938,6 +970,13 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * @return the actual number of rows that are currently visible.
 	 */
 	public int getNumRowsVisible() {
+		if (viewport != null && !flushingRows && viewport.hidden()) {
+			int planned = viewport.plannedRows(rows.size(), rowsDirty, rowControl, myHeader != null ? headerControl : null,
+					numRowsInCollection, topRow, maxRowsVisible, emptyTablePlaceholder != null);
+			if (planned >= 0) {
+				return planned; // the count a catch-up would leave, without building rows
+			}
+		}
 		flushRows();
 		return rows.size();
 	}
@@ -1649,6 +1688,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * Indicate to listeners that the focus is arriving on the specified row
 	 */
 	private void fireRowArriveEvent() {
+		if (viewport != null) {
+			viewport.beforeRowFocusEvent(currentRow);
+		}
         if (rows.size() < 1 || !isRowVisible(currentRow)) {
             return;
         }
@@ -1670,6 +1712,9 @@ class InternalCompositeTable extends Composite implements Listener {
 	 * @return true if all listeners permit the row change; false otherwise.
 	 */
     private boolean fireRequestRowChangeEvent() {
+        if (viewport != null) {
+            viewport.beforeRowFocusEvent(currentRow);
+        }
         if (rows.size() < 1 || !isRowVisible(currentRow)) {
             return true;
         }
