@@ -192,11 +192,7 @@ public class M3ImageView extends Canvas {
 	 */
 	public void setOrigin(double x, double y) {
 		checkWidget();
-		int nextX = (int) Math.round(x * scale), nextY = (int) Math.round(y * scale);
-		int dx = originX - nextX, dy = originY - nextY;
-		originX = nextX;
-		originY = nextY;
-		moveContent(dx, dy);
+		moveOrigin((int) Math.round(x * scale), (int) Math.round(y * scale));
 		changed();
 	}
 
@@ -214,9 +210,7 @@ public class M3ImageView extends Canvas {
 		if (dx == 0 && dy == 0) {
 			return;
 		}
-		originX += dx;
-		originY += dy;
-		moveContent(-dx, -dy);
+		moveOrigin(originX + dx, originY + dy);
 		changed();
 	}
 
@@ -245,11 +239,25 @@ public class M3ImageView extends Canvas {
 		}
 	}
 
+	/*
+	 * Moves the origin. Canvas.scroll flushes outstanding paints before it copies, so the pending damage is painted at
+	 * the old origin first; painted at the new one, the copy would move it a second time.
+	 */
+	private void moveOrigin(int nextX, int nextY) {
+		int dx = originX - nextX, dy = originY - nextY;
+		boolean showing = showing();
+		if (showing && VIEWPORT) {
+			update(); //FLLDCIM: BCP — pending damage painted at the old origin before the scroll
+		}
+		originX = nextX;
+		originY = nextY;
+		if (showing) {
+			moveContent(dx, dy);
+		}
+	}
+
 	/* moves the window's pixels by (dx, dy) and paints only the exposed strips (viewport), or repaints everything */
 	private void moveContent(int dx, int dy) {
-		if (!showing()) {
-			return;
-		}
 		if (!VIEWPORT) {
 			M3Counters.fullRepaints++;
 			redraw();

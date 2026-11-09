@@ -7,7 +7,7 @@
 # Usage: run_m3.sh <budget-seconds> <log> <mode: viewport|original> <jacoco exec file or -> [-D...]... <test classes...>
 #        run_m3.sh <budget-seconds> <log> <mode> - [-D...]... main:<class> [args...]
 OUT=${M3_OUT:-S:/m3-scratch/custom-widgets/out/m3}
-SWT=C:/Users/hsoliwal/.m2/repository/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.135.0/org.eclipse.swt.win32.win32.x86_64-3.135.0.jar
+SWT=${SWT_JAR:-C:/Users/hsoliwal/.m2/repository/org/eclipse/platform/org.eclipse.swt.win32.win32.x86_64/3.135.0/org.eclipse.swt.win32.win32.x86_64-3.135.0.jar}
 D=C:/m3-work-c/showcase-build/platform-deps
 M2=C:/Users/hsoliwal/.m2/repository
 AGENT=$M2/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar

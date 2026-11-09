@@ -6,7 +6,7 @@
 # desktop (call through ui_lock.sh). Report: $M3_OUT/coverage (csv + html) and a one-line summary per package.
 # Usage: coverage_m3.sh <test classes...>
 OUT=${M3_OUT:-S:/m3-scratch/custom-widgets/out/m3}
-WT=S:/m3-scratch/worktrees/nebula-widgets
+WT=${WT:-S:/m3-scratch/worktrees/nebula-widgets}
 M2=C:/Users/hsoliwal/.m2/repository
 CLI=$M2/org/jacoco/org.jacoco.cli/0.8.15/org.jacoco.cli-0.8.15-nodeps.jar
 HERE=$(cd "$(dirname "$0")" && pwd)
