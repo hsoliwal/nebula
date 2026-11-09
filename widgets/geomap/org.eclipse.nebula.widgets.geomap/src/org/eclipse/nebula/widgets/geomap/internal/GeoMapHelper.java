@@ -97,6 +97,8 @@ public class GeoMapHelper implements GeoMapPositioned, GeoMapHelperListener {
 	};
 	ThreadPoolExecutor executor = new ThreadPoolExecutor(DEFAULT_NUMBER_OF_IMAGEFETCHER_THREADS, 16, 2,
 			TimeUnit.SECONDS, workQueue, threadFactory);
+	/** Viewport mode (aspect H): the tile fetch gate of a GeoMap owner, or null (GeoMapFetchGate.install). */
+	GeoMapFetchGate fetchGate;
 	private Color waitBackground, waitForeground;
 
 	/**
@@ -310,6 +312,9 @@ public class GeoMapHelper implements GeoMapPositioned, GeoMapHelperListener {
 	 * Dispose internal data
 	 */
 	public void dispose() {
+		if (fetchGate != null) {
+			fetchGate.dispose(); // drops the waiting tiles and shuts the pool down
+		}
 		waitBackground.dispose();
 		waitForeground.dispose();
 		cache.clear();

@@ -48,8 +48,22 @@ class AsyncImage extends AtomicReference<ImageData> implements Runnable {
 		this.stamp = this.geoMapHelper.zoomStamp.longValue();
 		this.tile = tile;
 		this.tileUrl = tileUrl;
-		this.geoMapHelper.executor
-				.execute(new FutureTask<>(this, Boolean.TRUE));
+		if (this.geoMapHelper.fetchGate != null) {
+			this.geoMapHelper.fetchGate.submit(this); // viewport mode: the tile waits in the fetch gate (GeoMapFetchGate)
+		} else {
+			this.geoMapHelper.executor
+					.execute(new FutureTask<>(this, Boolean.TRUE));
+		}
+	}
+
+	/** @return the tile this image downloads (GeoMapFetchGate) */
+	TileRef m3Tile() {
+		return tile;
+	}
+
+	/** @return true when the zoom changed since this image was created: run() drops it unfetched (GeoMapFetchGate) */
+	boolean m3Stale() {
+		return stamp != this.geoMapHelper.zoomStamp.longValue();
 	}
 
 	private Runnable removeTileFromCacheRunnable = new Runnable() {

@@ -42,6 +42,9 @@ public class InternalGeoMap extends Canvas implements GeoMapPositioned, GeoMapHe
 	 */
 	protected GeoMapHelper geoMapHelper;
 
+	/** Viewport (aspect H): no tile download starts while the map is hidden; null in the original mode. */
+	final GeoMapViewport viewport;
+
 	/**
 	 * Initializes a new <code>InternalGeoMap</code>.
 	 * 
@@ -65,11 +68,13 @@ public class InternalGeoMap extends Canvas implements GeoMapPositioned, GeoMapHe
 
 		addDisposeListener(e -> InternalGeoMap.this.geoMapHelper.dispose());
 		addPaintListener(e -> InternalGeoMap.this.paintControl(e));
+		// after the stock paint listener: its paint of a whole map shows the tiles that arrived while hidden
+		viewport = GeoMapViewport.ENABLED ? new GeoMapViewport(this) : null;
 	}
 
 	@Override
 	public void tileUpdated(TileRef tileRef) {
-		if (!isDisposed()) {
+		if (!isDisposed() && (viewport == null || !viewport.arrivedHidden())) {
 			redraw();
 		}
 	}
