@@ -212,6 +212,13 @@ public abstract class Transition {
         //        && _t <= _T) {
         while(_t <= _T) {
             
+            // nobody can see the canvas: end frame now, no blocking frame loop //FLLDCIM: MARK — every-widget STW Transition H
+            if (!canvas.isVisible() || canvas.getShell().getMinimized()) {
+                transitionPainter.paintTransition(
+                    TransitionPainter.TRANSITION_END);
+                break;
+            }
+            
             ttemp = System.currentTimeMillis() - t0;
             dt = ttemp - _t;
             if (flag) {
