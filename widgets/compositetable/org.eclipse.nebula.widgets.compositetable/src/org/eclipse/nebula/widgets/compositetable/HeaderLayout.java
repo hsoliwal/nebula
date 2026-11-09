@@ -113,6 +113,8 @@ class HeaderLayout extends AbstractGridRowLayout {
      */
     private int lastChildWidth = -1;
     private int lastShellWidth = -1;
+    /* the header table that has the one pending widening relayout (a one-shot Paint listener), or null */
+    private Table pendingRelayout;
     
     protected void layout(final Composite child, boolean flushCache) {
         storeHeader(child);
@@ -126,12 +128,19 @@ class HeaderLayout extends AbstractGridRowLayout {
         
         if (childWidth > lastChildWidth) {
             final Table headerTable = getHeader(child).headerTable;
-            headerTable.addPaintListener(new PaintListener() {
-                public void paintControl(PaintEvent e) {
-                    headerTable.removePaintListener(this);
-                    layout(child);
-                }
-            });
+            // one pending relayout per header table: widening layouts of a hidden header fold into it //FLLDCIM: MARK — every-widget compositetable native header H
+            if (pendingRelayout != headerTable) {
+                pendingRelayout = headerTable;
+                headerTable.addPaintListener(new PaintListener() {
+                    public void paintControl(PaintEvent e) {
+                        headerTable.removePaintListener(this);
+                        if (pendingRelayout == headerTable) {
+                            pendingRelayout = null;
+                        }
+                        layout(child);
+                    }
+                });
+            }
         } else {
             layout(child);
         }
