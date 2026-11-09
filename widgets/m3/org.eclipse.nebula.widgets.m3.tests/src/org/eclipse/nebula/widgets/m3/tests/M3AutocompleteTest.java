@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,6 +81,32 @@ public class M3AutocompleteTest {
 		event.keyCode = keyCode;
 		event.character = character;
 		text.notifyListeners(SWT.KeyDown, event);
+	}
+
+	@Test
+	public void hiddenFieldScansNothingAndClosesItsDropDown() {
+		if (WidgetMode.of("M3Autocomplete", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+			return;
+		}
+		type("ber");
+		assertTrue(complete.isOpen());
+		text.setVisible(false);
+		M3TestSupport.flush(display);
+		assertFalse("the drop-down closes with the field", complete.isOpen());
+		int[] scanned = new int[1];
+		M3Autocomplete counting = new M3Autocomplete(text, M3Searchable.of(() -> {
+			scanned[0]++;
+			return CITIES.length;
+		}, row -> CITIES[row], row -> {
+		}));
+		text.setText("bre");
+		M3TestSupport.flush(display);
+		assertEquals("a programmatic setText on a hidden field scans nothing", 0, scanned[0]);
+		assertFalse(counting.isOpen());
+		text.setVisible(true);
+		text.setText("bren");
+		M3TestSupport.flush(display);
+		assertTrue("shown again: it scans", scanned[0] > 0);
 	}
 
 	@Test

@@ -248,6 +248,26 @@ public class M3CollapsiblePaneTest {
 	}
 
 	@Test
+	public void hiddenPaneDoesNotSlide() {
+		if (!viewport()) {
+			return;
+		}
+		pane.setAnimation(100, 50); // five seconds of frames if nothing stops them
+		pane.setCollapsed(true);
+		assertTrue(pane.isAnimating());
+		shell.setVisible(false);
+		M3TestSupport.spin(display, 150);
+		assertFalse("a slide that finds the pane hidden ends at once", pane.isAnimating());
+		assertEquals(1, collapses);
+		pane.setCollapsed(false);
+		assertFalse("a hidden pane does not start a slide", pane.isAnimating());
+		assertEquals(1, expands);
+		shell.setVisible(true);
+		M3TestSupport.flush(display);
+		assertEquals(pane.getExtent(), pane.getSize().y);
+	}
+
+	@Test
 	public void errors() {
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(0, 1));
 		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(1, 0));

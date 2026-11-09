@@ -30,6 +30,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -145,6 +146,39 @@ public class M3InfoPopupTest {
 		outside.y = 2;
 		table.notifyListeners(SWT.MouseDown, outside);
 		assertFalse("a click on no anchor closes it", popup.isVisible());
+	}
+
+	@Test
+	public void hiddenOwnerClosesThePopupAndDropsThePendingHover() {
+		if (WidgetMode.of("M3InfoPopup", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+			return;
+		}
+		popup.setDelays(40, 40);
+		Point at = cellCentre(5, 0);
+		Event move = new Event();
+		move.x = at.x;
+		move.y = at.y;
+		table.notifyListeners(SWT.MouseMove, move);
+		table.setVisible(false);
+		M3TestSupport.spin(display, 150);
+		assertFalse("the pending hover is dropped with the owner", popup.isVisible());
+		assertEquals("nothing built for a hidden owner", 0, fills);
+		table.setVisible(true);
+		M3TestSupport.flush(display);
+		Point cell = cellCentre(3, 1);
+		Event down = new Event();
+		down.button = 1;
+		down.x = cell.x;
+		down.y = cell.y;
+		table.notifyListeners(SWT.MouseDown, down);
+		M3TestSupport.flush(display);
+		assertTrue(popup.isVisible());
+		table.setVisible(false);
+		M3TestSupport.flush(display);
+		assertFalse("the open popup closes with its owner", popup.isVisible());
+		table.notifyListeners(SWT.MouseDown, down);
+		M3TestSupport.flush(display);
+		assertFalse("a click on a hidden owner opens nothing", popup.isVisible());
 	}
 
 	@Test

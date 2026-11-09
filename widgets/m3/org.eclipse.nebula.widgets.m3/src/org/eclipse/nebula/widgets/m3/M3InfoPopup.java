@@ -15,7 +15,9 @@
 package org.eclipse.nebula.widgets.m3;
 
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -121,6 +123,15 @@ public final class M3InfoPopup {
 	private Shell shell;
 	private Composite body;
 	private long anchor = NONE, pending = NONE;
+
+	/**
+	 * The owner gate, unless the startup widget mode is original (-Dswt.widget.mode.M3InfoPopup=original or
+	 * -Dswt.widget.mode=original): the popup closes and the pending hover is dropped when the owner hides (its own
+	 * Hide, its shell's Hide or Iconify, or SWT.PartHidden where SWT has part visibility), and a pending hover or a
+	 * click on a hidden owner opens nothing.
+	 */
+	static final boolean VIEWPORT = WidgetMode.of("M3InfoPopup", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget M3InfoPopup H
+	private static final int PART_HIDDEN = M3HiddenGate.partHiddenEvent();
 	private int openedBy;
 	private final int[] placed = new int[3];
 	private final Runnable showPending = this::showPending, hidePending = this::hideIfAway;
@@ -144,6 +155,14 @@ public final class M3InfoPopup {
 			owner.addListener(type, ownerListener);
 		}
 		owner.getShell().addListener(SWT.Deactivate, ownerListener);
+		if (VIEWPORT) {
+			owner.addListener(SWT.Hide, ownerListener);
+			owner.getShell().addListener(SWT.Hide, ownerListener);
+			owner.getShell().addListener(SWT.Iconify, ownerListener);
+			if (PART_HIDDEN >= 0) {
+				owner.addListener(PART_HIDDEN, ownerListener);
+			}
+		}
 	}
 
 	/** A popup plane for a table: header and cell anchors, Ctrl+I opens the popover of the selected row's cell. */
@@ -254,6 +273,9 @@ public final class M3InfoPopup {
 		if (anchorId == NONE || owner.isDisposed()) {
 			return false;
 		}
+		if (VIEWPORT && !M3HiddenGate.shown(owner)) {
+			return false; // a hidden owner opens nothing
+		}
 		Rectangle bounds = anchors.bounds(anchorId);
 		if (bounds == null) {
 			return false;
@@ -317,6 +339,10 @@ public final class M3InfoPopup {
 	}
 
 	private void ownerEvent(Event event) {
+		if (VIEWPORT && (event.type == SWT.Hide || event.type == SWT.Iconify || event.type == PART_HIDDEN && PART_HIDDEN >= 0)) {
+			hide(); // the owner hid: close the popup and drop the pending hover
+			return;
+		}
 		switch (event.type) {
 		case SWT.MouseMove:
 			if ((triggers & HOVER) == 0 || isVisible() && openedBy == CLICK) {
@@ -368,6 +394,8 @@ public final class M3InfoPopup {
 		case SWT.Dispose:
 			hide();
 			owner.getShell().removeListener(SWT.Deactivate, ownerListener);
+			owner.getShell().removeListener(SWT.Hide, ownerListener);
+			owner.getShell().removeListener(SWT.Iconify, ownerListener);
 			if (shell != null && !shell.isDisposed()) {
 				shell.dispose();
 			}

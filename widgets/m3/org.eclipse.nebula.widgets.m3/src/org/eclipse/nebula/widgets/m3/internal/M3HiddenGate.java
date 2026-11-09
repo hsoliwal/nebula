@@ -78,6 +78,25 @@ public final class M3HiddenGate {
 		return PART_HIDDEN >= 0;
 	}
 
+	/** @return SWT.PartHidden on SWT with part visibility (rule 25), else -1 */
+	public static int partHiddenEvent() {
+		return PART_HIDDEN;
+	}
+
+	/**
+	 * @return true when the control can be seen now: Control.isPartVisible() on SWT with part visibility, else the
+	 *         control and its ancestors visible and its shell not minimized
+	 */
+	public static boolean shown(Control control) {
+		if (control.isDisposed()) {
+			return false;
+		}
+		if (PART_HIDDEN >= 0) {
+			return isPartVisible(control);
+		}
+		return control.isVisible() && !control.getShell().getMinimized();
+	}
+
 	/**
 	 * Reports that a container hid or showed content by other means than setVisible or a zero size (a drawn
 	 * collapsible section, a drawn stack page, an overlay): Control.setPartHidden on SWT with part visibility, nothing

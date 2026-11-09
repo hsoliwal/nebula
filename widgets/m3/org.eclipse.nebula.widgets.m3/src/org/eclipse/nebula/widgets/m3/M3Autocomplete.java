@@ -16,7 +16,9 @@ package org.eclipse.nebula.widgets.m3;
 
 import java.util.Arrays;
 
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -47,6 +49,14 @@ public final class M3Autocomplete {
 
 	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3Autocomplete"); //$NON-NLS-1$
 
+	/*
+	 * The hidden gate, unless the startup widget mode is original (-Dswt.widget.mode.M3Autocomplete=original or
+	 * -Dswt.widget.mode=original): a Modify of a hidden field (a programmatic setText) starts no scan, a running scan
+	 * stops when the field is hidden, and the drop-down closes when the field hides (its own Hide, its shell's
+	 * Iconify, or SWT.PartHidden where SWT has part visibility).
+	 */
+	private static final boolean VIEWPORT = WidgetMode.of("M3Autocomplete", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget M3Autocomplete H
+
 	private final Text text;
 	private final M3Searchable source;
 	private Shell popup;
@@ -74,6 +84,13 @@ public final class M3Autocomplete {
 			}
 		});
 		text.addListener(SWT.KeyDown, this::key);
+		if (VIEWPORT) {
+			text.addListener(SWT.Hide, e -> close());
+			text.getShell().addListener(SWT.Iconify, e -> close());
+			if (M3HiddenGate.partHiddenEvent() >= 0) {
+				text.addListener(M3HiddenGate.partHiddenEvent(), e -> close());
+			}
+		}
 		text.addListener(SWT.FocusOut, e -> text.getDisplay().asyncExec(() -> {
 			if (!text.isDisposed() && popup != null && !popup.isDisposed() && !list.isFocusControl()) {
 				close();
@@ -193,8 +210,8 @@ public final class M3Autocomplete {
 		typed = value;
 		int mine = ++generation;
 		matchCount = 0;
-		if (value.length() < minimumLength) {
-			close();
+		if (value.length() < minimumLength || VIEWPORT && !M3HiddenGate.shown(text)) {
+			close(); // a hidden field: no scan, no drop-down
 			return;
 		}
 		text.getDisplay().asyncExec(() -> scan(mine, 0, false));
@@ -202,6 +219,10 @@ public final class M3Autocomplete {
 
 	private void scan(int mine, int from, boolean containsPass) {
 		if (mine != generation || text.isDisposed()) {
+			return;
+		}
+		if (VIEWPORT && !M3HiddenGate.shown(text)) {
+			close(); // the field was hidden during the scan: stop it
 			return;
 		}
 		int rows = source.getRowCount(), stop = Math.min(rows, from + SLICE);
