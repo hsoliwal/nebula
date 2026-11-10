@@ -28,6 +28,8 @@ public class GrayableButton extends Button {
 	Image image;
 	Image grayImage;
 	private static final String GRAY_IMAGE = "GrayableButton.GrayImage";
+	/** The enabled state the contents show; null until the first setEnabled. */
+	private Boolean shownEnabled;
 
 	public GrayableButton(Image image) {
 		this(image, null);
@@ -54,6 +56,11 @@ public class GrayableButton extends Button {
 	@Override
 	public void setEnabled(boolean value) {
 		super.setEnabled(value);
+		// the contents show this state already: no new figure, relayout or repaint //FLLDCIM: MARK — every-widget GrayableButton same-state D
+		if (shownEnabled != null && shownEnabled.booleanValue() == value) {
+			return;
+		}
+		shownEnabled = Boolean.valueOf(value);
         if (value) {
             setContents(new ImageFigure(image));
         } else {
