@@ -29,6 +29,11 @@ public class TimelineComposite extends Composite {
 
 	public TimelineComposite(Composite parent, int style) {
 		super(parent, style);
+		// on the Dispose event: dispose() is not called when an ancestor is disposed //FLLDCIM: MARK — every-widget TimelineComposite style provider on Dispose
+		addListener(SWT.Dispose, e -> {
+			TimelineComposite.this.fRootFigure.getStyleProvider().dispose();
+			TimelineComposite.this.fResourceManager.dispose();
+		});
 
 		fResourceManager = new LocalResourceManager(JFaceResources.getResources(), this);
 
@@ -61,13 +66,5 @@ public class TimelineComposite extends Composite {
 
 	public RootFigure getRootFigure() {
 		return fRootFigure;
-	}
-
-	@Override
-	public void dispose() {
-		fRootFigure.getStyleProvider().dispose();
-		fResourceManager.dispose();
-
-		super.dispose();
 	}
 }
