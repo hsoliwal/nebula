@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Vector;
 import java.util.function.Consumer;
@@ -1210,7 +1211,11 @@ public class Grid extends Canvas {
 	 */
 	public void setCellHeaderSelectionBackground(final Color cellSelectionBackground) {
 		checkWidget();
+		if (Objects.equals(cellHeaderSelectionBackground, cellSelectionBackground)) {
+			return;
+		}
 		cellHeaderSelectionBackground = cellSelectionBackground;
+		redraw(); // the selected cells' headers show the new colour at once
 	}
 
 	/**
@@ -4315,7 +4320,11 @@ public class Grid extends Canvas {
 	 */
 	public void setLineColor(final Color lineColor) {
 		checkWidget();
+		if (Objects.equals(this.lineColor, lineColor)) {
+			return;
+		}
 		this.lineColor = lineColor;
+		redraw(); // the grid lines show the new colour at once, as setLinesVisible redraws //FLLDCIM: MARK — every-widget Grid line and header colour D
 	}
 
 	/**
