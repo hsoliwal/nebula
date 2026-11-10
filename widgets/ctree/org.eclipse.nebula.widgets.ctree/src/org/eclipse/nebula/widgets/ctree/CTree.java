@@ -1596,7 +1596,11 @@ public class CTree extends Composite implements Listener {
 	}
 
 	public void setHorizontalLinesVisible(boolean visible) {
+		if (hLines == visible) {
+			return;
+		}
 		hLines = visible;
+		body.redraw(); // the grid lines are painted by the body //FLLDCIM: MARK — every-widget CTree grid line flags D
 	}
 	
 	public void setInsertMark(CTreeItem item, boolean before) {
@@ -1801,7 +1805,11 @@ public class CTree extends Composite implements Listener {
 	}
 
 	public void setVerticalLinesVisible(boolean visible) {
+		if (vLines == visible) {
+			return;
+		}
 		vLines = visible;
+		body.redraw();
 	}
 
 	/**
