@@ -249,7 +249,11 @@ public class Legend extends RectangleFigure {
 	 * @param displayDrawBorderAround if <code>true</code> a border is displayed around the legend
 	 */
 	public void setDrawBorder(boolean displayDrawBorderAround) {
+		if (this.drawBorder == displayDrawBorderAround) {
+			return;
+		}
 		this.drawBorder = displayDrawBorderAround;
+		repaint(); // the border shows or goes at once //FLLDCIM: MARK — every-widget XYGraph setter damage D
 	}
 
 	/**
@@ -263,7 +267,12 @@ public class Legend extends RectangleFigure {
 	 * @param preferredHeight the preferred height of this legend. If this value is -1, the height will be computed with default values
 	 */
 	public void setPreferredHeight(int preferredHeight) {
+		if (this.preferredHeight == preferredHeight) {
+			return;
+		}
 		this.preferredHeight = preferredHeight;
+		revalidate(); // a new preferred size: the graph lays the legend out again
+		repaint(); // the entries are centred in the preferred height
 	}
 
 	/**

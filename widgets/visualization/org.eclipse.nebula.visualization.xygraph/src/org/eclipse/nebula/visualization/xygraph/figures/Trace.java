@@ -1748,7 +1748,11 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *            the errorBarEnabled to set
 	 */
 	public void setErrorBarEnabled(boolean errorBarEnabled) {
+		if (this.errorBarEnabled == errorBarEnabled) {
+			return;
+		}
 		this.errorBarEnabled = errorBarEnabled;
+		repaint(); // the error bars show at once, as the other style setters do //FLLDCIM: MARK — every-widget XYGraph setter damage D
 	}
 
 	/**
@@ -1756,7 +1760,11 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *            the yErrorBarType to set
 	 */
 	public void setYErrorBarType(ErrorBarType errorBarType) {
+		if (yErrorBarType == errorBarType) {
+			return;
+		}
 		yErrorBarType = errorBarType;
+		repaint();
 	}
 
 	/**
@@ -1764,7 +1772,11 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *            the xErrorBarType to set
 	 */
 	public void setXErrorBarType(ErrorBarType errorBarType) {
+		if (xErrorBarType == errorBarType) {
+			return;
+		}
 		xErrorBarType = errorBarType;
+		repaint();
 	}
 
 	/**
@@ -1772,7 +1784,11 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *            the drawYErrorArea to set
 	 */
 	public void setDrawYErrorInArea(boolean drawYErrorInArea) {
+		if (this.drawYErrorInArea == drawYErrorInArea) {
+			return;
+		}
 		this.drawYErrorInArea = drawYErrorInArea;
+		repaint();
 	}
 
 	/**
@@ -1780,7 +1796,11 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *            the errorBarCapWidth to set
 	 */
 	public void setErrorBarCapWidth(int errorBarCapWidth) {
+		if (this.errorBarCapWidth == errorBarCapWidth) {
+			return;
+		}
 		this.errorBarCapWidth = errorBarCapWidth;
+		repaint();
 	}
 
 	/**
@@ -1791,6 +1811,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	public void setErrorBarColor(final Color errorBarColor) {
 		this.errorBarColor = errorBarColor;
 		errorBarColorSetFlag = true;
+		repaint();
 	}
 
 	/**
