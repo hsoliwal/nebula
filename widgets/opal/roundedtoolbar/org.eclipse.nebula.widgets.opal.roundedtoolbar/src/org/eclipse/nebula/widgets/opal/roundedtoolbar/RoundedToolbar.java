@@ -551,7 +551,11 @@ public class RoundedToolbar extends Canvas {
 	 */
 	public void setCornerRadius(final int cornerRadius) {
 		checkWidget();
+		if (this.cornerRadius == cornerRadius) {
+			return;
+		}
 		this.cornerRadius = cornerRadius;
+		repaint(); // the new corners show at once, as setBorderColor does //FLLDCIM: MARK — every-widget RoundedToolbar setCornerRadius D
 	}
 
 	/**
