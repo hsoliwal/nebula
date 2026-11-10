@@ -373,7 +373,11 @@ public class RoundedSwitch extends Canvas {
 	 */
 	public void setBorderWidth(int borderWidth) {
 		checkWidget();
+		if (this.borderWidth == borderWidth) {
+			return;
+		}
 		this.borderWidth = borderWidth;
+		redraw(); // the new style shows at once //FLLDCIM: MARK — every-widget RoundedSwitch setter damage D
 	}
 
 	// -- BORDER
@@ -418,6 +422,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			checkedEnabledConfiguration.borderColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -460,6 +465,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			uncheckedEnabledConfiguration.borderColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -502,6 +508,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			checkedDisabledConfiguration.borderColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -544,6 +551,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			uncheckedDisabledConfiguration.borderColor = color;
 		}
+		redraw();
 	}
 
 	// -- CIRCLE
@@ -587,6 +595,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			checkedEnabledConfiguration.circleColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -629,6 +638,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			uncheckedEnabledConfiguration.circleColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -671,6 +681,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			checkedDisabledConfiguration.circleColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -713,6 +724,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			uncheckedDisabledConfiguration.circleColor = color;
 		}
+		redraw();
 	}
 
 	// -- Background
@@ -756,6 +768,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			checkedEnabledConfiguration.backgroundColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -798,6 +811,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			uncheckedEnabledConfiguration.backgroundColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -840,6 +854,7 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			checkedDisabledConfiguration.backgroundColor = color;
 		}
+		redraw();
 	}
 
 	/**
@@ -882,5 +897,6 @@ public class RoundedSwitch extends Canvas {
 		} else {
 			uncheckedDisabledConfiguration.backgroundColor = color;
 		}
+		redraw();
 	}
 }
