@@ -12,6 +12,8 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.opal.titledseparator;
 
+import java.util.Objects;
+
 import org.eclipse.nebula.widgets.opal.commons.SWTGraphicUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -42,6 +44,10 @@ public class TitledSeparator extends Composite {
 	private int alignment;
 	private Image image;
 	private String text;
+	/* the look the labels were built with: a resize rebuilds them only when it changed */
+	private Font builtFont;
+	private Color builtForeground;
+	private Color builtBackground;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -88,7 +94,12 @@ public class TitledSeparator extends Composite {
 			originalFont = null;
 		}
 
-		addListener(SWT.Resize, e-> redrawComposite());
+		// a resize (also a hidden parent's layout) re-lays out the labels, it does not rebuild them //FLLDCIM: MARK — every-widget opal TitledSeparator H
+		addListener(SWT.Resize, e -> {
+			if (getChildren().length == 0 || lookChanged()) {
+				redrawComposite();
+			}
+		});
 
 		SWTGraphicUtil.addDisposer(this, originalColor);
 		SWTGraphicUtil.addDisposer(this, originalFont);
@@ -119,6 +130,14 @@ public class TitledSeparator extends Composite {
 
 		super.setLayout(new GridLayout(numberOfColumns, false));
 		createContent();
+		builtFont = getFont();
+		builtForeground = getForeground();
+		builtBackground = getBackground();
+	}
+
+	private boolean lookChanged() {
+		return !Objects.equals(builtFont, getFont()) || !Objects.equals(builtForeground, getForeground())
+				|| !Objects.equals(builtBackground, getBackground());
 	}
 
 	/**
