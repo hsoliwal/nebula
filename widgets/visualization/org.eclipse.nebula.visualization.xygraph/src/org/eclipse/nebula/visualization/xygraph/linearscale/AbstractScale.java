@@ -417,7 +417,11 @@ public abstract class AbstractScale extends Figure {
 	 *            the minorTicksVisible to set
 	 */
 	public void setMinorTicksVisible(boolean minorTicksVisible) {
+		if (this.minorTicksVisible == minorTicksVisible) {
+			return;
+		}
 		this.minorTicksVisible = minorTicksVisible;
+		repaint(); // the minor ticks show or go at once //FLLDCIM: MARK — every-widget AbstractScale setter damage D
 	}
 
 	/** set the scale range */
@@ -529,7 +533,11 @@ public abstract class AbstractScale extends Figure {
 	 *            the scaleLineVisible to set
 	 */
 	public void setScaleLineVisible(boolean scaleLineVisible) {
+		if (this.scaleLineVisible == scaleLineVisible) {
+			return;
+		}
 		this.scaleLineVisible = scaleLineVisible;
+		repaint();
 	}
 
 	/**
@@ -592,7 +600,13 @@ public abstract class AbstractScale extends Figure {
 	 *            the minorTickMarkStepHint to set
 	 */
 	public void setMinorTickMarkStepHint(int minorTickMarkStepHint) {
+		if (this.minorTickMarkStepHint == minorTickMarkStepHint) {
+			return;
+		}
 		this.minorTickMarkStepHint = minorTickMarkStepHint;
+		setDirty(true); // as setMajorTickMarkStepHint
+		revalidate();
+		repaint();
 	}
 
 	/**
