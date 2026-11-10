@@ -53,6 +53,9 @@ class FlatButton extends Canvas {
 	private int alignment;
 	private final List<SelectionListener> listeners;
 	private boolean mouseIn;
+
+	/* the state the last paint showed: a change that paints the same skips the repaint */
+	private boolean painted, paintedSelection, paintedMouseIn;
 	private Color backgroundColor;
 	private Color selectedColor;
 	private Color selectedTextColor;
@@ -117,12 +120,12 @@ class FlatButton extends Canvas {
 
 		addListener(SWT.MouseEnter, event -> {
 			mouseIn = true;
-			redraw();
+			repaintIfChanged();
 		});
 
 		addListener(SWT.MouseExit, event -> {
 			mouseIn = false;
-			redraw();
+			repaintIfChanged();
 		});
 
 		addListener(SWT.MouseUp, event -> {
@@ -152,12 +155,22 @@ class FlatButton extends Canvas {
 
 	private void paintControl(final PaintEvent e) {
 		final GC gc = e.gc;
+		painted = true;
+		paintedSelection = selection;
+		paintedMouseIn = mouseIn;
 		drawBackground(gc);
 		if (image != null) {
 			drawImage(gc);
 		}
 		if (text != null) {
 			drawText(gc);
+		}
+	}
+
+	/* selection picks the colours; hover only shows on a button that is not selected //FLLDCIM: MARK — every-widget opal FlatButton D */
+	private void repaintIfChanged() {
+		if (!painted || selection != paintedSelection || !selection && mouseIn != paintedMouseIn) {
+			redraw();
 		}
 	}
 
@@ -608,7 +621,7 @@ class FlatButton extends Canvas {
 	public void setSelection(final boolean selected) {
 		checkWidget();
 		selection = selected;
-		redraw();
+		repaintIfChanged();
 	}
 
 	/**
