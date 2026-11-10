@@ -69,6 +69,9 @@ class MonthPick extends Canvas implements MouseListener {
 
 	private boolean mBelowRun = false;
 
+	/** The scroll repeats on Display timers, parked while hidden (MonthPickViewport); null in original mode. */
+	private MonthPickViewport viewport; //FLLDCIM: MARK — every-widget wave 1 calendarcombo: viewport member
+
 	private CalendarComposite mCalendarComposite = null;
 
 	private Calendar mSelectedMonth = null;
@@ -99,6 +102,9 @@ class MonthPick extends Canvas implements MouseListener {
 		mSettings = settings;
 
 		setSize(101, 112);
+		if (MonthPickViewport.ENABLED) {
+			viewport = new MonthPickViewport(this);
+		}
 		
 		setCapture(true);
 
@@ -381,6 +387,10 @@ class MonthPick extends Canvas implements MouseListener {
 	}
 
 	private void runAbove() {
+		if (viewport != null) {
+			startScroll(true);
+			return;
+		}
 		if (mAboveThread != null && mAboveThread.isAlive() && mAboveRun) {
 			return;
 		}
@@ -411,7 +421,43 @@ class MonthPick extends Canvas implements MouseListener {
 		mAboveThread.start();
 	}
 
+	/*
+	 * runAbove/runBelow with a Display timer in place of the thread (MonthPickViewport): the same flags, set the same
+	 * way (both stock methods clear mBelowRun), and no second repeat while one is due or parked.
+	 */
+	private void startScroll(boolean up) {
+		if (viewport.scrolling(up) && (up ? mAboveRun : mBelowRun)) {
+			return;
+		}
+		mBelowRun = false;
+		if (up) {
+			mAboveRun = true;
+		} else {
+			mBelowRun = true;
+		}
+		viewport.scrollStarted(up);
+	}
+
+	/** @return the stock sleep between two scrolls (MonthPickViewport) */
+	int m3SleepTime() {
+		return sleepTime;
+	}
+
+	/** @return true while the stock flag of the direction is set (MonthPickViewport) */
+	boolean m3Scrolling(boolean up) {
+		return up ? mAboveRun : mBelowRun;
+	}
+
+	/** One scroll the stock thread posts after each sleep (MonthPickViewport). */
+	void m3ScrollOneMonth(boolean up) {
+		scrollOneMonth(up);
+	}
+
 	private void runBelow() {
+		if (viewport != null) {
+			startScroll(false);
+			return;
+		}
 		if (mBelowThread != null && mBelowThread.isAlive() && mBelowRun) {
 			return;
 		}

@@ -114,6 +114,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 
 	private int							mArrowThreadDirection		= 0;
 
+	/** The arrow repeat on a Display timer, parked while hidden (CalendarCompositeViewport); null in original mode. */
+	private CalendarCompositeViewport	viewport; //FLLDCIM: MARK — every-widget wave 1 calendarcombo: viewport member
+
 	private IColorManager				mColorManager;
 
 	private ISettings					mSettings;
@@ -146,6 +149,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		init();
 
 		build();
+		if (CalendarCompositeViewport.ENABLED) {
+			viewport = new CalendarCompositeViewport(this);
+		}
 	}
 
 	private void init() {
@@ -622,6 +628,9 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 
 	private void killArrowThread() {
 		if (mArrowThread != null) {
+			if (viewport != null) {
+				viewport.arrowStopping(); // a parked repeat first takes the steps of its hidden time
+			}
 			mArrowPause = true;
 			mArrowThreadDirection = 0;
 			mArrowRun = false;
@@ -672,7 +681,49 @@ class CalendarComposite extends Canvas implements MouseListener, MouseMoveListen
 		};
 		mArrowPause = false;
 		mArrowRun = true;
-		mArrowThread.start();
+		if (viewport != null) {
+			viewport.arrowStarted(); // a Display timer runs the loop body: the thread object is never started
+		} else {
+			mArrowThread.start();
+		}
+	}
+
+	/** @return the sleep before the next arrow step, or -1 when the repeat ended (CalendarCompositeViewport) */
+	int m3ArrowDelay() {
+		return mArrowRun ? mArrowSleepTime : -1;
+	}
+
+	/**
+	 * One pass of the stock arrow thread's loop after its sleep, on the Display thread (CalendarCompositeViewport).
+	 *
+	 * @return the sleep before the next step, or -1 when the repeat ended
+	 */
+	int m3ArrowStep() {
+		if (!mArrowRun) {
+			return -1;
+		}
+		if (!mArrowPause) {
+			mArrowIterations++;
+		}
+		if (mArrowIterations > ARROW_SPEED_SWITCH_COUNT && mArrowSleepTime != ARROW_FAST_TIME) {
+			mArrowSleepTime = ARROW_FAST_TIME;
+		}
+		if (!mArrowPause) {
+			flipArrowMonth();
+		}
+		return m3ArrowDelay();
+	}
+
+	/* the stock syncExec body: the month in the arrow's direction, or the end of the repeat once disposed */
+	private void flipArrowMonth() {
+		if (isDisposed()) {
+			mArrowRun = false;
+			mArrowThread = null;
+		} else if (mArrowThreadDirection == ARROW_LEFT) {
+			prevMonth();
+		} else if (mArrowThreadDirection == ARROW_RIGHT) {
+			nextMonth();
+		}
 	}
 
 	// selects a day at x, y if there is a day there to select
