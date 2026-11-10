@@ -16,6 +16,7 @@ package org.eclipse.nebula.widgets.pagination;
 
 import java.util.Locale;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 
 /**
@@ -126,6 +127,8 @@ public abstract class AbstractPageControllerComposite extends Composite
 		}
 		// add listener from the pagination controller.
 		this.controller.addPageChangedListener(this);
+		// remove it on the Dispose event: dispose() is not called when an ancestor is disposed //FLLDCIM: MARK — every-widget pagination controller listener on Dispose
+		addListener(SWT.Dispose, e -> this.controller.removePageChangedListener(this));
 	}
 
 	protected PageableController createController(int pageSize) {
@@ -147,13 +150,6 @@ public abstract class AbstractPageControllerComposite extends Composite
 	 */
 	public void setCurrentPage(int currentPage) {
 		getController().setCurrentPage(currentPage);
-	}
-
-	@Override
-	public void dispose() {
-		// remove listener from the pagination controller.
-		getController().removePageChangedListener(this);
-		super.dispose();
 	}
 
 	/**
