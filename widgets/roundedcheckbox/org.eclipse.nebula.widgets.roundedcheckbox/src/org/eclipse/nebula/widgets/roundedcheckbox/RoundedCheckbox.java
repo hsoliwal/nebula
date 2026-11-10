@@ -103,13 +103,20 @@ public class RoundedCheckbox extends Canvas {
 		addListener(SWT.MouseUp, e -> onClick(e));
 		addListener(SWT.KeyUp, e -> onKeyPress(e));
 
+		// the hover colour shows only on an enabled box //FLLDCIM: MARK — every-widget RoundedCheckbox D
 		addListener(SWT.MouseEnter, e -> {
+			final boolean changed = !cursorInside;
 			cursorInside = true;
-			redraw();
+			if (changed && isEnabled()) {
+				redraw();
+			}
 		});
 		addListener(SWT.MouseExit, e -> {
+			final boolean changed = cursorInside;
 			cursorInside = false;
-			redraw();
+			if (changed && isEnabled()) {
+				redraw();
+			}
 		});
 	}
 
@@ -413,9 +420,15 @@ public class RoundedCheckbox extends Canvas {
 	 */
 	public void setGrayed(boolean grayed) {
 		checkWidget();
+		if (this.grayed == grayed) {
+			return;
+		}
 		this.grayed = grayed;
-		redraw();
-		update();
+		// the grayed mark shows only on a selected box
+		if (selected) {
+			redraw();
+			update();
+		}
 	}
 
 	/**
@@ -509,6 +522,9 @@ public class RoundedCheckbox extends Canvas {
 	 */
 	public void setSelection(boolean selected) {
 		checkWidget();
+		if (this.selected == selected) {
+			return;
+		}
 		this.selected = selected;
 		redraw();
 		update();
