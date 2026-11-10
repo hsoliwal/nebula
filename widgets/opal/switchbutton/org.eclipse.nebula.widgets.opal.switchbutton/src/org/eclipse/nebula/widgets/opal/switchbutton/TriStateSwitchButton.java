@@ -167,7 +167,7 @@ public class TriStateSwitchButton extends Canvas {
 			}
 			state = newState;
 			if (SelectionListenerUtil.fireSelectionListeners(this, e)) {
-				redraw();
+				damageButton();
 			} else {
 				state = previousState;
 			}
@@ -178,20 +178,17 @@ public class TriStateSwitchButton extends Canvas {
 
 			@Override
 			public void mouseHover(final MouseEvent e) {
-				mouseInside = true;
-				redraw();
+				hover(true);
 			}
 
 			@Override
 			public void mouseExit(final MouseEvent e) {
-				mouseInside = false;
-				redraw();
+				hover(false);
 			}
 
 			@Override
 			public void mouseEnter(final MouseEvent e) {
-				mouseInside = true;
-				redraw();
+				hover(true);
 			}
 		});
 	}
@@ -230,6 +227,26 @@ public class TriStateSwitchButton extends Canvas {
 	// -------------------------------------------------------------------------
 	// Painting
 	// -------------------------------------------------------------------------
+
+	/* hover only draws the focus outline: repaint when it changes and there is one //FLLDCIM: MARK — every-widget opal TriStateSwitchButton D */
+	private void hover(final boolean inside) {
+		if (mouseInside == inside) {
+			return;
+		}
+		mouseInside = inside;
+		if (focusColor != null) {
+			damageButton();
+		}
+	}
+
+	/* the switch box as last painted (drawn from 2,2 with its size, outline and knob included) plus a pad */
+	private void damageButton() {
+		if (lastButtonSize == null) {
+			redraw();
+			return;
+		}
+		redraw(0, 0, lastButtonSize.x + 8, lastButtonSize.y + 8, false);
+	}
 
 	private void onPaint(final PaintEvent event) {
 		final Rectangle rect = getClientArea();
@@ -484,8 +501,11 @@ public class TriStateSwitchButton extends Canvas {
 		if (state == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
+		if (this.state == state) {
+			return;
+		}
 		this.state = state;
-		redraw();
+		damageButton();
 	}
 
 	// -------------------------------------------------------------------------
