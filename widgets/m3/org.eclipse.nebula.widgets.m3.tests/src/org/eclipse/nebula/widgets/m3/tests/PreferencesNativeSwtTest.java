@@ -31,7 +31,8 @@ public class PreferencesNativeSwtTest {
 
     @Test
     public void selectCreatesOneNativeComboWithDistinctSourceValues() {
-        Display display = new Display();
+        Display existing = Display.getCurrent(); // one Display per thread: reuse the one an earlier test left
+        Display display = existing != null ? existing : new Display();
         try {
             Shell shell = new Shell(display);
             try {
@@ -69,7 +70,9 @@ public class PreferencesNativeSwtTest {
                 shell.dispose();
             }
         } finally {
-            display.dispose();
+            if (existing == null) {
+                display.dispose();
+            }
         }
     }
 }
