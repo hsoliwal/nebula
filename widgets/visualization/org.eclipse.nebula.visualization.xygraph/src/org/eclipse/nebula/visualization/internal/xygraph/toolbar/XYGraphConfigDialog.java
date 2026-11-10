@@ -98,6 +98,17 @@ public class XYGraphConfigDialog extends Dialog {
 		newShell.setText("Configure Graph Settings");
 	}
 
+	/**
+	 * Lays out a page stack and the page it now shows. The hidden pages keep their layout: the stack gives them the
+	 * same bounds, and each page is laid out here when it is shown.
+	 */
+	private static void layoutShownPage(Composite stack, StackLayout layout) {
+		stack.layout(true);
+		if (layout.topControl instanceof Composite) {
+			((Composite) layout.topControl).layout(true, true);
+		}
+	}
+
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		return createDialogArea(parent, true);
@@ -165,7 +176,7 @@ public class XYGraphConfigDialog extends Dialog {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				axisStackLayout.topControl = axisConfigPageList.get(axisCombo.getSelectionIndex()).getComposite();
-				axisConfigComposite.layout(true, true);
+				layoutShownPage(axisConfigComposite, axisStackLayout); //FLLDCIM: MARK — every-widget XYGraphConfigDialog hidden pages
 			}
 		});
 
@@ -220,7 +231,7 @@ public class XYGraphConfigDialog extends Dialog {
 				public void widgetSelected(SelectionEvent e) {
 					traceStackLayout.topControl = traceConfigPageList.get(traceCombo.getSelectionIndex())
 							.getComposite();
-					traceConfigComposite.layout(true, true);
+					layoutShownPage(traceConfigComposite, traceStackLayout);
 				}
 			});
 		}
@@ -275,7 +286,7 @@ public class XYGraphConfigDialog extends Dialog {
 				public void widgetSelected(SelectionEvent e) {
 					stackLayout.topControl = annotationConfigPageList.get(annotationsCombo.getSelectionIndex())
 							.getComposite();
-					annoConfigComposite.layout(true, true);
+					layoutShownPage(annoConfigComposite, stackLayout);
 				}
 			});
 		}
