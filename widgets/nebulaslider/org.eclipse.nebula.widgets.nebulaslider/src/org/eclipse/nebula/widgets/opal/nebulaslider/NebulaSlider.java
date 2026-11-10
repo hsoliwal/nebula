@@ -284,7 +284,7 @@ public class NebulaSlider extends Canvas {
 			if(movingValue != value) {
 				SelectionListenerUtil.fireDefaultSelectionListeners(this, e);
 			}
-			redraw();
+			// the end of a drag changes nothing painted (the paint shows the position and the value) //FLLDCIM: MARK — every-widget NebulaSlider D
 		});
 
 		addListener(SWT.MouseMove, e -> {
@@ -292,6 +292,8 @@ public class NebulaSlider extends Canvas {
 				return;
 			}
 
+			final int paintedPosition = xPosition;
+			final int paintedValue = this.value;
 			xPosition = e.x + mouseDeltaX;
 			if (xPosition < 0) {
 				xPosition = 0;
@@ -309,7 +311,10 @@ public class NebulaSlider extends Canvas {
 				this.value = value;
 				SelectionListenerUtil.fireSelectionListeners(this, e);
 			}
-			redraw();
+			// a move that leaves the selector and the value where they were repaints nothing
+			if (xPosition != paintedPosition || this.value != paintedValue) {
+				redraw();
+			}
 
 		});
 	}
