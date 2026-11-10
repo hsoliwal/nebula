@@ -798,6 +798,10 @@ public class MonthCalendarableItemControl extends Canvas
 		
 	}
 	public void setFont(Font font) {
+		// the same font (same handle) draws the same item: no native font change, no repaint //FLLDCIM: MARK — every-widget compositetable month item D
+		if (font != null && font.equals(getFont())) {
+			return;
+		}
 		super.setFont(font);
 		redraw();
 	}
