@@ -259,6 +259,17 @@ public class FilteredTreeComposite extends Composite {
       GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
       treeViewer.getControl().setLayoutData(data);
       treeViewer.getControl().addListener(SWT.Dispose, e->refreshJob.cancel());
+      // filter changes folded while hidden refresh once when the tree paints again //FLLDCIM: MARK — every-widget FilteredTreeComposite hidden refresh H
+      treeViewer.getControl().addListener(SWT.Paint, e -> {
+         if (refreshPending) {
+            refreshPending = false;
+            getDisplay().asyncExec(() -> {
+               if (!isDisposed() && !treeViewer.getControl().isDisposed()) {
+                  runRefreshJob();
+               }
+            });
+         }
+      });
       if (treeViewer instanceof NotifyingTreeViewer) {
          patternFilter.setUseCache(true);
       }
@@ -556,12 +567,28 @@ public class FilteredTreeComposite extends Composite {
 
    private boolean narrowingDown;
 
+   /** Filter changes arrived while the tree was hidden; its next paint refreshes once. */
+   private boolean refreshPending;
+
    /**
     * Update the receiver after the text has changed.
     */
    protected void textChanged() {
-      narrowingDown = previousFilterText == null || getFilterString().startsWith(previousFilterText);
+      boolean narrowing = previousFilterText == null || getFilterString().startsWith(previousFilterText);
+      // folded changes widen the filter if any of them did
+      narrowingDown = refreshPending ? narrowingDown && narrowing : narrowing;
       previousFilterText = getFilterString();
+      Control tree = treeViewer == null ? null : treeViewer.getControl();
+      if (tree != null && !tree.isDisposed() && !tree.isVisible()) {
+         refreshPending = true;
+         refreshJob.cancel();
+         return;
+      }
+      refreshPending = false;
+      runRefreshJob();
+   }
+
+   private void runRefreshJob() {
       if (XViewerDisplay.isStandaloneXViewer()) {
          refreshJob.run(new NullProgressMonitor());
       } else {
