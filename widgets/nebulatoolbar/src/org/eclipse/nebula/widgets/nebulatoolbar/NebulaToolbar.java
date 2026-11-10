@@ -83,6 +83,16 @@ public class NebulaToolbar extends Canvas
 
 	private int selectedItemIndex = -1;
 
+	/* each item's slot and state at the last paint: a handler repaints only the slots whose state changed */
+	private int[] slotX = new int[0], slotWidth = new int[0];
+
+	private boolean[] slotHovered = new boolean[0], slotPushed = new boolean[0], slotSelected = new boolean[0];
+
+	private ToolbarItem[] slotItems = new ToolbarItem[0];
+
+	/* an item's hover or focus look may reach this far past its slot */
+	private static final int SLOT_PAD = 2;
+
 	/**
 	 * Parameterized constructor.
 	 * 
@@ -129,7 +139,7 @@ public class NebulaToolbar extends Canvas
 					items[selectedItemIndex].setSelected(active);
 				}
 
-				redraw();
+				damageItemStates();
 			}
 
 			public void focusLost(FocusEvent e)
@@ -141,7 +151,7 @@ public class NebulaToolbar extends Canvas
 					items[selectedItemIndex].setSelected(active);
 				}
 
-				redraw();
+				damageItemStates();
 			}
 
 		});
@@ -556,7 +566,7 @@ public class NebulaToolbar extends Canvas
 				items[selectedItemIndex].setPushedDown(true);
 				items[selectedItemIndex].setHovered(true);
 
-				redraw();
+				damageItemStates();
 
 				return;
 			}
@@ -579,7 +589,7 @@ public class NebulaToolbar extends Canvas
 		items[newSelectedItemIndex].setSelected(true);
 		selectedItemIndex = newSelectedItemIndex;
 
-		redraw();
+		damageItemStates();
 	}
 
 	/**
@@ -599,7 +609,7 @@ public class NebulaToolbar extends Canvas
 			items[selectedItemIndex].setPushedDown(false);
 			items[selectedItemIndex].setHovered(false);
 
-			redraw();
+			damageItemStates();
 
 			SelectionListener selectionListener = items[selectedItemIndex].getSelectionListener();
 
@@ -643,7 +653,7 @@ public class NebulaToolbar extends Canvas
 			items[selectedItemIndex].setPushedDown(true);
 		}
 
-		redraw();
+		damageItemStates();
 	}
 
 	/**
@@ -672,7 +682,7 @@ public class NebulaToolbar extends Canvas
 				items[selectedItemIndex].setPushedDown(selectedItemIndex == itemUnderCursor);
 			}
 
-			redraw();
+			damageItemStates();
 
 			return;
 		}
@@ -695,7 +705,7 @@ public class NebulaToolbar extends Canvas
 				}
 			}
 
-			redraw();
+			damageItemStates();
 		}
 	}
 
@@ -729,7 +739,7 @@ public class NebulaToolbar extends Canvas
 		{
 			if (selectedItemIndex != itemUnderCursor)
 			{
-				redraw();
+				damageItemStates();
 			}
 
 			return;
@@ -738,7 +748,7 @@ public class NebulaToolbar extends Canvas
 		items[selectedItemIndex].setPushedDown(false);
 		items[itemUnderCursor].setHovered(true);
 
-		redraw();
+		damageItemStates();
 
 		int selectedItemIndexFromUp = getItemIndexUnderCursor(e.x, e.y);
 		if (selectedItemIndexFromUp != selectedItemIndex)
@@ -762,7 +772,7 @@ public class NebulaToolbar extends Canvas
 		if (newEvent != null && getItemIndexUnderCursor(newEvent.x, newEvent.y) != selectedItemIndexFromUp)
 		{
 			items[selectedItemIndex].setHovered(false);
-			redraw();
+			damageItemStates();
 		}
 	}
 
@@ -793,6 +803,7 @@ public class NebulaToolbar extends Canvas
 	private void paintItems(GC gc)
 	{
 		int[] visibleItems = getVisibleItems();
+		recordSlots(visibleItems); //FLLDCIM: MARK — every-widget NebulaToolbar D
 
 		int x = INDENT;
 		int y = INDENT;
@@ -815,6 +826,67 @@ public class NebulaToolbar extends Canvas
 
 			item.paint(gc, x, y);
 			x += item.getWidth();
+		}
+	}
+
+	/**
+	 * Records each item's slot (as paintItems places it) and its hover, pushed and selected state.
+	 */
+	private void recordSlots(int[] visibleItems)
+	{
+		if (slotItems.length != items.length)
+		{
+			slotX = new int[items.length];
+			slotWidth = new int[items.length];
+			slotHovered = new boolean[items.length];
+			slotPushed = new boolean[items.length];
+			slotSelected = new boolean[items.length];
+		}
+		slotItems = items.clone();
+		java.util.Arrays.fill(slotWidth, 0);
+		int x = INDENT;
+		for (int i = 0; i < visibleItems.length; i++)
+		{
+			int index = visibleItems[i];
+			ToolbarItem item = items[index];
+			slotX[index] = index == rightAlignedIndex ? getClientArea().width - INDENT - item.getWidth() : x;
+			slotWidth[index] = item.getWidth();
+			slotHovered[index] = item.isHovered();
+			slotPushed[index] = item.isPushedDown();
+			slotSelected[index] = item.isSelected();
+			if (index != rightAlignedIndex)
+			{
+				x += item.getWidth();
+			}
+		}
+	}
+
+	/**
+	 * Repaints the slots of the items whose hover, pushed or selected state differs from the last paint; the
+	 * whole toolbar when nothing was painted yet or the items changed.
+	 */
+	private void damageItemStates()
+	{
+		// the Vista background gradient renders 1-2 pixels differently under a partial clip: it repaints whole
+		if (mode == MODE_VISTA || slotItems.length == 0 || slotItems.length != items.length)
+		{
+			redraw();
+			return;
+		}
+		int height = getClientArea().height;
+		for (int i = 0; i < items.length; i++)
+		{
+			ToolbarItem item = items[i];
+			if (item != slotItems[i] || item.getWidth() != slotWidth[i] && slotWidth[i] > 0)
+			{
+				redraw();
+				return;
+			}
+			if (slotWidth[i] > 0 && (item.isHovered() != slotHovered[i] || item.isPushedDown() != slotPushed[i]
+					|| item.isSelected() != slotSelected[i]))
+			{
+				redraw(slotX[i] - SLOT_PAD, 0, slotWidth[i] + 2 * SLOT_PAD, height, false);
+			}
 		}
 	}
 
@@ -1001,7 +1073,7 @@ public class NebulaToolbar extends Canvas
 					items[selectedItemIndex].setHovered(false);
 					items[selectedItemIndex].setSelected(true);
 
-					redraw();
+					damageItemStates();
 				}
 
 			});
