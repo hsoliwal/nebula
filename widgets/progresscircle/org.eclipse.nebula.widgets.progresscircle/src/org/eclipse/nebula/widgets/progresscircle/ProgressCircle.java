@@ -323,6 +323,11 @@ public class ProgressCircle extends Canvas {
 		if (firstDisplay || previousValue == selection) {
 			return;
 		}
+		// nobody can see the circle: the new value now, no blocking animation loop //FLLDCIM: MARK — every-widget ProgressCircle H
+		if (!isVisible() || getShell().getMinimized()) {
+			redraw();
+			return;
+		}
 		startAnimation(previousValue);
 	}
 
