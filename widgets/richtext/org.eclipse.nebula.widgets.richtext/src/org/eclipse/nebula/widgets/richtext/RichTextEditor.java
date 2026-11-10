@@ -222,6 +222,12 @@ public class RichTextEditor extends Composite {
 		if (embedded) {
 			embeddedShell = new Shell(parent.getShell(), SWT.MODELESS);
 			embeddedShell.setLayout(new FillLayout());
+			// no descendant of this editor: dispose it with the editor, also when an ancestor is disposed //FLLDCIM: MARK — every-widget RichTextEditor embedded shell on Dispose
+			addListener(SWT.Dispose, e -> {
+				if (!embeddedShell.isDisposed()) {
+					embeddedShell.dispose();
+				}
+			});
 			
 			// The Edge implementation is traversing the ESC key from the browser to the shell,
 			// which leads to closing the shell. We need to avoid this to be able to reuse the
