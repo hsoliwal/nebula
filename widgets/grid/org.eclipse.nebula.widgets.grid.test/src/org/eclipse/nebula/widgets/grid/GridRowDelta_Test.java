@@ -120,6 +120,58 @@ public class GridRowDelta_Test {
 		assertScreenIsPaint("after expanding the taller hidden row's parent");
 	}
 
+	@Test
+	public void rowColoursOffScreenPaintNothingAndOnScreenPaintTheRow() {
+		// whole-row and row-header colours change one row: off screen nothing paints, on screen the row
+		grid.setRowHeaderVisible(true);
+		flush();
+		final GridItem far = grid.getItem(grid.getItemCount() - 10);
+		assertBodyPaints("row background off screen", () -> far.setBackground(display.getSystemColor(SWT.COLOR_YELLOW)), 0, 1);
+		assertBodyPaints("row foreground off screen", () -> far.setForeground(display.getSystemColor(SWT.COLOR_RED)), 0, 1);
+		assertBodyPaints("header background off screen", () -> far.setHeaderBackground(display.getSystemColor(SWT.COLOR_GREEN)), 0, 1);
+		final GridItem shown = grid.getItem(6);
+		assertBodyPaints("row background on screen", () -> shown.setBackground(display.getSystemColor(SWT.COLOR_CYAN)), 1, 1);
+		assertBodyPaints("row foreground on screen", () -> shown.setForeground(display.getSystemColor(SWT.COLOR_BLUE)), 1, 1);
+		assertBodyPaints("header background on screen", () -> shown.setHeaderBackground(display.getSystemColor(SWT.COLOR_MAGENTA)), 1, 1);
+		assertBodyPaints("header foreground on screen", () -> shown.setHeaderForeground(display.getSystemColor(SWT.COLOR_WHITE)), 1, 1);
+		assertEquals(display.getSystemColor(SWT.COLOR_YELLOW), far.getBackground(1));
+	}
+
+	/* applies the change; the viewport mode paints the body paintsIfDelta times, the original mode stockPaints */
+	private void assertBodyPaints(final String step, final Runnable change, final int paintsIfDelta, final int stockPaints) {
+		flush();
+		final int before = grid.bodyPaintCount;
+		change.run();
+		grid.update();
+		flush();
+		assertEquals(step + ": body paints", GridViewport.ENABLED ? paintsIfDelta : stockPaints, grid.bodyPaintCount - before);
+		assertSameAsFullRepaint(step);
+	}
+
+	/* the window after the change equals the window after a full repaint (screen to screen, no print) */
+	private void assertSameAsFullRepaint(final String step) {
+		final int[] incremental = windowPixels();
+		grid.redraw();
+		grid.update();
+		flush();
+		assertTrue(step + ": the window equals a full repaint", java.util.Arrays.equals(incremental, windowPixels()));
+	}
+
+	private int[] windowPixels() {
+		final org.eclipse.swt.graphics.Rectangle area = grid.getClientArea();
+		final org.eclipse.swt.graphics.Image shot = new org.eclipse.swt.graphics.Image(display, area.width, area.height);
+		final org.eclipse.swt.graphics.GC gc = new org.eclipse.swt.graphics.GC(grid);
+		gc.copyArea(shot, 0, 0);
+		gc.dispose();
+		final ImageData data = shot.getImageData();
+		shot.dispose();
+		final int[] all = new int[area.width * area.height];
+		for (int y = 0; y < area.height; y++) {
+			data.getPixels(0, y, area.width, all, y * area.width);
+		}
+		return all;
+	}
+
 	/* applies the change; the viewport mode paints the body paintsIfDelta times, the original mode stockPaints */
 	private void assertDelta(final String step, final Runnable change, final int paintsIfDelta, final int stockPaints) {
 		flush();

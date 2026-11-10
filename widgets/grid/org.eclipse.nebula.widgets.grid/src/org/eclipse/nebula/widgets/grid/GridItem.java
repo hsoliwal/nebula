@@ -1557,7 +1557,7 @@ public class GridItem extends Item {
 			setBackground(i, background);
 		}
 		defaultBackground = background;
-		parent.redraw();
+		parent.redrawForItemData(this); // a row's colour: its row //FLLDCIM: MARK — every-widget Grid GridItem D
 		dataSet();
 	}
 
@@ -1928,7 +1928,7 @@ public class GridItem extends Item {
 			setForeground(i, foreground);
 		}
 		defaultForeground = foreground;
-		parent.redraw();
+		parent.redrawForItemData(this);
 		dataSet();
 	}
 
@@ -2510,7 +2510,7 @@ public class GridItem extends Item {
 	public void setHeaderBackground(Color headerBackground) {
 		checkWidget();
 		this.headerBackground = headerBackground;
-		parent.redraw();
+		parent.redrawForItemData(this); // the row header cell is in the row
 	}
 
 	/**
@@ -2529,7 +2529,7 @@ public class GridItem extends Item {
 	public void setHeaderForeground(Color headerForeground) {
 		checkWidget();
 		this.headerForeground = headerForeground;
-		parent.redraw();
+		parent.redrawForItemData(this);
 	}
 
 	/**
