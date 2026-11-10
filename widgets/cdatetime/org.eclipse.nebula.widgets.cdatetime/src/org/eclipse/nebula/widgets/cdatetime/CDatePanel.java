@@ -43,6 +43,8 @@ public class CDatePanel extends Composite {
 	private List<VNative<CDateTime>> pickers;
 	private int headerSize;
 	private int pickerSize;
+	/** A resize arrived while hidden or collapsed; the next paint applies it. */
+	private boolean resizePending;
 
 	private CDateTimeBuilder builder;
 	private CDateTimePainter painter;
@@ -114,6 +116,12 @@ public class CDatePanel extends Composite {
 		body.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 		body.addListener(SWT.Resize, event -> handleResize());
+		// a resize deferred while hidden or collapsed applies when the panel paints again //FLLDCIM: MARK — every-widget CDatePanel hidden resize H
+		addListener(SWT.Paint, event -> {
+			if (resizePending) {
+				handleResize();
+			}
+		});
 	}
 
 	private void addMonth() {
@@ -175,6 +183,12 @@ public class CDatePanel extends Composite {
 	}
 
 	private void handleResize() {
+		// once laid out, keep the months while nobody sees them or no month fits
+		if (pickerSize != -1 && (!isVisible() || getClientArea().height <= headerSize)) {
+			resizePending = true;
+			return;
+		}
+		resizePending = false;
 		if (pickerSize == -1) {
 			setMonthCount(1);
 			pickerSize = pickers.get(0).computeSize(-1, -1).y;
