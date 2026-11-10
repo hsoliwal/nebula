@@ -21,6 +21,7 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
 
 public class NativeHeaderTest extends TestCase {
 	private boolean createdDisplay = false;
@@ -87,6 +88,38 @@ public class NativeHeaderTest extends TestCase {
 	} catch (RuntimeException rex) {
 	    // expected
 	}
+    }
+
+    public void testHiddenWideningLayoutsKeepOnePendingRelayout() {
+	Composite holder = new Composite(shell, SWT.NONE);
+	holder.setLayout(new FillLayout());
+	Header header = new Header(holder, SWT.NONE);
+	Table table = header.headerTable;
+	int ownPaintListeners = table.getListeners(SWT.Paint).length;
+	holder.setVisible(false);
+	shell.setSize(200, 100);
+	shell.open();
+	for (int width = 220; width <= 400; width += 20) {
+	    shell.setSize(width, 100);
+	    while (display.readAndDispatch()) {
+		// flush
+	    }
+	}
+	assertEquals("a hidden header keeps one pending widening relayout", ownPaintListeners + 1,
+		table.getListeners(SWT.Paint).length);
+	holder.setVisible(true);
+	long end = System.currentTimeMillis() + 2000;
+	while (table.getListeners(SWT.Paint).length > ownPaintListeners && System.currentTimeMillis() < end) {
+	    if (!display.readAndDispatch()) {
+		try {
+		    Thread.sleep(5);
+		} catch (InterruptedException e) {
+		    break;
+		}
+	    }
+	}
+	assertEquals("the first paint runs the pending relayout", ownPaintListeners, table.getListeners(SWT.Paint).length);
+	assertEquals("the header table fills the header", header.getSize().x, table.getSize().x);
     }
 
     public void testSetSortDirection() {
