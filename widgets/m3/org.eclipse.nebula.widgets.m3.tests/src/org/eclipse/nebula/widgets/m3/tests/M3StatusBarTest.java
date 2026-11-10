@@ -27,6 +27,7 @@ import org.eclipse.nebula.widgets.m3.M3StatusBar;
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -150,6 +151,22 @@ public class M3StatusBarTest {
 		assertEquals(3, bar.getSlotCount());
 		assertEquals(M3StatusBar.PREFERRED, bar.getSlotMode(0));
 		assertEquals("a much longer preferred text", bar.getText(0));
+	}
+
+	@Test
+	public void controlsFollowAHeightChange() {
+		Label first = new Label(bar, SWT.NONE);
+		Label last = new Label(bar, SWT.NONE);
+		bar.setControl(0, first);
+		bar.setControl(3, last);
+		M3TestSupport.flush(display);
+		Point size = bar.getSize();
+		bar.setSize(size.x, size.y + 10);
+		assertEquals("taller: the slot control takes the new height", bar.getSlotBounds(0), first.getBounds());
+		assertEquals(bar.getSlotBounds(3), last.getBounds());
+		bar.setSize(size.x, size.y - 4);
+		assertEquals("shorter", bar.getSlotBounds(0), first.getBounds());
+		assertEquals(bar.getSlotBounds(3), last.getBounds());
 	}
 
 	@Test

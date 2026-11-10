@@ -18,6 +18,7 @@ import java.util.Arrays;
 
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -50,6 +51,14 @@ public final class M3Toasts {
 
 	private static final int WIDTH = 300, CARD = 54, GAP = 6, MARGIN = 12, MAX = 64;
 
+	/**
+	 * The owner gate, unless the startup widget mode is original (-Dswt.widget.mode.M3Toasts=original or
+	 * -Dswt.widget.mode=original): while the owner shell is hidden or minimized there is no expiry timer, no overlay
+	 * and no bounds work; when it is shown or restored, the toasts due in the meantime expire at once and the overlay
+	 * is placed and painted once.
+	 */
+	static final boolean VIEWPORT = WidgetMode.of("M3Toasts", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+
 	private final Shell owner;
 	private Shell overlay;
 	private Canvas canvas;
@@ -60,6 +69,10 @@ public final class M3Toasts {
 	private boolean paused;
 	private long pausedAt;
 	private final Runnable expire = this::expire;
+	/* the owner is hidden or minimized and the toasts wait for it (owner gate) */ //FLLDCIM: MARK — every-widget M3Toasts H: owner gate
+	private boolean parked;
+	/* the owner's Show is being handled: it is about to be visible */
+	private boolean revealing;
 
 	/**
 	 * @param owner the shell whose bottom-right corner holds the toasts
@@ -71,6 +84,12 @@ public final class M3Toasts {
 		this.owner = owner;
 		owner.addListener(SWT.Resize, e -> locate());
 		owner.addListener(SWT.Move, e -> locate());
+		if (VIEWPORT) {
+			owner.addListener(SWT.Hide, e -> park());
+			owner.addListener(SWT.Iconify, e -> park());
+			owner.addListener(SWT.Show, e -> resume(true));
+			owner.addListener(SWT.Deiconify, e -> resume(false));
+		}
 		owner.addListener(SWT.Dispose, e -> {
 			owner.getDisplay().timerExec(-1, expire);
 			if (overlay != null && !overlay.isDisposed()) {
@@ -150,6 +169,43 @@ public final class M3Toasts {
 		return x >= 0 && x < WIDTH && y >= GAP && index >= 0 && index < count && (y - GAP) % (CARD + GAP) < CARD ? ids[count - 1 - index] : 0;
 	}
 
+	/* the owner can show toasts: visible (or being shown) and not minimized; always true in original mode */
+	private boolean ownerShown() {
+		return !VIEWPORT || revealing || owner.isVisible() && !owner.getMinimized();
+	}
+
+	/* the owner hides or minimizes: no timer, and the overlay leaves with it */
+	private void park() {
+		if (owner.isDisposed() || count == 0) {
+			return;
+		}
+		parked = true;
+		owner.getDisplay().timerExec(-1, expire);
+		if (overlay != null && !overlay.isDisposed()) {
+			overlay.setVisible(false);
+		}
+	}
+
+	/* the owner is shown or restored: the toasts due meanwhile expire at once, then one overlay update */
+	private void resume(boolean showing) {
+		if (!parked || owner.isDisposed()) {
+			return;
+		}
+		parked = false;
+		revealing = showing;
+		try {
+			long time = now();
+			for (int i = count - 1; i >= 0; i--) {
+				if (!paused && expiries[i] <= time) {
+					remove(i);
+				}
+			}
+			changed();
+		} finally {
+			revealing = false;
+		}
+	}
+
 	private long now() {
 		return System.nanoTime() / 1_000_000L;
 	}
@@ -177,9 +233,13 @@ public final class M3Toasts {
 			owner.getDisplay().timerExec(-1, expire);
 			return;
 		}
+		if (!ownerShown()) {
+			park(); // the toast waits for the owner: no overlay, no bounds, no timer
+			return;
+		}
 		ensureOverlay();
 		locate();
-		if (owner.isVisible() && !owner.getMinimized()) {
+		if (revealing || owner.isVisible() && !owner.getMinimized()) {
 			overlay.setVisible(true);
 			canvas.redraw();
 			M3Counters.fullRepaints++;
@@ -200,6 +260,10 @@ public final class M3Toasts {
 
 	private void expire() {
 		if (owner.isDisposed() || paused) {
+			return;
+		}
+		if (!ownerShown()) {
+			park(); // hidden or minimized without a Hide or Iconify (an ancestor shell): wait for the owner
 			return;
 		}
 		long time = now();
@@ -247,7 +311,7 @@ public final class M3Toasts {
 	}
 
 	private void locate() {
-		if (overlay == null || overlay.isDisposed() || count == 0) {
+		if (overlay == null || overlay.isDisposed() || count == 0 || !ownerShown()) {
 			return;
 		}
 		Rectangle client = owner.getClientArea();

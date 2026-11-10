@@ -380,10 +380,16 @@ public class M3StatusBar extends Canvas {
 			}
 		}
 		layoutSlots();
-		Rectangle client = getClientArea();
+		placeControls(getClientArea());
+	}
+
+	/* every live slot control at its slot: the reveal, and a height change (which moves no slot edge, so layoutSlots
+	 * places nothing) */
+	private void placeControls(Rectangle client) {
 		for (int i = 0; i < count; i++) {
 			if (controls[i] != null && !controls[i].isDisposed()) {
 				controls[i].setBounds(xs[i], client.y, widths[i], client.height);
+				M3Counters.moves++;
 			}
 		}
 	}
@@ -409,6 +415,9 @@ public class M3StatusBar extends Canvas {
 		}
 		layoutSlots();
 		if (!VIEWPORT || heightChanged) {
+			if (heightChanged) {
+				placeControls(client); //FLLDCIM: MARK — every-widget M3StatusBar leaf 1 (D): controls follow a height change
+			}
 			fullRepaint();
 			return;
 		}

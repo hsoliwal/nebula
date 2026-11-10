@@ -15,6 +15,7 @@
 package org.eclipse.nebula.widgets.m3;
 
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
@@ -106,7 +107,7 @@ public class M3CollapsiblePane extends Composite {
 			extent = collapsed ? full : 0;
 		}
 		target = collapsed ? 0 : full;
-		if (animated && isVisible() && extent != target) {
+		if (animated && (VIEWPORT ? canSlide() : isVisible()) && extent != target) {
 			content.setVisible(true);
 			if (!animating) {
 				animating = true;
@@ -182,6 +183,10 @@ public class M3CollapsiblePane extends Composite {
 		if (isDisposed() || !animating) {
 			return;
 		}
+		if (VIEWPORT && !canSlide()) {
+			finish(); // hidden mid-slide: no frames nobody sees, the pane takes its target at once //FLLDCIM: MARK — every-widget M3CollapsiblePane H
+			return;
+		}
 		int full = Math.max(1, vertical ? fullHeight : fullWidth);
 		int step = Math.max(1, (full + steps - 1) / steps);
 		extent = extent < target ? Math.min(target, extent + step) : Math.max(target, extent - step);
@@ -194,6 +199,14 @@ public class M3CollapsiblePane extends Composite {
 		}
 		relayoutParent();
 		getDisplay().timerExec(delay, frame);
+	}
+
+	/*
+	 * A slide is seen when the pane is visible and its parent can be seen: the parent, not the pane, because a
+	 * collapsed pane has a zero extent itself and SWT part visibility counts a zero size as hidden.
+	 */
+	private boolean canSlide() {
+		return getVisible() && M3HiddenGate.shown(getParent());
 	}
 
 	private void finish() {

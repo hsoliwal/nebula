@@ -26,6 +26,7 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -105,6 +106,38 @@ public class M3ToastsTest {
 		canvas.notifyListeners(SWT.MouseExit, new Event());
 		M3TestSupport.spin(display, 250);
 		assertEquals(1, toasts.getCount());
+	}
+
+	@Test
+	public void hiddenOrMinimizedOwnerParksTheTimerAndCatchesUpOnce() {
+		if (WidgetMode.of("M3Toasts", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+			return;
+		}
+		toasts.show("short", "expires while hidden", M3Toasts.INFO, 150);
+		toasts.show("long", "outlives the hidden time", M3Toasts.INFO, 60_000);
+		M3TestSupport.flush(display);
+		assertTrue(toasts.getOverlay().isVisible());
+		shell.setVisible(false);
+		M3TestSupport.flush(display);
+		assertFalse("the overlay leaves with the owner", toasts.getOverlay().isVisible());
+		int[] overlayBounds = new int[1];
+		toasts.getOverlay().addListener(SWT.Move, e -> overlayBounds[0]++);
+		toasts.getOverlay().addListener(SWT.Resize, e -> overlayBounds[0]++);
+		shell.setBounds(120, 120, 640, 480);
+		M3TestSupport.spin(display, 400);
+		assertEquals("no expiry while the owner is hidden", 2, toasts.getCount());
+		assertEquals("no overlay bounds work while hidden", 0, overlayBounds[0]);
+		shell.setVisible(true);
+		M3TestSupport.flush(display);
+		assertEquals("the due toast expired at once on show", 1, toasts.getCount());
+		assertTrue(toasts.getOverlay().isVisible());
+		toasts.show("again", "while minimized", M3Toasts.WARNING, 150);
+		shell.setMinimized(true);
+		M3TestSupport.spin(display, 400);
+		assertEquals("no expiry while minimized", 2, toasts.getCount());
+		shell.setMinimized(false);
+		M3TestSupport.flush(display);
+		assertEquals("caught up on restore", 1, toasts.getCount());
 	}
 
 	@Test
