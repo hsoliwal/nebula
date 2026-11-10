@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.nebula.widgets.opal.commons.SWTGraphicUtil;
 import org.eclipse.swt.SWT;
@@ -452,6 +453,10 @@ public class Stepbar extends Canvas {
 		if (currentStep < 0 || currentStep > steps.size() - 1) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
+		// the value in use repaints nothing, unless a caller holds the steps list (it may have changed it) //FLLDCIM: MARK — every-widget Stepbar same-value D
+		if (currentStep == this.currentStep && !stepsEscaped) {
+			return;
+		}
 		this.currentStep = currentStep;
 		redraw();
 	}
@@ -471,6 +476,9 @@ public class Stepbar extends Canvas {
 	 */
 	public void setUnselectedColor(final Color unselectedColor) {
 		checkWidget();
+		if (Objects.equals(unselectedColor, this.unselectedColor) && !stepsEscaped) {
+			return;
+		}
 		this.unselectedColor = unselectedColor;
 		redraw();
 	}
@@ -490,6 +498,9 @@ public class Stepbar extends Canvas {
 	 */
 	public void setErrorState(final boolean errorState) {
 		checkWidget();
+		if (errorState == onError && !stepsEscaped) {
+			return;
+		}
 		onError = errorState;
 		redraw();
 	}
@@ -565,6 +576,9 @@ public class Stepbar extends Canvas {
 	 */
 	public void setTextColor(final Color textColor) {
 		checkWidget();
+		if (Objects.equals(textColor, this.textColor) && !stepsEscaped) {
+			return;
+		}
 		this.textColor = textColor;
 		redraw();
 	}
