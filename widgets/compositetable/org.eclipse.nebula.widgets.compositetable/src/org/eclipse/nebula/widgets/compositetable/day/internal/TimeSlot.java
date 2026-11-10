@@ -191,6 +191,7 @@ public class TimeSlot extends Canvas {
 			Color oldBackground = gc.getBackground();
 			Point controlSize = getSize();
 
+			paintedLines = linesOf(time);
 			// Draw basic background here
 			try {
 				// Draw "time bar" on left side
@@ -280,9 +281,25 @@ public class TimeSlot extends Canvas {
 	 * false otherwise.
 	 */
 	public boolean isMinutesAfterHour(int minute) {
-		Calendar calendar = new GregorianCalendar();
-		calendar.setTime(time);
-		return calendar.get(Calendar.MINUTE) == minute;
+		return minuteOf(time) == minute;
+	}
+
+	/* one Calendar per slot: paint reads the minute without allocating //FLLDCIM: MARK — every-widget compositetable TimeSlot D */
+	private final Calendar calendar = new GregorianCalendar();
+
+	private int minuteOf(Date date) {
+		calendar.setTime(date);
+		return calendar.get(Calendar.MINUTE);
+	}
+
+	/* what the slot draws for a time: the hour line, the half-hour line, or neither */
+	private static final int PLAIN = 0, HOUR = 1, HALF_HOUR = 2;
+
+	private int paintedLines = -1;
+
+	private int linesOf(Date date) {
+		int minute = minuteOf(date);
+		return minute == 0 ? HOUR : minute == 30 ? HALF_HOUR : PLAIN;
 	}
 	
 	private boolean allDay = false;
@@ -313,6 +330,9 @@ public class TimeSlot extends Canvas {
 	 */
 	public void setTime(Date currentTime) {
 		this.time = currentTime;
-		redraw();
+		// only the hour and half-hour lines depend on the time: same lines, nothing to repaint
+		if (paintedLines != linesOf(currentTime)) {
+			redraw();
+		}
 	}
 }
