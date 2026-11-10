@@ -332,6 +332,17 @@ public class XFilteredTree extends Composite {
       GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
       treeViewer.getControl().setLayoutData(data);
       treeViewer.getControl().addListener(SWT.Dispose, e-> refreshJob.cancel());
+      // filter changes folded while hidden refresh once when the tree paints again //FLLDCIM: MARK — every-widget XFilteredTree hidden refresh H
+      treeViewer.getControl().addListener(SWT.Paint, e -> {
+         if (refreshPending) {
+            refreshPending = false;
+            getDisplay().asyncExec(() -> {
+               if (!isDisposed() && !treeViewer.getControl().isDisposed()) {
+                  scheduleRefresh();
+               }
+            });
+         }
+      });
       if (treeViewer instanceof NotifyingTreeViewer) {
          patternFilter.setUseCache(true);
       }
@@ -679,14 +690,30 @@ public class XFilteredTree extends Composite {
 
    private boolean narrowingDown;
 
+   /** Filter changes arrived while the tree was hidden; its next paint refreshes once. */
+   private boolean refreshPending;
+
    /**
     * Update the receiver after the text has changed.
     */
    protected void textChanged() {
-      narrowingDown =
+      boolean narrowing =
          previousFilterText == null || previousFilterText.equals(XViewerText.get("XFilteredTree.filter")) || getFilterString().startsWith( //$NON-NLS-1$
             previousFilterText);
+      // folded changes widen the filter if any of them did
+      narrowingDown = refreshPending ? narrowingDown && narrowing : narrowing;
       previousFilterText = getFilterString();
+      Control tree = treeViewer == null ? null : treeViewer.getControl();
+      if (tree != null && !tree.isDisposed() && !tree.isVisible()) {
+         refreshPending = true;
+         refreshJob.cancel();
+         return;
+      }
+      refreshPending = false;
+      scheduleRefresh();
+   }
+
+   private void scheduleRefresh() {
       // cancel currently running job first, to prevent unnecessary redraw
       refreshJob.cancel();
       refreshJob.schedule(getRefreshJobDelay());
