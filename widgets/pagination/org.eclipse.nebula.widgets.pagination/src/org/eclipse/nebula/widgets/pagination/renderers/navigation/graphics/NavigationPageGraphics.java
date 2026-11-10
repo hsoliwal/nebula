@@ -17,6 +17,7 @@ package org.eclipse.nebula.widgets.pagination.renderers.navigation.graphics;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.eclipse.nebula.widgets.pagination.PaginationHelper;
 import org.eclipse.nebula.widgets.pagination.Resources;
@@ -332,7 +333,11 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setSelectedItemBackground(Color selectedItemBackground) {
+		if (Objects.equals(this.selectedItemBackground, selectedItemBackground)) {
+			return;
+		}
 		this.selectedItemBackground = selectedItemBackground;
+		redraw(); // the new style shows at once //FLLDCIM: MARK — every-widget NavigationPageGraphics style setter D
 	}
 
 	public Color getSelectedItemBackground() {
@@ -340,7 +345,11 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setSelectedItemForeground(Color selectedItemForeground) {
+		if (Objects.equals(this.selectedItemForeground, selectedItemForeground)) {
+			return;
+		}
 		this.selectedItemForeground = selectedItemForeground;
+		redraw(); // the new style shows at once
 	}
 
 	public Color getSelectedItemForeground() {
@@ -352,7 +361,11 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setItemForeground(Color itemForeground) {
+		if (Objects.equals(this.itemForeground, itemForeground)) {
+			return;
+		}
 		this.itemForeground = itemForeground;
+		redraw(); // the new style shows at once
 	}
 
 	public Color getItemBackground() {
@@ -360,7 +373,11 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setItemBackground(Color itemBackground) {
+		if (Objects.equals(this.itemBackground, itemBackground)) {
+			return;
+		}
 		this.itemBackground = itemBackground;
+		redraw(); // the new style shows at once
 	}
 
 	public Color getItemBorderColor() {
@@ -368,7 +385,11 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setItemBorderColor(Color itemBorderColor) {
+		if (Objects.equals(this.itemBorderColor, itemBorderColor)) {
+			return;
+		}
 		this.itemBorderColor = itemBorderColor;
+		redraw(); // the new style shows at once
 	}
 
 	public Color getSelectedItemBorderColor() {
@@ -376,7 +397,11 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setSelectedItemBorderColor(Color selectedItemBorderColor) {
+		if (Objects.equals(this.selectedItemBorderColor, selectedItemBorderColor)) {
+			return;
+		}
 		this.selectedItemBorderColor = selectedItemBorderColor;
+		redraw(); // the new style shows at once
 	}
 
 	public Color getDisabledItemForeground() {
@@ -384,7 +409,11 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setDisabledItemForeground(Color disabledItemForeground) {
+		if (Objects.equals(this.disabledItemForeground, disabledItemForeground)) {
+			return;
+		}
 		this.disabledItemForeground = disabledItemForeground;
+		redraw(); // the new style shows at once
 	}
 
 	public Color getDisabledItemBorderColor() {
@@ -392,11 +421,19 @@ public class NavigationPageGraphics extends Canvas {
 	}
 
 	public void setDisabledItemBorderColor(Color disabledItemBorderColor) {
+		if (Objects.equals(this.disabledItemBorderColor, disabledItemBorderColor)) {
+			return;
+		}
 		this.disabledItemBorderColor = disabledItemBorderColor;
+		redraw(); // the new style shows at once
 	}
 
 	public void setDisabledItemBackground(Color disabledItemBackground) {
+		if (Objects.equals(this.disabledItemBackground, disabledItemBackground)) {
+			return;
+		}
 		this.disabledItemBackground = disabledItemBackground;
+		redraw(); // the new style shows at once
 	}
 
 	public Color getDisabledItemBackground() {
@@ -415,7 +452,11 @@ public class NavigationPageGraphics extends Canvas {
 	 * @param round
 	 */
 	public void setRound(int round) {
+		if (Objects.equals(this.round, round)) {
+			return;
+		}
 		this.round = round;
+		redraw(); // the new style shows at once
 	}
 
 	/**
