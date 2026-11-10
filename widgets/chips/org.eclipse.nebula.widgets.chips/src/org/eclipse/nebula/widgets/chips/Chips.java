@@ -150,19 +150,27 @@ public class Chips extends Canvas {
 		});
 
 		addListener(SWT.MouseEnter, e -> {
+			final boolean wasInside = cursorInside;
 			cursorInside = isToggle || isCheck || isClose || isPush;
 			if (cursorInside) {
 				setCursor(getDisplay().getSystemCursor(SWT.CURSOR_HAND));
 			}
-			redraw();
+			// a plain chip never takes the hover look: nothing to repaint //FLLDCIM: MARK — every-widget Chips D
+			if (cursorInside != wasInside) {
+				redraw();
+			}
 		});
 		addListener(SWT.MouseExit, e -> {
+			final boolean wasInside = cursorInside;
 			cursorInside = false;
 			mouseDown = false;
 			if (isToggle || isCheck || isClose || isPush) {
 				setCursor(getDisplay().getSystemCursor(SWT.CURSOR_ARROW));
 			}
-			redraw();
+			// the hover and pushed looks show only while the cursor is inside
+			if (wasInside) {
+				redraw();
+			}
 		});
 		addListener(SWT.MouseDown, e -> {
 			mouseDown = true;
