@@ -81,6 +81,11 @@ public class RangeSlider extends Canvas {
 	private int startDragUpperValue, startDragLowerValue;
 	private Point startDragPoint;
 	private boolean hasFocus;
+	/* the values of the last paint: a change damages the strips the edges moved through, not the control */
+	private int paintedLower, paintedUpper;
+	private boolean painted;
+	/* the knob images are drawn 4 (vertical) or 5 (horizontal) pixels past the value; the pad covers antialiasing */
+	private static final int KNOB_OFFSET = 4, DAMAGE_PAD = 3;
 	private final boolean isSmooth;
 	private final boolean isFullSelection;
 	private final boolean isHighQuality;
@@ -168,11 +173,11 @@ public class RangeSlider extends Canvas {
 		});
 		addListener(SWT.FocusIn, e -> {
 			hasFocus = true;
-			redraw();
+			damage();
 		});
 		addListener(SWT.FocusOut, e -> {
 			hasFocus = false;
-			redraw();
+			damage();
 		});
 		addListener(SWT.KeyDown, event -> {
 			handleKeyDown(event);
@@ -325,7 +330,7 @@ public class RangeSlider extends Canvas {
 			}
 			previousUpperValue = upperValue;
 			previousLowerValue = lowerValue;
-			redraw();
+			damage();
 		}
 	}
 
@@ -341,7 +346,7 @@ public class RangeSlider extends Canvas {
 			final boolean wasLower = lowerHover;
 			selectKnobs(e);
 			if (wasUpper != upperHover || wasLower != lowerHover) {
-				redraw();
+				damage();
 			}
 		} else { // dragInProgress
 			final int x = e.x, y = e.y;
@@ -417,7 +422,7 @@ public class RangeSlider extends Canvas {
 			if (isOn) {
 				validateNewValues(e);
 			} else {
-				redraw();
+				damage();
 			}
 		}
 	}
@@ -679,6 +684,9 @@ public class RangeSlider extends Canvas {
 		if (rect.width == 0 || rect.height == 0) {
 			return;
 		}
+		paintedLower = lowerValue;
+		paintedUpper = upperValue;
+		painted = true;
 		e.gc.setAdvanced(true);
 		e.gc.setAntialias(SWT.ON);
 		if (orientation == SWT.HORIZONTAL) {
@@ -687,6 +695,34 @@ public class RangeSlider extends Canvas {
 			drawVerticalRangeSlider(e.gc);
 		}
 
+	}
+
+	/**
+	 * Repaints what a value or knob-state change touches: for each edge, the strip from its painted to its new
+	 * position, knob included. The background, frame and ticks do not depend on the values.
+	 */
+	private void damage() { //FLLDCIM: MARK — every-widget opal RangeSlider D
+		if (!painted) {
+			redraw();
+			return;
+		}
+		final Rectangle area = getClientArea();
+		final Rectangle knob = slider.getBounds();
+		damageEdge(paintedLower, lowerValue, area, knob);
+		damageEdge(paintedUpper, upperValue, area, knob);
+	}
+
+	private void damageEdge(final int from, final int to, final Rectangle area, final Rectangle knob) {
+		final boolean horizontal = orientation == SWT.HORIZONTAL;
+		final float pixelSize = horizontal ? computePixelSizeForHorizontalSlider() : computePixelSizeForVerticalSlider();
+		final int start = (int) (pixelSize * Math.min(from, to)) + KNOB_OFFSET - DAMAGE_PAD;
+		final int end = (int) (pixelSize * Math.max(from, to)) + KNOB_OFFSET + 1 + DAMAGE_PAD
+				+ (horizontal ? knob.width : knob.height);
+		if (horizontal) {
+			redraw(start, 0, end - start, area.height, false);
+		} else {
+			redraw(0, start, area.width, end - start, false);
+		}
 	}
 
 	/**
@@ -946,7 +982,7 @@ public class RangeSlider extends Canvas {
 					validateNewValues(event);
 					dragInProgress = false;
 					if (!isOn) {
-						redraw();
+						damage();
 					}
 					event.doit = false;
 					break;
@@ -1056,10 +1092,10 @@ public class RangeSlider extends Canvas {
 				final boolean next = (event.stateMask & SWT.SHIFT) == 0;
 				if (next && (selectedElement & LOWER) != 0) {
 					selectedElement = isFullSelection && selectedElement == LOWER ? BOTH : UPPER;
-					redraw();
+					damage();
 				} else if (!next && (selectedElement & UPPER) != 0) {
 					selectedElement = isFullSelection && selectedElement == UPPER ? BOTH : LOWER;
-					redraw();
+					damage();
 				} else {
 					traverse(next ? SWT.TRAVERSE_TAB_NEXT : SWT.TRAVERSE_TAB_PREVIOUS);
 				}
@@ -1522,7 +1558,7 @@ public class RangeSlider extends Canvas {
 		if (lowerValue <= upperValue && lowerValue >= minimum && upperValue <= maximum && (this.lowerValue != lowerValue || this.upperValue != upperValue)) {
 			this.lowerValue = lowerValue;
 			this.upperValue = upperValue;
-			redraw();
+			damage();
 		}
 	}
 
