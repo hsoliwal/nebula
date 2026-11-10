@@ -41,6 +41,10 @@ public class AlphaLabel extends Label {
 	 * @param alpha the alpha to set
 	 */
 	public void setAlpha(int alpha) {
+		if (this.alpha == alpha) {
+			return;
+		}
 		this.alpha = alpha;
+		repaint(); // the label's bounds only; before, the new alpha showed at the next unrelated repaint //FLLDCIM: MARK — every-widget AlphaLabel setAlpha damage D
 	}
 }
