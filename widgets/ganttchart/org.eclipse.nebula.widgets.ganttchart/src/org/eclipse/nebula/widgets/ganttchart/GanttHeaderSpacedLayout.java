@@ -104,11 +104,13 @@ public class GanttHeaderSpacedLayout extends Layout {
         int y = _ganttHeaderSize;
         for (int i = 0; i < children.length; i++) {
             final Control child = children[i];
-            final Point wantedSize = child.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 
             child.setLocation(0, y);
             child.setSize(bounds.width, bounds.height - y);
-            y += wantedSize.y;
+            // only a child with a sibling below needs its height: the last one (a Tree or Table) is not measured //FLLDCIM: MARK — every-widget gantt header layout
+            if (i < children.length - 1) {
+                y += child.computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
+            }
         }
 
     }
