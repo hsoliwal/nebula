@@ -14,6 +14,9 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.pagination.renderers.navigation;
 
+import java.util.Locale;
+import java.util.Objects;
+
 import org.eclipse.nebula.widgets.pagination.AbstractPageControllerComposite;
 import org.eclipse.nebula.widgets.pagination.PageableController;
 import org.eclipse.nebula.widgets.pagination.PaginationHelper;
@@ -35,6 +38,9 @@ public class NavigationPageComboRenderer extends
 		AbstractPageControllerComposite implements SelectionListener {
 
 	private Combo pageCombo;
+	/* the page count and locale the combo items were built for; a page step with neither changed only selects */
+	private int builtPages = -1;
+	private Locale builtLocale;
 
 	public NavigationPageComboRenderer(Composite parent, int style,
 			PageableController controller) {
@@ -69,12 +75,18 @@ public class NavigationPageComboRenderer extends
 	 */
 	private void populateCombo(PageableController controller) {
 		int totalPages = controller.getTotalPages();
-		String[] items = new String[totalPages];
-		for (int i = 0; i < items.length; i++) {
-			items[i] = PaginationHelper.getPageText((i + 1), totalPages,
-					getLocale());
+		// rebuild the items only when their text can differ: a page step keeps them //FLLDCIM: MARK — every-widget pagination page combo
+		if (totalPages != builtPages || !Objects.equals(getLocale(), builtLocale)
+				|| pageCombo.getItemCount() != totalPages) {
+			String[] items = new String[totalPages];
+			for (int i = 0; i < items.length; i++) {
+				items[i] = PaginationHelper.getPageText((i + 1), totalPages,
+						getLocale());
+			}
+			pageCombo.setItems(items);
+			builtPages = totalPages;
+			builtLocale = getLocale();
 		}
-		pageCombo.setItems(items);
 		if (pageCombo.getItemCount() > 0) {
 			pageCombo.select(controller.getCurrentPage());
 		}
