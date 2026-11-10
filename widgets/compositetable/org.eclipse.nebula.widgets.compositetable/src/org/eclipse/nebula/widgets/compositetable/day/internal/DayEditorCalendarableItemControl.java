@@ -195,8 +195,17 @@ public class DayEditorCalendarableItemControl extends Canvas implements ICalenda
 	 * @see org.eclipse.jface.examples.databinding.compositetable.day.internal.ICalendarableItemControl#setClipping(int)
 	 */
 	public void setClipping(int clipping) {
-		this.clipping = clipping;
-		redraw();
+		if (this.clipping != clipping) {
+			this.clipping = clipping;
+			damageArrows();
+		}
+	}
+
+	/* the arrows live in the top and bottom MARGIN strips: repaint those, not the box //FLLDCIM: MARK — every-widget compositetable day event box D */
+	private void damageArrows() {
+		Rectangle area = getClientArea();
+		redraw(0, 0, area.width, MARGIN, false);
+		redraw(0, Math.max(0, area.height - MARGIN), area.width, MARGIN, false);
 	}
 	
 	/* (non-Javadoc)
@@ -212,7 +221,10 @@ public class DayEditorCalendarableItemControl extends Canvas implements ICalenda
 	 * @see org.eclipse.jface.examples.databinding.compositetable.day.internal.ICalendarableItemControl#setContinued(int)
 	 */
 	public void setContinued(int continued) {
-		this.continued = continued;
+		if (this.continued != continued) {
+			this.continued = continued;
+			damageArrows(); // the arrows show it: repaint them (no repaint before, so they went stale)
+		}
 	}
 	
 	/* (non-Javadoc)
