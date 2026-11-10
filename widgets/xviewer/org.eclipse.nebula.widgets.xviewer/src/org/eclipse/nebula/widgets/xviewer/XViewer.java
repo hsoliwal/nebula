@@ -122,6 +122,8 @@ public class XViewer extends TreeViewer {
    private final Set<TreeItem> viewportExpanded = new HashSet<>();
    private Font statusBoldFont;
    private boolean statusLayoutDirty;
+   /** A status update arrived while the status line was hidden; computed on its first paint or read. */
+   private boolean statusTextDirty;
 
    public XViewer(Composite parent, int style, IXViewerFactory xViewerFactory) {
       this(parent, style, xViewerFactory, false, false);
@@ -676,6 +678,16 @@ public class XViewer extends TreeViewer {
       if (getTree().isDisposed() || filterText.isDisposed()) {
          return;
       }
+      // nobody sees the status line: compute it once when it paints or is read //FLLDCIM: MARK — every-widget XViewer status line H
+      if (!filterText.isVisible()) {
+         statusTextDirty = true;
+         return;
+      }
+      computeStatusLabel();
+   }
+
+   private void computeStatusLabel() {
+      statusTextDirty = false;
       StringBuilder sb = new StringBuilder();
       boolean allItemsFiltered = false;
       boolean filtered = false;
@@ -752,7 +764,14 @@ public class XViewer extends TreeViewer {
       }
    }
 
+   private void flushStatusLabel() {
+      if (statusTextDirty && filterText != null && !filterText.isDisposed() && !getTree().isDisposed()) {
+         computeStatusLabel();
+      }
+   }
+
    private void catchUpStatusLayout() {
+      flushStatusLabel();
       if (statusLayoutDirty && filterText != null && !filterText.isDisposed()) {
          statusLayoutDirty = false;
          Display.getCurrent().asyncExec(() -> {
@@ -794,6 +813,7 @@ public class XViewer extends TreeViewer {
    }
 
    public StyledText getStatusLabel() {
+      flushStatusLabel(); // a read sees the current status
       return filterText;
    }
 
