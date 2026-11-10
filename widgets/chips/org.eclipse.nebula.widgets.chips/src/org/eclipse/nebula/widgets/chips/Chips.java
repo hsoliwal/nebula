@@ -14,6 +14,7 @@ package org.eclipse.nebula.widgets.chips;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.nebula.widgets.opal.commons.SWTGraphicUtil;
 import org.eclipse.nebula.widgets.opal.commons.SelectionListenerUtil;
@@ -868,7 +869,11 @@ public class Chips extends Canvas {
 	 */
 	public void setChipsBackground(final Color chipsBackground) {
 		checkWidget();
+		if (Objects.equals(this.chipsBackground, chipsBackground)) {
+			return;
+		}
 		this.chipsBackground = chipsBackground;
+		redraw(); // shows at once //FLLDCIM: MARK — every-widget Chips setter D
 	}
 
 	/**
@@ -894,7 +899,11 @@ public class Chips extends Canvas {
 	 */
 	public void setHoverForeground(final Color hoverForeground) {
 		checkWidget();
+		if (Objects.equals(this.hoverForeground, hoverForeground)) {
+			return;
+		}
 		this.hoverForeground = hoverForeground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -920,7 +929,11 @@ public class Chips extends Canvas {
 	 */
 	public void setHoverBackground(final Color hoverBackground) {
 		checkWidget();
+		if (Objects.equals(this.hoverBackground, hoverBackground)) {
+			return;
+		}
 		this.hoverBackground = hoverBackground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -945,7 +958,11 @@ public class Chips extends Canvas {
 	 */
 	public void setCloseButtonForeground(final Color closeButtonForeground) {
 		checkWidget();
+		if (Objects.equals(this.closeButtonForeground, closeButtonForeground)) {
+			return;
+		}
 		this.closeButtonForeground = closeButtonForeground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -970,7 +987,11 @@ public class Chips extends Canvas {
 	 */
 	public void setCloseButtonBackground(final Color closeButtonBackground) {
 		checkWidget();
+		if (Objects.equals(this.closeButtonBackground, closeButtonBackground)) {
+			return;
+		}
 		this.closeButtonBackground = closeButtonBackground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -995,7 +1016,11 @@ public class Chips extends Canvas {
 	 */
 	public void setCloseButtonHoverForeground(final Color closeButtonHoverForeground) {
 		checkWidget();
+		if (Objects.equals(this.closeButtonHoverForeground, closeButtonHoverForeground)) {
+			return;
+		}
 		this.closeButtonHoverForeground = closeButtonHoverForeground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1020,7 +1045,11 @@ public class Chips extends Canvas {
 	 */
 	public void setCloseButtonHoverBackground(final Color closeButtonHoverBackground) {
 		checkWidget();
+		if (Objects.equals(this.closeButtonHoverBackground, closeButtonHoverBackground)) {
+			return;
+		}
 		this.closeButtonHoverBackground = closeButtonHoverBackground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1045,7 +1074,11 @@ public class Chips extends Canvas {
 	 */
 	public void setPushedStateForeground(final Color pushedStateForeground) {
 		checkWidget();
+		if (Objects.equals(this.pushedStateForeground, pushedStateForeground)) {
+			return;
+		}
 		this.pushedStateForeground = pushedStateForeground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1070,7 +1103,11 @@ public class Chips extends Canvas {
 	 */
 	public void setPushedStateBackground(final Color pushedStateBackground) {
 		checkWidget();
+		if (Objects.equals(this.pushedStateBackground, pushedStateBackground)) {
+			return;
+		}
 		this.pushedStateBackground = pushedStateBackground;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1092,7 +1129,11 @@ public class Chips extends Canvas {
 	 */
 	public void setBorderColor(final Color borderColor) {
 		checkWidget();
+		if (Objects.equals(this.borderColor, borderColor)) {
+			return;
+		}
 		this.borderColor = borderColor;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1118,7 +1159,11 @@ public class Chips extends Canvas {
 	 */
 	public void setHoverBorderColor(final Color hoverBorderColor) {
 		checkWidget();
+		if (Objects.equals(this.hoverBorderColor, hoverBorderColor)) {
+			return;
+		}
 		this.hoverBorderColor = hoverBorderColor;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1143,7 +1188,11 @@ public class Chips extends Canvas {
 	 */
 	public void setPushedStateBorderColor(final Color pushedStateBorderColor) {
 		checkWidget();
+		if (Objects.equals(this.pushedStateBorderColor, pushedStateBorderColor)) {
+			return;
+		}
 		this.pushedStateBorderColor = pushedStateBorderColor;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1167,7 +1216,11 @@ public class Chips extends Canvas {
 	 */
 	public void setText(final String text) {
 		checkWidget();
+		if (Objects.equals(this.text, text)) {
+			return;
+		}
 		this.text = text;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1188,7 +1241,11 @@ public class Chips extends Canvas {
 	 */
 	public void setImage(final Image image) {
 		checkWidget();
+		if (Objects.equals(this.image, image)) {
+			return;
+		}
 		this.image = image;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1212,7 +1269,11 @@ public class Chips extends Canvas {
 	 */
 	public void setPushImage(final Image pushImage) {
 		checkWidget();
+		if (Objects.equals(this.pushImage, pushImage)) {
+			return;
+		}
 		this.pushImage = pushImage;
+		redraw(); // shows at once
 	}
 
 	/**
@@ -1237,7 +1298,11 @@ public class Chips extends Canvas {
 	 */
 	public void setHoverImage(final Image hoverImage) {
 		checkWidget();
+		if (Objects.equals(this.hoverImage, hoverImage)) {
+			return;
+		}
 		this.hoverImage = hoverImage;
+		redraw(); // shows at once
 	}
 
 	/**
