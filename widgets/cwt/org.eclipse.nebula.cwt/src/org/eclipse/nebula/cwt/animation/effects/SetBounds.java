@@ -24,6 +24,11 @@ public class SetBounds extends AbstractEffect {
 
 	Control control = null;
 
+	@Override
+	Control target() {
+		return control;
+	}
+
 	public SetBounds(Control control, Rectangle src, Rectangle dest,
 			long lengthMilli, IMovement movement, Runnable onStop,
 			Runnable onCancel) {

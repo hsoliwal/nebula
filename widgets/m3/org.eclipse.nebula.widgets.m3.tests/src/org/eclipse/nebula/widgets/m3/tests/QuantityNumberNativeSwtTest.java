@@ -27,7 +27,8 @@ public final class QuantityNumberNativeSwtTest {
 
     @Test
     public void boundedIntegerNumberUsesOneNativeSpinnerAndStableSelectionCallback() {
-        Display display = new Display();
+        Display existing = Display.getCurrent(); // one Display per thread: reuse the one an earlier test left
+        Display display = existing != null ? existing : new Display();
         try {
             Shell shell = new Shell(display);
             try {
@@ -69,7 +70,9 @@ public final class QuantityNumberNativeSwtTest {
                 shell.dispose();
             }
         } finally {
-            display.dispose();
+            if (existing == null) {
+                display.dispose();
+            }
         }
     }
 }

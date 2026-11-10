@@ -109,6 +109,9 @@ public class CalendarCombo extends Composite {
     // the shell holding the CalendarComposite
     private Shell                  mCalendarShell;
 
+    /** Closes the drop-down when the combo or an ancestor hides (CalendarComboViewport); null in original mode. */
+    private CalendarComboViewport  viewport; //FLLDCIM: MARK — every-widget wave 1 calendarcombo: viewport member
+
     private Listener               mKillListener;
 
     private Listener               mFilterListenerFocusIn;
@@ -896,6 +899,9 @@ public class CalendarCombo extends Composite {
                 kill(10);
             }
         });
+        if (CalendarComboViewport.ENABLED) {
+            viewport = new CalendarComboViewport(this);
+        }
     }
 
     // parses the date, and really tries
@@ -1103,6 +1109,9 @@ public class CalendarCombo extends Composite {
             mLastKillRequest = Calendar.getInstance(mSettings.getLocale()).getTimeInMillis();
             mCalendarShell.setVisible(false);
             mCalendarShell.dispose();
+            if (viewport != null) {
+                viewport.closed();
+            }
         }
 
         getDisplay().removeFilter(SWT.KeyDown, mKillListener);
@@ -1224,6 +1233,9 @@ public class CalendarCombo extends Composite {
     }
 
     public synchronized void showCalendar() {
+        if (viewport != null && !viewport.mayOpen()) {
+            return; // a hidden combo opens nothing
+        }
         try {
             // this is part of the OSX issue where the popup for a combo is
             // shown even if there is only 1 item to select (dumb).
@@ -1486,6 +1498,9 @@ public class CalendarCombo extends Composite {
 
             mCalendarShell.setLocation(loc);
             mCalendarShell.setVisible(true);
+            if (viewport != null) {
+                viewport.opened();
+            }
 
         } catch (Exception e) {
             mComboControl.setCapture(false);
@@ -1798,6 +1813,32 @@ public class CalendarCombo extends Composite {
 
     public void addListener(int eventType, Listener listener) {
         mComboControl.addListener(eventType, listener);
+    }
+
+    /* the composite's own events (addListener forwards to the combo control): CalendarComboViewport */
+    void m3AddOwnListener(int eventType, Listener listener) {
+        super.addListener(eventType, listener);
+    }
+
+    /** @return true while the drop-down shell exists (CalendarComboViewport) */
+    boolean m3CalendarOpen() {
+        return isCalendarVisible();
+    }
+
+    /**
+     * Closes the drop-down of a combo that hid (CalendarComboViewport): an open month picker first, because the stock
+     * kill keeps the drop-down while it is open, then the stock kill, leaving the focus alone.
+     */
+    void m3CloseHidden() {
+        if (mCalendarComposite != null && !mCalendarComposite.isDisposed()) {
+            Control[] children = mCalendarComposite.getChildren();
+            for (int i = 0; i < children.length; i++) {
+                if (children[i] instanceof MonthPick) {
+                    children[i].dispose();
+                }
+            }
+        }
+        kill(98, true);
     }
 
     public void removeControlListener(ControlListener listener) {

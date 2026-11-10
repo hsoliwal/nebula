@@ -43,6 +43,11 @@ public class MoveControl extends AbstractEffect {
 
 	Control control = null;
 
+	@Override
+	Control target() {
+		return control;
+	}
+
 	public MoveControl(Control control, int startX, int endX, int startY,
 			int endY, long lengthMilli, IMovement movement, Runnable onStop,
 			Runnable onCancel) {

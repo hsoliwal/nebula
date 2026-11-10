@@ -75,7 +75,8 @@ public class M3VirtualTableBindingTest {
 
     @Test
     public void millionLogicalRowsUseOriginalSwtVirtualItemProtocolAndBoundedPages() {
-        Display display = new Display();
+        Display existing = Display.getCurrent(); // one Display per thread: reuse the one an earlier test left
+        Display display = existing != null ? existing : new Display();
         try {
             Shell shell = new Shell(display);
             try {
@@ -117,13 +118,16 @@ public class M3VirtualTableBindingTest {
                 shell.dispose();
             }
         } finally {
-            display.dispose();
+            if (existing == null) {
+                display.dispose();
+            }
         }
     }
 
     @Test
     public void selectionFromSwtEventRetainsKeysAndUnqualifiedStyleFailsClosed() {
-        Display display = new Display();
+        Display existing = Display.getCurrent(); // one Display per thread: reuse the one an earlier test left
+        Display display = existing != null ? existing : new Display();
         try {
             Shell shell = new Shell(display);
             try {
@@ -186,7 +190,9 @@ public class M3VirtualTableBindingTest {
                 shell.dispose();
             }
         } finally {
-            display.dispose();
+            if (existing == null) {
+                display.dispose();
+            }
         }
     }
 }

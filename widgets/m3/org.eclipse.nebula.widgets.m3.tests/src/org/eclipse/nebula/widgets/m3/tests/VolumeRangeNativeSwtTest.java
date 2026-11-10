@@ -27,7 +27,8 @@ public final class VolumeRangeNativeSwtTest {
 
     @Test
     public void boundedRangeUsesOneNativeScaleAndStableSelectionCallback() {
-        Display display = new Display();
+        Display existing = Display.getCurrent(); // one Display per thread: reuse the one an earlier test left
+        Display display = existing != null ? existing : new Display();
         try {
             Shell shell = new Shell(display);
             try {
@@ -67,7 +68,9 @@ public final class VolumeRangeNativeSwtTest {
                 shell.dispose();
             }
         } finally {
-            display.dispose();
+            if (existing == null) {
+                display.dispose();
+            }
         }
     }
 }

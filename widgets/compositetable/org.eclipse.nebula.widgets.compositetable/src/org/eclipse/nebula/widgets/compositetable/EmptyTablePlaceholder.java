@@ -107,6 +107,14 @@ class EmptyTablePlaceholder extends Canvas {
 	 * Actually resize ourself.
 	 */
 	private void resize() {
+		if (parentTable.viewport != null && parentTable.viewport.deferPlaceholderBounds()) {
+			return; // hidden: the bounds wait for the catch-up
+		}
+		m3Bounds();
+	}
+
+	/** Sets the bounds from the header and the controlHolder (the stock resize; CompositeTableViewport catch-up). */
+	void m3Bounds() {
 		Point headerSize = new Point(0, 0);
 		Control header = parentTable.getHeaderControl();
 		if (header != null) {

@@ -87,6 +87,11 @@ public class SetAlpha extends AbstractEffect {
 
 	Shell shell = null;
 
+	@Override
+	Shell target() {
+		return shell;
+	}
+
 	public SetAlpha(Shell shell, int start, int end, long lengthMilli,
 			IMovement movement, Runnable onStop, Runnable onCancel) {
 		super(lengthMilli, movement, onStop, onCancel);

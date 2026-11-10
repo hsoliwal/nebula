@@ -25,6 +25,11 @@ public class MoveScrollBar extends AbstractEffect {
 
 	ScrollBar scrollBar = null;
 
+	@Override
+	ScrollBar target() {
+		return scrollBar;
+	}
+
 	public MoveScrollBar(ScrollBar scrollBar, int start, int end,
 			long lengthMilli, IMovement movement, Runnable onStop,
 			Runnable onCancel) {

@@ -253,6 +253,23 @@ public class CompositeTable extends Canvas {
 	private void switchToRunMode() {
 		showPrototypes(false);
 		contentPane = new InternalCompositeTable(this, SWT.NO_FOCUS);
+		if (InternalCompositeTable.VIEWPORT) {
+			placeContentPane();
+		}
+	}
+
+	/*
+	 * A table that already has its size gets no further Resize, so the content pane takes it now: on the M3 SWT fork a
+	 * getSize before setRunTime(true) (resizePrototypeObjects, from setNumRowsInCollection) runs the deferred shell
+	 * layout, and a layout before the switch does the same on any SWT. Stock leaves the pane at 0 x 0 until the table
+	 * is resized.
+	 */
+	//FLLDCIM: MARK — every-widget wave 1 compositetable: content pane placed at the switch to run mode
+	private void placeContentPane() {
+		Point size = getSize();
+		if (size.x > 0 && size.y > 0) {
+			contentPane.setBounds(0, 0, size.x, size.y);
+		}
 	}
 
 	/**

@@ -68,6 +68,8 @@ public class CustomCombo extends Composite {
 	List	list;
 	int		visibleItemCount	= 5;
 	Shell	popup;
+	/** Hides the drop-down when the combo or an ancestor hides (CustomComboViewport); null in original mode. */
+	private CustomComboViewport viewport; //FLLDCIM: MARK — every-widget wave 1 calendarcombo: viewport member
 	Button	arrow;
 	boolean	hasFocus;
 	Listener	listener, filter;
@@ -181,6 +183,9 @@ public class CustomCombo extends Composite {
 
 		// the drop-down shell and list are built on first open or first item API use
 		initAccessible();
+		if (CustomComboViewport.ENABLED) {
+			viewport = new CustomComboViewport(this);
+		}
 	}
 
 	static int checkStyle(int style) {
@@ -604,6 +609,9 @@ public class CustomCombo extends Composite {
         if (drop == isDropped() || !isVisible()) {
             return;
         }
+        if (drop && viewport != null && !viewport.mayOpen()) {
+            return; // visible but not part-visible (M3 SWT fork): no drop, as on an invisible combo
+        }
 		if (!drop) {
 			if (popup == null) {
 				return;
@@ -654,6 +662,9 @@ public class CustomCombo extends Composite {
         }
 		popup.setBounds(x, y, width, height);
 		popup.setVisible(true);
+		if (viewport != null) {
+			viewport.opened();
+		}
         if (isFocusControl()) {
             list().setFocus();
         }
