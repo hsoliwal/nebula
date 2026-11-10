@@ -44,6 +44,9 @@ public class HeapManager extends Composite {
 	private Color barGradientColorTopStart;
 	private Color barGradientColorTopEnd;
 	private Color barGradientColorMiddleStart;
+	/* the sample loop, and whether it waits for the bar's next paint because nobody could see the bar */
+	private final Runnable sampler = this::sample;
+	private boolean parked;
 
 	/**
 	 * Constructs a new instance of this class given its parent and a style value
@@ -97,6 +100,12 @@ public class HeapManager extends Composite {
 		bar.setLayoutData(gd);
 		heapMaxSize = (int) (Runtime.getRuntime().maxMemory() / (1024 * 1024));
 		bar.addPaintListener(e -> {
+			if (parked) {
+				// the bar is seen again: one fresh sample, then the loop runs again
+				parked = false;
+				heapSize = (int) (Runtime.getRuntime().totalMemory() / (1024 * 1024));
+				getDisplay().timerExec(500, sampler);
+			}
 			drawBar(e);
 		});
 	}
@@ -157,18 +166,26 @@ public class HeapManager extends Composite {
 	 * Update the content of the bar
 	 */
 	private void updateContent() {
-		getDisplay().timerExec(500, new Runnable() {
-			@Override
-			public void run() {
-				heapSize = (int) (Runtime.getRuntime().totalMemory() / (1024 * 1024));
-				if (!isDisposed()) {
-					bar.redraw();
-					if (!getDisplay().isDisposed()) {
-						getDisplay().timerExec(500, this);
-					}
-				}
-			}
-		});
+		getDisplay().timerExec(500, sampler);
+	}
+
+	/*
+	 * One sample: the heap size, a redraw of the bar, the next sample in 500 ms. A bar nobody can see (it or an
+	 * ancestor hidden, or the shell minimized) is not sampled and arms no timer; its next paint resumes the loop.
+	 */
+	private void sample() {
+		if (isDisposed()) {
+			return;
+		}
+		if (!bar.isVisible() || getShell().getMinimized()) {
+			parked = true; //FLLDCIM: MARK — every-widget HeapManager H
+			return;
+		}
+		heapSize = (int) (Runtime.getRuntime().totalMemory() / (1024 * 1024));
+		bar.redraw();
+		if (!getDisplay().isDisposed()) {
+			getDisplay().timerExec(500, sampler);
+		}
 	}
 
 	/**
