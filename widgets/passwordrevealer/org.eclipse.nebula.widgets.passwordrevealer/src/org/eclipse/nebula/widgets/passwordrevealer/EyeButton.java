@@ -48,14 +48,16 @@ class EyeButton extends Canvas {
 		});
 
 		addListener(SWT.MouseEnter, event -> {
+			final int before = look();
 			mouseIn = true;
-			redraw();
+			repaintIfChanged(before);
 		});
 
 		addListener(SWT.MouseExit, event -> {
+			final int before = look();
 			mouseIn = false;
 			pressed = false;
-			redraw();
+			repaintIfChanged(before);
 		});
 
 		addListener(SWT.MouseDown, event -> {
@@ -83,6 +85,23 @@ class EyeButton extends Canvas {
 			((PasswordRevealer) getParent()).hidePassword();
 			redraw();
 		});
+	}
+
+	/* what paintControl draws for the current state: 0 image, 1 click image, 2 grey eye, 3 hover eye, 4 pressed //FLLDCIM: MARK — every-widget EyeButton D */
+	private int look() {
+		if (!pressed) {
+			return image != null ? 0 : mouseIn ? 3 : 2;
+		}
+		if (clickImage != null) {
+			return 1;
+		}
+		return image != null ? 0 : 4;
+	}
+
+	private void repaintIfChanged(final int before) {
+		if (look() != before) {
+			redraw();
+		}
 	}
 
 	private void paintControl(final PaintEvent e) {
