@@ -30,6 +30,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -121,6 +122,34 @@ public class M3DatePickerTest {
 		view.update();
 		assertEquals("one paint pass on open: " + paints, 1, paints.size());
 		picker.setPopupVisible(false);
+	}
+
+	@Test
+	public void hiddenPickerFoldsTheFieldAndClosesItsDropDown() {
+		if (WidgetMode.of("M3DatePicker", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+			return;
+		}
+		picker.setDate(OCT_20);
+		picker.setPopupVisible(true);
+		M3TestSupport.flush(display);
+		assertTrue(picker.isPopupVisible());
+		picker.setVisible(false);
+		M3TestSupport.flush(display);
+		assertFalse("the drop-down closes with the picker", picker.isPopupVisible());
+		picker.setPopupVisible(true);
+		assertFalse("a hidden picker opens no drop-down", picker.isPopupVisible());
+		Text field = (Text) picker.getChildren()[0];
+		int[] modifies = new int[1];
+		field.addListener(SWT.Modify, e -> modifies[0]++);
+		for (int i = 1; i <= 1000; i++) {
+			picker.setDate(OCT_20 + i);
+		}
+		assertEquals("no native field update while hidden", 0, modifies[0]);
+		assertEquals(OCT_20 + 1000, picker.getDate());
+		picker.setVisible(true);
+		M3TestSupport.flush(display);
+		assertEquals("one field update on show", 1, modifies[0]);
+		assertEquals(LocalDate.ofEpochDay(OCT_20 + 1000).toString(), field.getText());
 	}
 
 	@Test

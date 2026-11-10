@@ -341,6 +341,32 @@ public class M3HeatMapTest {
 	}
 
 	@Test
+	public void hiddenMapScansTheAutoRangeOnceOnShow() {
+		if (!VIEWPORT) {
+			return;
+		}
+		int side = 1000;
+		map.setGridSize(side, side);
+		map.setAutoRange(true);
+		map.setVisible(false);
+		flush();
+		java.lang.management.ThreadMXBean threads = java.lang.management.ManagementFactory.getThreadMXBean();
+		long before = threads.getCurrentThreadCpuTime();
+		for (int i = 0; i < 1000; i++) {
+			map.setValue(i % side, i % 7, -i); // each value below the range: a rescan per call when visible
+			map.update(i % side, i % side);
+		}
+		long nanos = threads.getCurrentThreadCpuTime() - before;
+		assertTrue("2000 deltas on a hidden 10^6-cell map took " + nanos / 1_000_000 + " ms of CPU", nanos < 100_000_000L);
+		assertEquals("the range is current when asked for", -999f, map.getMinimum(), 0f);
+		map.setValue(5, 5, 50f);
+		map.setVisible(true);
+		flush();
+		assertEquals(-999f, map.getMinimum(), 0f);
+		assertEquals("scanned on reveal", 50f, map.getMaximum(), 0f);
+	}
+
+	@Test
 	public void resizeSweepIsAViewportDelta() {
 		map.setGridSize(400, 400);
 		map.setCellSize(4, 4);

@@ -71,6 +71,8 @@ public class M3FindBar extends Composite {
 	 */
 	private int anchor = -1;
 	private boolean searching, pending, settingText;
+	/* the search text was set while the bar was hidden: the field gets it on reveal */
+	private boolean staleField;
 	/* sorted rows of all matches, filled by the counting slices; valid when count >= 0 */
 	private int[] hits = new int[16];
 	private int hitCount;
@@ -145,6 +147,11 @@ public class M3FindBar extends Composite {
 		checkWidget();
 		if (text == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		}
+		if (VIEWPORT && !gate.probe()) {
+			staleField = true; // hidden: the field gets the text on reveal; search() folds the search //FLLDCIM: MARK — every-widget M3FindBar H
+			search(text);
+			return;
 		}
 		settingText = true;
 		try {
@@ -340,6 +347,7 @@ public class M3FindBar extends Composite {
 		}
 		if (!gate.probe()) {
 			pending = true;
+			searching = false;
 			return;
 		}
 		searching = true;
@@ -350,7 +358,7 @@ public class M3FindBar extends Composite {
 
 	/* finds the first match from `start`, wrapping once to 0, SLICE rows per turn, then starts counting */
 	private void findSlice(int mine, int start, int row, boolean wrapped) {
-		if (isDisposed() || mine != generation) {
+		if (isDisposed() || mine != generation || parked()) {
 			return;
 		}
 		int rows = target.getRowCount(), end = wrapped ? Math.min(start, rows) : rows;
@@ -373,7 +381,7 @@ public class M3FindBar extends Composite {
 	}
 
 	private void countSlice(int mine, int row) {
-		if (isDisposed() || mine != generation) {
+		if (isDisposed() || mine != generation || parked()) {
 			return;
 		}
 		int rows = target.getRowCount(), stop = Math.min(rows, row + SLICE);
@@ -421,8 +429,31 @@ public class M3FindBar extends Composite {
 		return Math.max(0, Arrays.binarySearch(hits, 0, hitCount, current)) + 1;
 	}
 
-	/* the one patch on becoming visible: start the search that was requested while hidden */
+	/*
+	 * A slice that finds the bar hidden stops the chain: no rows are read while nobody sees the result. The search
+	 * starts again, once, when the bar is shown (from the anchor, so it finds the same first match).
+	 */
+	private boolean parked() {
+		if (gate.probe()) {
+			return false;
+		}
+		pending = true; //FLLDCIM: MARK — every-widget M3FindBar H
+		searching = false;
+		LOG.debug(() -> "search generation " + generation + " parked while hidden"); //$NON-NLS-1$ //$NON-NLS-2$
+		return true;
+	}
+
+	/* the one patch on becoming visible: the text set while hidden, then the search requested or parked meanwhile */
 	private void revealed() {
+		if (staleField) {
+			staleField = false;
+			settingText = true;
+			try {
+				field.setText(pattern);
+			} finally {
+				settingText = false;
+			}
+		}
 		if (pending) {
 			pending = false;
 			search(pattern);

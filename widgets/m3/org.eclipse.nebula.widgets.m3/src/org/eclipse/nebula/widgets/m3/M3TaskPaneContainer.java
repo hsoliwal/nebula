@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
+import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -35,7 +36,8 @@ import org.eclipse.swt.widgets.Layout;
  * The stack keeps the children's heights and tops in int lanes. When one pane changes size (expand, collapse, a frame
  * of the animation, new content) SWT flushes only that child, so only that child is measured again; panes above it are
  * not touched and panes below it are moved, not resized, so their content is not laid out again. A width change
- * re-measures every child (their content may wrap) but moves no child whose bounds stay the same.
+ * re-measures every child (their content may wrap) but moves no child whose bounds stay the same. While the container
+ * is hidden no stack layout runs: requests fold into the hidden gate and the stack is laid out once when it is shown.
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3TaskPaneContainer=original</code> measures
@@ -47,6 +49,10 @@ public class M3TaskPaneContainer extends Composite {
 	static final boolean VIEWPORT = WidgetMode.of("M3TaskPaneContainer", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private int margin = 8, spacing = 8;
+	/* null in original mode */
+	private final M3HiddenGate gate;
+	/* a layout folded while hidden asked to flush the children's caches */
+	private boolean foldedFlush;
 
 	/**
 	 * Creates an empty container.
@@ -58,6 +64,14 @@ public class M3TaskPaneContainer extends Composite {
 		super(parent, style);
 		super.setLayout(new Stack());
 		setBackground(getDisplay().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		gate = VIEWPORT ? new M3HiddenGate(this, this::revealed) : null; //FLLDCIM: MARK — every-widget M3TaskPaneContainer H
+	}
+
+	/* the one patch on becoming visible: the stack layout requested while hidden */
+	private void revealed() {
+		boolean flush = foldedFlush;
+		foldedFlush = false;
+		layout(flush);
 	}
 
 	/** The container stacks its children itself; a layout cannot be set. */
@@ -130,6 +144,10 @@ public class M3TaskPaneContainer extends Composite {
 
 		@Override
 		protected void layout(Composite composite, boolean flushCache) {
+			if (gate != null && !gate.probe()) {
+				foldedFlush |= flushCache; // hidden: dirty children stay recorded for the reveal
+				return;
+			}
 			M3Counters.layouts++;
 			Rectangle client = getClientArea();
 			Control[] list = getChildren();

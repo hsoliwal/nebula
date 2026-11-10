@@ -62,6 +62,8 @@ public class M3HeatMap extends Canvas {
 	private float[] values = new float[0];
 	private float min = 0f, max = 1f;
 	private boolean autoRange = true;
+	/* the values changed under automatic ranging while the map was hidden: the range is scanned on reveal */
+	private boolean staleRange;
 	private int[] lut = new int[LUT_SIZE];
 	private final Color[] colors = new Color[LUT_SIZE];
 	private int cellWidth = 8, cellHeight = 8;
@@ -77,7 +79,7 @@ public class M3HeatMap extends Canvas {
 	 */
 	public M3HeatMap(Composite parent, int style) {
 		super(parent, style | SWT.NO_BACKGROUND | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, this::updateScrollBars);
+		gate = new M3HiddenGate(this, this::revealed);
 		setPalette(new RGB[] { new RGB(0, 0, 160), new RGB(0, 200, 220), new RGB(255, 230, 0), new RGB(200, 0, 0) });
 		Listener listener = this::handle;
 		addListener(SWT.Paint, listener);
@@ -291,12 +293,14 @@ public class M3HeatMap extends Canvas {
 	/** @return the lower bound of the range */
 	public float getMinimum() {
 		checkWidget();
+		freshRange();
 		return min;
 	}
 
 	/** @return the upper bound of the range */
 	public float getMaximum() {
 		checkWidget();
+		freshRange();
 		return max;
 	}
 
@@ -320,6 +324,32 @@ public class M3HeatMap extends Canvas {
 		if (!autoRange) {
 			return;
 		}
+		if (VIEWPORT && !gate.probe()) {
+			staleRange = true; // hidden: no scan of every value per delta; one scan on reveal //FLLDCIM: MARK — every-widget M3HeatMap H
+			return;
+		}
+		staleRange = false;
+		scanRange();
+	}
+
+	/* the scan folded while hidden, when the range is needed (reveal, paint, the range getters) */
+	private void freshRange() {
+		if (staleRange) {
+			staleRange = false;
+			if (autoRange) {
+				scanRange();
+			}
+		}
+	}
+
+	/* the one patch on becoming visible: the folded range scan, then the scroll bars (the gate then paints once) */
+	private void revealed() {
+		freshRange();
+		updateScrollBars();
+	}
+
+	/* the range follows the smallest and largest value */
+	private void scanRange() {
 		float lo = Float.POSITIVE_INFINITY, hi = Float.NEGATIVE_INFINITY;
 		for (int i = 0, n = rows * columns; i < n; i++) {
 			float v = values[i];
@@ -401,6 +431,7 @@ public class M3HeatMap extends Canvas {
 	 */
 	public int indexOf(float value) {
 		checkWidget();
+		freshRange();
 		return lutIndex(value);
 	}
 
@@ -423,6 +454,7 @@ public class M3HeatMap extends Canvas {
 	 */
 	public int colorOf(float value) {
 		checkWidget();
+		freshRange();
 		return lut[lutIndex(value)];
 	}
 
@@ -625,6 +657,7 @@ public class M3HeatMap extends Canvas {
 	}
 
 	private void paint(GC gc, int clipX, int clipY, int clipWidth, int clipHeight) {
+		freshRange();
 		Rectangle client = getClientArea();
 		gc.setBackground(getBackground());
 		gc.fillRectangle(clipX, clipY, clipWidth, clipHeight);
