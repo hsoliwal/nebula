@@ -123,6 +123,9 @@ public class SwitchButton extends Canvas {
 	 */
 	private boolean mouseInside;
 
+	/* the switch box of the last paint: selection and hover changes repaint it, not the text beside it */
+	private Point paintedButton;
+
 	/**
 	 * Constructs a new instance of this class given its parent and a style
 	 * value describing its behavior and appearance.
@@ -175,7 +178,7 @@ public class SwitchButton extends Canvas {
 		addListener(SWT.MouseUp, e -> {
 			selection = !selection;
 			if (SelectionListenerUtil.fireSelectionListeners(this,e)) {
-				SwitchButton.this.redraw();
+				damageButton();
 			} else {
 				// SelectionChanged event canceled
 				selection = !selection;
@@ -187,20 +190,17 @@ public class SwitchButton extends Canvas {
 
 			@Override
 			public void mouseHover(final MouseEvent e) {
-				mouseInside = true;
-				SwitchButton.this.redraw();
+				hover(true);
 			}
 
 			@Override
 			public void mouseExit(final MouseEvent e) {
-				mouseInside = false;
-				SwitchButton.this.redraw();
+				hover(false);
 			}
 
 			@Override
 			public void mouseEnter(final MouseEvent e) {
-				mouseInside = true;
-				SwitchButton.this.redraw();
+				hover(true);
 			}
 		});
 
@@ -220,6 +220,7 @@ public class SwitchButton extends Canvas {
 		gc.setAntialias(SWT.ON);
 
 		final Point buttonSize = computeButtonSize();
+		paintedButton = buttonSize;
 		drawSwitchButton(buttonSize);
 		drawText(buttonSize);
 
@@ -234,6 +235,26 @@ public class SwitchButton extends Canvas {
 	 *
 	 * @param buttonSize size of the button
 	 */
+	/* hover only draws the focus outline: repaint when it changes and there is one //FLLDCIM: MARK — every-widget opal SwitchButton D */
+	private void hover(final boolean inside) {
+		if (mouseInside == inside) {
+			return;
+		}
+		mouseInside = inside;
+		if (focusColor != null) {
+			damageButton();
+		}
+	}
+
+	/* the switch box (drawn from 2,2 with its size, outline and toggle included) plus a pad */
+	private void damageButton() {
+		if (paintedButton == null) {
+			redraw();
+			return;
+		}
+		redraw(0, 0, paintedButton.x + 8, paintedButton.y + 8, false);
+	}
+
 	private void drawSwitchButton(final Point buttonSize) {
 		// Draw the background of the button
 		gc.setForeground(buttonBorderColor);
@@ -509,8 +530,11 @@ public class SwitchButton extends Canvas {
 	 */
 	public void setSelection(final boolean selection) {
 		checkWidget();
+		if (this.selection == selection) {
+			return;
+		}
 		this.selection = selection;
-		redraw();
+		damageButton();
 	}
 
 	/**
