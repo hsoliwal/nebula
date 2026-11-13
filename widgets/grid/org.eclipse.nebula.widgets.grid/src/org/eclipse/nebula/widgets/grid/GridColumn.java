@@ -520,6 +520,9 @@ public class GridColumn extends Item {
 	 */
 	public void setSort(final int style) {
 		checkWidget();
+		if (sortStyle == style) { //FLLDCIM: MARK — every-widget same-value D
+			return;
+		}
 		sortStyle = style;
 		parent.redraw();
 	}
@@ -1111,6 +1114,9 @@ public class GridColumn extends Item {
 	 */
 	public void setMoveable(final boolean moveable) {
 		checkWidget();
+		if (this.moveable == moveable) {
+			return;
+		}
 		this.moveable = moveable;
 		parent.redraw();
 	}

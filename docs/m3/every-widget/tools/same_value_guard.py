@@ -47,7 +47,8 @@ for m in setter.finditer(t):
     indent = re.match(r"\s*", b.group("assign")).group(0).lstrip("\n")
     cond = f"{left} == {param}" if typ in PRIMS else f"Objects.equals({left}, {param})"
     note = f" //FLLDCIM: MARK — {mark}" if mark and not done else ""
-    guard = f"{indent}if ({cond}) {{{note}\n{indent}\treturn;\n{indent}}}\n"
+    unit = "\t" if "\t" in indent or not indent else "    "  # the file's own indentation unit
+    guard = f"{indent}if ({cond}) {{{note}\n{indent}{unit}return;\n{indent}}}\n"
     head = b.group("check") or ""
     out.append(t[pos:i] + head + guard + body[len(head):])
     pos = close

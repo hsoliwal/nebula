@@ -12,6 +12,8 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.progresscircle;
 
+import java.util.Objects;
+
 import java.time.LocalTime;
 
 import org.eclipse.swt.SWT;
@@ -448,6 +450,9 @@ public class ProgressCircle extends Canvas {
 	 */
 	public void setThickness(int thickness) {
 		checkWidget();
+		if (this.thickness == thickness) { //FLLDCIM: MARK — every-widget same-value D
+			return;
+		}
 		this.thickness = thickness;
 		redraw();
 		update();
@@ -485,6 +490,9 @@ public class ProgressCircle extends Canvas {
 	 */
 	public void setShowText(boolean showPercentage) {
 		checkWidget();
+		if (showText == showPercentage) {
+			return;
+		}
 		showText = showPercentage;
 		redraw();
 		update();
@@ -521,6 +529,9 @@ public class ProgressCircle extends Canvas {
 	 */
 	public void setHighlightColor(Color highlightColor) {
 		checkWidget();
+		if (Objects.equals(this.highlightColor, highlightColor)) {
+			return;
+		}
 		this.highlightColor = highlightColor;
 		redraw();
 		update();
