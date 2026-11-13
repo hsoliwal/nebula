@@ -18,6 +18,7 @@ package org.eclipse.nebula.widgets.pgroup;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -190,6 +191,9 @@ public class PGroup extends Canvas
     public void setBackground(Color color)
     {
         checkWidget();
+        if (Objects.equals(backgroundColor, color)) { //FLLDCIM: MARK — every-widget same-value D
+            return;
+        }
         backgroundColor = color;
         redraw();
     }
@@ -224,6 +228,9 @@ public class PGroup extends Canvas
     public void setToggleRenderer(AbstractRenderer toggleRenderer)
     {
         checkWidget();
+        if (Objects.equals(this.toggleRenderer, toggleRenderer)) {
+            return;
+        }
         this.toggleRenderer = toggleRenderer;
         strategy.update();
         redraw();
@@ -776,6 +783,9 @@ public class PGroup extends Canvas
     public void setImagePosition(int imagePosition)
     {
         checkWidget();
+        if (this.imagePosition == imagePosition) {
+            return;
+        }
         this.imagePosition = imagePosition;
         strategy.update();
         redraw();
@@ -808,6 +818,9 @@ public class PGroup extends Canvas
     public void setTogglePosition(int togglePosition)
     {
         checkWidget();
+        if (this.togglePosition == togglePosition) {
+            return;
+        }
         this.togglePosition = togglePosition;
         strategy.update();
         redraw();
@@ -840,6 +853,9 @@ public class PGroup extends Canvas
     public void setLinePosition(int linePosition)
     {
         checkWidget();
+        if (this.linePosition == linePosition) {
+            return;
+        }
         this.linePosition = linePosition;
         strategy.update();
         redraw();
@@ -901,6 +917,9 @@ public class PGroup extends Canvas
 	public void setToolItemRenderer(AbstractToolItemRenderer toolItemRenderer)
     {
         checkWidget();
+        if (Objects.equals(this.toolItemRenderer, toolItemRenderer)) {
+            return;
+        }
         this.toolItemRenderer = toolItemRenderer;
         strategy.update();
         redraw();

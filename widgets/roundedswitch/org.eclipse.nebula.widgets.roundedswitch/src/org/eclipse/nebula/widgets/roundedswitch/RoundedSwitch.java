@@ -338,6 +338,9 @@ public class RoundedSwitch extends Canvas {
 	 */
 	public void setSelection(boolean selected) {
 		checkWidget();
+		if (this.selected == selected) { //FLLDCIM: MARK — every-widget same-value D
+			return;
+		}
 		this.selected = selected;
 		redraw();
 		update();

@@ -4342,6 +4342,9 @@ public class Grid extends Canvas {
 	 */
 	public void setLinesVisible(final boolean linesVisible) {
 		checkWidget();
+		if (this.linesVisible == linesVisible) { //FLLDCIM: MARK — every-widget same-value D
+			return;
+		}
 		this.linesVisible = linesVisible;
 		redraw();
 	}
@@ -4361,6 +4364,9 @@ public class Grid extends Canvas {
 	 */
 	public void setTreeLinesVisible(final boolean treeLinesVisible) {
 		checkWidget();
+		if (this.treeLinesVisible == treeLinesVisible) {
+			return;
+		}
 		this.treeLinesVisible = treeLinesVisible;
 		redraw();
 	}
