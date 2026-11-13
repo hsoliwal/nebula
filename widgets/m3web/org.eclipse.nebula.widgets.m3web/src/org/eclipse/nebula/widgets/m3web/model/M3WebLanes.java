@@ -254,6 +254,11 @@ public abstract class M3WebLanes implements M3WebApi {
 		damage(0, 0, width, height);
 	}
 
+	/** Returns whether damage is pending without consuming it or notifying listeners. */
+	final boolean hasDamage() {
+		return dx0 <= dx1 && dy0 <= dy1;
+	}
+
 	@Override
 	public boolean takeDamage(int[] out) {
 		if (dx0 > dx1 || dy0 > dy1) {

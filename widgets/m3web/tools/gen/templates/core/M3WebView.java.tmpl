@@ -9,8 +9,8 @@ import java.util.Arrays;
  * the rest are lanes ({@link #setLogicalCount(int)} sizes lanes without objects);</li>
  * <li><b>G</b> logical geometry: extent and scroll offset are {@code long}; scroll bars are int
  * projections ({@link #thumb(int, int[])}); no native overflow;</li>
- * <li><b>D</b> damage only: an item change damages its rect; a scroll records a blit distance and
- * damages only the exposed strip;</li>
+ * <li><b>D</b> damage only: an item change damages its rect; a clean short scroll blits and damages
+ * the exposed strip; pending damage or nested movement requires a full repaint;</li>
  * <li><b>P</b> retained planes: body, header, overlay and scrollbar planes carry their own offset;
  * moving a plane damages only its old and new bounds.</li>
  * </ul>
@@ -29,6 +29,8 @@ public abstract class M3WebView extends M3WebLanes {
 	private int[] matches = new int[8];
 	private int nm = -1;
 	private String filter = "";
+	// Bit 0: active scroll scope; bit 1: nested nonzero movement until outermost exit.
+	private int scrollState;
 
 	/** Recomputes the window and the resident rects at the current scroll offset, without damage. */
 	protected abstract void arrange();
@@ -134,31 +136,54 @@ public abstract class M3WebView extends M3WebLanes {
 		return false;
 	}
 
-	/** Scrolls to a logical offset; a short move is a blit plus the exposed strip. */
+	/** Scrolls to a logical offset; only a clean, stable source admits a short blit. */
 	public void scrollTo(long offset) {
-		long max = Math.max(0, logicalExtent() - viewLength());
-		long to = Math.max(0, Math.min(max, offset));
-		long dy = scroll - to;
-		if (dy == 0) {
-			return;
+		boolean outermost = (scrollState & 1) == 0;
+		if (outermost) {
+			scrollState = 1;
 		}
-		scroll = to;
-		arrange();
-		if (Math.abs(dy) < viewLength() && (aspects() & A_D) != 0) {
-			blit += (int) dy;
-			int at = viewOrigin() + (dy > 0 ? 0 : viewLength() + (int) dy), len = (int) Math.abs(dy);
-			if (scrollsHorizontally()) {
-				damage(at, 0, len, height);
-			} else {
-				damage(0, at, width, len);
+		try {
+			long max = Math.max(0, logicalExtent() - viewLength());
+			long to = Math.max(0, Math.min(max, offset));
+			long dy = scroll - to;
+			if (dy == 0) {
+				return;
 			}
-		} else {
-			damageAll();
+			if (!outermost) {
+				scrollState |= 2;
+			}
+			boolean copy = outermost && (scrollState & 2) == 0 && !hasDamage() && blit == 0;
+			scroll = to;
+			arrange();
+			copy = copy && (scrollState & 2) == 0 && scroll == to && !hasDamage() && blit == 0;
+			if (Math.abs(dy) < viewLength() && (aspects() & A_D) != 0) {
+				// Preserve publication and virtual-hook failure boundaries before deciding the fallback.
+				blit += (int) dy;
+				int at = viewOrigin() + (dy > 0 ? 0 : viewLength() + (int) dy), len = (int) Math.abs(dy);
+				boolean horizontal = scrollsHorizontally();
+				if (copy && (scrollState & 2) == 0 && scroll == to && !hasDamage() && blit == (int) dy) {
+					if (horizontal) {
+						damage(at, 0, len, height);
+					} else {
+						damage(0, at, width, len);
+					}
+				} else {
+					blit = 0;
+					damageAll();
+				}
+			} else {
+				blit = 0;
+				damageAll();
+			}
+			fire(-1, D_SCROLL);
+		} finally {
+			if (outermost) {
+				scrollState = 0;
+			}
 		}
-		fire(-1, D_SCROLL);
 	}
 
-	/** Blit distance accumulated since the last call (positive moves pixels down); the toolkit copies before repainting. */
+	/** Eligible blit distance since the last call (positive moves pixels down); unsafe pending damage returns zero and full damage. */
 	public int takeBlit() {
 		int b = blit;
 		blit = 0;

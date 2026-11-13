@@ -35,6 +35,7 @@ public final class M3WebPaint {
 
 	/** Forgets every record; arrays are kept for the next frame. */
 	public void reset() {
+		java.util.Arrays.fill(texts, 0, nt, null);
 		n = np = nt = tx = ty = 0;
 	}
 
