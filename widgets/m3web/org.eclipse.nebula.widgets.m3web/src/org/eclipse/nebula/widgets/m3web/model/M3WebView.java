@@ -53,14 +53,21 @@ public abstract class M3WebView extends M3WebLanes {
 
 	/** Sizes every lane to {@code n} items in one step; no strings, no per-item objects. */
 	public void setLogicalCount(int n) {
+		if (n < 0) {
+			// Preserve the existing Arrays.fill range failure before any mutation.
+			Arrays.fill(text, count, n, null);
+		}
 		if (n > flags.length) {
 			grow(n);
 		}
-		Arrays.fill(text, count, n, null);
-		Arrays.fill(detail, count, n, null);
+		blank(Math.min(count, n), Math.max(count, n));
 		count = n;
 		nm = -1;
 		filter = "";
+		focus = Math.min(focus, n - 1);
+		hover = hover >= n ? -1 : hover;
+		pressed = pressed >= n ? -1 : pressed;
+		scroll = Math.max(0, Math.min(scroll, Math.max(0, logicalExtent() - viewLength())));
 		relayout(-1, D_ITEMS);
 	}
 
