@@ -907,7 +907,8 @@ public class CTreeCombo extends Composite {
 	 */
 	public int getItemCount() {
 		checkWidget();
-		return tree().getItemCount();
+		// a drop-down that is not built yet gets one row per root item, so the count needs no drop-down
+		return tree == null ? items.size() : tree.getItemCount();
 	}
 
 	/**
