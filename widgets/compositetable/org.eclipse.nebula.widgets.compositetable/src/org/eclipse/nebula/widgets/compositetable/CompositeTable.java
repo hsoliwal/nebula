@@ -455,7 +455,13 @@ public class CompositeTable extends Canvas {
 	 *            otherwise.
 	 */
 	public void setLinesVisible(boolean linesVisible) {
+		if (this.linesVisible == linesVisible) {
+			return;
+		}
 		this.linesVisible = linesVisible;
+		// the header and the rows paint the grid lines: redraw them at once //FLLDCIM: MARK — every-widget CompositeTable lines D
+		Point size = getSize();
+		redraw(0, 0, size.x, size.y, true);
 	}
 
 	String insertHint = "Press <Ctrl-INSERT> to insert new data."; //$NON-NLS-1$
