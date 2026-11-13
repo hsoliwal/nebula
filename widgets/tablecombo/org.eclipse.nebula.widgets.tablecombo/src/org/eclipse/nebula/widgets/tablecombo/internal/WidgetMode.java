@@ -66,7 +66,13 @@ public enum WidgetMode {
 		return mode;
 	}
 
-	/** The mode the startup properties ask for, before any fallback. */
+	/**
+	 * Answers the mode the startup properties ask for, before any fallback.
+	 *
+	 * @param widget the simple class name of the widget, for example <code>"Tree"</code>
+	 * @return the mode named by <code>swt.widget.mode.&lt;widget&gt;</code>, else by <code>swt.widget.mode</code>,
+	 *         else {@link #VIEWPORT}
+	 */
 	public static WidgetMode requested (String widget) {
 		String specific = System.getProperty (PROPERTY + "." + widget);
 		String value = specific != null ? specific : System.getProperty (PROPERTY);
