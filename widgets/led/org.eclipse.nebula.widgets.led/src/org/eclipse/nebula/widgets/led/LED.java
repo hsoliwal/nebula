@@ -156,6 +156,9 @@ public class LED extends BaseLED {
 	 */
 	public void setShowDot(boolean showDot) {
 		checkWidget();
+		if (this.showDot == showDot) { //FLLDCIM: MARK — every-widget same-value D
+			return;
+		}
 		this.showDot = showDot;
 		redraw();
 	}

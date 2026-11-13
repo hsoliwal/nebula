@@ -14,6 +14,8 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.led;
 
+import java.util.Objects;
+
 import org.eclipse.nebula.widgets.opal.commons.SWTGraphicUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -150,6 +152,9 @@ public abstract class BaseLED extends Canvas {
 	public void setIdleColor(Color idleColor) {
 		checkWidget();
 		checkColor(idleColor);
+		if (Objects.equals(this.idleColor, idleColor)) { //FLLDCIM: MARK — every-widget same-value D
+			return;
+		}
 		this.idleColor = idleColor;
 		redraw();
 	}
@@ -204,6 +209,9 @@ public abstract class BaseLED extends Canvas {
 	public void setSelectedColor(Color selectedColor) {
 		checkWidget();
 		checkColor(selectedColor);
+		if (Objects.equals(this.selectedColor, selectedColor)) {
+			return;
+		}
 		this.selectedColor = selectedColor;
 		redraw();
 	}
