@@ -1652,7 +1652,7 @@ public class CTree extends Composite implements Listener {
             if (internalTable != null) {
                 internalTable.setLinesVisible(linesVisible);
             }
-			redraw();
+			body.redraw(); // the body paints the grid lines; redraw() on this composite does not reach it //FLLDCIM: MARK — every-widget CTree lines flag D
 		}
 		this.lastLine = lastLine;
 	}

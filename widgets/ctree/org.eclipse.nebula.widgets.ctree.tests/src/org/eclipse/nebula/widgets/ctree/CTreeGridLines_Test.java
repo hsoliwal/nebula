@@ -76,6 +76,12 @@ public class CTreeGridLines_Test {
 		assertEquals("the values in use paint nothing", 0, paints);
 	}
 
+	@Test
+	public void theLinesFlagShowsAtOnce() {
+		step("lines off", () -> tree.setLinesVisible(false));
+		step("lines on", () -> tree.setLinesVisible(true));
+	}
+
 	private void step(String name, Runnable change) {
 		change.run();
 		spin();
