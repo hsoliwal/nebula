@@ -57,6 +57,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 
 /**
@@ -173,6 +174,8 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 		});
 
 		compositeTable.setRunTime(true);
+		// a reveal filter left installed by a hidden editor goes with it //FLLDCIM: MARK — every-widget DayEditor hidden positioning H
+		addListener(SWT.Dispose, e -> getDisplay().removeFilter(SWT.Paint, positionsOnReveal));
 	}
 
 	private Menu menu = null;
@@ -1219,10 +1222,41 @@ public class DayEditor extends AbstractEventEditor implements IEventEditor {
 	}
 
 	@SuppressWarnings("unchecked")
+	/** Event positions asked for while the editor was hidden; the first paint inside it lays them out once. */
+	private boolean positionsPending;
+
+	/* the first paint inside this editor after positions were left pending lays them out once */
+	private final Listener positionsOnReveal = event -> {
+		if (!positionsPending || isDisposed() || !(event.widget instanceof Control)) {
+			return;
+		}
+		for (Control c = (Control) event.widget; c != null; c = c.getParent()) {
+			if (c == this) {
+				positionsPending = false;
+				getDisplay().removeFilter(SWT.Paint, DayEditor.this.positionsOnReveal);
+				getDisplay().asyncExec(this::positionEventControls);
+				return;
+			}
+		}
+	};
+
+	private void positionEventControls() {
+		if (!isDisposed()) {
+			refreshEventControlPositions.run();
+		}
+	}
+
 	private Runnable refreshEventControlPositions = () -> {
         if (isDisposed()) {
             return;
         }
+		if (!isVisible()) {
+			if (!positionsPending) {
+				positionsPending = true;
+				getDisplay().addFilter(SWT.Paint, positionsOnReveal);
+			}
+			return;
+		}
 
 		Control[] gridRows = compositeTable.getRowControls();
 
