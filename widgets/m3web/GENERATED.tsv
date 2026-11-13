@@ -132,7 +132,7 @@ org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3Ca
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CodeBlockApi.java	member/Api.tmpl	3ba13e04b67ab18ab818a2f811c50a8b2990f0c33692ad6c1ce4cfd8c4705863
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CodeBlockModel.java	member/Model.tmpl	84a6d5e23ad4cd8b22ff6189a35f654930fdc54924cbedae332256ef92ea8e40
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CollectionApi.java	family/COLLECTION.api.tmpl	a1e112eb2de3ccd2979d2446a446cbf205da350cc64ec3e697a1c045596d6348
-org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CollectionModel.java	family/COLLECTION.java.tmpl	d5a3ddbfa323b80f047352cd46c2a954adc2e9f977d5c472d40880115d8e39d7
+org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CollectionModel.java	family/COLLECTION.java.tmpl	64122886ab90eed027612be3a0d5df329251ba7c2c28326b2db818789a9bc6b5
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CommandPaletteApi.java	member/Api.tmpl	f70dc0349ab5332d900dc16ffdd8a464b66c3321d123e0553d330864209d95e5
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CommandPaletteModel.java	member/Model.tmpl	30e42e7c3c32d410718750f996248c634f487a8561b5bac2dcaeb664f36cbcbb
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CommandsApi.java	family/COMMANDS.api.tmpl	3cd1f5f09110f33708d67c82f9f4ea796a11784b0dd48b9f78a04290177a4138
