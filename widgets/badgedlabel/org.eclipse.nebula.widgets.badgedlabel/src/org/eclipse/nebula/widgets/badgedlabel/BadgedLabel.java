@@ -365,6 +365,7 @@ public class BadgedLabel extends Canvas {
 		}
 
 		SWTGraphicUtil.addDisposer(this, badgeBackground);
+		redraw(); // shows at once //FLLDCIM: MARK — every-widget BadgedLabel setter damage D
 	}
 
 	/**
@@ -578,6 +579,7 @@ public class BadgedLabel extends Canvas {
 		checkWidget();
 		checkColor(backgroundColor);
 		this.backgroundColor = backgroundColor;
+		redraw();
 	}
 
 	private void checkColor(Color color) {
@@ -613,6 +615,7 @@ public class BadgedLabel extends Canvas {
 		checkWidget();
 		checkColor(badgeBackground);
 		this.badgeBackground = badgeBackground;
+		redraw();
 	}
 
 	/**
@@ -639,6 +642,7 @@ public class BadgedLabel extends Canvas {
 		checkWidget();
 		checkColor(badgeForeground);
 		this.badgeForeground = badgeForeground;
+		redraw();
 	}
 
 	/**
@@ -664,8 +668,12 @@ public class BadgedLabel extends Canvas {
 		if (value == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
+		if (value.equals(badgeValue)) {
+			return;
+		}
 		badgeValue = value;
 		badgeTextSizeCache = null;
+		redraw();
 	}
 
 	/**
@@ -692,6 +700,7 @@ public class BadgedLabel extends Canvas {
 		checkWidget();
 		checkColor(borderColor);
 		this.borderColor = borderColor;
+		redraw();
 	}
 
 	/**
@@ -737,6 +746,7 @@ public class BadgedLabel extends Canvas {
 	public void setImage(Image image) {
 		checkWidget();
 		this.image = image;
+		redraw();
 	}
 
 	/**
@@ -775,8 +785,12 @@ public class BadgedLabel extends Canvas {
 	 */
 	public void setText(String text) {
 		checkWidget();
+		if (text != null && text.equals(this.text)) {
+			return;
+		}
 		textSizeCache = null;
 		this.text = text;
+		redraw();
 	}
 
 	/**
@@ -803,6 +817,7 @@ public class BadgedLabel extends Canvas {
 		checkWidget();
 		checkColor(textColor);
 		this.textColor = textColor;
+		redraw();
 	}
 
 }
