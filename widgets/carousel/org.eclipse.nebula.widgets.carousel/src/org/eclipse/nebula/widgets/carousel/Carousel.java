@@ -14,6 +14,7 @@ package org.eclipse.nebula.widgets.carousel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.nebula.widgets.opal.commons.SWTGraphicUtil;
 import org.eclipse.nebula.widgets.opal.commons.SelectionListenerUtil;
@@ -342,6 +343,9 @@ public class Carousel extends Composite {
 	 */
 	public void setArrowColor(final Color arrowColor) {
 		checkWidget();
+		if (Objects.equals(imageSelector.arrowColor, arrowColor)) { //FLLDCIM: MARK — every-widget same-value D
+			return;
+		}
 		imageSelector.arrowColor = arrowColor;
 		imageSelector.redraw();
 	}
@@ -375,6 +379,9 @@ public class Carousel extends Composite {
 	 */
 	public void setCircleBackground(final Color circleBackground) {
 		checkWidget();
+		if (Objects.equals(imageSelector.circleBackground, circleBackground)) {
+			return;
+		}
 		imageSelector.circleBackground = circleBackground;
 		imageSelector.redraw();
 	}
@@ -398,6 +405,9 @@ public class Carousel extends Composite {
 	 */
 	public void setCircleForeground(final Color circleForeground) {
 		checkWidget();
+		if (Objects.equals(imageSelector.circleForeground, circleForeground)) {
+			return;
+		}
 		imageSelector.circleForeground = circleForeground;
 		imageSelector.redraw();
 	}
@@ -421,6 +431,9 @@ public class Carousel extends Composite {
 	 */
 	public void setCircleHoverColor(final Color circleHoverColor) {
 		checkWidget();
+		if (Objects.equals(imageSelector.circleHoverColor, circleHoverColor)) {
+			return;
+		}
 		imageSelector.circleHoverColor = circleHoverColor;
 		imageSelector.redraw();
 	}
@@ -449,6 +462,7 @@ public class Carousel extends Composite {
 		selection = 0;
 		imageContainer.setImage(images.get(selection));
 		layout();
+		imageSelector.redraw(); // the dots show the new images and the first one selected
 	}
 
 	/**
@@ -477,9 +491,13 @@ public class Carousel extends Composite {
 		if (selected < 0 || selected >= images.size()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
+		if (selected == selection) {
+			return;
+		}
 		selection = selected;
 		imageContainer.setImage(images.get(selection));
 		redraw();
+		imageSelector.redraw(); // the dots show the selection; redraw() does not reach this child
 	}
 
 }

@@ -93,7 +93,11 @@ class ImageContainer extends Canvas {
 	}
 
 	void setImage(final Image image) {
+		if (this.image == image) {
+			return;
+		}
 		this.image = image;
+		redraw(); // the carousel's own redraw() does not reach this child: the old image stayed //FLLDCIM: MARK — every-widget Carousel image damage D
 	}
 
 	void moveTo(final int newSelection) {
