@@ -18,8 +18,8 @@ import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Random;
 
+import org.eclipse.nebula.widgets.lazystacklayout.LazyStackLayout;
 import org.eclipse.nebula.widgets.m3.M3HeatMap;
-import org.eclipse.nebula.widgets.m3.M3StackLayout;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.layout.FillLayout;
@@ -63,13 +63,13 @@ public class M3OptimizationBench {
 		System.out.println("bench " + widget + " " + operation + " " + size + " " + String.format(java.util.Locale.ROOT, "%.1f", value) + " " + unit);
 	}
 
-	/* layout after the top control changes, StackLayout versus M3StackLayout over n live children */
+	/* layout after the top control changes, StackLayout versus LazyStackLayout over n live children */
 	void stackChildren(int n, boolean m3) {
 		Shell shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(0, 0, 400, 300);
 		shell.setLayout(new FillLayout());
 		Composite composite = new Composite(shell, SWT.NONE);
-		StackLayout layout = m3 ? new M3StackLayout() : new StackLayout();
+		StackLayout layout = m3 ? new LazyStackLayout() : new StackLayout();
 		composite.setLayout(layout);
 		Control[] children = new Control[n];
 		for (int i = 0; i < n; i++) {
@@ -92,7 +92,7 @@ public class M3OptimizationBench {
 			bytes[k] = THREADS.getCurrentThreadAllocatedBytes() - a;
 			drain();
 		}
-		String widget = m3 ? "M3StackLayout" : "StackLayout";
+		String widget = m3 ? "LazyStackLayout" : "StackLayout";
 		print(widget, "layout-after-top-change", n, median(time) / 1000.0, "us");
 		print(widget, "layout-after-top-change-alloc", n, median(bytes), "bytes");
 		shell.dispose();
@@ -104,7 +104,7 @@ public class M3OptimizationBench {
 		shell.setBounds(0, 0, 400, 300);
 		shell.setLayout(new FillLayout());
 		Composite composite = new Composite(shell, SWT.NONE);
-		M3StackLayout layout = new M3StackLayout();
+		LazyStackLayout layout = new LazyStackLayout();
 		composite.setLayout(layout);
 		layout.setPages(composite, n, (parent, index) -> {
 			Label label = new Label(parent, SWT.NONE);
@@ -130,10 +130,10 @@ public class M3OptimizationBench {
 			hit[k] = System.nanoTime() - start;
 			drain();
 		}
-		print("M3StackLayout", "showPage-miss", n, median(time) / 1000.0, "us");
-		print("M3StackLayout", "showPage-miss-alloc", n, median(bytes), "bytes");
-		print("M3StackLayout", "showPage-resident", n, median(hit) / 1000.0, "us");
-		print("M3StackLayout", "resident-controls", n, layout.getResidentCount(), "controls");
+		print("LazyStackLayout", "showPage-miss", n, median(time) / 1000.0, "us");
+		print("LazyStackLayout", "showPage-miss-alloc", n, median(bytes), "bytes");
+		print("LazyStackLayout", "showPage-resident", n, median(hit) / 1000.0, "us");
+		print("LazyStackLayout", "resident-controls", n, layout.getResidentCount(), "controls");
 		shell.dispose();
 	}
 

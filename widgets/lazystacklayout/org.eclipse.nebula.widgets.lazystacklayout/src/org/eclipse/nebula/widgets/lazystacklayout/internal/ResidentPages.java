@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.internal;
+package org.eclipse.nebula.widgets.lazystacklayout.internal;
 
 import java.util.Arrays;
 
@@ -21,11 +21,10 @@ import org.eclipse.swt.widgets.Control;
 /**
  * The resident pages of a page stack, held in lanes: page index, last-shown tick and control per slot. Lookup and the
  * least recently used victim are one linear scan over the slots, which are as many as the residency budget (a handful).
- * No entry objects; no allocation once the lanes have grown to the budget. Pattern: M3jdk21
- * <code>com.m3.collections.M3BoundedCache</code> (lanes, no entries), with exact LRU instead of CLOCK because the
- * release order is visible to the page provider (docs/m3/custom-widgets/ALGORITHM_CATALOGUE.tsv, ALG-CW-STACK-LRU).
+ * No entry objects; no allocation once the lanes have grown to the budget. Pattern: a bounded cache held in lanes
+ * (no entries), with exact LRU instead of CLOCK because the release order is visible to the page provider.
  */
-public final class M3ResidentPages {
+public final class ResidentPages {
 	private int[] pages = new int[4];
 	private long[] ticks = new long[4];
 	private Control[] controls = new Control[4];

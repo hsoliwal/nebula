@@ -349,6 +349,7 @@ Contributors:
 		<module>../../widgets/geomap</module>
 		<module>../../widgets/grid</module>
 		<module>../../widgets/hyperlink</module>
+		<module>../../widgets/lazystacklayout</module>
 		<module>../../widgets/led</module>
 		<module>../../widgets/multisplitpane</module>
 		<module>../../widgets/nebulaslider</module>
