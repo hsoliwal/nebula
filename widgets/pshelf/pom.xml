@@ -20,6 +20,7 @@
 		<module>org.eclipse.nebula.widgets.pshelf.css</module>
 		<module>org.eclipse.nebula.widgets.pshelf.feature</module>
 		<module>org.eclipse.nebula.widgets.pshelf.css.feature</module>
+		<module>org.eclipse.nebula.widgets.pshelf.tests</module>
 	</modules>
 
 </project>
