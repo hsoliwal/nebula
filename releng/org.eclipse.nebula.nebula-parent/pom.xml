@@ -347,6 +347,7 @@ Contributors:
 		<module>../../widgets/ganttchart</module>
 		<module>../../widgets/geomap</module>
 		<module>../../widgets/grid</module>
+		<module>../../widgets/hyperlink</module>
 		<module>../../widgets/led</module>
 		<module>../../widgets/nebulaslider</module>
 		<module>../../widgets/opal</module>

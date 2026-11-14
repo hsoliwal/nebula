@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.hyperlink;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -21,9 +21,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.M3Hyperlink;
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.hyperlink.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.hyperlink.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
@@ -35,15 +34,15 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3Hyperlink: click, Enter and Space activate and mark visited, hover and visited repaint the text rectangle only, a
+ * Hyperlink: click, Enter and Space activate and mark visited, hover and visited repaint the text rectangle only, a
  * text change repaints the union of old and new text, a resize sweep repaints only the exposed strip, the hidden gate,
  * errors. Runs in both startup modes.
  */
-public class M3HyperlinkTest {
+public class HyperlinkTest {
 
 	Display display;
 	Shell shell;
-	M3Hyperlink link;
+	Hyperlink link;
 	List<Rectangle> paints;
 	int selections;
 
@@ -52,13 +51,13 @@ public class M3HyperlinkTest {
 		display = Display.getDefault();
 		shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(10, 10, 320, 80);
-		link = new M3Hyperlink(shell, SWT.NONE);
+		link = new Hyperlink(shell, SWT.NONE);
 		link.setBounds(0, 0, 300, 30);
 		link.setText("Open the Problems view");
 		link.addListener(SWT.Selection, e -> selections++);
-		paints = M3TestSupport.recordPaints(link);
+		paints = TestSupport.recordPaints(link);
 		shell.open();
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -67,7 +66,7 @@ public class M3HyperlinkTest {
 	}
 
 	static boolean viewport() {
-		return WidgetMode.of("M3Hyperlink", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+		return WidgetMode.of("Hyperlink", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	}
 
 	@Test
@@ -88,7 +87,7 @@ public class M3HyperlinkTest {
 		assertEquals(1, selections);
 		assertTrue(link.isVisited());
 		if (viewport()) {
-			M3TestSupport.assertPaintsInside(paints, text);
+			TestSupport.assertPaintsInside(paints, text);
 		}
 		Event key = new Event();
 		key.character = '\r';
@@ -112,14 +111,14 @@ public class M3HyperlinkTest {
 		link.update();
 		assertFalse(paints.isEmpty());
 		if (viewport()) {
-			M3TestSupport.assertPaintsInside(paints, link.getTextBounds());
+			TestSupport.assertPaintsInside(paints, link.getTextBounds());
 		}
 		Rectangle before = link.getTextBounds();
 		paints.clear();
 		link.setText("Open");
 		link.update();
 		if (viewport()) {
-			M3TestSupport.assertPaintsInside(paints, before.union(link.getTextBounds()));
+			TestSupport.assertPaintsInside(paints, before.union(link.getTextBounds()));
 		}
 		link.setLinkColors(new RGB(0, 0, 200), new RGB(120, 0, 120));
 		link.setVisited(true);
@@ -129,8 +128,8 @@ public class M3HyperlinkTest {
 	@Test
 	public void resizeSweepIsAViewportDelta() {
 		int height = link.getSize().y, old = link.getSize().x;
-		M3Counters.reset();
-		for (int width : M3TestSupport.sweepWidths(300)) {
+		RepaintCounters.reset();
+		for (int width : TestSupport.sweepWidths(300)) {
 			paints.clear();
 			link.setSize(width, height);
 			link.update();
@@ -141,7 +140,7 @@ public class M3HyperlinkTest {
 			}
 			old = width;
 		}
-		assertEquals(M3Counters.line(), 0, M3Counters.fullRepaints + M3Counters.measures);
+		assertEquals(RepaintCounters.line(), 0, RepaintCounters.fullRepaints + RepaintCounters.measures);
 	}
 
 	@Test
@@ -149,20 +148,20 @@ public class M3HyperlinkTest {
 		if (!viewport()) {
 			return;
 		}
-		M3TestSupport.assertHiddenGate(link, paints, i -> {
+		TestSupport.assertHiddenGate(link, paints, i -> {
 			link.setText("link " + i);
 			link.setVisited(i % 2 == 0);
 		});
-		M3Hyperlink fresh = new M3Hyperlink(shell, SWT.NONE);
+		Hyperlink fresh = new Hyperlink(shell, SWT.NONE);
 		fresh.setBounds(0, 40, 300, 30);
 		fresh.setText("link 9999");
-		M3TestSupport.flush(display);
-		assertArrayEquals(M3TestSupport.pixels(fresh).data, M3TestSupport.pixels(link).data);
+		TestSupport.flush(display);
+		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(link).data);
 	}
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setText(null));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setLinkColors(null, new RGB(0, 0, 0)));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setText(null));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setLinkColors(null, new RGB(0, 0, 0)));
 	}
 }
