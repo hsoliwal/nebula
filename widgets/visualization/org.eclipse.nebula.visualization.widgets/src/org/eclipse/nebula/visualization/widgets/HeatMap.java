@@ -12,14 +12,14 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.visualization.widgets;
 
 import java.util.Arrays;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.visualization.internal.widgets.HiddenGate;
+import org.eclipse.nebula.visualization.internal.widgets.RepaintCounters;
+import org.eclipse.nebula.visualization.internal.widgets.SwtLog;
+import org.eclipse.nebula.visualization.internal.widgets.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
@@ -46,15 +46,15 @@ import org.eclipse.swt.widgets.ScrollBar;
  * selected cell changes (<code>Event.x</code> the column, <code>Event.y</code> the row).
  * </p>
  * <p>
- * Startup switch: <code>-Dswt.widget.mode.M3HeatMap=original</code> paints every cell of the grid on every paint,
+ * Startup switch: <code>-Dswt.widget.mode.HeatMap=original</code> paints every cell of the grid on every paint,
  * as a plain implementation would; the default (viewport) paints the clip only.
  * </p>
  */
-public class M3HeatMap extends Canvas {
+public class HeatMap extends Canvas {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3HeatMap", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("HeatMap", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3HeatMap"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.visualization.widgets.HeatMap"); //$NON-NLS-1$
 
 	private static final int LUT_SIZE = 256;
 
@@ -69,7 +69,7 @@ public class M3HeatMap extends Canvas {
 	private int cellWidth = 8, cellHeight = 8;
 	private int originX, originY;
 	private int selectedRow = -1, selectedColumn = -1;
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 
 	/**
 	 * Creates a heat map with an empty grid and a blue-to-red palette.
@@ -77,9 +77,9 @@ public class M3HeatMap extends Canvas {
 	 * @param parent the parent
 	 * @param style H_SCROLL, V_SCROLL, BORDER
 	 */
-	public M3HeatMap(Composite parent, int style) {
+	public HeatMap(Composite parent, int style) {
 		super(parent, style | SWT.NO_BACKGROUND | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, this::revealed);
+		gate = new HiddenGate(this, this::revealed);
 		setPalette(new RGB[] { new RGB(0, 0, 160), new RGB(0, 200, 220), new RGB(255, 230, 0), new RGB(200, 0, 0) });
 		Listener listener = this::handle;
 		addListener(SWT.Paint, listener);
@@ -325,7 +325,7 @@ public class M3HeatMap extends Canvas {
 			return;
 		}
 		if (VIEWPORT && !gate.probe()) {
-			staleRange = true; // hidden: no scan of every value per delta; one scan on reveal //FLLDCIM: MARK — every-widget M3HeatMap H
+			staleRange = true; // hidden: no scan of every value per delta; one scan on reveal //FLLDCIM: MARK — every-widget HeatMap H
 			return;
 		}
 		staleRange = false;
@@ -623,7 +623,7 @@ public class M3HeatMap extends Canvas {
 
 	private void repaint() {
 		if (showing()) {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 		}
 	}

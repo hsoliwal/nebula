@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.visualization.widgets;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -24,8 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.eclipse.nebula.widgets.m3.M3HeatMap;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.visualization.internal.widgets.RepaintCounters;
+import org.eclipse.nebula.visualization.internal.widgets.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -41,16 +41,16 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3HeatMap: API, errors, range and palette mapping, geometry, selection events, delta repaints, pixels against a
+ * HeatMap: API, errors, range and palette mapping, geometry, selection events, delta repaints, pixels against a
  * reference painted cell by cell. Runs in both startup modes.
  */
-public class M3HeatMapTest {
+public class HeatMapTest {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3HeatMap", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("HeatMap", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	Display display;
 	Shell shell;
-	M3HeatMap map;
+	HeatMap map;
 	final List<Rectangle> paints = new ArrayList<>();
 	final List<Point> selections = new ArrayList<>();
 
@@ -59,7 +59,7 @@ public class M3HeatMapTest {
 		display = Display.getDefault();
 		shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(10, 10, 300, 200);
-		map = new M3HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+		map = new HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
 		map.setBounds(0, 0, 300, 200);
 		map.addListener(SWT.Paint, e -> paints.add(new Rectangle(e.x, e.y, e.width, e.height)));
 		map.addListener(SWT.Selection, e -> selections.add(new Point(e.x, e.y)));
@@ -308,7 +308,7 @@ public class M3HeatMapTest {
 		ImageData a = actual.getImageData(), e = expected.getImageData();
 		actual.dispose();
 		expected.dispose();
-		M3TestSupport.assertSamePixels("heatmap-cells", e, a);
+		TestSupport.assertSamePixels("heatmap-cells", e, a);
 	}
 
 	@Test
@@ -321,23 +321,23 @@ public class M3HeatMapTest {
 		map.setRange(0f, 1f);
 		float[] values = new float[12 * 16];
 		Random random = new Random(11);
-		M3TestSupport.assertHiddenGate(map, paints, i -> {
+		TestSupport.assertHiddenGate(map, paints, i -> {
 			int cell = random.nextInt(values.length);
 			values[cell] = random.nextInt(5) * 0.25f;
 			map.setValue(cell / 16, cell % 16, values[cell]);
 		});
-		M3HeatMap fresh = new M3HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+		HeatMap fresh = new HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
 		fresh.setBounds(0, 0, 300, 200);
 		fresh.setGridSize(12, 16);
 		fresh.setCellSize(9, 7);
 		fresh.setValues(values);
 		fresh.setRange(0f, 1f);
 		fresh.moveAbove(map);
-		M3TestSupport.flush(display);
-		org.eclipse.swt.graphics.ImageData expected = M3TestSupport.pixels(fresh);
+		TestSupport.flush(display);
+		org.eclipse.swt.graphics.ImageData expected = TestSupport.pixels(fresh);
 		fresh.dispose();
-		M3TestSupport.flush(display);
-		assertArrayEquals(expected.data, M3TestSupport.pixels(map).data);
+		TestSupport.flush(display);
+		assertArrayEquals(expected.data, TestSupport.pixels(map).data);
 	}
 
 	@Test
@@ -373,8 +373,8 @@ public class M3HeatMapTest {
 		map.setOrigin(100, 100);
 		flush();
 		int height = map.getSize().y, old = map.getSize().x;
-		org.eclipse.nebula.widgets.m3.internal.M3Counters.reset();
-		for (int width : M3TestSupport.sweepWidths(300)) {
+		RepaintCounters.reset();
+		for (int width : TestSupport.sweepWidths(300)) {
 			paints.clear();
 			map.setSize(width, height);
 			map.update();
@@ -385,30 +385,30 @@ public class M3HeatMapTest {
 			}
 			old = width;
 		}
-		assertEquals(org.eclipse.nebula.widgets.m3.internal.M3Counters.line(), 0, org.eclipse.nebula.widgets.m3.internal.M3Counters.fullRepaints);
+		assertEquals(RepaintCounters.line(), 0, RepaintCounters.fullRepaints);
 	}
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(-1, 2));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(2, -1));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(-1, 2));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(2, -1));
 		map.setGridSize(2, 2);
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setValues(null));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setValues(new float[3]));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setValue(2, 0, 1f));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(0, 2));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(-1, 0));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getCellBounds(0, -1));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(2, 2));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(-1, 0));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.showCell(5, 5));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(2f, 1f));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(Float.NaN, 1f));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(null));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0) }));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0), null }));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(0, 1));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(1, 0));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.getCell(null));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setValues(null));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setValues(new float[3]));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setValue(2, 0, 1f));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(0, 2));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(-1, 0));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getCellBounds(0, -1));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(2, 2));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(-1, 0));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.showCell(5, 5));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(2f, 1f));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(Float.NaN, 1f));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(null));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0) }));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0), null }));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(0, 1));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(1, 0));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.getCell(null));
 	}
 }
