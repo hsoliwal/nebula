@@ -44,7 +44,9 @@ public class GridSelectionOccurrence_Test {
 	@Before
 	public void setUp() {
 		display = Display.getDefault();
-		shell = new Shell(display);
+		// on top: a test here compares screen pixels, and a shell that a background process opens stays behind the
+		// window that holds the foreground (same style as GridBlitScroll_Test)
+		shell = new Shell(display, SWT.ON_TOP | SWT.SHELL_TRIM);
 	}
 
 	@After

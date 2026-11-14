@@ -188,7 +188,9 @@ public class GridCellSelectionMode_Test {
     }
 
     private void create(boolean grouped, boolean fixed) throws Exception {
-        shell = new Shell(Display.getDefault());
+        // on top: the test compares screen pixels, and a shell that a background process opens stays behind the
+        // window that holds the foreground (same style as GridBlitScroll_Test)
+        shell = new Shell(Display.getDefault(), SWT.ON_TOP | SWT.SHELL_TRIM);
         shell.setLayout(new FillLayout());
         grid = new Grid(shell, SWT.MULTI | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
         grid.setHeaderVisible(true);
