@@ -5,12 +5,17 @@ future Android/iOS backend of the **original** Nebula Grid. It does not replace,
 rename, wrap or alter the existing Grid widget public API. It supports long
 logical row counts, fixed row geometry, O(viewport + overscan) retained physical
 row slots, stable slot reuse, selection/dirty-region updates, native row release
-and overflow-safe large-scroll arithmetic. A RowSink can bind real native views
-once a production SWT mobile backend is available.
+and overflow-safe large-scroll arithmetic.
 
-Run bash mobile/test-core.sh on Java 21 to compile and execute its assertions.
-This proves its Java model/viewport invariants only. Native Grid painting,
-columns, sorting, editing, accessibility, RTL, IME, touch and equivalent desktop
-behavior on Android/iOS are **not** established; the SWT port and full Nebula
-native adapter remain required. No upstream Grid files or widget contracts are
-modified in this first PR.
+MobileGridViewBinding now also consumes SWT's MobileWidgetRuntime (exact
+source pinned by the cross-fork CI workflow) and creates a bounded pool of
+native clickable row views. It wires platform-native selection events, text,
+positions, accessibility labels, row rebind, and lifecycle cleanup. This is a
+working private native presentation receiver, **not original Grid API parity**.
+
+Run bash mobile/test-core.sh for geometry/oracle regressions. With the SWT fork
+checked out beside Nebula, run bash mobile/test-swt-integration.sh ../swt.
+These prove portable Java and event ownership only. Native Grid painting,
+columns, sorting, editing, accessibility, RTL, IME, touch, built Android APK
+or iOS runtime, and full equivalent desktop behavior remain unqualified.
+No upstream Grid source or public widget contract was modified.
