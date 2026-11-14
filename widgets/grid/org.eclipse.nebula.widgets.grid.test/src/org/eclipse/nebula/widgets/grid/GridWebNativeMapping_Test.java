@@ -183,7 +183,8 @@ public void staticProgressUsesNativeRwtCompatibleIntegerRange() {
         assertEquals("South hub", region.getItem(1));
         assertEquals(1, region.getSelectionIndex());
         assertTrue(children[2] instanceof Text);
-        assertEquals("  KEEP\nraw   spaces  ", ((Text) children[2]).getText());
+        // a native win32 Text reports its line breaks as CRLF
+        assertEquals("  KEEP\nraw   spaces  ", ((Text) children[2]).getText().replace("\r\n", "\n"));
         assertEquals("notes", children[2].getData("web.field"));
         assertTrue(children[3] instanceof Button);
         assertEquals("Refresh now", ((Button) children[3]).getText());
