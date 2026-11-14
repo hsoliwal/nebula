@@ -12,14 +12,14 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.multisplitpane;
 
 import java.util.Arrays;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.multisplitpane.internal.HiddenGate;
+import org.eclipse.nebula.widgets.multisplitpane.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.multisplitpane.internal.SwtLog;
+import org.eclipse.nebula.widgets.multisplitpane.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -49,12 +49,12 @@ import org.eclipse.swt.widgets.Layout;
  * <p>
  * Styles: <code>HORIZONTAL</code> (default, the root is a row) or <code>VERTICAL</code> (the root is a column),
  * <code>BORDER</code>. Events: <code>Selection</code> after a divider moved (<code>Event.index</code> the node after
- * the divider). Startup switch: <code>-Dswt.widget.mode.M3MultiSplitPane=original</code> lays out every node and
+ * the divider). Startup switch: <code>-Dswt.widget.mode.MultiSplitPane=original</code> lays out every node and
  * repaints the whole pane on every change. RWT: dragging needs MouseMove, which an RWT server does not receive;
  * {@link #moveDivider(int, int)} works everywhere.
  * </p>
  */
-public class M3MultiSplitPane extends Canvas {
+public class MultiSplitPane extends Canvas {
 
 	/** Node kind: children side by side, left to right. */
 	public static final int ROW = 0;
@@ -63,9 +63,9 @@ public class M3MultiSplitPane extends Canvas {
 	/** Node kind: a leaf showing one control. */
 	public static final int LEAF = 2;
 
-	static final boolean VIEWPORT = WidgetMode.of("M3MultiSplitPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("MultiSplitPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3MultiSplitPane"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.multisplitpane.MultiSplitPane"); //$NON-NLS-1$
 
 	private int count;
 	private int[] kind = new int[8], parent = new int[8], first = new int[8], last = new int[8], next = new int[8];
@@ -73,7 +73,7 @@ public class M3MultiSplitPane extends Canvas {
 	private double[] weight = new double[8];
 	private Control[] controls = new Control[8];
 	private int divider = 6;
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	/* drag state: the node after the dragged divider and the last pointer position along the axis */
 	private int dragNode = -1, dragAt;
 
@@ -83,9 +83,9 @@ public class M3MultiSplitPane extends Canvas {
 	 * @param parent the parent
 	 * @param style HORIZONTAL or VERTICAL, BORDER
 	 */
-	public M3MultiSplitPane(Composite parent, int style) {
+	public MultiSplitPane(Composite parent, int style) {
 		super(parent, (style & ~(SWT.HORIZONTAL | SWT.VERTICAL)) | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, this::layoutAll);
+		gate = new HiddenGate(this, this::layoutAll);
 		add(-1, (style & SWT.VERTICAL) != 0 ? COLUMN : ROW, 1, null);
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.Resize, e -> resized());
@@ -159,7 +159,7 @@ public class M3MultiSplitPane extends Canvas {
 		controls[leaf] = control;
 		if (control != null && showing()) {
 			control.setBounds(bx[leaf], by[leaf], bw[leaf], bh[leaf]);
-			M3Counters.moves++;
+			RepaintCounters.moves++;
 		}
 	}
 
@@ -283,7 +283,7 @@ public class M3MultiSplitPane extends Canvas {
 
 	private Point preferred(int node) {
 		if (kind[node] == LEAF) {
-			M3Counters.measures++;
+			RepaintCounters.measures++;
 			return controls[node] == null ? new Point(0, 0) : controls[node].computeSize(SWT.DEFAULT, SWT.DEFAULT);
 		}
 		int along = 0, across = 0, children = 0;
@@ -390,7 +390,7 @@ public class M3MultiSplitPane extends Canvas {
 	}
 
 	private void fullRepaint() {
-		M3Counters.fullRepaints++;
+		RepaintCounters.fullRepaints++;
 		redraw();
 	}
 
@@ -407,7 +407,7 @@ public class M3MultiSplitPane extends Canvas {
 
 	/* the one window patch on reveal, and a full layout after a divider size change */
 	private void layoutAll() {
-		M3Counters.fullLayouts++;
+		RepaintCounters.fullLayouts++;
 		Rectangle client = getClientArea();
 		place(0, client.x, client.y, client.width, client.height, true, true);
 	}
@@ -419,7 +419,7 @@ public class M3MultiSplitPane extends Canvas {
 			fullRepaint();
 			return;
 		}
-		M3Counters.layouts++;
+		RepaintCounters.layouts++;
 		place(split, bx[split], by[split], bw[split], bh[split], true, false);
 	}
 
@@ -441,7 +441,7 @@ public class M3MultiSplitPane extends Canvas {
 		if (kind[node] == LEAF) {
 			if (controls[node] != null && !controls[node].isDisposed() && (changed || all)) {
 				controls[node].setBounds(x, y, width, height);
-				M3Counters.moves++;
+				RepaintCounters.moves++;
 			}
 			return;
 		}
