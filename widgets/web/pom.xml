@@ -16,7 +16,6 @@
 	<packaging>pom</packaging>
 	<version>1.0.0-SNAPSHOT</version>
 
-	<!-- Not yet listed in widgets/pom.xml: the Tycho reactor build of this family has not run. -->
 	<modules>
 		<module>org.eclipse.nebula.widgets.web</module>
 		<module>org.eclipse.nebula.widgets.web.tests</module>

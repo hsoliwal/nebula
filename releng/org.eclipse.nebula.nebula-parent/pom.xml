@@ -367,6 +367,7 @@ Contributors:
 		<module>../../widgets/tiles</module>
 		<module>../../widgets/treemapper</module>
 		<module>../../widgets/visualization</module>
+		<module>../../widgets/web</module>
 		<module>../../widgets/xviewer</module>
 
 		<!-- Incubation -->
