@@ -11,7 +11,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.generated.ContactFormNativeSwt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -27,7 +26,7 @@ import org.junit.Test;
  * Native-screen acceptance test. Run under Win32/GTK/Cocoa with a display;
  * this is not a headless contract stub or proof of RAP browser execution.
  */
-public class ContactFormNativeSwtTest {
+public class ContactFormFixtureTest {
 
     @Test
     public void directNativeFormRetainsTypedControlsAndEventValues() {
@@ -38,7 +37,7 @@ public class ContactFormNativeSwtTest {
             try {
                 List<String> actions = new ArrayList<>();
                 List<String> changes = new ArrayList<>();
-                Composite form = ContactFormNativeSwt.create(shell, SWT.NONE,
+                Composite form = ContactFormFixture.create(shell, SWT.NONE,
                         actions::add, (id, value) -> changes.add(id + "=" + value));
                 Control[] controls = form.getChildren();
                 assertEquals(5, controls.length);

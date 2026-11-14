@@ -10,7 +10,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.generated.TransferProgressNativeSwt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -23,7 +22,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.Test;
 
 /** Native SWT display-backed acceptance; RAP browser sessions are a separate gate. */
-public final class TransferProgressNativeSwtTest {
+public final class TransferProgressFixtureTest {
 
     @Test
     public void determinateProgressUsesOneOriginalSwtWidgetAndNoInputListener() {
@@ -34,7 +33,7 @@ public final class TransferProgressNativeSwtTest {
             try {
                 List<String> actions = new ArrayList<>();
                 List<String> changes = new ArrayList<>();
-                Composite content = TransferProgressNativeSwt.create(
+                Composite content = TransferProgressFixture.create(
                         shell, SWT.NONE, actions::add,
                         (id, value) -> changes.add(id + "=" + value));
                 Control[] widgets = content.getChildren();

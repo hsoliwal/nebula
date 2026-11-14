@@ -10,7 +10,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.generated.QuantityNumberNativeSwt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -23,7 +22,7 @@ import org.eclipse.swt.widgets.Spinner;
 import org.junit.Test;
 
 /** Native SWT test: actual Spinner state and user-selection callback contract. */
-public final class QuantityNumberNativeSwtTest {
+public final class QuantityNumberFixtureTest {
 
     @Test
     public void boundedIntegerNumberUsesOneNativeSpinnerAndStableSelectionCallback() {
@@ -34,7 +33,7 @@ public final class QuantityNumberNativeSwtTest {
             try {
                 List<String> changes = new ArrayList<>();
                 List<String> actions = new ArrayList<>();
-                Composite content = QuantityNumberNativeSwt.create(
+                Composite content = QuantityNumberFixture.create(
                         shell, SWT.NONE, actions::add,
                         (id, value) -> changes.add(id + "=" + value));
                 Control[] widgets = content.getChildren();

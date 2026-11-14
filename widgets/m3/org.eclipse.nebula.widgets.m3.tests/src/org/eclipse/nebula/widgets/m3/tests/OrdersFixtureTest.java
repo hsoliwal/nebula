@@ -11,7 +11,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.generated.OrdersNativeSwt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -26,7 +25,7 @@ import org.junit.Test;
  * Actual SWT display-thread integration test, not a headless signature stub.
  * Qualify separately under Win32, GTK/Xvfb and Cocoa in the native UI lane.
  */
-public class OrdersNativeSwtTest {
+public class OrdersFixtureTest {
 
     @Test
     public void generatesNativeControlsWithStableIdsAndSelectionContracts() {
@@ -36,7 +35,7 @@ public class OrdersNativeSwtTest {
             Shell shell = new Shell(display);
             try {
                 List<String> actions = new ArrayList<>();
-                Composite content = OrdersNativeSwt.create(shell, SWT.NONE, actions::add);
+                Composite content = OrdersFixture.create(shell, SWT.NONE, actions::add);
                 Control[] children = content.getChildren();
                 assertEquals(4, children.length);
                 assertEquals("title", children[0].getData("m3.web.id"));

@@ -11,7 +11,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.generated.PreferencesNativeSwt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
@@ -27,7 +26,7 @@ import org.junit.Test;
  * Original SWT display-backed acceptance. Run separately on Win32/GTK/Cocoa.
  * RWT 4.8 web-session/API conformance remains a separate unrun gate.
  */
-public class PreferencesNativeSwtTest {
+public class PreferencesFixtureTest {
 
     @Test
     public void selectCreatesOneNativeComboWithDistinctSourceValues() {
@@ -38,7 +37,7 @@ public class PreferencesNativeSwtTest {
             try {
                 List<String> actions = new ArrayList<>();
                 List<String> changes = new ArrayList<>();
-                Composite form = PreferencesNativeSwt.create(shell, SWT.NONE,
+                Composite form = PreferencesFixture.create(shell, SWT.NONE,
                         actions::add, (id, value) -> changes.add(id + "=" + value));
                 Control[] controls = form.getChildren();
                 assertEquals(3, controls.length);
