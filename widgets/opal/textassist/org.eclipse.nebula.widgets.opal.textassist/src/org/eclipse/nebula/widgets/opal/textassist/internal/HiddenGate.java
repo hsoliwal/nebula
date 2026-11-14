@@ -84,6 +84,7 @@ public final class HiddenGate {
 	}
 
 	/**
+	 * @param control the control
 	 * @return true when the control can be seen now: Control.isPartVisible() on SWT with part visibility, else the
 	 *         control and its ancestors visible and its shell not minimized
 	 */
@@ -101,6 +102,9 @@ public final class HiddenGate {
 	 * Reports that a container hid or showed content by other means than setVisible or a zero size (a drawn
 	 * collapsible section, a drawn stack page, an overlay): Control.setPartHidden on SWT with part visibility, nothing
 	 * otherwise (the gates of the content then rely on Hide/Show, zero size and one probe).
+	 *
+	 * @param content the content that was hidden or shown
+	 * @param hidden true when the content was hidden, false when it was shown
 	 */
 	public static void setPartHidden(Control content, boolean hidden) {
 		if (SET_PART_HIDDEN != null) {
