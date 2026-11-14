@@ -286,7 +286,7 @@ Contributors:
 		<repository>
 			<id>m3-owned-batik</id>
 			<layout>p2</layout>
-			<url>file:///${maven.multiModuleProjectDirectory}/m3/third_party/p2-batik-20240313/mirror</url>
+			<url>file:///${maven.multiModuleProjectDirectory}/releng/third-party/p2-batik-20240313/mirror</url>
 		</repository>
 	</repositories>
 
