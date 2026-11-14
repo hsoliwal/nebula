@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.eclipse.nebula.widgets.web.model.WebModel;
 import org.eclipse.nebula.widgets.web.model.WebPaint;
@@ -39,6 +40,9 @@ public class WebCanvasExactClip_Test {
     private static final RGB SENTINEL = new RGB(0, 255, 255);
     private Display display;
     private boolean ownsDisplay;
+    private boolean previousTracking;
+    private Consumer<RuntimeException> previousRuntimeHandler;
+    private Consumer<Error> previousErrorHandler;
     private Shell shell;
     private Model model;
     private Probe canvas;
@@ -121,6 +125,19 @@ public class WebCanvasExactClip_Test {
             DeviceData tracking = new DeviceData();
             tracking.tracking = true;
             display = new Display(tracking);
+        } else {
+            // A shared (test harness) display: turn its resource tracking on and let listener failures reach the
+            // caller, as on a display created here; both are restored after the test.
+            previousTracking = display.isTracking();
+            display.setTracking(true);
+            previousRuntimeHandler = display.getRuntimeExceptionHandler();
+            previousErrorHandler = display.getErrorHandler();
+            display.setRuntimeExceptionHandler(failure -> {
+                throw failure;
+            });
+            display.setErrorHandler(failure -> {
+                throw failure;
+            });
         }
         shell = new Shell(display);
         model = new Model();
@@ -138,6 +155,10 @@ public class WebCanvasExactClip_Test {
         }
         if (ownsDisplay && display != null && !display.isDisposed()) {
             display.dispose();
+        } else if (!ownsDisplay && display != null && !display.isDisposed()) {
+            display.setRuntimeExceptionHandler(previousRuntimeHandler);
+            display.setErrorHandler(previousErrorHandler);
+            display.setTracking(previousTracking);
         }
     }
 
