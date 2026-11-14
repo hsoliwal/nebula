@@ -349,6 +349,7 @@ Contributors:
 		<module>../../widgets/grid</module>
 		<module>../../widgets/hyperlink</module>
 		<module>../../widgets/led</module>
+		<module>../../widgets/multisplitpane</module>
 		<module>../../widgets/nebulaslider</module>
 		<module>../../widgets/opal</module>
 		<module>../../widgets/oscilloscope</module>
