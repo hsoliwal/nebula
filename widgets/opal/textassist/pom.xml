@@ -17,6 +17,7 @@
 		<module>org.eclipse.nebula.widgets.opal.textassist</module>
 		<module>org.eclipse.nebula.widgets.opal.textassist.feature</module>
 		<module>org.eclipse.nebula.widgets.opal.textassist.snippets</module>
+		<module>org.eclipse.nebula.widgets.opal.textassist.tests</module>
 	</modules>
 
 </project>

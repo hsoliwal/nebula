@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.nebula.widgets.m3.M3FindBar;
-import org.eclipse.nebula.widgets.m3.M3Searchable;
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.commons.Searchable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -63,7 +63,7 @@ public class M3FindBarTest {
 		shell.setBounds(10, 10, 640, 60);
 		bar = new M3FindBar(shell, SWT.NONE);
 		bar.setBounds(0, 0, 640, 40);
-		bar.setSearchable(M3Searchable.of(() -> ROWS, row -> {
+		bar.setSearchable(Searchable.of(() -> ROWS, row -> {
 			reads++;
 			return TEXTS[row];
 		}, revealed::add));

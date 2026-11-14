@@ -12,13 +12,15 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.textassist;
 
 import java.util.Arrays;
 
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.commons.Searchable;
+import org.eclipse.nebula.widgets.opal.textassist.internal.HiddenGate;
+import org.eclipse.nebula.widgets.opal.textassist.internal.PopupPlacement;
+import org.eclipse.nebula.widgets.opal.textassist.internal.SwtLog;
+import org.eclipse.nebula.widgets.opal.textassist.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -31,7 +33,7 @@ import org.eclipse.swt.widgets.Text;
 
 /**
  * Autocomplete for a text field (behaviours catalogue: autocomplete): proposals are the rows of an
- * {@link M3Searchable} (the model, by index) whose text starts with, or contains, what was typed; they appear in a
+ * {@link Searchable} (the model, by index) whose text starts with, or contains, what was typed; they appear in a
  * drop-down list below the field; Up and Down move, Enter or a click accepts (the field takes the proposal and
  * Selection is sent with Event.index the model row), Escape closes. JFace's ContentProposalAdapter builds proposal
  * objects per keystroke; here the matches are an int lane of model rows.
@@ -42,23 +44,23 @@ import org.eclipse.swt.widgets.Text;
  * while it is closed it is hidden. Rows that start with the text come first when prefix matches are preferred.
  * </p>
  */
-public final class M3Autocomplete {
+public final class Autocomplete {
 
 	/** Rows scanned per event loop turn. */
 	public static final int SLICE = 50_000;
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3Autocomplete"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.opal.textassist.Autocomplete"); //$NON-NLS-1$
 
 	/*
-	 * The hidden gate, unless the startup widget mode is original (-Dswt.widget.mode.M3Autocomplete=original or
+	 * The hidden gate, unless the startup widget mode is original (-Dswt.widget.mode.Autocomplete=original or
 	 * -Dswt.widget.mode=original): a Modify of a hidden field (a programmatic setText) starts no scan, a running scan
 	 * stops when the field is hidden, and the drop-down closes when the field hides (its own Hide, its shell's
 	 * Iconify, or SWT.PartHidden where SWT has part visibility).
 	 */
-	private static final boolean VIEWPORT = WidgetMode.of("M3Autocomplete", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget M3Autocomplete H
+	private static final boolean VIEWPORT = WidgetMode.of("Autocomplete", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget Autocomplete H
 
 	private final Text text;
-	private final M3Searchable source;
+	private final Searchable source;
 	private Shell popup;
 	private Table list;
 	private int[] matches = new int[64];
@@ -72,7 +74,7 @@ public final class M3Autocomplete {
 	 * @param text the field
 	 * @param source the proposals, by model row
 	 */
-	public M3Autocomplete(Text text, M3Searchable source) {
+	public Autocomplete(Text text, Searchable source) {
 		if (text == null || source == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
@@ -87,8 +89,8 @@ public final class M3Autocomplete {
 		if (VIEWPORT) {
 			text.addListener(SWT.Hide, e -> close());
 			text.getShell().addListener(SWT.Iconify, e -> close());
-			if (M3HiddenGate.partHiddenEvent() >= 0) {
-				text.addListener(M3HiddenGate.partHiddenEvent(), e -> close());
+			if (HiddenGate.partHiddenEvent() >= 0) {
+				text.addListener(HiddenGate.partHiddenEvent(), e -> close());
 			}
 		}
 		text.addListener(SWT.FocusOut, e -> text.getDisplay().asyncExec(() -> {
@@ -210,7 +212,7 @@ public final class M3Autocomplete {
 		typed = value;
 		int mine = ++generation;
 		matchCount = 0;
-		if (value.length() < minimumLength || VIEWPORT && !M3HiddenGate.shown(text)) {
+		if (value.length() < minimumLength || VIEWPORT && !HiddenGate.shown(text)) {
 			close(); // a hidden field: no scan, no drop-down
 			return;
 		}
@@ -221,7 +223,7 @@ public final class M3Autocomplete {
 		if (mine != generation || text.isDisposed()) {
 			return;
 		}
-		if (VIEWPORT && !M3HiddenGate.shown(text)) {
+		if (VIEWPORT && !HiddenGate.shown(text)) {
 			close(); // the field was hidden during the scan: stop it
 			return;
 		}
@@ -229,7 +231,7 @@ public final class M3Autocomplete {
 		for (int row = from; row < stop && matchCount < limit; row++) {
 			String candidate = source.getText(row);
 			boolean prefix = candidate.regionMatches(true, 0, typed, 0, typed.length());
-			if (containsPass ? !prefix && M3FindBar.matches(candidate, typed, false) : prefix) {
+			if (containsPass ? !prefix && matches(candidate, typed, false) : prefix) {
 				if (matchCount == matches.length) {
 					matches = Arrays.copyOf(matches, matchCount * 2);
 				}
@@ -260,8 +262,8 @@ public final class M3Autocomplete {
 		int[] placed = new int[3];
 		Rectangle field = text.getBounds();
 		Point fieldTopLeft = text.getParent().toDisplay(field.x, field.y);
-		M3Placement.place(fieldTopLeft.x, fieldTopLeft.y, field.width, field.height, Math.max(field.width, 200), height, area.x, area.y,
-				area.width, area.height, M3Placement.BOTTOM, 0, placed);
+		PopupPlacement.place(fieldTopLeft.x, fieldTopLeft.y, field.width, field.height, Math.max(field.width, 200), height, area.x, area.y,
+				area.width, area.height, PopupPlacement.BOTTOM, 0, placed);
 		popup.setBounds(placed[0], placed[1], Math.max(field.width, 200), height);
 		popup.setVisible(true);
 		LOG.debug(() -> matchCount + " proposals for '" + typed + "' at " + origin); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -293,5 +295,19 @@ public final class M3Autocomplete {
 				accept(index);
 			}
 		});
+	}
+
+	/* contains match, ignoring case unless caseSensitive; no allocation (the find bar's matcher) */
+	private static boolean matches(String text, String needle, boolean caseSensitive) {
+		if (caseSensitive) {
+			return text.indexOf(needle) >= 0;
+		}
+		int last = text.length() - needle.length();
+		for (int i = 0; i <= last; i++) {
+			if (text.regionMatches(true, i, needle, 0, needle.length())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

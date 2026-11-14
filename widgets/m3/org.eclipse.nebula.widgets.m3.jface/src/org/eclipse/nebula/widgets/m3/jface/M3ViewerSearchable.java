@@ -25,11 +25,11 @@ import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.nebula.widgets.m3.M3FindBar;
-import org.eclipse.nebula.widgets.m3.M3Searchable;
+import org.eclipse.nebula.widgets.opal.commons.Searchable;
 import org.eclipse.swt.SWT;
 
 /**
- * JFace binding of {@link M3FindBar}: an {@link M3Searchable} over a structured viewer's model, in the order the viewer
+ * JFace binding of {@link M3FindBar}: an {@link Searchable} over a structured viewer's model, in the order the viewer
  * shows it (content provider elements, the viewer's filters, then its comparator), with row texts from the viewer's
  * label provider and the found element selected and revealed through the viewer. Rows are read from the model, never
  * from widget items, so a virtual table viewer is searched without materializing items.
@@ -38,7 +38,7 @@ import org.eclipse.swt.SWT;
  * or a filter or sort change, then {@link M3FindBar#modelChanged()}); texts are read per row on demand.
  * </p>
  */
-public final class M3ViewerSearchable implements M3Searchable {
+public final class M3ViewerSearchable implements Searchable {
 
 	private final StructuredViewer viewer;
 	private final int column;

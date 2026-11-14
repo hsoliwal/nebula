@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.commons;
 
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
@@ -22,11 +22,11 @@ import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Table;
 
 /**
- * What an {@link M3FindBar} searches: rows of text in the caller's model, by index (the SWT counterpart of SwingX
+ * What a find bar searches: rows of text in the caller's model, by index (the SWT counterpart of SwingX
  * <code>Searchable</code>). Rows are read from the model, never from widget items, so a virtual table of 10^6 rows is
  * searched without materializing items.
  */
-public interface M3Searchable {
+public interface Searchable {
 
 	/** @return the number of rows */
 	int getRowCount();
@@ -52,8 +52,8 @@ public interface M3Searchable {
 	 * @param reveal selects and reveals a row
 	 * @return the searchable
 	 */
-	static M3Searchable of(java.util.function.IntSupplier count, IntFunction<String> text, IntConsumer reveal) {
-		return new M3Searchable() {
+	static Searchable of(java.util.function.IntSupplier count, IntFunction<String> text, IntConsumer reveal) {
+		return new Searchable() {
 			@Override
 			public int getRowCount() {
 				return count.getAsInt();
@@ -80,7 +80,7 @@ public interface M3Searchable {
 	 * @param text the text of a row in the model
 	 * @return the searchable
 	 */
-	static M3Searchable of(Table table, IntFunction<String> text) {
+	static Searchable of(Table table, IntFunction<String> text) {
 		if (table == null || text == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
@@ -96,7 +96,7 @@ public interface M3Searchable {
 	 * @param list the list
 	 * @return the searchable
 	 */
-	static M3Searchable of(List list) {
+	static Searchable of(List list) {
 		if (list == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
