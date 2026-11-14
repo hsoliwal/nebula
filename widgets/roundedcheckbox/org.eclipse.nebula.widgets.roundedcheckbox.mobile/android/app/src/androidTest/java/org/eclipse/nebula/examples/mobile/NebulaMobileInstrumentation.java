@@ -15,6 +15,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
+import android.widget.EditText;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Native screen/touch proof for the existing, unmodified RoundedCheckbox implementation. */
 public final class NebulaMobileInstrumentation extends Instrumentation {
@@ -91,11 +95,41 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                     && NebulaMobileMain.state.listSelection == 999_999_990
                     && NebulaMobileMain.state.listDataLoads <= 22,
                     "Accessibility scrolling does not alter Selection or densely load virtual rows");
+            // The original SWT Text is a real child EditText. Exercise an
+            // InputConnection rather than mutating the Java Text model directly.
+            AtomicReference<InputConnection> connection = new AtomicReference<>();
+            runOnMainSync(() -> {
+                EditText nativeEditor = findNativeEditor(surface(current));
+                require(nativeEditor != null && nativeEditor.requestFocus(),
+                        "SWT Text owns a focusable Android IME native editor");
+                connection.set(nativeEditor.onCreateInputConnection(new EditorInfo()));
+                require(connection.get() != null
+                        && connection.get().commitText("native", 1),
+                        "Real Android InputConnection committed text");
+            });
+            await(() -> NebulaMobileMain.state.nativeText.equals("native")
+                    && NebulaMobileMain.state.textModifications == 1
+                    && NebulaMobileMain.state.textVerifications >= 1,
+                    "Original SWT Text Verify/Modify accepted native IME input");
+            runOnMainSync(() -> require(connection.get().commitText("!", 1),
+                    "Real Android InputConnection attempted vetoed input"));
+            await(() -> NebulaMobileMain.state.textVerifications >= 2,
+                    "Original SWT Verify listener received vetoed native edit");
+            AtomicReference<String> nativeSnapshot = new AtomicReference<>();
+            await(() -> {
+                runOnMainSync(() -> nativeSnapshot.set(
+                        findNativeEditor(surface(current)).getText().toString()));
+                return nativeSnapshot.get().equals("native");
+            }, "Verify veto restored the actual Android EditText snapshot");
+            require(NebulaMobileMain.state.nativeText.equals("native")
+                    && NebulaMobileMain.state.textModifications == 1
+                    && nativeSnapshot.get().equals("native"),
+                    "Verify veto rolled back Android IME edit without sending Modify");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: original widgets, Scale/ProgressBar, billion-row List, native accessibility, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: original widgets, billion-row List, Android IME Verify/Modify, accessibility, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -115,6 +149,17 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             throw new IllegalStateException("SWT Android native root not attached");
         }
         return content.getChildAt(0);
+    }
+
+    private EditText findNativeEditor(View root) {
+        if (root instanceof EditText editor) return editor;
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                EditText result = findNativeEditor(group.getChildAt(i));
+                if (result != null) return result;
+            }
+        }
+        return null;
     }
 
     private View findSlider(View root) {

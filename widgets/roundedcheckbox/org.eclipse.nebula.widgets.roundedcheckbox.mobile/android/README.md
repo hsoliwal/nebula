@@ -15,6 +15,15 @@ with one billion logical VIRTUAL rows. Visible `SWT.SetData` requests,
 row selection, selected pixels and Android ListView accessibility paging
 are exercised by native instrumentation; this does not instantiate a separate
 Android-specific List widget model.
+The same shared Nebula application now consumes
+[the original SWT Text backend (#386)](https://github.com/hsoliwal/eclipse.platform.swt/pull/386),
+using Android EditText and UIKit UITextField/UITextView peers. A native Android
+InputConnection inserts text, the Java SWT Display delivers Verify/Modify,
+and a rejected edit is rolled back to the actual Android EditText. These
+checks are included in the pinned Android API-35 instrumented test workflow.
+Full iOS Java runtime/app packaging, marked-text IME composition and device
+keyboard parity remain open.
+
 The test also invokes the Android SeekBar accessibility increment provided
 by [SWT #378](https://github.com/hsoliwal/eclipse.platform.swt/pull/378),
 checking that it produces exactly one original SWT Selection. iOS now exposes
