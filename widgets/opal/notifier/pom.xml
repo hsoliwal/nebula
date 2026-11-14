@@ -17,6 +17,7 @@
 		<module>org.eclipse.nebula.widgets.opal.notifier</module>
 		<module>org.eclipse.nebula.widgets.opal.notifier.feature</module>
 		<module>org.eclipse.nebula.widgets.opal.notifier.snippets</module>
+		<module>org.eclipse.nebula.widgets.opal.notifier.tests</module>
 	</modules>
 
 </project>

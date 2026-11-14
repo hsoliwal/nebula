@@ -12,13 +12,13 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.notifier;
 
 import java.util.Arrays;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.notifier.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.notifier.internal.SwtLog;
+import org.eclipse.nebula.widgets.opal.notifier.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -38,7 +38,7 @@ import org.eclipse.swt.widgets.Shell;
  * hidden; while the owner shell is minimized or hidden, toasts still expire but nothing is painted.
  * </p>
  */
-public final class M3Toasts {
+public final class Toasts {
 
 	/** Level: information. */
 	public static final int INFO = 0;
@@ -47,17 +47,17 @@ public final class M3Toasts {
 	/** Level: error. */
 	public static final int ERROR = 2;
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3Toasts"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.opal.notifier.Toasts"); //$NON-NLS-1$
 
 	private static final int WIDTH = 300, CARD = 54, GAP = 6, MARGIN = 12, MAX = 64;
 
 	/**
-	 * The owner gate, unless the startup widget mode is original (-Dswt.widget.mode.M3Toasts=original or
+	 * The owner gate, unless the startup widget mode is original (-Dswt.widget.mode.Toasts=original or
 	 * -Dswt.widget.mode=original): while the owner shell is hidden or minimized there is no expiry timer, no overlay
 	 * and no bounds work; when it is shown or restored, the toasts due in the meantime expire at once and the overlay
 	 * is placed and painted once.
 	 */
-	static final boolean VIEWPORT = WidgetMode.of("M3Toasts", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("Toasts", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private final Shell owner;
 	private Shell overlay;
@@ -69,7 +69,7 @@ public final class M3Toasts {
 	private boolean paused;
 	private long pausedAt;
 	private final Runnable expire = this::expire;
-	/* the owner is hidden or minimized and the toasts wait for it (owner gate) */ //FLLDCIM: MARK — every-widget M3Toasts H: owner gate
+	/* the owner is hidden or minimized and the toasts wait for it (owner gate) */ //FLLDCIM: MARK — every-widget Toasts H: owner gate
 	private boolean parked;
 	/* the owner's Show is being handled: it is about to be visible */
 	private boolean revealing;
@@ -77,7 +77,7 @@ public final class M3Toasts {
 	/**
 	 * @param owner the shell whose bottom-right corner holds the toasts
 	 */
-	public M3Toasts(Shell owner) {
+	public Toasts(Shell owner) {
 		if (owner == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
@@ -242,7 +242,7 @@ public final class M3Toasts {
 		if (revealing || owner.isVisible() && !owner.getMinimized()) {
 			overlay.setVisible(true);
 			canvas.redraw();
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 		}
 		schedule();
 	}

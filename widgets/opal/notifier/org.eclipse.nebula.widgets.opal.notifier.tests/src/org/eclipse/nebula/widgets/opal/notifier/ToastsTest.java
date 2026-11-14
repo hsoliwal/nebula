@@ -12,13 +12,13 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.opal.notifier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.eclipse.nebula.widgets.m3.M3Toasts;
+import org.eclipse.nebula.widgets.opal.notifier.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -26,20 +26,19 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3Toasts: one overlay with one canvas for any number of toasts, placement in the owner's bottom-right corner,
+ * Toasts: one overlay with one canvas for any number of toasts, placement in the owner's bottom-right corner,
  * dismiss by id and by click, expiry by one timer, hover pauses expiry, the 64-toast cap, errors.
  */
-public class M3ToastsTest {
+public class ToastsTest {
 
 	Display display;
 	Shell shell;
-	M3Toasts toasts;
+	Toasts toasts;
 
 	@Before
 	public void setUp() {
@@ -47,8 +46,8 @@ public class M3ToastsTest {
 		shell = new Shell(display);
 		shell.setBounds(100, 100, 700, 500);
 		shell.open();
-		toasts = new M3Toasts(shell);
-		M3TestSupport.flush(display);
+		toasts = new Toasts(shell);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -61,7 +60,7 @@ public class M3ToastsTest {
 		for (int i = 0; i < 10; i++) {
 			toasts.show("Build " + i, "10^6 rows indexed", i % 3, 60_000);
 		}
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals(10, toasts.getCount());
 		Shell overlay = toasts.getOverlay();
 		assertTrue(overlay.isVisible());
@@ -74,9 +73,9 @@ public class M3ToastsTest {
 
 	@Test
 	public void dismissByIdAndByClick() {
-		int first = toasts.show("one", "first", M3Toasts.INFO, 60_000);
-		int second = toasts.show("two", "second", M3Toasts.WARNING, 60_000);
-		int third = toasts.show("three", "third", M3Toasts.ERROR, 60_000);
+		int first = toasts.show("one", "first", Toasts.INFO, 60_000);
+		int second = toasts.show("two", "second", Toasts.WARNING, 60_000);
+		int third = toasts.show("three", "third", Toasts.ERROR, 60_000);
 		assertTrue(toasts.dismiss(second));
 		assertFalse(toasts.dismiss(second));
 		assertEquals(2, toasts.getCount());
@@ -94,61 +93,61 @@ public class M3ToastsTest {
 
 	@Test
 	public void expiryAndHoverPause() {
-		toasts.show("short", "goes away", M3Toasts.INFO, 40);
-		toasts.show("long", "stays", M3Toasts.INFO, 60_000);
-		M3TestSupport.spin(display, 250);
+		toasts.show("short", "goes away", Toasts.INFO, 40);
+		toasts.show("long", "stays", Toasts.INFO, 60_000);
+		TestSupport.spin(display, 250);
 		assertEquals(1, toasts.getCount());
-		toasts.show("held", "paused by hover", M3Toasts.INFO, 40);
+		toasts.show("held", "paused by hover", Toasts.INFO, 40);
 		Canvas canvas = (Canvas) toasts.getOverlay().getChildren()[0];
 		canvas.notifyListeners(SWT.MouseEnter, new Event());
-		M3TestSupport.spin(display, 200);
+		TestSupport.spin(display, 200);
 		assertEquals("hover pauses expiry", 2, toasts.getCount());
 		canvas.notifyListeners(SWT.MouseExit, new Event());
-		M3TestSupport.spin(display, 250);
+		TestSupport.spin(display, 250);
 		assertEquals(1, toasts.getCount());
 	}
 
 	@Test
 	public void hiddenOrMinimizedOwnerParksTheTimerAndCatchesUpOnce() {
-		if (WidgetMode.of("M3Toasts", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+		if (WidgetMode.of("Toasts", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
 			return;
 		}
-		toasts.show("short", "expires while hidden", M3Toasts.INFO, 150);
-		toasts.show("long", "outlives the hidden time", M3Toasts.INFO, 60_000);
-		M3TestSupport.flush(display);
+		toasts.show("short", "expires while hidden", Toasts.INFO, 150);
+		toasts.show("long", "outlives the hidden time", Toasts.INFO, 60_000);
+		TestSupport.flush(display);
 		assertTrue(toasts.getOverlay().isVisible());
 		shell.setVisible(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertFalse("the overlay leaves with the owner", toasts.getOverlay().isVisible());
 		int[] overlayBounds = new int[1];
 		toasts.getOverlay().addListener(SWT.Move, e -> overlayBounds[0]++);
 		toasts.getOverlay().addListener(SWT.Resize, e -> overlayBounds[0]++);
 		shell.setBounds(120, 120, 640, 480);
-		M3TestSupport.spin(display, 400);
+		TestSupport.spin(display, 400);
 		assertEquals("no expiry while the owner is hidden", 2, toasts.getCount());
 		assertEquals("no overlay bounds work while hidden", 0, overlayBounds[0]);
 		shell.setVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("the due toast expired at once on show", 1, toasts.getCount());
 		assertTrue(toasts.getOverlay().isVisible());
-		toasts.show("again", "while minimized", M3Toasts.WARNING, 150);
+		toasts.show("again", "while minimized", Toasts.WARNING, 150);
 		shell.setMinimized(true);
-		M3TestSupport.spin(display, 400);
+		TestSupport.spin(display, 400);
 		assertEquals("no expiry while minimized", 2, toasts.getCount());
 		shell.setMinimized(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("caught up on restore", 1, toasts.getCount());
 	}
 
 	@Test
 	public void capAndErrors() {
 		for (int i = 0; i < 70; i++) {
-			toasts.show("t" + i, "m", M3Toasts.INFO, 60_000);
+			toasts.show("t" + i, "m", Toasts.INFO, 60_000);
 		}
 		assertEquals(64, toasts.getCount());
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> toasts.show(null, "m", M3Toasts.INFO, 1));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", 7, 1));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", M3Toasts.INFO, 0));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3Toasts(null));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> toasts.show(null, "m", Toasts.INFO, 1));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", 7, 1));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", Toasts.INFO, 0));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new Toasts(null));
 	}
 }
