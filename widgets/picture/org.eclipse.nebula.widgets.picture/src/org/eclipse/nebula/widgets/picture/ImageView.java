@@ -12,11 +12,11 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.picture;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.picture.internal.HiddenGate;
+import org.eclipse.nebula.widgets.picture.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.picture.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -41,15 +41,15 @@ import org.eclipse.swt.widgets.Event;
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Events: <code>Selection</code> after the scale or origin changed. Startup switch:
- * <code>-Dswt.widget.mode.M3ImageView=original</code> repaints the whole view on every pan step and draws the whole
+ * <code>-Dswt.widget.mode.ImageView=original</code> repaints the whole view on every pan step and draws the whole
  * image on every paint. RWT: Control.scroll and MouseMove are not available on a stock RWT server.
  * </p>
  */
-public class M3ImageView extends Canvas {
+public class ImageView extends Canvas {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3ImageView", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("ImageView", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	private Image image;
 	private int imageWidth, imageHeight;
 	private double scale = 1, minScale = 1.0 / 64, maxScale = 64;
@@ -64,9 +64,9 @@ public class M3ImageView extends Canvas {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3ImageView(Composite parent, int style) {
+	public ImageView(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, null);
+		gate = new HiddenGate(this, null);
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.MouseDown, e -> {
 			if (e.button == 1) {
@@ -234,7 +234,7 @@ public class M3ImageView extends Canvas {
 
 	private void fullRepaint() {
 		if (showing()) {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 		}
 	}
@@ -259,7 +259,7 @@ public class M3ImageView extends Canvas {
 	/* moves the window's pixels by (dx, dy) and paints only the exposed strips (viewport), or repaints everything */
 	private void moveContent(int dx, int dy) {
 		if (!VIEWPORT) {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 			return;
 		}

@@ -18,6 +18,7 @@
 		<module>org.eclipse.nebula.widgets.picture.example</module>
 		<module>org.eclipse.nebula.widgets.picture.feature</module>
 		<module>org.eclipse.nebula.widgets.picture.snippets</module>
+		<module>org.eclipse.nebula.widgets.picture.tests</module>
 	</modules>
 
 </project>
