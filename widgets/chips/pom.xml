@@ -18,6 +18,7 @@
 		<module>org.eclipse.nebula.widgets.chips</module>
 		<module>org.eclipse.nebula.widgets.chips.feature</module>
 		<module>org.eclipse.nebula.widgets.chips.snippets</module>
+		<module>org.eclipse.nebula.widgets.chips.tests</module>
 	</modules>
 
 </project>
