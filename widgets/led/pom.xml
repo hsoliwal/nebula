@@ -18,6 +18,7 @@
 		<module>org.eclipse.nebula.widgets.led</module>
 		<module>org.eclipse.nebula.widgets.led.feature</module>
 		<module>org.eclipse.nebula.widgets.led.snippets</module>
+		<module>org.eclipse.nebula.widgets.led.tests</module>
 	</modules>
 
 </project>
