@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
  * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.internal;
+package org.eclipse.nebula.widgets.browserfallback.internal;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -12,7 +12,7 @@ import java.util.Map;
  * Native SWT/Nebula controls are the preferred receiver of admitted UI
  * translations. The scripts never evaluate application-supplied JavaScript.
  */
-public final class M3BrowserScripts {
+public final class BrowserScripts {
 
     public static final int MAX_EVENT_ID = 256;
     public static final int MAX_EVENT_VALUE = 65536;
@@ -20,7 +20,7 @@ public final class M3BrowserScripts {
     public static final int MAX_PATCH_SCRIPT_CHARS = 262144;
     public static final int MAX_PATCH_UTF8_BYTES = 262144;
 
-    private M3BrowserScripts() {
+    private BrowserScripts() {
     }
 
     /** Delegates ordinary DOM events; the BrowserFunction belongs to one Browser/session. */
