@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.jface;
+package org.eclipse.nebula.jface.statuspane;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -29,9 +29,9 @@ import org.eclipse.swt.widgets.Shell;
  * message, the severity picks the icon, and the details (the child statuses and every exception's stack trace) are
  * formatted only when the details are first shown.
  */
-public final class M3StatusPane {
+public final class StatusPane {
 
-	private M3StatusPane() {
+	private StatusPane() {
 	}
 
 	/**

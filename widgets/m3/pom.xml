@@ -16,12 +16,8 @@
 
 	<modules>
 		<module>../lazystacklayout/org.eclipse.nebula.widgets.lazystacklayout</module>
-		<module>../opal/findbar/org.eclipse.nebula.widgets.opal.findbar</module>
-		<module>../opal/dialog/org.eclipse.nebula.widgets.opal.dialog</module>
-		<module>../pgroup/org.eclipse.nebula.widgets.pgroup</module>
 		<module>../opal/commons/org.eclipse.nebula.widgets.opal.commons</module>
 		<module>org.eclipse.nebula.widgets.m3</module>
-		<module>org.eclipse.nebula.widgets.m3.jface</module>
 		<module>org.eclipse.nebula.widgets.m3.tests</module>
 	</modules>
 

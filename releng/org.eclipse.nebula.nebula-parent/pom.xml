@@ -366,6 +366,7 @@ Contributors:
 		<module>../../widgets/roundedswitch</module>
 		<module>../../widgets/segmentedbar</module>
 		<module>../../widgets/splitbutton</module>
+		<module>../../widgets/statuspane</module>
 		<module>../../widgets/stepbar</module>
 		<module>../../widgets/tablecombo</module>
 		<module>../../widgets/tiles</module>
