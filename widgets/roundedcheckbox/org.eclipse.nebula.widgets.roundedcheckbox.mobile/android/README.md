@@ -48,10 +48,8 @@ run the `org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation`
 instrumentation runner on an API-35-or-newer emulator or device. The test
 uses real Android screenshots and injected touch input to examine paint,
 selection, selection veto, disabled state, Scale-to-ProgressBar interaction
-and cleanup. See `.github/workflows/m3-mobile-roundedcheckbox-native-gates.yml`
-for the pinned SWT #378 build and Android API-35 emulator test lane. The
-workflow source alone is not an executed passing test. A successful compilation
-or APK assembly is **not** an executed native test.
+and cleanup. A successful compilation or APK assembly is **not** an executed
+native test.
 
 The iOS target uses the same `NebulaMobileMain` and SWT's existing
 `IOSPlatform.launch` bootstrap. It still requires an actual linked iOS
