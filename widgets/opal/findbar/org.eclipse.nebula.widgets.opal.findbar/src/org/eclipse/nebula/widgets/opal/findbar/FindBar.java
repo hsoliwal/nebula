@@ -12,14 +12,14 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.findbar;
 
 import java.util.Arrays;
 
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.nebula.widgets.opal.commons.Searchable;
+import org.eclipse.nebula.widgets.opal.findbar.internal.HiddenGate;
+import org.eclipse.nebula.widgets.opal.findbar.internal.SwtLog;
+import org.eclipse.nebula.widgets.opal.findbar.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -45,22 +45,22 @@ import org.eclipse.swt.widgets.Text;
  * While the bar is hidden (its own Hide, a zero size, a hidden ancestor, or SWT.PartHidden) a search request only
  * records the pattern; scanning starts when the bar becomes visible. Styles: <code>BORDER</code>. Events:
  * <code>Selection</code> when a match is revealed (<code>Event.index</code> the row). Startup switch:
- * <code>-Dswt.widget.mode.M3FindBar=original</code> scans all rows synchronously on every keystroke.
+ * <code>-Dswt.widget.mode.FindBar=original</code> scans all rows synchronously on every keystroke.
  * </p>
  */
-public class M3FindBar extends Composite {
+public class FindBar extends Composite {
 
 	/** Rows scanned per event loop turn. */
 	public static final int SLICE = 50_000;
 
-	static final boolean VIEWPORT = WidgetMode.of("M3FindBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("FindBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3FindBar"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.opal.findbar.FindBar"); //$NON-NLS-1$
 
 	private final Text field;
 	private final Button previous, next, matchCase, wrap;
 	private final Label status;
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	private Searchable target;
 	private String pattern = ""; //$NON-NLS-1$
 	/* the revealed match row, the match count (-1 while counting) and the superseding generation */
@@ -84,9 +84,9 @@ public class M3FindBar extends Composite {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3FindBar(Composite parent, int style) {
+	public FindBar(Composite parent, int style) {
 		super(parent, style);
-		gate = new M3HiddenGate(this, this::revealed);
+		gate = new HiddenGate(this, this::revealed);
 		GridLayout layout = new GridLayout(7, false);
 		layout.marginHeight = 2;
 		setLayout(layout);
@@ -150,7 +150,7 @@ public class M3FindBar extends Composite {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
 		if (VIEWPORT && !gate.probe()) {
-			staleField = true; // hidden: the field gets the text on reveal; search() folds the search //FLLDCIM: MARK — every-widget M3FindBar H
+			staleField = true; // hidden: the field gets the text on reveal; search() folds the search //FLLDCIM: MARK — every-widget FindBar H
 			search(text);
 			return;
 		}
@@ -438,7 +438,7 @@ public class M3FindBar extends Composite {
 		if (gate.probe()) {
 			return false;
 		}
-		pending = true; //FLLDCIM: MARK — every-widget M3FindBar H
+		pending = true; //FLLDCIM: MARK — every-widget FindBar H
 		searching = false;
 		LOG.debug(() -> "search generation " + generation + " parked while hidden"); //$NON-NLS-1$ //$NON-NLS-2$
 		return true;

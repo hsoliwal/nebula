@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.jface;
+package org.eclipse.nebula.widgets.opal.findbar;
 
 import java.util.Arrays;
 
@@ -24,27 +24,26 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.ViewerFilter;
-import org.eclipse.nebula.widgets.m3.M3FindBar;
 import org.eclipse.nebula.widgets.opal.commons.Searchable;
 import org.eclipse.swt.SWT;
 
 /**
- * JFace binding of {@link M3FindBar}: an {@link Searchable} over a structured viewer's model, in the order the viewer
+ * JFace binding of {@link FindBar}: an {@link Searchable} over a structured viewer's model, in the order the viewer
  * shows it (content provider elements, the viewer's filters, then its comparator), with row texts from the viewer's
  * label provider and the found element selected and revealed through the viewer. Rows are read from the model, never
  * from widget items, so a virtual table viewer is searched without materializing items.
  * <p>
  * The shown order is computed once, on the first read after {@link #modelChanged()} (call it after a refresh, a delta
- * or a filter or sort change, then {@link M3FindBar#modelChanged()}); texts are read per row on demand.
+ * or a filter or sort change, then {@link FindBar#modelChanged()}); texts are read per row on demand.
  * </p>
  */
-public final class M3ViewerSearchable implements Searchable {
+public final class ViewerSearchable implements Searchable {
 
 	private final StructuredViewer viewer;
 	private final int column;
 	private Object[] rows;
 
-	private M3ViewerSearchable(StructuredViewer viewer, int column) {
+	private ViewerSearchable(StructuredViewer viewer, int column) {
 		this.viewer = viewer;
 		this.column = column;
 	}
@@ -54,11 +53,11 @@ public final class M3ViewerSearchable implements Searchable {
 	 * @param column the column whose text is searched (ITableLabelProvider), or -1 for ILabelProvider text
 	 * @return the searchable
 	 */
-	public static M3ViewerSearchable of(StructuredViewer viewer, int column) {
+	public static ViewerSearchable of(StructuredViewer viewer, int column) {
 		if (viewer == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
-		return new M3ViewerSearchable(viewer, column);
+		return new ViewerSearchable(viewer, column);
 	}
 
 	/** Forgets the shown order; the next read computes it from the model again. */

@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.opal.findbar;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,10 +22,9 @@ import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.M3FindBar;
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.nebula.widgets.opal.commons.Searchable;
+import org.eclipse.nebula.widgets.opal.findbar.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.findbar.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -35,11 +34,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3FindBar over 10^6 model rows: first match, count and "k of n", next/previous by the hit lane with and without
+ * FindBar over 10^6 model rows: first match, count and "k of n", next/previous by the hit lane with and without
  * wrap, match case, superseding generations (only the last search reveals), no allocation per scanned row, the hidden
  * gate (no scan while hidden), a resize sweep, errors. Runs in both startup modes.
  */
-public class M3FindBarTest {
+public class FindBarTest {
 
 	static final int ROWS = 1_000_000;
 	static final String[] TEXTS = new String[ROWS];
@@ -51,7 +50,7 @@ public class M3FindBarTest {
 
 	Display display;
 	Shell shell;
-	M3FindBar bar;
+	FindBar bar;
 	final List<Integer> revealed = new ArrayList<>();
 	final List<Integer> selections = new ArrayList<>();
 	long reads;
@@ -61,7 +60,7 @@ public class M3FindBarTest {
 		display = Display.getDefault();
 		shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(10, 10, 640, 60);
-		bar = new M3FindBar(shell, SWT.NONE);
+		bar = new FindBar(shell, SWT.NONE);
 		bar.setBounds(0, 0, 640, 40);
 		bar.setSearchable(Searchable.of(() -> ROWS, row -> {
 			reads++;
@@ -69,7 +68,7 @@ public class M3FindBarTest {
 		}, revealed::add));
 		bar.addListener(SWT.Selection, e -> selections.add(e.index));
 		shell.open();
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -78,12 +77,12 @@ public class M3FindBarTest {
 	}
 
 	static boolean viewport() {
-		return WidgetMode.of("M3FindBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+		return WidgetMode.of("FindBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	}
 
 	void waitForSearch() {
 		for (int i = 0; i < 500 && bar.isSearching(); i++) {
-			M3TestSupport.spin(display, 5);
+			TestSupport.spin(display, 5);
 		}
 		assertFalse("search finished", bar.isSearching());
 	}
@@ -154,18 +153,18 @@ public class M3FindBarTest {
 			return;
 		}
 		bar.setVisible(false);
-		M3TestSupport.flush(display);
-		M3Counters.reset();
+		TestSupport.flush(display);
+		RepaintCounters.reset();
 		reads = 0;
 		for (int i = 0; i < 10_000; i++) {
 			bar.setText(i % 2 == 0 ? "need" : "needle");
 		}
-		M3TestSupport.spin(display, 50);
+		TestSupport.spin(display, 50);
 		assertEquals("no row read while hidden", 0, reads);
-		assertEquals(M3Counters.line(), 0, M3Counters.probes);
+		assertEquals(RepaintCounters.line(), 0, RepaintCounters.probes);
 		bar.setVisible(true);
 		waitForSearch();
-		assertEquals(1, M3Counters.reveals);
+		assertEquals(1, RepaintCounters.reveals);
 		assertEquals(1000, bar.getMatchCount());
 		assertEquals("needle", bar.getText());
 	}
@@ -183,14 +182,14 @@ public class M3FindBarTest {
 		assertTrue("still counting", bar.isSearching());
 		bar.setVisible(false);
 		reads = 0;
-		M3TestSupport.spin(display, 100);
+		TestSupport.spin(display, 100);
 		assertEquals("no row read after the bar hid", 0, reads);
 		assertFalse("parked", bar.isSearching());
 		bar.setText("Needle");
 		Text field = (Text) bar.getChildren()[1];
 		assertEquals("the field text is folded while hidden", "needle", field.getText());
 		assertEquals("Needle", bar.getText());
-		M3TestSupport.spin(display, 50);
+		TestSupport.spin(display, 50);
 		assertEquals(0, reads);
 		bar.setVisible(true);
 		waitForSearch();
@@ -204,19 +203,19 @@ public class M3FindBarTest {
 		bar.setText("needle");
 		waitForSearch();
 		reads = 0;
-		M3Counters.reset();
+		RepaintCounters.reset();
 		int height = bar.getSize().y;
-		for (int width : M3TestSupport.sweepWidths(640)) {
+		for (int width : TestSupport.sweepWidths(640)) {
 			bar.setSize(width, height);
 		}
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("a resize reads no row", 0, reads);
-		assertEquals(M3Counters.line(), 0, M3Counters.fullRepaints);
+		assertEquals(RepaintCounters.line(), 0, RepaintCounters.fullRepaints);
 	}
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(null));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(null));
 		bar.setSearchable(null);
 		assertEquals(-1, bar.findNext());
 		bar.setText("");

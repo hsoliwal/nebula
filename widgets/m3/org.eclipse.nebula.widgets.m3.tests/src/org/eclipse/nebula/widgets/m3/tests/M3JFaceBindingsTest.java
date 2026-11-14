@@ -27,10 +27,10 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.ViewerFilter;
-import org.eclipse.nebula.widgets.m3.M3FindBar;
 import org.eclipse.nebula.widgets.m3.jface.M3StatusPane;
-import org.eclipse.nebula.widgets.m3.jface.M3ViewerSearchable;
 import org.eclipse.nebula.widgets.opal.dialog.ErrorPane;
+import org.eclipse.nebula.widgets.opal.findbar.FindBar;
+import org.eclipse.nebula.widgets.opal.findbar.ViewerSearchable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -40,8 +40,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * JFace bindings: M3ViewerSearchable searches a TableViewer's model in its shown order (filters, then comparator) and
- * reveals through the viewer; M3FindBar finds over it; M3StatusPane shows a MultiStatus with deferred details.
+ * JFace bindings: ViewerSearchable searches a TableViewer's model in its shown order (filters, then comparator) and
+ * reveals through the viewer; FindBar finds over it; M3StatusPane shows a MultiStatus with deferred details.
  */
 public class M3JFaceBindingsTest {
 
@@ -91,14 +91,14 @@ public class M3JFaceBindingsTest {
 
 	@Test
 	public void searchableFollowsTheShownOrder() {
-		M3ViewerSearchable searchable = M3ViewerSearchable.of(viewer, -1);
+		ViewerSearchable searchable = ViewerSearchable.of(viewer, -1);
 		assertEquals(500, searchable.getRowCount());
 		assertEquals("item 998", searchable.getText(0));
 		assertEquals("item 0", searchable.getText(499));
 		searchable.reveal(3);
 		assertEquals(Integer.valueOf(992), ((IStructuredSelection) viewer.getSelection()).getFirstElement());
 		Shell barShell = new Shell(display, SWT.NO_TRIM);
-		M3FindBar bar = new M3FindBar(barShell, SWT.NONE);
+		FindBar bar = new FindBar(barShell, SWT.NONE);
 		bar.setBounds(0, 0, 400, 40);
 		barShell.open();
 		bar.setSearchable(searchable);
