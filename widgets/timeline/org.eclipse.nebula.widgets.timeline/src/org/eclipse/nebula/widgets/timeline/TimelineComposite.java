@@ -30,10 +30,7 @@ public class TimelineComposite extends Composite {
 	public TimelineComposite(Composite parent, int style) {
 		super(parent, style);
 		// on the Dispose event: dispose() is not called when an ancestor is disposed //FLLDCIM: MARK — every-widget TimelineComposite style provider on Dispose
-		addListener(SWT.Dispose, e -> {
-			TimelineComposite.this.fRootFigure.getStyleProvider().dispose();
-			TimelineComposite.this.fResourceManager.dispose();
-		});
+		addListener(SWT.Dispose, e -> disposeStyleAndResources());
 
 		fResourceManager = new LocalResourceManager(JFaceResources.getResources(), this);
 
@@ -66,5 +63,14 @@ public class TimelineComposite extends Composite {
 
 	public RootFigure getRootFigure() {
 		return fRootFigure;
+	}
+
+	/*
+	 * The Dispose listener is registered before the final fields are assigned, and a lambda in the constructor may not
+	 * read a blank final field (the Eclipse compiler rejects it), so the listener calls this method.
+	 */
+	private void disposeStyleAndResources() {
+		fRootFigure.getStyleProvider().dispose();
+		fResourceManager.dispose();
 	}
 }
