@@ -8,7 +8,14 @@ included unchanged. The shared application now also instantiates the original
 SWT mobile Scale and ProgressBar merged in
 [hsoliwal/eclipse.platform.swt#376](https://github.com/hsoliwal/eclipse.platform.swt/pull/376).
 A native Scale Selection updates ProgressBar through the unchanged SWT event
-loop. The test also invokes the Android SeekBar accessibility increment provided
+loop. The same shared Java UI also creates the original SWT
+`List` implementation from
+[hsoliwal/eclipse.platform.swt#385](https://github.com/hsoliwal/eclipse.platform.swt/pull/385)
+with one billion logical VIRTUAL rows. Visible `SWT.SetData` requests,
+row selection, selected pixels and Android ListView accessibility paging
+are exercised by native instrumentation; this does not instantiate a separate
+Android-specific List widget model.
+The test also invokes the Android SeekBar accessibility increment provided
 by [SWT #378](https://github.com/hsoliwal/eclipse.platform.swt/pull/378),
 checking that it produces exactly one original SWT Selection. iOS now exposes
 the corresponding UIKit adjustable accessibility methods, but its simulator/
