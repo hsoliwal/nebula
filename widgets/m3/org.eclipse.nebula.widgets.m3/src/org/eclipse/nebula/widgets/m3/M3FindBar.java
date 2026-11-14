@@ -19,6 +19,7 @@ import java.util.Arrays;
 import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.commons.Searchable;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -30,7 +31,7 @@ import org.eclipse.swt.widgets.Text;
 
 /**
  * A find bar: a search field, previous and next buttons, match case and wrap options and a "k of n" status, searching
- * an {@link M3Searchable} (the SWT counterpart of SwingX <code>JXFindBar</code>, re-derived from its documented
+ * an {@link Searchable} (the SWT counterpart of SwingX <code>JXFindBar</code>, re-derived from its documented
  * behaviour).
  * <p>
  * Search is incremental and sliced: typing starts a new generation that supersedes the running one (catalogue:
@@ -60,7 +61,7 @@ public class M3FindBar extends Composite {
 	private final Button previous, next, matchCase, wrap;
 	private final Label status;
 	private final M3HiddenGate gate;
-	private M3Searchable target;
+	private Searchable target;
 	private String pattern = ""; //$NON-NLS-1$
 	/* the revealed match row, the match count (-1 while counting) and the superseding generation */
 	private int current = -1, count = -1, generation;
@@ -124,7 +125,7 @@ public class M3FindBar extends Composite {
 	 *
 	 * @param searchable the rows to search, or null
 	 */
-	public void setSearchable(M3Searchable searchable) {
+	public void setSearchable(Searchable searchable) {
 		checkWidget();
 		target = searchable;
 		current = anchor = -1;
@@ -132,7 +133,7 @@ public class M3FindBar extends Composite {
 	}
 
 	/** @return the searchable, or null */
-	public M3Searchable getSearchable() {
+	public Searchable getSearchable() {
 		checkWidget();
 		return target;
 	}

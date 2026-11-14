@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.opal.textassist;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,23 +20,22 @@ import static org.junit.Assert.assertTrue;
 
 import java.lang.management.ManagementFactory;
 
-import org.eclipse.nebula.widgets.m3.M3Autocomplete;
-import org.eclipse.nebula.widgets.m3.M3Searchable;
+import org.eclipse.nebula.widgets.opal.commons.Searchable;
+import org.eclipse.nebula.widgets.opal.textassist.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3Autocomplete: prefix proposals before contains proposals, the limit, keyboard navigation and accept, Escape, the
+ * Autocomplete: prefix proposals before contains proposals, the limit, keyboard navigation and accept, Escape, the
  * minimum length, superseding keystrokes, no allocation per scanned row over 10^6 model rows.
  */
-public class M3AutocompleteTest {
+public class AutocompleteTest {
 
 	static final String[] CITIES = { "Hamburg", "Berlin", "Alberta", "Bern", "Munich", "Bergen", "Uberlingen", "Bremen" };
 	static final String[] BIG = new String[1_000_000];
@@ -49,7 +48,7 @@ public class M3AutocompleteTest {
 	Display display;
 	Shell shell;
 	Text text;
-	M3Autocomplete complete;
+	Autocomplete complete;
 	int accepted = -1;
 
 	@Before
@@ -59,11 +58,11 @@ public class M3AutocompleteTest {
 		shell.setBounds(100, 100, 300, 80);
 		text = new Text(shell, SWT.BORDER);
 		text.setBounds(5, 5, 200, 24);
-		complete = new M3Autocomplete(text, M3Searchable.of(() -> CITIES.length, row -> CITIES[row], row -> {
+		complete = new Autocomplete(text, Searchable.of(() -> CITIES.length, row -> CITIES[row], row -> {
 		}));
 		text.addListener(SWT.Selection, e -> accepted = e.index);
 		shell.open();
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -73,7 +72,7 @@ public class M3AutocompleteTest {
 
 	void type(String value) {
 		text.setText(value);
-		M3TestSupport.spin(display, 80);
+		TestSupport.spin(display, 80);
 	}
 
 	void key(int keyCode, char character) {
@@ -85,27 +84,27 @@ public class M3AutocompleteTest {
 
 	@Test
 	public void hiddenFieldScansNothingAndClosesItsDropDown() {
-		if (WidgetMode.of("M3Autocomplete", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+		if (WidgetMode.of("Autocomplete", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
 			return;
 		}
 		type("ber");
 		assertTrue(complete.isOpen());
 		text.setVisible(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertFalse("the drop-down closes with the field", complete.isOpen());
 		int[] scanned = new int[1];
-		M3Autocomplete counting = new M3Autocomplete(text, M3Searchable.of(() -> {
+		Autocomplete counting = new Autocomplete(text, Searchable.of(() -> {
 			scanned[0]++;
 			return CITIES.length;
 		}, row -> CITIES[row], row -> {
 		}));
 		text.setText("bre");
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("a programmatic setText on a hidden field scans nothing", 0, scanned[0]);
 		assertFalse(counting.isOpen());
 		text.setVisible(true);
 		text.setText("bren");
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertTrue("shown again: it scans", scanned[0] > 0);
 	}
 
@@ -148,25 +147,25 @@ public class M3AutocompleteTest {
 
 	@Test
 	public void keystrokesSupersedeAndScanAllocatesNothingPerRow() {
-		M3Autocomplete big = new M3Autocomplete(text, M3Searchable.of(() -> BIG.length, row -> BIG[row], row -> {
+		Autocomplete big = new Autocomplete(text, Searchable.of(() -> BIG.length, row -> BIG[row], row -> {
 		}));
 		complete.setMinimumLength(99);
 		com.sun.management.ThreadMXBean threads = (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
 		type("zz");
 		long before = threads.getCurrentThreadAllocatedBytes();
 		type("zzz");
-		M3TestSupport.spin(display, 400);
+		TestSupport.spin(display, 400);
 		long bytes = threads.getCurrentThreadAllocatedBytes() - before;
 		assertEquals(0, big.getProposalCount());
 		assertTrue("2 x 10^6 rows scanned with " + bytes + " bytes allocated", bytes < 1024 * 1024);
 		text.setText("row 1");
 		text.setText("row 12");
 		text.setText("row 123");
-		M3TestSupport.spin(display, 400);
+		TestSupport.spin(display, 400);
 		assertTrue(big.isOpen());
 		assertEquals("row 123", BIG[big.getProposalRow(0)]);
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3Autocomplete(text, null));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> big.setLimit(0));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> big.getProposalRow(9999));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new Autocomplete(text, null));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> big.setLimit(0));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> big.getProposalRow(9999));
 	}
 }
