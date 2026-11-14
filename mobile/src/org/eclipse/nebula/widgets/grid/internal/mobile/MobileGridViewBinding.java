@@ -37,12 +37,25 @@ public final class MobileGridViewBinding implements AutoCloseable, MobileGridVie
 	public MobileGridViewport projection() { requireLive(); return projection; }
 	public MobileGridViewport.Window show(long scrollY, int displayWidth, int displayHeight) {
 		requireLive();
-		if (displayWidth < 0 || displayHeight < 0) throw new IllegalArgumentException("negative extent");
-		offsetPixels = scrollY;
+		if (displayWidth < 0 || displayHeight < 0 || scrollY < 0)
+			throw new IllegalArgumentException("negative viewport extent");
+		long total = projection.itemCount();
+		long maximum = total == 0 ? 0 : total - 1;
+		// Keep the coordinate origin representable even if a caller overscrolls.
+		// Do not multiply until the row count is known to fit in long pixels.
+		offsetPixels = maximum <= Long.MAX_VALUE / rowHeight
+				? Math.min(scrollY, maximum * rowHeight) : scrollY;
 		width = displayWidth;
 		height = displayHeight;
 		surface.setBounds(new Bounds(0, 0, width, height));
-		return projection.show(scrollY, height);
+		MobileGridViewport.Window window = projection.show(offsetPixels, height);
+		// Even when the same rows remain resident, a fractional-row scroll
+		// changes their screen coordinates without changing model contents.
+		for (int slot = 0; slot < logicalRows.length; slot++) {
+			if (logicalRows[slot] >= 0 && nativeRows[slot] != null)
+				position(nativeRows[slot], logicalRows[slot]);
+		}
+		return window;
 	}
 	@Override public void bind(int slot, long row, String[] cells, boolean selected) {
 		requireLive();
@@ -67,13 +80,16 @@ public final class MobileGridViewBinding implements AutoCloseable, MobileGridVie
 			title.append(cells[i]);
 		}
 		view.setText(title.toString());
+		position(view, row);
+		view.setAccessibilityLabel("Grid row " + row);
+		view.setVisible(true);
+	}
+	private void position(MobileWidgetRuntime.Node view, long row) {
 		long delta = row - offsetPixels / rowHeight;
 		long position = delta * rowHeight - (offsetPixels % rowHeight);
 		if (position < Integer.MIN_VALUE || position > Integer.MAX_VALUE)
 			throw new IllegalStateException("projected row coordinate overflow");
 		view.setBounds(new Bounds(0, (int)position, width, rowHeight));
-		view.setAccessibilityLabel("Grid row " + row);
-		view.setVisible(true);
 	}
 	@Override public void release(int slot, long oldRow) {
 		if (slot >= logicalRows.length) return;
