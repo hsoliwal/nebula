@@ -238,6 +238,10 @@ public class GridSelectionOccurrence_Test {
 		shell.open();
 		grid.setFocus();
 		settle(grid);
+		// the shell has just opened: wait out the window manager's open animation (a quiet interval after the
+		// last Grid paint, as GridBlitScroll_Test does) so the first capture does not read a half-faded frame
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, 1,
+				"selection Grid paint did not settle");
 		final String configured = System.getProperty("nebula.selection.evidence.dir");
 		final Path evidence = configured == null ? Files.createTempDirectory("nebula-selection-occurrence-") : Path.of(configured);
 		Files.createDirectories(evidence);
