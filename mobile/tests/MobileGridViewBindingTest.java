@@ -46,6 +46,16 @@ public final class MobileGridViewBindingTest {
 				"overscroll clamps safely to the last logical row");
 		presentation.close();
 		check(host.children.size()==1,"disposal owns all native row views");
+		// SWT Selection listeners are allowed to close their control synchronously.
+		// The native view must not be rebound or repainted after that callback.
+		final MobileGridViewBinding[] closing = new MobileGridViewBinding[1];
+		closing[0] = new MobileGridViewBinding(shell, 2, 1, 24, 1,
+				(row,col) -> "row " + row, row -> closing[0].close());
+		closing[0].show(0, 320, 48);
+		MobileWidgetRuntime.Node closingRow = closing[0].nativeControl().children().get(0);
+		host.events.accept(new Event(closingRow.id(), EventType.SELECT, null, 0, 0));
+		check(closingRow.isDisposed() && host.children.size()==1,
+				"reentrant Selection disposal does not recreate native rows");
 		runtime.close();
 		check(host.children.isEmpty(),"runtime fully disposes");
 		System.out.println("MobileGridViewBindingTest PASSED");
