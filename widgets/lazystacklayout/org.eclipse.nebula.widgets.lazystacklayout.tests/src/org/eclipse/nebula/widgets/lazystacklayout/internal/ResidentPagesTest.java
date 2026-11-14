@@ -12,23 +12,22 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.lazystacklayout.internal;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import org.eclipse.nebula.widgets.m3.internal.M3ResidentPages;
 import org.junit.Test;
 
 /**
  * The resident-page lanes: lookup, growth, removal by swap, least recently shown victim.
  */
-public class M3ResidentPagesTest {
+public class ResidentPagesTest {
 
 	@Test
 	public void addLookupAndGrow() {
-		M3ResidentPages pages = new M3ResidentPages();
+		ResidentPages pages = new ResidentPages();
 		for (int i = 0; i < 10; i++) {
 			assertEquals(i, pages.add(100 + i, null));
 		}
@@ -41,7 +40,7 @@ public class M3ResidentPagesTest {
 
 	@Test
 	public void removeMovesTheLastSlot() {
-		M3ResidentPages pages = new M3ResidentPages();
+		ResidentPages pages = new ResidentPages();
 		pages.add(1, null);
 		pages.add(2, null);
 		pages.add(3, null);
@@ -56,7 +55,7 @@ public class M3ResidentPagesTest {
 
 	@Test
 	public void leastRecentSkipsTheKeptPage() {
-		M3ResidentPages pages = new M3ResidentPages();
+		ResidentPages pages = new ResidentPages();
 		assertEquals(-1, pages.leastRecent(-1));
 		pages.add(5, null);
 		pages.add(6, null);
@@ -72,7 +71,7 @@ public class M3ResidentPagesTest {
 
 	@Test
 	public void onlyTheKeptPageLeavesNoVictim() {
-		M3ResidentPages pages = new M3ResidentPages();
+		ResidentPages pages = new ResidentPages();
 		pages.add(4, null);
 		assertEquals(-1, pages.leastRecent(4));
 	}

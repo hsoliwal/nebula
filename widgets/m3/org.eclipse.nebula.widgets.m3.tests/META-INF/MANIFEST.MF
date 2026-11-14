@@ -11,7 +11,8 @@ Require-Bundle: org.eclipse.nebula.widgets.m3,
  org.eclipse.swt,
  org.eclipse.nebula.widgets.opal.commons,
  org.eclipse.nebula.widgets.opal.dialog,
- org.eclipse.nebula.widgets.opal.findbar
+ org.eclipse.nebula.widgets.opal.findbar,
+ org.eclipse.nebula.widgets.lazystacklayout
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-Vendor: Eclipse Nebula
 Automatic-Module-Name: org.eclipse.nebula.widgets.m3.tests

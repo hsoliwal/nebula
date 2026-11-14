@@ -12,11 +12,11 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.lazystacklayout;
 
-import org.eclipse.nebula.widgets.m3.internal.M3ResidentPages;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.lazystacklayout.internal.ResidentPages;
+import org.eclipse.nebula.widgets.lazystacklayout.internal.SwtLog;
+import org.eclipse.nebula.widgets.lazystacklayout.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.graphics.Rectangle;
@@ -32,10 +32,10 @@ import org.eclipse.swt.widgets.Control;
  * the top control, so a layout costs one <code>setBounds</code> instead of one per child.
  * </p>
  * <p>
- * <b>Pages.</b> {@link #setPages(Composite, int, M3PageProvider)} declares any number of pages without creating
+ * <b>Pages.</b> {@link #setPages(Composite, int, PageProvider)} declares any number of pages without creating
  * them. {@link #showPage(int)} creates a page through the provider when it is not resident and makes it the top
  * control. At most {@link #getResidencyBudget()} pages stay resident; beyond that the page shown least recently (never
- * the top page) is handed to {@link M3PageProvider#releasePage(int, Control)}. The cost of {@link #showPage(int)}
+ * the top page) is handed to {@link PageProvider#releasePage(int, Control)}. The cost of {@link #showPage(int)}
  * depends on the budget, not on the page count.
  * </p>
  * <p>
@@ -45,24 +45,24 @@ import org.eclipse.swt.widgets.Control;
  * the top control's bounds, the preferred size and the pixels are the same as with <code>StackLayout</code>.
  * </p>
  * <p>
- * Startup switch: <code>-Dswt.widget.mode.M3StackLayout=original</code> (or <code>-Dswt.widget.mode=original</code>)
+ * Startup switch: <code>-Dswt.widget.mode.LazyStackLayout=original</code> (or <code>-Dswt.widget.mode=original</code>)
  * lays out every child on every layout, as <code>StackLayout</code> does, and keeps every page that was created.
  * </p>
  *
- * @see M3PageProvider
+ * @see PageProvider
  */
-public class M3StackLayout extends StackLayout {
+public class LazyStackLayout extends StackLayout {
 
 	/** The residency budget of a new layout: the number of pages kept as controls. */
 	public static final int DEFAULT_RESIDENCY_BUDGET = 8;
 
-	static final boolean VIEWPORT = WidgetMode.of("M3StackLayout", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("LazyStackLayout", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3StackLayout"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.lazystacklayout.LazyStackLayout"); //$NON-NLS-1$
 
-	private final M3ResidentPages resident = new M3ResidentPages();
+	private final ResidentPages resident = new ResidentPages();
 	private Composite parent;
-	private M3PageProvider provider;
+	private PageProvider provider;
 	private int pageCount;
 	private int topPage = -1;
 	private int budget = DEFAULT_RESIDENCY_BUDGET;
@@ -106,7 +106,7 @@ public class M3StackLayout extends StackLayout {
 	 *                <li>ERROR_INVALID_ARGUMENT - if the parent is disposed or the count is negative</li>
 	 *                </ul>
 	 */
-	public void setPages(Composite parent, int count, M3PageProvider provider) {
+	public void setPages(Composite parent, int count, PageProvider provider) {
 		if (parent == null || provider == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
@@ -120,7 +120,7 @@ public class M3StackLayout extends StackLayout {
 	}
 
 	/** @return the page provider, or <code>null</code> when the layout is not in page mode */
-	public M3PageProvider getPageProvider() {
+	public PageProvider getPageProvider() {
 		return provider;
 	}
 
