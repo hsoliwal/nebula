@@ -17,6 +17,7 @@
 		<module>org.eclipse.nebula.widgets.opal.dialog</module>
 		<module>org.eclipse.nebula.widgets.opal.dialog.feature</module>
 		<module>org.eclipse.nebula.widgets.opal.dialog.snippets</module>
+		<module>org.eclipse.nebula.widgets.opal.dialog.tests</module>
 	</modules>
 
 </project>

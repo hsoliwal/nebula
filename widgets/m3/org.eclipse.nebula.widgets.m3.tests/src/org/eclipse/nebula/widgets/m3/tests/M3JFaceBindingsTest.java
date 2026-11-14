@@ -27,10 +27,10 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.ViewerFilter;
-import org.eclipse.nebula.widgets.m3.M3ErrorPane;
 import org.eclipse.nebula.widgets.m3.M3FindBar;
 import org.eclipse.nebula.widgets.m3.jface.M3StatusPane;
 import org.eclipse.nebula.widgets.m3.jface.M3ViewerSearchable;
+import org.eclipse.nebula.widgets.opal.dialog.ErrorPane;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -115,7 +115,7 @@ public class M3JFaceBindingsTest {
 	public void statusPaneDefersTheStatusTree() {
 		MultiStatus status = new MultiStatus("test", 0, "Sorting failed", null);
 		status.add(Status.error("comparator threw", new IllegalStateException("column 3")));
-		M3ErrorPane pane = new M3ErrorPane(shell, SWT.NONE);
+		ErrorPane pane = new ErrorPane(shell, SWT.NONE);
 		M3StatusPane.show(pane, status);
 		assertEquals("Sorting failed", pane.getMessage());
 		assertEquals(SWT.ICON_ERROR, pane.getSeverity());

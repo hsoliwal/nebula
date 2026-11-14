@@ -12,15 +12,15 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.dialog;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.dialog.internal.HiddenGate;
+import org.eclipse.nebula.widgets.opal.dialog.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.dialog.internal.SwtLog;
+import org.eclipse.nebula.widgets.opal.dialog.internal.WidgetMode;
 import org.eclipse.nebula.widgets.pgroup.CollapsiblePane;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
@@ -51,16 +51,16 @@ import org.eclipse.swt.widgets.Text;
  * only update the model; on becoming visible the latest values go into the controls once.
  * </p>
  * <p>
- * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3ErrorPane=original</code> creates the details
+ * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.ErrorPane=original</code> creates the details
  * control with the pane and formats every error at once, as a plain implementation would. RWT: no drawing;
  * {@link #copyToClipboard()} needs org.eclipse.swt.dnd.Clipboard, which RWT lacks.
  * </p>
  */
-public class M3ErrorPane extends Composite {
+public class ErrorPane extends Composite {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3ErrorPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("ErrorPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3ErrorPane"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.opal.dialog.ErrorPane"); //$NON-NLS-1$
 
 	private static final int DETAIL_LINES = 12;
 
@@ -73,7 +73,7 @@ public class M3ErrorPane extends Composite {
 	/* null while an error waits to be formatted */
 	private String details = ""; //$NON-NLS-1$
 	private String messageText = ""; //$NON-NLS-1$
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	/* model changes made while the pane was hidden, applied to the controls on reveal */
 	private boolean staleMessage, staleIcon, staleDetails;
 	/* details changed while the details were collapsed: formatted and pushed when they are next shown */
@@ -85,9 +85,9 @@ public class M3ErrorPane extends Composite {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3ErrorPane(Composite parent, int style) {
+	public ErrorPane(Composite parent, int style) {
 		super(parent, style);
-		gate = new M3HiddenGate(this, this::revealed);
+		gate = new HiddenGate(this, this::revealed);
 		GridLayout layout = new GridLayout(2, false);
 		layout.horizontalSpacing = 10;
 		setLayout(layout);
@@ -133,7 +133,7 @@ public class M3ErrorPane extends Composite {
 		Shell dialog = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL | SWT.RESIZE);
 		dialog.setText(title == null ? "" : title); //$NON-NLS-1$
 		dialog.setLayout(new FillLayout());
-		M3ErrorPane pane = new M3ErrorPane(dialog, SWT.NONE);
+		ErrorPane pane = new ErrorPane(dialog, SWT.NONE);
 		pane.setMessage(message);
 		pane.setError(error);
 		dialog.pack();
@@ -294,7 +294,7 @@ public class M3ErrorPane extends Composite {
 		if (detailsText == null) {
 			detailsText = new Text(detailsPane.getContent(), SWT.MULTI | SWT.READ_ONLY | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 			detailsText.setText(getDetails());
-			M3Counters.creates++;
+			RepaintCounters.creates++;
 		}
 	}
 
@@ -305,7 +305,7 @@ public class M3ErrorPane extends Composite {
 		}
 		if (detailsText != null) {
 			if (VIEWPORT && detailsPane.isCollapsed()) {
-				collapsedDetails = true; // collapsed: no stack trace formatted, no text pushed //FLLDCIM: MARK — every-widget M3ErrorPane H
+				collapsedDetails = true; // collapsed: no stack trace formatted, no text pushed //FLLDCIM: MARK — every-widget ErrorPane H
 			} else {
 				detailsText.setText(getDetails());
 			}

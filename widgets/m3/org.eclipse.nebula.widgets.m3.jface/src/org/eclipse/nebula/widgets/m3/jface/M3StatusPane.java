@@ -18,14 +18,14 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.nebula.widgets.m3.M3ErrorPane;
+import org.eclipse.nebula.widgets.opal.dialog.ErrorPane;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 /**
- * JFace/Eclipse binding of {@link M3ErrorPane} for an {@link IStatus} (the ErrorDialog use): the status message is the
+ * JFace/Eclipse binding of {@link ErrorPane} for an {@link IStatus} (the ErrorDialog use): the status message is the
  * message, the severity picks the icon, and the details (the child statuses and every exception's stack trace) are
  * formatted only when the details are first shown.
  */
@@ -40,7 +40,7 @@ public final class M3StatusPane {
 	 * @param pane the pane
 	 * @param status the status
 	 */
-	public static void show(M3ErrorPane pane, IStatus status) {
+	public static void show(ErrorPane pane, IStatus status) {
 		if (pane == null || status == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
@@ -61,7 +61,7 @@ public final class M3StatusPane {
 		Shell dialog = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL | SWT.RESIZE);
 		dialog.setText(title == null ? "" : title); //$NON-NLS-1$
 		dialog.setLayout(new FillLayout());
-		show(new M3ErrorPane(dialog, SWT.NONE), status);
+		show(new ErrorPane(dialog, SWT.NONE), status);
 		dialog.pack();
 		dialog.open();
 		Display display = dialog.getDisplay();
