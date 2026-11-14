@@ -1,0 +1,34 @@
+plugins { id 'com.android.application' }
+
+def nebulaRoot = file('../../../..')
+def widgetSources = layout.buildDirectory.dir('generated/sources/nebula')
+def prepareNebulaSources = tasks.register('prepareNebulaSources', Sync) {
+    from(new File(nebulaRoot, 'widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/src')) {
+        include 'org/eclipse/nebula/widgets/roundedcheckbox/RoundedCheckbox.java'
+    }
+    from(new File(nebulaRoot, 'widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/src')) {
+        include 'org/eclipse/nebula/widgets/opal/commons/SelectionListenerUtil.java'
+        include 'org/eclipse/nebula/widgets/opal/commons/ReflectionUtils.java'
+    }
+    into(widgetSources)
+}
+android {
+    namespace 'org.eclipse.nebula.examples.mobile'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'org.eclipse.nebula.examples.mobile'
+        minSdk 35
+        targetSdk 35
+        versionCode 1
+        versionName '0.1'
+        testInstrumentationRunner 'org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    sourceSets.main.java.srcDirs += [widgetSources, file('../../common/src/main/java')]
+}
+tasks.named('preBuild').configure { dependsOn(prepareNebulaSources) }
+dependencies { implementation project(':swt') }
+tasks.withType(JavaCompile).configureEach { options.compilerArgs.add('-XDstringConcat=inline') }
