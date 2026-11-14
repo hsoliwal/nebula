@@ -1,0 +1,31 @@
+name: Nebula mobile Grid Android APK build
+on:
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/m3-mobile-grid-android-apk.yml']
+  push:
+    paths: ['mobile/**', '.github/workflows/m3-mobile-grid-android-apk.yml']
+permissions:
+  contents: read
+jobs:
+  native-mobile-grid-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: hsoliwal/eclipse.platform.swt
+          ref: d8cd2018b22a7d69d417475a7ba15ebe8a9f015e
+          path: swt-mobile
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 35
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Assemble Nebula/Grid native Android demonstration
+        run: gradle --no-daemon -p mobile/android assembleDebug
