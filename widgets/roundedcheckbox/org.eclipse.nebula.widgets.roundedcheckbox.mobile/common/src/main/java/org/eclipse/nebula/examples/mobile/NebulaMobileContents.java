@@ -8,6 +8,7 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.List;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Shell;
 
 /** One shared demo body for the Android and iOS SWT hosts. */
@@ -23,6 +24,9 @@ public final class NebulaMobileContents {
         public volatile int listSelection = -1;
         public volatile int listEvents;
         public volatile int listDataLoads;
+        public volatile String nativeText = "";
+        public volatile int textModifications;
+        public volatile int textVerifications;
         public volatile boolean disposed;
     }
 
@@ -54,6 +58,19 @@ public final class NebulaMobileContents {
         rows.addListener(SWT.Selection, event -> {
             state.listSelection = rows.getSelectionIndex();
             state.listEvents++;
+            if (!labels.isDisposed()) labels.redraw();
+        });
+        // The actual SWT Text owner is backed by EditText / UITextField.
+        // Native keyboard events must go through its Verify/Modify lifecycle.
+        Text editor = new Text(shell, SWT.SINGLE | SWT.BORDER);
+        editor.setMessage("Native keyboard input");
+        editor.addVerifyListener(event -> {
+            state.textVerifications++;
+            if (event.text.contains("!")) event.doit = false;
+        });
+        editor.addModifyListener(event -> {
+            state.nativeText = editor.getText();
+            state.textModifications++;
             if (!labels.isDisposed()) labels.redraw();
         });
         scale.addListener(SWT.Selection, event -> {
@@ -92,6 +109,7 @@ public final class NebulaMobileContents {
             event.gc.drawText("Attempts: " + state.attempts, 16, 324, true);
             event.gc.drawText("Scale drives ProgressBar: " + state.progressSelection, 16, 356, true);
             event.gc.drawText("Billion-row List selected: " + state.listSelection, 16, 474, true);
+            event.gc.drawText("Text: " + state.nativeText, 16, 704, true);
         });
         Runnable layout = () -> {
             Rectangle area = shell.getClientArea();
@@ -101,8 +119,9 @@ public final class NebulaMobileContents {
             disabled.setBounds(20, 208, 44, 44);
             progress.setBounds(20, 388, Math.max(30, area.width - 40), 24);
             scale.setBounds(20, 428, Math.max(30, area.width - 40), 34);
-            rows.setBounds(20, 500, Math.max(30, area.width - 40),
-                    Math.max(90, Math.min(230, area.height - 520)));
+            int listHeight = Math.max(80, Math.min(120, area.height - 620));
+            rows.setBounds(20, 500, Math.max(30, area.width - 40), listHeight);
+            editor.setBounds(20, 500 + listHeight + 16, Math.max(30, area.width - 40), 40);
         };
         shell.addListener(SWT.Resize, event -> layout.run());
         layout.run();
