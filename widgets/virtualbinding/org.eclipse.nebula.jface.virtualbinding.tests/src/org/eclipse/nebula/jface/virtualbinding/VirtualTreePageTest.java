@@ -2,17 +2,16 @@
  * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
  * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.jface.virtualbinding;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.eclipse.nebula.widgets.m3.M3VirtualTreeBinding;
-import org.eclipse.nebula.widgets.m3.M3VirtualTreeBinding.Page;
+import org.eclipse.nebula.jface.virtualbinding.VirtualTreeBinding.Page;
 import org.junit.Test;
 
 /** Headless page-lane verification, independent of the native SWT display. */
-public class M3VirtualTreePageTest {
+public class VirtualTreePageTest {
 
     @Test
     public void keyedSiblingPageClonesBackingLanes() {
@@ -63,7 +62,7 @@ public class M3VirtualTreePageTest {
 
     @Test
     public void flatCellBudgetPreventsUnboundedPageMemory() {
-        String[] keys = new String[M3VirtualTreeBinding.PAGE_ROWS];
+        String[] keys = new String[VirtualTreeBinding.PAGE_ROWS];
         int[] children = new int[keys.length];
         String[] text = new String[keys.length * 2];
         for (int i = 0; i < keys.length; i++) {

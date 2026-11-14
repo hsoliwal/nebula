@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
  * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.jface.virtualbinding;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -14,9 +14,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import org.eclipse.nebula.widgets.m3.M3VirtualTableBinding;
-import org.eclipse.nebula.widgets.m3.M3VirtualTableBinding.Page;
-import org.eclipse.nebula.widgets.m3.M3VirtualTableBinding.Rows;
+import org.eclipse.nebula.jface.virtualbinding.VirtualTableBinding.Page;
+import org.eclipse.nebula.jface.virtualbinding.VirtualTableBinding.Rows;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -24,7 +23,7 @@ import org.eclipse.swt.widgets.Table;
 import org.junit.Test;
 
 /** Original SWT Table lifecycle regression; test stand-ins are not shipped. */
-public final class M3VirtualTableCloseDuringFetchTest {
+public final class VirtualTableCloseDuringFetchTest {
 
     @Test
     public void providerClosingBindingCannotPublishTheReturningPage() {
@@ -34,7 +33,7 @@ public final class M3VirtualTableCloseDuringFetchTest {
             Shell shell = new Shell(display);
             try {
                 Table table = new Table(shell, SWT.VIRTUAL);
-                AtomicReference<M3VirtualTableBinding> current = new AtomicReference<>();
+                AtomicReference<VirtualTableBinding> current = new AtomicReference<>();
                 int[] calls = {0};
                 Rows closing = new Rows() {
                     @Override public int size() { return 1; }
@@ -47,7 +46,7 @@ public final class M3VirtualTableCloseDuringFetchTest {
                                 new String[] {"must-not-publish"});
                     }
                 };
-                M3VirtualTableBinding binding = M3VirtualTableBinding.bind(table, closing);
+                VirtualTableBinding binding = VirtualTableBinding.bind(table, closing);
                 current.set(binding);
                 try {
                     // SWT hands a listener's exception to the Display's runtime exception handler:
@@ -70,7 +69,7 @@ public final class M3VirtualTableCloseDuringFetchTest {
                     assertEquals(1, calls[0]);
                     assertEquals(1, table.getItemCount());
                     assertFalse(table.isDisposed()); // Table remains SWT-owned.
-                    assertNull(table.getItem(0).getData(M3VirtualTableBinding.ROW_KEY));
+                    assertNull(table.getItem(0).getData(VirtualTableBinding.ROW_KEY));
                 } finally {
                     binding.close();
                 }
@@ -103,9 +102,9 @@ public final class M3VirtualTableCloseDuringFetchTest {
                                 new String[] {"ordinary"});
                     }
                 };
-                try (M3VirtualTableBinding binding = M3VirtualTableBinding.bind(table, steady)) {
+                try (VirtualTableBinding binding = VirtualTableBinding.bind(table, steady)) {
                     assertEquals("ordinary", table.getItem(0).getText(0));
-                    assertEquals("row-0", table.getItem(0).getData(M3VirtualTableBinding.ROW_KEY));
+                    assertEquals("row-0", table.getItem(0).getData(VirtualTableBinding.ROW_KEY));
                     assertEquals(1, binding.getResidentPageCount());
                 }
                 assertFalse(table.isDisposed());

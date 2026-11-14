@@ -2,17 +2,16 @@
  * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
  * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.jface.virtualbinding;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.eclipse.nebula.widgets.m3.M3VirtualTableBinding.Page;
-import org.eclipse.nebula.widgets.m3.M3VirtualTableBinding;
+import org.eclipse.nebula.jface.virtualbinding.VirtualTableBinding.Page;
 import org.junit.Test;
 
 /** Pure Java page-geometry tests; native Table is exercised separately. */
-public class M3VirtualTablePageTest {
+public class VirtualTablePageTest {
 
     @Test
     public void rowMajorArraysPreserveIdentityAndMakeDefensiveCopies() {
@@ -59,7 +58,7 @@ public class M3VirtualTablePageTest {
         for (int i = 1; i < text.length; i++) {
             text[i] = "ok";
         }
-        assertTrue(new Page(0, 2, ids, text).size() <= M3VirtualTableBinding.PAGE_ROWS);
+        assertTrue(new Page(0, 2, ids, text).size() <= VirtualTableBinding.PAGE_ROWS);
     }
 
     private static void assertRejected(Runnable operation) {

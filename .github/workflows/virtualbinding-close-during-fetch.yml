@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
-name: M3 Nebula Virtual Table Close During Fetch
+name: Nebula Virtual Table Binding Close During Fetch
 on:
   pull_request:
     paths:
-      - 'widgets/m3/org.eclipse.nebula.widgets.m3/src/org/eclipse/nebula/widgets/m3/M3VirtualTableBinding.java'
-      - 'widgets/m3/org.eclipse.nebula.widgets.m3.tests/src/org/eclipse/nebula/widgets/m3/tests/M3VirtualTableCloseDuringFetchTest.java'
-      - 'm3/web-widget-reverse/qualification/virtual-table-close/**'
-      - '.github/workflows/m3-nebula-virtual-table-close-20261027.yml'
+      - 'widgets/virtualbinding/org.eclipse.nebula.jface.virtualbinding/src/org/eclipse/nebula/jface/virtualbinding/VirtualTableBinding.java'
+      - 'widgets/virtualbinding/org.eclipse.nebula.jface.virtualbinding.tests/src/org/eclipse/nebula/jface/virtualbinding/VirtualTableCloseDuringFetchTest.java'
+      - '.github/workflows/virtualbinding-close-during-fetch.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,13 +31,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          xvfb-run -a mvn -B -ntp -f widgets/m3/pom.xml \
-            -pl :org.eclipse.nebula.widgets.m3.tests -am verify
+          xvfb-run -a mvn -B -ntp \
+            -pl widgets/virtualbinding/org.eclipse.nebula.jface.virtualbinding.tests -am verify
           python3 - <<'PY_JUNIT'
           from pathlib import Path
           import xml.etree.ElementTree as ET
-          report_dir=Path('widgets/m3/org.eclipse.nebula.widgets.m3.tests/target/surefire-reports')
-          files=list(report_dir.glob('TEST-*M3VirtualTableCloseDuringFetchTest*.xml'))
+          report_dir=Path('widgets/virtualbinding/org.eclipse.nebula.jface.virtualbinding.tests/target/surefire-reports')
+          files=list(report_dir.glob('TEST-*VirtualTableCloseDuringFetchTest*.xml'))
           if len(files) != 1:
               raise SystemExit('BLOCK: original Tycho regression report missing or duplicated')
           suite=ET.parse(files[0]).getroot()

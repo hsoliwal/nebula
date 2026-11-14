@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
  * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.jface.virtualbinding;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -28,7 +28,7 @@ import org.eclipse.swt.widgets.TreeItem;
  * Real RAP browser behavior, native SWT pixels, accessibility and resource
  * ownership require independent platform qualification.</p>
  */
-public final class M3VirtualTreeBinding implements AutoCloseable {
+public final class VirtualTreeBinding implements AutoCloseable {
 
     public static final int PAGE_ROWS = 64;
     public static final int HOT_PAGES = 4;
@@ -132,7 +132,7 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
     private boolean fetching;
     private boolean closed;
 
-    private M3VirtualTreeBinding(Tree tree, Nodes nodes) {
+    private VirtualTreeBinding(Tree tree, Nodes nodes) {
         this.tree = tree;
         this.nodes = nodes;
         setData = this::onSetData;
@@ -145,7 +145,7 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
     }
 
     /** Binds the existing Tree; TreeColumns must be created by the caller first. */
-    public static M3VirtualTreeBinding bind(Tree tree, Nodes nodes) {
+    public static VirtualTreeBinding bind(Tree tree, Nodes nodes) {
         if (tree == null || nodes == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -154,7 +154,7 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
         }
         verifyColumns(tree, nodes);
         int count = checkedCount(nodes.rootCount());
-        M3VirtualTreeBinding result = new M3VirtualTreeBinding(tree, nodes);
+        VirtualTreeBinding result = new VirtualTreeBinding(tree, nodes);
         try {
             tree.setItemCount(count);
         } catch (RuntimeException failure) {

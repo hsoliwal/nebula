@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
  * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.jface.virtualbinding;
 
 import java.util.Arrays;
 
@@ -32,7 +32,7 @@ import org.eclipse.swt.widgets.TableItem;
  * appropriate receiver when rich spans, frozen columns or cell editors
  * are needed.</p>
  */
-public final class M3VirtualTableBinding implements AutoCloseable {
+public final class VirtualTableBinding implements AutoCloseable {
 
     /** Exact, already-indexed view of a potentially very large logical table. */
     public interface Rows {
@@ -129,7 +129,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
     private boolean populating;
     private boolean closed;
 
-    private M3VirtualTableBinding(Table table, Rows rows) {
+    private VirtualTableBinding(Table table, Rows rows) {
         this.table = table;
         this.rows = rows;
         setData = this::onSetData;
@@ -147,7 +147,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
     }
 
     /** Bind one original virtual Table; the caller creates its columns first. */
-    public static M3VirtualTableBinding bind(Table table, Rows rows) {
+    public static VirtualTableBinding bind(Table table, Rows rows) {
         if (table == null || rows == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
@@ -156,7 +156,7 @@ public final class M3VirtualTableBinding implements AutoCloseable {
         }
         verifyColumns(table, rows);
         int size = checkedSize(rows);
-        M3VirtualTableBinding result = new M3VirtualTableBinding(table, rows);
+        VirtualTableBinding result = new VirtualTableBinding(table, rows);
         try {
             table.setItemCount(size);
         } catch (RuntimeException failed) {

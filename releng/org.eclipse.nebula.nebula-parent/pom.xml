@@ -371,6 +371,7 @@ Contributors:
 		<module>../../widgets/tablecombo</module>
 		<module>../../widgets/tiles</module>
 		<module>../../widgets/treemapper</module>
+		<module>../../widgets/virtualbinding</module>
 		<module>../../widgets/visualization</module>
 		<module>../../widgets/web</module>
 		<module>../../widgets/xviewer</module>
