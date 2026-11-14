@@ -146,9 +146,9 @@ public class M3ToastsTest {
 			toasts.show("t" + i, "m", M3Toasts.INFO, 60_000);
 		}
 		assertEquals(64, toasts.getCount());
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> toasts.show(null, "m", M3Toasts.INFO, 1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", 7, 1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", M3Toasts.INFO, 0));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3Toasts(null));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> toasts.show(null, "m", M3Toasts.INFO, 1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", 7, 1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> toasts.show("t", "m", M3Toasts.INFO, 0));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3Toasts(null));
 	}
 }

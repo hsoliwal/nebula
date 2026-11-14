@@ -154,7 +154,7 @@ public class M3DatePickerTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> picker.setFormat(null));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> picker.setFormat(null));
 		picker.setFormat(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 		picker.setDate(OCT_20);
 		assertEquals("20.10.2026", picker.getTextField().getText());

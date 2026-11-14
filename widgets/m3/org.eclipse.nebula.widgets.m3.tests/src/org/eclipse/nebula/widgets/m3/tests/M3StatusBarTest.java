@@ -264,13 +264,13 @@ public class M3StatusBarTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(3, 0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(M3StatusBar.FIXED, -1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> bar.setText(4, "x"));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> bar.getText(-1));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(0, null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_PARENT, () -> bar.setControl(0, new Label(shell, SWT.NONE)));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> bar.removeSlot(9));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(3, 0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(M3StatusBar.FIXED, -1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.setText(4, "x"));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.getText(-1));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(0, null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_PARENT, () -> bar.setControl(0, new Label(shell, SWT.NONE)));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.removeSlot(9));
 		for (int i = 0; i < 9; i++) {
 			bar.addSlot(M3StatusBar.FIXED, 4);
 		}

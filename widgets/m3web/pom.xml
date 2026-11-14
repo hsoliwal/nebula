@@ -20,7 +20,6 @@
 	<modules>
 		<module>org.eclipse.nebula.widgets.m3web</module>
 		<module>org.eclipse.nebula.widgets.m3web.test</module>
-		<module>org.eclipse.nebula.widgets.m3web.snippets</module>
 	</modules>
 
 </project>

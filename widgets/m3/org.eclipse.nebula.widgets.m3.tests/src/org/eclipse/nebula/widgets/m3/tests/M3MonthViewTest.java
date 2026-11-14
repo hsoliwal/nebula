@@ -210,9 +210,9 @@ public class M3MonthViewTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setMonthsShown(0, 1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setFirstDayOfWeek(8));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setSelectionInterval(JAN_1 + 1, JAN_1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setMonthsShown(0, 1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setFirstDayOfWeek(8));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setSelectionInterval(JAN_1 + 1, JAN_1));
 		M3MonthView single = new M3MonthView(shell, SWT.SINGLE);
 		single.setSelectionInterval(JAN_1, JAN_1 + 5);
 		assertEquals("SINGLE selects the start only", single.getSelectionStart(), single.getSelectionEnd());

@@ -162,7 +162,7 @@ public class M3HyperlinkTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setText(null));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setLinkColors(null, new RGB(0, 0, 0)));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setText(null));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> link.setLinkColors(null, new RGB(0, 0, 0)));
 	}
 }

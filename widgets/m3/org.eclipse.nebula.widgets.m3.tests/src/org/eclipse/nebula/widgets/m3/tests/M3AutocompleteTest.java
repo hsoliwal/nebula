@@ -165,8 +165,8 @@ public class M3AutocompleteTest {
 		M3TestSupport.spin(display, 400);
 		assertTrue(big.isOpen());
 		assertEquals("row 123", BIG[big.getProposalRow(0)]);
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3Autocomplete(text, null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> big.setLimit(0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> big.getProposalRow(9999));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3Autocomplete(text, null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> big.setLimit(0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> big.getProposalRow(9999));
 	}
 }

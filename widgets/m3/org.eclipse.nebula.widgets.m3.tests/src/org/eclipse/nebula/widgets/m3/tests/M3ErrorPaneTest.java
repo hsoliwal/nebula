@@ -189,9 +189,9 @@ public class M3ErrorPaneTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setMessage(null));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setDetails(null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setSeverity(SWT.ICON_QUESTION));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setMessage(null));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setDetails(null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setSeverity(SWT.ICON_QUESTION));
 		pane.setError(null);
 		assertEquals("", pane.getDetails());
 	}

@@ -194,8 +194,8 @@ public class M3TaskPaneTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> panes[0].setTitle(null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> container.setSpacing(-1, 0));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> panes[0].setTitle(null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> container.setSpacing(-1, 0));
 		container.setSpacing(4, 2);
 		assertEquals(2, container.getSpacing());
 		assertEquals(4, container.getMargin());

@@ -121,7 +121,7 @@ public class M3ColorButtonTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> button.setColor(null));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> button.setColor(null));
 		assertEquals(new RGB(0, 0, 0), new M3ColorButton(shell, SWT.NONE).getColor());
 	}
 }
