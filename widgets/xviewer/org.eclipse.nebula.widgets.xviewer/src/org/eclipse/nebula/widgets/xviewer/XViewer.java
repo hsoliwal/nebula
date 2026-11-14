@@ -85,6 +85,7 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
+import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.part.ViewPart;
 
 /**
@@ -1145,6 +1146,30 @@ public class XViewer extends TreeViewer {
       if (viewport != null && item instanceof TreeItem) {
          viewportExpanded.add((TreeItem) item);
       }
+   }
+
+   /**
+    * A viewport holds items only for the rows the native tree or the API asked for. An element that was never shown has
+    * no item, so the inherited lookup finds nothing and {@code setExpandedState}, {@code expandToLevel} and
+    * {@code reveal} would do nothing. The row of the element, and the rows of its ancestors, are materialized first.
+    */
+   @Override
+   protected Widget internalExpand(Object elementOrPath, boolean expand) {
+      if (viewport != null && elementOrPath != null) {
+         Object element =
+            elementOrPath instanceof TreePath ? ((TreePath) elementOrPath).getLastSegment() : elementOrPath;
+         if (element != null && !viewportHasItem(element)) {
+            viewport.materialize(element);
+         }
+      }
+      return super.internalExpand(elementOrPath, expand);
+   }
+
+   /**
+    * @return true if the element has an item, that is, its row is materialized (the input has the tree itself)
+    */
+   boolean viewportHasItem(Object element) {
+      return findItem(element) != null;
    }
 
    /**
