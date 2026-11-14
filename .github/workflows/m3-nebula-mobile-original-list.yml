@@ -1,0 +1,95 @@
+name: Nebula original SWT mobile List Android + iOS build and native acceptance
+on:
+  pull_request:
+    paths:
+      - 'widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/**'
+      - '.github/workflows/m3-nebula-mobile-original-list.yml'
+  push:
+    paths:
+      - 'widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/**'
+      - '.github/workflows/m3-nebula-mobile-original-list.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-original-widget-device:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: hsoliwal/eclipse.platform.swt
+          ref: 20e925c6e41801bf8f560c27934a55f613b5d31b
+          path: swt-mobile
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: android-actions/setup-android@v3
+      - name: Install actual Android API 35 and platform tools
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Compile canonical SWT Android mobile List and Java owners
+        run: mvn -B -ntp -f swt-mobile/mobile/pom.xml -Dmobile.platform=android "-Dandroid.sdk=$ANDROID_SDK_ROOT" clean verify
+      - name: Assemble Nebula original-widget app and native instrumentation
+        run: gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Execute original virtual List and existing widget native tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          target: google_apis
+          disable-animations: true
+          script: |
+            gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" :app:connectedDebugAndroidTest
+      - name: Retain Android native test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-original-list-device-reports
+          path: |
+            widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/app/build/reports/androidTests/**
+            widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/app/build/outputs/androidTest-results/**
+          if-no-files-found: warn
+  ios-original-list-source:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: hsoliwal/eclipse.platform.swt
+          ref: 20e925c6e41801bf8f560c27934a55f613b5d31b
+          path: swt-mobile
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile SWT mobile iOS Java owners and List
+        run: mvn -B -ntp -f swt-mobile/mobile/pom.xml -Dmobile.platform=ios clean verify
+      - name: Compile original Nebula widget Java source against iOS SWT JAR
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/nebula-mobile-ios"
+          javac --release 21 -cp "$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-ios.jar" \
+            -d "$RUNNER_TEMP/nebula-mobile-ios" \
+            widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/src/org/eclipse/nebula/widgets/roundedcheckbox/RoundedCheckbox.java \
+            widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/src/org/eclipse/nebula/widgets/opal/commons/SelectionListenerUtil.java \
+            widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/src/org/eclipse/nebula/widgets/opal/commons/ReflectionUtils.java \
+            widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/common/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileContents.java \
+            widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/common/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileMain.java \
+            widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/ios/src/main/java/org/eclipse/nebula/examples/mobile/IOSNebulaDemo.java
+      - name: Compile real UIKit bridge and generated JNI entrypoints
+        run: bash swt-mobile/mobile/ios/build.sh iphonesimulator arm64 "$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-ios.jar"
