@@ -5,7 +5,8 @@ Bundle-SymbolicName: org.eclipse.nebula.widgets.pgroup.tests
 Bundle-Version: 1.0.0.qualifier
 Fragment-Host: org.eclipse.nebula.widgets.pgroup
 Require-Bundle: org.junit,
- org.eclipse.swt
+ org.eclipse.swt,
+ org.eclipse.nebula.widgets.opal.statusbar
 Bundle-RequiredExecutionEnvironment: JavaSE-11
 Bundle-Vendor: Eclipse Nebula
 Automatic-Module-Name: org.eclipse.nebula.widgets.pgroup.tests
