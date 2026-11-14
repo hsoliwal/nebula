@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.jface.viewers.ILabelProviderListener;
@@ -110,7 +111,12 @@ public class XViewerViewport_Test {
       viewer.setExpandedState(root, true);
       pump();
       assertEquals(KIDS, tree.getItem(ROOTS - 1).getItemCount());
-      assertTrue(viewer.getStatusLabel().getText().contains(String.valueOf(ROOTS + KIDS)));
+      // the status line is recomputed on load, sort, refresh and mouse-up, not by an API expansion
+      viewer.updateStatusLabel();
+      // the status text is a MessageFormat pattern, so the count carries the locale's grouping (100,009)
+      String shown = MessageFormat.format("{0}", Integer.valueOf(ROOTS + KIDS));
+      String status = viewer.getStatusLabel().getText();
+      assertTrue(status, status.contains(shown));
       assertTrue(viewer.getViewportMaterializedCount() - scrolled <= MATERIALIZED_BOUND);
    }
 
