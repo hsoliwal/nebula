@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.xviewer;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -137,6 +138,31 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    public void inputChanged(Viewer changed, Object oldInput, Object newInput) {
       invalidate();
       delegate.inputChanged(changed, oldInput, newInput);
+   }
+
+   /**
+    * Materializes the row of {@code element}, after the rows of its ancestors that have no item yet, so an item API
+    * finds the item of an element the native tree has not asked for.
+    *
+    * @return false if the element is not a row of the tree (filtered out, not in the model, or the tree has no such
+    * row yet)
+    */
+   boolean materialize(Object element) {
+      Object known = delegate.getParent(element);
+      Object parent = known == null ? viewer.getInput() : known;
+      if (parent == null || !isRoot(parent) && !viewer.viewportHasItem(parent) && !materialize(parent)) {
+         return false;
+      }
+      Object[] siblings = children(parent);
+      int index = Arrays.asList(siblings).indexOf(element);
+      if (index < 0 || isRoot(parent) && index >= viewer.getTree().getItemCount()) {
+         return false;
+      }
+      if (!isRoot(parent)) {
+         viewer.setChildCount(parent, siblings.length);
+      }
+      updateElement(parent, index);
+      return true;
    }
 
    /** Drops cached child orderings and the materialized-row bits. */
