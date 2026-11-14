@@ -12,13 +12,13 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.gradientchooser;
 
 import java.util.Arrays;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.gradientchooser.internal.HiddenGate;
+import org.eclipse.nebula.widgets.opal.gradientchooser.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.gradientchooser.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
@@ -34,7 +34,7 @@ import org.eclipse.swt.widgets.Event;
  * A gradient chooser: a gradient bar defined by colour stops at positions from 0 to 1, with stop markers below it;
  * click under the bar to add a stop, drag a marker to move it, double-click it to change its colour, Delete to remove
  * the selected stop (the SWT counterpart of SwingX <code>JXGradientChooser</code>, re-derived from its documented
- * behaviour). {@link #toLookupTable(int)} samples the gradient, for example as an {@link M3HeatMap} palette.
+ * behaviour). {@link #toLookupTable(int)} samples the gradient, for example as an {@code HeatMap} palette.
  * <p>
  * Stops are two sorted lanes (float position, packed RGB int) plus a lazily filled Color lane. Every change is a
  * delta: moving, recolouring, adding or removing stop i repaints only the bar and marker strip between its neighbours
@@ -45,16 +45,16 @@ import org.eclipse.swt.widgets.Event;
  * <p>
  * Styles: <code>BORDER</code>. Events: <code>Modify</code> when the stops change (<code>Event.index</code> the stop),
  * <code>Selection</code> when the selected stop changes. Startup switch:
- * <code>-Dswt.widget.mode.M3GradientChooser=original</code> repaints everything on every change.
+ * <code>-Dswt.widget.mode.GradientChooser=original</code> repaints everything on every change.
  * </p>
  */
-public class M3GradientChooser extends Canvas {
+public class GradientChooser extends Canvas {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3GradientChooser", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("GradientChooser", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private static final int PAD = 6, BAR = 24, MARK = 10;
 
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	private float[] positions = { 0f, 1f };
 	private int[] colors = { 0x000000, 0xffffff };
 	private Color[] swatches = new Color[2];
@@ -67,9 +67,9 @@ public class M3GradientChooser extends Canvas {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3GradientChooser(Composite parent, int style) {
+	public GradientChooser(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED);
-		gate = new M3HiddenGate(this, null);
+		gate = new HiddenGate(this, null);
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.MouseDown, this::mouseDown);
 		addListener(SWT.MouseMove, e -> {
@@ -132,7 +132,7 @@ public class M3GradientChooser extends Canvas {
 		}
 		selected = -1;
 		if (showing()) {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 		}
 		modified(-1);
@@ -422,7 +422,7 @@ public class M3GradientChooser extends Canvas {
 			return;
 		}
 		if (!VIEWPORT) {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 			return;
 		}
@@ -441,7 +441,7 @@ public class M3GradientChooser extends Canvas {
 		if (VIEWPORT) {
 			redraw(x - MARK, bar.y + bar.height, 2 * MARK + 1, MARK + 3, false);
 		} else {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 		}
 	}

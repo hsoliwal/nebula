@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula Opal Gradient Chooser Tests
+Bundle-SymbolicName: org.eclipse.nebula.widgets.opal.gradientchooser.tests
+Bundle-Version: 1.0.0.qualifier
+Fragment-Host: org.eclipse.nebula.widgets.opal.gradientchooser
+Require-Bundle: org.junit,
+ org.eclipse.swt
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-Vendor: Eclipse Nebula
+Automatic-Module-Name: org.eclipse.nebula.widgets.opal.gradientchooser.tests
