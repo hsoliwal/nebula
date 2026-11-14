@@ -62,12 +62,12 @@ That workflow currently runs on Ubuntu 24.04 with GTK3 and X11
 1. Checks out a specific commit of `hsoliwal/eclipse.platform.swt` into
    `.m3-swt`, rather than following that repository's moving default branch
 2. Builds its GTK native fragment and uses
-   [prepare_swt_receiver.py](../m3/convergence/prepare_swt_receiver.py) plus the
-   [receiver p2 project](../m3/convergence/swt-receiver-p2/pom.xml) to prepare the
+   [prepare_swt_receiver.py](../releng/swt-receiver/prepare_swt_receiver.py) plus the
+   [receiver p2 project](../releng/swt-receiver/swt-receiver-p2/pom.xml) to prepare the
    bound target platform and expected identity
 3. Runs the Nebula reactor under Xvfb with the generated target-platform
    override and Grid screen-capture properties
-4. Runs [verify_grid_screenshots.py](../m3/convergence/verify_grid_screenshots.py)
+4. Runs [verify_grid_screenshots.py](../releng/swt-receiver/verify_grid_screenshots.py)
    against the captured images, Surefire reports and expected receiver identity
 
 Copy the exact pinned revision and commands from the workflow when reproducing

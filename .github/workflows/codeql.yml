@@ -18,22 +18,14 @@ on:
       - '**'
       - '!**/*.md'
       - '!docs/**'
-      - '!.m3/**'
-      - '!.m3-ui-distillation-trigger/**'
       - '!.github/workflows/m3-*.yml'
-      - '!m3/**'
-      - 'm3/third_party/**'
   pull_request:
     branches: [ "master" ]
     paths:
       - '**'
       - '!**/*.md'
       - '!docs/**'
-      - '!.m3/**'
-      - '!.m3-ui-distillation-trigger/**'
       - '!.github/workflows/m3-*.yml'
-      - '!m3/**'
-      - 'm3/third_party/**'
   schedule:
     - cron: '16 0 * * 0'
 

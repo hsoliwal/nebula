@@ -9,7 +9,7 @@ M3-SYNEXIA-LICENSING.tsv	Apache-2.0	Separable first-party scope metadata	This ta
 m3/catalogue/license-scope-provenance.json	Apache-2.0	Separable first-party provenance metadata	Pins the M3jdk21 precedent and retained upstream notices; not legal clearance.
 m3/grid-counters/README.md	Apache-2.0	Separable Synexia/Nebula integration documentation	Canonical recipe remains in com.synexia.
 m3/grid-counters/APPLICATION.json	Apache-2.0	Separable application/provenance receipt	Receipt only; product source keeps EPL-2.0.
-m3/third_party/**	FILE_LEVEL_OR_EXISTING_PATH_LICENSE	Pinned third-party source and notices	Never infer Apache-2.0 from the m3 directory name.
+releng/third-party/**	FILE_LEVEL_OR_EXISTING_PATH_LICENSE	Pinned third-party source and notices	Never infer Apache-2.0 from the m3 directory name.
 m3/recipe-first/src/main/resources/**	FILE_LEVEL_OR_EXISTING_PATH_LICENSE	Historical recipe resources and source snapshots	A template retains its source license even when its recipe is Apache-2.0.
 m3/recipe-first/src/test/resources/**	FILE_LEVEL_OR_EXISTING_PATH_LICENSE	Historical proving fixtures	Frozen bytes and inherited notices remain unchanged.
 widgets/**	FILE_LEVEL_OR_EXISTING_PATH_LICENSE	Eclipse Nebula product and bundled material	EPL product context does not override embedded MIT/MPL/BSD/OFL or other notices.
