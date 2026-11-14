@@ -1,0 +1,30 @@
+plugins { id 'com.android.application' version '8.7.2' }
+
+android {
+    namespace 'org.eclipse.nebula.widgets.grid.mobile'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'org.eclipse.nebula.widgets.grid.mobile'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main.java.srcDirs += "${rootProject.projectDir}/../src"
+    sourceSets.main.java.srcDirs += "$buildDir/generated/swt"
+}
+
+tasks.register('copySwtMobileHost', Copy) {
+    from("${rootProject.projectDir}/../../swt-mobile/bundles/org.eclipse.swt/Eclipse SWT/common") {
+        include 'org/eclipse/swt/internal/mobile/MobileWidgetRuntime.java'
+    }
+    from("${rootProject.projectDir}/../../swt-mobile/mobile/android/src/main/java") {
+        include 'org/eclipse/swt/internal/mobile/android/AndroidMobileHost.java'
+    }
+    into "$buildDir/generated/swt"
+}
+tasks.named('preBuild').configure { dependsOn tasks.named('copySwtMobileHost') }
