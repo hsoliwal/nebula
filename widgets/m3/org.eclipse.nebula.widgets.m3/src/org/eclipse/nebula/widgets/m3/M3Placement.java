@@ -19,7 +19,7 @@ package org.eclipse.nebula.widgets.m3;
  * rectangle (the monitor's client area): the preferred side, flipped to the opposite side when the box does not fit
  * and the opposite side has more room, then shifted along the cross axis to stay inside the bounds (the placement,
  * flip and shift steps of Floating UI, MIT, re-derived as plain integer arithmetic). No SWT or AWT types, no
- * allocation: SWT ({@link M3InfoPopup}) and Swing share it.
+ * allocation: SWT ({@code InfoPopup}) and Swing share it.
  */
 public final class M3Placement {
 
