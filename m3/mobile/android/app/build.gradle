@@ -1,5 +1,16 @@
 plugins { id 'com.android.application' }
 
+// Compile and package against the actual Maven-built SWT mobile Android JAR
+// from hsoliwal/eclipse.platform.swt#369; no second SWT backend project.
+def mobileSwtJarPath = providers.gradleProperty('swtMobileJar').orNull
+if (!mobileSwtJarPath) {
+    throw new GradleException('Build SWT mobile/android with Maven first, then pass -PswtMobileJar=/absolute/path/to/swt-mobile-android.jar')
+}
+def mobileSwtJar = file(mobileSwtJarPath)
+if (!mobileSwtJar.isFile()) {
+    throw new GradleException('SWT mobile Android JAR does not exist: ' + mobileSwtJar)
+}
+
 def nebulaRoot = file('../../../..')
 def widgetSources = layout.buildDirectory.dir('generated/sources/nebula')
 def prepareNebulaSources = tasks.register('prepareNebulaSources', Sync) {
@@ -30,5 +41,5 @@ android {
     sourceSets.main.java.srcDirs += [widgetSources, file('../../common/src/main/java')]
 }
 tasks.named('preBuild').configure { dependsOn(prepareNebulaSources) }
-dependencies { implementation project(':swt') }
+dependencies { implementation files(mobileSwtJar) }
 tasks.withType(JavaCompile).configureEach { options.compilerArgs.add('-XDstringConcat=inline') }
