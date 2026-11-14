@@ -18,6 +18,7 @@
 		<module>org.eclipse.nebula.widgets.pgroup</module>
 		<module>org.eclipse.nebula.widgets.pgroup.example</module>
 		<module>org.eclipse.nebula.widgets.pgroup.feature</module>
+		<module>org.eclipse.nebula.widgets.pgroup.tests</module>
 	</modules>
 
 </project>
