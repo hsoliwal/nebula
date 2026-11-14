@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.datechooser;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -20,9 +20,9 @@ import java.time.format.TextStyle;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.datechooser.internal.HiddenGate;
+import org.eclipse.nebula.widgets.datechooser.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.datechooser.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
@@ -46,17 +46,17 @@ import org.eclipse.swt.widgets.Event;
  * Styles: <code>SINGLE</code> (default) or <code>MULTI</code> (an interval by shift-click or shift-arrows),
  * <code>BORDER</code>. Events: <code>Selection</code> (<code>Event.index</code> the selected epoch day) and
  * <code>DefaultSelection</code> on double-click or Enter. Startup switch:
- * <code>-Dswt.widget.mode.M3MonthView=original</code> repaints the whole view on every change.
+ * <code>-Dswt.widget.mode.MonthView=original</code> repaints the whole view on every change.
  * </p>
  */
-public class M3MonthView extends Canvas {
+public class MonthView extends Canvas {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3MonthView", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("MonthView", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private static final int PAD = 4, GAP = 12;
 
 	private final boolean multi;
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	/* first shown month as epoch day of its first day; grid shape */
 	private long firstMonth;
 	private int columns = 1, rows = 1, firstDayOfWeek = 1;
@@ -74,10 +74,10 @@ public class M3MonthView extends Canvas {
 	 * @param parent the parent
 	 * @param style SINGLE or MULTI, BORDER
 	 */
-	public M3MonthView(Composite parent, int style) {
+	public MonthView(Composite parent, int style) {
 		super(parent, (style & ~(SWT.SINGLE | SWT.MULTI)) | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
 		multi = (style & SWT.MULTI) != 0;
-		gate = new M3HiddenGate(this, null);
+		gate = new HiddenGate(this, null);
 		today = LocalDate.now().toEpochDay();
 		firstMonth = LocalDate.ofEpochDay(today).withDayOfMonth(1).toEpochDay();
 		addListener(SWT.Paint, this::paint);
@@ -116,6 +116,8 @@ public class M3MonthView extends Canvas {
 	/**
 	 * Sets how many months are shown, side by side and stacked.
 	 *
+	 * @param columns the number of months side by side
+	 * @param rows the number of months stacked
 	 * @exception IllegalArgumentException ERROR_INVALID_ARGUMENT - if a value is less than 1
 	 */
 	public void setMonthsShown(int columns, int rows) {
@@ -150,7 +152,11 @@ public class M3MonthView extends Canvas {
 		return firstDayOfWeek;
 	}
 
-	/** Sets the day drawn as today and repaints the old and new today cells. */
+	/**
+	 * Sets the day drawn as today and repaints the old and new today cells.
+	 *
+	 * @param epochDay the day drawn as today, as LocalDate.toEpochDay
+	 */
 	public void setToday(long epochDay) {
 		checkWidget();
 		long old = today;
@@ -168,6 +174,7 @@ public class M3MonthView extends Canvas {
 	/**
 	 * Selects one day (unselectable days are refused) and repaints the old and new selected cells.
 	 *
+	 * @param epochDay the day to select, as LocalDate.toEpochDay
 	 * @return true when the day was selected
 	 */
 	public boolean setSelection(long epochDay) {
@@ -179,6 +186,8 @@ public class M3MonthView extends Canvas {
 	 * Selects an interval (MULTI only; SINGLE selects its start). Unselectable days inside the interval stay drawn as
 	 * unselectable.
 	 *
+	 * @param from the first day of the interval, as LocalDate.toEpochDay
+	 * @param to the last day of the interval, as LocalDate.toEpochDay
 	 * @exception IllegalArgumentException ERROR_INVALID_ARGUMENT - if from is after to
 	 */
 	public void setSelectionInterval(long from, long to) {
@@ -209,13 +218,21 @@ public class M3MonthView extends Canvas {
 		return selectionEnd;
 	}
 
-	/** @return true when a day is inside the selection */
+	/**
+	 * @param epochDay the day, as LocalDate.toEpochDay
+	 * @return true when a day is inside the selection
+	 */
 	public boolean isSelected(long epochDay) {
 		checkWidget();
 		return selectionStart != Long.MIN_VALUE && epochDay >= selectionStart && epochDay <= selectionEnd;
 	}
 
-	/** Flags or unflags a day (drawn bold); repaints its cell when shown. */
+	/**
+	 * Flags or unflags a day (drawn bold); repaints its cell when shown.
+	 *
+	 * @param epochDay the day, as LocalDate.toEpochDay
+	 * @param flag true to flag the day, false to unflag it
+	 */
 	public void setFlagged(long epochDay, boolean flag) {
 		checkWidget();
 		int at = Arrays.binarySearch(flagged, 0, flaggedCount, epochDay);
@@ -231,13 +248,21 @@ public class M3MonthView extends Canvas {
 		repaintDays(epochDay, epochDay);
 	}
 
-	/** @return true when the day is flagged */
+	/**
+	 * @param epochDay the day, as LocalDate.toEpochDay
+	 * @return true when the day is flagged
+	 */
 	public boolean isFlagged(long epochDay) {
 		checkWidget();
 		return Arrays.binarySearch(flagged, 0, flaggedCount, epochDay) >= 0;
 	}
 
-	/** Makes a day unselectable (drawn struck through) or selectable again; repaints its cell when shown. */
+	/**
+	 * Makes a day unselectable (drawn struck through) or selectable again; repaints its cell when shown.
+	 *
+	 * @param epochDay the day, as LocalDate.toEpochDay
+	 * @param value true to make the day unselectable, false to make it selectable again
+	 */
 	public void setUnselectable(long epochDay, boolean value) {
 		checkWidget();
 		int at = Arrays.binarySearch(unselectable, 0, unselectableCount, epochDay);
@@ -253,13 +278,17 @@ public class M3MonthView extends Canvas {
 		repaintDays(epochDay, epochDay);
 	}
 
-	/** @return true when the day cannot be selected */
+	/**
+	 * @param epochDay the day, as LocalDate.toEpochDay
+	 * @return true when the day cannot be selected
+	 */
 	public boolean isUnselectable(long epochDay) {
 		checkWidget();
 		return Arrays.binarySearch(unselectable, 0, unselectableCount, epochDay) >= 0;
 	}
 
 	/**
+	 * @param epochDay the day, as LocalDate.toEpochDay
 	 * @return the cell of a shown day in client coordinates, or null when the day is not shown
 	 */
 	public Rectangle getDayBounds(long epochDay) {
@@ -268,7 +297,11 @@ public class M3MonthView extends Canvas {
 		return dayBounds(epochDay);
 	}
 
-	/** @return the epoch day under a point, or Long.MIN_VALUE */
+	/**
+	 * @param x the x coordinate, in client coordinates
+	 * @param y the y coordinate, in client coordinates
+	 * @return the epoch day under a point, or Long.MIN_VALUE
+	 */
 	public long getDayAt(int x, int y) {
 		checkWidget();
 		geometry();
@@ -328,7 +361,7 @@ public class M3MonthView extends Canvas {
 
 	private void fullRepaint() {
 		if (showing()) {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 		}
 	}
@@ -339,7 +372,7 @@ public class M3MonthView extends Canvas {
 			return;
 		}
 		if (!VIEWPORT) {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 			return;
 		}
@@ -397,7 +430,7 @@ public class M3MonthView extends Canvas {
 		}
 		int fontHeight = gc.getFontMetrics().getHeight();
 		gc.dispose();
-		M3Counters.measures++;
+		RepaintCounters.measures++;
 		cellWidth = widest + 2 * PAD;
 		cellHeight = fontHeight + PAD;
 		headerHeight = fontHeight + 2 * PAD;

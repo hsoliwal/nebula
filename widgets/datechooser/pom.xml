@@ -17,6 +17,7 @@
 		<module>org.eclipse.nebula.widgets.datechooser</module>
 		<module>org.eclipse.nebula.widgets.datechooser.example</module>
 		<module>org.eclipse.nebula.widgets.datechooser.feature</module>
+		<module>org.eclipse.nebula.widgets.datechooser.tests</module>
 	</modules>
 
 
