@@ -1,56 +1,50 @@
-# Nebula on the SWT Android host
+# Nebula RoundedCheckbox on the merged SWT Android backend
 
-This app builds the **existing RoundedCheckbox source unchanged** against the
-SWT mobile backend. The source closure also includes the unchanged
-`SelectionListenerUtil` and `ReflectionUtils` from Opal commons. It does not
-create an Android-specific checkbox implementation or copy those widget sources
-into a competing package.
+This is an original Nebula `RoundedCheckbox` consumer of the mobile SWT
+`Display`/`Shell`/`Canvas` owners merged in
+[hsoliwal/eclipse.platform.swt#369](https://github.com/hsoliwal/eclipse.platform.swt/pull/369).
+The product widget, SelectionListenerUtil and ReflectionUtils sources are
+included unchanged. There is no second, competing SWT implementation.
 
-`m3/mobile/common/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileContents.java`
-creates selectable, selection-vetoed/grayed and disabled controls through their
-ordinary SWT/Nebula APIs. Android hosts that shared demo body in `SWTActivity`.
+## Compile and package
 
-## Build
+Prerequisites: JDK 21, Maven 3.9+, Python 3.10+, Android platform 35,
+Android build-tools and Gradle 8.13+. The mobile source closure currently
+requires Android 15 / API 35; compatibility with older Android is not claimed.
 
-Use the SWT fork containing the mobile sources, JDK 21, Python 3.10+, Android
-platform 35 and build-tools 35.0.0:
+1. Build the SWT Android Java artifact from a checkout that includes #369:
 
-```sh
-python3 /path/to/eclipse.platform.swt/m3/mobile/android/build-apk.py \
-  --swt-checkout /path/to/eclipse.platform.swt \
-  --nebula-checkout /path/to/nebula \
-  --android-sdk /path/to/android-sdk \
-  --jdk /path/to/jdk-21 \
-  --output /path/to/nebula-android-build
-```
+   ```sh
+   mvn -f /path/to/eclipse.platform.swt/mobile/pom.xml \
+     -Dmobile.platform=android -Dandroid.sdk=/path/to/android-sdk clean verify
+   ```
 
-The output contains a debug-signed application, a native instrumentation APK,
-source/tool/artifact hashes and explicit build results. Native execution stays
-`NOT_RUN` until the separate instrumentation succeeds.
+2. Build both APKs in this Nebula checkout:
 
-The alternative AGP 8.13.0/Gradle 8.13 project uses:
+   ```sh
+   gradle -p m3/mobile/android \
+     -PswtMobileJar=/path/to/eclipse.platform.swt/mobile/target/swt-mobile-android.jar \
+     :app:assembleDebug :app:assembleDebugAndroidTest
+   ```
 
-```sh
-gradle -p m3/mobile/android -PswtCheckout=/path/to/eclipse.platform.swt \
-  :app:assembleDebug :app:assembleDebugAndroidTest
-```
+`NebulaMobileActivity` extends `org.eclipse.swt.internal.android.SwtActivity`.
+Its manifest names `NebulaMobileMain`, which constructs the original widget
+tree and runs the ordinary SWT event loop on the Display thread.
+The application source is compiled against the exact supplied SWT Android JAR,
+not a second local `:swt` Gradle project.
 
-## Actual Android verification
+## Native acceptance
 
-```sh
-python3 /path/to/eclipse.platform.swt/m3/mobile/android/run-instrumentation.py \
-  --build-output /path/to/nebula-android-build \
-  --adb /path/to/android-sdk/platform-tools/adb \
-  --serial emulator-5554
-```
+Install the resulting application and instrumentation APKs with `adb`, then
+run the `org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation`
+instrumentation runner on an API-35-or-newer emulator or device. The test
+uses real Android screenshots and injected touch input to examine paint,
+selection, selection veto, disabled state and cleanup. A successful compilation
+or APK assembly is **not** an executed native test.
 
-The native runner requires actual device-screen pixels, injected Android touch,
-selection changes, selection veto, disabled-state behavior, and disposal after
-Activity destruction. It captures before/after PNGs. The test executes the
-original widget and the real Android renderer, with no Android/SWT API mocks.
+The iOS target uses the same `NebulaMobileMain` and SWT's existing
+`IOSPlatform.launch` bootstrap. It still requires an actual linked iOS
+Java runtime, Apple SDK build and simulator/device tests.
 
-This proves only the exercised mobile slice when its native receipt passes.
-Other Nebula widget families and their SWT dependencies still need a mobile
-implementation and their own native acceptance. This app does not qualify Grid,
-XViewer, browser widgets, accessibility, IME, or the complete Nebula Tycho reactor.
-See the SWT host's `m3/mobile/android/README.md` for platform/API limits.
+This remains one bounded mobile widget slice. The full Nebula Grid, XViewer
+and complete SWT control catalogue are not part of this build.
