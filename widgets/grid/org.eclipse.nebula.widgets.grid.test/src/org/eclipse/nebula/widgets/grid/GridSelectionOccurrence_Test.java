@@ -44,7 +44,9 @@ public class GridSelectionOccurrence_Test {
 	@Before
 	public void setUp() {
 		display = Display.getDefault();
-		shell = new Shell(display);
+		// on top: a test here compares screen pixels, and a shell that a background process opens stays behind the
+		// window that holds the foreground (same style as GridBlitScroll_Test)
+		shell = new Shell(display, SWT.ON_TOP | SWT.SHELL_TRIM);
 	}
 
 	@After
@@ -236,6 +238,10 @@ public class GridSelectionOccurrence_Test {
 		shell.open();
 		grid.setFocus();
 		settle(grid);
+		// the shell has just opened: wait out the window manager's open animation (a quiet interval after the
+		// last Grid paint, as GridBlitScroll_Test does) so the first capture does not read a half-faded frame
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, 1,
+				"selection Grid paint did not settle");
 		final String configured = System.getProperty("nebula.selection.evidence.dir");
 		final Path evidence = configured == null ? Files.createTempDirectory("nebula-selection-occurrence-") : Path.of(configured);
 		Files.createDirectories(evidence);
