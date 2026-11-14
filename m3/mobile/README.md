@@ -1,27 +1,41 @@
-# Nebula mobile application
+# Nebula mobile SWT consumer (review candidate)
 
-The Android and iOS entrypoints instantiate the same existing Nebula
-`RoundedCheckbox` source through the new SWT mobile backend. The existing
-`SelectionListenerUtil` and `ReflectionUtils` are included directly from their
-original source locations. Product widget sources are unchanged.
+The Android and iOS entrypoints instantiate the **original**, unchanged Nebula
+`RoundedCheckbox` using the canonical SWT mobile Display/Control/Canvas source
+merged in [SWT #369](https://github.com/hsoliwal/eclipse.platform.swt/pull/369).
+No cloned widget source or substitute public SWT API is introduced.
 
-The [Android build and native test](android/README.md) use the real Android SDK,
-ART, native View/Canvas, screen pixels and input injection. The shared demo body
-is `common/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileContents.java`.
+## Entrypoints and platform boundary
 
-The iOS entrypoint is
-`ios/src/main/java/org/eclipse/nebula/examples/mobile/IOSNebulaDemo.java`. An
-embedding application must first supply its JavaVM and UIView to the SWT
-`SWTIOSAttach` API, then invoke `IOSNebulaDemo.start()`. SWT runs its normal event
-loop on a separate thread while UIKit owns the main thread. This source does not
-provide the embedded VM, a signed iOS application or evidence that the complete
-Nebula widget catalogue runs on iOS.
+- `common/.../NebulaMobileMain.java` implements normal
+  `public static void main(String[])` with SWT `Display`, `Shell`, the
+  original RoundedCheckbox and the SWT event loop.
+- `android/.../NebulaMobileActivity.java` subclasses the merged
+  `org.eclipse.swt.internal.android.SwtActivity`; the Activity manifest
+  identifies `NebulaMobileMain` in `org.eclipse.swt.mobile.application`.
+  The app requires the `swt-mobile-android.jar` compiled from SWT #369 and
+  does not embed a separate SWT Gradle project.
+- `ios/.../IOSNebulaDemo.java` delegates to the same main. A native iOS
+  application must call the merged `org.eclipse.swt.internal.ios.IOSPlatform.launch`
+  with this class after supplying its verified Java runtime and JNI registration.
+  This PR **does not provide** an iOS Java runtime, signed app or device proof.
 
-The acceptance scope is the exercised Canvas widget: paint, primary pointer,
-selection, selection veto, disabled state and lifecycle. Grid, XViewer and other
-widgets remain dependent on additional SWT mobile owners. Java compilation,
-Android APK construction, native Android execution, iOS renderer tests and a
-complete iOS Java application are reported separately.
+See [Android build and instrumented acceptance](android/README.md). Compiling
+or packaging an Android APK is not the same as running native instrumentation.
+The native acceptance fixture tests painting, pointer activation, selection,
+veto, disabled state and disposal of this one original Nebula Canvas widget.
 
-The passive delivery receipt binds the exact emitted source to its canonical
-Maven/OpenRewrite recipe in Synexia. No recipe tooling is needed at runtime.
+## Release / provenance status
+
+This branch contains follow-up compatibility changes after the
+[Maven/OpenRewrite-generated handoff](https://github.com/hsoliwal/com.synexia/pull/17423).
+The older `SOURCE-RECEIPT.tsv` attests the **original handoff only**, not the
+newer SWT #369 compatibility corrections. Its original path/output hashes
+must not be read as verifying the current branch; regenerate the canonical
+Synexia recipes/receipts, compile the current cross-fork heads, then execute the
+Android native tests before making the PR mergeable as qualified production.
+
+The complete SWT/Nebula widget catalogue is **not** implemented here:
+Grid, XViewer, Table/Tree, native Text/IME, accessibility and other widgets
+still need both platform backends and their own native integration checks.
+No original desktop widget source has been modified by this candidate.
