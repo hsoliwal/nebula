@@ -11,7 +11,7 @@ if (!mobileSwtJar.isFile()) {
     throw new GradleException('SWT mobile Android JAR does not exist: ' + mobileSwtJar)
 }
 
-def nebulaRoot = file('../../../..')
+def nebulaRoot = file('../../../../..')
 def widgetSources = layout.buildDirectory.dir('generated/sources/nebula')
 def prepareNebulaSources = tasks.register('prepareNebulaSources', Sync) {
     from(new File(nebulaRoot, 'widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox/src')) {
