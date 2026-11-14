@@ -4,7 +4,15 @@ This is an original Nebula `RoundedCheckbox` consumer of the mobile SWT
 `Display`/`Shell`/`Canvas` owners merged in
 [hsoliwal/eclipse.platform.swt#369](https://github.com/hsoliwal/eclipse.platform.swt/pull/369).
 The product widget, SelectionListenerUtil and ReflectionUtils sources are
-included unchanged. There is no second, competing SWT implementation.
+included unchanged. The shared application now also instantiates the original
+SWT mobile Scale and ProgressBar merged in
+[hsoliwal/eclipse.platform.swt#376](https://github.com/hsoliwal/eclipse.platform.swt/pull/376).
+A native Scale Selection updates ProgressBar through the unchanged SWT event
+loop. The test also invokes the Android SeekBar accessibility increment provided
+by [SWT #378](https://github.com/hsoliwal/eclipse.platform.swt/pull/378),
+checking that it produces exactly one original SWT Selection. iOS now exposes
+the corresponding UIKit adjustable accessibility methods, but its simulator/
+VoiceOver device qualification remains open. There is no competing SWT toolkit.
 
 ## Compile and package
 
@@ -39,7 +47,10 @@ Install the resulting application and instrumentation APKs with `adb`, then
 run the `org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation`
 instrumentation runner on an API-35-or-newer emulator or device. The test
 uses real Android screenshots and injected touch input to examine paint,
-selection, selection veto, disabled state and cleanup. A successful compilation
+selection, selection veto, disabled state, Scale-to-ProgressBar interaction
+and cleanup. See `.github/workflows/m3-mobile-roundedcheckbox-native-gates.yml`
+for the pinned SWT #378 build and Android API-35 emulator test lane. The
+workflow source alone is not an executed passing test. A successful compilation
 or APK assembly is **not** an executed native test.
 
 The iOS target uses the same `NebulaMobileMain` and SWT's existing
