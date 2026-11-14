@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 /** Native screen/touch proof for the existing, unmodified RoundedCheckbox implementation. */
 public final class NebulaMobileInstrumentation extends Instrumentation {
@@ -51,11 +52,25 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                     && NebulaMobileMain.state.scaleSelection > 25
                     && NebulaMobileMain.state.progressSelection == NebulaMobileMain.state.scaleSelection,
                     "native Scale Selection updates original SWT ProgressBar exactly once");
+            int selectedBeforeAccessibility = NebulaMobileMain.state.scaleSelection;
+            runOnMainSync(() -> {
+                View slider = findSlider(surface(current));
+                require(slider != null, "Original SWT Scale has an Android accessibility peer");
+                AccessibilityNodeInfo info = slider.createAccessibilityNodeInfo();
+                require("android.widget.SeekBar".contentEquals(info.getClassName()),
+                        "Scale is advertised as a native Android SeekBar");
+                require(slider.performAccessibilityAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, null),
+                        "Native accessibility forwards one Scale increment");
+            });
+            await(() -> NebulaMobileMain.state.scaleEvents == 2
+                    && NebulaMobileMain.state.scaleSelection == selectedBeforeAccessibility + 1
+                    && NebulaMobileMain.state.progressSelection == NebulaMobileMain.state.scaleSelection,
+                    "native Scale accessibility increments original SWT Selection");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: source widget, pixels, selection, veto, disabled, Scale/ProgressBar, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: source widget, pixels, selection, veto, disabled, Scale/ProgressBar, Android slider accessibility, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -75,6 +90,18 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             throw new IllegalStateException("SWT Android native root not attached");
         }
         return content.getChildAt(0);
+    }
+
+    private View findSlider(View root) {
+        CharSequence label = root.getContentDescription();
+        if (label != null && label.toString().startsWith("Scale ")) return root;
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findSlider(group.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private int[] location(View view, int x, int y) {
