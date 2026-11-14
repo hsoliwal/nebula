@@ -22,8 +22,57 @@ Contributors:
 		<version>2.1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>org.eclipse.nebula.visualization.widgets.test</artifactId>
+	<artifactId>org.eclipse.nebula.visualization.widgets.tests</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-surefire-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<configuration>
+					<excludes>
+						<!-- run by hand: it animates the graph from a timer thread -->
+						<exclude>**/*ManualTest.java</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<profiles>
+		<profile>
+			<!-- Windows: the draw2d figure tests, run together in one JVM, crash it in SWT's GDI+ font path
+			     (GC.createGdipFont, EXCEPTION_ACCESS_VIOLATION); each passes on its own and all run elsewhere -->
+			<id>windows-figure-tests</id>
+			<activation>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.tycho</groupId>
+						<artifactId>tycho-surefire-plugin</artifactId>
+						<version>${tycho-version}</version>
+						<configuration>
+							<excludes combine.children="append">
+								<exclude>**/figures/GaugeTest.java</exclude>
+								<exclude>**/figures/IntensityGraphTest.java</exclude>
+								<exclude>**/figures/KnobTest.java</exclude>
+								<exclude>**/figures/MeterTest.java</exclude>
+								<exclude>**/figures/ProgressBarTest.java</exclude>
+								<exclude>**/figures/ScaledSliderTest.java</exclude>
+								<exclude>**/figures/TankTest.java</exclude>
+								<exclude>**/figures/ThermometerTest.java</exclude>
+							</excludes>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 	<name>Nebula Visualization Widgets</name>
 
 </project>

@@ -18,8 +18,8 @@ import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Random;
 
+import org.eclipse.nebula.visualization.widgets.HeatMap;
 import org.eclipse.nebula.widgets.lazystacklayout.LazyStackLayout;
-import org.eclipse.nebula.widgets.m3.M3HeatMap;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.layout.FillLayout;
@@ -142,7 +142,7 @@ public class M3OptimizationBench {
 		Shell shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(0, 0, 640, 480);
 		shell.setLayout(new FillLayout());
-		M3HeatMap map = new M3HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+		HeatMap map = new HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
 		map.setCellSize(4, 4);
 		map.setGridSize(side, side);
 		float[] values = new float[side * side];
@@ -165,13 +165,13 @@ public class M3OptimizationBench {
 			bytes[k] = THREADS.getCurrentThreadAllocatedBytes() - a;
 		}
 		long cells = (long) side * side;
-		print("M3HeatMap", "paint-client-area", cells, median(time) / 1000.0, "us");
-		print("M3HeatMap", "paint-client-area-alloc", cells, median(bytes), "bytes");
+		print("HeatMap", "paint-client-area", cells, median(time) / 1000.0, "us");
+		print("HeatMap", "paint-client-area-alloc", cells, median(bytes), "bytes");
 		long a = THREADS.getCurrentThreadAllocatedBytes();
 		long start = System.nanoTime();
 		map.setValues(values);
-		print("M3HeatMap", "setValues", cells, (System.nanoTime() - start) / 1000.0, "us");
-		print("M3HeatMap", "setValues-alloc", cells, THREADS.getCurrentThreadAllocatedBytes() - a, "bytes");
+		print("HeatMap", "setValues", cells, (System.nanoTime() - start) / 1000.0, "us");
+		print("HeatMap", "setValues-alloc", cells, THREADS.getCurrentThreadAllocatedBytes() - a, "bytes");
 		shell.dispose();
 	}
 
