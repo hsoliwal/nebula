@@ -34,10 +34,16 @@ public final class MobileGridViewBindingTest {
 		presentation.show(0,320,120);
 		check(host.children.size() <= 1 + 1 + 10, "native nodes bounded");
 		MobileWidgetRuntime.Node button = presentation.nativeControl().children().get(0);
+		check(host.geometry.get(button.id()).y() == 0, "initial row origin");
+		presentation.show(11, 320, 120);
+		check(host.geometry.get(button.id()).y() == -11,
+				"fractional-row scroll repositions unchanged native row");
 		host.events.accept(new Event(button.id(),EventType.SELECT,null,0,0));
 		check(selected.size()==1 && presentation.projection().selectedRow()==selected.get(0), "native row selection");
 		presentation.show(500_000_000_000L*24L,320,120);
 		check(host.children.size() <= 1+1+10, "far-scroll reuses native rows");
+		check(presentation.show(Long.MAX_VALUE, 320, 120).visibleStart() == 999_999_999_999L,
+				"overscroll clamps safely to the last logical row");
 		presentation.close();
 		check(host.children.size()==1,"disposal owns all native row views");
 		runtime.close();
