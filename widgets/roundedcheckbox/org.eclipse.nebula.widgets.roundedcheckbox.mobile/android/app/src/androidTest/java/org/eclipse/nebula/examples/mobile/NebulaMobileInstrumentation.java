@@ -43,11 +43,19 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             tap(disabled);
             SystemClock.sleep(150);
             require(NebulaMobileMain.state.attempts == 2, "Disabled control dispatched selection");
+            View screen = surface(current);
+            int screenLogicalWidth = Math.round(screen.getWidth() / screen.getResources().getDisplayMetrics().density);
+            int[] rangeTap = location(screen, Math.max(44, screenLogicalWidth * 3 / 4), 445);
+            tap(rangeTap);
+            await(() -> NebulaMobileMain.state.scaleEvents == 1
+                    && NebulaMobileMain.state.scaleSelection > 25
+                    && NebulaMobileMain.state.progressSelection == NebulaMobileMain.state.scaleSelection,
+                    "native Scale Selection updates original SWT ProgressBar exactly once");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: source widget, pixels, selection, veto, disabled, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: source widget, pixels, selection, veto, disabled, Scale/ProgressBar, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
