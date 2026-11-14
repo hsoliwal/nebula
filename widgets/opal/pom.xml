@@ -39,6 +39,7 @@
 		<module>launcher</module>
 		<module>panels</module>
 		<module>switchbutton</module>
+		<module>statusbar</module>
 	</modules>
 
 </project>

@@ -12,14 +12,14 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.statusbar;
 
 import java.util.Arrays;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.statusbar.internal.HiddenGate;
+import org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.statusbar.internal.SwtLog;
+import org.eclipse.nebula.widgets.opal.statusbar.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
@@ -47,11 +47,11 @@ import org.eclipse.swt.widgets.Shell;
  * out once and paints once.
  * </p>
  * <p>
- * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3StatusBar=original</code> lays out every
+ * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.StatusBar=original</code> lays out every
  * slot and repaints the whole bar on every change and resize, as a plain implementation would.
  * </p>
  */
-public class M3StatusBar extends Canvas {
+public class StatusBar extends Canvas {
 
 	/** Slot width mode: the value is the width in pixels. */
 	public static final int FIXED = 0;
@@ -60,9 +60,9 @@ public class M3StatusBar extends Canvas {
 	/** Slot width mode: the width of the text or the control's preferred width, at least the value. */
 	public static final int PREFERRED = 2;
 
-	static final boolean VIEWPORT = WidgetMode.of("M3StatusBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("StatusBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3StatusBar"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.opal.statusbar.StatusBar"); //$NON-NLS-1$
 
 	private static final int PAD = 4, SEPARATOR = 5, GRIP = 14;
 
@@ -76,7 +76,7 @@ public class M3StatusBar extends Canvas {
 	/* left edge of the area the last layout changed, or Integer.MAX_VALUE when nothing moved */
 	private int changedFrom;
 	private int dragX = -1, dragY, dragWidth, dragHeight;
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	/* preferred slots whose content changed while the bar was hidden; measured on reveal */
 	private boolean[] stale = new boolean[4];
 
@@ -86,9 +86,9 @@ public class M3StatusBar extends Canvas {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3StatusBar(Composite parent, int style) {
+	public StatusBar(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, this::revealed);
+		gate = new HiddenGate(this, this::revealed);
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.Resize, e -> resized());
 		addListener(SWT.MouseDown, this::mouse);
@@ -239,7 +239,7 @@ public class M3StatusBar extends Canvas {
 		Rectangle bounds = getSlotBounds(slot);
 		if (control != null) {
 			control.setBounds(bounds);
-			M3Counters.moves++;
+			RepaintCounters.moves++;
 		}
 		redraw(bounds.x, bounds.y, bounds.width, bounds.height, false);
 	}
@@ -338,7 +338,7 @@ public class M3StatusBar extends Canvas {
 	}
 
 	private int measure(String text) {
-		M3Counters.measures++;
+		RepaintCounters.measures++;
 		if (text.isEmpty()) {
 			return 0;
 		}
@@ -389,13 +389,13 @@ public class M3StatusBar extends Canvas {
 		for (int i = 0; i < count; i++) {
 			if (controls[i] != null && !controls[i].isDisposed()) {
 				controls[i].setBounds(xs[i], client.y, widths[i], client.height);
-				M3Counters.moves++;
+				RepaintCounters.moves++;
 			}
 		}
 	}
 
 	private void fullRepaint() {
-		M3Counters.fullRepaints++;
+		RepaintCounters.fullRepaints++;
 		redraw();
 	}
 
@@ -416,7 +416,7 @@ public class M3StatusBar extends Canvas {
 		layoutSlots();
 		if (!VIEWPORT || heightChanged) {
 			if (heightChanged) {
-				placeControls(client); //FLLDCIM: MARK — every-widget M3StatusBar leaf 1 (D): controls follow a height change
+				placeControls(client); //FLLDCIM: MARK — every-widget StatusBar leaf 1 (D): controls follow a height change
 			}
 			fullRepaint();
 			return;
@@ -453,7 +453,7 @@ public class M3StatusBar extends Canvas {
 	 * of a slot that only changed width) and moves only the controls whose slot changed.
 	 */
 	private void layoutSlots() {
-		M3Counters.layouts++;
+		RepaintCounters.layouts++;
 		Rectangle client = getClientArea();
 		int available = client.width - 2 * PAD - (grip ? GRIP : 0) - Math.max(0, count - 1) * SEPARATOR;
 		long weights = 0;
@@ -485,7 +485,7 @@ public class M3StatusBar extends Canvas {
 				widths[i] = width;
 				if (controls[i] != null && !controls[i].isDisposed()) {
 					controls[i].setBounds(x, client.y, width, client.height);
-					M3Counters.moves++;
+					RepaintCounters.moves++;
 				}
 			}
 			x += width + SEPARATOR;

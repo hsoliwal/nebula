@@ -22,10 +22,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.nebula.widgets.m3.M3CollapsiblePane;
-import org.eclipse.nebula.widgets.m3.M3StatusBar;
 import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.statusbar.StatusBar;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
@@ -219,9 +219,9 @@ public class M3CollapsiblePaneTest {
 		if (!viewport()) {
 			return;
 		}
-		M3StatusBar bar = new M3StatusBar(pane.getContent(), SWT.NONE);
-		bar.addSlot(M3StatusBar.PREFERRED, 0);
-		bar.addSlot(M3StatusBar.FILL, 1);
+		StatusBar bar = new StatusBar(pane.getContent(), SWT.NONE);
+		bar.addSlot(StatusBar.PREFERRED, 0);
+		bar.addSlot(StatusBar.FILL, 1);
 		bar.setText(0, "row 0");
 		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = M3TestSupport.recordPaints(bar);
 		shell.layout(true, true);
@@ -230,20 +230,20 @@ public class M3CollapsiblePaneTest {
 		pane.setCollapsed(true);
 		M3TestSupport.flush(display);
 		paints.clear();
-		M3Counters.reset();
+		org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.reset();
 		for (int i = 0; i < 10_000; i++) {
 			bar.setText(0, "row " + i);
 			bar.setText(1, "filter " + i);
 		}
 		M3TestSupport.flush(display);
 		assertEquals("no paint inside a collapsed pane", 0, paints.size());
-		assertEquals("hidden ancestor found by one probe, or by PartHidden: " + M3Counters.line(), M3HiddenGate.hasPartVisibility() ? 0 : 1, M3Counters.probes);
-		assertEquals(M3Counters.line(), 0, M3Counters.measures);
+		assertEquals("hidden ancestor found by one probe, or by PartHidden: " + org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), M3HiddenGate.hasPartVisibility() ? 0 : 1, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.probes);
+		assertEquals(org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), 0, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.measures);
 		pane.setCollapsed(false);
 		M3TestSupport.flush(display);
 		bar.update();
 		assertEquals("one paint pass on expand: " + paints, 1, paints.size());
-		assertEquals(M3Counters.line(), 1, M3Counters.reveals);
+		assertEquals(org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), 1, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.reveals);
 		assertEquals("row 9999", bar.getText(0));
 	}
 
