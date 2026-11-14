@@ -1,0 +1,25 @@
+name: Nebula mobile Grid / SWT native-host compatibility
+on:
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/m3-mobile-grid-swt-integration.yml']
+  push:
+    paths: ['mobile/**', '.github/workflows/m3-mobile-grid-swt-integration.yml']
+permissions:
+  contents: read
+jobs:
+  grid-native-row-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: hsoliwal/eclipse.platform.swt
+          ref: ecc415adbb51c705aa78f8cdd02bac6dd61425fd
+          path: swt-mobile
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prove native row binding against exact SWT source
+        run: bash mobile/test-swt-integration.sh ./swt-mobile
