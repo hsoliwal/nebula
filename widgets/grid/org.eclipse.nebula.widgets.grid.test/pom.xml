@@ -75,6 +75,9 @@
 						<include>**/model/SparseMirrorBoundary_Test.java</include>
 						<include>**/mobile/MobileGridViewport_Test.java</include>
 						<include>**/mobile/MobileGridCanvasReceiver_Test.java</include>
+						<include>**/GridRowExtentsEndpoint_Test.java</include>
+						<include>**/GridRowExtentsRankPixel_Test.java</include>
+						<include>**/GridRowExtentsRebuildFailure_Test.java</include>
 					</includes>
 				</configuration>
 			</plugin>
