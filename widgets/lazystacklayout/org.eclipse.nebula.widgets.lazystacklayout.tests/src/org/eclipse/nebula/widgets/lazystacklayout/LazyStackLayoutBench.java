@@ -12,17 +12,14 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.lazystacklayout;
 
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Random;
-
-import org.eclipse.nebula.visualization.widgets.HeatMap;
-import org.eclipse.nebula.widgets.lazystacklayout.LazyStackLayout;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -32,12 +29,11 @@ import org.junit.Assume;
 import org.junit.Test;
 
 /**
- * Optimization pass measurements of the M3 widgets (C:/m3-superset/tools/OPTIMIZATION_PASS.md): wall time (median of
- * 5 rounds) and bytes allocated on the UI thread per operation, at the sizes the pass asks for. Prints one line per
- * measurement: <code>bench &lt;widget&gt; &lt;operation&gt; &lt;size&gt; &lt;value&gt; &lt;unit&gt;</code>. Opt-in:
- * <code>-Dm3.bench=true</code>.
+ * Measurements of LazyStackLayout against StackLayout. Wall time (median of 5 rounds) and bytes allocated on the UI thread per operation;
+ * prints one line per measurement: <code>bench &lt;widget&gt; &lt;operation&gt; &lt;size&gt; &lt;value&gt; &lt;unit&gt;</code>.
+ * Opt-in: <code>-Dnebula.bench=true</code>.
  */
-public class M3OptimizationBench {
+public class LazyStackLayoutBench {
 
 	static final com.sun.management.ThreadMXBean THREADS = (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
 
@@ -45,7 +41,7 @@ public class M3OptimizationBench {
 
 	@Test
 	public void measure() {
-		Assume.assumeTrue("-Dm3.bench=true is not set", Boolean.getBoolean("m3.bench"));
+		Assume.assumeTrue("-Dnebula.bench=true is not set", Boolean.getBoolean("nebula.bench"));
 		display = Display.getDefault();
 		for (int children : new int[] { 1_000, 5_000 }) {
 			stackChildren(children, false);
@@ -54,9 +50,6 @@ public class M3OptimizationBench {
 		for (int pages : new int[] { 100_000, 1_000_000 }) {
 			stackPages(pages);
 		}
-		for (int side : new int[] { 316, 1000 }) {
-			heatMap(side);
-		}
 	}
 
 	static void print(String widget, String operation, long size, double value, String unit) {
@@ -64,12 +57,12 @@ public class M3OptimizationBench {
 	}
 
 	/* layout after the top control changes, StackLayout versus LazyStackLayout over n live children */
-	void stackChildren(int n, boolean m3) {
+	void stackChildren(int n, boolean lazy) {
 		Shell shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(0, 0, 400, 300);
 		shell.setLayout(new FillLayout());
 		Composite composite = new Composite(shell, SWT.NONE);
-		StackLayout layout = m3 ? new LazyStackLayout() : new StackLayout();
+		StackLayout layout = lazy ? new LazyStackLayout() : new StackLayout();
 		composite.setLayout(layout);
 		Control[] children = new Control[n];
 		for (int i = 0; i < n; i++) {
@@ -92,7 +85,7 @@ public class M3OptimizationBench {
 			bytes[k] = THREADS.getCurrentThreadAllocatedBytes() - a;
 			drain();
 		}
-		String widget = m3 ? "LazyStackLayout" : "StackLayout";
+		String widget = lazy ? "LazyStackLayout" : "StackLayout";
 		print(widget, "layout-after-top-change", n, median(time) / 1000.0, "us");
 		print(widget, "layout-after-top-change-alloc", n, median(bytes), "bytes");
 		shell.dispose();
@@ -134,44 +127,6 @@ public class M3OptimizationBench {
 		print("LazyStackLayout", "showPage-miss-alloc", n, median(bytes), "bytes");
 		print("LazyStackLayout", "showPage-resident", n, median(hit) / 1000.0, "us");
 		print("LazyStackLayout", "resident-controls", n, layout.getResidentCount(), "controls");
-		shell.dispose();
-	}
-
-	/* a full repaint of the client area and one cell update of a side x side heat map */
-	void heatMap(int side) {
-		Shell shell = new Shell(display, SWT.NO_TRIM);
-		shell.setBounds(0, 0, 640, 480);
-		shell.setLayout(new FillLayout());
-		HeatMap map = new HeatMap(shell, SWT.H_SCROLL | SWT.V_SCROLL);
-		map.setCellSize(4, 4);
-		map.setGridSize(side, side);
-		float[] values = new float[side * side];
-		Random random = new Random(3);
-		for (int i = 0; i < values.length; i++) {
-			values[i] = random.nextFloat();
-		}
-		map.setValues(values);
-		shell.open();
-		drain();
-		long[] time = new long[5], bytes = new long[5];
-		for (int k = 0; k < time.length; k++) {
-			map.setOrigin(random.nextInt(side * 4), random.nextInt(side * 4));
-			drain();
-			long a = THREADS.getCurrentThreadAllocatedBytes();
-			long start = System.nanoTime();
-			map.redraw();
-			map.update();
-			time[k] = System.nanoTime() - start;
-			bytes[k] = THREADS.getCurrentThreadAllocatedBytes() - a;
-		}
-		long cells = (long) side * side;
-		print("HeatMap", "paint-client-area", cells, median(time) / 1000.0, "us");
-		print("HeatMap", "paint-client-area-alloc", cells, median(bytes), "bytes");
-		long a = THREADS.getCurrentThreadAllocatedBytes();
-		long start = System.nanoTime();
-		map.setValues(values);
-		print("HeatMap", "setValues", cells, (System.nanoTime() - start) / 1000.0, "us");
-		print("HeatMap", "setValues-alloc", cells, THREADS.getCurrentThreadAllocatedBytes() - a, "bytes");
 		shell.dispose();
 	}
 
