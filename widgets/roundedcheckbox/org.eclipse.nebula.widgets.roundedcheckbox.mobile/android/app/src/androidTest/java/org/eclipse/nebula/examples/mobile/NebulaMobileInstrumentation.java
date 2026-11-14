@@ -116,8 +116,11 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             await(() -> NebulaMobileMain.state.textVerifications >= 2,
                     "Original SWT Verify listener received vetoed native edit");
             AtomicReference<String> nativeSnapshot = new AtomicReference<>();
-            runOnMainSync(() -> nativeSnapshot.set(
-                    findNativeEditor(surface(current)).getText().toString()));
+            await(() -> {
+                runOnMainSync(() -> nativeSnapshot.set(
+                        findNativeEditor(surface(current)).getText().toString()));
+                return nativeSnapshot.get().equals("native");
+            }, "Verify veto restored the actual Android EditText snapshot");
             require(NebulaMobileMain.state.nativeText.equals("native")
                     && NebulaMobileMain.state.textModifications == 1
                     && nativeSnapshot.get().equals("native"),
