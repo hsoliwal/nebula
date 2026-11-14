@@ -22,7 +22,7 @@ requires Android 15 / API 35; compatibility with older Android is not claimed.
 2. Build both APKs in this Nebula checkout:
 
    ```sh
-   gradle -p m3/mobile/android \
+   gradle -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android \
      -PswtMobileJar=/path/to/eclipse.platform.swt/mobile/target/swt-mobile-android.jar \
      :app:assembleDebug :app:assembleDebugAndroidTest
    ```
