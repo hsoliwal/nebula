@@ -441,12 +441,22 @@ public class CTreeCombo extends Composite {
 	public Point computeSize(int wHint, int hHint, boolean changed) {
 		checkWidget();
 		int width = 0, height = 0;
-		final TreeItem[] items = tree().getItems();
 		final GC gc = new GC(text);
 		final int spacer = gc.stringExtent(" ").x; //$NON-NLS-1$
 		int textWidth = gc.stringExtent(text.getText()).x;
-		for (int i = 0; i < items.length; i++) {
-			textWidth = Math.max(gc.stringExtent(items[i].getText()).x, textWidth);
+		if (virtualRows) {
+			// TreeItem.getText requests the data of a virtual row, so reading the rows would bind every one of them.
+			// Measure the labels the rows are bound with instead; the drop-down stays unbound.
+			tree();
+			final int columnCount = columns.size();
+			for (final CTreeComboItem item : visibleChildren(null)) {
+				textWidth = Math.max(gc.stringExtent(item.rowLabel(columnCount)).x, textWidth);
+			}
+		} else {
+			final TreeItem[] items = tree().getItems();
+			for (int i = 0; i < items.length; i++) {
+				textWidth = Math.max(gc.stringExtent(items[i].getText()).x, textWidth);
+			}
 		}
 		gc.dispose();
 		final Point textSize = text.computeSize(SWT.DEFAULT, SWT.DEFAULT, changed);

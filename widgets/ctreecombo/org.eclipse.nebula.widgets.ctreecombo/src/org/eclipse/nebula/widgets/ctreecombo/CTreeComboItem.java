@@ -1082,4 +1082,13 @@ public class CTreeComboItem extends Item {
 		}
 		setRealTreeItem(ti);
 	}
+
+	/**
+	 * @param numberOfColumns the column count of the drop-down
+	 * @return the first-column label {@link #bindRealTreeItem(TreeItem, int)} gives a row, read without a row
+	 */
+	String rowLabel(int numberOfColumns) {
+		final String first = numberOfColumns > 0 && !texts.isEmpty() ? texts.get(0) : null;
+		return first != null ? first : getText();
+	}
 }
