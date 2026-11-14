@@ -26,6 +26,7 @@ http://www.eclipse.org/legal/epl-v10.html
 		<module>org.eclipse.nebula.widgets.roundedcheckbox</module>
 		<module>org.eclipse.nebula.widgets.roundedcheckbox.feature</module>
 		<module>org.eclipse.nebula.widgets.roundedcheckbox.snippets</module>
+		<module>org.eclipse.nebula.widgets.roundedcheckbox.tests</module>
 	</modules>
 
 </project>
