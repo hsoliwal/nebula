@@ -12,12 +12,12 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.pgroup;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.pgroup.internal.HiddenGate;
+import org.eclipse.nebula.widgets.pgroup.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.pgroup.internal.SwtLog;
+import org.eclipse.nebula.widgets.pgroup.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -43,16 +43,16 @@ import org.eclipse.swt.widgets.Layout;
  * <p>
  * Styles: <code>VERTICAL</code> (default, collapses the height) or <code>HORIZONTAL</code> (collapses the width).
  * Events: <code>Expand</code> and <code>Collapse</code> when a state change completes. Startup switch:
- * <code>-Dswt.widget.mode.M3CollapsiblePane=original</code> measures and lays out the content on every frame and
+ * <code>-Dswt.widget.mode.CollapsiblePane=original</code> measures and lays out the content on every frame and
  * keeps a collapsed content visible at zero size, as a plain implementation would. RWT: timerExec, setBounds and
  * layout only; no drawing.
  * </p>
  */
-public class M3CollapsiblePane extends Composite {
+public class CollapsiblePane extends Composite {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3CollapsiblePane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("CollapsiblePane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3CollapsiblePane"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.pgroup.CollapsiblePane"); //$NON-NLS-1$
 
 	private final Composite content;
 	private final boolean vertical;
@@ -69,7 +69,7 @@ public class M3CollapsiblePane extends Composite {
 	 * @param parent the parent
 	 * @param style VERTICAL or HORIZONTAL, BORDER
 	 */
-	public M3CollapsiblePane(Composite parent, int style) {
+	public CollapsiblePane(Composite parent, int style) {
 		super(parent, style & ~(SWT.VERTICAL | SWT.HORIZONTAL));
 		vertical = (style & SWT.HORIZONTAL) == 0;
 		content = new Composite(this, SWT.NONE);
@@ -176,7 +176,7 @@ public class M3CollapsiblePane extends Composite {
 		Point size = content.computeSize(wHint, hHint);
 		fullWidth = size.x;
 		fullHeight = size.y;
-		M3Counters.fullLayouts++;
+		RepaintCounters.fullLayouts++;
 	}
 
 	private void frame() {
@@ -184,7 +184,7 @@ public class M3CollapsiblePane extends Composite {
 			return;
 		}
 		if (VIEWPORT && !canSlide()) {
-			finish(); // hidden mid-slide: no frames nobody sees, the pane takes its target at once //FLLDCIM: MARK — every-widget M3CollapsiblePane H
+			finish(); // hidden mid-slide: no frames nobody sees, the pane takes its target at once //FLLDCIM: MARK — every-widget CollapsiblePane H
 			return;
 		}
 		int full = Math.max(1, vertical ? fullHeight : fullWidth);
@@ -206,7 +206,7 @@ public class M3CollapsiblePane extends Composite {
 	 * collapsed pane has a zero extent itself and SWT part visibility counts a zero size as hidden.
 	 */
 	private boolean canSlide() {
-		return getVisible() && M3HiddenGate.shown(getParent());
+		return getVisible() && HiddenGate.shown(getParent());
 	}
 
 	private void finish() {
@@ -222,7 +222,7 @@ public class M3CollapsiblePane extends Composite {
 			// then lay the content out once, so children added or changed while it was hidden take their place
 			layout(false);
 			content.layout(true);
-			M3Counters.layouts++;
+			RepaintCounters.layouts++;
 		}
 		Event event = new Event();
 		notifyListeners(collapsed ? SWT.Collapse : SWT.Expand, event);
@@ -255,7 +255,7 @@ public class M3CollapsiblePane extends Composite {
 
 		@Override
 		protected void layout(Composite composite, boolean flushCache) {
-			M3Counters.layouts++;
+			RepaintCounters.layouts++;
 			Rectangle client = getClientArea();
 			if (collapsed && !animating && VIEWPORT) {
 				return;
@@ -273,10 +273,10 @@ public class M3CollapsiblePane extends Composite {
 			Rectangle bounds = content.getBounds();
 			if (bounds.width != width || bounds.height != height) {
 				content.setBounds(x, y, width, height);
-				M3Counters.moves++;
+				RepaintCounters.moves++;
 			} else if (bounds.x != x || bounds.y != y) {
 				content.setLocation(x, y);
-				M3Counters.moves++;
+				RepaintCounters.moves++;
 			}
 		}
 	}

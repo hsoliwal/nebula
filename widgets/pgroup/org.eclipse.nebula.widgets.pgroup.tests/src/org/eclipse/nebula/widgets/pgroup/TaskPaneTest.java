@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.pgroup;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,10 +20,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.M3TaskPane;
-import org.eclipse.nebula.widgets.m3.M3TaskPaneContainer;
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.pgroup.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.pgroup.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
@@ -36,18 +34,18 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3TaskPane and M3TaskPaneContainer: stacking, a collapse moves the panes below without resizing them and leaves the
+ * TaskPane and TaskPaneContainer: stacking, a collapse moves the panes below without resizing them and leaves the
  * panes above untouched, only the changed pane's content is measured, title-bar click and events, title-bar deltas
  * (title repaints the bar, collapse repaints the chevron), a resize sweep, the hidden gate of the title bar, errors.
  * Runs in both startup modes.
  */
-public class M3TaskPaneTest {
+public class TaskPaneTest {
 
 	Display display;
 	Shell shell;
-	M3TaskPaneContainer container;
-	M3TaskPane[] panes = new M3TaskPane[3];
-	M3CollapsiblePaneTest.CountingGridLayout[] contents = new M3CollapsiblePaneTest.CountingGridLayout[3];
+	TaskPaneContainer container;
+	TaskPane[] panes = new TaskPane[3];
+	CollapsiblePaneTest.CountingGridLayout[] contents = new CollapsiblePaneTest.CountingGridLayout[3];
 	int[] resizes = new int[3], moves = new int[3];
 
 	@Before
@@ -56,12 +54,12 @@ public class M3TaskPaneTest {
 		shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(10, 10, 300, 600);
 		shell.setLayout(new FillLayout());
-		container = new M3TaskPaneContainer(shell, SWT.NONE);
+		container = new TaskPaneContainer(shell, SWT.NONE);
 		for (int i = 0; i < panes.length; i++) {
-			M3TaskPane pane = new M3TaskPane(container, SWT.NONE);
+			TaskPane pane = new TaskPane(container, SWT.NONE);
 			pane.setTitle("Tasks " + i);
 			pane.setAnimated(false);
-			contents[i] = new M3CollapsiblePaneTest.CountingGridLayout();
+			contents[i] = new CollapsiblePaneTest.CountingGridLayout();
 			pane.getContent().setLayout(contents[i]);
 			for (int k = 0; k < 4; k++) {
 				new Label(pane.getContent(), SWT.NONE).setText("task " + i + "." + k);
@@ -73,7 +71,7 @@ public class M3TaskPaneTest {
 		}
 		shell.open();
 		shell.layout(true, true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -82,12 +80,12 @@ public class M3TaskPaneTest {
 	}
 
 	static boolean viewport() {
-		return WidgetMode.of("M3TaskPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+		return WidgetMode.of("TaskPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	}
 
 	void assertStacked() {
 		int y = container.getMargin();
-		for (M3TaskPane pane : panes) {
+		for (TaskPane pane : panes) {
 			Rectangle bounds = pane.getBounds();
 			assertEquals(y, bounds.y);
 			assertEquals(pane.computeSize(bounds.width, SWT.DEFAULT).y, bounds.height);
@@ -101,13 +99,13 @@ public class M3TaskPaneTest {
 		int height = panes[1].getSize().y;
 		java.util.Arrays.fill(resizes, 0);
 		java.util.Arrays.fill(moves, 0);
-		for (M3CollapsiblePaneTest.CountingGridLayout content : contents) {
+		for (CollapsiblePaneTest.CountingGridLayout content : contents) {
 			content.measures = content.layouts = 0;
 		}
 		int[] collapses = new int[1];
 		panes[1].addListener(SWT.Collapse, e -> collapses[0]++);
 		panes[1].setCollapsed(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertTrue(panes[1].getSize().y < height);
 		assertEquals(1, collapses[0]);
 		if (viewport()) {
@@ -119,23 +117,23 @@ public class M3TaskPaneTest {
 		}
 		assertStacked();
 		panes[1].setCollapsed(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertStacked();
 		assertEquals(height, panes[1].getSize().y);
 	}
 
 	@Test
 	public void titleBarClickTogglesAndRepaintsTheChevron() {
-		List<Rectangle> paints = M3TestSupport.recordPaints(panes[0].getTitleBar());
+		List<Rectangle> paints = TestSupport.recordPaints(panes[0].getTitleBar());
 		paints.clear();
 		Event down = new Event();
 		down.button = 1;
 		panes[0].getTitleBar().notifyListeners(SWT.MouseDown, down);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		panes[0].getTitleBar().update();
 		assertTrue(panes[0].isCollapsed());
 		if (viewport()) {
-			M3TestSupport.assertPaintsInside(paints, panes[0].getChevronBounds());
+			TestSupport.assertPaintsInside(paints, panes[0].getChevronBounds());
 		}
 		paints.clear();
 		panes[0].setTitle("Renamed");
@@ -148,13 +146,13 @@ public class M3TaskPaneTest {
 
 	@Test
 	public void resizeSweepIsAViewportDelta() {
-		M3Counters.reset();
+		RepaintCounters.reset();
 		int height = container.getSize().y;
-		for (int width : M3TestSupport.sweepWidths(300)) {
+		for (int width : TestSupport.sweepWidths(300)) {
 			container.setSize(width, height);
 			assertStacked();
 		}
-		assertEquals(M3Counters.line(), 0, M3Counters.fullRepaints);
+		assertEquals(RepaintCounters.line(), 0, RepaintCounters.fullRepaints);
 	}
 
 	@Test
@@ -162,8 +160,8 @@ public class M3TaskPaneTest {
 		if (!viewport()) {
 			return;
 		}
-		List<Rectangle> paints = M3TestSupport.recordPaints(panes[2].getTitleBar());
-		M3TestSupport.assertHiddenGate(panes[2].getTitleBar(), paints, i -> {
+		List<Rectangle> paints = TestSupport.recordPaints(panes[2].getTitleBar());
+		TestSupport.assertHiddenGate(panes[2].getTitleBar(), paints, i -> {
 			panes[2].setTitle("Tasks " + i);
 			panes[2].setSpecial(i % 2 == 0);
 		});
@@ -172,11 +170,11 @@ public class M3TaskPaneTest {
 
 	@Test
 	public void hiddenContainerStacksNothingAndLaysOutOnceOnShow() {
-		if (WidgetMode.of("M3TaskPaneContainer", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+		if (WidgetMode.of("TaskPaneContainer", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
 			return;
 		}
 		container.setVisible(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		java.util.Arrays.fill(resizes, 0);
 		java.util.Arrays.fill(moves, 0);
 		for (int i = 0; i < 20; i++) {
@@ -184,18 +182,18 @@ public class M3TaskPaneTest {
 			container.setSpacing(8, 4 + i % 3);
 		}
 		shell.layout(true, true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("no pane moved or resized while hidden", 0, resizes[0] + resizes[1] + resizes[2] + moves[0] + moves[1] + moves[2]);
 		container.setVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals(5, container.getSpacing());
 		assertStacked();
 	}
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> panes[0].setTitle(null));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> container.setSpacing(-1, 0));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> panes[0].setTitle(null));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> container.setSpacing(-1, 0));
 		container.setSpacing(4, 2);
 		assertEquals(2, container.getSpacing());
 		assertEquals(4, container.getMargin());

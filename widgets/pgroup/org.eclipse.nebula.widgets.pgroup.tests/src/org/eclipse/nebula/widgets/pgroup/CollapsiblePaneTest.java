@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.pgroup;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,11 +21,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.nebula.widgets.m3.M3CollapsiblePane;
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.eclipse.nebula.widgets.opal.statusbar.StatusBar;
+import org.eclipse.nebula.widgets.pgroup.internal.HiddenGate;
+import org.eclipse.nebula.widgets.pgroup.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.pgroup.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
@@ -42,11 +41,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3CollapsiblePane: collapse and expand with and without animation, events, the content slides during an animation
+ * CollapsiblePane: collapse and expand with and without animation, events, the content slides during an animation
  * (measured once, never laid out per frame), a collapsed content is neither laid out nor shown, a resize sweep never
  * measures the content, horizontal panes, errors. Runs in both startup modes.
  */
-public class M3CollapsiblePaneTest {
+public class CollapsiblePaneTest {
 
 	/** a vertical stack layout that counts how often the content is measured and laid out */
 	static final class CountingGridLayout extends Layout {
@@ -78,7 +77,7 @@ public class M3CollapsiblePaneTest {
 
 	Display display;
 	Shell shell;
-	M3CollapsiblePane pane;
+	CollapsiblePane pane;
 	CountingGridLayout counting;
 	int expands, collapses;
 
@@ -88,7 +87,7 @@ public class M3CollapsiblePaneTest {
 		shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(10, 10, 300, 400);
 		shell.setLayout(new GridLayout(1, false));
-		pane = new M3CollapsiblePane(shell, SWT.VERTICAL);
+		pane = new CollapsiblePane(shell, SWT.VERTICAL);
 		pane.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 		counting = new CountingGridLayout();
 		pane.getContent().setLayout(counting);
@@ -100,7 +99,7 @@ public class M3CollapsiblePaneTest {
 		pane.addListener(SWT.Collapse, e -> collapses++);
 		shell.open();
 		shell.layout(true, true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -109,12 +108,12 @@ public class M3CollapsiblePaneTest {
 	}
 
 	static boolean viewport() {
-		return WidgetMode.of("M3CollapsiblePane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+		return WidgetMode.of("CollapsiblePane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	}
 
 	void waitForAnimation() {
 		for (int i = 0; i < 200 && pane.isAnimating(); i++) {
-			M3TestSupport.spin(display, 10);
+			TestSupport.spin(display, 10);
 		}
 		assertFalse("animation finished", pane.isAnimating());
 	}
@@ -149,7 +148,7 @@ public class M3CollapsiblePaneTest {
 		Set<Integer> heights = new HashSet<>();
 		pane.addListener(SWT.Resize, e -> heights.add(pane.getSize().y));
 		counting.measures = counting.layouts = 0;
-		M3Counters.reset();
+		RepaintCounters.reset();
 		pane.setCollapsed(true);
 		assertTrue(pane.isAnimating());
 		waitForAnimation();
@@ -174,20 +173,20 @@ public class M3CollapsiblePaneTest {
 	public void resizeSweepIsAViewportDelta() {
 		// room for every swept width inside the shell
 		shell.setSize(700, 400);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		int height = pane.getSize().y;
 		counting.measures = counting.layouts = 0;
-		M3Counters.reset();
-		for (int width : M3TestSupport.sweepWidths(280)) {
+		RepaintCounters.reset();
+		for (int width : TestSupport.sweepWidths(280)) {
 			pane.setSize(width, height);
 			assertEquals("pane " + pane.getBounds() + " client " + pane.getClientArea() + " content " + pane.getContent().getBounds(), width, pane.getContent().getSize().x);
 		}
 		assertEquals("a resize never measures the content", 0, counting.measures);
-		assertEquals(M3Counters.line(), 0, M3Counters.fullRepaints + M3Counters.fullLayouts);
+		assertEquals(RepaintCounters.line(), 0, RepaintCounters.fullRepaints + RepaintCounters.fullLayouts);
 		pane.setAnimated(false);
 		pane.setCollapsed(true);
 		counting.measures = counting.layouts = 0;
-		for (int width : M3TestSupport.sweepWidths(280)) {
+		for (int width : TestSupport.sweepWidths(280)) {
 			pane.setSize(width, 20);
 		}
 		if (viewport()) {
@@ -199,7 +198,7 @@ public class M3CollapsiblePaneTest {
 	public void horizontalPaneCollapsesItsWidth() {
 		Shell other = new Shell(display, SWT.NO_TRIM);
 		other.setLayout(new GridLayout(2, false));
-		M3CollapsiblePane side = new M3CollapsiblePane(other, SWT.HORIZONTAL);
+		CollapsiblePane side = new CollapsiblePane(other, SWT.HORIZONTAL);
 		side.getContent().setLayout(new FillLayout());
 		new Label(side.getContent(), SWT.NONE).setText("a wide side panel label");
 		new Label(other, SWT.NONE).setText("main");
@@ -223,24 +222,24 @@ public class M3CollapsiblePaneTest {
 		bar.addSlot(StatusBar.PREFERRED, 0);
 		bar.addSlot(StatusBar.FILL, 1);
 		bar.setText(0, "row 0");
-		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = M3TestSupport.recordPaints(bar);
+		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = TestSupport.recordPaints(bar);
 		shell.layout(true, true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		pane.setAnimated(false);
 		pane.setCollapsed(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		paints.clear();
 		org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.reset();
 		for (int i = 0; i < 10_000; i++) {
 			bar.setText(0, "row " + i);
 			bar.setText(1, "filter " + i);
 		}
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("no paint inside a collapsed pane", 0, paints.size());
-		assertEquals("hidden ancestor found by one probe, or by PartHidden: " + org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), M3HiddenGate.hasPartVisibility() ? 0 : 1, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.probes);
+		assertEquals("hidden ancestor found by one probe, or by PartHidden: " + org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), HiddenGate.hasPartVisibility() ? 0 : 1, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.probes);
 		assertEquals(org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), 0, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.measures);
 		pane.setCollapsed(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		bar.update();
 		assertEquals("one paint pass on expand: " + paints, 1, paints.size());
 		assertEquals(org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), 1, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.reveals);
@@ -256,26 +255,26 @@ public class M3CollapsiblePaneTest {
 		pane.setCollapsed(true);
 		assertTrue(pane.isAnimating());
 		shell.setVisible(false);
-		M3TestSupport.spin(display, 150);
+		TestSupport.spin(display, 150);
 		assertFalse("a slide that finds the pane hidden ends at once", pane.isAnimating());
 		assertEquals(1, collapses);
 		pane.setCollapsed(false);
 		assertFalse("a hidden pane does not start a slide", pane.isAnimating());
 		assertEquals(1, expands);
 		shell.setVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals(pane.getExtent(), pane.getSize().y);
 	}
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(0, 1));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(1, 0));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(0, 1));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(1, 0));
 		pane.setLayout(new FillLayout());
 		assertFalse("the pane keeps its own layout", pane.getLayout() instanceof FillLayout);
 		pane.setAnimation(100, 1000);
 		pane.setCollapsed(true);
 		pane.dispose();
-		M3TestSupport.spin(display, 30);
+		TestSupport.spin(display, 30);
 	}
 }

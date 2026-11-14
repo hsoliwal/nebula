@@ -21,6 +21,7 @@ import org.eclipse.nebula.widgets.m3.internal.M3Counters;
 import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
 import org.eclipse.nebula.widgets.m3.internal.SwtLog;
 import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.pgroup.CollapsiblePane;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
@@ -44,7 +45,7 @@ import org.eclipse.swt.widgets.Text;
  * from its documented behaviour). {@link #open(Shell, String, String, Throwable)} shows it in a modal dialog.
  * <p>
  * Details are deferred: the stack trace is formatted and the details text control created only when the details are
- * first shown (in an {@link M3CollapsiblePane}); a new error while the details are hidden only stores the
+ * first shown (in an {@link CollapsiblePane}); a new error while the details are hidden only stores the
  * throwable. A resize reflows the message; it never formats, creates or measures the details.
  * While the pane is hidden (its own Hide, a zero size, a hidden ancestor) message, severity and details changes
  * only update the model; on becoming visible the latest values go into the controls once.
@@ -65,7 +66,7 @@ public class M3ErrorPane extends Composite {
 
 	private final Label icon, message;
 	private final Button detailsButton, copyButton;
-	private final M3CollapsiblePane detailsPane;
+	private final CollapsiblePane detailsPane;
 	private Text detailsText;
 	private int severity = SWT.ICON_ERROR;
 	private Throwable error;
@@ -109,7 +110,7 @@ public class M3ErrorPane extends Composite {
 		detailsButton = new Button(buttons, SWT.PUSH);
 		detailsButton.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		detailsButton.addListener(SWT.Selection, e -> setDetailsVisible(!isDetailsVisible()));
-		detailsPane = new M3CollapsiblePane(this, SWT.VERTICAL);
+		detailsPane = new CollapsiblePane(this, SWT.VERTICAL);
 		detailsPane.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 		detailsPane.setAnimated(false);
 		detailsPane.setCollapsed(true);

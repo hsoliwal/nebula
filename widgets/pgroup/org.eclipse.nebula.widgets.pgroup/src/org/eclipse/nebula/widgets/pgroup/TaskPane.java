@@ -12,11 +12,11 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.pgroup;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.pgroup.internal.HiddenGate;
+import org.eclipse.nebula.widgets.pgroup.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.pgroup.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
@@ -30,9 +30,9 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Layout;
 
 /**
- * A task pane: a drawn title bar (image, title, chevron) over an {@link M3CollapsiblePane}; clicking the title bar
+ * A task pane: a drawn title bar (image, title, chevron) over an {@link CollapsiblePane}; clicking the title bar
  * collapses or expands the content (the SWT counterpart of SwingX <code>JXTaskPane</code>, re-derived from its
- * documented behaviour). Stack task panes in an {@link M3TaskPaneContainer}.
+ * documented behaviour). Stack task panes in an {@link TaskPaneContainer}.
  * <p>
  * Every change is a delta: a title or image change repaints the title bar only; a hover repaints the title bar only;
  * collapsing slides the content (measured once, never laid out per frame) and repaints only the chevron; a collapsed
@@ -42,18 +42,18 @@ import org.eclipse.swt.widgets.Layout;
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Events: <code>Expand</code> and <code>Collapse</code> when a state change completes.
- * Startup switch: <code>-Dswt.widget.mode.M3TaskPane=original</code> repaints the whole title bar on every change.
+ * Startup switch: <code>-Dswt.widget.mode.TaskPane=original</code> repaints the whole title bar on every change.
  * </p>
  */
-public class M3TaskPane extends Composite {
+public class TaskPane extends Composite {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3TaskPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("TaskPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private static final int PAD = 6, CHEVRON = 12;
 
 	private final Canvas header;
-	private final M3CollapsiblePane body;
-	private final M3HiddenGate gate;
+	private final CollapsiblePane body;
+	private final HiddenGate gate;
 	private String title = ""; //$NON-NLS-1$
 	private Image image;
 	private boolean special, hover;
@@ -62,14 +62,14 @@ public class M3TaskPane extends Composite {
 	/**
 	 * Creates an expanded task pane with an empty title.
 	 *
-	 * @param parent the parent, usually an {@link M3TaskPaneContainer}
+	 * @param parent the parent, usually an {@link TaskPaneContainer}
 	 * @param style BORDER
 	 */
-	public M3TaskPane(Composite parent, int style) {
+	public TaskPane(Composite parent, int style) {
 		super(parent, style);
 		header = new Canvas(this, SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(header, null);
-		body = new M3CollapsiblePane(this, SWT.VERTICAL);
+		gate = new HiddenGate(header, null);
+		body = new CollapsiblePane(this, SWT.VERTICAL);
 		super.setLayout(new PaneLayout());
 		header.addListener(SWT.Paint, this::paintHeader);
 		header.addListener(SWT.Resize, e -> headerResized());
@@ -209,7 +209,7 @@ public class M3TaskPane extends Composite {
 
 	private void repaintHeader() {
 		if (showing()) {
-			M3Counters.fullRepaints += VIEWPORT ? 0 : 1;
+			RepaintCounters.fullRepaints += VIEWPORT ? 0 : 1;
 			header.redraw();
 		}
 	}
@@ -222,7 +222,7 @@ public class M3TaskPane extends Composite {
 			Rectangle chevron = getChevronBounds();
 			header.redraw(chevron.x, chevron.y, chevron.width, chevron.height, false);
 		} else {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			header.redraw();
 		}
 	}
@@ -248,7 +248,7 @@ public class M3TaskPane extends Composite {
 			gc.dispose();
 			int icon = image == null ? 0 : image.getBounds().height;
 			headerHeight = Math.max(Math.max(text, icon), CHEVRON) + 2 * PAD;
-			M3Counters.measures++;
+			RepaintCounters.measures++;
 		}
 		return headerHeight;
 	}

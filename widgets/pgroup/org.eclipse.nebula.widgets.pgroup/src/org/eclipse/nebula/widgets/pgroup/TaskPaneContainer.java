@@ -12,15 +12,15 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.pgroup;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.pgroup.internal.HiddenGate;
+import org.eclipse.nebula.widgets.pgroup.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.pgroup.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -29,7 +29,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Layout;
 
 /**
- * A vertical stack of {@link M3TaskPane}s (or any controls) with margins and spacing (the SWT counterpart of SwingX
+ * A vertical stack of {@link TaskPane}s (or any controls) with margins and spacing (the SWT counterpart of SwingX
  * <code>JXTaskPaneContainer</code>, re-derived from its documented behaviour). Put it in a ScrolledComposite for
  * scrolling.
  * <p>
@@ -40,17 +40,17 @@ import org.eclipse.swt.widgets.Layout;
  * is hidden no stack layout runs: requests fold into the hidden gate and the stack is laid out once when it is shown.
  * </p>
  * <p>
- * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3TaskPaneContainer=original</code> measures
+ * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.TaskPaneContainer=original</code> measures
  * every child on every layout, as a plain stacking layout would.
  * </p>
  */
-public class M3TaskPaneContainer extends Composite {
+public class TaskPaneContainer extends Composite {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3TaskPaneContainer", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("TaskPaneContainer", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private int margin = 8, spacing = 8;
 	/* null in original mode */
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	/* a layout folded while hidden asked to flush the children's caches */
 	private boolean foldedFlush;
 
@@ -60,11 +60,11 @@ public class M3TaskPaneContainer extends Composite {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3TaskPaneContainer(Composite parent, int style) {
+	public TaskPaneContainer(Composite parent, int style) {
 		super(parent, style);
 		super.setLayout(new Stack());
 		setBackground(getDisplay().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-		gate = VIEWPORT ? new M3HiddenGate(this, this::revealed) : null; //FLLDCIM: MARK — every-widget M3TaskPaneContainer H
+		gate = VIEWPORT ? new HiddenGate(this, this::revealed) : null; //FLLDCIM: MARK — every-widget TaskPaneContainer H
 	}
 
 	/* the one patch on becoming visible: the stack layout requested while hidden */
@@ -148,7 +148,7 @@ public class M3TaskPaneContainer extends Composite {
 				foldedFlush |= flushCache; // hidden: dirty children stay recorded for the reveal
 				return;
 			}
-			M3Counters.layouts++;
+			RepaintCounters.layouts++;
 			Rectangle client = getClientArea();
 			Control[] list = getChildren();
 			int inner = Math.max(0, client.width - 2 * margin);
@@ -164,16 +164,16 @@ public class M3TaskPaneContainer extends Composite {
 				Control child = list[i];
 				if (all || dirty.contains(child)) {
 					heights[i] = child.computeSize(inner, SWT.DEFAULT, true).y;
-					M3Counters.measures++;
+					RepaintCounters.measures++;
 				}
 				Rectangle bounds = child.getBounds();
 				int x = client.x + margin;
 				if (bounds.width != inner || bounds.height != heights[i]) {
 					child.setBounds(x, y, inner, heights[i]);
-					M3Counters.moves++;
+					RepaintCounters.moves++;
 				} else if (bounds.x != x || bounds.y != y) {
 					child.setLocation(x, y);
-					M3Counters.moves++;
+					RepaintCounters.moves++;
 				}
 				tops[i] = y;
 				y += heights[i] + spacing;
