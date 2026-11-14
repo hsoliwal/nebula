@@ -10,7 +10,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.generated.VolumeRangeNativeSwt;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -23,7 +22,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.Test;
 
 /** Original SWT display test, not an emulated web event or RAP browser session. */
-public final class VolumeRangeNativeSwtTest {
+public final class VolumeRangeFixtureTest {
 
     @Test
     public void boundedRangeUsesOneNativeScaleAndStableSelectionCallback() {
@@ -34,7 +33,7 @@ public final class VolumeRangeNativeSwtTest {
             try {
                 List<String> changes = new ArrayList<>();
                 List<String> actions = new ArrayList<>();
-                Composite content = VolumeRangeNativeSwt.create(
+                Composite content = VolumeRangeFixture.create(
                         shell, SWT.NONE, actions::add,
                         (id, value) -> changes.add(id + "=" + value));
                 Control[] widgets = content.getChildren();
