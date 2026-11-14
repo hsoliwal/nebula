@@ -100,7 +100,7 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
 
     private void checkOpen() {
         if (closed || canvas.isDisposed()) throw new IllegalStateException("mobile Grid receiver disposed");
-        canvas.getDisplay().getThread(); // retain SWT owner-thread enforcement
+        canvas.getStyle(); // SWT Widget.checkWidget enforces owning Display thread
     }
 
     private long maxScroll() {
