@@ -20,7 +20,7 @@ resource lifecycle; it does not replace those contracts.
 | Reproduce a Grid interaction | [Grid snippets](examples/org.eclipse.nebula.snippets/src/org/eclipse/nebula/snippets/grid/) |
 | Change Grid behavior | [Grid bundle](widgets/grid/org.eclipse.nebula.widgets.grid/) and [Grid tests](widgets/grid/org.eclipse.nebula.widgets.grid.test/) |
 | Understand build membership/targets | [Parent reactor](releng/org.eclipse.nebula.nebula-parent/pom.xml) |
-| Understand fork qualification/tooling | [Development guide](docs/DEVELOPMENT_GUIDE.md) and [M3 guide](m3/README.md) |
+| Understand fork qualification/tooling | [Development guide](docs/DEVELOPMENT_GUIDE.md) and [M3 guide](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/m3/README.md) |
 
 ## Nebula key concepts
 
@@ -42,7 +42,7 @@ resource lifecycle; it does not replace those contracts.
 This is the downstream [hsoliwal fork](https://github.com/hsoliwal/nebula) of
 [Eclipse Nebula](https://github.com/EclipseNebula/nebula).
 The checkout contains ordinary widgets, fork-specific Grid/state work,
-[recipe tooling](m3/README.md), and a
+[recipe tooling](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/m3/README.md), and a
 [bound SWT/Grid screen-validation workflow](.github/workflows/maven.yaml).
 Those are inspectable implementations and configured checks, not a blanket claim
 of accepted optimization, passing native tests or measured resource budgets.
@@ -105,7 +105,7 @@ in the configured PDE workspace.
 
 These are source-derived instructions; this homepage update ran no build or UI
 tests. Continue with [the development guide](docs/DEVELOPMENT_GUIDE.md),
-[widget catalogue](docs/Widgets.md), [M3 scope](m3/README.md) and
+[widget catalogue](docs/Widgets.md), [M3 scope](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/m3/README.md) and
 [contributor requirements](CONTRIBUTING.MD).
 The original project download links, fork notes and licensing text follow.
 

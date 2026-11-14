@@ -154,7 +154,7 @@ These are source-derived test cases to implement or run in a configured environm
 
 ## Separate recipe tooling from widget acceptance
 
-The public [m3/README.md](../m3/README.md) explains the fork's recipe-first invariants and opt-in profiles. The source-first [m3/reactor.xml](../m3/reactor.xml) builds the qualified parser module before the recipe module, outside the normal Tycho reactor:
+The public [m3/README.md](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/m3/README.md) explains the fork's recipe-first invariants and opt-in profiles. The source-first [m3/reactor.xml](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/m3/reactor.xml) builds the qualified parser module before the recipe module, outside the normal Tycho reactor:
 
 ```sh
 mvn -f m3/reactor.xml verify

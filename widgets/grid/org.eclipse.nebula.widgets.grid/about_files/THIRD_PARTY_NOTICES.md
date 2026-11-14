@@ -3,14 +3,14 @@
 
 The Grid model classes (`org.eclipse.nebula.widgets.grid.model`) and the Grid changes of this leaf are
 written for Nebula. The algorithms follow the donors below. Exact commits, paths, hashes and the
-decision for each donor are in `FOSS_REUSE_DECISION.tsv`; the hash of every donor file read is in
-`DONOR_FILES.sha256.tsv`.
+decision for each donor are in [FOSS_REUSE_DECISION.tsv](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/widgets/grid/m3/grid-model-20261013/FOSS_REUSE_DECISION.tsv); the hash of every donor file read is in
+[DONOR_FILES.sha256.tsv](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/widgets/grid/m3/grid-model-20261013/DONOR_FILES.sha256.tsv) (hsoliwal/com.synexia).
 
 ## Ported code
 
 | file | donor | licence | what was ported |
 |---|---|---|---|
-| `org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/model/IntPermutationSort.java` | fastutil 8.5.14 `it/unimi/dsi/fastutil/ints/IntArrays.java` (Sebastiano Vigna) | Apache-2.0 | `quickSort(int[], int, int, IntComparator)` with `med3`, `swap`, `vecSwap`, `selectionSort` (Bentley-McIlroy), re-typed to the Grid row comparator. The file keeps the Apache-2.0 header and the original copyright line. |
+| `src/org/eclipse/nebula/widgets/grid/model/IntPermutationSort.java` | fastutil 8.5.14 `it/unimi/dsi/fastutil/ints/IntArrays.java` (Sebastiano Vigna) | Apache-2.0 | `quickSort(int[], int, int, IntComparator)` with `med3`, `swap`, `vecSwap`, `selectionSort` (Bentley-McIlroy), re-typed to the Grid row comparator. The file keeps the Apache-2.0 header and the original copyright line. |
 
 ## Patterns adapted (no code copied)
 
