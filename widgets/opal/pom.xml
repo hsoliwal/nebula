@@ -42,6 +42,7 @@
 		<module>statusbar</module>
 		<module>colorbutton</module>
 		<module>gradientchooser</module>
+		<module>findbar</module>
 	</modules>
 
 </project>
