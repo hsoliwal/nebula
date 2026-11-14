@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula Status Pane Tests
+Bundle-SymbolicName: org.eclipse.nebula.jface.statuspane.tests
+Bundle-Version: 1.0.0.qualifier
+Fragment-Host: org.eclipse.nebula.jface.statuspane
+Require-Bundle: org.junit,
+ org.eclipse.swt,
+ org.eclipse.nebula.widgets.opal.findbar
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-Vendor: Eclipse Nebula
+Automatic-Module-Name: org.eclipse.nebula.jface.statuspane.tests
