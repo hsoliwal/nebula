@@ -12,11 +12,11 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.hyperlink;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.hyperlink.internal.HiddenGate;
+import org.eclipse.nebula.widgets.hyperlink.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.hyperlink.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.AccessibleAdapter;
 import org.eclipse.swt.accessibility.AccessibleEvent;
@@ -40,16 +40,16 @@ import org.eclipse.swt.widgets.Event;
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Events: <code>Selection</code>. Startup switch:
- * <code>-Dswt.widget.mode.M3Hyperlink=original</code> repaints the whole control on every change.
+ * <code>-Dswt.widget.mode.Hyperlink=original</code> repaints the whole control on every change.
  * </p>
  */
-public class M3Hyperlink extends Canvas {
+public class Hyperlink extends Canvas {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3Hyperlink", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("Hyperlink", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private static final int PAD = 2;
 
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	private String text = ""; //$NON-NLS-1$
 	private int textWidth, textHeight = -1;
 	private boolean visited, hover, pressed;
@@ -62,9 +62,9 @@ public class M3Hyperlink extends Canvas {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3Hyperlink(Composite parent, int style) {
+	public Hyperlink(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, null);
+		gate = new HiddenGate(this, null);
 		unvisitedRgb = getDisplay().getSystemColor(SWT.COLOR_LINK_FOREGROUND).getRGB();
 		setCursor(getDisplay().getSystemCursor(SWT.CURSOR_HAND));
 		addListener(SWT.Paint, this::paint);
@@ -198,7 +198,7 @@ public class M3Hyperlink extends Canvas {
 		gc.dispose();
 		textWidth = extent.x;
 		textHeight = extent.y;
-		M3Counters.measures++;
+		RepaintCounters.measures++;
 	}
 
 	private boolean showing() {
@@ -215,7 +215,7 @@ public class M3Hyperlink extends Canvas {
 		if (VIEWPORT) {
 			redraw(area.x, area.y, area.width, area.height, false);
 		} else {
-			M3Counters.fullRepaints++;
+			RepaintCounters.fullRepaints++;
 			redraw();
 		}
 	}
