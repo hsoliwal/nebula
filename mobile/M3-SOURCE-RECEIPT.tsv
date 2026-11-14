@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Hitesh Soliwal and contributors
+# SPDX-License-Identifier: EPL-2.0
+kind	key	value	detail
+receipt	schema	M3_MOBILE_SOURCE_RECEIPT_V1	Source delivery; native platform results remain separate
+receiver	repository	hsoliwal/nebula	base 91d01b4e3ff3ed0c298c4f5c148710b770756932
+canonical	workspace	hsoliwal/com.synexia	Recipes and proof remain in canonical repository
+canonical	main_named_recipe_revision	4168e8ccff1ac5b98e0c545413562cf5feb63c8b	Named product descriptors and their frozen input resources
+canonical	text_engine_revision	4168e8ccff1ac5b98e0c545413562cf5feb63c8b	com.synexia.rewrite.M3HashPinnedTextSnapshotRecipe
+canonical	text_engine_sha256	501442c7f7074e24bc4f1626d9736069d007edfef8c61f71b568d92a65c4a9ce	Later packets use this existing engine; new packet descriptors are not claimed to exist at the earlier revision
+input	main_frozen_inputs_sha256	3ce4dd7e5de1f428454fa998ba9c12d2eb5f5502d1b6e6af64d756e2e005086a	synexia-openrewrite-recipes/recipe-crates/swt-mobile-20261114/prepared/product-current/FROZEN_INPUTS.json
+execution	main_sdk_receipt_sha256	949423e224c4555655582a6ba770227f62c357ea93ff905ebe2d5fec03f2008c	synexia-openrewrite-recipes/recipe-crates/swt-mobile-20261114/evidence/product-current-qualified-temurin21/result.json
+execution	main_maven_receipt_sha256	7e6fd0c3e58f6f4d8ca8b11856926b3bc398efa7d2e3a88a95c50160a7aa686c	synexia-openrewrite-recipes/recipe-crates/swt-mobile-20261114/evidence/product-current-maven-temurin21/result.json
+input	launcher_frozen_inputs_sha256	e777541651d0e4681ebb278cd69d942df21f3ae7a0e8c837a68b80272a5221ad	synexia-openrewrite-recipes/recipe-crates/swt-mobile-20261114/prepared/mobile-launcher-isolation/FROZEN_INPUTS.json
+execution	launcher_sdk_receipt_sha256	7366eb992ce217b89a1a149c0e37297c6447902e6810d7b8b0cccc6e2c752dda	synexia-openrewrite-recipes/recipe-crates/swt-mobile-20261114/evidence/mobile-launcher-isolation-temurin21/result.json
+execution	launcher_maven_receipt_sha256	119017adb793410655760a06d005852a4f08af122b9f3298169f7d785cb26bf7	synexia-openrewrite-recipes/recipe-crates/swt-mobile-20261114/evidence/mobile-launcher-isolation-maven-temurin21/result.json
+scope	mobile_widget	Original Nebula RoundedCheckbox	Selected SWT Display/Shell/Canvas, original event contracts, native graphics and image API closure
+gate	recipe_sdk_and_focused_maven	PASS	16 tests per named packet; fixed point zero; every selected input drift refused
+gate	android_native_behavior	NOT_RUN	Official software-emulator boots did not produce a usable activity test session; no screenshot or native behavior pass claimed
+gate	ios_native_sdk_and_device	NOT_RUN	Apple SDK compile/link and embedded JVM/AOT device execution are separate required gates
+scope	desktop_and_widget_completeness	NOT_CLAIMED	No full desktop reactor or all-widget compatibility claim
+output	mobile/.gitignore	02e7b40893c74a993a139de7b0f85d8cf2eaea57d544effd576920a514872af4	nebula-mobile-native-images-20261114-text
+output	mobile/.mvn/extensions.xml	d50f90bc5f8d585dc26afbcf85bbbaeb98d82e194eef4f1e275408a53df942c6	nebula-mobile-launcher-isolation-20261114-text
+output	mobile/README.md	57fd4503e76df9e1816bc89f3fb02a25026a64b50c70e9ac4242e872e48c41d8	nebula-mobile-native-images-20261114-text
+output	mobile/android/AndroidManifest.instrumentation.xml	77ebee48d0d8b708f3b9f42537dc3d5c2d3ca872afe5566121fb27cc10fb9b87	nebula-mobile-native-images-20261114-text
+output	mobile/android/AndroidManifest.xml	325ca8ad153d938281673da1269447295dac9735ccdaf036faa1d8d4d269af5e	nebula-mobile-native-images-20261114-text
+output	mobile/build_mobile.py	6933e6700bbd253faf029a8af0637368e14ac59e6a4938dd17c3a2f83d094a2a	nebula-mobile-native-images-20261114-text
+output	mobile/pom.xml	d309c6907a84bd322185825fe7f32a6526cddc417da30a2250b1d8e51da343aa	nebula-mobile-native-images-20261114-text
+output	mobile/source-manifest.json	0131c816a571ecb9ce29d18c16e681d999ec2b1307deb38c64258e69255f3bd3	nebula-mobile-native-images-20261114-text
+output	mobile/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileApplication.java	2a6f961ff3bf31b3fd2416428cf9e38e932db88a1819ca4d3fec2cdc186efe1d	nebula-mobile-native-images-20261114-java
+output	mobile/src/test/java/org/eclipse/nebula/tests/mobile/AndroidMobileInstrumentation.java	b3c52f2cde678c33bbe4d5f1a4c4d89346192bcf98f25347fea5867850908280	nebula-mobile-native-images-20261114-java

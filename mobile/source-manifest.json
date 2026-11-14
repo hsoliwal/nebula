@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "javaRelease": 21,
+  "androidMinimumApi": 35,
+  "androidTargetApi": 35,
+  "androidBuildTools": "36.0.0",
+  "originalNebulaSourceSelection": "SWT mobile/source-manifest.json#nebulaOriginalSources",
+  "application": [
+    {"path": "mobile/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileApplication.java"}
+  ],
+  "instrumentation": [
+    {"path": "mobile/src/test/java/org/eclipse/nebula/tests/mobile/AndroidMobileInstrumentation.java"}
+  ]
+}

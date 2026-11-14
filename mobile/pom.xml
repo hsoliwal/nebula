@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (c) 2026 Hitesh Soliwal and contributors. SPDX-License-Identifier: EPL-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.eclipse.nebula</groupId><artifactId>org.eclipse.nebula.mobile.example</artifactId><version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Original Nebula widget mobile example</name>
+  <description>Maven control plane for the real SDK debug build; runtime/device gates remain separate.</description>
+  <licenses><license><name>Eclipse Public License 2.0</name><url>https://www.eclipse.org/legal/epl-2.0/</url></license></licenses>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <swt.checkout>${project.basedir}/../../swt</swt.checkout>
+    <nebula.checkout>${project.basedir}/..</nebula.checkout>
+    <mobile.output>${project.basedir}/target</mobile.output>
+    <mobile.platform>android</mobile.platform>
+    <mobile.instrumentation>false</mobile.instrumentation>
+    <swt.mobile.jar>${swt.checkout}/mobile/target/swt-mobile-ios.jar</swt.mobile.jar>
+    <android.sdk>${env.ANDROID_SDK_ROOT}</android.sdk>
+    <python.executable>python3</python.executable>
+  </properties>
+  <build>
+    <directory>${mobile.output}</directory>
+    <plugins>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-clean-plugin</artifactId><version>3.2.0</version></plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.5.0</version>
+        <executions><execution><id>build-real-mobile-sdk-artifact</id><phase>package</phase><goals><goal>exec</goal></goals>
+          <configuration><executable>${python.executable}</executable><arguments>
+            <argument>${project.basedir}/build_mobile.py</argument>
+            <argument>--swt</argument><argument>${swt.checkout}</argument>
+            <argument>--nebula</argument><argument>${nebula.checkout}</argument>
+            <argument>--output</argument><argument>${project.build.directory}</argument>
+            <argument>--platform</argument><argument>${mobile.platform}</argument>
+            <argument>--sdk</argument><argument>${android.sdk}</argument>
+            <argument>--java-home</argument><argument>${java.home}</argument>
+            <argument>--swt-mobile-jar</argument><argument>${swt.mobile.jar}</argument>
+            <argument>--instrumentation</argument><argument>${mobile.instrumentation}</argument>
+          </arguments></configuration>
+        </execution></executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) 2026 Hitesh Soliwal and contributors. SPDX-License-Identifier: EPL-2.0 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.eclipse.swt.mobile.probe">
+  <uses-sdk android:minSdkVersion="35" android:targetSdkVersion="35" />
+  <application android:theme="@android:style/Theme.Material.Light.NoActionBar"
+               android:label="SWT Nebula mobile test" android:allowBackup="false" android:debuggable="true">
+    <activity android:name="org.eclipse.swt.internal.android.SwtActivity" android:exported="true"
+              android:enableOnBackInvokedCallback="true">
+      <meta-data android:name="org.eclipse.swt.mobile.application" android:value="org.eclipse.nebula.examples.mobile.NebulaMobileApplication" />
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+    <activity android:name="org.eclipse.nebula.tests.mobile.AndroidMobileInstrumentation$TransportActivity" android:exported="false" />
+  </application>
+  <instrumentation android:name="org.eclipse.nebula.tests.mobile.AndroidMobileInstrumentation"
+                   android:targetPackage="org.eclipse.swt.mobile.probe" android:functionalTest="true" />
+</manifest>
