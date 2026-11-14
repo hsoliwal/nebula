@@ -36,6 +36,7 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
     private boolean dragged;
     private volatile boolean closed;
 
+    /** Binds a Grid viewport of itemCount logical rows to the canvas; selection receives the selected row. */
     public MobileGridCanvasReceiver(Canvas canvas, long itemCount, int columns,
             int rowHeight, int overscan, MobileGridViewport.CellSource data,
             LongConsumer selection) {
@@ -120,6 +121,7 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         return last > Long.MAX_VALUE / rowHeight ? Long.MAX_VALUE : last * rowHeight;
     }
 
+    /** Scrolls to a vertical pixel offset, clamped to the last row. */
     public void scrollTo(long pixels) {
         checkOpen();
         if (pixels < 0) throw new IllegalArgumentException("negative scroll");
@@ -130,6 +132,7 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         }
     }
 
+    /** Scrolls by a pixel delta, saturating at both ends. */
     public void scrollBy(long delta) {
         checkOpen();
         long next = delta > 0 && scrollY > Long.MAX_VALUE - delta
@@ -139,17 +142,24 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         scrollTo(Math.max(0, next));
     }
 
+    /** The vertical scroll offset in pixels. */
     public long scrollY() { checkOpen(); return scrollY; }
+    /** The last presented window of the viewport. */
     public MobileGridViewport.Window window() { checkOpen(); return viewport.window(); }
+    /** Sets the number of logical rows and keeps the scroll offset in range. */
     public void setItemCount(long count) {
         checkOpen();
         viewport.setItemCount(count);
         scrollTo(Math.min(scrollY, maxScroll()));
         canvas.redraw();
     }
+    /** Invalidates one retained row and redraws. */
     public void invalidate(long row) { checkOpen(); viewport.invalidate(row); canvas.redraw(); }
+    /** Invalidates every retained row and redraws. */
     public void invalidateAll() { checkOpen(); viewport.invalidateAll(); canvas.redraw(); }
+    /** The selected row, or -1. */
     public long selectedRow() { checkOpen(); return viewport.selectedRow(); }
+    /** Selects a row (-1 for none) and redraws. */
     public void select(long row) { checkOpen(); viewport.select(row); canvas.redraw(); }
 
     /** Hit-test only the visible logical range; overscan rows cannot be selected. */
@@ -200,7 +210,9 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         }
     }
 
+    /** Whether close() has run. */
     public boolean isClosed() { return closed; }
+    /** Releases the viewport and its retained cells; later calls do nothing. */
     @Override public void close() {
         if (closed) return;
         closed = true;
