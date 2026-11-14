@@ -10,25 +10,38 @@ import java.util.Objects;
  * Logical rows are long-indexed; only viewport+overscan rows own native slots.
  */
 public final class MobileGridViewport {
-	@FunctionalInterface public interface CellSource { String cell(long row, int column); }
+	/** Supplies the text of a cell. */
+	@FunctionalInterface public interface CellSource {
+		/** The text of the cell at a logical row and column. */
+		String cell(long row, int column);
+	}
+	/** Receives the rows of the native slots. */
 	public interface RowSink {
+		/** Binds a logical row and its cell texts to a native slot. */
 		void bind(int slot, long row, String[] cells, boolean selected);
+		/** Releases a native slot from the row it showed. */
 		void release(int slot, long oldRow);
 	}
 	/** Immutable presentation window without java.lang.Record (Android API 26). */
 	public static final class Window {
 		private final long visibleStart, visibleEnd, retainedStart, retainedEnd;
 		private final int nativeSlots;
+		/** Creates a window of visible and retained rows and native slots. */
 		public Window(long visibleStart, long visibleEnd, long retainedStart,
 				long retainedEnd, int nativeSlots) {
 			this.visibleStart = visibleStart; this.visibleEnd = visibleEnd;
 			this.retainedStart = retainedStart; this.retainedEnd = retainedEnd;
 			this.nativeSlots = nativeSlots;
 		}
+		/** First visible logical row. */
 		public long visibleStart() { return visibleStart; }
+		/** Logical row after the last visible one. */
 		public long visibleEnd() { return visibleEnd; }
+		/** First logical row that owns a native slot. */
 		public long retainedStart() { return retainedStart; }
+		/** Logical row after the last one that owns a native slot. */
 		public long retainedEnd() { return retainedEnd; }
+		/** Number of native slots. */
 		public int nativeSlots() { return nativeSlots; }
 	}
 	private static final int MAX_NATIVE_SLOTS = 8192;
@@ -46,6 +59,7 @@ public final class MobileGridViewport {
 	private int epoch;
 	private Window window = new Window(0, 0, 0, 0, 0);
 
+	/** Creates a viewport over itemCount logical rows with the given columns, row height and overscan rows. */
 	public MobileGridViewport(long itemCount, int columns, int rowHeight,
 			int overscan, CellSource data, RowSink sink) {
 		if (itemCount < 0 || columns <= 0 || rowHeight <= 0 || overscan < 0)
@@ -57,15 +71,20 @@ public final class MobileGridViewport {
 		this.data = Objects.requireNonNull(data);
 		this.sink = Objects.requireNonNull(sink);
 	}
+	/** The last presented window. */
 	public Window window() { return window; }
+	/** The selected row, or -1. */
 	public long selectedRow() { return selectedRow; }
+	/** The number of logical rows. */
 	public long itemCount() { return itemCount; }
+	/** Sets the number of logical rows and releases the slots of rows beyond it. */
 	public void setItemCount(long count) {
 		if (count < 0) throw new IllegalArgumentException("negative rows");
 		itemCount = count;
 		if (selectedRow >= count) selectedRow = -1;
 		for (int i = 0; i < rowAt.length; i++) if (rowAt[i] >= count) release(i);
 	}
+	/** Selects a row (-1 for none) and invalidates the previous and the new selection. */
 	public void select(long row) {
 		if (row < -1 || row >= itemCount) throw new IndexOutOfBoundsException("row " + row);
 		if (selectedRow == row) return;
@@ -80,6 +99,7 @@ public final class MobileGridViewport {
 		int slot = (int) (row % rowAt.length);
 		if (rowAt[slot] == row) dirty[slot] = true;
 	}
+	/** Invalidates every retained row. */
 	public void invalidateAll() {
 		Arrays.fill(dirty, true);
 	}
@@ -144,6 +164,7 @@ public final class MobileGridViewport {
 		dirty[slot] = false;
 		selectedAt[slot] = false;
 	}
+	/** Releases every native slot. */
 	public void close() {
 		for (int i = 0; i < rowAt.length; i++) release(i);
 		window = new Window(0, 0, 0, 0, rowAt.length);
