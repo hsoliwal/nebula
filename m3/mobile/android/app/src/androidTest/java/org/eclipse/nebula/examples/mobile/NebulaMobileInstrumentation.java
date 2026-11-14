@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 
 /** Native screen/touch proof for the existing, unmodified RoundedCheckbox implementation. */
 public final class NebulaMobileInstrumentation extends Instrumentation {
@@ -26,26 +27,26 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             activity = (NebulaMobileActivity) startActivitySync(new Intent(getTargetContext(), NebulaMobileActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             NebulaMobileActivity current = activity;
-            await(() -> current.state != null && current.getSWTView().getWidth() > 0, "Nebula source construction");
-            int[] toggle = location(current.getSWTView(), 42, 86);
-            int[] veto = location(current.getSWTView(), 42, 158);
-            int[] disabled = location(current.getSWTView(), 42, 230);
-            int[] fill = location(current.getSWTView(), 28, 86);
+            await(() -> NebulaMobileMain.state != null && surface(current).getWidth() > 0, "Nebula source construction");
+            int[] toggle = location(surface(current), 42, 86);
+            int[] veto = location(surface(current), 42, 158);
+            int[] disabled = location(surface(current), 42, 230);
+            int[] fill = location(surface(current), 28, 86);
             await(() -> pixelMatches(veto, 0x007aff), "native grayed-checkbox pixels");
             saveScreen("nebula-android-before.png");
             tap(toggle);
-            await(() -> current.state.selected && current.state.attempts == 1, "real widget selection");
+            await(() -> NebulaMobileMain.state.selected && NebulaMobileMain.state.attempts == 1, "real widget selection");
             await(() -> pixelMatches(fill, 0x007aff), "native selected-checkbox fill");
             tap(veto);
-            await(() -> current.state.attempts == 2, "selection veto listener");
+            await(() -> NebulaMobileMain.state.attempts == 2, "selection veto listener");
             await(() -> pixelMatches(veto, 0x007aff), "veto preserves grayed selection");
             tap(disabled);
             SystemClock.sleep(150);
-            require(current.state.attempts == 2, "Disabled control dispatched selection");
-            require(activity.failure == null, "SWT application failure: " + activity.failure);
+            require(NebulaMobileMain.state.attempts == 2, "Disabled control dispatched selection");
+            require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
-            await(() -> current.state.disposed, "Activity destruction disposes Nebula shell");
+            await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
             result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: source widget, pixels, selection, veto, disabled, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
@@ -56,6 +57,16 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             sendCaseStatus(-2, failure);
             finish(Activity.RESULT_CANCELED, result);
         }
+    }
+
+    // SwtActivity exposes the original Android content root, not getSWTView().
+    // Use the real platform view installed by AndroidPlatform.bind().
+    private View surface(Activity activity) {
+        ViewGroup content = activity.findViewById(android.R.id.content);
+        if (content == null || content.getChildCount() == 0) {
+            throw new IllegalStateException("SWT Android native root not attached");
+        }
+        return content.getChildAt(0);
     }
 
     private int[] location(View view, int x, int y) {
