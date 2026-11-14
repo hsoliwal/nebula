@@ -12,11 +12,11 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.opal.colorbutton;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.colorbutton.internal.HiddenGate;
+import org.eclipse.nebula.widgets.opal.colorbutton.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.colorbutton.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.accessibility.AccessibleAdapter;
 import org.eclipse.swt.accessibility.AccessibleEvent;
@@ -39,17 +39,17 @@ import org.eclipse.swt.widgets.Event;
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Events: <code>Selection</code> when the colour changed (<code>Event.index</code> the
- * packed 0xRRGGBB value). Startup switch: <code>-Dswt.widget.mode.M3ColorButton=original</code> repaints the whole
+ * packed 0xRRGGBB value). Startup switch: <code>-Dswt.widget.mode.ColorButton=original</code> repaints the whole
  * button on every change.
  * </p>
  */
-public class M3ColorButton extends Canvas {
+public class ColorButton extends Canvas {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3ColorButton", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("ColorButton", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
 	private static final int INSET = 4, SIZE = 24;
 
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	private int rgb = 0x000000;
 	private Color swatch;
 	private boolean pressed, hover;
@@ -61,9 +61,9 @@ public class M3ColorButton extends Canvas {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3ColorButton(Composite parent, int style) {
+	public ColorButton(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, null);
+		gate = new HiddenGate(this, null);
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.MouseDown, e -> pressed = e.button == 1);
 		addListener(SWT.MouseUp, e -> {
@@ -153,7 +153,7 @@ public class M3ColorButton extends Canvas {
 				Rectangle area = getSwatchBounds();
 				redraw(area.x, area.y, area.width, area.height, false);
 			} else {
-				M3Counters.fullRepaints++;
+				RepaintCounters.fullRepaints++;
 				redraw();
 			}
 		}
@@ -175,7 +175,7 @@ public class M3ColorButton extends Canvas {
 
 	private void repaintButton() {
 		if (showing()) {
-			M3Counters.fullRepaints += VIEWPORT ? 0 : 1;
+			RepaintCounters.fullRepaints += VIEWPORT ? 0 : 1;
 			redraw();
 		}
 	}
