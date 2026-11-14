@@ -7,9 +7,12 @@ package org.eclipse.nebula.widgets.m3.tests;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.eclipse.nebula.widgets.m3.M3VirtualTableBinding;
 import org.eclipse.nebula.widgets.m3.M3VirtualTableBinding.Page;
@@ -47,13 +50,23 @@ public final class M3VirtualTableCloseDuringFetchTest {
                 M3VirtualTableBinding binding = M3VirtualTableBinding.bind(table, closing);
                 current.set(binding);
                 try {
+                    // SWT hands a listener's exception to the Display's runtime exception handler:
+                    // the default one rethrows it, a workbench (the UI test harness) logs it. Record
+                    // it here so the check is the same under either handler.
+                    List<RuntimeException> reported = new ArrayList<>();
+                    Consumer<RuntimeException> previous = display.getRuntimeExceptionHandler();
+                    display.setRuntimeExceptionHandler(reported::add);
+                    String text;
                     try {
-                        table.getItem(0).getText(0); // real SWT.VIRTUAL SetData
-                        fail("A returned page must not be published after close()");
-                    } catch (IllegalStateException expected) {
-                        assertEquals("Virtual Table binding closed during SetData",
-                                expected.getMessage());
+                        text = table.getItem(0).getText(0); // real SWT.VIRTUAL SetData
+                    } finally {
+                        display.setRuntimeExceptionHandler(previous);
                     }
+                    assertEquals(1, reported.size());
+                    assertTrue(reported.get(0) instanceof IllegalStateException);
+                    assertEquals("Virtual Table binding closed during SetData",
+                            reported.get(0).getMessage());
+                    assertEquals("A returned page must not be published after close()", "", text);
                     assertEquals(1, calls[0]);
                     assertEquals(1, table.getItemCount());
                     assertFalse(table.isDisposed()); // Table remains SWT-owned.
