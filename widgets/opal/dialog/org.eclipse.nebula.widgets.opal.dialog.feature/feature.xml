@@ -15,6 +15,7 @@
 
    <requires>
       <import feature="org.eclipse.nebula.widgets.opal.commons.feature"/>
+      <import feature="org.eclipse.nebula.widgets.pgroup.feature"/>
    </requires>
 
    <plugin

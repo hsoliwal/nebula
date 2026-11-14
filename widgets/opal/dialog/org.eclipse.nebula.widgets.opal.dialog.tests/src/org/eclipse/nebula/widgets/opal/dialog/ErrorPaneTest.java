@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.opal.dialog;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,9 +21,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import org.eclipse.nebula.widgets.m3.M3ErrorPane;
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.dialog.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.dialog.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -34,14 +33,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3ErrorPane: deferred details (formatted and created on first show, reused after), report text, severity, a resize
+ * ErrorPane: deferred details (formatted and created on first show, reused after), report text, severity, a resize
  * sweep that never formats or creates the details, the modal dialog, errors. Runs in both startup modes.
  */
-public class M3ErrorPaneTest {
+public class ErrorPaneTest {
 
 	Display display;
 	Shell shell;
-	M3ErrorPane pane;
+	ErrorPane pane;
 	final IllegalStateException failure = new IllegalStateException("index 1000000 out of bounds", new ArithmeticException("cause"));
 
 	@Before
@@ -50,11 +49,11 @@ public class M3ErrorPaneTest {
 		shell = new Shell(display, SWT.NO_TRIM | SWT.RESIZE);
 		shell.setBounds(10, 10, 480, 360);
 		shell.setLayout(new FillLayout());
-		M3Counters.reset();
-		pane = new M3ErrorPane(shell, SWT.NONE);
+		RepaintCounters.reset();
+		pane = new ErrorPane(shell, SWT.NONE);
 		pane.setMessage("The table could not be sorted.");
 		shell.open();
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -63,7 +62,7 @@ public class M3ErrorPaneTest {
 	}
 
 	static boolean viewport() {
-		return WidgetMode.of("M3ErrorPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+		return WidgetMode.of("ErrorPane", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	}
 
 	@Test
@@ -72,7 +71,7 @@ public class M3ErrorPaneTest {
 		assertSame(failure, pane.getError());
 		if (viewport()) {
 			assertNull("no details control before the details are shown", pane.getDetailsText());
-			assertEquals(0, M3Counters.creates);
+			assertEquals(0, RepaintCounters.creates);
 		}
 		assertFalse(pane.isDetailsVisible());
 		pane.setDetailsVisible(true);
@@ -85,7 +84,7 @@ public class M3ErrorPaneTest {
 		pane.setDetailsVisible(false);
 		pane.setDetailsVisible(true);
 		assertSame("the details control is reused", text, pane.getDetailsText());
-		assertEquals(1, M3Counters.creates);
+		assertEquals(1, RepaintCounters.creates);
 		pane.setDetails("plain details");
 		assertEquals("plain details", text.getText());
 		assertNull(pane.getError());
@@ -105,22 +104,22 @@ public class M3ErrorPaneTest {
 	@Test
 	public void resizeSweepIsAViewportDelta() {
 		pane.setError(failure);
-		M3Counters.reset();
+		RepaintCounters.reset();
 		int height = shell.getSize().y;
-		for (int width : M3TestSupport.sweepWidths(480)) {
+		for (int width : TestSupport.sweepWidths(480)) {
 			shell.setSize(width, height);
 		}
 		if (viewport()) {
 			assertNull("a resize never creates the details", pane.getDetailsText());
 		}
-		assertEquals(M3Counters.line(), 0, M3Counters.creates + M3Counters.fullRepaints);
+		assertEquals(RepaintCounters.line(), 0, RepaintCounters.creates + RepaintCounters.fullRepaints);
 		pane.setDetailsVisible(true);
 		Text text = pane.getDetailsText();
-		for (int width : M3TestSupport.sweepWidths(480)) {
+		for (int width : TestSupport.sweepWidths(480)) {
 			shell.setSize(width, height);
 			assertSame(text, pane.getDetailsText());
 		}
-		assertEquals(M3Counters.line(), viewport() ? 1 : 0, M3Counters.creates);
+		assertEquals(RepaintCounters.line(), viewport() ? 1 : 0, RepaintCounters.creates);
 	}
 
 	@Test
@@ -132,7 +131,7 @@ public class M3ErrorPaneTest {
 				}
 			}
 		});
-		M3ErrorPane.open(shell, "Sort failed", "The table could not be sorted.", failure);
+		ErrorPane.open(shell, "Sort failed", "The table could not be sorted.", failure);
 	}
 
 	@Test
@@ -140,9 +139,9 @@ public class M3ErrorPaneTest {
 		if (!viewport()) {
 			return;
 		}
-		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = M3TestSupport.recordPaints(pane);
+		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = TestSupport.recordPaints(pane);
 		org.eclipse.swt.widgets.Label message = (org.eclipse.swt.widgets.Label) pane.getChildren()[1];
-		M3TestSupport.assertHiddenGate(pane, paints, i -> {
+		TestSupport.assertHiddenGate(pane, paints, i -> {
 			pane.setMessage("message " + i);
 			pane.setSeverity(i % 2 == 0 ? SWT.ICON_WARNING : SWT.ICON_ERROR);
 			pane.setError(i % 3 == 0 ? failure : null);
@@ -189,9 +188,9 @@ public class M3ErrorPaneTest {
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setMessage(null));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setDetails(null));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setSeverity(SWT.ICON_QUESTION));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setMessage(null));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setDetails(null));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setSeverity(SWT.ICON_QUESTION));
 		pane.setError(null);
 		assertEquals("", pane.getDetails());
 	}
