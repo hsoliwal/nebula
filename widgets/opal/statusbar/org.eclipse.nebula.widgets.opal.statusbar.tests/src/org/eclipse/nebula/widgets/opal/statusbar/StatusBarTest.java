@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.opal.statusbar;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -23,9 +23,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.M3StatusBar;
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.opal.statusbar.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -38,15 +37,15 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3StatusBar: prefix-sum layout (fixed, preferred, weighted slots tile the bar), delta repaints (a text change
+ * StatusBar: prefix-sum layout (fixed, preferred, weighted slots tile the bar), delta repaints (a text change
  * repaints its slot; a preferred slot that grows repaints from itself on), controls in slots, grip drag, pixels after
  * deltas equal a bar built with the final texts, errors. Runs in both startup modes.
  */
-public class M3StatusBarTest {
+public class StatusBarTest {
 
 	Display display;
 	Shell shell;
-	M3StatusBar bar;
+	StatusBar bar;
 	List<Rectangle> paints;
 
 	@Before
@@ -55,18 +54,18 @@ public class M3StatusBarTest {
 		shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(10, 10, 420, 80);
 		bar = build(shell, 0);
-		paints = M3TestSupport.recordPaints(bar);
+		paints = TestSupport.recordPaints(bar);
 		shell.open();
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
-	static M3StatusBar build(Shell shell, int y) {
-		M3StatusBar bar = new M3StatusBar(shell, SWT.NONE);
+	static StatusBar build(Shell shell, int y) {
+		StatusBar bar = new StatusBar(shell, SWT.NONE);
 		bar.setBounds(0, y, 400, 24);
-		bar.addSlot(M3StatusBar.FIXED, 80);
-		bar.addSlot(M3StatusBar.PREFERRED, 20);
-		bar.addSlot(M3StatusBar.FILL, 1);
-		bar.addSlot(M3StatusBar.FILL, 3);
+		bar.addSlot(StatusBar.FIXED, 80);
+		bar.addSlot(StatusBar.PREFERRED, 20);
+		bar.addSlot(StatusBar.FILL, 1);
+		bar.addSlot(StatusBar.FILL, 3);
 		bar.setText(0, "Ready");
 		bar.setText(1, "row 1");
 		bar.setText(2, "filter: none");
@@ -80,7 +79,7 @@ public class M3StatusBarTest {
 	}
 
 	static boolean viewport() {
-		return WidgetMode.of("M3StatusBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+		return WidgetMode.of("StatusBar", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	}
 
 	@Test
@@ -132,7 +131,7 @@ public class M3StatusBarTest {
 		assertEquals(before.x, after.x);
 		if (viewport()) {
 			Rectangle client = bar.getClientArea();
-			M3TestSupport.assertPaintsInside(paints, new Rectangle(after.x, client.y, client.x + client.width - after.x, client.height));
+			TestSupport.assertPaintsInside(paints, new Rectangle(after.x, client.y, client.x + client.width - after.x, client.height));
 		}
 	}
 
@@ -149,7 +148,7 @@ public class M3StatusBarTest {
 		assertNull(bar.getControl(3));
 		bar.removeSlot(0);
 		assertEquals(3, bar.getSlotCount());
-		assertEquals(M3StatusBar.PREFERRED, bar.getSlotMode(0));
+		assertEquals(StatusBar.PREFERRED, bar.getSlotMode(0));
 		assertEquals("a much longer preferred text", bar.getText(0));
 	}
 
@@ -159,7 +158,7 @@ public class M3StatusBarTest {
 		Label last = new Label(bar, SWT.NONE);
 		bar.setControl(0, first);
 		bar.setControl(3, last);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		Point size = bar.getSize();
 		bar.setSize(size.x, size.y + 10);
 		assertEquals("taller: the slot control takes the new height", bar.getSlotBounds(0), first.getBounds());
@@ -194,12 +193,12 @@ public class M3StatusBarTest {
 		bar.setText(1, "row 77");
 		bar.setText(3, "12 rows");
 		bar.update();
-		M3StatusBar fresh = build(shell, 40);
+		StatusBar fresh = build(shell, 40);
 		fresh.setText(0, "Busy");
 		fresh.setText(1, "row 77");
 		fresh.setText(3, "12 rows");
-		M3TestSupport.flush(display);
-		assertArrayEquals(M3TestSupport.pixels(fresh).data, M3TestSupport.pixels(bar).data);
+		TestSupport.flush(display);
+		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(bar).data);
 	}
 
 	@Test
@@ -210,16 +209,16 @@ public class M3StatusBarTest {
 		int[] moves = new int[1];
 		pinned.addListener(SWT.Move, e -> moves[0]++);
 		pinned.addListener(SWT.Resize, e -> moves[0]++);
-		M3StatusBar fixedOnly = new M3StatusBar(shell, SWT.NONE);
+		StatusBar fixedOnly = new StatusBar(shell, SWT.NONE);
 		fixedOnly.setBounds(0, 40, 400, 24);
-		fixedOnly.addSlot(M3StatusBar.FIXED, 60);
-		fixedOnly.addSlot(M3StatusBar.PREFERRED, 0);
+		fixedOnly.addSlot(StatusBar.FIXED, 60);
+		fixedOnly.addSlot(StatusBar.PREFERRED, 0);
 		fixedOnly.setText(1, "no weighted slot");
-		List<Rectangle> fixedPaints = M3TestSupport.recordPaints(fixedOnly);
-		M3TestSupport.flush(display);
+		List<Rectangle> fixedPaints = TestSupport.recordPaints(fixedOnly);
+		TestSupport.flush(display);
 		int firstFill = bar.getSlotBounds(2).x, height = bar.getSize().y, old = bar.getSize().x;
-		M3Counters.reset();
-		for (int width : M3TestSupport.sweepWidths(400)) {
+		RepaintCounters.reset();
+		for (int width : TestSupport.sweepWidths(400)) {
 			paints.clear();
 			fixedPaints.clear();
 			bar.setSize(width, height);
@@ -238,9 +237,9 @@ public class M3StatusBarTest {
 			old = width;
 		}
 		assertEquals("fixed slot control never moves", 0, moves[0]);
-		assertEquals(M3Counters.line(), viewport() ? 0 : 100, M3Counters.fullRepaints);
+		assertEquals(RepaintCounters.line(), viewport() ? 0 : 100, RepaintCounters.fullRepaints);
 		bar.setSize(old, height + 6);
-		assertEquals("a height change moves every baseline", viewport() ? 1 : 101, M3Counters.fullRepaints);
+		assertEquals("a height change moves every baseline", viewport() ? 1 : 101, RepaintCounters.fullRepaints);
 	}
 
 	@Test
@@ -248,31 +247,31 @@ public class M3StatusBarTest {
 		if (!viewport()) {
 			return;
 		}
-		M3TestSupport.assertHiddenGate(bar, paints, i -> {
+		TestSupport.assertHiddenGate(bar, paints, i -> {
 			bar.setText(1, "row " + i);
 			bar.setText(0, i % 2 == 0 ? "Busy" : "Ready");
 			bar.setText(3, i + " rows");
 		});
-		M3StatusBar fresh = build(shell, 40);
+		StatusBar fresh = build(shell, 40);
 		fresh.setText(1, "row 9999");
 		fresh.setText(0, "Ready");
 		fresh.setText(3, "9999 rows");
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals(fresh.getSlotBounds(1), bar.getSlotBounds(1));
-		assertArrayEquals(M3TestSupport.pixels(fresh).data, M3TestSupport.pixels(bar).data);
+		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(bar).data);
 	}
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(3, 0));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(M3StatusBar.FIXED, -1));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.setText(4, "x"));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.getText(-1));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(0, null));
-		M3TestSupport.expect(SWT.ERROR_INVALID_PARENT, () -> bar.setControl(0, new Label(shell, SWT.NONE)));
-		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.removeSlot(9));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(3, 0));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> bar.addSlot(StatusBar.FIXED, -1));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.setText(4, "x"));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.getText(-1));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(0, null));
+		TestSupport.expect(SWT.ERROR_INVALID_PARENT, () -> bar.setControl(0, new Label(shell, SWT.NONE)));
+		TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> bar.removeSlot(9));
 		for (int i = 0; i < 9; i++) {
-			bar.addSlot(M3StatusBar.FIXED, 4);
+			bar.addSlot(StatusBar.FIXED, 4);
 		}
 		assertEquals(13, bar.getSlotCount());
 		assertTrue(bar.computeSize(SWT.DEFAULT, SWT.DEFAULT).x > 80);
