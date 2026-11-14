@@ -66,11 +66,36 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                     && NebulaMobileMain.state.scaleSelection == selectedBeforeAccessibility + 1
                     && NebulaMobileMain.state.progressSelection == NebulaMobileMain.state.scaleSelection,
                     "native Scale accessibility increments original SWT Selection");
+            await(() -> NebulaMobileMain.state.listDataLoads > 0
+                    && NebulaMobileMain.state.listDataLoads <= 20,
+                    "one-billion-row SWT List requests only visible SetData cells");
+            int[] listTap = location(screen, 52, 515);
+            tap(listTap);
+            await(() -> NebulaMobileMain.state.listSelection == 999_999_990
+                    && NebulaMobileMain.state.listEvents == 1,
+                    "native List tap selects the correct billion-row virtual index");
+            int[] selectedRowPixels = location(screen, screenLogicalWidth - 60, 515);
+            await(() -> pixelMatches(selectedRowPixels, 0x007aff),
+                    "selected original List row paints native selection pixels");
+            runOnMainSync(() -> {
+                View nativeList = findList(surface(current));
+                require(nativeList != null, "Original SWT List owns a native accessibility peer");
+                AccessibilityNodeInfo info = nativeList.createAccessibilityNodeInfo();
+                require("android.widget.ListView".contentEquals(info.getClassName()),
+                        "SWT List is announced as a native Android ListView");
+                require(nativeList.performAccessibilityAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, null),
+                        "Android native accessibility forwards List viewport paging");
+            });
+            SystemClock.sleep(200);
+            require(NebulaMobileMain.state.listEvents == 1
+                    && NebulaMobileMain.state.listSelection == 999_999_990
+                    && NebulaMobileMain.state.listDataLoads <= 22,
+                    "Accessibility scrolling does not alter Selection or densely load virtual rows");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: source widget, pixels, selection, veto, disabled, Scale/ProgressBar, Android slider accessibility, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: original widgets, Scale/ProgressBar, billion-row List, native accessibility, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -98,6 +123,18 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
         if (root instanceof ViewGroup group) {
             for (int i = 0; i < group.getChildCount(); i++) {
                 View found = findSlider(group.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private View findList(View root) {
+        CharSequence label = root.getContentDescription();
+        if (label != null && label.toString().equals("List")) return root;
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findList(group.getChildAt(i));
                 if (found != null) return found;
             }
         }

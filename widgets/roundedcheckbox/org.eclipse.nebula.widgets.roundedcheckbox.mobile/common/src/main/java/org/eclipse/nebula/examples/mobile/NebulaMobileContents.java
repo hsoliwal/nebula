@@ -7,6 +7,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Scale;
+import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Shell;
 
 /** One shared demo body for the Android and iOS SWT hosts. */
@@ -19,6 +20,9 @@ public final class NebulaMobileContents {
         public volatile int scaleSelection = 25;
         public volatile int progressSelection = 25;
         public volatile int scaleEvents;
+        public volatile int listSelection = -1;
+        public volatile int listEvents;
+        public volatile int listDataLoads;
         public volatile boolean disposed;
     }
 
@@ -38,6 +42,20 @@ public final class NebulaMobileContents {
         Scale scale = new Scale(shell, SWT.HORIZONTAL);
         progress.setSelection(25);
         scale.setSelection(25);
+        // Original SWT List, not a platform-specific demo replacement:
+        // one billion logical VIRTUAL items, only visible source rows loaded.
+        List rows = new List(shell, SWT.SINGLE | SWT.VIRTUAL | SWT.V_SCROLL);
+        rows.addListener(SWT.SetData, event -> {
+            state.listDataLoads++;
+            rows.setItem(event.index, "Row " + event.index);
+        });
+        rows.setItemCount(1_000_000_000);
+        rows.setTopIndex(999_999_990);
+        rows.addListener(SWT.Selection, event -> {
+            state.listSelection = rows.getSelectionIndex();
+            state.listEvents++;
+            if (!labels.isDisposed()) labels.redraw();
+        });
         scale.addListener(SWT.Selection, event -> {
             int value = scale.getSelection();
             state.scaleSelection = value;
@@ -73,6 +91,7 @@ public final class NebulaMobileContents {
             event.gc.drawText("Selection: " + selectable.getSelection(), 16, 292, true);
             event.gc.drawText("Attempts: " + state.attempts, 16, 324, true);
             event.gc.drawText("Scale drives ProgressBar: " + state.progressSelection, 16, 356, true);
+            event.gc.drawText("Billion-row List selected: " + state.listSelection, 16, 474, true);
         });
         Runnable layout = () -> {
             Rectangle area = shell.getClientArea();
@@ -82,6 +101,8 @@ public final class NebulaMobileContents {
             disabled.setBounds(20, 208, 44, 44);
             progress.setBounds(20, 388, Math.max(30, area.width - 40), 24);
             scale.setBounds(20, 428, Math.max(30, area.width - 40), 34);
+            rows.setBounds(20, 500, Math.max(30, area.width - 40),
+                    Math.max(90, Math.min(230, area.height - 520)));
         };
         shell.addListener(SWT.Resize, event -> layout.run());
         layout.run();
