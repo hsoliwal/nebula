@@ -98,3 +98,169 @@ jobs:
 #      if: always()
 #      with:
 #       files: /**/surefire-reports/*.xml
+
+  # Mechanical routing keeps the native emulator off unrelated desktop changes.
+  # This extends the existing control plane; no additional workflow is registered.
+  mobile-changes:
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      run: ${{ steps.paths.outputs.run }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - id: paths
+        name: Route mobile and original widget changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          paths = []
+          if os.environ['EVENT_NAME'] != 'workflow_dispatch':
+              paths = subprocess.check_output(
+                  ['git', 'diff', '--name-only', '--no-renames', '-z', 'HEAD^', 'HEAD']
+              ).decode('utf-8').split('\0')
+          dependencies = {
+              '.github/workflows/maven.yaml',
+              'widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/src/org/eclipse/nebula/widgets/opal/commons/SelectionListenerUtil.java',
+              'widgets/opal/commons/org.eclipse.nebula.widgets.opal.commons/src/org/eclipse/nebula/widgets/opal/commons/ReflectionUtils.java',
+          }
+          selected = os.environ['EVENT_NAME'] == 'workflow_dispatch' or any(
+              path.startswith(('mobile/', 'widgets/roundedcheckbox/')) or path in dependencies
+              for path in paths
+          )
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              output.write('run=' + str(selected).lower() + '\n')
+          PY
+
+  mobile-android:
+    name: Original SWT and Nebula on Android 35
+    needs: mobile-changes
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository) &&
+      needs.mobile-changes.outputs.run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - id: swt
+        name: Read exact published SWT source pin
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+          value = Path('mobile/swt-revision.txt').read_text(encoding='ascii')
+          if not re.fullmatch(r'[0-9a-f]{40}\n?', value):
+              raise SystemExit('mobile/swt-revision.txt must contain the actual published 40-character SWT commit')
+          revision = value.rstrip('\n')
+          if revision == '0' * 40:
+              raise SystemExit('A placeholder SWT commit is not an admitted source pin')
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              output.write('revision=' + revision + '\n')
+          PY
+      - name: Checkout the pinned mobile SWT source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: hsoliwal/eclipse.platform.swt
+          ref: ${{ steps.swt.outputs.revision }}
+          path: .mobile-swt
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Verify SWT checkout identity
+        env:
+          SWT_REVISION: ${{ steps.swt.outputs.revision }}
+        run: test "$(git -C .mobile-swt rev-parse HEAD)" = "$SWT_REVISION"
+      - name: Set up the pinned JDK
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21.0.13+9'
+          cache: maven
+          cache-dependency-path: |
+            mobile/pom.xml
+            .mobile-swt/mobile/pom.xml
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
+        with:
+          maven-version: 3.9.11
+      - name: Prepare the actual SDK and KVM device
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          SWT_MOBILE_SDK=${ANDROID_SDK_ROOT:-${ANDROID_HOME:?Hosted Android SDK is missing}}
+          SWT_SDKMANAGER="$SWT_MOBILE_SDK/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SWT_SDKMANAGER"
+          test -c /dev/kvm
+          sudo chgrp "$(id -gn)" /dev/kvm
+          sudo chmod g+rw /dev/kvm
+          printf 'SWT_MOBILE_SDK=%s\n' "$SWT_MOBILE_SDK" >> "$GITHUB_ENV"
+          # Hosted SDK licenses must already be accepted. Never feed acceptance
+          # responses to sdkmanager, including through an emulator setup action.
+          if ! "$SWT_SDKMANAGER" --sdk_root="$SWT_MOBILE_SDK" \
+            'platform-tools' 'emulator' 'platforms;android-35' 'build-tools;36.0.0' \
+            'system-images;android-35;default;x86_64' < /dev/null; then
+            printf 'SDK setup failed. This gate requires existing accepted licenses and does not accept licenses automatically.\n' >&2
+            exit 1
+          fi
+          for required in \
+            platforms/android-35/android.jar \
+            build-tools/36.0.0/lib/d8.jar \
+            emulator/emulator \
+            system-images/android-35/default/x86_64/system.img; do
+            if [[ ! -f "$SWT_MOBILE_SDK/$required" ]]; then
+              printf 'Missing SDK package after installation: %s; this gate requires already accepted SDK licenses.\n' "$required" >&2
+              exit 1
+            fi
+          done
+          "$SWT_SDKMANAGER" --sdk_root="$SWT_MOBILE_SDK" --list_installed > mobile-ci-sdk-packages.txt
+      - name: Build the actual instrumentation APK through Maven
+        timeout-minutes: 10
+        run: >-
+          mvn -B -V -f mobile/pom.xml
+          -Dswt.checkout="$PWD/.mobile-swt"
+          -Dandroid.sdk="$SWT_MOBILE_SDK"
+          -Dmobile.instrumentation=true verify
+      - name: Execute native input, lifecycle and visible-pixel contracts
+        timeout-minutes: 15
+        env:
+          SWT_REVISION: ${{ steps.swt.outputs.revision }}
+        run: >-
+          python3 mobile/android/run_instrumentation.py
+          --sdk "$SWT_MOBILE_SDK"
+          --apk mobile/target/swt-nebula-mobile-instrumentation.apk
+          --output mobile/target/native-proof
+          --swt-revision "$SWT_REVISION"
+          --nebula-revision "$GITHUB_SHA"
+          --boot-timeout 300 --test-timeout 300
+      - name: Preserve Android execution evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: swt-nebula-android-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            mobile/swt-revision.txt
+            mobile-ci-sdk-packages.txt
+            mobile/target/native-proof/
+            mobile/target/*.apk
+            mobile/target/build-report.json
+            mobile/target/build.log
