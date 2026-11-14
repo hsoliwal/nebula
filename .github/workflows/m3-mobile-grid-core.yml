@@ -1,0 +1,26 @@
+name: Nebula mobile Grid pure-Java long-index viewport contracts
+on:
+  pull_request:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/internal/mobile/**'
+      - 'm3/mobile/grid-tests/**'
+      - 'm3/mobile/test-grid-core.sh'
+      - '.github/workflows/m3-mobile-grid-core.yml'
+  push:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/internal/mobile/**'
+      - 'm3/mobile/grid-tests/**'
+      - 'm3/mobile/test-grid-core.sh'
+permissions:
+  contents: read
+jobs:
+  java17-viewport:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile and execute long-index viewport ownership regression
+        run: bash m3/mobile/test-grid-core.sh
