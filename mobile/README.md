@@ -19,3 +19,18 @@ These prove portable Java and event ownership only. Native Grid painting,
 columns, sorting, editing, accessibility, RTL, IME, touch, built Android APK
 or iOS runtime, and full equivalent desktop behavior remain unqualified.
 No upstream Grid source or public widget contract was modified.
+
+## Android native-view demonstration
+
+The standalone `mobile/android` Gradle application uses `MobileGridActivity` to
+render 1,000,000,000,000 logical rows in three display columns while maintaining
+only viewport + overscan native row buttons. It supports touch-motion scrolling,
+selection callback and device Activity lifecycle transitions. Its SWT source
+is pinned in `.github/workflows/m3-mobile-grid-android-apk.yml` to a known
+mobile-host commit; to build locally, place that SWT fork checkout at
+`./swt-mobile` relative to the Nebula repository root, install Android SDK 35,
+then run `gradle -p mobile/android assembleDebug` with Java 17.
+
+This is a **private demonstration app**, not a replacement implementation of
+`org.eclipse.nebula.widgets.grid.Grid`. Android APK assembly, emulator/device
+execution and production Grid API compatibility still require passing proof.
