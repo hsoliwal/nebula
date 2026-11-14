@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula Web Widgets Tests
+Bundle-SymbolicName: org.eclipse.nebula.widgets.web.tests
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Eclipse Nebula
+Fragment-Host: org.eclipse.nebula.widgets.web
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.junit;bundle-version="4.13.0"
+Automatic-Module-Name: org.eclipse.nebula.widgets.web.tests
