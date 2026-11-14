@@ -6,9 +6,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = 'nebula-android'
-def checkout = providers.gradleProperty('swtCheckout').orNull
-if (checkout == null) {
-    throw new GradleException('Supply -PswtCheckout=/absolute/path/to/eclipse.platform.swt containing the SWT mobile backend.')
-}
-include ':swt', ':app'
-project(':swt').projectDir = new File(checkout, 'm3/mobile/android/swt')
+include ':app'
