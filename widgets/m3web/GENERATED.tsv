@@ -107,7 +107,7 @@ org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/M3StatKpi.
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/M3SwipeActions.java	nebula/Widget.tmpl	7028bba4223c655e48189469dea9fa8157a67fa7276b6cd5afcede3b86c2c95f
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/M3TagInput.java	nebula/Widget.tmpl	0da0230cf9791196d1848d35f8a72bbd41c8df9efec7376933fac0afea3d2c7b
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/M3Tour.java	nebula/Widget.tmpl	cb6a8f4baa28a893000d94960faabfcba20cce13ba0822c6b38f735cc7a4f24f
-org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/M3WebCanvas.java	nebula/M3WebCanvas.java.tmpl	e6841cc47f749969cec62d1590244e8badb58ef8aa2cc9dac6b2ef70859df3d6
+org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/M3WebCanvas.java	nebula/M3WebCanvas.java.tmpl	19fce5b3048868fcce8d4841e4e62d841948c7dd68afd0f8d96d635318325bb8
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/M3WebCanvasCache.java	nebula/M3WebCanvasCache.java.tmpl	cd5970ffcd3dec7e8f9be389060b58961adf9b02ac50be9b445380334600270a
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3AffixApi.java	member/Api.tmpl	9cd4931fdf301024b9ef3a6f956889f5797c22f7587c240b327b16e2ae029ce5
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3AffixModel.java	member/Model.tmpl	e8108cd05ad6c4aa3e033a3e588717c049e0f43e7606e3e65b12987408b062ab
@@ -132,7 +132,7 @@ org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3Ca
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CodeBlockApi.java	member/Api.tmpl	3ba13e04b67ab18ab818a2f811c50a8b2990f0c33692ad6c1ce4cfd8c4705863
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CodeBlockModel.java	member/Model.tmpl	84a6d5e23ad4cd8b22ff6189a35f654930fdc54924cbedae332256ef92ea8e40
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CollectionApi.java	family/COLLECTION.api.tmpl	a1e112eb2de3ccd2979d2446a446cbf205da350cc64ec3e697a1c045596d6348
-org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CollectionModel.java	family/COLLECTION.java.tmpl	d5a3ddbfa323b80f047352cd46c2a954adc2e9f977d5c472d40880115d8e39d7
+org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CollectionModel.java	family/COLLECTION.java.tmpl	64122886ab90eed027612be3a0d5df329251ba7c2c28326b2db818789a9bc6b5
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CommandPaletteApi.java	member/Api.tmpl	f70dc0349ab5332d900dc16ffdd8a464b66c3321d123e0553d330864209d95e5
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CommandPaletteModel.java	member/Model.tmpl	30e42e7c3c32d410718750f996248c634f487a8561b5bac2dcaeb664f36cbcbb
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3CommandsApi.java	family/COMMANDS.api.tmpl	3cd1f5f09110f33708d67c82f9f4ea796a11784b0dd48b9f78a04290177a4138
@@ -194,9 +194,9 @@ org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3To
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebApi.java	core/M3WebApi.java.tmpl	03400fd3cf642b117ead66f78a67b5fb1543d177755093ae54e74a6c7d6cb02f
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebDelta.java	core/M3WebDelta.java.tmpl	0df16b140b540058f34f51cb8504aa6ded6123bfc15effd52b06c2a1a79b4855
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebGlyphs.java	core/M3WebGlyphs.java.tmpl	d7a3985298b51e51084586e3ddc8bfe0d6cc556db7a38719ef9afdd62bc606b1
-org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebLanes.java	core/M3WebLanes.java.tmpl	b08574f7a9209f66f79294e6e0d78537d9f2bc6d29f6bac0d4b3576c5a42829c
+org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebLanes.java	core/M3WebLanes.java.tmpl	9f8f4d9cc89db35f5a7871e9ca4f46ad8b1170eb54e028c23ac7100501a9135e
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebModel.java	core/M3WebModel.java.tmpl	88553d781eae84c18d6195a7d01e03b2d7e6c5e0ca88e15f14653e37df1318bd
-org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebPaint.java	core/M3WebPaint.java.tmpl	e5a6c1b25c4bfb57d63f4363d42c91fb1714fec60263e1378d0cff7b59386dc3
+org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebPaint.java	core/M3WebPaint.java.tmpl	3939a9b694193a5a5d312806ac1412eda8abd43c527115a3c3ac68fcb76cb494
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebStates.java	core/M3WebStates.java.tmpl	3418138823c8423f5720dbaf8354ceab445f3b905420ee70296697daecd9b940
 org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebTheme.java	core/M3WebTheme.java.tmpl	d66b9514abd380fe300c953843b5b0b00b230a650e3db0a9cccee9fa472a8045
-org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebView.java	core/M3WebView.java.tmpl	e3cfa08033cc619c23bc8a6690ecd7e8cfcfff98fd56d8292bab10847a741b29
+org.eclipse.nebula.widgets.m3web/src/org/eclipse/nebula/widgets/m3web/model/M3WebView.java	core/M3WebView.java.tmpl	427bd3917ba94c5c27ea57efa72da213ab6447d977c33cb0e5b97f6eacd6863b

@@ -41,7 +41,7 @@ public class M3CollectionModel extends M3WebModel implements M3CollectionApi {
 
 	@Override
 	public long logicalExtent() {
-		return mode == KANBAN ? (long) columnDepth() * itemExtent : (long) ((logicalCount() + perRow() - 1) / perRow()) * itemExtent;
+		return mode == KANBAN ? (long) columnDepth() * itemExtent : (((long) logicalCount() + perRow() - 1) / perRow()) * itemExtent;
 	}
 
 	@Override
@@ -49,8 +49,10 @@ public class M3CollectionModel extends M3WebModel implements M3CollectionApi {
 		super.project();
 		if (mode == GALLERY) {
 			int n = logicalCount(), per = perRow();
-			window[0] *= per; window[1] = Math.min(n, window[1] * per);
-			window[2] *= per; window[3] = Math.min(n, window[3] * per);
+			window[0] = (int) Math.min((long) n, (long) window[0] * per);
+			window[1] = (int) Math.min((long) n, (long) window[1] * per);
+			window[2] = (int) Math.min((long) n, (long) window[2] * per);
+			window[3] = (int) Math.min((long) n, (long) window[3] * per);
 		}
 	}
 

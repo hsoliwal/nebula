@@ -33,6 +33,9 @@ public abstract class M3WebLanes implements M3WebApi {
 		}
 		text[count] = label;
 		detail[count] = det;
+		if (keys != null) {
+			keys[count] = label;
+		}
 		flags[count] = value[count] = aux[count] = group[count] = 0;
 		count++;
 		relayout(count - 1, D_ITEMS);
@@ -55,13 +58,33 @@ public abstract class M3WebLanes implements M3WebApi {
 		}
 		System.arraycopy(text, item + 1, text, item, tail);
 		System.arraycopy(detail, item + 1, detail, item, tail);
+		if (keys != null) {
+			System.arraycopy(keys, item + 1, keys, item, tail);
+		}
 		count--;
+		blank(count, count + 1);
 		focus = Math.min(focus, count - 1);
 		relayout(item, D_ITEMS);
 	}
 
+	/** Clears retired or newly admitted ids without replacing the backing lanes. */
+	final void blank(int from, int to) {
+		Arrays.fill(flags, from, to, 0);
+		Arrays.fill(value, from, to, 0);
+		Arrays.fill(aux, from, to, 0);
+		Arrays.fill(group, from, to, 0);
+		Arrays.fill(rects, from * 4, to * 4, 0);
+		Arrays.fill(text, from, to, null);
+		Arrays.fill(detail, from, to, null);
+		if (keys != null) {
+			Arrays.fill(keys, from, to, null);
+		}
+	}
+
 	@Override
 	public void clear() {
+		blank(0, count);
+		keys = null;
 		count = 0;
 		focus = hover = pressed = -1;
 		relayout(-1, D_ITEMS);
@@ -82,6 +105,9 @@ public abstract class M3WebLanes implements M3WebApi {
 	public void setText(int item, String s) {
 		check(item);
 		text[item] = s;
+		if (keys != null) {
+			keys[item] = s;
+		}
 		relayout(item, D_TEXT);
 	}
 
@@ -211,6 +237,11 @@ public abstract class M3WebLanes implements M3WebApi {
 
 	protected void damageAll() {
 		damage(0, 0, width, height);
+	}
+
+	/** Returns whether damage is pending without consuming it or notifying listeners. */
+	final boolean hasDamage() {
+		return dx0 <= dx1 && dy0 <= dy1;
 	}
 
 	@Override

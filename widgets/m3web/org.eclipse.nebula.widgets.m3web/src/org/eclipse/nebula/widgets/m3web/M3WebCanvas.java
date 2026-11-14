@@ -167,10 +167,11 @@ public class M3WebCanvas<M extends M3WebModel> extends Canvas {
 			Point size = getSize();
 			boolean h = model.scrollsHorizontally();
 			int o = model.viewOrigin(), len = model.viewLength();
+			int source = o + Math.max(0, -dy), span = len - Math.abs(dy);
 			if (h) {
-				scroll(o + dy, 0, o, 0, len, size.y, false);
+				scroll(source + dy, 0, source, 0, span, size.y, false);
 			} else {
-				scroll(0, o + dy, 0, o, size.x, len, false);
+				scroll(0, source + dy, 0, source, size.x, span, false);
 			}
 		}
 		if (model.takeDamage(damage)) {
@@ -209,14 +210,16 @@ public class M3WebCanvas<M extends M3WebModel> extends Canvas {
 		gc.setBackground(cache.color(model.theme().slot(0)));
 		gc.fillRectangle(e.x, e.y, e.width, e.height);
 		model.paint(paint);
-		for (int i = 0; i < paint.count(); i++) {
-			if (paint.intersects(i, e.x, e.y, e.width, e.height)) {
-				replay(gc, i, e);
+		try (PaintClip clipping = new PaintClip(gc)) {
+			for (int i = 0; i < paint.count(); i++) {
+				if (paint.intersects(i, e.x, e.y, e.width, e.height)) {
+					replay(gc, i, e, clipping);
+				}
 			}
 		}
 	}
 
-	private void replay(GC gc, int i, Event e) {
+	private void replay(GC gc, int i, Event e, PaintClip clipping) {
 		int x = paint.get(i, M3WebPaint.F_X), y = paint.get(i, M3WebPaint.F_Y), w = paint.get(i, M3WebPaint.F_W), h = paint.get(i, M3WebPaint.F_H);
 		int arg = paint.get(i, M3WebPaint.F_ARG);
 		Color c = cache.color(paint.get(i, M3WebPaint.F_RGB));
@@ -229,13 +232,13 @@ public class M3WebCanvas<M extends M3WebModel> extends Canvas {
 		case M3WebPaint.OVAL: gc.fillOval(x, y, w, h); break;
 		case M3WebPaint.OVAL_LINE: gc.drawOval(x, y, w - 1, h - 1); break;
 		case M3WebPaint.LINE: gc.drawLine(x, arg == 0 ? y : y + h, x + w, arg == 0 ? y + h : y); break;
-		default: replayRest(gc, i, x, y, w, h, arg, e);
+		default: replayRest(gc, i, x, y, w, h, arg, e, clipping);
 		}
 	}
 
-	private void replayRest(GC gc, int i, int x, int y, int w, int h, int arg, Event e) {
+	private void replayRest(GC gc, int i, int x, int y, int w, int h, int arg, Event e, PaintClip clipping) {
 		switch (paint.get(i, M3WebPaint.F_OP)) {
-		case M3WebPaint.TEXT: text(gc, paint.text(paint.get(i, M3WebPaint.F_REF)), x, y, w, h, arg, e); break;
+		case M3WebPaint.TEXT: text(gc, paint.text(paint.get(i, M3WebPaint.F_REF)), x, y, w, h, arg, e, clipping); break;
 		case M3WebPaint.GRADIENT: gc.setBackground(cache.color(arg)); gc.fillGradientRectangle(x, y, w, h, false); break;
 		case M3WebPaint.ARC: gc.drawArc(x, y, w, h, arg, paint.get(i, M3WebPaint.F_REF)); break;
 		default: gc.drawPolyline(points(i, arg));
@@ -251,17 +254,133 @@ public class M3WebCanvas<M extends M3WebModel> extends Canvas {
 		return xy;
 	}
 
-	private void text(GC gc, String s, int x, int y, int w, int h, int style, Event e) {
+	private void text(GC gc, String s, int x, int y, int w, int h, int style, Event e, PaintClip clipping) {
 		gc.setFont(cache.font(getFont(), style));
 		Point ext = gc.textExtent(s);
 		int tx = (style & M3WebPaint.CENTER) != 0 ? x + (w - ext.x) / 2 : (style & M3WebPaint.RIGHT) != 0 ? x + w - ext.x : x;
 		int ty = y + (h - ext.y) / 2;
-		gc.setClipping(x, y, w, h);
-		gc.drawText(s, tx, ty, true);
-		if ((style & M3WebPaint.UNDERLINE) != 0) {
-			gc.drawLine(tx, ty + ext.y - 1, tx + ext.x, ty + ext.y - 1);
+		Throwable primary = null;
+		try {
+			clipping.apply(x, y, w, h);
+			gc.drawText(s, tx, ty, true);
+			if ((style & M3WebPaint.UNDERLINE) != 0) {
+				gc.drawLine(tx, ty + ext.y - 1, tx + ext.x, ty + ext.y - 1);
+			}
+		} catch (RuntimeException | Error failure) {
+			primary = failure;
+			throw failure;
+		} finally {
+			try {
+				clipping.restore();
+			} catch (RuntimeException | Error cleanup) {
+				if (primary == null) {
+					throw cleanup;
+				}
+				if (primary != cleanup) {
+					primary.addSuppressed(cleanup);
+				}
+			}
 		}
-		gc.setClipping(e.x, e.y, e.width, e.height);
+	}
+
+	/** One frame scope; native scratch is lazy and shared by its text records only. */
+	private static final class PaintClip implements AutoCloseable {
+		private final GC gc;
+		private org.eclipse.swt.graphics.Region originalClip, workingClip;
+		private org.eclipse.swt.graphics.Transform originalTransform;
+		private boolean captured, originallyClipped;
+
+		PaintClip(GC gc) {
+			this.gc = gc;
+		}
+
+		void apply(int x, int y, int w, int h) {
+			captured = false;
+			if (originalClip == null) {
+				originalClip = new org.eclipse.swt.graphics.Region(gc.getDevice());
+			}
+			if (workingClip == null) {
+				workingClip = new org.eclipse.swt.graphics.Region(gc.getDevice());
+			}
+			if (originalTransform == null) {
+				originalTransform = new org.eclipse.swt.graphics.Transform(gc.getDevice());
+			}
+			originallyClipped = gc.isClipped();
+			gc.getTransform(originalTransform);
+			if (originalTransform.isIdentity()) {
+				gc.getClipping(originalClip);
+			} else {
+				try {
+					gc.setTransform(null);
+					gc.getClipping(originalClip);
+				} finally {
+					gc.setTransform(originalTransform);
+				}
+			}
+			captured = true;
+			gc.setClipping(x, y, w, h);
+			if (originalTransform.isIdentity()) {
+				gc.getClipping(workingClip);
+				workingClip.intersect(originalClip);
+				gc.setClipping(workingClip);
+			} else {
+				try {
+					gc.setTransform(null);
+					gc.getClipping(workingClip);
+					workingClip.intersect(originalClip);
+					gc.setClipping(workingClip);
+				} finally {
+					gc.setTransform(originalTransform);
+				}
+			}
+		}
+
+		void restore() {
+			if (!captured) {
+				return;
+			}
+			try {
+				if (originalTransform.isIdentity()) {
+					gc.setClipping(originallyClipped ? originalClip : null);
+				} else {
+					try {
+						gc.setTransform(null);
+						gc.setClipping(originallyClipped ? originalClip : null);
+					} finally {
+						gc.setTransform(originalTransform);
+					}
+				}
+			} finally {
+				captured = false;
+			}
+		}
+
+		void dispose() {
+			try {
+				restore();
+			} finally {
+				try {
+					if (originalTransform != null) {
+						originalTransform.dispose();
+					}
+				} finally {
+					try {
+						if (workingClip != null) {
+							workingClip.dispose();
+						}
+					} finally {
+						if (originalClip != null) {
+							originalClip.dispose();
+						}
+					}
+				}
+			}
+		}
+
+		@Override
+		public void close() {
+			dispose();
+		}
 	}
 
 	private void initAccessible() {
