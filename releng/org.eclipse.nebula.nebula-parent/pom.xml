@@ -333,6 +333,7 @@ Contributors:
 		<!-- Mature -->
 
 		<module>../../widgets/badgedlabel</module>
+		<module>../../widgets/browserfallback</module>
 		<module>../../widgets/carousel</module>
 		<module>../../widgets/cdatetime</module>
 		<module>../../widgets/chips</module>

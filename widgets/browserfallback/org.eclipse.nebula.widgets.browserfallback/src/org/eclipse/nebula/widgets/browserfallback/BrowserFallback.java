@@ -2,12 +2,12 @@
  * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
  * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.browserfallback;
 
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.eclipse.nebula.widgets.m3.internal.M3BrowserScripts;
+import org.eclipse.nebula.widgets.browserfallback.internal.BrowserScripts;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.browser.Browser;
@@ -41,7 +41,7 @@ import org.eclipse.swt.widgets.Composite;
  * the RWT Remote API for custom high-frequency controls. No guarantee of
  * RWT parity is implied without runtime qualification.</p>
  */
-public final class M3BrowserWidget extends Composite {
+public final class BrowserFallback extends Composite {
 
     /** A callback runs on the widget's SWT/RWT UI thread; it must not retain UI state across disposal. */
     @FunctionalInterface
@@ -58,14 +58,14 @@ public final class M3BrowserWidget extends Composite {
     private boolean ready;
     private SWTException bridgeFailure;
 
-    public M3BrowserWidget(Composite parent, int style) {
+    public BrowserFallback(Composite parent, int style) {
         super(parent, style);
         setLayout(new FillLayout());
         browser = new Browser(this, SWT.NONE);
         function = new BrowserFunction(browser, "m3NebulaEvent") {
             @Override
             public Object function(Object[] arguments) {
-                if (isDisposed() || !ready || !M3BrowserScripts.validEvent(arguments)) {
+                if (isDisposed() || !ready || !BrowserScripts.validEvent(arguments)) {
                     return Boolean.FALSE;
                 }
                 long sourceRevision = documentRevision;
@@ -158,7 +158,7 @@ public final class M3BrowserWidget extends Composite {
         // If evaluation throws, a previous successful bridge must not remain ready.
         long sourceRevision = documentRevision;
         ready = false;
-        Object result = browser.evaluate(M3BrowserScripts.install());
+        Object result = browser.evaluate(BrowserScripts.install());
         // Browser.evaluate may reenter Java and synchronously replace the
         // document. Never authorize a stale evaluation as the new bridge.
         if (isDisposed() || documentRevision != sourceRevision) {
@@ -199,13 +199,13 @@ public final class M3BrowserWidget extends Composite {
     /** Updates textContent; never treats a value as HTML or executable code. */
     public int setTexts(Map<String, String> patches) {
         checkWidget();
-        return evaluatePatch(M3BrowserScripts.patch(patches, false));
+        return evaluatePatch(BrowserScripts.patch(patches, false));
     }
 
     /** Updates input/textarea/select value; does not synthesize an input event. */
     public int setValues(Map<String, String> patches) {
         checkWidget();
-        return evaluatePatch(M3BrowserScripts.patch(patches, true));
+        return evaluatePatch(BrowserScripts.patch(patches, true));
     }
 
     /**
