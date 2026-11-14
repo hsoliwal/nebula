@@ -74,7 +74,8 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             await(() -> NebulaMobileMain.state.listSelection == 999_999_990
                     && NebulaMobileMain.state.listEvents == 1,
                     "native List tap selects the correct billion-row virtual index");
-            await(() -> pixelMatches(listTap, 0x007aff),
+            int[] selectedRowPixels = location(screen, screenLogicalWidth - 60, 515);
+            await(() -> pixelMatches(selectedRowPixels, 0x007aff),
                     "selected original List row paints native selection pixels");
             runOnMainSync(() -> {
                 View nativeList = findList(surface(current));
