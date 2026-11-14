@@ -12,12 +12,12 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.progresscircle;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.progresscircle.internal.HiddenGate;
+import org.eclipse.nebula.widgets.progresscircle.internal.RepaintCounters;
+import org.eclipse.nebula.widgets.progresscircle.internal.SwtLog;
+import org.eclipse.nebula.widgets.progresscircle.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
@@ -39,16 +39,16 @@ import org.eclipse.swt.widgets.Event;
  * and the timer parks; on becoming visible it paints once and the timer resumes.
  * </p>
  * <p>
- * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.M3BusyLabel=original</code> repaints the whole
+ * Styles: <code>BORDER</code>. Startup switch: <code>-Dswt.widget.mode.BusyLabel=original</code> repaints the whole
  * control on every frame and resize, as a plain implementation would. A width-only resize repaints nothing but the
  * newly exposed strip; a height change re-centres the content (whole repaint).
  * </p>
  */
-public class M3BusyLabel extends Canvas {
+public class BusyLabel extends Canvas {
 
-	static final boolean VIEWPORT = WidgetMode.of("M3BusyLabel", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
+	static final boolean VIEWPORT = WidgetMode.of("BusyLabel", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3BusyLabel"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.progresscircle.BusyLabel"); //$NON-NLS-1$
 
 	private static final int GAP = 4;
 
@@ -60,7 +60,7 @@ public class M3BusyLabel extends Canvas {
 	/* shades[0] is the head, shades[trail] the idle point colour; null until the next paint after a colour change */
 	private Color[] shades;
 	private final Runnable tick = this::tick;
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	private boolean parked;
 
 	/**
@@ -69,9 +69,9 @@ public class M3BusyLabel extends Canvas {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3BusyLabel(Composite parent, int style) {
+	public BusyLabel(Composite parent, int style) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | (VIEWPORT ? SWT.NO_REDRAW_RESIZE : 0));
-		gate = new M3HiddenGate(this, this::revealed);
+		gate = new HiddenGate(this, this::revealed);
 		geometry();
 		addListener(SWT.Paint, this::paint);
 		addListener(SWT.Resize, e -> resized());
@@ -320,7 +320,7 @@ public class M3BusyLabel extends Canvas {
 		if (!showing()) {
 			return;
 		}
-		M3Counters.fullRepaints++;
+		RepaintCounters.fullRepaints++;
 		redraw();
 	}
 
