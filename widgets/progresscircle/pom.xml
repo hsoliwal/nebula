@@ -18,6 +18,7 @@
 		<module>org.eclipse.nebula.widgets.progresscircle</module>
 		<module>org.eclipse.nebula.widgets.progresscircle.feature</module>
 		<module>org.eclipse.nebula.widgets.progresscircle.snippets</module>
+		<module>org.eclipse.nebula.widgets.progresscircle.tests</module>
 	</modules>
 
 </project>
