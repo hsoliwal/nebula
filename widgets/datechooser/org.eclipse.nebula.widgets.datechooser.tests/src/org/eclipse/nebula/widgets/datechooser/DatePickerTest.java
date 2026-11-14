@@ -12,7 +12,7 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.datechooser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -22,9 +22,7 @@ import static org.junit.Assert.assertTrue;
 import java.time.LocalDate;
 import java.util.List;
 
-import org.eclipse.nebula.widgets.m3.M3DatePicker;
-import org.eclipse.nebula.widgets.m3.M3MonthView;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.datechooser.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
@@ -36,17 +34,17 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3DatePicker: the field shows the date, typed text is parsed on Enter (an unparsable text is restored), the drop-down
+ * DatePicker: the field shows the date, typed text is parsed on Enter (an unparsable text is restored), the drop-down
  * month view is created once and reused, picking a day sets the date and closes nothing it should not, a closed
  * drop-down takes flagged days without painting and paints once when opened, errors.
  */
-public class M3DatePickerTest {
+public class DatePickerTest {
 
 	static final long OCT_20 = LocalDate.of(2026, 10, 20).toEpochDay();
 
 	Display display;
 	Shell shell;
-	M3DatePicker picker;
+	DatePicker picker;
 	int selections;
 
 	@Before
@@ -54,11 +52,11 @@ public class M3DatePickerTest {
 		display = Display.getDefault();
 		shell = new Shell(display, SWT.NO_TRIM);
 		shell.setBounds(10, 10, 300, 80);
-		picker = new M3DatePicker(shell, SWT.NONE);
+		picker = new DatePicker(shell, SWT.NONE);
 		picker.setBounds(0, 0, 200, 30);
 		picker.addListener(SWT.Selection, e -> selections++);
 		shell.open();
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -79,16 +77,16 @@ public class M3DatePickerTest {
 		assertEquals("restored", "2026-11-03", picker.getTextField().getText());
 		picker.getTextField().setText("");
 		picker.getTextField().notifyListeners(SWT.DefaultSelection, new Event());
-		assertEquals(M3DatePicker.NO_DATE, picker.getDate());
+		assertEquals(DatePicker.NO_DATE, picker.getDate());
 	}
 
 	@Test
 	public void dropDownIsReusedAndPicksADay() {
 		picker.setDate(OCT_20);
 		picker.setPopupVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertTrue(picker.isPopupVisible());
-		M3MonthView view = picker.getMonthView();
+		MonthView view = picker.getMonthView();
 		assertEquals(OCT_20, view.getSelectionStart());
 		Rectangle cell = view.getDayBounds(OCT_20 + 2);
 		Event down = new Event();
@@ -106,19 +104,19 @@ public class M3DatePickerTest {
 
 	@Test
 	public void closedDropDownFoldsDeltasAndPaintsOnceWhenOpened() {
-		if (WidgetMode.of("M3MonthView", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+		if (WidgetMode.of("MonthView", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
 			return;
 		}
 		picker.setDate(OCT_20);
-		M3MonthView view = picker.getMonthView();
-		List<Rectangle> paints = M3TestSupport.recordPaints(view);
+		MonthView view = picker.getMonthView();
+		List<Rectangle> paints = TestSupport.recordPaints(view);
 		for (int i = 0; i < 10_000; i++) {
 			view.setFlagged(OCT_20 + i % 40, i % 3 != 0);
 		}
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("no paint while the drop-down is closed", 0, paints.size());
 		picker.setPopupVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		view.update();
 		assertEquals("one paint pass on open: " + paints, 1, paints.size());
 		picker.setPopupVisible(false);
@@ -126,15 +124,15 @@ public class M3DatePickerTest {
 
 	@Test
 	public void hiddenPickerFoldsTheFieldAndClosesItsDropDown() {
-		if (WidgetMode.of("M3DatePicker", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+		if (WidgetMode.of("DatePicker", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
 			return;
 		}
 		picker.setDate(OCT_20);
 		picker.setPopupVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertTrue(picker.isPopupVisible());
 		picker.setVisible(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertFalse("the drop-down closes with the picker", picker.isPopupVisible());
 		picker.setPopupVisible(true);
 		assertFalse("a hidden picker opens no drop-down", picker.isPopupVisible());
@@ -147,14 +145,14 @@ public class M3DatePickerTest {
 		assertEquals("no native field update while hidden", 0, modifies[0]);
 		assertEquals(OCT_20 + 1000, picker.getDate());
 		picker.setVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertEquals("one field update on show", 1, modifies[0]);
 		assertEquals(LocalDate.ofEpochDay(OCT_20 + 1000).toString(), field.getText());
 	}
 
 	@Test
 	public void errors() {
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> picker.setFormat(null));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> picker.setFormat(null));
 		picker.setFormat(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
 		picker.setDate(OCT_20);
 		assertEquals("20.10.2026", picker.getTextField().getText());

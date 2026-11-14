@@ -12,14 +12,14 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.datechooser;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.datechooser.internal.HiddenGate;
+import org.eclipse.nebula.widgets.datechooser.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -34,7 +34,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 /**
- * A date picker: a text field with the date and a button that drops down an {@link M3MonthView} (the SWT counterpart
+ * A date picker: a text field with the date and a button that drops down an {@link MonthView} (the SWT counterpart
  * of SwingX <code>JXDatePicker</code>, re-derived from its documented behaviour). The date is an epoch day.
  * <p>
  * The drop-down month view is created on first open and reused (hidden while closed, so it takes model changes such as
@@ -48,25 +48,25 @@ import org.eclipse.swt.widgets.Text;
  * </p>
  * <p>
  * Styles: <code>BORDER</code>. Events: <code>Selection</code> when the date changes (<code>Event.index</code> the
- * epoch day). Startup switch: <code>-Dswt.widget.mode.M3DatePicker=original</code> pushes every date into the field
+ * epoch day). Startup switch: <code>-Dswt.widget.mode.DatePicker=original</code> pushes every date into the field
  * and leaves the drop-down to the shell.
  * </p>
  */
-public class M3DatePicker extends Composite {
+public class DatePicker extends Composite {
 
 	/** The value of {@link #getDate()} when no date is set. */
 	public static final long NO_DATE = Long.MIN_VALUE;
 
-	static final boolean VIEWPORT = WidgetMode.of("M3DatePicker", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget M3DatePicker H
+	static final boolean VIEWPORT = WidgetMode.of("DatePicker", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget DatePicker H
 
 	private final Text field;
 	private final Button button;
 	private DateTimeFormatter format = DateTimeFormatter.ISO_LOCAL_DATE;
 	private long date = NO_DATE;
 	private Shell popup;
-	private M3MonthView monthView;
+	private MonthView monthView;
 	/* null in original mode */
-	private final M3HiddenGate gate;
+	private final HiddenGate gate;
 	/* the date changed while the picker was hidden: the field shows an older date until the reveal */
 	private boolean staleField;
 
@@ -76,9 +76,9 @@ public class M3DatePicker extends Composite {
 	 * @param parent the parent
 	 * @param style BORDER
 	 */
-	public M3DatePicker(Composite parent, int style) {
+	public DatePicker(Composite parent, int style) {
 		super(parent, style);
-		gate = VIEWPORT ? new M3HiddenGate(this, this::pushField) : null;
+		gate = VIEWPORT ? new HiddenGate(this, this::pushField) : null;
 		GridLayout layout = new GridLayout(2, false);
 		layout.marginWidth = layout.marginHeight = 0;
 		layout.horizontalSpacing = 1;
@@ -107,8 +107,8 @@ public class M3DatePicker extends Composite {
 			addListener(SWT.Hide, closer);
 			shell.addListener(SWT.Hide, closer);
 			shell.addListener(SWT.Iconify, closer);
-			if (M3HiddenGate.partHiddenEvent() >= 0) {
-				addListener(M3HiddenGate.partHiddenEvent(), closer);
+			if (HiddenGate.partHiddenEvent() >= 0) {
+				addListener(HiddenGate.partHiddenEvent(), closer);
 			}
 		}
 		addListener(SWT.Dispose, e -> {
@@ -132,7 +132,7 @@ public class M3DatePicker extends Composite {
 		boolean changed = epochDay != date;
 		date = epochDay;
 		if (gate != null && !gate.probe()) {
-			staleField = true; // hidden: the field gets the date on reveal //FLLDCIM: MARK — every-widget M3DatePicker H
+			staleField = true; // hidden: the field gets the date on reveal //FLLDCIM: MARK — every-widget DatePicker H
 		} else {
 			staleField = true;
 			pushField();
@@ -157,6 +157,7 @@ public class M3DatePicker extends Composite {
 	/**
 	 * Sets the format of the field (parsing uses the same format).
 	 *
+	 * @param format the format of the field
 	 * @exception IllegalArgumentException ERROR_NULL_ARGUMENT - if the format is null
 	 */
 	public void setFormat(DateTimeFormatter format) {
@@ -178,13 +179,17 @@ public class M3DatePicker extends Composite {
 	}
 
 	/** @return the drop-down month view, created on first use; flag days or set limits on it */
-	public M3MonthView getMonthView() {
+	public MonthView getMonthView() {
 		checkWidget();
 		ensurePopup();
 		return monthView;
 	}
 
-	/** Opens or closes the drop-down month view below the field. */
+	/**
+	 * Opens or closes the drop-down month view below the field.
+	 *
+	 * @param visible true to open the month view, false to close it
+	 */
 	public void setPopupVisible(boolean visible) {
 		checkWidget();
 		if (!visible) {
@@ -193,7 +198,7 @@ public class M3DatePicker extends Composite {
 			}
 			return;
 		}
-		if (VIEWPORT && !M3HiddenGate.shown(this)) {
+		if (VIEWPORT && !HiddenGate.shown(this)) {
 			return; // a hidden picker opens no drop-down
 		}
 		ensurePopup();
@@ -221,7 +226,7 @@ public class M3DatePicker extends Composite {
 		}
 		popup = new Shell(getShell(), SWT.NO_TRIM | SWT.ON_TOP);
 		popup.setLayout(new FillLayout());
-		monthView = new M3MonthView(popup, SWT.SINGLE | SWT.BORDER);
+		monthView = new MonthView(popup, SWT.SINGLE | SWT.BORDER);
 		monthView.addListener(SWT.Selection, e -> {
 			if (monthView.getSelectionStart() != Long.MIN_VALUE && monthView.getSelectionStart() != date) {
 				setDate(monthView.getSelectionStart());
