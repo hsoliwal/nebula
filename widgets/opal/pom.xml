@@ -41,6 +41,7 @@
 		<module>switchbutton</module>
 		<module>statusbar</module>
 		<module>colorbutton</module>
+		<module>gradientchooser</module>
 	</modules>
 
 </project>
