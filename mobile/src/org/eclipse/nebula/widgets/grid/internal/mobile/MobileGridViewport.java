@@ -15,8 +15,22 @@ public final class MobileGridViewport {
 		void bind(int slot, long row, String[] cells, boolean selected);
 		void release(int slot, long oldRow);
 	}
-	public record Window(long visibleStart, long visibleEnd,
-			long retainedStart, long retainedEnd, int nativeSlots) { }
+	/** Immutable presentation window without java.lang.Record (Android API 26). */
+	public static final class Window {
+		private final long visibleStart, visibleEnd, retainedStart, retainedEnd;
+		private final int nativeSlots;
+		public Window(long visibleStart, long visibleEnd, long retainedStart,
+				long retainedEnd, int nativeSlots) {
+			this.visibleStart = visibleStart; this.visibleEnd = visibleEnd;
+			this.retainedStart = retainedStart; this.retainedEnd = retainedEnd;
+			this.nativeSlots = nativeSlots;
+		}
+		public long visibleStart() { return visibleStart; }
+		public long visibleEnd() { return visibleEnd; }
+		public long retainedStart() { return retainedStart; }
+		public long retainedEnd() { return retainedEnd; }
+		public int nativeSlots() { return nativeSlots; }
+	}
 	private static final int MAX_NATIVE_SLOTS = 8192;
 	private final int columns;
 	private final int rowHeight;
