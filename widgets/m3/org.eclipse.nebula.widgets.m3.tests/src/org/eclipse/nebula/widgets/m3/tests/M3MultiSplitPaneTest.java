@@ -204,15 +204,15 @@ public class M3MultiSplitPaneTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> pane.addLeaf(9, 1, null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.addLeaf(a, 1, null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.addSplit(0, M3MultiSplitPane.LEAF, 1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.addLeaf(0, 0, null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setWeight(a, Double.NaN));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_PARENT, () -> pane.addLeaf(0, 1, new Label(shell, SWT.NONE)));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.moveDivider(a, 5));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setControl(column, null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setDividerSize(0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> pane.addLeaf(9, 1, null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.addLeaf(a, 1, null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.addSplit(0, M3MultiSplitPane.LEAF, 1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.addLeaf(0, 0, null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setWeight(a, Double.NaN));
+		M3TestSupport.expect(SWT.ERROR_INVALID_PARENT, () -> pane.addLeaf(0, 1, new Label(shell, SWT.NONE)));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.moveDivider(a, 5));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setControl(column, null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setDividerSize(0));
 		pane.setDividerSize(4);
 		assertEquals(4, pane.getDividerSize());
 		assertTrue(pane.computeSize(SWT.DEFAULT, SWT.DEFAULT).x > 0);

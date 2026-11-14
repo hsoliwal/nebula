@@ -216,7 +216,7 @@ public class M3FindBarTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(null));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> bar.setText(null));
 		bar.setSearchable(null);
 		assertEquals(-1, bar.findNext());
 		bar.setText("");

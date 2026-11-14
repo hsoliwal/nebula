@@ -390,25 +390,25 @@ public class M3HeatMapTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(-1, 2));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(2, -1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(-1, 2));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setGridSize(2, -1));
 		map.setGridSize(2, 2);
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setValues(null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setValues(new float[3]));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.setValue(2, 0, 1f));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(0, 2));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(-1, 0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.getCellBounds(0, -1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(2, 2));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(-1, 0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> map.showCell(5, 5));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(2f, 1f));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(Float.NaN, 1f));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0) }));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0), null }));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(0, 1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(1, 0));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.getCell(null));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setValues(null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setValues(new float[3]));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setValue(2, 0, 1f));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(0, 2));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getValue(-1, 0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.getCellBounds(0, -1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(2, 2));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.setSelection(-1, 0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> map.showCell(5, 5));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(2f, 1f));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setRange(Float.NaN, 1f));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0) }));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.setPalette(new RGB[] { new RGB(0, 0, 0), null }));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(0, 1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> map.setCellSize(1, 0));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> map.getCell(null));
 	}
 }

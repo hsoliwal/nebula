@@ -269,8 +269,8 @@ public class M3CollapsiblePaneTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(0, 1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(1, 0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(0, 1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> pane.setAnimation(1, 0));
 		pane.setLayout(new FillLayout());
 		assertFalse("the pane keeps its own layout", pane.getLayout() instanceof FillLayout);
 		pane.setAnimation(100, 1000);

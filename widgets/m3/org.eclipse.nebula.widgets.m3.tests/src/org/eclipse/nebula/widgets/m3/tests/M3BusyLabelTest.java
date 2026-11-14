@@ -216,13 +216,13 @@ public class M3BusyLabelTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setPointCount(2));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> label.setFrame(-1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> label.setFrame(8));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setTrailLength(0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setTrailLength(9));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setDelay(0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setIconSize(7));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> label.setText(null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setPointCount(2));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> label.setFrame(-1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> label.setFrame(8));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setTrailLength(0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setTrailLength(9));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setDelay(0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> label.setIconSize(7));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> label.setText(null));
 	}
 }

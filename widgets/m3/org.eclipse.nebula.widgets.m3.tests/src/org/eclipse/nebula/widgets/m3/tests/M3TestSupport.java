@@ -16,6 +16,7 @@ package org.eclipse.nebula.widgets.m3.tests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -171,5 +172,25 @@ public final class M3TestSupport {
 		ImageData data = image.getImageData();
 		image.dispose();
 		return data;
+	}
+
+	/** asserts that the action fails with the SWT error of the code */
+	static void expect(int code, Runnable action) {
+		try {
+			action.run();
+			fail("expected SWT error " + code);
+		} catch (IllegalArgumentException e) {
+			assertEquals(message(code), e.getMessage());
+		}
+	}
+
+	/** the message SWT.error gives for the code */
+	static String message(int code) {
+		try {
+			SWT.error(code);
+			return null;
+		} catch (IllegalArgumentException e) {
+			return e.getMessage();
+		}
 	}
 }

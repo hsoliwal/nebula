@@ -215,8 +215,8 @@ public class M3InfoPopupTest {
 		assertFalse(popup.show(M3Placement.anchor(M3InfoPopup.BODY, 0, 2)));
 		assertFalse(popup.isVisible());
 		assertFalse("a row that is not there", popup.show(M3Placement.anchor(M3InfoPopup.BODY, 99, 0)));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3InfoPopup(table, null, (p, a, t) -> true));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setDelays(-1, 0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setPlacement(9, 0));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3InfoPopup(table, null, (p, a, t) -> true));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setDelays(-1, 0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setPlacement(9, 0));
 	}
 }

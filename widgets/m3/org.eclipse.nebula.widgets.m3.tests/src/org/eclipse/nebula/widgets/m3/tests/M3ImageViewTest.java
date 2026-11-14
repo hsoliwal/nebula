@@ -158,9 +158,9 @@ public class M3ImageViewTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setScale(0));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setScaleLimits(2, 1));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.zoomAt(-1, 0, 0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setScale(0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.setScaleLimits(2, 1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> view.zoomAt(-1, 0, 0));
 		view.setImage(null);
 		view.fitToWindow();
 		assertEquals(new Point(1, 1), view.computeSize(SWT.DEFAULT, SWT.DEFAULT));

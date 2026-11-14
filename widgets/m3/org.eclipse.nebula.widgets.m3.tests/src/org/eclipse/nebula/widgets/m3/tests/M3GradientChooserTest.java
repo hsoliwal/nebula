@@ -174,15 +174,15 @@ public class M3GradientChooserTest {
 
 	@Test
 	public void errors() {
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.setStops(new float[] { 0f }, new RGB[] { new RGB(0, 0, 0) }));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.setStops(new float[] { 0.5f, 0.2f }, new RGB[] { new RGB(0, 0, 0), new RGB(1, 1, 1) }));
-		M3StackLayoutTest.expect(SWT.ERROR_NULL_ARGUMENT, () -> chooser.setStops(null, null));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.addStop(1.5f, new RGB(0, 0, 0)));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> chooser.removeStop(9));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_RANGE, () -> chooser.setSelectedStop(9));
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.toLookupTable(1));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.setStops(new float[] { 0f }, new RGB[] { new RGB(0, 0, 0) }));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.setStops(new float[] { 0.5f, 0.2f }, new RGB[] { new RGB(0, 0, 0), new RGB(1, 1, 1) }));
+		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> chooser.setStops(null, null));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.addStop(1.5f, new RGB(0, 0, 0)));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> chooser.removeStop(9));
+		M3TestSupport.expect(SWT.ERROR_INVALID_RANGE, () -> chooser.setSelectedStop(9));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.toLookupTable(1));
 		chooser.removeStop(1);
 		chooser.removeStop(1);
-		M3StackLayoutTest.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.removeStop(0));
+		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> chooser.removeStop(0));
 	}
 }
