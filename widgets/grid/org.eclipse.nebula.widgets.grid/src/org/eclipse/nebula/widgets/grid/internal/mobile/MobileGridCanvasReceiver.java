@@ -64,7 +64,14 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         canvas.addListener(SWT.Paint, event -> paint(event.gc));
         canvas.addListener(SWT.Resize, event -> { if (!closed) canvas.redraw(); });
         canvas.addListener(SWT.MouseWheel, event -> {
-            if (!closed) scrollBy(-3L * rowHeight * event.count);
+            if (closed) return;
+            long delta;
+            try {
+                delta = Math.negateExact(Math.multiplyExact(3L * rowHeight, (long) event.count));
+            } catch (ArithmeticException overflow) {
+                delta = event.count < 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+            }
+            scrollBy(delta);
         });
         canvas.addListener(SWT.MouseDown, event -> {
             if (closed || event.button != 1) return;
@@ -86,6 +93,9 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
             pointerDown = false;
             if (!dragged) selectAt(event.y);
         });
+        // Android ACTION_CANCEL and UIKit touch cancellation map to MouseExit.
+        // Never allow an abandoned drag to leak into a new pointer sequence.
+        canvas.addListener(SWT.MouseExit, event -> pointerDown = false);
         canvas.addListener(SWT.Dispose, event -> close());
     }
 
@@ -182,9 +192,11 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
                 int x = (int)Math.min(Integer.MAX_VALUE, (long)col * width);
                 if (x >= area.width) break;
                 gc.drawText(values[col], x + 3, y + 2, true);
-                if (col != 0) gc.drawLine(x, y, x, y + rowHeight);
+                if (col != 0) gc.drawLine(x, y, x,
+                        (int)Math.min(Integer.MAX_VALUE, (long)y + rowHeight));
             }
-            gc.drawLine(0, y + rowHeight - 1, area.width, y + rowHeight - 1);
+            int bottom = (int)Math.min(Integer.MAX_VALUE, (long)y + rowHeight - 1L);
+            gc.drawLine(0, bottom, area.width, bottom);
         }
     }
 
