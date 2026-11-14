@@ -69,8 +69,14 @@ public final class MobileGridViewBinding implements AutoCloseable, MobileGridVie
 				long selectedRow = logicalRows[ownedSlot];
 				if (selectedRow < 0 || disposed) return;
 				projection.select(selectedRow);
-				onSelection.accept(selectedRow);
-				projection.show(offsetPixels, height);
+				try {
+					onSelection.accept(selectedRow);
+				} finally {
+					// A selection listener may dispose or replace the Grid.
+					// Never repaint native rows after their owner is closed.
+					if (!disposed && !surface.isDisposed())
+						projection.show(offsetPixels, height);
+				}
 			});
 		}
 		logicalRows[slot] = row;
