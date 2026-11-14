@@ -78,6 +78,7 @@
 						<include>**/GridRowExtentsEndpoint_Test.java</include>
 						<include>**/GridRowExtentsRankPixel_Test.java</include>
 						<include>**/GridRowExtentsRebuildFailure_Test.java</include>
+						<include>**/InfoPopup_Test.java</include>
 					</includes>
 				</configuration>
 			</plugin>

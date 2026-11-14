@@ -12,14 +12,12 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3.tests;
+package org.eclipse.nebula.widgets.grid.internal;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.eclipse.nebula.widgets.m3.M3InfoPopup;
-import org.eclipse.nebula.widgets.m3.M3Placement;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -30,24 +28,23 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * M3InfoPopup and M3Placement: placement with flip and shift, anchor packing, a click popover on a table cell
+ * InfoPopup and PopupPlacement: placement with flip and shift, anchor packing, a click popover on a table cell
  * (content built only on open, placed next to the cell), Escape and a click elsewhere close it, hover after the show
  * delay, keyboard open for the selected row, content that declines. No pointer is moved: events are notified.
  */
-public class M3InfoPopupTest {
+public class InfoPopup_Test {
 
 	Display display;
 	Shell shell;
 	Table table;
-	M3InfoPopup popup;
+	InfoPopup popup;
 	int fills;
-	long lastFilled = M3InfoPopup.NONE;
+	long lastFilled = InfoPopup.NONE;
 	int lastTrigger;
 
 	@Before
@@ -66,18 +63,18 @@ public class M3InfoPopupTest {
 		for (int r = 0; r < 20; r++) {
 			new TableItem(table, SWT.NONE).setText(new String[] { "name " + r, Integer.toString(r * 1024), "2026-10-" + (r + 1) });
 		}
-		popup = M3InfoPopup.forTable(table, (parent, anchor, trigger) -> {
+		popup = InfoPopup.forTable(table, (parent, anchor, trigger) -> {
 			fills++;
 			lastFilled = anchor;
 			lastTrigger = trigger;
-			if (M3Placement.columnOf(anchor) == 2 && M3Placement.rowOf(anchor) == 0) {
+			if (PopupPlacement.columnOf(anchor) == 2 && PopupPlacement.rowOf(anchor) == 0) {
 				return false;
 			}
-			new Label(parent, SWT.NONE).setText("row " + M3Placement.rowOf(anchor) + " column " + M3Placement.columnOf(anchor));
+			new Label(parent, SWT.NONE).setText("row " + PopupPlacement.rowOf(anchor) + " column " + PopupPlacement.columnOf(anchor));
 			return true;
 		});
 		shell.open();
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 	}
 
 	@After
@@ -93,23 +90,23 @@ public class M3InfoPopupTest {
 	@Test
 	public void placementFlipsAndShifts() {
 		int[] out = new int[3];
-		M3Placement.place(100, 100, 50, 20, 80, 40, 0, 0, 1000, 800, M3Placement.BOTTOM, 4, out);
+		PopupPlacement.place(100, 100, 50, 20, 80, 40, 0, 0, 1000, 800, PopupPlacement.BOTTOM, 4, out);
 		assertEquals(100, out[0]);
 		assertEquals(124, out[1]);
-		assertEquals(M3Placement.BOTTOM, out[2]);
-		M3Placement.place(100, 770, 50, 20, 80, 40, 0, 0, 1000, 800, M3Placement.BOTTOM, 4, out);
-		assertEquals("flipped above", M3Placement.TOP, out[2]);
+		assertEquals(PopupPlacement.BOTTOM, out[2]);
+		PopupPlacement.place(100, 770, 50, 20, 80, 40, 0, 0, 1000, 800, PopupPlacement.BOTTOM, 4, out);
+		assertEquals("flipped above", PopupPlacement.TOP, out[2]);
 		assertEquals(770 - 4 - 40, out[1]);
-		M3Placement.place(960, 100, 30, 20, 80, 40, 0, 0, 1000, 800, M3Placement.BOTTOM, 4, out);
+		PopupPlacement.place(960, 100, 30, 20, 80, 40, 0, 0, 1000, 800, PopupPlacement.BOTTOM, 4, out);
 		assertEquals("shifted inside", 920, out[0]);
-		M3Placement.place(950, 100, 40, 20, 80, 40, 0, 0, 1000, 800, M3Placement.RIGHT, 4, out);
-		assertEquals(M3Placement.LEFT, out[2]);
+		PopupPlacement.place(950, 100, 40, 20, 80, 40, 0, 0, 1000, 800, PopupPlacement.RIGHT, 4, out);
+		assertEquals(PopupPlacement.LEFT, out[2]);
 		assertEquals(950 - 4 - 80, out[0]);
-		long anchor = M3Placement.anchor(M3InfoPopup.BODY, 1_000_000, 7);
-		assertEquals(M3InfoPopup.BODY, M3Placement.kindOf(anchor));
-		assertEquals(1_000_000, M3Placement.rowOf(anchor));
-		assertEquals(7, M3Placement.columnOf(anchor));
-		assertEquals(-1, M3Placement.rowOf(M3Placement.anchor(M3InfoPopup.HEADER, -1, 2)));
+		long anchor = PopupPlacement.anchor(InfoPopup.BODY, 1_000_000, 7);
+		assertEquals(InfoPopup.BODY, PopupPlacement.kindOf(anchor));
+		assertEquals(1_000_000, PopupPlacement.rowOf(anchor));
+		assertEquals(7, PopupPlacement.columnOf(anchor));
+		assertEquals(-1, PopupPlacement.rowOf(PopupPlacement.anchor(InfoPopup.HEADER, -1, 2)));
 	}
 
 	@Test
@@ -121,11 +118,11 @@ public class M3InfoPopupTest {
 		down.x = at.x;
 		down.y = at.y;
 		table.notifyListeners(SWT.MouseDown, down);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertTrue(popup.isVisible());
 		assertEquals(1, fills);
-		assertEquals(M3Placement.anchor(M3InfoPopup.BODY, 3, 1), popup.getAnchor());
-		assertEquals(M3InfoPopup.CLICK, lastTrigger);
+		assertEquals(PopupPlacement.anchor(InfoPopup.BODY, 3, 1), popup.getAnchor());
+		assertEquals(InfoPopup.CLICK, lastTrigger);
 		Rectangle cell = table.getItem(3).getBounds(1);
 		Point cellBottom = table.toDisplay(cell.x, cell.y + cell.height);
 		Rectangle card = popup.getShell().getBounds();
@@ -150,7 +147,7 @@ public class M3InfoPopupTest {
 
 	@Test
 	public void hiddenOwnerClosesThePopupAndDropsThePendingHover() {
-		if (WidgetMode.of("M3InfoPopup", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
+		if (WidgetMode.of("InfoPopup", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
 			return;
 		}
 		popup.setDelays(40, 40);
@@ -160,24 +157,24 @@ public class M3InfoPopupTest {
 		move.y = at.y;
 		table.notifyListeners(SWT.MouseMove, move);
 		table.setVisible(false);
-		M3TestSupport.spin(display, 150);
+		TestSupport.spin(display, 150);
 		assertFalse("the pending hover is dropped with the owner", popup.isVisible());
 		assertEquals("nothing built for a hidden owner", 0, fills);
 		table.setVisible(true);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		Point cell = cellCentre(3, 1);
 		Event down = new Event();
 		down.button = 1;
 		down.x = cell.x;
 		down.y = cell.y;
 		table.notifyListeners(SWT.MouseDown, down);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertTrue(popup.isVisible());
 		table.setVisible(false);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertFalse("the open popup closes with its owner", popup.isVisible());
 		table.notifyListeners(SWT.MouseDown, down);
-		M3TestSupport.flush(display);
+		TestSupport.flush(display);
 		assertFalse("a click on a hidden owner opens nothing", popup.isVisible());
 	}
 
@@ -190,16 +187,16 @@ public class M3InfoPopupTest {
 		move.y = at.y;
 		table.notifyListeners(SWT.MouseMove, move);
 		assertFalse("not before the delay", popup.isVisible());
-		M3TestSupport.spin(display, 150);
+		TestSupport.spin(display, 150);
 		assertTrue(popup.isVisible());
-		assertEquals(M3Placement.anchor(M3InfoPopup.BODY, 5, 0), popup.getAnchor());
-		assertEquals(M3InfoPopup.HOVER, lastTrigger);
+		assertEquals(PopupPlacement.anchor(InfoPopup.BODY, 5, 0), popup.getAnchor());
+		assertEquals(InfoPopup.HOVER, lastTrigger);
 		Point next = cellCentre(6, 2);
 		move.x = next.x;
 		move.y = next.y;
 		table.notifyListeners(SWT.MouseMove, move);
-		M3TestSupport.spin(display, 150);
-		assertEquals(M3Placement.anchor(M3InfoPopup.BODY, 6, 2), lastFilled);
+		TestSupport.spin(display, 150);
+		assertEquals(PopupPlacement.anchor(InfoPopup.BODY, 6, 2), lastFilled);
 	}
 
 	@Test
@@ -210,13 +207,13 @@ public class M3InfoPopupTest {
 		key.stateMask = SWT.MOD1;
 		table.notifyListeners(SWT.KeyDown, key);
 		assertTrue(popup.isVisible());
-		assertEquals(M3Placement.anchor(M3InfoPopup.BODY, 4, 0), popup.getAnchor());
+		assertEquals(PopupPlacement.anchor(InfoPopup.BODY, 4, 0), popup.getAnchor());
 		popup.hide();
-		assertFalse(popup.show(M3Placement.anchor(M3InfoPopup.BODY, 0, 2)));
+		assertFalse(popup.show(PopupPlacement.anchor(InfoPopup.BODY, 0, 2)));
 		assertFalse(popup.isVisible());
-		assertFalse("a row that is not there", popup.show(M3Placement.anchor(M3InfoPopup.BODY, 99, 0)));
-		M3TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new M3InfoPopup(table, null, (p, a, t) -> true));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setDelays(-1, 0));
-		M3TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setPlacement(9, 0));
+		assertFalse("a row that is not there", popup.show(PopupPlacement.anchor(InfoPopup.BODY, 99, 0)));
+		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> new InfoPopup(table, null, (p, a, t) -> true));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setDelays(-1, 0));
+		TestSupport.expect(SWT.ERROR_INVALID_ARGUMENT, () -> popup.setPlacement(9, 0));
 	}
 }

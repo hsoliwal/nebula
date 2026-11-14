@@ -12,12 +12,9 @@
  * Contributors:
  *     Hitesh Soliwal (Synexia) - initial API and implementation
  *******************************************************************************/
-package org.eclipse.nebula.widgets.m3;
+package org.eclipse.nebula.widgets.grid.internal;
 
-import org.eclipse.nebula.widgets.m3.internal.M3Counters;
-import org.eclipse.nebula.widgets.m3.internal.M3HiddenGate;
-import org.eclipse.nebula.widgets.m3.internal.SwtLog;
-import org.eclipse.nebula.widgets.m3.internal.WidgetMode;
+import org.eclipse.nebula.widgets.grid.internal.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -41,11 +38,11 @@ import org.eclipse.swt.widgets.TreeItem;
  * and footer"). One popup per owner control, one floating shell reused for every anchor.
  * <p>
  * The owner says what is under a point and where it is through {@link Anchors} (packed long ids from
- * {@link M3Placement#anchor(int, int, int)}: kind {@link #HEADER}, {@link #BODY} or {@link #FOOTER}, row, column);
+ * {@link PopupPlacement#anchor(int, int, int)}: kind {@link #HEADER}, {@link #BODY} or {@link #FOOTER}, row, column);
  * {@link #forTable(Table, Content)} and {@link #forTree(Tree, Content)} provide them for SWT tables and trees, and the
  * Table, Tree and Grid tracks provide them for their footers. The popup's content is built by {@link Content} only
  * when the popup opens, from the model: nothing exists per cell, row or column. Placement is
- * {@link M3Placement#place} (preferred side, flip, shift inside the monitor).
+ * {@link PopupPlacement#place} (preferred side, flip, shift inside the monitor).
  * </p>
  * <p>
  * Behaviour: a hover card opens after the show delay when the pointer rests on an anchor and closes after the hide
@@ -57,11 +54,11 @@ import org.eclipse.swt.widgets.TreeItem;
  * </p>
  * <p>
  * Native headers: a stock Table or Tree header is a separate native window on some platforms and does not deliver
- * mouse moves to the table, so header hover cards need a drawn header (M3 and viewport Table/Tree tracks) or
+ * mouse moves to the table, so header hover cards need a drawn header (viewport Table/Tree tracks) or
  * {@link #show(long)} from the column's own events; body and footer anchors work everywhere.
  * </p>
  */
-public final class M3InfoPopup {
+public final class InfoPopup {
 
 	/** Anchor kind: a column header. */
 	public static final int HEADER = 1;
@@ -77,7 +74,7 @@ public final class M3InfoPopup {
 	/** Trigger: open on a click. */
 	public static final int CLICK = 2;
 
-	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.m3.M3InfoPopup"); //$NON-NLS-1$
+	private static final SwtLog LOG = SwtLog.getLog("org.eclipse.nebula.widgets.grid.internal.InfoPopup"); //$NON-NLS-1$
 
 	/** What is under a point of the owner, and where an anchor is. Implemented by the owner widget or its track. */
 	public interface Anchors {
@@ -85,7 +82,7 @@ public final class M3InfoPopup {
 		/**
 		 * @param x owner client x
 		 * @param y owner client y
-		 * @return the packed anchor under the point, or {@link M3InfoPopup#NONE}
+		 * @return the packed anchor under the point, or {@link InfoPopup#NONE}
 		 */
 		long anchorAt(int x, int y);
 
@@ -95,7 +92,7 @@ public final class M3InfoPopup {
 		 */
 		Rectangle bounds(long anchor);
 
-		/** @return the anchor that has the keyboard focus, or {@link M3InfoPopup#NONE} */
+		/** @return the anchor that has the keyboard focus, or {@link InfoPopup#NONE} */
 		default long focused() {
 			return NONE;
 		}
@@ -119,19 +116,19 @@ public final class M3InfoPopup {
 	private final Control owner;
 	private final Anchors anchors;
 	private final Content content;
-	private int triggers = HOVER | CLICK, showDelay = 600, hideDelay = 300, side = M3Placement.BOTTOM, gap = 4;
+	private int triggers = HOVER | CLICK, showDelay = 600, hideDelay = 300, side = PopupPlacement.BOTTOM, gap = 4;
 	private Shell shell;
 	private Composite body;
 	private long anchor = NONE, pending = NONE;
 
 	/**
-	 * The owner gate, unless the startup widget mode is original (-Dswt.widget.mode.M3InfoPopup=original or
+	 * The owner gate, unless the startup widget mode is original (-Dswt.widget.mode.InfoPopup=original or
 	 * -Dswt.widget.mode=original): the popup closes and the pending hover is dropped when the owner hides (its own
 	 * Hide, its shell's Hide or Iconify, or SWT.PartHidden where SWT has part visibility), and a pending hover or a
 	 * click on a hidden owner opens nothing.
 	 */
-	static final boolean VIEWPORT = WidgetMode.of("M3InfoPopup", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget M3InfoPopup H
-	private static final int PART_HIDDEN = M3HiddenGate.partHiddenEvent();
+	static final boolean VIEWPORT = WidgetMode.of("InfoPopup", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$ //FLLDCIM: MARK — every-widget InfoPopup H
+	private static final int PART_HIDDEN = HiddenGate.partHiddenEvent();
 	private int openedBy;
 	private final int[] placed = new int[3];
 	private final Runnable showPending = this::showPending, hidePending = this::hideIfAway;
@@ -144,7 +141,7 @@ public final class M3InfoPopup {
 	 * @param anchors what is under a point and where it is
 	 * @param content builds the popup's content
 	 */
-	public M3InfoPopup(Control owner, Anchors anchors, Content content) {
+	public InfoPopup(Control owner, Anchors anchors, Content content) {
 		if (owner == null || anchors == null || content == null) {
 			SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		}
@@ -166,14 +163,14 @@ public final class M3InfoPopup {
 	}
 
 	/** A popup plane for a table: header and cell anchors, Ctrl+I opens the popover of the selected row's cell. */
-	public static M3InfoPopup forTable(Table table, Content content) {
-		M3InfoPopup popup = new M3InfoPopup(table, new TableAnchors(table), content);
+	public static InfoPopup forTable(Table table, Content content) {
+		InfoPopup popup = new InfoPopup(table, new TableAnchors(table), content);
 		return popup;
 	}
 
 	/** A popup plane for a tree: header and cell anchors (row = index among the visible items from the top item). */
-	public static M3InfoPopup forTree(Tree tree, Content content) {
-		return new M3InfoPopup(tree, new TreeAnchors(tree), content);
+	public static InfoPopup forTree(Tree tree, Content content) {
+		return new InfoPopup(tree, new TreeAnchors(tree), content);
 	}
 
 	/** Sets which triggers open the popup: HOVER, CLICK or both. */
@@ -195,9 +192,9 @@ public final class M3InfoPopup {
 		hideDelay = hide;
 	}
 
-	/** Sets the preferred side, one of the M3Placement sides, and the gap to the anchor. */
+	/** Sets the preferred side, one of the PopupPlacement sides, and the gap to the anchor. */
 	public void setPlacement(int side, int gap) {
-		if (side < M3Placement.BOTTOM || side > M3Placement.LEFT || gap < 0) {
+		if (side < PopupPlacement.BOTTOM || side > PopupPlacement.LEFT || gap < 0) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		this.side = side;
@@ -273,7 +270,7 @@ public final class M3InfoPopup {
 		if (anchorId == NONE || owner.isDisposed()) {
 			return false;
 		}
-		if (VIEWPORT && !M3HiddenGate.shown(owner)) {
+		if (VIEWPORT && !HiddenGate.shown(owner)) {
 			return false; // a hidden owner opens nothing
 		}
 		Rectangle bounds = anchors.bounds(anchorId);
@@ -289,7 +286,7 @@ public final class M3InfoPopup {
 			hide();
 			return false;
 		}
-		M3Counters.creates++;
+		RepaintCounters.creates++;
 		anchor = anchorId;
 		openedBy = trigger;
 		shell.pack();
@@ -298,8 +295,8 @@ public final class M3InfoPopup {
 			shell.setVisible(true);
 			owner.getDisplay().addFilter(SWT.MouseDown, filter);
 		}
-		LOG.debug(() -> "info popup " + M3Placement.kindOf(anchorId) + " row " + M3Placement.rowOf(anchorId) + " column " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-				+ M3Placement.columnOf(anchorId) + (trigger == HOVER ? " (hover)" : " (click)")); //$NON-NLS-1$ //$NON-NLS-2$
+		LOG.debug(() -> "info popup " + PopupPlacement.kindOf(anchorId) + " row " + PopupPlacement.rowOf(anchorId) + " column " //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				+ PopupPlacement.columnOf(anchorId) + (trigger == HOVER ? " (hover)" : " (click)")); //$NON-NLS-1$ //$NON-NLS-2$
 		return true;
 	}
 
@@ -324,7 +321,7 @@ public final class M3InfoPopup {
 		Point topLeft = owner.toDisplay(bounds.x, bounds.y);
 		Point size = shell.getSize();
 		Rectangle area = owner.getMonitor().getClientArea();
-		M3Placement.place(topLeft.x, topLeft.y, bounds.width, bounds.height, size.x, size.y, area.x, area.y, area.width, area.height, side, gap,
+		PopupPlacement.place(topLeft.x, topLeft.y, bounds.width, bounds.height, size.x, size.y, area.x, area.y, area.width, area.height, side, gap,
 				placed);
 		shell.setLocation(placed[0], placed[1]);
 	}
@@ -470,13 +467,13 @@ public final class M3InfoPopup {
 			int header = table.getHeaderVisible() ? table.getHeaderHeight() : 0;
 			int column = columnAt(x);
 			if (y < header) {
-				return column < 0 ? NONE : M3Placement.anchor(HEADER, -1, column);
+				return column < 0 ? NONE : PopupPlacement.anchor(HEADER, -1, column);
 			}
 			TableItem item = table.getItem(new Point(x, y));
 			if (item == null) {
 				return NONE;
 			}
-			return M3Placement.anchor(BODY, table.indexOf(item), Math.max(0, column));
+			return PopupPlacement.anchor(BODY, table.indexOf(item), Math.max(0, column));
 		}
 
 		private int columnAt(int x) {
@@ -499,8 +496,8 @@ public final class M3InfoPopup {
 
 		@Override
 		public Rectangle bounds(long id) {
-			int column = M3Placement.columnOf(id), row = M3Placement.rowOf(id);
-			if (M3Placement.kindOf(id) == HEADER) {
+			int column = PopupPlacement.columnOf(id), row = PopupPlacement.rowOf(id);
+			if (PopupPlacement.kindOf(id) == HEADER) {
 				int left = scrolled(table.getHorizontalBar());
 				for (int index : table.getColumnOrder()) {
 					int width = table.getColumn(index).getWidth();
@@ -522,7 +519,7 @@ public final class M3InfoPopup {
 		@Override
 		public long focused() {
 			int index = table.getSelectionIndex();
-			return index < 0 ? NONE : M3Placement.anchor(BODY, index, 0);
+			return index < 0 ? NONE : PopupPlacement.anchor(BODY, index, 0);
 		}
 	}
 
@@ -540,14 +537,14 @@ public final class M3InfoPopup {
 			int header = tree.getHeaderVisible() ? tree.getHeaderHeight() : 0;
 			int column = columnAt(x);
 			if (y < header) {
-				return column < 0 ? NONE : M3Placement.anchor(HEADER, -1, column);
+				return column < 0 ? NONE : PopupPlacement.anchor(HEADER, -1, column);
 			}
 			TreeItem item = tree.getItem(new Point(x, y));
 			if (item == null) {
 				return NONE;
 			}
 			int row = (y - header) / Math.max(1, tree.getItemHeight());
-			return M3Placement.anchor(BODY, row, Math.max(0, column));
+			return PopupPlacement.anchor(BODY, row, Math.max(0, column));
 		}
 
 		private int columnAt(int x) {
@@ -568,9 +565,9 @@ public final class M3InfoPopup {
 
 		@Override
 		public Rectangle bounds(long id) {
-			int column = M3Placement.columnOf(id);
+			int column = PopupPlacement.columnOf(id);
 			int header = tree.getHeaderVisible() ? tree.getHeaderHeight() : 0;
-			if (M3Placement.kindOf(id) == HEADER) {
+			if (PopupPlacement.kindOf(id) == HEADER) {
 				int left = scrolled(tree.getHorizontalBar());
 				for (int index : tree.getColumnOrder()) {
 					int width = tree.getColumn(index).getWidth();
@@ -581,7 +578,7 @@ public final class M3InfoPopup {
 				}
 				return null;
 			}
-			int y = header + M3Placement.rowOf(id) * tree.getItemHeight() + 1;
+			int y = header + PopupPlacement.rowOf(id) * tree.getItemHeight() + 1;
 			TreeItem item = tree.getItem(new Point(Math.max(1, tree.getClientArea().width / 2), y));
 			if (item == null) {
 				return null;
