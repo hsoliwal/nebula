@@ -21,9 +21,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: 7cb698698b3e635bdcd4a803c5aeb3da35dd9719
+          ref: 19932a279ad8730b1310d382def90b16dc82daf0
           path: swt-mobile
           persist-credentials: false
+      - name: Record exact receiving source revisions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p mobile-acceptance-evidence
+          test "$(git -C swt-mobile rev-parse HEAD)" = "19932a279ad8730b1310d382def90b16dc82daf0"
+          git rev-parse HEAD > mobile-acceptance-evidence/nebula-source.txt
+          git -C swt-mobile rev-parse HEAD > mobile-acceptance-evidence/swt-source.txt
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -41,6 +49,32 @@ jobs:
         run: mvn -B -ntp -f swt-mobile/mobile/pom.xml -Dmobile.platform=android "-Dandroid.sdk=$ANDROID_SDK_ROOT" clean verify
       - name: Assemble Nebula original-widget app and native instrumentation
         run: gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Prepare native test runner and screenshot capture
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/nebula-native-acceptance.sh" <<'SCRIPT'
+          set -euo pipefail
+          mkdir -p mobile-acceptance-evidence/screenshots
+          capture_native_evidence() {
+            local test_status=$?
+            local capture_status=0
+            trap - EXIT
+            set +e
+            for name in before recovery after; do
+              adb pull "/sdcard/Android/data/org.eclipse.nebula.examples.mobile/files/nebula-android-$name.png" \
+                "mobile-acceptance-evidence/screenshots/nebula-android-$name.png" || capture_status=1
+            done
+            if [[ "$test_status" -ne 0 ]]; then
+              exit "$test_status"
+            fi
+            exit "$capture_status"
+          }
+          trap capture_native_evidence EXIT
+          sha256sum swt-mobile/mobile/target/swt-mobile-android.jar > mobile-acceptance-evidence/swt-jar.sha256
+          gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true :app:connectedDebugAndroidTest \
+            2>&1 | tee mobile-acceptance-evidence/android-native-execution.log
+          SCRIPT
       - name: Execute original Combo popup, List, Text IME and native widget tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -49,8 +83,7 @@ jobs:
           profile: pixel_6
           target: google_apis
           disable-animations: true
-          script: |
-            gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" :app:connectedDebugAndroidTest
+          script: bash "$RUNNER_TEMP/nebula-native-acceptance.sh"
       - name: Retain Android native test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -59,6 +92,7 @@ jobs:
           path: |
             widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/app/build/reports/androidTests/**
             widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/app/build/outputs/androidTest-results/**
+            mobile-acceptance-evidence/**
           if-no-files-found: warn
   ios-original-list-source:
     runs-on: macos-15
@@ -68,9 +102,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: 7cb698698b3e635bdcd4a803c5aeb3da35dd9719
+          ref: 19932a279ad8730b1310d382def90b16dc82daf0
           path: swt-mobile
           persist-credentials: false
+      - name: Record exact receiving source revisions
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p mobile-acceptance-evidence
+          test "$(git -C swt-mobile rev-parse HEAD)" = "19932a279ad8730b1310d382def90b16dc82daf0"
+          git rev-parse HEAD > mobile-acceptance-evidence/nebula-source.txt
+          git -C swt-mobile rev-parse HEAD > mobile-acceptance-evidence/swt-source.txt
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -92,5 +134,14 @@ jobs:
             widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/common/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileContents.java \
             widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/common/src/main/java/org/eclipse/nebula/examples/mobile/NebulaMobileMain.java \
             widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/ios/src/main/java/org/eclipse/nebula/examples/mobile/IOSNebulaDemo.java
-      - name: Compile real UIKit bridge and generated JNI entrypoints
+      - name: Compile UIKit bridge and execute current native renderer contracts
         run: bash swt-mobile/mobile/ios/build.sh iphonesimulator arm64 "$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-ios.jar"
+      - name: Retain iOS native kernel results and source revisions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-pinned-swt-ios-native-kernel-reports
+          path: |
+            mobile-acceptance-evidence/**
+            swt-mobile/build/ios-iphonesimulator-arm64/native-render-tests.log
+          if-no-files-found: warn
