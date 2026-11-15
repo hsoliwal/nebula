@@ -23,6 +23,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.EditText;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Text;
 
@@ -253,11 +255,63 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             require(NebulaMobileMain.state.comboSelection == 1
                     && NebulaMobileMain.state.comboEvents == 3,
                     "Escape does not fabricate SWT Combo Selection");
+            // The original SWT Table has one billion virtual logical rows;
+            // Android exposes the actual SWT Canvas peer as a GridView for
+            // accessibility, not a separate Android Table data model.
+            Table table = NebulaMobileMain.state.table;
+            require(table != null, "Original SWT Table model is constructed");
+            await(() -> NebulaMobileMain.state.tableDataLoads >= 2
+                    && NebulaMobileMain.state.tableDataLoads <= 16,
+                    "Native original SWT Table materializes only visible SetData rows");
+            AtomicInteger tableTop = new AtomicInteger();
+            AtomicInteger tableHeader = new AtomicInteger();
+            AtomicInteger tableRowHeight = new AtomicInteger();
+            table.getDisplay().syncExec(() -> {
+                tableTop.set(table.getTopIndex());
+                tableHeader.set(table.getHeaderHeight());
+                tableRowHeight.set(table.getItemHeight());
+                require(table.getItemCount() == 1_000_000_000
+                        && table.getColumnCount() == 2,
+                        "SWT Table has billion-row model and two original columns");
+            });
+            runOnMainSync(() -> {
+                View view = findNativeTable(surface(current));
+                require(view != null, "Original SWT Table has native Android peer");
+                AccessibilityNodeInfo info = view.createAccessibilityNodeInfo();
+                require("android.widget.GridView".contentEquals(info.getClassName()),
+                        "SWT Table native peer publishes GridView accessibility");
+                require(view.performAccessibilityAction(
+                                AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD, null),
+                        "Native Table accessibility sends original viewport paging event");
+            });
+            int initialTop = tableTop.get();
+            await(() -> {
+                table.getDisplay().syncExec(() -> tableTop.set(table.getTopIndex()));
+                return tableTop.get() < initialTop;
+            }, "Native Table accessibility moves sparse viewport");
+            require(NebulaMobileMain.state.tableSelections == 0,
+                    "Table accessibility paging does not fabricate SWT.Selection");
+            int[] tableTap = new int[2];
+            runOnMainSync(() -> {
+                View view = findNativeTable(surface(current));
+                require(view != null, "Native Table retained after page scroll");
+                view.getLocationOnScreen(tableTap);
+                float density = view.getResources().getDisplayMetrics().density;
+                tableTap[0] += Math.round(40 * density);
+                tableTap[1] += Math.round((tableHeader.get()
+                        + tableRowHeight.get() / 2f) * density);
+            });
+            tap(tableTap);
+            await(() -> NebulaMobileMain.state.tableSelections == 1
+                    && NebulaMobileMain.state.tableSelection == tableTop.get(),
+                    "Native Table row tap maps the correct billion-row logical index");
+            require(NebulaMobileMain.state.tableDataLoads <= 32,
+                    "Native Table touch/accessibility retains bounded SetData materialization");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: SWT Combo popup/Selection, billion-row List, Android IME selection/copy/cut/Verify/Modify, accessibility, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: billion-row SWT Table and List, Combo popup, Text IME, native accessibility, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -277,6 +331,18 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             throw new IllegalStateException("SWT Android native root not attached");
         }
         return content.getChildAt(0);
+    }
+
+    private View findNativeTable(View root) {
+        CharSequence label = root.getContentDescription();
+        if (label != null && "Table".contentEquals(label)) return root;
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View candidate = findNativeTable(group.getChildAt(i));
+                if (candidate != null) return candidate;
+            }
+        }
+        return null;
     }
 
     private View findCombo(View root) {
