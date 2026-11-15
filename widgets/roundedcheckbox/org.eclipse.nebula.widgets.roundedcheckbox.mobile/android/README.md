@@ -58,17 +58,27 @@ VoiceOver device qualification remains open. There is no competing SWT toolkit.
 ## Compile and package
 
 Prerequisites: JDK 21, Maven 3.9+, Python 3.10+, Android platform 35,
-Android build-tools and Gradle 8.13+. The mobile source closure currently
+Android build-tools 35.0.0 (the Android Gradle Plugin 8.13 default) and Gradle
+8.13+. The mobile source closure currently
 requires Android 15 / API 35; compatibility with older Android is not claimed.
 
-1. Build the SWT Android Java artifact from a checkout that includes #369:
+1. Select the SWT checkout revision used by the
+   [mobile acceptance workflow](../../../../.github/workflows/m3-nebula-mobile-original-list.yml).
+   Both Android and iOS jobs pin that dependency explicitly. This application
+   requires the original List backend (#385), Text backend (#386), Combo
+   integration (#388/#389), and the native-selection synchronization exercised by its current instrumentation;
+   a checkout containing only the initial #369 backend will not compile or
+   satisfy these tests. When validating a paired SWT change, build that exact
+   reviewed SWT commit and update the workflow pin after it exists.
+
+2. Build the SWT Android Java artifact from that checkout:
 
    ```sh
    mvn -f /path/to/eclipse.platform.swt/mobile/pom.xml \
      -Dmobile.platform=android -Dandroid.sdk=/path/to/android-sdk clean verify
    ```
 
-2. Build both APKs in this Nebula checkout:
+3. Build both APKs in this Nebula checkout:
 
    ```sh
    gradle -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android \
@@ -79,8 +89,10 @@ requires Android 15 / API 35; compatibility with older Android is not claimed.
 `NebulaMobileActivity` extends `org.eclipse.swt.internal.android.SwtActivity`.
 Its manifest names `NebulaMobileMain`, which constructs the original widget
 tree and runs the ordinary SWT event loop on the Display thread.
-The application source is compiled against the exact supplied SWT Android JAR,
-not a second local `:swt` Gradle project.
+The application source is compiled against the exact supplied SWT Android JAR.
+There is no second local `:swt` Gradle project. The source and build entrypoint is
+this `widgets/roundedcheckbox/...mobile/android` directory; the historical
+`m3/mobile` paths and a Nebula `mobile/pom.xml` are not the current build.
 
 ## Native acceptance
 
@@ -89,8 +101,20 @@ run the `org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation`
 instrumentation runner on an API-35-or-newer emulator or device. The test
 uses real Android screenshots and injected touch input to examine paint,
 selection, selection veto, disabled state, Scale-to-ProgressBar interaction
-and cleanup. A successful compilation or APK assembly is **not** an executed
-native test.
+and cleanup. Native editor caret/range selection is compared with SWT Text
+selection and clipboard operations; selection-only movement must not generate
+Verify/Modify events. Run the Gradle-managed instrumentation lane with the same
+project and JAR inputs:
+
+```sh
+gradle -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android \
+  -PswtMobileJar=/absolute/path/to/eclipse.platform.swt/mobile/target/swt-mobile-android.jar \
+  :app:connectedDebugAndroidTest
+```
+
+A successful compilation or APK assembly is **not** an executed native test.
+Record the actual device/emulator result separately; merely adding these
+assertions or declaring the workflow does not establish a pass.
 
 The iOS target uses the same `NebulaMobileMain` and SWT's existing
 `IOSPlatform.launch` bootstrap. It still requires an actual linked iOS

@@ -40,11 +40,15 @@ public final class NebulaMobileContents {
         public volatile int tableHeaderHeight;
         public volatile boolean tableShown;
         public volatile boolean disposed;
+        Text editor;
     }
 
     public static State create(Shell shell) {
         State state = new State();
-        shell.addListener(SWT.Dispose, event -> state.disposed = true);
+        shell.addListener(SWT.Dispose, event -> {
+            state.editor = null;
+            state.disposed = true;
+        });
         Canvas labels = new Canvas(shell, SWT.DOUBLE_BUFFERED);
         RoundedCheckbox selectable = new RoundedCheckbox(shell, SWT.NONE);
         RoundedCheckbox vetoed = new RoundedCheckbox(shell, SWT.NONE);
@@ -75,6 +79,7 @@ public final class NebulaMobileContents {
         // The actual SWT Text owner is backed by EditText / UITextField.
         // Native keyboard events must go through its Verify/Modify lifecycle.
         Text editor = new Text(shell, SWT.SINGLE | SWT.BORDER);
+        state.editor = editor;
         editor.setMessage("Native keyboard input");
         editor.addVerifyListener(event -> {
             state.textVerifications++;

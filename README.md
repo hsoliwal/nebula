@@ -17,7 +17,8 @@ resource lifecycle; it does not replace those contracts.
 The current mobile consumer is the
 [RoundedCheckbox application](widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/),
 using the original Nebula `RoundedCheckbox` with SWT's own mobile `Display`,
-`Shell`, `Canvas`, `Scale`, `ProgressBar`, `List` and native-editor `Text` owners.
+`Shell`, `Canvas`, `Scale`, `ProgressBar`, `List`, native-editor `Text` and `Combo`
+owners.
 The shared Java UI and SWT event loop are reused by its Android and iOS
 entrypoints.
 
@@ -32,7 +33,7 @@ entrypoints.
 
 Use the SWT revision selected by the
 [mobile acceptance workflow](.github/workflows/m3-nebula-mobile-original-list.yml).
-The application now requires the original SWT List and Text implementation;
+The application now requires the original SWT List, Text and Combo implementation;
 the initial mobile backend alone is insufficient. APK assembly, Java/native
 compilation and actual device execution are distinct gates. This bounded preview
 does not qualify the full Nebula Grid, XViewer or complete widget catalogue,
