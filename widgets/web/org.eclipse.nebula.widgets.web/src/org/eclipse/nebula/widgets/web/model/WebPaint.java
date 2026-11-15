@@ -131,7 +131,7 @@ public final class WebPaint {
 	/** True when the record's box intersects the clip; replay skips the rest (damage-only paint). */
 	public boolean intersects(int record, int cx, int cy, int cw, int ch) {
 		int b = record * STRIDE;
-		return ops[b + F_X] <= cx + cw && ops[b + F_X] + ops[b + F_W] >= cx && ops[b + F_Y] <= cy + ch && ops[b + F_Y] + ops[b + F_H] >= cy;
+		return ops[b + F_X] <= (long) cx + cw && (long) ops[b + F_X] + ops[b + F_W] >= cx && ops[b + F_Y] <= (long) cy + ch && (long) ops[b + F_Y] + ops[b + F_H] >= cy;
 	}
 
 	/** FNV-1a over records, points and strings: the differential compares this between toolkits. */
