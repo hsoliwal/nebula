@@ -46,6 +46,7 @@
 						<include>**/GridWebNativeMapping_Test.java</include>
 						<include>**/GridFixedColumn_Test.java</include>
 						<include>**/GridVisibleRangeSupport_Test.java</include>
+						<include>**/GridRowResizerHover_Test.java</include>
 						<include>**/GridViewportCoordinates_Test.java</include>
 						<include>**/GridGCProxy_Test.java</include>
 						<include>**/GridViewportDistillation_Test.java</include>

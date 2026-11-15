@@ -257,6 +257,16 @@ final class GridViewport {
 	}
 
 	/**
+	 * Finds a visible row coordinate without materializing hidden items.
+	 *
+	 * @param position an item index in {@code [0, items]}
+	 * @return the first visible item index at or after it, or -1 when none remains
+	 */
+	int nextVisibleIndex(final int position) {
+		return rows().nextVisible(position);
+	}
+
+	/**
 	 * @param position an item index in {@code [0, items]}
 	 * @return the first visible item at or after it, or {@code null}
 	 */
