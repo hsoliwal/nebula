@@ -54,6 +54,8 @@ public final class MobileGridViewport {
 	private long selectedRow = -1;
 	private long[] rowAt = new long[0];
 	private boolean[] selectedAt = new boolean[0];
+	// A row can be assigned before its provider has allowed sink binding to start.
+	private boolean[] bindingStarted = new boolean[0];
 	private boolean[] dirty = new boolean[0];
 	private int[] seenEpoch = new int[0];
 	private int epoch;
@@ -136,6 +138,7 @@ public final class MobileGridViewport {
 					String cell = data.cell(row, col);
 					cells[col] = cell == null ? "" : cell;
 				}
+				bindingStarted[slot] = true;
 				sink.bind(slot, row, cells, selected);
 				dirty[slot] = false;
 				selectedAt[slot] = selected;
@@ -154,13 +157,15 @@ public final class MobileGridViewport {
 		rowAt = new long[required];
 		Arrays.fill(rowAt, -1);
 		selectedAt = new boolean[required];
+		bindingStarted = new boolean[required];
 		dirty = new boolean[required];
 		seenEpoch = new int[required];
 		epoch = 0;
 	}
 	private void release(int slot) {
-		if (rowAt[slot] >= 0) sink.release(slot, rowAt[slot]);
+		if (rowAt[slot] >= 0 && bindingStarted[slot]) sink.release(slot, rowAt[slot]);
 		rowAt[slot] = -1;
+		bindingStarted[slot] = false;
 		dirty[slot] = false;
 		selectedAt[slot] = false;
 	}
