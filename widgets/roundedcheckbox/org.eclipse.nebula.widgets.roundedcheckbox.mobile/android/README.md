@@ -44,9 +44,14 @@ The billion-row virtual model fills only visible SWT.SetData rows and draws
 two native-backed columns. Android instrumentation examines the actual
 SWT Table Canvas peer (GridView accessibility role), pages its viewport with
 a native accessibility action, and taps a high-index logical row to verify
-ordinary SWT.Selection. These are runnable acceptance tests, not a report of
-executed device results. UIKit's corresponding Table accessibility paging
-is wired, but Apple runtime/device qualification remains open. Full Nebula
+ordinary SWT.Selection. The original Table can now expand into the
+visible screen using an original SWT Button, then restore its compact layout,
+without replacing its TableItem identities or billion-row model. Android
+instrumentation verifies this native toggle, a genuine selected-row screen
+pixel, TableColumn header Selection, and the restored viewport. These are
+runnable acceptance tests, not a report of executed device results. UIKit's
+corresponding Table accessibility paging is wired, but Apple runtime/device
+qualification remains open. Full Nebula
 Grid and XViewer APIs are not claimed by this original SWT Table consumer.
 
 The test also invokes the Android SeekBar accessibility increment provided

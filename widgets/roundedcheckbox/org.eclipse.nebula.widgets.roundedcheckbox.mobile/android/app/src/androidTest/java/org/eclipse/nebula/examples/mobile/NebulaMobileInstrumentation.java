@@ -263,6 +263,19 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             await(() -> NebulaMobileMain.state.tableDataLoads >= 2
                     && NebulaMobileMain.state.tableDataLoads <= 16,
                     "Native original SWT Table materializes only visible SetData rows");
+            // Use the same Table model, expanded into the actual screen.
+            // This preserves the existing checkbox/Combo/Text acceptance scene.
+            int[] expandTap = new int[2];
+            runOnMainSync(() -> {
+                View toggle = findVisibleDescription(surface(current), "Expand Table");
+                require(toggle != null, "SWT Table has an accessible Expand Table button");
+                toggle.getLocationOnScreen(expandTap);
+                expandTap[0] += toggle.getWidth() / 2;
+                expandTap[1] += toggle.getHeight() / 2;
+            });
+            tap(expandTap);
+            await(() -> NebulaMobileMain.state.tableExpanded,
+                    "Native Expand Table activates the original Java-owned viewport");
             AtomicInteger tableTop = new AtomicInteger();
             AtomicInteger tableHeader = new AtomicInteger();
             AtomicInteger tableRowHeight = new AtomicInteger();
@@ -305,13 +318,47 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             await(() -> NebulaMobileMain.state.tableSelections == 1
                     && NebulaMobileMain.state.tableSelection == tableTop.get(),
                     "Native Table row tap maps the correct billion-row logical index");
-            require(NebulaMobileMain.state.tableDataLoads <= 32,
-                    "Native Table touch/accessibility retains bounded SetData materialization");
+            int[] selectionPixel = new int[2];
+            runOnMainSync(() -> {
+                View tableView = findNativeTable(surface(current));
+                require(tableView != null && tableView.isShown(),
+                        "Expanded original SWT Table remains visible on Android screen");
+                tableView.getLocationOnScreen(selectionPixel);
+                selectionPixel[0] += tableView.getWidth() - 9;
+                selectionPixel[1] = tableTap[1];
+            });
+            await(() -> pixelMatches(selectionPixel, 0x007aff),
+                    "Original Table selected row paints actual Android blue pixels");
+            int[] headerTap = new int[2];
+            runOnMainSync(() -> {
+                View tableView = findNativeTable(surface(current));
+                tableView.getLocationOnScreen(headerTap);
+                float density = tableView.getResources().getDisplayMetrics().density;
+                headerTap[0] += Math.round(24 * density);
+                headerTap[1] += Math.round(9 * density);
+            });
+            tap(headerTap);
+            await(() -> NebulaMobileMain.state.tableHeaderSelections == 1
+                    && NebulaMobileMain.state.tableSelections == 1,
+                    "Real TableColumn header click dispatches Selection without row selection");
+            require(NebulaMobileMain.state.tableDataLoads <= 80,
+                    "Expanded million-scale viewport remains bounded despite billion-row model");
+            int[] restoreTap = new int[2];
+            runOnMainSync(() -> {
+                View toggle = findVisibleDescription(surface(current), "Restore");
+                require(toggle != null, "Expanded Table has a native Restore control");
+                toggle.getLocationOnScreen(restoreTap);
+                restoreTap[0] += toggle.getWidth() / 2;
+                restoreTap[1] += toggle.getHeight() / 2;
+            });
+            tap(restoreTap);
+            await(() -> !NebulaMobileMain.state.tableExpanded,
+                    "Restore returns the same original Table to its compact viewport");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: billion-row SWT Table and List, Combo popup, Text IME, native accessibility, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: expanded Table pixels/header/row, bounded billion-row model, List, Combo and Text IME\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -331,6 +378,18 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             throw new IllegalStateException("SWT Android native root not attached");
         }
         return content.getChildAt(0);
+    }
+
+    private View findVisibleDescription(View root, String description) {
+        CharSequence label = root.getContentDescription();
+        if (root.isShown() && label != null && description.contentEquals(label)) return root;
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findVisibleDescription(group.getChildAt(i), description);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private View findNativeTable(View root) {

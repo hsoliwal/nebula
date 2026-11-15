@@ -5,6 +5,7 @@ import org.eclipse.nebula.widgets.roundedcheckbox.RoundedCheckbox;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.List;
@@ -37,6 +38,8 @@ public final class NebulaMobileContents {
         public volatile int tableSelection = -1;
         public volatile int tableSelections;
         public volatile int tableDataLoads;
+        public volatile int tableHeaderSelections;
+        public volatile boolean tableExpanded;
         public volatile boolean disposed;
         Text editor;
         Table table;
@@ -110,6 +113,7 @@ public final class NebulaMobileContents {
         TableColumn itemName = new TableColumn(table, SWT.LEFT);
         itemName.setText("Name");
         itemName.setWidth(160);
+        itemName.addListener(SWT.Selection, event -> state.tableHeaderSelections++);
         TableColumn itemValue = new TableColumn(table, SWT.RIGHT);
         itemValue.setText("Value");
         itemValue.setWidth(120);
@@ -128,6 +132,10 @@ public final class NebulaMobileContents {
             state.tableSelections++;
             if (!labels.isDisposed()) labels.redraw();
         });
+        // Reposition the *same* original Table to an on-screen viewport,
+        // retaining its 1-billion-row model and stable SWT item identities.
+        Button tableToggle = new Button(shell, SWT.PUSH);
+        tableToggle.setText("Expand Table");
         scale.addListener(SWT.Selection, event -> {
             int value = scale.getSelection();
             state.scaleSelection = value;
@@ -181,9 +189,21 @@ public final class NebulaMobileContents {
             editor.setBounds(20, 500 + listHeight + 16, Math.max(30, area.width - 40), 40);
             combo.setBounds(20, 500 + listHeight + 72, Math.max(30, area.width - 40), 34);
             int tableY = 500 + listHeight + 122;
-            table.setBounds(20, tableY, Math.max(30, area.width - 40),
-                    Math.max(96, Math.min(148, area.height - tableY - 8)));
+            if (state.tableExpanded) {
+                table.setBounds(12, 68, Math.max(30, area.width - 24),
+                        Math.max(96, area.height - 82));
+                tableToggle.setBounds(Math.max(6, area.width - 125), 12, 115, 36);
+            } else {
+                table.setBounds(20, tableY, Math.max(30, area.width - 40),
+                        Math.max(96, Math.min(148, area.height - tableY - 8)));
+                tableToggle.setBounds(Math.max(6, area.width - 125), 260, 115, 36);
+            }
         };
+        tableToggle.addListener(SWT.Selection, event -> {
+            state.tableExpanded = !state.tableExpanded;
+            tableToggle.setText(state.tableExpanded ? "Restore" : "Expand Table");
+            layout.run();
+        });
         shell.addListener(SWT.Resize, event -> layout.run());
         layout.run();
         return state;
