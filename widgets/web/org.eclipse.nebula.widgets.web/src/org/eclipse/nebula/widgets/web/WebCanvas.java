@@ -100,7 +100,11 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 		case SWT.KeyDown: onKey(e); break;
 		case SWT.Traverse: onTraverse(e); break;
 		case SWT.FocusIn: case SWT.FocusOut: model.setState(-1, WebStates.FOCUS, e.type == SWT.FocusIn); break;
-		case SWT.Dispose: cache.dispose(); break;
+		case SWT.Dispose:
+			getDisplay().timerExec(-1, ticker);
+			ticking = false;
+			cache.dispose();
+			break;
 		case SWT.Show: setPartVisible(true); break;
 		case SWT.Hide: setPartVisible(false); break;
 		default: onOther(e);
@@ -186,7 +190,7 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 	/** PartVisible-aware hook: one flush and one paint when the part becomes visible. */
 	protected void setPartVisible(boolean visible) {
 		partVisible = visible;
-		if (visible && pending) {
+		if (visible && (pending || model.isAnimating())) {
 			pending = false;
 			changed(-1, 0);
 		}
