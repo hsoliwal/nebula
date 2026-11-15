@@ -201,11 +201,76 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             require(NebulaMobileMain.state.comboSelection == 1
                     && NebulaMobileMain.state.comboEvents == 3,
                     "Escape does not fabricate SWT Combo Selection");
+            // Open the original billion-row SWT Table page through a real
+            // Android Button. Its Cell, header and selection are Java-owned.
+            int[] tableButton = new int[2];
+            runOnMainSync(() -> {
+                View opener = findViewByDescription(surface(current), "Table");
+                require(opener != null && opener.isShown(), "Native Table navigation Button is visible");
+                opener.getLocationOnScreen(tableButton);
+                tableButton[0] += opener.getWidth() / 2;
+                tableButton[1] += opener.getHeight() / 2;
+            });
+            tap(tableButton);
+            await(() -> NebulaMobileMain.state.tableShown
+                    && NebulaMobileMain.state.tableDataLoads > 0
+                    && NebulaMobileMain.state.tableDataLoads <= 35,
+                    "Native SWT Table shows only the final visible billion-row window");
+            AtomicReference<View> tablePeer = new AtomicReference<>();
+            runOnMainSync(() -> {
+                View found = findOriginalTable(surface(current));
+                require(found != null && found.isShown(), "Original SWT Table has a visible native peer");
+                tablePeer.set(found);
+                AccessibilityNodeInfo info = found.createAccessibilityNodeInfo();
+                require("android.widget.GridView".contentEquals(info.getClassName()),
+                        "Original SWT Table exposes its native accessible GridView role");
+            });
+            int[] tableOrigin = new int[2];
+            runOnMainSync(() -> tablePeer.get().getLocationOnScreen(tableOrigin));
+            float density = tablePeer.get().getResources().getDisplayMetrics().density;
+            int headerY = tableOrigin[1] + Math.round(10 * density);
+            tap(new int[] {tableOrigin[0] + Math.round(28 * density), headerY});
+            await(() -> NebulaMobileMain.state.tableHeaderEvents == 1,
+                    "Touching original TableColumn header dispatches one SWT Selection");
+            require(NebulaMobileMain.state.tableEvents == 0,
+                    "TableColumn header click does not select any row");
+            int secondY = tableOrigin[1] + Math.round(
+                    (64L > NebulaMobileMain.state.tableHeaderHeight
+                            ? NebulaMobileMain.state.tableHeaderHeight
+                            : NebulaMobileMain.state.tableHeaderHeight)
+                    * density)
+                    + Math.round((NebulaMobileMain.state.tableRowHeight
+                            + NebulaMobileMain.state.tableRowHeight / 2.0f) * density);
+            tap(new int[] {tableOrigin[0] + Math.round(28 * density), secondY});
+            await(() -> NebulaMobileMain.state.tableSelection == 999_999_991
+                    && NebulaMobileMain.state.tableEvents == 1,
+                    "Native Table touch selects the correct virtual row at a billion-item index");
+            int tableTopBefore = NebulaMobileMain.state.tableTopIndex;
+            runOnMainSync(() -> require(tablePeer.get().performAccessibilityAction(
+                    AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, null),
+                    "Native Table accessibility scroll action is accepted"));
+            await(() -> NebulaMobileMain.state.tableTopIndex > tableTopBefore,
+                    "Native accessibility scroll advances the original Table viewport");
+            require(NebulaMobileMain.state.tableSelection == 999_999_991
+                    && NebulaMobileMain.state.tableEvents == 1
+                    && NebulaMobileMain.state.tableDataLoads <= 45,
+                    "Accessible Table scrolling remains sparse and does not fabricate SWT.Selection");
+            int[] backPosition = new int[2];
+            runOnMainSync(() -> {
+                View back = findViewByDescription(surface(current), "Back");
+                require(back != null, "Native SWT Table page has an accessible Back Button");
+                back.getLocationOnScreen(backPosition);
+                backPosition[0] += back.getWidth() / 2;
+                backPosition[1] += back.getHeight() / 2;
+            });
+            tap(backPosition);
+            await(() -> !NebulaMobileMain.state.tableShown,
+                    "Original Table owned Shell is hidden by native Back button");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: SWT Combo popup/Selection, billion-row List, Android IME Verify/Modify, accessibility, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: original Table, header, sparse billion-row selection, Combo, List, IME and disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -225,6 +290,33 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             throw new IllegalStateException("SWT Android native root not attached");
         }
         return content.getChildAt(0);
+    }
+
+    private View findViewByDescription(View root, String description) {
+        CharSequence label = root.getContentDescription();
+        if (root.isShown() && label != null && description.contentEquals(label)) return root;
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View candidate = findViewByDescription(group.getChildAt(i), description);
+                if (candidate != null) return candidate;
+            }
+        }
+        return null;
+    }
+
+    private View findOriginalTable(View root) {
+        if (root.isShown()) {
+            AccessibilityNodeInfo info = root.createAccessibilityNodeInfo();
+            if (info != null && "android.widget.GridView".contentEquals(info.getClassName()))
+                return root;
+        }
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View candidate = findOriginalTable(group.getChildAt(i));
+                if (candidate != null) return candidate;
+            }
+        }
+        return null;
     }
 
     private View findCombo(View root) {
