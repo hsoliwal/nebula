@@ -41,13 +41,13 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             NebulaMobileActivity current = activity;
             await(() -> NebulaMobileMain.state != null && surface(current).getWidth() > 0, "Nebula source construction");
-            int[] toggle = location(surface(current), 42, 86);
+            int[] checkboxTap = location(surface(current), 42, 86);
             int[] veto = location(surface(current), 42, 158);
             int[] disabled = location(surface(current), 42, 230);
             int[] fill = location(surface(current), 28, 86);
             await(() -> pixelMatches(veto, 0x007aff), "native grayed-checkbox pixels");
             saveScreen("nebula-android-before.png");
-            tap(toggle);
+            tap(checkboxTap);
             await(() -> NebulaMobileMain.state.selected && NebulaMobileMain.state.attempts == 1, "real widget selection");
             await(() -> pixelMatches(fill, 0x007aff), "native selected-checkbox fill");
             tap(veto);
@@ -354,6 +354,7 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             tap(restoreTap);
             await(() -> !NebulaMobileMain.state.tableExpanded,
                     "Restore returns the same original Table to its compact viewport");
+            SwtMobileRecoveryContracts.verify(this, current, NebulaMobileMain.state.editor.getDisplay());
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
