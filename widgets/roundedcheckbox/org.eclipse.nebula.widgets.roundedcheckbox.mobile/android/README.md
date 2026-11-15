@@ -24,6 +24,18 @@ checks are included in the pinned Android API-35 instrumented test workflow.
 Full iOS Java runtime/app packaging, marked-text IME composition and device
 keyboard parity remain open.
 
+The application includes an additional **Table** button that opens an
+owned native SWT Shell containing the original `Table`, `TableColumn` and
+`TableItem` mobile implementations. It starts at logical row
+999,999,990 of a one-billion-row virtual model, materializes rows via
+`SWT.SetData`, and handles column-header selection, row selection and native
+accessibility paging without enumerating the entire model. The original
+RoundedCheckbox, Text, List and Combo remain on their existing screen.
+Android instrumentation checks the native GridView role, bounded visible
+data loading, exact row/header events and selection-neutral accessibility
+scrolling. iOS uses the same shared Java Table consumer, but still requires
+Apple SDK/device and embedded-Java runtime qualification.
+
 The shared widget application also instantiates the **original** SWT
 `Combo` merged in [SWT #388](https://github.com/hsoliwal/eclipse.platform.swt/pull/388).
 On Android the instrumentation invokes its native Spinner accessibility action,
