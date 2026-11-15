@@ -29,9 +29,13 @@ The shared widget application also instantiates the **original** SWT
 On Android the instrumentation invokes its native Spinner accessibility action,
 locates the SWT popup Shell/List, taps the second row, and checks the original
 Combo Selection and selected text without a separate Android-native Combo
-model. The same Java Combo source uses UIKit-owned Text/List/Button/Shell
-components on iOS, but iOS device runtime and VoiceOver popup behavior
-are not yet qualified.
+model. With [SWT #390](https://github.com/hsoliwal/eclipse.platform.swt/pull/390),
+the native acceptance fixture also dispatches hardware DPAD_UP / DPAD_DOWN to
+the original Combo peer, checks each original SWT Selection, reopens the
+dropdown and verifies that Escape closes it without fabricating Selection.
+The same Java Combo source uses UIKit-owned Text/List/Button/Shell
+components on iOS, but iOS device runtime, physical keyboard navigation,
+and VoiceOver popup behavior are not yet qualified.
 
 The test also invokes the Android SeekBar accessibility increment provided
 by [SWT #378](https://github.com/hsoliwal/eclipse.platform.swt/pull/378),
