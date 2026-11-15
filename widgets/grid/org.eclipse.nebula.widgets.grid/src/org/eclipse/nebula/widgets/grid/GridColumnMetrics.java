@@ -315,7 +315,7 @@ final class GridColumnMetrics {
 	/** As {@link GridViewportProjection#visibleColumns(List, int, int, int, boolean)}. */
 	GridColumn[] visibleColumns(final int horizontalSelectionPixels, final int viewportLeft, final int viewportRight,
 			final boolean fixedOverlayActive) {
-		if (viewportRight <= viewportLeft || count == 0) {
+		if (viewportRight <= viewportLeft || count == 0 || prefix[count] == 0) {
 			return new GridColumn[0];
 		}
 		final long span = (long) viewportRight - viewportLeft;

@@ -55,6 +55,7 @@
 						<include>**/GridColumnWindow_Test.java</include>
 						<include>**/GridColumnMetricsRetention_Test.java</include>
 						<include>**/GridColumnMetricsViewport_Test.java</include>
+						<include>**/GridColumnMetricsPinned_Test.java</include>
 						<include>**/GridCellSelectionMode_Test.java</include>
 						<include>**/GridIssue700_Test.java</include>
 						<include>**/GridModelJobs_Test.java</include>
