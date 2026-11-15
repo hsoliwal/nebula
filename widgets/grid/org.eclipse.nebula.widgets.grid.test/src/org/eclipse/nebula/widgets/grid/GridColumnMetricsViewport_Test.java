@@ -1,0 +1,280 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Hitesh Soliwal and Contributors to the Synexia Project.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+ * Public License 2.0, which are available at
+ * https://www.apache.org/licenses/LICENSE-2.0 and
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *******************************************************************************/
+package org.eclipse.nebula.widgets.grid;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+/** Boundary and ownership contracts for the original Grid's cached column projection. */
+public class GridColumnMetricsViewport_Test {
+
+	private Shell shell;
+	private Grid grid;
+
+	@Before
+	public void setUp() {
+		shell = new Shell(Display.getDefault());
+		grid = new Grid(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+		grid.setBounds(0, 0, 320, 160);
+	}
+
+	@After
+	public void tearDown() {
+		if (shell != null && !shell.isDisposed()) {
+			shell.dispose();
+		}
+	}
+
+	@Test
+	public void positivePinnedPrefixKeepsExactRightEdgeSemantics() {
+		for (int i = 0; i < 2048; i++) {
+			column(7, true, true);
+		}
+		final List<GridColumn> columns = ordered();
+		final GridColumnMetrics metrics = ready(columns);
+		assertArrayEquals(new GridColumn[0], metrics.visibleColumns(0, 0, 0, true));
+		assertArrayEquals(new GridColumn[] { columns.get(0) }, metrics.visibleColumns(0, 0, 1, true));
+		assertArrayEquals(new GridColumn[] { columns.get(0) }, metrics.visibleColumns(0, 0, 7, true));
+		assertArrayEquals(new GridColumn[] { columns.get(0), columns.get(1) },
+				metrics.visibleColumns(0, 0, 8, true));
+		assertArrayEquals(new GridColumn[] { columns.get(0), columns.get(1), columns.get(2) },
+				metrics.visibleColumns(Integer.MAX_VALUE, 40, 61, true));
+		assertArrayEquals(columns.toArray(new GridColumn[0]),
+				metrics.visibleColumns(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, true));
+	}
+
+	@Test
+	public void zeroWidthAndHiddenFixedColumnsKeepRepeatedPrefixOrder() {
+		column(0, true, true);
+		column(0, true, true);
+		final GridColumn first = column(7, true, true);
+		column(0, true, true);
+		column(80, true, false);
+		final GridColumn second = column(9, true, true);
+		column(0, true, true);
+		final GridColumn third = column(11, true, true);
+		column(0, true, true);
+		final GridColumnMetrics metrics = ready(ordered());
+		assertArrayEquals(new GridColumn[] { first }, metrics.visibleColumns(0, 0, 7, true));
+		assertArrayEquals(new GridColumn[] { first, second }, metrics.visibleColumns(0, 0, 16, true));
+		assertArrayEquals(new GridColumn[] { first, second, third }, metrics.visibleColumns(0, 0, 17, true));
+		assertProjection();
+		first.setWidth(0);
+		second.setVisible(false);
+		third.setWidth(0);
+		assertProjection();
+		assertEquals(0, ready(ordered()).visibleColumns(0, 0, 40, true).length);
+	}
+
+	@Test
+	public void wideCoordinatesAndMixedReorderedColumnsMatchTheLinearProjection() {
+		final int[] widths = { Integer.MAX_VALUE, 0, 7, 12, 0, Integer.MAX_VALUE, 3, 31, 5, 0, 1, 17 };
+		for (int i = 0; i < widths.length; i++) {
+			column(widths[i], i % 3 != 1, i % 5 != 4);
+		}
+		assertProjection();
+		final int[] reverse = new int[widths.length];
+		for (int i = 0; i < reverse.length; i++) {
+			reverse[i] = reverse.length - 1 - i;
+		}
+		grid.setColumnOrder(reverse);
+		assertProjection();
+		for (int i = 0; i < widths.length; i++) {
+			grid.getColumn(i).setFixed(i % 2 == 0);
+			grid.getColumn(i).setVisible(i % 4 != 0);
+			grid.getColumn(i).setWidth(i % 3 == 0 ? 0 : 1 + i * 13);
+			assertProjection();
+		}
+	}
+
+	@Test
+	public void cachedProjectionDoesNotInvokeSubclassAccessors() {
+		final CountingColumn first = new CountingColumn(grid);
+		first.setWidth(11);
+		first.setFixed(true);
+		final CountingColumn second = new CountingColumn(grid);
+		second.setWidth(37);
+		second.setFixed(true);
+		final GridColumnMetrics metrics = ready(ordered());
+		final int before = first.calls + second.calls;
+		for (int i = 0; i < 20; i++) {
+			assertArrayEquals(new GridColumn[] { first }, metrics.visibleColumns(i - 10, 0, 11, true));
+		}
+		assertEquals("a cached query must not reenter column methods", before, first.calls + second.calls);
+	}
+
+	@Test
+	public void cachedProjectionUsesCapturedMembershipWhenFixedChangesFromTrueToFalse() {
+		assertCapturedPinnedMembership(true, false, 0);
+	}
+
+	@Test
+	public void cachedProjectionUsesCapturedMembershipWhenFixedChangesFromFalseToTrue() {
+		assertCapturedPinnedMembership(false, true, -6);
+	}
+
+	private void assertCapturedPinnedMembership(final boolean first, final boolean second,
+			final int horizontalSelection) {
+		final StatefulFixedColumn column = new StatefulFixedColumn(grid);
+		column.setWidth(12);
+		final List<GridColumn> columns = ordered();
+		final GridColumnMetrics metrics = grid.columnMetrics();
+		metrics.invalidate();
+		column.begin(first, second);
+		try {
+			assertTrue(metrics.ready(columns));
+			assertEquals("rebuild retains both existing subclass observations", 2, column.calls);
+			assertArrayEquals("projection follows the captured pinned membership",
+					new GridColumn[] { column }, metrics.visibleColumns(horizontalSelection, 0, 12, true));
+			assertEquals("projection adds no subclass observation", 2, column.calls);
+		} finally {
+			column.end();
+		}
+	}
+
+	@Test
+	public void negativeWidthKeepsTheExistingScalarFallback() {
+		grid.setSize(20, 100);
+		grid.setRowHeaderVisible(true, 100);
+		final GridColumn column = column(40, true, true);
+		assertTrue("the row header is wider than the client area", column.getWidth() < 0);
+		assertFalse(grid.columnMetrics().ready(ordered()));
+		assertEquals(0, grid.getVisibleRange().getColumns().length);
+		grid.setSize(320, 160);
+		column.setWidth(40);
+		assertProjection();
+	}
+
+	@Test
+	public void returnedArraysRemainIndependentSnapshots() {
+		final GridColumn first = column(10, true, true);
+		column(20, true, true);
+		final GridColumnMetrics metrics = ready(ordered());
+		final GridColumn[] a = metrics.visibleColumns(0, 0, 10, true);
+		final GridColumn[] b = metrics.visibleColumns(0, 0, 10, true);
+		assertNotSame(a, b);
+		a[0] = null;
+		assertSame(first, b[0]);
+		assertSame(first, metrics.visibleColumns(0, 0, 10, true)[0]);
+	}
+
+	private GridColumn column(final int width, final boolean fixed, final boolean visible) {
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setWidth(width);
+		column.setFixed(fixed);
+		column.setVisible(visible);
+		return column;
+	}
+
+	private List<GridColumn> ordered() {
+		final List<GridColumn> columns = new ArrayList<>();
+		for (final int index : grid.getColumnOrder()) {
+			columns.add(grid.getColumn(index));
+		}
+		return columns;
+	}
+
+	private GridColumnMetrics ready(final List<GridColumn> columns) {
+		final GridColumnMetrics metrics = grid.columnMetrics();
+		assertTrue(metrics.ready(columns));
+		return metrics;
+	}
+
+	private void assertProjection() {
+		final List<GridColumn> columns = ordered();
+		final GridColumnMetrics metrics = ready(columns);
+		final int[] selections = { Integer.MIN_VALUE, -1000, -1, 0, 1, 23, 1000, Integer.MAX_VALUE };
+		final int[][] ranges = { { 0, 0 }, { 10, 5 }, { 0, 1 }, { 0, 7 }, { 0, 8 }, { 40, 61 },
+				{ -50, 50 }, { Integer.MIN_VALUE, Integer.MAX_VALUE },
+				{ Integer.MAX_VALUE - 31, Integer.MAX_VALUE }, { Integer.MIN_VALUE, -1 } };
+		for (final int selection : selections) {
+			for (final int[] range : ranges) {
+				for (final boolean overlay : new boolean[] { false, true }) {
+					assertArrayEquals("selection " + selection + " range " + Arrays.toString(range)
+							+ " overlay " + overlay,
+							GridViewportProjection.visibleColumns(columns, selection, range[0], range[1], overlay),
+							metrics.visibleColumns(selection, range[0], range[1], overlay));
+				}
+			}
+		}
+	}
+
+	private static final class StatefulFixedColumn extends GridColumn {
+		private boolean[] observations;
+		private int calls;
+
+		StatefulFixedColumn(final Grid parent) {
+			super(parent, SWT.NONE);
+		}
+
+		void begin(final boolean first, final boolean second) {
+			observations = new boolean[] { first, second };
+			calls = 0;
+		}
+
+		void end() {
+			observations = null;
+		}
+
+		@Override
+		public boolean isFixed() {
+			if (observations == null) {
+				return super.isFixed();
+			}
+			if (calls >= observations.length) {
+				throw new AssertionError("unexpected subclass observation during cached projection");
+			}
+			return observations[calls++];
+		}
+	}
+
+	private static final class CountingColumn extends GridColumn {
+		int calls;
+
+		CountingColumn(final Grid parent) {
+			super(parent, SWT.NONE);
+		}
+
+		@Override
+		public int getWidth() {
+			calls++;
+			return super.getWidth();
+		}
+
+		@Override
+		public boolean isVisible() {
+			calls++;
+			return super.isVisible();
+		}
+
+		@Override
+		public boolean isFixed() {
+			calls++;
+			return super.isFixed();
+		}
+	}
+}
