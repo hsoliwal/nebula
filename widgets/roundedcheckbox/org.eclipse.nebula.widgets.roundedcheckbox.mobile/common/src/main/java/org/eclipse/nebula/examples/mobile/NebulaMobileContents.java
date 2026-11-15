@@ -10,6 +10,9 @@ import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Shell;
 
 /** One shared demo body for the Android and iOS SWT hosts. */
@@ -31,14 +34,19 @@ public final class NebulaMobileContents {
         public volatile int comboSelection = -1;
         public volatile int comboEvents;
         public volatile String comboText = "";
+        public volatile int tableSelection = -1;
+        public volatile int tableSelections;
+        public volatile int tableDataLoads;
         public volatile boolean disposed;
         Text editor;
+        Table table;
     }
 
     public static State create(Shell shell) {
         State state = new State();
         shell.addListener(SWT.Dispose, event -> {
             state.editor = null;
+            state.table = null;
             state.disposed = true;
         });
         Canvas labels = new Canvas(shell, SWT.DOUBLE_BUFFERED);
@@ -95,6 +103,31 @@ public final class NebulaMobileContents {
             state.comboEvents++;
             if (!labels.isDisposed()) labels.redraw();
         });
+        // Actual original SWT Table/TableItem/TableColumn, not a list clone:
+        // the billion-row model allocates only explicit and visible row peers.
+        Table table = new Table(shell, SWT.VIRTUAL | SWT.SINGLE | SWT.FULL_SELECTION);
+        state.table = table;
+        TableColumn itemName = new TableColumn(table, SWT.LEFT);
+        itemName.setText("Name");
+        itemName.setWidth(160);
+        TableColumn itemValue = new TableColumn(table, SWT.RIGHT);
+        itemValue.setText("Value");
+        itemValue.setWidth(120);
+        table.setHeaderVisible(true);
+        table.setLinesVisible(true);
+        table.addListener(SWT.SetData, event -> {
+            state.tableDataLoads++;
+            TableItem item = (TableItem) event.item;
+            item.setText(0, "Table row " + event.index);
+            item.setText(1, "Value " + event.index);
+        });
+        table.setItemCount(1_000_000_000);
+        table.setTopIndex(999_999_994);
+        table.addListener(SWT.Selection, event -> {
+            state.tableSelection = table.getSelectionIndex();
+            state.tableSelections++;
+            if (!labels.isDisposed()) labels.redraw();
+        });
         scale.addListener(SWT.Selection, event -> {
             int value = scale.getSelection();
             state.scaleSelection = value;
@@ -133,6 +166,7 @@ public final class NebulaMobileContents {
             event.gc.drawText("Billion-row List selected: " + state.listSelection, 16, 474, true);
             event.gc.drawText("Text: " + state.nativeText, 16, 724, true);
             event.gc.drawText("Combo: " + state.comboText + " / " + state.comboSelection, 16, 756, true);
+            event.gc.drawText("Table selection: " + state.tableSelection, 16, 926, true);
         });
         Runnable layout = () -> {
             Rectangle area = shell.getClientArea();
@@ -146,6 +180,9 @@ public final class NebulaMobileContents {
             rows.setBounds(20, 500, Math.max(30, area.width - 40), listHeight);
             editor.setBounds(20, 500 + listHeight + 16, Math.max(30, area.width - 40), 40);
             combo.setBounds(20, 500 + listHeight + 72, Math.max(30, area.width - 40), 34);
+            int tableY = 500 + listHeight + 122;
+            table.setBounds(20, tableY, Math.max(30, area.width - 40),
+                    Math.max(96, Math.min(148, area.height - tableY - 8)));
         };
         shell.addListener(SWT.Resize, event -> layout.run());
         layout.run();

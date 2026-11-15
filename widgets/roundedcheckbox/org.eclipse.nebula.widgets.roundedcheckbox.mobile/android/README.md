@@ -37,6 +37,18 @@ The same Java Combo source uses UIKit-owned Text/List/Button/Shell
 components on iOS, but iOS device runtime, physical keyboard navigation,
 and VoiceOver popup behavior are not yet qualified.
 
+The same shared Java application now consumes the original SWT
+`Table`/`TableItem`/`TableColumn` merged in
+[SWT #393](https://github.com/hsoliwal/eclipse.platform.swt/pull/393).
+The billion-row virtual model fills only visible SWT.SetData rows and draws
+two native-backed columns. Android instrumentation examines the actual
+SWT Table Canvas peer (GridView accessibility role), pages its viewport with
+a native accessibility action, and taps a high-index logical row to verify
+ordinary SWT.Selection. These are runnable acceptance tests, not a report of
+executed device results. UIKit's corresponding Table accessibility paging
+is wired, but Apple runtime/device qualification remains open. Full Nebula
+Grid and XViewer APIs are not claimed by this original SWT Table consumer.
+
 The test also invokes the Android SeekBar accessibility increment provided
 by [SWT #378](https://github.com/hsoliwal/eclipse.platform.swt/pull/378),
 checking that it produces exactly one original SWT Selection. iOS now exposes
