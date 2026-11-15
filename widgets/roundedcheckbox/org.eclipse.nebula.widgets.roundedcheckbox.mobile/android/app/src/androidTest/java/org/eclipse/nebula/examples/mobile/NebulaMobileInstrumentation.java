@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -156,6 +157,50 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                     && "Second".equals(NebulaMobileMain.state.comboText)
                     && NebulaMobileMain.state.comboEvents == 1,
                     "Native original Combo popup row selection dispatches SWT.Selection once");
+            // A native hardware DPAD key must flow through the original
+            // SWT Combo keyboard owner, not a synthetic Java-only selection.
+            runOnMainSync(() -> {
+                View comboPeer = findCombo(surface(current));
+                require(comboPeer != null && comboPeer.requestFocus(),
+                        "Native Android Combo peer receives hardware keyboard focus");
+                require(comboPeer.dispatchKeyEvent(
+                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_UP)),
+                        "Android DPAD_UP delivered to SWT Combo native peer");
+            });
+            await(() -> NebulaMobileMain.state.comboSelection == 0
+                    && "First".equals(NebulaMobileMain.state.comboText)
+                    && NebulaMobileMain.state.comboEvents == 2,
+                    "Original Combo DPAD_UP sends one SWT Selection and updated text");
+            runOnMainSync(() -> {
+                View comboPeer = findCombo(surface(current));
+                require(comboPeer.dispatchKeyEvent(
+                        new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_DOWN)),
+                        "Android DPAD_DOWN delivered to SWT Combo native peer");
+            });
+            await(() -> NebulaMobileMain.state.comboSelection == 1
+                    && "Second".equals(NebulaMobileMain.state.comboText)
+                    && NebulaMobileMain.state.comboEvents == 3,
+                    "Original Combo DPAD_DOWN sends one SWT Selection");
+            runOnMainSync(() -> require(
+                    findCombo(surface(current)).performAccessibilityAction(
+                            AccessibilityNodeInfo.ACTION_CLICK, null),
+                    "Android Combo popup reopens for Escape-key test"));
+            await(() -> {
+                runOnMainSync(() -> popupList.set(findPopupList(
+                        surface(current), comboBottom[1])));
+                return popupList.get() != null;
+            }, "Original Combo popup reopened");
+            runOnMainSync(() -> require(findCombo(surface(current)).dispatchKeyEvent(
+                    new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ESCAPE)),
+                    "Android Escape sent to original Combo owner"));
+            await(() -> {
+                runOnMainSync(() -> popupList.set(findPopupList(
+                        surface(current), comboBottom[1])));
+                return popupList.get() == null;
+            }, "Original Combo Escape closes native popup without selecting");
+            require(NebulaMobileMain.state.comboSelection == 1
+                    && NebulaMobileMain.state.comboEvents == 3,
+                    "Escape does not fabricate SWT Combo Selection");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
