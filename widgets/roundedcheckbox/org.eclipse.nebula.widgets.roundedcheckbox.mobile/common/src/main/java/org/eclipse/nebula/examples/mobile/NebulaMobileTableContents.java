@@ -48,6 +48,7 @@ public final class NebulaMobileTableContents {
         }));
         table.setItemCount(1_000_000_000);
         table.setTopIndex(999_999_990);
+        table.addListener(SWT.Paint, event -> state.tableTopIndex = table.getTopIndex());
         state.tableTopIndex = table.getTopIndex();
         state.tableRowHeight = table.getItemHeight();
         state.tableHeaderHeight = table.getHeaderHeight();
