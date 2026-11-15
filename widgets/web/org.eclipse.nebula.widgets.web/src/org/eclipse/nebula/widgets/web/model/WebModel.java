@@ -178,6 +178,9 @@ public abstract class WebModel extends WebView {
 	@Override
 	public final void paint(WebPaint p) {
 		p.reset();
+		if ((widgetFlags & HIDDEN) != 0 || width <= 0 || height <= 0) {
+			return;
+		}
 		emit(p);
 		if (focus >= 0 && focus < count && (widgetFlags & FOCUS) != 0) {
 			int b = focus * 4;

@@ -320,29 +320,27 @@ final class GridColumnMetrics {
 		}
 		final long span = (long) viewportRight - viewportLeft;
 		final long fixedWidth = fixedOverlayActive ? pinnedPrefix[pinnedCount] : 0;
+		final int pinnedEnd = fixedOverlayActive ? firstPinnedStartingAtOrAfter(span) : 0;
 		// scrolled columns: right edge past the body's left (behind the overlay), left edge before
 		// the viewport's right
 		final long left = horizontalSelectionPixels + fixedWidth;
 		final long right = span + horizontalSelectionPixels;
 		final int from = left < prefix[count] ? firstEndingAfter(Math.max(left, 0)) : count;
 		final int to = firstStartingAtOrAfter(right);
-		// Pinned columns starting at or beyond the right edge cannot contribute to this paint.
-		// Bound both the scratch array and the merge by the existing sorted prefix lane.
-		final int pinnedLimit = fixedOverlayActive ? firstPinnedStartingAtOrAfter(span) : 0;
-		final GridColumn[] result = new GridColumn[Math.max(0, to - from) + pinnedLimit];
+		final GridColumn[] result = new GridColumn[Math.max(0, to - from) + pinnedEnd];
 		int n = 0;
 		int k = 0;
 		for (int i = from; i < to; i++) {
 			if (fixedOverlayActive) {
 				// pinned columns before this one, in display order
-				for (; k < pinnedLimit && pinned[k] < i; k++) {
+				for (; k < pinnedEnd && pinned[k] < i; k++) {
 					n = addPinned(result, n, k, span);
 				}
-				if (fixed[i]) {
-					if (k < pinnedLimit && pinned[k] == i) {
+				// Preserve captured membership when subclass reads differ during rebuild.
+				if (pinnedBefore[i + 1] != pinnedBefore[i]) {
+					if (k < pinnedEnd && pinned[k] == i) {
 						n = addPinned(result, n, k++, span);
 					}
-					// A fixed column outside the visible prefix is not a scrolled column.
 					continue;
 				}
 			}
@@ -351,20 +349,20 @@ final class GridColumnMetrics {
 			}
 		}
 		if (fixedOverlayActive) {
-			for (; k < pinnedLimit; k++) {
+			for (; k < pinnedEnd; k++) {
 				n = addPinned(result, n, k, span);
 			}
 		}
 		return n == result.length ? result : Arrays.copyOf(result, n);
 	}
 
-	/* the first pinned position whose column starts at or after p (pinnedCount if none) */
-	private int firstPinnedStartingAtOrAfter(final long p) {
+	/* The first pinned column starting outside the viewport; zero-width prefixes stay ordered. */
+	private int firstPinnedStartingAtOrAfter(final long span) {
 		int low = 0;
 		int high = pinnedCount;
 		while (low < high) {
 			final int mid = (low + high) >>> 1;
-			if (pinnedPrefix[mid] >= p) {
+			if (pinnedPrefix[mid] >= span) {
 				high = mid;
 			} else {
 				low = mid + 1;
