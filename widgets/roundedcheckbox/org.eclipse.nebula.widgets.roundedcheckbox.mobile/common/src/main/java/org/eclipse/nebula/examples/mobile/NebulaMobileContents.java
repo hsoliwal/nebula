@@ -9,6 +9,7 @@ import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Shell;
 
 /** One shared demo body for the Android and iOS SWT hosts. */
@@ -27,6 +28,9 @@ public final class NebulaMobileContents {
         public volatile String nativeText = "";
         public volatile int textModifications;
         public volatile int textVerifications;
+        public volatile int comboSelection = -1;
+        public volatile int comboEvents;
+        public volatile String comboText = "";
         public volatile boolean disposed;
     }
 
@@ -73,6 +77,19 @@ public final class NebulaMobileContents {
             state.textModifications++;
             if (!labels.isDisposed()) labels.redraw();
         });
+        // The production SWT Combo is an original Text/List/Button/Shell
+        // composition; its native Android/UIKit popup sends Combo.Selection.
+        Combo combo = new Combo(shell, SWT.DROP_DOWN | SWT.READ_ONLY);
+        combo.setItems("First", "Second", "Third");
+        combo.select(0);
+        state.comboSelection = combo.getSelectionIndex();
+        state.comboText = combo.getText();
+        combo.addListener(SWT.Selection, event -> {
+            state.comboSelection = combo.getSelectionIndex();
+            state.comboText = combo.getText();
+            state.comboEvents++;
+            if (!labels.isDisposed()) labels.redraw();
+        });
         scale.addListener(SWT.Selection, event -> {
             int value = scale.getSelection();
             state.scaleSelection = value;
@@ -109,7 +126,8 @@ public final class NebulaMobileContents {
             event.gc.drawText("Attempts: " + state.attempts, 16, 324, true);
             event.gc.drawText("Scale drives ProgressBar: " + state.progressSelection, 16, 356, true);
             event.gc.drawText("Billion-row List selected: " + state.listSelection, 16, 474, true);
-            event.gc.drawText("Text: " + state.nativeText, 16, 704, true);
+            event.gc.drawText("Text: " + state.nativeText, 16, 724, true);
+            event.gc.drawText("Combo: " + state.comboText + " / " + state.comboSelection, 16, 756, true);
         });
         Runnable layout = () -> {
             Rectangle area = shell.getClientArea();
@@ -119,9 +137,10 @@ public final class NebulaMobileContents {
             disabled.setBounds(20, 208, 44, 44);
             progress.setBounds(20, 388, Math.max(30, area.width - 40), 24);
             scale.setBounds(20, 428, Math.max(30, area.width - 40), 34);
-            int listHeight = Math.max(80, Math.min(120, area.height - 620));
+            int listHeight = Math.max(80, Math.min(100, area.height - 640));
             rows.setBounds(20, 500, Math.max(30, area.width - 40), listHeight);
             editor.setBounds(20, 500 + listHeight + 16, Math.max(30, area.width - 40), 40);
+            combo.setBounds(20, 500 + listHeight + 72, Math.max(30, area.width - 40), 34);
         };
         shell.addListener(SWT.Resize, event -> layout.run());
         layout.run();

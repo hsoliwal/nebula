@@ -24,6 +24,15 @@ checks are included in the pinned Android API-35 instrumented test workflow.
 Full iOS Java runtime/app packaging, marked-text IME composition and device
 keyboard parity remain open.
 
+The shared widget application also instantiates the **original** SWT
+`Combo` merged in [SWT #388](https://github.com/hsoliwal/eclipse.platform.swt/pull/388).
+On Android the instrumentation invokes its native Spinner accessibility action,
+locates the SWT popup Shell/List, taps the second row, and checks the original
+Combo Selection and selected text without a separate Android-native Combo
+model. The same Java Combo source uses UIKit-owned Text/List/Button/Shell
+components on iOS, but iOS device runtime and VoiceOver popup behavior
+are not yet qualified.
+
 The test also invokes the Android SeekBar accessibility increment provided
 by [SWT #378](https://github.com/hsoliwal/eclipse.platform.swt/pull/378),
 checking that it produces exactly one original SWT Selection. iOS now exposes
