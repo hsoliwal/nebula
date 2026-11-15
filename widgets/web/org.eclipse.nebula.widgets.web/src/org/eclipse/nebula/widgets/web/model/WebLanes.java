@@ -201,7 +201,11 @@ public abstract class WebLanes implements WebApi {
 			damageAll();
 		} else {
 			flags[item] = now;
-			damageItem(item);
+			if (((old ^ now) & (WebStates.OPEN | WebStates.HIDDEN)) != 0) {
+				layout(width, height);
+			} else {
+				damageItem(item);
+			}
 		}
 		fire(item, D_STATE);
 	}
