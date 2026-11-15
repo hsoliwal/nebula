@@ -1,4 +1,4 @@
-name: Nebula SWT mobile List and native Text Android/iOS acceptance
+name: Nebula SWT mobile original List Text Combo Android/iOS acceptance
 on:
   pull_request:
     paths:
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: df8da08a4d1086de4af30f7d8367484f383d6a4e
+          ref: d804f928bb21c32c12c128c1ad1db548cce7fee9
           path: swt-mobile
           persist-credentials: false
       - uses: actions/setup-java@v4
@@ -36,11 +36,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Compile canonical SWT Android mobile List, Text and JNI owners
+      - name: Compile canonical SWT Android mobile List, Text, Combo and JNI owners
         run: mvn -B -ntp -f swt-mobile/mobile/pom.xml -Dmobile.platform=android "-Dandroid.sdk=$ANDROID_SDK_ROOT" clean verify
       - name: Assemble Nebula original-widget app and native instrumentation
         run: gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" :app:assembleDebug :app:assembleDebugAndroidTest
-      - name: Execute original virtual List, Text IME and existing native widget tests
+      - name: Execute original Combo popup, List, Text IME and native widget tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: df8da08a4d1086de4af30f7d8367484f383d6a4e
+          ref: d804f928bb21c32c12c128c1ad1db548cce7fee9
           path: swt-mobile
           persist-credentials: false
       - uses: actions/setup-java@v4
@@ -77,7 +77,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Compile SWT mobile iOS Java owners, List and Text
+      - name: Compile SWT mobile iOS Java owners, List, Text and Combo
         run: mvn -B -ntp -f swt-mobile/mobile/pom.xml -Dmobile.platform=ios clean verify
       - name: Compile original Nebula widget Java source against iOS SWT JAR
         run: |
