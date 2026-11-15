@@ -1,0 +1,27 @@
+name: Nebula release verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['release/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-orchestration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop-widgets:
+    uses: ./.github/workflows/maven.yaml
+    with:
+      release_verification: true
+  mobile-grid-core:
+    uses: ./.github/workflows/m3-mobile-grid-core.yml
+  mobile-grid-swt-binding:
+    uses: ./.github/workflows/m3-mobile-grid-swt-integration.yml
+  android-grid-package:
+    uses: ./.github/workflows/m3-mobile-grid-android-apk.yml
+  original-mobile-widgets:
+    uses: ./.github/workflows/m3-nebula-mobile-original-list.yml

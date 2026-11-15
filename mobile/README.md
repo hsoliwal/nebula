@@ -1,5 +1,28 @@
 # Nebula Grid mobile viewport projection (candidate)
 
+## Release verification
+
+The [release workflow](../.github/workflows/release-verification.yml) runs on
+every `release/**` push and can be started manually for a selected branch. It
+calls the existing desktop-widget, mobile-core, SWT-binding, Android-package
+and original-widget Android/iOS workflows without their change-path filters.
+Those workflows retain their exact SWT source pins; changing the Nebula branch
+does not silently select a newer SWT build.
+
+The desktop lane runs the Maven/Tycho widget tests and Grid pixel checks on GTK3
+and retains all Surefire reports. Release calls explicitly enable tests and
+make failures fatal, including the CDateTime, CWT and CompositeTable test modules
+whose POMs skip tests during ordinary builds. Their known failures must be
+resolved before a release pass; partial reports cannot stand in for those tests.
+The mobile lanes cover portable Grid geometry
+and ownership, Android debug APK assembly, original-widget Android
+instrumentation, and iOS Java/UIKit/JNI compilation. A built APK is a test
+application, not a signed release. iOS device execution and complete original
+Grid API parity remain separate requirements. Interpret the actual reports for
+the candidate being released; workflow configuration does not establish a pass.
+
+## Portable Grid model
+
 MobileGridViewport is an internal, array-backed row residency atom for a
 future Android/iOS backend of the **original** Nebula Grid. It does not replace,
 rename, wrap or alter the existing Grid widget public API. It supports long
