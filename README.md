@@ -8,8 +8,35 @@ implementation/test bundles. Nebula builds on SWT's display, native platform and
 resource lifecycle; it does not replace those contracts.
 
 [Widget map](#nebula-widget-map) · [Concepts](#nebula-key-concepts) ·
-[Quickstart](#nebula-quickstart) · [Example](#nebula-worked-example) ·
+[Quickstart](#nebula-quickstart) · [Android and iOS preview](#android-and-ios-preview) ·
+[Example](#nebula-worked-example) ·
 [Development guide](docs/DEVELOPMENT_GUIDE.md)
+
+## Android and iOS preview
+
+The current mobile consumer is the
+[RoundedCheckbox application](widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/),
+using the original Nebula `RoundedCheckbox` with SWT's own mobile `Display`,
+`Shell`, `Canvas`, `Scale`, `ProgressBar`, `List` and native-editor `Text` owners.
+The shared Java UI and SWT event loop are reused by its Android and iOS
+entrypoints.
+
+- [Android build and native test guide](widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/README.md):
+  build the current SWT Android JAR, then the Gradle application and
+  instrumentation APKs. Android 15 / API 35 is the current minimum.
+- [Shared application source](widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/common/src/main/java/org/eclipse/nebula/examples/mobile/):
+  ordinary SWT controls and original Nebula widget interaction.
+- [iOS entrypoint](widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/ios/src/main/java/org/eclipse/nebula/examples/mobile/IOSNebulaDemo.java)
+  and [SWT Apple build/runtime requirements](https://github.com/hsoliwal/eclipse.platform.swt/blob/master/mobile/ios/README.md#compile-the-native-library-with-xcode):
+  an actual iOS Java runtime and application link are still required.
+
+Use the SWT revision selected by the
+[mobile acceptance workflow](.github/workflows/m3-nebula-mobile-original-list.yml).
+The application now requires the original SWT List and Text implementation;
+the initial mobile backend alone is insufficient. APK assembly, Java/native
+compilation and actual device execution are distinct gates. This bounded preview
+does not qualify the full Nebula Grid, XViewer or complete widget catalogue,
+full IME/accessibility parity, or an iOS application runtime.
 
 ## Nebula widget map
 
