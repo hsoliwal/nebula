@@ -233,7 +233,16 @@ public abstract class WebView extends WebLanes {
 		long ext = Math.max(1, logicalExtent());
 		int len = (int) Math.max(Math.min(track, 8), Math.min(track, (long) track * viewLength() / ext));
 		long range = Math.max(1, ext - viewLength());
-		out[0] = (int) ((track - len) * Math.min(scroll, range) / range);
+		int travel = track - len;
+		long position = Math.min(scroll, range);
+		// Overflow detection adapted from Guava 32.1.3 LongMath.checkedMultiply (Apache-2.0).
+		int leadingZeros = Long.numberOfLeadingZeros((long) travel) + Long.numberOfLeadingZeros(~(long) travel)
+				+ Long.numberOfLeadingZeros(position) + Long.numberOfLeadingZeros(~position);
+		long product = (long) travel * position;
+		boolean fits = leadingZeros > 65 || leadingZeros >= 64
+				&& (travel >= 0 || position != Long.MIN_VALUE) && (travel == 0 || product / travel == position);
+		out[0] = fits ? (int) (product / range) : java.math.BigInteger.valueOf(travel)
+				.multiply(java.math.BigInteger.valueOf(position)).divide(java.math.BigInteger.valueOf(range)).intValue();
 		out[1] = len;
 	}
 
