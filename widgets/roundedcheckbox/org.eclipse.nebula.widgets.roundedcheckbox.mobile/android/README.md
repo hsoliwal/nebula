@@ -117,6 +117,46 @@ gradle -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mob
   :app:connectedDebugAndroidTest
 ```
 
+The same runner retains the original checkbox contracts: programmatic selection
+does not emit Selection; a pointer listener observes the pre-toggle value and
+can veto the toggle; the original Space KeyUp toggles without an added Selection
+event. Cancelled and multi-pointer gestures must not produce extra activations,
+and native accessibility must invoke the original cancellable action.
+
+Activity recreation must preserve the same Display, widget instances and shared
+application state. Detached native peers must reject input, resize and close
+callbacks. System Back is tested through the Android global action and must
+reach a vetoable SWT Shell.Close; final OS destruction must still terminate the
+application thread and dispose the original SWT owners.
+
+After that application exits, the same runner uses an isolated original Android
+`Activity`, declared only in the debug manifest, to check the SWT transport.
+Disconnect must release a child before its parent even when the child reused a
+lower native handle slot. Disconnected control and image handles must remain
+invalid after reconnect and slot reuse, while their replacements remain usable.
+Host destruction before the next Display connection must retain one termination
+callback. These checks use the existing `AndroidPlatform` implementation.
+
+The original recovery suite remains in the same runner. It checks native
+geometry, pointer and modifier state, primary-contact cancellation, reentrant
+focus, image drawing, antialias settings and ancestor disabling. The checkbox
+multi-pointer sequence also checks that removing a secondary contact preserves
+the primary gesture and that completing it activates exactly once.
+
+The runner writes four real visible-window images using SWT
+`new GC(display).copyArea(...)`: `nebula-android-before.png`,
+`nebula-android-recovery.png`, `nebula-android-after.png` and
+`nebula-android-recreated.png`. The existing native acceptance workflow records
+both source revisions and the receiving SWT JAR hash, retains installed APKs
+while its exit trap retrieves all four app-specific screenshots with adb, then
+requires and decodes each file. Missing, duplicate, corrupt, blank or repeated
+frames fail validation. A failing native test keeps its original exit status,
+and available screenshots and execution logs are retained with the test reports.
+When Gradle supplies `additionalTestOutputDir`, the before, after and recreated
+captures are also written there for Gradle collection. The original recovery
+capture stays in the app-specific external directory. These visible-window
+captures are separate from offscreen `Control.print` output.
+
 A successful compilation or APK assembly is **not** an executed native test.
 Record the actual device/emulator result separately; merely adding these
 assertions or declaring the workflow does not establish a pass.
