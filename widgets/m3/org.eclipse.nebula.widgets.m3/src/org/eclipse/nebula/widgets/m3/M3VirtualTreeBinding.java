@@ -237,6 +237,11 @@ public final class M3VirtualTreeBinding implements AutoCloseable {
         } finally {
             fetching = false;
         }
+        // close() or SWT.Dispose may release the binding synchronously in fetch.
+        // Refuse its page before caching it or querying the Tree again.
+        if (closed) {
+            throw new IllegalStateException("Virtual Tree binding closed during SetData");
+        }
         if (candidate == null || candidate.offset() != offset
                 || candidate.size() != length
                 || candidate.columns() != Math.max(1, tree.getColumnCount())
