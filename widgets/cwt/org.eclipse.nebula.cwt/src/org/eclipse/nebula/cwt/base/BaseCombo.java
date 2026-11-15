@@ -202,8 +202,9 @@ public abstract class BaseCombo extends Canvas {
 				if (!child.isDisposed()) {
 					if (child == control) {
 						return true;
-					} else if (child instanceof Composite) {
-						return containsControl(control, (Composite) child);
+					} else if (child instanceof Composite
+							&& containsControl(control, (Composite) child)) {
+						return true;
 					}
 				}
 			}

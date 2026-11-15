@@ -69,6 +69,16 @@ full IME/accessibility parity, or an iOS application runtime.
 
 This is the downstream [hsoliwal fork](https://github.com/hsoliwal/nebula) of
 [Eclipse Nebula](https://github.com/EclipseNebula/nebula).
+
+The release contract for this optimized fork is a **backward-compatible superset**
+of upstream Eclipse Nebula: upstream APIs and supported behavior remain the
+preserved subset. Existing applications must continue to compile and run with
+their widget identity, event ordering, selection, accessibility, resource
+ownership and platform contracts intact. Additive capabilities and internal
+optimizations must preserve both that upstream subset and previously admitted
+fork behavior. Qualify the exact source and native revisions before claiming a
+release satisfies this contract.
+
 The checkout contains ordinary widgets, fork-specific Grid/state work,
 [recipe tooling](https://github.com/hsoliwal/com.synexia/blob/develop/forks/nebula/m3/README.md), and a
 [bound SWT/Grid screen-validation workflow](.github/workflows/maven.yaml).
