@@ -320,23 +320,27 @@ final class GridColumnMetrics {
 		}
 		final long span = (long) viewportRight - viewportLeft;
 		final long fixedWidth = fixedOverlayActive ? pinnedPrefix[pinnedCount] : 0;
+		final int pinnedEnd = fixedOverlayActive ? firstPinnedStartingAtOrAfter(span) : 0;
 		// scrolled columns: right edge past the body's left (behind the overlay), left edge before
 		// the viewport's right
 		final long left = horizontalSelectionPixels + fixedWidth;
 		final long right = span + horizontalSelectionPixels;
 		final int from = left < prefix[count] ? firstEndingAfter(Math.max(left, 0)) : count;
 		final int to = firstStartingAtOrAfter(right);
-		final GridColumn[] result = new GridColumn[Math.max(0, to - from) + (fixedOverlayActive ? pinnedCount : 0)];
+		final GridColumn[] result = new GridColumn[Math.max(0, to - from) + pinnedEnd];
 		int n = 0;
 		int k = 0;
 		for (int i = from; i < to; i++) {
 			if (fixedOverlayActive) {
 				// pinned columns before this one, in display order
-				for (; k < pinnedCount && pinned[k] < i; k++) {
+				for (; k < pinnedEnd && pinned[k] < i; k++) {
 					n = addPinned(result, n, k, span);
 				}
-				if (k < pinnedCount && pinned[k] == i) {
-					n = addPinned(result, n, k++, span);
+				// Preserve captured membership when subclass reads differ during rebuild.
+				if (pinnedBefore[i + 1] != pinnedBefore[i]) {
+					if (k < pinnedEnd && pinned[k] == i) {
+						n = addPinned(result, n, k++, span);
+					}
 					continue;
 				}
 			}
@@ -345,11 +349,26 @@ final class GridColumnMetrics {
 			}
 		}
 		if (fixedOverlayActive) {
-			for (; k < pinnedCount; k++) {
+			for (; k < pinnedEnd; k++) {
 				n = addPinned(result, n, k, span);
 			}
 		}
 		return n == result.length ? result : Arrays.copyOf(result, n);
+	}
+
+	/* The first pinned column starting outside the viewport; zero-width prefixes stay ordered. */
+	private int firstPinnedStartingAtOrAfter(final long span) {
+		int low = 0;
+		int high = pinnedCount;
+		while (low < high) {
+			final int mid = (low + high) >>> 1;
+			if (pinnedPrefix[mid] >= span) {
+				high = mid;
+			} else {
+				low = mid + 1;
+			}
+		}
+		return low;
 	}
 
 	/* a pinned column paints at the viewport's left plus the pinned widths before it */

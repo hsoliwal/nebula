@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "passive_receipt": true,
+  "license": "Apache-2.0",
+  "workorder": "ui-superset-efficiency-20261115",
+  "repository": "hsoliwal/nebula",
+  "base_revision": "89b30c6cd1ff256ea51c668c8282e25346cb38b2",
+  "canonical_engine": {
+    "repository": "hsoliwal/com.synexia",
+    "owner_revision": "b6638d5b1cdfe0227a16ce1e8bc653d071132f44",
+    "owners": [
+      "M3HashPinnedJavaSnapshotRecipe",
+      "M3HashPinnedTextSnapshotRecipe"
+    ],
+    "packet_location": "synexia-openrewrite-recipes/crates/ui-superset-efficiency-20261115",
+    "recipe_ids": [
+      "ui-superset-efficiency-20261115-nebula-java-r2",
+      "ui-superset-efficiency-20261115-nebula-text-r2"
+    ]
+  },
+  "outputs": [
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridColumnMetricsViewport_Test.java",
+      "before_sha256": "ABSENT",
+      "after_sha256": "3c75d58391f0e6617c55c609e11e13239cd4bcb9952565a6ba457212a185fa6e"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridColumnMetrics.java",
+      "before_sha256": "11d6fe7044bdb017b6935e1c9674aea24d7fdfb3e97d058ed899cc84f2920901",
+      "after_sha256": "29cba210250f51490c663a05baae298256ac71a54c36e2e82e7ad0e1671db6fa"
+    },
+    {
+      "path": "widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml",
+      "before_sha256": "e84aec393a25169ae55fd32d269986606edd38633b6469a88e987a29f3549dab",
+      "after_sha256": "f8f475c910ae300e23c4f48ff9cb94b22ba069c1cf13fdd08a7bf01728726095"
+    }
+  ],
+  "implementation": "Bound fixed-column viewport work and temporary storage to pinned columns whose starts can intersect the viewport; retain captured pinned membership and full fixed-width scroll clipping.",
+  "compatibility_contract": "One-way upstream compatibility: retain API descriptors, identities, callback demand and order, threading, lifecycle and prior optimizations. Widgets retain their existing viewport ownership.",
+  "sdk_verification": {
+    "exact_output": "PASS",
+    "fixed_point_changed_files": 0,
+    "input_order_independence": "PASS",
+    "source_drift_refusal": "PASS",
+    "required_input_missing_refusal": "PASS",
+    "duplicate_target_refusal": "PASS"
+  },
+  "qualification": {
+    "native_viewport_tests_passed": 13,
+    "native_original_mode_tests_passed": 12,
+    "java21_grid_production_sources_compiled": 124,
+    "tycho_test_sources_compiled": 85,
+    "native_tycho_grid_tests_reported": 54,
+    "native_tycho_failures": 0,
+    "native_tycho_errors": 0,
+    "native_tycho_skips": 1,
+    "skip_reason": "Existing opt-in screen-capture test flag remains false.",
+    "stateful_subclass_regressions": {
+      "original_passed": 2,
+      "rejected_r1_failed": 2,
+      "r2_passed": 2
+    },
+    "jvm_existing_fields_and_method_descriptors": "UNCHANGED; one added private helper",
+    "standalone_jdk": "21.0.13+9",
+    "tycho_build_and_test_jdk": "25.0.5+8-LTS"
+  },
+  "resource_observation": {
+    "scenario": "4096 pinned columns, four visible columns, two independent allocation pairs",
+    "before_allocated_bytes_per_query": 16432,
+    "after_allocated_bytes_per_query": 32
+  },
+  "remaining_gates": [
+    "Qualification covers the Grid reactor on Linux GTK3: standalone compilation and native JUnit on Java21; Maven/Tycho build and UI-harness tests on Java25.0.5, with a recorded local p2 dependency closure.",
+    "Other Nebula widgets, platforms and the optional screen-capture test were not executed."
+  ],
+  "scope": "Only the listed outputs are admitted by this packet. This receipt does not assert whole-toolkit completion, universal speedup, release approval or full platform qualification."
+}
