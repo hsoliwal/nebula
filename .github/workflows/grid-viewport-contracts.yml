@@ -3,8 +3,11 @@ name: Nebula Grid viewport contracts (GTK3)
 on:
   pull_request:
     paths:
-      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/Grid.java'
-      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridViewportItemRange_Test.java'
+      - 'widgets/grid/**'
+      - 'releng/org.eclipse.nebula.nebula-parent/pom.xml'
+      - 'releng/third-party/**'
+      - '.mvn/**'
+      - 'pom.xml'
       - '.github/workflows/grid-viewport-contracts.yml'
   workflow_dispatch:
 permissions:
