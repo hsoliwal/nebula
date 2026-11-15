@@ -1,5 +1,6 @@
 name: Nebula mobile Grid Android APK build
 on:
+  workflow_call:
   pull_request:
     paths: ['mobile/**', '.github/workflows/m3-mobile-grid-android-apk.yml']
   push:
@@ -29,3 +30,9 @@ jobs:
           gradle-version: '8.10.2'
       - name: Assemble Nebula/Grid native Android demonstration
         run: gradle --no-daemon -p mobile/android assembleDebug
+      - name: Retain the Android test application
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-mobile-grid-debug-apk
+          path: mobile/android/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

@@ -1,6 +1,13 @@
 name: Java CI with Maven
 
 on:
+  workflow_call:
+    inputs:
+      release_verification:
+        description: Execute all active widget test modules with failures fatal
+        type: boolean
+        required: false
+        default: false
   workflow_dispatch:
   pull_request:
     paths:
@@ -8,6 +15,9 @@ on:
       - '!**/*.md'
       - '!docs/**'
       - '!.github/workflows/m3-*.yml'
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -64,7 +74,7 @@ jobs:
     - name: Build All Widgets
       uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
       with:
-       run: mvn -V -B clean verify -Dtycho.localArtifacts=ignore -Dnebula.grid.viewport.screenshots.screen=true -Dnebula.swt.gc.sha256=${{ env.M3_SWT_GC_SHA256 }} -Dtarget-platform-platform=${{ env.M3_SWT_PLATFORM }}
+       run: mvn -V -B clean verify ${{ inputs.release_verification && '-DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false' || '' }} -Dtycho.localArtifacts=ignore -Dnebula.grid.viewport.screenshots.screen=true -Dnebula.swt.gc.sha256=${{ env.M3_SWT_GC_SHA256 }} -Dtarget-platform-platform=${{ env.M3_SWT_PLATFORM }}
     - name: Qualify Grid native screen pixels with OpenCV
       run: |
         python3 -m venv /tmp/nebula-vision
@@ -84,6 +94,13 @@ jobs:
           releng/swt-receiver/swt-receiver-p2/target/repository/*.xml
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
+    - name: Upload all widget test reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-widget-test-reports
+        if-no-files-found: error
+        path: '**/target/surefire-reports/TEST-*.xml'
 #    - name: Build Incubation Widgets
 #      run: xvfb-run mvn -V clean verify -Pincubation  -Dtycho.localArtifacts=ignore
 #    - name: Publish Unit Test Results

@@ -1,5 +1,6 @@
 name: Nebula SWT mobile original List Text Combo Android/iOS acceptance
 on:
+  workflow_call:
   pull_request:
     paths:
       - 'widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/**'
