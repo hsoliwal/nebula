@@ -511,14 +511,50 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 
 	@Override
 	public int nextVisible(final int position) {
-		final int rank = rankOf(position);
-		return rank < visibleCount() ? positionOfRank(rank) : -1;
+		settle();
+		return findVisibleAfter(root, 0, position);
 	}
 
 	@Override
 	public int previousVisible(final int position) {
-		final int rank = rankOf(position + 1) - 1;
-		return rank >= 0 ? positionOfRank(rank) : -1;
+		settle();
+		return findVisibleBefore(root, 0, position);
+	}
+
+	/* Select the closest visible position directly from the native Grid's packed lanes.
+	 * Subtrees without visible rows are pruned; no GridItem or iterator is made. */
+	private int findVisibleAfter(final int node, final int start, final int position) {
+		if (node == NONE || visible(node) == 0) {
+			return -1;
+		}
+		final int index = start + size(left[node]);
+		if (index >= position) {
+			final int fromLeft = findVisibleAfter(left[node], start, position);
+			if (fromLeft != -1) {
+				return fromLeft;
+			}
+			if (weights[node] > 0) {
+				return index;
+			}
+		}
+		return findVisibleAfter(right[node], index + 1, position);
+	}
+
+	private int findVisibleBefore(final int node, final int start, final int position) {
+		if (node == NONE || visible(node) == 0) {
+			return -1;
+		}
+		final int index = start + size(left[node]);
+		if (index <= position) {
+			final int fromRight = findVisibleBefore(right[node], index + 1, position);
+			if (fromRight != -1) {
+				return fromRight;
+			}
+			if (weights[node] > 0) {
+				return index;
+			}
+		}
+		return findVisibleBefore(left[node], start, position);
 	}
 
 	/* the extent a visible item adds: its height and the one-pixel line below it */
