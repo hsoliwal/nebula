@@ -457,10 +457,30 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		if (rank == 0) {
 			return 0;
 		}
-		if (rank == visibleCount()) {
-			return totalExtent();
+		settle();
+		final int count = visible(root);
+		if (rank == count) {
+			return sum(root);
 		}
-		return extentBefore(positionOfRank(rank));
+		int remaining = rank;
+		long extent = 0;
+		int node = root;
+		// Select the visible row and accumulate its pixel prefix in the same descent.
+		while (node != NONE) {
+			final int before = visible(left[node]);
+			if (remaining < before) {
+				node = left[node];
+				continue;
+			}
+			final int own = weights[node] > 0 ? 1 : 0;
+			if (remaining < before + own) {
+				return extent + sum(left[node]);
+			}
+			extent += sum(left[node]) + weights[node];
+			remaining -= before + own;
+			node = right[node];
+		}
+		throw new IndexOutOfBoundsException("visible row " + rank + ", visible rows " + count);
 	}
 
 	@Override
