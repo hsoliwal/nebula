@@ -293,6 +293,14 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             await(() -> NebulaMobileMain.state.tableSelection == 999_999_991
                     && NebulaMobileMain.state.tableEvents == 1,
                     "Native Table touch selects the correct virtual row at a billion-item index");
+            // Sample away from the text glyphs: the original SWT GC paints
+            // the selected row background with the native list-selection blue.
+            int[] selectedTablePixel = new int[] {
+                    tableOrigin[0] + tablePeer.get().getWidth() - Math.round(10 * density),
+                    secondY
+            };
+            await(() -> pixelMatches(selectedTablePixel, 0x007aff),
+                    "Original Table selection is visible in a real Android screen capture");
             int tableTopBefore = NebulaMobileMain.state.tableTopIndex;
             runOnMainSync(() -> require(tablePeer.get().performAccessibilityAction(
                     AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, null),
