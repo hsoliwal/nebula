@@ -2660,7 +2660,8 @@ public class GridItem extends Item {
 		}
 	}
 
-	private void handleVirtual() {
+	/** Requests virtual data without reading fields after application listeners return. */
+	void handleVirtual() {
 		if ((getParent().getStyle() & SWT.VIRTUAL) != 0 && !hasSetDataFlag()) {
 			hasSetDataFlag(true);
 			Event event = new Event();

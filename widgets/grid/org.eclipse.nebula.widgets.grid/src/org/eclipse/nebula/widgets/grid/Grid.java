@@ -739,7 +739,7 @@ public class Grid extends Canvas {
 	/** Rows populated ahead of the viewport after a paint (0 = off, the historic behaviour). */
 	private int prefetchRows;
 
-	/** Paint epoch the scheduled prefetch belongs to; a newer paint cancels it. */
+	/** Paint epoch of the scheduled prefetch; -1 cancels a changed request until the next paint. */
 	private int prefetchEpoch = -1;
 
 	/** Rows populated by prefetch (package-private counter for tests and benches). */
@@ -6533,7 +6533,10 @@ public class Grid extends Canvas {
 		if (rows < 0) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
-		prefetchRows = rows;
+		if (prefetchRows != rows) {
+			prefetchRows = rows;
+			prefetchEpoch = -1;
+		}
 	}
 
 	/**
@@ -6567,41 +6570,68 @@ public class Grid extends Canvas {
 
 	/** One idle batch; reschedules itself until done or until a newer paint moved the viewport. */
 	private void prefetchStep(final int epoch) {
-		if (isDisposed() || epoch != prefetchEpoch || !isVisible()) {
+		if (!prefetchCurrent(epoch)) {
 			return;
 		}
 		final GridVirtualItemList sparse = sparseVirtualItems();
 		final int count = items.size();
-		final int budget = residencyCapacity == Integer.MAX_VALUE ? prefetchRows
-				: Math.max(0, Math.min(prefetchRows, residencyCapacity - sparse.materializedCount()));
 		final int bottom = getBottomIndex();
 		final int top = getTopIndex();
+		final int belowRows = Math.min(prefetchRows, count - bottom - 1);
+		final int aboveRows = Math.min(prefetchRows, top);
 		int done = 0;
+		final boolean wasPrefetching = prefetching;
 		prefetching = true;
 		try {
-		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
-			final int below = bottom + i;
-			if (below >= 0 && below < count && sparse.getMaterialized(below) == null) {
-				items.get(below).getText(0);
-				prefetchedRows++;
-				done++;
+			for (int i = 1; i <= belowRows && done < PREFETCH_BATCH; i++) {
+				if (sparse.materializedCount() >= residencyCapacity) {
+					return;
+				}
+				final int below = bottom + i;
+				if (below >= 0 && sparse.getMaterialized(below) == null) {
+					// Demand data only: a listener may dispose the item before a text read.
+					sparse.get(below).handleVirtual();
+					prefetchedRows++;
+					done++;
+					if (!prefetchCurrent(epoch, sparse, count, top, bottom)) {
+						return;
+					}
+				}
 			}
-		}
-		for (int i = 1; i <= budget && done < PREFETCH_BATCH; i++) {
-			final int above = top - i;
-			if (above >= 0 && above < count && sparse.getMaterialized(above) == null) {
-				items.get(above).getText(0);
-				prefetchedRows++;
-				done++;
+			for (int i = 1; i <= aboveRows && done < PREFETCH_BATCH; i++) {
+				// Both sides and any callback-created facades share the live capacity.
+				if (sparse.materializedCount() >= residencyCapacity) {
+					return;
+				}
+				final int above = top - i;
+				if (above < count && sparse.getMaterialized(above) == null) {
+					sparse.get(above).handleVirtual();
+					prefetchedRows++;
+					done++;
+					if (!prefetchCurrent(epoch, sparse, count, top, bottom)) {
+						return;
+					}
+				}
 			}
-		}
 		} finally {
-			prefetching = false;
+			prefetching = wasPrefetching;
 		}
-		if (done == PREFETCH_BATCH && !prefetchQueued) {
+		if (done == PREFETCH_BATCH && sparse.materializedCount() < residencyCapacity && !prefetchQueued) {
 			prefetchQueued = true;
 			getDisplay().asyncExec(prefetchTask);
 		}
+	}
+
+	private boolean prefetchCurrent(final int epoch) {
+		return !isDisposed() && epoch >= 0 && epoch == prefetchEpoch && prefetchRows > 0
+				&& usesSparseVirtualItems() && isVisible();
+	}
+
+	/** Revalidate the original owner and viewport after application SetData listeners. */
+	private boolean prefetchCurrent(final int epoch, final GridVirtualItemList sparse, final int count,
+			final int top, final int bottom) {
+		return prefetchCurrent(epoch) && items == sparse && sparse.size() == count
+				&& getTopIndex() == top && getBottomIndex() == bottom;
 	}
 
 	/**
