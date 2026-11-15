@@ -235,12 +235,8 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             require(NebulaMobileMain.state.tableEvents == 0,
                     "TableColumn header click does not select any row");
             int secondY = tableOrigin[1] + Math.round(
-                    (64L > NebulaMobileMain.state.tableHeaderHeight
-                            ? NebulaMobileMain.state.tableHeaderHeight
-                            : NebulaMobileMain.state.tableHeaderHeight)
-                    * density)
-                    + Math.round((NebulaMobileMain.state.tableRowHeight
-                            + NebulaMobileMain.state.tableRowHeight / 2.0f) * density);
+                    (NebulaMobileMain.state.tableHeaderHeight
+                            + NebulaMobileMain.state.tableRowHeight * 1.5f) * density);
             tap(new int[] {tableOrigin[0] + Math.round(28 * density), secondY});
             await(() -> NebulaMobileMain.state.tableSelection == 999_999_991
                     && NebulaMobileMain.state.tableEvents == 1,
