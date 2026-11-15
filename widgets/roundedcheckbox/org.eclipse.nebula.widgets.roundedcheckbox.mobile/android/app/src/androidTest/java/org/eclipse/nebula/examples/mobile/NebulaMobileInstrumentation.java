@@ -7,6 +7,9 @@ import java.util.function.BooleanSupplier;
 
 import android.app.Activity;
 import android.app.Instrumentation;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -19,6 +22,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.EditText;
 import java.util.concurrent.atomic.AtomicReference;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Text;
 
 /** Native screen/touch proof for the existing, unmodified RoundedCheckbox implementation. */
 public final class NebulaMobileInstrumentation extends Instrumentation {
@@ -97,6 +102,10 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                     "Accessibility scrolling does not alter Selection or densely load virtual rows");
             // The original SWT Text is a real child EditText. Exercise an
             // InputConnection rather than mutating the Java Text model directly.
+            Text editor = NebulaMobileMain.state.editor;
+            editor.getDisplay().syncExec(() -> { });
+            int modificationsBeforeIme = NebulaMobileMain.state.textModifications;
+            int verificationsBeforeIme = NebulaMobileMain.state.textVerifications;
             AtomicReference<InputConnection> connection = new AtomicReference<>();
             runOnMainSync(() -> {
                 EditText nativeEditor = findNativeEditor(surface(current));
@@ -107,14 +116,16 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                         && connection.get().commitText("native", 1),
                         "Real Android InputConnection committed text");
             });
+            editor.getDisplay().syncExec(() -> { });
             await(() -> NebulaMobileMain.state.nativeText.equals("native")
-                    && NebulaMobileMain.state.textModifications == 1
-                    && NebulaMobileMain.state.textVerifications >= 1,
-                    "Original SWT Text Verify/Modify accepted native IME input");
+                    && NebulaMobileMain.state.textModifications == modificationsBeforeIme + 1
+                    && NebulaMobileMain.state.textVerifications == verificationsBeforeIme + 1,
+                    "Original SWT Text accepts native IME input with exactly one Verify and Modify");
             runOnMainSync(() -> require(connection.get().commitText("!", 1),
                     "Real Android InputConnection attempted vetoed input"));
-            await(() -> NebulaMobileMain.state.textVerifications >= 2,
-                    "Original SWT Verify listener received vetoed native edit");
+            editor.getDisplay().syncExec(() -> { });
+            await(() -> NebulaMobileMain.state.textVerifications == verificationsBeforeIme + 2,
+                    "Original SWT Verify listener receives the vetoed native edit exactly once");
             AtomicReference<String> nativeSnapshot = new AtomicReference<>();
             await(() -> {
                 runOnMainSync(() -> nativeSnapshot.set(
@@ -122,9 +133,50 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                 return nativeSnapshot.get().equals("native");
             }, "Verify veto restored the actual Android EditText snapshot");
             require(NebulaMobileMain.state.nativeText.equals("native")
-                    && NebulaMobileMain.state.textModifications == 1
+                    && NebulaMobileMain.state.textModifications == modificationsBeforeIme + 1
                     && nativeSnapshot.get().equals("native"),
                     "Verify veto rolled back Android IME edit without sending Modify");
+            // Selection-only native changes must reach the original SWT Text
+            // without pretending that the text itself was edited.
+            // The InputConnection can also queue its final caret snapshot.
+            // Finish those IME callbacks before measuring selection-only events.
+            editor.getDisplay().syncExec(() -> { });
+            int modificationsBeforeSelection = NebulaMobileMain.state.textModifications;
+            int verificationsBeforeSelection = NebulaMobileMain.state.textVerifications;
+            runOnMainSync(() -> findNativeEditor(surface(current)).setSelection(2));
+            await(() -> swtSelectionMatches(editor, 2, 2, ""),
+                    "Native caret move updates original SWT Text selection");
+            runOnMainSync(() -> findNativeEditor(surface(current)).setSelection(1, 4));
+            await(() -> swtSelectionMatches(editor, 1, 4, "ati"),
+                    "Native selection range updates original SWT selected text");
+            require(NebulaMobileMain.state.textModifications == modificationsBeforeSelection
+                    && NebulaMobileMain.state.textVerifications == verificationsBeforeSelection,
+                    "Native selection-only changes must not send Verify or Modify");
+            editor.getDisplay().syncExec(editor::copy);
+            require("ati".equals(nativeClipboardText()),
+                    "SWT copy uses the actual native selection range");
+            editor.getDisplay().syncExec(editor::cut);
+            await(() -> NebulaMobileMain.state.nativeText.equals("nve")
+                    && NebulaMobileMain.state.textModifications == modificationsBeforeSelection + 1
+                    && NebulaMobileMain.state.textVerifications == verificationsBeforeSelection + 1,
+                    "SWT cut removes only the selected native range with one Verify and Modify");
+            await(() -> {
+                runOnMainSync(() -> nativeSnapshot.set(
+                        findNativeEditor(surface(current)).getText().toString()));
+                return nativeSnapshot.get().equals("nve")
+                        && swtSelectionMatches(editor, 1, 1, "");
+            }, "SWT cut publishes the accepted text and collapsed caret to Android");
+            // Publishing a Java selection back to Android must not echo a text edit.
+            editor.getDisplay().syncExec(() -> editor.setSelection(0, 3));
+            runOnMainSync(() -> {
+                EditText nativeEditor = findNativeEditor(surface(current));
+                require(nativeEditor.getSelectionStart() == 0 && nativeEditor.getSelectionEnd() == 3,
+                        "Programmatic SWT selection reaches the native editor");
+            });
+            editor.getDisplay().syncExec(() -> { });
+            require(NebulaMobileMain.state.textModifications == modificationsBeforeSelection + 1
+                    && NebulaMobileMain.state.textVerifications == verificationsBeforeSelection + 1,
+                    "Programmatic selection publication must not echo Verify or Modify");
             // Open the original SWT Combo through its Android Spinner
             // accessibility action and tap the actual popup List Canvas.
             int[] comboBottom = new int[2];
@@ -160,7 +212,7 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: SWT Combo popup/Selection, billion-row List, Android IME Verify/Modify, accessibility, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: SWT Combo popup/Selection, billion-row List, Android IME selection/copy/cut/Verify/Modify, accessibility, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -219,6 +271,29 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             }
         }
         return null;
+    }
+
+    private boolean swtSelectionMatches(Text editor, int start, int end, String selectedText) {
+        AtomicReference<Point> selection = new AtomicReference<>();
+        AtomicReference<String> text = new AtomicReference<>();
+        editor.getDisplay().syncExec(() -> {
+            selection.set(editor.getSelection());
+            text.set(editor.getSelectionText());
+        });
+        return new Point(start, end).equals(selection.get()) && selectedText.equals(text.get());
+    }
+
+    private String nativeClipboardText() {
+        AtomicReference<String> text = new AtomicReference<>();
+        runOnMainSync(() -> {
+            ClipboardManager clipboard = (ClipboardManager)
+                    getTargetContext().getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData data = clipboard == null ? null : clipboard.getPrimaryClip();
+            if (data != null && data.getItemCount() > 0) {
+                text.set(data.getItemAt(0).coerceToText(getTargetContext()).toString());
+            }
+        });
+        return text.get();
     }
 
     private View findSlider(View root) {
