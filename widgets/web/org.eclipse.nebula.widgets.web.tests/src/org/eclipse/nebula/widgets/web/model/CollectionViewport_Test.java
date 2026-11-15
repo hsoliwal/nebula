@@ -129,4 +129,62 @@ public class CollectionViewport_Test {
         assertEquals(1L, m.logicalExtent());
         assertEquals(0, m.count()); assertEquals(8, m.flags.length);
     }
+
+    @Test public void thumbAtBottomPreservesExactLargeTrackPosition() {
+        CollectionModel m = new CollectionModel("thumb-overflow", 0,
+                CollectionModel.REORDER, WebStates.RECT, WebStates.V_DEFAULT);
+        m.setLogicalCount(3); m.setItemExtent(Integer.MAX_VALUE);
+        m.layout(120, 1); m.scrollTo(Long.MAX_VALUE);
+        int[] out = new int[2]; m.thumb(Integer.MAX_VALUE, out);
+        assertEquals(6_442_450_941L, m.logicalExtent());
+        assertEquals(6_442_450_940L, m.scrollOffset());
+        assertArrayEquals(new int[] {2_147_483_639, 8}, out);
+    }
+    @Test public void thumbAtBottomProjectsHugeLogicalExtentWithoutPayloads() {
+        IndexGallery m = new IndexGallery();
+        int[] window = m.window;
+        m.itemExtent = Integer.MAX_VALUE;
+        long extent = (long) Integer.MAX_VALUE * Integer.MAX_VALUE;
+        m.projectAt(Integer.MAX_VALUE, 1, 1, extent - 1);
+        int[] out = new int[2]; m.thumb(1000, out);
+        assertEquals(4_611_686_014_132_420_609L, m.logicalExtent());
+        assertArrayEquals(new int[] {992, 8}, out);
+        assertSame(window, m.window); assertEquals(4, m.window.length);
+        assertEquals(0, m.count()); assertEquals(8, m.flags.length);
+    }
+    @Test public void thumbProjectionMatchesBigIntegerMatrixWithoutPayloads() {
+        IndexGallery m = new IndexGallery();
+        int[] window = m.window, out = new int[2];
+        int checked = 0;
+        for (int n : new int[] {0, 1, 2, 3, 7, 31, 1_000_000, Integer.MAX_VALUE}) {
+            for (int item : new int[] {1, 7, 40, 4096, Integer.MAX_VALUE}) {
+                m.itemExtent = item;
+                long total = (long) n * item;
+                for (int height : new int[] {0, 1, 31, 96, Integer.MAX_VALUE}) {
+                    long max = Math.max(0, total - height);
+                    for (long at : new long[] {0, Math.min(1, max), max / 3, max / 2, max == 0 ? 0 : max - 1, max}) {
+                        m.projectAt(n, 1, height, at);
+                        assertEquals(total, m.logicalExtent());
+                        java.math.BigInteger ext = java.math.BigInteger.valueOf(total).max(java.math.BigInteger.ONE);
+                        java.math.BigInteger view = java.math.BigInteger.valueOf(height);
+                        java.math.BigInteger range = ext.subtract(view).max(java.math.BigInteger.ONE);
+                        java.math.BigInteger position = java.math.BigInteger.valueOf(at).min(range);
+                        for (int track : new int[] {Integer.MIN_VALUE, -31, -1, 0, 1, 7, 8, 9, 31, 200, 1000, Integer.MAX_VALUE}) {
+                            java.math.BigInteger pixels = java.math.BigInteger.valueOf(track);
+                            java.math.BigInteger len = pixels.min(java.math.BigInteger.valueOf(8))
+                                    .max(pixels.min(pixels.multiply(view).divide(ext)));
+                            int expected = pixels.subtract(len).multiply(position).divide(range).intValueExact();
+                            m.thumb(track, out);
+                            assertEquals("thumb offset", expected, out[0]);
+                            assertEquals("thumb length", len.intValueExact(), out[1]);
+                            checked++;
+                        }
+                    }
+                }
+            }
+        }
+        assertEquals(14_400, checked);
+        assertSame(window, m.window); assertEquals(4, m.window.length);
+        assertEquals(0, m.count()); assertEquals(8, m.flags.length);
+    }
 }
