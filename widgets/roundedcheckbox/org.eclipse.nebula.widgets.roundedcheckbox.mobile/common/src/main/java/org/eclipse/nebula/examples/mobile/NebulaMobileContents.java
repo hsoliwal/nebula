@@ -31,6 +31,14 @@ public final class NebulaMobileContents {
         public volatile int comboSelection = -1;
         public volatile int comboEvents;
         public volatile String comboText = "";
+        public volatile int tableSelection = -1;
+        public volatile int tableEvents;
+        public volatile int tableHeaderEvents;
+        public volatile int tableDataLoads;
+        public volatile int tableTopIndex;
+        public volatile int tableRowHeight;
+        public volatile int tableHeaderHeight;
+        public volatile boolean tableShown;
         public volatile boolean disposed;
     }
 
@@ -144,6 +152,7 @@ public final class NebulaMobileContents {
         };
         shell.addListener(SWT.Resize, event -> layout.run());
         layout.run();
+        NebulaMobileTableContents.attach(shell, state);
         return state;
     }
 }
