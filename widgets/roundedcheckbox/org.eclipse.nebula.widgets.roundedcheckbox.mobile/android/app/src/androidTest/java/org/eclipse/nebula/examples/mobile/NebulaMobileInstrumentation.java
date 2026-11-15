@@ -125,11 +125,42 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                     && NebulaMobileMain.state.textModifications == 1
                     && nativeSnapshot.get().equals("native"),
                     "Verify veto rolled back Android IME edit without sending Modify");
+            // Open the original SWT Combo through its Android Spinner
+            // accessibility action and tap the actual popup List Canvas.
+            int[] comboBottom = new int[2];
+            runOnMainSync(() -> {
+                View combo = findCombo(surface(current));
+                require(combo != null, "Original Combo has a native Android peer");
+                AccessibilityNodeInfo info = combo.createAccessibilityNodeInfo();
+                require("android.widget.Spinner".contentEquals(info.getClassName()),
+                        "Original SWT Combo exposes a Spinner accessibility class");
+                combo.getLocationOnScreen(comboBottom);
+                comboBottom[1] += combo.getHeight();
+                require(combo.performAccessibilityAction(AccessibilityNodeInfo.ACTION_CLICK, null),
+                        "Native Combo accessibility activates original popup Shell");
+            });
+            AtomicReference<View> popupList = new AtomicReference<>();
+            await(() -> {
+                runOnMainSync(() -> popupList.set(findPopupList(surface(current), comboBottom[1])));
+                return popupList.get() != null;
+            }, "Native Combo popup List becomes visible");
+            int[] secondRow = new int[2];
+            runOnMainSync(() -> {
+                View view = popupList.get();
+                view.getLocationOnScreen(secondRow);
+                secondRow[0] += Math.min(28, Math.max(1, view.getWidth() / 2));
+                secondRow[1] += view.getHeight() / 2;
+            });
+            tap(secondRow);
+            await(() -> NebulaMobileMain.state.comboSelection == 1
+                    && "Second".equals(NebulaMobileMain.state.comboText)
+                    && NebulaMobileMain.state.comboEvents == 1,
+                    "Native original Combo popup row selection dispatches SWT.Selection once");
             require(current.applicationFailure() == null, "SWT application failure: " + current.applicationFailure());
             saveScreen("nebula-android-after.png");
             runOnMainSync(current::finish);
             await(() -> NebulaMobileMain.state.disposed, "Activity destruction disposes Nebula shell");
-            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: original widgets, billion-row List, Android IME Verify/Modify, accessibility, disposal\n");
+            result.putString("stream", "NEBULA_ANDROID_NATIVE_PASS: SWT Combo popup/Selection, billion-row List, Android IME Verify/Modify, accessibility, disposal\n");
             result.putString("screenshotDirectory", getTargetContext().getExternalFilesDir(null).getAbsolutePath());
             sendCaseStatus(0, null);
             finish(Activity.RESULT_OK, result);
@@ -149,6 +180,34 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             throw new IllegalStateException("SWT Android native root not attached");
         }
         return content.getChildAt(0);
+    }
+
+    private View findCombo(View root) {
+        CharSequence label = root.getContentDescription();
+        if (label != null && label.toString().startsWith("Combo ")) return root;
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View candidate = findCombo(group.getChildAt(i));
+                if (candidate != null) return candidate;
+            }
+        }
+        return null;
+    }
+
+    private View findPopupList(View root, int popupBottomThreshold) {
+        CharSequence label = root.getContentDescription();
+        if (label != null && "List".contentEquals(label) && root.isShown()) {
+            int[] position = new int[2];
+            root.getLocationOnScreen(position);
+            if (position[1] >= popupBottomThreshold - 2 && root.getHeight() > 0) return root;
+        }
+        if (root instanceof ViewGroup group) {
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View candidate = findPopupList(group.getChildAt(i), popupBottomThreshold);
+                if (candidate != null) return candidate;
+            }
+        }
+        return null;
     }
 
     private EditText findNativeEditor(View root) {
