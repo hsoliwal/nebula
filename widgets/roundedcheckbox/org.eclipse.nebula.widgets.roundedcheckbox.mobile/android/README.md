@@ -161,6 +161,47 @@ A successful compilation or APK assembly is **not** an executed native test.
 Record the actual device/emulator result separately; merely adding these
 assertions or declaring the workflow does not establish a pass.
 
+## Native pixel move (NDK)
+
+The SWT Android backend moves retained pixels (a `Canvas.scroll`) through one native call when
+`libswtpixels.so` is in the application and through a Java lane when it is not. Build the
+library in the SWT checkout with an Android NDK and copy it into this application:
+
+```sh
+python /path/to/eclipse.platform.swt/mobile/android/build_native.py \
+  --ndk /path/to/android-ndk --api 35 --output /path/to/native
+cp -r /path/to/native/jniLibs app/src/main/
+```
+
+`app/src/main/jniLibs` is ignored by git: the libraries are build output. The Android Gradle
+Plugin packages them into the APK from there.
+
+`PixelsNativeProbe` is a second instrumentation in the test sources. It calls the native move
+and the Java lane for 400 random rectangles and distances on opaque bitmaps, compares both
+with a plain model, checks that a target outside the bitmap is refused, and times one large
+move both ways. Build the test APK with it as the runner and run it:
+
+```sh
+gradle -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android \
+  -PswtMobileJar=/absolute/path/to/swt-mobile-android.jar \
+  -PtestRunner=org.eclipse.nebula.examples.mobile.PixelsNativeProbe \
+  :app:assembleDebug :app:assembleDebugAndroidTest
+adb install -r -t app/build/outputs/apk/debug/app-debug.apk
+adb install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+adb shell am instrument -w \
+  org.eclipse.nebula.examples.mobile.test/org.eclipse.nebula.examples.mobile.PixelsNativeProbe
+```
+
+`INSTRUMENTATION_CODE: -1` is a pass. Without `-PtestRunner` the runner is
+`NebulaMobileInstrumentation`, as before. The probe reads no screen, so it also runs on an
+automated test device image (`aosp_atd`); the screenshot checks of `NebulaMobileInstrumentation`
+need an image that renders (`default` or `google_apis`): on `aosp_atd` every capture is black.
+
+Executed on 2026-11-16 on an API 35 x86_64 `aosp_atd` emulator with NDK r30: library loaded,
+400 of 400 cases equal for the native move and for the Java lane, a 2048 by 1984 scroll in
+5.6 ms natively against 57.9 ms through the Java lane. With the library left out of the APK the
+probe reports it as not loaded and returns `INSTRUMENTATION_CODE: 0`.
+
 The iOS target uses the same `NebulaMobileMain` and SWT's existing
 `IOSPlatform.launch` bootstrap. It still requires an actual linked iOS
 Java runtime, Apple SDK build and simulator/device tests.

@@ -2,3 +2,4 @@
 **/build/
 build-sdk/
 local.properties
+app/src/main/jniLibs/
