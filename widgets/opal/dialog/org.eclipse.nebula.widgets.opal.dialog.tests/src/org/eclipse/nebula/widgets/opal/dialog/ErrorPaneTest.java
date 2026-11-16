@@ -141,12 +141,16 @@ public class ErrorPaneTest {
 		}
 		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = TestSupport.recordPaints(pane);
 		org.eclipse.swt.widgets.Label message = (org.eclipse.swt.widgets.Label) pane.getChildren()[1];
+		org.eclipse.swt.widgets.Composite buttons =
+				(org.eclipse.swt.widgets.Composite) pane.getChildren()[2];
+		org.eclipse.swt.widgets.Button nativeDetailsButton =
+				(org.eclipse.swt.widgets.Button) buttons.getChildren()[1];
 		try {
 			TestSupport.assertHiddenGate(pane, paints, i -> {
 				pane.setMessage("message " + i);
 				pane.setSeverity(i % 2 == 0 ? SWT.ICON_WARNING : SWT.ICON_ERROR);
 				pane.setError(i % 3 == 0 ? failure : null);
-			});
+			}, nativeDetailsButton);
 		} catch (AssertionError nativePaintFailure) {
 			// Diagnostics only: do not suppress the exact one-paint native gate.
 			System.out.println("ERROR_PANE_NATIVE_PAINT_DIAGNOSTIC pane=" + pane.getClientArea()
@@ -159,6 +163,48 @@ public class ErrorPaneTest {
 		assertEquals(SWT.ICON_ERROR, pane.getSeverity());
 		assertSame(failure, pane.getError());
 	}
+
+
+	@Test
+	public void nativeChildPaintAllowanceCannotHideBodyDamageOrSecondFullPaint() {
+		org.eclipse.swt.widgets.Composite buttons =
+				(org.eclipse.swt.widgets.Composite) pane.getChildren()[2];
+		org.eclipse.swt.widgets.Button nativeDetailsButton =
+				(org.eclipse.swt.widgets.Button) buttons.getChildren()[1];
+		org.eclipse.swt.graphics.Point paneSize = pane.getSize();
+		org.eclipse.swt.graphics.Rectangle full =
+				new org.eclipse.swt.graphics.Rectangle(0, 0, paneSize.x, paneSize.y);
+		org.eclipse.swt.graphics.Point position =
+				pane.toControl(nativeDetailsButton.toDisplay(0, 0));
+		org.eclipse.swt.graphics.Point buttonSize = nativeDetailsButton.getSize();
+		org.eclipse.swt.graphics.Rectangle clip =
+				new org.eclipse.swt.graphics.Rectangle(position.x, position.y,
+						buttonSize.x, buttonSize.y);
+		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = new java.util.ArrayList<>();
+		paints.add(full);
+		paints.add(clip);
+		TestSupport.assertOneFullPanePaintWithChildOnly(pane, paints, nativeDetailsButton);
+		assertFalse("a client-corner pixel must not be inside the button", clip.contains(0, 0));
+		paints.add(new org.eclipse.swt.graphics.Rectangle(0, 0, 1, 1));
+		boolean refused = false;
+		try {
+			TestSupport.assertOneFullPanePaintWithChildOnly(pane, paints, nativeDetailsButton);
+		} catch (AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("even one native body pixel outside the button is forbidden", refused);
+		paints.clear();
+		paints.add(full);
+		paints.add(full);
+		refused = false;
+		try {
+			TestSupport.assertOneFullPanePaintWithChildOnly(pane, paints, nativeDetailsButton);
+		} catch (AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("two full native pane repaints must fail", refused);
+	}
+
 
 	private static void dumpNativeChildGeometry(org.eclipse.swt.widgets.Composite owner,
 			org.eclipse.swt.widgets.Composite parent) {

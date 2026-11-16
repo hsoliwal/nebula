@@ -25,6 +25,7 @@ import java.util.function.IntConsumer;
 import org.eclipse.nebula.widgets.opal.dialog.internal.RepaintCounters;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
@@ -144,6 +145,17 @@ public final class TestSupport {
 	 * control and checks for exactly one paint pass and one reveal.
 	 */
 	public static void assertHiddenGate(Control control, List<Rectangle> paints, IntConsumer delta) {
+		assertHiddenGate(control, paints, delta, null);
+	}
+
+	/**
+	 * ErrorPane's GTK button can produce independent child-only native paint clips
+	 * during a CSS enabled-state transition. Keep the original exactly-one FULL
+	 * pane paint/one reveal contract; no other parent or child region is allowed.
+	 * Other widgets continue to use the strict three-argument one-event gate.
+	 */
+	public static void assertHiddenGate(Control control, List<Rectangle> paints,
+			IntConsumer delta, Control nativeAnimatedChild) {
 		Display display = control.getDisplay();
 		control.setVisible(false);
 		flush(display);
@@ -158,8 +170,51 @@ public final class TestSupport {
 		assertTrue(RepaintCounters.line(), RepaintCounters.hiddenDeltas >= 10_000);
 		control.setVisible(true);
 		awaitNativePaint(control, paints, 1, "hidden opal-dialog reveal did not paint");
-		assertEquals("one paint pass after show: " + paints, 1, paints.size());
+		if (nativeAnimatedChild == null) {
+			assertEquals("one paint pass after show: " + paints, 1, paints.size());
+		} else {
+			assertOneFullPanePaintWithChildOnly(control, paints, nativeAnimatedChild);
+		}
 		assertEquals(RepaintCounters.line(), 1, RepaintCounters.reveals);
+	}
+
+
+	/**
+	 * One full parent repaint is mandatory. Additional paint events must fit
+	 * strictly inside the one native button that can animate independently;
+	 * there is no waiver for other child regions or additional full repaints.
+	 */
+	static void assertOneFullPanePaintWithChildOnly(Control pane,
+			List<Rectangle> paints, Control animatedChild) {
+		if (animatedChild.isDisposed() || animatedChild.getParent() == null)
+			throw new AssertionError("native animated child is not live");
+		Point size = pane.getSize();
+		Rectangle client = new Rectangle(0, 0, size.x, size.y);
+		Point start = pane.toControl(animatedChild.toDisplay(0, 0));
+		Point childSize = animatedChild.getSize();
+		Rectangle clip = new Rectangle(start.x, start.y, childSize.x, childSize.y);
+		if (client.width <= 0 || client.height <= 0 || clip.width <= 0 || clip.height <= 0
+				|| !client.contains(clip.x, clip.y)
+				|| !client.contains(clip.x + clip.width - 1, clip.y + clip.height - 1))
+			throw new AssertionError("invalid native child repaint geometry: " + clip + " of " + client);
+		int fullPaints = 0;
+		int nativeChildPaints = 0;
+		for (Rectangle paint : paints) {
+			if (paint.width <= 0 || paint.height <= 0)
+				throw new AssertionError("invalid native paint rectangle " + paint);
+			if (paint.contains(client.x, client.y)
+					&& paint.contains(client.x + client.width - 1, client.y + client.height - 1)) {
+				fullPaints++;
+			} else if (clip.contains(paint.x, paint.y)
+					&& clip.contains(paint.x + paint.width - 1, paint.y + paint.height - 1)) {
+				nativeChildPaints++;
+			} else {
+				throw new AssertionError("native paint outside full pane and its button: "
+						+ paint + " allowed " + clip + " paints " + paints);
+			}
+		}
+		assertEquals("exactly one complete pane repaint: " + paints, 1, fullPaints);
+		assertTrue("too many independent native button paints: " + paints, nativeChildPaints <= 32);
 	}
 
 	/**
