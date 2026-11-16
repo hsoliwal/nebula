@@ -70,7 +70,10 @@ public class GridPinnedRows_Test {
 		pinned.setPinnedRowCount(3, 0);
 		flush();
 		assertEquals(plain.getClientArea(), pinned.getClientArea());
-		assertEquals(region(plain, plain.getClientArea()), region(pinned, pinned.getClientArea()));
+
+		final String[] hashes = GridSwtScreenshotCapture.comparableGridClientHashes(
+				plain, snapshot(plain), snapshot(pinned), plain.getClientArea());
+		assertEquals("pinned and unpinned native body pixels", hashes[0], hashes[1]);
 	}
 
 	@Test
@@ -80,16 +83,18 @@ public class GridPinnedRows_Test {
 		flush();
 		final Rectangle top = topPlane(grid, 2);
 		final Rectangle bottom = bottomPlane(grid, 2);
-		final String top0 = region(grid, top);
-		final String bottom0 = region(grid, bottom);
-		final String body0 = region(grid, new Rectangle(0, top.y + top.height, top.width, 40));
+		final Rectangle body = new Rectangle(0, top.y + top.height, top.width, 40);
+		final GridSwtScreenshotCapture.GridClientFrame initial = snapshot(grid);
+		GridSwtScreenshotCapture.GridClientFrame latest = initial;
 		for (final int index : new int[] { 1, 37, 250, 480 }) {
 			final int before = grid.paintPasses;
 			grid.setTopIndex(index);
 			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, before + 1,
 					"pinned-row scroll paint did not settle");
-			final String nowTop = region(grid, top);
-			if (!top0.equals(nowTop)) {
+			latest = snapshot(grid);
+			final String[] topHashes = GridSwtScreenshotCapture.comparableGridClientHashes(
+					grid, initial, latest, top);
+			if (!topHashes[0].equals(topHashes[1])) {
 				final org.eclipse.swt.widgets.ScrollBar vertical = grid.getVerticalBar();
 				System.out.println("GRID_NATIVE_SCROLLBAR_DIAGNOSTIC pinned top=" + index
 						+ " plane=" + top + " client=" + grid.getClientArea() + " screen=" + grid.getSize()
@@ -97,11 +102,14 @@ public class GridPinnedRows_Test {
 						+ " thumb=" + (vertical == null ? "none" : vertical.getThumbBounds())
 						+ " visible=" + (vertical != null && vertical.getVisible()));
 			}
-			assertEquals("top plane at " + index, top0, nowTop);
-			assertEquals("bottom plane at " + index, bottom0, region(grid, bottom));
+			assertEquals("top plane at " + index, topHashes[0], topHashes[1]);
+			final String[] bottomHashes = GridSwtScreenshotCapture.comparableGridClientHashes(
+					grid, initial, latest, bottom);
+			assertEquals("bottom plane at " + index, bottomHashes[0], bottomHashes[1]);
 		}
-		assertNotEquals("the body itself scrolled", body0,
-				region(grid, new Rectangle(0, top.y + top.height, top.width, 40)));
+		final String[] bodyHashes = GridSwtScreenshotCapture.comparableGridClientHashes(
+				grid, initial, latest, body);
+		assertNotEquals("the body itself scrolled", bodyHashes[0], bodyHashes[1]);
 	}
 
 	@Test
@@ -192,9 +200,36 @@ public class GridPinnedRows_Test {
 		return new Rectangle(0, grid.getClientArea().height - h, grid.getClientArea().width, h);
 	}
 
-	private static String region(final Grid grid, final Rectangle r) throws Exception {
-		final ImageData data = GridSwtScreenshotCapture.captureScreenData(grid, "pinned-rows");
-		return GridSwtScreenshotCapture.gridClientContentHash(grid, data, r);
+	private static GridSwtScreenshotCapture.GridClientFrame snapshot(final Grid grid) throws Exception {
+		return GridSwtScreenshotCapture.captureGridClientFrame(grid, "pinned-rows");
+	}
+
+	@Test
+	public void differentAnimatedOverlayWidthsUseAnIdenticalBodyPixelExtent() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 30, 460, 400);
+		final Rectangle client = grid.getClientArea();
+		final int border = grid.getBorderWidth();
+		final PaletteData palette = new PaletteData(0xff0000, 0x00ff00, 0x0000ff);
+		final ImageData first = new ImageData(460, 400, 24, palette);
+		final ImageData later = new ImageData(460, 400, 24, palette);
+		final int endX = border + client.width - 6;
+		assertEquals("fixture must have a native right-hand content strip", true,
+				endX > 10 && endX + 1 < later.width);
+		// The scrollbar is only 2 pixels in one frame and 6 in another.
+		// A single-frame hash would hash unequal numbers of pixels.
+		later.setPixel(endX + 1, border + 10, 0x00ffffff);
+		final GridSwtScreenshotCapture.GridClientFrame narrow =
+				new GridSwtScreenshotCapture.GridClientFrame(first, client, border, 2);
+		final GridSwtScreenshotCapture.GridClientFrame wide =
+				new GridSwtScreenshotCapture.GridClientFrame(later, client, border, 6);
+		final String[] matching = GridSwtScreenshotCapture.comparableGridClientHashes(
+				grid, narrow, wide, client);
+		assertEquals("only measured native overlay pixels may differ", matching[0], matching[1]);
+		later.setPixel(border + 10, border + 10, 0x00ffffff);
+		final String[] changed = GridSwtScreenshotCapture.comparableGridClientHashes(
+				grid, narrow, wide, client);
+		assertNotEquals("any interior body pixel difference must fail", changed[0], changed[1]);
 	}
 
 	@Test

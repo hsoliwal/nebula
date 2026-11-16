@@ -50,6 +50,9 @@ public class ToastsTest {
 		shell = new Shell(display);
 		shell.setBounds(100, 100, 700, 500);
 		shell.open();
+		// Keep the real native pointer outside the bottom-right toast overlay.
+		// A prior GTK test may otherwise leave an unrelated hover active.
+		display.setCursorLocation(shell.toDisplay(4, 4));
 		toasts = new Toasts(shell);
 		TestSupport.flush(display);
 	}
@@ -126,6 +129,11 @@ public class ToastsTest {
 		// Native GTK may reposition a child Shell when its owner moves even if
 		// Toasts never requests a placement. Count actual owner-originated work.
 		long ownerPlacementsBefore = RepaintCounters.moves;
+		// GTK can deliver an outstanding overlay Move from its earlier native
+		// show/unmap after the Java event queue was briefly empty. Settle those
+		// old events before measuring *new* work from the hidden-owner resize.
+		TestSupport.spin(display, 100);
+		Rectangle parkedBounds = toasts.getOverlay().getBounds();
 		int[] overlayBounds = new int[1];
 		toasts.getOverlay().addListener(SWT.Move, e -> overlayBounds[0]++);
 		toasts.getOverlay().addListener(SWT.Resize, e -> overlayBounds[0]++);
@@ -134,6 +142,9 @@ public class ToastsTest {
 		assertEquals("no expiry while the owner is hidden", 2, toasts.getCount());
 		assertEquals("hidden owner must not request an overlay placement; native WM events="
 				+ overlayBounds[0], ownerPlacementsBefore, RepaintCounters.moves);
+		assertEquals("no overlay bounds work while hidden", 0, overlayBounds[0]);
+		assertEquals("overlay geometry remains parked while its owner resizes",
+				parkedBounds, toasts.getOverlay().getBounds());
 		shell.setVisible(true);
 		TestSupport.flush(display);
 		assertEquals("the due toast expired at once on show", 1, toasts.getCount());
@@ -145,6 +156,18 @@ public class ToastsTest {
 		shell.setMinimized(false);
 		TestSupport.flush(display);
 		assertEquals("caught up on restore", 1, toasts.getCount());
+	}
+
+	@Test
+	public void earlierExpiryReplacesPreviousTimerWithoutDiscardingLongToast() {
+		int longId = toasts.show("long", "retained", Toasts.INFO, 60_000);
+		int shortId = toasts.show("short", "earlier deadline", Toasts.WARNING, 40);
+		assertEquals(2, toasts.getCount());
+		TestSupport.spin(display, 250);
+		assertEquals("only the earliest expiry is removed", 1, toasts.getCount());
+		assertFalse("already expired short toast cannot be dismissed twice", toasts.dismiss(shortId));
+		assertTrue("long toast remains live", toasts.dismiss(longId));
+		assertEquals(0, toasts.getCount());
 	}
 
 	@Test

@@ -171,7 +171,9 @@ public final class Toasts {
 
 	/* the owner can show toasts: visible (or being shown) and not minimized; always true in original mode */
 	private boolean ownerShown() {
-		return !VIEWPORT || revealing || owner.isVisible() && !owner.getMinimized();
+		// The native shell can still report an old visible state while Hide
+		// or Iconify is being delivered. The parked owner remains authoritative.
+		return !VIEWPORT || revealing || !parked && owner.isVisible() && !owner.getMinimized();
 	}
 
 	/* the owner hides or minimizes: no timer, and the overlay leaves with it */
@@ -248,7 +250,10 @@ public final class Toasts {
 	}
 
 	private void schedule() {
-		if (paused || count == 0) {
+		// Preserve the promised one-earliest-expiry timer. Reentrant shows,
+		// dismissals and hover exits must replace rather than accumulate timers.
+		owner.getDisplay().timerExec(-1, expire);
+		if (paused || count == 0 || VIEWPORT && parked) {
 			return;
 		}
 		long earliest = Long.MAX_VALUE;
@@ -321,6 +326,13 @@ public final class Toasts {
 		// asynchronous Move/Resize notifications on a hidden native Shell.
 		RepaintCounters.moves++;
 		overlay.setBounds(corner.x, corner.y, WIDTH, height);
+		// Avoid redundant native GTK/Cocoa/Win32 geometry requests when a
+		// model or timer delta changes no overlay position or extent.
+		Rectangle bounds = overlay.getBounds();
+		if (bounds.x != corner.x || bounds.y != corner.y
+				|| bounds.width != WIDTH || bounds.height != height) {
+			overlay.setBounds(corner.x, corner.y, WIDTH, height);
+		}
 	}
 
 	private void paint(Event event) {

@@ -262,14 +262,80 @@ final class GridSwtScreenshotCapture {
 	}
 
 	/**
-	 * Compare the original Grid's actual on-screen client pixels, never an
-	 * offscreen Control.print image. GTK3's right-aligned overlay scrollbar
-	 * paints independently from the Grid body and can animate its thumb even
-	 * between a blit and a full redraw. Exclude only the native scrollbar's
-	 * measured track width, with a hard cap; all remaining pixels are exact.
+	 * A captured native frame and its measured GTK scrollbar overlay width.
+	 * A scrollbar may animate between two frames. Keep its geometry with the
+	 * pixels so comparisons use one common exclusion width, never two different
+	 * numbers of hashed pixels.
+	 */
+	static final class GridClientFrame {
+		final ImageData pixels;
+		final Rectangle client;
+		final int border;
+		final int overlayWidth;
+
+		GridClientFrame(ImageData pixels, Rectangle client, int border, int overlayWidth) {
+			this.pixels = Objects.requireNonNull(pixels, "pixels");
+			this.client = Objects.requireNonNull(client, "client");
+			this.border = border;
+			this.overlayWidth = overlayWidth;
+		}
+	}
+
+	/**
+	 * Capture real display pixels, not Control.print. Measure the native overlay
+	 * on both sides of capture to include animated width changes conservatively.
+	 */
+	static GridClientFrame captureGridClientFrame(final Grid grid, final String label)
+			throws IOException {
+		final Rectangle clientBefore = grid.getClientArea();
+		final int border = grid.getBorderWidth();
+		final int overlayBefore = gtkOverlayWidth(grid);
+		final ImageData pixels = captureScreenData(grid, label);
+		final int overlayAfter = gtkOverlayWidth(grid);
+		if (!clientBefore.equals(grid.getClientArea()) || border != grid.getBorderWidth()) {
+			throw new AssertionError("Grid geometry changed during native screen capture");
+		}
+		return new GridClientFrame(pixels, clientBefore, border,
+				Math.max(overlayBefore, overlayAfter));
+	}
+
+	/**
+	 * Hash two native captures with the SAME measured exclusion width. Mask the
+	 * union of their independently measured overlay strips only, never the body.
+	 * Reusing two separately computed digests would hash different pixel counts
+	 * when GTK3 animates the right-aligned scrollbar from 4 to 6 pixels.
+	 */
+	static String[] comparableGridClientHashes(final Grid grid,
+			final GridClientFrame earlier, final GridClientFrame later,
+			final Rectangle region) {
+		Objects.requireNonNull(grid, "grid");
+		Objects.requireNonNull(earlier, "earlier");
+		Objects.requireNonNull(later, "later");
+		if (earlier.border != later.border || !earlier.client.equals(later.client)
+				|| !earlier.client.equals(grid.getClientArea())
+				|| earlier.border != grid.getBorderWidth()
+				|| earlier.pixels.width != later.pixels.width
+				|| earlier.pixels.height != later.pixels.height) {
+			throw new AssertionError("native Grid content geometry changed between compared frames");
+		}
+		final int overlay = Math.max(earlier.overlayWidth, later.overlayWidth);
+		return new String[] {
+				gridClientContentHash(grid, earlier.pixels, region, overlay),
+				gridClientContentHash(grid, later.pixels, region, overlay)
+		};
+	}
+
+	/**
+	 * Existing single-frame content digest remains available to other tests.
+	 * Paired visual comparisons must instead use comparableGridClientHashes.
 	 */
 	static String gridClientContentHash(final Grid grid, final ImageData image,
 			final Rectangle clientRegion) {
+		return gridClientContentHash(grid, image, clientRegion, gtkOverlayWidth(grid));
+	}
+
+	private static String gridClientContentHash(final Grid grid, final ImageData image,
+			final Rectangle clientRegion, final int overlayWidth) {
 		Objects.requireNonNull(grid, "grid");
 		Objects.requireNonNull(image, "image");
 		Objects.requireNonNull(clientRegion, "clientRegion");
@@ -280,26 +346,34 @@ final class GridSwtScreenshotCapture {
 				|| (long)clientRegion.y + clientRegion.height > client.height) {
 			throw new AssertionError("Grid content region outside native client: " + clientRegion);
 		}
+		if (overlayWidth < 0 || overlayWidth > 32) {
+			throw new AssertionError("invalid GTK overlay strip width: " + overlayWidth);
+		}
 		final int border = grid.getBorderWidth();
 		final Rectangle captureRegion = new Rectangle(border + clientRegion.x,
 				border + clientRegion.y, clientRegion.width, clientRegion.height);
-		int rightLimit = border + client.width;
+		return exactContentHash(image, captureRegion,
+				border + client.width - overlayWidth);
+	}
+
+	/** Only the native GTK3 vertical scrollbar's actual bounded track may be omitted. */
+	private static int gtkOverlayWidth(final Grid grid) {
 		final org.eclipse.swt.widgets.ScrollBar vertical = grid.getVerticalBar();
-		if ("gtk".equals(SWT.getPlatform())
-				&& !"1".equals(System.getenv("SWT_GTK4"))
-				&& vertical != null && vertical.getVisible()) {
-			final Rectangle track = vertical.getThumbTrackBounds();
-			final Rectangle thumb = vertical.getThumbBounds();
-			if (track.width <= 0 || track.width > 32 || track.height <= 0
-					|| thumb.width <= 0 || thumb.height <= 0
-					|| thumb.width > track.width || thumb.height > track.height
-					|| thumb.y < track.y || (long)thumb.y + thumb.height > (long)track.y + track.height) {
-				throw new AssertionError("invalid measured native GTK3 scrollbar geometry: "
-						+ track + " thumb=" + thumb);
-			}
-			rightLimit -= track.width;
+		if (!"gtk".equals(SWT.getPlatform())
+				|| "1".equals(System.getenv("SWT_GTK4"))
+				|| vertical == null || !vertical.getVisible()) {
+			return 0;
 		}
-		return exactContentHash(image, captureRegion, rightLimit);
+		final Rectangle track = vertical.getThumbTrackBounds();
+		final Rectangle thumb = vertical.getThumbBounds();
+		if (track.width <= 0 || track.width > 32 || track.height <= 0
+				|| thumb.width <= 0 || thumb.height <= 0
+				|| thumb.width > track.width || thumb.height > track.height
+				|| thumb.y < track.y || (long)thumb.y + thumb.height > (long)track.y + track.height) {
+			throw new AssertionError("invalid measured native GTK3 scrollbar geometry: "
+					+ track + " thumb=" + thumb);
+		}
+		return track.width;
 	}
 
 	/**
