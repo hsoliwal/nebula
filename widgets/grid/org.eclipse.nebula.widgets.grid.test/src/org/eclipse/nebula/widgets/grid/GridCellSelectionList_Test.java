@@ -16,7 +16,10 @@ package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -123,6 +126,31 @@ public class GridCellSelectionList_Test {
 				assertEquals(java.lang.Boolean.valueOf(reference.containsAll(Arrays.asList(p))), java.lang.Boolean.valueOf(list.containsAll(Arrays.asList(p))));
 			}
 		}
+	}
+
+
+	@Test
+	public void duplicatesAtHashThresholdDoNotGrowUniqueCellDirectory() throws Exception {
+		final GridCellSelectionList list = new GridCellSelectionList();
+		for (int i = 0; i < 16; i++) {
+			list.add(new Point(i, i + 100));
+		}
+		final Field field = GridCellSelectionList.class.getDeclaredField("keys");
+		field.setAccessible(true);
+		final long[] first = (long[]) field.get(list);
+		assertEquals(32, first.length);
+		for (int i = 0; i < 400; i++) list.add(new Point(0, 100));
+		assertSame("repeated cells do not add distinct hash keys", first, field.get(list));
+		assertEquals(416, list.size());
+		assertTrue(list.contains(new Point(0, 100)));
+		assertTrue(list.remove(new Point(0, 100)));
+		assertTrue(list.contains(new Point(0, 100)));
+		list.reindex();
+		assertSame("rehashing duplicates retains the original capacity", first, field.get(list));
+		assertEquals(415, list.size());
+		list.add(new Point(400, 401));
+		assertEquals(64, ((long[]) field.get(list)).length);
+		assertTrue(list.contains(new Point(400, 401)));
 	}
 
 	@Test

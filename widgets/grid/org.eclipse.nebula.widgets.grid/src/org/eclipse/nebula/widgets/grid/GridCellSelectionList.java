@@ -79,11 +79,14 @@ final class GridCellSelectionList extends AbstractList<Point> implements RandomA
 
 	/* one more entry of p; a new cell's first entry is at position */
 	private void inc(final Point p, final int position) {
-		if (used + 1 > keys.length >> 1) {
-			grow();
-		}
 		final long key = key(p.x, p.y);
-		final int i = slot(key);
+		int i = slot(key);
+		// Repeat selections increase an existing count, not unique-key occupancy.
+		// Grow the three hash lanes only when a genuinely new cell needs a slot.
+		if (counts[i] == 0 && used + 1 > keys.length >> 1) {
+			grow();
+			i = slot(key);
+		}
 		if (counts[i] == 0) {
 			keys[i] = key;
 			firsts[i] = position;
