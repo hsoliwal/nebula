@@ -185,7 +185,9 @@ final class GridSwtScreenshotCapture {
 		}
 		Rectangle screen = outerDisplayBounds (control);
 		if (screen.width <= 0 || screen.height <= 0 || !screen.equals (screen.intersection (display.getBounds ()))) {
-			throw new IllegalArgumentException ("screen capture must be fully on the display");
+			throw new IllegalArgumentException ("screen capture must be fully on the display: " + screen + " outside "
+					+ display.getBounds () + ", shell " + control.getShell ().getBounds () + ", minimized "
+					+ control.getShell ().getMinimized ());
 		}
 		for (Composite ancestor = control instanceof Shell ? null : control.getParent ();
 				ancestor != null; ancestor = ancestor.getParent ()) {
