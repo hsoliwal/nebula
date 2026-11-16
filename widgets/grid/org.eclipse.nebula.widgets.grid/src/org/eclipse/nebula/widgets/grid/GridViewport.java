@@ -134,7 +134,9 @@ final class GridViewport {
 			// The index already owns the row coordinate; a cold endpoint needs no item.
 			return index.positionOfRank(visible - 1);
 		}
-		return items.get(index.positionOfRank(selection)).getRowIndex();
+		// A visible rank already resolves to the stable logical row ordinal.
+		// Avoid constructing a lazy GridItem solely to ask for that ordinal.
+		return index.positionOfRank(selection);
 	}
 
 	/**
