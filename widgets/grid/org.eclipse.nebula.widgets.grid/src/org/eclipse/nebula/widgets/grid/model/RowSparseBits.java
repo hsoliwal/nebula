@@ -424,6 +424,82 @@ public final class RowSparseBits {
 		return total;
 	}
 
+
+	/**
+	 * Counts the intersection with a displayed-row mask below {@code limit}, without
+	 * materializing row objects or walking every selected row. ARRAY containers visit
+	 * sparse positions; BITMAP containers intersect two 32-bit words per mask word;
+	 * RUN containers count whole 64-bit mask words between clipped endpoints.
+	 *
+	 * <p>The mask may be shorter than the logical model; missing words are zero.
+	 * Bits beyond the model limit are ignored, including a partial final word.</p>
+	 */
+	int countMasked(final long[] mask, final int limit) {
+		if (n == 0 || limit <= 0) {
+			return 0;
+		}
+		final long maskLimit = Math.min((long) limit, ((long) mask.length) << 6);
+		if (maskLimit <= 0L) {
+			return 0;
+		}
+		int total = 0;
+		for (int c = 0; c < n; c++) {
+			final long base = ((long) keys[c]) << 16;
+			if (base >= maskLimit) {
+				break;
+			}
+			final int stop = (int) Math.min((long) CHUNK, maskLimit - base);
+			final int firstWord = (int) (base >>> 6);
+			final int[] d = data[c];
+			switch (kinds[c]) {
+			case ARRAY:
+				for (int i = 0; i < sizes[c]; i++) {
+					final int v = d[i];
+					if (v >= stop) {
+						break;
+					}
+					if ((mask[firstWord + (v >>> 6)] & (1L << (v & 63))) != 0L) {
+						total++;
+					}
+				}
+				break;
+			case BITMAP:
+				final int wordCount = (stop + 63) >>> 6;
+				for (int w = 0; w < wordCount; w++) {
+					long visible = mask[firstWord + w];
+					if (w == wordCount - 1 && (stop & 63) != 0) {
+						visible &= (1L << (stop & 63)) - 1L;
+					}
+					total += Integer.bitCount(d[w << 1] & (int) visible);
+					total += Integer.bitCount(d[(w << 1) + 1] & (int) (visible >>> 32));
+				}
+				break;
+			default:
+				for (int i = 0; i < sizes[c]; i++) {
+					final int from = d[i << 1];
+					if (from >= stop) {
+						break;
+					}
+					final int to = Math.min(d[(i << 1) + 1], stop);
+					final int fw = from >>> 6;
+					final int lw = (to - 1) >>> 6;
+					final long firstMask = -1L << (from & 63);
+					final long lastMask = -1L >>> (63 - ((to - 1) & 63));
+					if (fw == lw) {
+						total += Long.bitCount(mask[firstWord + fw] & firstMask & lastMask);
+					} else {
+						total += Long.bitCount(mask[firstWord + fw] & firstMask);
+						for (int w = fw + 1; w < lw; w++) {
+							total += Long.bitCount(mask[firstWord + w]);
+						}
+						total += Long.bitCount(mask[firstWord + lw] & lastMask);
+					}
+				}
+			}
+		}
+		return total;
+	}
+
 	/** First set position at or after {@code from} and below {@code limit}, or -1. */
 	public int next(int from, int limit) {
 		if (from < 0 || from >= limit) return -1;
