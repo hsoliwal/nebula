@@ -137,9 +137,14 @@ public class InfoPopup_Test {
 		assertTrue(popup.isVisible());
 		Event outside = new Event();
 		outside.button = 1;
-		// the header right of the last column (3 x 110 px): no anchor at any row height; a body point is a cell
-		// whenever the 20 rows overflow the table, as they do at 96 dpi with the default font
-		outside.x = 340;
+		// Native GTK/Cocoa/Win32 may report DPI/theme-adjusted column widths.
+		// Choose an actual empty trailing column point, not a hard-coded x=340.
+		int lastColumnRight = 0;
+		for (TableColumn column : table.getColumns()) {
+			lastColumnRight += column.getWidth();
+		}
+		outside.x = lastColumnRight
+				- (table.getHorizontalBar() == null ? 0 : table.getHorizontalBar().getSelection()) + 2;
 		outside.y = 2;
 		table.notifyListeners(SWT.MouseDown, outside);
 		assertFalse("a click on no anchor closes it", popup.isVisible());
