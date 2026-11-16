@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+name: GridRowTree headless Java compatibility
+on:
+  pull_request:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowTree.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridRowIndex.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/model/**'
+      - 'releng/verification/grid-row-neighbors/**'
+      - '.github/workflows/grid-row-neighbors-headless.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  differential:
+    if: github.repository == 'hsoliwal/nebula'
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: ['17', '21']
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.jdk }}
+      - name: Verify real packed row index against deterministic oracle
+        run: bash releng/verification/grid-row-neighbors/verify.sh
