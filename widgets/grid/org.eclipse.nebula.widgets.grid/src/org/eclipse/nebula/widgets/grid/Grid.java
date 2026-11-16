@@ -5870,6 +5870,12 @@ public class Grid extends Canvas {
 
 			int row = getTopIndex();
 			while (row < items.size() && y2 <= getClientArea().height) {
+				if (rowsIndexed()) {
+					row = viewport.nextVisibleIndex(row);
+					if (row < 0) {
+						break;
+					}
+				}
 				final GridItem currItem = items.get(row);
 				if (currItem.isVisible()) {
 					y2 += currItem.getHeight() + 1;
