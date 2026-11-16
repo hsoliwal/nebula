@@ -62,6 +62,8 @@ public final class MobileGridViewportTest {
         failedSinkBindingRemainsRetryable();
         reserveContract();
         growthFailurePreservesResidentBindings();
+        unchangedFramesReuseWindow();
+        zeroCountClearsPresentedWindow();
 		System.out.println("MobileGridViewportTest PASSED");
 	}
 
@@ -369,6 +371,56 @@ public final class MobileGridViewportTest {
         check(after.nativeSlots() == 8 && binds[0] == 12 && releases[0] == 4,
                 "retry replaces exactly four retained bindings");
         view.close();
+    }
+
+
+    static void unchangedFramesReuseWindow() {
+        Sink sink = new Sink();
+        MobileGridViewport view = new MobileGridViewport(1000, 2, 24, 2,
+                (row, col) -> col == 0 ? "row-" + row : "cell", sink);
+        Window first = view.show(0, 120);
+        int initialBinds = sink.binds;
+        for (int i = 0; i < 1000; i++)
+            check(view.show(0, 120) == first, "unchanged Window identity");
+        check(sink.binds == initialBinds, "no duplicate binding on stable frame");
+        view.select(1);
+        check(view.show(0, 120) == first, "selection keeps Window geometry");
+        check(sink.binds == initialBinds + 1, "only one selection row rebound");
+        Window moved = view.show(24, 120);
+        check(moved != first && moved.visibleStart() == 1, "scroll changes Window");
+        Window empty = view.show(0, 0);
+        check(empty.visibleEnd() == 0 && empty.retainedEnd() == 0, "zero-height viewport");
+        check(view.show(0, 0) == empty, "unchanged empty Window identity");
+        view.close();
+        check(sink.slots.isEmpty(), "no bindings remain after close");
+    }
+
+    static void zeroCountClearsPresentedWindow() {
+        final long huge = 1_000_000_000_000L;
+        Sink sink = new Sink();
+        MobileGridViewport view = new MobileGridViewport(huge, 2, 24, 2,
+                (row, col) -> col == 0 ? "row-" + row : "cell", sink);
+        Window far = view.show((huge - 1) * 24L, 120);
+        check(far.visibleStart() == huge - 1 && far.visibleEnd() == huge,
+                "trillion-row last viewport");
+        view.select(huge - 1);
+        view.setItemCount(0);
+        Window reset = view.window();
+        check(reset.visibleStart() == 0 && reset.visibleEnd() == 0
+                && reset.retainedStart() == 0 && reset.retainedEnd() == 0,
+                "zero count clears presented Window synchronously");
+        check(view.selectedRow() == -1 && sink.slots.isEmpty(),
+                "zero count releases selection and slot bindings");
+        view.setItemCount(0);
+        check(view.window() == reset, "repeated zero reset reuses Window");
+        check(view.show(0, 120) == reset, "empty paint reuses reset Window");
+        view.setItemCount(7);
+        Window reopened = view.show(0, 120);
+        check(reopened.visibleStart() == 0 && reopened.visibleEnd() == 5
+                && reopened.retainedEnd() == 7, "regrown viewport and overscan");
+        check(sink.slots.size() <= 7, "regrown native slots bounded");
+        view.close();
+        check(sink.slots.isEmpty(), "regrown slots released");
     }
 
     private static void assertTrue(String message, boolean value) { check(value, message); }
