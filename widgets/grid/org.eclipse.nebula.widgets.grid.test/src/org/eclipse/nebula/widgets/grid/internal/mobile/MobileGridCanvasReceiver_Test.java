@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -132,6 +134,48 @@ public class MobileGridCanvasReceiver_Test {
 		canvas.dispose();
 		assertTrue("canvas owns receiver disposal", receiver.isClosed());
 		receiver.close(); // idempotent
+	}
+
+	@Test
+	public void scrollKeepsTheRetainedFrameAndPaintsOnlyTheClip() {
+		assertEquals("a short scroll moves the frame by its distance", 24, MobileGridCanvasReceiver.blitDistance(24, 120));
+		assertEquals(-119, MobileGridCanvasReceiver.blitDistance(-119, 120));
+		assertEquals("a whole viewport keeps nothing", 0, MobileGridCanvasReceiver.blitDistance(120, 120));
+		assertEquals(0, MobileGridCanvasReceiver.blitDistance(-120, 120));
+		assertEquals("a long-index jump keeps nothing", 0, MobileGridCanvasReceiver.blitDistance(Long.MAX_VALUE, 120));
+		assertEquals(0, MobileGridCanvasReceiver.blitDistance(Long.MIN_VALUE, 120));
+
+		final Canvas canvas = new Canvas(shell, SWT.NONE);
+		canvas.setBounds(0, 0, 320, 120);
+		final MobileGridCanvasReceiver receiver = new MobileGridCanvasReceiver(canvas, 1_000_000_000_000L, 2, 24, 2,
+				(row, column) -> "row " + row, row -> { /* selection is not under test */ });
+		// The rows are painted into an image through a GC whose clip is set here,
+		// so no native paint and no window state decide the outcome.
+		final Image frame = new Image(display, 320, 120);
+		final GC gc = new GC(frame);
+		try {
+			receiver.paint(gc);
+			assertEquals("a full clip paints every row in view", 5, receiver.lastPaintedRows());
+			gc.setClipping(0, 96, 320, 24);
+			receiver.paint(gc);
+			assertEquals("a one-row band paints one row", 1, receiver.lastPaintedRows());
+			receiver.scrollTo(12);
+			assertEquals(12, receiver.scrollY());
+			gc.setClipping(0, 108, 320, 12);
+			receiver.paint(gc);
+			assertEquals("the band a 12 pixel scroll uncovers holds one row", 1, receiver.lastPaintedRows());
+			gc.setClipping(0, 0, 320, 120);
+			receiver.paint(gc);
+			assertEquals("a fractional scroll shows a sixth, partial row", 6, receiver.lastPaintedRows());
+			receiver.scrollTo(999_999_999_999L * 24L);
+			receiver.paint(gc);
+			assertEquals("the last row of a long-index model is alone in view", 1, receiver.lastPaintedRows());
+			assertEquals(999_999_999_999L, receiver.window().visibleStart());
+		} finally {
+			gc.dispose();
+			frame.dispose();
+		}
+		canvas.dispose();
 	}
 
     @Test
