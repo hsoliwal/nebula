@@ -6418,16 +6418,13 @@ public class Grid extends Canvas {
 				evictionScratch[candidates++] = ((long) sparse.slotStamp(slot) << 32) | slot;
 			}
 		}
-		Arrays.sort(evictionScratch, 0, candidates);
 		final int victims = Math.min(excess, candidates);
-		// release by descending slot so earlier slot numbers stay valid
-		final long[] slots = new long[victims];
-		for (int i = 0; i < victims; i++) {
-			slots[i] = evictionScratch[i] & 0xffffffffL;
-		}
-		Arrays.sort(slots);
+		// Rank by paint age, then convert selected entries to slot indices
+		// in the same parent-owned lane. Never allocate a victims[] per paint.
+		selectEvictionVictimsInPlace(evictionScratch, candidates, victims);
+		// Release by descending slot so earlier slot numbers stay valid.
 		for (int i = victims - 1; i >= 0; i--) {
-			final int slot = (int) slots[i];
+			final int slot = (int) evictionScratch[i];
 			final int model = sparse.slotModel(slot);
 			final GridItem item = sparse.release(slot);
 			if (model >= 0) {
@@ -6440,6 +6437,21 @@ public class Grid extends Canvas {
 			item.disposeOnly();
 			residencyReleased++;
 		}
+	}
+
+	/**
+	 * Selects oldest cold rows by (paint stamp, slot) and orders their slot
+	 * indexes for descending release. The caller's primitive lane is already
+	 * scratch and its high 32 stamp bits are dead after victim selection.
+	 * No new array or per-row object graph is created.
+	 */
+	static void selectEvictionVictimsInPlace(final long[] entries, final int candidates,
+			final int victims) {
+		Arrays.sort(entries, 0, candidates);
+		for (int i = 0; i < victims; i++) {
+			entries[i] &= 0xffffffffL;
+		}
+		Arrays.sort(entries, 0, victims);
 	}
 
 	private boolean residentPinned(final GridItem item, final int index) {
