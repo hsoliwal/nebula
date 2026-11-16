@@ -105,6 +105,40 @@ public final class TestSupport {
 	}
 
 	/**
+	 * Await an actual SWT.Paint from the original native control, not merely a
+	 * redraw request or an empty Display event queue. A short quiet interval
+	 * checks that a delayed native expose has not added a second paint.
+	 * Never synthesize a Paint event or request a new redraw.
+	 */
+	public static void awaitNativePaint(Control control, List<Rectangle> paints,
+			int minimum, String message) {
+		if (minimum < 1) throw new IllegalArgumentException("positive paint count required");
+		final Display display = control.getDisplay();
+		final long started = System.nanoTime();
+		long unchangedSince = started;
+		int observed = paints.size();
+		while (observed < minimum || System.nanoTime() - unchangedSince < 200_000_000L) {
+			if (System.nanoTime() - started > 5_000_000_000L)
+				throw new AssertionError(message + ": observed " + paints.size()
+						+ " native Paint events, required " + minimum);
+			control.update();
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(5L);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted awaiting native SWT.Paint", interrupted);
+				}
+			}
+			int current = paints.size();
+			if (current != observed) {
+				observed = current;
+				unchangedSince = System.nanoTime();
+			}
+		}
+	}
+
+	/**
 	 * The hidden-viewport gate (brief rule 24, "Hidden viewports"): hides the control, applies 10^4 model deltas,
 	 * checks that they caused no paint, no visibility probe, no measure, move, creation or full repaint, shows the
 	 * control and checks for exactly one paint pass and one reveal.
@@ -123,8 +157,7 @@ public final class TestSupport {
 		assertEquals(RepaintCounters.line(), 0, RepaintCounters.probes + RepaintCounters.measures + RepaintCounters.moves + RepaintCounters.creates + RepaintCounters.fullRepaints);
 		assertTrue(RepaintCounters.line(), RepaintCounters.hiddenDeltas >= 10_000);
 		control.setVisible(true);
-		flush(display);
-		control.update();
+		awaitNativePaint(control, paints, 1, "hidden Hyperlink reveal did not paint");
 		assertEquals("one paint pass after show: " + paints, 1, paints.size());
 		assertEquals(RepaintCounters.line(), 1, RepaintCounters.reveals);
 	}
