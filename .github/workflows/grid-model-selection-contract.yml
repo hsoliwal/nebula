@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+name: Nebula Grid packed model selection contracts
+on:
+  pull_request:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/model/**'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/model/**'
+      - '.github/workflows/grid-model-selection-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  jdk-model-selection:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile original model owners with javac (no SWT or Xvfb)
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(mktemp -d)"
+          trap 'rm -rf "$output"' EXIT
+          src=widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/model
+          test=widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/model
+          javac --release 21 -d "$output" \
+            "$src/HeapSampler.java" \
+            "$src/HeapGrowth.java" \
+            "$src/RowComparator.java" \
+            "$src/RowPredicate.java" \
+            "$src/RowView.java" \
+            "$src/IntPermutationSort.java" \
+            "$src/RowPermutation.java" \
+            "$src/RowSparseBits.java" \
+            "$src/RowSelection.java" \
+            "$test/RowSelectionMaskedCountContract.java"
+          java -cp "$output" org.eclipse.nebula.widgets.grid.model.RowSelectionMaskedCountContract
