@@ -77,6 +77,60 @@ public class MobileGridViewport_Test {
 	}
 
 
+	@Test
+	public void steadyViewportPaintsReuseWindowSnapshot() {
+		Sink sink = new Sink();
+		MobileGridViewport viewport = new MobileGridViewport(1000, 2, 24, 2,
+				(row, column) -> column == 0 ? "row-" + row : "cell", sink);
+		Window first = viewport.show(0, 120);
+		int binds = sink.binds;
+		for (int i = 0; i < 1000; i++) {
+			assertTrue("unchanged frame must reuse immutable Window", first == viewport.show(0, 120));
+		}
+		assertEquals("no repeated model provider work", binds, sink.binds);
+		viewport.select(1);
+		assertTrue("selection redraw keeps same row range", first == viewport.show(0, 120));
+		assertEquals("exactly one selected row rebound", binds + 1, sink.binds);
+		Window moved = viewport.show(24, 120);
+		assertTrue("scrolled row range has new snapshot", moved != first);
+		Window empty = viewport.show(0, 0);
+		assertEquals(0L, empty.visibleEnd());
+		assertTrue("repeated empty paints reuse snapshot", empty == viewport.show(0, 0));
+		viewport.close();
+		assertTrue(sink.slots.isEmpty());
+	}
+
+	@Test
+	public void zeroRowsClearPresentedWindowWithoutAnotherNativePaint() {
+		Sink sink = new Sink();
+		final long huge = 1_000_000_000_000L;
+		MobileGridViewport viewport = new MobileGridViewport(huge, 2, 24, 2,
+				(row, column) -> column == 0 ? "row-" + row : "cell", sink);
+		viewport.show((huge - 1) * 24L, 120);
+		assertEquals("last visible row presented", huge - 1, viewport.window().visibleStart());
+		assertTrue("some resident rows were bound", !sink.slots.isEmpty());
+		viewport.select(huge - 1);
+		viewport.setItemCount(0);
+		assertEquals("logical count reset", 0L, viewport.itemCount());
+		assertEquals("selection reset", -1L, viewport.selectedRow());
+		assertTrue("all native row bindings released", sink.slots.isEmpty());
+		Window cleared = viewport.window();
+		assertEquals("presented start cleared synchronously", 0L, cleared.visibleStart());
+		assertEquals("presented end cleared synchronously", 0L, cleared.visibleEnd());
+		assertEquals("retained start cleared synchronously", 0L, cleared.retainedStart());
+		assertEquals("retained end cleared synchronously", 0L, cleared.retainedEnd());
+		assertTrue("slot capacity stays bounded", cleared.nativeSlots() <= 9);
+		viewport.setItemCount(0);
+		assertTrue("repeated empty reset does not allocate a Window", cleared == viewport.window());
+		viewport.setItemCount(7);
+		viewport.show(0, 120);
+		assertEquals("reopening the model rebinds only visible rows", 5L, viewport.window().visibleEnd());
+		assertTrue("new native row bindings remain bounded", sink.slots.size() <= 7);
+		viewport.close();
+		assertTrue("close releases rebound rows", sink.slots.isEmpty());
+	}
+
+
     private static final class FailureSink implements RowSink {
         final Map<Integer, Long> slots = new HashMap<>();
         final java.util.List<String> calls = new java.util.ArrayList<>();

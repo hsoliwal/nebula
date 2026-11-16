@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: EPL-2.0
+name: Mobile Grid original-owner viewport contracts
+on:
+  pull_request:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/internal/mobile/MobileGridViewport.java'
+      - 'releng/verification/mobile-grid-viewport/**'
+      - '.github/workflows/mobile-grid-viewport-headless.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/internal/mobile/MobileGridViewport.java'
+      - 'releng/verification/mobile-grid-viewport/**'
+      - '.github/workflows/mobile-grid-viewport-headless.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  viewport:
+    if: github.repository == 'hsoliwal/nebula'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['17', '21']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Compile actual native-mobile viewport owner with strict Java 17 API
+        run: bash releng/verification/mobile-grid-viewport/verify.sh

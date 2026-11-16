@@ -85,6 +85,12 @@ public final class MobileGridViewport {
 		itemCount = count;
 		if (selectedRow >= count) selectedRow = -1;
 		for (int i = 0; i < rowAt.length; i++) if (rowAt[i] >= count) release(i);
+		// No old row can remain presented after the logical model becomes empty.
+		// Clear the cached window here, not only in a later asynchronous SWT.Paint.
+		// Do not allocate for repeated no-op empty resets.
+		if (count == 0 && window.visibleEnd() != 0) {
+			window = new Window(0, 0, 0, 0, rowAt.length);
+		}
 	}
 	/** Selects a row (-1 for none) and invalidates the previous and the new selection. */
 	public void select(long row) {
@@ -111,6 +117,11 @@ public final class MobileGridViewport {
 			throw new IllegalArgumentException("negative scroll extent");
 		if (itemCount == 0 || viewportHeight == 0) {
 			for (int i = 0; i < rowAt.length; i++) release(i);
+			if (window.visibleStart() == 0 && window.visibleEnd() == 0
+					&& window.retainedStart() == 0 && window.retainedEnd() == 0
+					&& window.nativeSlots() == rowAt.length) {
+				return window;
+			}
 			return window = new Window(0, 0, 0, 0, rowAt.length);
 		}
 		long first = Math.min(itemCount - 1, scrollY / rowHeight);
@@ -146,6 +157,12 @@ public final class MobileGridViewport {
 		}
 		for (int slot = 0; slot < rowAt.length; slot++)
 			if (seenEpoch[slot] != epoch) release(slot);
+		// Reuse the immutable window on unchanged paints: no per-frame object churn.
+		if (window.visibleStart() == first && window.visibleEnd() == last
+				&& window.retainedStart() == start && window.retainedEnd() == end
+				&& window.nativeSlots() == rowAt.length) {
+			return window;
+		}
 		return window = new Window(first, last, start, end, rowAt.length);
 	}
 	private static long saturatedAdd(long first, long second) {
