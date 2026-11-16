@@ -75,9 +75,20 @@ jobs:
           -Dm3.swt.source="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
         cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
     - name: Build All Widgets
-      uses: coactions/setup-xvfb@b6b4fcfb9f5a895edadc3bc76318fae0ac17c8b3 # v1.0.1
-      with:
-       run: mvn -V -B clean verify ${{ inputs.release_verification && '-DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false' || '' }} -Dtycho.localArtifacts=ignore -Dnebula.grid.viewport.screenshots.screen=true -Dnebula.swt.gc.sha256=${{ env.M3_SWT_GC_SHA256 }} -Dtarget-platform-platform=${{ env.M3_SWT_PLATFORM }}
+      shell: bash
+      env:
+        M3_RELEASE_VERIFICATION: ${{ inputs.release_verification }}
+      run: |
+        set -euo pipefail
+        release_flags=()
+        if [[ "${M3_RELEASE_VERIFICATION:-}" == "true" ]]; then
+          release_flags=(-DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false)
+        fi
+        xvfb-run --auto-servernum mvn -V -B clean verify "${release_flags[@]}" \
+          -Dtycho.localArtifacts=ignore \
+          -Dnebula.grid.viewport.screenshots.screen=true \
+          "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}"
     - name: Qualify Grid native screen pixels with OpenCV
       run: |
         python3 -m venv /tmp/nebula-vision
