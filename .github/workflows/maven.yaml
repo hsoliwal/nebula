@@ -84,6 +84,7 @@ jobs:
         if [[ "${M3_RELEASE_VERIFICATION:-}" == "true" ]]; then
           release_flags=(-DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false)
         fi
+        sudo apt-get install -y xvfb x11-xserver-utils
         xvfb-run --auto-servernum mvn -V -B clean verify "${release_flags[@]}" \
           -Dtycho.localArtifacts=ignore \
           -Dnebula.grid.viewport.screenshots.screen=true \
