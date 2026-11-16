@@ -69,6 +69,10 @@ public final class MobileGridViewport {
 		itemCount = count;
 		if (selectedRow >= count) selectedRow = -1;
 		for (int i = 0; i < rowAt.length; i++) if (rowAt[i] >= count) release(i);
+		// The empty model cannot expose a stale last-presented row.
+		// Preserve Window identity for repeated zero-count updates.
+		if (count == 0 && window.visibleEnd() != 0)
+			window = new Window(0, 0, 0, 0, rowAt.length);
 	}
 	public void select(long row) {
 		if (row < -1 || row >= itemCount) throw new IndexOutOfBoundsException("row " + row);
@@ -93,6 +97,10 @@ public final class MobileGridViewport {
 			throw new IllegalArgumentException("negative scroll extent");
 		if (itemCount == 0 || viewportHeight == 0) {
 			for (int i = 0; i < rowAt.length; i++) release(i);
+			if (window.visibleStart() == 0 && window.visibleEnd() == 0
+					&& window.retainedStart() == 0 && window.retainedEnd() == 0
+					&& window.nativeSlots() == rowAt.length)
+				return window;
 			return window = new Window(0, 0, 0, 0, rowAt.length);
 		}
 		long first = Math.min(itemCount - 1, scrollY / rowHeight);
@@ -138,6 +146,11 @@ public final class MobileGridViewport {
 		}
 		for (int slot = 0; slot < rowAt.length; slot++)
 			if (seenEpoch[slot] != epoch) release(slot);
+		// Selection and cell updates do not change the immutable row geometry.
+		if (window.visibleStart() == first && window.visibleEnd() == last
+				&& window.retainedStart() == start && window.retainedEnd() == end
+				&& window.nativeSlots() == rowAt.length)
+			return window;
 		return window = new Window(first, last, start, end, rowAt.length);
 	}
 	private static long saturatedAdd(long first, long second) {
