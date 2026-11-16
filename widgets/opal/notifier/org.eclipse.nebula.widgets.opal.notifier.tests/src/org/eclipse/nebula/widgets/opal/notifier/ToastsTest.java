@@ -153,7 +153,23 @@ public class ToastsTest {
 		shell.setMinimized(true);
 		TestSupport.spin(display, 400);
 		assertEquals("no expiry while minimized", 2, toasts.getCount());
+		// Native GTK window state is delivered after gtk_window_deiconify returns.
+		int[] nativeRestores = new int[1];
+		shell.addListener(SWT.Deiconify, e -> nativeRestores[0]++);
 		shell.setMinimized(false);
+		long deadline = System.nanoTime() + 5_000_000_000L;
+		while (nativeRestores[0] == 0 && System.nanoTime() < deadline) {
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(5L);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted awaiting SWT.Deiconify", interrupted);
+				}
+			}
+		}
+		assertTrue("native SWT.Deiconify not delivered; minimized=" + shell.getMinimized()
+				+ " visible=" + shell.isVisible(), nativeRestores[0] > 0);
 		TestSupport.flush(display);
 		assertEquals("caught up on restore", 1, toasts.getCount());
 	}
