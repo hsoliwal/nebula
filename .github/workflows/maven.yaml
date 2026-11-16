@@ -59,12 +59,15 @@ jobs:
         path: .m3-swt
         fetch-depth: 0
         lfs: false
+    - name: Qualify fail-closed upstream HTTP 503 retry behavior
+      run: bash releng/swt-receiver/test-retry-transient-maven-503.sh
     - name: Build and bind the pinned SWT GTK3 distribution
       run: |
         sudo apt-get update -qq
         sudo apt-get install -qq -y libgtk-3-dev freeglut3-dev
         GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
-          mvn -B -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
+          bash releng/swt-receiver/retry-transient-maven-503.sh \
+          mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
           -Dtycho.baseline.replace=none -pl :org.eclipse.swt.gtk.linux.x86_64 -am package
         python3 releng/swt-receiver/prepare_swt_receiver.py .m3-swt releng/swt-receiver/swt-receiver-p2/target/binding \
           releng/swt-receiver/swt-receiver-p2/target/repository
