@@ -34,6 +34,7 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
     private int lastPointerY;
     private boolean pointerDown;
     private boolean dragged;
+    private int lastPaintedRows;
     private volatile boolean closed;
 
     /** Binds a Grid viewport of itemCount logical rows to the canvas; selection receives the selected row. */
@@ -133,10 +134,28 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         checkOpen();
         if (pixels < 0) throw new IllegalArgumentException("negative scroll");
         long next = Math.min(pixels, maxScroll());
-        if (next != scrollY) {
-            scrollY = next;
-            canvas.redraw();
-        }
+        if (next == scrollY) return;
+        long delta = next - scrollY;
+        scrollY = next;
+        Rectangle area = canvas.getClientArea();
+        int distance = blitDistance(delta, area.height);
+        // The retained frame moves with the scroll and only the band it uncovers
+        // is painted. A jump of a viewport or more keeps nothing.
+        if (distance != 0 && area.width > 0) canvas.scroll(0, -distance, 0, 0, area.width, area.height, false);
+        else canvas.redraw();
+    }
+    /** The pixels a scroll of delta moves the retained frame by, or 0 when no part of it stays in view. */
+    static int blitDistance(long delta, int viewportHeight) {
+        return delta > -viewportHeight && delta < viewportHeight ? (int) delta : 0;
+    }
+    /** Redraws one row when it is in view; the rest of the frame is kept. */
+    private void redrawRow(long row) {
+        if (row < 0 || closed || canvas.isDisposed()) return;
+        Rectangle area = canvas.getClientArea();
+        long first = scrollY / rowHeight;
+        if (row < first || row - first > (long) area.height / rowHeight + 1) return;
+        int y = (int) ((row - first) * rowHeight - scrollY % rowHeight);
+        canvas.redraw(0, y, area.width, rowHeight, false);
     }
 
     /** Scrolls by a pixel delta, saturating at both ends. */
@@ -160,14 +179,20 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         scrollTo(Math.min(scrollY, maxScroll()));
         canvas.redraw();
     }
-    /** Invalidates one retained row and redraws. */
-    public void invalidate(long row) { checkOpen(); viewport.invalidate(row); canvas.redraw(); }
+    /** Invalidates one retained row and redraws that row. */
+    public void invalidate(long row) { checkOpen(); viewport.invalidate(row); redrawRow(row); }
     /** Invalidates every retained row and redraws. */
     public void invalidateAll() { checkOpen(); viewport.invalidateAll(); canvas.redraw(); }
     /** The selected row, or -1. */
     public long selectedRow() { checkOpen(); return viewport.selectedRow(); }
-    /** Selects a row (-1 for none) and redraws. */
-    public void select(long row) { checkOpen(); viewport.select(row); canvas.redraw(); }
+    /** Selects a row (-1 for none) and redraws the previous and the new selection. */
+    public void select(long row) {
+        checkOpen();
+        long previous = viewport.selectedRow();
+        viewport.select(row);
+        redrawRow(previous);
+        redrawRow(row);
+    }
 
     /** Hit-test only the visible logical range; overscan rows cannot be selected. */
     public long rowAt(int y) {
@@ -184,12 +209,15 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
     private void selectAt(int y) {
         long row = rowAt(y);
         if (row < 0) return;
+        long previous = viewport.selectedRow();
         viewport.select(row);
         selection.accept(row);
-        if (!closed && !canvas.isDisposed()) canvas.redraw();
+        redrawRow(previous);
+        redrawRow(row);
     }
 
-    private void paint(GC gc) {
+    /** Paints the rows the clip of the GC touches; rows outside it keep their retained pixels. */
+    void paint(GC gc) {
         if (closed || gc == null) return;
         Rectangle area = canvas.getClientArea();
         if (area.width <= 0 || area.height <= 0) return;
@@ -197,12 +225,16 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         int width = Math.max(1, area.width / columns);
         gc.setBackground(canvas.getBackground());
         gc.setForeground(canvas.getForeground());
+        Rectangle clip = gc.getClipping();
+        int painted = 0;
         for (long row = view.visibleStart(); row < view.visibleEnd(); row++) {
             int slot = (int)(row % Math.max(1, rows.length));
             if (slot >= rows.length || rows[slot] != row || cells[slot] == null) continue;
             long yValue = (row - view.visibleStart()) * rowHeight - (scrollY % rowHeight);
             if (yValue < -rowHeight || yValue >= area.height) continue;
             int y = (int)yValue;
+            if (y + rowHeight <= clip.y || y >= clip.y + clip.height) continue;
+            painted++;
             String[] values = cells[slot];
             if (selected[slot]) gc.drawRectangle(0, y, Math.max(0, area.width - 1), Math.max(0, rowHeight - 1));
             for (int col = 0; col < columns; col++) {
@@ -215,7 +247,10 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
             int bottom = (int)Math.min(Integer.MAX_VALUE, (long)y + rowHeight - 1L);
             gc.drawLine(0, bottom, area.width, bottom);
         }
+        lastPaintedRows = painted;
     }
+    /** Rows the last paint drew (those its clip touched). */
+    int lastPaintedRows() { return lastPaintedRows; }
 
     /** Whether close() has run. */
     public boolean isClosed() { return closed; }
