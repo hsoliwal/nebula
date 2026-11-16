@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.eclipse.swt.graphics.ImageData;
+
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -76,7 +76,7 @@ public class GridBlitScroll_Test {
 	public void blitScrollEqualsFullRepaintOnScreen() throws Exception {
 		final ScrollBar bar = grid.getVerticalBar();
 		final int before = grid.blitScrollCount;
-		final String initial = screen();
+		final GridSwtScreenshotCapture.GridClientFrame initial = screen();
 		for (final int step : new int[] { 1, 2, 5, 3, 17, 1, 9, 30, 2 }) {
 			final int beforeScroll = grid.paintPasses;
 			bar.setSelection(bar.getSelection() + step);
@@ -84,14 +84,16 @@ public class GridBlitScroll_Test {
 			grid.update();
 			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses,
 					beforeScroll + 1, "blit-scroll paint did not settle");
-			final String blitted = screen();
+			final GridSwtScreenshotCapture.GridClientFrame blitted = screen();
 			final int beforeRepaint = grid.paintPasses;
 			grid.redraw();
 			grid.update();
 			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses,
 					beforeRepaint + 1, "full repaint did not settle");
-			final String repainted = screen();
-			if (!repainted.equals(blitted)) {
+			final GridSwtScreenshotCapture.GridClientFrame repainted = screen();
+			final String[] hashes = GridSwtScreenshotCapture.comparableGridClientHashes(
+					grid, blitted, repainted, grid.getClientArea());
+			if (!hashes[0].equals(hashes[1])) {
 				final ScrollBar vertical = grid.getVerticalBar();
 				System.out.println("GRID_NATIVE_SCROLLBAR_DIAGNOSTIC blit step=" + step
 						+ " client=" + grid.getClientArea() + " screen=" + grid.getSize()
@@ -99,16 +101,17 @@ public class GridBlitScroll_Test {
 						+ " thumb=" + (vertical == null ? "none" : vertical.getThumbBounds())
 						+ " visible=" + (vertical != null && vertical.getVisible()));
 			}
-			assertEquals("after +" + step + " rows", repainted, blitted);
+			assertEquals("after +" + step + " rows", hashes[1], hashes[0]);
 		}
 		assertTrue("blit path used: " + (grid.blitScrollCount - before), grid.blitScrollCount > before);
-		assertNotEquals("scrolling must change the visible Grid pixels", initial, screen());
+		final String[] changed = GridSwtScreenshotCapture.comparableGridClientHashes(
+				grid, initial, screen(), grid.getClientArea());
+		assertNotEquals("scrolling must change the visible Grid pixels", changed[0], changed[1]);
 	}
 
 	/** SHA-256 of exact Grid-painted screen pixels (native GTK3 scrollbar excluded). */
-	private String screen() throws Exception {
-		final ImageData pixels = GridSwtScreenshotCapture.captureScreenData(grid, "blit-scroll");
-		return GridSwtScreenshotCapture.gridClientContentHash(grid, pixels, grid.getClientArea());
+	private GridSwtScreenshotCapture.GridClientFrame screen() throws Exception {
+		return GridSwtScreenshotCapture.captureGridClientFrame(grid, "blit-scroll");
 	}
 
 	private void settle() {
