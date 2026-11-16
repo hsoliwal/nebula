@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: 6915aea813a3d9f013e5a9d3152844162c111d93
+          ref: 0f61a4499a7a059ec9e8741ddc76c86b2662fc3f
           path: swt-mobile
           persist-credentials: false
       - name: Record exact receiving source revisions
@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p mobile-acceptance-evidence
-          test "$(git -C swt-mobile rev-parse HEAD)" = "6915aea813a3d9f013e5a9d3152844162c111d93"
+          test "$(git -C swt-mobile rev-parse HEAD)" = "0f61a4499a7a059ec9e8741ddc76c86b2662fc3f"
           git rev-parse HEAD > mobile-acceptance-evidence/nebula-source.txt
           git -C swt-mobile rev-parse HEAD > mobile-acceptance-evidence/swt-source.txt
       - uses: actions/setup-java@v4
@@ -143,7 +143,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: 6915aea813a3d9f013e5a9d3152844162c111d93
+          ref: 0f61a4499a7a059ec9e8741ddc76c86b2662fc3f
           path: swt-mobile
           persist-credentials: false
       - name: Record exact receiving source revisions
@@ -151,7 +151,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p mobile-acceptance-evidence
-          test "$(git -C swt-mobile rev-parse HEAD)" = "6915aea813a3d9f013e5a9d3152844162c111d93"
+          test "$(git -C swt-mobile rev-parse HEAD)" = "0f61a4499a7a059ec9e8741ddc76c86b2662fc3f"
           git rev-parse HEAD > mobile-acceptance-evidence/nebula-source.txt
           git -C swt-mobile rev-parse HEAD > mobile-acceptance-evidence/swt-source.txt
       - uses: actions/setup-java@v4

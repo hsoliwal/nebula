@@ -58,6 +58,57 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
         start();
     }
 
+    /** Exercises the actual AndroidPlatform private generation-tagged registry inside the APK. */
+    private static void verifyNativeHandleMinHeap() throws ReflectiveOperationException {
+        Class<?> owner = Class.forName("org.eclipse.swt.internal.android.AndroidPlatform$Handles");
+        java.lang.reflect.Constructor<?> constructor = owner.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        Object registry = constructor.newInstance();
+        java.lang.reflect.Method add = owner.getDeclaredMethod("add", Object.class);
+        java.lang.reflect.Method get = owner.getDeclaredMethod("get", long.class);
+        java.lang.reflect.Method remove = owner.getDeclaredMethod("remove", long.class);
+        java.lang.reflect.Method replace = owner.getDeclaredMethod("replace", long.class, Object.class);
+        java.lang.reflect.Method size = owner.getDeclaredMethod("size");
+        for (java.lang.reflect.Method method : new java.lang.reflect.Method[] {add, get, remove, replace, size}) {
+            method.setAccessible(true);
+        }
+        long[] handles = new long[128];
+        for (int i = 0; i < handles.length; i++) {
+            handles[i] = ((Long)add.invoke(registry, new Object())).longValue();
+            require((handles[i] & 0xffff_ffffL) == i + 1L,
+                    "Android native registry initially allocates monotonic slots");
+        }
+        require(((Integer)size.invoke(registry)).intValue() == handles.length,
+                "Original registry reports physical high-water slots");
+        for (int index : new int[] {73, 7, 35}) {
+            require(remove.invoke(registry, handles[index]) != null,
+                    "Original native handle removal returns its occupant");
+        }
+        long first = ((Long)add.invoke(registry, new Object())).longValue();
+        long second = ((Long)add.invoke(registry, new Object())).longValue();
+        long third = ((Long)add.invoke(registry, new Object())).longValue();
+        require((first & 0xffff_ffffL) == 8L && (second & 0xffff_ffffL) == 36L
+                        && (third & 0xffff_ffffL) == 74L,
+                "Android native registry preserves lowest-free-slot reuse");
+        require(first != handles[7] && second != handles[35] && third != handles[73],
+                "Recycling must advance each native generation");
+        for (long expired : new long[] {handles[7], handles[35], handles[73]}) {
+            boolean rejected = false;
+            try {
+                get.invoke(registry, expired);
+            } catch (java.lang.reflect.InvocationTargetException failure) {
+                rejected = failure.getCause() instanceof IllegalStateException;
+            }
+            require(rejected, "Previously disposed Android native handle must remain invalid");
+        }
+        Object newOwner = new Object();
+        replace.invoke(registry, first, newOwner);
+        require(get.invoke(registry, first) == newOwner,
+                "Android Activity replacement preserves its current generation and native handle");
+        require(((Integer)size.invoke(registry)).intValue() == 128,
+                "Native recycling cannot increase control/image slot high-water");
+    }
+
     @Override public void onStart() {
         Bundle result = new Bundle();
         sendCaseStatus(1, null);
@@ -69,6 +120,7 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             require(screenshotDirectory != null
                     && (screenshotDirectory.isDirectory() || screenshotDirectory.mkdirs()),
                     "Native screenshot directory is writable");
+            verifyNativeHandleMinHeap();
             activity = (NebulaMobileActivity) startActivitySync(new Intent(getTargetContext(), NebulaMobileActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             NebulaMobileActivity current = activity;
