@@ -133,6 +133,27 @@ public class GridRowResizerHover_Test {
 	}
 
 	@Test
+	public void topRankQueryUsesPackedRowWithoutMaterializingUnreadItem() {
+		assumeTrue(GridViewport.ENABLED);
+		final Fixture fixture = new Fixture(true, 4096, true, 0);
+		fixture.root.setExpanded(true);
+		open();
+		assertTrue("expanded virtual tree should scroll",
+				fixture.grid.getVerticalScrollBarProxy().getVisible());
+		fixture.grid.getVerticalScrollBarProxy().setSelection(2048);
+		final int selected = fixture.grid.getVerticalScrollBarProxy().getSelection();
+		assertTrue("test must seek beyond the painted viewport", selected > 256);
+		final int materialized = fixture.grid.virtualMaterializedItemCount();
+		final int requests = fixture.requests[0];
+		assertTrue("unread row facades remain after initial painting", materialized < 256);
+		assertEquals("visible rank is the tree preorder row", selected,
+				fixture.grid.viewport.getTopIndex(true));
+		assertEquals("top-index query does not construct a GridItem",
+				materialized, fixture.grid.virtualMaterializedItemCount());
+		assertEquals("top-index query does not request row data", requests, fixture.requests[0]);
+	}
+
+	@Test
 	public void variableHeightOverlapResizesLastBoundaryLikeEagerRows() {
 		final Fixture sparse = new Fixture(true, 8, true, 0);
 		final Fixture eager = new Fixture(false, 8, true, 320);
