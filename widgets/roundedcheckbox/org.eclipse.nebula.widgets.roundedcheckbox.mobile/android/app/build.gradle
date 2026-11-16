@@ -32,7 +32,8 @@ android {
         targetSdk 35
         versionCode 1
         versionName '0.1'
-        testInstrumentationRunner 'org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation'
+        // -PtestRunner=<class> builds the test APK with another Instrumentation of the androidTest sources as its runner
+        testInstrumentationRunner providers.gradleProperty('testRunner').getOrElse('org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation')
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
