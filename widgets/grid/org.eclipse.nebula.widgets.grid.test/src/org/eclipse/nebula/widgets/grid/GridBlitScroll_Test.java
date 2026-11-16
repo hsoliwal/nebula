@@ -90,7 +90,16 @@ public class GridBlitScroll_Test {
 			grid.update();
 			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses,
 					beforeRepaint + 1, "full repaint did not settle");
-			assertEquals("after +" + step + " rows", screen(), blitted);
+			final String repainted = screen();
+			if (!repainted.equals(blitted)) {
+				final ScrollBar vertical = grid.getVerticalBar();
+				System.out.println("GRID_NATIVE_SCROLLBAR_DIAGNOSTIC blit step=" + step
+						+ " client=" + grid.getClientArea() + " screen=" + grid.getSize()
+						+ " track=" + (vertical == null ? "none" : vertical.getThumbTrackBounds())
+						+ " thumb=" + (vertical == null ? "none" : vertical.getThumbBounds())
+						+ " visible=" + (vertical != null && vertical.getVisible()));
+			}
+			assertEquals("after +" + step + " rows", repainted, blitted);
 		}
 		assertTrue("blit path used: " + (grid.blitScrollCount - before), grid.blitScrollCount > before);
 		assertNotEquals("scrolling must change the visible Grid pixels", initial, screen());
