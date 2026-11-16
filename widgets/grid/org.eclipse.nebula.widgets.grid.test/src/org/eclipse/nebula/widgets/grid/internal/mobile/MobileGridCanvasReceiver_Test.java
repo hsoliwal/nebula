@@ -123,8 +123,10 @@ public class MobileGridCanvasReceiver_Test {
 		awaitPaint(canvas, paints, beforeJumpPaint);
 		assertEquals("long-index jump", 999_999_999_999L, receiver.window().visibleStart());
 		assertTrue("long-index bounded cache", receiver.window().nativeSlots() <= 9);
+		int beforeResetPaint = paints[0];
 		receiver.setItemCount(0);
 		pump();
+		awaitPaint(canvas, paints, beforeResetPaint);
 		assertEquals("zero-row reset", -1, receiver.rowAt(20));
 		assertEquals("zero-row reset", 0, receiver.window().visibleEnd());
 		canvas.dispose();
