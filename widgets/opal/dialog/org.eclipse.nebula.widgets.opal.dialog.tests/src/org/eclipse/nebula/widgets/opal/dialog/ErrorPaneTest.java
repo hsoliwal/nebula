@@ -210,6 +210,33 @@ public class ErrorPaneTest {
 	}
 
 	@Test
+	public void detailsButtonNativeStateIsIdempotentAcrossModelUpdates() {
+		// The original two native buttons remain in the existing controls
+		// composite; no separate renderer or wrapper is introduced.
+		org.eclipse.swt.widgets.Composite buttons =
+				(org.eclipse.swt.widgets.Composite) pane.getChildren()[2];
+		org.eclipse.swt.widgets.Button detailsButton =
+				(org.eclipse.swt.widgets.Button) buttons.getChildren()[1];
+		assertEquals("Details >>", detailsButton.getText());
+		assertFalse(detailsButton.getEnabled());
+		pane.setError(failure);
+		assertTrue(detailsButton.getEnabled());
+		for (int i = 0; i < 500; i++) {
+			pane.setError(failure);
+			assertEquals("Details >>", detailsButton.getText());
+			assertTrue(detailsButton.getEnabled());
+		}
+		pane.setDetails("");
+		assertFalse(detailsButton.getEnabled());
+		pane.setDetails("native details");
+		assertTrue(detailsButton.getEnabled());
+		pane.setDetailsVisible(true);
+		assertEquals("Details <<", detailsButton.getText());
+		pane.setDetailsVisible(false);
+		assertEquals("Details >>", detailsButton.getText());
+	}
+
+	@Test
 	public void errors() {
 		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setMessage(null));
 		TestSupport.expect(SWT.ERROR_NULL_ARGUMENT, () -> pane.setDetails(null));
