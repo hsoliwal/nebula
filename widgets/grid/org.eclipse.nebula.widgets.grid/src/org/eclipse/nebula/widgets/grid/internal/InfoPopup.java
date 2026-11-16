@@ -469,6 +469,11 @@ public final class InfoPopup {
 			if (y < header) {
 				return column < 0 ? NONE : PopupPlacement.anchor(HEADER, -1, column);
 			}
+			// Native Table.getItem(Point) can return a row in the blank trailing area.
+			// That space is not a cell and must never silently become column zero.
+			if (table.getColumnCount() > 0 && column < 0) {
+				return NONE;
+			}
 			TableItem item = table.getItem(new Point(x, y));
 			if (item == null) {
 				return NONE;
@@ -538,6 +543,10 @@ public final class InfoPopup {
 			int column = columnAt(x);
 			if (y < header) {
 				return column < 0 ? NONE : PopupPlacement.anchor(HEADER, -1, column);
+			}
+			// The same cell/blank-space contract applies to SWT Tree.
+			if (tree.getColumnCount() > 0 && column < 0) {
+				return NONE;
 			}
 			TreeItem item = tree.getItem(new Point(x, y));
 			if (item == null) {
