@@ -61,6 +61,7 @@ public final class MobileGridViewportTest {
         sinkSelectionAndInvalidationRemainPending();
         failedSinkBindingRemainsRetryable();
         reserveContract();
+        growthFailurePreservesResidentBindings();
 		System.out.println("MobileGridViewportTest PASSED");
 	}
 
@@ -337,6 +338,37 @@ public final class MobileGridViewportTest {
         rejectedView.show(0, 20);
         check(reservedAttempts[0] == 2 && partialBinds[0] == 20, "retry after preflight failure");
         rejectedView.close();
+    }
+
+
+    private static void growthFailurePreservesResidentBindings() {
+        int[] capacity = {0}, binds = {0}, releases = {0};
+        boolean[] failGrowth = {false};
+        RowSink sink = new RowSink() {
+            @Override public void reserve(int slots) {
+                if (failGrowth[0]) throw new IllegalStateException("native growth denied");
+                capacity[0] = slots;
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                check(slot < capacity[0], "slot was bound without reserve");
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) { releases[0]++; }
+        };
+        MobileGridViewport view = new MobileGridViewport(100, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        Window before = view.show(0, 4);
+        check(binds[0] == 4, "four initial bindings");
+        failGrowth[0] = true;
+        boolean rejected = false;
+        try { view.show(0, 8); } catch (IllegalStateException expected) { rejected = true; }
+        check(rejected && view.window() == before, "failed native growth preserves window");
+        check(binds[0] == 4 && releases[0] == 0, "previous bindings intact after failure");
+        failGrowth[0] = false;
+        Window after = view.show(0, 8);
+        check(after.nativeSlots() == 8 && binds[0] == 12 && releases[0] == 4,
+                "retry replaces exactly four retained bindings");
+        view.close();
     }
 
     private static void assertTrue(String message, boolean value) { check(value, message); }
