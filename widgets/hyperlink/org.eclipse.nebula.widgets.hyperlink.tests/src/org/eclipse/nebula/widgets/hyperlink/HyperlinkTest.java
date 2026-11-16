@@ -57,7 +57,7 @@ public class HyperlinkTest {
 		link.addListener(SWT.Selection, e -> selections++);
 		paints = TestSupport.recordPaints(link);
 		shell.open();
-		TestSupport.flush(display);
+		TestSupport.awaitNativePaint(link, paints, 1, "initial Hyperlink fixture paint did not settle");
 	}
 
 	@After
@@ -83,7 +83,7 @@ public class HyperlinkTest {
 		up.y = down.y;
 		paints.clear();
 		link.notifyListeners(SWT.MouseUp, up);
-		link.update();
+		TestSupport.awaitNativePaint(link, paints, 1, "activation did not deliver native Paint");
 		assertEquals(1, selections);
 		assertTrue(link.isVisited());
 		if (viewport()) {
@@ -108,7 +108,7 @@ public class HyperlinkTest {
 	public void hoverAndTextChangesAreDeltas() {
 		paints.clear();
 		link.notifyListeners(SWT.MouseEnter, new Event());
-		link.update();
+		TestSupport.awaitNativePaint(link, paints, 1, "hover did not deliver native Paint");
 		assertFalse(paints.isEmpty());
 		if (viewport()) {
 			TestSupport.assertPaintsInside(paints, link.getTextBounds());
@@ -116,7 +116,7 @@ public class HyperlinkTest {
 		Rectangle before = link.getTextBounds();
 		paints.clear();
 		link.setText("Open");
-		link.update();
+		TestSupport.awaitNativePaint(link, paints, 1, "text delta did not deliver native Paint");
 		if (viewport()) {
 			TestSupport.assertPaintsInside(paints, before.union(link.getTextBounds()));
 		}
