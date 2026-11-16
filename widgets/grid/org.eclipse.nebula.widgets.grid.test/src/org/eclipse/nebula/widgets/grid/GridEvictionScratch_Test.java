@@ -58,6 +58,18 @@ public final class GridEvictionScratch_Test {
     }
 
     @Test
+    public void sharedGrowthNeverFallsBelowRequiredArrayLength() {
+        for (int minimum : new int[] { 1, 2, 16, 17, 64, 255, 1024,
+                65_536, 1 << 20, Integer.MAX_VALUE - 8, Integer.MAX_VALUE - 1 }) {
+            int current = minimum == 1 ? 0 : minimum - 1;
+            int chosen = org.eclipse.nebula.widgets.grid.model.HeapGrowth.capacity(
+                    current, minimum, Long.BYTES);
+            org.junit.Assert.assertTrue("capacity cannot overflow below required " + minimum,
+                    chosen >= minimum);
+        }
+    }
+
+    @Test
     public void emptyAndSingleVictimSelectionsRemainAllocationFree() {
         long[] empty = {};
         Grid.selectEvictionVictimsInPlace(empty, 0, 0);
