@@ -146,6 +146,38 @@ public class InfoPopup_Test {
 	}
 
 	@Test
+	public void trailingBlankColumnIsNotAnAnchor() {
+		// Native Table can report an item for blank body space beyond all
+		// explicit columns; an InfoPopup must not retarget that hit to col 0.
+		Point cell = cellCentre(3, 1);
+		Event click = new Event();
+		click.button = 1;
+		click.x = cell.x;
+		click.y = cell.y;
+		table.notifyListeners(SWT.MouseDown, click);
+		assertTrue("fixture opens the original table popover", popup.isVisible());
+		int previousFills = fills;
+
+		int right = 0;
+		for (TableColumn column : table.getColumns()) right += column.getWidth();
+		Event blank = new Event();
+		blank.button = 1;
+		blank.x = right + 2;
+		blank.y = cell.y;
+		table.notifyListeners(SWT.MouseDown, blank);
+		assertFalse("blank body space is not a cell anchor", popup.isVisible());
+		assertEquals("no replacement content is built", previousFills, fills);
+
+		// Header blank area must also remain unanchored (even on GTK where
+		// header geometry can be temporarily zero before first paint).
+		table.notifyListeners(SWT.MouseDown, click);
+		assertTrue(popup.isVisible());
+		blank.y = 2;
+		table.notifyListeners(SWT.MouseDown, blank);
+		assertFalse("blank header space closes the popup", popup.isVisible());
+	}
+
+	@Test
 	public void hiddenOwnerClosesThePopupAndDropsThePendingHover() {
 		if (WidgetMode.of("InfoPopup", WidgetMode.VIEWPORT) != WidgetMode.VIEWPORT) { //$NON-NLS-1$
 			return;
