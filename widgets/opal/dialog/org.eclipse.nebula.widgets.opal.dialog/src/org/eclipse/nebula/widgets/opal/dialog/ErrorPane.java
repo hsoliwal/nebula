@@ -336,8 +336,17 @@ public class ErrorPane extends Composite {
 	}
 
 	private void updateDetailsButton() {
-		detailsButton.setText(isDetailsVisible() ? "Details <<" : "Details >>"); //$NON-NLS-1$ //$NON-NLS-2$
-		detailsButton.setEnabled(error != null || details == null || !details.isEmpty());
+		// Native Button.setText/setEnabled can invalidate and remeasure GTK
+		// widgets even if the value has not changed. The original Button is
+		// the owner; a model update that retains both values must be a no-op.
+		final String label = isDetailsVisible() ? "Details <<" : "Details >>"; //$NON-NLS-1$ //$NON-NLS-2$
+		if (!label.equals(detailsButton.getText())) {
+			detailsButton.setText(label);
+		}
+		final boolean enabled = error != null || details == null || !details.isEmpty();
+		if (detailsButton.getEnabled() != enabled) {
+			detailsButton.setEnabled(enabled);
+		}
 	}
 
 	/* fills the details composite and asks for DETAIL_LINES lines of text */
