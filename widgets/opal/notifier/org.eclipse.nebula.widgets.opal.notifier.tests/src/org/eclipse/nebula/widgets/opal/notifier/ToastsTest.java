@@ -171,6 +171,23 @@ public class ToastsTest {
 	}
 
 	@Test
+	public void unchangedNativeOwnerCallbacksDoNotRequestRedundantOverlayBounds() {
+		toasts.show("long", "retain original native overlay", Toasts.INFO, 60_000);
+		TestSupport.flush(display);
+		Shell nativeOverlay = toasts.getOverlay();
+		Rectangle existing = nativeOverlay.getBounds();
+		long placements = RepaintCounters.moves;
+		// Invoke the existing SWT owner Move/Resize callbacks with unchanged
+		// geometry. This is a Java event contract, not native-device proof.
+		shell.notifyListeners(SWT.Move, new Event());
+		shell.notifyListeners(SWT.Resize, new Event());
+		assertEquals("no-op callbacks preserve the native Shell bounds",
+				existing, nativeOverlay.getBounds());
+		assertEquals("no-op callbacks never request setBounds", placements,
+				RepaintCounters.moves);
+	}
+
+	@Test
 	public void capAndErrors() {
 		for (int i = 0; i < 70; i++) {
 			toasts.show("t" + i, "m", Toasts.INFO, 60_000);
