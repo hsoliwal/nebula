@@ -88,7 +88,16 @@ public class GridPinnedRows_Test {
 			grid.setTopIndex(index);
 			GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, before + 1,
 					"pinned-row scroll paint did not settle");
-			assertEquals("top plane at " + index, top0, region(grid, top));
+			final String nowTop = region(grid, top);
+			if (!top0.equals(nowTop)) {
+				final org.eclipse.swt.widgets.ScrollBar vertical = grid.getVerticalBar();
+				System.out.println("GRID_NATIVE_SCROLLBAR_DIAGNOSTIC pinned top=" + index
+						+ " plane=" + top + " client=" + grid.getClientArea() + " screen=" + grid.getSize()
+						+ " track=" + (vertical == null ? "none" : vertical.getThumbTrackBounds())
+						+ " thumb=" + (vertical == null ? "none" : vertical.getThumbBounds())
+						+ " visible=" + (vertical != null && vertical.getVisible()));
+			}
+			assertEquals("top plane at " + index, top0, nowTop);
 			assertEquals("bottom plane at " + index, bottom0, region(grid, bottom));
 		}
 		assertNotEquals("the body itself scrolled", body0,
