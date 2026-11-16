@@ -60,6 +60,8 @@ public final class MobileGridViewportTest {
         providerInvalidationDuringBindingRemainsPending();
         sinkSelectionAndInvalidationRemainPending();
         failedSinkBindingRemainsRetryable();
+        reserveContract();
+        growthFailurePreservesResidentBindings();
 		System.out.println("MobileGridViewportTest PASSED");
 	}
 
@@ -288,6 +290,85 @@ public final class MobileGridViewportTest {
         assertEquals(2, binds[0]);
         view.close();
         assertEquals(1, releases[0]);
+    }
+
+
+    private static void reserveContract() {
+        final int[] reserved = {0}, calls = {0}, binds = {0};
+        RowSink sink = new RowSink() {
+            @Override public void reserve(int count) {
+                reserved[0] = count;
+                calls[0]++;
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                check(slot < reserved[0], "slot bound without preflight");
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) { }
+        };
+        MobileGridViewport view = new MobileGridViewport(1_000_000L, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        Window first = view.show(0, 8192);
+        check(first.nativeSlots() == 8192, "native slot limit");
+        check(calls[0] == 1 && reserved[0] == 8192 && binds[0] == 8192,
+                "one exact native reservation before all binding");
+        view.show(16, 8192);
+        view.show(0, 10);
+        check(calls[0] == 1, "no repeat reservation for stable capacity");
+        view.close();
+
+        RuntimeException error = new IllegalStateException("native reserve failed");
+        boolean[] rejected = {true};
+        int[] reservedAttempts = {0}, partialBinds = {0};
+        MobileGridViewport rejectedView = new MobileGridViewport(100, 1, 1, 0,
+                (row, col) -> "cell", new RowSink() {
+                    @Override public void reserve(int count) {
+                        reservedAttempts[0]++;
+                        if (rejected[0]) throw error;
+                    }
+                    @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                        partialBinds[0]++;
+                    }
+                    @Override public void release(int slot, long row) { }
+                });
+        expectSameFailure(error, () -> rejectedView.show(0, 20));
+        check(partialBinds[0] == 0 && rejectedView.window().visibleEnd() == 0,
+                "failed preflight preserves unbound initial viewport");
+        rejected[0] = false;
+        rejectedView.show(0, 20);
+        check(reservedAttempts[0] == 2 && partialBinds[0] == 20, "retry after preflight failure");
+        rejectedView.close();
+    }
+
+
+    private static void growthFailurePreservesResidentBindings() {
+        int[] capacity = {0}, binds = {0}, releases = {0};
+        boolean[] failGrowth = {false};
+        RowSink sink = new RowSink() {
+            @Override public void reserve(int slots) {
+                if (failGrowth[0]) throw new IllegalStateException("native growth denied");
+                capacity[0] = slots;
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                check(slot < capacity[0], "slot was bound without reserve");
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) { releases[0]++; }
+        };
+        MobileGridViewport view = new MobileGridViewport(100, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        Window before = view.show(0, 4);
+        check(binds[0] == 4, "four initial bindings");
+        failGrowth[0] = true;
+        boolean rejected = false;
+        try { view.show(0, 8); } catch (IllegalStateException expected) { rejected = true; }
+        check(rejected && view.window() == before, "failed native growth preserves window");
+        check(binds[0] == 4 && releases[0] == 0, "previous bindings intact after failure");
+        failGrowth[0] = false;
+        Window after = view.show(0, 8);
+        check(after.nativeSlots() == 8 && binds[0] == 12 && releases[0] == 4,
+                "retry replaces exactly four retained bindings");
+        view.close();
     }
 
     private static void assertTrue(String message, boolean value) { check(value, message); }

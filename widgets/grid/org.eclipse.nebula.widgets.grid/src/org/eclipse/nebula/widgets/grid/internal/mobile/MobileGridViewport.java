@@ -17,6 +17,8 @@ public final class MobileGridViewport {
 	}
 	/** Receives the rows of the native slots. */
 	public interface RowSink {
+		/** Optional preflight when native slot capacity grows; legacy sinks need no changes. */
+		default void reserve(int slots) {}
 		/** Binds a logical row and its cell texts to a native slot. */
 		void bind(int slot, long row, String[] cells, boolean selected);
 		/** Releases a native slot from the row it showed. */
@@ -179,6 +181,9 @@ public final class MobileGridViewport {
 	}
 	private void ensureCapacity(int required) {
 		if (required <= rowAt.length) return;
+		// Reserve the receiver's parallel lanes once before any old slot is released.
+		// Failure leaves this viewport's old slot identity and binding untouched.
+		sink.reserve(required);
 		for (int i = 0; i < rowAt.length; i++) release(i);
 		rowAt = new long[required];
 		Arrays.fill(rowAt, -1);

@@ -356,4 +356,112 @@ public class MobileGridViewport_Test {
         view.close();
         assertEquals(1, releases[0]);
     }
+
+    @Test
+    public void reserveIsOnePreflightPerNativeSlotCapacity() {
+        final int[] reserved = {0}, count = {0}, binds = {0}, releases = {0};
+        final RowSink sink = new RowSink() {
+            @Override public void reserve(int slots) {
+                reserved[0] = slots;
+                count[0]++;
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean active) {
+                assertTrue("reserve occurs before native bind", slot < reserved[0]);
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) { releases[0]++; }
+        };
+        MobileGridViewport view = new MobileGridViewport(1_000_000L, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        Window first = view.show(0, 8192);
+        assertEquals(8192, first.nativeSlots());
+        assertEquals("one preflight instead of 8192 per-slot array growths", 1, count[0]);
+        assertEquals(8192, reserved[0]);
+        assertEquals(8192, binds[0]);
+        view.show(16, 8192);
+        view.show(0, 20);
+        assertEquals("no duplicate native reservation on stable/shrinking windows", 1, count[0]);
+        boolean exceeded = false;
+        try {
+            view.show(0, 8193);
+        } catch (IllegalArgumentException expected) {
+            exceeded = true;
+        }
+        assertTrue("max resident slots guard remains authoritative", exceeded);
+        assertEquals(1, count[0]);
+        view.close();
+        assertTrue("all started native bindings can still be released", releases[0] >= 8192);
+    }
+
+    @Test
+    public void failedReservationPreservesOriginalSlotsAndAllowsRetry() {
+        final RuntimeException failure = new IllegalStateException("native slot reserve rejected");
+        final boolean[] refuse = {true};
+        final int[] binds = {0}, reservations = {0};
+        final RowSink sink = new RowSink() {
+            @Override public void reserve(int slots) {
+                reservations[0]++;
+                if (refuse[0]) throw failure;
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) { }
+        };
+        MobileGridViewport view = new MobileGridViewport(100L, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        boolean rejected = false;
+        try {
+            view.show(0, 20);
+        } catch (IllegalStateException caught) {
+            rejected = caught == failure;
+        }
+        assertTrue("reserve failure propagates unchanged", rejected);
+        assertEquals("no bind occurred after failed preflight", 0, binds[0]);
+        assertEquals(0L, view.window().visibleEnd());
+        refuse[0] = false;
+        view.show(0, 20);
+        assertEquals(2, reservations[0]);
+        assertEquals(20, binds[0]);
+        view.close();
+    }
+
+    @Test
+    public void rejectedGrowthPreservesPreviouslyBoundNativeSlots() {
+        final int[] reserved = {0}, binds = {0}, releases = {0};
+        final boolean[] failGrowth = {false};
+        final RowSink sink = new RowSink() {
+            @Override public void reserve(int capacity) {
+                if (failGrowth[0]) throw new IllegalStateException("reservation rejected");
+                reserved[0] = capacity;
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                assertTrue(slot < reserved[0]);
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) { releases[0]++; }
+        };
+        MobileGridViewport view = new MobileGridViewport(100, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        Window stable = view.show(0, 4);
+        assertEquals(4, binds[0]);
+        assertEquals(0, releases[0]);
+        failGrowth[0] = true;
+        boolean rejected = false;
+        try {
+            view.show(0, 8);
+        } catch (IllegalStateException expected) {
+            rejected = true;
+        }
+        assertTrue("a failed growth preflight must propagate", rejected);
+        assertTrue("prior visible window identity remains intact", stable == view.window());
+        assertEquals("old native slots must not be released before reserve", 0, releases[0]);
+        assertEquals(4, binds[0]);
+        failGrowth[0] = false;
+        Window grown = view.show(0, 8);
+        assertEquals(8, grown.nativeSlots());
+        assertEquals(12, binds[0]);
+        assertEquals(4, releases[0]);
+        view.close();
+    }
 }
