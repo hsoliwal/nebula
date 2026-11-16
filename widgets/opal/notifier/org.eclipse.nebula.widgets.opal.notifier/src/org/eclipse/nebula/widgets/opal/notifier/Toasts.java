@@ -322,15 +322,12 @@ public final class Toasts {
 		Rectangle client = owner.getClientArea();
 		int height = GAP + count * (CARD + GAP);
 		Point corner = owner.toDisplay(client.x + client.width - WIDTH - MARGIN, client.y + client.height - height - MARGIN);
-		// This counts owner-requested placement, not the window manager's
-		// asynchronous Move/Resize notifications on a hidden native Shell.
-		RepaintCounters.moves++;
-		overlay.setBounds(corner.x, corner.y, WIDTH, height);
-		// Avoid redundant native GTK/Cocoa/Win32 geometry requests when a
-		// model or timer delta changes no overlay position or extent.
+		// Only an actual requested placement counts: native Move/Resize or
+		// model callbacks with unchanged geometry must not call setBounds.
 		Rectangle bounds = overlay.getBounds();
 		if (bounds.x != corner.x || bounds.y != corner.y
 				|| bounds.width != WIDTH || bounds.height != height) {
+			RepaintCounters.moves++;
 			overlay.setBounds(corner.x, corner.y, WIDTH, height);
 		}
 	}
