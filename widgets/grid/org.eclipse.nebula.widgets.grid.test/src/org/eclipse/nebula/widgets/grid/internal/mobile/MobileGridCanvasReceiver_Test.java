@@ -76,6 +76,12 @@ public class MobileGridCanvasReceiver_Test {
 				(row, column) -> "row " + row + " col " + column, row -> selections.add(Long.valueOf(row)));
 		shell.open();
 		pump();
+		// The window() API returns the LAST PAINTED window, not the last
+		// requested scroll position. A compositor may defer SWT.Paint until
+		// Control.update() flushes the native Canvas expose event.
+		canvas.redraw();
+		canvas.update();
+		assertTrue("fixture must have painted a native Canvas window", receiver.window().visibleEnd() > 0);
 		assertEquals("initial viewport", 0, receiver.window().visibleStart());
 		assertTrue("bounded native row slots", receiver.window().nativeSlots() <= 9);
 		assertEquals("initial row hit test", 1, receiver.rowAt(25));
@@ -93,6 +99,7 @@ public class MobileGridCanvasReceiver_Test {
 		assertEquals("drag scroll without click", 1, selections.size());
 		receiver.scrollTo(Long.MAX_VALUE);
 		pump();
+		canvas.update(); // flush the scroll's scheduled SWT.Paint before inspecting last-painted window
 		assertEquals("long-index jump", 999_999_999_999L, receiver.window().visibleStart());
 		assertTrue("long-index bounded cache", receiver.window().nativeSlots() <= 9);
 		receiver.setItemCount(0);
