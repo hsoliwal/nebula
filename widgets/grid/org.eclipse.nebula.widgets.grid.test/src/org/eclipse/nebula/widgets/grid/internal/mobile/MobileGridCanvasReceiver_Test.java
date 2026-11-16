@@ -59,6 +59,24 @@ public class MobileGridCanvasReceiver_Test {
 		display.update();
 	}
 
+	/** Waits for a real SWT.Paint event after an asynchronous native redraw. */
+	private void awaitPaint(Canvas canvas, int[] paints, int previous) {
+		long deadline = System.nanoTime() + 5_000_000_000L;
+		while (paints[0] <= previous && System.nanoTime() < deadline) {
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(5L);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted while waiting for native Canvas paint", interrupted);
+				}
+			}
+			canvas.update();
+		}
+		assertTrue("scroll must schedule a real SWT.Paint (before " + previous
+				+ ", observed " + paints[0] + ")", paints[0] > previous);
+	}
+
 	private static void pointer(Canvas canvas, int eventType, int y) {
 		final Event event = new Event();
 		event.button = 1;
@@ -74,6 +92,8 @@ public class MobileGridCanvasReceiver_Test {
 		final List<Long> selections = new ArrayList<>();
 		final MobileGridCanvasReceiver receiver = new MobileGridCanvasReceiver(canvas, 1_000_000_000_000L, 2, 24, 2,
 				(row, column) -> "row " + row + " col " + column, row -> selections.add(Long.valueOf(row)));
+		final int[] paints = new int[1];
+		canvas.addListener(SWT.Paint, event -> paints[0]++);
 		shell.open();
 		pump();
 		// The window() API returns the LAST PAINTED window, not the last
@@ -97,9 +117,10 @@ public class MobileGridCanvasReceiver_Test {
 		pointer(canvas, SWT.MouseUp, 80);
 		assertEquals("drag scroll without click", 32, receiver.scrollY());
 		assertEquals("drag scroll without click", 1, selections.size());
+		int beforeJumpPaint = paints[0];
 		receiver.scrollTo(Long.MAX_VALUE);
 		pump();
-		canvas.update(); // flush the scroll's scheduled SWT.Paint before inspecting last-painted window
+		awaitPaint(canvas, paints, beforeJumpPaint);
 		assertEquals("long-index jump", 999_999_999_999L, receiver.window().visibleStart());
 		assertTrue("long-index bounded cache", receiver.window().nativeSlots() <= 9);
 		receiver.setItemCount(0);
