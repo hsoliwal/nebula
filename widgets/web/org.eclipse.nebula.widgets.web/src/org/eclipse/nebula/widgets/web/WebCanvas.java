@@ -31,7 +31,11 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
 
 /**
  * One drawn Canvas per web widget (pattern CORE-1, SWT side). The control owns no widget
@@ -52,22 +56,43 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 	private final WebPaint paint = new WebPaint();
 	private final int[] damage = new int[4];
 	private final WebCanvasCache cache;
+	private final Display clockDisplay;
 	private final Runnable ticker = this::tick;
+	private final Listener ownListener = this::handle;
+	private final Listener ancestorListener = this::ancestorChanged;
 	private boolean partVisible = true, pending, ticking;
+	private boolean clockBlocked, hasArea, clockClosed;
+	private int clockFilters;
 
 	public WebCanvas(Composite parent, int style, M model) {
 		super(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);
 		this.model = model;
-		this.cache = new WebCanvasCache(getDisplay());
+		this.clockDisplay = getDisplay();
+		this.cache = new WebCanvasCache(clockDisplay);
 		model.setDelta(this::changed);
 		for (int type : EVENTS) {
-			addListener(type, this::handle);
+			addListener(type, ownListener);
 		}
 		if (PART_VISIBLE != 0) {
-			addListener(PART_VISIBLE, this::handle);
-			addListener(PART_HIDDEN, this::handle);
+			addListener(PART_VISIBLE, ownListener);
+			addListener(PART_HIDDEN, ownListener);
 		}
 		initAccessible();
+		try {
+			clockFilters |= 1;
+			clockDisplay.addFilter(SWT.Hide, ancestorListener);
+			clockFilters |= 2;
+			clockDisplay.addFilter(SWT.Iconify, ancestorListener);
+		} catch (RuntimeException | Error failure) {
+			try {
+				removeClockFilters();
+			} catch (RuntimeException | Error cleanup) {
+				if (failure != cleanup) {
+					failure.addSuppressed(cleanup);
+				}
+			}
+			throw failure;
+		}
 	}
 
 	static int eventType(String name) {
@@ -96,14 +121,33 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 	private void handle(Event e) {
 		switch (e.type) {
 		case SWT.Paint: onPaint(e); break;
-		case SWT.Resize: model.layout(getSize().x, getSize().y); break;
+		case SWT.Resize:
+			int width = getSize().x, height = getSize().y;
+			hasArea = width > 0 && height > 0;
+			if (!hasArea) {
+				parkClock();
+			}
+			model.layout(width, height);
+			if (hasArea) {
+				wakeClock();
+			}
+			break;
 		case SWT.KeyDown: onKey(e); break;
 		case SWT.Traverse: onTraverse(e); break;
 		case SWT.FocusIn: case SWT.FocusOut: model.setState(-1, WebStates.FOCUS, e.type == SWT.FocusIn); break;
 		case SWT.Dispose:
-			getDisplay().timerExec(-1, ticker);
+			clockClosed = true;
+			clockBlocked = true;
 			ticking = false;
-			cache.dispose();
+			try {
+				clockDisplay.timerExec(-1, ticker);
+			} finally {
+				try {
+					removeClockFilters();
+				} finally {
+					cache.dispose();
+				}
+			}
 			break;
 		case SWT.Show: setPartVisible(true); break;
 		case SWT.Hide: setPartVisible(false); break;
@@ -181,15 +225,20 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 		if (model.takeDamage(damage)) {
 			redraw(damage[0], damage[1], damage[2], damage[3], false);
 		}
-		if (model.isAnimating() && !ticking) {
+		if (model.isAnimating() && !ticking && clockReady(false)) {
 			ticking = true;
-			getDisplay().timerExec(16, ticker);
+			clockDisplay.timerExec(16, ticker);
 		}
 	}
 
 	/** PartVisible-aware hook: one flush and one paint when the part becomes visible. */
 	protected void setPartVisible(boolean visible) {
 		partVisible = visible;
+		if (!visible) {
+			parkClock();
+		} else {
+			clockBlocked = false;
+		}
 		if (visible && (pending || model.isAnimating())) {
 			pending = false;
 			changed(-1, 0);
@@ -202,9 +251,74 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 
 	private void tick() {
 		ticking = false;
-		if (!isDisposed() && partVisible && model.tick(16)) {
+		if (!clockReady(false)) {
+			return;
+		}
+		boolean again = model.tick(16);
+		if (clockReady(false) && again && !ticking) {
 			ticking = true;
-			getDisplay().timerExec(16, ticker);
+			clockDisplay.timerExec(16, ticker);
+		}
+	}
+
+	/** Clock admission is independent of model damage and explicit painting. */
+	private boolean clockReady(boolean wake) {
+		if (clockClosed || isDisposed() || !partVisible || !hasArea || clockBlocked && !wake) {
+			return false;
+		}
+		clockBlocked = true;
+		if (!isVisible() || getShell().getMinimized()) {
+			parkClock();
+			return false;
+		}
+		if (clockClosed || isDisposed() || !partVisible || !hasArea) {
+			return false;
+		}
+		clockBlocked = false;
+		return true;
+	}
+
+	private void parkClock() {
+		clockBlocked = true;
+		if (ticking) {
+			ticking = false;
+			clockDisplay.timerExec(-1, ticker);
+		}
+	}
+
+	private void wakeClock() {
+		if (!ticking && clockReady(true) && model.isAnimating() && !ticking && clockReady(false)) {
+			ticking = true;
+			clockDisplay.timerExec(16, ticker);
+		}
+	}
+
+	private void ancestorChanged(Event event) {
+		if (clockClosed || isDisposed() || event.widget == this) {
+			return;
+		}
+		for (Control ancestor = getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+			if (event.widget == ancestor) {
+				parkClock();
+				return;
+			}
+			if (ancestor instanceof Shell) {
+				return;
+			}
+		}
+	}
+
+	private void removeClockFilters() {
+		int filters = clockFilters;
+		clockFilters = 0;
+		try {
+			if ((filters & 1) != 0) {
+				clockDisplay.removeFilter(SWT.Hide, ancestorListener);
+			}
+		} finally {
+			if ((filters & 2) != 0) {
+				clockDisplay.removeFilter(SWT.Iconify, ancestorListener);
+			}
 		}
 	}
 
@@ -221,6 +335,7 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 				}
 			}
 		}
+		wakeClock();
 	}
 
 	private void replay(GC gc, int i, Event e, PaintClip clipping) {

@@ -1,0 +1,2271 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.m3.WebCanvasPhysicalClockAdmission20261116
+displayName: Admit the existing WebCanvas clock only for a physically visible positive-area owner
+description: Exact-source clock-only owner maintenance and opened seven-intent controls with native edge regressions; damage and paint behavior remain byte-preserved.
+recipeList:
+  - org.openrewrite.text.FindAndReplace:
+      find: "\\A\\Q/*******************************************************************************\n * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.\n *\n * This program and the accompanying materials are made available under the\n * terms of the Apache License, Version 2.0, or (at your option) the Eclipse\n * Public License 2.0, which are available at\n * https://www.apache.org/licenses/LICENSE-2.0 and\n * https://www.eclipse.org/legal/epl-2.0/\n *\n * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0\n *\n * Contributors:\n *     Hitesh Soliwal (Synexia) - initial API and implementation\n *******************************************************************************/\n// Generated fromtemplates/nebula/WebCanvas.java.tmpl; edit the template and regenerate.\npackage org.eclipse.nebula.widgets.web;\n\nimport org.eclipse.nebula.widgets.web.model.WebModel;\nimport org.eclipse.nebula.widgets.web.model.WebPaint;\nimport org.eclipse.nebula.widgets.web.model.WebStates;\nimport org.eclipse.swt.SWT;\nimport org.eclipse.swt.accessibility.ACC;\nimport org.eclipse.swt.accessibility.AccessibleAdapter;\nimport org.eclipse.swt.accessibility.AccessibleControlAdapter;\nimport org.eclipse.swt.accessibility.AccessibleControlEvent;\nimport org.eclipse.swt.accessibility.AccessibleEvent;\nimport org.eclipse.swt.graphics.Color;\nimport org.eclipse.swt.graphics.Font;\nimport org.eclipse.swt.graphics.FontData;\nimport org.eclipse.swt.graphics.GC;\nimport org.eclipse.swt.graphics.Point;\nimport org.eclipse.swt.widgets.Canvas;\nimport org.eclipse.swt.widgets.Composite;\nimport org.eclipse.swt.widgets.Event;\n\n/**\n * One drawn Canvas per web widget (pattern CORE-1, SWT side). The control owns no widget\n * state: it maps SWT events to neutral model keys and pointer kinds, repaints only the model's\n * damage, records damage without painting while the part is hidden ({@code SWT.PartVisible} /\n * {@code SWT.PartHidden} when the SWT build has them, else Show/Hide), and replays the model's\n * display list through the GC. Colours and fonts are cached per widget and disposed with it.\n *\n * @param <M> the lane model\n */\npublic class WebCanvas<M extends WebModel> extends Canvas {\n\tstatic final int PART_VISIBLE = eventType(\"PartVisible\"), PART_HIDDEN = eventType(\"PartHidden\");\n\tprivate static final int[] EVENTS = { SWT.Paint, SWT.Resize, SWT.KeyDown, SWT.MouseMove, SWT.MouseDown, SWT.MouseUp, SWT.MouseExit,\n\t\t\tSWT.MouseVerticalWheel, SWT.FocusIn, SWT.FocusOut, SWT.Traverse, SWT.Dispose, SWT.Show, SWT.Hide };\n\tprivate static final int[] SWT_KEYS = { SWT.ARROW_LEFT, SWT.ARROW_RIGHT, SWT.ARROW_UP, SWT.ARROW_DOWN, SWT.HOME, SWT.END, SWT.PAGE_UP,\n\t\t\tSWT.PAGE_DOWN, SWT.CR, ' ', SWT.ESC, SWT.TAB, SWT.DEL, SWT.BS };\n\tprotected final M model;\n\tprivate final WebPaint paint = new WebPaint();\n\tprivate final int[] damage = new int[4];\n\tprivate final WebCanvasCache cache;\n\tprivate final Runnable ticker = this::tick;\n\tprivate boolean partVisible = true, pending, ticking;\n\n\tpublic WebCanvas(Composite parent, int style, M model) {\n\t\tsuper(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);\n\t\tthis.model = model;\n\t\tthis.cache = new WebCanvasCache(getDisplay());\n\t\tmodel.setDelta(this::changed);\n\t\tfor (int type : EVENTS) {\n\t\t\taddListener(type, this::handle);\n\t\t}\n\t\tif (PART_VISIBLE != 0) {\n\t\t\taddListener(PART_VISIBLE, this::handle);\n\t\t\taddListener(PART_HIDDEN, this::handle);\n\t\t}\n\t\tinitAccessible();\n\t}\n\n\tstatic int eventType(String name) {\n\t\ttry {\n\t\t\treturn SWT.class.getField(name).getInt(null);\n\t\t} catch (ReflectiveOperationException e) {\n\t\t\treturn 0;\n\t\t}\n\t}\n\n\t/** The lane model; all widget behaviour is model API. */\n\tpublic M getModel() {\n\t\tcheckWidget();\n\t\treturn model;\n\t}\n\n\t@Override\n\tpublic Point computeSize(int wHint, int hHint, boolean changed) {\n\t\tcheckWidget();\n\t\tmodel.layout(wHint == SWT.DEFAULT ? 320 : wHint, hHint == SWT.DEFAULT ? 0 : hHint);\n\t\tPoint p = new Point(wHint == SWT.DEFAULT ? model.prefWidth() : wHint, hHint == SWT.DEFAULT ? model.prefHeight() : hHint);\n\t\tmodel.layout(getSize().x, getSize().y);\n\t\treturn p;\n\t}\n\n\tprivate void handle(Event e) {\n\t\tswitch (e.type) {\n\t\tcase SWT.Paint: onPaint(e); break;\n\t\tcase SWT.Resize: model.layout(getSize().x, getSize().y); break;\n\t\tcase SWT.KeyDown: onKey(e); break;\n\t\tcase SWT.Traverse: onTraverse(e); break;\n\t\tcase SWT.FocusIn: case SWT.FocusOut: model.setState(-1, WebStates.FOCUS, e.type == SWT.FocusIn); break;\n\t\tcase SWT.Dispose:\n\t\t\tgetDisplay().timerExec(-1, ticker);\n\t\t\tticking = false;\n\t\t\tcache.dispose();\n\t\t\tbreak;\n\t\tcase SWT.Show: setPartVisible(true); break;\n\t\tcase SWT.Hide: setPartVisible(false); break;\n\t\tdefault: onOther(e);\n\t\t}\n\t}\n\n\tprivate void onOther(Event e) {\n\t\tif (e.type == PART_VISIBLE || e.type == PART_HIDDEN) {\n\t\t\tsetPartVisible(e.type == PART_VISIBLE);\n\t\t} else {\n\t\t\tonMouse(e);\n\t\t}\n\t}\n\n\tprivate void onMouse(Event e) {\n\t\tint mods = mods(e.stateMask);\n\t\tswitch (e.type) {\n\t\tcase SWT.MouseMove: model.pointer((e.stateMask & SWT.BUTTON1) != 0 ? WebStates.P_DRAG : WebStates.P_MOVE, e.x, e.y, mods); break;\n\t\tcase SWT.MouseDown: forceFocus(); model.pointer(WebStates.P_DOWN, e.x, e.y, mods); break;\n\t\tcase SWT.MouseUp: model.pointer(WebStates.P_UP, e.x, e.y, mods); break;\n\t\tcase SWT.MouseExit: model.pointer(WebStates.P_EXIT, e.x, e.y, mods); break;\n\t\tdefault: model.pointer(WebStates.P_WHEEL, e.x, -e.count, mods);\n\t\t}\n\t}\n\n\tprivate void onKey(Event e) {\n\t\tint key = WebStates.KEY_CHAR;\n\t\tfor (int i = 0; i < SWT_KEYS.length; i++) {\n\t\t\tif (e.keyCode == SWT_KEYS[i]) {\n\t\t\t\tkey = i + 1;\n\t\t\t}\n\t\t}\n\t\tif (key != WebStates.KEY_CHAR || e.character >= ' ') {\n\t\t\te.doit = !model.key(key, e.character, mods(e.stateMask));\n\t\t}\n\t}\n\n\tprivate void onTraverse(Event e) {\n\t\tswitch (e.detail) {\n\t\tcase SWT.TRAVERSE_ARROW_NEXT: case SWT.TRAVERSE_ARROW_PREVIOUS: case SWT.TRAVERSE_RETURN: case SWT.TRAVERSE_ESCAPE:\n\t\t\te.doit = false; break;\n\t\tcase SWT.TRAVERSE_TAB_NEXT: case SWT.TRAVERSE_TAB_PREVIOUS:\n\t\t\te.doit = !model.key(WebStates.KEY_TAB, 0, e.detail == SWT.TRAVERSE_TAB_PREVIOUS ? WebStates.MOD_SHIFT : 0); break;\n\t\tdefault: break;\n\t\t}\n\t}\n\n\tprivate static int mods(int stateMask) {\n\t\treturn ((stateMask & SWT.SHIFT) != 0 ? WebStates.MOD_SHIFT : 0) | ((stateMask & SWT.MOD1) != 0 ? WebStates.MOD_CTRL : 0)\n\t\t\t\t| ((stateMask & SWT.ALT) != 0 ? WebStates.MOD_ALT : 0);\n\t}\n\n\t/** Model delta: damage-only redraw while visible; while hidden only remember that damage exists. */\n\tprivate void changed(int item, int mask) {\n\t\tif (isDisposed()) {\n\t\t\treturn;\n\t\t}\n\t\tif (!partVisible) {\n\t\t\tpending = true;\n\t\t\treturn;\n\t\t}\n\t\tint dy = model.takeBlit();\n\t\tif (dy != 0) {\n\t\t\tPoint size = getSize();\n\t\t\tboolean h = model.scrollsHorizontally();\n\t\t\tint o = model.viewOrigin(), len = model.viewLength();\n\t\t\tint source = o + Math.max(0, -dy), span = len - Math.abs(dy);\n\t\t\tif (h) {\n\t\t\t\tscroll(source + dy, 0, source, 0, span, size.y, false);\n\t\t\t} else {\n\t\t\t\tscroll(0, source + dy, 0, source, size.x, span, false);\n\t\t\t}\n\t\t}\n\t\tif (model.takeDamage(damage)) {\n\t\t\tredraw(damage[0], damage[1], damage[2], damage[3], false);\n\t\t}\n\t\tif (model.isAnimating() && !ticking) {\n\t\t\tticking = true;\n\t\t\tgetDisplay().timerExec(16, ticker);\n\t\t}\n\t}\n\n\t/** PartVisible-aware hook: one flush and one paint when the part becomes visible. */\n\tprotected void setPartVisible(boolean visible) {\n\t\tpartVisible = visible;\n\t\tif (visible && (pending || model.isAnimating())) {\n\t\t\tpending = false;\n\t\t\tchanged(-1, 0);\n\t\t}\n\t}\n\n\tpublic boolean isPartVisible() {\n\t\treturn partVisible;\n\t}\n\n\tprivate void tick() {\n\t\tticking = false;\n\t\tif (!isDisposed() && partVisible && model.tick(16)) {\n\t\t\tticking = true;\n\t\t\tgetDisplay().timerExec(16, ticker);\n\t\t}\n\t}\n\n\tprivate void onPaint(Event e) {\n\t\tGC gc = e.gc;\n\t\tgc.setAntialias(SWT.ON);\n\t\tgc.setBackground(cache.color(model.theme().slot(0)));\n\t\tgc.fillRectangle(e.x, e.y, e.width, e.height);\n\t\tmodel.paint(paint);\n\t\ttry (PaintClip clipping = new PaintClip(gc)) {\n\t\t\tfor (int i = 0; i < paint.count(); i++) {\n\t\t\t\tif (paint.intersects(i, e.x, e.y, e.width, e.height)) {\n\t\t\t\t\treplay(gc, i, e, clipping);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void replay(GC gc, int i, Event e, PaintClip clipping) {\n\t\tint x = paint.get(i, WebPaint.F_X), y = paint.get(i, WebPaint.F_Y), w = paint.get(i, WebPaint.F_W), h = paint.get(i, WebPaint.F_H);\n\t\tint arg = paint.get(i, WebPaint.F_ARG);\n\t\tColor c = cache.color(paint.get(i, WebPaint.F_RGB));\n\t\tgc.setBackground(c);\n\t\tgc.setForeground(c);\n\t\tswitch (paint.get(i, WebPaint.F_OP)) {\n\t\tcase WebPaint.RECT: gc.fillRectangle(x, y, w, h); break;\n\t\tcase WebPaint.ROUND: gc.fillRoundRectangle(x, y, w, h, 2 * arg, 2 * arg); break;\n\t\tcase WebPaint.ROUND_LINE: gc.drawRoundRectangle(x, y, w - 1, h - 1, 2 * arg, 2 * arg); break;\n\t\tcase WebPaint.OVAL: gc.fillOval(x, y, w, h); break;\n\t\tcase WebPaint.OVAL_LINE: gc.drawOval(x, y, w - 1, h - 1); break;\n\t\tcase WebPaint.LINE: gc.drawLine(x, arg == 0 ? y : y + h, x + w, arg == 0 ? y + h : y); break;\n\t\tdefault: replayRest(gc, i, x, y, w, h, arg, e, clipping);\n\t\t}\n\t}\n\n\tprivate void replayRest(GC gc, int i, int x, int y, int w, int h, int arg, Event e, PaintClip clipping) {\n\t\tswitch (paint.get(i, WebPaint.F_OP)) {\n\t\tcase WebPaint.TEXT: text(gc, paint.text(paint.get(i, WebPaint.F_REF)), x, y, w, h, arg, e, clipping); break;\n\t\tcase WebPaint.GRADIENT: gc.setBackground(cache.color(arg)); gc.fillGradientRectangle(x, y, w, h, false); break;\n\t\tcase WebPaint.ARC: gc.drawArc(x, y, w, h, arg, paint.get(i, WebPaint.F_REF)); break;\n\t\tdefault: gc.drawPolyline(points(i, arg));\n\t\t}\n\t}\n\n\tprivate int[] points(int i, int n) {\n\t\tint[] xy = new int[2 * n]; // TODO CORE-1: a reusable scratch array per point count\n\t\tint off = paint.get(i, WebPaint.F_REF);\n\t\tfor (int k = 0; k < xy.length; k++) {\n\t\t\txy[k] = paint.point(off + k);\n\t\t}\n\t\treturn xy;\n\t}\n\n\tprivate void text(GC gc, String s, int x, int y, int w, int h, int style, Event e, PaintClip clipping) {\n\t\tgc.setFont(cache.font(getFont(), style));\n\t\tPoint ext = gc.textExtent(s);\n\t\tint tx = (style & WebPaint.CENTER) != 0 ? x + (w - ext.x) / 2 : (style & WebPaint.RIGHT) != 0 ? x + w - ext.x : x;\n\t\tint ty = y + (h - ext.y) / 2;\n\t\tThrowable primary = null;\n\t\ttry {\n\t\t\tclipping.apply(x, y, w, h);\n\t\t\tgc.drawText(s, tx, ty, true);\n\t\t\tif ((style & WebPaint.UNDERLINE) != 0) {\n\t\t\t\tgc.drawLine(tx, ty + ext.y - 1, tx + ext.x, ty + ext.y - 1);\n\t\t\t}\n\t\t} catch (RuntimeException | Error failure) {\n\t\t\tprimary = failure;\n\t\t\tthrow failure;\n\t\t} finally {\n\t\t\ttry {\n\t\t\t\tclipping.restore();\n\t\t\t} catch (RuntimeException | Error cleanup) {\n\t\t\t\tif (primary == null) {\n\t\t\t\t\tthrow cleanup;\n\t\t\t\t}\n\t\t\t\tif (primary != cleanup) {\n\t\t\t\t\tprimary.addSuppressed(cleanup);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t/** One frame scope; native scratch is lazy and shared by its text records only. */\n\tprivate static final class PaintClip implements AutoCloseable {\n\t\tprivate final GC gc;\n\t\tprivate org.eclipse.swt.graphics.Region originalClip, workingClip;\n\t\tprivate org.eclipse.swt.graphics.Transform originalTransform;\n\t\tprivate boolean captured, originallyClipped;\n\n\t\tPaintClip(GC gc) {\n\t\t\tthis.gc = gc;\n\t\t}\n\n\t\tvoid apply(int x, int y, int w, int h) {\n\t\t\tcaptured = false;\n\t\t\tif (originalClip == null) {\n\t\t\t\toriginalClip = new org.eclipse.swt.graphics.Region(gc.getDevice());\n\t\t\t}\n\t\t\tif (workingClip == null) {\n\t\t\t\tworkingClip = new org.eclipse.swt.graphics.Region(gc.getDevice());\n\t\t\t}\n\t\t\tif (originalTransform == null) {\n\t\t\t\toriginalTransform = new org.eclipse.swt.graphics.Transform(gc.getDevice());\n\t\t\t}\n\t\t\toriginallyClipped = gc.isClipped();\n\t\t\tgc.getTransform(originalTransform);\n\t\t\tif (originalTransform.isIdentity()) {\n\t\t\t\tgc.getClipping(originalClip);\n\t\t\t} else {\n\t\t\t\ttry {\n\t\t\t\t\tgc.setTransform(null);\n\t\t\t\t\tgc.getClipping(originalClip);\n\t\t\t\t} finally {\n\t\t\t\t\tgc.setTransform(originalTransform);\n\t\t\t\t}\n\t\t\t}\n\t\t\tcaptured = true;\n\t\t\tgc.setClipping(x, y, w, h);\n\t\t\tif (originalTransform.isIdentity()) {\n\t\t\t\tgc.getClipping(workingClip);\n\t\t\t\tworkingClip.intersect(originalClip);\n\t\t\t\tgc.setClipping(workingClip);\n\t\t\t} else {\n\t\t\t\ttry {\n\t\t\t\t\tgc.setTransform(null);\n\t\t\t\t\tgc.getClipping(workingClip);\n\t\t\t\t\tworkingClip.intersect(originalClip);\n\t\t\t\t\tgc.setClipping(workingClip);\n\t\t\t\t} finally {\n\t\t\t\t\tgc.setTransform(originalTransform);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tvoid restore() {\n\t\t\tif (!captured) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\ttry {\n\t\t\t\tif (originalTransform.isIdentity()) {\n\t\t\t\t\tgc.setClipping(originallyClipped ? originalClip : null);\n\t\t\t\t} else {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tgc.setTransform(null);\n\t\t\t\t\t\tgc.setClipping(originallyClipped ? originalClip : null);\n\t\t\t\t\t} finally {\n\t\t\t\t\t\tgc.setTransform(originalTransform);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t} finally {\n\t\t\t\tcaptured = false;\n\t\t\t}\n\t\t}\n\n\t\tvoid dispose() {\n\t\t\ttry {\n\t\t\t\trestore();\n\t\t\t} finally {\n\t\t\t\ttry {\n\t\t\t\t\tif (originalTransform != null) {\n\t\t\t\t\t\toriginalTransform.dispose();\n\t\t\t\t\t}\n\t\t\t\t} finally {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tif (workingClip != null) {\n\t\t\t\t\t\t\tworkingClip.dispose();\n\t\t\t\t\t\t}\n\t\t\t\t\t} finally {\n\t\t\t\t\t\tif (originalClip != null) {\n\t\t\t\t\t\t\toriginalClip.dispose();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t@Override\n\t\tpublic void close() {\n\t\t\tdispose();\n\t\t}\n\t}\n\n\tprivate void initAccessible() {\n\t\tgetAccessible().addAccessibleListener(new AccessibleAdapter() {\n\t\t\t@Override\n\t\t\tpublic void getName(AccessibleEvent e) {\n\t\t\t\te.result = model.accessibleName(e.childID == ACC.CHILDID_SELF ? -1 : e.childID);\n\t\t\t}\n\t\t});\n\t\tgetAccessible().addAccessibleControlListener(new AccessibleControlAdapter() {\n\t\t\t@Override\n\t\t\tpublic void getRole(AccessibleControlEvent e) {\n\t\t\t\te.detail = WebCanvasCache.accRole(WebStates.roleName(model.role()));\n\t\t\t}\n\t\t});\n\t}\n\n\t/** Font data of the widget font scaled to a pixel size (used by the cache). */\n\tstatic FontData scaled(Font base, int px, int style) {\n\t\tFontData fd = base.getFontData()[0];\n\t\tString name = (style & WebPaint.MONO) != 0 ? \"Consolas\" : fd.getName();\n\t\treturn new FontData(name, Math.max(6, px * 3 / 4), (style & WebPaint.BOLD) != 0 ? SWT.BOLD : SWT.NORMAL);\n\t}\n}\n\\E\\z"
+      replace: "/*******************************************************************************\n * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.\n *\n * This program and the accompanying materials are made available under the\n * terms of the Apache License, Version 2.0, or (at your option) the Eclipse\n * Public License 2.0, which are available at\n * https://www.apache.org/licenses/LICENSE-2.0 and\n * https://www.eclipse.org/legal/epl-2.0/\n *\n * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0\n *\n * Contributors:\n *     Hitesh Soliwal (Synexia) - initial API and implementation\n *******************************************************************************/\n// Generated fromtemplates/nebula/WebCanvas.java.tmpl; edit the template and regenerate.\npackage org.eclipse.nebula.widgets.web;\n\nimport org.eclipse.nebula.widgets.web.model.WebModel;\nimport org.eclipse.nebula.widgets.web.model.WebPaint;\nimport org.eclipse.nebula.widgets.web.model.WebStates;\nimport org.eclipse.swt.SWT;\nimport org.eclipse.swt.accessibility.ACC;\nimport org.eclipse.swt.accessibility.AccessibleAdapter;\nimport org.eclipse.swt.accessibility.AccessibleControlAdapter;\nimport org.eclipse.swt.accessibility.AccessibleControlEvent;\nimport org.eclipse.swt.accessibility.AccessibleEvent;\nimport org.eclipse.swt.graphics.Color;\nimport org.eclipse.swt.graphics.Font;\nimport org.eclipse.swt.graphics.FontData;\nimport org.eclipse.swt.graphics.GC;\nimport org.eclipse.swt.graphics.Point;\nimport org.eclipse.swt.widgets.Canvas;\nimport org.eclipse.swt.widgets.Composite;\nimport org.eclipse.swt.widgets.Control;\nimport org.eclipse.swt.widgets.Display;\nimport org.eclipse.swt.widgets.Event;\nimport org.eclipse.swt.widgets.Listener;\nimport org.eclipse.swt.widgets.Shell;\n\n/**\n * One drawn Canvas per web widget (pattern CORE-1, SWT side). The control owns no widget\n * state: it maps SWT events to neutral model keys and pointer kinds, repaints only the model's\n * damage, records damage without painting while the part is hidden ({@code SWT.PartVisible} /\n * {@code SWT.PartHidden} when the SWT build has them, else Show/Hide), and replays the model's\n * display list through the GC. Colours and fonts are cached per widget and disposed with it.\n *\n * @param <M> the lane model\n */\npublic class WebCanvas<M extends WebModel> extends Canvas {\n\tstatic final int PART_VISIBLE = eventType(\"PartVisible\"), PART_HIDDEN = eventType(\"PartHidden\");\n\tprivate static final int[] EVENTS = { SWT.Paint, SWT.Resize, SWT.KeyDown, SWT.MouseMove, SWT.MouseDown, SWT.MouseUp, SWT.MouseExit,\n\t\t\tSWT.MouseVerticalWheel, SWT.FocusIn, SWT.FocusOut, SWT.Traverse, SWT.Dispose, SWT.Show, SWT.Hide };\n\tprivate static final int[] SWT_KEYS = { SWT.ARROW_LEFT, SWT.ARROW_RIGHT, SWT.ARROW_UP, SWT.ARROW_DOWN, SWT.HOME, SWT.END, SWT.PAGE_UP,\n\t\t\tSWT.PAGE_DOWN, SWT.CR, ' ', SWT.ESC, SWT.TAB, SWT.DEL, SWT.BS };\n\tprotected final M model;\n\tprivate final WebPaint paint = new WebPaint();\n\tprivate final int[] damage = new int[4];\n\tprivate final WebCanvasCache cache;\n\tprivate final Display clockDisplay;\n\tprivate final Runnable ticker = this::tick;\n\tprivate final Listener ownListener = this::handle;\n\tprivate final Listener ancestorListener = this::ancestorChanged;\n\tprivate boolean partVisible = true, pending, ticking;\n\tprivate boolean clockBlocked, hasArea, clockClosed;\n\tprivate int clockFilters;\n\n\tpublic WebCanvas(Composite parent, int style, M model) {\n\t\tsuper(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);\n\t\tthis.model = model;\n\t\tthis.clockDisplay = getDisplay();\n\t\tthis.cache = new WebCanvasCache(clockDisplay);\n\t\tmodel.setDelta(this::changed);\n\t\tfor (int type : EVENTS) {\n\t\t\taddListener(type, ownListener);\n\t\t}\n\t\tif (PART_VISIBLE != 0) {\n\t\t\taddListener(PART_VISIBLE, ownListener);\n\t\t\taddListener(PART_HIDDEN, ownListener);\n\t\t}\n\t\tinitAccessible();\n\t\ttry {\n\t\t\tclockFilters |= 1;\n\t\t\tclockDisplay.addFilter(SWT.Hide, ancestorListener);\n\t\t\tclockFilters |= 2;\n\t\t\tclockDisplay.addFilter(SWT.Iconify, ancestorListener);\n\t\t} catch (RuntimeException | Error failure) {\n\t\t\ttry {\n\t\t\t\tremoveClockFilters();\n\t\t\t} catch (RuntimeException | Error cleanup) {\n\t\t\t\tif (failure != cleanup) {\n\t\t\t\t\tfailure.addSuppressed(cleanup);\n\t\t\t\t}\n\t\t\t}\n\t\t\tthrow failure;\n\t\t}\n\t}\n\n\tstatic int eventType(String name) {\n\t\ttry {\n\t\t\treturn SWT.class.getField(name).getInt(null);\n\t\t} catch (ReflectiveOperationException e) {\n\t\t\treturn 0;\n\t\t}\n\t}\n\n\t/** The lane model; all widget behaviour is model API. */\n\tpublic M getModel() {\n\t\tcheckWidget();\n\t\treturn model;\n\t}\n\n\t@Override\n\tpublic Point computeSize(int wHint, int hHint, boolean changed) {\n\t\tcheckWidget();\n\t\tmodel.layout(wHint == SWT.DEFAULT ? 320 : wHint, hHint == SWT.DEFAULT ? 0 : hHint);\n\t\tPoint p = new Point(wHint == SWT.DEFAULT ? model.prefWidth() : wHint, hHint == SWT.DEFAULT ? model.prefHeight() : hHint);\n\t\tmodel.layout(getSize().x, getSize().y);\n\t\treturn p;\n\t}\n\n\tprivate void handle(Event e) {\n\t\tswitch (e.type) {\n\t\tcase SWT.Paint: onPaint(e); break;\n\t\tcase SWT.Resize:\n\t\t\tint width = getSize().x, height = getSize().y;\n\t\t\thasArea = width > 0 && height > 0;\n\t\t\tif (!hasArea) {\n\t\t\t\tparkClock();\n\t\t\t}\n\t\t\tmodel.layout(width, height);\n\t\t\tif (hasArea) {\n\t\t\t\twakeClock();\n\t\t\t}\n\t\t\tbreak;\n\t\tcase SWT.KeyDown: onKey(e); break;\n\t\tcase SWT.Traverse: onTraverse(e); break;\n\t\tcase SWT.FocusIn: case SWT.FocusOut: model.setState(-1, WebStates.FOCUS, e.type == SWT.FocusIn); break;\n\t\tcase SWT.Dispose:\n\t\t\tclockClosed = true;\n\t\t\tclockBlocked = true;\n\t\t\tticking = false;\n\t\t\ttry {\n\t\t\t\tclockDisplay.timerExec(-1, ticker);\n\t\t\t} finally {\n\t\t\t\ttry {\n\t\t\t\t\tremoveClockFilters();\n\t\t\t\t} finally {\n\t\t\t\t\tcache.dispose();\n\t\t\t\t}\n\t\t\t}\n\t\t\tbreak;\n\t\tcase SWT.Show: setPartVisible(true); break;\n\t\tcase SWT.Hide: setPartVisible(false); break;\n\t\tdefault: onOther(e);\n\t\t}\n\t}\n\n\tprivate void onOther(Event e) {\n\t\tif (e.type == PART_VISIBLE || e.type == PART_HIDDEN) {\n\t\t\tsetPartVisible(e.type == PART_VISIBLE);\n\t\t} else {\n\t\t\tonMouse(e);\n\t\t}\n\t}\n\n\tprivate void onMouse(Event e) {\n\t\tint mods = mods(e.stateMask);\n\t\tswitch (e.type) {\n\t\tcase SWT.MouseMove: model.pointer((e.stateMask & SWT.BUTTON1) != 0 ? WebStates.P_DRAG : WebStates.P_MOVE, e.x, e.y, mods); break;\n\t\tcase SWT.MouseDown: forceFocus(); model.pointer(WebStates.P_DOWN, e.x, e.y, mods); break;\n\t\tcase SWT.MouseUp: model.pointer(WebStates.P_UP, e.x, e.y, mods); break;\n\t\tcase SWT.MouseExit: model.pointer(WebStates.P_EXIT, e.x, e.y, mods); break;\n\t\tdefault: model.pointer(WebStates.P_WHEEL, e.x, -e.count, mods);\n\t\t}\n\t}\n\n\tprivate void onKey(Event e) {\n\t\tint key = WebStates.KEY_CHAR;\n\t\tfor (int i = 0; i < SWT_KEYS.length; i++) {\n\t\t\tif (e.keyCode == SWT_KEYS[i]) {\n\t\t\t\tkey = i + 1;\n\t\t\t}\n\t\t}\n\t\tif (key != WebStates.KEY_CHAR || e.character >= ' ') {\n\t\t\te.doit = !model.key(key, e.character, mods(e.stateMask));\n\t\t}\n\t}\n\n\tprivate void onTraverse(Event e) {\n\t\tswitch (e.detail) {\n\t\tcase SWT.TRAVERSE_ARROW_NEXT: case SWT.TRAVERSE_ARROW_PREVIOUS: case SWT.TRAVERSE_RETURN: case SWT.TRAVERSE_ESCAPE:\n\t\t\te.doit = false; break;\n\t\tcase SWT.TRAVERSE_TAB_NEXT: case SWT.TRAVERSE_TAB_PREVIOUS:\n\t\t\te.doit = !model.key(WebStates.KEY_TAB, 0, e.detail == SWT.TRAVERSE_TAB_PREVIOUS ? WebStates.MOD_SHIFT : 0); break;\n\t\tdefault: break;\n\t\t}\n\t}\n\n\tprivate static int mods(int stateMask) {\n\t\treturn ((stateMask & SWT.SHIFT) != 0 ? WebStates.MOD_SHIFT : 0) | ((stateMask & SWT.MOD1) != 0 ? WebStates.MOD_CTRL : 0)\n\t\t\t\t| ((stateMask & SWT.ALT) != 0 ? WebStates.MOD_ALT : 0);\n\t}\n\n\t/** Model delta: damage-only redraw while visible; while hidden only remember that damage exists. */\n\tprivate void changed(int item, int mask) {\n\t\tif (isDisposed()) {\n\t\t\treturn;\n\t\t}\n\t\tif (!partVisible) {\n\t\t\tpending = true;\n\t\t\treturn;\n\t\t}\n\t\tint dy = model.takeBlit();\n\t\tif (dy != 0) {\n\t\t\tPoint size = getSize();\n\t\t\tboolean h = model.scrollsHorizontally();\n\t\t\tint o = model.viewOrigin(), len = model.viewLength();\n\t\t\tint source = o + Math.max(0, -dy), span = len - Math.abs(dy);\n\t\t\tif (h) {\n\t\t\t\tscroll(source + dy, 0, source, 0, span, size.y, false);\n\t\t\t} else {\n\t\t\t\tscroll(0, source + dy, 0, source, size.x, span, false);\n\t\t\t}\n\t\t}\n\t\tif (model.takeDamage(damage)) {\n\t\t\tredraw(damage[0], damage[1], damage[2], damage[3], false);\n\t\t}\n\t\tif (model.isAnimating() && !ticking && clockReady(false)) {\n\t\t\tticking = true;\n\t\t\tclockDisplay.timerExec(16, ticker);\n\t\t}\n\t}\n\n\t/** PartVisible-aware hook: one flush and one paint when the part becomes visible. */\n\tprotected void setPartVisible(boolean visible) {\n\t\tpartVisible = visible;\n\t\tif (!visible) {\n\t\t\tparkClock();\n\t\t} else {\n\t\t\tclockBlocked = false;\n\t\t}\n\t\tif (visible && (pending || model.isAnimating())) {\n\t\t\tpending = false;\n\t\t\tchanged(-1, 0);\n\t\t}\n\t}\n\n\tpublic boolean isPartVisible() {\n\t\treturn partVisible;\n\t}\n\n\tprivate void tick() {\n\t\tticking = false;\n\t\tif (!clockReady(false)) {\n\t\t\treturn;\n\t\t}\n\t\tboolean again = model.tick(16);\n\t\tif (clockReady(false) && again && !ticking) {\n\t\t\tticking = true;\n\t\t\tclockDisplay.timerExec(16, ticker);\n\t\t}\n\t}\n\n\t/** Clock admission is independent of model damage and explicit painting. */\n\tprivate boolean clockReady(boolean wake) {\n\t\tif (clockClosed || isDisposed() || !partVisible || !hasArea || clockBlocked && !wake) {\n\t\t\treturn false;\n\t\t}\n\t\tclockBlocked = true;\n\t\tif (!isVisible() || getShell().getMinimized()) {\n\t\t\tparkClock();\n\t\t\treturn false;\n\t\t}\n\t\tif (clockClosed || isDisposed() || !partVisible || !hasArea) {\n\t\t\treturn false;\n\t\t}\n\t\tclockBlocked = false;\n\t\treturn true;\n\t}\n\n\tprivate void parkClock() {\n\t\tclockBlocked = true;\n\t\tif (ticking) {\n\t\t\tticking = false;\n\t\t\tclockDisplay.timerExec(-1, ticker);\n\t\t}\n\t}\n\n\tprivate void wakeClock() {\n\t\tif (!ticking && clockReady(true) && model.isAnimating()) {\n\t\t\tticking = true;\n\t\t\tclockDisplay.timerExec(16, ticker);\n\t\t}\n\t}\n\n\tprivate void ancestorChanged(Event event) {\n\t\tif (clockClosed || isDisposed() || event.widget == this) {\n\t\t\treturn;\n\t\t}\n\t\tfor (Control ancestor = getParent(); ancestor != null; ancestor = ancestor.getParent()) {\n\t\t\tif (event.widget == ancestor) {\n\t\t\t\tparkClock();\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (ancestor instanceof Shell) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void removeClockFilters() {\n\t\tint filters = clockFilters;\n\t\tclockFilters = 0;\n\t\ttry {\n\t\t\tif ((filters & 1) != 0) {\n\t\t\t\tclockDisplay.removeFilter(SWT.Hide, ancestorListener);\n\t\t\t}\n\t\t} finally {\n\t\t\tif ((filters & 2) != 0) {\n\t\t\t\tclockDisplay.removeFilter(SWT.Iconify, ancestorListener);\n\t\t\t}\n\t\t}\n\t}\n\n\tprivate void onPaint(Event e) {\n\t\tGC gc = e.gc;\n\t\tgc.setAntialias(SWT.ON);\n\t\tgc.setBackground(cache.color(model.theme().slot(0)));\n\t\tgc.fillRectangle(e.x, e.y, e.width, e.height);\n\t\tmodel.paint(paint);\n\t\ttry (PaintClip clipping = new PaintClip(gc)) {\n\t\t\tfor (int i = 0; i < paint.count(); i++) {\n\t\t\t\tif (paint.intersects(i, e.x, e.y, e.width, e.height)) {\n\t\t\t\t\treplay(gc, i, e, clipping);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t\twakeClock();\n\t}\n\n\tprivate void replay(GC gc, int i, Event e, PaintClip clipping) {\n\t\tint x = paint.get(i, WebPaint.F_X), y = paint.get(i, WebPaint.F_Y), w = paint.get(i, WebPaint.F_W), h = paint.get(i, WebPaint.F_H);\n\t\tint arg = paint.get(i, WebPaint.F_ARG);\n\t\tColor c = cache.color(paint.get(i, WebPaint.F_RGB));\n\t\tgc.setBackground(c);\n\t\tgc.setForeground(c);\n\t\tswitch (paint.get(i, WebPaint.F_OP)) {\n\t\tcase WebPaint.RECT: gc.fillRectangle(x, y, w, h); break;\n\t\tcase WebPaint.ROUND: gc.fillRoundRectangle(x, y, w, h, 2 * arg, 2 * arg); break;\n\t\tcase WebPaint.ROUND_LINE: gc.drawRoundRectangle(x, y, w - 1, h - 1, 2 * arg, 2 * arg); break;\n\t\tcase WebPaint.OVAL: gc.fillOval(x, y, w, h); break;\n\t\tcase WebPaint.OVAL_LINE: gc.drawOval(x, y, w - 1, h - 1); break;\n\t\tcase WebPaint.LINE: gc.drawLine(x, arg == 0 ? y : y + h, x + w, arg == 0 ? y + h : y); break;\n\t\tdefault: replayRest(gc, i, x, y, w, h, arg, e, clipping);\n\t\t}\n\t}\n\n\tprivate void replayRest(GC gc, int i, int x, int y, int w, int h, int arg, Event e, PaintClip clipping) {\n\t\tswitch (paint.get(i, WebPaint.F_OP)) {\n\t\tcase WebPaint.TEXT: text(gc, paint.text(paint.get(i, WebPaint.F_REF)), x, y, w, h, arg, e, clipping); break;\n\t\tcase WebPaint.GRADIENT: gc.setBackground(cache.color(arg)); gc.fillGradientRectangle(x, y, w, h, false); break;\n\t\tcase WebPaint.ARC: gc.drawArc(x, y, w, h, arg, paint.get(i, WebPaint.F_REF)); break;\n\t\tdefault: gc.drawPolyline(points(i, arg));\n\t\t}\n\t}\n\n\tprivate int[] points(int i, int n) {\n\t\tint[] xy = new int[2 * n]; // TODO CORE-1: a reusable scratch array per point count\n\t\tint off = paint.get(i, WebPaint.F_REF);\n\t\tfor (int k = 0; k < xy.length; k++) {\n\t\t\txy[k] = paint.point(off + k);\n\t\t}\n\t\treturn xy;\n\t}\n\n\tprivate void text(GC gc, String s, int x, int y, int w, int h, int style, Event e, PaintClip clipping) {\n\t\tgc.setFont(cache.font(getFont(), style));\n\t\tPoint ext = gc.textExtent(s);\n\t\tint tx = (style & WebPaint.CENTER) != 0 ? x + (w - ext.x) / 2 : (style & WebPaint.RIGHT) != 0 ? x + w - ext.x : x;\n\t\tint ty = y + (h - ext.y) / 2;\n\t\tThrowable primary = null;\n\t\ttry {\n\t\t\tclipping.apply(x, y, w, h);\n\t\t\tgc.drawText(s, tx, ty, true);\n\t\t\tif ((style & WebPaint.UNDERLINE) != 0) {\n\t\t\t\tgc.drawLine(tx, ty + ext.y - 1, tx + ext.x, ty + ext.y - 1);\n\t\t\t}\n\t\t} catch (RuntimeException | Error failure) {\n\t\t\tprimary = failure;\n\t\t\tthrow failure;\n\t\t} finally {\n\t\t\ttry {\n\t\t\t\tclipping.restore();\n\t\t\t} catch (RuntimeException | Error cleanup) {\n\t\t\t\tif (primary == null) {\n\t\t\t\t\tthrow cleanup;\n\t\t\t\t}\n\t\t\t\tif (primary != cleanup) {\n\t\t\t\t\tprimary.addSuppressed(cleanup);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\t/** One frame scope; native scratch is lazy and shared by its text records only. */\n\tprivate static final class PaintClip implements AutoCloseable {\n\t\tprivate final GC gc;\n\t\tprivate org.eclipse.swt.graphics.Region originalClip, workingClip;\n\t\tprivate org.eclipse.swt.graphics.Transform originalTransform;\n\t\tprivate boolean captured, originallyClipped;\n\n\t\tPaintClip(GC gc) {\n\t\t\tthis.gc = gc;\n\t\t}\n\n\t\tvoid apply(int x, int y, int w, int h) {\n\t\t\tcaptured = false;\n\t\t\tif (originalClip == null) {\n\t\t\t\toriginalClip = new org.eclipse.swt.graphics.Region(gc.getDevice());\n\t\t\t}\n\t\t\tif (workingClip == null) {\n\t\t\t\tworkingClip = new org.eclipse.swt.graphics.Region(gc.getDevice());\n\t\t\t}\n\t\t\tif (originalTransform == null) {\n\t\t\t\toriginalTransform = new org.eclipse.swt.graphics.Transform(gc.getDevice());\n\t\t\t}\n\t\t\toriginallyClipped = gc.isClipped();\n\t\t\tgc.getTransform(originalTransform);\n\t\t\tif (originalTransform.isIdentity()) {\n\t\t\t\tgc.getClipping(originalClip);\n\t\t\t} else {\n\t\t\t\ttry {\n\t\t\t\t\tgc.setTransform(null);\n\t\t\t\t\tgc.getClipping(originalClip);\n\t\t\t\t} finally {\n\t\t\t\t\tgc.setTransform(originalTransform);\n\t\t\t\t}\n\t\t\t}\n\t\t\tcaptured = true;\n\t\t\tgc.setClipping(x, y, w, h);\n\t\t\tif (originalTransform.isIdentity()) {\n\t\t\t\tgc.getClipping(workingClip);\n\t\t\t\tworkingClip.intersect(originalClip);\n\t\t\t\tgc.setClipping(workingClip);\n\t\t\t} else {\n\t\t\t\ttry {\n\t\t\t\t\tgc.setTransform(null);\n\t\t\t\t\tgc.getClipping(workingClip);\n\t\t\t\t\tworkingClip.intersect(originalClip);\n\t\t\t\t\tgc.setClipping(workingClip);\n\t\t\t\t} finally {\n\t\t\t\t\tgc.setTransform(originalTransform);\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tvoid restore() {\n\t\t\tif (!captured) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\ttry {\n\t\t\t\tif (originalTransform.isIdentity()) {\n\t\t\t\t\tgc.setClipping(originallyClipped ? originalClip : null);\n\t\t\t\t} else {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tgc.setTransform(null);\n\t\t\t\t\t\tgc.setClipping(originallyClipped ? originalClip : null);\n\t\t\t\t\t} finally {\n\t\t\t\t\t\tgc.setTransform(originalTransform);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t} finally {\n\t\t\t\tcaptured = false;\n\t\t\t}\n\t\t}\n\n\t\tvoid dispose() {\n\t\t\ttry {\n\t\t\t\trestore();\n\t\t\t} finally {\n\t\t\t\ttry {\n\t\t\t\t\tif (originalTransform != null) {\n\t\t\t\t\t\toriginalTransform.dispose();\n\t\t\t\t\t}\n\t\t\t\t} finally {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tif (workingClip != null) {\n\t\t\t\t\t\t\tworkingClip.dispose();\n\t\t\t\t\t\t}\n\t\t\t\t\t} finally {\n\t\t\t\t\t\tif (originalClip != null) {\n\t\t\t\t\t\t\toriginalClip.dispose();\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\t@Override\n\t\tpublic void close() {\n\t\t\tdispose();\n\t\t}\n\t}\n\n\tprivate void initAccessible() {\n\t\tgetAccessible().addAccessibleListener(new AccessibleAdapter() {\n\t\t\t@Override\n\t\t\tpublic void getName(AccessibleEvent e) {\n\t\t\t\te.result = model.accessibleName(e.childID == ACC.CHILDID_SELF ? -1 : e.childID);\n\t\t\t}\n\t\t});\n\t\tgetAccessible().addAccessibleControlListener(new AccessibleControlAdapter() {\n\t\t\t@Override\n\t\t\tpublic void getRole(AccessibleControlEvent e) {\n\t\t\t\te.detail = WebCanvasCache.accRole(WebStates.roleName(model.role()));\n\t\t\t}\n\t\t});\n\t}\n\n\t/** Font data of the widget font scaled to a pixel size (used by the cache). */\n\tstatic FontData scaled(Font base, int px, int style) {\n\t\tFontData fd = base.getFontData()[0];\n\t\tString name = (style & WebPaint.MONO) != 0 ? \"Consolas\" : fd.getName();\n\t\treturn new FontData(name, Math.max(6, px * 3 / 4), (style & WebPaint.BOLD) != 0 ? SWT.BOLD : SWT.NORMAL);\n\t}\n}\n"
+      regex: true
+      caseSensitive: true
+      multiline: false
+      dotAll: false
+      filePattern: "widgets/web/org.eclipse.nebula.widgets.web/src/org/eclipse/nebula/widgets/web/WebCanvas.java"
+  - org.openrewrite.text.FindAndReplace:
+      find: "\\A\\Q/*******************************************************************************\n * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.\n *\n * This program and the accompanying materials are made available under the\n * terms of the Apache License, Version 2.0, or (at your option) the Eclipse\n * Public License 2.0, which are available at\n * https://www.apache.org/licenses/LICENSE-2.0 and\n * https://www.eclipse.org/legal/epl-2.0/\n *\n * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0\n *\n * Contributors:\n *     Hitesh Soliwal (Synexia) - initial API and implementation\n *******************************************************************************/\npackage org.eclipse.nebula.widgets.web;\n\nimport java.lang.reflect.Field;\nimport java.util.Collections;\nimport java.util.IdentityHashMap;\nimport java.util.Set;\nimport org.eclipse.nebula.widgets.web.model.AnimvalueModel;\nimport org.eclipse.nebula.widgets.web.model.WebStates;\nimport org.eclipse.swt.SWT;\nimport org.eclipse.swt.graphics.DeviceData;\nimport org.eclipse.swt.widgets.Display;\nimport org.eclipse.swt.widgets.Shell;\nimport org.junit.After;\nimport org.junit.Before;\nimport org.junit.Test;\n\n/** Uses an owned, unopened Shell and the real Display timer queue; no screen capture. */\npublic final class WebAnimationVisibilityTest {\n private Display display;\n private Shell shell;\n private AnimvalueModel model;\n private WebCanvas<AnimvalueModel> widget;\n private Runnable ticker;\n private Set<Object> beforeResources;\n private static int widgetsCreated, widgetsClosed, displaysCreated, displaysClosed, forcedCancellations;\n\n private static void need(boolean condition, String message) {\n  if (!condition) throw new AssertionError(message);\n }\n private static Object field(Object owner, Class<?> type, String name) throws Exception {\n  Field field = type.getDeclaredField(name);\n  field.setAccessible(true);\n  return field.get(owner);\n }\n private Set<Object> resources() {\n  Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());\n  Object[] objects = display.getDeviceData().objects;\n  if (objects != null) for (Object object : objects) if (object != null) result.add(object);\n  return result;\n }\n private int queued() throws Exception {\n  Runnable[] callbacks = (Runnable[]) field(display, Display.class, \"timerList\");\n  int count = 0;\n  if (callbacks != null) for (Runnable callback : callbacks) if (callback == ticker) count++;\n  return count;\n }\n private void pump(int millis) throws Exception {\n  long until = System.nanoTime() + millis * 1_000_000L;\n  while (System.nanoTime() < until) {\n   while (display.readAndDispatch()) { }\n   Thread.sleep(1);\n  }\n }\n private void openWidget(int mode) throws Exception {\n  model = new AnimvalueModel(\"animation-proof\", 0, mode, 0, 0);\n  widget = new WebCanvas<>(shell, SWT.NONE, model);\n  widgetsCreated++;\n  widget.setBounds(0, 0, 360, 240);\n  widget.setPartVisible(true);\n  ticker = (Runnable) field(widget, WebCanvas.class, \"ticker\");\n }\n private void closeWidget() throws Exception {\n  if (widget == null) return;\n  try {\n   if (!widget.isDisposed()) widget.dispose();\n   boolean retained = queued() != 0;\n   if (retained) { forcedCancellations++; display.timerExec(-1, ticker); }\n   need(!retained, \"OWNED_SWT_TICKER_RETAINED\");\n  } finally {\n   widgetsClosed++;\n   widget = null;\n   model = null;\n   ticker = null;\n  }\n  Set<Object> extra = resources();\n  extra.removeAll(beforeResources);\n  need(extra.isEmpty(), \"UNEXPECTED_TRACKED_NATIVE_RESOURCE \" + extra);\n }\n private int phase() { return model.snapshot()[8]; }\n private void startClock() throws Exception {\n  model.load(\"spinning\");\n  need(model.isAnimating() && queued() == 1, \"SWT_START_PRECONDITION\");\n  pump(80);\n  need(phase() != 0 && queued() == 1, \"ACTUAL_DISPLAY_CLOCK_PRECONDITION\");\n }\n @Before public void setup() throws Exception {\n  DeviceData data = new DeviceData();\n  data.tracking = true;\n  display = new Display(data);\n  displaysCreated++;\n  shell = new Shell(display);\n  beforeResources = resources();\n  openWidget(AnimvalueModel.SPINNER);\n }\n @After public void close() throws Exception {\n  try { closeWidget(); }\n  finally {\n   try { if (shell != null && !shell.isDisposed()) shell.dispose(); }\n   finally {\n    if (display != null && !display.isDisposed()) { display.dispose(); displaysClosed++; }\n    need(display == null || display.isDisposed(), \"OWNED_DISPLAY_RETAINED\");\n   }\n  }\n }\n @Test public void visibleClockAdvances() throws Exception {\n  startClock();\n  int before = phase();\n  pump(80);\n  need(phase() != before, \"VISIBLE_SWT_CLOCK_STALLED\");\n }\n @Test public void hiddenClockStable() throws Exception {\n  startClock();\n  widget.setPartVisible(false);\n  int before = phase();\n  pump(80);\n  need(phase() == before && queued() == 0, \"HIDDEN_SWT_PHASE_CHANGED\");\n }\n @Test public void idleHiddenIntervalResumes() throws Exception {\n  startClock();\n  widget.setPartVisible(false);\n  pump(80);\n  int before = phase();\n  need(!(boolean) field(widget, WebCanvas.class, \"pending\") && queued() == 0,\n    \"IDLE_SWT_PENDING_PRECONDITION\");\n  widget.setPartVisible(true);\n  pump(80);\n  need(phase() != before, \"IDLE_SWT_RESUME_NO_PHASE_ADVANCE\");\n }\n @Test public void pendingHiddenDeltaResumes() throws Exception {\n  startClock();\n  widget.setPartVisible(false);\n  pump(80);\n  int before = phase();\n  model.setState(-1, WebStates.ERROR, true);\n  need((boolean) field(widget, WebCanvas.class, \"pending\"), \"HIDDEN_SWT_DELTA_PRECONDITION\");\n  widget.setPartVisible(true);\n  pump(80);\n  need(phase() != before, \"PENDING_SWT_RESUME_STALLED\");\n }\n @Test public void nonAnimatingNeverStarts() throws Exception {\n  closeWidget();\n  openWidget(AnimvalueModel.TRANSITION);\n  model.load(\"transition\");\n  widget.setPartVisible(false);\n  widget.setPartVisible(true);\n  need(!model.isAnimating() && queued() == 0, \"IDLE_SWT_STARTED\");\n  pump(80);\n  need(phase() == 0, \"IDLE_SWT_PHASE_CHANGED\");\n }\n @Test public void repeatedVisibilityUsesOneRunnable() throws Exception {\n  startClock();\n  Runnable original = ticker;\n  for (int i = 0; i < 20; i++) widget.setPartVisible(true);\n  need(field(widget, WebCanvas.class, \"ticker\") == original && queued() == 1,\n    \"SWT_TIMER_IDENTITY_OR_COUNT\");\n }\n @Test public void disposeCancelsExactQueuedTickerBeforePump() throws Exception {\n  model.load(\"spinning\");\n  need(queued() == 1, \"SWT_DISPOSE_QUEUE_PRECONDITION\");\n  int before = phase();\n  widget.dispose();\n  need(queued() == 0, \"DISPOSED_SWT_TICKER_RETAINED\");\n  pump(80);\n  need(phase() == before, \"DISPOSED_SWT_MODEL_ADVANCED\");\n }\n}\n\\E\\z"
+      replace: "/*******************************************************************************\n * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.\n *\n * This program and the accompanying materials are made available under the\n * terms of the Apache License, Version 2.0, or (at your option) the Eclipse\n * Public License 2.0, which are available at\n * https://www.apache.org/licenses/LICENSE-2.0 and\n * https://www.eclipse.org/legal/epl-2.0/\n *\n * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0\n *\n * Contributors:\n *     Hitesh Soliwal (Synexia) - initial API and implementation\n *******************************************************************************/\npackage org.eclipse.nebula.widgets.web;\n\nimport java.lang.reflect.Field;\nimport java.util.Collections;\nimport java.util.IdentityHashMap;\nimport java.util.Map;\nimport java.util.Set;\nimport org.eclipse.nebula.widgets.web.model.AnimvalueModel;\nimport org.eclipse.nebula.widgets.web.model.WebStates;\nimport org.eclipse.swt.SWT;\nimport org.eclipse.swt.graphics.DeviceData;\nimport org.eclipse.swt.graphics.GC;\nimport org.eclipse.swt.graphics.Image;\nimport org.eclipse.swt.widgets.Event;\nimport org.eclipse.swt.widgets.Listener;\nimport org.eclipse.swt.graphics.Font;\nimport org.eclipse.swt.graphics.Resource;\nimport org.eclipse.swt.graphics.Color;\nimport org.eclipse.swt.widgets.Composite;\nimport org.eclipse.swt.widgets.Display;\nimport org.eclipse.swt.widgets.Shell;\nimport org.junit.After;\nimport org.junit.Before;\nimport org.junit.Test;\n\n/** Uses an owned, opened Shell and the real Display timer queue; no screen capture.\n * The seven timer assertion intents supersede the historical unopened-host fixture. */\npublic final class WebAnimationVisibilityTest {\n private Display display;\n private Shell shell;\n private Composite parent;\n private final IdentityHashMap<Font, Integer> displayOwnedFonts = new IdentityHashMap<>();\n private java.util.Map<?, ?> providerRegistries;\n private AnimvalueModel model;\n private WebCanvas<AnimvalueModel> widget;\n private Runnable ticker;\n private Set<Object> beforeResources;\n private static int widgetsCreated, widgetsClosed, displaysCreated, displaysClosed, forcedCancellations;\n\n private static void need(boolean condition, String message) {\n  if (!condition) throw new AssertionError(message);\n }\n private static Object field(Object owner, Class<?> type, String name) throws Exception {\n  Field field = type.getDeclaredField(name);\n  field.setAccessible(true);\n  return field.get(owner);\n }\n private static Object field(Object owner,String name)throws Exception{Field f=owner.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(owner);}\n private int requireDisplayOwnedFont(org.eclipse.swt.graphics.Font font)throws Exception{\n  Field root=Class.forName(\"org.eclipse.swt.internal.SWTFontProvider\").getDeclaredField(\"fontRegistries\");root.setAccessible(true);providerRegistries=(Map<?,?>)root.get(null);Object registry=providerRegistries.get(display);need(registry!=null&&registry.getClass().getName().equals(\"org.eclipse.swt.internal.ScalingSWTFontRegistry\"),\"UNKNOWN_FONT_REGISTRY\");need(field(registry,\"device\")==display,\"FOREIGN_FONT_REGISTRY\");\n  Map<?,?> containers=(Map<?,?>)field(registry,\"fontsKeyMap\");\n  for(Object c:containers.values())if(c.getClass().getName().equals(\"org.eclipse.swt.internal.ScalingSWTFontRegistry\\$ScaledCustomFontContainer\")){\n   Class<?> parent=c.getClass().getSuperclass();need(parent.getName().equals(\"org.eclipse.swt.internal.ScalingSWTFontRegistry\\$ScaledFontContainer\"),\"UNKNOWN_FONT_CONTAINER\");Field f=parent.getDeclaredField(\"scaledFonts\");f.setAccessible(true);Map<?,?> fonts=(Map<?,?>)f.get(c);for(var e:fonts.entrySet())if(e.getValue()==font){need(e.getKey() instanceof Integer,\"FONT_ZOOM_TYPE\");return (Integer)e.getKey();}\n  }\n  throw new AssertionError(\"UNOWNED_TRACKED_FONT \"+font);\n }\n\n private Set<Object> resources() {\n  Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());\n  Object[] objects = display.getDeviceData().objects;\n  if (objects != null) for (Object object : objects)\n   if (object instanceof Resource resource && !resource.isDisposed() && !(object instanceof Color)) result.add(object);\n  return result;\n }\n private int queued() throws Exception {\n  Runnable[] callbacks = (Runnable[]) field(display, Display.class, \"timerList\");\n  int count = 0;\n  if (callbacks != null) for (Runnable callback : callbacks) if (callback == ticker) count++;\n  return count;\n }\n private void pump(int millis) throws Exception {\n  long until = System.nanoTime() + millis * 1_000_000L;\n  while (!display.isDisposed() && System.nanoTime() < until) {\n   while (!display.isDisposed() && display.readAndDispatch()) { }\n   Thread.sleep(1);\n  }\n }\n private void openWidget(int mode) throws Exception {\n  openModel(new AnimvalueModel(\"animation-proof\", 0, mode, 0, 0));\n }\n private void openModel(AnimvalueModel supplied) throws Exception {\n  model = supplied;\n  widget = new WebCanvas<>(parent, SWT.NONE, model);\n  widgetsCreated++;\n  widget.setBounds(0, 0, 360, 240);\n  widget.setPartVisible(true);\n  ticker = (Runnable) field(widget, WebCanvas.class, \"ticker\");\n }\n private void closeWidget() throws Exception {\n  if (widget == null) return;\n  try {\n   if (!widget.isDisposed()) widget.dispose();\n   boolean retained = queued() != 0;\n   if (retained) { forcedCancellations++; display.timerExec(-1, ticker); }\n   need(!retained, \"OWNED_SWT_TICKER_RETAINED\");\n  } finally {\n   widgetsClosed++;\n   widget = null;\n   model = null;\n   ticker = null;\n  }\n  if (display.isDisposed()) return;\n  Set<Object> extra = resources();\n  extra.removeAll(beforeResources);\n  for (Object value : extra) {\n   need(value instanceof Font, \"UNCLASSIFIED_TRACKED_RESOURCE \" + value.getClass().getName());\n   Font font = (Font) value;\n   displayOwnedFonts.put(font, requireDisplayOwnedFont(font));\n  }\n }\n private int phase() { return model.snapshot()[8]; }\n private void startClock() throws Exception {\n  model.load(\"spinning\");\n  need(model.isAnimating() && queued() == 1, \"SWT_START_PRECONDITION\");\n  pump(80);\n  need(phase() != 0 && queued() == 1, \"ACTUAL_DISPLAY_CLOCK_PRECONDITION\");\n }\n @Before public void setup() throws Exception {\n  DeviceData data = new DeviceData();\n  data.tracking = true;\n  display = new Display(data);\n  displaysCreated++;\n  display.getSystemFont();\n  display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);\n  shell = new Shell(display);\n  shell.setText(\"Synexia opened animation clock controls\");\n  var trim = shell.computeTrim(0, 0, 360, 240);\n  shell.setSize(trim.width, trim.height);\n  shell.setLocation(80, 80);\n  parent = new Composite(shell, SWT.NONE);\n  parent.setBounds(0, 0, 360, 240);\n  shell.open();\n  shell.forceActive();\n  pump(80);\n  need(shell.isVisible() && display.getActiveShell() == shell, \"OWNED_OPEN_ACTIVE_SHELL_REQUIRED\");\n  beforeResources = resources();\n  openWidget(AnimvalueModel.SPINNER);\n }\n @After public void close() throws Exception {\n  try { closeWidget(); }\n  finally {\n   try { if (shell != null && !shell.isDisposed()) shell.dispose(); }\n   finally {\n    if (display != null && !display.isDisposed()) { display.dispose(); displaysClosed++; }\n    need(display == null || display.isDisposed(), \"OWNED_DISPLAY_RETAINED\");\n    for (Font font : displayOwnedFonts.keySet()) need(font.isDisposed(), \"DISPLAY_FONT_NOT_RELEASED\");\n    if (providerRegistries != null) need(!providerRegistries.containsKey(display), \"OWNED_DISPLAY_REGISTRY_RETAINED\");\n   }\n  }\n }\n @Test public void visibleClockAdvances() throws Exception {\n  startClock();\n  int before = phase();\n  pump(80);\n  need(phase() != before, \"VISIBLE_SWT_CLOCK_STALLED\");\n }\n @Test public void hiddenClockStable() throws Exception {\n  startClock();\n  widget.setPartVisible(false);\n  int before = phase();\n  pump(80);\n  need(phase() == before && queued() == 0, \"HIDDEN_SWT_PHASE_CHANGED\");\n }\n @Test public void idleHiddenIntervalResumes() throws Exception {\n  startClock();\n  widget.setPartVisible(false);\n  pump(80);\n  int before = phase();\n  need(!(boolean) field(widget, WebCanvas.class, \"pending\") && queued() == 0,\n    \"IDLE_SWT_PENDING_PRECONDITION\");\n  widget.setPartVisible(true);\n  pump(80);\n  need(phase() != before, \"IDLE_SWT_RESUME_NO_PHASE_ADVANCE\");\n }\n @Test public void pendingHiddenDeltaResumes() throws Exception {\n  startClock();\n  widget.setPartVisible(false);\n  pump(80);\n  int before = phase();\n  model.setState(-1, WebStates.ERROR, true);\n  need((boolean) field(widget, WebCanvas.class, \"pending\"), \"HIDDEN_SWT_DELTA_PRECONDITION\");\n  widget.setPartVisible(true);\n  pump(80);\n  need(phase() != before, \"PENDING_SWT_RESUME_STALLED\");\n }\n @Test public void nonAnimatingNeverStarts() throws Exception {\n  closeWidget();\n  openWidget(AnimvalueModel.TRANSITION);\n  model.load(\"transition\");\n  widget.setPartVisible(false);\n  widget.setPartVisible(true);\n  need(!model.isAnimating() && queued() == 0, \"IDLE_SWT_STARTED\");\n  pump(80);\n  need(phase() == 0, \"IDLE_SWT_PHASE_CHANGED\");\n }\n @Test public void repeatedVisibilityUsesOneRunnable() throws Exception {\n  startClock();\n  Runnable original = ticker;\n  for (int i = 0; i < 20; i++) widget.setPartVisible(true);\n  need(field(widget, WebCanvas.class, \"ticker\") == original && queued() == 1,\n    \"SWT_TIMER_IDENTITY_OR_COUNT\");\n }\n @Test public void disposeCancelsExactQueuedTickerBeforePump() throws Exception {\n  model.load(\"spinning\");\n  need(queued() == 1, \"SWT_DISPOSE_QUEUE_PRECONDITION\");\n  int before = phase();\n  widget.dispose();\n  need(queued() == 0, \"DISPOSED_SWT_TICKER_RETAINED\");\n  pump(80);\n  need(phase() == before, \"DISPOSED_SWT_MODEL_ADVANCED\");\n }\n\n private static final class CallbackModel extends AnimvalueModel {\n  Runnable next;\n  CallbackModel() { super(\"clock-callback-proof\", 0, SPINNER, 0, 0); }\n  @Override protected boolean advance(int ms) {\n   boolean again = super.advance(ms);\n   Runnable action = next;\n   next = null;\n   if (action != null) action.run();\n   return again;\n  }\n  void pulse() { animate(); }\n }\n private void stableHidden(String label) throws Exception {\n  int before = phase();\n  pump(100);\n  need(phase() == before && queued() == 0, label);\n }\n @Test public void ancestorHiddenStopsAndShowResumes() throws Exception {\n  startClock();\n  parent.setVisible(false);\n  need(widget.getVisible() && !widget.isVisible() && widget.isPartVisible(), \"PARENT_ONLY_HIDE_STATE\");\n  stableHidden(\"ANCESTOR_HIDDEN_CLOCK_ADVANCED\");\n  int before = phase();\n  parent.setVisible(true);\n  pump(100);\n  need(phase() != before, \"ANCESTOR_SHOW_NO_MODEL_MUTATION_STALLED\");\n }\n @Test public void initiallyHiddenParentFirstShowStarts() throws Exception {\n  closeWidget();\n  parent.setVisible(false);\n  openWidget(AnimvalueModel.SPINNER);\n  model.load(\"spinning\");\n  stableHidden(\"INITIALLY_HIDDEN_CLOCK_STARTED\");\n  int before = phase();\n  parent.setVisible(true);\n  pump(100);\n  need(phase() != before, \"FIRST_NATIVE_PARENT_SHOW_STALLED\");\n }\n @Test public void ancestorHiddenDeltaDoesNotRestart() throws Exception {\n  startClock();\n  parent.setVisible(false);\n  model.setState(-1, WebStates.ERROR, true);\n  stableHidden(\"ANCESTOR_HIDDEN_DELTA_RESTARTED_CLOCK\");\n  int before = phase();\n  parent.setVisible(true);\n  pump(100);\n  need(phase() != before, \"ANCESTOR_DELTA_REVEAL_STALLED\");\n }\n @Test public void zeroAreaPausesAndPositiveResizeResumes() throws Exception {\n  startClock();\n  for (int[] size : new int[][] { { 0, 240 }, { 360, 0 } }) {\n   widget.setSize(size[0], size[1]);\n   stableHidden(\"ZERO_AREA_CLOCK_ADVANCED\");\n   int before = phase();\n   widget.setSize(360, 240);\n   pump(100);\n   need(phase() != before, \"POSITIVE_RESIZE_CLOCK_STALLED\");\n  }\n }\n @Test public void nativeMinimizeAndDeiconifyResume() throws Exception {\n  startClock();\n  shell.setMinimized(true);\n  need(shell.getMinimized(), \"NATIVE_MINIMIZED_PRECONDITION\");\n  stableHidden(\"MINIMIZED_CLOCK_ADVANCED\");\n  int before = phase();\n  shell.setMinimized(false);\n  shell.forceActive();\n  pump(100);\n  need(!shell.getMinimized() && phase() != before, \"NATIVE_DEICONIFY_CLOCK_STALLED\");\n }\n @Test public void sameZoomReparentWakesAndIgnoresOldAncestor() throws Exception {\n  startClock();\n  Composite hidden = new Composite(shell, SWT.NONE);\n  hidden.setBounds(0, 0, 360, 240);\n  hidden.setVisible(false);\n  int[] events = new int[2];\n  Listener resize = event -> events[0]++;\n  Listener paint = event -> events[1]++;\n  widget.addListener(SWT.Resize, resize);\n  widget.addListener(SWT.Paint, paint);\n  try {\n   var extent = widget.getBounds();\n   need(widget.setParent(hidden), \"NATIVE_REPARENT_HIDDEN_REFUSED\");\n   need(widget.getBounds().equals(extent) && !widget.isVisible(), \"SAME_EXTENT_HIDDEN_REPARENT\");\n   stableHidden(\"HIDDEN_REPARENT_CLOCK_ADVANCED\");\n   int before = phase();\n   int resizeBefore = events[0], paintBefore = events[1];\n   need(widget.setParent(parent), \"NATIVE_REPARENT_VISIBLE_REFUSED\");\n   pump(100);\n   System.out.println(\"CLOCK_REPARENT_WAKE resizeDelta=\" + (events[0] - resizeBefore) +\n     \" paintDelta=\" + (events[1] - paintBefore) + \" phaseAdvanced=\" + (phase() != before));\n   need(widget.getBounds().equals(extent) && widget.isVisible(), \"SAME_EXTENT_VISIBLE_REPARENT\");\n   need(phase() != before, \"SAME_ZOOM_REPARENT_VISIBLE_CLOCK_STALLED\");\n   int current = phase();\n   hidden.setVisible(true);\n   hidden.setVisible(false);\n   pump(100);\n   need(phase() != current, \"OLD_ANCESTOR_EVENT_PARKED_CURRENT_CLOCK\");\n  } finally {\n   if (!widget.isDisposed()) {\n    widget.removeListener(SWT.Resize, resize);\n    widget.removeListener(SWT.Paint, paint);\n   }\n   if (!hidden.isDisposed()) hidden.dispose();\n  }\n }\n private CallbackModel callbackModel() throws Exception {\n  closeWidget();\n  CallbackModel callbacks = new CallbackModel();\n  openModel(callbacks);\n  startClock();\n  return callbacks;\n }\n @Test public void midTickAncestorHideCannotResurrectTicker() throws Exception {\n  CallbackModel callbacks = callbackModel();\n  callbacks.next = () -> parent.setVisible(false);\n  pump(80);\n  need(!parent.getVisible(), \"MID_TICK_PARENT_ACTION_NOT_RUN\");\n  stableHidden(\"MID_TICK_ANCESTOR_HIDE_RESURRECTED\");\n }\n @Test public void midTickLogicalHideCannotResurrectTicker() throws Exception {\n  CallbackModel callbacks = callbackModel();\n  callbacks.next = () -> widget.setPartVisible(false);\n  pump(80);\n  need(!widget.isPartVisible(), \"MID_TICK_LOGICAL_ACTION_NOT_RUN\");\n  stableHidden(\"MID_TICK_LOGICAL_HIDE_RESURRECTED\");\n }\n @Test public void midTickWidgetDisposeCannotResurrectTicker() throws Exception {\n  CallbackModel callbacks = callbackModel();\n  callbacks.next = widget::dispose;\n  pump(80);\n  int before = phase();\n  need(widget.isDisposed() && queued() == 0, \"MID_TICK_DISPOSE_TICKER_RETAINED\");\n  pump(80);\n  need(phase() == before, \"MID_TICK_DISPOSE_MODEL_ADVANCED\");\n }\n @Test public void midTickDisplayDisposeCannotResurrectTicker() throws Exception {\n  CallbackModel callbacks = callbackModel();\n  Set<Object> owned = resources();\n  callbacks.next = display::dispose;\n  pump(80);\n  need(display.isDisposed() && widget.isDisposed() && queued() == 0, \"MID_TICK_DISPLAY_DISPOSE_TICKER_RETAINED\");\n  for (Object value : owned) need(((Resource) value).isDisposed(), \"DISPLAY_DISPOSE_TRACKED_RESOURCE_RETAINED\");\n }\n @Test public void explicitUnopenedPaintDoesNotGrantClock() throws Exception {\n  closeWidget();\n  shell.dispose();\n  shell = new Shell(display);\n  parent = new Composite(shell, SWT.NONE);\n  parent.setBounds(0, 0, 360, 240);\n  openWidget(AnimvalueModel.SPINNER);\n  need(!shell.isVisible() && !widget.isVisible(), \"TRULY_UNOPENED_HOST_REQUIRED\");\n  model.load(\"spinning\");\n  Image image = new Image(display, 360, 240);\n  GC gc = new GC(image);\n  try {\n   gc.setBackground(display.getSystemColor(SWT.COLOR_RED));\n   gc.fillRectangle(0, 0, 360, 240);\n   Event event = new Event();\n   event.gc = gc;\n   event.width = 360;\n   event.height = 240;\n   widget.notifyListeners(SWT.Paint, event);\n  } finally { gc.dispose(); }\n  try {\n   var data = image.getImageData();\n   int sentinel = data.palette.getPixel(new org.eclipse.swt.graphics.RGB(255, 0, 0)), changed = 0;\n   int rgb = data.palette.redMask | data.palette.greenMask | data.palette.blueMask;\n   for (int y = 0; y < 240; y++) for (int x = 0; x < 360; x++)\n    if ((data.getPixel(x, y) & rgb) != sentinel) changed++;\n   need(changed > 0, \"EXPLICIT_UNOPENED_PAINT_DID_NOT_RENDER\");\n   stableHidden(\"EXPLICIT_UNOPENED_PAINT_GRANTED_CLOCK\");\n  } finally { image.dispose(); }\n }\n\n @Test public void sameZoomCrossShellReparentWakes() throws Exception {\n  startClock();\n  Shell other = new Shell(display);\n  var trim = other.computeTrim(0, 0, 360, 240);\n  other.setSize(trim.width, trim.height);\n  other.setLocation(100, 100);\n  Composite target = new Composite(other, SWT.NONE);\n  target.setBounds(0, 0, 360, 240);\n  int[] events = new int[2];\n  Listener resize = event -> events[0]++;\n  Listener paint = event -> events[1]++;\n  widget.addListener(SWT.Resize, resize);\n  widget.addListener(SWT.Paint, paint);\n  try {\n   other.open();\n   pump(40);\n   other.setVisible(false);\n   var extent = widget.getBounds();\n   need(widget.setParent(target), \"NATIVE_CROSS_SHELL_HIDDEN_REPARENT_REFUSED\");\n   need(widget.getBounds().equals(extent) && !widget.isVisible(), \"CROSS_SHELL_HIDDEN_EXTENT\");\n   stableHidden(\"CROSS_SHELL_HIDDEN_CLOCK_ADVANCED\");\n   int before = phase(), resizeBefore = events[0], paintBefore = events[1];\n   need(widget.setParent(parent), \"NATIVE_CROSS_SHELL_VISIBLE_REPARENT_REFUSED\");\n   shell.forceActive();\n   pump(100);\n   System.out.println(\"CLOCK_CROSS_SHELL_REPARENT_WAKE resizeDelta=\" + (events[0] - resizeBefore) +\n     \" paintDelta=\" + (events[1] - paintBefore) + \" phaseAdvanced=\" + (phase() != before));\n   need(widget.getBounds().equals(extent) && widget.isVisible(), \"CROSS_SHELL_VISIBLE_EXTENT\");\n   need(phase() != before, \"CROSS_SHELL_VISIBLE_CLOCK_STALLED\");\n  } finally {\n   if (!widget.isDisposed()) {\n    widget.removeListener(SWT.Resize, resize);\n    widget.removeListener(SWT.Paint, paint);\n   }\n   if (!other.isDisposed()) other.dispose();\n  }\n }\n}\n"
+      regex: true
+      caseSensitive: true
+      multiline: false
+      dotAll: false
+      filePattern: "widgets/web/org.eclipse.nebula.widgets.web.tests/src/org/eclipse/nebula/widgets/web/WebAnimationVisibilityTest.java"
+
+---
+# SPDX-License-Identifier: Apache-2.0
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.m3.RepairWebCanvasWakeQueryReentry20261116
+displayName: Recheck native clock eligibility after the model animation query
+description: Exact existing-owner lifetime maintenance proven necessary by four executed wake-query counterexamples; retain native-before-model ordering and coalesce reentrant scheduling.
+recipeList:
+  - org.openrewrite.text.FindAndReplace:
+      find: |-
+        \A\Q/*******************************************************************************
+         * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+         *
+         * This program and the accompanying materials are made available under the
+         * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+         * Public License 2.0, which are available at
+         * https://www.apache.org/licenses/LICENSE-2.0 and
+         * https://www.eclipse.org/legal/epl-2.0/
+         *
+         * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+         *
+         * Contributors:
+         *     Hitesh Soliwal (Synexia) - initial API and implementation
+         *******************************************************************************/
+        // Generated fromtemplates/nebula/WebCanvas.java.tmpl; edit the template and regenerate.
+        package org.eclipse.nebula.widgets.web;
+        
+        import org.eclipse.nebula.widgets.web.model.WebModel;
+        import org.eclipse.nebula.widgets.web.model.WebPaint;
+        import org.eclipse.nebula.widgets.web.model.WebStates;
+        import org.eclipse.swt.SWT;
+        import org.eclipse.swt.accessibility.ACC;
+        import org.eclipse.swt.accessibility.AccessibleAdapter;
+        import org.eclipse.swt.accessibility.AccessibleControlAdapter;
+        import org.eclipse.swt.accessibility.AccessibleControlEvent;
+        import org.eclipse.swt.accessibility.AccessibleEvent;
+        import org.eclipse.swt.graphics.Color;
+        import org.eclipse.swt.graphics.Font;
+        import org.eclipse.swt.graphics.FontData;
+        import org.eclipse.swt.graphics.GC;
+        import org.eclipse.swt.graphics.Point;
+        import org.eclipse.swt.widgets.Canvas;
+        import org.eclipse.swt.widgets.Composite;
+        import org.eclipse.swt.widgets.Control;
+        import org.eclipse.swt.widgets.Display;
+        import org.eclipse.swt.widgets.Event;
+        import org.eclipse.swt.widgets.Listener;
+        import org.eclipse.swt.widgets.Shell;
+        
+        /**
+         * One drawn Canvas per web widget (pattern CORE-1, SWT side). The control owns no widget
+         * state: it maps SWT events to neutral model keys and pointer kinds, repaints only the model's
+         * damage, records damage without painting while the part is hidden ({@code SWT.PartVisible} /
+         * {@code SWT.PartHidden} when the SWT build has them, else Show/Hide), and replays the model's
+         * display list through the GC. Colours and fonts are cached per widget and disposed with it.
+         *
+         * @param <M> the lane model
+         */
+        public class WebCanvas<M extends WebModel> extends Canvas {
+        	static final int PART_VISIBLE = eventType("PartVisible"), PART_HIDDEN = eventType("PartHidden");
+        	private static final int[] EVENTS = { SWT.Paint, SWT.Resize, SWT.KeyDown, SWT.MouseMove, SWT.MouseDown, SWT.MouseUp, SWT.MouseExit,
+        			SWT.MouseVerticalWheel, SWT.FocusIn, SWT.FocusOut, SWT.Traverse, SWT.Dispose, SWT.Show, SWT.Hide };
+        	private static final int[] SWT_KEYS = { SWT.ARROW_LEFT, SWT.ARROW_RIGHT, SWT.ARROW_UP, SWT.ARROW_DOWN, SWT.HOME, SWT.END, SWT.PAGE_UP,
+        			SWT.PAGE_DOWN, SWT.CR, ' ', SWT.ESC, SWT.TAB, SWT.DEL, SWT.BS };
+        	protected final M model;
+        	private final WebPaint paint = new WebPaint();
+        	private final int[] damage = new int[4];
+        	private final WebCanvasCache cache;
+        	private final Display clockDisplay;
+        	private final Runnable ticker = this::tick;
+        	private final Listener ownListener = this::handle;
+        	private final Listener ancestorListener = this::ancestorChanged;
+        	private boolean partVisible = true, pending, ticking;
+        	private boolean clockBlocked, hasArea, clockClosed;
+        	private int clockFilters;
+        
+        	public WebCanvas(Composite parent, int style, M model) {
+        		super(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);
+        		this.model = model;
+        		this.clockDisplay = getDisplay();
+        		this.cache = new WebCanvasCache(clockDisplay);
+        		model.setDelta(this::changed);
+        		for (int type : EVENTS) {
+        			addListener(type, ownListener);
+        		}
+        		if (PART_VISIBLE != 0) {
+        			addListener(PART_VISIBLE, ownListener);
+        			addListener(PART_HIDDEN, ownListener);
+        		}
+        		initAccessible();
+        		try {
+        			clockFilters |= 1;
+        			clockDisplay.addFilter(SWT.Hide, ancestorListener);
+        			clockFilters |= 2;
+        			clockDisplay.addFilter(SWT.Iconify, ancestorListener);
+        		} catch (RuntimeException | Error failure) {
+        			try {
+        				removeClockFilters();
+        			} catch (RuntimeException | Error cleanup) {
+        				if (failure != cleanup) {
+        					failure.addSuppressed(cleanup);
+        				}
+        			}
+        			throw failure;
+        		}
+        	}
+        
+        	static int eventType(String name) {
+        		try {
+        			return SWT.class.getField(name).getInt(null);
+        		} catch (ReflectiveOperationException e) {
+        			return 0;
+        		}
+        	}
+        
+        	/** The lane model; all widget behaviour is model API. */
+        	public M getModel() {
+        		checkWidget();
+        		return model;
+        	}
+        
+        	@Override
+        	public Point computeSize(int wHint, int hHint, boolean changed) {
+        		checkWidget();
+        		model.layout(wHint == SWT.DEFAULT ? 320 : wHint, hHint == SWT.DEFAULT ? 0 : hHint);
+        		Point p = new Point(wHint == SWT.DEFAULT ? model.prefWidth() : wHint, hHint == SWT.DEFAULT ? model.prefHeight() : hHint);
+        		model.layout(getSize().x, getSize().y);
+        		return p;
+        	}
+        
+        	private void handle(Event e) {
+        		switch (e.type) {
+        		case SWT.Paint: onPaint(e); break;
+        		case SWT.Resize:
+        			int width = getSize().x, height = getSize().y;
+        			hasArea = width > 0 && height > 0;
+        			if (!hasArea) {
+        				parkClock();
+        			}
+        			model.layout(width, height);
+        			if (hasArea) {
+        				wakeClock();
+        			}
+        			break;
+        		case SWT.KeyDown: onKey(e); break;
+        		case SWT.Traverse: onTraverse(e); break;
+        		case SWT.FocusIn: case SWT.FocusOut: model.setState(-1, WebStates.FOCUS, e.type == SWT.FocusIn); break;
+        		case SWT.Dispose:
+        			clockClosed = true;
+        			clockBlocked = true;
+        			ticking = false;
+        			try {
+        				clockDisplay.timerExec(-1, ticker);
+        			} finally {
+        				try {
+        					removeClockFilters();
+        				} finally {
+        					cache.dispose();
+        				}
+        			}
+        			break;
+        		case SWT.Show: setPartVisible(true); break;
+        		case SWT.Hide: setPartVisible(false); break;
+        		default: onOther(e);
+        		}
+        	}
+        
+        	private void onOther(Event e) {
+        		if (e.type == PART_VISIBLE || e.type == PART_HIDDEN) {
+        			setPartVisible(e.type == PART_VISIBLE);
+        		} else {
+        			onMouse(e);
+        		}
+        	}
+        
+        	private void onMouse(Event e) {
+        		int mods = mods(e.stateMask);
+        		switch (e.type) {
+        		case SWT.MouseMove: model.pointer((e.stateMask & SWT.BUTTON1) != 0 ? WebStates.P_DRAG : WebStates.P_MOVE, e.x, e.y, mods); break;
+        		case SWT.MouseDown: forceFocus(); model.pointer(WebStates.P_DOWN, e.x, e.y, mods); break;
+        		case SWT.MouseUp: model.pointer(WebStates.P_UP, e.x, e.y, mods); break;
+        		case SWT.MouseExit: model.pointer(WebStates.P_EXIT, e.x, e.y, mods); break;
+        		default: model.pointer(WebStates.P_WHEEL, e.x, -e.count, mods);
+        		}
+        	}
+        
+        	private void onKey(Event e) {
+        		int key = WebStates.KEY_CHAR;
+        		for (int i = 0; i < SWT_KEYS.length; i++) {
+        			if (e.keyCode == SWT_KEYS[i]) {
+        				key = i + 1;
+        			}
+        		}
+        		if (key != WebStates.KEY_CHAR || e.character >= ' ') {
+        			e.doit = !model.key(key, e.character, mods(e.stateMask));
+        		}
+        	}
+        
+        	private void onTraverse(Event e) {
+        		switch (e.detail) {
+        		case SWT.TRAVERSE_ARROW_NEXT: case SWT.TRAVERSE_ARROW_PREVIOUS: case SWT.TRAVERSE_RETURN: case SWT.TRAVERSE_ESCAPE:
+        			e.doit = false; break;
+        		case SWT.TRAVERSE_TAB_NEXT: case SWT.TRAVERSE_TAB_PREVIOUS:
+        			e.doit = !model.key(WebStates.KEY_TAB, 0, e.detail == SWT.TRAVERSE_TAB_PREVIOUS ? WebStates.MOD_SHIFT : 0); break;
+        		default: break;
+        		}
+        	}
+        
+        	private static int mods(int stateMask) {
+        		return ((stateMask & SWT.SHIFT) != 0 ? WebStates.MOD_SHIFT : 0) | ((stateMask & SWT.MOD1) != 0 ? WebStates.MOD_CTRL : 0)
+        				| ((stateMask & SWT.ALT) != 0 ? WebStates.MOD_ALT : 0);
+        	}
+        
+        	/** Model delta: damage-only redraw while visible; while hidden only remember that damage exists. */
+        	private void changed(int item, int mask) {
+        		if (isDisposed()) {
+        			return;
+        		}
+        		if (!partVisible) {
+        			pending = true;
+        			return;
+        		}
+        		int dy = model.takeBlit();
+        		if (dy != 0) {
+        			Point size = getSize();
+        			boolean h = model.scrollsHorizontally();
+        			int o = model.viewOrigin(), len = model.viewLength();
+        			int source = o + Math.max(0, -dy), span = len - Math.abs(dy);
+        			if (h) {
+        				scroll(source + dy, 0, source, 0, span, size.y, false);
+        			} else {
+        				scroll(0, source + dy, 0, source, size.x, span, false);
+        			}
+        		}
+        		if (model.takeDamage(damage)) {
+        			redraw(damage[0], damage[1], damage[2], damage[3], false);
+        		}
+        		if (model.isAnimating() && !ticking && clockReady(false)) {
+        			ticking = true;
+        			clockDisplay.timerExec(16, ticker);
+        		}
+        	}
+        
+        	/** PartVisible-aware hook: one flush and one paint when the part becomes visible. */
+        	protected void setPartVisible(boolean visible) {
+        		partVisible = visible;
+        		if (!visible) {
+        			parkClock();
+        		} else {
+        			clockBlocked = false;
+        		}
+        		if (visible && (pending || model.isAnimating())) {
+        			pending = false;
+        			changed(-1, 0);
+        		}
+        	}
+        
+        	public boolean isPartVisible() {
+        		return partVisible;
+        	}
+        
+        	private void tick() {
+        		ticking = false;
+        		if (!clockReady(false)) {
+        			return;
+        		}
+        		boolean again = model.tick(16);
+        		if (clockReady(false) && again && !ticking) {
+        			ticking = true;
+        			clockDisplay.timerExec(16, ticker);
+        		}
+        	}
+        
+        	/** Clock admission is independent of model damage and explicit painting. */
+        	private boolean clockReady(boolean wake) {
+        		if (clockClosed || isDisposed() || !partVisible || !hasArea || clockBlocked && !wake) {
+        			return false;
+        		}
+        		clockBlocked = true;
+        		if (!isVisible() || getShell().getMinimized()) {
+        			parkClock();
+        			return false;
+        		}
+        		if (clockClosed || isDisposed() || !partVisible || !hasArea) {
+        			return false;
+        		}
+        		clockBlocked = false;
+        		return true;
+        	}
+        
+        	private void parkClock() {
+        		clockBlocked = true;
+        		if (ticking) {
+        			ticking = false;
+        			clockDisplay.timerExec(-1, ticker);
+        		}
+        	}
+        
+        	private void wakeClock() {
+        		if (!ticking && clockReady(true) && model.isAnimating()) {
+        			ticking = true;
+        			clockDisplay.timerExec(16, ticker);
+        		}
+        	}
+        
+        	private void ancestorChanged(Event event) {
+        		if (clockClosed || isDisposed() || event.widget == this) {
+        			return;
+        		}
+        		for (Control ancestor = getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+        			if (event.widget == ancestor) {
+        				parkClock();
+        				return;
+        			}
+        			if (ancestor instanceof Shell) {
+        				return;
+        			}
+        		}
+        	}
+        
+        	private void removeClockFilters() {
+        		int filters = clockFilters;
+        		clockFilters = 0;
+        		try {
+        			if ((filters & 1) != 0) {
+        				clockDisplay.removeFilter(SWT.Hide, ancestorListener);
+        			}
+        		} finally {
+        			if ((filters & 2) != 0) {
+        				clockDisplay.removeFilter(SWT.Iconify, ancestorListener);
+        			}
+        		}
+        	}
+        
+        	private void onPaint(Event e) {
+        		GC gc = e.gc;
+        		gc.setAntialias(SWT.ON);
+        		gc.setBackground(cache.color(model.theme().slot(0)));
+        		gc.fillRectangle(e.x, e.y, e.width, e.height);
+        		model.paint(paint);
+        		try (PaintClip clipping = new PaintClip(gc)) {
+        			for (int i = 0; i < paint.count(); i++) {
+        				if (paint.intersects(i, e.x, e.y, e.width, e.height)) {
+        					replay(gc, i, e, clipping);
+        				}
+        			}
+        		}
+        		wakeClock();
+        	}
+        
+        	private void replay(GC gc, int i, Event e, PaintClip clipping) {
+        		int x = paint.get(i, WebPaint.F_X), y = paint.get(i, WebPaint.F_Y), w = paint.get(i, WebPaint.F_W), h = paint.get(i, WebPaint.F_H);
+        		int arg = paint.get(i, WebPaint.F_ARG);
+        		Color c = cache.color(paint.get(i, WebPaint.F_RGB));
+        		gc.setBackground(c);
+        		gc.setForeground(c);
+        		switch (paint.get(i, WebPaint.F_OP)) {
+        		case WebPaint.RECT: gc.fillRectangle(x, y, w, h); break;
+        		case WebPaint.ROUND: gc.fillRoundRectangle(x, y, w, h, 2 * arg, 2 * arg); break;
+        		case WebPaint.ROUND_LINE: gc.drawRoundRectangle(x, y, w - 1, h - 1, 2 * arg, 2 * arg); break;
+        		case WebPaint.OVAL: gc.fillOval(x, y, w, h); break;
+        		case WebPaint.OVAL_LINE: gc.drawOval(x, y, w - 1, h - 1); break;
+        		case WebPaint.LINE: gc.drawLine(x, arg == 0 ? y : y + h, x + w, arg == 0 ? y + h : y); break;
+        		default: replayRest(gc, i, x, y, w, h, arg, e, clipping);
+        		}
+        	}
+        
+        	private void replayRest(GC gc, int i, int x, int y, int w, int h, int arg, Event e, PaintClip clipping) {
+        		switch (paint.get(i, WebPaint.F_OP)) {
+        		case WebPaint.TEXT: text(gc, paint.text(paint.get(i, WebPaint.F_REF)), x, y, w, h, arg, e, clipping); break;
+        		case WebPaint.GRADIENT: gc.setBackground(cache.color(arg)); gc.fillGradientRectangle(x, y, w, h, false); break;
+        		case WebPaint.ARC: gc.drawArc(x, y, w, h, arg, paint.get(i, WebPaint.F_REF)); break;
+        		default: gc.drawPolyline(points(i, arg));
+        		}
+        	}
+        
+        	private int[] points(int i, int n) {
+        		int[] xy = new int[2 * n]; // TODO CORE-1: a reusable scratch array per point count
+        		int off = paint.get(i, WebPaint.F_REF);
+        		for (int k = 0; k < xy.length; k++) {
+        			xy[k] = paint.point(off + k);
+        		}
+        		return xy;
+        	}
+        
+        	private void text(GC gc, String s, int x, int y, int w, int h, int style, Event e, PaintClip clipping) {
+        		gc.setFont(cache.font(getFont(), style));
+        		Point ext = gc.textExtent(s);
+        		int tx = (style & WebPaint.CENTER) != 0 ? x + (w - ext.x) / 2 : (style & WebPaint.RIGHT) != 0 ? x + w - ext.x : x;
+        		int ty = y + (h - ext.y) / 2;
+        		Throwable primary = null;
+        		try {
+        			clipping.apply(x, y, w, h);
+        			gc.drawText(s, tx, ty, true);
+        			if ((style & WebPaint.UNDERLINE) != 0) {
+        				gc.drawLine(tx, ty + ext.y - 1, tx + ext.x, ty + ext.y - 1);
+        			}
+        		} catch (RuntimeException | Error failure) {
+        			primary = failure;
+        			throw failure;
+        		} finally {
+        			try {
+        				clipping.restore();
+        			} catch (RuntimeException | Error cleanup) {
+        				if (primary == null) {
+        					throw cleanup;
+        				}
+        				if (primary != cleanup) {
+        					primary.addSuppressed(cleanup);
+        				}
+        			}
+        		}
+        	}
+        
+        	/** One frame scope; native scratch is lazy and shared by its text records only. */
+        	private static final class PaintClip implements AutoCloseable {
+        		private final GC gc;
+        		private org.eclipse.swt.graphics.Region originalClip, workingClip;
+        		private org.eclipse.swt.graphics.Transform originalTransform;
+        		private boolean captured, originallyClipped;
+        
+        		PaintClip(GC gc) {
+        			this.gc = gc;
+        		}
+        
+        		void apply(int x, int y, int w, int h) {
+        			captured = false;
+        			if (originalClip == null) {
+        				originalClip = new org.eclipse.swt.graphics.Region(gc.getDevice());
+        			}
+        			if (workingClip == null) {
+        				workingClip = new org.eclipse.swt.graphics.Region(gc.getDevice());
+        			}
+        			if (originalTransform == null) {
+        				originalTransform = new org.eclipse.swt.graphics.Transform(gc.getDevice());
+        			}
+        			originallyClipped = gc.isClipped();
+        			gc.getTransform(originalTransform);
+        			if (originalTransform.isIdentity()) {
+        				gc.getClipping(originalClip);
+        			} else {
+        				try {
+        					gc.setTransform(null);
+        					gc.getClipping(originalClip);
+        				} finally {
+        					gc.setTransform(originalTransform);
+        				}
+        			}
+        			captured = true;
+        			gc.setClipping(x, y, w, h);
+        			if (originalTransform.isIdentity()) {
+        				gc.getClipping(workingClip);
+        				workingClip.intersect(originalClip);
+        				gc.setClipping(workingClip);
+        			} else {
+        				try {
+        					gc.setTransform(null);
+        					gc.getClipping(workingClip);
+        					workingClip.intersect(originalClip);
+        					gc.setClipping(workingClip);
+        				} finally {
+        					gc.setTransform(originalTransform);
+        				}
+        			}
+        		}
+        
+        		void restore() {
+        			if (!captured) {
+        				return;
+        			}
+        			try {
+        				if (originalTransform.isIdentity()) {
+        					gc.setClipping(originallyClipped ? originalClip : null);
+        				} else {
+        					try {
+        						gc.setTransform(null);
+        						gc.setClipping(originallyClipped ? originalClip : null);
+        					} finally {
+        						gc.setTransform(originalTransform);
+        					}
+        				}
+        			} finally {
+        				captured = false;
+        			}
+        		}
+        
+        		void dispose() {
+        			try {
+        				restore();
+        			} finally {
+        				try {
+        					if (originalTransform != null) {
+        						originalTransform.dispose();
+        					}
+        				} finally {
+        					try {
+        						if (workingClip != null) {
+        							workingClip.dispose();
+        						}
+        					} finally {
+        						if (originalClip != null) {
+        							originalClip.dispose();
+        						}
+        					}
+        				}
+        			}
+        		}
+        
+        		@Override
+        		public void close() {
+        			dispose();
+        		}
+        	}
+        
+        	private void initAccessible() {
+        		getAccessible().addAccessibleListener(new AccessibleAdapter() {
+        			@Override
+        			public void getName(AccessibleEvent e) {
+        				e.result = model.accessibleName(e.childID == ACC.CHILDID_SELF ? -1 : e.childID);
+        			}
+        		});
+        		getAccessible().addAccessibleControlListener(new AccessibleControlAdapter() {
+        			@Override
+        			public void getRole(AccessibleControlEvent e) {
+        				e.detail = WebCanvasCache.accRole(WebStates.roleName(model.role()));
+        			}
+        		});
+        	}
+        
+        	/** Font data of the widget font scaled to a pixel size (used by the cache). */
+        	static FontData scaled(Font base, int px, int style) {
+        		FontData fd = base.getFontData()[0];
+        		String name = (style & WebPaint.MONO) != 0 ? "Consolas" : fd.getName();
+        		return new FontData(name, Math.max(6, px * 3 / 4), (style & WebPaint.BOLD) != 0 ? SWT.BOLD : SWT.NORMAL);
+        	}
+        }
+        \E\z
+      replace: |
+        /*******************************************************************************
+         * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+         *
+         * This program and the accompanying materials are made available under the
+         * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+         * Public License 2.0, which are available at
+         * https://www.apache.org/licenses/LICENSE-2.0 and
+         * https://www.eclipse.org/legal/epl-2.0/
+         *
+         * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+         *
+         * Contributors:
+         *     Hitesh Soliwal (Synexia) - initial API and implementation
+         *******************************************************************************/
+        // Generated fromtemplates/nebula/WebCanvas.java.tmpl; edit the template and regenerate.
+        package org.eclipse.nebula.widgets.web;
+        
+        import org.eclipse.nebula.widgets.web.model.WebModel;
+        import org.eclipse.nebula.widgets.web.model.WebPaint;
+        import org.eclipse.nebula.widgets.web.model.WebStates;
+        import org.eclipse.swt.SWT;
+        import org.eclipse.swt.accessibility.ACC;
+        import org.eclipse.swt.accessibility.AccessibleAdapter;
+        import org.eclipse.swt.accessibility.AccessibleControlAdapter;
+        import org.eclipse.swt.accessibility.AccessibleControlEvent;
+        import org.eclipse.swt.accessibility.AccessibleEvent;
+        import org.eclipse.swt.graphics.Color;
+        import org.eclipse.swt.graphics.Font;
+        import org.eclipse.swt.graphics.FontData;
+        import org.eclipse.swt.graphics.GC;
+        import org.eclipse.swt.graphics.Point;
+        import org.eclipse.swt.widgets.Canvas;
+        import org.eclipse.swt.widgets.Composite;
+        import org.eclipse.swt.widgets.Control;
+        import org.eclipse.swt.widgets.Display;
+        import org.eclipse.swt.widgets.Event;
+        import org.eclipse.swt.widgets.Listener;
+        import org.eclipse.swt.widgets.Shell;
+        
+        /**
+         * One drawn Canvas per web widget (pattern CORE-1, SWT side). The control owns no widget
+         * state: it maps SWT events to neutral model keys and pointer kinds, repaints only the model's
+         * damage, records damage without painting while the part is hidden ({@code SWT.PartVisible} /
+         * {@code SWT.PartHidden} when the SWT build has them, else Show/Hide), and replays the model's
+         * display list through the GC. Colours and fonts are cached per widget and disposed with it.
+         *
+         * @param <M> the lane model
+         */
+        public class WebCanvas<M extends WebModel> extends Canvas {
+        	static final int PART_VISIBLE = eventType("PartVisible"), PART_HIDDEN = eventType("PartHidden");
+        	private static final int[] EVENTS = { SWT.Paint, SWT.Resize, SWT.KeyDown, SWT.MouseMove, SWT.MouseDown, SWT.MouseUp, SWT.MouseExit,
+        			SWT.MouseVerticalWheel, SWT.FocusIn, SWT.FocusOut, SWT.Traverse, SWT.Dispose, SWT.Show, SWT.Hide };
+        	private static final int[] SWT_KEYS = { SWT.ARROW_LEFT, SWT.ARROW_RIGHT, SWT.ARROW_UP, SWT.ARROW_DOWN, SWT.HOME, SWT.END, SWT.PAGE_UP,
+        			SWT.PAGE_DOWN, SWT.CR, ' ', SWT.ESC, SWT.TAB, SWT.DEL, SWT.BS };
+        	protected final M model;
+        	private final WebPaint paint = new WebPaint();
+        	private final int[] damage = new int[4];
+        	private final WebCanvasCache cache;
+        	private final Display clockDisplay;
+        	private final Runnable ticker = this::tick;
+        	private final Listener ownListener = this::handle;
+        	private final Listener ancestorListener = this::ancestorChanged;
+        	private boolean partVisible = true, pending, ticking;
+        	private boolean clockBlocked, hasArea, clockClosed;
+        	private int clockFilters;
+        
+        	public WebCanvas(Composite parent, int style, M model) {
+        		super(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);
+        		this.model = model;
+        		this.clockDisplay = getDisplay();
+        		this.cache = new WebCanvasCache(clockDisplay);
+        		model.setDelta(this::changed);
+        		for (int type : EVENTS) {
+        			addListener(type, ownListener);
+        		}
+        		if (PART_VISIBLE != 0) {
+        			addListener(PART_VISIBLE, ownListener);
+        			addListener(PART_HIDDEN, ownListener);
+        		}
+        		initAccessible();
+        		try {
+        			clockFilters |= 1;
+        			clockDisplay.addFilter(SWT.Hide, ancestorListener);
+        			clockFilters |= 2;
+        			clockDisplay.addFilter(SWT.Iconify, ancestorListener);
+        		} catch (RuntimeException | Error failure) {
+        			try {
+        				removeClockFilters();
+        			} catch (RuntimeException | Error cleanup) {
+        				if (failure != cleanup) {
+        					failure.addSuppressed(cleanup);
+        				}
+        			}
+        			throw failure;
+        		}
+        	}
+        
+        	static int eventType(String name) {
+        		try {
+        			return SWT.class.getField(name).getInt(null);
+        		} catch (ReflectiveOperationException e) {
+        			return 0;
+        		}
+        	}
+        
+        	/** The lane model; all widget behaviour is model API. */
+        	public M getModel() {
+        		checkWidget();
+        		return model;
+        	}
+        
+        	@Override
+        	public Point computeSize(int wHint, int hHint, boolean changed) {
+        		checkWidget();
+        		model.layout(wHint == SWT.DEFAULT ? 320 : wHint, hHint == SWT.DEFAULT ? 0 : hHint);
+        		Point p = new Point(wHint == SWT.DEFAULT ? model.prefWidth() : wHint, hHint == SWT.DEFAULT ? model.prefHeight() : hHint);
+        		model.layout(getSize().x, getSize().y);
+        		return p;
+        	}
+        
+        	private void handle(Event e) {
+        		switch (e.type) {
+        		case SWT.Paint: onPaint(e); break;
+        		case SWT.Resize:
+        			int width = getSize().x, height = getSize().y;
+        			hasArea = width > 0 && height > 0;
+        			if (!hasArea) {
+        				parkClock();
+        			}
+        			model.layout(width, height);
+        			if (hasArea) {
+        				wakeClock();
+        			}
+        			break;
+        		case SWT.KeyDown: onKey(e); break;
+        		case SWT.Traverse: onTraverse(e); break;
+        		case SWT.FocusIn: case SWT.FocusOut: model.setState(-1, WebStates.FOCUS, e.type == SWT.FocusIn); break;
+        		case SWT.Dispose:
+        			clockClosed = true;
+        			clockBlocked = true;
+        			ticking = false;
+        			try {
+        				clockDisplay.timerExec(-1, ticker);
+        			} finally {
+        				try {
+        					removeClockFilters();
+        				} finally {
+        					cache.dispose();
+        				}
+        			}
+        			break;
+        		case SWT.Show: setPartVisible(true); break;
+        		case SWT.Hide: setPartVisible(false); break;
+        		default: onOther(e);
+        		}
+        	}
+        
+        	private void onOther(Event e) {
+        		if (e.type == PART_VISIBLE || e.type == PART_HIDDEN) {
+        			setPartVisible(e.type == PART_VISIBLE);
+        		} else {
+        			onMouse(e);
+        		}
+        	}
+        
+        	private void onMouse(Event e) {
+        		int mods = mods(e.stateMask);
+        		switch (e.type) {
+        		case SWT.MouseMove: model.pointer((e.stateMask & SWT.BUTTON1) != 0 ? WebStates.P_DRAG : WebStates.P_MOVE, e.x, e.y, mods); break;
+        		case SWT.MouseDown: forceFocus(); model.pointer(WebStates.P_DOWN, e.x, e.y, mods); break;
+        		case SWT.MouseUp: model.pointer(WebStates.P_UP, e.x, e.y, mods); break;
+        		case SWT.MouseExit: model.pointer(WebStates.P_EXIT, e.x, e.y, mods); break;
+        		default: model.pointer(WebStates.P_WHEEL, e.x, -e.count, mods);
+        		}
+        	}
+        
+        	private void onKey(Event e) {
+        		int key = WebStates.KEY_CHAR;
+        		for (int i = 0; i < SWT_KEYS.length; i++) {
+        			if (e.keyCode == SWT_KEYS[i]) {
+        				key = i + 1;
+        			}
+        		}
+        		if (key != WebStates.KEY_CHAR || e.character >= ' ') {
+        			e.doit = !model.key(key, e.character, mods(e.stateMask));
+        		}
+        	}
+        
+        	private void onTraverse(Event e) {
+        		switch (e.detail) {
+        		case SWT.TRAVERSE_ARROW_NEXT: case SWT.TRAVERSE_ARROW_PREVIOUS: case SWT.TRAVERSE_RETURN: case SWT.TRAVERSE_ESCAPE:
+        			e.doit = false; break;
+        		case SWT.TRAVERSE_TAB_NEXT: case SWT.TRAVERSE_TAB_PREVIOUS:
+        			e.doit = !model.key(WebStates.KEY_TAB, 0, e.detail == SWT.TRAVERSE_TAB_PREVIOUS ? WebStates.MOD_SHIFT : 0); break;
+        		default: break;
+        		}
+        	}
+        
+        	private static int mods(int stateMask) {
+        		return ((stateMask & SWT.SHIFT) != 0 ? WebStates.MOD_SHIFT : 0) | ((stateMask & SWT.MOD1) != 0 ? WebStates.MOD_CTRL : 0)
+        				| ((stateMask & SWT.ALT) != 0 ? WebStates.MOD_ALT : 0);
+        	}
+        
+        	/** Model delta: damage-only redraw while visible; while hidden only remember that damage exists. */
+        	private void changed(int item, int mask) {
+        		if (isDisposed()) {
+        			return;
+        		}
+        		if (!partVisible) {
+        			pending = true;
+        			return;
+        		}
+        		int dy = model.takeBlit();
+        		if (dy != 0) {
+        			Point size = getSize();
+        			boolean h = model.scrollsHorizontally();
+        			int o = model.viewOrigin(), len = model.viewLength();
+        			int source = o + Math.max(0, -dy), span = len - Math.abs(dy);
+        			if (h) {
+        				scroll(source + dy, 0, source, 0, span, size.y, false);
+        			} else {
+        				scroll(0, source + dy, 0, source, size.x, span, false);
+        			}
+        		}
+        		if (model.takeDamage(damage)) {
+        			redraw(damage[0], damage[1], damage[2], damage[3], false);
+        		}
+        		if (model.isAnimating() && !ticking && clockReady(false)) {
+        			ticking = true;
+        			clockDisplay.timerExec(16, ticker);
+        		}
+        	}
+        
+        	/** PartVisible-aware hook: one flush and one paint when the part becomes visible. */
+        	protected void setPartVisible(boolean visible) {
+        		partVisible = visible;
+        		if (!visible) {
+        			parkClock();
+        		} else {
+        			clockBlocked = false;
+        		}
+        		if (visible && (pending || model.isAnimating())) {
+        			pending = false;
+        			changed(-1, 0);
+        		}
+        	}
+        
+        	public boolean isPartVisible() {
+        		return partVisible;
+        	}
+        
+        	private void tick() {
+        		ticking = false;
+        		if (!clockReady(false)) {
+        			return;
+        		}
+        		boolean again = model.tick(16);
+        		if (clockReady(false) && again && !ticking) {
+        			ticking = true;
+        			clockDisplay.timerExec(16, ticker);
+        		}
+        	}
+        
+        	/** Clock admission is independent of model damage and explicit painting. */
+        	private boolean clockReady(boolean wake) {
+        		if (clockClosed || isDisposed() || !partVisible || !hasArea || clockBlocked && !wake) {
+        			return false;
+        		}
+        		clockBlocked = true;
+        		if (!isVisible() || getShell().getMinimized()) {
+        			parkClock();
+        			return false;
+        		}
+        		if (clockClosed || isDisposed() || !partVisible || !hasArea) {
+        			return false;
+        		}
+        		clockBlocked = false;
+        		return true;
+        	}
+        
+        	private void parkClock() {
+        		clockBlocked = true;
+        		if (ticking) {
+        			ticking = false;
+        			clockDisplay.timerExec(-1, ticker);
+        		}
+        	}
+        
+        	private void wakeClock() {
+        		if (!ticking && clockReady(true) && model.isAnimating() && !ticking && clockReady(false)) {
+        			ticking = true;
+        			clockDisplay.timerExec(16, ticker);
+        		}
+        	}
+        
+        	private void ancestorChanged(Event event) {
+        		if (clockClosed || isDisposed() || event.widget == this) {
+        			return;
+        		}
+        		for (Control ancestor = getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+        			if (event.widget == ancestor) {
+        				parkClock();
+        				return;
+        			}
+        			if (ancestor instanceof Shell) {
+        				return;
+        			}
+        		}
+        	}
+        
+        	private void removeClockFilters() {
+        		int filters = clockFilters;
+        		clockFilters = 0;
+        		try {
+        			if ((filters & 1) != 0) {
+        				clockDisplay.removeFilter(SWT.Hide, ancestorListener);
+        			}
+        		} finally {
+        			if ((filters & 2) != 0) {
+        				clockDisplay.removeFilter(SWT.Iconify, ancestorListener);
+        			}
+        		}
+        	}
+        
+        	private void onPaint(Event e) {
+        		GC gc = e.gc;
+        		gc.setAntialias(SWT.ON);
+        		gc.setBackground(cache.color(model.theme().slot(0)));
+        		gc.fillRectangle(e.x, e.y, e.width, e.height);
+        		model.paint(paint);
+        		try (PaintClip clipping = new PaintClip(gc)) {
+        			for (int i = 0; i < paint.count(); i++) {
+        				if (paint.intersects(i, e.x, e.y, e.width, e.height)) {
+        					replay(gc, i, e, clipping);
+        				}
+        			}
+        		}
+        		wakeClock();
+        	}
+        
+        	private void replay(GC gc, int i, Event e, PaintClip clipping) {
+        		int x = paint.get(i, WebPaint.F_X), y = paint.get(i, WebPaint.F_Y), w = paint.get(i, WebPaint.F_W), h = paint.get(i, WebPaint.F_H);
+        		int arg = paint.get(i, WebPaint.F_ARG);
+        		Color c = cache.color(paint.get(i, WebPaint.F_RGB));
+        		gc.setBackground(c);
+        		gc.setForeground(c);
+        		switch (paint.get(i, WebPaint.F_OP)) {
+        		case WebPaint.RECT: gc.fillRectangle(x, y, w, h); break;
+        		case WebPaint.ROUND: gc.fillRoundRectangle(x, y, w, h, 2 * arg, 2 * arg); break;
+        		case WebPaint.ROUND_LINE: gc.drawRoundRectangle(x, y, w - 1, h - 1, 2 * arg, 2 * arg); break;
+        		case WebPaint.OVAL: gc.fillOval(x, y, w, h); break;
+        		case WebPaint.OVAL_LINE: gc.drawOval(x, y, w - 1, h - 1); break;
+        		case WebPaint.LINE: gc.drawLine(x, arg == 0 ? y : y + h, x + w, arg == 0 ? y + h : y); break;
+        		default: replayRest(gc, i, x, y, w, h, arg, e, clipping);
+        		}
+        	}
+        
+        	private void replayRest(GC gc, int i, int x, int y, int w, int h, int arg, Event e, PaintClip clipping) {
+        		switch (paint.get(i, WebPaint.F_OP)) {
+        		case WebPaint.TEXT: text(gc, paint.text(paint.get(i, WebPaint.F_REF)), x, y, w, h, arg, e, clipping); break;
+        		case WebPaint.GRADIENT: gc.setBackground(cache.color(arg)); gc.fillGradientRectangle(x, y, w, h, false); break;
+        		case WebPaint.ARC: gc.drawArc(x, y, w, h, arg, paint.get(i, WebPaint.F_REF)); break;
+        		default: gc.drawPolyline(points(i, arg));
+        		}
+        	}
+        
+        	private int[] points(int i, int n) {
+        		int[] xy = new int[2 * n]; // TODO CORE-1: a reusable scratch array per point count
+        		int off = paint.get(i, WebPaint.F_REF);
+        		for (int k = 0; k < xy.length; k++) {
+        			xy[k] = paint.point(off + k);
+        		}
+        		return xy;
+        	}
+        
+        	private void text(GC gc, String s, int x, int y, int w, int h, int style, Event e, PaintClip clipping) {
+        		gc.setFont(cache.font(getFont(), style));
+        		Point ext = gc.textExtent(s);
+        		int tx = (style & WebPaint.CENTER) != 0 ? x + (w - ext.x) / 2 : (style & WebPaint.RIGHT) != 0 ? x + w - ext.x : x;
+        		int ty = y + (h - ext.y) / 2;
+        		Throwable primary = null;
+        		try {
+        			clipping.apply(x, y, w, h);
+        			gc.drawText(s, tx, ty, true);
+        			if ((style & WebPaint.UNDERLINE) != 0) {
+        				gc.drawLine(tx, ty + ext.y - 1, tx + ext.x, ty + ext.y - 1);
+        			}
+        		} catch (RuntimeException | Error failure) {
+        			primary = failure;
+        			throw failure;
+        		} finally {
+        			try {
+        				clipping.restore();
+        			} catch (RuntimeException | Error cleanup) {
+        				if (primary == null) {
+        					throw cleanup;
+        				}
+        				if (primary != cleanup) {
+        					primary.addSuppressed(cleanup);
+        				}
+        			}
+        		}
+        	}
+        
+        	/** One frame scope; native scratch is lazy and shared by its text records only. */
+        	private static final class PaintClip implements AutoCloseable {
+        		private final GC gc;
+        		private org.eclipse.swt.graphics.Region originalClip, workingClip;
+        		private org.eclipse.swt.graphics.Transform originalTransform;
+        		private boolean captured, originallyClipped;
+        
+        		PaintClip(GC gc) {
+        			this.gc = gc;
+        		}
+        
+        		void apply(int x, int y, int w, int h) {
+        			captured = false;
+        			if (originalClip == null) {
+        				originalClip = new org.eclipse.swt.graphics.Region(gc.getDevice());
+        			}
+        			if (workingClip == null) {
+        				workingClip = new org.eclipse.swt.graphics.Region(gc.getDevice());
+        			}
+        			if (originalTransform == null) {
+        				originalTransform = new org.eclipse.swt.graphics.Transform(gc.getDevice());
+        			}
+        			originallyClipped = gc.isClipped();
+        			gc.getTransform(originalTransform);
+        			if (originalTransform.isIdentity()) {
+        				gc.getClipping(originalClip);
+        			} else {
+        				try {
+        					gc.setTransform(null);
+        					gc.getClipping(originalClip);
+        				} finally {
+        					gc.setTransform(originalTransform);
+        				}
+        			}
+        			captured = true;
+        			gc.setClipping(x, y, w, h);
+        			if (originalTransform.isIdentity()) {
+        				gc.getClipping(workingClip);
+        				workingClip.intersect(originalClip);
+        				gc.setClipping(workingClip);
+        			} else {
+        				try {
+        					gc.setTransform(null);
+        					gc.getClipping(workingClip);
+        					workingClip.intersect(originalClip);
+        					gc.setClipping(workingClip);
+        				} finally {
+        					gc.setTransform(originalTransform);
+        				}
+        			}
+        		}
+        
+        		void restore() {
+        			if (!captured) {
+        				return;
+        			}
+        			try {
+        				if (originalTransform.isIdentity()) {
+        					gc.setClipping(originallyClipped ? originalClip : null);
+        				} else {
+        					try {
+        						gc.setTransform(null);
+        						gc.setClipping(originallyClipped ? originalClip : null);
+        					} finally {
+        						gc.setTransform(originalTransform);
+        					}
+        				}
+        			} finally {
+        				captured = false;
+        			}
+        		}
+        
+        		void dispose() {
+        			try {
+        				restore();
+        			} finally {
+        				try {
+        					if (originalTransform != null) {
+        						originalTransform.dispose();
+        					}
+        				} finally {
+        					try {
+        						if (workingClip != null) {
+        							workingClip.dispose();
+        						}
+        					} finally {
+        						if (originalClip != null) {
+        							originalClip.dispose();
+        						}
+        					}
+        				}
+        			}
+        		}
+        
+        		@Override
+        		public void close() {
+        			dispose();
+        		}
+        	}
+        
+        	private void initAccessible() {
+        		getAccessible().addAccessibleListener(new AccessibleAdapter() {
+        			@Override
+        			public void getName(AccessibleEvent e) {
+        				e.result = model.accessibleName(e.childID == ACC.CHILDID_SELF ? -1 : e.childID);
+        			}
+        		});
+        		getAccessible().addAccessibleControlListener(new AccessibleControlAdapter() {
+        			@Override
+        			public void getRole(AccessibleControlEvent e) {
+        				e.detail = WebCanvasCache.accRole(WebStates.roleName(model.role()));
+        			}
+        		});
+        	}
+        
+        	/** Font data of the widget font scaled to a pixel size (used by the cache). */
+        	static FontData scaled(Font base, int px, int style) {
+        		FontData fd = base.getFontData()[0];
+        		String name = (style & WebPaint.MONO) != 0 ? "Consolas" : fd.getName();
+        		return new FontData(name, Math.max(6, px * 3 / 4), (style & WebPaint.BOLD) != 0 ? SWT.BOLD : SWT.NORMAL);
+        	}
+        }
+      regex: true
+      caseSensitive: true
+      filePattern: widgets/web/org.eclipse.nebula.widgets.web/src/org/eclipse/nebula/widgets/web/WebCanvas.java
+
+---
+# SPDX-License-Identifier: Apache-2.0
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.m3.ApplyWebCanvasPhysicalClockWithWakeReentryRepair20261116
+displayName: Apply the physical clock mediation and its query reentry repair
+description: Preserve the exact original source and opened-clock test recipe, then apply the bounded post-model-query lifetime and coalescence repair in order.
+recipeList:
+  - com.synexia.m3.WebCanvasPhysicalClockAdmission20261116
+  - com.synexia.m3.RepairWebCanvasWakeQueryReentry20261116
+
+---
+# SPDX-License-Identifier: Apache-2.0
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.m3.ScopeWebAnimationVisibilityToQualifiedWin32Runtime20261116
+displayName: Scope opened native clock introspection to the qualified Win32 runtime
+description: Add only an explicit JUnit assumption before any Display creation; preserve strict ownership and native behavior assertions.
+recipeList:
+  - org.openrewrite.text.FindAndReplace:
+      find: |-
+        \A\Q/*******************************************************************************
+         * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+         *
+         * This program and the accompanying materials are made available under the
+         * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+         * Public License 2.0, which are available at
+         * https://www.apache.org/licenses/LICENSE-2.0 and
+         * https://www.eclipse.org/legal/epl-2.0/
+         *
+         * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+         *
+         * Contributors:
+         *     Hitesh Soliwal (Synexia) - initial API and implementation
+         *******************************************************************************/
+        package org.eclipse.nebula.widgets.web;
+        
+        import java.lang.reflect.Field;
+        import java.util.Collections;
+        import java.util.IdentityHashMap;
+        import java.util.Map;
+        import java.util.Set;
+        import org.eclipse.nebula.widgets.web.model.AnimvalueModel;
+        import org.eclipse.nebula.widgets.web.model.WebStates;
+        import org.eclipse.swt.SWT;
+        import org.eclipse.swt.graphics.DeviceData;
+        import org.eclipse.swt.graphics.GC;
+        import org.eclipse.swt.graphics.Image;
+        import org.eclipse.swt.widgets.Event;
+        import org.eclipse.swt.widgets.Listener;
+        import org.eclipse.swt.graphics.Font;
+        import org.eclipse.swt.graphics.Resource;
+        import org.eclipse.swt.graphics.Color;
+        import org.eclipse.swt.widgets.Composite;
+        import org.eclipse.swt.widgets.Display;
+        import org.eclipse.swt.widgets.Shell;
+        import org.junit.After;
+        import org.junit.Before;
+        import org.junit.Test;
+        
+        /** Uses an owned, opened Shell and the real Display timer queue; no screen capture.
+         * The seven timer assertion intents supersede the historical unopened-host fixture. */
+        public final class WebAnimationVisibilityTest {
+         private Display display;
+         private Shell shell;
+         private Composite parent;
+         private final IdentityHashMap<Font, Integer> displayOwnedFonts = new IdentityHashMap<>();
+         private java.util.Map<?, ?> providerRegistries;
+         private AnimvalueModel model;
+         private WebCanvas<AnimvalueModel> widget;
+         private Runnable ticker;
+         private Set<Object> beforeResources;
+         private static int widgetsCreated, widgetsClosed, displaysCreated, displaysClosed, forcedCancellations;
+        
+         private static void need(boolean condition, String message) {
+          if (!condition) throw new AssertionError(message);
+         }
+         private static Object field(Object owner, Class<?> type, String name) throws Exception {
+          Field field = type.getDeclaredField(name);
+          field.setAccessible(true);
+          return field.get(owner);
+         }
+         private static Object field(Object owner,String name)throws Exception{Field f=owner.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(owner);}
+         private int requireDisplayOwnedFont(org.eclipse.swt.graphics.Font font)throws Exception{
+          Field root=Class.forName("org.eclipse.swt.internal.SWTFontProvider").getDeclaredField("fontRegistries");root.setAccessible(true);providerRegistries=(Map<?,?>)root.get(null);Object registry=providerRegistries.get(display);need(registry!=null&&registry.getClass().getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry"),"UNKNOWN_FONT_REGISTRY");need(field(registry,"device")==display,"FOREIGN_FONT_REGISTRY");
+          Map<?,?> containers=(Map<?,?>)field(registry,"fontsKeyMap");
+          for(Object c:containers.values())if(c.getClass().getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry$ScaledCustomFontContainer")){
+           Class<?> parent=c.getClass().getSuperclass();need(parent.getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry$ScaledFontContainer"),"UNKNOWN_FONT_CONTAINER");Field f=parent.getDeclaredField("scaledFonts");f.setAccessible(true);Map<?,?> fonts=(Map<?,?>)f.get(c);for(var e:fonts.entrySet())if(e.getValue()==font){need(e.getKey() instanceof Integer,"FONT_ZOOM_TYPE");return (Integer)e.getKey();}
+          }
+          throw new AssertionError("UNOWNED_TRACKED_FONT "+font);
+         }
+        
+         private Set<Object> resources() {
+          Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());
+          Object[] objects = display.getDeviceData().objects;
+          if (objects != null) for (Object object : objects)
+           if (object instanceof Resource resource && !resource.isDisposed() && !(object instanceof Color)) result.add(object);
+          return result;
+         }
+         private int queued() throws Exception {
+          Runnable[] callbacks = (Runnable[]) field(display, Display.class, "timerList");
+          int count = 0;
+          if (callbacks != null) for (Runnable callback : callbacks) if (callback == ticker) count++;
+          return count;
+         }
+         private void pump(int millis) throws Exception {
+          long until = System.nanoTime() + millis * 1_000_000L;
+          while (!display.isDisposed() && System.nanoTime() < until) {
+           while (!display.isDisposed() && display.readAndDispatch()) { }
+           Thread.sleep(1);
+          }
+         }
+         private void openWidget(int mode) throws Exception {
+          openModel(new AnimvalueModel("animation-proof", 0, mode, 0, 0));
+         }
+         private void openModel(AnimvalueModel supplied) throws Exception {
+          model = supplied;
+          widget = new WebCanvas<>(parent, SWT.NONE, model);
+          widgetsCreated++;
+          widget.setBounds(0, 0, 360, 240);
+          widget.setPartVisible(true);
+          ticker = (Runnable) field(widget, WebCanvas.class, "ticker");
+         }
+         private void closeWidget() throws Exception {
+          if (widget == null) return;
+          try {
+           if (!widget.isDisposed()) widget.dispose();
+           boolean retained = queued() != 0;
+           if (retained) { forcedCancellations++; display.timerExec(-1, ticker); }
+           need(!retained, "OWNED_SWT_TICKER_RETAINED");
+          } finally {
+           widgetsClosed++;
+           widget = null;
+           model = null;
+           ticker = null;
+          }
+          if (display.isDisposed()) return;
+          Set<Object> extra = resources();
+          extra.removeAll(beforeResources);
+          for (Object value : extra) {
+           need(value instanceof Font, "UNCLASSIFIED_TRACKED_RESOURCE " + value.getClass().getName());
+           Font font = (Font) value;
+           displayOwnedFonts.put(font, requireDisplayOwnedFont(font));
+          }
+         }
+         private int phase() { return model.snapshot()[8]; }
+         private void startClock() throws Exception {
+          model.load("spinning");
+          need(model.isAnimating() && queued() == 1, "SWT_START_PRECONDITION");
+          pump(80);
+          need(phase() != 0 && queued() == 1, "ACTUAL_DISPLAY_CLOCK_PRECONDITION");
+         }
+         @Before public void setup() throws Exception {
+          DeviceData data = new DeviceData();
+          data.tracking = true;
+          display = new Display(data);
+          displaysCreated++;
+          display.getSystemFont();
+          display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+          shell = new Shell(display);
+          shell.setText("Synexia opened animation clock controls");
+          var trim = shell.computeTrim(0, 0, 360, 240);
+          shell.setSize(trim.width, trim.height);
+          shell.setLocation(80, 80);
+          parent = new Composite(shell, SWT.NONE);
+          parent.setBounds(0, 0, 360, 240);
+          shell.open();
+          shell.forceActive();
+          pump(80);
+          need(shell.isVisible() && display.getActiveShell() == shell, "OWNED_OPEN_ACTIVE_SHELL_REQUIRED");
+          beforeResources = resources();
+          openWidget(AnimvalueModel.SPINNER);
+         }
+         @After public void close() throws Exception {
+          try { closeWidget(); }
+          finally {
+           try { if (shell != null && !shell.isDisposed()) shell.dispose(); }
+           finally {
+            if (display != null && !display.isDisposed()) { display.dispose(); displaysClosed++; }
+            need(display == null || display.isDisposed(), "OWNED_DISPLAY_RETAINED");
+            for (Font font : displayOwnedFonts.keySet()) need(font.isDisposed(), "DISPLAY_FONT_NOT_RELEASED");
+            if (providerRegistries != null) need(!providerRegistries.containsKey(display), "OWNED_DISPLAY_REGISTRY_RETAINED");
+           }
+          }
+         }
+         @Test public void visibleClockAdvances() throws Exception {
+          startClock();
+          int before = phase();
+          pump(80);
+          need(phase() != before, "VISIBLE_SWT_CLOCK_STALLED");
+         }
+         @Test public void hiddenClockStable() throws Exception {
+          startClock();
+          widget.setPartVisible(false);
+          int before = phase();
+          pump(80);
+          need(phase() == before && queued() == 0, "HIDDEN_SWT_PHASE_CHANGED");
+         }
+         @Test public void idleHiddenIntervalResumes() throws Exception {
+          startClock();
+          widget.setPartVisible(false);
+          pump(80);
+          int before = phase();
+          need(!(boolean) field(widget, WebCanvas.class, "pending") && queued() == 0,
+            "IDLE_SWT_PENDING_PRECONDITION");
+          widget.setPartVisible(true);
+          pump(80);
+          need(phase() != before, "IDLE_SWT_RESUME_NO_PHASE_ADVANCE");
+         }
+         @Test public void pendingHiddenDeltaResumes() throws Exception {
+          startClock();
+          widget.setPartVisible(false);
+          pump(80);
+          int before = phase();
+          model.setState(-1, WebStates.ERROR, true);
+          need((boolean) field(widget, WebCanvas.class, "pending"), "HIDDEN_SWT_DELTA_PRECONDITION");
+          widget.setPartVisible(true);
+          pump(80);
+          need(phase() != before, "PENDING_SWT_RESUME_STALLED");
+         }
+         @Test public void nonAnimatingNeverStarts() throws Exception {
+          closeWidget();
+          openWidget(AnimvalueModel.TRANSITION);
+          model.load("transition");
+          widget.setPartVisible(false);
+          widget.setPartVisible(true);
+          need(!model.isAnimating() && queued() == 0, "IDLE_SWT_STARTED");
+          pump(80);
+          need(phase() == 0, "IDLE_SWT_PHASE_CHANGED");
+         }
+         @Test public void repeatedVisibilityUsesOneRunnable() throws Exception {
+          startClock();
+          Runnable original = ticker;
+          for (int i = 0; i < 20; i++) widget.setPartVisible(true);
+          need(field(widget, WebCanvas.class, "ticker") == original && queued() == 1,
+            "SWT_TIMER_IDENTITY_OR_COUNT");
+         }
+         @Test public void disposeCancelsExactQueuedTickerBeforePump() throws Exception {
+          model.load("spinning");
+          need(queued() == 1, "SWT_DISPOSE_QUEUE_PRECONDITION");
+          int before = phase();
+          widget.dispose();
+          need(queued() == 0, "DISPOSED_SWT_TICKER_RETAINED");
+          pump(80);
+          need(phase() == before, "DISPOSED_SWT_MODEL_ADVANCED");
+         }
+        
+         private static final class CallbackModel extends AnimvalueModel {
+          Runnable next;
+          CallbackModel() { super("clock-callback-proof", 0, SPINNER, 0, 0); }
+          @Override protected boolean advance(int ms) {
+           boolean again = super.advance(ms);
+           Runnable action = next;
+           next = null;
+           if (action != null) action.run();
+           return again;
+          }
+          void pulse() { animate(); }
+         }
+         private void stableHidden(String label) throws Exception {
+          int before = phase();
+          pump(100);
+          need(phase() == before && queued() == 0, label);
+         }
+         @Test public void ancestorHiddenStopsAndShowResumes() throws Exception {
+          startClock();
+          parent.setVisible(false);
+          need(widget.getVisible() && !widget.isVisible() && widget.isPartVisible(), "PARENT_ONLY_HIDE_STATE");
+          stableHidden("ANCESTOR_HIDDEN_CLOCK_ADVANCED");
+          int before = phase();
+          parent.setVisible(true);
+          pump(100);
+          need(phase() != before, "ANCESTOR_SHOW_NO_MODEL_MUTATION_STALLED");
+         }
+         @Test public void initiallyHiddenParentFirstShowStarts() throws Exception {
+          closeWidget();
+          parent.setVisible(false);
+          openWidget(AnimvalueModel.SPINNER);
+          model.load("spinning");
+          stableHidden("INITIALLY_HIDDEN_CLOCK_STARTED");
+          int before = phase();
+          parent.setVisible(true);
+          pump(100);
+          need(phase() != before, "FIRST_NATIVE_PARENT_SHOW_STALLED");
+         }
+         @Test public void ancestorHiddenDeltaDoesNotRestart() throws Exception {
+          startClock();
+          parent.setVisible(false);
+          model.setState(-1, WebStates.ERROR, true);
+          stableHidden("ANCESTOR_HIDDEN_DELTA_RESTARTED_CLOCK");
+          int before = phase();
+          parent.setVisible(true);
+          pump(100);
+          need(phase() != before, "ANCESTOR_DELTA_REVEAL_STALLED");
+         }
+         @Test public void zeroAreaPausesAndPositiveResizeResumes() throws Exception {
+          startClock();
+          for (int[] size : new int[][] { { 0, 240 }, { 360, 0 } }) {
+           widget.setSize(size[0], size[1]);
+           stableHidden("ZERO_AREA_CLOCK_ADVANCED");
+           int before = phase();
+           widget.setSize(360, 240);
+           pump(100);
+           need(phase() != before, "POSITIVE_RESIZE_CLOCK_STALLED");
+          }
+         }
+         @Test public void nativeMinimizeAndDeiconifyResume() throws Exception {
+          startClock();
+          shell.setMinimized(true);
+          need(shell.getMinimized(), "NATIVE_MINIMIZED_PRECONDITION");
+          stableHidden("MINIMIZED_CLOCK_ADVANCED");
+          int before = phase();
+          shell.setMinimized(false);
+          shell.forceActive();
+          pump(100);
+          need(!shell.getMinimized() && phase() != before, "NATIVE_DEICONIFY_CLOCK_STALLED");
+         }
+         @Test public void sameZoomReparentWakesAndIgnoresOldAncestor() throws Exception {
+          startClock();
+          Composite hidden = new Composite(shell, SWT.NONE);
+          hidden.setBounds(0, 0, 360, 240);
+          hidden.setVisible(false);
+          int[] events = new int[2];
+          Listener resize = event -> events[0]++;
+          Listener paint = event -> events[1]++;
+          widget.addListener(SWT.Resize, resize);
+          widget.addListener(SWT.Paint, paint);
+          try {
+           var extent = widget.getBounds();
+           need(widget.setParent(hidden), "NATIVE_REPARENT_HIDDEN_REFUSED");
+           need(widget.getBounds().equals(extent) && !widget.isVisible(), "SAME_EXTENT_HIDDEN_REPARENT");
+           stableHidden("HIDDEN_REPARENT_CLOCK_ADVANCED");
+           int before = phase();
+           int resizeBefore = events[0], paintBefore = events[1];
+           need(widget.setParent(parent), "NATIVE_REPARENT_VISIBLE_REFUSED");
+           pump(100);
+           System.out.println("CLOCK_REPARENT_WAKE resizeDelta=" + (events[0] - resizeBefore) +
+             " paintDelta=" + (events[1] - paintBefore) + " phaseAdvanced=" + (phase() != before));
+           need(widget.getBounds().equals(extent) && widget.isVisible(), "SAME_EXTENT_VISIBLE_REPARENT");
+           need(phase() != before, "SAME_ZOOM_REPARENT_VISIBLE_CLOCK_STALLED");
+           int current = phase();
+           hidden.setVisible(true);
+           hidden.setVisible(false);
+           pump(100);
+           need(phase() != current, "OLD_ANCESTOR_EVENT_PARKED_CURRENT_CLOCK");
+          } finally {
+           if (!widget.isDisposed()) {
+            widget.removeListener(SWT.Resize, resize);
+            widget.removeListener(SWT.Paint, paint);
+           }
+           if (!hidden.isDisposed()) hidden.dispose();
+          }
+         }
+         private CallbackModel callbackModel() throws Exception {
+          closeWidget();
+          CallbackModel callbacks = new CallbackModel();
+          openModel(callbacks);
+          startClock();
+          return callbacks;
+         }
+         @Test public void midTickAncestorHideCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          callbacks.next = () -> parent.setVisible(false);
+          pump(80);
+          need(!parent.getVisible(), "MID_TICK_PARENT_ACTION_NOT_RUN");
+          stableHidden("MID_TICK_ANCESTOR_HIDE_RESURRECTED");
+         }
+         @Test public void midTickLogicalHideCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          callbacks.next = () -> widget.setPartVisible(false);
+          pump(80);
+          need(!widget.isPartVisible(), "MID_TICK_LOGICAL_ACTION_NOT_RUN");
+          stableHidden("MID_TICK_LOGICAL_HIDE_RESURRECTED");
+         }
+         @Test public void midTickWidgetDisposeCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          callbacks.next = widget::dispose;
+          pump(80);
+          int before = phase();
+          need(widget.isDisposed() && queued() == 0, "MID_TICK_DISPOSE_TICKER_RETAINED");
+          pump(80);
+          need(phase() == before, "MID_TICK_DISPOSE_MODEL_ADVANCED");
+         }
+         @Test public void midTickDisplayDisposeCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          Set<Object> owned = resources();
+          callbacks.next = display::dispose;
+          pump(80);
+          need(display.isDisposed() && widget.isDisposed() && queued() == 0, "MID_TICK_DISPLAY_DISPOSE_TICKER_RETAINED");
+          for (Object value : owned) need(((Resource) value).isDisposed(), "DISPLAY_DISPOSE_TRACKED_RESOURCE_RETAINED");
+         }
+         @Test public void explicitUnopenedPaintDoesNotGrantClock() throws Exception {
+          closeWidget();
+          shell.dispose();
+          shell = new Shell(display);
+          parent = new Composite(shell, SWT.NONE);
+          parent.setBounds(0, 0, 360, 240);
+          openWidget(AnimvalueModel.SPINNER);
+          need(!shell.isVisible() && !widget.isVisible(), "TRULY_UNOPENED_HOST_REQUIRED");
+          model.load("spinning");
+          Image image = new Image(display, 360, 240);
+          GC gc = new GC(image);
+          try {
+           gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+           gc.fillRectangle(0, 0, 360, 240);
+           Event event = new Event();
+           event.gc = gc;
+           event.width = 360;
+           event.height = 240;
+           widget.notifyListeners(SWT.Paint, event);
+          } finally { gc.dispose(); }
+          try {
+           var data = image.getImageData();
+           int sentinel = data.palette.getPixel(new org.eclipse.swt.graphics.RGB(255, 0, 0)), changed = 0;
+           int rgb = data.palette.redMask | data.palette.greenMask | data.palette.blueMask;
+           for (int y = 0; y < 240; y++) for (int x = 0; x < 360; x++)
+            if ((data.getPixel(x, y) & rgb) != sentinel) changed++;
+           need(changed > 0, "EXPLICIT_UNOPENED_PAINT_DID_NOT_RENDER");
+           stableHidden("EXPLICIT_UNOPENED_PAINT_GRANTED_CLOCK");
+          } finally { image.dispose(); }
+         }
+        
+         @Test public void sameZoomCrossShellReparentWakes() throws Exception {
+          startClock();
+          Shell other = new Shell(display);
+          var trim = other.computeTrim(0, 0, 360, 240);
+          other.setSize(trim.width, trim.height);
+          other.setLocation(100, 100);
+          Composite target = new Composite(other, SWT.NONE);
+          target.setBounds(0, 0, 360, 240);
+          int[] events = new int[2];
+          Listener resize = event -> events[0]++;
+          Listener paint = event -> events[1]++;
+          widget.addListener(SWT.Resize, resize);
+          widget.addListener(SWT.Paint, paint);
+          try {
+           other.open();
+           pump(40);
+           other.setVisible(false);
+           var extent = widget.getBounds();
+           need(widget.setParent(target), "NATIVE_CROSS_SHELL_HIDDEN_REPARENT_REFUSED");
+           need(widget.getBounds().equals(extent) && !widget.isVisible(), "CROSS_SHELL_HIDDEN_EXTENT");
+           stableHidden("CROSS_SHELL_HIDDEN_CLOCK_ADVANCED");
+           int before = phase(), resizeBefore = events[0], paintBefore = events[1];
+           need(widget.setParent(parent), "NATIVE_CROSS_SHELL_VISIBLE_REPARENT_REFUSED");
+           shell.forceActive();
+           pump(100);
+           System.out.println("CLOCK_CROSS_SHELL_REPARENT_WAKE resizeDelta=" + (events[0] - resizeBefore) +
+             " paintDelta=" + (events[1] - paintBefore) + " phaseAdvanced=" + (phase() != before));
+           need(widget.getBounds().equals(extent) && widget.isVisible(), "CROSS_SHELL_VISIBLE_EXTENT");
+           need(phase() != before, "CROSS_SHELL_VISIBLE_CLOCK_STALLED");
+          } finally {
+           if (!widget.isDisposed()) {
+            widget.removeListener(SWT.Resize, resize);
+            widget.removeListener(SWT.Paint, paint);
+           }
+           if (!other.isDisposed()) other.dispose();
+          }
+         }
+        }
+        \E\z
+      replace: |
+        /*******************************************************************************
+         * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+         *
+         * This program and the accompanying materials are made available under the
+         * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+         * Public License 2.0, which are available at
+         * https://www.apache.org/licenses/LICENSE-2.0 and
+         * https://www.eclipse.org/legal/epl-2.0/
+         *
+         * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+         *
+         * Contributors:
+         *     Hitesh Soliwal (Synexia) - initial API and implementation
+         *******************************************************************************/
+        package org.eclipse.nebula.widgets.web;
+        
+        import java.lang.reflect.Field;
+        import java.util.Collections;
+        import java.util.IdentityHashMap;
+        import java.util.Map;
+        import java.util.Set;
+        import org.eclipse.nebula.widgets.web.model.AnimvalueModel;
+        import org.eclipse.nebula.widgets.web.model.WebStates;
+        import org.eclipse.swt.SWT;
+        import org.eclipse.swt.graphics.DeviceData;
+        import org.eclipse.swt.graphics.GC;
+        import org.eclipse.swt.graphics.Image;
+        import org.eclipse.swt.widgets.Event;
+        import org.eclipse.swt.widgets.Listener;
+        import org.eclipse.swt.graphics.Font;
+        import org.eclipse.swt.graphics.Resource;
+        import org.eclipse.swt.graphics.Color;
+        import org.eclipse.swt.widgets.Composite;
+        import org.eclipse.swt.widgets.Display;
+        import org.eclipse.swt.widgets.Shell;
+        import org.junit.After;
+        import org.junit.Before;
+        import org.junit.Test;
+        
+        /** Uses an owned, opened Shell and the real Display timer queue; no screen capture.
+         * The seven timer assertion intents supersede the historical unopened-host fixture. */
+        public final class WebAnimationVisibilityTest {
+         private Display display;
+         private Shell shell;
+         private Composite parent;
+         private final IdentityHashMap<Font, Integer> displayOwnedFonts = new IdentityHashMap<>();
+         private java.util.Map<?, ?> providerRegistries;
+         private AnimvalueModel model;
+         private WebCanvas<AnimvalueModel> widget;
+         private Runnable ticker;
+         private Set<Object> beforeResources;
+         private static int widgetsCreated, widgetsClosed, displaysCreated, displaysClosed, forcedCancellations;
+        
+         private static void need(boolean condition, String message) {
+          if (!condition) throw new AssertionError(message);
+         }
+         private static Object field(Object owner, Class<?> type, String name) throws Exception {
+          Field field = type.getDeclaredField(name);
+          field.setAccessible(true);
+          return field.get(owner);
+         }
+         private static Object field(Object owner,String name)throws Exception{Field f=owner.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(owner);}
+         private int requireDisplayOwnedFont(org.eclipse.swt.graphics.Font font)throws Exception{
+          Field root=Class.forName("org.eclipse.swt.internal.SWTFontProvider").getDeclaredField("fontRegistries");root.setAccessible(true);providerRegistries=(Map<?,?>)root.get(null);Object registry=providerRegistries.get(display);need(registry!=null&&registry.getClass().getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry"),"UNKNOWN_FONT_REGISTRY");need(field(registry,"device")==display,"FOREIGN_FONT_REGISTRY");
+          Map<?,?> containers=(Map<?,?>)field(registry,"fontsKeyMap");
+          for(Object c:containers.values())if(c.getClass().getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry\$ScaledCustomFontContainer")){
+           Class<?> parent=c.getClass().getSuperclass();need(parent.getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry\$ScaledFontContainer"),"UNKNOWN_FONT_CONTAINER");Field f=parent.getDeclaredField("scaledFonts");f.setAccessible(true);Map<?,?> fonts=(Map<?,?>)f.get(c);for(var e:fonts.entrySet())if(e.getValue()==font){need(e.getKey() instanceof Integer,"FONT_ZOOM_TYPE");return (Integer)e.getKey();}
+          }
+          throw new AssertionError("UNOWNED_TRACKED_FONT "+font);
+         }
+        
+         private Set<Object> resources() {
+          Set<Object> result = Collections.newSetFromMap(new IdentityHashMap<>());
+          Object[] objects = display.getDeviceData().objects;
+          if (objects != null) for (Object object : objects)
+           if (object instanceof Resource resource && !resource.isDisposed() && !(object instanceof Color)) result.add(object);
+          return result;
+         }
+         private int queued() throws Exception {
+          Runnable[] callbacks = (Runnable[]) field(display, Display.class, "timerList");
+          int count = 0;
+          if (callbacks != null) for (Runnable callback : callbacks) if (callback == ticker) count++;
+          return count;
+         }
+         private void pump(int millis) throws Exception {
+          long until = System.nanoTime() + millis * 1_000_000L;
+          while (!display.isDisposed() && System.nanoTime() < until) {
+           while (!display.isDisposed() && display.readAndDispatch()) { }
+           Thread.sleep(1);
+          }
+         }
+         private void openWidget(int mode) throws Exception {
+          openModel(new AnimvalueModel("animation-proof", 0, mode, 0, 0));
+         }
+         private void openModel(AnimvalueModel supplied) throws Exception {
+          model = supplied;
+          widget = new WebCanvas<>(parent, SWT.NONE, model);
+          widgetsCreated++;
+          widget.setBounds(0, 0, 360, 240);
+          widget.setPartVisible(true);
+          ticker = (Runnable) field(widget, WebCanvas.class, "ticker");
+         }
+         private void closeWidget() throws Exception {
+          if (widget == null) return;
+          try {
+           if (!widget.isDisposed()) widget.dispose();
+           boolean retained = queued() != 0;
+           if (retained) { forcedCancellations++; display.timerExec(-1, ticker); }
+           need(!retained, "OWNED_SWT_TICKER_RETAINED");
+          } finally {
+           widgetsClosed++;
+           widget = null;
+           model = null;
+           ticker = null;
+          }
+          if (display.isDisposed()) return;
+          Set<Object> extra = resources();
+          extra.removeAll(beforeResources);
+          for (Object value : extra) {
+           need(value instanceof Font, "UNCLASSIFIED_TRACKED_RESOURCE " + value.getClass().getName());
+           Font font = (Font) value;
+           displayOwnedFonts.put(font, requireDisplayOwnedFont(font));
+          }
+         }
+         private int phase() { return model.snapshot()[8]; }
+         private void startClock() throws Exception {
+          model.load("spinning");
+          need(model.isAnimating() && queued() == 1, "SWT_START_PRECONDITION");
+          pump(80);
+          need(phase() != 0 && queued() == 1, "ACTUAL_DISPLAY_CLOCK_PRECONDITION");
+         }
+         @Before public void setup() throws Exception {
+          org.junit.Assume.assumeTrue("Pinned Win32 SWT4974 native clock/private-resource introspection; other runtimes are not qualified.", "win32".equals(SWT.getPlatform()) && SWT.getVersion() == 4974);
+          DeviceData data = new DeviceData();
+          data.tracking = true;
+          display = new Display(data);
+          displaysCreated++;
+          display.getSystemFont();
+          display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+          shell = new Shell(display);
+          shell.setText("Synexia opened animation clock controls");
+          var trim = shell.computeTrim(0, 0, 360, 240);
+          shell.setSize(trim.width, trim.height);
+          shell.setLocation(80, 80);
+          parent = new Composite(shell, SWT.NONE);
+          parent.setBounds(0, 0, 360, 240);
+          shell.open();
+          shell.forceActive();
+          pump(80);
+          need(shell.isVisible() && display.getActiveShell() == shell, "OWNED_OPEN_ACTIVE_SHELL_REQUIRED");
+          beforeResources = resources();
+          openWidget(AnimvalueModel.SPINNER);
+         }
+         @After public void close() throws Exception {
+          try { closeWidget(); }
+          finally {
+           try { if (shell != null && !shell.isDisposed()) shell.dispose(); }
+           finally {
+            if (display != null && !display.isDisposed()) { display.dispose(); displaysClosed++; }
+            need(display == null || display.isDisposed(), "OWNED_DISPLAY_RETAINED");
+            for (Font font : displayOwnedFonts.keySet()) need(font.isDisposed(), "DISPLAY_FONT_NOT_RELEASED");
+            if (providerRegistries != null) need(!providerRegistries.containsKey(display), "OWNED_DISPLAY_REGISTRY_RETAINED");
+           }
+          }
+         }
+         @Test public void visibleClockAdvances() throws Exception {
+          startClock();
+          int before = phase();
+          pump(80);
+          need(phase() != before, "VISIBLE_SWT_CLOCK_STALLED");
+         }
+         @Test public void hiddenClockStable() throws Exception {
+          startClock();
+          widget.setPartVisible(false);
+          int before = phase();
+          pump(80);
+          need(phase() == before && queued() == 0, "HIDDEN_SWT_PHASE_CHANGED");
+         }
+         @Test public void idleHiddenIntervalResumes() throws Exception {
+          startClock();
+          widget.setPartVisible(false);
+          pump(80);
+          int before = phase();
+          need(!(boolean) field(widget, WebCanvas.class, "pending") && queued() == 0,
+            "IDLE_SWT_PENDING_PRECONDITION");
+          widget.setPartVisible(true);
+          pump(80);
+          need(phase() != before, "IDLE_SWT_RESUME_NO_PHASE_ADVANCE");
+         }
+         @Test public void pendingHiddenDeltaResumes() throws Exception {
+          startClock();
+          widget.setPartVisible(false);
+          pump(80);
+          int before = phase();
+          model.setState(-1, WebStates.ERROR, true);
+          need((boolean) field(widget, WebCanvas.class, "pending"), "HIDDEN_SWT_DELTA_PRECONDITION");
+          widget.setPartVisible(true);
+          pump(80);
+          need(phase() != before, "PENDING_SWT_RESUME_STALLED");
+         }
+         @Test public void nonAnimatingNeverStarts() throws Exception {
+          closeWidget();
+          openWidget(AnimvalueModel.TRANSITION);
+          model.load("transition");
+          widget.setPartVisible(false);
+          widget.setPartVisible(true);
+          need(!model.isAnimating() && queued() == 0, "IDLE_SWT_STARTED");
+          pump(80);
+          need(phase() == 0, "IDLE_SWT_PHASE_CHANGED");
+         }
+         @Test public void repeatedVisibilityUsesOneRunnable() throws Exception {
+          startClock();
+          Runnable original = ticker;
+          for (int i = 0; i < 20; i++) widget.setPartVisible(true);
+          need(field(widget, WebCanvas.class, "ticker") == original && queued() == 1,
+            "SWT_TIMER_IDENTITY_OR_COUNT");
+         }
+         @Test public void disposeCancelsExactQueuedTickerBeforePump() throws Exception {
+          model.load("spinning");
+          need(queued() == 1, "SWT_DISPOSE_QUEUE_PRECONDITION");
+          int before = phase();
+          widget.dispose();
+          need(queued() == 0, "DISPOSED_SWT_TICKER_RETAINED");
+          pump(80);
+          need(phase() == before, "DISPOSED_SWT_MODEL_ADVANCED");
+         }
+        
+         private static final class CallbackModel extends AnimvalueModel {
+          Runnable next;
+          CallbackModel() { super("clock-callback-proof", 0, SPINNER, 0, 0); }
+          @Override protected boolean advance(int ms) {
+           boolean again = super.advance(ms);
+           Runnable action = next;
+           next = null;
+           if (action != null) action.run();
+           return again;
+          }
+          void pulse() { animate(); }
+         }
+         private void stableHidden(String label) throws Exception {
+          int before = phase();
+          pump(100);
+          need(phase() == before && queued() == 0, label);
+         }
+         @Test public void ancestorHiddenStopsAndShowResumes() throws Exception {
+          startClock();
+          parent.setVisible(false);
+          need(widget.getVisible() && !widget.isVisible() && widget.isPartVisible(), "PARENT_ONLY_HIDE_STATE");
+          stableHidden("ANCESTOR_HIDDEN_CLOCK_ADVANCED");
+          int before = phase();
+          parent.setVisible(true);
+          pump(100);
+          need(phase() != before, "ANCESTOR_SHOW_NO_MODEL_MUTATION_STALLED");
+         }
+         @Test public void initiallyHiddenParentFirstShowStarts() throws Exception {
+          closeWidget();
+          parent.setVisible(false);
+          openWidget(AnimvalueModel.SPINNER);
+          model.load("spinning");
+          stableHidden("INITIALLY_HIDDEN_CLOCK_STARTED");
+          int before = phase();
+          parent.setVisible(true);
+          pump(100);
+          need(phase() != before, "FIRST_NATIVE_PARENT_SHOW_STALLED");
+         }
+         @Test public void ancestorHiddenDeltaDoesNotRestart() throws Exception {
+          startClock();
+          parent.setVisible(false);
+          model.setState(-1, WebStates.ERROR, true);
+          stableHidden("ANCESTOR_HIDDEN_DELTA_RESTARTED_CLOCK");
+          int before = phase();
+          parent.setVisible(true);
+          pump(100);
+          need(phase() != before, "ANCESTOR_DELTA_REVEAL_STALLED");
+         }
+         @Test public void zeroAreaPausesAndPositiveResizeResumes() throws Exception {
+          startClock();
+          for (int[] size : new int[][] { { 0, 240 }, { 360, 0 } }) {
+           widget.setSize(size[0], size[1]);
+           stableHidden("ZERO_AREA_CLOCK_ADVANCED");
+           int before = phase();
+           widget.setSize(360, 240);
+           pump(100);
+           need(phase() != before, "POSITIVE_RESIZE_CLOCK_STALLED");
+          }
+         }
+         @Test public void nativeMinimizeAndDeiconifyResume() throws Exception {
+          startClock();
+          shell.setMinimized(true);
+          need(shell.getMinimized(), "NATIVE_MINIMIZED_PRECONDITION");
+          stableHidden("MINIMIZED_CLOCK_ADVANCED");
+          int before = phase();
+          shell.setMinimized(false);
+          shell.forceActive();
+          pump(100);
+          need(!shell.getMinimized() && phase() != before, "NATIVE_DEICONIFY_CLOCK_STALLED");
+         }
+         @Test public void sameZoomReparentWakesAndIgnoresOldAncestor() throws Exception {
+          startClock();
+          Composite hidden = new Composite(shell, SWT.NONE);
+          hidden.setBounds(0, 0, 360, 240);
+          hidden.setVisible(false);
+          int[] events = new int[2];
+          Listener resize = event -> events[0]++;
+          Listener paint = event -> events[1]++;
+          widget.addListener(SWT.Resize, resize);
+          widget.addListener(SWT.Paint, paint);
+          try {
+           var extent = widget.getBounds();
+           need(widget.setParent(hidden), "NATIVE_REPARENT_HIDDEN_REFUSED");
+           need(widget.getBounds().equals(extent) && !widget.isVisible(), "SAME_EXTENT_HIDDEN_REPARENT");
+           stableHidden("HIDDEN_REPARENT_CLOCK_ADVANCED");
+           int before = phase();
+           int resizeBefore = events[0], paintBefore = events[1];
+           need(widget.setParent(parent), "NATIVE_REPARENT_VISIBLE_REFUSED");
+           pump(100);
+           System.out.println("CLOCK_REPARENT_WAKE resizeDelta=" + (events[0] - resizeBefore) +
+             " paintDelta=" + (events[1] - paintBefore) + " phaseAdvanced=" + (phase() != before));
+           need(widget.getBounds().equals(extent) && widget.isVisible(), "SAME_EXTENT_VISIBLE_REPARENT");
+           need(phase() != before, "SAME_ZOOM_REPARENT_VISIBLE_CLOCK_STALLED");
+           int current = phase();
+           hidden.setVisible(true);
+           hidden.setVisible(false);
+           pump(100);
+           need(phase() != current, "OLD_ANCESTOR_EVENT_PARKED_CURRENT_CLOCK");
+          } finally {
+           if (!widget.isDisposed()) {
+            widget.removeListener(SWT.Resize, resize);
+            widget.removeListener(SWT.Paint, paint);
+           }
+           if (!hidden.isDisposed()) hidden.dispose();
+          }
+         }
+         private CallbackModel callbackModel() throws Exception {
+          closeWidget();
+          CallbackModel callbacks = new CallbackModel();
+          openModel(callbacks);
+          startClock();
+          return callbacks;
+         }
+         @Test public void midTickAncestorHideCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          callbacks.next = () -> parent.setVisible(false);
+          pump(80);
+          need(!parent.getVisible(), "MID_TICK_PARENT_ACTION_NOT_RUN");
+          stableHidden("MID_TICK_ANCESTOR_HIDE_RESURRECTED");
+         }
+         @Test public void midTickLogicalHideCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          callbacks.next = () -> widget.setPartVisible(false);
+          pump(80);
+          need(!widget.isPartVisible(), "MID_TICK_LOGICAL_ACTION_NOT_RUN");
+          stableHidden("MID_TICK_LOGICAL_HIDE_RESURRECTED");
+         }
+         @Test public void midTickWidgetDisposeCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          callbacks.next = widget::dispose;
+          pump(80);
+          int before = phase();
+          need(widget.isDisposed() && queued() == 0, "MID_TICK_DISPOSE_TICKER_RETAINED");
+          pump(80);
+          need(phase() == before, "MID_TICK_DISPOSE_MODEL_ADVANCED");
+         }
+         @Test public void midTickDisplayDisposeCannotResurrectTicker() throws Exception {
+          CallbackModel callbacks = callbackModel();
+          Set<Object> owned = resources();
+          callbacks.next = display::dispose;
+          pump(80);
+          need(display.isDisposed() && widget.isDisposed() && queued() == 0, "MID_TICK_DISPLAY_DISPOSE_TICKER_RETAINED");
+          for (Object value : owned) need(((Resource) value).isDisposed(), "DISPLAY_DISPOSE_TRACKED_RESOURCE_RETAINED");
+         }
+         @Test public void explicitUnopenedPaintDoesNotGrantClock() throws Exception {
+          closeWidget();
+          shell.dispose();
+          shell = new Shell(display);
+          parent = new Composite(shell, SWT.NONE);
+          parent.setBounds(0, 0, 360, 240);
+          openWidget(AnimvalueModel.SPINNER);
+          need(!shell.isVisible() && !widget.isVisible(), "TRULY_UNOPENED_HOST_REQUIRED");
+          model.load("spinning");
+          Image image = new Image(display, 360, 240);
+          GC gc = new GC(image);
+          try {
+           gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+           gc.fillRectangle(0, 0, 360, 240);
+           Event event = new Event();
+           event.gc = gc;
+           event.width = 360;
+           event.height = 240;
+           widget.notifyListeners(SWT.Paint, event);
+          } finally { gc.dispose(); }
+          try {
+           var data = image.getImageData();
+           int sentinel = data.palette.getPixel(new org.eclipse.swt.graphics.RGB(255, 0, 0)), changed = 0;
+           int rgb = data.palette.redMask | data.palette.greenMask | data.palette.blueMask;
+           for (int y = 0; y < 240; y++) for (int x = 0; x < 360; x++)
+            if ((data.getPixel(x, y) & rgb) != sentinel) changed++;
+           need(changed > 0, "EXPLICIT_UNOPENED_PAINT_DID_NOT_RENDER");
+           stableHidden("EXPLICIT_UNOPENED_PAINT_GRANTED_CLOCK");
+          } finally { image.dispose(); }
+         }
+        
+         @Test public void sameZoomCrossShellReparentWakes() throws Exception {
+          startClock();
+          Shell other = new Shell(display);
+          var trim = other.computeTrim(0, 0, 360, 240);
+          other.setSize(trim.width, trim.height);
+          other.setLocation(100, 100);
+          Composite target = new Composite(other, SWT.NONE);
+          target.setBounds(0, 0, 360, 240);
+          int[] events = new int[2];
+          Listener resize = event -> events[0]++;
+          Listener paint = event -> events[1]++;
+          widget.addListener(SWT.Resize, resize);
+          widget.addListener(SWT.Paint, paint);
+          try {
+           other.open();
+           pump(40);
+           other.setVisible(false);
+           var extent = widget.getBounds();
+           need(widget.setParent(target), "NATIVE_CROSS_SHELL_HIDDEN_REPARENT_REFUSED");
+           need(widget.getBounds().equals(extent) && !widget.isVisible(), "CROSS_SHELL_HIDDEN_EXTENT");
+           stableHidden("CROSS_SHELL_HIDDEN_CLOCK_ADVANCED");
+           int before = phase(), resizeBefore = events[0], paintBefore = events[1];
+           need(widget.setParent(parent), "NATIVE_CROSS_SHELL_VISIBLE_REPARENT_REFUSED");
+           shell.forceActive();
+           pump(100);
+           System.out.println("CLOCK_CROSS_SHELL_REPARENT_WAKE resizeDelta=" + (events[0] - resizeBefore) +
+             " paintDelta=" + (events[1] - paintBefore) + " phaseAdvanced=" + (phase() != before));
+           need(widget.getBounds().equals(extent) && widget.isVisible(), "CROSS_SHELL_VISIBLE_EXTENT");
+           need(phase() != before, "CROSS_SHELL_VISIBLE_CLOCK_STALLED");
+          } finally {
+           if (!widget.isDisposed()) {
+            widget.removeListener(SWT.Resize, resize);
+            widget.removeListener(SWT.Paint, paint);
+           }
+           if (!other.isDisposed()) other.dispose();
+          }
+         }
+        }
+      regex: true
+      caseSensitive: true
+      filePattern: widgets/web/org.eclipse.nebula.widgets.web.tests/src/org/eclipse/nebula/widgets/web/WebAnimationVisibilityTest.java
+
+---
+# SPDX-License-Identifier: Apache-2.0
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.m3.CreateScopedWebClockAdmissionAtomTest20261116
+displayName: Create the scoped Win32 clock admission atom test without overwrite
+description: Emit the exact qualified admission fixture with one platform assumption before Display creation; preserve occupied test paths.
+recipeList:
+  - org.openrewrite.text.CreateTextFile:
+      relativeFileName: widgets/web/org.eclipse.nebula.widgets.web.tests/src/org/eclipse/nebula/widgets/web/WebClockAdmissionAtomTest.java
+      overwriteExisting: false
+      fileContents: |
+        /*******************************************************************************
+         * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+         *
+         * This program and the accompanying materials are made available under the
+         * terms of the Apache License, Version 2.0, or (at your option) the Eclipse
+         * Public License 2.0, which are available at
+         * https://www.apache.org/licenses/LICENSE-2.0 and
+         * https://www.eclipse.org/legal/epl-2.0/
+         *
+         * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+         *
+         * Contributors:
+         *     Hitesh Soliwal (Synexia) - initial API and implementation
+         *******************************************************************************/
+        package org.eclipse.nebula.widgets.web;
+        
+        import java.lang.reflect.Field;
+        import java.lang.reflect.Method;
+        import java.util.*;
+        import org.eclipse.nebula.widgets.web.model.AnimvalueModel;
+        import org.eclipse.nebula.widgets.web.model.WebPaint;
+        import org.eclipse.nebula.widgets.web.model.WebStates;
+        import org.eclipse.swt.SWT;
+        import org.eclipse.swt.graphics.*;
+        import org.eclipse.swt.widgets.Composite;
+        import org.eclipse.swt.widgets.Display;
+        import org.eclipse.swt.widgets.Event;
+        import org.eclipse.swt.widgets.Listener;
+        import org.eclipse.swt.widgets.Shell;
+        import org.eclipse.swt.widgets.Widget;
+        import org.junit.After;
+        import org.junit.Before;
+        import org.junit.Test;
+        
+        /** Focused native clock admission/identity probes; no opened-window or screen claim. */
+        public final class WebClockAdmissionAtomTest {
+         private FilterDisplay display; private Shell shell; private Composite parent;
+         private Model model; private CanvasProbe widget; private Set<Object> beforeResources;
+         private final IdentityHashMap<Font,Integer> displayOwnedFonts=new IdentityHashMap<>();
+         private Map<?,?> providerRegistries;
+         private final Listener foreignHide=event->{},foreignIconify=event->{};
+         private static void need(boolean b,String label){if(!b)throw new AssertionError(label);}
+         private static Object field(Object owner,Class<?> type,String name)throws Exception{Field f=type.getDeclaredField(name);f.setAccessible(true);return f.get(owner);}
+         private static Object field(Object owner,String name)throws Exception{return field(owner,owner.getClass(),name);}
+         private static final class FilterDisplay extends Display {
+          boolean armed,cleanupFailure; int failAt,attempts,timerCalls,positiveTimers;
+          final RuntimeException primary=new RuntimeException("controlled addFilter failure");
+          final RuntimeException cleanup=new RuntimeException("controlled removeFilter failure");
+          final List<Listener> added=new ArrayList<>(),removed=new ArrayList<>();
+          final List<Integer> addedTypes=new ArrayList<>(),removedTypes=new ArrayList<>();
+          FilterDisplay(DeviceData data){super(data);}
+          @Override protected void checkSubclass(){ }
+          @Override public void addFilter(int type,Listener listener){
+           super.addFilter(type,listener);
+           if(armed&&(type==SWT.Hide||type==SWT.Iconify)){added.add(listener);addedTypes.add(type);if(++attempts==failAt)throw primary;}
+          }
+          @Override public void removeFilter(int type,Listener listener){
+           super.removeFilter(type,listener);
+           if(armed&&(type==SWT.Hide||type==SWT.Iconify)){removed.add(listener);removedTypes.add(type);if(cleanupFailure&&type==SWT.Hide){cleanupFailure=false;throw cleanup;}}
+          }
+          @Override public void timerExec(int ms,Runnable callback){timerCalls++;if(ms>=0)positiveTimers++;super.timerExec(ms,callback);}
+          void resetTimers(){timerCalls=positiveTimers=0;}
+         }
+         private static final class Model extends AnimvalueModel {
+          final List<String> order=new ArrayList<>();
+          int blitReads,damageReads,damageHits,emits,pulses,loads,advances; RuntimeException layoutFailure; Runnable animationQueryHook; boolean forcedAnimating; int queryActions;
+          Model(){super("clock-admission-atom",0,SPINNER,0,0);}
+          @Override public boolean isAnimating(){Runnable hook=animationQueryHook;if(hook!=null){animationQueryHook=null;queryActions++;hook.run();return true;}return forcedAnimating||super.isAnimating();}
+          @Override public void load(String sample){loads++;super.load(sample);}
+          @Override protected boolean advance(int ms){advances++;return super.advance(ms);}
+          @Override public void layout(int w,int h){order.add("L:"+w+":"+h);if(layoutFailure!=null)throw layoutFailure;super.layout(w,h);}
+          @Override public int takeBlit(){blitReads++;return super.takeBlit();}
+          @Override public boolean takeDamage(int[] out){damageReads++;boolean hit=super.takeDamage(out);if(hit)damageHits++;return hit;}
+          @Override protected void emit(WebPaint paint){emits++;super.emit(paint);}
+          void pulse(){pulses++;animate();}
+          void resetCost(){blitReads=damageReads=damageHits=emits=pulses=0;}
+         }
+         private static final class CanvasProbe extends WebCanvas<Model> {
+          int visibleQueries,shellQueries,sizeQueries; boolean scripted;
+          Point first,second; RuntimeException firstFailure,secondFailure;
+          CanvasProbe(Composite parent,Model model){super(parent,SWT.NONE,model);}
+          @Override public boolean isVisible(){visibleQueries++;return super.isVisible();}
+          @Override public Shell getShell(){shellQueries++;return super.getShell();}
+          @Override public Point getSize(){
+           int index=++sizeQueries;
+           if(scripted){model.order.add("Q"+index);if(index==1&&firstFailure!=null)throw firstFailure;if(index==2&&secondFailure!=null)throw secondFailure;need(index<=2,"EXCESS_SIZE_QUERY");return index==1?first:second;}
+           return super.getSize();
+          }
+          void resetQueries(){visibleQueries=shellQueries=sizeQueries=0;}
+         }
+         private Set<Object> resources(){
+          Set<Object> result=Collections.newSetFromMap(new IdentityHashMap<>());Object[] objects=display.getDeviceData().objects;
+          if(objects!=null)for(Object object:objects)if(object instanceof Resource resource&&!resource.isDisposed()&&!(object instanceof Color))result.add(object);
+          return result;
+         }
+         private int requireDisplayOwnedFont(Font font)throws Exception{
+          Field root=Class.forName("org.eclipse.swt.internal.SWTFontProvider").getDeclaredField("fontRegistries");root.setAccessible(true);providerRegistries=(Map<?,?>)root.get(null);Object registry=providerRegistries.get(display);
+          need(registry!=null&&registry.getClass().getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry"),"UNKNOWN_FONT_REGISTRY");need(field(registry,"device")==display,"FOREIGN_FONT_REGISTRY");
+          Map<?,?> containers=(Map<?,?>)field(registry,"fontsKeyMap");
+          for(Object c:containers.values())if(c.getClass().getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry$ScaledCustomFontContainer")){
+           Class<?> base=c.getClass().getSuperclass();need(base.getName().equals("org.eclipse.swt.internal.ScalingSWTFontRegistry$ScaledFontContainer"),"UNKNOWN_FONT_CONTAINER");Field f=base.getDeclaredField("scaledFonts");f.setAccessible(true);Map<?,?> fonts=(Map<?,?>)f.get(c);
+           for(var e:fonts.entrySet())if(e.getValue()==font){need(e.getKey() instanceof Integer,"FONT_ZOOM_TYPE");return (Integer)e.getKey();}
+          }
+          throw new AssertionError("UNOWNED_TRACKED_FONT");
+         }
+         private Listener[] filters(int type)throws Exception{
+          Object table=field(display,Display.class,"filterTable");if(table==null)return new Listener[0];Method m=table.getClass().getDeclaredMethod("getListeners",int.class);m.setAccessible(true);return (Listener[])m.invoke(table,type);
+         }
+         private int countFilter(int type,Listener listener)throws Exception{int n=0;for(Listener entry:filters(type))if(entry==listener)n++;return n;}
+         private Runnable ticker()throws Exception{return (Runnable)field(widget,WebCanvas.class,"ticker");}
+         private int queued(Runnable own)throws Exception{Runnable[] list=(Runnable[])field(display,Display.class,"timerList");int count=0;if(list!=null)for(Runnable value:list)if(value==own)count++;return count;}
+         private void createWidget(){model=new Model();widget=new CanvasProbe(parent,model);widget.setBounds(0,0,360,240);}
+         private void drainDamage(){int[] out=new int[4];while(model.takeDamage(out)){}model.takeBlit();}
+         @Before public void setup(){
+          org.junit.Assume.assumeTrue("Pinned Win32 SWT4974 native clock/private-resource introspection; other runtimes are not qualified.", "win32".equals(SWT.getPlatform()) && SWT.getVersion() == 4974);
+          DeviceData data=new DeviceData();data.tracking=true;display=new FilterDisplay(data);display.getSystemFont();display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+          shell=new Shell(display);parent=new Composite(shell,SWT.NONE);parent.setBounds(0,0,360,240);beforeResources=resources();
+          display.addFilter(SWT.Hide,foreignHide);display.addFilter(SWT.Iconify,foreignIconify);
+         }
+         @After public void close()throws Exception{
+          try{
+           if(display!=null&&!display.isDisposed()){
+            display.armed=false;
+            if(parent!=null&&!parent.isDisposed())parent.dispose();
+            if(shell!=null&&!shell.isDisposed())shell.dispose();
+            Set<Object> extra=resources();extra.removeAll(beforeResources);
+            for(Object value:extra){need(value instanceof Font,"UNCLASSIFIED_TRACKED_RESOURCE");Font font=(Font)value;displayOwnedFonts.put(font,requireDisplayOwnedFont(font));}
+           }
+          }finally{
+           if(display!=null&&!display.isDisposed())display.dispose();
+           need(display==null||display.isDisposed(),"OWNED_DISPLAY_RETAINED");
+           for(Font font:displayOwnedFonts.keySet())need(font.isDisposed(),"DISPLAY_FONT_NOT_RELEASED");
+           if(providerRegistries!=null)need(!providerRegistries.containsKey(display),"DISPLAY_FONT_REGISTRY_RETAINED");
+          }
+         }
+         private Map<String,Integer> prepareBlocked()throws Exception{
+          createWidget();Map<String,Integer> construction=Map.of("isVisible",widget.visibleQueries,"getShell",widget.shellQueries,"getSize",widget.sizeQueries);
+          need(!shell.isVisible()&&!widget.isVisible(),"ACTUAL_UNOPENED_NATIVE_HOST_REQUIRED");
+          widget.setPartVisible(false);model.load("spinning");need(model.isAnimating(),"REAL_SPINNER_ANIMATION_REQUIRED");drainDamage();
+          widget.resetQueries();model.resetCost();display.resetTimers();widget.setPartVisible(true);
+          need(widget.visibleQueries==1&&widget.shellQueries==0&&widget.sizeQueries==0,"FIRST_NATIVE_DENIAL_QUERY_COUNTS");
+          need(model.blitReads==1&&model.damageReads==1&&model.damageHits==0&&model.emits==0&&display.positiveTimers==0&&queued(ticker())==0,"FIRST_DENIAL_NO_DAMAGE_PAINT_OR_TICKER");
+          return construction;
+         }
+         @Test public void blockedNativeQueriesAreCached()throws Exception{
+          Map<String,Integer> construction=prepareBlocked();int generation=model.generation(),phase=model.snapshot()[8];
+          widget.resetQueries();model.resetCost();display.resetTimers();
+          for(int i=0;i<256;i++)model.pulse();
+          need(widget.visibleQueries==0&&widget.shellQueries==0&&widget.sizeQueries==0,"BLOCKED_ADDITIONAL_NATIVE_QUERY");
+          need(model.pulses==256&&model.blitReads==256&&model.damageReads==256&&model.damageHits==0&&model.emits==0&&model.generation()==generation+256&&model.snapshot()[8]==phase&&display.timerCalls==0&&queued(ticker())==0,"BLOCKED_DAMAGE_FREE_INPUT_LAWS");
+          System.out.println("CLOCK_BLOCKED_QUERY_COUNTS constructionAndResize="+construction+" firstProbe={isVisible=1,getShell=0,getSize=0} repeated256={isVisible=0,getShell=0,getSize=0} phaseUnchanged=true timers=0");
+         }
+         @Test public void exactListenerAndFilterIdentitiesDetach()throws Exception{
+          createWidget();int[] events=(int[])field(null,WebCanvas.class,"EVENTS");Set<Listener> identities=Collections.newSetFromMap(new IdentityHashMap<>());
+          for(int type:events){Listener[] listeners=widget.getListeners(type);need(listeners.length==1,"OWN_LISTENER_REGISTRATION_COUNT");identities.add(listeners[0]);}
+          need(events.length==14&&identities.size()==1,"ONE_OWN_LISTENER_IDENTITY");
+          Listener own=(Listener)field(widget,WebCanvas.class,"ownListener"),ancestor=(Listener)field(widget,WebCanvas.class,"ancestorListener");need(identities.contains(own)&&own!=ancestor,"OWN_AND_ANCESTOR_IDENTITIES_DISTINCT");
+          need(countFilter(SWT.Hide,ancestor)==1&&countFilter(SWT.Iconify,ancestor)==1&&countFilter(SWT.Hide,foreignHide)==1&&countFilter(SWT.Iconify,foreignIconify)==1,"EXACT_OWN_AND_FOREIGN_FILTERS");
+          Runnable callback=ticker();widget.dispose();
+          need(countFilter(SWT.Hide,ancestor)==0&&countFilter(SWT.Iconify,ancestor)==0&&countFilter(SWT.Hide,foreignHide)==1&&countFilter(SWT.Iconify,foreignIconify)==1&&queued(callback)==0,"EXACT_FILTER_DETACH_FOREIGN_RETAINED");
+          need(field(widget,Widget.class,"eventTable")==null,"DISPOSED_OWN_LISTENER_TABLE_RETAINED");
+         }
+         private void registrationFailure(int failAt,boolean cleanupFailure)throws Exception{
+          display.armed=true;display.failAt=failAt;display.cleanupFailure=cleanupFailure;Throwable actual=null;
+          try{model=new Model();widget=new CanvasProbe(parent,model);}catch(RuntimeException|Error failure){actual=failure;}
+          finally{display.armed=false;}
+          need(actual==display.primary,"ADD_FILTER_PRIMARY_IDENTITY");
+          need(display.attempts==failAt&&display.added.size()==failAt,"EXACT_PARTIAL_REGISTRATION_ATTEMPTS");
+          Listener ancestor=display.added.get(0);for(Listener entry:display.added)need(entry==ancestor,"PARTIAL_REGISTRATION_SAME_ADAPTER");
+          need(countFilter(SWT.Hide,ancestor)==0&&countFilter(SWT.Iconify,ancestor)==0&&countFilter(SWT.Hide,foreignHide)==1&&countFilter(SWT.Iconify,foreignIconify)==1,"PARTIAL_ROLLBACK_EXACT_FILTERS");
+          need(display.removed.size()==failAt,"EXACT_ROLLBACK_REMOVE_COUNT");need(display.addedTypes.equals(failAt==1?List.of(SWT.Hide):List.of(SWT.Hide,SWT.Iconify))&&display.removedTypes.equals(display.addedTypes),"EXACT_FILTER_TYPE_ORDER");for(Listener entry:display.removed)need(entry==ancestor,"ROLLBACK_WRONG_ADAPTER");
+          if(cleanupFailure)need(actual.getSuppressed().length==1&&actual.getSuppressed()[0]==display.cleanup,"SUPPRESSED_CLEANUP_IDENTITY");else need(actual.getSuppressed().length==0,"UNEXPECTED_SUPPRESSED_FAILURE");
+          need(parent.getChildren().length==1,"FAILED_CONSTRUCTOR_NATIVE_CHILD_ACCOUNTED");
+          parent.getChildren()[0].dispose();need(parent.getChildren().length==0,"FAILED_CONSTRUCTOR_CHILD_CLEANUP");
+         }
+         @Test public void partialHideRegistrationRollsBack()throws Exception{registrationFailure(1,false);}
+         @Test public void partialIconifyRegistrationRollsBack()throws Exception{registrationFailure(2,false);}
+         @Test public void rollbackPreservesPrimaryAndSuppressedCleanup()throws Exception{registrationFailure(2,true);}
+         private void sizeCase(int mode)throws Exception{
+          createWidget();widget.scripted=true;widget.resetQueries();model.order.clear();widget.first=new Point(17,99);widget.second=new Point(88,37);
+          RuntimeException marker=new RuntimeException("controlled getSize failure");
+          if(mode==1)widget.first=null;if(mode==2)widget.second=null;if(mode==3)widget.firstFailure=marker;if(mode==4)widget.secondFailure=marker;if(mode==5)model.layoutFailure=marker;
+          Throwable actual=null;try{widget.notifyListeners(SWT.Resize,new Event());}catch(RuntimeException|Error failure){actual=failure;}finally{widget.scripted=false;model.layoutFailure=null;}
+          int calls=mode==1||mode==3?1:2;need(widget.sizeQueries==calls,"ORIGINAL_SIZE_CALL_COUNT");
+          if(mode==5)need(actual==marker&&model.order.equals(List.of("Q1","Q2","L:17:37"))&&widget.visibleQueries==0&&widget.shellQueries==0,"LAYOUT_FAILURE_IDENTITY_ORDER_NO_POST_SUCCESS_WAKE");
+          else if(mode==0)need(actual==null&&model.order.equals(List.of("Q1","Q2","L:17:37")),"FIRST_X_SECOND_Y_LAYOUT_ORDER");
+          else{need(model.order.equals(calls==1?List.of("Q1"):List.of("Q1","Q2")),"FAILURE_MUST_PRECEDE_LAYOUT");if(mode>=3)need(actual==marker,"SIZE_THROW_IDENTITY");else need(actual instanceof NullPointerException,"NULL_SIZE_EXCEPTION_TYPE");}
+         }
+         @Test public void resizeTakesFirstXAndSecondY()throws Exception{sizeCase(0);}
+         @Test public void firstSizeNullStopsSecondAndLayout()throws Exception{sizeCase(1);}
+         @Test public void secondSizeNullStopsLayout()throws Exception{sizeCase(2);}
+         @Test public void firstSizeThrowIdentity()throws Exception{sizeCase(3);}
+         @Test public void secondSizeThrowIdentity()throws Exception{sizeCase(4);}
+         @Test public void layoutFailureKeepsTwoSizeQueriesAndSkipsClockWake()throws Exception{sizeCase(5);}
+        
+         private void pump(int ms)throws Exception{long end=System.nanoTime()+ms*1_000_000L;while(System.nanoTime()<end){while(display.readAndDispatch()){}Thread.sleep(1);}}
+         @Test public void loadBeforeFirstNativeShellOpenResumesWithoutAnotherMutation()throws Exception{
+          createWidget();var trim=shell.computeTrim(0,0,360,240);shell.setSize(trim.width,trim.height);
+          model.load("spinning");need(model.loads==1&&model.isAnimating()&&!shell.isVisible()&&!widget.isVisible(),"LOAD_BEFORE_FIRST_OPEN_REQUIRED");
+          int phase=model.snapshot()[8],beforeQueue=queued(ticker());pump(80);
+          System.out.println("CLOCK_FIRST_OPEN_UNOPENED_OBSERVATION advances="+model.advances+" queued="+queued(ticker())+" phaseUnchanged="+(model.snapshot()[8]==phase));
+          need(model.advances==0&&model.snapshot()[8]==phase&&queued(ticker())==0,"UNOPENED_AUTOMATIC_CLOCK_BEFORE_FIRST_OPEN");
+          shell.open();pump(160);
+          need(shell.isVisible()&&widget.isVisible()&&!shell.getMinimized()&&model.loads==1&&model.pulses==0&&model.advances>0&&model.snapshot()[8]!=phase&&queued(ticker())==1,"FIRST_NATIVE_OPEN_DID_NOT_RESUME_WITHOUT_MODEL_MUTATION");
+          System.out.println("CLOCK_FIRST_NATIVE_OPEN loadedBeforeOpen=true loadCalls=1 manualPulses=0 queuedBeforeOpen="+beforeQueue+" actualModelAdvances="+model.advances+" queuedAfterOpen=1 noExtraModelMutation=true");
+         }
+        
+         private void wakeQueryCase(int mode)throws Exception{
+          createWidget();var trim=shell.computeTrim(0,0,360,240);shell.setSize(trim.width,trim.height);shell.open();pump(40);
+          need(widget.isVisible()&&!shell.getMinimized()&&queued(ticker())==0&&!model.isAnimating(),"ELIGIBLE_IDLE_WAKE_HOST_REQUIRED");
+          Composite hidden=null;if(mode==2){hidden=new Composite(shell,SWT.NONE);hidden.setBounds(0,0,360,240);hidden.setVisible(false);}
+          Composite destination=hidden;Runnable callback=ticker();
+          if(mode==3)model.forcedAnimating=true;
+          model.animationQueryHook=()->{if(mode==0)widget.dispose();else if(mode==1)display.dispose();else if(mode==2)need(widget.setParent(destination),"QUERY_REPARENT_REFUSED");else model.pulse();};
+          display.resetTimers();Throwable actual=null;
+          try{widget.notifyListeners(SWT.Resize,new Event());}catch(RuntimeException|Error failure){actual=failure;}
+          int ownQueued=queued(callback);
+          System.out.println("CLOCK_WAKE_QUERY_OBSERVATION mode="+mode+" queryActions="+model.queryActions+" exception="+(actual==null?"NONE":actual.getClass().getName())+" timerArms="+display.positiveTimers+" queued="+ownQueued);
+          need(model.queryActions==1,"WAKE_QUERY_CALLBACK_NOT_REACHED");
+          need(actual==null,"WAKE_QUERY_LIFETIME_EXCEPTION");
+          if(mode==0)need(widget.isDisposed()&&ownQueued==0&&display.positiveTimers==0,"WAKE_QUERY_DISPOSED_WIDGET_TICKER");
+          else if(mode==1)need(display.isDisposed()&&widget.isDisposed()&&ownQueued==0&&display.positiveTimers==0,"WAKE_QUERY_DISPOSED_DISPLAY_TICKER");
+          else if(mode==2)need(widget.getParent()==destination&&!widget.isVisible()&&ownQueued==0&&display.positiveTimers==0,"WAKE_QUERY_HIDDEN_REPARENT_TICKER");
+          else need(ownQueued==1&&display.positiveTimers==1,"WAKE_QUERY_REENTRANT_DOUBLE_ARM");
+         }
+         @Test public void wakeQueryWidgetDisposeDoesNotResurrectTicker()throws Exception{wakeQueryCase(0);}
+         @Test public void wakeQueryDisplayDisposeDoesNotScheduleOrThrow()throws Exception{wakeQueryCase(1);}
+         @Test public void wakeQueryHiddenReparentDoesNotArmTicker()throws Exception{wakeQueryCase(2);}
+         @Test public void wakeQueryReentrantDeltaArmsOnlyOnce()throws Exception{wakeQueryCase(3);}
+        
+         /** One bounded diagnostic on the actual D_ANIM callback path, after its first native denial. */
+         public static Map<String,Object> runBlockedDiagnostic()throws Exception{
+          WebClockAdmissionAtomTest test=new WebClockAdmissionAtomTest();test.setup();
+          try{
+           Map<String,Integer> construction=test.prepareBlocked();CanvasProbe widget=test.widget;Model model=test.model;FilterDisplay display=test.display;Runnable ticker=test.ticker();
+           final int samples=20,batch=5000,warm=1000;long[] elapsed=new long[samples],before=new long[samples],after=new long[samples],allocated=new long[samples];String[] statuses=new String[samples];
+           java.lang.management.ThreadMXBean base=java.lang.management.ManagementFactory.getThreadMXBean();com.sun.management.ThreadMXBean bean=base instanceof com.sun.management.ThreadMXBean ext?ext:null;String reason="AVAILABLE";if(bean==null)reason="NOT_RUN_EXTENSION";else if(!bean.isThreadAllocatedMemorySupported())reason="NOT_RUN_UNSUPPORTED";else if(!bean.isThreadAllocatedMemoryEnabled())reason="NOT_RUN_DISABLED";boolean measure=reason.equals("AVAILABLE");long thread=Thread.currentThread().threadId();
+           if(measure)for(int i=0;i<32;i++)bean.getThreadAllocatedBytes(thread);
+           int generation=model.generation(),phase=model.snapshot()[8];widget.resetQueries();model.resetCost();display.resetTimers();
+           for(int i=0;i<warm;i++)model.pulse();
+           for(int sample=0;sample<samples;sample++){
+            long a0=measure?bean.getThreadAllocatedBytes(thread):-1,start=System.nanoTime();
+            for(int i=0;i<batch;i++)model.pulse();
+            long ns=System.nanoTime()-start,a1=measure?bean.getThreadAllocatedBytes(thread):-1;
+            elapsed[sample]=ns;before[sample]=a0;after[sample]=a1;
+            if(measure&&a0>=0&&a1>=a0){allocated[sample]=a1-a0;statuses[sample]="MEASURED_APPROXIMATE";}else{allocated[sample]=-1;statuses[sample]=measure?"NOT_RUN_INVALID_READING":reason;}
+           }
+           int total=warm+samples*batch;
+           need(model.pulses==total&&model.blitReads==total&&model.damageReads==total&&model.damageHits==0&&model.emits==0,"PERF_EXACT_DAMAGE_FREE_CALLBACK_COUNTS");
+           need(widget.visibleQueries==0&&widget.shellQueries==0&&widget.sizeQueries==0&&display.timerCalls==0&&test.queued(ticker)==0,"PERF_BLOCKED_NATIVE_QUERY_TIMER_LAW");
+           need(model.snapshot()[8]==phase&&model.generation()==generation+total,"PERF_PHASE_AND_DELTA_GENERATION_LAW");
+           List<Double> nsPerInput=new ArrayList<>(),bytesPerInput=new ArrayList<>();for(int i=0;i<samples;i++){nsPerInput.add(elapsed[i]/(double)batch);bytesPerInput.add(allocated[i]<0?null:allocated[i]/(double)batch);}
+           Map<String,Object> result=new LinkedHashMap<>();result.put("nsPerInput",nsPerInput);result.put("allocatedBytesPerInput",bytesPerInput);result.put("samples",samples);result.put("inputsPerSample",batch);result.put("warmInputs",warm);result.put("totalInputs",total);result.put("constructionAndResizeQueries",construction);result.put("firstDenialQueries",Map.of("isVisible",1,"getShell",0,"getSize",0));result.put("additionalQueries",Map.of("isVisible",0,"getShell",0,"getSize",0));result.put("elapsedNs",elapsed);result.put("allocationBeforeBytes",before);result.put("allocationAfterBytes",after);result.put("allocatedBytes",allocated);result.put("allocationStatus",statuses);result.put("allocationAvailability",reason);result.put("allocationBean",base.getClass().getName());result.put("platformThread",!Thread.currentThread().isVirtual());result.put("modelCallbacks",total);result.put("blitReads",model.blitReads);result.put("damageReads",model.damageReads);result.put("damageHits",0);result.put("emitCalls",0);result.put("timerCalls",0);result.put("queuedOwnTicker",0);result.put("phaseUnchanged",true);result.put("generationDelta",model.generation()-generation);result.put("timingThreshold","NONE");result.put("scope","Unopened actual native host; repeated no-damage D_ANIM inputs only. Not whole-widget performance or zero-allocation guarantee.");return result;
+          }finally{test.close();}
+         }
+        }
+
+---
+# SPDX-License-Identifier: Apache-2.0
+type: specs.openrewrite.org/v1beta/recipe
+name: com.synexia.m3.ReceiveScopedWebCanvasPhysicalClock20261116
+displayName: Receive the physical clock and scoped native tests
+description: Apply exact existing-owner clock mediation, post-query repair, then scope and create only the qualified native test fixtures.
+recipeList:
+  - com.synexia.m3.ApplyWebCanvasPhysicalClockWithWakeReentryRepair20261116
+  - com.synexia.m3.ScopeWebAnimationVisibilityToQualifiedWin32Runtime20261116
+  - com.synexia.m3.CreateScopedWebClockAdmissionAtomTest20261116
