@@ -12,7 +12,7 @@ mode=$2
 count=0
 [[ ! -f "$state" ]] || count=$(<"$state")
 count=$((count + 1))
-printf '%s\\n' "$count" > "$state"
+printf '%s\n' "$count" > "$state"
 if [[ "$mode" == transient && "$count" -eq 1 || "$mode" == persistent ]]; then
   echo '[ERROR] status code: 503, reason phrase: Service Temporarily Unavailable (503)'
   exit 22
@@ -31,4 +31,4 @@ if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/b" fatal >/dev
 [[ $(<"$tmp/b") == 1 ]] || exit 1
 if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/c" persistent >/dev/null 2>&1; then exit 1; fi
 [[ $(<"$tmp/c") == 3 ]] || exit 1
-printf 'PASS: HTTP503 transient retry=2, compile failure=1 (fatal), persistent503=3 (fatal)\\n'
+printf 'PASS: HTTP503 transient retry=2, compile failure=1 (fatal), persistent503=3 (fatal)\n'
