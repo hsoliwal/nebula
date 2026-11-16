@@ -144,15 +144,24 @@ public final class MobileGridViewport {
 			}
 			boolean selected = row == selectedRow;
 			if (dirty[slot] || selectedAt[slot] != selected) {
-				String[] cells = new String[columns];
-				for (int col = 0; col < columns; col++) {
-					String cell = data.cell(row, col);
-					cells[col] = cell == null ? "" : cell;
-				}
-				bindingStarted[slot] = true;
-				sink.bind(slot, row, cells, selected);
+				// Consume only this refresh. Providers and native receivers may
+				// synchronously invalidate or select the row while binding.
 				dirty[slot] = false;
 				selectedAt[slot] = selected;
+				try {
+					String[] cells = new String[columns];
+					for (int col = 0; col < columns; col++) {
+						String cell = data.cell(row, col);
+						cells[col] = cell == null ? "" : cell;
+					}
+					bindingStarted[slot] = true;
+					sink.bind(slot, row, cells, selected);
+				} catch (RuntimeException | Error failure) {
+					// Preserve a retry for a still-owned row after a provider
+					// failure or a partially started native binding.
+					if (rowAt[slot] == row) dirty[slot] = true;
+					throw failure;
+				}
 			}
 		}
 		for (int slot = 0; slot < rowAt.length; slot++)
