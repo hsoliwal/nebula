@@ -85,18 +85,14 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 			clockDisplay.addFilter(SWT.Iconify, ancestorListener);
 		} catch (RuntimeException | Error failure) {
 			try {
-				removeClockFilters();
+				removeClockFilters(failure);
 			} catch (RuntimeException | Error cleanup) {
-				if (failure != cleanup) {
-					failure.addSuppressed(cleanup);
-				}
+				appendCleanupFailure(failure, cleanup);
 			}
 			try {
 				super.dispose();
 			} catch (RuntimeException | Error cleanup) {
-				if (failure != cleanup) {
-					failure.addSuppressed(cleanup);
-				}
+				appendCleanupFailure(failure, cleanup);
 			}
 			throw failure;
 		}
@@ -150,7 +146,7 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 				clockDisplay.timerExec(-1, ticker);
 			} finally {
 				try {
-					removeClockFilters();
+					removeClockFilters(null);
 				} finally {
 					cache.dispose();
 				}
@@ -315,18 +311,89 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 		}
 	}
 
-	private void removeClockFilters() {
-		int filters = clockFilters;
-		clockFilters = 0;
+	private void removeClockFilters(Throwable outer) {
+		if ((clockFilters & 4) != 0) {
+			return;
+		}
+		clockFilters |= 4;
+		Throwable failure = null;
 		try {
-			if ((filters & 1) != 0) {
-				clockDisplay.removeFilter(SWT.Hide, ancestorListener);
+			for (int pass = 0; pass < 2; pass++) {
+				for (int bit = 1; bit <= 2; bit <<= 1) {
+					if ((clockFilters & bit) == 0 || (clockFilters & (bit << 3)) != 0) {
+						continue;
+					}
+					try {
+						clockDisplay.removeFilter(bit == 1 ? SWT.Hide : SWT.Iconify, ancestorListener);
+						clockFilters &= ~bit;
+					} catch (RuntimeException | Error cleanup) {
+						if (pass == 1) {
+							clockFilters |= bit << 3;
+						}
+						if (failure == null) {
+							failure = cleanup;
+						} else {
+							appendCleanupFailure(failure, cleanup, outer);
+						}
+					}
+				}
 			}
 		} finally {
-			if ((filters & 2) != 0) {
-				clockDisplay.removeFilter(SWT.Iconify, ancestorListener);
+			clockFilters &= ~4;
+		}
+		if (failure instanceof RuntimeException runtime) {
+			throw runtime;
+		}
+		if (failure instanceof Error error) {
+			throw error;
+		}
+	}
+
+	private static void appendCleanupFailure(Throwable first, Throwable later) {
+		appendCleanupFailure(first, later, null);
+	}
+
+	private static void appendCleanupFailure(Throwable first, Throwable later, Throwable outer) {
+		if (first == later) {
+			return;
+		}
+		try {
+			java.util.IdentityHashMap<Throwable, Boolean> seen = new java.util.IdentityHashMap<>();
+			java.util.ArrayDeque<Throwable> pending = new java.util.ArrayDeque<>();
+			if (outer != null && first != outer
+					&& (containsFailure(later, outer, seen, pending) || containsFailure(outer, later, seen, pending))) {
+				return;
+			}
+			if (!containsFailure(first, later, seen, pending) && !containsFailure(later, first, seen, pending)) {
+				first.addSuppressed(later);
+			}
+		} catch (RuntimeException | Error unavailable) {
+			// Preserve the first failure when inspection or attachment is unavailable.
+		}
+	}
+
+	private static boolean containsFailure(Throwable root, Throwable target,
+			java.util.IdentityHashMap<Throwable, Boolean> seen, java.util.ArrayDeque<Throwable> pending) {
+		seen.clear();
+		pending.clear();
+		pending.add(root);
+		while (!pending.isEmpty()) {
+			Throwable value = pending.removeFirst();
+			if (value == target) {
+				return true;
+			}
+			if (seen.put(value, Boolean.TRUE) != null) {
+				continue;
+			}
+			Throwable cause = value.getCause();
+			if (cause != null) {
+				pending.addLast(cause);
+			}
+			for (Throwable suppressed : value.getSuppressed()) {
+				pending.addLast(suppressed);
 			}
 		}
+		return false;
 	}
 
 	private void onPaint(Event e) {
