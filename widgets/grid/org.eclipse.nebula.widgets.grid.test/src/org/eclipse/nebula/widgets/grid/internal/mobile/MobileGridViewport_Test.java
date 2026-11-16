@@ -78,6 +78,29 @@ public class MobileGridViewport_Test {
 
 
 	@Test
+	public void steadyViewportPaintsReuseWindowSnapshot() {
+		Sink sink = new Sink();
+		MobileGridViewport viewport = new MobileGridViewport(1000, 2, 24, 2,
+				(row, column) -> column == 0 ? "row-" + row : "cell", sink);
+		Window first = viewport.show(0, 120);
+		int binds = sink.binds;
+		for (int i = 0; i < 1000; i++) {
+			assertTrue("unchanged frame must reuse immutable Window", first == viewport.show(0, 120));
+		}
+		assertEquals("no repeated model provider work", binds, sink.binds);
+		viewport.select(1);
+		assertTrue("selection redraw keeps same row range", first == viewport.show(0, 120));
+		assertEquals("exactly one selected row rebound", binds + 1, sink.binds);
+		Window moved = viewport.show(24, 120);
+		assertTrue("scrolled row range has new snapshot", moved != first);
+		Window empty = viewport.show(0, 0);
+		assertEquals(0L, empty.visibleEnd());
+		assertTrue("repeated empty paints reuse snapshot", empty == viewport.show(0, 0));
+		viewport.close();
+		assertTrue(sink.slots.isEmpty());
+	}
+
+	@Test
 	public void zeroRowsClearPresentedWindowWithoutAnotherNativePaint() {
 		Sink sink = new Sink();
 		final long huge = 1_000_000_000_000L;
