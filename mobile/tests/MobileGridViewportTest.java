@@ -60,6 +60,7 @@ public final class MobileGridViewportTest {
         providerInvalidationDuringBindingRemainsPending();
         sinkSelectionAndInvalidationRemainPending();
         failedSinkBindingRemainsRetryable();
+        reserveContract();
 		System.out.println("MobileGridViewportTest PASSED");
 	}
 
@@ -288,6 +289,54 @@ public final class MobileGridViewportTest {
         assertEquals(2, binds[0]);
         view.close();
         assertEquals(1, releases[0]);
+    }
+
+
+    private static void reserveContract() {
+        final int[] reserved = {0}, calls = {0}, binds = {0};
+        RowSink sink = new RowSink() {
+            @Override public void reserve(int count) {
+                reserved[0] = count;
+                calls[0]++;
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                check(slot < reserved[0], "slot bound without preflight");
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) { }
+        };
+        MobileGridViewport view = new MobileGridViewport(1_000_000L, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        Window first = view.show(0, 8192);
+        check(first.nativeSlots() == 8192, "native slot limit");
+        check(calls[0] == 1 && reserved[0] == 8192 && binds[0] == 8192,
+                "one exact native reservation before all binding");
+        view.show(16, 8192);
+        view.show(0, 10);
+        check(calls[0] == 1, "no repeat reservation for stable capacity");
+        view.close();
+
+        RuntimeException error = new IllegalStateException("native reserve failed");
+        boolean[] rejected = {true};
+        int[] reservedAttempts = {0}, partialBinds = {0};
+        MobileGridViewport rejectedView = new MobileGridViewport(100, 1, 1, 0,
+                (row, col) -> "cell", new RowSink() {
+                    @Override public void reserve(int count) {
+                        reservedAttempts[0]++;
+                        if (rejected[0]) throw error;
+                    }
+                    @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                        partialBinds[0]++;
+                    }
+                    @Override public void release(int slot, long row) { }
+                });
+        expectSameFailure(error, () -> rejectedView.show(0, 20));
+        check(partialBinds[0] == 0 && rejectedView.window().visibleEnd() == 0,
+                "failed preflight preserves unbound initial viewport");
+        rejected[0] = false;
+        rejectedView.show(0, 20);
+        check(reservedAttempts[0] == 2 && partialBinds[0] == 20, "retry after preflight failure");
+        rejectedView.close();
     }
 
     private static void assertTrue(String message, boolean value) { check(value, message); }
