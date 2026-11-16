@@ -20,7 +20,7 @@ for (( attempt = 1; attempt <= attempts; attempt++ )); do
   else
     rc=$?
   fi
-  if ! grep -Eq 'status code: 503|Service Temporarily Unavailable \\(503\\)|HTTP/[0-9.]+ 503' "$log"; then
+  if ! grep -Eq 'status code: 503|Service Temporarily Unavailable \(503\)|HTTP/[0-9.]+ 503' "$log"; then
     echo "M3: non-503 failure; no retry (exit $rc)" >&2
     exit "$rc"
   fi
