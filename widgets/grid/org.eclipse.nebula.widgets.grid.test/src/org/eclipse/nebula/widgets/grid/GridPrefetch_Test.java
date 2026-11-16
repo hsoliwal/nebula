@@ -15,9 +15,12 @@
 package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
@@ -81,11 +84,208 @@ public class GridPrefetch_Test {
 		assertTrue(bottom > 0);
 	}
 
-	private void flush() {
-		for (int i = 0; i < 50; i++) {
-			while (display.readAndDispatch()) {
-				// drain
+	@Test
+	public void bothSidesShareTheRemainingResidencyCapacity() {
+		prepareMiddleViewport();
+		final GridItem retained = grid.getItem(100);
+		final int before = grid.virtualMaterializedItemCount();
+		final int bottom = grid.getBottomIndex();
+		final int top = grid.getTopIndex();
+		grid.setItemResidency(Grid.RESIDENCY_EVICT_COLD, before + 2);
+
+		queuePrefetch(2);
+		flush();
+
+		assertEquals("one capacity shared by below and above rows", before + 2,
+				grid.virtualMaterializedItemCount());
+		assertEquals(1, setData[bottom + 1]);
+		assertEquals(1, setData[bottom + 2]);
+		assertEquals("no capacity remains for the upper side", 0, setData[top - 1]);
+		assertSame(retained, grid.getItem(100));
+	}
+
+	@Test
+	public void setDataMaterializationConsumesTheRemainingCapacity() {
+		prepareMiddleViewport();
+		final int before = grid.virtualMaterializedItemCount();
+		final int first = grid.getBottomIndex() + 1;
+		final GridItem[] added = new GridItem[1];
+		grid.setItemResidency(Grid.RESIDENCY_EVICT_COLD, before + 2);
+		grid.addListener(SWT.SetData, event -> {
+			if (event.index == first) {
+				added[0] = grid.getItem(190);
+				added[0].setData("application identity");
+				added[0].getText(0);
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertEquals("callback-created rows share the capacity", before + 2,
+				grid.virtualMaterializedItemCount());
+		assertEquals("prefetch stops after the callback consumes the last slot", 0, setData[first + 1]);
+		assertSame(added[0], grid.getItem(190));
+		assertEquals("application identity", added[0].getData());
+	}
+
+	@Test
+	public void queuedPrefetchStopsAfterTheGridBecomesATree() {
+		prepareMiddleViewport();
+		final int before = grid.prefetchedRows;
+		final GridItem root = grid.getItem(0);
+		final GridItem[] child = new GridItem[1];
+		grid.addPaintListener(new PaintListener() {
+			@Override
+			public void paintControl(PaintEvent event) {
+				grid.removePaintListener(this);
+				// Grid's earlier paint listener has queued prefetch, but it cannot run yet.
+				child[0] = new GridItem(root, SWT.NONE);
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertEquals("flat prefetch does not run against the tree owner", before, grid.prefetchedRows);
+		assertSame(child[0], root.getItem(0));
+	}
+
+	@Test
+	public void setDataCanDisablePrefetch() {
+		prepareMiddleViewport();
+		final int first = grid.getBottomIndex() + 1;
+		final int before = grid.prefetchedRows;
+		grid.addListener(SWT.SetData, event -> {
+			if (event.index == first) {
+				grid.setPrefetchRows(0);
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertEquals("the disabling callback is the last prefetch", before + 1, grid.prefetchedRows);
+		assertEquals(0, setData[first + 1]);
+		assertEquals(0, grid.getPrefetchRows());
+	}
+
+	@Test
+	public void setDataCanReplaceThePrefetchRequest() {
+		prepareMiddleViewport();
+		final int first = grid.getBottomIndex() + 1;
+		final int before = grid.prefetchedRows;
+		grid.addListener(SWT.SetData, event -> {
+			if (event.index == first) {
+				grid.setPrefetchRows(1);
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertEquals("the old request stops at the callback", before + 1, grid.prefetchedRows);
+		assertEquals(0, setData[first + 1]);
+		assertEquals(1, grid.getPrefetchRows());
+	}
+
+	@Test
+	public void setDataCanDisposeTheGrid() {
+		prepareMiddleViewport();
+		final int first = grid.getBottomIndex() + 1;
+		grid.addListener(SWT.SetData, event -> {
+			if (event.index == first) {
+				grid.dispose();
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertTrue(grid.isDisposed());
+		assertEquals("no next-row callback after disposal", 0, setData[first + 1]);
+	}
+
+	@Test
+	public void setDataCanChangeTheGridToATree() {
+		prepareMiddleViewport();
+		final int first = grid.getBottomIndex() + 1;
+		final int before = grid.prefetchedRows;
+		final GridItem[] child = new GridItem[1];
+		grid.addListener(SWT.SetData, event -> {
+			if (event.index == first) {
+				child[0] = new GridItem(grid.getItem(0), SWT.NONE);
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertEquals("the old sparse owner is not used after the callback", before + 1, grid.prefetchedRows);
+		assertSame(child[0], grid.getItem(0).getItem(0));
+	}
+
+	@Test
+	public void setDataCanShrinkTheLogicalRows() {
+		prepareMiddleViewport();
+		final int first = grid.getBottomIndex() + 1;
+		grid.addListener(SWT.SetData, event -> {
+			if (event.index == first) {
+				grid.setItemCount(first + 1);
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertEquals(first + 1, grid.getItemCount());
+		assertEquals("no access beyond the callback's new extent", 0, setData[first + 1]);
+	}
+
+	@Test
+	public void setDataCanMoveTheViewport() {
+		prepareMiddleViewport();
+		final int first = grid.getBottomIndex() + 1;
+		grid.addListener(SWT.SetData, event -> {
+			if (event.index == first) {
+				grid.setTopIndex(150);
+			}
+		});
+
+		queuePrefetch(4);
+		flush();
+
+		assertEquals(150, grid.getTopIndex());
+		assertEquals("the old viewport is abandoned at the callback", 0, setData[first + 1]);
+		assertEquals("the next paint serves the new viewport", 1, setData[grid.getBottomIndex() + 1]);
+	}
+
+	private void prepareMiddleViewport() {
+		grid.setPrefetchRows(0);
+		grid.setItemCount(200);
+		grid.setTopIndex(100);
+		grid.update();
+		flush();
+		assertEquals(100, grid.getTopIndex());
+	}
+
+	private void queuePrefetch(final int rows) {
+		grid.setPrefetchRows(rows);
+		final int before = grid.paintPasses;
+		grid.redraw();
+		grid.update();
+		// Stop at the first paint, leaving its queued idle request to the caller.
+		final long deadline = System.nanoTime() + 5_000_000_000L;
+		while (grid.paintPasses == before && System.nanoTime() < deadline) {
+			if (!display.readAndDispatch()) {
+				Thread.yield();
 			}
 		}
+		assertTrue("the paint queues the idle request", grid.paintPasses > before);
+	}
+
+	private void flush() {
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, 1,
+				"prefetch Grid paint did not settle");
 	}
 }
