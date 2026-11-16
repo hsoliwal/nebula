@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.security.MessageDigest;
+import org.eclipse.swt.graphics.ImageData;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -105,15 +105,10 @@ public class GridBlitScroll_Test {
 		assertNotEquals("scrolling must change the visible Grid pixels", initial, screen());
 	}
 
-	/** SHA-256 of the Grid's actual on-screen pixels (DISPLAY_COPY_AREA). */
+	/** SHA-256 of exact Grid-painted screen pixels (native GTK3 scrollbar excluded). */
 	private String screen() throws Exception {
-		final byte[] pixels = GridSwtScreenshotCapture.captureScreenData(grid, "blit-scroll").data;
-		final byte[] digest = MessageDigest.getInstance("SHA-256").digest(pixels);
-		final StringBuilder hex = new StringBuilder();
-		for (final byte b : digest) {
-			hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
-		}
-		return hex.toString();
+		final ImageData pixels = GridSwtScreenshotCapture.captureScreenData(grid, "blit-scroll");
+		return GridSwtScreenshotCapture.gridClientContentHash(grid, pixels, grid.getClientArea());
 	}
 
 	private void settle() {
