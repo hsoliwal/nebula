@@ -86,14 +86,14 @@ public class MobileGridViewport_Test {
 
         @Override public void bind(int slot, long row, String[] cells, boolean selected) {
             calls.add("bind:" + row);
-            slots.put(slot, row);
+            slots.put(Integer.valueOf(slot), Long.valueOf(row));
             binds++;
             if (bindFailure != null) throw bindFailure;
         }
 
         @Override public void release(int slot, long row) {
             calls.add("release:" + row);
-            assertTrue("release requires a started binding", slots.remove(slot, row));
+            assertTrue("release requires a started binding", slots.remove(Integer.valueOf(slot), Long.valueOf(row)));
             releases++;
         }
     }
@@ -131,7 +131,7 @@ public class MobileGridViewport_Test {
         view.show(0, 20);
         assertEquals(5, reads[0]);
         assertEquals(1, sink.binds);
-        assertEquals(Long.valueOf(0), sink.slots.get(0));
+        assertEquals(Long.valueOf(0), sink.slots.get(Integer.valueOf(0)));
         view.close();
         assertEquals(1, sink.releases);
     }
@@ -172,7 +172,7 @@ public class MobileGridViewport_Test {
         view.invalidate(0);
         fail[0] = true;
         expectSameFailure(failure, () -> view.show(0, 20));
-        assertEquals(Long.valueOf(0), sink.slots.get(0));
+        assertEquals(Long.valueOf(0), sink.slots.get(Integer.valueOf(0)));
         assertEquals(0, sink.releases);
         fail[0] = false;
         view.show(0, 20);
