@@ -63,6 +63,7 @@
 						<include>**/GridPinnedRows_Test.java</include>
 						<include>**/GridPrefetch_Test.java</include>
 						<include>**/GridResidency_Test.java</include>
+						<include>**/GridEvictionScratch_Test.java</include>
 						<include>**/GridRowPermutation_Test.java</include>
 						<include>**/GridRowTreeRankExtent_Test.java</include>
 						<include>**/GridRowTreeVisibleNeighbor_Test.java</include>
