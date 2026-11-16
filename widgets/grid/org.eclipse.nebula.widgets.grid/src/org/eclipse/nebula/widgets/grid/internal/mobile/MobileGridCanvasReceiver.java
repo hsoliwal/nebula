@@ -82,11 +82,13 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         });
         canvas.addListener(SWT.MouseMove, event -> {
             if (closed || !pointerDown) return;
-            int delta = event.y - lastPointerY;
+            // Subtract in long before narrowing: extreme native pointer coordinates
+            // must not wrap and reverse the scroll direction.
+            long delta = (long)event.y - lastPointerY;
             lastPointerY = event.y;
             if (delta != 0) {
                 dragged = true;
-                scrollBy(-(long) delta);
+                scrollBy(-delta);
             }
         });
         canvas.addListener(SWT.MouseUp, event -> {
