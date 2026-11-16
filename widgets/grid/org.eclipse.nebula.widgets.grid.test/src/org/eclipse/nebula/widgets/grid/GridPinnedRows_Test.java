@@ -17,6 +17,7 @@ package org.eclipse.nebula.widgets.grid;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
@@ -214,7 +215,7 @@ public class GridPinnedRows_Test {
 		final ImageData first = new ImageData(460, 400, 24, palette);
 		final ImageData later = new ImageData(460, 400, 24, palette);
 		final int endX = border + client.width - 6;
-		assertEquals("fixture must have a native right-hand content strip", true,
+		assertTrue("fixture must have a native right-hand content strip",
 				endX > 10 && endX + 1 < later.width);
 		// The scrollbar is only 2 pixels in one frame and 6 in another.
 		// A single-frame hash would hash unequal numbers of pixels.
