@@ -93,6 +93,7 @@ jobs:
           releng/swt-receiver/swt-receiver-p2/target/binding/expected.json
           releng/swt-receiver/swt-receiver-p2/target/repository/*.xml
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/
+          widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-native-oracle-screenshots/
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
     - name: Upload all widget test reports
       if: always()
