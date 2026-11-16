@@ -152,10 +152,19 @@ public class ErrorPaneTest {
 				pane.setError(i % 3 == 0 ? failure : null);
 			}, nativeDetailsButton);
 		} catch (AssertionError nativePaintFailure) {
-			// Diagnostics only: do not suppress the exact one-paint native gate.
-			System.out.println("ERROR_PANE_NATIVE_PAINT_DIAGNOSTIC pane=" + pane.getClientArea()
-					+ " events=" + paints);
-			dumpNativeChildGeometry(pane, pane);
+			// Preserve the original failed assertion and its stack. Tycho does not
+			// archive System.out from the OSGi test, so attach geometry as suppressed
+			// evidence to the same AssertionError in the Surefire XML failure trace.
+			final StringBuilder nativeGeometry =
+					new StringBuilder("ERROR_PANE_NATIVE_PAINT_DIAGNOSTIC pane=");
+			try {
+				nativeGeometry.append(pane.getClientArea()).append(" events=")
+						.append(paints).append('\n');
+				appendNativeChildGeometry(pane, pane, nativeGeometry);
+			} catch (RuntimeException diagnosticFailure) {
+				nativePaintFailure.addSuppressed(diagnosticFailure);
+			}
+			nativePaintFailure.addSuppressed(new AssertionError(nativeGeometry.toString()));
 			throw nativePaintFailure;
 		}
 		assertEquals("message 9999", message.getText());
@@ -206,21 +215,21 @@ public class ErrorPaneTest {
 	}
 
 
-	private static void dumpNativeChildGeometry(org.eclipse.swt.widgets.Composite owner,
-			org.eclipse.swt.widgets.Composite parent) {
+	private static void appendNativeChildGeometry(org.eclipse.swt.widgets.Composite owner,
+			org.eclipse.swt.widgets.Composite parent, StringBuilder diagnostic) {
 		for (org.eclipse.swt.widgets.Control child : parent.getChildren()) {
 			org.eclipse.swt.graphics.Point position = owner.toControl(child.toDisplay(0, 0));
 			org.eclipse.swt.graphics.Rectangle bounds = child.getBounds();
-			System.out.println("ERROR_PANE_NATIVE_CHILD type=" + child.getClass().getName()
-					+ " client=" + new org.eclipse.swt.graphics.Rectangle(position.x, position.y,
-							bounds.width, bounds.height)
-					+ " visible=" + child.getVisible() + " enabled=" + child.getEnabled());
+			diagnostic.append("ERROR_PANE_NATIVE_CHILD type=").append(child.getClass().getName())
+					.append(" client=").append(new org.eclipse.swt.graphics.Rectangle(position.x, position.y,
+							bounds.width, bounds.height))
+					.append(" visible=").append(child.getVisible())
+					.append(" enabled=").append(child.getEnabled()).append('\n');
 			if (child instanceof org.eclipse.swt.widgets.Composite) {
-				dumpNativeChildGeometry(owner, (org.eclipse.swt.widgets.Composite) child);
+				appendNativeChildGeometry(owner, (org.eclipse.swt.widgets.Composite) child, diagnostic);
 			}
 		}
 	}
-
 	@Test
 	public void collapsedDetailsFormatAndPushNothingUntilShown() {
 		if (!viewport()) {
