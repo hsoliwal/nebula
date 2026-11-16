@@ -138,13 +138,7 @@ public final class RowSelection {
 	 * @return number of selected rows that are displayed
 	 */
 	public int getSelectionCount(final long[] displayed) {
-		int count = 0;
-		for (int row = rows.next(0, rowLimit); row >= 0; row = rows.next(row + 1, rowLimit)) {
-			if ((row >>> 6) < displayed.length && (displayed[row >>> 6] & (1L << (row & 63))) != 0L) {
-				count++;
-			}
-		}
-		return count;
+		return rows.countMasked(displayed, rowLimit);
 	}
 
 	/**
