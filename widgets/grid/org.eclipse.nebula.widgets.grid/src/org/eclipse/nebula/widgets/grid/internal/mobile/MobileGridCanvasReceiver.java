@@ -48,6 +48,11 @@ public final class MobileGridCanvasReceiver implements AutoCloseable {
         this.rowHeight = rowHeight;
         viewport = new MobileGridViewport(itemCount, columns, rowHeight, overscan,
                 data, new MobileGridViewport.RowSink() {
+                    @Override public void reserve(int slots) {
+                        // The viewport owns the exact modulo slot count. Preallocate
+                        // all three receiver lanes once, never geometrically or per row.
+                        ensureSlot(slots);
+                    }
                     @Override public void bind(int slot, long row, String[] text, boolean active) {
                         ensureSlot(slot + 1);
                         rows[slot] = row;
