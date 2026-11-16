@@ -85,6 +85,12 @@ public final class MobileGridViewport {
 		itemCount = count;
 		if (selectedRow >= count) selectedRow = -1;
 		for (int i = 0; i < rowAt.length; i++) if (rowAt[i] >= count) release(i);
+		// No old row can remain presented after the logical model becomes empty.
+		// Clear the cached window here, not only in a later asynchronous SWT.Paint.
+		// Do not allocate for repeated no-op empty resets.
+		if (count == 0 && window.visibleEnd() != 0) {
+			window = new Window(0, 0, 0, 0, rowAt.length);
+		}
 	}
 	/** Selects a row (-1 for none) and invalidates the previous and the new selection. */
 	public void select(long row) {
