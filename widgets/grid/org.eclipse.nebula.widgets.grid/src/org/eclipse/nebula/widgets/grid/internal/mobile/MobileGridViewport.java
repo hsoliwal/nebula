@@ -197,16 +197,18 @@ public final class MobileGridViewport {
 		reserving = true;
 		try {
 			sink.reserve(required);
+			// External release callbacks may re-enter just like reserve itself:
+			// finish all release/array replacement under the same transition guard.
+			for (int i = 0; i < rowAt.length; i++) release(i);
+			rowAt = nextRows;
+			selectedAt = nextSelected;
+			bindingStarted = nextBindingStarted;
+			dirty = nextDirty;
+			seenEpoch = nextSeenEpoch;
+			epoch = 0;
 		} finally {
 			reserving = false;
 		}
-		for (int i = 0; i < rowAt.length; i++) release(i);
-		rowAt = nextRows;
-		selectedAt = nextSelected;
-		bindingStarted = nextBindingStarted;
-		dirty = nextDirty;
-		seenEpoch = nextSeenEpoch;
-		epoch = 0;
 	}
 	private void release(int slot) {
 		if (rowAt[slot] >= 0 && bindingStarted[slot]) sink.release(slot, rowAt[slot]);
