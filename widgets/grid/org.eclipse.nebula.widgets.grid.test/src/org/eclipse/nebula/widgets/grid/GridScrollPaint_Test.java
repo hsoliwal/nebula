@@ -21,6 +21,7 @@ import static org.junit.Assert.fail;
 import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -52,8 +53,13 @@ public class GridScrollPaint_Test {
 	@Before
 	public void setUp() {
 		display = Display.getDefault();
-		shell = new Shell(display);
-		shell.setBounds(10, 10, 420, 420);
+		// these tests read the screen: the shell stays above other applications' windows, which
+		// would be captured in its place
+		shell = new Shell(display, SWT.ON_TOP | SWT.SHELL_TRIM);
+		// The positions below are client coordinates. The shell gets a client area of this size on every
+		// platform: with a fixed outer size the window frame of Windows left the Grid one pixel outside it
+		Rectangle trim = shell.computeTrim(0, 0, 420, 420);
+		shell.setBounds(10, 10, trim.width, trim.height);
 		new Text(shell, SWT.SINGLE).setBounds(5, 390, 60, 22);
 	}
 
@@ -63,7 +69,10 @@ public class GridScrollPaint_Test {
 	}
 
 	private Grid grid(final int style) {
-		final Grid grid = new Grid(shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | style);
+		return configure(new Grid(shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | style), style);
+	}
+
+	private static Grid configure(final Grid grid, final int style) {
 		grid.setBounds(5, 5, 400, 370);
 		grid.setHeaderVisible(true);
 		grid.setLinesVisible(false);
@@ -74,6 +83,36 @@ public class GridScrollPaint_Test {
 			column.setTree(c == 0 && (style & SWT.VIRTUAL) == 0);
 		}
 		return grid;
+	}
+
+	/* opens the shell and returns once the screen shows the Grid */
+	private void show(final Grid grid) {
+		shell.open();
+		settle();
+		awaitShown(grid);
+	}
+
+	/*
+	 * Waits until the screen shows the Grid as it paints itself. The desktop draws a window that has
+	 * just opened in a transition (scaled, blended frames) for some hundred milliseconds; those frames
+	 * are not the Grid's pixels, and a comparison during them fails for every row. Only pumps events.
+	 */
+	static void awaitShown(final Grid grid) {
+		final long deadline = System.currentTimeMillis() + 5000;
+		while (!sameClientArea(grid, screen(grid), print(grid))) {
+			if (System.currentTimeMillis() > deadline) {
+				fail("the screen never showed the Grid's paint: another window covers the shell, or the desktop still animates it ("
+						+ GridViewportDifferential_Test.difference(screen(grid), print(grid)) + ")");
+			}
+			if (!grid.getDisplay().readAndDispatch()) {
+				try {
+					Thread.sleep(20);
+				} catch (final InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+			}
+		}
 	}
 
 	/*
@@ -223,8 +262,7 @@ public class GridScrollPaint_Test {
 	}
 
 	private void scrollScript(final Grid grid) {
-		shell.open();
-		settle();
+		show(grid);
 		previous = screen(grid);
 		final ScrollBar bar = grid.getVerticalBar();
 		final int[] tops = { 40, 41, 60, 400, 399, 1200, 7, 5000, 5013, 2 };
@@ -339,15 +377,8 @@ public class GridScrollPaint_Test {
 		scrollScript(grid, "tree", GridViewport.ENABLED);
 	}
 
-	/*
-	 * Optimization pass, frozen columns (nebula#696, #165): a horizontal scroll moves the pixels
-	 * right of the frozen column and repaints the exposed strip and the header row. Steps to the
-	 * right and left by odd and even amounts, one across the overlay's activation and one of more
-	 * than the scrolled width (no blit); the window equals the Grid's paint right after each blit (the
-	 * viewport mode; the original mode repaints, as stock) and once settled, in both modes.
-	 */
-	@Test
-	public void horizontalBlitUnderAFrozenColumn() {
+	/* twelve columns of 90 pixels, the first one frozen, 2000 rows */
+	private Grid frozenColumnGrid() {
 		final Grid grid = new Grid(shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
 		grid.setBounds(5, 5, 400, 370);
 		grid.setHeaderVisible(true);
@@ -364,8 +395,20 @@ public class GridScrollPaint_Test {
 				item.setText(c, r + ":" + c);
 			}
 		}
-		shell.open();
-		settle();
+		return grid;
+	}
+
+	/*
+	 * Optimization pass, frozen columns (nebula#696, #165): a horizontal scroll moves the pixels
+	 * right of the frozen column and repaints the exposed strip and the header row. Steps to the
+	 * right and left by odd and even amounts, one across the overlay's activation and one of more
+	 * than the scrolled width (no blit); the window equals the Grid's paint right after each blit (the
+	 * viewport mode; the original mode repaints, as stock) and once settled, in both modes.
+	 */
+	@Test
+	public void horizontalBlitUnderAFrozenColumn() {
+		final Grid grid = frozenColumnGrid();
+		show(grid);
 		final ScrollBar bar = grid.getHorizontalBar();
 		final int blits = grid.hBlitScrollCount;
 		final int[] values = { 37, 74, 73, 200, 160, 10, 0, 150, 151, 700 };
@@ -387,8 +430,7 @@ public class GridScrollPaint_Test {
 	}
 
 	private void scrollScript(final Grid grid, final String label, final boolean expectBlits) {
-		shell.open();
-		settle();
+		show(grid);
 		final ScrollBar bar = grid.getVerticalBar();
 		final int blits = grid.blitScrollCount;
 		// rows up and down by one and by several (odd and even), a jump of more than a page (no blit)
@@ -433,5 +475,87 @@ public class GridScrollPaint_Test {
 			root.setExpanded(r % 6 == 0);
 		}
 		scrollScript(grid);
+	}
+
+	/*
+	 * A paint that is pending when a scroll arrives shows the rows of the new position; the pixels it
+	 * painted must not be moved again. Whatever was invalid before the scroll (the whole Grid, one cell),
+	 * the settled window shows exactly the Grid's paint.
+	 */
+	@Test
+	public void repaintPendingAtAScrollIsNotMoved() {
+		final Grid grid = grid(SWT.NONE);
+		grid.getColumn(0).setTree(false);
+		for (int r = 0; r < 2000; r++) {
+			new GridItem(grid, SWT.NONE).setText(0, "row " + r);
+		}
+		show(grid);
+		final ScrollBar bar = grid.getVerticalBar();
+		final int[] values = { 1, 6, 5, 2, 9, 3 };
+		for (int i = 0; i < values.length; i++) {
+			final boolean whole = i % 2 == 0;
+			if (whole) {
+				grid.redraw();
+			} else {
+				grid.redraw(40, grid.getHeaderHeight() + 3 * (grid.getItemHeight() + 1), 60, 30, false);
+			}
+			bar.setSelection(values[i]);
+			bar.notifyListeners(SWT.Selection, new Event());
+			final String step = "scroll bar " + values[i] + (whole ? " with the Grid invalid" : " with one cell invalid");
+			settle();
+			assertScreenIsPaint(grid, step + ", settled");
+		}
+	}
+
+	@Test
+	public void repaintPendingAtAHorizontalScrollIsNotMoved() {
+		final Grid grid = frozenColumnGrid();
+		show(grid);
+		final ScrollBar bar = grid.getHorizontalBar();
+		final int[] values = { 37, 74, 73, 200, 160, 10 };
+		for (int i = 0; i < values.length; i++) {
+			final boolean whole = i % 2 == 0;
+			if (whole) {
+				grid.redraw();
+			} else {
+				grid.redraw(150, grid.getHeaderHeight() + 3 * (grid.getItemHeight() + 1), 60, 30, false);
+			}
+			bar.setSelection(values[i]);
+			bar.notifyListeners(SWT.Selection, new Event());
+			final String step = "hbar " + values[i] + (whole ? " with the Grid invalid" : " with one cell invalid");
+			settle();
+			assertScreenIsPaint(grid, step + ", settled");
+		}
+	}
+
+	/*
+	 * A scroll while the pointer is over the Grid changes the hovered row, and a hover change
+	 * invalidates the client area. A test cannot place the pointer, so this Grid's hover refresh
+	 * invalidates the way a hover change does. The scroll is still a blit, and the window shows
+	 * exactly the Grid's paint right after it and once settled.
+	 */
+	@Test
+	public void hoverChangeAtAScrollKeepsTheBlitAndTheWindowExact() {
+		final Grid grid = configure(new Grid(shell, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL) {
+			@Override
+			protected void refreshHoverState() {
+				redraw();
+			}
+		}, SWT.NONE);
+		grid.getColumn(0).setTree(false);
+		for (int r = 0; r < 2000; r++) {
+			new GridItem(grid, SWT.NONE).setText(0, "row " + r);
+		}
+		show(grid);
+		final ScrollBar bar = grid.getVerticalBar();
+		for (final int value : new int[] { 1, 6, 5, 2, 9, 3 }) {
+			final int blits = grid.blitScrollCount;
+			bar.setSelection(value);
+			bar.notifyListeners(SWT.Selection, new Event());
+			assertEquals("scroll bar " + value + " under a hover change: blit scrolls", blits + 1, grid.blitScrollCount);
+			assertScreenIsPaint(grid, "scroll bar " + value + " under a hover change, right after the blit");
+			settle();
+			assertScreenIsPaint(grid, "scroll bar " + value + " under a hover change, settled");
+		}
 	}
 }

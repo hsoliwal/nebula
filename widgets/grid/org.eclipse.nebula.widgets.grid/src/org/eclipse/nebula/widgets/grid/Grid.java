@@ -9633,19 +9633,36 @@ public class Grid extends Canvas {
 			invalidateVisibleColumnCache();
 		}
 		fireViewportChanged();
-		refreshHoverState();
 		final Rectangle clientArea = getClientArea();
 		final Rectangle damage = GridViewportDamage.scrollDamage(
 				clientArea,
 				columnHeadersVisible ? headerHeight() : 0,
 				columnFootersVisible ? footerHeight() : 0,
 				horizontal);
-		if (damage.width > 0 && damage.height > 0) {
-			if (horizontal ? blitBodyHorizontally(damage) : blitBody(oldTop, damage)) {
-				return;
-			}
+		final boolean damaged = damage.width > 0 && damage.height > 0;
+		// the pixels move before the hover is refreshed: a scroll under the pointer changes the hovered
+		// row, that change invalidates the client area, and a body with a paint pending cannot be moved
+		// (bodyPaintedBeforeMove)
+		final boolean moved = damaged && (horizontal ? blitBodyHorizontally(damage) : blitBody(oldTop, damage));
+		refreshHoverState();
+		if (damaged && !moved) {
 			redraw(damage.x, damage.y, damage.width, damage.height, false);
 		}
+	}
+
+	/**
+	 * Paints what is pending before the body's pixels move. {@code scroll} paints it too, but with the
+	 * rows of the new position, and then moves those pixels once more: the window showed its rows one
+	 * step too far until the next full paint (a scroll while the pointer is over the Grid, whose hover
+	 * change invalidates the client area; any redraw requested before a scroll in the same event).
+	 *
+	 * @return {@code true} if that paint reached the body: the body no longer shows the old position
+	 *         everywhere, so it cannot be moved and the caller repaints it
+	 */
+	private boolean bodyPaintedBeforeMove() {
+		final int paints = bodyPaintCount;
+		update();
+		return bodyPaintCount != paints;
 	}
 
 	/**
@@ -9686,6 +9703,9 @@ public class Grid extends Canvas {
 		}
 		// the classic tree column's dotted lines take their phase from the absolute pixel column
 		if ((dx & 1) != 0 && hasDottedBranches()) {
+			return false;
+		}
+		if (bodyPaintedBeforeMove()) {
 			return false;
 		}
 		// each damaged part gets its own paint: the paint clip is the bounding box of what is
@@ -9745,6 +9765,9 @@ public class Grid extends Canvas {
 		// carries them into the body, a move up covers them with row pixels; both are repainted
 		final int band = columnHeadersVisible
 				? Math.min(headerOverflowBelow(getExtraFill(), getClientArea().width), body.height) : 0;
+		if (bodyPaintedBeforeMove()) {
+			return false;
+		}
 		if (dy > 0) {
 			scroll(body.x, body.y + dy, body.x, body.y, body.width, body.height - dy, false);
 			// the scroll invalidates only the part of its source rectangle that it uncovers; when
