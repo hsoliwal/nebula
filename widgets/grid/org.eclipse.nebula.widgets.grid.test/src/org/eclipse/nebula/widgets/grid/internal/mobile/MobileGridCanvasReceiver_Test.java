@@ -133,4 +133,39 @@ public class MobileGridCanvasReceiver_Test {
 		assertTrue("canvas owns receiver disposal", receiver.isClosed());
 		receiver.close(); // idempotent
 	}
+
+    @Test
+    public void nativePointerExtremesKeepDragDirectionAndAvoidClickSelection() {
+        final Canvas canvas = new Canvas(shell, SWT.NONE);
+        canvas.setBounds(0, 0, 320, 120);
+        final List<Long> selections = new ArrayList<>();
+        final MobileGridCanvasReceiver receiver = new MobileGridCanvasReceiver(
+                canvas, 1_000_000_000_000L, 2, 24, 2,
+                (row, column) -> "cell", row -> selections.add(Long.valueOf(row)));
+        shell.open();
+
+        // 32-bit subtraction would wrap -4_294_967_295 to +1 and scroll up.
+        pointer(canvas, SWT.MouseDown, Integer.MAX_VALUE);
+        pointer(canvas, SWT.MouseMove, Integer.MIN_VALUE);
+        assertEquals("positive long drag offset", 4_294_967_295L, receiver.scrollY());
+        pointer(canvas, SWT.MouseUp, Integer.MIN_VALUE);
+        assertTrue("a drag must not be mistaken for a click", selections.isEmpty());
+
+        // The inverse transition must subtract the full unsigned 32-bit span.
+        receiver.scrollTo(5_000_000_000L);
+        pointer(canvas, SWT.MouseDown, Integer.MIN_VALUE);
+        pointer(canvas, SWT.MouseMove, Integer.MAX_VALUE);
+        assertEquals("negative long drag offset", 705_032_705L, receiver.scrollY());
+        pointer(canvas, SWT.MouseUp, Integer.MAX_VALUE);
+        assertTrue("drag completion must not select", selections.isEmpty());
+
+        // Clamps remain in the original parent-owned viewport.
+        receiver.scrollTo(0);
+        pointer(canvas, SWT.MouseDown, Integer.MIN_VALUE);
+        pointer(canvas, SWT.MouseMove, Integer.MAX_VALUE);
+        assertEquals("floor at zero", 0L, receiver.scrollY());
+        pointer(canvas, SWT.MouseUp, Integer.MAX_VALUE);
+        canvas.dispose();
+        assertTrue("canvas continues to own receiver disposal", receiver.isClosed());
+    }
 }
