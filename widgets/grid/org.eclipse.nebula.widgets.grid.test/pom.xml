@@ -69,6 +69,7 @@
 						<include>**/GridRowTreeVisibleNeighbor_Test.java</include>
 						<include>**/GridScrollbarSettle_Test.java</include>
 						<include>**/GridSetDataRedraw_Test.java</include>
+						<include>**/GridCellSelectionList_Test.java</include>
 						<include>**/GridSelectionList_Test.java</include>
 						<include>**/GridSelectionOccurrence_Test.java</include>
 						<include>**/GridVirtualHeights_Test.java</include>
