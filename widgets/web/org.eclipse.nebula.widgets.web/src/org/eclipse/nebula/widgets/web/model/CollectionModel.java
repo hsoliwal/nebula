@@ -129,7 +129,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		}
 		for (int i = 0; i < count; i++) {
 			int b = i * 4;
-			if (rects[b + 2] > 0) {
+			if (rects[b + 2] > 0 && (flags[i] & HIDDEN) == 0) {
 				cell(p, i, rects[b], rects[b + 1], rects[b + 2], rects[b + 3]);
 			}
 		}
