@@ -57,6 +57,9 @@ public final class MobileGridViewportTest {
         partiallyStartedSinkBindingRetainsCleanupBehavior();
         providerErrorDoesNotReleaseUnboundSlot();
         capacityGrowthKeepsOnlyStartedBindingsReleasable();
+        providerInvalidationDuringBindingRemainsPending();
+        sinkSelectionAndInvalidationRemainPending();
+        failedSinkBindingRemainsRetryable();
 		System.out.println("MobileGridViewportTest PASSED");
 	}
 
@@ -219,6 +222,72 @@ public final class MobileGridViewportTest {
         view.close();
         assertEquals(2, sink.releases);
         assertTrue(sink.slots.isEmpty());
+    }
+
+    static void providerInvalidationDuringBindingRemainsPending() {
+        final MobileGridViewport[] holder = new MobileGridViewport[1];
+        int[] reads = {0};
+        int[] binds = {0};
+        int[] releases = {0};
+        holder[0] = new MobileGridViewport(1, 1, 20, 0,
+                (row, column) -> {
+                    if (++reads[0] == 1) holder[0].invalidate(row);
+                    return "cell";
+                }, new RowSink() {
+                    @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                        binds[0]++;
+                    }
+                    @Override public void release(int slot, long row) { releases[0]++; }
+                });
+        holder[0].show(0, 20);
+        holder[0].show(0, 20);
+        holder[0].show(0, 20);
+        assertEquals(2, reads[0]);
+        assertEquals(2, binds[0]);
+        holder[0].close();
+        assertEquals(1, releases[0]);
+    }
+
+    static void sinkSelectionAndInvalidationRemainPending() {
+        final MobileGridViewport[] holder = new MobileGridViewport[1];
+        java.util.List<Boolean> selectedAtBind = new java.util.ArrayList<>();
+        int[] releases = {0};
+        holder[0] = new MobileGridViewport(1, 1, 20, 0,
+                (row, column) -> "cell", new RowSink() {
+                    @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                        selectedAtBind.add(selected);
+                        if (selectedAtBind.size() == 1) holder[0].select(row);
+                        if (selectedAtBind.size() == 2) holder[0].invalidateAll();
+                    }
+                    @Override public void release(int slot, long row) { releases[0]++; }
+                });
+        holder[0].show(0, 20);
+        holder[0].show(0, 20);
+        holder[0].show(0, 20);
+        holder[0].show(0, 20);
+        assertEquals(java.util.List.of(false, true, true), selectedAtBind);
+        assertEquals(0L, holder[0].selectedRow());
+        holder[0].close();
+        assertEquals(1, releases[0]);
+    }
+
+    static void failedSinkBindingRemainsRetryable() {
+        RuntimeException failure = new IllegalStateException("native bind failed");
+        int[] binds = {0};
+        int[] releases = {0};
+        MobileGridViewport view = new MobileGridViewport(1, 1, 20, 0,
+                (row, column) -> "cell", new RowSink() {
+                    @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                        if (++binds[0] == 1) throw failure;
+                    }
+                    @Override public void release(int slot, long row) { releases[0]++; }
+                });
+        expectSameFailure(failure, () -> view.show(0, 20));
+        view.show(0, 20);
+        view.show(0, 20);
+        assertEquals(2, binds[0]);
+        view.close();
+        assertEquals(1, releases[0]);
     }
 
     private static void assertTrue(String message, boolean value) { check(value, message); }
