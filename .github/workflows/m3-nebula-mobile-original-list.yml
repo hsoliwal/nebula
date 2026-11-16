@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: 19932a279ad8730b1310d382def90b16dc82daf0
+          ref: 9d1442448532f4a8a56d0bd282697d7ecae04d63
           path: swt-mobile
           persist-credentials: false
       - name: Record exact receiving source revisions
@@ -29,7 +29,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p mobile-acceptance-evidence
-          test "$(git -C swt-mobile rev-parse HEAD)" = "19932a279ad8730b1310d382def90b16dc82daf0"
+          test "$(git -C swt-mobile rev-parse HEAD)" = "9d1442448532f4a8a56d0bd282697d7ecae04d63"
           git rev-parse HEAD > mobile-acceptance-evidence/nebula-source.txt
           git -C swt-mobile rev-parse HEAD > mobile-acceptance-evidence/swt-source.txt
       - uses: actions/setup-java@v4
@@ -61,7 +61,7 @@ jobs:
             local capture_status=0
             trap - EXIT
             set +e
-            for name in before recovery after; do
+            for name in before recovery after recreated; do
               adb pull "/sdcard/Android/data/org.eclipse.nebula.examples.mobile/files/nebula-android-$name.png" \
                 "mobile-acceptance-evidence/screenshots/nebula-android-$name.png" || capture_status=1
             done
@@ -72,7 +72,7 @@ jobs:
           }
           trap capture_native_evidence EXIT
           sha256sum swt-mobile/mobile/target/swt-mobile-android.jar > mobile-acceptance-evidence/swt-jar.sha256
-          gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true :app:connectedDebugAndroidTest \
+          gradle --no-daemon -p widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android "-PswtMobileJar=$GITHUB_WORKSPACE/swt-mobile/mobile/target/swt-mobile-android.jar" -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true -Pandroid.enableAdditionalTestOutput=true :app:connectedDebugAndroidTest \
             2>&1 | tee mobile-acceptance-evidence/android-native-execution.log
           SCRIPT
       - name: Execute original Combo popup, List, Text IME and native widget tests
@@ -84,6 +84,46 @@ jobs:
           target: google_apis
           disable-animations: true
           script: bash "$RUNNER_TEMP/nebula-native-acceptance.sh"
+      - name: Require the four native SWT screen captures
+        run: |
+          cat > "$RUNNER_TEMP/VerifyNativeScreenshots.java" <<'JAVA'
+          import java.awt.image.BufferedImage;
+          import java.nio.file.Files;
+          import java.nio.file.Path;
+          import java.util.ArrayList;
+          import java.util.Arrays;
+          import javax.imageio.ImageIO;
+          class VerifyNativeScreenshots {
+              public static void main(String[] args) throws Exception {
+                  var captured = new ArrayList<int[]>();
+                  for (String state : new String[] {"before", "recovery", "after", "recreated"}) {
+                      String name = "nebula-android-" + state + ".png";
+                      try (var paths = Files.walk(Path.of(args[0]))) {
+                          var images = paths.filter(Files::isRegularFile)
+                                  .filter(path -> name.equals(path.getFileName().toString())).toList();
+                          if (images.size() != 1) throw new AssertionError("Missing or duplicate " + name);
+                          BufferedImage image = ImageIO.read(images.getFirst().toFile());
+                          if (image == null || image.getWidth() < 2 || image.getHeight() < 2)
+                              throw new AssertionError("Invalid native screen capture " + name);
+                          boolean varied = false;
+                          int first = image.getRGB(0, 0);
+                          for (int y = 0; !varied && y < image.getHeight(); y++) {
+                              for (int x = 0; x < image.getWidth(); x++) {
+                                  if (image.getRGB(x, y) != first) { varied = true; break; }
+                              }
+                          }
+                          if (!varied) throw new AssertionError("Blank native screen capture " + name);
+                          int[] pixels = image.getRGB(0, 0, image.getWidth(), image.getHeight(),
+                                  null, 0, image.getWidth());
+                          if (captured.stream().anyMatch(prior -> Arrays.equals(prior, pixels)))
+                              throw new AssertionError("Repeated stale native screen capture " + name);
+                          captured.add(pixels);
+                      }
+                  }
+              }
+          }
+          JAVA
+          java -Djava.awt.headless=true "$RUNNER_TEMP/VerifyNativeScreenshots.java" mobile-acceptance-evidence/screenshots
       - name: Retain Android native test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,6 +132,7 @@ jobs:
           path: |
             widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/app/build/reports/androidTests/**
             widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/app/build/outputs/androidTest-results/**
+            widgets/roundedcheckbox/org.eclipse.nebula.widgets.roundedcheckbox.mobile/android/app/build/outputs/connected_android_test_additional_output/**
             mobile-acceptance-evidence/**
           if-no-files-found: warn
   ios-original-list-source:
@@ -102,7 +143,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: 19932a279ad8730b1310d382def90b16dc82daf0
+          ref: 9d1442448532f4a8a56d0bd282697d7ecae04d63
           path: swt-mobile
           persist-credentials: false
       - name: Record exact receiving source revisions
@@ -110,7 +151,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p mobile-acceptance-evidence
-          test "$(git -C swt-mobile rev-parse HEAD)" = "19932a279ad8730b1310d382def90b16dc82daf0"
+          test "$(git -C swt-mobile rev-parse HEAD)" = "9d1442448532f4a8a56d0bd282697d7ecae04d63"
           git rev-parse HEAD > mobile-acceptance-evidence/nebula-source.txt
           git -C swt-mobile rev-parse HEAD > mobile-acceptance-evidence/swt-source.txt
       - uses: actions/setup-java@v4
