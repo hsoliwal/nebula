@@ -180,7 +180,11 @@ public final class WebClockAdmissionAtomTest {
   need(display.attempts==failAt&&display.added.size()==failAt,"EXACT_PARTIAL_REGISTRATION_ATTEMPTS");
   Listener ancestor=display.added.get(0);for(Listener entry:display.added)need(entry==ancestor,"PARTIAL_REGISTRATION_SAME_ADAPTER");
   need(countFilter(SWT.Hide,ancestor)==0&&countFilter(SWT.Iconify,ancestor)==0&&countFilter(SWT.Hide,foreignHide)==1&&countFilter(SWT.Iconify,foreignIconify)==1,"PARTIAL_ROLLBACK_EXACT_FILTERS");
-  need(display.removed.size()==failAt,"EXACT_ROLLBACK_REMOVE_COUNT");need(display.addedTypes.equals(failAt==1?List.of(SWT.Hide):List.of(SWT.Hide,SWT.Iconify))&&display.removedTypes.equals(display.addedTypes),"EXACT_FILTER_TYPE_ORDER");for(Listener entry:display.removed)need(entry==ancestor,"ROLLBACK_WRONG_ADAPTER");
+  List<Integer> expectedRemovals=new ArrayList<>(display.addedTypes);if(cleanupFailure)expectedRemovals.add(SWT.Hide);
+  int hideRemovals=Collections.frequency(display.removedTypes,SWT.Hide),iconifyRemovals=Collections.frequency(display.removedTypes,SWT.Iconify);
+  System.out.println("CLOCK_ROLLBACK_RETRY_TRACE failAt="+failAt+" cleanupFailure="+cleanupFailure+" added="+display.addedTypes+" removed="+display.removedTypes+" expected="+expectedRemovals+" perType="+hideRemovals+"/"+iconifyRemovals);
+  need(display.removed.size()==expectedRemovals.size()&&display.removedTypes.size()==expectedRemovals.size()&&hideRemovals<=2&&iconifyRemovals<=2&&display.removed.size()<=4,"BOUNDED_ROLLBACK_REMOVE_COUNT");
+  need(display.addedTypes.equals(failAt==1?List.of(SWT.Hide):List.of(SWT.Hide,SWT.Iconify))&&display.removedTypes.equals(expectedRemovals),"EXACT_FILTER_FIRST_PASS_AND_RETRY_ORDER");for(Listener entry:display.removed)need(entry==ancestor,"ROLLBACK_WRONG_ADAPTER");
   if(cleanupFailure)need(actual.getSuppressed().length==1&&actual.getSuppressed()[0]==display.cleanup,"SUPPRESSED_CLEANUP_IDENTITY");else need(actual.getSuppressed().length==0,"UNEXPECTED_SUPPRESSED_FAILURE");
   need(display.constructorChild!=null&&display.constructorHWND!=0,"FAILED_CONSTRUCTOR_CAPTURE_REQUIRED");
   need(parent.getChildren().length==0&&OS.GetWindow(parent.handle,OS.GW_CHILD)==0&&display.findWidget(display.constructorHWND)==null&&OS.GetWindowThreadProcessId(display.constructorHWND,null)==0&&display.constructorChild.isDisposed()&&display.constructorChild.handle==0,"FAILED_CONSTRUCTOR_NATIVE_CHILD_RETAINED");

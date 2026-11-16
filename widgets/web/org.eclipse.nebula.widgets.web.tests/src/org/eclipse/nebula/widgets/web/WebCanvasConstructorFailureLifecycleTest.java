@@ -144,7 +144,10 @@ public final class WebCanvasConstructorFailureLifecycleTest {
   finally{display.armed=false;}
   need(actual==display.primary,"PRIMARY_FAILURE_IDENTITY");
   need(captured!=null&&capturedHandle!=0&&capturedAncestor==display.added.get(0),"CAPTURED_NATIVE_OWNER_REQUIRED");
-  need(display.attempts==failAt&&display.addedTypes.equals(failAt==1?List.of(SWT.Hide):List.of(SWT.Hide,SWT.Iconify))&&display.removedTypes.equals(display.addedTypes),"EXACT_FILTER_ATTEMPT_AND_ROLLBACK_ORDER");
+  List<Integer> expectedRemovals=new ArrayList<>(display.addedTypes);if(cleanupFailure)expectedRemovals.add(SWT.Hide);
+  int hideRemovals=Collections.frequency(display.removedTypes,SWT.Hide),iconifyRemovals=Collections.frequency(display.removedTypes,SWT.Iconify);
+  System.out.println("CTOR_ROLLBACK_RETRY_TRACE failAt="+failAt+" cleanupFailure="+cleanupFailure+" added="+display.addedTypes+" removed="+display.removedTypes+" expected="+expectedRemovals+" perType="+hideRemovals+"/"+iconifyRemovals);
+  need(display.attempts==failAt&&display.addedTypes.equals(failAt==1?List.of(SWT.Hide):List.of(SWT.Hide,SWT.Iconify))&&display.removedTypes.equals(expectedRemovals)&&display.removed.size()==expectedRemovals.size()&&hideRemovals<=2&&iconifyRemovals<=2&&display.removed.size()<=4,"EXACT_FILTER_REGISTRATION_AND_BOUNDED_RETRY_ORDER");
   for(Listener value:display.added)need(value==capturedAncestor,"REGISTERED_ADAPTER_IDENTITY");
   for(Listener value:display.removed)need(value==capturedAncestor,"REMOVED_ADAPTER_IDENTITY");
   need(actual.getSuppressed().length==(cleanupFailure?1:0),"SUPPRESSED_CLEANUP_COUNT");
