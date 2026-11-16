@@ -21,8 +21,10 @@ import org.eclipse.nebula.widgets.web.model.AnimvalueModel;
 import org.eclipse.nebula.widgets.web.model.WebPaint;
 import org.eclipse.nebula.widgets.web.model.WebStates;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -44,6 +46,7 @@ public final class WebClockAdmissionAtomTest {
  private static Object field(Object owner,String name)throws Exception{return field(owner,owner.getClass(),name);}
  private static final class FilterDisplay extends Display {
   boolean armed,cleanupFailure; int failAt,attempts,timerCalls,positiveTimers;
+  Composite failureParent; Control constructorChild; long constructorHWND;
   final RuntimeException primary=new RuntimeException("controlled addFilter failure");
   final RuntimeException cleanup=new RuntimeException("controlled removeFilter failure");
   final List<Listener> added=new ArrayList<>(),removed=new ArrayList<>();
@@ -52,7 +55,16 @@ public final class WebClockAdmissionAtomTest {
   @Override protected void checkSubclass(){ }
   @Override public void addFilter(int type,Listener listener){
    super.addFilter(type,listener);
-   if(armed&&(type==SWT.Hide||type==SWT.Iconify)){added.add(listener);addedTypes.add(type);if(++attempts==failAt)throw primary;}
+   if(armed&&(type==SWT.Hide||type==SWT.Iconify)){
+    added.add(listener);addedTypes.add(type);
+    if(++attempts==failAt){
+     Control[] children=failureParent.getChildren();
+     need(children.length==1&&children[0] instanceof WebCanvas<?>,"FAILED_CONSTRUCTOR_CAPTURE_PRECONDITION");
+     constructorChild=children[0];constructorHWND=constructorChild.handle;
+     need(constructorHWND!=0&&OS.GetWindowThreadProcessId(constructorHWND,null)==OS.GetCurrentThreadId()&&OS.GetParent(constructorHWND)==failureParent.handle&&findWidget(constructorHWND)==constructorChild,"FAILED_CONSTRUCTOR_NATIVE_BIRTH_CAPTURE");
+     throw primary;
+    }
+   }
   }
   @Override public void removeFilter(int type,Listener listener){
    super.removeFilter(type,listener);
@@ -114,7 +126,7 @@ public final class WebClockAdmissionAtomTest {
  @Before public void setup(){
   org.junit.Assume.assumeTrue("Pinned Win32 SWT4974 native clock/private-resource introspection; other runtimes are not qualified.", "win32".equals(SWT.getPlatform()) && SWT.getVersion() == 4974);
   DeviceData data=new DeviceData();data.tracking=true;display=new FilterDisplay(data);display.getSystemFont();display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-  shell=new Shell(display);parent=new Composite(shell,SWT.NONE);parent.setBounds(0,0,360,240);beforeResources=resources();
+  shell=new Shell(display);parent=new Composite(shell,SWT.NONE);parent.setBounds(0,0,360,240);display.failureParent=parent;beforeResources=resources();
   display.addFilter(SWT.Hide,foreignHide);display.addFilter(SWT.Iconify,foreignIconify);
  }
  @After public void close()throws Exception{
@@ -170,8 +182,8 @@ public final class WebClockAdmissionAtomTest {
   need(countFilter(SWT.Hide,ancestor)==0&&countFilter(SWT.Iconify,ancestor)==0&&countFilter(SWT.Hide,foreignHide)==1&&countFilter(SWT.Iconify,foreignIconify)==1,"PARTIAL_ROLLBACK_EXACT_FILTERS");
   need(display.removed.size()==failAt,"EXACT_ROLLBACK_REMOVE_COUNT");need(display.addedTypes.equals(failAt==1?List.of(SWT.Hide):List.of(SWT.Hide,SWT.Iconify))&&display.removedTypes.equals(display.addedTypes),"EXACT_FILTER_TYPE_ORDER");for(Listener entry:display.removed)need(entry==ancestor,"ROLLBACK_WRONG_ADAPTER");
   if(cleanupFailure)need(actual.getSuppressed().length==1&&actual.getSuppressed()[0]==display.cleanup,"SUPPRESSED_CLEANUP_IDENTITY");else need(actual.getSuppressed().length==0,"UNEXPECTED_SUPPRESSED_FAILURE");
-  need(parent.getChildren().length==1,"FAILED_CONSTRUCTOR_NATIVE_CHILD_ACCOUNTED");
-  parent.getChildren()[0].dispose();need(parent.getChildren().length==0,"FAILED_CONSTRUCTOR_CHILD_CLEANUP");
+  need(display.constructorChild!=null&&display.constructorHWND!=0,"FAILED_CONSTRUCTOR_CAPTURE_REQUIRED");
+  need(parent.getChildren().length==0&&OS.GetWindow(parent.handle,OS.GW_CHILD)==0&&display.findWidget(display.constructorHWND)==null&&OS.GetWindowThreadProcessId(display.constructorHWND,null)==0&&display.constructorChild.isDisposed()&&display.constructorChild.handle==0,"FAILED_CONSTRUCTOR_NATIVE_CHILD_RETAINED");
  }
  @Test public void partialHideRegistrationRollsBack()throws Exception{registrationFailure(1,false);}
  @Test public void partialIconifyRegistrationRollsBack()throws Exception{registrationFailure(2,false);}

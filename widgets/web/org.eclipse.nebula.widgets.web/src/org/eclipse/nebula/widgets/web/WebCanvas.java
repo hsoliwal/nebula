@@ -91,6 +91,13 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 					failure.addSuppressed(cleanup);
 				}
 			}
+			try {
+				super.dispose();
+			} catch (RuntimeException | Error cleanup) {
+				if (failure != cleanup) {
+					failure.addSuppressed(cleanup);
+				}
+			}
 			throw failure;
 		}
 	}
