@@ -261,6 +261,87 @@ final class GridSwtScreenshotCapture {
 		return data;
 	}
 
+	/**
+	 * Compare the original Grid's actual on-screen client pixels, never an
+	 * offscreen Control.print image. GTK3's right-aligned overlay scrollbar
+	 * paints independently from the Grid body and can animate its thumb even
+	 * between a blit and a full redraw. Exclude only the native scrollbar's
+	 * measured track width, with a hard cap; all remaining pixels are exact.
+	 */
+	static String gridClientContentHash(final Grid grid, final ImageData image,
+			final Rectangle clientRegion) {
+		Objects.requireNonNull(grid, "grid");
+		Objects.requireNonNull(image, "image");
+		Objects.requireNonNull(clientRegion, "clientRegion");
+		final Rectangle client = grid.getClientArea();
+		if (clientRegion.x < 0 || clientRegion.y < 0 || clientRegion.width <= 0
+				|| clientRegion.height <= 0
+				|| (long)clientRegion.x + clientRegion.width > client.width
+				|| (long)clientRegion.y + clientRegion.height > client.height) {
+			throw new AssertionError("Grid content region outside native client: " + clientRegion);
+		}
+		final int border = grid.getBorderWidth();
+		final Rectangle captureRegion = new Rectangle(border + clientRegion.x,
+				border + clientRegion.y, clientRegion.width, clientRegion.height);
+		int rightLimit = border + client.width;
+		final org.eclipse.swt.widgets.ScrollBar vertical = grid.getVerticalBar();
+		if ("gtk".equals(SWT.getPlatform())
+				&& !"1".equals(System.getenv("SWT_GTK4"))
+				&& vertical != null && vertical.getVisible()) {
+			final Rectangle track = vertical.getThumbTrackBounds();
+			final Rectangle thumb = vertical.getThumbBounds();
+			if (track.width <= 0 || track.width > 32 || track.height <= 0
+					|| thumb.width <= 0 || thumb.height <= 0
+					|| thumb.width > track.width || thumb.height > track.height
+					|| thumb.y < track.y || (long)thumb.y + thumb.height > (long)track.y + track.height) {
+				throw new AssertionError("invalid measured native GTK3 scrollbar geometry: "
+						+ track + " thumb=" + thumb);
+			}
+			rightLimit -= track.width;
+		}
+		return exactContentHash(image, captureRegion, rightLimit);
+	}
+
+	/**
+	 * Exact RGB-word digest of the non-overlay part of a capture rectangle.
+	 * The excluded strip must be explicit and cannot hide changes to body pixels.
+	 * Package-local for deterministic native-image regression fixtures.
+	 */
+	static String exactContentHash(final ImageData image, final Rectangle region,
+			final int rightLimit) {
+		Objects.requireNonNull(image, "image");
+		Objects.requireNonNull(region, "region");
+		if (region.x < 0 || region.y < 0 || region.width <= 0 || region.height <= 0
+				|| (long)region.x + region.width > image.width
+				|| (long)region.y + region.height > image.height
+				|| rightLimit > image.width || rightLimit <= region.x) {
+			throw new AssertionError("invalid native content/scrollbar region: " + region
+					+ ", rightLimit=" + rightLimit);
+		}
+		final int endX = Math.min(region.x + region.width, rightLimit);
+		final MessageDigest digest;
+		try {
+			digest = MessageDigest.getInstance("SHA-256");
+		} catch (final NoSuchAlgorithmException impossible) {
+			throw new AssertionError(impossible);
+		}
+		for (int y = region.y; y < region.y + region.height; y++) {
+			for (int x = region.x; x < endX; x++) {
+				final int pixel = image.getPixel(x, y);
+				digest.update((byte)pixel);
+				digest.update((byte)(pixel >>> 8));
+				digest.update((byte)(pixel >>> 16));
+			}
+		}
+		final byte[] hash = digest.digest();
+		final StringBuilder hex = new StringBuilder(hash.length * 2);
+		for (final byte b : hash) {
+			hex.append(Character.forDigit((b >>> 4) & 0x0f, 16));
+			hex.append(Character.forDigit(b & 0x0f, 16));
+		}
+		return hex.toString();
+	}
+
 	private static void savePng(final Image image, final Path path) throws IOException {
 		final Path parent = path.getParent();
 		if (parent != null) {

@@ -19,12 +19,12 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-import java.security.MessageDigest;
 
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -194,25 +194,35 @@ public class GridPinnedRows_Test {
 
 	private static String region(final Grid grid, final Rectangle r) throws Exception {
 		final ImageData data = GridSwtScreenshotCapture.captureScreenData(grid, "pinned-rows");
-		final int border = grid.getBorderWidth();
-		if (r.x < 0 || r.y < 0 || border + r.x + r.width > data.width
-				|| border + r.y + r.height > data.height) {
-			throw new AssertionError("pinned-plane region is outside the visible Grid capture: " + r);
-		}
-		final MessageDigest md = MessageDigest.getInstance("SHA-256");
-		for (int y = r.y; y < r.y + r.height; y++) {
-			for (int x = r.x; x < r.x + r.width; x++) {
-				final int pixel = data.getPixel(border + x, border + y);
-				md.update((byte) pixel);
-				md.update((byte) (pixel >>> 8));
-				md.update((byte) (pixel >>> 16));
+		return GridSwtScreenshotCapture.gridClientContentHash(grid, data, r);
+	}
+
+	@Test
+	public void nativeScrollbarExclusionNeverMasksBodyPixels() {
+		// Synthetic pixel fixture proves that the exact native comparator
+		// ignores ONLY a two-pixel right overlay, never interior cell changes.
+		final PaletteData palette = new PaletteData(0xff0000, 0x00ff00, 0x0000ff);
+		final ImageData reference = new ImageData(10, 4, 24, palette);
+		final ImageData changed = new ImageData(10, 4, 24, palette);
+		for (int y = 0; y < 4; y++) {
+			for (int x = 0; x < 10; x++) {
+				final int pixel = (x * 71 << 16) | (y * 13 << 8) | (x + y);
+				reference.setPixel(x, y, pixel);
+				changed.setPixel(x, y, pixel);
 			}
 		}
-		final StringBuilder hex = new StringBuilder();
-		for (final byte b : md.digest()) {
-			hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
-		}
-		return hex.toString();
+		final Rectangle full = new Rectangle(0, 0, 10, 4);
+		changed.setPixel(9, 2, 0x00ffffff);
+		assertEquals("only native overlay pixels may differ",
+				GridSwtScreenshotCapture.exactContentHash(reference, full, 8),
+				GridSwtScreenshotCapture.exactContentHash(changed, full, 8));
+		assertNotEquals("full screen comparison must still detect native overlay delta",
+				GridSwtScreenshotCapture.exactContentHash(reference, full, 10),
+				GridSwtScreenshotCapture.exactContentHash(changed, full, 10));
+		changed.setPixel(3, 1, 0x00ffffff);
+		assertNotEquals("a single body pixel difference remains fatal",
+				GridSwtScreenshotCapture.exactContentHash(reference, full, 8),
+				GridSwtScreenshotCapture.exactContentHash(changed, full, 8));
 	}
 
 	private void flush() {
