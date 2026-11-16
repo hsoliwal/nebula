@@ -157,8 +157,24 @@ public final class RowSelection {
 	 * @return ascending view positions
 	 */
 	public int[] toViewIndices(final RowView view) {
-		int[] out = new int[Math.min(getSelectionCount(), view.getViewCount())];
+		final int selectedCount = getSelectionCount();
+		final int viewCount = view.getViewCount();
+		int[] out = new int[Math.min(selectedCount, viewCount)];
 		int n = 0;
+		// A filtered/collapsed view can be tiny even when all model rows are selected.
+		// Iterate whichever coordinate space is smaller; view positions are already
+		// ascending and group headers (modelRow == -1) do not represent selections.
+		// RowView guarantees a one-to-one model/view mapping for actual model rows.
+		if (selectedCount > viewCount) {
+			final int modelCount = view.getModelCount();
+			for (int v = 0; v < viewCount; v++) {
+				final int row = view.modelRow(v);
+				if (row >= 0 && row < rowLimit && row < modelCount && rows.get(row)) {
+					out[n++] = v;
+				}
+			}
+			return n == out.length ? out : Arrays.copyOf(out, n);
+		}
 		for (int row = rows.next(0, rowLimit); row >= 0; row = rows.next(row + 1, rowLimit)) {
 			final int v = row < view.getModelCount() ? view.viewIndex(row) : -1;
 			if (v >= 0) {

@@ -82,6 +82,36 @@ public class RowSelection_Test {
 	}
 
 	@Test
+	public void denseSelectionWalksFilteredViewAndSkipsCollapsedGroupHeaders() {
+		final int n = 100_000;
+		final RowSelection selection = new RowSelection(n);
+		selection.selectAll();
+		final RowPermutation permutation = new RowPermutation(n);
+		permutation.setFilter(modelRow -> modelRow % 8192 == 0);
+		final int[] expected = new int[permutation.getViewCount()];
+		for (int i = 0; i < expected.length; i++) expected[i] = i;
+		assertArrayEquals(expected, selection.toViewIndices(permutation));
+
+		selection.setSelected(0, false);
+		assertArrayEquals(java.util.Arrays.copyOfRange(expected, 1, expected.length),
+				selection.toViewIndices(permutation));
+
+		final int[] groupKeys = new int[n];
+		for (int i = 32768; i < n; i++) groupKeys[i] = 1;
+		final RowGrouping grouping = new RowGrouping(permutation);
+		grouping.groupBy(groupKeys);
+		assertEquals(2, grouping.getGroupCount());
+		assertArrayEquals(new int[] {2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+				selection.toViewIndices(grouping));
+
+		grouping.setExpanded(0, false);
+		assertArrayEquals(new int[] {2, 3, 4, 5, 6, 7, 8, 9, 10},
+				selection.toViewIndices(grouping));
+		grouping.setExpanded(1, false);
+		assertArrayEquals(new int[0], selection.toViewIndices(grouping));
+	}
+
+	@Test
 	public void viewIndicesAndFilterAwareCountsFollowTheView() {
 		final int n = 5000;
 		final RowSelection selection = new RowSelection(n);

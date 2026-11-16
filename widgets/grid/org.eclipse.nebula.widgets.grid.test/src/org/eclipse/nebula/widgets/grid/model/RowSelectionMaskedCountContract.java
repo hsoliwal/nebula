@@ -72,6 +72,26 @@ public final class RowSelectionMaskedCountContract {
 			}
 		}
 
+		// Select-all must traverse the compact visible view, including after a
+		// deselection. Result order is the view's order, not model-row order.
+		final int viewRows = 200_000;
+		final RowSelection dense = new RowSelection(viewRows);
+		dense.selectAll();
+		final RowPermutation view = new RowPermutation(viewRows);
+		view.setFilter(row -> row % 8192 == 0);
+		final int shown = view.getViewCount();
+		final int[] allIndices = dense.toViewIndices(view);
+		check(shown, allIndices.length, "filtered view selection length");
+		for (int i = 0; i < shown; i++) {
+			check(i, allIndices[i], "filtered view selection position");
+		}
+		dense.setSelected(0, false);
+		final int[] withoutFirst = dense.toViewIndices(view);
+		check(shown - 1, withoutFirst.length, "filtered view deselection");
+		for (int i = 1; i < shown; i++) {
+			check(i, withoutFirst[i - 1], "filtered view deselected index");
+		}
+
 		final int million = 2_000_017;
 		final RowSelection all = new RowSelection(million);
 		all.selectAll();
