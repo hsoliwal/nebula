@@ -54,6 +54,7 @@ import org.eclipse.nebula.widgets.grid.internal.GridToolTip;
 import org.eclipse.nebula.widgets.grid.internal.IScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.NullScrollBarProxy;
 import org.eclipse.nebula.widgets.grid.internal.ScrollBarProxyAdapter;
+import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
 import org.eclipse.nebula.widgets.grid.model.RowGrouping;
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.nebula.widgets.grid.model.RowStateLanes;
@@ -6409,8 +6410,12 @@ public class Grid extends Canvas {
 		if (excess <= 0) {
 			return;
 		}
-		if (evictionScratch.length < sparse.materializedCount()) {
-			evictionScratch = new long[sparse.materializedCount() * 2];
+		final int required = sparse.materializedCount();
+		if (evictionScratch.length < required) {
+			// Grow on capacity misses. The shared primitive-array policy
+			// limits speculative memory under heap pressure and widens
+			// arithmetic before Java's array-limit boundary.
+			evictionScratch = new long[HeapGrowth.capacity(evictionScratch.length, required, Long.BYTES)];
 		}
 		int candidates = 0;
 		for (int slot = 0; slot < sparse.materializedCount(); slot++) {
