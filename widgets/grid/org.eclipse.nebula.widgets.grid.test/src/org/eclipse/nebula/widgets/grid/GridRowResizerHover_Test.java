@@ -85,6 +85,54 @@ public class GridRowResizerHover_Test {
 	}
 
 	@Test
+	public void neighborQueriesSkipUnreadCollapsedChildrenInBothDirections() {
+		assumeTrue(GridViewport.ENABLED);
+		final Fixture fixture = new Fixture(true, 4096, true, 0);
+		fixture.root.setHeight(20);
+		fixture.tail.setHeight(30);
+		open();
+		final int materialized = fixture.grid.virtualMaterializedItemCount();
+		final int requests = fixture.requests[0];
+		assertTrue("fixture must retain unread hidden children", materialized < 40);
+		assertSame(fixture.root, fixture.grid.getNextVisibleItem(null));
+		assertSame(fixture.tail, fixture.grid.getNextVisibleItem(fixture.root));
+		assertSame(fixture.root, fixture.grid.getPreviousVisibleItem(fixture.tail));
+		assertSame(fixture.tail, fixture.grid.getPreviousVisibleItem(null));
+		assertEquals("neighbor queries must not create hidden facades",
+				materialized, fixture.grid.virtualMaterializedItemCount());
+		assertEquals("neighbor queries must not request hidden payload",
+				requests, fixture.requests[0]);
+	}
+
+	@Test
+	public void nextVisibleAtCollapsedTreeEndDoesNotMaterializeChildren() {
+		assumeTrue(GridViewport.ENABLED);
+		final Fixture fixture = new Fixture(true, 4096, false, 0);
+		open();
+		final int materialized = fixture.grid.virtualMaterializedItemCount();
+		final int requests = fixture.requests[0];
+		assertEquals(null, fixture.grid.getNextVisibleItem(fixture.root));
+		assertSame(fixture.root, fixture.grid.getPreviousVisibleItem(null));
+		assertEquals(materialized, fixture.grid.virtualMaterializedItemCount());
+		assertEquals(requests, fixture.requests[0]);
+	}
+
+	@Test
+	public void neighborQueriesRespectExpansionThenCollapse() {
+		assumeTrue(GridViewport.ENABLED);
+		final Fixture fixture = new Fixture(true, 64, true, 0);
+		open();
+		fixture.root.setExpanded(true);
+		final GridItem child = fixture.grid.getNextVisibleItem(fixture.root);
+		assertSame(fixture.root, child.getParentItem());
+		fixture.root.setExpanded(false);
+		final int materialized = fixture.grid.virtualMaterializedItemCount();
+		assertSame(fixture.tail, fixture.grid.getNextVisibleItem(fixture.root));
+		assertSame(fixture.root, fixture.grid.getPreviousVisibleItem(fixture.tail));
+		assertEquals(materialized, fixture.grid.virtualMaterializedItemCount());
+	}
+
+	@Test
 	public void variableHeightOverlapResizesLastBoundaryLikeEagerRows() {
 		final Fixture sparse = new Fixture(true, 8, true, 0);
 		final Fixture eager = new Fixture(false, 8, true, 320);
