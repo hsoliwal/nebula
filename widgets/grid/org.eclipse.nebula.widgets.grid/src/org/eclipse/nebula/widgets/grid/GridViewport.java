@@ -274,6 +274,12 @@ final class GridViewport {
 		if (position == items.size()) {
 			return null;
 		}
+		// The indexed tree already knows which rows are visible. Do not create
+		// the hidden candidate's facade just to discover that it is hidden.
+		if (tree != null) {
+			final int visible = tree.nextVisible(position);
+			return visible < 0 ? null : items.get(visible);
+		}
 		final GridItem item = items.get(position);
 		if (item.isVisible()) {
 			return item;
@@ -287,6 +293,12 @@ final class GridViewport {
 	 * @return the last visible item at or before it, or {@code null}
 	 */
 	GridItem previousVisibleItem(final int position) {
+		// Preserve the legacy non-tree path, but seek a visible tree position
+		// before touching the lazy item list.
+		if (tree != null) {
+			final int visible = tree.previousVisible(position);
+			return visible < 0 ? null : items.get(visible);
+		}
 		final GridItem item = items.get(position);
 		if (item.isVisible()) {
 			return item;
