@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.eclipse.nebula.widgets.opal.notifier.internal.RepaintCounters;
 import org.eclipse.nebula.widgets.opal.notifier.internal.WidgetMode;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -43,6 +44,9 @@ public class ToastsTest {
 	@Before
 	public void setUp() {
 		display = Display.getDefault();
+		// A native pointer resting on the transient overlay legitimately pauses expiry.
+		// Start outside the fixture's 100,100 owner before creating any toast.
+		display.setCursorLocation(0, 0);
 		shell = new Shell(display);
 		shell.setBounds(100, 100, 700, 500);
 		shell.open();
@@ -119,13 +123,17 @@ public class ToastsTest {
 		shell.setVisible(false);
 		TestSupport.flush(display);
 		assertFalse("the overlay leaves with the owner", toasts.getOverlay().isVisible());
+		// Native GTK may reposition a child Shell when its owner moves even if
+		// Toasts never requests a placement. Count actual owner-originated work.
+		long ownerPlacementsBefore = RepaintCounters.moves;
 		int[] overlayBounds = new int[1];
 		toasts.getOverlay().addListener(SWT.Move, e -> overlayBounds[0]++);
 		toasts.getOverlay().addListener(SWT.Resize, e -> overlayBounds[0]++);
 		shell.setBounds(120, 120, 640, 480);
 		TestSupport.spin(display, 400);
 		assertEquals("no expiry while the owner is hidden", 2, toasts.getCount());
-		assertEquals("no overlay bounds work while hidden", 0, overlayBounds[0]);
+		assertEquals("hidden owner must not request an overlay placement; native WM events="
+				+ overlayBounds[0], ownerPlacementsBefore, RepaintCounters.moves);
 		shell.setVisible(true);
 		TestSupport.flush(display);
 		assertEquals("the due toast expired at once on show", 1, toasts.getCount());

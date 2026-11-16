@@ -317,6 +317,9 @@ public final class Toasts {
 		Rectangle client = owner.getClientArea();
 		int height = GAP + count * (CARD + GAP);
 		Point corner = owner.toDisplay(client.x + client.width - WIDTH - MARGIN, client.y + client.height - height - MARGIN);
+		// This counts owner-requested placement, not the window manager's
+		// asynchronous Move/Resize notifications on a hidden native Shell.
+		RepaintCounters.moves++;
 		overlay.setBounds(corner.x, corner.y, WIDTH, height);
 	}
 
