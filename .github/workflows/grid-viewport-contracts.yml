@@ -36,6 +36,16 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      # Keep Tycho's Maven runtime aligned with the existing nebula Java CI.
+      # The unpinned runner Maven produced a missing MavenTargetLocationFactory binding.
+      - name: Set up pinned Maven for Tycho
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
+        with:
+          maven-version: 3.9.11
+      - name: Record Maven and Tycho versions
+        run: |
+          mvn -version
+          cat .mvn/maven.config
       - name: Install GTK3/Xvfb native test requirements
         run: |
           sudo apt-get update -qq
