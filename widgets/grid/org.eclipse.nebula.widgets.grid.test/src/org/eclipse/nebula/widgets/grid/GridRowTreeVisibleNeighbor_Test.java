@@ -25,7 +25,7 @@ public final class GridRowTreeVisibleNeighbor_Test {
             int expectedNext = -1;
             int expectedPrevious = -1;
             for (int index = 0; index < extents.size(); index++) {
-                if (extents.get(index) > 0) {
+                if (extents.get(index).intValue() > 0) {
                     if (index >= position && expectedNext == -1) expectedNext = index;
                     if (index <= position) expectedPrevious = index;
                 }
@@ -45,14 +45,14 @@ public final class GridRowTreeVisibleNeighbor_Test {
         assertOracle(tree, new ArrayList<Integer>());
         int[] slots = tree.insertUnread(0, null, 9, 0);
         List<Integer> extents = new ArrayList<Integer>();
-        for (int index = 0; index < 9; index++) extents.add(0);
+        for (int index = 0; index < 9; index++) extents.add(Integer.valueOf(0));
         assertOracle(tree, extents);
         tree.reweighSlot(slots[1], 11);
         tree.reweighSlot(slots[4], 6);
         tree.reweighSlot(slots[8], 3);
-        extents.set(1, 11);
-        extents.set(4, 6);
-        extents.set(8, 3);
+        extents.set(1, Integer.valueOf(11));
+        extents.set(4, Integer.valueOf(6));
+        extents.set(8, Integer.valueOf(3));
         assertOracle(tree, extents);
         assertEquals(0, tree.materializedCount());
     }
@@ -70,17 +70,17 @@ public final class GridRowTreeVisibleNeighbor_Test {
                 int index = random.nextInt(extents.size() + 1);
                 int extent = random.nextInt(5) == 0 ? 0 : 1 + random.nextInt(40);
                 int slot = tree.insertUnread(index, null, 1, extent)[0];
-                extents.add(index, extent);
-                slots.add(index, slot);
+                extents.add(index, Integer.valueOf(extent));
+                slots.add(index, Integer.valueOf(slot));
             } else if (operation == 1) {
                 int index = random.nextInt(extents.size());
-                tree.removeUnread(slots.remove(index));
+                tree.removeUnread(slots.remove(index).intValue());
                 extents.remove(index);
             } else {
                 int index = random.nextInt(extents.size());
                 int extent = random.nextInt(3) == 0 ? 0 : 1 + random.nextInt(30);
-                tree.reweighSlot(slots.get(index), extent);
-                extents.set(index, extent);
+                tree.reweighSlot(slots.get(index).intValue(), extent);
+                extents.set(index, Integer.valueOf(extent));
             }
             assertOracle(tree, extents);
             assertEquals(0, tree.materializedCount());
@@ -93,24 +93,24 @@ public final class GridRowTreeVisibleNeighbor_Test {
         tree.setFacades(slot -> { throw new AssertionError("must not realize row " + slot); });
         int[] slots = tree.insertUnread(0, null, 11, 1);
         List<Integer> extents = new ArrayList<Integer>();
-        for (int i = 0; i < 11; i++) extents.add(1);
+        for (int i = 0; i < 11; i++) extents.add(Integer.valueOf(1));
         tree.beginBatch();
         try {
             tree.reweighSlot(slots[0], 0);
-            extents.set(0, 0);
+            extents.set(0, Integer.valueOf(0));
             tree.beginBatch();
             try {
                 tree.reweighSlot(slots[4], 0);
-                extents.set(4, 0);
+                extents.set(4, Integer.valueOf(0));
                 tree.reweighSlot(slots[10], 0);
-                extents.set(10, 0);
+                extents.set(10, Integer.valueOf(0));
                 assertOracle(tree, extents);
             } finally {
                 tree.endBatch();
             }
             assertOracle(tree, extents);
             tree.reweighSlot(slots[4], 5);
-            extents.set(4, 5);
+            extents.set(4, Integer.valueOf(5));
             assertOracle(tree, extents);
         } finally {
             tree.endBatch();
@@ -128,7 +128,7 @@ public final class GridRowTreeVisibleNeighbor_Test {
         List<Integer> extents = new ArrayList<Integer>();
         for (int index = 0; index < n; index++) {
             int extent = (index % 31) == 0 ? 7 : 0;
-            extents.add(extent);
+            extents.add(Integer.valueOf(extent));
             if (extent != 0) tree.reweighSlot(slots[index], extent);
         }
         Random random = new Random(327911L);
@@ -137,7 +137,7 @@ public final class GridRowTreeVisibleNeighbor_Test {
             int next = -1;
             int previous = -1;
             for (int index = 0; index < n; index++) {
-                if (extents.get(index) > 0) {
+                if (extents.get(index).intValue() > 0) {
                     if (index >= position && next == -1) next = index;
                     if (index <= position) previous = index;
                 }
