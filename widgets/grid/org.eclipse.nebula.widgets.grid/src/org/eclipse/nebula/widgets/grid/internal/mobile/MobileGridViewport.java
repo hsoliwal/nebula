@@ -61,6 +61,8 @@ public final class MobileGridViewport {
 	private boolean[] dirty = new boolean[0];
 	private int[] seenEpoch = new int[0];
 	private int epoch;
+	/** Guards the external native-slot preflight against recursive viewport mutations. */
+	private boolean reserving;
 	private Window window = new Window(0, 0, 0, 0, 0);
 
 	/** Creates a viewport over itemCount logical rows with the given columns, row height and overscan rows. */
@@ -83,6 +85,7 @@ public final class MobileGridViewport {
 	public long itemCount() { return itemCount; }
 	/** Sets the number of logical rows and releases the slots of rows beyond it. */
 	public void setItemCount(long count) {
+		if (reserving) throw new IllegalStateException("item count changed during native Grid reservation");
 		if (count < 0) throw new IllegalArgumentException("negative rows");
 		itemCount = count;
 		if (selectedRow >= count) selectedRow = -1;
@@ -115,6 +118,7 @@ public final class MobileGridViewport {
 	}
 	/** Scroll coordinates use long pixels to avoid overflow for huge virtual grids. */
 	public Window show(long scrollY, int viewportHeight) {
+		if (reserving) throw new IllegalStateException("reentrant native Grid reservation");
 		if (scrollY < 0 || viewportHeight < 0)
 			throw new IllegalArgumentException("negative scroll extent");
 		if (itemCount == 0 || viewportHeight == 0) {
@@ -181,17 +185,30 @@ public final class MobileGridViewport {
 	}
 	private void ensureCapacity(int required) {
 		if (required <= rowAt.length) return;
-		// Reserve the receiver's parallel lanes once before any old slot is released.
-		// Failure leaves this viewport's old slot identity and binding untouched.
-		sink.reserve(required);
-		for (int i = 0; i < rowAt.length; i++) release(i);
-		rowAt = new long[required];
-		Arrays.fill(rowAt, -1);
-		selectedAt = new boolean[required];
-		bindingStarted = new boolean[required];
-		dirty = new boolean[required];
-		seenEpoch = new int[required];
-		epoch = 0;
+		// Allocate all canonical primitive lanes before calling the native sink or
+		// releasing previously bound rows. Allocation failures preserve the old owner.
+		long[] nextRows = new long[required];
+		Arrays.fill(nextRows, -1);
+		boolean[] nextSelected = new boolean[required];
+		boolean[] nextBindingStarted = new boolean[required];
+		boolean[] nextDirty = new boolean[required];
+		int[] nextSeenEpoch = new int[required];
+		// Reserve once; a failed or reentrant callback cannot release old slots.
+		reserving = true;
+		try {
+			sink.reserve(required);
+			// External release callbacks may re-enter just like reserve itself:
+			// finish all release/array replacement under the same transition guard.
+			for (int i = 0; i < rowAt.length; i++) release(i);
+			rowAt = nextRows;
+			selectedAt = nextSelected;
+			bindingStarted = nextBindingStarted;
+			dirty = nextDirty;
+			seenEpoch = nextSeenEpoch;
+			epoch = 0;
+		} finally {
+			reserving = false;
+		}
 	}
 	private void release(int slot) {
 		if (rowAt[slot] >= 0 && bindingStarted[slot]) sink.release(slot, rowAt[slot]);
@@ -202,6 +219,7 @@ public final class MobileGridViewport {
 	}
 	/** Releases every native slot. */
 	public void close() {
+		if (reserving) throw new IllegalStateException("close during native Grid reservation");
 		for (int i = 0; i < rowAt.length; i++) release(i);
 		window = new Window(0, 0, 0, 0, rowAt.length);
 	}

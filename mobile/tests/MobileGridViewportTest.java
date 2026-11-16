@@ -62,6 +62,8 @@ public final class MobileGridViewportTest {
         failedSinkBindingRemainsRetryable();
         reserveContract();
         growthFailurePreservesResidentBindings();
+        reentrantReservationPreservesOldBindings();
+        reentrantReleaseDoesNotStartAnotherResize();
         unchangedFramesReuseWindow();
         zeroCountClearsPresentedWindow();
 		System.out.println("MobileGridViewportTest PASSED");
@@ -421,6 +423,74 @@ public final class MobileGridViewportTest {
         check(sink.slots.size() <= 7, "regrown native slots bounded");
         view.close();
         check(sink.slots.isEmpty(), "regrown slots released");
+    }
+
+
+    private static void reentrantReservationPreservesOldBindings() {
+        MobileGridViewport[] owner = new MobileGridViewport[1];
+        int[] mode = {0}, reserves = {0}, binds = {0}, releases = {0};
+        RowSink sink = new RowSink() {
+            @Override public void reserve(int count) {
+                reserves[0]++;
+                if (mode[0] == 1) owner[0].show(0, 8);
+                if (mode[0] == 2) owner[0].setItemCount(0);
+                if (mode[0] == 3) owner[0].close();
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) {
+                releases[0]++;
+            }
+        };
+        owner[0] = new MobileGridViewport(30, 1, 1, 0, (row, col) -> "cell", sink);
+        Window first = owner[0].show(0, 4);
+        for (int request = 1; request <= 3; request++) {
+            mode[0] = request;
+            boolean rejected = false;
+            try { owner[0].show(0, 8); }
+            catch (IllegalStateException expected) { rejected = true; }
+            check(rejected, "reentrant native reserve must fail");
+            check(owner[0].window() == first && owner[0].itemCount() == 30,
+                    "failed reserve preserves window and model");
+            check(binds[0] == 4 && releases[0] == 0, "old bindings preserved");
+        }
+        mode[0] = 0;
+        Window expanded = owner[0].show(0, 8);
+        check(expanded.nativeSlots() == 8 && reserves[0] == 5,
+                "subsequent retry reserves exact new capacity");
+        check(binds[0] == 12 && releases[0] == 4, "growth releases each old native slot once");
+        owner[0].close();
+        check(releases[0] == 12, "close releases all retained bindings");
+    }
+
+
+    private static void reentrantReleaseDoesNotStartAnotherResize() {
+        final MobileGridViewport[] owner = new MobileGridViewport[1];
+        final boolean[] nested = {false};
+        final int[] binds = {0}, releases = {0}, rejected = {0};
+        RowSink sink = new RowSink() {
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) {
+                if (nested[0]) {
+                    try { owner[0].show(0, 8); }
+                    catch (IllegalStateException expected) { rejected[0]++; }
+                }
+                releases[0]++;
+            }
+        };
+        owner[0] = new MobileGridViewport(100, 1, 1, 0, (row, col) -> "cell", sink);
+        owner[0].show(0, 4);
+        nested[0] = true;
+        Window grown = owner[0].show(0, 8);
+        check(grown.nativeSlots() == 8, "growth succeeds without recursive show");
+        check(rejected[0] == 4 && releases[0] == 4 && binds[0] == 12,
+                "old slot releases are guarded and ordered exactly once");
+        nested[0] = false;
+        owner[0].close();
+        check(releases[0] == 12, "all bound rows released");
     }
 
     private static void assertTrue(String message, boolean value) { check(value, message); }

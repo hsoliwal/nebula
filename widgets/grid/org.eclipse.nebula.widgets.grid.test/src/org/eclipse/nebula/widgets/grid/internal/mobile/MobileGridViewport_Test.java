@@ -464,4 +464,85 @@ public class MobileGridViewport_Test {
         assertEquals(4, releases[0]);
         view.close();
     }
+
+    @Test
+    public void recursiveReservationCannotReenterOrMutateTheActiveWindow() {
+        final MobileGridViewport[] owner = new MobileGridViewport[1];
+        final int[] operation = {0};
+        final int[] reservations = {0}, binds = {0}, releases = {0};
+        RowSink sink = new RowSink() {
+            @Override public void reserve(int requested) {
+                reservations[0]++;
+                if (operation[0] == 1) owner[0].show(0, 8);
+                if (operation[0] == 2) owner[0].setItemCount(0);
+                if (operation[0] == 3) owner[0].close();
+            }
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) {
+                releases[0]++;
+            }
+        };
+        owner[0] = new MobileGridViewport(30, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        final Window original = owner[0].show(0, 4);
+        assertEquals(4, original.nativeSlots());
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            operation[0] = attempt;
+            boolean rejected = false;
+            try {
+                owner[0].show(0, 8);
+            } catch (IllegalStateException expected) {
+                rejected = true;
+            }
+            assertTrue("native reservation must reject recursive mutation " + attempt, rejected);
+            assertTrue("previous Window identity remains visible", owner[0].window() == original);
+            assertEquals(30L, owner[0].itemCount());
+            assertEquals(4, binds[0]);
+            assertEquals(0, releases[0]);
+        }
+        operation[0] = 0;
+        Window grown = owner[0].show(0, 8);
+        assertEquals(8, grown.nativeSlots());
+        assertEquals(5, reservations[0]);
+        assertEquals(12, binds[0]);
+        assertEquals(4, releases[0]);
+        owner[0].close();
+        assertEquals(12, releases[0]);
+    }
+
+    @Test
+    public void reentrantReleaseCannotStartSecondCapacityTransition() {
+        final MobileGridViewport[] owner = new MobileGridViewport[1];
+        final boolean[] nested = {false};
+        final int[] binds = {0}, releases = {0}, rejected = {0};
+        RowSink sink = new RowSink() {
+            @Override public void bind(int slot, long row, String[] cells, boolean selected) {
+                binds[0]++;
+            }
+            @Override public void release(int slot, long row) {
+                if (nested[0]) {
+                    try {
+                        owner[0].show(0, 8);
+                    } catch (IllegalStateException expected) {
+                        rejected[0]++;
+                    }
+                }
+                releases[0]++;
+            }
+        };
+        owner[0] = new MobileGridViewport(100, 1, 1, 0,
+                (row, col) -> "cell", sink);
+        owner[0].show(0, 4);
+        nested[0] = true;
+        Window grown = owner[0].show(0, 8);
+        assertEquals(8, grown.nativeSlots());
+        assertEquals("one prevented recursive show per original native slot", 4, rejected[0]);
+        assertEquals(4, releases[0]);
+        assertEquals(12, binds[0]);
+        nested[0] = false;
+        owner[0].close();
+        assertEquals(12, releases[0]);
+    }
 }
