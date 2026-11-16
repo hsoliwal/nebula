@@ -141,15 +141,38 @@ public class ErrorPaneTest {
 		}
 		java.util.List<org.eclipse.swt.graphics.Rectangle> paints = TestSupport.recordPaints(pane);
 		org.eclipse.swt.widgets.Label message = (org.eclipse.swt.widgets.Label) pane.getChildren()[1];
-		TestSupport.assertHiddenGate(pane, paints, i -> {
-			pane.setMessage("message " + i);
-			pane.setSeverity(i % 2 == 0 ? SWT.ICON_WARNING : SWT.ICON_ERROR);
-			pane.setError(i % 3 == 0 ? failure : null);
-		});
+		try {
+			TestSupport.assertHiddenGate(pane, paints, i -> {
+				pane.setMessage("message " + i);
+				pane.setSeverity(i % 2 == 0 ? SWT.ICON_WARNING : SWT.ICON_ERROR);
+				pane.setError(i % 3 == 0 ? failure : null);
+			});
+		} catch (AssertionError nativePaintFailure) {
+			// Diagnostics only: do not suppress the exact one-paint native gate.
+			System.out.println("ERROR_PANE_NATIVE_PAINT_DIAGNOSTIC pane=" + pane.getClientArea()
+					+ " events=" + paints);
+			dumpNativeChildGeometry(pane, pane);
+			throw nativePaintFailure;
+		}
 		assertEquals("message 9999", message.getText());
 		assertEquals("message 9999", pane.getMessage());
 		assertEquals(SWT.ICON_ERROR, pane.getSeverity());
 		assertSame(failure, pane.getError());
+	}
+
+	private static void dumpNativeChildGeometry(org.eclipse.swt.widgets.Composite owner,
+			org.eclipse.swt.widgets.Composite parent) {
+		for (org.eclipse.swt.widgets.Control child : parent.getChildren()) {
+			org.eclipse.swt.graphics.Point position = owner.toControl(child.toDisplay(0, 0));
+			org.eclipse.swt.graphics.Rectangle bounds = child.getBounds();
+			System.out.println("ERROR_PANE_NATIVE_CHILD type=" + child.getClass().getName()
+					+ " client=" + new org.eclipse.swt.graphics.Rectangle(position.x, position.y,
+							bounds.width, bounds.height)
+					+ " visible=" + child.getVisible() + " enabled=" + child.getEnabled());
+			if (child instanceof org.eclipse.swt.widgets.Composite) {
+				dumpNativeChildGeometry(owner, (org.eclipse.swt.widgets.Composite) child);
+			}
+		}
 	}
 
 	@Test
