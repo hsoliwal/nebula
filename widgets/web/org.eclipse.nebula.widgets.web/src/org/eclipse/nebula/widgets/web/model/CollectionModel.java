@@ -51,6 +51,13 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	// Optional Flexbox-like zero-basis gallery weights, indexed by existing item id.
 	// Unsigned 16-bit weights travel with stable keys; no per-tile style objects.
 	private short[] galleryFlexWeights;
+	// Source-ordered ids keep painting and hit testing in the original stacking order.
+	private int[] residentItems = new int[16];
+	private int residentSize;
+	private boolean scrolling, residentLayout, masonryValid, boardValid;
+	private int masonryPlanCount = -1, masonryPlanColumns = -1, masonryPlanExtent = -1;
+	private int boardPlanCount = -1, boardPlanColumns = -1, boardDepth;
+	private int[] boardStarts, boardItems;
 
 	public CollectionModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
@@ -119,7 +126,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				stagedGroup = new int[n];
 		String[] stagedDetail = new String[n];
 		short[] stagedFlex = galleryFlexWeights == null ? null : new short[n];
-		int nextFocus = -1, nextHover = -1, nextPressed = -1;
+		int nextFocus = -1, nextHover = -1, nextPressed = -1, nextDrag = -1;
 		boolean changedProps = false;
 		for (int i = 0; i < n; i++) {
 			int old = previous == null ? -1 : lookup(incoming[i], stableKeys, previous);
@@ -132,6 +139,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				if (old == focus) nextFocus = i;
 				if (old == hover) nextHover = i;
 				if (old == pressed) nextPressed = i;
+				if (old == dragFrom) nextDrag = i;
 			}
 			if (stagedFlex != null) {
 				stagedFlex[i] = old < 0 ? (short) 1 : galleryFlexWeights[old];
@@ -146,6 +154,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		if (sameRows && !changedProps) {
 			return;
 		}
+		masonryValid = boardValid = false;
 		int retired = count;
 		if (n > flags.length) {
 			grow(n);
@@ -170,6 +179,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		focus = nextFocus;
 		hover = nextHover;
 		pressed = nextPressed;
+		dragFrom = nextDrag;
 		loadedAt = -1;
 		rebuildFilter();
 		scroll = Math.max(0L, Math.min(scroll, Math.max(0L, logicalExtent() - viewLength())));
@@ -329,6 +339,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				Arrays.fill(galleryFlexWeights, n, count, (short) 1);
 			}
 		}
+		masonryValid = boardValid = false;
 		super.setLogicalCount(n);
 		stableKeys = null;
 	}
@@ -395,6 +406,10 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	private void planMasonry() {
 		int n = logicalCount(), per = perRow();
+		if (residentTraversal() && masonryValid && masonryPlanCount == n
+				&& masonryPlanColumns == per && masonryPlanExtent == itemExtent) {
+			return;
+		}
 		if (masonryTop == null || masonryTop.length < n) {
 			masonryTop = new long[n];
 			masonryColumn = new short[n];
@@ -420,6 +435,10 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		for (long d : depth) {
 			masonryExtent = Math.max(masonryExtent, d);
 		}
+		masonryPlanCount = n;
+		masonryPlanColumns = per;
+		masonryPlanExtent = itemExtent;
+		masonryValid = true;
 	}
 
 	private int masonryLowerBound(long target) {
@@ -436,6 +455,10 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	}
 
 	private int columnDepth() {
+		if (residentTraversal()) {
+			planBoard();
+			return boardDepth;
+		}
 		int[] depth = new int[Math.max(1, columns)];
 		int max = 0;
 		for (int i = 0; i < count; i++) {
@@ -444,9 +467,99 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		return max;
 	}
 
+	/** A parent-owned column index; rebuilt by mutations, reused by pure scrolling. */
+	private void planBoard() {
+		if (boardValid && boardPlanCount == count && boardPlanColumns == columns) {
+			return;
+		}
+		if (boardStarts == null || boardStarts.length != columns + 1) {
+			boardStarts = new int[columns + 1];
+		} else {
+			Arrays.fill(boardStarts, 0);
+		}
+		if (boardItems == null || boardItems.length < count) {
+			boardItems = new int[count];
+		}
+		for (int i = 0; i < count; i++) {
+			int column = Math.max(0, Math.min(columns - 1, group[i]));
+			boardStarts[column + 1]++;
+		}
+		boardDepth = 0;
+		for (int column = 0; column < columns; column++) {
+			boardDepth = Math.max(boardDepth, boardStarts[column + 1]);
+			boardStarts[column + 1] += boardStarts[column];
+		}
+		int[] next = Arrays.copyOf(boardStarts, columns);
+		for (int i = 0; i < count; i++) {
+			int column = Math.max(0, Math.min(columns - 1, group[i]));
+			boardItems[next[column]++] = i;
+		}
+		boardPlanCount = count;
+		boardPlanColumns = columns;
+		boardValid = true;
+	}
+
+	/**
+	 * External layout and mutation retain the complete layout contract. Only an
+	 * unchanged built-in owner's scroll may reuse its prior resident geometry.
+	 */
+	@Override
+	public void layout(int w, int h) {
+		masonryValid = boardValid = residentLayout = false;
+		boolean moving = scrolling;
+		scrolling = false;
+		try {
+			super.layout(w, h);
+		} finally {
+			scrolling = moving;
+		}
+	}
+
+	@Override
+	protected void arrange() {
+		if (!residentTraversal() || !scrolling || !residentLayout) {
+			residentLayout = false;
+			super.arrange();
+			residentLayout = residentTraversal();
+			return;
+		}
+		residentLayout = false;
+		for (int k = 0; k < residentSize; k++) {
+			setRect(residentItems[k], rtl ? width : 0, 0, 0, 0);
+		}
+		residentSize = 0;
+		project();
+		layoutResidents();
+		if (rtl) {
+			for (int k = 0; k < residentSize; k++) {
+				int b = residentItems[k] * 4;
+				rects[b] = width - rects[b] - rects[b + 2];
+			}
+		}
+		residentLayout = true;
+	}
+
+	/** Unknown subclasses keep their original private/protected layout and paint hooks. */
+	private boolean residentTraversal() {
+		Class<?> type = getClass();
+		return type == CollectionModel.class || type == KanbanBoardModel.class
+				|| type == SwipeActionsModel.class || type == PullToRefreshModel.class
+				|| type == InfiniteScrollModel.class || type == ReorderDragModel.class
+				|| type == MessageListModel.class || type == CommandPaletteModel.class
+				|| type == MasonryModel.class;
+	}
+
+	private void recordResident(int item) {
+		if (residentSize == residentItems.length) {
+			residentItems = Arrays.copyOf(residentItems, residentSize * 2);
+		}
+		residentItems[residentSize++] = item;
+	}
+
 	@Override
 	protected void doLayout() {
 		boolean bounded = residentOnlyLayout && mode != KANBAN;
+		residentSize = 0;
 		columns = 1;
 		if (bounded && !rtl && !mirroredRects) {
 			for (int k = 0; k < previousResidents; k++) {
@@ -461,6 +574,11 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				columns = mode == KANBAN ? Math.max(columns, group[i] + 1) : 1;
 			}
 		}
+		layoutResidents();
+	}
+
+	private void layoutResidents() {
+		boolean bounded = residentOnlyLayout && mode != KANBAN;
 		if (mode == KANBAN) {
 			board();
 		} else if (mode == MASONRY) {
@@ -489,6 +607,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 			int x = masonryColumn[k] * tile + gap();
 			int y = (int) (masonryTop[k] - scroll);
 			setRect(i, x, y, Math.max(0, tile - 2 * gap()), Math.max(0, masonryHeights[k] - gap()));
+			recordResident(i);
 		}
 	}
 
@@ -504,6 +623,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 			int x = mode == MESSAGES ? (group[i] == 1 ? width / 4 : 0) : col * tile;
 			int w = mode == MESSAGES ? width * 3 / 4 : mode == GALLERY ? tile : width;
 			setRect(i, x + (mode == SWIPE ? aux[i] : 0), y, w, itemExtent - (mode == GALLERY || mode == MESSAGES ? gap() : 1));
+			recordResident(i);
 		}
 	}
 
@@ -548,12 +668,34 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	private void board() {
 		int colW = width / Math.max(1, columns);
+		if (residentTraversal()) {
+			planBoard();
+			long first = scroll / itemExtent;
+			long limit = Math.max(0L, scroll + height - rowHeight());
+			long end = (limit + itemExtent - 1) / itemExtent;
+			for (int column = 0; column < columns; column++) {
+				int start = boardStarts[column], depth = boardStarts[column + 1] - start;
+				int from = (int) Math.min(first, depth), to = (int) Math.min(end, depth);
+				for (int row = from; row < to; row++) {
+					int i = boardItems[start + row];
+					long y = rowHeight() + (long) row * itemExtent - scroll;
+					// Test long coordinates before narrowing: distant rows must not wrap on screen.
+					if (y + itemExtent > rowHeight() && y < height) {
+						setRect(i, column * colW + gap(), (int) y, colW - 2 * gap(), itemExtent - gap());
+						recordResident(i);
+					}
+				}
+			}
+			Arrays.sort(residentItems, 0, residentSize);
+			return;
+		}
 		int[] depth = new int[Math.max(1, columns)];
 		for (int i = 0; i < count; i++) {
 			int c = Math.max(0, Math.min(columns - 1, group[i]));
 			int y = rowHeight() + (int) ((long) depth[c]++ * itemExtent - scroll);
 			if (y + itemExtent > rowHeight() && y < height) {
 				setRect(i, c * colW + gap(), y, colW - 2 * gap(), itemExtent - gap());
+				recordResident(i);
 			}
 		}
 	}
@@ -675,7 +817,13 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	@Override
 	public void scrollTo(long offset) {
-		super.scrollTo(offset);
+		boolean moving = scrolling;
+		scrolling = true;
+		try {
+			super.scrollTo(offset);
+		} finally {
+			scrolling = moving;
+		}
 		if (mode == INFINITE && window[1] >= logicalCount() - threshold && loadedAt != count) {
 			loadedAt = count;
 			fire(-1, D_LOAD);
