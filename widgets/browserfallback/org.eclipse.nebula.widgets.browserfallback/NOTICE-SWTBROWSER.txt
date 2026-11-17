@@ -1,0 +1,11 @@
+Third-party component: de.linearbits.swt.simplebrowser.HTMLCache
+Original project: https://github.com/prasser/swtbrowser
+Original source: src/main/de/linearbits/swt/simplebrowser/HTMLCache.java
+Original revision: 92120bef61dfc06d5af1a4122c8c6251b41d85b0
+Original author: Fabian Prasser, Copyright (c) 2015
+Original per-file license: Eclipse Public License v1.0
+
+Nebula preserves the original license notice and adds a bounded access-order
+constructor. No other swtbrowser classes or TagSoup binaries are included.
+The upstream repository-level Apache-2.0 declaration differs from the source
+file's EPL-1.0 notice; the original file notice has been retained.
