@@ -7,6 +7,7 @@ package org.eclipse.nebula.widgets.browserfallback;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import de.linearbits.swt.simplebrowser.HTMLCache;
 import org.eclipse.nebula.widgets.browserfallback.internal.BrowserScripts;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -43,6 +44,10 @@ import org.eclipse.swt.widgets.Composite;
  */
 public final class BrowserFallback extends Composite {
 
+    /** Donor-backed, instance-local backing store; no DOM Control is materialized. */
+    private static final int MAX_CACHED_DOCUMENTS = 64;
+    private static final int MAX_CACHED_HTML_CHARS = 262_144;
+
     /** A callback runs on the widget's SWT/RWT UI thread; it must not retain UI state across disposal. */
     @FunctionalInterface
     public interface WebEventListener {
@@ -52,6 +57,7 @@ public final class BrowserFallback extends Composite {
     private final Browser browser;
     private final BrowserFunction function;
     private final CopyOnWriteArrayList<WebEventListener> listeners = new CopyOnWriteArrayList<>();
+    private final HTMLCache<String> trustedHtmlCache = new HTMLCache<>(MAX_CACHED_DOCUMENTS);
     private boolean documentRequested;
     // A callback belongs to the document that originally emitted it.
     private long documentRevision;
@@ -114,7 +120,10 @@ public final class BrowserFallback extends Composite {
                 }
             }
         });
-        addListener(SWT.Dispose, event -> listeners.clear());
+        addListener(SWT.Dispose, event -> {
+            listeners.clear();
+            trustedHtmlCache.clear();
+        });
     }
 
     /**
@@ -147,6 +156,40 @@ public final class BrowserFallback extends Composite {
             }
             throw failed;
         }
+    }
+
+    /**
+     * Stores caller-trusted HTML in this widget's bounded backing store.
+     * Caching does not load a document, execute scripts or alter event order.
+     * Content is not shared with another BrowserFallback instance.
+     *
+     * @throws IllegalArgumentException if HTML exceeds 262,144 characters
+     */
+    public void cacheTrustedHtml(String key, String html) {
+        checkWidget();
+        if (key == null || html == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        if (html.length() > MAX_CACHED_HTML_CHARS) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        trustedHtmlCache.put(key, html);
+    }
+
+    /** Loads cached trusted HTML through the same revision-safe Browser path. */
+    public boolean loadCachedTrustedHtml(String key) {
+        checkWidget();
+        if (key == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        String html = trustedHtmlCache.get(key);
+        return html != null && setTrustedHtml(html);
+    }
+
+    /** Clears this widget's cached documents without affecting the active page. */
+    public void clearTrustedHtmlCache() {
+        checkWidget();
+        trustedHtmlCache.clear();
     }
 
     /**
