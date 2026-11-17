@@ -25,6 +25,16 @@ public interface CollectionApi extends WebApi {
 		throw new UnsupportedOperationException("keyed collection reconciliation is not supported");
 	}
 
+	/**
+	 * Reconciles declarative row properties together with keys and labels. Each unsigned
+	 * 16-bit mask selects the controlled state bits; the corresponding value supplies
+	 * those bits. Unmasked state stays native and is preserved across keyed moves.
+	 * Implementations without an atomic property bridge fail explicitly.
+	 */
+	default void reconcileProps(String[] keys, String[] labels, short[] masks, short[] values) {
+		throw new UnsupportedOperationException("controlled collection properties are not supported");
+	}
+
 	/** Returns a stable row key, or null when this implementation has no keyed snapshot. */
 	default String stableKey(int item) {
 		return null;
