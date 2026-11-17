@@ -43,6 +43,7 @@
 		<module>colorbutton</module>
 		<module>gradientchooser</module>
 		<module>findbar</module>
+		<module>wizard</module>
 	</modules>
 
 </project>
