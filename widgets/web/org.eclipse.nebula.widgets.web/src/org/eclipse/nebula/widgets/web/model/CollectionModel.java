@@ -33,6 +33,11 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	private static final int CONTROLLED = DISABLED | SELECTED | ERROR | OPEN | CHECKED | MIXED
 			| EXPANDED | VISITED | HIDDEN | DONE | READONLY;
 	private int pull, loadedAt = -1, threshold = 5, columns = 1, dragFrom = -1, dragX, dragY;
+	private final boolean residentOnlyLayout;
+	// Only the previous paint window is retired on a warm left-to-right layout.
+	private int[] residentIds = new int[0];
+	private int previousResidents;
+	private boolean mirroredRects;
 	/** React-style identities are references owned by this collection, never per-item proxies. */
 	private String[] stableKeys;
 	// The parent owns primitive geometry for every masonry item; no per-tile objects.
@@ -40,6 +45,12 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	private short[] masonryColumn;
 	private int[] masonryHeights;
 	private long masonryExtent;
+	// Reusable, source-index-ordered resident ids for paint and pointer targeting.
+	// Source order preserves overlapping-cell z-order when filter positions differ.
+	private int[] residentOrder = new int[8];
+	// Optional Flexbox-like zero-basis gallery weights, indexed by existing item id.
+	// Unsigned 16-bit weights travel with stable keys; no per-tile style objects.
+	private short[] galleryFlexWeights;
 	// Source-ordered ids keep painting and hit testing in the original stacking order.
 	private int[] residentItems = new int[16];
 	private int residentSize;
@@ -50,7 +61,16 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	public CollectionModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
+		residentOnlyLayout = originalLayoutOwner(getClass());
 		itemExtent = mode == MESSAGES ? 56 : mode == GALLERY || mode == MASONRY ? 112 : 40;
+	}
+
+	/** Exact built-in owners alone can rely on resident-only rectangles and pure layout hooks. */
+	private static boolean originalLayoutOwner(Class<?> leaf) {
+		return leaf == CollectionModel.class || leaf == SwipeActionsModel.class
+				|| leaf == PullToRefreshModel.class || leaf == InfiniteScrollModel.class
+				|| leaf == ReorderDragModel.class || leaf == MessageListModel.class
+				|| leaf == CommandPaletteModel.class || leaf == MasonryModel.class;
 	}
 
 	/**
@@ -105,6 +125,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		int[] stagedFlags = new int[n], stagedValue = new int[n], stagedAux = new int[n],
 				stagedGroup = new int[n];
 		String[] stagedDetail = new String[n];
+		short[] stagedFlex = galleryFlexWeights == null ? null : new short[n];
 		int nextFocus = -1, nextHover = -1, nextPressed = -1, nextDrag = -1;
 		boolean changedProps = false;
 		for (int i = 0; i < n; i++) {
@@ -119,6 +140,9 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				if (old == hover) nextHover = i;
 				if (old == pressed) nextPressed = i;
 				if (old == dragFrom) nextDrag = i;
+			}
+			if (stagedFlex != null) {
+				stagedFlex[i] = old < 0 ? (short) 1 : galleryFlexWeights[old];
 			}
 			if (masks != null) {
 				int mask = masks[i] & 0xffff;
@@ -141,6 +165,10 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		System.arraycopy(stagedGroup, 0, group, 0, n);
 		System.arraycopy(words, 0, text, 0, n);
 		System.arraycopy(stagedDetail, 0, detail, 0, n);
+		if (stagedFlex != null) {
+			System.arraycopy(stagedFlex, 0, galleryFlexWeights, 0, n);
+			Arrays.fill(galleryFlexWeights, n, Math.max(n, retired), (short) 1);
+		}
 		java.util.Arrays.fill(rects, 0, Math.max(n, retired) * 4, 0);
 		if (retired > n) {
 			blank(n, retired);
@@ -162,6 +190,50 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	public String stableKey(int item) {
 		check(item);
 		return stableKeys == null ? null : stableKeys[item];
+	}
+
+	@Override
+	public void setGalleryFlexWeights(short[] weights) {
+		if (mode != GALLERY) {
+			throw new UnsupportedOperationException("flex weights require gallery mode");
+		}
+		short[] staged = weights == null ? null : weights.clone();
+		if (staged != null) {
+			if (staged.length != count) {
+				throw new IllegalArgumentException("flex weight count must equal gallery item count");
+			}
+			for (int i = 0; i < staged.length; i++) {
+				if ((staged[i] & 0xffff) == 0) {
+					throw new IllegalArgumentException("zero flex weight at " + i);
+				}
+			}
+		}
+		if (staged == null && galleryFlexWeights == null) {
+			return;
+		}
+		if (staged != null && galleryFlexWeights != null) {
+			boolean unchanged = true;
+			for (int i = 0; i < count; i++) {
+				unchanged &= staged[i] == galleryFlexWeights[i];
+			}
+			if (unchanged) {
+				return;
+			}
+		}
+		galleryFlexWeights = staged == null ? null : Arrays.copyOf(staged, flags.length);
+		if (galleryFlexWeights != null) {
+			Arrays.fill(galleryFlexWeights, count, flags.length, (short) 1);
+		}
+		relayout(-1, D_LAYOUT);
+	}
+
+	@Override
+	public int galleryFlexWeight(int item) {
+		if (mode != GALLERY) {
+			throw new UnsupportedOperationException("flex weights require gallery mode");
+		}
+		check(item);
+		return galleryFlexWeights == null ? 1 : galleryFlexWeights[item] & 0xffff;
 	}
 
 	private boolean sameSnapshot(String[] keys, String[] labels) {
@@ -223,11 +295,30 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	@Override
 	public int add(String label, String detail) {
 		stableKeys = null;
+		if (galleryFlexWeights != null && count < galleryFlexWeights.length) {
+			galleryFlexWeights[count] = 1;
+		}
 		return super.add(label, detail);
 	}
 
 	@Override
+	protected void grow(int cap) {
+		super.grow(cap);
+		if (galleryFlexWeights != null) {
+			int old = galleryFlexWeights.length;
+			galleryFlexWeights = Arrays.copyOf(galleryFlexWeights, cap);
+			Arrays.fill(galleryFlexWeights, old, cap, (short) 1);
+		}
+	}
+
+	@Override
 	public void remove(int item) {
+		check(item);
+		if (galleryFlexWeights != null) {
+			System.arraycopy(galleryFlexWeights, item + 1, galleryFlexWeights, item,
+					count - item - 1);
+			galleryFlexWeights[count - 1] = 1;
+		}
 		super.remove(item);
 		stableKeys = null;
 	}
@@ -235,11 +326,19 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	@Override
 	public void clear() {
 		stableKeys = null;
+		galleryFlexWeights = null;
 		super.clear();
 	}
 
 	@Override
 	public void setLogicalCount(int n) {
+		if (galleryFlexWeights != null && n >= 0) {
+			if (n > count) {
+				Arrays.fill(galleryFlexWeights, count, Math.min(n, galleryFlexWeights.length), (short) 1);
+			} else {
+				Arrays.fill(galleryFlexWeights, n, count, (short) 1);
+			}
+		}
 		masonryValid = boardValid = false;
 		super.setLogicalCount(n);
 		stableKeys = null;
@@ -459,22 +558,44 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	@Override
 	protected void doLayout() {
+		boolean bounded = residentOnlyLayout && mode != KANBAN;
 		residentSize = 0;
 		columns = 1;
-		for (int i = 0; i < count; i++) {
-			setRect(i, 0, 0, 0, 0);
-			columns = mode == KANBAN ? Math.max(columns, group[i] + 1) : 1;
+		if (bounded && !rtl && !mirroredRects) {
+			for (int k = 0; k < previousResidents; k++) {
+				setRect(residentIds[k], 0, 0, 0, 0);
+			}
+		} else {
+			// RTL exposes mirrored zero-width rectangles through itemRect/snapshot.
+			// Keep their exact coordinates, including the first layout back in LTR.
+			// Unknown subclasses retain every original setRect hook invocation.
+			for (int i = 0; i < count; i++) {
+				setRect(i, 0, 0, 0, 0);
+				columns = mode == KANBAN ? Math.max(columns, group[i] + 1) : 1;
+			}
 		}
 		layoutResidents();
 	}
 
 	private void layoutResidents() {
+		boolean bounded = residentOnlyLayout && mode != KANBAN;
 		if (mode == KANBAN) {
 			board();
 		} else if (mode == MASONRY) {
 			masonry();
 		} else {
 			rows();
+		}
+		if (bounded) {
+			int n = window[3] - window[2];
+			if (n > residentIds.length) {
+				residentIds = Arrays.copyOf(residentIds, Math.max(n, Math.max(8, residentIds.length * 2)));
+			}
+			for (int k = 0; k < n; k++) {
+				residentIds[k] = itemAt(window[2] + k);
+			}
+			previousResidents = n;
+			mirroredRects = rtl;
 		}
 		setPlane(OVERLAY, 0, 0, width, rowHeight() + pad());
 	}
@@ -491,6 +612,10 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	}
 
 	private void rows() {
+		if (mode == GALLERY && galleryFlexWeights != null) {
+			flexRows();
+			return;
+		}
 		int per = perRow(), tile = width / per;
 		for (int k = window[2]; k < window[3]; k++) {
 			int i = itemAt(k), row = k / per, col = k % per;
@@ -500,6 +625,45 @@ public class CollectionModel extends WebModel implements CollectionApi {
 			setRect(i, x + (mode == SWIPE ? aux[i] : 0), y, w, itemExtent - (mode == GALLERY || mode == MESSAGES ? gap() : 1));
 			recordResident(i);
 		}
+	}
+
+	/**
+	 * A zero-basis, weighted Flexbox-row subset. Each row consumes its available
+	 * width, including a short final row, while retaining logical row height,
+	 * viewport residency, hit geometry and existing per-item identity.
+	 */
+	private void flexRows() {
+		int per = perRow(), n = logicalCount();
+		int rowStart = window[2] / per * per;
+		while (rowStart < window[3]) {
+			int end = (int) Math.min((long) n, (long) rowStart + per);
+			long total = 0;
+			for (int k = rowStart; k < end; k++) {
+				total += galleryFlexWeights[itemAt(k)] & 0xffff;
+			}
+			long preceding = 0;
+			int y = (int) ((long) (rowStart / per) * itemExtent - scroll) + pull;
+			for (int k = rowStart; k < end; k++) {
+				int i = itemAt(k), x = flexEdge(preceding, total);
+				preceding += galleryFlexWeights[i] & 0xffff;
+				if (k >= window[2] && k < window[3]) {
+					setRect(i, x, y, flexEdge(preceding, total) - x, itemExtent - gap());
+				}
+			}
+			rowStart = end;
+		}
+	}
+
+	/** Integer pixel edges avoid cumulative rounding; enormous products fall back safely. */
+	private int flexEdge(long prefix, long total) {
+		if (prefix == 0 || width == 0) {
+			return 0;
+		}
+		if (prefix <= Long.MAX_VALUE / width) {
+			return (int) (prefix * width / total);
+		}
+		return java.math.BigInteger.valueOf(prefix).multiply(java.math.BigInteger.valueOf(width))
+				.divide(java.math.BigInteger.valueOf(total)).intValueExact();
 	}
 
 	private void board() {
@@ -536,6 +700,44 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		}
 	}
 
+	/**
+	 * Only built-in row/tile owners admit resident-only traversal. A subclass may
+	 * set other rectangles or paint outside its projected resident window;
+	 * Kanban's independently scrolling columns do not form a contiguous window.
+	 */
+	private boolean residentOnlyOwner() {
+		return mode != KANBAN && (getClass() == CollectionModel.class || getClass() == MasonryModel.class);
+	}
+
+	/** Rebuilds a primitive projection in the original source-index z-order. */
+	private int residentOrder() {
+		int n = window[3] - window[2];
+		if (n > residentOrder.length) {
+			residentOrder = Arrays.copyOf(residentOrder, n);
+		}
+		for (int k = 0; k < n; k++) {
+			residentOrder[k] = itemAt(window[2] + k);
+		}
+		Arrays.sort(residentOrder, 0, n);
+		return n;
+	}
+
+	@Override
+	public int hitTest(int x, int y) {
+		if (!residentOnlyOwner()) {
+			return super.hitTest(x, y);
+		}
+		int n = residentOrder();
+		for (int k = n - 1; k >= 0; k--) {
+			int i = residentOrder[k], b = i * 4;
+			if ((flags[i] & HIDDEN) == 0 && x >= rects[b] && y >= rects[b + 1]
+					&& x < rects[b] + rects[b + 2] && y < rects[b + 1] + rects[b + 3]) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	@Override
 	protected void emit(WebPaint p) {
 		if (mode == KANBAN) {
@@ -544,30 +746,30 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		if (mode == PULL && pull > 0) {
 			indicator(p);
 		}
-		boolean bounded = residentTraversal();
-		int end = bounded ? residentSize : count;
-		for (int k = 0; k < end; k++) {
-			int i = bounded ? residentItems[k] : k;
-			int b = i * 4;
-			if (rects[b + 2] > 0 && (flags[i] & HIDDEN) == 0) {
-				cell(p, i, rects[b], rects[b + 1], rects[b + 2], rects[b + 3]);
+		if (mode == MASONRY && getClass() == MasonryModel.class) {
+			// This owner's preexisting bounded painter draws in filtered
+			// viewport order, which differs from source order on some filters.
+			for (int k = window[2]; k < window[3]; k++) {
+				emitItem(p, itemAt(k));
+			}
+		} else if (residentOnlyOwner()) {
+			int n = residentOrder();
+			for (int k = 0; k < n; k++) {
+				emitItem(p, residentOrder[k]);
+			}
+		} else {
+			// Preserve subclass full scans and Kanban's independent column order.
+			for (int i = 0; i < count; i++) {
+				emitItem(p, i);
 			}
 		}
 	}
 
-	@Override
-	public int hitTest(int x, int y) {
-		if (!residentTraversal()) {
-			return super.hitTest(x, y);
+	private void emitItem(WebPaint p, int i) {
+		int b = i * 4;
+		if (rects[b + 2] > 0 && (flags[i] & HIDDEN) == 0) {
+			cell(p, i, rects[b], rects[b + 1], rects[b + 2], rects[b + 3]);
 		}
-		for (int k = residentSize - 1; k >= 0; k--) {
-			int i = residentItems[k], b = i * 4;
-			if ((flags[i] & HIDDEN) == 0 && x >= rects[b] && y >= rects[b + 1]
-					&& x < rects[b] + rects[b + 2] && y < rects[b + 1] + rects[b + 3]) {
-				return i;
-			}
-		}
-		return -1;
 	}
 
 	private void headers(WebPaint p) {
@@ -657,18 +859,21 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		check(to);
 		String t = text[from], d = detail[from];
 		int f = flags[from], v = value[from], a = aux[from], g = group[from];
+		short flex = galleryFlexWeights == null ? (short) 1 : galleryFlexWeights[from];
 		remove(from);
-		insertAt(to, t, d, f, v, a, g);
+		insertAt(to, t, d, f, v, a, g, flex);
 		setFocus(to);
 	}
 
-	private void insertAt(int to, String t, String d, int f, int v, int a, int g) {
+	private void insertAt(int to, String t, String d, int f, int v, int a, int g, short flex) {
 		add(t, d);
 		for (int i = count - 1; i > to; i--) {
 			text[i] = text[i - 1]; detail[i] = detail[i - 1]; flags[i] = flags[i - 1];
 			value[i] = value[i - 1]; aux[i] = aux[i - 1]; group[i] = group[i - 1];
+			if (galleryFlexWeights != null) galleryFlexWeights[i] = galleryFlexWeights[i - 1];
 		}
 		text[to] = t; detail[to] = d; flags[to] = f; value[to] = v; aux[to] = a; group[to] = g;
+		if (galleryFlexWeights != null) galleryFlexWeights[to] = flex;
 		relayout(to, D_ITEMS);
 	}
 

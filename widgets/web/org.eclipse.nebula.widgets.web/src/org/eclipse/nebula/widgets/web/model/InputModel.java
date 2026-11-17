@@ -31,6 +31,10 @@ public class InputModel extends WebModel implements InputApi {
 	private int len, caret;
 	private boolean masked;
 	private String placeholder = "";
+	// Retained identities are bounded by the rendered cells or filtered dropdown window.
+	private int[] residentIds = new int[16];
+	private int previousResidents;
+	private boolean mirroredRects;
 
 	public InputModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
@@ -189,8 +193,18 @@ public class InputModel extends WebModel implements InputApi {
 	@Override
 	protected void doLayout() {
 		int r = rowHeight();
-		for (int i = 0; i < count; i++) {
-			setRect(i, 0, 0, 0, 0);
+		boolean bounded = boundedGeometry();
+		if (!bounded || rtl || mirroredRects) {
+			// Tags need cumulative text geometry; unknown subclasses retain all layout hooks.
+			for (int i = 0; i < count; i++) {
+				setRect(i, 0, 0, 0, 0);
+			}
+		} else {
+			for (int i = 0; i < previousResidents; i++) {
+				if (residentIds[i] < count) {
+					setRect(residentIds[i], 0, 0, 0, 0);
+				}
+			}
 		}
 		if (mode == OTP) {
 			for (int i = 0; i < count && i < 64; i++) {
@@ -206,7 +220,28 @@ public class InputModel extends WebModel implements InputApi {
 		} else if (mode == AUTOCOMPLETE && is(-1, OPEN)) {
 			dropdown();
 		}
+		if (bounded) {
+			rememberResidents();
+		}
+		mirroredRects = rtl;
 		setPlane(OVERLAY, 0, field(), width, viewLength());
+	}
+
+	private boolean boundedGeometry() {
+		return mode != TAGS && (getClass() == InputModel.class
+				|| getClass() == AutocompleteModel.class || getClass() == OtpInputModel.class);
+	}
+
+	private void rememberResidents() {
+		int n = mode == OTP ? Math.min(count, 64)
+				: mode == AUTOCOMPLETE && is(-1, OPEN) ? window[3] - window[2] : 0;
+		if (residentIds.length < n) {
+			residentIds = Arrays.copyOf(residentIds, n);
+		}
+		for (int i = 0; i < n; i++) {
+			residentIds[i] = mode == OTP ? i : itemAt(window[2] + i);
+		}
+		previousResidents = n;
 	}
 
 	private void dropdown() {

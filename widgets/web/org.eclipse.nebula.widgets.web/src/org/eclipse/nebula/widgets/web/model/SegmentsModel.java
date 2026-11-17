@@ -30,6 +30,9 @@ public class SegmentsModel extends WebModel implements SegmentsApi {
 			TILES = 8, NAV = 9;
 	private static final int[] EXTENT = { 120, 56, 96, 36, 96, 88, 28, 320, 112, 40 };
 	private int current = -1;
+	// Only exact built-in owners use bounded retirement; subclass layout hooks keep full traversal.
+	private int previousFirst, previousEnd;
+	private boolean mirroredRects;
 
 	public SegmentsModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
@@ -107,20 +110,38 @@ public class SegmentsModel extends WebModel implements SegmentsApi {
 	@Override
 	protected void doLayout() {
 		int cross = vertical() ? width : mode == CAROUSEL ? Math.max(rowHeight(), height - rowHeight()) : Math.min(height, crossExtent());
-		for (int i = 0; i < count; i++) {
-			if (i < window[2] || i >= window[3]) {
-				setRect(i, 0, 0, 0, 0);
-				continue;
+		boolean bounded = (getClass() == SegmentsModel.class || getClass() == NavigationModel.class) && !rtl;
+		if (!bounded || mirroredRects) {
+			// Preserve full hook order and the observable X coordinate of zero-size RTL rects.
+			for (int i = 0; i < count; i++) {
+				if (i < window[2] || i >= window[3]) {
+					setRect(i, 0, 0, 0, 0);
+				} else {
+					layoutSegment(i, cross);
+				}
 			}
-			int pos = (int) ((long) i * itemExtent - scroll);
-			int ext = mode == SEGMENTED || mode == TOGGLE || mode == PAGINATION || mode == RATING ? itemExtent - 2 : itemExtent;
-			if (vertical()) {
-				setRect(i, 0, pos, cross, ext);
-			} else {
-				setRect(i, pos, 0, ext, cross);
+		} else {
+			for (int i = previousFirst, end = Math.min(previousEnd, count); i < end; i++) {
+				setRect(i, 0, 0, 0, 0);
+			}
+			for (int i = window[2]; i < window[3]; i++) {
+				layoutSegment(i, cross);
 			}
 		}
+		previousFirst = window[2];
+		previousEnd = window[3];
+		mirroredRects = rtl;
 		setPlane(OVERLAY, 0, Math.max(0, height - rowHeight()), width, rowHeight());
+	}
+
+	private void layoutSegment(int item, int cross) {
+		int pos = (int) ((long) item * itemExtent - scroll);
+		int ext = mode == SEGMENTED || mode == TOGGLE || mode == PAGINATION || mode == RATING ? itemExtent - 2 : itemExtent;
+		if (vertical()) {
+			setRect(item, 0, pos, cross, ext);
+		} else {
+			setRect(item, pos, 0, ext, cross);
+		}
 	}
 
 	private int crossExtent() {
