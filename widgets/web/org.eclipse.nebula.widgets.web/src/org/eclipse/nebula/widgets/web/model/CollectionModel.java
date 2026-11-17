@@ -29,6 +29,9 @@ import static org.eclipse.nebula.widgets.web.model.WebStates.*;
  */
 public class CollectionModel extends WebModel implements CollectionApi {
 	public static final int KANBAN = 0, SWIPE = 1, PULL = 2, INFINITE = 3, REORDER = 4, MESSAGES = 5, PALETTE = 6, GALLERY = 7, MASONRY = 8;
+	/** Writable declarative bits; pointer, focus, dragging and loading stay owned by SWT. */
+	private static final int CONTROLLED = DISABLED | SELECTED | ERROR | OPEN | CHECKED | MIXED
+			| EXPANDED | VISITED | HIDDEN | DONE | READONLY;
 	private int pull, loadedAt = -1, threshold = 5, columns = 1, dragFrom = -1, dragX, dragY;
 	/** React-style identities are references owned by this collection, never per-item proxies. */
 	private String[] stableKeys;
@@ -51,13 +54,40 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	 */
 	@Override
 	public void reconcile(String[] keys, String[] labels) {
+		applySnapshot(keys, labels, null, null);
+	}
+
+	/**
+	 * Applies React-style controlled boolean properties to the existing native lanes.
+	 * Uncontrolled event state is retained, even while the declarative order changes.
+	 * The unsigned short masks and values are cloned and validated before mutation.
+	 */
+	@Override
+	public void reconcileProps(String[] keys, String[] labels, short[] masks, short[] values) {
+		if (masks == null || values == null || keys == null
+				|| masks.length != keys.length || values.length != keys.length) {
+			throw new IllegalArgumentException("property masks and values must match key count");
+		}
+		applySnapshot(keys, labels, masks.clone(), values.clone());
+	}
+
+	private void applySnapshot(String[] keys, String[] labels, short[] masks, short[] props) {
 		if (keys == null || labels == null || keys.length != labels.length) {
 			throw new IllegalArgumentException("key and label arrays must have equal non-null lengths");
 		}
 		String[] incoming = keys.clone(), words = labels.clone();
 		int[] unique = keyTable(incoming.length);
 		indexKeys(incoming, unique);
-		if (sameSnapshot(incoming, words)) {
+		if (masks != null) {
+			for (int i = 0; i < masks.length; i++) {
+				int mask = masks[i] & 0xffff, value = props[i] & 0xffff;
+				if ((mask & ~CONTROLLED) != 0 || (value & ~mask) != 0) {
+					throw new IllegalArgumentException("invalid controlled state at " + i);
+				}
+			}
+		}
+		boolean sameRows = sameSnapshot(incoming, words);
+		if (sameRows && masks == null) {
 			return;
 		}
 		int n = incoming.length;
@@ -69,19 +99,28 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				stagedGroup = new int[n];
 		String[] stagedDetail = new String[n];
 		int nextFocus = -1, nextHover = -1, nextPressed = -1;
+		boolean changedProps = false;
 		for (int i = 0; i < n; i++) {
 			int old = previous == null ? -1 : lookup(incoming[i], stableKeys, previous);
-			if (old < 0) {
-				continue;
+			if (old >= 0) {
+				stagedFlags[i] = flags[old];
+				stagedValue[i] = value[old];
+				stagedAux[i] = aux[old];
+				stagedGroup[i] = group[old];
+				stagedDetail[i] = detail[old];
+				if (old == focus) nextFocus = i;
+				if (old == hover) nextHover = i;
+				if (old == pressed) nextPressed = i;
 			}
-			stagedFlags[i] = flags[old];
-			stagedValue[i] = value[old];
-			stagedAux[i] = aux[old];
-			stagedGroup[i] = group[old];
-			stagedDetail[i] = detail[old];
-			if (old == focus) nextFocus = i;
-			if (old == hover) nextHover = i;
-			if (old == pressed) nextPressed = i;
+			if (masks != null) {
+				int mask = masks[i] & 0xffff;
+				int controlled = (stagedFlags[i] & ~mask) | (props[i] & 0xffff);
+				changedProps |= controlled != stagedFlags[i];
+				stagedFlags[i] = controlled;
+			}
+		}
+		if (sameRows && !changedProps) {
+			return;
 		}
 		int retired = count;
 		if (n > flags.length) {
