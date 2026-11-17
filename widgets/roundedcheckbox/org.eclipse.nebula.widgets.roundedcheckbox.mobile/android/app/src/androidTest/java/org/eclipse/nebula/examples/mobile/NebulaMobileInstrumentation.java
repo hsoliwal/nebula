@@ -48,6 +48,11 @@ import org.eclipse.swt.widgets.Text;
 
 /** Native screen/touch proof for the existing, unmodified RoundedCheckbox implementation. */
 public final class NebulaMobileInstrumentation extends Instrumentation {
+    /** How long a tap waits for a transient system window, such as the clipboard overlay, to leave its point. */
+    private static final long OCCLUDED_TAP_WAIT_MS = 10_000;
+    private static final long OCCLUDED_TAP_RETRY_MS = 250;
+    /** The message of Android's refusal of a targeted injection that would reach another application's window. */
+    private static final String NOT_OWN_WINDOW = "not directed at a window owned by";
     private NebulaMobileActivity activity;
     private String requestedScreenshotDirectory;
     private File screenshotDirectory;
@@ -328,9 +333,8 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                         surface(current), comboBottom[1])));
                 return popupList.get() != null;
             }, "Original Combo popup reopened");
-            runOnMainSync(() -> require(findCombo(surface(current)).dispatchKeyEvent(
-                    new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ESCAPE)),
-                    "Android Escape sent to original Combo owner"));
+            // A device delivers a hardware key to the focused view, and the open popup's List holds focus.
+            sendKeyDownUpSync(KeyEvent.KEYCODE_ESCAPE);
             await(() -> {
                 runOnMainSync(() -> popupList.set(findPopupList(
                         surface(current), comboBottom[1])));
@@ -900,7 +904,27 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
         } finally { image.recycle(); }
     }
 
+    /**
+     * Taps a screen point of this application's window. A transient system window can cover the point: on Android 13
+     * and later, a cut or copy shows the clipboard overlay in the lower start corner for a few seconds, and Android
+     * refuses a targeted injection that would reach another application's window. Such a refusal is retried until
+     * {@link #OCCLUDED_TAP_WAIT_MS}; a point that stays covered fails with Android's original exception.
+     */
     private void tap(int[] location) {
+        long deadline = SystemClock.uptimeMillis() + OCCLUDED_TAP_WAIT_MS;
+        while (true) {
+            try {
+                tapOnce(location);
+                return;
+            } catch (IllegalArgumentException refused) {
+                if (!String.valueOf(refused.getMessage()).contains(NOT_OWN_WINDOW)
+                        || SystemClock.uptimeMillis() > deadline) throw refused;
+                SystemClock.sleep(OCCLUDED_TAP_RETRY_MS);
+            }
+        }
+    }
+
+    private void tapOnce(int[] location) {
         long down = SystemClock.uptimeMillis();
         MotionEvent first = MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, location[0], location[1], 0);
         MotionEvent last = MotionEvent.obtain(down, down + 20, MotionEvent.ACTION_UP, location[0], location[1], 0);

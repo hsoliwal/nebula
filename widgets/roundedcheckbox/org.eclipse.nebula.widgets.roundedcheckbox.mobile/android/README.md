@@ -103,7 +103,12 @@ this `widgets/roundedcheckbox/...mobile/android` directory; the historical
 
 Install the resulting application and instrumentation APKs with `adb`, then
 run the `org.eclipse.nebula.examples.mobile.NebulaMobileInstrumentation`
-instrumentation runner on an API-35-or-newer emulator or device. The test
+instrumentation runner on an API-35-or-newer emulator or device. The device
+needs a screen at least as tall as the workflow's `pixel_6` profile (1080 by
+2400 at 420 dpi): on a 720 by 1280 screen with system bars the lower controls
+lie under the navigation bar, where Android refuses the runner's taps. The
+emulator image must render (a `default` or `google_apis` image; the automated
+test device images, `aosp_atd`, capture black screenshots). The test
 uses real Android screenshots and injected touch input to examine paint,
 selection, selection veto, disabled state, Scale-to-ProgressBar interaction
 and cleanup. Native editor caret/range selection is compared with SWT Text
