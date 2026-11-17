@@ -133,6 +133,13 @@ public class SparklineModel_Test {
 		assertEquals(7, model.value(0));
 		assertEquals(-3, model.minValue());
 		assertEquals(42, model.maxValue());
+		model.setValue(0, 8); // Interior update retains cached extrema.
+		assertEquals(-3, model.minValue());
+		model.setValue(1, 5); // Retired lower bound must be rediscovered.
+		assertEquals(5, model.minValue());
+		model.setValue(2, -1); // Retired upper bound and a new lower bound.
+		assertEquals(-1, model.minValue());
+		assertEquals(8, model.maxValue());
 	}
 
 	@Test

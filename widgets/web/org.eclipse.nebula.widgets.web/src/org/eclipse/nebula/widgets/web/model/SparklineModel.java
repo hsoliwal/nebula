@@ -95,8 +95,19 @@ public class SparklineModel extends WebModel implements SparklineApi {
 
 	@Override
 	public void setValue(int item, int v) {
-		rangeDirty = true;
-		super.setValue(item, v);
+		check(item);
+		int old = value[item], next = clampValue(item, v);
+		if (!rangeDirty) {
+			if ((old == minimum && next > old) || (old == maximum && next < old)) {
+				// An old extremum moved inward; another point may own that bound.
+				rangeDirty = true;
+			} else {
+				minimum = Math.min(minimum, next);
+				maximum = Math.max(maximum, next);
+			}
+		}
+		value[item] = next;
+		relayout(item, D_VALUE);
 	}
 
 	@Override
