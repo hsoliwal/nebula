@@ -61,8 +61,11 @@ public class DrawnBrowser extends Canvas {
 	/* the stores this widget draws and takes input for: the scroll window, and the location with its history */
 	private final PageViewport viewport = new PageViewport();
 	private final PageHistory pages = new PageHistory();
-	/* the selection in the page's text, made by find */
+	/* the selection in the page's text, made by find or the mouse */
 	private final PageSelection selection = new PageSelection();
+	/* scrolls while a drag holds the mouse above or below the view; re-armed while it moves the page */
+	private final Runnable autoScroll = this::autoScroll;
+	private static final int AUTO_SCROLL_MS = 40;
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
 	private java.util.concurrent.ExecutorService pageLoader;
 
@@ -76,7 +79,8 @@ public class DrawnBrowser extends Canvas {
 		layout = newLayout();
 		images = new ImageStore(getDisplay(), 64, this::imageLoaded);
 		Listener listener = this::handle;
-		for (int type : new int[] { SWT.Paint, SWT.Resize, SWT.MouseUp, SWT.MouseMove, SWT.MouseWheel, SWT.KeyDown, SWT.Dispose }) {
+		for (int type : new int[] { SWT.Paint, SWT.Resize, SWT.MouseDown, SWT.MouseUp, SWT.MouseMove, SWT.MouseWheel, SWT.KeyDown,
+				SWT.Dispose }) {
 			addListener(type, listener);
 		}
 		getVerticalBar().addListener(SWT.Selection, e -> scrollTo(getVerticalBar().getSelection()));
@@ -179,10 +183,61 @@ public class DrawnBrowser extends Canvas {
 		return new Point(selection.start(), selection.end());
 	}
 
-	/** The selected text, or the empty string. */
+	/**
+	 * The selected text, or the empty string. A selection across blocks has a line break between their texts (the
+	 * page's text has none), so it can be longer than the selection's range.
+	 */
 	public String getSelectionText() {
 		checkWidget();
 		return selection.text(document);
+	}
+
+	/**
+	 * Selects the range {@code [start, end)} of the page's text (clamped to it; in either order), as
+	 * {@code StyledText.setSelection(int, int)} does, without scrolling.
+	 */
+	public void setSelection(int start, int end) {
+		checkWidget();
+		int length = document.text.length();
+		redrawRange(selection.start(), selection.end());
+		selection.select(Math.max(0, Math.min(start, length)), Math.max(0, Math.min(end, length)));
+		redrawRange(selection.start(), selection.end());
+	}
+
+	/** Selects the page's whole text. */
+	public void selectAll() {
+		checkWidget();
+		setSelection(0, document.text.length());
+	}
+
+	/**
+	 * Copies the selected text to the clipboard as text, blocks separated by line breaks; nothing happens when nothing
+	 * is selected. Ctrl+C (Command+C) does the same, Ctrl+A selects all.
+	 */
+	public void copy() {
+		checkWidget();
+		String text = selection.text(document);
+		if (text.isEmpty()) return;
+		org.eclipse.swt.dnd.Clipboard clipboard = new org.eclipse.swt.dnd.Clipboard(getDisplay());
+		try {
+			clipboard.setContents(new Object[] { text }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+		} finally {
+			clipboard.dispose();
+		}
+	}
+
+	/* one auto-scroll step of a drag held above or below the view: the page moves, the selection follows the mouse */
+	private void autoScroll() {
+		if (isDisposed() || !selection.isDragging()) return;
+		int step = viewport.edgeStep(selection.pointerY(), LINE);
+		if (step == 0) return;
+		int before = viewport.y();
+		scrollTo(before + step);
+		int oldStart = selection.start(), oldEnd = selection.end();
+		if (selection.drag(layout.offsetAt(selection.pointerX(), selection.pointerY() + viewport.y()))) {
+			redrawRange(Math.min(oldStart, selection.start()), Math.max(oldEnd, selection.end()));
+		}
+		if (viewport.y() != before) getDisplay().timerExec(AUTO_SCROLL_MS, autoScroll);
 	}
 
 	/* damages the blocks that hold [start, end) of the page's text, where they are in view */
@@ -246,16 +301,37 @@ public class DrawnBrowser extends Canvas {
 		switch (e.type) {
 			case SWT.Paint -> paint(e.gc, e.x, e.y, e.width, e.height);
 			case SWT.Resize -> relayout();
-			case SWT.MouseUp -> {
-				if (e.button == 1) click(e.x, e.y);
+			case SWT.MouseDown -> {
+				if (e.button == 1) {
+					redrawRange(selection.start(), selection.end());
+					selection.press(layout.offsetAt(e.x, e.y + viewport.y()));
+					selection.pointer(e.x, e.y);
+				}
 			}
-			case SWT.MouseMove -> setCursor(layout.linkAt(e.x, e.y + viewport.y()) != null ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : null);
+			case SWT.MouseUp -> {
+				if (e.button == 1) {
+					selection.release();
+					if (selection.isEmpty()) click(e.x, e.y); // a drag that selected text does not follow the link under it
+				}
+			}
+			case SWT.MouseMove -> {
+				if (selection.isDragging() && (e.stateMask & SWT.BUTTON1) != 0) {
+					selection.pointer(e.x, e.y);
+					int oldStart = selection.start(), oldEnd = selection.end();
+					if (selection.drag(layout.offsetAt(e.x, e.y + viewport.y()))) {
+						redrawRange(Math.min(oldStart, selection.start()), Math.max(oldEnd, selection.end()));
+					}
+					if (viewport.edgeStep(e.y, LINE) != 0) getDisplay().timerExec(AUTO_SCROLL_MS, autoScroll);
+				}
+				setCursor(layout.linkAt(e.x, e.y + viewport.y()) != null ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : null);
+			}
 			case SWT.MouseWheel -> {
 				scrollTo(viewport.y() - e.count * LINE);
 				e.doit = false;
 			}
 			case SWT.KeyDown -> key(e);
 			case SWT.Dispose -> {
+				getDisplay().timerExec(-1, autoScroll);
 				pages.stop();
 				layout.dispose();
 				images.dispose();
@@ -423,6 +499,11 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	private void key(Event e) {
+		if ((e.stateMask & SWT.MOD1) != 0 && (e.keyCode == 'c' || e.keyCode == 'a')) {
+			if (e.keyCode == 'c') copy();
+			else selectAll();
+			return;
+		}
 		sync();
 		int scrollY = viewport.y(), page = viewport.page(LINE);
 		switch (e.keyCode) {

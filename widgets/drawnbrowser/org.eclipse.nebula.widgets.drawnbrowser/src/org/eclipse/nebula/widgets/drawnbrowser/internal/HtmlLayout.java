@@ -163,6 +163,20 @@ public final class HtmlLayout {
 	}
 
 	/**
+	 * The offset in the page's text nearest to ({@code x}, {@code y}) in page coordinates, for selecting with the mouse:
+	 * above or below a block's text its first or last line, in an image's block the block's place in the text.
+	 */
+	public int offsetAt(int x, int y) {
+		int b = blockAt(y);
+		if (b < 0) return 0;
+		if (doc.kind[b] == HtmlDocument.IMAGE) return doc.textStart[b];
+		TextLayout layout = textLayout(b);
+		int[] trailing = new int[1];
+		int local = layout.getOffset(x - indent(b), y - top[b] - BLOCK_GAP, trailing) + trailing[0];
+		return doc.textStart[b] + Math.min(local, doc.textEnd[b] - doc.textStart[b]);
+	}
+
+	/**
 	 * Gives image {@code index} its natural size once its pixels are loaded. A width or height the tag declared is
 	 * kept; a missing one is taken from the image, scaled to keep its aspect ratio. Blocks from the image's block on
 	 * are measured again.

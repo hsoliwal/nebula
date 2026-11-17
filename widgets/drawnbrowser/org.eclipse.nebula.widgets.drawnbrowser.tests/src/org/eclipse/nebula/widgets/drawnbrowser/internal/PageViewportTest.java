@@ -115,6 +115,19 @@ public class PageViewportTest {
 	}
 
 	@Test
+	public void aDragOutsideTheViewStepsByHowFarOutCappedAtHalfTheView() {
+		PageViewport v = viewport(100, 1000, 0);
+		for (int y : new int[] { 0, 50, 99 }) assertEquals("inside " + y, 0, v.edgeStep(y, 16));
+		assertEquals(-16, v.edgeStep(-1, 16));
+		assertEquals(-40, v.edgeStep(-40, 16));
+		assertEquals(-50, v.edgeStep(-500, 16));
+		assertEquals(16, v.edgeStep(100, 16));
+		assertEquals(31, v.edgeStep(130, 16));
+		assertEquals(50, v.edgeStep(1000, 16));
+		assertEquals("a small view still moves a line", 16, viewport(20, 1000, 0).edgeStep(500, 16));
+	}
+
+	@Test
 	public void aPageStepIsTheViewLessALineButAtLeastALine() {
 		assertEquals(84, viewport(100, 1000, 0).page(16));
 		assertEquals(16, viewport(10, 1000, 0).page(16));

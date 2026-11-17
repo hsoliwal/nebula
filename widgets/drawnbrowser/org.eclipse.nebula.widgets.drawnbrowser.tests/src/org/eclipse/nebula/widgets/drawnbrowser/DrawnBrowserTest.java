@@ -264,6 +264,114 @@ public class DrawnBrowserTest {
 		assertEquals("a new page selects nothing", "", browser.getSelectionText());
 	}
 
+	private void mouse(int type, int x, int y, int stateMask) {
+		Event e = new Event();
+		e.x = x;
+		e.y = y;
+		e.button = type == SWT.MouseMove ? 0 : 1;
+		e.stateMask = stateMask;
+		browser.notifyListeners(type, e);
+	}
+
+	@Test
+	public void aDragSelectsAcrossBlocksAndDoesNotFollowTheLinkItStartedOn() {
+		open("<p><a href=\"next.html\">LINKLINKLINKLINK</a> first</p><p>second paragraph</p>");
+		List<String> calls = new ArrayList<>();
+		browser.addLocationListener(new LocationListener() {
+			@Override
+			public void changing(LocationEvent event) {
+				calls.add("changing " + event.location);
+			}
+
+			@Override
+			public void changed(LocationEvent event) {
+				calls.add("changed " + event.location);
+			}
+		});
+		int secondLine = 8 + 6 + browser.getClientArea().height; // clamped: the drag ends in the last block
+		mouse(SWT.MouseDown, 6, 8 + 6, 0);
+		mouse(SWT.MouseMove, 60, secondLine / 4, SWT.BUTTON1);
+		mouse(SWT.MouseMove, 2000, 400, SWT.BUTTON1);
+		mouse(SWT.MouseUp, 2000, 400, SWT.BUTTON1);
+		settle();
+		assertEquals("the drag selected text, so the link is not followed", List.of(), calls);
+		String selected = browser.getSelectionText();
+		assertTrue("selected " + selected, selected.endsWith("first\nsecond paragraph"));
+		mouse(SWT.MouseDown, 6, 8 + 6, 0);
+		mouse(SWT.MouseMove, 40, 8 + 6, SWT.BUTTON1);
+		mouse(SWT.MouseUp, 40, 8 + 6, SWT.BUTTON1);
+		String inLink = browser.getSelectionText();
+		assertTrue("part of the link is selected: " + inLink, !inLink.isEmpty() && "LINKLINKLINKLINK".contains(inLink));
+		assertEquals("a drag inside the link does not follow it either", List.of(), calls);
+		mouse(SWT.MouseDown, 6, 8 + 6, 0);
+		mouse(SWT.MouseUp, 6, 8 + 6, SWT.BUTTON1);
+		assertEquals("a click without a drag follows the link", List.of("changing next.html"), calls);
+		assertEquals("and selects nothing", "", browser.getSelectionText());
+	}
+
+	/* runs the event loop, timers included, for about {@code millis} or until the condition holds */
+	private void pump(long millis, java.util.function.BooleanSupplier done) {
+		long end = System.currentTimeMillis() + millis;
+		while (!done.getAsBoolean() && System.currentTimeMillis() < end) {
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(5);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+			}
+		}
+	}
+
+	@Test
+	public void aDragHeldBelowTheViewScrollsAndExtendsTheSelectionUntilReleased() {
+		open(paragraphs(300));
+		int height = browser.getClientArea().height;
+		mouse(SWT.MouseDown, 6, 20, 0);
+		mouse(SWT.MouseMove, 60, height + 40, SWT.BUTTON1);
+		int endAtMove = browser.getSelection().y;
+		pump(5000, () -> browser.getScrollY() >= 300);
+		assertTrue("auto-scrolled to " + browser.getScrollY(), browser.getScrollY() >= 300);
+		org.eclipse.swt.graphics.Point selected = browser.getSelection();
+		assertTrue("the selection follows the page past " + endAtMove + ": " + selected, selected.y > endAtMove + 100);
+		mouse(SWT.MouseUp, 60, height + 40, SWT.BUTTON1);
+		int released = browser.getScrollY();
+		pump(400, () -> false);
+		assertEquals("released: the page stops", released, browser.getScrollY());
+	}
+
+	@Test
+	public void selectAllAndCopyPutTheTextOnTheClipboard() {
+		open("<p>one</p><p>two <b>three</b></p>");
+		org.eclipse.swt.dnd.Clipboard before = new org.eclipse.swt.dnd.Clipboard(display);
+		try {
+			before.setContents(new Object[] { "before" }, new org.eclipse.swt.dnd.Transfer[] { org.eclipse.swt.dnd.TextTransfer.getInstance() });
+		} finally {
+			before.dispose();
+		}
+		Event all = new Event();
+		all.keyCode = 'a';
+		all.stateMask = SWT.MOD1;
+		browser.notifyListeners(SWT.KeyDown, all);
+		assertEquals("one\ntwo three", browser.getSelectionText());
+		Event copy = new Event();
+		copy.keyCode = 'c';
+		copy.stateMask = SWT.MOD1;
+		browser.notifyListeners(SWT.KeyDown, copy);
+		org.eclipse.swt.dnd.Clipboard clipboard = new org.eclipse.swt.dnd.Clipboard(display);
+		try {
+			assertEquals("one\ntwo three", clipboard.getContents(org.eclipse.swt.dnd.TextTransfer.getInstance()));
+		} finally {
+			clipboard.dispose();
+		}
+		browser.setSelection(9, 3);
+		assertEquals(new org.eclipse.swt.graphics.Point(3, 9), browser.getSelection());
+		assertEquals("two th", browser.getSelectionText());
+		browser.setSelection(-5, 999);
+		assertEquals("clamped to the page", new org.eclipse.swt.graphics.Point(0, 12), browser.getSelection());
+	}
+
 	@Test
 	public void textIsPaintedInTheFirstBlock() {
 		open("<h1>Drawn</h1>");
