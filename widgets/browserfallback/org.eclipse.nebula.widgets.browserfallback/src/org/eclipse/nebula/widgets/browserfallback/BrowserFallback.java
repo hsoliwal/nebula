@@ -47,6 +47,7 @@ public final class BrowserFallback extends Composite {
     /** Donor-backed, instance-local backing store; no DOM Control is materialized. */
     private static final int MAX_CACHED_DOCUMENTS = 64;
     private static final int MAX_CACHED_HTML_CHARS = 262_144;
+    private static final int MAX_CACHED_KEY_CHARS = 1_024;
 
     /** A callback runs on the widget's SWT/RWT UI thread; it must not retain UI state across disposal. */
     @FunctionalInterface
@@ -167,7 +168,8 @@ public final class BrowserFallback extends Composite {
      */
     public void cacheTrustedHtml(String key, String html) {
         checkWidget();
-        if (key == null || html == null) {
+        requireCacheKey(key);
+        if (html == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
         if (html.length() > MAX_CACHED_HTML_CHARS) {
@@ -179,9 +181,7 @@ public final class BrowserFallback extends Composite {
     /** Loads cached trusted HTML through the same revision-safe Browser path. */
     public boolean loadCachedTrustedHtml(String key) {
         checkWidget();
-        if (key == null) {
-            SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        }
+        requireCacheKey(key);
         String html = trustedHtmlCache.get(key);
         return html != null && setTrustedHtml(html);
     }
@@ -190,6 +190,15 @@ public final class BrowserFallback extends Composite {
     public void clearTrustedHtmlCache() {
         checkWidget();
         trustedHtmlCache.clear();
+    }
+
+    private static void requireCacheKey(String key) {
+        if (key == null) {
+            SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        }
+        if (key.isEmpty() || key.length() > MAX_CACHED_KEY_CHARS) {
+            SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
     }
 
     /**
