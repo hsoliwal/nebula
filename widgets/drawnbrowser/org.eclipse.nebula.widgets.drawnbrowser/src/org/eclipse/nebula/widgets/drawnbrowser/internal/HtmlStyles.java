@@ -1,0 +1,188 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Synexia, Hitesh Soliwal (hsoliwal@gmail.com) and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Apache License 2.0 or the Eclipse Public License 2.0.
+ *
+ * SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+ *******************************************************************************/
+package org.eclipse.nebula.widgets.drawnbrowser.internal;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * The CSS subset of the drawn browser.
+ * <p>
+ * Rules come from {@code <style>} elements and declarations from {@code style} attributes. Selectors are a tag, a
+ * {@code .class}, a {@code tag.class}, or comma-separated lists of these. Properties: {@code color},
+ * {@code background-color}, {@code font-weight}, {@code font-style}, {@code text-decoration}, {@code text-align} and
+ * {@code margin-left} (px). Anything else is ignored, never an error.
+ * </p>
+ * <p>
+ * The cascade applies the rules that match an element in specificity order (tag, class, tag.class; a later rule wins
+ * a tie), then the element's own {@code style} attribute. Text properties (color, weight, style, decoration) inherit;
+ * so does text-align; background and indent belong to the element that sets them. A computed style is an
+ * int array indexed by the constants below, no object per element.
+ * </p>
+ * <p>
+ * Pattern: Flying Saucer (XHTML and CSS 2.1, LGPL; its licence is recorded, not copied) for the cascade order; this
+ * class keeps only the subset above.
+ * </p>
+ */
+public final class HtmlStyles {
+
+	/** Computed style slots: ARGB colour (0 inherits the widget's), background, set style bits, align, indent px. */
+	public static final int COLOR = 0, BACKGROUND = 1, BITS = 2, ALIGN = 3, INDENT = 4, SLOTS = 5;
+
+	/** Alignments. */
+	public static final int LEFT = 0, CENTER = 1, RIGHT = 2;
+
+	/* one rule per selector: tag (or null), class (or null), specificity, declarations, order */
+	private final List<String[]> selectors = new ArrayList<>();
+	private final List<int[]> declarations = new ArrayList<>();
+
+	/** Adds the rules of a style sheet. */
+	public void addSheet(String css) {
+		String text = css.replaceAll("(?s)/\\*.*?\\*/", "");
+		int i = 0;
+		while (i < text.length()) {
+			int open = text.indexOf('{', i), close = open < 0 ? -1 : text.indexOf('}', open);
+			if (open < 0 || close < 0) break;
+			int[] decls = parse(text.substring(open + 1, close), new int[] { 0, 0, 0, -1, -1 });
+			for (String selector : text.substring(i, open).split(",")) {
+				String s = selector.trim().toLowerCase(Locale.ROOT);
+				if (!s.matches("[a-z][a-z0-9]*|\\.[a-z_][a-z0-9_-]*|[a-z][a-z0-9]*\\.[a-z_][a-z0-9_-]*")) continue;
+				int dot = s.indexOf('.');
+				String tag = dot == 0 ? null : dot < 0 ? s : s.substring(0, dot);
+				String cls = dot < 0 ? null : s.substring(dot + 1);
+				selectors.add(new String[] { tag, cls, String.valueOf((tag != null ? 1 : 0) + (cls != null ? 10 : 0)) });
+				declarations.add(decls);
+			}
+			i = close + 1;
+		}
+	}
+
+	/**
+	 * The computed style of an element.
+	 *
+	 * @param parent  the parent's computed style
+	 * @param tag     the tag, lower case
+	 * @param classes the class attribute, or null
+	 * @param inline  the style attribute, or null
+	 */
+	public int[] compute(int[] parent, String tag, String classes, String inline) {
+		int[] style = { parent[COLOR], 0, parent[BITS], parent[ALIGN], 0 };
+		String[] own = classes == null ? new String[0] : classes.trim().toLowerCase(Locale.ROOT).split("\\s+");
+		for (int specificity : new int[] { 1, 10, 11 }) {
+			for (int r = 0; r < selectors.size(); r++) {
+				String[] s = selectors.get(r);
+				if (Integer.parseInt(s[2]) != specificity) continue;
+				if (s[0] != null && !s[0].equals(tag)) continue;
+				if (s[1] != null && !contains(own, s[1])) continue;
+				apply(style, declarations.get(r));
+			}
+		}
+		if (inline != null) apply(style, parse(inline, new int[] { 0, 0, 0, -1, -1 }));
+		return style;
+	}
+
+	/** The style of the document root: the widget's colours, nothing set. */
+	public static int[] root() {
+		return new int[] { 0, 0, 0, LEFT, 0 };
+	}
+
+	private static boolean contains(String[] values, String value) {
+		for (String v : values) if (v.equals(value)) return true;
+		return false;
+	}
+
+	/* declarations as a delta: 0 colour/background = not set, BITS = bits set | (bits cleared << 8), -1 = not set */
+	private static int[] parse(String block, int[] delta) {
+		for (String declaration : block.split(";")) {
+			int colon = declaration.indexOf(':');
+			if (colon < 0) continue;
+			String name = declaration.substring(0, colon).trim().toLowerCase(Locale.ROOT);
+			String value = declaration.substring(colon + 1).trim().toLowerCase(Locale.ROOT).replace("!important", "").trim();
+			switch (name) {
+				case "color" -> delta[COLOR] = color(value);
+				case "background-color", "background" -> delta[BACKGROUND] = color(value);
+				case "font-weight" -> delta[BITS] = bit(delta[BITS], HtmlDocument.BOLD,
+						value.equals("bold") || value.equals("bolder") || value.matches("[6-9]00") ? 1 : value.equals("normal") || value.matches("[1-5]00") ? -1 : 0);
+				case "font-style" -> delta[BITS] = bit(delta[BITS], HtmlDocument.ITALIC,
+						value.equals("italic") || value.equals("oblique") ? 1 : value.equals("normal") ? -1 : 0);
+				case "text-decoration", "text-decoration-line" -> {
+					if (value.contains("none")) {
+						delta[BITS] = bit(bit(delta[BITS], HtmlDocument.UNDERLINE, -1), HtmlDocument.STRIKE, -1);
+					} else {
+						if (value.contains("underline")) delta[BITS] = bit(delta[BITS], HtmlDocument.UNDERLINE, 1);
+						if (value.contains("line-through")) delta[BITS] = bit(delta[BITS], HtmlDocument.STRIKE, 1);
+					}
+				}
+				case "text-align" -> delta[ALIGN] = value.equals("center") ? CENTER : value.equals("right") ? RIGHT
+						: value.equals("left") ? LEFT : delta[ALIGN];
+				case "margin-left" -> {
+					if (value.matches("\\d{1,4}(px)?")) delta[INDENT] = Integer.parseInt(value.replace("px", ""));
+				}
+				default -> {
+				}
+			}
+		}
+		return delta;
+	}
+
+	private static int bit(int bits, int bit, int sign) {
+		if (sign > 0) return (bits | bit) & ~(bit << 8);
+		if (sign < 0) return (bits & ~bit) | (bit << 8);
+		return bits;
+	}
+
+	private static void apply(int[] style, int[] delta) {
+		if (delta[COLOR] != 0) style[COLOR] = delta[COLOR];
+		if (delta[BACKGROUND] != 0) style[BACKGROUND] = delta[BACKGROUND];
+		int set = delta[BITS] & 0xFF, cleared = (delta[BITS] >>> 8) & 0xFF;
+		style[BITS] = (style[BITS] | set) & ~cleared;
+		if (delta[ALIGN] >= 0) style[ALIGN] = delta[ALIGN];
+		if (delta[INDENT] >= 0) style[INDENT] = delta[INDENT];
+	}
+
+	/** An opaque ARGB colour from #rgb, #rrggbb, rgb(r, g, b) or a basic colour name; 0 when not one of these. */
+	public static int color(String value) {
+		String v = value.trim().toLowerCase(Locale.ROOT);
+		try {
+			if (v.matches("#[0-9a-f]{3}")) {
+				int r = Integer.parseInt(v.substring(1, 2), 16), g = Integer.parseInt(v.substring(2, 3), 16), b = Integer.parseInt(v.substring(3, 4), 16);
+				return 0xFF000000 | (r * 17) << 16 | (g * 17) << 8 | b * 17;
+			}
+			if (v.matches("#[0-9a-f]{6}")) return 0xFF000000 | Integer.parseInt(v.substring(1), 16);
+			if (v.matches("rgb\\(\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*\\)")) {
+				String[] c = v.substring(4, v.length() - 1).split(",");
+				int r = Math.min(255, Integer.parseInt(c[0].trim())), g = Math.min(255, Integer.parseInt(c[1].trim())), b = Math.min(255, Integer.parseInt(c[2].trim()));
+				return 0xFF000000 | r << 16 | g << 8 | b;
+			}
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+		return switch (v) {
+			case "black" -> 0xFF000000;
+			case "white" -> 0xFFFFFFFF;
+			case "red" -> 0xFFFF0000;
+			case "lime" -> 0xFF00FF00;
+			case "green" -> 0xFF008000;
+			case "blue" -> 0xFF0000FF;
+			case "gray", "grey" -> 0xFF808080;
+			case "silver" -> 0xFFC0C0C0;
+			case "maroon" -> 0xFF800000;
+			case "navy" -> 0xFF000080;
+			case "olive" -> 0xFF808000;
+			case "purple" -> 0xFF800080;
+			case "teal" -> 0xFF008080;
+			case "orange" -> 0xFFFFA500;
+			case "yellow" -> 0xFFFFFF00;
+			case "fuchsia", "magenta" -> 0xFFFF00FF;
+			case "aqua", "cyan" -> 0xFF00FFFF;
+			default -> 0;
+		};
+	}
+}

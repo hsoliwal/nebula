@@ -41,6 +41,8 @@ public final class HtmlLayout {
 	private final Color linkColor;
 	/* fonts by (size class: 0 body, 1-6 headings) x (bold, italic bits), made on first use */
 	private final Font[] fonts = new Font[7 * 4];
+	/* CSS colours by ARGB, made on first use */
+	private final java.util.Map<Integer, Color> colors = new java.util.HashMap<>();
 
 	private int width = -1;
 	/* per image: the width and height it is drawn at once loaded (-1: not loaded), or null before any loads */
@@ -115,7 +117,7 @@ public final class HtmlLayout {
 
 	/** The x where block {@code b}'s content starts (list indent). */
 	public int indent(int b) {
-		return doc.kind[b] == HtmlDocument.LIST_ITEM ? doc.level[b] * LIST_INDENT : 0;
+		return (doc.kind[b] == HtmlDocument.LIST_ITEM ? doc.level[b] * LIST_INDENT : 0) + doc.blockIndent[b];
 	}
 
 	/** The block's text layout, made and cached on demand; null for an image block. */
@@ -202,6 +204,8 @@ public final class HtmlLayout {
 	public void dispose() {
 		clearCache();
 		for (Font font : fonts) if (font != null) font.dispose();
+		colors.values().forEach(Color::dispose);
+		colors.clear();
 		Arrays.fill(fonts, null);
 	}
 
@@ -233,18 +237,21 @@ public final class HtmlLayout {
 		layoutsMade++;
 		TextLayout layout = new TextLayout(device);
 		layout.setWidth(Math.max(1, width - indent(b)));
+		int align = doc.blockAlign[b];
+		layout.setAlignment(align == HtmlStyles.CENTER ? SWT.CENTER : align == HtmlStyles.RIGHT ? SWT.RIGHT : SWT.LEFT);
 		int sizeClass = doc.kind[b] == HtmlDocument.HEADING ? doc.level[b] : 0;
 		int blockBold = sizeClass > 0 ? HtmlDocument.BOLD : 0;
 		layout.setFont(font(sizeClass, blockBold));
 		int start = doc.textStart[b];
 		layout.setText(doc.text.substring(start, doc.textEnd[b]));
 		for (int k = 0; k < doc.runCount[b]; k++) {
-			int r = doc.firstRun[b] + k, s = doc.runStyle[r];
-			if (s == 0) continue;
+			int r = doc.firstRun[b] + k, s = doc.runStyle[r], argb = doc.runColor[r];
+			if (s == 0 && argb == 0) continue;
 			TextStyle style = new TextStyle(font(sizeClass, (s | blockBold) & (HtmlDocument.BOLD | HtmlDocument.ITALIC)), null, null);
 			style.underline = (s & (HtmlDocument.UNDERLINE | HtmlDocument.LINK)) != 0;
 			style.strikeout = (s & HtmlDocument.STRIKE) != 0;
 			if ((s & HtmlDocument.LINK) != 0) style.foreground = linkColor;
+			if (argb != 0) style.foreground = color(argb);
 			layout.setStyle(style, doc.runStart[r] - start, doc.runEnd[r] - start - 1);
 		}
 		return layout;
@@ -258,6 +265,11 @@ public final class HtmlLayout {
 			fonts[slot] = new Font(device, new FontData(base.getName(), Math.max(1, Math.round(base.getHeight() * scale)), style));
 		}
 		return fonts[slot];
+	}
+
+	/** The colour of an opaque ARGB value (CSS), made on first use and disposed with the layout. */
+	public Color color(int argb) {
+		return colors.computeIfAbsent(argb, v -> new Color(device, (v >>> 16) & 0xFF, (v >>> 8) & 0xFF, v & 0xFF));
 	}
 
 	private void clearCache() {

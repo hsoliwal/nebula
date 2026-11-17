@@ -111,6 +111,29 @@ public class HtmlDocumentTest {
 	}
 
 	@Test
+	public void cssGivesRunsTheirColourAndStyleAndBlocksTheirBox() {
+		HtmlDocument d = HtmlDocument.parse("<html><head><style>p.box { background-color: #ff0; text-align: center; margin-left: 12px }"
+				+ " .hot { color: red; font-weight: bold }</style></head><body>"
+				+ "<p class=\"box\">a <span class=\"hot\">b <em>c</em></span> d</p><p style=\"text-decoration: underline\">u</p></body></html>");
+		assertEquals(2, d.blockCount);
+		assertEquals("a b c d", d.blockText(0));
+		assertEquals(0xFFFFFF00, d.blockBackground[0]);
+		assertEquals(HtmlStyles.CENTER, d.blockAlign[0]);
+		assertEquals(12, d.blockIndent[0]);
+		assertArrayEquals(new String[] { "0@a ", BOLD + "@b ", (BOLD | ITALIC) + "@c", "0@ d" }, runs(d, 0));
+		int r = d.firstRun[0];
+		assertEquals(0, d.runColor[r]);
+		assertEquals(0xFFFF0000, d.runColor[r + 1]);
+		assertEquals("the colour inherits into em", 0xFFFF0000, d.runColor[r + 2]);
+		assertEquals(0, d.runColor[r + 3]);
+		assertArrayEquals(new String[] { UNDERLINE + "@u" }, runs(d, 1));
+		assertEquals(0, d.blockBackground[1]);
+		HtmlDocument colourOnly = HtmlDocument.parse("<p>x<span style=\"color: blue\">y</span>z</p>");
+		assertArrayEquals("a colour change alone starts a run", new String[] { "0@x", "0@y", "0@z" }, runs(colourOnly, 0));
+		assertEquals(0xFF0000FF, colourOnly.runColor[colourOnly.firstRun[0] + 1]);
+	}
+
+	@Test
 	public void malformedInputNeverFails() {
 		HtmlDocument d = HtmlDocument.parse("<p>open <b>bold <i>both</p> after</b> < lone <p");
 		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:open bold both", PARAGRAPH + ":0:0:after < lone <p" }, blocks(d));

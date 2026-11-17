@@ -122,6 +122,17 @@ public class HtmlLayoutTest {
 	}
 
 	@Test
+	public void cssAlignsIndentsAndColours() {
+		HtmlLayout l = layout("<p style=\"text-align: right; margin-left: 20px\">a <span style=\"color: #102030\">b</span></p><ul><li style=\"margin-left: 5px\">x</li></ul>", 400);
+		TextLayout text = l.textLayout(0);
+		assertEquals(SWT.RIGHT, text.getAlignment());
+		assertEquals(20, l.indent(0));
+		assertEquals(HtmlLayout.LIST_INDENT + 5, l.indent(1));
+		org.eclipse.swt.graphics.Color colour = text.getStyle(2).foreground;
+		assertEquals(new org.eclipse.swt.graphics.RGB(0x10, 0x20, 0x30), colour.getRGB());
+	}
+
+	@Test
 	public void linkAtHitsOnlyTheLink() {
 		HtmlLayout l = layout("<p>plain words then <a href=\"next.html\">the link</a> end</p>", 2000);
 		TextLayout text = l.textLayout(0);

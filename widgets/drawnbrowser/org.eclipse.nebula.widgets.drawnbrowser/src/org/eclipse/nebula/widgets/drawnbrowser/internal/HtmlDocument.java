@@ -16,7 +16,8 @@ import java.util.Arrays;
  * string; its style runs (bold, italic, underline, strike-through, link) are ranges of that slice.
  * <p>
  * Semantics follow prasser/swtbrowser's tag handlers (Apache-2.0, 92120bef61): p, h1-h6, br, strong/b, em/i, u,
- * del/strike/s, a, ul, ol, li, img; script and style content is not text. Whitespace collapses as in HTML's normal
+ * del/strike/s, a, ul, ol, li, img; script content is not text; style content and style attributes are the CSS subset
+ * of {@link HtmlStyles}. Whitespace collapses as in HTML's normal
  * flow: runs of white space become one space, and a block's text has no leading or trailing space; br is a hard
  * line break.
  * </p>
@@ -42,10 +43,14 @@ public final class HtmlDocument {
 	 */
 	public int[] kind = new int[16], level = new int[16], marker = new int[16], textStart = new int[16],
 			textEnd = new int[16], firstRun = new int[16], runCount = new int[16], image = new int[16];
+	/** Per block, from CSS: background (ARGB, 0 none), alignment ({@link HtmlStyles#LEFT} ...), extra indent px. */
+	public int[] blockBackground = new int[16], blockAlign = new int[16], blockIndent = new int[16];
 
 	public int runTotal;
 	/** Per run: start and end in {@link #text}, style bits, link index or -1. */
 	public int[] runStart = new int[32], runEnd = new int[32], runStyle = new int[32], runLink = new int[32];
+	/** Per run, from CSS: text colour (ARGB, 0 the widget's). */
+	public int[] runColor = new int[32];
 
 	public int linkCount;
 	public String[] href = new String[8];
@@ -78,15 +83,31 @@ public final class HtmlDocument {
 		int open = -1;                 // the block being filled, or -1
 		int style, link = -1;          // current inline style bits and link
 		int bold, italic, underline, strike;
-		int skip;                      // inside script or style
+		int skip;                      // inside script
+		/* CSS: the sheet, the text of a style element being read, and one computed style per open element */
+		final HtmlStyles styles = new HtmlStyles();
+		final StringBuilder css = new StringBuilder();
+		int cssDepth;
+		int[][] frames = { HtmlStyles.root() };
+		String[] frameTags = { "" };
+		int depth;
 		int listDepth;
 		int[] ordinals = new int[8];   // per list depth: next ordinal, or BULLET for ul
 		boolean space;                 // a collapsed space is pending
 
 		@Override
 		public void startTag(String name, String[] attributes, boolean selfClosing) {
+			flushSpace();
+			if (name.equals("style")) {
+				cssDepth += selfClosing ? 0 : 1;
+				return;
+			}
+			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("script")) {
+				push(name, styles.compute(frames[depth], name, HtmlTokenizer.attribute(attributes, "class"),
+						HtmlTokenizer.attribute(attributes, "style")));
+			}
 			switch (name) {
-				case "script", "style" -> skip += selfClosing ? 0 : 1;
+				case "script" -> skip += selfClosing ? 0 : 1;
 				case "p", "div" -> openBlock(PARAGRAPH, 0, 0);
 				case "h1", "h2", "h3", "h4", "h5", "h6" -> openBlock(HEADING, name.charAt(1) - '0', 0);
 				case "ul", "ol" -> {
@@ -125,9 +146,17 @@ public final class HtmlDocument {
 
 		@Override
 		public void endTag(String name) {
-			if (name.equals("a")) flushSpace();
+			flushSpace();
+			if (name.equals("style")) {
+				if (cssDepth > 0 && --cssDepth == 0) {
+					styles.addSheet(css.toString());
+					css.setLength(0);
+				}
+				return;
+			}
+			pop(name);
 			switch (name) {
-				case "script", "style" -> skip = Math.max(0, skip - 1);
+				case "script" -> skip = Math.max(0, skip - 1);
 				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li" -> closeBlock();
 				case "ul", "ol" -> {
 					closeBlock();
@@ -145,6 +174,10 @@ public final class HtmlDocument {
 
 		@Override
 		public void text(String text) {
+			if (cssDepth > 0) {
+				css.append(text);
+				return;
+			}
 			if (skip > 0) return;
 			for (int i = 0, n = text.length(); i < n; i++) {
 				char c = text.charAt(i);
@@ -185,10 +218,12 @@ public final class HtmlDocument {
 		void appendRun(char c) {
 			int at = chars.length();
 			chars.append(c);
-			int effective = link >= 0 ? style | LINK : style;
+			int[] frame = frames[depth];
+			int effective = (link >= 0 ? style | LINK : style) | frame[HtmlStyles.BITS], color = frame[HtmlStyles.COLOR];
 			HtmlDocument d = doc;
 			int last = d.runTotal - 1;
-			if (d.runCount[open] > 0 && d.runEnd[last] == at && d.runStyle[last] == effective && d.runLink[last] == link) {
+			if (d.runCount[open] > 0 && d.runEnd[last] == at && d.runStyle[last] == effective && d.runLink[last] == link
+					&& d.runColor[last] == color) {
 				d.runEnd[last] = at + 1;
 				return;
 			}
@@ -198,11 +233,13 @@ public final class HtmlDocument {
 				d.runEnd = Arrays.copyOf(d.runEnd, capacity);
 				d.runStyle = Arrays.copyOf(d.runStyle, capacity);
 				d.runLink = Arrays.copyOf(d.runLink, capacity);
+				d.runColor = Arrays.copyOf(d.runColor, capacity);
 			}
 			d.runStart[d.runTotal] = at;
 			d.runEnd[d.runTotal] = at + 1;
 			d.runStyle[d.runTotal] = effective;
 			d.runLink[d.runTotal] = link;
+			d.runColor[d.runTotal] = color;
 			if (d.runCount[open]++ == 0) d.firstRun[open] = d.runTotal;
 			d.runTotal++;
 		}
@@ -220,6 +257,9 @@ public final class HtmlDocument {
 				d.firstRun = Arrays.copyOf(d.firstRun, capacity);
 				d.runCount = Arrays.copyOf(d.runCount, capacity);
 				d.image = Arrays.copyOf(d.image, capacity);
+				d.blockBackground = Arrays.copyOf(d.blockBackground, capacity);
+				d.blockAlign = Arrays.copyOf(d.blockAlign, capacity);
+				d.blockIndent = Arrays.copyOf(d.blockIndent, capacity);
 			}
 			open = d.blockCount++;
 			d.kind[open] = kind;
@@ -229,7 +269,39 @@ public final class HtmlDocument {
 			d.firstRun[open] = d.runTotal;
 			d.runCount[open] = 0;
 			d.image[open] = -1;
+			// an explicit block's own element is the top frame; an implicit paragraph only inherits the alignment
+			int[] frame = frames[depth];
+			boolean own = kind != IMAGE && depth > 0 && blockTag(frameTags[depth]);
+			d.blockBackground[open] = own ? frame[HtmlStyles.BACKGROUND] : 0;
+			d.blockIndent[open] = own ? frame[HtmlStyles.INDENT] : 0;
+			d.blockAlign[open] = frame[HtmlStyles.ALIGN];
 			space = false;
+		}
+
+		static boolean blockTag(String tag) {
+			return switch (tag) {
+				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li" -> true;
+				default -> false;
+			};
+		}
+
+		void push(String tag, int[] frame) {
+			if (++depth == frames.length) {
+				frames = Arrays.copyOf(frames, 2 * frames.length);
+				frameTags = Arrays.copyOf(frameTags, 2 * frameTags.length);
+			}
+			frames[depth] = frame;
+			frameTags[depth] = tag;
+		}
+
+		/* closes the innermost open element of that tag and every element opened inside it (misnested tags) */
+		void pop(String tag) {
+			for (int k = depth; k > 0; k--) {
+				if (frameTags[k].equals(tag)) {
+					depth = k - 1;
+					return;
+				}
+			}
 		}
 
 		void closeBlock() {
