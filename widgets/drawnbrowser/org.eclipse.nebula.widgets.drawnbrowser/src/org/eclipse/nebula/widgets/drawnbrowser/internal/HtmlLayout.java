@@ -43,6 +43,8 @@ public final class HtmlLayout {
 	private final Font[] fonts = new Font[7 * 4];
 
 	private int width = -1;
+	/* per image: the width and height it is drawn at once loaded (-1: not loaded), or null before any loads */
+	private int[] shown;
 	/* block tops (top[b] valid for b <= measured) and heights; measured = number of blocks measured so far */
 	private int[] top, height;
 	private int measured;
@@ -158,6 +160,45 @@ public final class HtmlLayout {
 		return null;
 	}
 
+	/**
+	 * Gives image {@code index} its natural size once its pixels are loaded. A width or height the tag declared is
+	 * kept; a missing one is taken from the image, scaled to keep its aspect ratio. Blocks from the image's block on
+	 * are measured again.
+	 *
+	 * @return whether the image's box changed
+	 */
+	public boolean setNaturalSize(int index, int naturalWidth, int naturalHeight) {
+		int w = doc.imageWidth[index], h = doc.imageHeight[index];
+		int width = w > 0 ? w : h > 0 && naturalHeight > 0 ? Math.round((float) naturalWidth * h / naturalHeight) : naturalWidth;
+		int height = h > 0 ? h : w > 0 && naturalWidth > 0 ? Math.round((float) naturalHeight * w / naturalWidth) : naturalHeight;
+		if (width == shownWidth(index) && height == shownHeight(index)) return false;
+		if (shown == null) {
+			shown = new int[2 * doc.imageCount];
+			Arrays.fill(shown, -1);
+		}
+		shown[2 * index] = width;
+		shown[2 * index + 1] = height;
+		for (int b = 0; b < measured; b++) {
+			if (doc.image[b] == index) {
+				measured = b;
+				break;
+			}
+		}
+		return true;
+	}
+
+	/** The width image {@code index} is drawn at: declared, natural once loaded, else the placeholder. */
+	public int shownWidth(int index) {
+		if (shown != null && shown[2 * index] > 0) return shown[2 * index];
+		return doc.imageWidth[index] > 0 ? doc.imageWidth[index] : IMAGE_PLACEHOLDER;
+	}
+
+	/** The height image {@code index} is drawn at: declared, natural once loaded, else the placeholder. */
+	public int shownHeight(int index) {
+		if (shown != null && shown[2 * index + 1] > 0) return shown[2 * index + 1];
+		return doc.imageHeight[index] > 0 ? doc.imageHeight[index] : IMAGE_PLACEHOLDER;
+	}
+
 	public void dispose() {
 		clearCache();
 		for (Font font : fonts) if (font != null) font.dispose();
@@ -174,8 +215,7 @@ public final class HtmlLayout {
 		int b = measured;
 		int h;
 		if (doc.kind[b] == HtmlDocument.IMAGE) {
-			int i = doc.image[b];
-			h = doc.imageHeight[i] > 0 ? doc.imageHeight[i] : IMAGE_PLACEHOLDER;
+			h = shownHeight(doc.image[b]);
 		} else {
 			boolean keep = false;
 			TextLayout layout = null;

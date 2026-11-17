@@ -144,6 +144,28 @@ public class DrawnBrowserTest {
 	}
 
 	@Test
+	public void anImageLoadsWhenShownAndIsPainted() {
+		open("<img src=\"" + org.eclipse.nebula.widgets.drawnbrowser.internal.ImageStoreTest.dataUri(30, 20, 0xFF0000) + "\">");
+		long end = System.currentTimeMillis() + 10_000;
+		int red = 0;
+		while (red < 400 && System.currentTimeMillis() < end) {
+			settle();
+			Image shot = new Image(display, 60, 40);
+			GC gc = new GC(browser);
+			gc.copyArea(shot, 0, 0);
+			gc.dispose();
+			ImageData data = shot.getImageData();
+			shot.dispose();
+			red = 0;
+			for (int y = 0; y < 40; y++) for (int x = 0; x < 60; x++) {
+				org.eclipse.swt.graphics.RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+				if (rgb.red > 200 && rgb.green < 60 && rgb.blue < 60) red++;
+			}
+		}
+		assertTrue("red pixels " + red, red >= 30 * 20 - 40);
+	}
+
+	@Test
 	public void textIsPaintedInTheFirstBlock() {
 		open("<h1>Drawn</h1>");
 		Image shot = new Image(display, 200, 60);
