@@ -43,11 +43,11 @@ public class GridViewportDamageAtoms_Test {
 			int header = EXTENTS[random.nextInt(EXTENTS.length)];
 			int footer = EXTENTS[random.nextInt(EXTENTS.length)];
 			assertEquals("header sample " + sample,
-					originalHeader(clip, client, header),
-					GridViewportDamage.intersectsHeader(clip, client, header));
+					Boolean.valueOf(originalHeader(clip, client, header)),
+					Boolean.valueOf(GridViewportDamage.intersectsHeader(clip, client, header)));
 			assertEquals("footer sample " + sample,
-					originalFooter(clip, client, footer),
-					GridViewportDamage.intersectsFooter(clip, client, footer));
+					Boolean.valueOf(originalFooter(clip, client, footer)),
+					Boolean.valueOf(GridViewportDamage.intersectsFooter(clip, client, footer)));
 			for (int bits = 0; bits < 16; bits++) {
 				boolean headerVisible = (bits & 1) != 0;
 				boolean footerVisible = (bits & 2) != 0;
@@ -65,10 +65,10 @@ public class GridViewportDamageAtoms_Test {
 	@Test
 	public void visibleHeaderFooterBoundariesRemainExclusive() {
 		Rectangle client = new Rectangle(10, 20, 200, 100);
-		assertEquals(originalHeader(new Rectangle(10, 36, 10, 1), client, 16),
-				GridViewportDamage.intersectsHeader(new Rectangle(10, 36, 10, 1), client, 16));
-		assertEquals(originalFooter(new Rectangle(10, 103, 10, 1), client, 16),
-				GridViewportDamage.intersectsFooter(new Rectangle(10, 103, 10, 1), client, 16));
+		assertEquals(Boolean.valueOf(originalHeader(new Rectangle(10, 36, 10, 1), client, 16)),
+				Boolean.valueOf(GridViewportDamage.intersectsHeader(new Rectangle(10, 36, 10, 1), client, 16)));
+		assertEquals(Boolean.valueOf(originalFooter(new Rectangle(10, 103, 10, 1), client, 16)),
+				Boolean.valueOf(GridViewportDamage.intersectsFooter(new Rectangle(10, 103, 10, 1), client, 16)));
 	}
 
 	private static Rectangle rectangle(Random random) {
