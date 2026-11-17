@@ -189,6 +189,51 @@ public class DrawnBrowserTest {
 		assertTrue("green pixels " + green, green > 300 * 20);
 	}
 
+	/* the view's pixels as the window shows them */
+	private int[] capture() {
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		Image shot = new Image(display, area.width, area.height);
+		GC gc = new GC(browser);
+		gc.copyArea(shot, 0, 0);
+		gc.dispose();
+		ImageData data = shot.getImageData();
+		shot.dispose();
+		int[] pixels = new int[area.width * area.height];
+		for (int y = 0; y < area.height; y++) data.getPixels(0, y, area.width, pixels, y * area.width);
+		return pixels;
+	}
+
+	/* the first row (of the view) where two captures differ, or -1 */
+	private int firstDifferentRow(int[] a, int[] b) {
+		int width = browser.getClientArea().width;
+		for (int i = 0; i < a.length; i++) if (a[i] != b[i]) return i / width;
+		return -1;
+	}
+
+	/**
+	 * The backing store's delta path (the kept pixels moved, only the exposed band painted) must leave the window
+	 * exactly as a full repaint at the new position would: scrolling down, up, and by less than a line. With
+	 * {@code -Dswt.widget.mode.DrawnBrowser=maya} the same test covers maya's retained back buffer.
+	 */
+	@Test
+	public void scrolledPixelsEqualAFullRepaint() {
+		StringBuilder html = new StringBuilder();
+		for (int i = 0; i < 80; i++) {
+			html.append("<p style=\"background-color: #").append(String.format("%06x", (i * 0x2F1B37) & 0xFFFFFF)).append("\">Row ").append(i)
+					.append(" <b>bold</b> <a href=\"x\">link</a></p>");
+		}
+		open(html.toString());
+		for (int target : new int[] { 24, 31, 10, 9, 200, 150 }) {
+			browser.setScrollY(target);
+			settle();
+			int[] moved = capture();
+			browser.redraw();
+			settle();
+			int[] full = capture();
+			assertEquals("scrolled to " + target + ": first row that differs from a full repaint", -1, firstDifferentRow(moved, full));
+		}
+	}
+
 	@Test
 	public void textIsPaintedInTheFirstBlock() {
 		open("<h1>Drawn</h1>");
