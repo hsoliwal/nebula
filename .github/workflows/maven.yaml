@@ -84,8 +84,30 @@ jobs:
         if [[ "${M3_RELEASE_VERIFICATION:-}" == "true" ]]; then
           release_flags=(-DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false)
         fi
-        sudo apt-get install -y xvfb x11-xserver-utils
-        xvfb-run --auto-servernum mvn -V -B clean verify "${release_flags[@]}" \
+        sudo apt-get install -y xvfb x11-xserver-utils openbox wmctrl
+        # A real X11 window manager must deliver native Iconify/Deiconify; xvfb alone
+        # supplies a display but does not provide window-management transitions.
+        xvfb-run --auto-servernum bash -c '
+          set -euo pipefail
+          openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/nebula-openbox.log" 2>&1 &
+          wm_pid=$!
+          trap "kill $wm_pid 2>/dev/null || true" EXIT
+          for attempt in $(seq 1 100); do
+            if wmctrl -m >/dev/null 2>&1; then
+              break
+            fi
+            if ! kill -0 "$wm_pid" 2>/dev/null; then
+              echo "openbox exited before becoming the X11 window manager" >&2
+              exit 1
+            fi
+            sleep 0.1
+          done
+          if ! wmctrl -m; then
+            echo "no native window manager registered on $DISPLAY" >&2
+            exit 1
+          fi
+          "$@"
+        ' nebula-wm mvn -V -B clean verify "${release_flags[@]}" \
           -Dtycho.localArtifacts=ignore \
           -Dnebula.grid.viewport.screenshots.screen=true \
           "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
