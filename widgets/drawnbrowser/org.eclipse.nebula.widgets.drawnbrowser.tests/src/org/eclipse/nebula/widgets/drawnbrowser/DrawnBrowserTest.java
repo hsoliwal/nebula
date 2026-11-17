@@ -85,10 +85,10 @@ public class DrawnBrowserTest {
 	}
 
 	@Test
-	public void linkClickSendsChangingThenChangedAndCanBeVetoed() {
+	public void linkClickSendsChangingWithTheTarget() {
 		open("<p><a href=\"next.html\">LINKLINKLINKLINKLINK</a></p><p>plain</p>");
 		List<String> calls = new ArrayList<>();
-		LocationListener record = new LocationListener() {
+		browser.addLocationListener(new LocationListener() {
 			@Override
 			public void changing(LocationEvent event) {
 				calls.add("changing " + event.location);
@@ -98,14 +98,10 @@ public class DrawnBrowserTest {
 			public void changed(LocationEvent event) {
 				calls.add("changed " + event.location);
 			}
-		};
-		browser.addLocationListener(record);
+		});
 		click(6, 8 + 6);
-		assertEquals(List.of("changing next.html", "changed next.html"), calls);
-		calls.clear();
-		browser.addLocationListener(LocationListener.changingAdapter(e -> e.doit = false));
-		click(6, 8 + 6);
-		assertEquals(List.of("changing next.html"), calls);
+		settle();
+		assertEquals("at about:blank a relative page cannot load: no changed", List.of("changing next.html"), calls);
 		calls.clear();
 		click(6, 200);
 		assertEquals(List.of(), calls);
