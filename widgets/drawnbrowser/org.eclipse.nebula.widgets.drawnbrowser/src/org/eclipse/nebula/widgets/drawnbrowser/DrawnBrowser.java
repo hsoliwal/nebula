@@ -30,10 +30,11 @@ import org.eclipse.swt.widgets.ScrollBar;
  * the blocks of the damaged area are painted. Scrolling moves the window's own pixels ({@link #scroll}) and repaints
  * only the band that comes into view; the page is laid out lazily, as far down as it is shown.
  * <p>
- * The API keeps the names of {@link org.eclipse.swt.browser.Browser}: {@link #setText(String)},
- * {@link #getText()}, {@link #addLocationListener(LocationListener)}. A click on a link sends
- * {@link LocationListener#changing} (a listener may veto it with {@code doit = false}), then
- * {@link LocationListener#changed}. Supported HTML: p, div, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
+ * The API keeps the names of {@link org.eclipse.swt.browser.Browser}: {@link #setText(String)}, {@link #setUrl(String)},
+ * {@link #getText()}, {@link #getUrl()}, {@link #back()}, {@link #forward()}, {@link #stop()},
+ * {@link #addLocationListener(LocationListener)}. A click on a link navigates to it, resolved against the page's
+ * location: {@link LocationListener#changing} (a listener may veto it with {@code doit = false}), then, once the page
+ * has loaded and is shown, {@link LocationListener#changed}. Supported HTML: p, div, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
  * img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script and style
  * are ignored.
  * </p>
@@ -53,6 +54,16 @@ public class DrawnBrowser extends Canvas {
 	private final ImageStore images;
 	private int scrollY;
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
+	/* the page's location ("about:blank" for setText), the history and the position in it */
+	private String location = ABOUT_BLANK;
+	private final java.util.List<String> history = new java.util.ArrayList<>();
+	private int historyIndex = -1;
+	/* bumped by every navigation and by stop(): a page that arrives for an older one is dropped */
+	private int generation;
+	private java.util.concurrent.ExecutorService pageLoader;
+
+	private static final String ABOUT_BLANK = "about:blank";
+	private static final int PUSH = 0, BACK = -1, FORWARD = 1;
 
 	/**
 	 * @param parent a composite
@@ -70,20 +81,78 @@ public class DrawnBrowser extends Canvas {
 		getVerticalBar().addListener(SWT.Selection, e -> scrollTo(getVerticalBar().getSelection()));
 	}
 
-	/** Shows {@code text} as HTML; answers true, as {@link org.eclipse.swt.browser.Browser#setText(String)} does. */
+	/**
+	 * Shows {@code text} as HTML at {@code about:blank}; answers true, as
+	 * {@link org.eclipse.swt.browser.Browser#setText(String)} does. Relative links and images are then taken as they
+	 * are written.
+	 */
 	public boolean setText(String text) {
 		checkWidget();
 		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		generation++;
+		location = ABOUT_BLANK;
+		show(text);
+		return true;
+	}
+
+	/**
+	 * Loads the page at {@code url} off the UI thread: {@link LocationListener#changing} first (a listener may veto
+	 * it), then, once the page is shown, {@link LocationListener#changed}. A page that cannot be loaded leaves the
+	 * current one; a newer navigation replaces an older one still loading. URLs are those {@link java.net.URLConnection}
+	 * opens (file:, http:, https:).
+	 *
+	 * @return whether the navigation started (false when a listener vetoed it)
+	 */
+	public boolean setUrl(String url) {
+		checkWidget();
+		if (url == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		return navigate(url, PUSH);
+	}
+
+	/** The location of the page shown: its URL, or {@code about:blank} for {@link #setText(String)}. */
+	public String getUrl() {
+		checkWidget();
+		return location;
+	}
+
+	public boolean isBackEnabled() {
+		checkWidget();
+		return historyIndex > 0;
+	}
+
+	public boolean isForwardEnabled() {
+		checkWidget();
+		return historyIndex >= 0 && historyIndex < history.size() - 1;
+	}
+
+	/** Goes to the previous page of the history; answers whether there was one. */
+	public boolean back() {
+		checkWidget();
+		return isBackEnabled() && navigate(history.get(historyIndex - 1), BACK);
+	}
+
+	/** Goes to the next page of the history; answers whether there was one. */
+	public boolean forward() {
+		checkWidget();
+		return isForwardEnabled() && navigate(history.get(historyIndex + 1), FORWARD);
+	}
+
+	/** Drops the page being loaded, if any. */
+	public void stop() {
+		checkWidget();
+		generation++;
+	}
+
+	private void show(String text) {
 		html = text;
 		document = HtmlDocument.parse(text);
 		layout.dispose();
 		layout = newLayout();
 		scrollY = 0;
 		relayout();
-		return true;
 	}
 
-	/** The HTML last given to {@link #setText(String)}. */
+	/** The HTML of the page shown. */
 	public String getText() {
 		checkWidget();
 		return html;
@@ -132,8 +201,10 @@ public class DrawnBrowser extends Canvas {
 			}
 			case SWT.KeyDown -> key(e);
 			case SWT.Dispose -> {
+				generation++;
 				layout.dispose();
 				images.dispose();
+				if (pageLoader != null) pageLoader.shutdownNow();
 			}
 			default -> {
 			}
@@ -190,7 +261,7 @@ public class DrawnBrowser extends Canvas {
 			int top = layout.top(b) - scrollY + HtmlLayout.BLOCK_GAP, left = layout.indent(b);
 			if (document.kind[b] == HtmlDocument.IMAGE) {
 				int i = document.image[b], w = layout.shownWidth(i), h = layout.shownHeight(i);
-				Image image = images.get(document.source[i]);
+				Image image = images.get(resolve(document.source[i]));
 				if (image != null && !image.isDisposed()) {
 					Rectangle size = image.getBounds();
 					gc.drawImage(image, 0, 0, size.width, size.height, left, top, w, h);
@@ -214,25 +285,90 @@ public class DrawnBrowser extends Canvas {
 		Rectangle size = image.getBounds();
 		boolean moved = false;
 		for (int i = 0; i < document.imageCount; i++) {
-			if (source.equals(document.source[i])) moved |= layout.setNaturalSize(i, size.width, size.height);
+			if (source.equals(resolve(document.source[i]))) moved |= layout.setNaturalSize(i, size.width, size.height);
 		}
 		if (moved) relayout();
 		else redraw();
 	}
 
 	private void click(int x, int y) {
-		String location = layout.linkAt(x, y + scrollY);
-		if (location == null) return;
+		String target = layout.linkAt(x, y + scrollY);
+		if (target != null) navigate(resolve(target), PUSH);
+	}
+
+	/* changing (vetoable), then the page loads off the UI thread, then it is shown and changed is sent */
+	private boolean navigate(String url, int mode) {
 		LocationEvent changing = new LocationEvent(this);
-		changing.location = location;
+		changing.location = url;
 		changing.top = true;
 		changing.doit = true;
 		for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) listener.changing(changing);
-		if (!changing.doit) return;
+		if (!changing.doit) return false;
+		int expected = ++generation;
+		if (pageLoader == null) {
+			pageLoader = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+				Thread thread = new Thread(r, "DrawnBrowser pages");
+				thread.setDaemon(true);
+				return thread;
+			});
+		}
+		org.eclipse.swt.widgets.Display display = getDisplay();
+		pageLoader.execute(() -> {
+			String page = fetch(url);
+			if (page != null && !display.isDisposed()) display.asyncExec(() -> arrived(url, mode, expected, page));
+		});
+		return true;
+	}
+
+	private void arrived(String url, int mode, int expected, String page) {
+		if (isDisposed() || expected != generation) return;
+		location = url;
+		if (mode == PUSH) {
+			while (history.size() > historyIndex + 1) history.remove(history.size() - 1);
+			history.add(url);
+			historyIndex++;
+		} else {
+			historyIndex += mode;
+		}
+		show(page);
 		LocationEvent changed = new LocationEvent(this);
-		changed.location = location;
+		changed.location = url;
 		changed.top = true;
 		for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) listener.changed(changed);
+	}
+
+	/* the page's text, or null; runs on the loader thread */
+	private static String fetch(String url) {
+		try {
+			java.net.URLConnection connection = java.net.URI.create(url).toURL().openConnection();
+			connection.setConnectTimeout(10_000);
+			connection.setReadTimeout(10_000);
+			String type = connection.getContentType();
+			java.nio.charset.Charset charset = java.nio.charset.StandardCharsets.UTF_8;
+			int at = type == null ? -1 : type.toLowerCase(java.util.Locale.ROOT).indexOf("charset=");
+			if (at >= 0) {
+				try {
+					charset = java.nio.charset.Charset.forName(type.substring(at + 8).replace("\"", "").trim());
+				} catch (IllegalArgumentException e) {
+					// keep UTF-8
+				}
+			}
+			try (java.io.InputStream in = connection.getInputStream()) {
+				return new String(in.readAllBytes(), charset);
+			}
+		} catch (java.io.IOException | IllegalArgumentException e) {
+			return null;
+		}
+	}
+
+	/* a link or image reference against the page's location */
+	private String resolve(String reference) {
+		if (location.equals(ABOUT_BLANK)) return reference;
+		try {
+			return java.net.URI.create(location).resolve(reference).toString();
+		} catch (IllegalArgumentException e) {
+			return reference;
+		}
 	}
 
 	private void key(Event e) {
