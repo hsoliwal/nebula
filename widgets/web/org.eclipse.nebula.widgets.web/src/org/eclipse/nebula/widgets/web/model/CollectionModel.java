@@ -30,6 +30,8 @@ import static org.eclipse.nebula.widgets.web.model.WebStates.*;
 public class CollectionModel extends WebModel implements CollectionApi {
 	public static final int KANBAN = 0, SWIPE = 1, PULL = 2, INFINITE = 3, REORDER = 4, MESSAGES = 5, PALETTE = 6, GALLERY = 7, MASONRY = 8;
 	private int pull, loadedAt = -1, threshold = 5, columns = 1, dragFrom = -1, dragX, dragY;
+	/** React-style identities are references owned by this collection, never per-item proxies. */
+	private String[] stableKeys;
 	// The parent owns primitive geometry for every masonry item; no per-tile objects.
 	private long[] masonryTop;
 	private short[] masonryColumn;
@@ -39,6 +41,158 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	public CollectionModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
 		itemExtent = mode == MESSAGES ? 56 : mode == GALLERY || mode == MASONRY ? 112 : 40;
+	}
+
+	/**
+	 * Reconciles a declarative sequence in one layout/delta publication. Stable keys preserve
+	 * per-row primitive state, value, group, aux and focus across reorder and relabel; new
+	 * keys start empty. The caller's arrays are copied before validation and never retained.
+	 * This is a native row-state bridge, not a JavaScript/React hook interpreter.
+	 */
+	@Override
+	public void reconcile(String[] keys, String[] labels) {
+		if (keys == null || labels == null || keys.length != labels.length) {
+			throw new IllegalArgumentException("key and label arrays must have equal non-null lengths");
+		}
+		String[] incoming = keys.clone(), words = labels.clone();
+		int[] unique = keyTable(incoming.length);
+		indexKeys(incoming, unique);
+		if (sameSnapshot(incoming, words)) {
+			return;
+		}
+		int n = incoming.length;
+		int[] previous = stableKeys == null ? null : keyTable(stableKeys.length);
+		if (previous != null) {
+			indexKeys(stableKeys, previous);
+		}
+		int[] stagedFlags = new int[n], stagedValue = new int[n], stagedAux = new int[n],
+				stagedGroup = new int[n];
+		String[] stagedDetail = new String[n];
+		int nextFocus = -1, nextHover = -1, nextPressed = -1;
+		for (int i = 0; i < n; i++) {
+			int old = previous == null ? -1 : lookup(incoming[i], stableKeys, previous);
+			if (old < 0) {
+				continue;
+			}
+			stagedFlags[i] = flags[old];
+			stagedValue[i] = value[old];
+			stagedAux[i] = aux[old];
+			stagedGroup[i] = group[old];
+			stagedDetail[i] = detail[old];
+			if (old == focus) nextFocus = i;
+			if (old == hover) nextHover = i;
+			if (old == pressed) nextPressed = i;
+		}
+		int retired = count;
+		if (n > flags.length) {
+			grow(n);
+		}
+		System.arraycopy(stagedFlags, 0, flags, 0, n);
+		System.arraycopy(stagedValue, 0, value, 0, n);
+		System.arraycopy(stagedAux, 0, aux, 0, n);
+		System.arraycopy(stagedGroup, 0, group, 0, n);
+		System.arraycopy(words, 0, text, 0, n);
+		System.arraycopy(stagedDetail, 0, detail, 0, n);
+		java.util.Arrays.fill(rects, 0, Math.max(n, retired) * 4, 0);
+		if (retired > n) {
+			blank(n, retired);
+		}
+		count = n;
+		stableKeys = incoming;
+		forgetLocalizationKeys();
+		focus = nextFocus;
+		hover = nextHover;
+		pressed = nextPressed;
+		loadedAt = -1;
+		rebuildFilter();
+		scroll = Math.max(0L, Math.min(scroll, Math.max(0L, logicalExtent() - viewLength())));
+		relayout(-1, D_ITEMS);
+	}
+
+	@Override
+	public String stableKey(int item) {
+		check(item);
+		return stableKeys == null ? null : stableKeys[item];
+	}
+
+	private boolean sameSnapshot(String[] keys, String[] labels) {
+		if (stableKeys == null || count != keys.length) {
+			return false;
+		}
+		for (int i = 0; i < count; i++) {
+			if (!stableKeys[i].equals(keys[i]) || !java.util.Objects.equals(text[i], labels[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** A primitive open-addressed index: collision resolution checks complete String keys. */
+	private static int[] keyTable(int n) {
+		if (n > (1 << 28)) {
+			throw new IllegalArgumentException("keyed snapshot exceeds addressable index limit");
+		}
+		int size = 8;
+		while (size < n * 2) {
+			size <<= 1;
+		}
+		return new int[size];
+	}
+
+	private static void indexKeys(String[] keys, int[] table) {
+		int mask = table.length - 1;
+		for (int i = 0; i < keys.length; i++) {
+			String key = keys[i];
+			if (key == null) {
+				throw new IllegalArgumentException("null stable key at " + i);
+			}
+			int hash = key.hashCode();
+			int slot = (hash ^ (hash >>> 16)) & mask;
+			while (table[slot] != 0) {
+				if (keys[table[slot] - 1].equals(key)) {
+					throw new IllegalArgumentException("duplicate stable key: " + key);
+				}
+				slot = (slot + 1) & mask;
+			}
+			table[slot] = i + 1;
+		}
+	}
+
+	private static int lookup(String key, String[] keys, int[] table) {
+		int mask = table.length - 1;
+		int hash = key.hashCode(), slot = (hash ^ (hash >>> 16)) & mask;
+		while (table[slot] != 0) {
+			int i = table[slot] - 1;
+			if (keys[i].equals(key)) {
+				return i;
+			}
+			slot = (slot + 1) & mask;
+		}
+		return -1;
+	}
+
+	@Override
+	public int add(String label, String detail) {
+		stableKeys = null;
+		return super.add(label, detail);
+	}
+
+	@Override
+	public void remove(int item) {
+		super.remove(item);
+		stableKeys = null;
+	}
+
+	@Override
+	public void clear() {
+		stableKeys = null;
+		super.clear();
+	}
+
+	@Override
+	public void setLogicalCount(int n) {
+		super.setLogicalCount(n);
+		stableKeys = null;
 	}
 
 	@Override

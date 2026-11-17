@@ -221,6 +221,14 @@ public abstract class WebLanes implements WebApi {
 		relayout(-1, D_TEXT);
 	}
 
+	/**
+	 * A declarative snapshot supplies new source labels, so the next localization
+	 * pass must capture those labels rather than a retired snapshot's source keys.
+	 */
+	protected final void forgetLocalizationKeys() {
+		keys = null;
+	}
+
 	@Override
 	public void setDelta(WebDelta d) {
 		delta = d;
