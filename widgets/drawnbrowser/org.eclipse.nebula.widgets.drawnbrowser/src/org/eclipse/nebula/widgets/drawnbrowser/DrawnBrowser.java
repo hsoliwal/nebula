@@ -226,7 +226,11 @@ public class DrawnBrowser extends Canvas {
 		bar.setValues(viewport.y(), 0, Math.max(page, layout.totalHeight()), page, LINE, page);
 	}
 
-	/* moves the window's pixels by the scroll delta; only the band that comes into view is damaged and repainted */
+	/*
+	 * moves the window's pixels by the scroll delta; only the band that comes into view is damaged and repainted.
+	 * Control.scroll repaints only the part of its source the destination does not cover: for a move of more than half
+	 * the view that leaves rows between them stale, so the exposed band is damaged explicitly (as StyledText does).
+	 */
 	private void scrollTo(int y) {
 		layout.ensure(Math.max(0, y) + getClientArea().height);
 		sync();
@@ -235,7 +239,9 @@ public class DrawnBrowser extends Canvas {
 			if (viewport.isFullRepaint(delta)) {
 				redraw();
 			} else {
-				scroll(0, viewport.copyTo(delta), 0, viewport.copyFrom(delta), getClientArea().width, viewport.copyHeight(delta), false);
+				int width = getClientArea().width;
+				scroll(0, viewport.copyTo(delta), 0, viewport.copyFrom(delta), width, viewport.copyHeight(delta), false);
+				redraw(0, viewport.exposedTop(delta), width, viewport.exposedHeight(delta), false);
 			}
 		}
 		updateBar();
