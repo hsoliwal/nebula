@@ -40,6 +40,23 @@ public interface CollectionApi extends WebApi {
 		return null;
 	}
 
+	/**
+	 * Enables an opt-in, zero-basis weighted row layout for gallery tiles. Each
+	 * unsigned short is a positive grow weight, associated with its current item
+	 * identity; each visible row distributes the available width proportionally.
+	 * Passing null restores the original equal-width gallery layout. The array
+	 * must match {@link #count()} and is never retained by reference. This is a
+	 * subset of Flexbox grow, not a complete CSS layout engine.
+	 */
+	default void setGalleryFlexWeights(short[] weights) {
+		throw new UnsupportedOperationException("gallery flex weights are not supported");
+	}
+
+	/** Returns the unsigned grow weight, or one in the original equal-width mode. */
+	default int galleryFlexWeight(int item) {
+		throw new UnsupportedOperationException("gallery flex weights are not supported");
+	}
+
 	/** Replaces the rows: {@code ;}-separated labels; boards and messages take {@code column~label} / {@code side~text}. */
 	void load(String sample);
 
