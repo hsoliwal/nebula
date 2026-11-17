@@ -33,6 +33,11 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	private static final int CONTROLLED = DISABLED | SELECTED | ERROR | OPEN | CHECKED | MIXED
 			| EXPANDED | VISITED | HIDDEN | DONE | READONLY;
 	private int pull, loadedAt = -1, threshold = 5, columns = 1, dragFrom = -1, dragX, dragY;
+	private final boolean residentOnlyLayout;
+	// Only the previous paint window is retired on a warm left-to-right layout.
+	private int[] residentIds = new int[0];
+	private int previousResidents;
+	private boolean mirroredRects;
 	/** React-style identities are references owned by this collection, never per-item proxies. */
 	private String[] stableKeys;
 	// The parent owns primitive geometry for every masonry item; no per-tile objects.
@@ -49,7 +54,16 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	public CollectionModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
+		residentOnlyLayout = originalLayoutOwner(getClass());
 		itemExtent = mode == MESSAGES ? 56 : mode == GALLERY || mode == MASONRY ? 112 : 40;
+	}
+
+	/** Exact built-in owners alone can rely on resident-only rectangles and pure layout hooks. */
+	private static boolean originalLayoutOwner(Class<?> leaf) {
+		return leaf == CollectionModel.class || leaf == SwipeActionsModel.class
+				|| leaf == PullToRefreshModel.class || leaf == InfiniteScrollModel.class
+				|| leaf == ReorderDragModel.class || leaf == MessageListModel.class
+				|| leaf == CommandPaletteModel.class || leaf == MasonryModel.class;
 	}
 
 	/**
@@ -432,10 +446,20 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	@Override
 	protected void doLayout() {
+		boolean bounded = residentOnlyLayout && mode != KANBAN;
 		columns = 1;
-		for (int i = 0; i < count; i++) {
-			setRect(i, 0, 0, 0, 0);
-			columns = mode == KANBAN ? Math.max(columns, group[i] + 1) : 1;
+		if (bounded && !rtl && !mirroredRects) {
+			for (int k = 0; k < previousResidents; k++) {
+				setRect(residentIds[k], 0, 0, 0, 0);
+			}
+		} else {
+			// RTL exposes mirrored zero-width rectangles through itemRect/snapshot.
+			// Keep their exact coordinates, including the first layout back in LTR.
+			// Unknown subclasses retain every original setRect hook invocation.
+			for (int i = 0; i < count; i++) {
+				setRect(i, 0, 0, 0, 0);
+				columns = mode == KANBAN ? Math.max(columns, group[i] + 1) : 1;
+			}
 		}
 		if (mode == KANBAN) {
 			board();
@@ -443,6 +467,17 @@ public class CollectionModel extends WebModel implements CollectionApi {
 			masonry();
 		} else {
 			rows();
+		}
+		if (bounded) {
+			int n = window[3] - window[2];
+			if (n > residentIds.length) {
+				residentIds = Arrays.copyOf(residentIds, Math.max(n, Math.max(8, residentIds.length * 2)));
+			}
+			for (int k = 0; k < n; k++) {
+				residentIds[k] = itemAt(window[2] + k);
+			}
+			previousResidents = n;
+			mirroredRects = rtl;
 		}
 		setPlane(OVERLAY, 0, 0, width, rowHeight() + pad());
 	}
