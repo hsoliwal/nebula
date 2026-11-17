@@ -35,8 +35,9 @@ import org.eclipse.swt.widgets.ScrollBar;
  * {@link #addLocationListener(LocationListener)}. A click on a link navigates to it, resolved against the page's
  * location: {@link LocationListener#changing} (a listener may veto it with {@code doit = false}), then, once the page
  * has loaded and is shown, {@link LocationListener#changed}. Supported HTML: p, div, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
- * img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script and style
- * are ignored.
+ * img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script is ignored;
+ * style elements and style attributes give the CSS subset of colour, background, weight, style, decoration, alignment
+ * and left margin.
  * </p>
  * <p>
  * Pattern: prasser/swtbrowser (Apache-2.0, 92120bef61) builds a StyledText per block; this widget draws the same
@@ -259,6 +260,11 @@ public class DrawnBrowser extends Canvas {
 		int pageTop = y + scrollY, pageBottom = pageTop + height;
 		for (int b = layout.blockAt(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
 			int top = layout.top(b) - scrollY + HtmlLayout.BLOCK_GAP, left = layout.indent(b);
+			if (document.blockBackground[b] != 0) {
+				gc.setBackground(layout.color(document.blockBackground[b]));
+				gc.fillRectangle(0, layout.top(b) - scrollY, getClientArea().width, layout.height(b));
+				gc.setBackground(getBackground());
+			}
 			if (document.kind[b] == HtmlDocument.IMAGE) {
 				int i = document.image[b], w = layout.shownWidth(i), h = layout.shownHeight(i);
 				Image image = images.get(resolve(document.source[i]));

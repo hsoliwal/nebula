@@ -162,6 +162,23 @@ public class DrawnBrowserTest {
 	}
 
 	@Test
+	public void aBlockBackgroundIsPaintedAcrossTheView() {
+		open("<p style=\"background-color: #00ff00\">green row</p><p>plain</p>");
+		Image shot = new Image(display, 300, 30);
+		GC gc = new GC(browser);
+		gc.copyArea(shot, 0, 0);
+		gc.dispose();
+		ImageData data = shot.getImageData();
+		shot.dispose();
+		int green = 0;
+		for (int y = 0; y < 30; y++) for (int x = 0; x < 300; x++) {
+			org.eclipse.swt.graphics.RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+			if (rgb.green > 200 && rgb.red < 60 && rgb.blue < 60) green++;
+		}
+		assertTrue("green pixels " + green, green > 300 * 20);
+	}
+
+	@Test
 	public void textIsPaintedInTheFirstBlock() {
 		open("<h1>Drawn</h1>");
 		Image shot = new Image(display, 200, 60);
