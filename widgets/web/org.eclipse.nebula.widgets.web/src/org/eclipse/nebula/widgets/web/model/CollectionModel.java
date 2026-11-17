@@ -15,6 +15,7 @@
 // Generated fromtemplates/family/COLLECTION.java.tmpl; edit the template and regenerate.
 package org.eclipse.nebula.widgets.web.model;
 
+import java.util.Arrays;
 
 import static org.eclipse.nebula.widgets.web.model.WebStates.*;
 
@@ -22,16 +23,22 @@ import static org.eclipse.nebula.widgets.web.model.WebStates.*;
  * Virtual collections (pattern COLLECTION-1, aspects R+G+D+P): rows or tiles over a long logical
  * extent; only the resident window has rects. Per-row swipe offset (aux lane), board columns (group
  * lane), overscroll pull with a refresh indicator on the OVERLAY plane, a load threshold, keyboard and
- * drag reorder, message bubbles, a filtered command palette and a tile grid. Members: kanban-board,
- * swipe-actions, pull-to-refresh, infinite-scroll, reorder-drag, message-list, command-palette, gallery.
+ * drag reorder, message bubbles, a filtered command palette, a tile grid and variable-height
+ * masonry columns. Members: kanban-board, swipe-actions, pull-to-refresh, infinite-scroll,
+ * reorder-drag, message-list, command-palette, gallery, masonry.
  */
 public class CollectionModel extends WebModel implements CollectionApi {
-	public static final int KANBAN = 0, SWIPE = 1, PULL = 2, INFINITE = 3, REORDER = 4, MESSAGES = 5, PALETTE = 6, GALLERY = 7;
+	public static final int KANBAN = 0, SWIPE = 1, PULL = 2, INFINITE = 3, REORDER = 4, MESSAGES = 5, PALETTE = 6, GALLERY = 7, MASONRY = 8;
 	private int pull, loadedAt = -1, threshold = 5, columns = 1, dragFrom = -1, dragX, dragY;
+	// The parent owns primitive geometry for every masonry item; no per-tile objects.
+	private long[] masonryTop;
+	private short[] masonryColumn;
+	private int[] masonryHeights;
+	private long masonryExtent;
 
 	public CollectionModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
-		itemExtent = mode == MESSAGES ? 56 : mode == GALLERY ? 112 : 40;
+		itemExtent = mode == MESSAGES ? 56 : mode == GALLERY || mode == MASONRY ? 112 : 40;
 	}
 
 	@Override
@@ -50,18 +57,40 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		}
 	}
 
-	/** Positions per row: tile columns for the gallery, else 1. */
+	/** Positions per row: equal gallery tiles or at most eight shortest-column masonry lanes. */
 	protected int perRow() {
-		return mode == GALLERY ? Math.max(1, width / itemExtent) : 1;
+		return mode == GALLERY ? Math.max(1, width / itemExtent)
+				: mode == MASONRY ? Math.max(1, Math.min(8, width / itemExtent)) : 1;
 	}
 
 	@Override
 	public long logicalExtent() {
+		if (mode == MASONRY) {
+			planMasonry();
+			return masonryExtent;
+		}
 		return mode == KANBAN ? (long) columnDepth() * itemExtent : (((long) logicalCount() + perRow() - 1) / perRow()) * itemExtent;
 	}
 
 	@Override
 	protected void project() {
+		if (mode == MASONRY) {
+			planMasonry();
+			int n = logicalCount();
+			if (viewLength() <= 0 || n == 0) {
+				Arrays.fill(window, 0);
+				return;
+			}
+			// Greedy shortest-column placement has non-decreasing start positions.
+			// Include tall tiles starting before the visible interval.
+			int first = masonryLowerBound(Math.max(0L, scroll - (long) itemExtent * 4));
+			int end = masonryLowerBound(scroll + viewLength());
+			window[0] = first;
+			window[1] = end;
+			window[2] = Math.max(0, first - overscan);
+			window[3] = (int) Math.min(n, (long) end + overscan);
+			return;
+		}
 		super.project();
 		if (mode == GALLERY) {
 			int n = logicalCount(), per = perRow();
@@ -70,6 +99,48 @@ public class CollectionModel extends WebModel implements CollectionApi {
 			window[2] = (int) Math.min((long) n, (long) window[2] * per);
 			window[3] = (int) Math.min((long) n, (long) window[3] * per);
 		}
+	}
+
+	private void planMasonry() {
+		int n = logicalCount(), per = perRow();
+		if (masonryTop == null || masonryTop.length < n) {
+			masonryTop = new long[n];
+			masonryColumn = new short[n];
+			masonryHeights = new int[n];
+		}
+		long[] depth = new long[per];
+		for (int k = 0; k < n; k++) {
+			int col = 0;
+			for (int c = 1; c < per; c++) {
+				if (depth[c] < depth[col]) {
+					col = c;
+				}
+			}
+			int i = itemAt(k);
+			int requested = value[i];
+			int h = requested <= 0 ? itemExtent : (int) Math.min((long) requested, (long) itemExtent * 4);
+			masonryTop[k] = depth[col];
+			masonryColumn[k] = (short) col;
+			masonryHeights[k] = h;
+			depth[col] += h;
+		}
+		masonryExtent = 0;
+		for (long d : depth) {
+			masonryExtent = Math.max(masonryExtent, d);
+		}
+	}
+
+	private int masonryLowerBound(long target) {
+		int lo = 0, hi = logicalCount();
+		while (lo < hi) {
+			int mid = (lo + hi) >>> 1;
+			if (masonryTop[mid] < target) {
+				lo = mid + 1;
+			} else {
+				hi = mid;
+			}
+		}
+		return lo;
 	}
 
 	private int columnDepth() {
@@ -90,10 +161,22 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		}
 		if (mode == KANBAN) {
 			board();
+		} else if (mode == MASONRY) {
+			masonry();
 		} else {
 			rows();
 		}
 		setPlane(OVERLAY, 0, 0, width, rowHeight() + pad());
+	}
+
+	private void masonry() {
+		int per = perRow(), tile = width / per;
+		for (int k = window[2]; k < window[3]; k++) {
+			int i = itemAt(k);
+			int x = masonryColumn[k] * tile + gap();
+			int y = (int) (masonryTop[k] - scroll);
+			setRect(i, x, y, Math.max(0, tile - 2 * gap()), Math.max(0, masonryHeights[k] - gap()));
+		}
 	}
 
 	private void rows() {
@@ -127,7 +210,12 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		if (mode == PULL && pull > 0) {
 			indicator(p);
 		}
-		for (int i = 0; i < count; i++) {
+		// The existing modes keep their complete scan and subclass painting
+		// semantics. Only the exact built-in Masonry owner has resident-only rects.
+		boolean bounded = mode == MASONRY && getClass() == MasonryModel.class;
+		int first = bounded ? window[2] : 0, end = bounded ? window[3] : count;
+		for (int k = first; k < end; k++) {
+			int i = bounded ? itemAt(k) : k;
 			int b = i * 4;
 			if (rects[b + 2] > 0 && (flags[i] & HIDDEN) == 0) {
 				cell(p, i, rects[b], rects[b + 1], rects[b + 2], rects[b + 3]);
@@ -156,7 +244,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 			p.rect(x + w + aux[i], y, -aux[i], h, theme.slot(WebTheme.DANGER));
 			p.text(x + w + aux[i], y, -aux[i], h, 0xffffff, font() | WebPaint.CENTER, "Delete");
 		}
-		boolean bubble = mode == MESSAGES || mode == KANBAN || mode == GALLERY;
+		boolean bubble = mode == MESSAGES || mode == KANBAN || mode == GALLERY || mode == MASONRY;
 		int st = flags[i] | (i == focus ? SELECTED : 0);
 		if (bubble) {
 			p.round(x, y, w, h, radius(), mode == MESSAGES && group[i] == 1 ? theme.fill(V_PRIMARY, flags[i]) : theme.fill(V_DEFAULT, st));
@@ -167,7 +255,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		}
 		int ink = mode == MESSAGES && group[i] == 1 ? 0xffffff : theme.ink(V_DEFAULT, st);
 		String s = text[i] == null ? Integer.toString(i + 1) : text[i];
-		p.text(x + pad(), y, w - 2 * pad(), h, ink, font() | (mode == GALLERY ? WebPaint.CENTER : rtl ? WebPaint.RIGHT : 0), s);
+		p.text(x + pad(), y, w - 2 * pad(), h, ink, font() | (mode == GALLERY || mode == MASONRY ? WebPaint.CENTER : rtl ? WebPaint.RIGHT : 0), s);
 		if ((flags[i] & DRAGGING) != 0) {
 			p.roundLine(x + 1, y + 1, w - 2, h - 2, radius(), theme.slot(WebTheme.ACCENT));
 		}
@@ -295,9 +383,16 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		for (int k = 0; k < logicalCount(); k++) {
 			pos = itemAt(k) == item ? k : pos;
 		}
-		long top = (long) (pos / perRow()) * itemExtent;
-		if (mode != KANBAN && (top < scroll || top + itemExtent > scroll + viewLength())) {
-			scrollTo(top < scroll ? top : top + itemExtent - viewLength());
+		if (mode == MASONRY) {
+			if (pos >= logicalCount() || itemAt(pos) != item) {
+				return; // Filtered out: do not scroll to a nonresident logical position.
+			}
+			planMasonry();
+		}
+		long top = mode == MASONRY ? masonryTop[pos] : (long) (pos / perRow()) * itemExtent;
+		int extent = mode == MASONRY ? masonryHeights[pos] : itemExtent;
+		if (mode != KANBAN && (top < scroll || top + extent > scroll + viewLength())) {
+			scrollTo(top < scroll ? top : top + extent - viewLength());
 		}
 	}
 
