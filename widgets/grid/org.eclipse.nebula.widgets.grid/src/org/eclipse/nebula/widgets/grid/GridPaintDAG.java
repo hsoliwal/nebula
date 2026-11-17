@@ -49,27 +49,30 @@ final class GridPaintDAG {
             return 0;
         }
 
-		int plan = BACKGROUND;
-		int header = headerVisible ? Math.max(0, headerHeight) : 0;
-		int footer = footerVisible ? Math.max(0, footerHeight) : 0;
-		Rectangle body = GridViewportDamage.scrollDamage(clientArea, header, footer, false);
-		if (body.width > 0 && body.height > 0 && clip.intersects(body)) {
-			plan |= BODY;
+        int plan = BACKGROUND;
+        int header = headerVisible ? Math.max(0, headerHeight) : 0;
+        int footer = footerVisible ? Math.max(0, footerHeight) : 0;
+        int bodyTop = clientArea.y + Math.max(0, header);
+        int bodyBottom = clientArea.y + clientArea.height - Math.max(0, footer);
+        int bodyHeight = Math.max(0, bodyBottom - bodyTop);
+        if (clientArea.width > 0 && bodyHeight > 0
+                && clip.intersects(clientArea.x, bodyTop, clientArea.width, bodyHeight)) {
+            plan |= BODY;
             if (fixedOverlayActive) {
                 plan |= FIXED;
             }
-		}
-		if (headerVisible && GridViewportDamage.intersectsHeader(clip, clientArea, header)) {
-			plan |= HEADER;
-		}
-		if (footerVisible && GridViewportDamage.intersectsFooter(clip, clientArea, footer)) {
-			plan |= FOOTER;
-		}
+        }
+        if (headerVisible && GridViewportDamage.intersectsHeader(clip, clientArea, header)) {
+            plan |= HEADER;
+        }
+        if (footerVisible && GridViewportDamage.intersectsFooter(clip, clientArea, footer)) {
+            plan |= FOOTER;
+        }
         if (transientOverlayActive) {
             plan |= OVERLAY;
         }
-		return plan;
-	}
+        return plan;
+    }
 
 	static boolean includes(int plan, int plane) {
 		return (plan & plane) != 0;
