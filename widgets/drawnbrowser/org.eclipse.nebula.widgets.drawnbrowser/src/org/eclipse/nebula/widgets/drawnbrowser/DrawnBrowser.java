@@ -10,11 +10,13 @@ package org.eclipse.nebula.widgets.drawnbrowser;
 
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.ImageStore;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.widgets.Canvas;
@@ -32,7 +34,8 @@ import org.eclipse.swt.widgets.ScrollBar;
  * {@link #getText()}, {@link #addLocationListener(LocationListener)}. A click on a link sends
  * {@link LocationListener#changing} (a listener may veto it with {@code doit = false}), then
  * {@link LocationListener#changed}. Supported HTML: p, div, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
- * img; script and style are ignored.
+ * img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script and style
+ * are ignored.
  * </p>
  * <p>
  * Pattern: prasser/swtbrowser (Apache-2.0, 92120bef61) builds a StyledText per block; this widget draws the same
@@ -46,6 +49,8 @@ public class DrawnBrowser extends Canvas {
 	private String html = "";
 	private HtmlDocument document = HtmlDocument.parse("");
 	private HtmlLayout layout;
+	/* images of every page shown, loaded when their block is painted */
+	private final ImageStore images;
 	private int scrollY;
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
 
@@ -57,6 +62,7 @@ public class DrawnBrowser extends Canvas {
 	public DrawnBrowser(Composite parent, int style) {
 		super(parent, style | SWT.V_SCROLL | SWT.NO_BACKGROUND);
 		layout = newLayout();
+		images = new ImageStore(getDisplay(), 64, this::imageLoaded);
 		Listener listener = this::handle;
 		for (int type : new int[] { SWT.Paint, SWT.Resize, SWT.MouseUp, SWT.MouseMove, SWT.MouseWheel, SWT.KeyDown, SWT.Dispose }) {
 			addListener(type, listener);
@@ -125,7 +131,10 @@ public class DrawnBrowser extends Canvas {
 				e.doit = false;
 			}
 			case SWT.KeyDown -> key(e);
-			case SWT.Dispose -> layout.dispose();
+			case SWT.Dispose -> {
+				layout.dispose();
+				images.dispose();
+			}
 			default -> {
 			}
 		}
@@ -180,8 +189,14 @@ public class DrawnBrowser extends Canvas {
 		for (int b = layout.blockAt(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
 			int top = layout.top(b) - scrollY + HtmlLayout.BLOCK_GAP, left = layout.indent(b);
 			if (document.kind[b] == HtmlDocument.IMAGE) {
-				int i = document.image[b], w = document.imageWidth[i] > 0 ? document.imageWidth[i] : HtmlLayout.IMAGE_PLACEHOLDER;
-				gc.drawRectangle(left, top, w - 1, layout.height(b) - 2 * HtmlLayout.BLOCK_GAP - 1);
+				int i = document.image[b], w = layout.shownWidth(i), h = layout.shownHeight(i);
+				Image image = images.get(document.source[i]);
+				if (image != null && !image.isDisposed()) {
+					Rectangle size = image.getBounds();
+					gc.drawImage(image, 0, 0, size.width, size.height, left, top, w, h);
+				} else {
+					gc.drawRectangle(left, top, w - 1, h - 1);
+				}
 				continue;
 			}
 			TextLayout text = layout.textLayout(b);
@@ -191,6 +206,18 @@ public class DrawnBrowser extends Canvas {
 			}
 			text.draw(gc, left, top);
 		}
+	}
+
+	/* an image arrived: its natural size may change its block, and the blocks below move */
+	private void imageLoaded(String source, Image image) {
+		if (isDisposed()) return;
+		Rectangle size = image.getBounds();
+		boolean moved = false;
+		for (int i = 0; i < document.imageCount; i++) {
+			if (source.equals(document.source[i])) moved |= layout.setNaturalSize(i, size.width, size.height);
+		}
+		if (moved) relayout();
+		else redraw();
 	}
 
 	private void click(int x, int y) {

@@ -108,6 +108,20 @@ public class HtmlLayoutTest {
 	}
 
 	@Test
+	public void aLoadedImageKeepsItsDeclaredSideAndScalesTheOther() {
+		HtmlLayout l = layout("<p>above</p><img src=a.png width=40><img src=b.png><p>below</p>", 400);
+		int below = l.top(3);
+		assertTrue(l.setNaturalSize(0, 20, 10));
+		assertEquals(40, l.shownWidth(0));
+		assertEquals(20, l.shownHeight(0));
+		assertTrue(l.setNaturalSize(1, 30, 50));
+		assertEquals(30, l.shownWidth(1));
+		assertEquals(50, l.height(2) - 2 * HtmlLayout.BLOCK_GAP);
+		assertEquals("the blocks below move", below + (20 - HtmlLayout.IMAGE_PLACEHOLDER) + (50 - HtmlLayout.IMAGE_PLACEHOLDER), l.top(3));
+		assertTrue("the same size again changes nothing", !l.setNaturalSize(0, 20, 10));
+	}
+
+	@Test
 	public void linkAtHitsOnlyTheLink() {
 		HtmlLayout l = layout("<p>plain words then <a href=\"next.html\">the link</a> end</p>", 2000);
 		TextLayout text = l.textLayout(0);
