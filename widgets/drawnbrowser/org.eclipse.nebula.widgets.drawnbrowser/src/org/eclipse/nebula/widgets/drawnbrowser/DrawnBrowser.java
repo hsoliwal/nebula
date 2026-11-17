@@ -40,6 +40,7 @@ import org.eclipse.swt.widgets.ScrollBar;
  * {@link #addLocationListener(LocationListener)}. A click on a link navigates to it, resolved against the page's
  * location: {@link LocationListener#changing} (a listener may veto it with {@code doit = false}), then, once the page
  * has loaded and is shown, {@link LocationListener#changed}. Supported HTML: p, div, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
+ * pre (white space kept, no wrap, monospace), code/tt/kbd/samp (monospace), blockquote (indented), hr,
  * img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script is ignored;
  * style elements and style attributes give the CSS subset of colour, background, weight, style, decoration, alignment
  * and left margin.
@@ -396,6 +397,12 @@ public class DrawnBrowser extends Canvas {
 				gc.setBackground(layout.color(document.blockBackground[b]));
 				gc.fillRectangle(0, layout.top(b) - scrollY, getClientArea().width, layout.height(b));
 				gc.setBackground(getBackground());
+			}
+			if (document.kind[b] == HtmlDocument.RULE) {
+				gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+				gc.fillRectangle(left, top, Math.max(0, getClientArea().width - left - HtmlLayout.BLOCK_GAP), HtmlLayout.RULE_HEIGHT);
+				gc.setBackground(getBackground());
+				continue;
 			}
 			if (document.kind[b] == HtmlDocument.IMAGE) {
 				int i = document.image[b], w = layout.shownWidth(i), h = layout.shownHeight(i);

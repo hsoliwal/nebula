@@ -45,6 +45,22 @@ public class HtmlLayoutTest {
 	}
 
 	@Test
+	public void preDoesNotWrapIsMonospaceAndARuleIsThin() {
+		String line = "a long line of code that would wrap at this narrow width without pre";
+		HtmlLayout l = layout("<p>" + line + "</p><pre>" + line + "</pre><hr><p>after <code>x</code></p>", 120);
+		TextLayout paragraph = l.textLayout(0), pre = l.textLayout(1);
+		assertTrue("the paragraph wraps: " + paragraph.getLineCount(), paragraph.getLineCount() > 1);
+		assertEquals("pre does not", 1, pre.getLineCount());
+		assertTrue("wider than the view", pre.getBounds().width > 120);
+		String mono = pre.getFont().getFontData()[0].getName();
+		assertTrue("pre is monospace, not " + mono, !mono.equals(paragraph.getFont().getFontData()[0].getName()));
+		assertEquals("inline code too", mono, l.textLayout(3).getStyle(6).font.getFontData()[0].getName());
+		assertNull("a rule has no text", l.textLayout(2));
+		assertEquals(HtmlLayout.RULE_HEIGHT + 2 * HtmlLayout.BLOCK_GAP, l.height(2));
+		assertEquals("a rule has no link", null, l.linkAt(10, l.top(2) + HtmlLayout.BLOCK_GAP));
+	}
+
+	@Test
 	public void onlyWhatIsAskedForIsMeasured() {
 		HtmlLayout l = layout(paragraphs(1000), 400);
 		assertEquals(0, l.blockAt(5));

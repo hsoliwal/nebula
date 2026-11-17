@@ -373,6 +373,24 @@ public class DrawnBrowserTest {
 	}
 
 	@Test
+	public void aRuleIsPaintedAcrossTheView() {
+		open("<hr><p>after</p>");
+		org.eclipse.swt.graphics.RGB shadow = display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW).getRGB();
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		Image shot = new Image(display, area.width, 30);
+		GC gc = new GC(browser);
+		gc.copyArea(shot, 0, 0);
+		gc.dispose();
+		ImageData data = shot.getImageData();
+		shot.dispose();
+		int ruled = 0;
+		for (int y = 0; y < 30; y++) {
+			for (int x = 0; x < area.width; x++) if (data.palette.getRGB(data.getPixel(x, y)).equals(shadow)) ruled++;
+		}
+		assertTrue("rule pixels " + ruled, ruled >= (area.width - 2 * 8) * 2);
+	}
+
+	@Test
 	public void textIsPaintedInTheFirstBlock() {
 		open("<h1>Drawn</h1>");
 		Image shot = new Image(display, 200, 60);
