@@ -39,18 +39,16 @@ final class GridViewportDamage {
         if (headerHeight <= 0) {
             return false;
         }
-		Rectangle header = new Rectangle(
-				clientArea.x, clientArea.y, clientArea.width, Math.min(headerHeight, clientArea.height));
-		return clip.intersects(header);
-	}
+        return clip.intersects(clientArea.x, clientArea.y, clientArea.width,
+                Math.min(headerHeight, clientArea.height));
+    }
 
 	static boolean intersectsFooter(Rectangle clip, Rectangle clientArea, int footerHeight) {
         if (footerHeight <= 0) {
             return false;
         }
-		int height = Math.min(footerHeight, clientArea.height);
-		Rectangle footer = new Rectangle(
-				clientArea.x, clientArea.y + clientArea.height - height, clientArea.width, height);
-		return clip.intersects(footer);
-	}
+        int height = Math.min(footerHeight, clientArea.height);
+        return clip.intersects(clientArea.x,
+                clientArea.y + clientArea.height - height, clientArea.width, height);
+    }
 }
