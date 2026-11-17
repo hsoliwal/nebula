@@ -107,6 +107,17 @@ public final class PageViewport {
 		return isFullRepaint(delta) ? view : Math.abs(delta);
 	}
 
+	/**
+	 * The scroll step while a drag holds the mouse at view y {@code pointerY}: 0 inside the view; above it negative,
+	 * below it positive, as far as the mouse is out (at least a line, at most half the view).
+	 */
+	public int edgeStep(int pointerY, int line) {
+		int out = pointerY < 0 ? -pointerY : pointerY >= view ? pointerY - view + 1 : 0;
+		if (out == 0) return 0;
+		int step = Math.min(Math.max(line, view / 2), Math.max(line, out));
+		return pointerY < 0 ? -step : step;
+	}
+
 	/** A page step for page up and down: the view less one line, at least one line. */
 	public int page(int line) {
 		return Math.max(line, view - line);

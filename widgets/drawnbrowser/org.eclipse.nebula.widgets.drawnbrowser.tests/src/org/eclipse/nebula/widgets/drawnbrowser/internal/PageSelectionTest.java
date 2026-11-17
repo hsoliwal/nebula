@@ -42,12 +42,38 @@ public class PageSelectionTest {
 	}
 
 	@Test
-	public void aRangeAcrossBlocksTakesTheirTextsAndPastTheEndIsClipped() {
+	public void aRangeAcrossBlocksSeparatesThemAndPastTheEndIsClipped() {
 		PageSelection selection = new PageSelection();
 		selection.select(6, 15);
-		assertEquals("betagamma", selection.text(DOC));
+		assertEquals("beta\ngamma", selection.text(DOC));
+		selection.select(0, 10);
+		assertEquals("a whole block, no break after it", "Alpha beta", selection.text(DOC));
 		selection.select(12, 99);
 		assertEquals("mma", selection.text(DOC));
+		HtmlDocument three = HtmlDocument.parse("<p>a</p><p>b</p><p>c</p>");
+		selection.select(0, 3);
+		assertEquals("a\nb\nc", selection.text(three));
+	}
+
+	@Test
+	public void aDragSelectsFromThePressToWhereTheMouseIs() {
+		PageSelection selection = new PageSelection();
+		assertFalse("no drag without a press", selection.drag(5));
+		selection.press(8);
+		assertTrue(selection.isDragging());
+		assertTrue(selection.isEmpty());
+		assertTrue(selection.drag(3));
+		assertFalse("the same place changes nothing", selection.drag(3));
+		assertEquals(3, selection.start());
+		assertEquals(8, selection.end());
+		assertEquals(8, selection.anchor());
+		selection.pointer(12, -30);
+		assertEquals(12, selection.pointerX());
+		assertEquals(-30, selection.pointerY());
+		selection.release();
+		assertFalse(selection.isDragging());
+		assertFalse("after the release the mouse moves freely", selection.drag(1));
+		assertEquals(3, selection.start());
 	}
 
 	@Test
