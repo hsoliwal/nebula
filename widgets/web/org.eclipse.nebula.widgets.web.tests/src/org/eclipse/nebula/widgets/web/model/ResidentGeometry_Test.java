@@ -68,7 +68,7 @@ public class ResidentGeometry_Test {
 			final List<Integer> calls = new ArrayList<>();
 			Observed() { super("observed", 0, NAV, ROUND, 0); }
 			@Override protected void setRect(int item, int x, int y, int w, int h) {
-				calls.add(item);
+				calls.add(Integer.valueOf(item));
 				super.setRect(item, x, y, w, h);
 			}
 		}
@@ -145,7 +145,7 @@ public class ResidentGeometry_Test {
 			final List<Integer> calls = new ArrayList<>();
 			Observed() { super("observed", 0, AUTOCOMPLETE, ROUND, 0); }
 			@Override protected void setRect(int item, int x, int y, int w, int h) {
-				calls.add(item);
+				calls.add(Integer.valueOf(item));
 				super.setRect(item, x, y, w, h);
 			}
 		}

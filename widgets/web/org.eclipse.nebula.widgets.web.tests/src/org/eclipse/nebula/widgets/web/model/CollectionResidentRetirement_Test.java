@@ -89,7 +89,7 @@ public class CollectionResidentRetirement_Test {
 		final List<Integer> resets = new ArrayList<>();
 		Extension() { super("extension", 0, INFINITE, 0, 0); }
 		@Override protected void setRect(int item, int x, int y, int w, int h) {
-			if (w == 0 && h == 0) resets.add(item);
+			if (w == 0 && h == 0) resets.add(Integer.valueOf(item));
 			super.setRect(item, x, y, w, h);
 		}
 		@Override protected void doLayout() {
@@ -113,7 +113,7 @@ public class CollectionResidentRetirement_Test {
 		model.resets.clear();
 		model.scrollTo(80);
 		List<Integer> expected = new ArrayList<>();
-		for (int i = 0; i < 100; i++) expected.add(i);
+		for (int i = 0; i < 100; i++) expected.add(Integer.valueOf(i));
 		assertEquals(expected, model.resets);
 		assertDecoration(model);
 		LeafExtension leaf = new LeafExtension();
