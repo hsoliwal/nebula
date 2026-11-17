@@ -74,14 +74,25 @@ public class DrawnBrowserTest {
 	@Test
 	public void scrollingRepaintsOnlyTheExposedBand() {
 		open(paragraphs(300));
-		List<Integer> clips = new ArrayList<>();
-		browser.addListener(SWT.Paint, e -> clips.add(e.height));
+		int height = browser.getClientArea().height;
+		List<int[]> clips = new ArrayList<>();
+		browser.addListener(SWT.Paint, e -> clips.add(new int[] { e.y, e.height }));
 		browser.setScrollY(24);
 		browser.update();
 		assertEquals(24, browser.getScrollY());
-		assertTrue("paints " + clips, !clips.isEmpty());
-		int painted = clips.stream().mapToInt(Integer::intValue).sum();
+		assertTrue("paints", !clips.isEmpty());
+		int painted = clips.stream().mapToInt(c -> c[1]).sum();
 		assertTrue("painted " + painted + " rows for a 24 pixel scroll", painted <= 24 + 2);
+		for (int[] clip : clips) {
+			assertTrue("scrolling down exposes the bottom band, painted y " + clip[0], clip[0] >= height - 24 - 1 && clip[0] + clip[1] <= height);
+		}
+		clips.clear();
+		browser.setScrollY(10);
+		browser.update();
+		assertTrue("paints", !clips.isEmpty());
+		for (int[] clip : clips) {
+			assertTrue("scrolling up exposes the top band, painted y " + clip[0] + " h " + clip[1], clip[0] == 0 && clip[1] <= 14 + 1);
+		}
 	}
 
 	@Test

@@ -11,6 +11,8 @@ package org.eclipse.nebula.widgets.drawnbrowser;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.ImageStore;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.PageHistory;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.PageViewport;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
@@ -53,18 +55,11 @@ public class DrawnBrowser extends Canvas {
 	private HtmlLayout layout;
 	/* images of every page shown, loaded when their block is painted */
 	private final ImageStore images;
-	private int scrollY;
+	/* the stores this widget draws and takes input for: the scroll window, and the location with its history */
+	private final PageViewport viewport = new PageViewport();
+	private final PageHistory pages = new PageHistory();
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
-	/* the page's location ("about:blank" for setText), the history and the position in it */
-	private String location = ABOUT_BLANK;
-	private final java.util.List<String> history = new java.util.ArrayList<>();
-	private int historyIndex = -1;
-	/* bumped by every navigation and by stop(): a page that arrives for an older one is dropped */
-	private int generation;
 	private java.util.concurrent.ExecutorService pageLoader;
-
-	private static final String ABOUT_BLANK = "about:blank";
-	private static final int PUSH = 0, BACK = -1, FORWARD = 1;
 
 	/**
 	 * @param parent a composite
@@ -90,8 +85,7 @@ public class DrawnBrowser extends Canvas {
 	public boolean setText(String text) {
 		checkWidget();
 		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		generation++;
-		location = ABOUT_BLANK;
+		pages.setText();
 		show(text);
 		return true;
 	}
@@ -107,41 +101,41 @@ public class DrawnBrowser extends Canvas {
 	public boolean setUrl(String url) {
 		checkWidget();
 		if (url == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
-		return navigate(url, PUSH);
+		return navigate(url, PageHistory.PUSH);
 	}
 
 	/** The location of the page shown: its URL, or {@code about:blank} for {@link #setText(String)}. */
 	public String getUrl() {
 		checkWidget();
-		return location;
+		return pages.location();
 	}
 
 	public boolean isBackEnabled() {
 		checkWidget();
-		return historyIndex > 0;
+		return pages.canBack();
 	}
 
 	public boolean isForwardEnabled() {
 		checkWidget();
-		return historyIndex >= 0 && historyIndex < history.size() - 1;
+		return pages.canForward();
 	}
 
 	/** Goes to the previous page of the history; answers whether there was one. */
 	public boolean back() {
 		checkWidget();
-		return isBackEnabled() && navigate(history.get(historyIndex - 1), BACK);
+		return isBackEnabled() && navigate(pages.backTarget(), PageHistory.BACK);
 	}
 
 	/** Goes to the next page of the history; answers whether there was one. */
 	public boolean forward() {
 		checkWidget();
-		return isForwardEnabled() && navigate(history.get(historyIndex + 1), FORWARD);
+		return isForwardEnabled() && navigate(pages.forwardTarget(), PageHistory.FORWARD);
 	}
 
 	/** Drops the page being loaded, if any. */
 	public void stop() {
 		checkWidget();
-		generation++;
+		pages.stop();
 	}
 
 	private void show(String text) {
@@ -149,7 +143,7 @@ public class DrawnBrowser extends Canvas {
 		document = HtmlDocument.parse(text);
 		layout.dispose();
 		layout = newLayout();
-		scrollY = 0;
+		viewport.reset();
 		relayout();
 	}
 
@@ -174,7 +168,7 @@ public class DrawnBrowser extends Canvas {
 	/** The vertical scroll position in pixels. */
 	public int getScrollY() {
 		checkWidget();
-		return scrollY;
+		return viewport.y();
 	}
 
 	/** Scrolls so that page y {@code y} is at the top (clamped). */
@@ -195,14 +189,14 @@ public class DrawnBrowser extends Canvas {
 			case SWT.MouseUp -> {
 				if (e.button == 1) click(e.x, e.y);
 			}
-			case SWT.MouseMove -> setCursor(layout.linkAt(e.x, e.y + scrollY) != null ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : null);
+			case SWT.MouseMove -> setCursor(layout.linkAt(e.x, e.y + viewport.y()) != null ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : null);
 			case SWT.MouseWheel -> {
-				scrollTo(scrollY - e.count * LINE);
+				scrollTo(viewport.y() - e.count * LINE);
 				e.doit = false;
 			}
 			case SWT.KeyDown -> key(e);
 			case SWT.Dispose -> {
-				generation++;
+				pages.stop();
 				layout.dispose();
 				images.dispose();
 				if (pageLoader != null) pageLoader.shutdownNow();
@@ -215,39 +209,34 @@ public class DrawnBrowser extends Canvas {
 	private void relayout() {
 		Rectangle area = getClientArea();
 		layout.setWidth(Math.max(1, area.width));
-		layout.ensure(scrollY + area.height);
+		layout.ensure(viewport.y() + area.height);
+		sync();
 		updateBar();
-		scrollY = Math.max(0, Math.min(scrollY, maxScroll()));
 		redraw();
 	}
 
-	private int maxScroll() {
-		return Math.max(0, layout.totalHeight() - getClientArea().height);
+	/* the viewport learns the view height and how far the page is laid out; the scroll position is clamped */
+	private void sync() {
+		viewport.resize(getClientArea().height, layout.totalHeight());
 	}
 
 	private void updateBar() {
 		ScrollBar bar = getVerticalBar();
 		int page = Math.max(1, getClientArea().height);
-		bar.setValues(scrollY, 0, Math.max(page, layout.totalHeight()), page, LINE, page);
+		bar.setValues(viewport.y(), 0, Math.max(page, layout.totalHeight()), page, LINE, page);
 	}
 
 	/* moves the window's pixels by the scroll delta; only the band that comes into view is damaged and repainted */
 	private void scrollTo(int y) {
 		layout.ensure(Math.max(0, y) + getClientArea().height);
-		int target = Math.max(0, Math.min(y, maxScroll()));
-		int delta = target - scrollY;
-		if (delta == 0) {
-			updateBar();
-			return;
-		}
-		scrollY = target;
-		Rectangle area = getClientArea();
-		if (Math.abs(delta) >= area.height) {
-			redraw();
-		} else if (delta > 0) {
-			scroll(0, 0, 0, delta, area.width, area.height - delta, false);
-		} else {
-			scroll(0, -delta, 0, 0, area.width, area.height + delta, false);
+		sync();
+		int delta = viewport.scrollTo(y);
+		if (delta != 0) {
+			if (viewport.isFullRepaint(delta)) {
+				redraw();
+			} else {
+				scroll(0, viewport.copyTo(delta), 0, viewport.copyFrom(delta), getClientArea().width, viewport.copyHeight(delta), false);
+			}
 		}
 		updateBar();
 	}
@@ -257,6 +246,7 @@ public class DrawnBrowser extends Canvas {
 		gc.fillRectangle(x, y, width, height);
 		if (document.blockCount == 0) return;
 		gc.setForeground(getForeground());
+		int scrollY = viewport.y();
 		int pageTop = y + scrollY, pageBottom = pageTop + height;
 		for (int b = layout.blockAt(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
 			int top = layout.top(b) - scrollY + HtmlLayout.BLOCK_GAP, left = layout.indent(b);
@@ -267,7 +257,7 @@ public class DrawnBrowser extends Canvas {
 			}
 			if (document.kind[b] == HtmlDocument.IMAGE) {
 				int i = document.image[b], w = layout.shownWidth(i), h = layout.shownHeight(i);
-				Image image = images.get(resolve(document.source[i]));
+				Image image = images.get(pages.resolve(document.source[i]));
 				if (image != null && !image.isDisposed()) {
 					Rectangle size = image.getBounds();
 					gc.drawImage(image, 0, 0, size.width, size.height, left, top, w, h);
@@ -291,15 +281,15 @@ public class DrawnBrowser extends Canvas {
 		Rectangle size = image.getBounds();
 		boolean moved = false;
 		for (int i = 0; i < document.imageCount; i++) {
-			if (source.equals(resolve(document.source[i]))) moved |= layout.setNaturalSize(i, size.width, size.height);
+			if (source.equals(pages.resolve(document.source[i]))) moved |= layout.setNaturalSize(i, size.width, size.height);
 		}
 		if (moved) relayout();
 		else redraw();
 	}
 
 	private void click(int x, int y) {
-		String target = layout.linkAt(x, y + scrollY);
-		if (target != null) navigate(resolve(target), PUSH);
+		String target = layout.linkAt(x, y + viewport.y());
+		if (target != null) navigate(pages.resolve(target), PageHistory.PUSH);
 	}
 
 	/* changing (vetoable), then the page loads off the UI thread, then it is shown and changed is sent */
@@ -310,7 +300,7 @@ public class DrawnBrowser extends Canvas {
 		changing.doit = true;
 		for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) listener.changing(changing);
 		if (!changing.doit) return false;
-		int expected = ++generation;
+		int expected = pages.begin();
 		if (pageLoader == null) {
 			pageLoader = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
 				Thread thread = new Thread(r, "DrawnBrowser pages");
@@ -327,15 +317,7 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	private void arrived(String url, int mode, int expected, String page) {
-		if (isDisposed() || expected != generation) return;
-		location = url;
-		if (mode == PUSH) {
-			while (history.size() > historyIndex + 1) history.remove(history.size() - 1);
-			history.add(url);
-			historyIndex++;
-		} else {
-			historyIndex += mode;
-		}
+		if (isDisposed() || !pages.arrive(url, mode, expected)) return;
 		show(page);
 		LocationEvent changed = new LocationEvent(this);
 		changed.location = url;
@@ -367,18 +349,9 @@ public class DrawnBrowser extends Canvas {
 		}
 	}
 
-	/* a link or image reference against the page's location */
-	private String resolve(String reference) {
-		if (location.equals(ABOUT_BLANK)) return reference;
-		try {
-			return java.net.URI.create(location).resolve(reference).toString();
-		} catch (IllegalArgumentException e) {
-			return reference;
-		}
-	}
-
 	private void key(Event e) {
-		int page = Math.max(LINE, getClientArea().height - LINE);
+		sync();
+		int scrollY = viewport.y(), page = viewport.page(LINE);
 		switch (e.keyCode) {
 			case SWT.ARROW_DOWN -> scrollTo(scrollY + LINE);
 			case SWT.ARROW_UP -> scrollTo(scrollY - LINE);
@@ -387,7 +360,8 @@ public class DrawnBrowser extends Canvas {
 			case SWT.HOME -> scrollTo(0);
 			case SWT.END -> {
 				layout.ensure(Integer.MAX_VALUE);
-				scrollTo(maxScroll());
+				sync();
+				scrollTo(viewport.maxY());
 			}
 			default -> {
 			}
