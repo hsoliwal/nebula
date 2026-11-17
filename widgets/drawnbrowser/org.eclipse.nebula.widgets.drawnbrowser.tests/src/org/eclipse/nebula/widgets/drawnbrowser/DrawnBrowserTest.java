@@ -235,6 +235,36 @@ public class DrawnBrowserTest {
 	}
 
 	@Test
+	public void findSelectsScrollsToAndPaintsTheMatch() {
+		open(paragraphs(300) + "<p>a needle here</p>");
+		int at = browser.findAndSelect(-1, "NEEDLE", true, false, false);
+		assertTrue("found at " + at, at > 0);
+		assertEquals("needle", browser.getSelectionText());
+		assertEquals(new org.eclipse.swt.graphics.Point(at, at + 6), browser.getSelection());
+		settle();
+		assertTrue("scrolled to the match: " + browser.getScrollY(), browser.getScrollY() > 1000);
+		org.eclipse.swt.graphics.RGB selection = display.getSystemColor(SWT.COLOR_LIST_SELECTION).getRGB();
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		Image shot = new Image(display, area.width, area.height);
+		GC gc = new GC(browser);
+		gc.copyArea(shot, 0, 0);
+		gc.dispose();
+		ImageData data = shot.getImageData();
+		shot.dispose();
+		int selected = 0;
+		for (int y = 0; y < area.height; y++) {
+			for (int x = 0; x < area.width; x++) {
+				if (data.palette.getRGB(data.getPixel(x, y)).equals(selection)) selected++;
+			}
+		}
+		assertTrue("selection-coloured pixels " + selected, selected > 20);
+		assertEquals("no later match", -1, browser.findAndSelect(at + 1, "needle", true, false, false));
+		assertEquals("a miss keeps the selection", "needle", browser.getSelectionText());
+		browser.setText("<p>new</p>");
+		assertEquals("a new page selects nothing", "", browser.getSelectionText());
+	}
+
+	@Test
 	public void textIsPaintedInTheFirstBlock() {
 		open("<h1>Drawn</h1>");
 		Image shot = new Image(display, 200, 60);

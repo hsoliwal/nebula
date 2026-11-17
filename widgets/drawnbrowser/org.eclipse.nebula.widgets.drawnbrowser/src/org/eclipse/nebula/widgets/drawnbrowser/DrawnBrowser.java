@@ -11,7 +11,9 @@ package org.eclipse.nebula.widgets.drawnbrowser;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.ImageStore;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.PageFind;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageHistory;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.PageSelection;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageViewport;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
@@ -19,6 +21,7 @@ import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.widgets.Canvas;
@@ -58,6 +61,8 @@ public class DrawnBrowser extends Canvas {
 	/* the stores this widget draws and takes input for: the scroll window, and the location with its history */
 	private final PageViewport viewport = new PageViewport();
 	private final PageHistory pages = new PageHistory();
+	/* the selection in the page's text, made by find */
+	private final PageSelection selection = new PageSelection();
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
 	private java.util.concurrent.ExecutorService pageLoader;
 
@@ -144,7 +149,62 @@ public class DrawnBrowser extends Canvas {
 		layout.dispose();
 		layout = newLayout();
 		viewport.reset();
+		selection.clear();
 		relayout();
+	}
+
+	/**
+	 * Finds {@code findString} in the page's text (the text drawn, not the HTML) and selects it, as JFace's
+	 * {@code IFindReplaceTarget.findAndSelect} does: searching forward finds the first match that starts at or after
+	 * {@code offset}, backward the last one that starts at or before it; -1 searches the whole page. There is no wrap.
+	 * The match is scrolled into view; only the blocks of the old and the new selection are painted again.
+	 *
+	 * @return the match's offset in the page's text, or -1 (the selection is then unchanged)
+	 */
+	public int findAndSelect(int offset, String findString, boolean searchForward, boolean caseSensitive, boolean wholeWord) {
+		checkWidget();
+		if (findString == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		int at = PageFind.find(document, offset, findString, searchForward, caseSensitive, wholeWord);
+		if (at < 0) return -1;
+		redrawRange(selection.start(), selection.end());
+		selection.select(at, at + findString.length());
+		reveal(at);
+		redrawRange(selection.start(), selection.end());
+		return at;
+	}
+
+	/** The selection in the page's text: {@code x} is its start offset, {@code y} its end (as StyledText answers). */
+	public Point getSelection() {
+		checkWidget();
+		return new Point(selection.start(), selection.end());
+	}
+
+	/** The selected text, or the empty string. */
+	public String getSelectionText() {
+		checkWidget();
+		return selection.text(document);
+	}
+
+	/* damages the blocks that hold [start, end) of the page's text, where they are in view */
+	private void redrawRange(int start, int end) {
+		if (start >= end) return;
+		int first = PageFind.blockOf(document, start), last = PageFind.blockOf(document, end - 1);
+		if (first < 0 || last < 0) return;
+		int width = getClientArea().width;
+		for (int b = first; b <= last; b++) {
+			redraw(0, layout.top(b) - viewport.y(), width, layout.height(b), false);
+		}
+	}
+
+	/* scrolls the line holding the page text offset into view, a third of the way down, unless it is in view already */
+	private void reveal(int offset) {
+		int b = PageFind.blockOf(document, offset);
+		TextLayout text = b < 0 ? null : layout.textLayout(b);
+		if (text == null) return;
+		int local = offset - document.textStart[b];
+		Rectangle line = text.getLineBounds(text.getLineIndex(local));
+		int top = layout.top(b) + HtmlLayout.BLOCK_GAP + line.y, view = getClientArea().height;
+		if (top < viewport.y() || top + line.height > viewport.y() + view) scrollTo(top - view / 3);
 	}
 
 	/** The HTML of the page shown. */
@@ -277,7 +337,14 @@ public class DrawnBrowser extends Canvas {
 				String marker = document.marker[b] == HtmlDocument.BULLET ? "\u2022" : document.marker[b] + ".";
 				gc.drawString(marker, left - gc.stringExtent(marker).x - 6, top, true);
 			}
-			text.draw(gc, left, top);
+			int selectionStart = Math.max(selection.start(), document.textStart[b]) - document.textStart[b];
+			int selectionEnd = Math.min(selection.end(), document.textEnd[b]) - document.textStart[b] - 1;
+			if (selectionStart <= selectionEnd) {
+				text.draw(gc, left, top, selectionStart, selectionEnd, getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT),
+						getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION));
+			} else {
+				text.draw(gc, left, top);
+			}
 		}
 	}
 
