@@ -40,6 +40,9 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	private short[] masonryColumn;
 	private int[] masonryHeights;
 	private long masonryExtent;
+	// Reusable, source-index-ordered resident ids for paint and pointer targeting.
+	// Source order preserves overlapping-cell z-order when filter positions differ.
+	private int[] residentOrder = new int[8];
 
 	public CollectionModel(String concept, int role, int mode, int shape, int variant) {
 		super(concept, role, mode, shape, variant);
@@ -395,6 +398,44 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		}
 	}
 
+	/**
+	 * Only built-in row/tile owners admit resident-only traversal. A subclass may
+	 * set other rectangles or paint outside its projected resident window;
+	 * Kanban's independently scrolling columns do not form a contiguous window.
+	 */
+	private boolean residentOnlyOwner() {
+		return mode != KANBAN && (getClass() == CollectionModel.class || getClass() == MasonryModel.class);
+	}
+
+	/** Rebuilds a primitive projection in the original source-index z-order. */
+	private int residentOrder() {
+		int n = window[3] - window[2];
+		if (n > residentOrder.length) {
+			residentOrder = Arrays.copyOf(residentOrder, n);
+		}
+		for (int k = 0; k < n; k++) {
+			residentOrder[k] = itemAt(window[2] + k);
+		}
+		Arrays.sort(residentOrder, 0, n);
+		return n;
+	}
+
+	@Override
+	public int hitTest(int x, int y) {
+		if (!residentOnlyOwner()) {
+			return super.hitTest(x, y);
+		}
+		int n = residentOrder();
+		for (int k = n - 1; k >= 0; k--) {
+			int i = residentOrder[k], b = i * 4;
+			if ((flags[i] & HIDDEN) == 0 && x >= rects[b] && y >= rects[b + 1]
+					&& x < rects[b] + rects[b + 2] && y < rects[b + 1] + rects[b + 3]) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	@Override
 	protected void emit(WebPaint p) {
 		if (mode == KANBAN) {
@@ -403,16 +444,29 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		if (mode == PULL && pull > 0) {
 			indicator(p);
 		}
-		// The existing modes keep their complete scan and subclass painting
-		// semantics. Only the exact built-in Masonry owner has resident-only rects.
-		boolean bounded = mode == MASONRY && getClass() == MasonryModel.class;
-		int first = bounded ? window[2] : 0, end = bounded ? window[3] : count;
-		for (int k = first; k < end; k++) {
-			int i = bounded ? itemAt(k) : k;
-			int b = i * 4;
-			if (rects[b + 2] > 0 && (flags[i] & HIDDEN) == 0) {
-				cell(p, i, rects[b], rects[b + 1], rects[b + 2], rects[b + 3]);
+		if (mode == MASONRY && getClass() == MasonryModel.class) {
+			// This owner's preexisting bounded painter draws in filtered
+			// viewport order, which differs from source order on some filters.
+			for (int k = window[2]; k < window[3]; k++) {
+				emitItem(p, itemAt(k));
 			}
+		} else if (residentOnlyOwner()) {
+			int n = residentOrder();
+			for (int k = 0; k < n; k++) {
+				emitItem(p, residentOrder[k]);
+			}
+		} else {
+			// Preserve subclass full scans and Kanban's independent column order.
+			for (int i = 0; i < count; i++) {
+				emitItem(p, i);
+			}
+		}
+	}
+
+	private void emitItem(WebPaint p, int i) {
+		int b = i * 4;
+		if (rects[b + 2] > 0 && (flags[i] & HIDDEN) == 0) {
+			cell(p, i, rects[b], rects[b + 1], rects[b + 2], rects[b + 3]);
 		}
 	}
 
