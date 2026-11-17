@@ -17,6 +17,19 @@ package org.eclipse.nebula.widgets.web.model;
 
 /** API of the virtual collections (pattern COLLECTION-1). */
 public interface CollectionApi extends WebApi {
+	/**
+	 * Applies a declarative keyed row snapshot. Existing implementers remain binary-compatible;
+	 * implementations without stable-key reconciliation fail explicitly.
+	 */
+	default void reconcile(String[] keys, String[] labels) {
+		throw new UnsupportedOperationException("keyed collection reconciliation is not supported");
+	}
+
+	/** Returns a stable row key, or null when this implementation has no keyed snapshot. */
+	default String stableKey(int item) {
+		return null;
+	}
+
 	/** Replaces the rows: {@code ;}-separated labels; boards and messages take {@code column~label} / {@code side~text}. */
 	void load(String sample);
 

@@ -102,6 +102,13 @@ public abstract class WebView extends WebLanes {
 	/** Case-insensitive substring filter over item texts; empty clears it. Positions compact to the matches. */
 	public void setFilter(String query) {
 		filter = query == null ? "" : query.toLowerCase(java.util.Locale.ROOT);
+		rebuildFilter();
+		scroll = 0;
+		relayout(-1, D_ITEMS);
+	}
+
+	/** Rebuilds the filtered position lane after an atomic item snapshot, without a second delta. */
+	protected final void rebuildFilter() {
 		nm = filter.isEmpty() ? -1 : 0;
 		for (int i = 0; nm >= 0 && i < count; i++) {
 			if (text[i] != null && text[i].toLowerCase(java.util.Locale.ROOT).contains(filter)) {
@@ -111,8 +118,6 @@ public abstract class WebView extends WebLanes {
 				matches[nm++] = i;
 			}
 		}
-		scroll = 0;
-		relayout(-1, D_ITEMS);
 	}
 
 	public String filter() {
