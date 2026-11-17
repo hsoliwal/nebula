@@ -10,6 +10,9 @@ package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.BOLD;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.BULLET;
+import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.CODE;
+import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.PRE;
+import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.RULE;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.HEADING;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.IMAGE;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.ITALIC;
@@ -131,6 +134,32 @@ public class HtmlDocumentTest {
 		HtmlDocument colourOnly = HtmlDocument.parse("<p>x<span style=\"color: blue\">y</span>z</p>");
 		assertArrayEquals("a colour change alone starts a run", new String[] { "0@x", "0@y", "0@z" }, runs(colourOnly, 0));
 		assertEquals(0xFF0000FF, colourOnly.runColor[colourOnly.firstRun[0] + 1]);
+	}
+
+	@Test
+	public void preKeepsItsWhiteSpaceAndIsCode() {
+		HtmlDocument d = HtmlDocument.parse("<p>a</p><pre>\n  x  =  1;\r\n\ty\n</pre><p>b   c</p>");
+		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:a", PRE + ":0:0:  x  =  1;\n\ty", PARAGRAPH + ":0:0:b c" }, blocks(d));
+		assertArrayEquals(new String[] { CODE + "@  x  =  1;\n\ty" }, runs(d, 1));
+		HtmlDocument bold = HtmlDocument.parse("<pre>a <b>b</b>\r c</pre>");
+		assertArrayEquals("styles inside pre, a lone CR is a line end", new String[] { CODE + "@a ", (CODE | BOLD) + "@b", CODE + "@\n c" },
+				runs(bold, 0));
+	}
+
+	@Test
+	public void inlineCodeIsAStyle() {
+		HtmlDocument d = HtmlDocument.parse("<p>call <code>f(x)</code> or <kbd>Ctrl</kbd>+<tt>C</tt> <samp>ok</samp></p>");
+		assertArrayEquals(new String[] { "0@call ", CODE + "@f(x)", "0@ or ", CODE + "@Ctrl", "0@+", CODE + "@C", "0@ ", CODE + "@ok" },
+				runs(d, 0));
+	}
+
+	@Test
+	public void blockquotesIndentTheirBlocksAndHrIsARule() {
+		HtmlDocument d = HtmlDocument.parse("<p>before</p><blockquote><p>q1</p><blockquote>q2</blockquote></blockquote><hr><p>after</p>");
+		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:before", PARAGRAPH + ":0:0:q1", PARAGRAPH + ":0:0:q2", RULE + ":0:0:",
+				PARAGRAPH + ":0:0:after" }, blocks(d));
+		assertArrayEquals(new int[] { 0, HtmlDocument.QUOTE_INDENT, 2 * HtmlDocument.QUOTE_INDENT, 0, 0 },
+				java.util.Arrays.copyOf(d.blockIndent, d.blockCount));
 	}
 
 	@Test

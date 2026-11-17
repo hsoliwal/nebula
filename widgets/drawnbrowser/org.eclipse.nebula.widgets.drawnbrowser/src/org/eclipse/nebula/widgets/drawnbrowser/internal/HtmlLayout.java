@@ -30,6 +30,16 @@ public final class HtmlLayout {
 	/** Space before and after a block, and the indent of one list level, in pixels. */
 	public static final int BLOCK_GAP = 8, LIST_INDENT = 24, IMAGE_PLACEHOLDER = 16;
 
+	/** The height of a rule's line (hr), in pixels, between its gaps. */
+	public static final int RULE_HEIGHT = 2;
+
+	/* the platform's monospace family, for code and pre */
+	private static final String MONOSPACE = switch (SWT.getPlatform()) {
+		case "win32" -> "Consolas";
+		case "cocoa" -> "Menlo";
+		default -> "Monospace";
+	};
+
 	/** CSS default heading sizes relative to body text, h1 to h6. */
 	private static final float[] HEADING_SCALE = { 2f, 1.5f, 1.17f, 1f, .83f, .67f };
 
@@ -39,8 +49,8 @@ public final class HtmlLayout {
 	private final HtmlDocument doc;
 	private final FontData base;
 	private final Color linkColor;
-	/* fonts by (size class: 0 body, 1-6 headings) x (bold, italic bits), made on first use */
-	private final Font[] fonts = new Font[7 * 4];
+	/* fonts by (size class: 0 body, 1-6 headings) x (bold, italic bits) x (proportional, monospace), made on first use */
+	private final Font[] fonts = new Font[7 * 4 * 2];
 	/* CSS colours by ARGB, made on first use */
 	private final java.util.Map<Integer, Color> colors = new java.util.HashMap<>();
 
@@ -123,7 +133,7 @@ public final class HtmlLayout {
 	/** The block's text layout, made and cached on demand; null for an image block. */
 	public TextLayout textLayout(int b) {
 		ensureBlock(b);
-		if (doc.kind[b] == HtmlDocument.IMAGE) return null;
+		if (textless(b)) return null;
 		for (int s = cacheSize - 1; s >= 0; s--) {
 			if (cachedBlock[s] == b) {
 				TextLayout hit = cached[s];
@@ -149,7 +159,7 @@ public final class HtmlLayout {
 	/** The link target under ({@code x}, {@code y}) in page coordinates, or null. */
 	public String linkAt(int x, int y) {
 		int b = blockAt(y);
-		if (b < 0 || doc.kind[b] == HtmlDocument.IMAGE) return null;
+		if (b < 0 || textless(b)) return null;
 		TextLayout layout = textLayout(b);
 		int lx = x - indent(b), ly = y - top[b] - BLOCK_GAP;
 		if (lx < 0 || ly < 0 || !layout.getBounds().contains(lx, ly)) return null;
@@ -169,7 +179,7 @@ public final class HtmlLayout {
 	public int offsetAt(int x, int y) {
 		int b = blockAt(y);
 		if (b < 0) return 0;
-		if (doc.kind[b] == HtmlDocument.IMAGE) return doc.textStart[b];
+		if (textless(b)) return doc.textStart[b];
 		TextLayout layout = textLayout(b);
 		int[] trailing = new int[1];
 		int local = layout.getOffset(x - indent(b), y - top[b] - BLOCK_GAP, trailing) + trailing[0];
@@ -234,6 +244,8 @@ public final class HtmlLayout {
 		int h;
 		if (doc.kind[b] == HtmlDocument.IMAGE) {
 			h = shownHeight(doc.image[b]);
+		} else if (doc.kind[b] == HtmlDocument.RULE) {
+			h = RULE_HEIGHT;
 		} else {
 			boolean keep = false;
 			TextLayout layout = null;
@@ -250,18 +262,19 @@ public final class HtmlLayout {
 	private TextLayout make(int b) {
 		layoutsMade++;
 		TextLayout layout = new TextLayout(device);
-		layout.setWidth(Math.max(1, width - indent(b)));
+		boolean pre = doc.kind[b] == HtmlDocument.PRE;
+		layout.setWidth(pre ? -1 : Math.max(1, width - indent(b))); // pre does not wrap
 		int align = doc.blockAlign[b];
 		layout.setAlignment(align == HtmlStyles.CENTER ? SWT.CENTER : align == HtmlStyles.RIGHT ? SWT.RIGHT : SWT.LEFT);
 		int sizeClass = doc.kind[b] == HtmlDocument.HEADING ? doc.level[b] : 0;
 		int blockBold = sizeClass > 0 ? HtmlDocument.BOLD : 0;
-		layout.setFont(font(sizeClass, blockBold));
+		layout.setFont(font(sizeClass, blockBold | (pre ? HtmlDocument.CODE : 0)));
 		int start = doc.textStart[b];
 		layout.setText(doc.text.substring(start, doc.textEnd[b]));
 		for (int k = 0; k < doc.runCount[b]; k++) {
 			int r = doc.firstRun[b] + k, s = doc.runStyle[r], argb = doc.runColor[r];
 			if (s == 0 && argb == 0) continue;
-			TextStyle style = new TextStyle(font(sizeClass, (s | blockBold) & (HtmlDocument.BOLD | HtmlDocument.ITALIC)), null, null);
+			TextStyle style = new TextStyle(font(sizeClass, (s | blockBold) & (HtmlDocument.BOLD | HtmlDocument.ITALIC | HtmlDocument.CODE)), null, null);
 			style.underline = (s & (HtmlDocument.UNDERLINE | HtmlDocument.LINK)) != 0;
 			style.strikeout = (s & HtmlDocument.STRIKE) != 0;
 			if ((s & HtmlDocument.LINK) != 0) style.foreground = linkColor;
@@ -271,14 +284,21 @@ public final class HtmlLayout {
 		return layout;
 	}
 
-	private Font font(int sizeClass, int boldItalic) {
-		int slot = sizeClass * 4 + (boldItalic & 3);
+	/* the font of a size class and the BOLD, ITALIC and CODE bits */
+	private Font font(int sizeClass, int bits) {
+		boolean mono = (bits & HtmlDocument.CODE) != 0;
+		int slot = (sizeClass * 4 + (bits & 3)) * 2 + (mono ? 1 : 0);
 		if (fonts[slot] == null) {
 			float scale = sizeClass == 0 ? 1f : HEADING_SCALE[sizeClass - 1];
-			int style = ((boldItalic & HtmlDocument.BOLD) != 0 ? SWT.BOLD : 0) | ((boldItalic & HtmlDocument.ITALIC) != 0 ? SWT.ITALIC : 0);
-			fonts[slot] = new Font(device, new FontData(base.getName(), Math.max(1, Math.round(base.getHeight() * scale)), style));
+			int style = ((bits & HtmlDocument.BOLD) != 0 ? SWT.BOLD : 0) | ((bits & HtmlDocument.ITALIC) != 0 ? SWT.ITALIC : 0);
+			fonts[slot] = new Font(device, new FontData(mono ? MONOSPACE : base.getName(), Math.max(1, Math.round(base.getHeight() * scale)), style));
 		}
 		return fonts[slot];
+	}
+
+	/** Whether block {@code b} has no text to lay out (an image or a rule). */
+	private boolean textless(int b) {
+		return doc.kind[b] == HtmlDocument.IMAGE || doc.kind[b] == HtmlDocument.RULE;
 	}
 
 	/** The colour of an opaque ARGB value (CSS), made on first use and disposed with the layout. */

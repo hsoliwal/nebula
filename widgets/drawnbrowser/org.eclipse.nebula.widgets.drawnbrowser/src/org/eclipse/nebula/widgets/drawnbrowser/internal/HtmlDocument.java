@@ -24,11 +24,14 @@ import java.util.Arrays;
  */
 public final class HtmlDocument {
 
-	/** Block kinds. */
-	public static final int PARAGRAPH = 0, HEADING = 1, LIST_ITEM = 2, IMAGE = 3;
+	/** Block kinds: pre keeps its white space and does not wrap; a rule (hr) has no text. */
+	public static final int PARAGRAPH = 0, HEADING = 1, LIST_ITEM = 2, IMAGE = 3, PRE = 4, RULE = 5;
 
-	/** Style bits of a run. */
-	public static final int BOLD = 1, ITALIC = 2, UNDERLINE = 4, STRIKE = 8, LINK = 16;
+	/** Style bits of a run; code is monospace (code, tt, kbd, samp, and all of pre). */
+	public static final int BOLD = 1, ITALIC = 2, UNDERLINE = 4, STRIKE = 8, LINK = 16, CODE = 32;
+
+	/** The indent, px, of each blockquote a block is in. */
+	public static final int QUOTE_INDENT = 32;
 
 	/** No ordinal: an unordered list item's marker. */
 	public static final int BULLET = -1;
@@ -82,8 +85,11 @@ public final class HtmlDocument {
 		final StringBuilder chars = new StringBuilder();
 		int open = -1;                 // the block being filled, or -1
 		int style, link = -1;          // current inline style bits and link
-		int bold, italic, underline, strike;
+		int bold, italic, underline, strike, code;
 		int skip;                      // inside script
+		int pre;                       // inside pre: white space is kept
+		boolean preStart;              // a newline right after <pre> is not content
+		int quote;                     // blockquote depth
 		/* CSS: the sheet, the text of a style element being read, and one computed style per open element */
 		final HtmlStyles styles = new HtmlStyles();
 		final StringBuilder css = new StringBuilder();
@@ -102,7 +108,7 @@ public final class HtmlDocument {
 				cssDepth += selfClosing ? 0 : 1;
 				return;
 			}
-			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("script")) {
+			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")) {
 				push(name, styles.compute(frames[depth], name, HtmlTokenizer.attribute(attributes, "class"),
 						HtmlTokenizer.attribute(attributes, "style")));
 			}
@@ -128,6 +134,20 @@ public final class HtmlDocument {
 					space = false;
 				}
 				case "img" -> image(attributes);
+				case "pre" -> {
+					openBlock(PRE, 0, 0);
+					pre++;
+					preStart = true;
+				}
+				case "blockquote" -> {
+					closeBlock();
+					quote++;
+				}
+				case "hr" -> {
+					openBlock(RULE, 0, 0);
+					closeBlock();
+				}
+				case "code", "tt", "kbd", "samp" -> style(CODE, ++code);
 				case "strong", "b" -> style(BOLD, ++bold);
 				case "em", "i" -> style(ITALIC, ++italic);
 				case "u" -> style(UNDERLINE, ++underline);
@@ -162,6 +182,15 @@ public final class HtmlDocument {
 					closeBlock();
 					listDepth = Math.max(0, listDepth - 1);
 				}
+				case "pre" -> {
+					closeBlock();
+					pre = Math.max(0, pre - 1);
+				}
+				case "blockquote" -> {
+					closeBlock();
+					quote = Math.max(0, quote - 1);
+				}
+				case "code", "tt", "kbd", "samp" -> style(CODE, code = Math.max(0, code - 1));
 				case "strong", "b" -> style(BOLD, bold = Math.max(0, bold - 1));
 				case "em", "i" -> style(ITALIC, italic = Math.max(0, italic - 1));
 				case "u" -> style(UNDERLINE, underline = Math.max(0, underline - 1));
@@ -179,6 +208,10 @@ public final class HtmlDocument {
 				return;
 			}
 			if (skip > 0) return;
+			if (pre > 0) {
+				preformatted(text);
+				return;
+			}
 			for (int i = 0, n = text.length(); i < n; i++) {
 				char c = text.charAt(i);
 				if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f') {
@@ -188,6 +221,23 @@ public final class HtmlDocument {
 				if (open < 0) openBlock(PARAGRAPH, 0, 0);
 				if (space && chars.length() > doc.textStart[open] && chars.charAt(chars.length() - 1) != '\n') appendRun(' ');
 				space = false;
+				appendRun(c);
+			}
+		}
+
+		/* text inside pre: every character kept, line ends as \n, except a newline right after <pre> */
+		void preformatted(String text) {
+			for (int i = 0, n = text.length(); i < n; i++) {
+				char c = text.charAt(i);
+				if (c == '\r') {
+					if (i + 1 < n && text.charAt(i + 1) == '\n') continue;
+					c = '\n';
+				}
+				if (preStart) {
+					preStart = false;
+					if (c == '\n') continue;
+				}
+				if (open < 0) openBlock(PRE, 0, 0);
 				appendRun(c);
 			}
 		}
@@ -219,7 +269,7 @@ public final class HtmlDocument {
 			int at = chars.length();
 			chars.append(c);
 			int[] frame = frames[depth];
-			int effective = (link >= 0 ? style | LINK : style) | frame[HtmlStyles.BITS], color = frame[HtmlStyles.COLOR];
+			int effective = (link >= 0 ? style | LINK : style) | frame[HtmlStyles.BITS] | (pre > 0 ? CODE : 0), color = frame[HtmlStyles.COLOR];
 			HtmlDocument d = doc;
 			int last = d.runTotal - 1;
 			if (d.runCount[open] > 0 && d.runEnd[last] == at && d.runStyle[last] == effective && d.runLink[last] == link
@@ -273,14 +323,14 @@ public final class HtmlDocument {
 			int[] frame = frames[depth];
 			boolean own = kind != IMAGE && depth > 0 && blockTag(frameTags[depth]);
 			d.blockBackground[open] = own ? frame[HtmlStyles.BACKGROUND] : 0;
-			d.blockIndent[open] = own ? frame[HtmlStyles.INDENT] : 0;
+			d.blockIndent[open] = (own ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
 			d.blockAlign[open] = frame[HtmlStyles.ALIGN];
 			space = false;
 		}
 
 		static boolean blockTag(String tag) {
 			return switch (tag) {
-				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li" -> true;
+				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre" -> true;
 				default -> false;
 			};
 		}
@@ -306,17 +356,28 @@ public final class HtmlDocument {
 
 		void closeBlock() {
 			if (open < 0) return;
-			trimTrailingSpace();
+			if (doc.kind[open] == PRE) trimLastNewline();
+			else trimTrailingSpace();
 			HtmlDocument d = doc;
 			d.textEnd[open] = chars.length();
-			if (d.textEnd[open] == d.textStart[open] && d.image[open] < 0 && d.kind[open] != LIST_ITEM) d.blockCount--;  // empty
+			boolean empty = d.textEnd[open] == d.textStart[open] && d.image[open] < 0 && d.kind[open] != LIST_ITEM && d.kind[open] != RULE;
+			if (empty) d.blockCount--;
 			open = -1;
 			space = false;
 		}
 
 		void trimTrailingSpace() {
+			trimLast(' ');
+		}
+
+		/* the line end before </pre> ends the last line; it does not start an empty one */
+		void trimLastNewline() {
+			trimLast('\n');
+		}
+
+		void trimLast(char c) {
 			int end = chars.length();
-			if (open < 0 || end == doc.textStart[open] || chars.charAt(end - 1) != ' ') return;
+			if (open < 0 || end == doc.textStart[open] || chars.charAt(end - 1) != c) return;
 			chars.setLength(end - 1);
 			int last = doc.runTotal - 1;
 			if (doc.runEnd[last] == end && --doc.runEnd[last] == doc.runStart[last]) {
