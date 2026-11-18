@@ -451,15 +451,10 @@ public final class GridModelJobs {
 				final int[] order;
 				try {
 					order = RowPermutation.sortedOrder(snapshot, rows, descending);
-				} catch (final RuntimeException failure) {
-					done.completeExceptionally(failure);
-					try {
-						display.asyncExec(() -> {
-							if (!grid.isDisposed()) grid.removeListener(SWT.Dispose, onDispose);
-						});
-					} catch (final org.eclipse.swt.SWTException disposed) {
-						/* The Grid's disposal listener has already completed the future. */
-					}
+				} catch (final RuntimeException | Error failure) {
+					finishWorkerFailure(display, done, failure, () -> {
+						if (!grid.isDisposed()) grid.removeListener(SWT.Dispose, onDispose);
+					});
 					return;
 				}
 				try {
@@ -495,5 +490,27 @@ public final class GridModelJobs {
 			throw rejected;
 		}
 		return done;
+	}
+
+	/*
+	 * Future callbacks may update SWT widgets. CompletableFuture invokes
+	 * non-async continuations on its completing thread, so even a failed CPU
+	 * sort must complete on the Display thread while that thread is live.
+	 */
+	private static void finishWorkerFailure(final Display display,
+			final CompletableFuture<Boolean> done, final Throwable failure,
+			final Runnable onUiCleanup) {
+		try {
+			display.asyncExec(() -> {
+				try {
+					done.completeExceptionally(failure);
+				} finally {
+					onUiCleanup.run();
+				}
+			});
+		} catch (final SWTException disposed) {
+			// The Display cannot deliver another UI callback after disposal.
+			done.complete(Boolean.FALSE);
+		}
 	}
 }
