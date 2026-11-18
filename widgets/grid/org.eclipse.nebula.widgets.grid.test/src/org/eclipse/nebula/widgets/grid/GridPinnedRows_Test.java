@@ -289,6 +289,82 @@ public class GridPinnedRows_Test {
 	}
 
 
+
+	@Test
+	public void stickySubheadingPushesAwayAtItsLastDescendant() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 460, 400);
+		grid.setHeaderVisible(true);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setTree(true);
+		column.setFixed(true);
+		column.setWidth(220);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		final GridItem a = new GridItem(root, SWT.NONE);
+		final GridItem[] aChildren = new GridItem[40];
+		for (int i = 0; i < aChildren.length; i++) {
+			aChildren[i] = new GridItem(a, SWT.NONE);
+		}
+		final GridItem b = new GridItem(root, SWT.NONE);
+		final GridItem[] bChildren = new GridItem[40];
+		for (int i = 0; i < bChildren.length; i++) bChildren[i] = new GridItem(b, SWT.NONE);
+		root.setExpanded(true);
+		a.setExpanded(true);
+		b.setExpanded(true);
+		grid.setStickyAncestorRows(true);
+		final int chrome = grid.getHeaderHeight();
+		final int rootHeight = root.getHeight() + 1;
+		final int aHeight = a.getHeight() + 1;
+		grid.setTopIndex(aChildren[35].getRowIndex());
+		assertEquals(chrome, grid.getOrigin(column, root).y);
+		assertEquals(chrome + rootHeight, grid.getOrigin(column, a).y);
+		assertTrue(grid.isShown(a));
+		assertSame(a, grid.getItem(new Point(16, chrome + rootHeight + 2)));
+		grid.setTopIndex(aChildren[39].getRowIndex());
+		assertEquals("last child ends the group; the pinned subheading moves up",
+				chrome + aChildren[39].getHeight() + 1 - aHeight,
+				grid.getOrigin(column, a).y);
+		assertEquals("a moving subheading cannot host an un-clipped native editor",
+				false, grid.isShown(a));
+		assertSame("the outer ancestor remains at the top", root,
+				grid.getItem(new Point(16, chrome + 2)));
+		grid.setTopIndex(bChildren[10].getRowIndex());
+		assertEquals("the next subtree restores its own sticky subheading",
+				chrome + rootHeight, grid.getOrigin(column, b).y);
+		assertSame(b, grid.getItem(new Point(16, chrome + rootHeight + 2)));
+	}
+
+	@Test
+	public void stickySubtreePushGeometryClampsWithoutOverflow() {
+		assertEquals(30, Grid.stickyPushedTop(Long.MAX_VALUE, 20, 30));
+		assertEquals(30, Grid.stickyPushedTop(1_000L, 20, 30));
+		assertEquals(24, Grid.stickyPushedTop(44L, 20, 30));
+		assertEquals(0, Grid.stickyPushedTop(20L, 20, 30));
+		assertEquals(-(1 << 28), Grid.stickyPushedTop(Long.MIN_VALUE, 20, 30));
+		for (int end = 1; end < 250; end++) {
+			final int actual = Grid.stickyPushedTop(end, 19, 40);
+			assertTrue(actual <= 40);
+			assertTrue(actual <= Grid.stickyPushedTop(end + 1L, 19, 40));
+		}
+	}
+
+
+	@Test
+	public void stickyPushGeometryMatchesExactLongOracle() {
+		final java.util.Random random = new java.util.Random(0x20261118L);
+		for (int i = 0; i < 20_000; i++) {
+			final long end = random.nextLong();
+			final long height = 1L + random.nextInt(2000);
+			final int slot = random.nextInt(4000);
+			final java.math.BigInteger expected = java.math.BigInteger.valueOf(end)
+					.subtract(java.math.BigInteger.valueOf(height))
+					.max(java.math.BigInteger.valueOf(-(1L << 28)))
+					.min(java.math.BigInteger.valueOf(slot));
+			assertEquals("case " + i, expected.intValueExact(),
+					Grid.stickyPushedTop(end, height, slot));
+		}
+	}
+
 	@Test
 	public void accessibilityHitIndexIsBoundedForMillionVirtualRows() {
 		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL);
