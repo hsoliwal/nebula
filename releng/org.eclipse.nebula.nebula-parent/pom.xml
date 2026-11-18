@@ -378,6 +378,7 @@ Contributors:
 		<!-- Incubation -->
 
 		<module>../../widgets/calendarcombo</module>
+		<module>../../widgets/vnc</module>
 		<module>../../widgets/collapsiblebuttons</module>
 		<module>../../widgets/datechooser</module>
 		<module>../../widgets/pagination</module>
