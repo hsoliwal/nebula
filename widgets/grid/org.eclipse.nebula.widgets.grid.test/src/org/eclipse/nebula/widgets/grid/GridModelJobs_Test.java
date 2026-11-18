@@ -22,6 +22,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
@@ -142,6 +145,145 @@ public class GridModelJobs_Test {
 		grid.dispose();
 		assertTrue(done.isDone());
 		assertFalse(done.join());
+	}
+
+
+	private void pumpUntil(final CompletableFuture<Boolean> future) {
+		final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
+		while (!future.isDone() && System.nanoTime() < deadline) {
+			if (!display.readAndDispatch()) Thread.yield();
+		}
+		assertTrue("CPU sort did not publish to the SWT event thread", future.isDone());
+	}
+
+	@Test
+	public void cpuLatestSortAlwaysOffloadsEvenSmallModel() throws InterruptedException {
+		final int rows = 32;
+		final Grid grid = grid(rows);
+		final int[] input = keys(rows);
+		final List<Runnable> submitted = new ArrayList<>();
+		final Thread uiThread = Thread.currentThread();
+		final AtomicBoolean calculatedOffUi = new AtomicBoolean();
+		final CompletableFuture<Boolean> done = GridModelJobs.sortByIntKeysCpuLatest(grid,
+				input, false, task -> submitted.add(() -> {
+					calculatedOffUi.set(Thread.currentThread() != uiThread);
+					task.run();
+				}));
+		assertEquals("worker queue should get one job", 1, submitted.size());
+		assertFalse("small job cannot execute inline", done.isDone());
+		assertFalse(grid.getRowPermutation().isSorted());
+		input[0] = Integer.MAX_VALUE; // detached CPU input: caller may reuse buffer
+		final Thread worker = new Thread(submitted.get(0), "nebula-cpu-sort");
+		worker.start();
+		pumpUntil(done);
+		worker.join(2000);
+		assertTrue(calculatedOffUi.get());
+		assertTrue(done.join());
+		assertArrayEquals(RowPermutation.sortedOrder(keys(rows), rows, false),
+				view(grid.getRowPermutation()));
+	}
+
+	@Test
+	public void cpuPreparedImmutableKeysAvoidUiSideModelCopy() throws InterruptedException {
+		final int rows = 800;
+		final int[] caller = keys(rows);
+		final int[] expected = caller.clone();
+		final java.util.concurrent.atomic.AtomicReference<GridModelJobs.IntKeySnapshot> frozen =
+				new java.util.concurrent.atomic.AtomicReference<>();
+		final Thread preparer = new Thread(() ->
+				frozen.set(GridModelJobs.IntKeySnapshot.copyOf(caller, rows)), "key-copy-backend");
+		preparer.start();
+		preparer.join(2000);
+		assertTrue(frozen.get() != null);
+		final Grid grid = grid(rows);
+		final List<Runnable> pending = new ArrayList<>();
+		final CompletableFuture<Boolean> done = GridModelJobs.sortByIntKeysCpuLatest(
+				grid, frozen.get(), false, pending::add);
+		caller[0] = Integer.MAX_VALUE;
+		final Thread worker = new Thread(pending.get(0), "grid-key-cpu");
+		worker.start();
+		pumpUntil(done);
+		worker.join(2000);
+		assertTrue(done.join());
+		assertArrayEquals(RowPermutation.sortedOrder(expected, rows, false), view(grid.getRowPermutation()));
+	}
+
+	@Test
+	public void cpuLatestSortCoalescesBurstAndCancelsOlderFutures() throws InterruptedException {
+		final int rows = 1200;
+		final Grid grid = grid(rows);
+		final List<Runnable> submitted = new ArrayList<>();
+		final int[] input = keys(rows);
+		final CompletableFuture<Boolean> first = GridModelJobs.sortByIntKeysCpuLatest(
+				grid, input, false, submitted::add);
+		final CompletableFuture<Boolean> second = GridModelJobs.sortByIntKeysCpuLatest(
+				grid, input, false, submitted::add);
+		final CompletableFuture<Boolean> last = GridModelJobs.sortByIntKeysCpuLatest(
+				grid, input, true, submitted::add);
+		assertEquals("one worker drain must serve the newest request", 1, submitted.size());
+		assertTrue(first.isDone());
+		assertFalse(first.join());
+		assertTrue(second.isDone());
+		assertFalse(second.join());
+		final Thread worker = new Thread(submitted.get(0), "nebula-coalesced-cpu");
+		worker.start();
+		pumpUntil(last);
+		worker.join(2000);
+		assertTrue(last.join());
+		assertArrayEquals(RowPermutation.sortedOrder(input, rows, true), view(grid.getRowPermutation()));
+	}
+
+	@Test
+	public void cpuLatestSortRefusesExecutorThatRunsOnUiThread() {
+		final Grid grid = grid(32);
+		try {
+			GridModelJobs.sortByIntKeysCpuLatest(grid, keys(32), false, Runnable::run);
+			org.junit.Assert.fail("inline executor must not run CPU sorting on UI thread");
+		} catch (IllegalArgumentException expected) {
+			assertFalse(grid.getRowPermutation().isSorted());
+		}
+	}
+
+	@Test
+	public void cpuLatestSortDropsStaleModelAndDisposedWidget() throws InterruptedException {
+		final int rows = 64;
+		final Grid grid = grid(rows);
+		final List<Runnable> submitted = new ArrayList<>();
+		final CompletableFuture<Boolean> stale = GridModelJobs.sortByIntKeysCpuLatest(
+				grid, keys(rows), false, submitted::add);
+		grid.getRowPermutation().setFilter(row -> (row & 1) == 0);
+		grid.refreshRowPermutation();
+		final Thread worker = new Thread(submitted.remove(0), "nebula-stale-cpu");
+		worker.start();
+		pumpUntil(stale);
+		worker.join(2000);
+		assertFalse(stale.join());
+
+		final List<Runnable> pending = new ArrayList<>();
+		final CompletableFuture<Boolean> disposed = GridModelJobs.sortByIntKeysCpuLatest(
+				grid, keys(rows), true, pending::add);
+		grid.dispose();
+		assertTrue(disposed.isDone());
+		assertFalse(disposed.join());
+		// An accepted executor task can still start after disposal; it must be inert.
+		final Thread trailing = new Thread(pending.get(0), "nebula-disposed-cpu");
+		trailing.start();
+		trailing.join(2000);
+	}
+
+	@Test
+	public void cancellablePackedRadixStopsInsideCpuPass() {
+		final int rows = 40_000;
+		final int[] input = keys(rows);
+		final int[] original = input.clone();
+		final java.util.concurrent.atomic.AtomicInteger polls = new java.util.concurrent.atomic.AtomicInteger();
+		try {
+			RowPermutation.sortedOrder(input, rows, false, () -> polls.incrementAndGet() >= 4);
+			org.junit.Assert.fail("obsolete sort must stop before a full radix pass");
+		} catch (CancellationException expected) {
+			assertTrue(polls.get() >= 4);
+			assertArrayEquals("sort input must remain immutable", original, input);
+		}
 	}
 
 	private Grid grid(final int rows) {

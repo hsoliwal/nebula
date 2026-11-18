@@ -3,6 +3,9 @@
    <feature id="org.eclipse.nebula.widgets.vnc.feature" version="0.0.0">
       <category name="Nebula Individual Incubation Widgets"/>
    </feature>
+   <feature id="org.eclipse.nebula.widgets.terminal.feature" version="0.0.0">
+      <category name="Nebula Individual Incubation Widgets"/>
+   </feature>
    <feature id="org.eclipse.nebula.widgets.xviewer.feature" version="0.0.0">
       <category name="Nebula Individual Mature Widgets"/>
    </feature>

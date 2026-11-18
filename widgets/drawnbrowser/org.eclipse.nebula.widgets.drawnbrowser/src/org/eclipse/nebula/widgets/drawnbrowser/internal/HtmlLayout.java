@@ -70,11 +70,17 @@ public final class HtmlLayout {
 	private int width = -1;
 	/* per image: the width and height it is drawn at once loaded (-1: not loaded), or null before any loads */
 	private int[] shown;
+	private final int[] imageBox;
 	/* block tops (top[b] valid for b <= measured) and heights; measured = number of blocks measured so far */
 	private int[] top, height;
 	private int measured;
+	/* Only positioned/sized documents need a complete box scene; the ordinary prefix layout is unchanged. */
+	private final HtmlPositionedLayout positioned;
+	private boolean positionedDirty = true;
+	private int viewHeight, scrollY;
 	/* per table: column left edges relative to the table, one more than its columns (the last is its width), or null */
 	private int[][] columnX;
+	private final int[] columnAvailableWidth;
 
 	/* the TextLayout cache: block index per slot, least recently used first */
 	private final int[] cachedBlock = new int[CACHE];
@@ -91,6 +97,10 @@ public final class HtmlLayout {
 		top = new int[doc.blockCount + 1];
 		height = new int[Math.max(1, doc.blockCount)];
 		columnX = new int[doc.tableCount][];
+		columnAvailableWidth = new int[doc.tableCount];
+		positioned = doc.boxLayout ? new HtmlPositionedLayout(doc) : null;
+		imageBox = new int[doc.imageCount];
+		for (int b = 0; b < doc.blockCount; b++) if (doc.image[b] >= 0) imageBox[doc.image[b]] = doc.blockBox[b];
 	}
 
 	/** Sets the width blocks wrap to; a new width forgets every measure. */
@@ -98,6 +108,7 @@ public final class HtmlLayout {
 		if (newWidth == width) return;
 		width = Math.max(1, newWidth);
 		measured = 0;
+		positionedDirty = true;
 		Arrays.fill(columnX, null);
 		clearCache();
 	}
@@ -106,25 +117,47 @@ public final class HtmlLayout {
 		return width;
 	}
 
+	/** Updates the viewport used by fixed boxes. A scroll changes projection only, not text measurements. */
+	public void setViewport(int height, int scroll) {
+		if (viewHeight != Math.max(0, height)) positionedDirty = true;
+		viewHeight = Math.max(0, height);
+		scrollY = Math.max(0, scroll);
+	}
+
+	/** The resolved positioned scene, or null for the ordinary lazy block layout. */
+	public HtmlPositionedLayout positioned() {
+		if (positioned != null) ensurePositioned();
+		return positioned;
+	}
+
 	/** Measures blocks until {@code y} is covered or the document ends. */
 	public void ensure(int y) {
+		if (positioned != null) {
+			ensurePositioned();
+			return;
+		}
 		while (measured < doc.blockCount && top[measured] <= y) measureNext();
 	}
 
 	/** The block whose box holds {@code y} (clamped to the document); in a table row, the row's first cell. */
 	public int blockAt(int y) {
 		ensure(y);
+		if (positioned != null) return positioned.blockAt(0, y, scrollY);
 		if (measured == 0) return -1;
 		int index = Arrays.binarySearch(top, 0, measured + 1, y);
 		int b = Math.max(0, Math.min(index >= 0 ? index : -index - 2, measured - 1));
 		while (b > 0 && doc.sameRow(b - 1, b)) b--;
-		// a box out of the flow has no extent there: the block of the flow at that y follows it
+		// Preserve the flat owner's flow lookup: absolute/fixed blocks have no allocation here.
 		while (b + 1 < measured && outOfFlow(b) && top[b + 1] <= y) b++;
 		return b;
 	}
 
 	/** The block under ({@code x}, {@code y}) in page coordinates: in a table row, the cell whose column holds x. */
 	public int blockAt(int x, int y) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.blockAt(x, y, scrollY);
+		}
 		int b = blockAt(y);
 		if (b < 0 || doc.kind[b] != HtmlDocument.CELL) return b;
 		// a cell of an earlier row whose rowspan reaches y, under x, comes first
@@ -138,16 +171,20 @@ public final class HtmlLayout {
 
 	public int top(int b) {
 		ensureBlock(b);
-		return top[b];
+		return positioned == null ? top[b] : positioned.blockY(b, scrollY);
 	}
 
 	public int height(int b) {
 		ensureBlock(b);
-		return height[b];
+		return positioned == null ? height[b] : positioned.blockHeight(b);
 	}
 
 	/** The page height: exact once every block is measured, else an estimate from the average so far. */
 	public int totalHeight() {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.totalHeight();
+		}
 		if (measured == doc.blockCount) return top[measured];
 		if (measured == 0) return doc.blockCount * (base.getHeight() * 2 + 2 * BLOCK_GAP);
 		return top[measured] + (int) ((long) top[measured] * (doc.blockCount - measured) / measured);
@@ -160,12 +197,20 @@ public final class HtmlLayout {
 
 	/** The x where block {@code b}'s content starts (list indent, left margin, border and padding; a cell's column and padding). */
 	public int indent(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.blockX(b);
+		}
 		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + (boxedItem(b) ? doc.blockBorder[b] + doc.blockPadLeft[b] : CELL_PADDING);
 		return boxLeft(b) + doc.blockBorder[b] + doc.blockPadLeft[b];
 	}
 
 	/** How far below its top block {@code b}'s content starts: the gap and top margin, border and padding; a cell's padding. */
 	public int contentTop(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.blockContentTop(b);
+		}
 		if (doc.kind[b] == HtmlDocument.CELL) return boxedItem(b) ? doc.blockBorder[b] + doc.blockPadTop[b] : CELL_PADDING;
 		return gapTop(b) + doc.blockBorder[b] + doc.blockPadTop[b];
 	}
@@ -179,21 +224,37 @@ public final class HtmlLayout {
 
 	/** The left edge of block {@code b}'s border box: list indent and left margin. */
 	public int boxLeft(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.boxX(doc.blockBox[b]);
+		}
 		return (doc.kind[b] == HtmlDocument.LIST_ITEM ? doc.level[b] * LIST_INDENT : 0) + doc.blockIndent[b];
 	}
 
 	/** The page y of the top of block {@code b}'s border box. */
 	public int boxTop(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.boxY(doc.blockBox[b], scrollY);
+		}
 		return top(b) + gapTop(b);
 	}
 
 	/** The width of block {@code b}'s border box: the view less the left edge and the right margin. */
 	public int boxWidth(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.boxWidth(doc.blockBox[b]);
+		}
 		return Math.max(0, width - boxLeft(b) - doc.blockMarginRight[b]);
 	}
 
 	/** The height of block {@code b}'s border box. */
 	public int boxHeight(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.boxHeight(doc.blockBox[b]);
+		}
 		return height(b) - gapTop(b) - gapBottom(b);
 	}
 
@@ -213,6 +274,8 @@ public final class HtmlLayout {
 	 * or fixed box so that its border box starts at its left offset; 0 when the offset is auto.
 	 */
 	public int offsetX(int b) {
+		// A resolved box scene already includes its visual displacement in the geometry accessors.
+		if (positioned != null) return 0;
 		int left = doc.blockLeft[b];
 		if (left == HtmlStyles.AUTO || !positioned(b)) return 0;
 		return doc.blockPosition[b] == HtmlStyles.RELATIVE ? left : left - boxLeft(b);
@@ -225,6 +288,10 @@ public final class HtmlLayout {
 	 * view's top, by as much, but not past the end of its containing element; 0 when the offset is auto.
 	 */
 	public int offsetY(int b, int scrollY) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.blockY(b, scrollY) - positioned.blockY(b, this.scrollY);
+		}
 		int offset = doc.blockTop[b];
 		if (offset == HtmlStyles.AUTO || !positioned(b)) return 0;
 		return switch (doc.blockPosition[b]) {
@@ -246,7 +313,7 @@ public final class HtmlLayout {
 	public String linkIn(int b, int x, int y) {
 		if (b < 0 || textless(b)) return null;
 		TextLayout layout = textLayout(b);
-		int lx = x - indent(b), ly = y - top[b] - contentTop(b);
+		int lx = x - indent(b), ly = y - top(b) - contentTop(b);
 		if (lx < 0 || ly < 0 || !layout.getBounds().contains(lx, ly)) return null;
 		int[] trailing = new int[1];
 		int offset = layout.getOffset(lx, ly, trailing) + doc.textStart[b];
@@ -267,6 +334,10 @@ public final class HtmlLayout {
 
 	/** The left edge of cell {@code b}'s box. */
 	public int cellX(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.boxX(doc.blockBox[b]);
+		}
 		return doc.blockIndent[b] + columns(doc.cellTable[b])[doc.cellColumn[b]];
 	}
 
@@ -286,6 +357,10 @@ public final class HtmlLayout {
 
 	/** The width of cell {@code b}'s box (its columns' width). */
 	public int cellWidth(int b) {
+		if (positioned != null) {
+			ensurePositioned();
+			return positioned.boxWidth(doc.blockBox[b]);
+		}
 		int t = doc.cellTable[b];
 		int[] x = columns(t);
 		if (doc.tableDisplay[t] != HtmlStyles.DISPLAY_DEFAULT) {
@@ -327,7 +402,7 @@ public final class HtmlLayout {
 		int b = blockAt(x, y);
 		if (b < 0 || textless(b)) return null;
 		TextLayout layout = textLayout(b);
-		int lx = x - indent(b), ly = y - top[b] - contentTop(b);
+		int lx = x - indent(b), ly = y - top(b) - contentTop(b);
 		if (lx < 0 || ly < 0 || !layout.getBounds().contains(lx, ly)) return null;
 		int[] trailing = new int[1];
 		int offset = layout.getOffset(lx, ly, trailing) + doc.textStart[b];
@@ -344,11 +419,12 @@ public final class HtmlLayout {
 	 */
 	public int offsetAt(int x, int y) {
 		int b = blockAt(x, y);
+		if (b < 0 && positioned != null) b = positioned.nearestBlock(x, y, scrollY);
 		if (b < 0) return 0;
 		if (textless(b)) return doc.textStart[b];
 		TextLayout layout = textLayout(b);
 		int[] trailing = new int[1];
-		int local = layout.getOffset(x - indent(b), y - top[b] - contentTop(b), trailing) + trailing[0];
+		int local = layout.getOffset(x - indent(b), y - top(b) - contentTop(b), trailing) + trailing[0];
 		return doc.textStart[b] + Math.min(local, doc.textEnd[b] - doc.textStart[b]);
 	}
 
@@ -360,9 +436,9 @@ public final class HtmlLayout {
 	 * @return whether the image's box changed
 	 */
 	public boolean setNaturalSize(int index, int naturalWidth, int naturalHeight) {
-		int w = doc.imageWidth[index], h = doc.imageHeight[index];
-		int width = w > 0 ? w : h > 0 && naturalHeight > 0 ? Math.round((float) naturalWidth * h / naturalHeight) : naturalWidth;
-		int height = h > 0 ? h : w > 0 && naturalWidth > 0 ? Math.round((float) naturalHeight * w / naturalWidth) : naturalHeight;
+		int w = specifiedImageWidth(index), h = specifiedImageHeight(index);
+		int width = w >= 0 ? w : h >= 0 && naturalHeight > 0 ? Math.round((float) naturalWidth * h / naturalHeight) : naturalWidth;
+		int height = h >= 0 ? h : w >= 0 && naturalWidth > 0 ? Math.round((float) naturalHeight * w / naturalWidth) : naturalHeight;
 		if (width == shownWidth(index) && height == shownHeight(index)) return false;
 		if (shown == null) {
 			shown = new int[2 * doc.imageCount];
@@ -370,6 +446,7 @@ public final class HtmlLayout {
 		}
 		shown[2 * index] = width;
 		shown[2 * index + 1] = height;
+		positionedDirty = true;
 		for (int b = 0; b < measured; b++) {
 			if (doc.image[b] == index) {
 				measured = b;
@@ -381,14 +458,26 @@ public final class HtmlLayout {
 
 	/** The width image {@code index} is drawn at: declared, natural once loaded, else the placeholder. */
 	public int shownWidth(int index) {
-		if (shown != null && shown[2 * index] > 0) return shown[2 * index];
-		return doc.imageWidth[index] > 0 ? doc.imageWidth[index] : IMAGE_PLACEHOLDER;
+		if (shown != null && shown[2 * index] >= 0) return shown[2 * index];
+		int specified = specifiedImageWidth(index);
+		return specified >= 0 ? specified : IMAGE_PLACEHOLDER;
 	}
 
 	/** The height image {@code index} is drawn at: declared, natural once loaded, else the placeholder. */
 	public int shownHeight(int index) {
-		if (shown != null && shown[2 * index + 1] > 0) return shown[2 * index + 1];
-		return doc.imageHeight[index] > 0 ? doc.imageHeight[index] : IMAGE_PLACEHOLDER;
+		if (shown != null && shown[2 * index + 1] >= 0) return shown[2 * index + 1];
+		int specified = specifiedImageHeight(index);
+		return specified >= 0 ? specified : IMAGE_PLACEHOLDER;
+	}
+
+	private int specifiedImageWidth(int index) {
+		int css = doc.boxWidth[imageBox[index]];
+		return css != HtmlStyles.AUTO ? css : doc.imageWidth[index] > 0 ? doc.imageWidth[index] : -1;
+	}
+
+	private int specifiedImageHeight(int index) {
+		int css = doc.boxHeight[imageBox[index]];
+		return css != HtmlStyles.AUTO ? css : doc.imageHeight[index] > 0 ? doc.imageHeight[index] : -1;
 	}
 
 	public void dispose() {
@@ -401,7 +490,58 @@ public final class HtmlLayout {
 
 	private void ensureBlock(int b) {
 		if (b < 0 || b >= doc.blockCount) throw new IndexOutOfBoundsException(b);
+		if (positioned != null) {
+			ensurePositioned();
+			return;
+		}
 		while (measured <= b) measureNext();
+	}
+
+	private void ensurePositioned() {
+		if (!positionedDirty) return;
+		if (width < 0) throw new IllegalStateException("setWidth first");
+		clearCache();
+		Arrays.fill(columnX, null);
+		positioned.layout(width, viewHeight, new HtmlPositionedLayout.Metrics() {
+			@Override
+			public int height(int b, int wrapWidth) {
+				int content;
+				if (doc.kind[b] == HtmlDocument.IMAGE) content = shownHeight(doc.image[b]);
+				else if (doc.kind[b] == HtmlDocument.RULE) content = RULE_HEIGHT;
+				else if (doc.kind[b] == HtmlDocument.CONTROL) content = controlHeight(b);
+				else {
+					TextLayout text = make(b, doc.kind[b] == HtmlDocument.PRE ? -1 : wrapWidth);
+					try { content = text.getBounds().height; }
+					finally { text.dispose(); }
+				}
+				// The scene owns margin/border/padding once per element, even across multiple fragments.
+				return content + 2 * (doc.kind[b] == HtmlDocument.CELL ? boxedItem(b) ? 0 : CELL_PADDING : BLOCK_GAP);
+			}
+
+			@Override
+			public long intrinsicWidths(int b) {
+				int min, max;
+				if (doc.kind[b] == HtmlDocument.IMAGE) min = max = shownWidth(doc.image[b]);
+				else if (doc.kind[b] == HtmlDocument.RULE) min = max = 0;
+				else if (doc.kind[b] == HtmlDocument.CONTROL) min = max = controlWidth(b);
+				else {
+					TextLayout text = make(b, -1);
+					try {
+						max = text.getBounds().width;
+						min = doc.kind[b] == HtmlDocument.PRE ? max : widestWord(text, doc.blockText(b));
+					} finally { text.dispose(); }
+				}
+				if (doc.kind[b] == HtmlDocument.CELL && !boxedItem(b)) { min += 2 * CELL_PADDING; max += 2 * CELL_PADDING; }
+				return (long) min << 32 | max & 0xFFFFFFFFL;
+			}
+
+			@Override
+			public int[] columns(int table, int availableWidth) {
+				return HtmlLayout.this.columns(table, availableWidth);
+			}
+		});
+		measured = doc.blockCount;
+		positionedDirty = false;
 	}
 
 	private void measureNext() {
@@ -423,7 +563,6 @@ public final class HtmlLayout {
 		}
 		// the block gap and the CSS margins outside the border box; the border and the padding inside it
 		height[b] = h + gapTop(b) + gapBottom(b) + 2 * doc.blockBorder[b] + doc.blockPadTop[b] + doc.blockPadBottom[b];
-		// an absolute or fixed box keeps its height but takes no space in the flow
 		top[b + 1] = top[b] + (outOfFlow(b) ? 0 : height[b]);
 		measured++;
 	}
@@ -508,13 +647,19 @@ public final class HtmlLayout {
 	 */
 	private int[] columns(int t) {
 		if (columnX[t] != null) return columnX[t];
-		int n = doc.tableColumns[t], first = -1;
+		int first = 0;
+		while (first < doc.blockCount && doc.cellTable[first] != t) first++;
+		return columns(t, width - (first < doc.blockCount ? doc.blockIndent[first] : 0));
+	}
+
+	private int[] columns(int t, int availableWidth) {
+		if (columnX[t] != null && columnAvailableWidth[t] == availableWidth) return columnX[t];
+		int n = doc.tableColumns[t];
 		int[] min = new int[n], max = new int[n];
 		// cells of one column first; then a spanning cell spreads what its columns lack over them (CSS 2.1 17.5.2.2)
 		for (int pass = 0; pass < 2; pass++) {
 			for (int k = 0; k < doc.blockCount; k++) {
 				if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t || (doc.cellSpan[k] > 1) != (pass == 1)) continue;
-				if (first < 0 || k < first) first = k;
 				TextLayout layout = make(k, -1);
 				int c = doc.cellColumn[k], span = doc.cellSpan[k];
 				int cellMax = layout.getBounds().width + insetH(k), cellMin = widestWord(layout, doc.blockText(k)) + insetH(k);
@@ -527,7 +672,8 @@ public final class HtmlLayout {
 		if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_GRID) {
 			// a grid: x then width per column, by the grid track sizing algorithm (Taffy's steps)
 			int[] tracks = Arrays.copyOfRange(doc.tracks, doc.tableTrackStart[t], doc.tableTrackStart[t] + n);
-			return columnX[t] = GridTracks.layout(tracks, min, max, width - doc.blockIndent[first], doc.tableGap[t], doc.tableJustify[t]);
+			columnAvailableWidth[t] = availableWidth;
+			return columnX[t] = GridTracks.layout(tracks, min, max, availableWidth, doc.tableGap[t], doc.tableJustify[t]);
 		}
 		if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_FLEX) {
 			// a flex row: x then width per item, by the flex algorithm (Yoga's steps)
@@ -538,9 +684,11 @@ public final class HtmlLayout {
 				basis[c] = doc.cellBasis[k] >= 0 ? doc.cellBasis[k] + insetH(k) : -1;
 				grow[c] = doc.cellGrow[k];
 			}
-			return columnX[t] = FlexRow.layout(min, max, basis, grow, width - doc.blockIndent[first], doc.tableGap[t], doc.tableJustify[t]);
+			columnAvailableWidth[t] = availableWidth;
+			return columnX[t] = FlexRow.layout(min, max, basis, grow, availableWidth, doc.tableGap[t], doc.tableJustify[t]);
 		}
-		return columnX[t] = TableColumns.edges(min, max, width - doc.blockIndent[first]);
+		columnAvailableWidth[t] = availableWidth;
+		return columnX[t] = TableColumns.edges(min, max, availableWidth);
 	}
 
 	/*
@@ -565,6 +713,7 @@ public final class HtmlLayout {
 	/* pre does not wrap; a cell wraps to its column, other blocks to the view less their indent */
 	private TextLayout make(int b) {
 		boolean pre = doc.kind[b] == HtmlDocument.PRE, cell = doc.kind[b] == HtmlDocument.CELL;
+		if (positioned != null) return make(b, pre ? -1 : Math.max(1, positioned.blockWidth(b)));
 		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - insetH(b)
 				: width - indent(b) - doc.blockBorder[b] - doc.blockPadRight[b] - doc.blockMarginRight[b]));
 	}
