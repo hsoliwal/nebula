@@ -27,7 +27,9 @@ import java.util.Locale;
  * {@code border} (width, {@code solid}/{@code none}, colour), {@code border-width}, {@code border-color},
  * {@code border-style}; {@code display} (none, flex, grid, others kept as the element's default), and for a flex row
  * {@code flex-direction} row, {@code justify-content}, {@code gap}, and on its items {@code flex-grow},
- * {@code flex-basis} and {@code width} (px); for a grid {@code grid-template-columns} ({@link GridTracks}),
+ * {@code flex-shrink} (finite nonnegative numbers), {@code flex-basis} and {@code width} (px). The flex shorthand
+ * accepts the existing integer grow/pixel-or-auto basis subset, including its fractional shrink factor; for a grid
+ * {@code grid-template-columns} ({@link GridTracks}),
  * {@code justify-content}, {@code gap} (row and column), {@code row-gap}, {@code column-gap}, and on its items
  * {@code grid-column} or {@code grid-column-end} {@code span N} (or {@code 1 / -1}, the whole row); positioning: {@code position} (static, relative, absolute, fixed, sticky), {@code top} and {@code left}
  * (px, negative allowed, or auto) and {@code z-index}. Anything else (other units, other border styles) is ignored,
@@ -65,7 +67,11 @@ public final class HtmlStyles {
 			TRACKS = 24, COLUMN_SPAN = 25, BORDER_STYLE = 26;
 	/** Positioned-box additions preserve every current table, flex, grid and border slot. */
 	public static final int OFFSET_TOP = POS_TOP, OFFSET_LEFT = POS_LEFT, OFFSET_RIGHT = 27, OFFSET_BOTTOM = 28,
-			WIDTH = 29, HEIGHT = 30, Z_AUTO = 31, SLOTS = 32;
+			WIDTH = 29, HEIGHT = 30, Z_AUTO = 31;
+	/** Two primitive words preserve a finite double shrink factor without reusing the positional presence mask. */
+	private static final int SHRINK_HIGH = 32, SHRINK_LOW = 33;
+	/** Number of primitive computed-style slots. Existing slots retain their indices. */
+	public static final int SLOTS = 34;
 
 	/** Draw2D SchemeBorder-style highlight/shadow schemes, encoded as scalar CSS. */
 	public static final int BORDER_SOLID = 0, BORDER_INSET = 1, BORDER_OUTSET = 2,
@@ -90,6 +96,9 @@ public final class HtmlStyles {
 	/* a declaration that does not set a position slot */
 	private static final int NOT_SET = Integer.MIN_VALUE;
 	private static final int PRESENT = SLOTS;
+	private static final int SHRINK_PRESENT = SLOTS + 1;
+	private static final java.util.regex.Pattern NUMBER = java.util.regex.Pattern.compile(
+			"[+-]?(?:[0-9]+(?:\\.[0-9]+)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?");
 
 	/* the numeric box slots, "not set" (-1) in a declaration delta */
 	private static final int[] BOX = { MARGIN_TOP, MARGIN_RIGHT, MARGIN_BOTTOM, PADDING_TOP, PADDING_RIGHT,
@@ -361,12 +370,79 @@ public final class HtmlStyles {
 		root[POS_TOP] = root[POS_LEFT] = root[OFFSET_RIGHT] = root[OFFSET_BOTTOM] = root[WIDTH] = root[HEIGHT] = AUTO;
 		root[Z_AUTO] = 1;
 		root[FLEX_BASIS] = -1;
+		putShrink(root, 1);
 		return root;
+	}
+
+	/** The non-inherited flex-shrink factor, initially 1; the legacy 32-slot style also means 1. */
+	public static double shrink(int[] style) {
+		return style.length <= SHRINK_LOW ? 1 : Double.longBitsToDouble(
+				((long) style[SHRINK_HIGH] << 32) | (style[SHRINK_LOW] & 0xFFFFFFFFL));
+	}
+
+	private static void putShrink(int[] target, double factor) {
+		long bits = Double.doubleToLongBits(factor == 0 ? 0 : factor);
+		target[SHRINK_HIGH] = (int) (bits >>> 32);
+		target[SHRINK_LOW] = (int) bits;
+	}
+
+	/* CSS numbers exclude Java's NaN, infinity, suffixes and hexadecimal floating-point syntax. */
+	private static double shrinkNumber(String value) {
+		if (!NUMBER.matcher(value).matches()) return -1;
+		try {
+			double factor = Double.parseDouble(value);
+			return Double.isFinite(factor) && factor >= 0 ? factor : -1;
+		} catch (NumberFormatException invalid) {
+			return -1;
+		}
+	}
+
+	private static void shrinkDeclaration(int[] delta, double factor) {
+		putShrink(delta, factor);
+		delta[SHRINK_PRESENT] = 1;
+	}
+
+	/* The admitted grow/basis grammar stays integer/px; the second factor accepts finite CSS numbers. */
+	private static void flex(int[] delta, String value) {
+		int grow, basis;
+		double shrink = 1;
+		if (value.equals("none") || value.equals("auto") || value.equals("initial")) {
+			grow = value.equals("auto") ? 1 : 0;
+			shrink = value.equals("none") ? 0 : 1;
+			basis = -1;
+		} else {
+			String[] parts = value.trim().split("\\s+");
+			if (parts.length > 3) return;
+			if (!parts[0].matches("\\d{1,4}")) {
+				if (parts.length != 1 || (basis = px(parts[0])) < 0) return;
+				grow = 1;
+			} else {
+				grow = Integer.parseInt(parts[0]);
+				basis = 0;
+				if (parts.length > 1) {
+					double factor = shrinkNumber(parts[1]);
+					if (factor >= 0) {
+						shrink = factor;
+						if (parts.length == 3) {
+							basis = parts[2].equals("auto") ? -1 : px(parts[2]);
+							if (basis < 0 && !parts[2].equals("auto")) return;
+						}
+					} else {
+						if (parts.length != 2) return;
+						basis = parts[1].equals("auto") ? -1 : px(parts[1]);
+						if (basis < 0 && !parts[1].equals("auto")) return;
+					}
+				}
+			}
+		}
+		delta[FLEX_GROW] = grow;
+		delta[FLEX_BASIS] = basis;
+		shrinkDeclaration(delta, shrink);
 	}
 
 	/* a declaration delta with nothing set */
 	private static int[] emptyDelta() {
-		int[] delta = new int[SLOTS + 1];
+		int[] delta = new int[SLOTS + 2];
 		delta[ALIGN] = delta[INDENT] = -1;
 		for (int slot : BOX) delta[slot] = -1;
 		delta[DISPLAY] = -1;
@@ -516,15 +592,15 @@ public final class HtmlStyles {
 				case "flex-grow" -> {
 					if (value.matches("\\d{1,4}")) delta[FLEX_GROW] = Integer.parseInt(value);
 				}
+				case "flex-shrink" -> {
+					double factor = shrinkNumber(value);
+					if (factor >= 0) shrinkDeclaration(delta, factor);
+				}
 				case "flex-basis" -> {
 					if (px(value) >= 0) delta[FLEX_BASIS] = px(value);
 					else if (value.equals("auto")) delta[FLEX_BASIS] = -1;
 				}
-				case "flex" -> {
-					String[] parts = value.trim().split("\\s+");
-					if (parts[0].matches("\\d{1,4}")) delta[FLEX_GROW] = Integer.parseInt(parts[0]);
-					if (parts.length == 3 && px(parts[2]) >= 0) delta[FLEX_BASIS] = px(parts[2]);
-				}
+				case "flex" -> flex(delta, value);
 				case "justify-content" -> delta[JUSTIFY] = switch (value) {
 					case "center" -> FlexRow.CENTER;
 					case "flex-end", "end", "right" -> FlexRow.END;
@@ -612,9 +688,10 @@ public final class HtmlStyles {
 		if (delta[INDENT] >= 0) style[INDENT] = delta[INDENT];
 		for (int slot : BOX) if (delta[slot] >= 0) style[slot] = delta[slot];
 		if (delta[BORDER_COLOR] != 0) style[BORDER_COLOR] = delta[BORDER_COLOR];
-		for (int slot = POSITION; slot < SLOTS; slot++) {
+		for (int slot = POSITION; slot <= Z_AUTO; slot++) {
 			if ((delta[PRESENT] & (1 << slot)) != 0) style[slot] = delta[slot];
 		}
+		if (delta[SHRINK_PRESENT] != 0) putShrink(style, shrink(delta));
 		if (delta[DISPLAY] >= 0) style[DISPLAY] = delta[DISPLAY];
 		if (delta[FLEX_GROW] >= 0) style[FLEX_GROW] = delta[FLEX_GROW];
 		if (delta[FLEX_BASIS] != NOT_SET) style[FLEX_BASIS] = delta[FLEX_BASIS];

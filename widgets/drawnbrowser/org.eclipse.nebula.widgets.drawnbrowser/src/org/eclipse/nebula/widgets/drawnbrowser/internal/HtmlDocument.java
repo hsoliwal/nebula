@@ -132,6 +132,8 @@ public final class HtmlDocument {
 	public int trackTotal;
 	/** Per block: a flex item's flex-grow, and its flex basis (or width) in px, -1 for none. */
 	public int[] cellGrow = new int[16], cellBasis = new int[16];
+	/** Per flex item, its finite nonnegative flex-shrink factor; anonymous items use the initial value 1. */
+	public double[] cellShrink = new double[16];
 
 	public int runTotal;
 	/** Per run: start and end in {@link #text}, style bits, link index or -1. */
@@ -713,6 +715,7 @@ public final class HtmlDocument {
 				d.cellRowSpan = Arrays.copyOf(d.cellRowSpan, capacity);
 				d.cellGrow = Arrays.copyOf(d.cellGrow, capacity);
 				d.cellBasis = Arrays.copyOf(d.cellBasis, capacity);
+				d.cellShrink = Arrays.copyOf(d.cellShrink, capacity);
 				d.blockBox = Arrays.copyOf(d.blockBox, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
@@ -1059,6 +1062,11 @@ public final class HtmlDocument {
 			openCell(0, span);
 			doc.cellGrow[open] = element ? frame[HtmlStyles.FLEX_GROW] : 0;
 			doc.cellBasis[open] = element ? frame[HtmlStyles.FLEX_BASIS] : -1;
+			// An auto flex basis uses the independently computed width; shorthand declaration order cannot erase it.
+			if (element && doc.cellBasis[open] < 0 && frame[HtmlStyles.WIDTH] != HtmlStyles.AUTO) {
+				doc.cellBasis[open] = frame[HtmlStyles.WIDTH];
+			}
+			doc.cellShrink[open] = element ? HtmlStyles.shrink(frame) : 1;
 		}
 
 		void endContainer() {
