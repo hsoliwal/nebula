@@ -10,6 +10,8 @@ package org.eclipse.nebula.widgets.drawnbrowser;
 
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlPaintOrder;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlPositionedLayout;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.ImageStore;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageFind;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageHistory;
@@ -60,7 +62,7 @@ public class DrawnBrowser extends Canvas {
 
 	private String html = "";
 	private HtmlDocument document = HtmlDocument.parse("");
-	/* the positioned blocks of the page in painting order (null: not computed yet for this page) */
+	/* The existing flat positioned-block order; box scenes use their context-aware fragment plan. */
 	private int[] positionedOrder;
 	/* the page's form controls: their widgets (made when first in view), the values and checked states they show */
 	private Control[] widgets = new Control[0];
@@ -365,6 +367,7 @@ public class DrawnBrowser extends Canvas {
 	private void relayout() {
 		Rectangle area = getClientArea();
 		layout.setWidth(Math.max(1, area.width));
+		layout.setViewport(area.height, viewport.y());
 		layout.ensure(viewport.y() + area.height);
 		sync();
 		updateBar();
@@ -375,6 +378,7 @@ public class DrawnBrowser extends Canvas {
 	/* the viewport learns the view height and how far the page is laid out; the scroll position is clamped */
 	private void sync() {
 		viewport.resize(getClientArea().height, layout.totalHeight());
+		layout.setViewport(getClientArea().height, viewport.y());
 	}
 
 	private void updateBar() {
@@ -392,14 +396,16 @@ public class DrawnBrowser extends Canvas {
 		layout.ensure(Math.max(0, y) + getClientArea().height);
 		sync();
 		int delta = viewport.scrollTo(y);
+		layout.setViewport(getClientArea().height, viewport.y());
 		if (delta != 0) {
-			if (viewport.isFullRepaint(delta)) {
+			HtmlPositionedLayout scene = layout.positioned();
+			if (viewport.isFullRepaint(delta) || scene != null && (scene.hasFixed() || scene.hasSticky())) {
 				redraw();
 			} else {
 				int width = getClientArea().width;
 				scroll(0, viewport.copyTo(delta), 0, viewport.copyFrom(delta), width, viewport.copyHeight(delta), false);
 				redraw(0, viewport.exposedTop(delta), width, viewport.exposedHeight(delta), false);
-				redrawFixed(delta, width);
+				if (layout.positioned() == null) redrawFixed(delta, width);
 			}
 		}
 		updateBar();
@@ -409,16 +415,123 @@ public class DrawnBrowser extends Canvas {
 	private void paint(GC gc, int x, int y, int width, int height) {
 		gc.setBackground(getBackground());
 		gc.fillRectangle(x, y, width, height);
-		if (document.blockCount == 0) return;
 		gc.setForeground(getForeground());
+		HtmlPositionedLayout scene = layout.positioned();
+		if (scene != null) {
+			paintPositioned(gc, scene, x, y, width, height);
+			return;
+		}
+		if (document.blockCount == 0) return;
 		int scrollY = viewport.y();
 		int pageTop = y + scrollY, pageBottom = pageTop + height;
-		// CSS painting order: positioned boxes with a negative z-index, the flow, then the other positioned boxes
 		paintPositioned(gc, scrollY, pageTop, pageBottom, true);
 		for (int b = layout.paintStart(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
-			if (!layout.positioned(b)) paintBlock(gc, b, 0, -scrollY);
+			if (!layout.positioned(b)) paintLegacyBlock(gc, b, 0, -scrollY);
 		}
 		paintPositioned(gc, scrollY, pageTop, pageBottom, false);
+	}
+
+	/* Context backgrounds and content are separate fragments: negative descendants paint between them. */
+	private void paintPositioned(GC gc, HtmlPositionedLayout scene, int damageX, int damageY, int damageWidth, int damageHeight) {
+		HtmlPaintOrder order = scene.order();
+		int scroll = viewport.y();
+		int count = scene.collectVisible(damageY + scroll, damageHeight, scroll);
+		for (int v = 0; v < count; v++) {
+			int s = scene.visibleStep(v);
+			int i = order.index(s);
+			if (order.isBackground(s)) {
+				int color = document.boxBackground[i];
+				int border = document.boxBorder[i];
+				if (color == 0 && border == 0) continue;
+				int x = scene.boxX(i), y = scene.boxY(i, scroll) - scroll, w = scene.boxWidth(i), h = scene.boxHeight(i);
+				if (!intersects(x, y, w, h, damageX, damageY, damageWidth, damageHeight)) continue;
+				paintBox(gc, x, y, w, h, color, border, document.boxBorderColor[i]);
+			} else {
+				int y = scene.blockY(i, scroll) - scroll, box = document.blockBox[i];
+				// PRE, list markers and images may overflow their box; let the widget's damage clip bound drawing.
+				if ((long) y + scene.blockHeight(i) <= damageY || y >= (long) damageY + damageHeight) continue;
+				paintBlock(gc, i, y + layout.contentTop(i), scene.blockX(i), scene.boxX(box), scene.boxWidth(box));
+			}
+		}
+	}
+
+	private static boolean intersects(int x, int y, int width, int height, int dx, int dy, int dw, int dh) {
+		return width > 0 && height > 0 && x < (long) dx + dw && y < (long) dy + dh
+				&& (long) x + width > dx && (long) y + height > dy;
+	}
+
+	/* A box's background and border paint together, before its negative-z descendants and content. */
+	private void paintBox(GC gc, int x, int y, int width, int height, int background, int border, int borderColor) {
+		if (width <= 0 || height <= 0) return;
+		if (background != 0) {
+			gc.setBackground(layout.color(background));
+			gc.fillRectangle(x, y, width, height);
+		}
+		if (border > 0) {
+			gc.setBackground(borderColor == 0 ? getForeground() : layout.color(borderColor));
+			int horizontal = Math.min(border, height), vertical = Math.min(border, width);
+			gc.fillRectangle(x, y, width, horizontal);
+			gc.fillRectangle(x, y + height - horizontal, width, horizontal);
+			gc.fillRectangle(x, y, vertical, height);
+			gc.fillRectangle(x + width - vertical, y, vertical, height);
+		}
+		gc.setBackground(getBackground());
+	}
+
+	/* Retain the flat owner's coordinate contract while sharing the existing content drawing atoms. */
+	private void paintLegacyBlock(GC gc, int b, int dx, int dy) {
+		int top = layout.top(b) + dy + layout.contentTop(b), left = layout.indent(b) + dx;
+		boolean cell = document.kind[b] == HtmlDocument.CELL, box = !cell && layout.hasBox(b);
+		int boxX = (cell ? layout.cellX(b) : box ? layout.boxLeft(b) : 0) + dx;
+		int boxWidth = cell ? layout.cellWidth(b) : box ? layout.boxWidth(b) : getClientArea().width;
+		int boxY = (box ? layout.boxTop(b) : layout.top(b)) + dy;
+		int boxHeight = box ? layout.boxHeight(b) : layout.height(b);
+		paintBox(gc, boxX, boxY, boxWidth, boxHeight, document.blockBackground[b],
+				cell && !layout.boxedItem(b) ? 0 : document.blockBorder[b], document.blockBorderColor[b]);
+		paintBlock(gc, b, top, left, boxX, boxWidth);
+	}
+
+	private void paintBlock(GC gc, int b, int top, int left, int boxX, int boxWidth) {
+		int scrollY = viewport.y();
+		boolean cell = document.kind[b] == HtmlDocument.CELL;
+
+		if (cell && document.tableBorder[document.cellTable[b]] > 0) {
+			gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+			gc.drawRectangle(boxX, layout.top(b) - scrollY, boxWidth - 1, layout.height(b) - 1);
+			gc.setForeground(getForeground());
+		}
+		if (document.kind[b] == HtmlDocument.RULE) {
+			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+			gc.fillRectangle(left, top, Math.max(0, boxX + boxWidth - left - HtmlLayout.BLOCK_GAP), HtmlLayout.RULE_HEIGHT);
+			gc.setBackground(getBackground());
+			return;
+		}
+		if (document.kind[b] == HtmlDocument.IMAGE) {
+			int i = document.image[b], w = layout.shownWidth(i), h = layout.shownHeight(i);
+			if (w <= 0 || h <= 0) return;
+			Image image = images.get(pages.resolve(document.source[i]));
+			if (image != null && !image.isDisposed()) {
+				Rectangle size = image.getBounds();
+				gc.drawImage(image, 0, 0, size.width, size.height, left, top, w, h);
+			} else {
+				gc.drawRectangle(left, top, w - 1, h - 1);
+			}
+			return;
+		}
+		if (document.kind[b] == HtmlDocument.CONTROL) return; // the original native widget owns its pixels
+		TextLayout text = layout.textLayout(b);
+		if (document.kind[b] == HtmlDocument.LIST_ITEM) {
+			String marker = document.marker[b] == HtmlDocument.BULLET ? "\u2022" : document.marker[b] + ".";
+			gc.drawString(marker, left - gc.stringExtent(marker).x - 6, top, true);
+		}
+		int selectionStart = Math.max(selection.start(), document.textStart[b]) - document.textStart[b];
+		int selectionEnd = Math.min(selection.end(), document.textEnd[b]) - document.textStart[b] - 1;
+		if (selectionStart <= selectionEnd) {
+			text.draw(gc, left, top, selectionStart, selectionEnd, getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT),
+					getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION));
+		} else {
+			text.draw(gc, left, top);
+		}
 	}
 
 	/* an image arrived: its natural size may change its block, and the blocks below move */
@@ -518,68 +631,6 @@ public class DrawnBrowser extends Canvas {
 			}
 		}
 	}
-
-	/* block b, shifted by (dx, dy) from its page place to the screen */
-	private void paintBlock(GC gc, int b, int dx, int dy) {
-		int top = layout.top(b) + dy + layout.contentTop(b), left = layout.indent(b) + dx;
-		boolean cell = document.kind[b] == HtmlDocument.CELL, box = !cell && layout.hasBox(b);
-		// a cell's box is its column; a CSS box its border box; any other block keeps its whole row
-		int boxX = (cell ? layout.cellX(b) : box ? layout.boxLeft(b) : 0) + dx;
-		int boxWidth = cell ? layout.cellWidth(b) : box ? layout.boxWidth(b) : getClientArea().width;
-		int boxY = (box ? layout.boxTop(b) : layout.top(b)) + dy, boxHeight = box ? layout.boxHeight(b) : layout.height(b);
-		if (document.blockBackground[b] != 0) {
-			gc.setBackground(layout.color(document.blockBackground[b]));
-			gc.fillRectangle(boxX, boxY, boxWidth, boxHeight);
-			gc.setBackground(getBackground());
-		}
-		int border = cell && !layout.boxedItem(b) ? 0 : document.blockBorder[b];
-		if (border > 0) {
-			int argb = document.blockBorderColor[b];
-			gc.setBackground(argb != 0 ? layout.color(argb) : getForeground());
-			gc.fillRectangle(boxX, boxY, boxWidth, border);
-			gc.fillRectangle(boxX, boxY + boxHeight - border, boxWidth, border);
-			gc.fillRectangle(boxX, boxY, border, boxHeight);
-			gc.fillRectangle(boxX + boxWidth - border, boxY, border, boxHeight);
-			gc.setBackground(getBackground());
-		}
-		if (cell && document.tableBorder[document.cellTable[b]] > 0) {
-			gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
-			gc.drawRectangle(boxX, layout.top(b) + dy, boxWidth - 1, layout.height(b) - 1);
-			gc.setForeground(getForeground());
-		}
-		if (document.kind[b] == HtmlDocument.RULE) {
-			gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
-			gc.fillRectangle(left, top, Math.max(0, getClientArea().width - left - HtmlLayout.BLOCK_GAP), HtmlLayout.RULE_HEIGHT);
-			gc.setBackground(getBackground());
-			return;
-		}
-		if (document.kind[b] == HtmlDocument.IMAGE) {
-			int i = document.image[b], w = layout.shownWidth(i), h = layout.shownHeight(i);
-			Image image = images.get(pages.resolve(document.source[i]));
-			if (image != null && !image.isDisposed()) {
-				Rectangle size = image.getBounds();
-				gc.drawImage(image, 0, 0, size.width, size.height, left, top, w, h);
-			} else {
-				gc.drawRectangle(left, top, w - 1, h - 1);
-			}
-			return;
-		}
-		if (document.kind[b] == HtmlDocument.CONTROL) return; // a native widget shows it
-		TextLayout text = layout.textLayout(b);
-		if (document.kind[b] == HtmlDocument.LIST_ITEM) {
-			String marker = document.marker[b] == HtmlDocument.BULLET ? "\u2022" : document.marker[b] + ".";
-			gc.drawString(marker, left - gc.stringExtent(marker).x - 6, top, true);
-		}
-		int selectionStart = Math.max(selection.start(), document.textStart[b]) - document.textStart[b];
-		int selectionEnd = Math.min(selection.end(), document.textEnd[b]) - document.textStart[b] - 1;
-		if (selectionStart <= selectionEnd) {
-			text.draw(gc, left, top, selectionStart, selectionEnd, getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT),
-				getDisplay().getSystemColor(SWT.COLOR_LIST_SELECTION));
-		} else {
-			text.draw(gc, left, top);
-		}
-	}
-
 	/*
 	 * the positioned boxes in z-index order (document order among equals): those with a negative z-index when below,
 	 * the others otherwise; only boxes that reach the damaged page band are painted
@@ -589,7 +640,7 @@ public class DrawnBrowser extends Canvas {
 			if ((document.blockZ[b] < 0) != below) continue;
 			int dy = layout.offsetY(b, scrollY), top = layout.top(b) + dy;
 			if (top >= pageBottom || top + layout.height(b) <= pageTop) continue;
-			paintBlock(gc, b, layout.offsetX(b), dy - scrollY);
+			paintLegacyBlock(gc, b, layout.offsetX(b), dy - scrollY);
 		}
 	}
 
@@ -614,6 +665,7 @@ public class DrawnBrowser extends Canvas {
 
 	/* the link under (x, y) in the view: positioned boxes from the topmost down, then the flow */
 	private String linkAt(int x, int y) {
+		if (layout.positioned() != null) return layout.linkAt(x, y + viewport.y());
 		int scrollY = viewport.y();
 		int[] order = positionedOrder();
 		for (int i = order.length - 1; i >= 0; i--) {
@@ -648,7 +700,17 @@ public class DrawnBrowser extends Canvas {
 	private void placeWidgets() {
 		if (widgets.length == 0) return;
 		int stamp = ++placeStamp, scrollY = viewport.y(), viewBottom = scrollY + getClientArea().height;
-		for (int b = layout.blockAt(scrollY); b >= 0 && b < document.blockCount && layout.top(b) < viewBottom; b++) {
+		HtmlPositionedLayout scene = layout.positioned();
+		int visible = scene == null ? 0 : scene.collectVisible(scrollY, getClientArea().height, scrollY);
+		for (int step = scene == null ? layout.blockAt(scrollY) : 0;
+				step >= 0 && (scene == null ? step < document.blockCount && layout.top(step) < viewBottom : step < visible); step++) {
+			int b;
+			if (scene == null) b = step;
+			else {
+				int paint = scene.visibleStep(step);
+				if (scene.order().isBackground(paint)) continue;
+				b = scene.order().index(paint);
+			}
 			int c = document.blockControl[b];
 			if (c < 0 || document.kind[b] != HtmlDocument.CONTROL) continue;
 			Control widget = widget(c);
