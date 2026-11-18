@@ -206,6 +206,7 @@ final class SwtMobileRecoveryContracts {
             require(enters.get() == beforeEnters + 1,
                     "A native hover entry followed by repeated moves emits MouseEnter exactly once");
 
+            verifyNativeCanvasLayers(host, display, canvas.get(), peer);
             verifyNativeFocusRedirection(display, canvas.get());
             display.syncExec(() -> {
                 verifyImageGraphics(display);
@@ -226,6 +227,63 @@ final class SwtMobileRecoveryContracts {
             });
         }
     }
+
+
+    /**
+     * Real Android screenshot proof for the SWT retained Canvas image layers.
+     * Uses the existing native View peer, never Java-only synthetic Paint.
+     */
+    private static void verifyNativeCanvasLayers(Instrumentation host, Display display,
+            Canvas canvas, View nativePeer) {
+        int[] oldPoint = location(host, nativePeer, 110, 92);
+        int[] newPoint = location(host, nativePeer, 125, 92);
+        int originalOld = screenPixel(host, oldPoint);
+        int originalNew = screenPixel(host, newPoint);
+        require(!pixelMatches(host, oldPoint, 0xff0000)
+                        && !pixelMatches(host, newPoint, 0xff0000),
+                "Native Canvas layer proof requires distinguishable original pixels");
+        int[] handle = new int[1];
+        display.syncExec(() -> {
+            ImageData source = new ImageData(8, 8, 32,
+                    new org.eclipse.swt.graphics.PaletteData(0xff0000, 0xff00, 0xff));
+            int[] row = new int[8];
+            java.util.Arrays.fill(row, 0xff0000);
+            for (int y = 0; y < 8; y++) source.setPixels(0, y, 8, row, 0);
+            source.alpha = 255;
+            handle[0] = canvas.addLayer(source);
+            canvas.setLayerLocation(handle[0], 108, 89);
+            int[] ids = canvas.getLayerIds();
+            require(ids.length == 1 && ids[0] == handle[0],
+                    "Original Canvas must own one stable retained layer");
+            // Mutate caller-owned source after addLayer copied the pixels.
+            java.util.Arrays.fill(row, 0x0000ff);
+            for (int y = 0; y < 8; y++) source.setPixels(0, y, 8, row, 0);
+        });
+        try {
+            await(() -> pixelMatches(host, oldPoint, 0xff0000),
+                    "Real Android screen presents copied red Canvas image layer");
+            display.syncExec(() -> canvas.setLayerOpacity(handle[0], 0));
+            await(() -> pixelMatches(host, oldPoint, originalOld),
+                    "Transparent retained layer restores original native pixels");
+            display.syncExec(() -> {
+                canvas.setLayerOpacity(handle[0], 255);
+                canvas.setLayerLocation(handle[0], 123, 89);
+            });
+            await(() -> pixelMatches(host, oldPoint, originalOld)
+                            && pixelMatches(host, newPoint, 0xff0000),
+                    "Layer moved with no stale pixels at old native bounds");
+        } finally {
+            display.syncExec(() -> {
+                if (!canvas.isDisposed()) canvas.removeAllLayers();
+            });
+        }
+        await(() -> pixelMatches(host, oldPoint, originalOld)
+                        && pixelMatches(host, newPoint, originalNew),
+                "Removing layers restores both original native Canvas regions");
+        display.syncExec(() -> require(canvas.getLayerIds().length == 0,
+                "Removing layers releases original Canvas image identities"));
+    }
+
 
     private static void verifyNativeFocusRedirection(Display display, Canvas original) {
         AtomicReference<Canvas> requested = new AtomicReference<>();
@@ -341,6 +399,21 @@ final class SwtMobileRecoveryContracts {
         });
         return result;
     }
+
+
+    private static int screenPixel(Instrumentation host, int[] location) {
+        Bitmap frame = host.getUiAutomation().takeScreenshot();
+        require(frame != null, "Actual Android screen capture is available");
+        try {
+            require(location[0] >= 0 && location[1] >= 0
+                            && location[0] < frame.getWidth() && location[1] < frame.getHeight(),
+                    "Native Canvas pixel is within actual device screenshot bounds");
+            return frame.getPixel(location[0], location[1]);
+        } finally {
+            frame.recycle();
+        }
+    }
+
 
     private static boolean pixelMatches(Instrumentation host, int[] location, int expected) {
         Bitmap image = host.getUiAutomation().takeScreenshot();
