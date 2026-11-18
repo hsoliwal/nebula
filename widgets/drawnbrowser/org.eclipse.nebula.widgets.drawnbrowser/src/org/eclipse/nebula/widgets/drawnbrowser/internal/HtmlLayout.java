@@ -24,11 +24,22 @@ import org.eclipse.swt.graphics.TextStyle;
  * prefix sums in one int lane; {@link #blockAt(int)} is a binary search over the measured part. A block's
  * {@link TextLayout} exists only while it is in a small cache of recently used blocks (the visible ones); others are
  * measured and disposed. Changing the width forgets all measures.
+ * <p>
+ * A table row is measured as one step: its cells share a top, and the row is as tall as its tallest cell. Column
+ * widths follow CSS 2.1 automatic table layout (section 17.5.2.2) without spans: each column has a minimum (its
+ * widest word) and a maximum (its widest unwrapped line) over its cells; a table that fits takes its maximums, one
+ * that cannot fit even its minimums takes those and overflows, and otherwise each column gets its minimum plus a
+ * share of the remaining width in proportion to its maximum less its minimum. A table's widths are computed when its
+ * first row is measured, from all its cells (as automatic layout requires), and forgotten with the width.
+ * </p>
  */
 public final class HtmlLayout {
 
 	/** Space before and after a block, and the indent of one list level, in pixels. */
 	public static final int BLOCK_GAP = 8, LIST_INDENT = 24, IMAGE_PLACEHOLDER = 16;
+
+	/** Space between a table cell's edge and its text, in pixels, on each side. */
+	public static final int CELL_PADDING = 4;
 
 	/** The height of a rule's line (hr), in pixels, between its gaps. */
 	public static final int RULE_HEIGHT = 2;
@@ -60,6 +71,8 @@ public final class HtmlLayout {
 	/* block tops (top[b] valid for b <= measured) and heights; measured = number of blocks measured so far */
 	private int[] top, height;
 	private int measured;
+	/* per table: column left edges relative to the table, one more than its columns (the last is its width), or null */
+	private int[][] columnX;
 
 	/* the TextLayout cache: block index per slot, least recently used first */
 	private final int[] cachedBlock = new int[CACHE];
@@ -75,6 +88,7 @@ public final class HtmlLayout {
 		this.linkColor = linkColor;
 		top = new int[doc.blockCount + 1];
 		height = new int[Math.max(1, doc.blockCount)];
+		columnX = new int[doc.tableCount][];
 	}
 
 	/** Sets the width blocks wrap to; a new width forgets every measure. */
@@ -82,6 +96,7 @@ public final class HtmlLayout {
 		if (newWidth == width) return;
 		width = Math.max(1, newWidth);
 		measured = 0;
+		Arrays.fill(columnX, null);
 		clearCache();
 	}
 
@@ -94,13 +109,23 @@ public final class HtmlLayout {
 		while (measured < doc.blockCount && top[measured] <= y) measureNext();
 	}
 
-	/** The block whose box holds {@code y} (clamped to the document). */
+	/** The block whose box holds {@code y} (clamped to the document); in a table row, the row's first cell. */
 	public int blockAt(int y) {
 		ensure(y);
 		if (measured == 0) return -1;
 		int index = Arrays.binarySearch(top, 0, measured + 1, y);
-		int b = index >= 0 ? index : -index - 2;
-		return Math.max(0, Math.min(b, measured - 1));
+		int b = Math.max(0, Math.min(index >= 0 ? index : -index - 2, measured - 1));
+		while (b > 0 && doc.sameRow(b - 1, b)) b--;
+		return b;
+	}
+
+	/** The block under ({@code x}, {@code y}) in page coordinates: in a table row, the cell whose column holds x. */
+	public int blockAt(int x, int y) {
+		int b = blockAt(y);
+		if (b < 0 || doc.kind[b] != HtmlDocument.CELL) return b;
+		int hit = b;
+		for (int k = b; k < doc.blockCount && doc.sameRow(b, k); k++) if (x >= cellX(k)) hit = k;
+		return hit;
 	}
 
 	public int top(int b) {
@@ -125,9 +150,26 @@ public final class HtmlLayout {
 		return measured;
 	}
 
-	/** The x where block {@code b}'s content starts (list indent). */
+	/** The x where block {@code b}'s content starts (list indent; a cell's column and padding). */
 	public int indent(int b) {
+		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + CELL_PADDING;
 		return (doc.kind[b] == HtmlDocument.LIST_ITEM ? doc.level[b] * LIST_INDENT : 0) + doc.blockIndent[b];
+	}
+
+	/** How far below its top block {@code b}'s content starts: the block gap, or a cell's padding. */
+	public int contentTop(int b) {
+		return doc.kind[b] == HtmlDocument.CELL ? CELL_PADDING : BLOCK_GAP;
+	}
+
+	/** The left edge of cell {@code b}'s box. */
+	public int cellX(int b) {
+		return doc.blockIndent[b] + columns(doc.cellTable[b])[doc.cellColumn[b]];
+	}
+
+	/** The width of cell {@code b}'s box (its column's width). */
+	public int cellWidth(int b) {
+		int[] x = columns(doc.cellTable[b]);
+		return x[doc.cellColumn[b] + 1] - x[doc.cellColumn[b]];
 	}
 
 	/** The block's text layout, made and cached on demand; null for an image block. */
@@ -158,10 +200,10 @@ public final class HtmlLayout {
 
 	/** The link target under ({@code x}, {@code y}) in page coordinates, or null. */
 	public String linkAt(int x, int y) {
-		int b = blockAt(y);
+		int b = blockAt(x, y);
 		if (b < 0 || textless(b)) return null;
 		TextLayout layout = textLayout(b);
-		int lx = x - indent(b), ly = y - top[b] - BLOCK_GAP;
+		int lx = x - indent(b), ly = y - top[b] - contentTop(b);
 		if (lx < 0 || ly < 0 || !layout.getBounds().contains(lx, ly)) return null;
 		int[] trailing = new int[1];
 		int offset = layout.getOffset(lx, ly, trailing) + doc.textStart[b];
@@ -177,12 +219,12 @@ public final class HtmlLayout {
 	 * above or below a block's text its first or last line, in an image's block the block's place in the text.
 	 */
 	public int offsetAt(int x, int y) {
-		int b = blockAt(y);
+		int b = blockAt(x, y);
 		if (b < 0) return 0;
 		if (textless(b)) return doc.textStart[b];
 		TextLayout layout = textLayout(b);
 		int[] trailing = new int[1];
-		int local = layout.getOffset(x - indent(b), y - top[b] - BLOCK_GAP, trailing) + trailing[0];
+		int local = layout.getOffset(x - indent(b), y - top[b] - contentTop(b), trailing) + trailing[0];
 		return doc.textStart[b] + Math.min(local, doc.textEnd[b] - doc.textStart[b]);
 	}
 
@@ -241,33 +283,92 @@ public final class HtmlLayout {
 	private void measureNext() {
 		if (width < 0) throw new IllegalStateException("setWidth first");
 		int b = measured;
+		if (doc.kind[b] == HtmlDocument.CELL) {
+			measureRow(b);
+			return;
+		}
 		int h;
 		if (doc.kind[b] == HtmlDocument.IMAGE) {
 			h = shownHeight(doc.image[b]);
 		} else if (doc.kind[b] == HtmlDocument.RULE) {
 			h = RULE_HEIGHT;
 		} else {
-			boolean keep = false;
-			TextLayout layout = null;
-			for (int s = 0; s < cacheSize; s++) if (cachedBlock[s] == b) { layout = cached[s]; keep = true; }
-			if (layout == null) layout = make(b);
-			h = layout.getBounds().height;
-			if (!keep) layout.dispose();
+			h = textHeight(b);
 		}
 		height[b] = h + 2 * BLOCK_GAP;
 		top[b + 1] = top[b] + height[b];
 		measured++;
 	}
 
+	/* the cells of the row starting at block b share its top; the row is as tall as its tallest cell */
+	private void measureRow(int b) {
+		int end = b, h = 0;
+		while (end < doc.blockCount && doc.sameRow(b, end)) h = Math.max(h, textHeight(end++));
+		for (int k = b; k < end; k++) {
+			top[k] = top[b];
+			height[k] = h + 2 * CELL_PADDING;
+		}
+		top[end] = top[b] + h + 2 * CELL_PADDING;
+		measured = end;
+	}
+
+	/* the height of block b's text, from its cached layout or one made and disposed */
+	private int textHeight(int b) {
+		for (int s = 0; s < cacheSize; s++) if (cachedBlock[s] == b) return cached[s].getBounds().height;
+		TextLayout layout = make(b);
+		int h = layout.getBounds().height;
+		layout.dispose();
+		return h;
+	}
+
+	/*
+	 * the column edges of table t, computed on first use (CSS 2.1 automatic table layout without spans): a column's
+	 * minimum is its widest word, its maximum its widest unwrapped line, each plus the cell padding
+	 */
+	private int[] columns(int t) {
+		if (columnX[t] != null) return columnX[t];
+		int n = doc.tableColumns[t], first = -1;
+		int[] min = new int[n], max = new int[n];
+		for (int k = 0; k < doc.blockCount; k++) {
+			if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t) continue;
+			if (first < 0) first = k;
+			TextLayout layout = make(k, -1);
+			int c = doc.cellColumn[k];
+			max[c] = Math.max(max[c], layout.getBounds().width + 2 * CELL_PADDING);
+			min[c] = Math.max(min[c], widestWord(layout, doc.blockText(k)) + 2 * CELL_PADDING);
+			layout.dispose();
+		}
+		return columnX[t] = TableColumns.edges(min, max, width - doc.blockIndent[first]);
+	}
+
+	/* the width of the widest run of text between spaces and line ends, laid out unwrapped */
+	private static int widestWord(TextLayout layout, String text) {
+		int widest = 0;
+		for (int start = 0, n = text.length(); start < n;) {
+			int end = start;
+			while (end < n && text.charAt(end) != ' ' && text.charAt(end) != '\n') end++;
+			if (end > start) widest = Math.max(widest, layout.getLocation(end - 1, true).x - layout.getLocation(start, false).x);
+			start = end + 1;
+		}
+		return widest;
+	}
+
+	/* pre does not wrap; a cell wraps to its column, other blocks to the view less their indent */
 	private TextLayout make(int b) {
+		boolean pre = doc.kind[b] == HtmlDocument.PRE, cell = doc.kind[b] == HtmlDocument.CELL;
+		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - 2 * CELL_PADDING : width - indent(b)));
+	}
+
+	/* block b's text and styles laid out to the wrap width (-1: no wrapping) */
+	private TextLayout make(int b, int wrap) {
 		layoutsMade++;
 		TextLayout layout = new TextLayout(device);
-		boolean pre = doc.kind[b] == HtmlDocument.PRE;
-		layout.setWidth(pre ? -1 : Math.max(1, width - indent(b))); // pre does not wrap
+		boolean pre = doc.kind[b] == HtmlDocument.PRE, cell = doc.kind[b] == HtmlDocument.CELL;
+		layout.setWidth(wrap);
 		int align = doc.blockAlign[b];
 		layout.setAlignment(align == HtmlStyles.CENTER ? SWT.CENTER : align == HtmlStyles.RIGHT ? SWT.RIGHT : SWT.LEFT);
 		int sizeClass = doc.kind[b] == HtmlDocument.HEADING ? doc.level[b] : 0;
-		int blockBold = sizeClass > 0 ? HtmlDocument.BOLD : 0;
+		int blockBold = sizeClass > 0 || cell && doc.level[b] == 1 ? HtmlDocument.BOLD : 0;
 		layout.setFont(font(sizeClass, blockBold | (pre ? HtmlDocument.CODE : 0)));
 		int start = doc.textStart[b];
 		layout.setText(doc.text.substring(start, doc.textEnd[b]));

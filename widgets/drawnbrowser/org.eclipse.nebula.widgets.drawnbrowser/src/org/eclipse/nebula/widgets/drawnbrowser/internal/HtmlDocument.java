@@ -21,11 +21,20 @@ import java.util.Arrays;
  * flow: runs of white space become one space, and a block's text has no leading or trailing space; br is a hard
  * line break.
  * </p>
+ * <p>
+ * A table is its cells: one {@link #CELL} block per td or th, with its table, row and column in three lanes; the cells
+ * of a row are consecutive blocks. Inside a cell, block elements become line breaks (the cell stays one block), images
+ * are not shown, and a nested table's cells and rows become spaces and line breaks. A caption is a centred paragraph;
+ * text in a table outside any cell gets a cell of its own. Empty cells are kept: they hold their column.
+ * </p>
  */
 public final class HtmlDocument {
 
-	/** Block kinds: pre keeps its white space and does not wrap; a rule (hr) has no text. */
-	public static final int PARAGRAPH = 0, HEADING = 1, LIST_ITEM = 2, IMAGE = 3, PRE = 4, RULE = 5;
+	/**
+	 * Block kinds: pre keeps its white space and does not wrap; a rule (hr) has no text; a cell is a td (level 0) or a
+	 * th (level 1) of a table.
+	 */
+	public static final int PARAGRAPH = 0, HEADING = 1, LIST_ITEM = 2, IMAGE = 3, PRE = 4, RULE = 5, CELL = 6;
 
 	/** Style bits of a run; code is monospace (code, tt, kbd, samp, and all of pre). */
 	public static final int BOLD = 1, ITALIC = 2, UNDERLINE = 4, STRIKE = 8, LINK = 16, CODE = 32;
@@ -48,6 +57,12 @@ public final class HtmlDocument {
 			textEnd = new int[16], firstRun = new int[16], runCount = new int[16], image = new int[16];
 	/** Per block, from CSS: background (ARGB, 0 none), alignment ({@link HtmlStyles#LEFT} ...), extra indent px. */
 	public int[] blockBackground = new int[16], blockAlign = new int[16], blockIndent = new int[16];
+	/** Per block: its table, row (numbered across the page) and column if it is a {@link #CELL}, else -1. */
+	public int[] cellTable = new int[16], cellRow = new int[16], cellColumn = new int[16];
+
+	public int tableCount;
+	/** Per table: number of columns (its widest row), and the border attribute in px (0: none). */
+	public int[] tableColumns = new int[4], tableBorder = new int[4];
 
 	public int runTotal;
 	/** Per run: start and end in {@link #text}, style bits, link index or -1. */
@@ -70,7 +85,7 @@ public final class HtmlDocument {
 	public static HtmlDocument parse(String html) {
 		Builder builder = new Builder();
 		HtmlTokenizer.tokenize(html, builder);
-		builder.closeBlock();
+		builder.closeCell();
 		builder.doc.text = builder.chars.toString();
 		return builder.doc;
 	}
@@ -78,6 +93,11 @@ public final class HtmlDocument {
 	/** The text of block {@code b}. */
 	public String blockText(int b) {
 		return text.substring(textStart[b], textEnd[b]);
+	}
+
+	/** Whether blocks {@code a} and {@code b} are cells of the same table row. */
+	public boolean sameRow(int a, int b) {
+		return kind[a] == CELL && kind[b] == CELL && cellRow[a] == cellRow[b];
 	}
 
 	private static final class Builder implements HtmlTokenizer.Handler {
@@ -90,6 +110,10 @@ public final class HtmlDocument {
 		int pre;                       // inside pre: white space is kept
 		boolean preStart;              // a newline right after <pre> is not content
 		int quote;                     // blockquote depth
+		int tables;                    // table depth: only the outermost table's td, th and tr make cells and rows
+		int table = -1, row = -1, rows, column;
+		boolean rowOpen;               // a row of the outermost table has started and not ended
+		boolean cellOpen;              // the open block is a cell: block elements inside it are line breaks
 		/* CSS: the sheet, the text of a style element being read, and one computed style per open element */
 		final HtmlStyles styles = new HtmlStyles();
 		final StringBuilder css = new StringBuilder();
@@ -127,8 +151,27 @@ public final class HtmlDocument {
 					int mark = listDepth == 0 || ordinals[depth] == BULLET ? BULLET : ordinals[depth]++;
 					openBlock(LIST_ITEM, depth, mark);
 				}
+				case "table" -> {
+					if (tables++ == 0) startTable(attributes);
+					else lineBreak('\n');
+				}
+				case "tr" -> {
+					if (tables == 1) startRow();
+					else if (tables > 1) lineBreak('\n');
+				}
+				case "td", "th" -> {
+					if (tables == 1) openCell(name.equals("th") ? 1 : 0);
+					else if (tables > 1) lineBreak(' ');
+				}
+				case "caption" -> {
+					if (tables == 1) {
+						closeCell();
+						openBlock(PARAGRAPH, 0, 0);
+						doc.blockAlign[open] = HtmlStyles.CENTER;
+					}
+				}
 				case "br" -> {
-					if (open < 0) openBlock(PARAGRAPH, 0, 0);
+					ensureOpen();
 					trimTrailingSpace();
 					chars.append('\n');
 					space = false;
@@ -177,7 +220,23 @@ public final class HtmlDocument {
 			pop(name);
 			switch (name) {
 				case "script" -> skip = Math.max(0, skip - 1);
-				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li" -> closeBlock();
+				case "td", "th" -> {
+					if (tables == 1) closeCell();
+				}
+				case "tr" -> {
+					if (tables == 1) {
+						closeCell();
+						rowOpen = false;
+					}
+				}
+				case "table" -> {
+					if (tables == 1) {
+						closeCell();
+						rowOpen = false;
+					}
+					tables = Math.max(0, tables - 1);
+				}
+				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "caption" -> closeBlock();
 				case "ul", "ol" -> {
 					closeBlock();
 					listDepth = Math.max(0, listDepth - 1);
@@ -218,7 +277,7 @@ public final class HtmlDocument {
 					space = true;
 					continue;
 				}
-				if (open < 0) openBlock(PARAGRAPH, 0, 0);
+				ensureOpen();
 				if (space && chars.length() > doc.textStart[open] && chars.charAt(chars.length() - 1) != '\n') appendRun(' ');
 				space = false;
 				appendRun(c);
@@ -240,6 +299,63 @@ public final class HtmlDocument {
 				if (open < 0) openBlock(PRE, 0, 0);
 				appendRun(c);
 			}
+		}
+
+		/* text needs a block: in a table outside any cell it gets a cell of its own, else a paragraph */
+		void ensureOpen() {
+			if (open >= 0) return;
+			if (tables > 0) openCell(0);
+			else openBlock(PARAGRAPH, 0, 0);
+		}
+
+		void startTable(String[] attributes) {
+			closeBlock();
+			HtmlDocument d = doc;
+			if (d.tableCount == d.tableColumns.length) {
+				d.tableColumns = Arrays.copyOf(d.tableColumns, 2 * d.tableCount);
+				d.tableBorder = Arrays.copyOf(d.tableBorder, 2 * d.tableCount);
+			}
+			table = d.tableCount++;
+			String border = HtmlTokenizer.attribute(attributes, "border");
+			d.tableBorder[table] = border == null ? 0 : border.isBlank() ? 1 : Math.max(0, size(border));
+			rowOpen = false;
+		}
+
+		void startRow() {
+			closeCell();
+			row = rows++;
+			column = 0;
+			rowOpen = true;
+		}
+
+		/* a td or th of the outermost table: one block, placed in the current row (a row starts if none has) */
+		void openCell(int header) {
+			if (!rowOpen) startRow();
+			else closeCell();
+			openBlock(CELL, header, 0);
+			HtmlDocument d = doc;
+			d.cellTable[open] = table;
+			d.cellRow[open] = row;
+			d.cellColumn[open] = column++;
+			d.tableColumns[table] = Math.max(d.tableColumns[table], column);
+			d.blockIndent[open] = quote * QUOTE_INDENT;
+			if (header == 1 && d.blockAlign[open] == HtmlStyles.LEFT) d.blockAlign[open] = HtmlStyles.CENTER;
+			cellOpen = true;
+		}
+
+		/* ends the open cell, or the open block when it is not a cell */
+		void closeCell() {
+			cellOpen = false;
+			closeBlock();
+		}
+
+		/* inside a cell a block element, or a nested table's row or cell, separates its text and opens no block */
+		void lineBreak(char separator) {
+			if (!cellOpen) return;
+			trimTrailingSpace();
+			int end = chars.length();
+			if (end > doc.textStart[open] && chars.charAt(end - 1) != '\n') chars.append(separator);
+			space = false;
 		}
 
 		/* sets or clears one style bit; the counter keeps nested tags of the same kind balanced */
@@ -295,6 +411,10 @@ public final class HtmlDocument {
 		}
 
 		void openBlock(int kind, int level, int mark) {
+			if (cellOpen) {
+				lineBreak('\n');
+				return;
+			}
 			closeBlock();
 			HtmlDocument d = doc;
 			if (d.blockCount == d.kind.length) {
@@ -310,8 +430,12 @@ public final class HtmlDocument {
 				d.blockBackground = Arrays.copyOf(d.blockBackground, capacity);
 				d.blockAlign = Arrays.copyOf(d.blockAlign, capacity);
 				d.blockIndent = Arrays.copyOf(d.blockIndent, capacity);
+				d.cellTable = Arrays.copyOf(d.cellTable, capacity);
+				d.cellRow = Arrays.copyOf(d.cellRow, capacity);
+				d.cellColumn = Arrays.copyOf(d.cellColumn, capacity);
 			}
 			open = d.blockCount++;
+			d.cellTable[open] = d.cellRow[open] = d.cellColumn[open] = -1;
 			d.kind[open] = kind;
 			d.level[open] = level;
 			d.marker[open] = mark;
@@ -330,7 +454,7 @@ public final class HtmlDocument {
 
 		static boolean blockTag(String tag) {
 			return switch (tag) {
-				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre" -> true;
+				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "td", "th", "caption" -> true;
 				default -> false;
 			};
 		}
@@ -355,12 +479,13 @@ public final class HtmlDocument {
 		}
 
 		void closeBlock() {
-			if (open < 0) return;
+			if (open < 0 || cellOpen) return;
 			if (doc.kind[open] == PRE) trimLastNewline();
 			else trimTrailingSpace();
 			HtmlDocument d = doc;
 			d.textEnd[open] = chars.length();
-			boolean empty = d.textEnd[open] == d.textStart[open] && d.image[open] < 0 && d.kind[open] != LIST_ITEM && d.kind[open] != RULE;
+			int k = d.kind[open];
+			boolean empty = d.textEnd[open] == d.textStart[open] && d.image[open] < 0 && k != LIST_ITEM && k != RULE && k != CELL;
 			if (empty) d.blockCount--;
 			open = -1;
 			space = false;
@@ -388,7 +513,7 @@ public final class HtmlDocument {
 
 		void image(String[] attributes) {
 			String src = HtmlTokenizer.attribute(attributes, "src");
-			if (src == null) return;
+			if (src == null || cellOpen) return; // a cell is one text block: images in cells are not shown yet
 			openBlock(IMAGE, 0, 0);
 			HtmlDocument d = doc;
 			if (d.imageCount == d.source.length) {

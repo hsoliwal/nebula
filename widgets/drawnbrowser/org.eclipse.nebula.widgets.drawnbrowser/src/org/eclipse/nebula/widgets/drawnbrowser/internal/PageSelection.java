@@ -110,7 +110,8 @@ public final class PageSelection {
 			int stop = b < 0 ? to : Math.min(to, doc.textEnd[b]);
 			out.append(doc.text, at, stop);
 			at = stop;
-			if (at < to) out.append('\n');
+			int next = at < to ? PageFind.blockOf(doc, at) : -1;
+			if (at < to) out.append(b >= 0 && next >= 0 && doc.sameRow(b, next) ? '\t' : '\n'); // cells of a row: tabs
 		}
 		return out.toString();
 	}

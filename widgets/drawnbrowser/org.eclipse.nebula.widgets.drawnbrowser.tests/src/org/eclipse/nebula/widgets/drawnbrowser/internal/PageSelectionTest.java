@@ -28,6 +28,10 @@ public class PageSelectionTest {
 
 	@Test
 	public void aRangeIsOrderedWhicheverWayItWasMade() {
+		PageSelection cells = new PageSelection();
+		HtmlDocument table = HtmlDocument.parse("<table><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table><p>d</p>");
+		cells.select(0, table.text.length());
+		assertEquals("cells of a row are joined by tabs", "a\tb\nc\nd", cells.text(table));
 		PageSelection selection = new PageSelection();
 		selection.select(10, 6);
 		assertEquals(6, selection.start());
