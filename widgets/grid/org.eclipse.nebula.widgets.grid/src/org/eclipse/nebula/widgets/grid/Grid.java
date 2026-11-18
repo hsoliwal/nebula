@@ -781,6 +781,9 @@ public class Grid extends Canvas {
 	/** Reused primitive row indices: nearest ancestor first, root last. */
 	private int[] stickyAncestorPath = new int[4];
 	private int stickyAncestorDepth;
+	/** Stable, reusable item-identity snapshot during a possibly reentrant paint. */
+	private GridItem[] stickyPaintItems = new GridItem[4];
+	private boolean stickyPaintBusy;
 
 	/** True while {@link #onPaint(PaintEvent)} runs. */
 	private boolean painting;
@@ -6331,11 +6334,33 @@ public class Grid extends Canvas {
 		int y = columnHeadersVisible ? headerHeight() : 0;
 		final int bottom = clientArea.height - (columnFootersVisible ? footerHeight() : 0);
 		final int depth = resolveStickyAncestors();
-		for (int i = depth - 1; i >= 0 && y < bottom; i--) {
-			final int row = stickyAncestorPath[i];
-			paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll,
-					fixed, fixedOverlayActive, row, 1, y);
-			y = (int) Math.min((long) bottom, (long) y + items.get(row).getHeight() + 1L);
+		final GridItem[] frame;
+		if (stickyPaintBusy) {
+			// A nested paint must not overwrite the outer pass's stable item identities.
+			frame = new GridItem[depth];
+		} else {
+			if (stickyPaintItems.length < depth) {
+				stickyPaintItems = Arrays.copyOf(stickyPaintItems, Math.max(depth, stickyPaintItems.length * 2));
+			}
+			frame = stickyPaintItems;
+			stickyPaintBusy = true;
+		}
+		try {
+			for (int i = 0; i < depth; i++) frame[i] = items.get(stickyAncestorPath[i]);
+			for (int i = depth - 1; i >= 0 && y < bottom; i++) {
+				if (isDisposed()) return;
+				final GridItem item = frame[i];
+				if (item.isDisposed() || !item.isVisible()) continue;
+				final int row = item.getRowIndex();
+				if (row < 0 || row >= items.size() || items.get(row) != item) continue;
+				final int extent = item.getHeight() + 1;
+				paintPinnedPlane(gc, originalClipping, clientArea, extraFill, hscroll,
+						fixed, fixedOverlayActive, row, 1, y);
+				y = (int) Math.min((long) bottom, (long) y + extent);
+			}
+		} finally {
+			Arrays.fill(frame, 0, depth, null);
+			if (frame == stickyPaintItems) stickyPaintBusy = false;
 		}
 	}
 
