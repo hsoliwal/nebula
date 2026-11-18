@@ -39,7 +39,7 @@ public class CollectionViewportTraversal_Test {
 				|| mode == CollectionModel.INFINITE ? RECT : ROUND;
 	}
 
-	private static final class Reference extends CollectionModel {
+	private static final class Reference extends CollectionPlaneChecks {
 		Reference(CollectionModel model, int mode) {
 			super(model.concept(), model.role(), mode, shape(mode), model.variant());
 		}
@@ -104,7 +104,9 @@ public class CollectionViewportTraversal_Test {
 		assertEquals(where + " logical extent", reference.logicalExtent(), actual.logicalExtent());
 		assertEquals(where + " logical count", reference.logicalCount(), actual.logicalCount());
 		assertArrayEquals(where + " all native lanes and rectangles", reference.snapshot(), actual.snapshot());
-		assertEquals(where + " display list", transcript(paint(reference)), transcript(paint(actual)));
+		WebPaint expected = paint(reference), rendered = paint(actual);
+		assertEquals(where + " display list", transcript(expected), transcript(rendered));
+		CollectionPlaneChecks.assertPaint(actual, expected, rendered, where);
 		for (int x : new int[] {-1, 0, 1, 8, 17, 111, 223, 447, 895, 896, 1000}) {
 			for (int y : new int[] {-200, -1, 0, 1, 31, 32, 63, 95, 191, 192, 300}) {
 				assertEquals(where + " hit " + x + "," + y, reference.hitTest(x, y), actual.hitTest(x, y));

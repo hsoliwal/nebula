@@ -122,7 +122,17 @@ public final class WebChecks {
 		m.scrollTo(1005);
 		check(m.takeBlit() == -5, "short scroll is a blit");
 		boolean h = m.scrollsHorizontally();
-		check(m.takeDamage(d) && (h ? d[0] == m.width - 5 && d[2] == 5 : d[1] == m.height - 5 && d[3] == 5), "exposed strip only");
+		int header = metric(m.size, 0);
+		int corner = m.shape == PILL || m.shape == CIRCLE ? header / 2
+				: m.shape == ROUND ? Math.min(WebTheme.RADIUS, header / 3) : 0;
+		if (m.mode == CollectionModel.KANBAN && corner > 0
+				&& (m.getClass() == CollectionModel.class || m.getClass() == KanbanBoardModel.class)) {
+			int top = Math.max(Math.min(m.height, header), m.height - 5 - corner - 1);
+			check(m.takeDamage(d) && Arrays.equals(d, new int[] {0, top, m.width, m.height - top}),
+					"exposed strip plus stationary board corner repair");
+		} else {
+			check(m.takeDamage(d) && (h ? d[0] == m.width - 5 && d[2] == 5 : d[1] == m.height - 5 && d[3] == 5), "exposed strip only");
+		}
 		m.scrollTo(1000);
 		check(m.takeBlit() == 5, "blit back");
 		m.scrollTo(900_000);

@@ -32,17 +32,55 @@ public final class WebPaint {
 	private int[] pts = new int[64];
 	private String[] texts = new String[16];
 	private int n, np, nt, tx, ty;
+	// Optional clip references and immutable rectangles stay in parent-owned primitive pools.
+	private int[] clipRefs, clipRects;
+	private int clips, activeClip;
 
 	/** Forgets every record; arrays are kept for the next frame. */
 	public void reset() {
 		java.util.Arrays.fill(texts, 0, nt, null);
-		n = np = nt = tx = ty = 0;
+		n = np = nt = tx = ty = clips = activeClip = 0;
 	}
 
 	/** Offset added to every following record: a plane's translation (pattern VIEWPORT-1). */
 	public void translate(int dx, int dy) {
 		tx = dx;
 		ty = dy;
+	}
+
+	/**
+	 * Replaces the clip for following records. Coordinates include the translation at this call;
+	 * later translations do not move this clip. Nonpositive width or height makes an empty clip.
+	 * Each record captures the current rectangle by value. Replay intersects it with the caller's
+	 * existing clip; this method never changes previously emitted records or their geometry.
+	 */
+	public void clip(int x, int y, int w, int h) {
+		if (clipRects == null) {
+			clipRects = new int[16];
+		} else if (clips == clipRects.length / 4) {
+			clipRects = java.util.Arrays.copyOf(clipRects, clipRects.length * 2);
+		}
+		int at = clips++ * 4;
+		clipRects[at] = x + tx;
+		clipRects[at + 1] = y + ty;
+		clipRects[at + 2] = Math.max(0, w);
+		clipRects[at + 3] = Math.max(0, h);
+		activeClip = clips;
+	}
+
+	/** Following records use only the replay caller's clip; prior records retain their clips. */
+	public void clearClip() {
+		activeClip = 0;
+	}
+
+	/** Whether a record captured an explicit clip, including an empty one. */
+	public boolean hasClip(int record) {
+		return clipRefs != null && clipRefs[record] != 0;
+	}
+
+	/** Captured clip field: 0=x, 1=y, 2=width, 3=height; zero when the record has no clip. */
+	public int clipRect(int record, int field) {
+		return hasClip(record) ? clipRects[(clipRefs[record] - 1) * 4 + field] : 0;
 	}
 
 	public int count() {
@@ -131,7 +169,16 @@ public final class WebPaint {
 	/** True when the record's box intersects the clip; replay skips the rest (damage-only paint). */
 	public boolean intersects(int record, int cx, int cy, int cw, int ch) {
 		int b = record * STRIDE;
-		return ops[b + F_X] <= (long) cx + cw && (long) ops[b + F_X] + ops[b + F_W] >= cx && ops[b + F_Y] <= (long) cy + ch && (long) ops[b + F_Y] + ops[b + F_H] >= cy;
+		boolean visible = ops[b + F_X] <= (long) cx + cw && (long) ops[b + F_X] + ops[b + F_W] >= cx && ops[b + F_Y] <= (long) cy + ch && (long) ops[b + F_Y] + ops[b + F_H] >= cy;
+		if (!visible || !hasClip(record)) {
+			return visible;
+		}
+		int at = (clipRefs[record] - 1) * 4;
+		int x = clipRects[at], y = clipRects[at + 1], w = clipRects[at + 2], h = clipRects[at + 3];
+		return w > 0 && h > 0 && x < (long) cx + cw && (long) x + w > cx
+				&& y < (long) cy + ch && (long) y + h > cy
+				&& ops[b + F_X] <= (long) x + w && (long) ops[b + F_X] + ops[b + F_W] >= x
+				&& ops[b + F_Y] <= (long) y + h && (long) ops[b + F_Y] + ops[b + F_H] >= y;
 	}
 
 	/** FNV-1a over records, points and strings: the differential compares this between toolkits. */
@@ -146,12 +193,32 @@ public final class WebPaint {
 		for (int i = 0; i < nt; i++) {
 			h = (h ^ texts[i].hashCode()) * 0x01000193;
 		}
+		if (clipRefs != null) {
+			for (int i = 0; i < n; i++) {
+				if (clipRefs[i] != 0) {
+					h = (h ^ 0x434c4950) * 0x01000193;
+					h = (h ^ i) * 0x01000193;
+					int at = (clipRefs[i] - 1) * 4;
+					for (int field = 0; field < 4; field++) {
+						h = (h ^ clipRects[at + field]) * 0x01000193;
+					}
+				}
+			}
+		}
 		return h;
 	}
 
 	private void add(int op, int x, int y, int w, int h, int rgb, int arg, int ref) {
 		if ((n + 1) * STRIDE > ops.length) {
 			ops = java.util.Arrays.copyOf(ops, ops.length * 2);
+		}
+		if (clipRefs == null && activeClip != 0) {
+			clipRefs = new int[ops.length / STRIDE];
+		} else if (clipRefs != null && n == clipRefs.length) {
+			clipRefs = java.util.Arrays.copyOf(clipRefs, ops.length / STRIDE);
+		}
+		if (clipRefs != null) {
+			clipRefs[n] = activeClip;
 		}
 		int b = n++ * STRIDE;
 		ops[b] = op; ops[b + 1] = x + tx; ops[b + 2] = y + ty; ops[b + 3] = w;

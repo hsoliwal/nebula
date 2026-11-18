@@ -367,6 +367,16 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	}
 
 	@Override
+	public int viewOrigin() {
+		return mode == KANBAN && residentOnlyOwner() ? Math.min(height, rowHeight()) : super.viewOrigin();
+	}
+
+	@Override
+	public int viewLength() {
+		return mode == KANBAN && residentOnlyOwner() ? Math.max(0, height - rowHeight()) : super.viewLength();
+	}
+
+	@Override
 	public long logicalExtent() {
 		if (mode == MASONRY) {
 			planMasonry();
@@ -728,6 +738,9 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		if (!residentOnlyOwner()) {
 			return super.hitTest(x, y);
 		}
+		if (mode == KANBAN && (x < 0 || x >= width || y < viewOrigin() || y >= height)) {
+			return -1;
+		}
 		int n = mode == KANBAN ? residentSize : residentOrder();
 		for (int k = n - 1; k >= 0; k--) {
 			int i = mode == KANBAN ? residentItems[k] : residentOrder[k];
@@ -744,6 +757,10 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	protected void emit(WebPaint p) {
 		if (mode == KANBAN) {
 			headers(p);
+			if (residentOnlyOwner()) {
+				// Cards and the inherited focus ring stay below the stationary header.
+				p.clip(0, viewOrigin(), width, viewLength());
+			}
 		}
 		if (mode == PULL && pull > 0) {
 			indicator(p);
@@ -823,6 +840,17 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	@Override
 	protected boolean vertical() {
 		return mode != GALLERY;
+	}
+
+	@Override
+	protected void fire(int item, int mask) {
+		if (mask == D_SCROLL && mode == KANBAN && residentOnlyOwner() && blit != 0 && radius() > 0) {
+			// Column backgrounds stay fixed. Repair their original and copied bottom corners
+			// before the synchronous consumer takes the blit and damage; retain the header.
+			int top = (int) Math.max(viewOrigin(), (long) height - radius() - 1 + Math.min(0, blit));
+			damage(0, top, width, height - top);
+		}
+		super.fire(item, mask);
 	}
 
 	@Override
