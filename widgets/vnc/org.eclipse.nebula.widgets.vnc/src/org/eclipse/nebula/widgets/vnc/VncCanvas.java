@@ -8,6 +8,7 @@ package org.eclipse.nebula.widgets.vnc;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
@@ -38,6 +39,7 @@ public final class VncCanvas extends Canvas {
     private final Display display;
     private final AtomicReference<RfbClient.Frame> pending = new AtomicReference<>();
     private final AtomicBoolean redrawQueued = new AtomicBoolean();
+    private final AtomicLong sessionGeneration = new AtomicLong();
     private volatile RfbClient client;
     private Listener listener = new Listener() { };
     private RfbClient.Frame frame;
@@ -90,6 +92,7 @@ public final class VncCanvas extends Canvas {
             }
         });
         addDisposeListener(e -> {
+            sessionGeneration.incrementAndGet();
             RfbClient old = client;
             client = null;
             if (old != null) {
@@ -116,10 +119,11 @@ public final class VncCanvas extends Canvas {
     public void connect(String host, int port, char[] password, boolean allowUnencryptedRemote) {
         checkWidget();
         disconnect();
+        long session = sessionGeneration.incrementAndGet();
         RfbClient next = new RfbClient(new RfbClient.Listener() {
             @Override
             public void connected(String name, int width, int height) {
-                onUi(() -> {
+                onUi(session, () -> {
                     setToolTipText(name);
                     listener().connected(name, width, height);
                 });
@@ -127,23 +131,25 @@ public final class VncCanvas extends Canvas {
 
             @Override
             public void frame(RfbClient.Frame snapshot) {
-                pending.set(snapshot);
-                scheduleFrame();
+                if (sessionGeneration.get() == session) {
+                    pending.set(snapshot);
+                    scheduleFrame();
+                }
             }
 
             @Override
             public void bell() {
-                onUi(() -> listener().bell());
+                onUi(session, () -> listener().bell());
             }
 
             @Override
             public void clipboard(String text) {
-                onUi(() -> listener().clipboard(text));
+                onUi(session, () -> listener().clipboard(text));
             }
 
             @Override
             public void disconnected(IOException cause) {
-                onUi(() -> listener().disconnected(cause));
+                onUi(session, () -> listener().disconnected(cause));
             }
         });
         client = next;
@@ -152,12 +158,20 @@ public final class VncCanvas extends Canvas {
 
     public void disconnect() {
         checkWidget();
+        sessionGeneration.incrementAndGet();
         RfbClient old = client;
         client = null;
         if (old != null) {
             old.close();
         }
         buttonMask = 0;
+        pending.set(null);
+        frame = null;
+        if (image != null) {
+            image.dispose();
+            image = null;
+        }
+        redraw();
     }
 
     public boolean requestRefresh() {
@@ -179,10 +193,10 @@ public final class VncCanvas extends Canvas {
         return listener;
     }
 
-    private void onUi(Runnable action) {
-        if (!display.isDisposed()) {
+    private void onUi(long session, Runnable action) {
+        if (!display.isDisposed() && sessionGeneration.get() == session) {
             display.asyncExec(() -> {
-                if (!isDisposed()) {
+                if (!isDisposed() && sessionGeneration.get() == session) {
                     action.run();
                 }
             });

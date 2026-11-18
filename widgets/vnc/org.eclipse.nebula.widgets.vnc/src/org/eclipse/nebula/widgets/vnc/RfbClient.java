@@ -93,6 +93,7 @@ public final class RfbClient implements AutoCloseable {
     private volatile Socket socket;
     private volatile Thread readerThread;
     private volatile Thread writerThread;
+    private volatile IOException writerFailure;
     private volatile int width;
     private volatile int height;
     private int[] framebuffer;
@@ -137,6 +138,7 @@ public final class RfbClient implements AutoCloseable {
                 DataOutputStream output = new DataOutputStream(
                         new BufferedOutputStream(connection.getOutputStream()));
                 authenticate(input, output, secret);
+                Arrays.fill(secret, '\0');
                 initialize(input, output);
                 if (closed.get()) {
                     return;
@@ -157,6 +159,9 @@ public final class RfbClient implements AutoCloseable {
                 }
             } finally {
                 Arrays.fill(secret, '\0');
+                if (problem == null) {
+                    problem = writerFailure;
+                }
                 close();
                 listener.disconnected(problem);
             }
@@ -337,7 +342,9 @@ public final class RfbClient implements AutoCloseable {
             }
         }
         publish();
-        enqueue(requestUpdate(true));
+        if (!enqueue(requestUpdate(true))) {
+            throw new IOException("RFB outgoing queue full or connection closing");
+        }
     }
 
     private void decodeRaw(DataInputStream input, int x, int y, int w, int h)
@@ -529,6 +536,7 @@ public final class RfbClient implements AutoCloseable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (IOException e) {
+            writerFailure = e;
             close();
         }
     }
