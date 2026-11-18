@@ -257,4 +257,63 @@ public class HtmlDocumentTest {
 		assertEquals("outside the form", -1, d.controlForm[9]);
 		assertEquals("text after a control is a paragraph again", "after", d.blockText(d.blockCount - 2));
 	}
+
+	/* the first block whose text is this */
+	private static int block(HtmlDocument d, String text) {
+		for (int b = 0; b < d.blockCount; b++) if (d.blockText(b).equals(text)) return b;
+		throw new AssertionError("no block " + text);
+	}
+
+	/* the colour of the run of a block that holds this text */
+	private static int colorOf(HtmlDocument d, int b, String text) {
+		int at = d.textStart[b] + d.blockText(b).indexOf(text);
+		for (int k = 0; k < d.runCount[b]; k++) {
+			int r = d.firstRun[b] + k;
+			if (at >= d.runStart[r] && at < d.runEnd[r]) return d.runColor[r];
+		}
+		return 0;
+	}
+
+	private static int styleOf(HtmlDocument d, int b, String text) {
+		int at = d.textStart[b] + d.blockText(b).indexOf(text);
+		for (int k = 0; k < d.runCount[b]; k++) {
+			int r = d.firstRun[b] + k;
+			if (at >= d.runStart[r] && at < d.runEnd[r]) return d.runStyle[r];
+		}
+		return 0;
+	}
+
+	@Test
+	public void selectorsAxesAttributeConditionsAndSpecificity() {
+		HtmlDocument d = HtmlDocument.parse("<style>"
+				+ "div p { color: #ff0000 } div > p { color: #0000ff } h1 + p { color: #008000 } p:first-child { font-weight: bold }"
+				+ " a[href^='http'] { color: #808080 } #main .note { color: #800000 } .note { color: #000080 }"
+				+ " [lang|=en] { color: #800080 } p:hover { color: #ffff00 } span.x.y { text-decoration: underline }"
+				+ " p + p + p { color: #00ffff }</style>"
+				+ "<div><section><p>deep</p></section><p>child</p></div>"
+				+ "<h1>t</h1><p>next</p>"
+				+ "<div id=main><p class=note>main note</p></div><p class=note>plain note</p>"
+				+ "<p><a href='http://x'>web</a> <a href='mailto:y'>mail</a></p>"
+				+ "<p lang=en-GB>english</p><p><span class='x y'>both</span> <span class=x>one</span></p>");
+		assertEquals("descendant", 0xFFFF0000, colorOf(d, block(d, "deep"), "deep"));
+		assertEquals("child beats descendant by sheet order at equal specificity", 0xFF0000FF, colorOf(d, block(d, "child"), "child"));
+		assertEquals("adjacent sibling", 0xFF008000, colorOf(d, block(d, "next"), "next"));
+		assertEquals("first child", BOLD, styleOf(d, block(d, "deep"), "deep") & BOLD);
+		assertEquals("not the first child", 0, styleOf(d, block(d, "child"), "child") & BOLD);
+		assertEquals("an id outweighs a later class", 0xFF800000, colorOf(d, block(d, "main note"), "main note"));
+		assertEquals(0xFF000080, colorOf(d, block(d, "plain note"), "plain note"));
+		int links = block(d, "web mail");
+		assertEquals("attribute prefix", 0xFF808080, colorOf(d, links, "web"));
+		assertEquals("no match: the link colour stays", 0, colorOf(d, links, "mail"));
+		assertEquals("attribute dash match", 0xFF800080, colorOf(d, block(d, "english"), "english"));
+		int spans = block(d, "both one");
+		assertEquals("both classes", UNDERLINE, styleOf(d, spans, "both") & UNDERLINE);
+		assertEquals("one class is not enough", 0, styleOf(d, spans, "one") & UNDERLINE);
+		for (int b = 0; b < d.blockCount; b++) {
+			assertEquals("an unsupported pseudo-class never matches", false, colorOf(d, b, d.blockText(b)) == 0xFFFFFF00);
+		}
+		HtmlDocument chain = HtmlDocument.parse("<style>p + p + p { color: #00ffff }</style><p>a</p><p>b</p><p>c</p>");
+		assertEquals("two siblings back", 0xFF00FFFF, colorOf(chain, block(chain, "c"), "c"));
+		assertEquals(0, colorOf(chain, block(chain, "b"), "b"));
+	}
 }
