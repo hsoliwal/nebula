@@ -168,8 +168,10 @@ public final class GridTracks {
 		long x = free > 0 ? justify == FlexRow.CENTER ? free / 2 : justify == FlexRow.END ? free : 0 : 0;
 		long extraGap = free > 0 && justify == FlexRow.SPACE_BETWEEN && n > 1 ? free / (n - 1) : 0;
 		for (int i = 0; i < n; i++) {
-			out[i] = (int) x;
-			out[n + i] = (int) base[i];
+			// Layout is computed in long lanes; a gigantic CSS grid may overflow an SWT int pixel.
+			// Saturate only at the native geometry boundary instead of wrapping negative.
+			out[i] = pixel(x);
+			out[n + i] = pixel(base[i]);
 			x += base[i] + gap + extraGap;
 		}
 		return out;
@@ -216,7 +218,8 @@ public final class GridTracks {
 			long divisor = Math.max(factors, 100); // a factor sum under 1 shares only that fraction
 			boolean restart = false;
 			for (int i = 0; i < n; i++) {
-				if (isFr(tracks[i]) && !inflexible[i] && (tracks[i] & VALUE) * leftover < base[i] * divisor) {
+				if (isFr(tracks[i]) && !inflexible[i]
+					&& weightedBelowMinimum(tracks[i] & VALUE, leftover, base[i], divisor)) {
 					inflexible[i] = true;
 					restart = true;
 				}
@@ -228,10 +231,40 @@ public final class GridTracks {
 		for (int i = 0; i < n; i++) {
 			if (!isFr(tracks[i]) || inflexible[i]) continue;
 			weight += tracks[i] & VALUE;
-			long share = leftover * weight / divisor - done; // cumulative: the line ends exactly when the factors reach 1
+			long share = scaledFloor(leftover, weight, divisor) - done; // overflow-safe cumulative edge
 			done += share;
 			base[i] = Math.max(base[i], share);
 		}
+	}
+
+
+	/** Saturation at the int-only SWT geometry boundary; long track arithmetic remains exact. */
+	private static int pixel(long value) {
+		return (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, value));
+	}
+
+	/**
+	 * Compare a * b to c * d without overflowing long. Common CSS cases stay on the allocation-free
+	 * long path; extremely large fr factors or minimums take the exact BigInteger fallback.
+	 */
+	private static boolean weightedBelowMinimum(long a, long b, long c, long d) {
+		if (a >= 0 && b >= 0 && c >= 0 && d >= 0
+				&& (a == 0 || b <= Long.MAX_VALUE / a)
+				&& (c == 0 || d <= Long.MAX_VALUE / c)) {
+			return a * b < c * d;
+		}
+		return java.math.BigInteger.valueOf(a).multiply(java.math.BigInteger.valueOf(b))
+				.compareTo(java.math.BigInteger.valueOf(c).multiply(java.math.BigInteger.valueOf(d))) < 0;
+	}
+
+	/** Floor of the cumulative proportional edge, with exact large-factor arithmetic. */
+	private static long scaledFloor(long total, long weight, long divisor) {
+		if (total >= 0 && weight >= 0 && divisor > 0
+				&& (total == 0 || weight <= Long.MAX_VALUE / total)) {
+			return total * weight / divisor;
+		}
+		return java.math.BigInteger.valueOf(total).multiply(java.math.BigInteger.valueOf(weight))
+				.divide(java.math.BigInteger.valueOf(divisor)).longValueExact();
 	}
 
 	/* 11.8: space still free shared equally by the auto tracks */
