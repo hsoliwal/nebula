@@ -17,6 +17,7 @@ package org.eclipse.nebula.widgets.ctree;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -1896,6 +1897,23 @@ public class CTree extends Composite implements Listener {
 	
 			List oldPainted = (paintedItems == null) ? new ArrayList() : new ArrayList(paintedItems);
 			paintedItems = new ArrayList(newPainted);
+			// On a dense viewport, repeated contains/remove makes the old difference
+			// quadratic. Stock CTreeItem uses object identity, so count occurrences
+			// once and preserve the exact first-match cancellation and callback order.
+			// Subclasses and custom painted lists retain the original equality path.
+			if (getClass() == CTree.class && oldPainted.size() >= 32 && newPainted.size() >= 32
+					&& stockPaintedItems(oldPainted) && stockPaintedItems(newPainted)) {
+				List noLongerPainted = new ArrayList();
+				List newlyPainted = new ArrayList();
+				differenceByIdentity(oldPainted, newPainted, noLongerPainted, newlyPainted);
+				for (Iterator i = noLongerPainted.iterator(); i.hasNext();) {
+					((CTreeItem) i.next()).setPainted(false);
+				}
+				for (Iterator i = newlyPainted.iterator(); i.hasNext();) {
+					((CTreeItem) i.next()).setPainted(true);
+				}
+				return;
+			}
 
 			// remove common elements from both lists
 			for (Iterator i = oldPainted.iterator(); i.hasNext();) {
@@ -1914,6 +1932,49 @@ public class CTree extends Composite implements Listener {
 				((CTreeItem) i.next()).setPainted(true);
 			}
 		}
+	}
+
+	private static boolean stockPaintedItems(List items) {
+		for (Iterator i = items.iterator(); i.hasNext();) {
+			Object item = i.next();
+			if (item == null || item.getClass() != CTreeItem.class) return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Stable multiset difference for identity-based painted windows. The old scan
+	 * consumes the first matching incoming occurrence for every old occurrence;
+	 * therefore unmatched incoming duplicates are the last ones, in their
+	 * original order. No equality/hashCode hooks or SWT callbacks are invoked.
+	 */
+	static <T> void differenceByIdentity(List<T> previous, List<T> incoming,
+			List<T> departed, List<T> arrived) {
+		IdentityHashMap<T, Integer> counts = new IdentityHashMap<>();
+		for (T item : incoming) {
+			Integer count = counts.get(item);
+			counts.put(item, count == null ? 1 : count + 1);
+		}
+		for (T item : previous) {
+			Integer count = counts.get(item);
+			if (count == null) {
+				departed.add(item);
+			} else if (count == 1) {
+				counts.remove(item);
+			} else {
+				counts.put(item, count - 1);
+			}
+		}
+		for (int i = incoming.size() - 1; i >= 0; i--) {
+			T item = incoming.get(i);
+			Integer count = counts.get(item);
+			if (count != null) {
+				arrived.add(item);
+				if (count == 1) counts.remove(item);
+				else counts.put(item, count - 1);
+			}
+		}
+		Collections.reverse(arrived);
 	}
 
 //	public void showColumn(CTreeColumn column) {
