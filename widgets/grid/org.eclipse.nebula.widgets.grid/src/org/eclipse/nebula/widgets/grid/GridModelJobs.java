@@ -379,10 +379,17 @@ public final class GridModelJobs {
 		final int version = permutation.getVersion();
 		final CompletableFuture<int[]> order = CompletableFuture
 				.supplyAsync(() -> RowPermutation.sortedOrder(snapshot, rows, descending), executor);
+		/* BusyIndicator runs a nested SWT event loop while the CPU job completes.
+		 * Publish this request to the same latest-sort owner as the asynchronous
+		 * entry points: a newer request may be admitted before this sort returns,
+		 * without having changed the permutation version yet. */
+		final Object request = new Object();
+		latestSort.put(grid, request);
 		BusyIndicator.showWhile(order);
 		final int[] result = order.join();
 		measured(rows, System.nanoTime() - t0);
-		if (grid.isDisposed() || grid.getRowPermutation() != permutation || permutation.getVersion() != version) {
+		if (grid.isDisposed() || grid.getRowPermutation() != permutation
+				|| permutation.getVersion() != version || latestSort.get(grid) != request) {
 			return false;
 		}
 		permutation.setOrder(result);

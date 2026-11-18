@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
@@ -145,6 +147,64 @@ public class GridModelJobs_Test {
 		grid.dispose();
 		assertTrue(done.isDone());
 		assertFalse(done.join());
+	}
+
+	@Test
+	public void busySortCannotOverrideNewerRequestAdmittedDuringNestedUiPump() throws Exception {
+		/* Force the old busy method's worker branch regardless of measurements
+		 * left by other tests. Its nested SWT event loop must not let an older
+		 * order supersede either kind of newer asynchronous request. */
+		final java.lang.reflect.Field cost = GridModelJobs.class.getDeclaredField("sortNanosPerRow"); //$NON-NLS-1$
+		cost.setAccessible(true);
+		final long originalCost = cost.getLong(null);
+		try {
+			for (boolean newestCpuLane : new boolean[] { false, true }) {
+				cost.setLong(null, GridModelJobs.INLINE_BUDGET_NANOS);
+				final int rows = GridModelJobs.BATCH_THRESHOLD;
+				final Grid grid = grid(rows);
+				final int[] keys = keys(rows);
+				final CountDownLatch allowOldWorker = new CountDownLatch(1);
+				final List<Runnable> workers = new ArrayList<>();
+				final AtomicReference<CompletableFuture<Boolean>> newest = new AtomicReference<>();
+				try {
+					display.asyncExec(() -> {
+						newest.set(newestCpuLane
+								? GridModelJobs.sortByIntKeysCpuLatest(grid, keys, true, workers::add)
+								: GridModelJobs.sortByIntKeys(grid, keys, true, workers::add));
+						allowOldWorker.countDown();
+					});
+					final boolean olderApplied = GridModelJobs.sortByIntKeysBusy(grid, keys, false, task -> {
+						final Thread worker = new Thread(() -> {
+							try {
+								if (!allowOldWorker.await(5, TimeUnit.SECONDS)) {
+									throw new IllegalStateException("SWT busy event loop did not dispatch newer sort"); //$NON-NLS-1$
+								}
+								task.run();
+							} catch (InterruptedException failure) {
+								Thread.currentThread().interrupt();
+								throw new IllegalStateException(failure);
+							}
+						}, "nebula-older-busy-sort"); //$NON-NLS-1$
+						worker.setDaemon(true);
+						worker.start();
+					});
+					assertFalse("newer request must invalidate pending busy result", olderApplied); //$NON-NLS-1$
+					assertFalse("older result must not mutate permutation", grid.getRowPermutation().isSorted()); //$NON-NLS-1$
+					assertEquals(1, workers.size());
+					final Thread worker = new Thread(workers.get(0), "nebula-newer-sort"); //$NON-NLS-1$
+					worker.setDaemon(true);
+					worker.start();
+					pumpUntil(newest.get());
+					worker.join(2_000);
+					assertTrue("latest sort must apply", newest.get().join()); //$NON-NLS-1$
+					assertArrayEquals(RowPermutation.sortedOrder(keys, rows, true), view(grid.getRowPermutation()));
+				} finally {
+					allowOldWorker.countDown();
+				}
+			}
+		} finally {
+			cost.setLong(null, originalCost);
+		}
 	}
 
 
