@@ -14,7 +14,7 @@ public class CollectionResidentWindow_Test {
 			CollectionModel.INFINITE, CollectionModel.REORDER, CollectionModel.MESSAGES,
 			CollectionModel.PALETTE, CollectionModel.GALLERY, CollectionModel.MASONRY };
 
-	private static final class FullScanCollection extends CollectionModel {
+	private static final class FullScanCollection extends CollectionPlaneChecks {
 		FullScanCollection(int mode) {
 			super("native", 0, mode, WebStates.ROUND, WebStates.V_DEFAULT);
 		}
@@ -78,8 +78,8 @@ public class CollectionResidentWindow_Test {
 					fast.paint(actual);
 					assertEquals("paint count mode=" + mode + ",filter=" + filter,
 							expected.count(), actual.count());
-					assertEquals("paint hash mode=" + mode + ",filter=" + filter,
-							expected.hash(), actual.hash());
+					CollectionPlaneChecks.assertPaint(fast, expected, actual,
+							"paint fields and plane clips mode=" + mode + ",filter=" + filter);
 					for (int y = -6; y <= 174; y += 18) {
 						for (int x = -6; x <= 434; x += 22) {
 							assertEquals("pointer mode=" + mode + ",filter=" + filter

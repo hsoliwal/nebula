@@ -402,9 +402,24 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 		gc.setBackground(cache.color(model.theme().slot(0)));
 		gc.fillRectangle(e.x, e.y, e.width, e.height);
 		model.paint(paint);
-		try (PaintClip clipping = new PaintClip(gc)) {
+		try (PaintClip clipping = new PaintClip(gc); PaintClip recordClipping = new PaintClip(gc)) {
+			boolean recordClipped = false;
+			int clipX = 0, clipY = 0, clipWidth = 0, clipHeight = 0;
 			for (int i = 0; i < paint.count(); i++) {
 				if (paint.intersects(i, e.x, e.y, e.width, e.height)) {
+					if (paint.hasClip(i)) {
+						int x = paint.clipRect(i, 0), y = paint.clipRect(i, 1), w = paint.clipRect(i, 2), h = paint.clipRect(i, 3);
+						if (!recordClipped || x != clipX || y != clipY || w != clipWidth || h != clipHeight) {
+							// Equal consecutive clips share one native intersection; text nests inside it.
+							recordClipping.restore();
+							recordClipping.apply(x, y, w, h);
+							recordClipped = true;
+							clipX = x; clipY = y; clipWidth = w; clipHeight = h;
+						}
+					} else if (recordClipped) {
+						recordClipping.restore();
+						recordClipped = false;
+					}
 					replay(gc, i, e, clipping);
 				}
 			}
@@ -476,7 +491,7 @@ public class WebCanvas<M extends WebModel> extends Canvas {
 		}
 	}
 
-	/** One frame scope; native scratch is lazy and shared by its text records only. */
+	/** One frame scope; native scratch is lazy and reused by its clipped records. */
 	private static final class PaintClip implements AutoCloseable {
 		private final GC gc;
 		private org.eclipse.swt.graphics.Region originalClip, workingClip;

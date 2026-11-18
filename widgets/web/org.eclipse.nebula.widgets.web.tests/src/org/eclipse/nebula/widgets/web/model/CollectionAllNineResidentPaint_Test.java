@@ -31,7 +31,7 @@ public class CollectionAllNineResidentPaint_Test {
 		};
 	}
 
-	private static class FullScan extends CollectionModel {
+	private static class FullScan extends CollectionPlaneChecks {
 		FullScan(int mode) {
 			super("legacy", WebStates.role("grid"), mode, WebStates.RECT,
 					WebStates.V_DEFAULT);
@@ -44,7 +44,7 @@ public class CollectionAllNineResidentPaint_Test {
 		baseline.paint(expected);
 		current.paint(actual);
 		assertEquals("paint record count", expected.count(), actual.count());
-		assertEquals("paint transcript", expected.hash(), actual.hash());
+		CollectionPlaneChecks.assertPaint(current, expected, actual, "paint transcript");
 		for (int y = -8; y < 190; y += 13) {
 			for (int x = -5; x < 360; x += 19) {
 				assertEquals("hit " + x + ":" + y,
