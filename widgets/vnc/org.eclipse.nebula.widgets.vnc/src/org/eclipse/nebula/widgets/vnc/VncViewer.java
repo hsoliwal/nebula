@@ -70,7 +70,7 @@ public class VncViewer extends Canvas {
     private RfbFramebuffer cachedOwner;
     private long cachedRevision = -1;
     private Rectangle displayedBounds = new Rectangle(0, 0, 0, 0);
-    private int pointerButtons;
+    private final RfbViewportInput pointerInput = new RfbViewportInput();
 
     public VncViewer(Composite parent, int style) {
         super(parent, style | SWT.DOUBLE_BUFFERED);
@@ -79,20 +79,26 @@ public class VncViewer extends Canvas {
         addListener(SWT.Resize, event -> redraw());
         addListener(SWT.MouseDown, event -> {
             setFocus();
-            pointerButtons |= mouseButton(event.button);
-            sendPointer(event.x, event.y, pointerButtons);
+            // Presses in letterbox margins must not start a remote drag.
+            sendCaptured(pointerInput.press(mouseButton(event.button), mappedPointer(event.x, event.y)));
         });
         addListener(SWT.MouseUp, event -> {
-            pointerButtons &= ~mouseButton(event.button);
-            sendPointer(event.x, event.y, pointerButtons);
+            // Drop unsent movement before the release. If the pointer has left
+            // the image, release at the last captured remote pixel.
+            pendingMotion.set(null);
+            sendCaptured(pointerInput.release(mouseButton(event.button), mappedPointer(event.x, event.y)));
         });
-        addListener(SWT.MouseMove, event -> sendPointerCoalesced(event.x, event.y, pointerButtons));
+        addListener(SWT.MouseMove, event -> {
+            int[] command = pointerInput.move(mappedPointer(event.x, event.y));
+            if (command != null) sendPointerCoalesced(command);
+        });
         addListener(SWT.MouseWheel, event -> {
             int wheel = event.count > 0 ? 8 : 16;
             int steps = Math.min(8, Math.abs(event.count));
+            int mask = pointerInput.buttons();
             for (int i = 0; i < steps; i++) {
-                sendPointer(event.x, event.y, pointerButtons | wheel);
-                sendPointer(event.x, event.y, pointerButtons);
+                sendPointer(event.x, event.y, mask | wheel);
+                sendPointer(event.x, event.y, mask);
             }
         });
         addListener(SWT.KeyDown, event -> sendKey(event, true));
@@ -103,6 +109,7 @@ public class VncViewer extends Canvas {
             connection = null;
             if (active != null) active.close();
             pendingMotion.set(null);
+            pointerInput.reset();
             outbound.shutdownNow();
             discardImage();
         });
@@ -236,7 +243,7 @@ public class VncViewer extends Canvas {
         if (active != null) active.close();
         framebuffer = null;
         pendingMotion.set(null);
-        pointerButtons = 0;
+        pointerInput.reset();
         clipboardText = "";
         status = "Disconnected";
         discardImage();
@@ -329,12 +336,28 @@ public class VncViewer extends Canvas {
         RfbConnection active = connection;
         RfbFramebuffer current = framebuffer;
         Rectangle target = displayedBounds;
-        if (active == null || current == null || target.width == 0 || target.height == 0) {
-            return null;
+        // A newly decoded frame cannot receive input until its exact revision
+        // has actually been painted. Do not send to stale/letterboxed geometry.
+        if (active == null || current == null || cachedOwner != current
+                || cachedRevision != current.revision()) return null;
+        int remoteWidth = current.width();
+        int remoteHeight = current.height();
+        if (cachedRevision != current.revision()) return null;
+        int[] xy = RfbViewportInput.map(x, y, target.x, target.y, target.width,
+                target.height, remoteWidth, remoteHeight);
+        return xy == null ? null : new PointerUpdate(active, xy[0], xy[1], buttons);
+    }
+
+    private int[] mappedPointer(int x, int y) {
+        PointerUpdate update = pointerUpdate(x, y, 0);
+        return update == null ? null : new int[] { update.x(), update.y() };
+    }
+
+    private void sendCaptured(int[] command) {
+        RfbConnection active = connection;
+        if (active != null && command != null) {
+            queueInput(active, client -> client.sendPointer(command[0], command[1], command[2]));
         }
-        int px = (int) ((long) (x - target.x) * current.width() / target.width);
-        int py = (int) ((long) (y - target.y) * current.height() / target.height);
-        return new PointerUpdate(active, px, py, buttons);
     }
 
     private void sendPointer(int x, int y, int buttons) {
@@ -346,11 +369,11 @@ public class VncViewer extends Canvas {
         }
     }
 
-    private void sendPointerCoalesced(int x, int y, int buttons) {
-        PointerUpdate update = pointerUpdate(x, y, buttons);
-        if (update != null) {
+    private void sendPointerCoalesced(int[] command) {
+        RfbConnection active = connection;
+        if (active != null) {
             // Never enqueue one network write for every high-frequency move.
-            pendingMotion.set(update);
+            pendingMotion.set(new PointerUpdate(active, command[0], command[1], command[2]));
             scheduleMotion();
         }
     }
