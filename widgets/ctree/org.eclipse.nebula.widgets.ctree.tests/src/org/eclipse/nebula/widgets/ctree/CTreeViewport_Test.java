@@ -18,7 +18,10 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
@@ -34,6 +37,7 @@ import org.junit.Test;
  * never takes focus.
  */
 public class CTreeViewport_Test {
+	private static final long PAINT_DELTA_SEED = 0x435452454544454cL;
 	private Display display;
 	private Shell shell;
 
@@ -111,6 +115,92 @@ public class CTreeViewport_Test {
 		pump();
 		assertEquals(before, state(tree));
 		assertEquals(pixels, pixels(tree));
+	}
+
+	@Test
+	public void densePaintedWindowKeepsIdentityAndPaintedBitsAcrossScrolls() {
+		// More than 32 painted rows exercises the identity multiset difference;
+		// ordinary-height scenes still use the unchanged small-window path.
+		shell.setBounds(10, 10, 500, 2400);
+		CTree tree = tree(450, 0);
+		shell.open();
+		pump();
+		assertTrue("dense viewport", tree.paintedItems.size() >= 32);
+		List<?> visible = tree.items(false);
+		for (int y : new int[] { 0, 100, 800, 1200, 2200, 3200, 0 }) {
+			tree.setScrollPosition(new org.eclipse.swt.graphics.Point(0, y));
+			tree.updatePaintedItems();
+			int top = tree.getScrollPosition().y;
+			List<Object> expected = scan(visible, top, top + tree.body.getClientArea().height);
+			assertEquals("painted window @" + y, expected, tree.paintedItems);
+			for (int i = 0; i < tree.getItemCount(); i++) {
+				CTreeItem item = tree.getItem(i);
+				assertEquals("painted lane @" + y + " item " + i, expected.contains(item),
+						tree.lanes.get(CTreeBitLanes.ITEM_PAINTED, item.slot));
+			}
+		}
+	}
+
+	@Test
+	public void paintedIdentityDifferenceMatchesTheOriginalCancellation() {
+		Object a = new Object();
+		Object b = new Object();
+		Object c = new Object();
+		checkDifference(Arrays.asList(a, a, b, c, a), Arrays.asList(b, a, b, a, c, c));
+		checkDifference(Arrays.asList(a, b, c), Arrays.asList(c, b, a));
+		checkDifference(Arrays.asList(a, a, a), Arrays.asList(a));
+		checkDifference(Arrays.asList(a), Arrays.asList(a, a, a));
+		checkDifference(Arrays.asList(a, b), Arrays.asList(c));
+		checkDifference(Arrays.asList(a, b), List.of());
+		checkDifference(List.of(), Arrays.asList(a, b));
+		checkDifference(List.of(), List.of());
+		Random random = new Random(PAINT_DELTA_SEED);
+		Object[] pool = new Object[37];
+		for (int i = 0; i < pool.length; i++) pool[i] = new Object();
+		for (int trial = 0; trial < 20_000; trial++) {
+			List<Object> previous = new ArrayList<>();
+			List<Object> incoming = new ArrayList<>();
+			for (int i = random.nextInt(65); i > 0; i--) previous.add(pool[random.nextInt(pool.length)]);
+			for (int i = random.nextInt(65); i > 0; i--) incoming.add(pool[random.nextInt(pool.length)]);
+			checkDifference(previous, incoming);
+		}
+	}
+
+	@Test
+	public void largeDenseIdentityWindowHasTheExactDifference() {
+		Object[] pool = new Object[8192];
+		for (int i = 0; i < pool.length; i++) pool[i] = new Object();
+		List<Object> previous = new ArrayList<>();
+		List<Object> incoming = new ArrayList<>();
+		for (int i = 0; i < pool.length; i++) previous.add(pool[i]);
+		for (int i = 2048; i < pool.length; i++) incoming.add(pool[i]);
+		for (int i = 0; i < 2048; i++) incoming.add(new Object());
+		List<Object> departed = new ArrayList<>();
+		List<Object> arrived = new ArrayList<>();
+		CTree.differenceByIdentity(previous, incoming, departed, arrived);
+		assertEquals(previous.subList(0, 2048), departed);
+		assertEquals(incoming.subList(6144, 8192), arrived);
+	}
+
+	private static void checkDifference(List<Object> previous, List<Object> incoming) {
+		List<Object> originalPrevious = new ArrayList<>(previous);
+		List<Object> originalIncoming = new ArrayList<>(incoming);
+		List<Object> expectedDeparted = new ArrayList<>(previous);
+		List<Object> expectedArrived = new ArrayList<>(incoming);
+		for (Iterator<Object> i = expectedDeparted.iterator(); i.hasNext();) {
+			Object item = i.next();
+			if (expectedArrived.contains(item)) {
+				expectedArrived.remove(item);
+				i.remove();
+			}
+		}
+		List<Object> departed = new ArrayList<>();
+		List<Object> arrived = new ArrayList<>();
+		CTree.differenceByIdentity(previous, incoming, departed, arrived);
+		assertEquals(expectedDeparted, departed);
+		assertEquals(expectedArrived, arrived);
+		assertEquals("previous window unchanged", originalPrevious, previous);
+		assertEquals("incoming window unchanged", originalIncoming, incoming);
 	}
 
 	private static String state(CTree tree) {
