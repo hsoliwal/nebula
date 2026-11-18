@@ -591,6 +591,18 @@ public class DrawnBrowserTest {
 		settle();
 		assertEquals("only the band was damaged, and the spanning cell is painted in it", red, rgbAt(shot(), 4, band + 1));
 	}
+
+	@Test
+	public void flexItemsPaintSideBySideWithTheirBoxes() {
+		open("<div style='display:flex; gap:20px'><div style='flex-grow:1; background-color:#ff0000'>left</div>"
+				+ "<div style='flex-grow:1; background-color:#0000ff'>right</div></div><p style='display:none'>hidden text</p>");
+		ImageData shown = shot();
+		int width = browser.getClientArea().width, y = 6;
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0), blue = new org.eclipse.swt.graphics.RGB(0, 0, 255);
+		assertEquals("the first half is red", red, rgbAt(shown, width / 4, y));
+		assertEquals("the second half blue", blue, rgbAt(shown, 3 * width / 4, y));
+		assertTrue("the gap between them is neither", !rgbAt(shown, width / 2, y).equals(red) && !rgbAt(shown, width / 2, y).equals(blue));
+	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");

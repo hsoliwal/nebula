@@ -25,7 +25,9 @@ import java.util.Locale;
  * {@code background-color}, {@code font-weight}, {@code font-style}, {@code text-decoration}, {@code text-align}, the box
  * model in px: {@code margin} and {@code padding} (one to four values, or one side: {@code margin-top} ...),
  * {@code border} (width, {@code solid}/{@code none}, colour), {@code border-width}, {@code border-color},
- * {@code border-style}; positioning: {@code position} (static, relative, absolute, fixed), {@code top} and {@code left}
+ * {@code border-style}; {@code display} (none, flex, others kept as the element's default), and for a flex row
+ * {@code flex-direction} row, {@code justify-content}, {@code gap}, and on its items {@code flex-grow},
+ * {@code flex-basis} and {@code width} (px); positioning: {@code position} (static, relative, absolute, fixed), {@code top} and {@code left}
  * (px, negative allowed, or auto) and {@code z-index}. Anything else (other units, other border styles) is ignored,
  * never an error.
  * </p>
@@ -50,7 +52,10 @@ public final class HtmlStyles {
 	public static final int COLOR = 0, BACKGROUND = 1, BITS = 2, ALIGN = 3, INDENT = 4, MARGIN_TOP = 5,
 			MARGIN_RIGHT = 6, MARGIN_BOTTOM = 7, PADDING_TOP = 8, PADDING_RIGHT = 9, PADDING_BOTTOM = 10,
 			PADDING_LEFT = 11, BORDER_WIDTH = 12, BORDER_COLOR = 13, POSITION = 14, POS_TOP = 15, POS_LEFT = 16,
-			Z_INDEX = 17, SLOTS = 18;
+			Z_INDEX = 17, DISPLAY = 18, FLEX_GROW = 19, FLEX_BASIS = 20, JUSTIFY = 21, GAP = 22, SLOTS = 23;
+
+	/** Displays ({@link #DISPLAY}): as its element is by default, none (not shown at all), flex (a row flex container). */
+	public static final int DISPLAY_DEFAULT = 0, DISPLAY_NONE = 1, DISPLAY_FLEX = 2;
 
 	/** Positions ({@link #POSITION}). */
 	public static final int STATIC = 0, RELATIVE = 1, ABSOLUTE = 2, FIXED = 3;
@@ -302,6 +307,7 @@ public final class HtmlStyles {
 		style[ALIGN] = parent[ALIGN];
 		style[POS_TOP] = AUTO;
 		style[POS_LEFT] = AUTO;
+		style[FLEX_BASIS] = -1;
 		List<Rule> matched = new ArrayList<>();
 		for (Rule rule : rules) if (matches(rule, rule.compounds().length - 1, path, 0, 0)) matched.add(rule);
 		matched.sort(java.util.Comparator.comparingInt(Rule::specificity).thenComparingInt(Rule::order));
@@ -315,6 +321,7 @@ public final class HtmlStyles {
 		int[] root = new int[SLOTS];
 		root[POS_TOP] = AUTO;
 		root[POS_LEFT] = AUTO;
+		root[FLEX_BASIS] = -1;
 		return root;
 	}
 
@@ -328,6 +335,11 @@ public final class HtmlStyles {
 		delta[POS_TOP] = NOT_SET;
 		delta[POS_LEFT] = NOT_SET;
 		delta[Z_INDEX] = NOT_SET;
+		delta[DISPLAY] = -1;
+		delta[FLEX_GROW] = -1;
+		delta[FLEX_BASIS] = NOT_SET;
+		delta[JUSTIFY] = -1;
+		delta[GAP] = -1;
 		return delta;
 	}
 
@@ -428,6 +440,28 @@ public final class HtmlStyles {
 				};
 				case "top" -> delta[POS_TOP] = offset(value);
 				case "left" -> delta[POS_LEFT] = offset(value);
+				case "display" -> delta[DISPLAY] = value.equals("none") ? DISPLAY_NONE : value.equals("flex") ? DISPLAY_FLEX : DISPLAY_DEFAULT;
+				case "flex-grow" -> {
+					if (value.matches("\\d{1,4}")) delta[FLEX_GROW] = Integer.parseInt(value);
+				}
+				case "flex-basis", "width" -> {
+					if (px(value) >= 0) delta[FLEX_BASIS] = px(value);
+					else if (value.equals("auto")) delta[FLEX_BASIS] = -1;
+				}
+				case "flex" -> {
+					String[] parts = value.trim().split("\\s+");
+					if (parts[0].matches("\\d{1,4}")) delta[FLEX_GROW] = Integer.parseInt(parts[0]);
+					if (parts.length == 3 && px(parts[2]) >= 0) delta[FLEX_BASIS] = px(parts[2]);
+				}
+				case "justify-content" -> delta[JUSTIFY] = switch (value) {
+					case "center" -> FlexRow.CENTER;
+					case "flex-end", "end", "right" -> FlexRow.END;
+					case "space-between" -> FlexRow.SPACE_BETWEEN;
+					default -> FlexRow.START;
+				};
+				case "gap", "column-gap" -> {
+					if (px(value) >= 0) delta[GAP] = px(value);
+				}
 				case "z-index" -> {
 					if (value.equals("auto")) delta[Z_INDEX] = 0;
 					else if (value.matches("-?\\d{1,6}")) delta[Z_INDEX] = Integer.parseInt(value);
@@ -458,6 +492,11 @@ public final class HtmlStyles {
 		if (delta[POS_TOP] != NOT_SET) style[POS_TOP] = delta[POS_TOP];
 		if (delta[POS_LEFT] != NOT_SET) style[POS_LEFT] = delta[POS_LEFT];
 		if (delta[Z_INDEX] != NOT_SET) style[Z_INDEX] = delta[Z_INDEX];
+		if (delta[DISPLAY] >= 0) style[DISPLAY] = delta[DISPLAY];
+		if (delta[FLEX_GROW] >= 0) style[FLEX_GROW] = delta[FLEX_GROW];
+		if (delta[FLEX_BASIS] != NOT_SET) style[FLEX_BASIS] = delta[FLEX_BASIS];
+		if (delta[JUSTIFY] >= 0) style[JUSTIFY] = delta[JUSTIFY];
+		if (delta[GAP] >= 0) style[GAP] = delta[GAP];
 	}
 
 	/** An opaque ARGB colour from #rgb, #rrggbb, rgb(r, g, b) or a basic colour name; 0 when not one of these. */

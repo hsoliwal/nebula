@@ -131,4 +131,26 @@ public class HtmlStylesTest {
 		assertEquals(0, child[HtmlStyles.Z_INDEX]);
 		assertEquals(HtmlStyles.STATIC, styles.compute(root, "div", "a", "position: static")[HtmlStyles.POSITION]);
 	}
+
+	@Test
+	public void displayAndFlexProperties() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".row { display: flex; justify-content: space-between; gap: 12px } .grow { flex: 2 1 40px }"
+				+ " .w { width: 90px; flex-grow: 1 } .gone { display: none }");
+		int[] root = HtmlStyles.root(), row = styles.compute(root, "div", "row", null);
+		assertEquals(HtmlStyles.DISPLAY_FLEX, row[HtmlStyles.DISPLAY]);
+		assertEquals(FlexRow.SPACE_BETWEEN, row[HtmlStyles.JUSTIFY]);
+		assertEquals(12, row[HtmlStyles.GAP]);
+		int[] grow = styles.compute(root, "div", "grow", null);
+		assertEquals("flex: grow shrink basis", 2, grow[HtmlStyles.FLEX_GROW]);
+		assertEquals(40, grow[HtmlStyles.FLEX_BASIS]);
+		int[] w = styles.compute(root, "div", "w", null);
+		assertEquals("width is the basis", 90, w[HtmlStyles.FLEX_BASIS]);
+		assertEquals(1, w[HtmlStyles.FLEX_GROW]);
+		assertEquals(HtmlStyles.DISPLAY_NONE, styles.compute(root, "p", "gone", null)[HtmlStyles.DISPLAY]);
+		int[] child = styles.compute(row, "span", null, null);
+		assertEquals("display is not inherited", HtmlStyles.DISPLAY_DEFAULT, child[HtmlStyles.DISPLAY]);
+		assertEquals(-1, child[HtmlStyles.FLEX_BASIS]);
+		assertEquals(0, child[HtmlStyles.GAP]);
+	}
 }
