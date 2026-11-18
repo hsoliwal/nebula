@@ -18,12 +18,14 @@ import org.eclipse.nebula.widgets.drawnbrowser.internal.PageFind;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageHistory;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageSelection;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageViewport;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.RemoteFrameWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
@@ -83,6 +85,85 @@ public class DrawnBrowser extends Canvas {
 	private static final int AUTO_SCROLL_MS = 40;
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
 	private java.util.concurrent.ExecutorService pageLoader;
+
+	/* Optional remote-image mode; native SWT Image stays owned by this Canvas. */
+	private final RemoteFrameWindow remoteFrames = new RemoteFrameWindow();
+	private Image remoteFrameImage;
+	private boolean previousVerticalBarVisible;
+	private RemoteFramePaintListener remoteFramePaintListener;
+
+	/** A frame's exact epoch/revision completed an SWT GC paint callback (not OS scan-out). */
+	@FunctionalInterface
+	public interface RemoteFramePaintListener {
+		void painted(long epoch, long revision);
+	}
+
+	/** UI-thread callback, fired only after the matching entire image content was drawn. */
+	public void setRemoteFramePaintListener(RemoteFramePaintListener listener) {
+		checkWidget();
+		remoteFramePaintListener = listener;
+	}
+
+	/**
+	 * Accept one already-decoded full remote browser image on the SWT UI thread.
+	 * The embedding host owns an authenticated CDP/other transport, compression
+	 * limits and decoding on its worker; this widget does not connect to a host.
+	 * Stale epochs/revisions fail closed. The image data are copied by SWT Image.
+	 */
+	public boolean presentRemoteFrame(long epoch, long revision, int cssWidth, int cssHeight, ImageData pixels) {
+		checkWidget();
+		if (pixels == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (!remoteFrames.canReceive(epoch, revision, pixels.width, pixels.height, cssWidth, cssHeight)) {
+			return false;
+		}
+		// Allocate the next image before publishing the revision or disposing the old one.
+		Image next = new Image(getDisplay(), pixels);
+		boolean first = remoteFrameImage == null;
+		if (first) previousVerticalBarVisible = getVerticalBar().getVisible();
+		remoteFrames.receive(epoch, revision, pixels.width, pixels.height, cssWidth, cssHeight);
+		Image previous = remoteFrameImage;
+		remoteFrameImage = next;
+		if (first) {
+			pages.stop(); // Cancel an older HTML navigation before it can replace the remote surface.
+			getDisplay().timerExec(-1, autoScroll);
+			selection.clear();
+			for (Control widget : widgets) if (widget != null && !widget.isDisposed()) widget.setVisible(false);
+			getVerticalBar().setVisible(false);
+			setCursor(null);
+		}
+		if (previous != null) previous.dispose();
+		redraw();
+		return true;
+	}
+
+	/**
+	 * Pure coordinate lookup for the painted image, not remote input authorization.
+	 * The host must separately authorize user input and guard session ownership.
+	 */
+	public Point remoteCssPoint(long epoch, long revision, int x, int y) {
+		checkWidget();
+		int[] point = remoteFrames.cssPoint(epoch, revision, x, y);
+		return point == null ? null : new Point(point[0], point[1]);
+	}
+
+	/** Return from remote image mode to the existing local HTML document. */
+	public void clearRemoteFrame() {
+		checkWidget();
+		boolean active = remoteFrameImage != null;
+		clearRemoteFrameInternal(true);
+		if (active) relayout();
+	}
+
+	private void clearRemoteFrameInternal(boolean restoreBar) {
+		remoteFrames.retire();
+		Image image = remoteFrameImage;
+		remoteFrameImage = null;
+		if (image != null) {
+			image.dispose();
+			if (restoreBar) getVerticalBar().setVisible(previousVerticalBarVisible);
+		}
+	}
+
 
 	/** A completed, exclusively owned backend result; publication transfers its document to the UI thread. */
 	static final class PreparedPage {
@@ -197,8 +278,10 @@ public class DrawnBrowser extends Canvas {
 
 	/* UI-thread installation only: parsing has finished, and the published document has no remaining writer. */
 	private void show(PreparedPage page) {
+		HtmlDocument incoming = page.document();
+		clearRemoteFrameInternal(true);
 		html = page.text;
-		document = page.document();
+		document = incoming;
 		positionedOrder = null;
 		// the page's form state, apart from the widgets that show it; the old page's widgets go
 		for (Control widget : widgets) if (widget != null) widget.dispose();
@@ -354,9 +437,19 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	private void handle(Event e) {
+		// Remote mode has no implicit keyboard, pointer or DOM-event forwarding.
+		if (remoteFrameImage != null && e.type != SWT.Paint && e.type != SWT.Resize && e.type != SWT.Dispose) {
+			if (e.type == SWT.MouseDown) setFocus();
+			return;
+		}
 		switch (e.type) {
 			case SWT.Paint -> paint(e.gc, e.x, e.y, e.width, e.height);
-			case SWT.Resize -> relayout();
+			case SWT.Resize -> {
+				if (remoteFrameImage != null) {
+					remoteFrames.invalidatePaint();
+					redraw();
+				} else relayout();
+			}
 			case SWT.MouseDown -> {
 				if (e.button == 1) {
 					redrawRange(selection.start(), selection.end());
@@ -387,6 +480,7 @@ public class DrawnBrowser extends Canvas {
 			}
 			case SWT.KeyDown -> key(e);
 			case SWT.Dispose -> {
+				clearRemoteFrameInternal(false);
 				getDisplay().timerExec(-1, autoScroll);
 				pages.stop();
 				layout.dispose();
@@ -427,6 +521,7 @@ public class DrawnBrowser extends Canvas {
 	 * the view that leaves rows between them stale, so the exposed band is damaged explicitly (as StyledText does).
 	 */
 	private void scrollTo(int y) {
+		if (remoteFrameImage != null) return;
 		layout.ensure(Math.max(0, y) + getClientArea().height);
 		sync();
 		int delta = viewport.scrollTo(y);
@@ -447,6 +542,23 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	private void paint(GC gc, int x, int y, int width, int height) {
+		if (remoteFrameImage != null) {
+			gc.setBackground(getBackground());
+			gc.fillRectangle(x, y, width, height);
+			Rectangle area = getClientArea();
+			RemoteFrameWindow.Rect box = remoteFrames.content(area.width, area.height);
+			if (box != null) {
+				Rectangle image = remoteFrameImage.getBounds();
+				long epoch = remoteFrames.epoch(), revision = remoteFrames.revision();
+				gc.drawImage(remoteFrameImage, 0, 0, image.width, image.height,
+						area.x + box.x(), area.y + box.y(), box.width(), box.height());
+				if (remoteFrames.markPainted(epoch, revision, area.width, area.height,
+						x - area.x, y - area.y, width, height) && remoteFramePaintListener != null) {
+					remoteFramePaintListener.painted(epoch, revision);
+				}
+			}
+			return;
+		}
 		gc.setBackground(getBackground());
 		gc.fillRectangle(x, y, width, height);
 		gc.setForeground(getForeground());
@@ -794,7 +906,7 @@ public class DrawnBrowser extends Canvas {
 
 	/* the form controls of the blocks in view, made on first sight; those out of view are hidden */
 	private void placeWidgets() {
-		if (widgets.length == 0) return;
+		if (remoteFrameImage != null || widgets.length == 0) return;
 		int stamp = ++placeStamp, scrollY = viewport.y(), viewBottom = scrollY + getClientArea().height;
 		HtmlPositionedLayout scene = layout.positioned();
 		int visible = scene == null ? 0 : scene.collectVisible(scrollY, getClientArea().height, scrollY);

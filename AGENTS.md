@@ -89,6 +89,10 @@ widget/facade names or a second toolkit naming layer. Donor names belong in
 provenance. Preserve already-existing interoperability APIs and third-party
 notices; this rule does not authorize renaming or removing compatible APIs.
 
+## MOP SDK cross-repository agent read gate (2026-11-18)
+<!-- MOP-AGENT-2026-11-18-1 -->
+Before any source analysis, refactor, PR, merge, licensing decision, or history checkpoint, also read [AGENT.md](AGENT.md). It governs bidirectional atomization/patternization, documented contract-sealed atoms, additive best-of-best API supersets, complete available-history loss checks, dated last-verified proof, Apache-2.0 eligibility and upstream rights. Existing stronger project-specific and locked-canon constraints remain in force. Installation of this pointer does not establish that a source or historical audit has run.
+
 
 ## Superset merge and history-audit rule (2026-11-18)
 
