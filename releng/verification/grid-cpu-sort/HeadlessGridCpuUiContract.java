@@ -112,6 +112,24 @@ public final class HeadlessGridCpuUiContract {
         complete(display, accepted);
         require(accepted.join(), "rejected second request invalidated accepted sort");
 
+        // The large primitive copy is prepared on a CPU worker, not in a SWT callback.
+        Grid snapshotGrid = new Grid(display, 420);
+        int[] mutableInput = keys(420);
+        int[] frozenExpectation = mutableInput.clone();
+        AtomicReference<GridModelJobs.IntKeySnapshot> frozen = new AtomicReference<>();
+        worker(() -> frozen.set(GridModelJobs.IntKeySnapshot.copyOf(mutableInput, 420)));
+        require(frozen.get() != null && frozen.get().size() == 420,
+                "background key snapshot missing");
+        mutableInput[0] = Integer.MAX_VALUE;
+        List<Runnable> snapshotWorkers = new ArrayList<>();
+        CompletableFuture<Boolean> snapshotResult = GridModelJobs.sortByIntKeysCpuLatest(
+                snapshotGrid, frozen.get(), false, snapshotWorkers::add);
+        worker(snapshotWorkers.remove(0));
+        complete(display, snapshotResult);
+        require(snapshotResult.join(), "CPU-prepared key snapshot was rejected");
+        require(Arrays.equals(RowPermutation.sortedOrder(frozenExpectation, 420, false),
+                order(snapshotGrid.getRowPermutation())), "snapshot aliased mutated caller array");
+
         Grid staleGrid = new Grid(display, 512);
         List<Runnable> staleJobs = new ArrayList<>();
         CompletableFuture<Boolean> stale = GridModelJobs.sortByIntKeysCpuLatest(staleGrid,
