@@ -105,11 +105,14 @@ public class StatusBarTest {
 		paints.clear();
 		bar.setText(0, "Busy");
 		bar.update();
+		// Observe this independent slot delta before queuing another dirty region.
+		TestSupport.awaitNativePaint(bar, paints, 1, "StatusBar first text delta did not paint");
+		int nextPaint = paints.size() + 1;
 		bar.setText(3, "999,999 rows");
 		bar.update();
 		// GTK may post its actual Paint after the immediate update returns.
 		// The existing helper requires a native SWT.Paint and a quiet interval.
-		TestSupport.awaitNativePaint(bar, paints, 1, "StatusBar text delta did not paint");
+		TestSupport.awaitNativePaint(bar, paints, nextPaint, "StatusBar text delta did not paint");
 		assertFalse(paints.isEmpty());
 		if (viewport()) {
 			for (Rectangle paint : paints) {
@@ -262,10 +265,13 @@ public class StatusBarTest {
 			bar.setText(3, i + " rows");
 		});
 		StatusBar fresh = build(shell, 40);
+		List<Rectangle> freshPaints = TestSupport.recordPaints(fresh);
 		fresh.setText(1, "row 9999");
 		fresh.setText(0, "Ready");
 		fresh.setText(3, "9999 rows");
 		TestSupport.flush(display);
+		// Compare only after the independent reference bar has actually painted.
+		TestSupport.awaitNativePaint(fresh, freshPaints, 1, "fresh hidden-gate reference frame not painted");
 		assertEquals(fresh.getSlotBounds(1), bar.getSlotBounds(1));
 		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(bar).data);
 	}

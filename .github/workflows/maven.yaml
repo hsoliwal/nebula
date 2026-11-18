@@ -107,7 +107,7 @@ jobs:
             exit 1
           fi
           "$@"
-        ' nebula-wm mvn -V -B clean verify "${release_flags[@]}" \
+        ' nebula-wm mvn -V -B --fail-at-end clean verify "${release_flags[@]}" \
           -Dtycho.localArtifacts=ignore \
           -Dnebula.grid.viewport.screenshots.screen=true \
           "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \

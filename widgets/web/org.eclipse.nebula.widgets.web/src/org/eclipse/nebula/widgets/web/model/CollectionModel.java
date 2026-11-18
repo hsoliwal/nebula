@@ -313,8 +313,8 @@ public class CollectionModel extends WebModel implements CollectionApi {
 
 	@Override
 	public void remove(int item) {
-		check(item);
-		if (galleryFlexWeights != null) {
+		// Inherited remove resets the filter before validating an invalid index.
+		if (galleryFlexWeights != null && item >= 0 && item < count) {
 			System.arraycopy(galleryFlexWeights, item + 1, galleryFlexWeights, item,
 					count - item - 1);
 			galleryFlexWeights[count - 1] = 1;
@@ -648,6 +648,7 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				preceding += galleryFlexWeights[i] & 0xffff;
 				if (k >= window[2] && k < window[3]) {
 					setRect(i, x, y, flexEdge(preceding, total) - x, itemExtent - gap());
+					recordResident(i);
 				}
 			}
 			rowStart = end;
@@ -701,12 +702,12 @@ public class CollectionModel extends WebModel implements CollectionApi {
 	}
 
 	/**
-	 * Only built-in row/tile owners admit resident-only traversal. A subclass may
-	 * set other rectangles or paint outside its projected resident window;
-	 * Kanban's independently scrolling columns do not form a contiguous window.
+	 * Only exact built-in owners admit resident traversal. An external subclass
+	 * may lay out or paint outside the native projected window, so it keeps
+	 * the original full scan. Kanban has its own column-resident item lane.
 	 */
 	private boolean residentOnlyOwner() {
-		return mode != KANBAN && (getClass() == CollectionModel.class || getClass() == MasonryModel.class);
+		return residentTraversal();
 	}
 
 	/** Rebuilds a primitive projection in the original source-index z-order. */
@@ -727,9 +728,10 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		if (!residentOnlyOwner()) {
 			return super.hitTest(x, y);
 		}
-		int n = residentOrder();
+		int n = mode == KANBAN ? residentSize : residentOrder();
 		for (int k = n - 1; k >= 0; k--) {
-			int i = residentOrder[k], b = i * 4;
+			int i = mode == KANBAN ? residentItems[k] : residentOrder[k];
+			int b = i * 4;
 			if ((flags[i] & HIDDEN) == 0 && x >= rects[b] && y >= rects[b + 1]
 					&& x < rects[b] + rects[b + 2] && y < rects[b + 1] + rects[b + 3]) {
 				return i;
@@ -753,12 +755,20 @@ public class CollectionModel extends WebModel implements CollectionApi {
 				emitItem(p, itemAt(k));
 			}
 		} else if (residentOnlyOwner()) {
-			int n = residentOrder();
-			for (int k = 0; k < n; k++) {
-				emitItem(p, residentOrder[k]);
+			if (mode == KANBAN) {
+				// The board's columns are not a single [first,end) window.
+				// planBoard/board already maintain sorted visible item IDs.
+				for (int k = 0; k < residentSize; k++) {
+					emitItem(p, residentItems[k]);
+				}
+			} else {
+				int n = residentOrder();
+				for (int k = 0; k < n; k++) {
+					emitItem(p, residentOrder[k]);
+				}
 			}
 		} else {
-			// Preserve subclass full scans and Kanban's independent column order.
+			// Preserve external subclasses' arbitrary off-window paint hooks.
 			for (int i = 0; i < count; i++) {
 				emitItem(p, i);
 			}
@@ -935,12 +945,38 @@ public class CollectionModel extends WebModel implements CollectionApi {
 		}
 	}
 
+	/**
+	 * Native filter projection is in increasing item-id order, so exact built-in
+	 * collections resolve a filtered focus/reveal by binary search. An external
+	 * subclass may override itemAt() with arbitrary order and keeps the old scan.
+	 */
+	private int logicalPosition(int item) {
+		if (!residentTraversal()) {
+			int pos = item;
+			for (int k = 0; k < logicalCount(); k++) {
+				pos = itemAt(k) == item ? k : pos;
+			}
+			return pos;
+		}
+		if (filter().isEmpty()) {
+			return item; // Unfiltered identity projection, no logical-item scan.
+		}
+		int low = 0, high = logicalCount();
+		while (low < high) {
+			int mid = (low + high) >>> 1;
+			if (itemAt(mid) < item) {
+				low = mid + 1;
+			} else {
+				high = mid;
+			}
+		}
+		// Preserve the old fallback for a filtered-out item in non-Masonry modes.
+		return low < logicalCount() && itemAt(low) == item ? low : item;
+	}
+
 	/** Scrolls the minimum so the item's row is inside the viewport. */
 	public void reveal(int item) {
-		int pos = item;
-		for (int k = 0; k < logicalCount(); k++) {
-			pos = itemAt(k) == item ? k : pos;
-		}
+		int pos = logicalPosition(item);
 		if (mode == MASONRY) {
 			if (pos >= logicalCount() || itemAt(pos) != item) {
 				return; // Filtered out: do not scroll to a nonresident logical position.

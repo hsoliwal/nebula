@@ -224,6 +224,31 @@ public abstract class WebView extends WebLanes {
 		window[3] = visible == 0 || start == end ? end : (int) Math.min((long) n, (long) end + overscan);
 	}
 
+
+	/**
+	 * Resident hit testing used by exact native model owners. A null identity
+	 * lane addresses raw item indices; a supplied lane projects filtered or
+	 * reordered logical positions. Keep the highest original item id on overlap
+	 * exactly as WebModel.hitTest does, without creating item wrappers.
+	 */
+	final int hitTestProjected(int x, int y, int[] identities, int first, int end) {
+		int hit = -1;
+		for (int position = first; position < end; position++) {
+			int item = identities == null ? position : identities[position];
+			if (item <= hit || item < 0 || item >= count) {
+				continue;
+			}
+			int b = item * 4;
+			if ((flags[item] & WebStates.HIDDEN) == 0
+					&& x >= rects[b] && y >= rects[b + 1]
+					&& x < rects[b] + rects[b + 2]
+					&& y < rects[b + 1] + rects[b + 3]) {
+				hit = item;
+			}
+		}
+		return hit;
+	}
+
 	/** {@code k}: 0 first visible, 1 end visible, 2 first resident, 3 end resident. */
 	public int window(int k) {
 		return window[k];

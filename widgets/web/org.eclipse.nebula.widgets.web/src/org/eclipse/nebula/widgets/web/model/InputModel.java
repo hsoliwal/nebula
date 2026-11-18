@@ -250,6 +250,22 @@ public class InputModel extends WebModel implements InputApi {
 		}
 	}
 
+
+	@Override
+	public int hitTest(int x, int y) {
+		// Search has no item geometry, tags retain cumulative layout, and
+		// external subclasses may place extra hit targets off the viewport.
+		Class<?> leaf = getClass();
+		boolean known = leaf == InputModel.class || leaf == AutocompleteModel.class
+				|| leaf == OtpInputModel.class;
+		if (!known || mode != OTP && mode != AUTOCOMPLETE) {
+			return super.hitTest(x, y);
+		}
+		// Use the last laid-out resident identities rather than the current
+		// filter window: direct state mutations need not trigger relayout.
+		return hitTestProjected(x, y, residentIds, 0, previousResidents);
+	}
+
 	@Override
 	protected void emit(WebPaint p) {
 		if (mode == OTP) {
