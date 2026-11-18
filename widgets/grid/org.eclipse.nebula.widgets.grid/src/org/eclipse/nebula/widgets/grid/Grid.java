@@ -12954,6 +12954,36 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * The child ID of a materialized GridItem. The same source-owned identity
+	 * check used by editor and scroll visibility avoids materializing a virtual
+	 * row during accessibility hit resolution. Return -1 for a foreign/stale
+	 * facade, exactly as an unsuccessful original identity search did.
+	 */
+	int accessibleRowOf(final GridItem item) {
+		final int row = item.getRowIndex();
+		return isRowOf(item, row) ? row : -1;
+	}
+
+	/** The number of actual root items (unread virtual descendants are not roots). */
+	int accessibleRootCount() {
+		return isTree ? rootItems.size() : items.size();
+	}
+
+	/**
+	 * Complete root enumeration requested by accessibility. A tree already owns
+	 * the root list, so no descendant row is visited or materialized. This is
+	 * O(number of roots), not O(number of all logical descendants).
+	 */
+	Object[] accessibleRootChildren() {
+		final int count = accessibleRootCount();
+		final Object[] children = new Object[count];
+		for (int i = 0; i < count; i++) {
+			children[i] = Integer.valueOf(isTree ? rootItems.get(i).getRowIndex() : i);
+		}
+		return children;
+	}
+
+	/**
 	 * Initialize accessibility.
 	 */
 	private void initAccessible() {
@@ -13001,14 +13031,15 @@ public class Grid extends Canvas {
 				final Point location = toControl(e.x, e.y);
 				e.childID = ACC.CHILDID_SELF;
 
-				// Grid Items
+				// The viewport and pinned ancestors both return the original item.
+				// Resolve its stable row index directly, rather than walking every
+				// row (and materializing cold SWT.VIRTUAL items) for each screen reader hit.
 				final GridItem item = getItem(location);
 				if (item != null) {
-					for (int i = 0; i < getItemCount(); i++) {
-						if (item.equals(getItem(i))) {
-							e.childID = i;
-							return;
-						}
+					final int row = accessibleRowOf(item);
+					if (row >= 0) {
+						e.childID = row;
+						return;
 					}
 				} else {
 					// Column Headers
@@ -13048,50 +13079,14 @@ public class Grid extends Canvas {
 			@Override
 			public void getChildCount(final AccessibleControlEvent e) {
 				if (e.childID == ACC.CHILDID_SELF) {
-					int length = items.size();
-
-					if (isTree) {
-						// Child count for parent. Here if the item parent
-						// is not an other item,
-						// it is consider as children of Grid
-						for (final GridItem item : materializedItems()) {
-							if (item.getParentItem() != null) {
-								length--;
-							}
-						}
-					}
-					e.detail = length;
+					e.detail = accessibleRootCount();
 				}
 			}
 
 			@Override
 			public void getChildren(final AccessibleControlEvent e) {
 				if (e.childID == ACC.CHILDID_SELF) {
-					int length = items.size();
-					if (isTree) {
-						for (final GridItem item : materializedItems()) {
-							if (item.getParentItem() != null) {
-								length--;
-							}
-						}
-
-						final Object[] children = new Object[length];
-						int j = 0;
-
-						for (int i = 0; i < items.size(); i++) {
-							if (items.get(i).getParentItem() == null) {
-								children[j] = Integer.valueOf(i);
-								j++;
-							}
-						}
-						e.children = children;
-					} else {
-						final Object[] children = new Object[length];
-						for (int i = 0; i < items.size(); i++) {
-							children[i] = Integer.valueOf(i);
-						}
-						e.children = children;
-					}
+					e.children = accessibleRootChildren();
 				}
 			}
 

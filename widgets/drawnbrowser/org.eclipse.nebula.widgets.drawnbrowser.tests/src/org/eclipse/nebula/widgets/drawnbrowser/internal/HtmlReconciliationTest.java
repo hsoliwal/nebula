@@ -17,6 +17,33 @@ import org.junit.Test;
 /** Cross-feature regressions for nested boxes with the current forms, selectors, flex and table owners. */
 public class HtmlReconciliationTest {
 
+	@Test
+	public void currentBorderSlotAndGrowingBoxLanesRetainPositionStyles() {
+		assertEquals(26, HtmlStyles.BORDER_STYLE);
+		int[] style = new HtmlStyles().compute(HtmlStyles.root(), "div", null,
+				"border:4px ridge #808080;width:70px;height:40px;right:8px;z-index:2147483647");
+		assertEquals(HtmlStyles.BORDER_RIDGE, style[HtmlStyles.BORDER_STYLE]);
+		assertEquals(70, style[HtmlStyles.WIDTH]);
+		assertEquals(40, style[HtmlStyles.HEIGHT]);
+		assertEquals(8, style[HtmlStyles.OFFSET_RIGHT]);
+		assertEquals(Integer.MAX_VALUE, style[HtmlStyles.Z_INDEX]);
+		assertEquals(0, style[HtmlStyles.Z_AUTO]);
+		assertEquals(1, new HtmlStyles().compute(style, "div", null, "z-index:auto")[HtmlStyles.Z_AUTO]);
+		HtmlDocument doc = HtmlDocument.parse("<div style='position:relative;width:200px;border:4px inset #808080'>"
+				+ "<div style='position:absolute;width:30px;height:20px;border:4px ridge #808080'></div>".repeat(20)
+				+ "<p>child</p></div>");
+		int ridge = 0, inset = 0;
+		assertTrue(doc.boxCount > 16);
+		for (int box = 0; box < doc.boxCount; box++) {
+			if (doc.boxBorderStyle[box] == HtmlStyles.BORDER_RIDGE) ridge++;
+			if (doc.boxBorderStyle[box] == HtmlStyles.BORDER_INSET) inset++;
+		}
+		assertEquals(20, ridge);
+		assertEquals(1, inset);
+		assertEquals(HtmlStyles.BORDER_SOLID, doc.boxBorderStyle[doc.blockBox[0]]);
+		assertEquals(HtmlStyles.BORDER_SOLID, doc.blockBorderStyle[0]);
+	}
+
 	private static HtmlLayout layout(HtmlDocument doc, int width) {
 		Display display = Display.getDefault();
 		HtmlLayout layout = new HtmlLayout(display, doc, display.getSystemFont(), display.getSystemColor(SWT.COLOR_BLUE));

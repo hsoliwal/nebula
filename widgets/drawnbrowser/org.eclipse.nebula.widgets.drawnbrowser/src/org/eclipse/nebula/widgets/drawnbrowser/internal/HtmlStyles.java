@@ -62,10 +62,14 @@ public final class HtmlStyles {
 			MARGIN_RIGHT = 6, MARGIN_BOTTOM = 7, PADDING_TOP = 8, PADDING_RIGHT = 9, PADDING_BOTTOM = 10,
 			PADDING_LEFT = 11, BORDER_WIDTH = 12, BORDER_COLOR = 13, POSITION = 14, POS_TOP = 15, POS_LEFT = 16,
 			Z_INDEX = 17, DISPLAY = 18, FLEX_GROW = 19, FLEX_BASIS = 20, JUSTIFY = 21, GAP = 22, ROW_GAP = 23,
-			TRACKS = 24, COLUMN_SPAN = 25;
-	/** Positioned-box additions preserve every current table, flex and grid slot. */
-	public static final int OFFSET_TOP = POS_TOP, OFFSET_LEFT = POS_LEFT, OFFSET_RIGHT = 26, OFFSET_BOTTOM = 27,
-			WIDTH = 28, HEIGHT = 29, Z_AUTO = 30, SLOTS = 31;
+			TRACKS = 24, COLUMN_SPAN = 25, BORDER_STYLE = 26;
+	/** Positioned-box additions preserve every current table, flex, grid and border slot. */
+	public static final int OFFSET_TOP = POS_TOP, OFFSET_LEFT = POS_LEFT, OFFSET_RIGHT = 27, OFFSET_BOTTOM = 28,
+			WIDTH = 29, HEIGHT = 30, Z_AUTO = 31, SLOTS = 32;
+
+	/** Draw2D SchemeBorder-style highlight/shadow schemes, encoded as scalar CSS. */
+	public static final int BORDER_SOLID = 0, BORDER_INSET = 1, BORDER_OUTSET = 2,
+			BORDER_GROOVE = 3, BORDER_RIDGE = 4, BORDER_DOUBLE = 5;
 
 	/**
 	 * Displays ({@link #DISPLAY}): as its element is by default, none (not shown at all), flex (a row flex container),
@@ -89,7 +93,7 @@ public final class HtmlStyles {
 
 	/* the numeric box slots, "not set" (-1) in a declaration delta */
 	private static final int[] BOX = { MARGIN_TOP, MARGIN_RIGHT, MARGIN_BOTTOM, PADDING_TOP, PADDING_RIGHT,
-			PADDING_BOTTOM, PADDING_LEFT, BORDER_WIDTH };
+			PADDING_BOTTOM, PADDING_LEFT, BORDER_WIDTH, BORDER_STYLE };
 
 	/** Alignments. */
 	public static final int LEFT = 0, CENTER = 1, RIGHT = 2;
@@ -394,11 +398,25 @@ public final class HtmlStyles {
 		delta[left] = l;
 	}
 
-	/* border shorthand: a width, a style (solid, or none / hidden for no border) and a colour, in any order */
+	/* Supported Draw2D-style side-shading rules, encoded as primitive CSS constants. */
+	private static int borderStyle(String part) {
+		return switch (part) {
+			case "solid" -> BORDER_SOLID;
+			case "inset" -> BORDER_INSET;
+			case "outset" -> BORDER_OUTSET;
+			case "groove" -> BORDER_GROOVE;
+			case "ridge" -> BORDER_RIDGE;
+			case "double" -> BORDER_DOUBLE;
+			default -> -1;
+		};
+	}
+
+	/* A width, style and colour, in any order. */
 	private static void border(int[] delta, String value) {
 		for (String part : value.trim().split("\\s+")) {
 			if (px(part) >= 0) delta[BORDER_WIDTH] = px(part);
 			else if (part.equals("none") || part.equals("hidden")) delta[BORDER_WIDTH] = 0;
+			else if (borderStyle(part) >= 0) delta[BORDER_STYLE] = borderStyle(part);
 			else if (color(part) != 0) delta[BORDER_COLOR] = color(part);
 		}
 	}
@@ -466,6 +484,7 @@ public final class HtmlStyles {
 				}
 				case "border-style" -> {
 					if (value.equals("none") || value.equals("hidden")) delta[BORDER_WIDTH] = 0;
+					else if (borderStyle(value) >= 0) delta[BORDER_STYLE] = borderStyle(value);
 				}
 				case "position" -> {
 					int position = switch (value) {

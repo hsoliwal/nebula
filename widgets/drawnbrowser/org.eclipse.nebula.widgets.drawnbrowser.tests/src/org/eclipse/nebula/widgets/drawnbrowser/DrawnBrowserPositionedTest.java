@@ -40,6 +40,33 @@ public class DrawnBrowserPositionedTest {
 	private DrawnBrowser browser;
 
 	@Test
+	public void currentBorderSchemesPaintOnEmptyNestedPositionedBoxes() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		RGB dark = new RGB(64, 64, 64), light = new RGB(191, 191, 191);
+		RGB base = new RGB(128, 128, 128), white = new RGB(255, 255, 255);
+		for (String kind : new String[] {"solid", "inset", "outset", "groove", "ridge", "double"}) {
+			show("<div style='position:relative;left:17px;top:11px;width:200px;height:150px'>"
+					+ "<div style='position:absolute;left:13px;top:19px;width:80px;height:60px;"
+					+ "border:6px " + kind + " #808080;background:white'></div></div>");
+			ImageData image = capture();
+			RGB outer = kind.equals("solid") || kind.equals("double") ? base
+					: kind.equals("inset") || kind.equals("groove") ? dark : light;
+			RGB opposite = kind.equals("solid") || kind.equals("double") ? base
+					: kind.equals("inset") || kind.equals("groove") ? light : dark;
+			assertEquals(kind + " outer left", outer, image.palette.getRGB(image.getPixel(31, 50)));
+			assertEquals(kind + " outer right", opposite, image.palette.getRGB(image.getPixel(120, 50)));
+			if (kind.equals("groove") || kind.equals("ridge")) {
+				assertEquals(kind + " inner left", opposite, image.palette.getRGB(image.getPixel(34, 50)));
+			} else if (kind.equals("double")) {
+				assertEquals("double gap", white, image.palette.getRGB(image.getPixel(33, 50)));
+				assertEquals("double inner", base, image.palette.getRGB(image.getPixel(35, 50)));
+			}
+			assertEquals(kind + " exterior", white, image.palette.getRGB(image.getPixel(29, 50)));
+			assertEquals(kind + " interior", white, image.palette.getRGB(image.getPixel(40, 50)));
+		}
+	}
+
+	@Test
 	public void positionedInputKeepsItsNativeIdentityAndContainingBlockBounds() {
 		show("<div style='position:relative;left:40px;top:20px;width:240px;height:100px'><input name=field value=hello></div>");
 		org.eclipse.swt.widgets.Control[] children = browser.getChildren();

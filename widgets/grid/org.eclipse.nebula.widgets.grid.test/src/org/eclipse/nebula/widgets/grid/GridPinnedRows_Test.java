@@ -288,6 +288,90 @@ public class GridPinnedRows_Test {
 				chain[6].getBoundsCorrected(0).y);
 	}
 
+
+	@Test
+	public void accessibilityHitIndexIsBoundedForMillionVirtualRows() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 460, 400);
+		new GridColumn(grid, SWT.NONE).setWidth(170);
+		grid.setItemCount(1_000_000);
+		final GridItem first = grid.getItem(0);
+		final GridItem last = grid.getItem(999_999);
+		assertEquals("first logical row", 0, grid.accessibleRowOf(first));
+		assertEquals("last logical row", 999_999, grid.accessibleRowOf(last));
+		assertEquals("stale row lookup must not alter item identities",
+				last, grid.getItem(grid.accessibleRowOf(last)));
+		final Grid other = new Grid(shell, SWT.NONE);
+		final GridItem foreign = new GridItem(other, SWT.NONE);
+		assertEquals("a foreign item is never an accessible child", -1, grid.accessibleRowOf(foreign));
+	}
+
+
+	@Test
+	public void virtualTreeAccessibilityEnumeratesRootsWithoutMaterializingUnreadChildren() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL);
+		grid.setBounds(0, 30, 460, 380);
+		new GridColumn(grid, SWT.NONE).setTree(true);
+		final GridItem first = new GridItem(grid, SWT.NONE);
+		final GridItem second = new GridItem(grid, SWT.NONE);
+		final GridItem third = new GridItem(grid, SWT.NONE);
+		first.setItemCount(10_000);
+		second.setItemCount(3);
+		assertEquals("tree rows include unread descendants", 10_006, grid.getItemCount());
+		final int materializedBefore = grid.rowTree().materializedCount();
+		assertEquals("only three root items are accessible children", 3, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(10_001), Integer.valueOf(10_005)
+		}, grid.accessibleRootChildren());
+		assertEquals("accessible root enumeration must not instantiate cold descendants",
+				materializedBefore, grid.rowTree().materializedCount());
+		first.setExpanded(true);
+		second.setExpanded(true);
+		assertEquals(3, grid.accessibleRootCount());
+		third.dispose();
+		assertEquals(2, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(10_001)
+		}, grid.accessibleRootChildren());
+	}
+
+	@Test
+	public void flatAccessibilityStillExposesEachLogicalRow() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL);
+		grid.setBounds(0, 30, 460, 380);
+		grid.setItemCount(5);
+		assertEquals(5, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2),
+				Integer.valueOf(3), Integer.valueOf(4)
+		}, grid.accessibleRootChildren());
+	}
+
+	@Test
+	public void stickyAncestorKeepsItsOriginalAccessibleRowIdAfterScroll() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 30, 460, 400);
+		grid.setHeaderVisible(true);
+		new GridColumn(grid, SWT.NONE).setTree(true);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		final GridItem parent = new GridItem(root, SWT.NONE);
+		final GridItem[] children = new GridItem[90];
+		for (int i = 0; i < children.length; i++) {
+			children[i] = new GridItem(parent, SWT.NONE);
+		}
+		root.setExpanded(true);
+		parent.setExpanded(true);
+		grid.setStickyAncestorRows(true);
+		grid.setTopIndex(children[55].getRowIndex());
+		final int top = grid.getHeaderHeight();
+		assertSame("sticky point returns the original row", root,
+				grid.getItem(new Point(12, top + 2)));
+		assertEquals("the pinned visual header retains the original child ID",
+				root.getRowIndex(), grid.accessibleRowOf(root));
+		assertEquals(parent.getRowIndex(), grid.accessibleRowOf(parent));
+		assertEquals(children[55].getRowIndex(), grid.accessibleRowOf(children[55]));
+	}
+
 	@Test
 	public void permutationChoosesThePinnedModelRows() throws Exception {
 		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL);

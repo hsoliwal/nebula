@@ -12,6 +12,7 @@ import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlPaintOrder;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlPositionedLayout;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.ImageStore;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageFind;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageHistory;
@@ -445,7 +446,7 @@ public class DrawnBrowser extends Canvas {
 				if (color == 0 && border == 0) continue;
 				int x = scene.boxX(i), y = scene.boxY(i, scroll) - scroll, w = scene.boxWidth(i), h = scene.boxHeight(i);
 				if (!intersects(x, y, w, h, damageX, damageY, damageWidth, damageHeight)) continue;
-				paintBox(gc, x, y, w, h, color, border, document.boxBorderColor[i]);
+				paintBox(gc, x, y, w, h, color, border, document.boxBorderColor[i], document.boxBorderStyle[i]);
 			} else {
 				int y = scene.blockY(i, scroll) - scroll, box = document.blockBox[i];
 				// PRE, list markers and images may overflow their box; let the widget's damage clip bound drawing.
@@ -461,20 +462,13 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	/* A box's background and border paint together, before its negative-z descendants and content. */
-	private void paintBox(GC gc, int x, int y, int width, int height, int background, int border, int borderColor) {
+	private void paintBox(GC gc, int x, int y, int width, int height, int background, int border, int borderColor, int borderStyle) {
 		if (width <= 0 || height <= 0) return;
 		if (background != 0) {
 			gc.setBackground(layout.color(background));
 			gc.fillRectangle(x, y, width, height);
 		}
-		if (border > 0) {
-			gc.setBackground(borderColor == 0 ? getForeground() : layout.color(borderColor));
-			int horizontal = Math.min(border, height), vertical = Math.min(border, width);
-			gc.fillRectangle(x, y, width, horizontal);
-			gc.fillRectangle(x, y + height - horizontal, width, horizontal);
-			gc.fillRectangle(x, y, vertical, height);
-			gc.fillRectangle(x + width - vertical, y, vertical, height);
-		}
+		if (border > 0) paintBorder(gc, x, y, width, height, border, borderColor, borderStyle);
 		gc.setBackground(getBackground());
 	}
 
@@ -487,7 +481,8 @@ public class DrawnBrowser extends Canvas {
 		int boxY = (box ? layout.boxTop(b) : layout.top(b)) + dy;
 		int boxHeight = box ? layout.boxHeight(b) : layout.height(b);
 		paintBox(gc, boxX, boxY, boxWidth, boxHeight, document.blockBackground[b],
-				cell && !layout.boxedItem(b) ? 0 : document.blockBorder[b], document.blockBorderColor[b]);
+				cell && !layout.boxedItem(b) ? 0 : document.blockBorder[b], document.blockBorderColor[b],
+				document.blockBorderStyle[b]);
 		paintBlock(gc, b, top, left, boxX, boxWidth);
 	}
 
@@ -631,6 +626,66 @@ public class DrawnBrowser extends Canvas {
 			}
 		}
 	}
+
+	/** One CSS border scheme in the original SWT GC; no Figure or Control per box. */
+	private void paintBorder(GC gc, int x, int y, int width, int height, int thickness, int argb, int style) {
+		Color base = argb != 0 ? layout.color(argb) : getForeground();
+		if (style == HtmlStyles.BORDER_SOLID || (style == HtmlStyles.BORDER_DOUBLE && thickness < 3)) {
+			// Exact original solid-border pixels.
+			gc.setBackground(base);
+			int horizontal = Math.min(thickness, height), vertical = Math.min(thickness, width);
+			gc.fillRectangle(x, y, width, horizontal);
+			gc.fillRectangle(x, y + height - horizontal, width, horizontal);
+			gc.fillRectangle(x, y, vertical, height);
+			gc.fillRectangle(x + width - vertical, y, vertical, height);
+		} else if (style == HtmlStyles.BORDER_DOUBLE) {
+			int stripe = Math.max(1, thickness / 3);
+			borderBand(gc, x, y, width, height, 0, stripe, base, base);
+			borderBand(gc, x, y, width, height, thickness - stripe, stripe, base, base);
+		} else {
+			// Draw2D SchemeBorder: light/dark top-left vs bottom-right side colours.
+			int color = argb;
+			if (color == 0) {
+				org.eclipse.swt.graphics.RGB rgb = getForeground().getRGB();
+				color = 0xFF000000 | rgb.red << 16 | rgb.green << 8 | rgb.blue;
+			}
+			Color light = layout.color(shadeBorder(color, true));
+			Color dark = layout.color(shadeBorder(color, false));
+			boolean lower = style == HtmlStyles.BORDER_INSET || style == HtmlStyles.BORDER_GROOVE;
+			Color tl = lower ? dark : light, br = lower ? light : dark;
+			if (style == HtmlStyles.BORDER_GROOVE || style == HtmlStyles.BORDER_RIDGE) {
+				int outer = (thickness + 1) / 2;
+				borderBand(gc, x, y, width, height, 0, outer, tl, br);
+				borderBand(gc, x, y, width, height, outer, thickness - outer, br, tl);
+			} else {
+				borderBand(gc, x, y, width, height, 0, thickness, tl, br);
+			}
+		}
+		gc.setBackground(getBackground());
+	}
+
+	private static int shadeBorder(int color, boolean lighter) {
+		int red = color >>> 16 & 255, green = color >>> 8 & 255, blue = color & 255;
+		red = lighter ? red + (255 - red) / 2 : red / 2;
+		green = lighter ? green + (255 - green) / 2 : green / 2;
+		blue = lighter ? blue + (255 - blue) / 2 : blue / 2;
+		return 0xFF000000 | red << 16 | green << 8 | blue;
+	}
+
+	private static void borderBand(GC gc, int x, int y, int width, int height,
+			int inset, int thickness, Color topLeft, Color bottomRight) {
+		int w = width - 2 * inset, h = height - 2 * inset;
+		if (w <= 0 || h <= 0 || thickness <= 0) return;
+		int t = Math.min(thickness, Math.min(w, h));
+		int xx = x + inset, yy = y + inset;
+		gc.setBackground(topLeft);
+		gc.fillRectangle(xx, yy, w, t);
+		gc.fillRectangle(xx, yy, t, h);
+		gc.setBackground(bottomRight);
+		gc.fillRectangle(xx, yy + h - t, w, t);
+		gc.fillRectangle(xx + w - t, yy, t, h);
+	}
+
 	/*
 	 * the positioned boxes in z-index order (document order among equals): those with a negative z-index when below,
 	 * the others otherwise; only boxes that reach the damaged page band are painted
