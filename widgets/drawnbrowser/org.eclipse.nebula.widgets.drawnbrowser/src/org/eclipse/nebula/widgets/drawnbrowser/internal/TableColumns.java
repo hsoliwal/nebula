@@ -18,6 +18,18 @@ public final class TableColumns {
 	}
 
 	/**
+	 * Makes {@code widths[from .. from + span - 1]} hold at least {@code need} together: what they lack is shared
+	 * equally over the columns, the first ones taking the remainder. A span of 1 is a plain maximum.
+	 */
+	public static void spread(int[] widths, int from, int span, int need) {
+		int end = Math.min(widths.length, from + span), have = 0;
+		for (int c = from; c < end; c++) have += widths[c];
+		int lack = need - have, n = end - from;
+		if (lack <= 0 || n <= 0) return;
+		for (int c = from; c < end; c++) widths[c] += lack / n + (c - from < lack % n ? 1 : 0);
+	}
+
+	/**
 	 * The column edges for {@code available} pixels: {@code edges[c]} is column c's left edge from the table's left, and
 	 * {@code edges[n]} the table's width. A table whose maximums fit takes them (it is as narrow as its content); one
 	 * whose minimums do not fit takes the minimums (it overflows); otherwise each column gets its minimum plus a share

@@ -76,6 +76,8 @@ public final class HtmlDocument {
 	public int[] blockPosition = new int[16], blockTop = new int[16], blockLeft = new int[16], blockZ = new int[16];
 	/** Per block: its table, row (numbered across the page) and column if it is a {@link #CELL}, else -1. */
 	public int[] cellTable = new int[16], cellRow = new int[16], cellColumn = new int[16];
+	/** Per block: the number of columns a cell spans (its colspan, at least 1); 1 for any other block. */
+	public int[] cellSpan = new int[16];
 
 	public int tableCount;
 	/** Per table: number of columns (its widest row), and the border attribute in px (0: none). */
@@ -209,7 +211,7 @@ public final class HtmlDocument {
 					else if (tables > 1) lineBreak('\n');
 				}
 				case "td", "th" -> {
-					if (tables == 1) openCell(name.equals("th") ? 1 : 0);
+					if (tables == 1) openCell(name.equals("th") ? 1 : 0, Math.max(1, Math.min(1000, number(HtmlTokenizer.attribute(attributes, "colspan")))));
 					else if (tables > 1) lineBreak(' ');
 				}
 				case "caption" -> {
@@ -407,7 +409,7 @@ public final class HtmlDocument {
 		/* text needs a block: in a table outside any cell it gets a cell of its own, else a paragraph */
 		void ensureOpen() {
 			if (open >= 0) return;
-			if (tables > 0) openCell(0);
+			if (tables > 0) openCell(0, 1);
 			else openBlock(PARAGRAPH, 0, 0);
 		}
 
@@ -431,15 +433,17 @@ public final class HtmlDocument {
 			rowOpen = true;
 		}
 
-		/* a td or th of the outermost table: one block, placed in the current row (a row starts if none has) */
-		void openCell(int header) {
+		/* a td or th of the outermost table: one block of span columns, placed in the current row (a row starts if none has) */
+		void openCell(int header, int span) {
 			if (!rowOpen) startRow();
 			else closeCell();
 			openBlock(CELL, header, 0);
 			HtmlDocument d = doc;
 			d.cellTable[open] = table;
 			d.cellRow[open] = row;
-			d.cellColumn[open] = column++;
+			d.cellColumn[open] = column;
+			d.cellSpan[open] = span;
+			column += span;
 			d.tableColumns[table] = Math.max(d.tableColumns[table], column);
 			d.blockIndent[open] = quote * QUOTE_INDENT;
 			if (header == 1 && d.blockAlign[open] == HtmlStyles.LEFT) d.blockAlign[open] = HtmlStyles.CENTER;
@@ -537,6 +541,7 @@ public final class HtmlDocument {
 				d.cellRow = Arrays.copyOf(d.cellRow, capacity);
 				d.cellColumn = Arrays.copyOf(d.cellColumn, capacity);
 				d.blockControl = Arrays.copyOf(d.blockControl, capacity);
+				d.cellSpan = Arrays.copyOf(d.cellSpan, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
 				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
@@ -554,6 +559,7 @@ public final class HtmlDocument {
 			open = d.blockCount++;
 			d.cellTable[open] = d.cellRow[open] = d.cellColumn[open] = -1;
 			d.blockControl[open] = -1;
+			d.cellSpan[open] = 1;
 			d.kind[open] = kind;
 			d.level[open] = level;
 			d.marker[open] = mark;
