@@ -10,10 +10,23 @@ import sys
 import xml.etree.ElementTree as ET
 import zipfile
 
-PIN = '25e637e40c5243f5210586007a74206d8dce7953'
+PIN = 'e352d87e5f2d7b98307f42102815409d851c1a23'
 GC_SOURCE = 'bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/graphics/GC.java'
-GC_SHA256 = 'b68e4dc52b4d009972b01b46eb191eb1a30269345a3044ad2d02c850fce53c76'
+GC_SHA256 = '51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768c8c9'
 GC_CLASS = 'org/eclipse/swt/graphics/GC.class'
+CANVAS_SOURCE = 'bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/Canvas.java'
+CANVAS_GIT_BLOB = 'e53a8bf0273b88093b3ea5c049bd9bf595432280'
+REQUIRED_CANVAS_DESCRIPTORS = (
+    'int addLayer(org.eclipse.swt.graphics.ImageData);',
+    'int[] getLayerIds();',
+    'void removeLayer(int);',
+    'void setLayerLocation(int, int, int);',
+    'void setLayerTransform(int, org.eclipse.swt.graphics.Transform);',
+    'void setLayerClip(int, org.eclipse.swt.graphics.Rectangle);',
+    'void setLayerOpacity(int, int);',
+    'int getLayerAtPoint(int, int);',
+    'void setLayerZOrder(int, int);',
+)
 
 
 def digest(data):
@@ -21,6 +34,10 @@ def digest(data):
 
 
 def prepare(source, output, repository):
+    # Refuse a different source revision, even if a partial path diff is empty.
+    if subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'],
+                               text=True).strip() != PIN:
+        raise ValueError('SWT checkout does not match pinned source revision')
     # Inspect the whole source owner and fragment build configuration. Native .so files
     # are build outputs, so their byte identities are recorded below instead.
     subprocess.run(['git', '-C', str(source), 'diff', '--quiet', PIN, '--',
@@ -32,24 +49,37 @@ def prepare(source, output, repository):
         raise ValueError('Untracked SWT source inputs')
     if digest((source / GC_SOURCE).read_bytes()) != GC_SHA256:
         raise ValueError('Unqualified GTK GC source')
-    jars = [source / 'bundles/org.eclipse.swt/target/org.eclipse.swt-3.136.0-SNAPSHOT.jar',
-            source / 'binaries/org.eclipse.swt.gtk.linux.x86_64/target/org.eclipse.swt.gtk.linux.x86_64-3.136.0-SNAPSHOT.jar']
+    actual_canvas = subprocess.check_output(['git', '-C', str(source),
+                    'hash-object', CANVAS_SOURCE], text=True).strip()
+    if actual_canvas != CANVAS_GIT_BLOB:
+        raise ValueError('Unqualified GTK Canvas native layer API source')
+    jars = [source / 'bundles/org.eclipse.swt/target/org.eclipse.swt-3.138.0-SNAPSHOT.jar',
+            source / 'binaries/org.eclipse.swt.gtk.linux.x86_64/target/org.eclipse.swt.gtk.linux.x86_64-3.138.0-SNAPSHOT.jar']
     gtk_jar = jars[1]
     # Tycho resolves the parent's three environments even for Linux tests. Include
     # the other Java fragments as resolution inputs; their native execution is unqualified.
     for platform in ('cocoa.macosx.aarch64', 'cocoa.macosx.x86_64', 'gtk.linux.aarch64',
                      'gtk.linux.ppc64le', 'gtk.linux.riscv64', 'win32.win32.aarch64', 'win32.win32.x86_64'):
-        jars.append(source / ('binaries/org.eclipse.swt.' + platform + '/target/org.eclipse.swt.' + platform + '-3.136.0-SNAPSHOT.jar'))
+        jars.append(source / ('binaries/org.eclipse.swt.' + platform + '/target/org.eclipse.swt.' + platform + '-3.138.0-SNAPSHOT.jar'))
     source_jar = gtk_jar.with_name(gtk_jar.stem + '-sources.jar')
     with zipfile.ZipFile(source_jar) as archive:
         if digest(archive.read('org/eclipse/swt/graphics/GC.java')) != GC_SHA256:
             raise ValueError('Packaged GTK GC source differs')
+        if archive.read('org/eclipse/swt/widgets/Canvas.java') != (source / CANVAS_SOURCE).read_bytes():
+            raise ValueError('Packaged GTK Canvas source differs from source-validated owner')
     with zipfile.ZipFile(gtk_jar) as archive:
         gc_hash = digest(archive.read(GC_CLASS))
+        if 'org/eclipse/swt/widgets/Canvas.class' not in archive.namelist():
+            raise ValueError('Missing compiled GTK Canvas class')
         natives = {name: digest(archive.read(name)) for name in archive.namelist() if name.endswith('.so')}
         if not all(any(name.startswith(prefix) and archive.read(name).startswith(b'\x7fELF') for name in natives) for prefix in
                    ('libswt-gtk-', 'libswt-pi3-gtk-', 'libswt-cairo-gtk-', 'libswt-atk-gtk-')):
             raise ValueError('Missing source-built GTK3 JNI payloads')
+    api = subprocess.check_output(['javap', '-classpath', str(gtk_jar),
+                                   'org.eclipse.swt.widgets.Canvas'], text=True)
+    for descriptor in REQUIRED_CANVAS_DESCRIPTORS:
+        if descriptor not in api:
+            raise ValueError('Pinned SWT Canvas layer API missing: ' + descriptor)
     plugins = output / 'input/plugins'
     plugins.mkdir(parents=True, exist_ok=False)
     for jar in jars:
