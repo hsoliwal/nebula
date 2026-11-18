@@ -367,6 +367,8 @@ Contributors:
 		<module>../../widgets/segmentedbar</module>
 		<module>../../widgets/splitbutton</module>
 		<module>../../widgets/statuspane</module>
+		<module>../../widgets/terminal</module>
+		<module>../../widgets/vnc</module>
 		<module>../../widgets/stepbar</module>
 		<module>../../widgets/tablecombo</module>
 		<module>../../widgets/tiles</module>
