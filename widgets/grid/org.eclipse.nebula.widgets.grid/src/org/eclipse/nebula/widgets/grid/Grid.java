@@ -12954,6 +12954,17 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * The child ID of a materialized GridItem. The same source-owned identity
+	 * check used by editor and scroll visibility avoids materializing a virtual
+	 * row during accessibility hit resolution. Return -1 for a foreign/stale
+	 * facade, exactly as an unsuccessful original identity search did.
+	 */
+	int accessibleRowOf(final GridItem item) {
+		final int row = item.getRowIndex();
+		return isRowOf(item, row) ? row : -1;
+	}
+
+	/**
 	 * Initialize accessibility.
 	 */
 	private void initAccessible() {
@@ -13001,14 +13012,15 @@ public class Grid extends Canvas {
 				final Point location = toControl(e.x, e.y);
 				e.childID = ACC.CHILDID_SELF;
 
-				// Grid Items
+				// The viewport and pinned ancestors both return the original item.
+				// Resolve its stable row index directly, rather than walking every
+				// row (and materializing cold SWT.VIRTUAL items) for each screen reader hit.
 				final GridItem item = getItem(location);
 				if (item != null) {
-					for (int i = 0; i < getItemCount(); i++) {
-						if (item.equals(getItem(i))) {
-							e.childID = i;
-							return;
-						}
+					final int row = accessibleRowOf(item);
+					if (row >= 0) {
+						e.childID = row;
+						return;
 					}
 				} else {
 					// Column Headers
