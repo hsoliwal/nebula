@@ -107,6 +107,9 @@ public class StatusBarTest {
 		bar.update();
 		bar.setText(3, "999,999 rows");
 		bar.update();
+		// GTK may post its actual Paint after the immediate update returns.
+		// The existing helper requires a native SWT.Paint and a quiet interval.
+		TestSupport.awaitNativePaint(bar, paints, 1, "StatusBar text delta did not paint");
 		assertFalse(paints.isEmpty());
 		if (viewport()) {
 			for (Rectangle paint : paints) {
@@ -189,15 +192,21 @@ public class StatusBarTest {
 
 	@Test
 	public void deltaPixelsEqualAFreshBar() {
+		paints.clear();
 		bar.setText(0, "Busy");
 		bar.setText(1, "row 77");
 		bar.setText(3, "12 rows");
 		bar.update();
 		StatusBar fresh = build(shell, 40);
+		List<Rectangle> freshPaints = TestSupport.recordPaints(fresh);
 		fresh.setText(0, "Busy");
 		fresh.setText(1, "row 77");
 		fresh.setText(3, "12 rows");
 		TestSupport.flush(display);
+		// Observe both real native paint streams before comparing on-screen
+		// GC(Control).copyArea pixels. A drained Java queue alone is not enough.
+		TestSupport.awaitNativePaint(bar, paints, 1, "StatusBar delta frame not painted");
+		TestSupport.awaitNativePaint(fresh, freshPaints, 1, "fresh StatusBar frame not painted");
 		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(bar).data);
 	}
 
