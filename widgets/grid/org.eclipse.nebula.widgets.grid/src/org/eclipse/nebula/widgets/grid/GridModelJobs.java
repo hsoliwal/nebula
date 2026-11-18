@@ -14,6 +14,8 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -21,6 +23,7 @@ import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 
 /**
  * CPU jobs of the Grid model with a batch threshold: small jobs run inline on the UI thread,
@@ -39,6 +42,11 @@ public final class GridModelJobs {
 
 	/** Measured sort cost per model row (0 = not measured yet). */
 	private static volatile long sortNanosPerRow;
+
+	/* UI-thread only: an outstanding worker result may not supersede a later sort
+	 * request, even when both captured the same RowPermutation version. Weak keys
+	 * avoid retaining Grids once their applications release them. */
+	private static final Map<Grid, Object> latestSort = new WeakHashMap<>();
 
 	private GridModelJobs() {
 	}
@@ -136,25 +144,58 @@ public final class GridModelJobs {
 		final int version = permutation.getVersion();
 		final Display display = grid.getDisplay();
 		final CompletableFuture<Boolean> done = new CompletableFuture<>();
-		executor.execute(() -> {
-			final int[] order;
-			try {
-				order = RowPermutation.sortedOrder(snapshot, rows, descending);
-			} catch (final RuntimeException failure) {
-				done.completeExceptionally(failure);
-				return;
-			}
-			display.asyncExec(() -> {
-				if (grid.isDisposed() || grid.getRowPermutation() != permutation
-						|| permutation.getVersion() != version) {
-					done.complete(Boolean.FALSE);
+		final Object request = new Object();
+		final Object previous = latestSort.put(grid, request);
+		final Listener onDispose = e -> done.complete(Boolean.FALSE);
+		grid.addListener(SWT.Dispose, onDispose);
+		try {
+			executor.execute(() -> {
+				final int[] order;
+				try {
+					order = RowPermutation.sortedOrder(snapshot, rows, descending);
+				} catch (final RuntimeException failure) {
+					done.completeExceptionally(failure);
+					try {
+						display.asyncExec(() -> {
+							if (!grid.isDisposed()) grid.removeListener(SWT.Dispose, onDispose);
+						});
+					} catch (final org.eclipse.swt.SWTException disposed) {
+						/* The Grid's disposal listener has already completed the future. */
+					}
 					return;
 				}
-				permutation.setOrder(order);
-				grid.refreshRowPermutation();
-				done.complete(Boolean.TRUE);
+				try {
+					display.asyncExec(() -> {
+						try {
+							if (done.isDone() || grid.isDisposed()
+									|| grid.getRowPermutation() != permutation
+									|| permutation.getVersion() != version
+									|| latestSort.get(grid) != request) {
+								done.complete(Boolean.FALSE);
+								return;
+							}
+							permutation.setOrder(order);
+							grid.refreshRowPermutation();
+							done.complete(Boolean.TRUE);
+						} catch (final RuntimeException | Error failure) {
+							done.completeExceptionally(failure);
+							throw failure;
+						} finally {
+							if (!grid.isDisposed()) grid.removeListener(SWT.Dispose, onDispose);
+						}
+					});
+				} catch (final org.eclipse.swt.SWTException disposed) {
+					done.complete(Boolean.FALSE);
+				}
 			});
-		});
+		} catch (final RuntimeException rejected) {
+			grid.removeListener(SWT.Dispose, onDispose);
+			if (latestSort.get(grid) == request) {
+				if (previous == null) latestSort.remove(grid);
+				else latestSort.put(grid, previous);
+			}
+			throw rejected;
+		}
 		return done;
 	}
 }

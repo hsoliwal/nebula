@@ -100,6 +100,50 @@ public class GridModelJobs_Test {
 		assertEquals(rows / 2, grid.getItemCount());
 	}
 
+	@Test
+	public void newerLargeSortWinsEvenWhenOlderWorkerFinishesFirst() {
+		final int rows = GridModelJobs.BATCH_THRESHOLD;
+		final Grid grid = grid(rows);
+		final List<Runnable> workers = new ArrayList<>();
+		final int[] keys = keys(rows);
+		final CompletableFuture<Boolean> old = GridModelJobs.sortByIntKeys(grid, keys, false, workers::add);
+		final CompletableFuture<Boolean> newer = GridModelJobs.sortByIntKeys(grid, keys, true, workers::add);
+		assertEquals(2, workers.size());
+		workers.get(0).run();
+		workers.get(1).run();
+		final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(10);
+		while ((!old.isDone() || !newer.isDone()) && System.nanoTime() < deadline) {
+			display.readAndDispatch();
+		}
+		assertTrue("Both queued results must complete", old.isDone() && newer.isDone());
+		assertFalse("The superseded result must not commit", old.join());
+		assertTrue("The last submitted sort must commit", newer.join());
+		assertArrayEquals(RowPermutation.sortedOrder(keys, rows, true), view(grid.getRowPermutation()));
+	}
+
+	@Test
+	public void cancelledLargeSortNeverMutatesTheGrid() {
+		final int rows = GridModelJobs.BATCH_THRESHOLD;
+		final Grid grid = grid(rows);
+		final List<Runnable> workers = new ArrayList<>();
+		final CompletableFuture<Boolean> done = GridModelJobs.sortByIntKeys(grid, keys(rows), false, workers::add);
+		assertTrue(done.cancel(false));
+		workers.get(0).run();
+		display.readAndDispatch();
+		assertFalse(grid.getRowPermutation().isSorted());
+	}
+
+	@Test
+	public void disposingGridCompletesPendingLargeSortWithoutWaitingForWorker() {
+		final Grid grid = grid(GridModelJobs.BATCH_THRESHOLD);
+		final List<Runnable> workers = new ArrayList<>();
+		final CompletableFuture<Boolean> done = GridModelJobs.sortByIntKeys(grid,
+				keys(GridModelJobs.BATCH_THRESHOLD), false, workers::add);
+		grid.dispose();
+		assertTrue(done.isDone());
+		assertFalse(done.join());
+	}
+
 	private Grid grid(final int rows) {
 		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL);
 		new GridColumn(grid, SWT.NONE).setWidth(80);
