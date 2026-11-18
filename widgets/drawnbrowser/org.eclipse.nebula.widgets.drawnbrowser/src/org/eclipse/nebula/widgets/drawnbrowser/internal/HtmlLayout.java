@@ -219,7 +219,8 @@ public final class HtmlLayout {
 	/**
 	 * How far block {@code b} is drawn below its place in the flow (page coordinates): a relative box by its top
 	 * offset; an absolute box so that its top is at its top offset in the page; a fixed box at its top offset in the
-	 * view, given the scroll position; 0 when the offset is auto.
+	 * view, given the scroll position; a sticky box, once the view has scrolled its top above its top offset from the
+	 * view's top, by as much, but not past the end of its containing element; 0 when the offset is auto.
 	 */
 	public int offsetY(int b, int scrollY) {
 		int offset = doc.blockTop[b];
@@ -227,8 +228,16 @@ public final class HtmlLayout {
 		return switch (doc.blockPosition[b]) {
 			case HtmlStyles.RELATIVE -> offset;
 			case HtmlStyles.FIXED -> scrollY + offset - top(b);
+			case HtmlStyles.STICKY -> sticky(b, scrollY, offset);
 			default -> offset - top(b);
 		};
+	}
+
+	/* how far a sticky box is carried down to stay {@code inset} px below the view's top, within its containing element */
+	private int sticky(int b, int scrollY, int inset) {
+		int boxTop = doc.kind[b] == HtmlDocument.CELL ? top(b) : boxTop(b), end = doc.blockStickyEnd[b];
+		int limit = end >= b ? top(end) + height(end) : top(b) + height(b);
+		return Math.max(0, Math.min(scrollY + inset - boxTop, limit - top(b) - height(b)));
 	}
 
 	/** The link target in block {@code b} at ({@code x}, {@code y}) in that block's own page coordinates, or null. */

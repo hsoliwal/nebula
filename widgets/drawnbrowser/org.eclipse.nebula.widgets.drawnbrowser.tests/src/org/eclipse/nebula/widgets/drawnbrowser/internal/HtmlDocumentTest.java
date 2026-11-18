@@ -392,4 +392,23 @@ public class HtmlDocumentTest {
 		assertEquals(d.cellRow[one] + 1, d.cellRow[two]);
 		assertEquals(PARAGRAPH, d.kind[block(d, "after")]);
 	}
+
+	@Test
+	public void aStickyBoxEndsWithItsContainingElement() {
+		HtmlDocument d = HtmlDocument.parse("<div><h2 style='position:sticky; top:0'>A</h2><p>a1</p><p>a2</p></div>"
+				+ "<div><h2 style='position:sticky; top:4px'>B</h2><p>b1</p></div><p>after</p>"
+				+ "<table><tr><th style='position:sticky; top:0'>h1</th><th style='position:sticky; top:0'>h2</th></tr>"
+				+ "<tr><td>x</td><td>y</td></tr></table><p>last</p><h3 style='position:sticky; top:1px'>open</h3><p>end</p>");
+		int a = block(d, "A"), b = block(d, "B"), h1 = block(d, "h1"), h2 = block(d, "h2"), open = block(d, "open");
+		assertEquals(HtmlStyles.STICKY, d.blockPosition[a]);
+		assertEquals(block(d, "a2"), d.blockStickyEnd[a]);
+		assertEquals(block(d, "b1"), d.blockStickyEnd[b]);
+		assertEquals(4, d.blockTop[b]);
+		assertEquals("a sticky header cell", HtmlStyles.STICKY, d.blockPosition[h1]);
+		assertEquals("ends with its table, not its row", block(d, "y"), d.blockStickyEnd[h1]);
+		assertEquals(block(d, "y"), d.blockStickyEnd[h2]);
+		assertEquals("an element still open at the end: the last block", block(d, "end"), d.blockStickyEnd[open]);
+		assertEquals(-1, d.blockStickyEnd[block(d, "after")]);
+		assertEquals(HtmlStyles.STATIC, d.blockPosition[block(d, "x")]);
+	}
 }

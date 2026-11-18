@@ -251,6 +251,22 @@ public class HtmlLayoutTest {
 		assertEquals("a grid item's content is inset by its padding", l.cellX(4) + 5, l.indent(4));
 		assertEquals(5, l.contentTop(4));
 	}
+
+	@Test
+	public void aStickyBoxSticksUntilItsContainingElementEnds() {
+		StringBuilder html = new StringBuilder("<div><h2 style='position:sticky; top:5px'>A</h2>");
+		for (int i = 0; i < 20; i++) html.append("<p>a").append(i).append("</p>");
+		html.append("</div><p>after</p>");
+		HtmlLayout l = layout(html.toString(), 300);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals("not scrolled to yet", 0, l.offsetY(0, 0));
+		int scroll = l.boxTop(0) + 40;
+		assertEquals("stuck 5 px below the view's top", scroll + 5, l.boxTop(0) + l.offsetY(0, scroll));
+		int end = l.top(20) + l.height(20);
+		assertEquals("pushed up by its element's end", end, l.top(0) + l.height(0) + l.offsetY(0, end));
+		assertEquals("and no further", end, l.top(0) + l.height(0) + l.offsetY(0, end + 500));
+		assertTrue("it stays in the flow", l.top(1) == l.top(0) + l.height(0));
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);

@@ -70,10 +70,16 @@ public final class HtmlDocument {
 			blockPadTop = new int[16], blockPadRight = new int[16], blockPadBottom = new int[16], blockPadLeft = new int[16],
 			blockBorder = new int[16], blockBorderColor = new int[16];
 	/**
-	 * Per block, the position of its own element: {@link HtmlStyles#STATIC} (also for table cells), relative,
-	 * absolute or fixed; its top and left offsets in px ({@link HtmlStyles#AUTO} when not given) and its z-index.
+	 * Per block, the position of its own element: {@link HtmlStyles#STATIC} (also for table cells, unless sticky),
+	 * relative, absolute, fixed or sticky; its top and left offsets in px ({@link HtmlStyles#AUTO} when not given) and
+	 * its z-index.
 	 */
 	public int[] blockPosition = new int[16], blockTop = new int[16], blockLeft = new int[16], blockZ = new int[16];
+	/**
+	 * Per block: for a sticky box, the last block of the element that contains it (a table cell's: its table), whose
+	 * end the box is not carried past; -1 for any other block.
+	 */
+	public int[] blockStickyEnd = new int[16];
 	/** Per block: its table, row (numbered across the page) and column if it is a {@link #CELL}, else -1. */
 	public int[] cellTable = new int[16], cellRow = new int[16], cellColumn = new int[16];
 	/** Per block: the number of columns a cell spans (its colspan, at least 1); 1 for any other block. */
@@ -139,6 +145,7 @@ public final class HtmlDocument {
 		Builder builder = new Builder();
 		HtmlTokenizer.tokenize(html, builder);
 		builder.closeCell();
+		builder.unstick(-1); // the sticky boxes of elements still open at the end end with the last block
 		builder.doc.text = builder.chars.toString();
 		return builder.doc;
 	}
@@ -165,6 +172,10 @@ public final class HtmlDocument {
 		int quote;                     // blockquote depth
 		int tables;                    // table depth: only the outermost table's td, th and tr make cells and rows
 		int containerFrame;            // the frame of the open flex or grid container, or 0
+		int tableDepth;                // the level of the open table element (or flex or grid container)
+		/* sticky blocks whose containing element (open at stickyDepth) has not ended yet, innermost last */
+		int[] stickyOpen = new int[4], stickyDepth = new int[4];
+		int stickyCount;
 		boolean[] frameHidden = new boolean[1]; // per open element: display none (it counts in skip)
 		int[] spanRows = new int[8];   // per column: rows below the current one still covered by a rowspan from above
 		boolean[] taken = new boolean[8]; // per column: covered in the current row by a rowspan from above
@@ -323,6 +334,11 @@ public final class HtmlDocument {
 
 		@Override
 		public void endTag(String name) {
+			endElement(name);
+			unstick(depth); // the sticky boxes of the elements that ended end with their last block
+		}
+
+		private void endElement(String name) {
 			flushSpace();
 			if (name.equals("style")) {
 				if (cssDepth > 0 && --cssDepth == 0) {
@@ -477,6 +493,7 @@ public final class HtmlDocument {
 				d.tableGap = Arrays.copyOf(d.tableGap, 2 * d.tableCount);
 			}
 			table = d.tableCount++;
+			tableDepth = depth;
 			String border = HtmlTokenizer.attribute(attributes, "border");
 			d.tableBorder[table] = border == null ? 0 : border.isBlank() ? 1 : Math.max(0, size(border));
 			d.tableDisplay[table] = HtmlStyles.DISPLAY_DEFAULT;
@@ -640,6 +657,7 @@ public final class HtmlDocument {
 				d.blockTop = Arrays.copyOf(d.blockTop, capacity);
 				d.blockLeft = Arrays.copyOf(d.blockLeft, capacity);
 				d.blockZ = Arrays.copyOf(d.blockZ, capacity);
+				d.blockStickyEnd = Arrays.copyOf(d.blockStickyEnd, capacity);
 			}
 			open = d.blockCount++;
 			d.cellTable[open] = d.cellRow[open] = d.cellColumn[open] = -1;
@@ -675,7 +693,33 @@ public final class HtmlDocument {
 			d.blockTop[open] = box ? frame[HtmlStyles.POS_TOP] : HtmlStyles.AUTO;
 			d.blockLeft[open] = box ? frame[HtmlStyles.POS_LEFT] : HtmlStyles.AUTO;
 			d.blockZ[open] = box ? frame[HtmlStyles.Z_INDEX] : 0;
+			// a table cell may be sticky too: a header row that stays while its table scrolls under it
+			boolean stickyCell = kind == CELL && !box && own && frame[HtmlStyles.POSITION] == HtmlStyles.STICKY;
+			if (stickyCell) {
+				d.blockPosition[open] = HtmlStyles.STICKY;
+				d.blockTop[open] = frame[HtmlStyles.POS_TOP];
+				d.blockZ[open] = frame[HtmlStyles.Z_INDEX];
+			}
+			d.blockStickyEnd[open] = -1;
+			if (d.blockPosition[open] == HtmlStyles.STICKY) stick(open, stickyCell ? tableDepth : depth - 1);
 			space = false;
+		}
+
+		/* a sticky block, bounded by its containing element open at level {@code within} */
+		void stick(int block, int within) {
+			if (stickyCount == stickyOpen.length) {
+				stickyOpen = Arrays.copyOf(stickyOpen, 2 * stickyCount);
+				stickyDepth = Arrays.copyOf(stickyDepth, 2 * stickyCount);
+			}
+			stickyOpen[stickyCount] = block;
+			stickyDepth[stickyCount++] = within;
+		}
+
+		/* the elements deeper than {@code level} have ended: the sticky blocks they contain end at the last block so far */
+		void unstick(int level) {
+			while (stickyCount > 0 && stickyDepth[stickyCount - 1] > level) {
+				doc.blockStickyEnd[stickyOpen[--stickyCount]] = doc.blockCount - 1;
+			}
 		}
 
 		static boolean blockTag(String tag) {

@@ -29,7 +29,7 @@ import java.util.Locale;
  * {@code flex-direction} row, {@code justify-content}, {@code gap}, and on its items {@code flex-grow},
  * {@code flex-basis} and {@code width} (px); for a grid {@code grid-template-columns} ({@link GridTracks}),
  * {@code justify-content}, {@code gap} (row and column), {@code row-gap}, {@code column-gap}, and on its items
- * {@code grid-column} or {@code grid-column-end} {@code span N} (or {@code 1 / -1}, the whole row); positioning: {@code position} (static, relative, absolute, fixed), {@code top} and {@code left}
+ * {@code grid-column} or {@code grid-column-end} {@code span N} (or {@code 1 / -1}, the whole row); positioning: {@code position} (static, relative, absolute, fixed, sticky), {@code top} and {@code left}
  * (px, negative allowed, or auto) and {@code z-index}. Anything else (other units, other border styles) is ignored,
  * never an error.
  * </p>
@@ -68,7 +68,7 @@ public final class HtmlStyles {
 	private static final java.util.regex.Pattern SPAN = java.util.regex.Pattern.compile("span\\s+(\\d{1,4})");
 
 	/** Positions ({@link #POSITION}). */
-	public static final int STATIC = 0, RELATIVE = 1, ABSOLUTE = 2, FIXED = 3;
+	public static final int STATIC = 0, RELATIVE = 1, ABSOLUTE = 2, FIXED = 3, STICKY = 4;
 
 	/** {@link #POS_TOP} or {@link #POS_LEFT} not given (auto): the box keeps its place in the flow on that axis. */
 	public static final int AUTO = Integer.MIN_VALUE + 1;
@@ -463,6 +463,7 @@ public final class HtmlStyles {
 					case "relative" -> RELATIVE;
 					case "absolute" -> ABSOLUTE;
 					case "fixed" -> FIXED;
+					case "sticky", "-webkit-sticky" -> STICKY;
 					default -> delta[POSITION];
 				};
 				case "top" -> delta[POS_TOP] = offset(value);

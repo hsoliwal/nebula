@@ -179,4 +179,14 @@ public class HtmlStylesTest {
 		assertEquals(0, child[HtmlStyles.ROW_GAP]);
 		assertEquals(0, child[HtmlStyles.COLUMN_SPAN]);
 	}
+
+	@Test
+	public void positionSticky() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet("h2 { position: sticky; top: 3px } th { position: -webkit-sticky }");
+		int[] root = HtmlStyles.root(), h2 = styles.compute(root, "h2", null, null);
+		assertEquals(HtmlStyles.STICKY, h2[HtmlStyles.POSITION]);
+		assertEquals(3, h2[HtmlStyles.POS_TOP]);
+		assertEquals(HtmlStyles.STICKY, styles.compute(root, "th", null, null)[HtmlStyles.POSITION]);
+	}
 }

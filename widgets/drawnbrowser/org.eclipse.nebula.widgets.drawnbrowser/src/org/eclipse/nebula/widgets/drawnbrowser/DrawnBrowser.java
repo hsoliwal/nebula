@@ -627,15 +627,20 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	/*
-	 * a fixed box stays where it is in the view, but the scroll moved its pixels with the page: its place and the place
-	 * its pixels were moved to are damaged
+	 * a fixed box stays where it is in the view, and a stuck sticky box moves less than the page, but the scroll moved
+	 * their pixels with the page: where such a box is now and where its pixels were moved to are damaged
 	 */
 	private void redrawFixed(int delta, int width) {
+		int scrollY = viewport.y(), before = scrollY - delta;
 		for (int b : positionedOrder()) {
-			if (document.blockPosition[b] != org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.FIXED) continue;
-			int top = layout.top(b) + layout.offsetY(b, viewport.y()) - viewport.y(), height = layout.height(b);
+			int position = document.blockPosition[b];
+			if (position != org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.FIXED
+					&& position != org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.STICKY) continue;
+			int height = layout.height(b), top = layout.top(b) + layout.offsetY(b, scrollY) - scrollY;
+			int moved = layout.top(b) + layout.offsetY(b, before) - before - delta;
+			if (moved == top) continue; // it moved with the page
 			redraw(0, top, width, height, false);
-			redraw(0, top - delta, width, height, false);
+			redraw(0, moved, width, height, false);
 		}
 	}
 
