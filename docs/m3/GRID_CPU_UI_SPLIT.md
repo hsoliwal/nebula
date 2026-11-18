@@ -10,7 +10,7 @@ The existing SWT Display/Synchronizer remains the only GUI dispatcher.
 SWT UI thread
   GridModelJobs.sortByIntKeysCpuLatest(Grid, keys, descending, Executor)
     -> validate the installed row permutation and capture its version
-    -> clone exactly modelCount primitive keys
+    -> accept a CPU-prepared IntKeySnapshot (no UI copy), or clone the\n       conventional int[] convenience input on the UI thread
     -> enqueue only latest pending job per Grid
 CPU worker
     -> RowPermutation.sortedOrder(keys, count, descending, cancelled)
@@ -61,8 +61,7 @@ row-count mutations invalidate a stale sorted order.
 
 ## Thread and input ownership contracts
 
-The caller may mutate its `keys` buffer immediately after return; the
-CPU work sees a private clone. The worker sorts no live `RowPermutation`.
+The convenience int[] overload copies exactly modelCount entries on the UI\nthread, so its capture still costs O(n). For very large models build\n`GridModelJobs.IntKeySnapshot.copyOf(keys, count)` on an independent CPU\nthread before posting the UI command. The snapshot has no mutable accessor,\nand the Grid method only validates identity/version and borrows the frozen\narray. After creation, the caller may mutate its original `keys` buffer; CPU\nwork sees a private clone. The worker sorts no live `RowPermutation`.
 `setOrder`, `refreshRowPermutation`, dispose handling, selection, painting,
 accessibility, model listeners, native controls and owner-draw remain SWT-only.
 
