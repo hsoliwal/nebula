@@ -125,6 +125,10 @@ public final class HtmlLayout {
 	public int blockAt(int x, int y) {
 		int b = blockAt(y);
 		if (b < 0 || doc.kind[b] != HtmlDocument.CELL) return b;
+		// a cell of an earlier row whose rowspan reaches y, under x, comes first
+		for (int k = b - 1; k >= 0 && b - k <= SPAN_LOOKBACK && doc.kind[k] == HtmlDocument.CELL && doc.cellTable[k] == doc.cellTable[b]; k--) {
+			if (doc.cellRowSpan[k] > 1 && top[k] + height[k] > y && x >= cellX(k) && x < cellX(k) + cellWidth(k)) return k;
+		}
 		int hit = b;
 		for (int k = b; k < doc.blockCount && doc.sameRow(b, k); k++) if (x >= cellX(k)) hit = k;
 		return hit;
@@ -393,16 +397,67 @@ public final class HtmlLayout {
 	}
 
 	/* the cells of the row starting at block b share its top; the row is as tall as its tallest cell */
+	/*
+	 * the row starting at block b, and the rows its rowspans reach, measured as one group: a row is as tall as its cells
+	 * of one row; a spanning cell taller than its rows grows the last of them, and is as tall as the rows it spans
+	 */
 	private void measureRow(int b) {
-		int end = b, h = 0;
-		while (end < doc.blockCount && doc.sameRow(b, end)) h = Math.max(h, textHeight(end++));
-		for (int k = b; k < end; k++) {
-			top[k] = top[b];
-			height[k] = h + 2 * CELL_PADDING;
+		int[] rowStart = new int[4], rowHeight = new int[4];
+		int rowsInGroup = 0, reach = 0, k = b;
+		while (k < doc.blockCount && doc.kind[k] == HtmlDocument.CELL && doc.cellTable[k] == doc.cellTable[b]
+				&& (rowsInGroup == 0 || rowsInGroup <= reach)) {
+			if (rowsInGroup == rowStart.length) {
+				rowStart = Arrays.copyOf(rowStart, 2 * rowsInGroup);
+				rowHeight = Arrays.copyOf(rowHeight, 2 * rowsInGroup);
+			}
+			rowStart[rowsInGroup] = k;
+			int h = 0, first = k;
+			for (; k < doc.blockCount && doc.sameRow(first, k); k++) {
+				if (doc.cellRowSpan[k] == 1) h = Math.max(h, textHeight(k));
+				reach = Math.max(reach, rowsInGroup + doc.cellRowSpan[k] - 1);
+			}
+			rowHeight[rowsInGroup++] = h + 2 * CELL_PADDING;
 		}
-		top[end] = top[b] + h + 2 * CELL_PADDING;
-		measured = end;
+		for (int r = 0; r < rowsInGroup; r++) {
+			for (int c = rowStart[r]; c < (r + 1 < rowsInGroup ? rowStart[r + 1] : k); c++) {
+				if (doc.cellRowSpan[c] == 1) continue;
+				int last = Math.min(rowsInGroup, r + doc.cellRowSpan[c]) - 1, have = 0;
+				for (int s = r; s <= last; s++) have += rowHeight[s];
+				int need = textHeight(c) + 2 * CELL_PADDING;
+				if (need > have) rowHeight[last] += need - have;
+			}
+		}
+		int y = top[b];
+		for (int r = 0; r < rowsInGroup; r++) {
+			int end = r + 1 < rowsInGroup ? rowStart[r + 1] : k;
+			for (int c = rowStart[r]; c < end; c++) {
+				top[c] = y;
+				int last = Math.min(rowsInGroup, r + doc.cellRowSpan[c]) - 1, h = 0;
+				for (int s = r; s <= last; s++) h += rowHeight[s];
+				height[c] = h;
+			}
+			y += rowHeight[r];
+		}
+		top[k] = y;
+		measured = k;
 	}
+
+	/**
+	 * The first block to paint for a band starting at page y {@code y}: {@link #blockAt(int)}, or an earlier cell of the
+	 * same table whose rowspan reaches down to {@code y}.
+	 */
+	public int paintStart(int y) {
+		int b = blockAt(y);
+		if (b < 0 || doc.kind[b] != HtmlDocument.CELL) return b;
+		int start = b;
+		for (int k = b - 1; k >= 0 && b - k <= SPAN_LOOKBACK && doc.kind[k] == HtmlDocument.CELL && doc.cellTable[k] == doc.cellTable[b]; k--) {
+			if (top[k] + height[k] > y) start = k;
+		}
+		return start;
+	}
+
+	/* how many cells before a row the hit test and the painting look back for a rowspan reaching into it */
+	private static final int SPAN_LOOKBACK = 256;
 
 	/* the height of block b's text, from its cached layout or one made and disposed */
 	private int textHeight(int b) {

@@ -572,6 +572,25 @@ public class DrawnBrowserTest {
 		settle();
 		assertTrue("hidden when out of view", !texts.get(0).getVisible());
 	}
+
+	@Test
+	public void aBandBelowASpanningCellsFirstRowRepaintsIt() {
+		open("<table><tr><td rowspan=2 style='background-color:#ff0000'>tall cell</td><td>first row</td></tr>"
+				+ "<tr><td>second row</td></tr></table>");
+		ImageData full = shot();
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0);
+		int bottom = -1;
+		for (int y = 0; y < full.height; y++) if (rgbAt(full, 4, y).equals(red)) bottom = y;
+		assertTrue("the spanning cell is painted", bottom > 0);
+		int band = bottom - 4; // in the second row
+		GC gc = new GC(browser);
+		gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.fillRectangle(0, band, browser.getClientArea().width, 3);
+		gc.dispose();
+		browser.redraw(0, band, browser.getClientArea().width, 3, false);
+		settle();
+		assertEquals("only the band was damaged, and the spanning cell is painted in it", red, rgbAt(shot(), 4, band + 1));
+	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");

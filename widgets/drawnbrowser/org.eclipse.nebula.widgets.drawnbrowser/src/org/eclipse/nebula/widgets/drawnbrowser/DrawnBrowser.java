@@ -415,7 +415,7 @@ public class DrawnBrowser extends Canvas {
 		int pageTop = y + scrollY, pageBottom = pageTop + height;
 		// CSS painting order: positioned boxes with a negative z-index, the flow, then the other positioned boxes
 		paintPositioned(gc, scrollY, pageTop, pageBottom, true);
-		for (int b = layout.blockAt(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
+		for (int b = layout.paintStart(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
 			if (!layout.positioned(b)) paintBlock(gc, b, 0, -scrollY);
 		}
 		paintPositioned(gc, scrollY, pageTop, pageBottom, false);

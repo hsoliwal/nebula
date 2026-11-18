@@ -195,6 +195,27 @@ public class HtmlLayoutTest {
 		}
 		assertTrue("and share it", Math.abs(l.cellWidth(1) - l.cellWidth(2)) <= 1);
 	}
+
+	@Test
+	public void aSpanningCellIsAsTallAsItsRowsAndGrowsTheLast() {
+		HtmlLayout l = layout("<table><tr><td rowspan=2>tall</td><td>a</td></tr><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>"
+				+ "<p>after</p>", 400);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals("the second row starts below the first", l.top(1) + l.height(1), l.top(2));
+		assertEquals("the spanning cell covers both rows", l.height(1) + l.height(2), l.height(0));
+		assertEquals("the third row follows", l.top(2) + l.height(2), l.top(3));
+		assertEquals("a point in the second row, in the first column, is the spanning cell", 0, l.blockAt(l.cellX(0) + 2, l.top(2) + 2));
+		assertEquals("and in the second column the second row's cell", 2, l.blockAt(l.cellX(2) + 2, l.top(2) + 2));
+		assertEquals("painting a band in the second row starts at the spanning cell", 0, l.paintStart(l.top(2) + 1));
+		assertEquals(3, l.paintStart(l.top(3) + 1));
+		l.dispose();
+		StringBuilder words = new StringBuilder();
+		for (int i = 0; i < 40; i++) words.append("word ").append(i).append(' ');
+		l = layout("<table><tr><td rowspan=2>" + words + "</td><td>a</td></tr><tr><td>b</td></tr></table>", 300);
+		l.ensure(Integer.MAX_VALUE);
+		assertTrue("a tall spanning cell grows the last row: " + l.height(2) + " vs " + l.height(1), l.height(2) > l.height(1));
+		assertEquals("and fits its text", l.textLayout(0).getBounds().height + 2 * HtmlLayout.CELL_PADDING, l.height(0));
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);
