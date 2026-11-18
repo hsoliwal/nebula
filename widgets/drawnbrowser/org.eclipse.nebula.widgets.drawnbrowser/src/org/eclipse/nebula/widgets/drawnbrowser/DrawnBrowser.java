@@ -533,15 +533,8 @@ public class DrawnBrowser extends Canvas {
 			gc.setBackground(getBackground());
 		}
 		int border = cell && !layout.boxedItem(b) ? 0 : document.blockBorder[b];
-		if (border > 0) {
-			int argb = document.blockBorderColor[b];
-			gc.setBackground(argb != 0 ? layout.color(argb) : getForeground());
-			gc.fillRectangle(boxX, boxY, boxWidth, border);
-			gc.fillRectangle(boxX, boxY + boxHeight - border, boxWidth, border);
-			gc.fillRectangle(boxX, boxY, border, boxHeight);
-			gc.fillRectangle(boxX + boxWidth - border, boxY, border, boxHeight);
-			gc.setBackground(getBackground());
-		}
+		if (border > 0) paintBorder(gc, boxX, boxY, boxWidth, boxHeight, border,
+				document.blockBorderColor[b], document.blockBorderStyle[b]);
 		if (cell && document.tableBorder[document.cellTable[b]] > 0) {
 			gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
 			gc.drawRectangle(boxX, layout.top(b) + dy, boxWidth - 1, layout.height(b) - 1);
@@ -578,6 +571,64 @@ public class DrawnBrowser extends Canvas {
 		} else {
 			text.draw(gc, left, top);
 		}
+	}
+
+	/** One CSS border scheme in the original SWT GC; no Figure or Control per box. */
+	private void paintBorder(GC gc, int x, int y, int width, int height, int thickness, int argb, int style) {
+		Color base = argb != 0 ? layout.color(argb) : getForeground();
+		if (style == HtmlStyles.BORDER_SOLID || (style == HtmlStyles.BORDER_DOUBLE && thickness < 3)) {
+			// Exact original solid-border pixels.
+			gc.setBackground(base);
+			gc.fillRectangle(x, y, width, thickness);
+			gc.fillRectangle(x, y + height - thickness, width, thickness);
+			gc.fillRectangle(x, y, thickness, height);
+			gc.fillRectangle(x + width - thickness, y, thickness, height);
+		} else if (style == HtmlStyles.BORDER_DOUBLE) {
+			int stripe = Math.max(1, thickness / 3);
+			borderBand(gc, x, y, width, height, 0, stripe, base, base);
+			borderBand(gc, x, y, width, height, thickness - stripe, stripe, base, base);
+		} else {
+			// Draw2D SchemeBorder: light/dark top-left vs bottom-right side colours.
+			int color = argb;
+			if (color == 0) {
+				org.eclipse.swt.graphics.RGB rgb = getForeground().getRGB();
+				color = 0xFF000000 | rgb.red << 16 | rgb.green << 8 | rgb.blue;
+			}
+			Color light = layout.color(shadeBorder(color, true));
+			Color dark = layout.color(shadeBorder(color, false));
+			boolean lower = style == HtmlStyles.BORDER_INSET || style == HtmlStyles.BORDER_GROOVE;
+			Color tl = lower ? dark : light, br = lower ? light : dark;
+			if (style == HtmlStyles.BORDER_GROOVE || style == HtmlStyles.BORDER_RIDGE) {
+				int outer = (thickness + 1) / 2;
+				borderBand(gc, x, y, width, height, 0, outer, tl, br);
+				borderBand(gc, x, y, width, height, outer, thickness - outer, br, tl);
+			} else {
+				borderBand(gc, x, y, width, height, 0, thickness, tl, br);
+			}
+		}
+		gc.setBackground(getBackground());
+	}
+
+	private static int shadeBorder(int color, boolean lighter) {
+		int red = color >>> 16 & 255, green = color >>> 8 & 255, blue = color & 255;
+		red = lighter ? red + (255 - red) / 2 : red / 2;
+		green = lighter ? green + (255 - green) / 2 : green / 2;
+		blue = lighter ? blue + (255 - blue) / 2 : blue / 2;
+		return 0xFF000000 | red << 16 | green << 8 | blue;
+	}
+
+	private static void borderBand(GC gc, int x, int y, int width, int height,
+			int inset, int thickness, Color topLeft, Color bottomRight) {
+		int w = width - 2 * inset, h = height - 2 * inset;
+		if (w <= 0 || h <= 0 || thickness <= 0) return;
+		int t = Math.min(thickness, Math.min(w, h));
+		int xx = x + inset, yy = y + inset;
+		gc.setBackground(topLeft);
+		gc.fillRectangle(xx, yy, w, t);
+		gc.fillRectangle(xx, yy, t, h);
+		gc.setBackground(bottomRight);
+		gc.fillRectangle(xx, yy + h - t, w, t);
+		gc.fillRectangle(xx + w - t, yy, t, h);
 	}
 
 	/*

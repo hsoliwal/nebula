@@ -74,6 +74,32 @@ public class HtmlStylesTest {
 	}
 
 	@Test
+	public void schemeBordersAreParsedAndNotInherited() {
+		HtmlStyles styles = new HtmlStyles();
+		for (String name : new String[] {"solid", "inset", "outset", "groove", "ridge", "double"}) {
+			int expected = switch (name) {
+				case "inset" -> HtmlStyles.BORDER_INSET;
+				case "outset" -> HtmlStyles.BORDER_OUTSET;
+				case "groove" -> HtmlStyles.BORDER_GROOVE;
+				case "ridge" -> HtmlStyles.BORDER_RIDGE;
+				case "double" -> HtmlStyles.BORDER_DOUBLE;
+				default -> HtmlStyles.BORDER_SOLID;
+			};
+			int[] box = styles.compute(HtmlStyles.root(), "p", null, "border: 4px " + name + " #808080");
+			assertEquals(name, expected, box[HtmlStyles.BORDER_STYLE]);
+			assertEquals(4, box[HtmlStyles.BORDER_WIDTH]);
+			assertEquals("style is not inherited", HtmlStyles.BORDER_SOLID,
+					styles.compute(box, "span", null, null)[HtmlStyles.BORDER_STYLE]);
+		}
+		assertEquals(HtmlStyles.BORDER_OUTSET,
+				styles.compute(HtmlStyles.root(), "p", null, "border: 4px solid red; border-style: outset")[HtmlStyles.BORDER_STYLE]);
+		assertEquals(0, styles.compute(HtmlStyles.root(), "p", null, "border: 4px ridge red; border-style: none")[HtmlStyles.BORDER_WIDTH]);
+		HtmlDocument document = HtmlDocument.parse("<p style='border:4px inset #808080'>a</p><p style='border:4px outset #808080'>b</p>");
+		assertEquals(HtmlStyles.BORDER_INSET, document.blockBorderStyle[0]);
+		assertEquals(HtmlStyles.BORDER_OUTSET, document.blockBorderStyle[1]);
+	}
+
+	@Test
 	public void boxModelShorthandsSidesAndBorders() {
 		HtmlStyles styles = new HtmlStyles();
 		styles.addSheet("p { margin: 10px 20px 30px 40px; padding: 5px; border: 2px solid red } div { margin: 4px 8px; padding: 1px 2px 3px }"
