@@ -15,8 +15,13 @@ import java.util.Locale;
 /**
  * The CSS subset of the drawn browser.
  * <p>
- * Rules come from {@code <style>} elements and declarations from {@code style} attributes. Selectors are a tag, a
- * {@code .class}, a {@code tag.class}, or comma-separated lists of these. Properties: {@code color},
+ * Rules come from {@code <style>} elements and declarations from {@code style} attributes. Selectors, comma-separated:
+ * compounds of a tag or {@code *}, {@code #id}, {@code .class}es, attribute tests ({@code [a]}, {@code [a=v]},
+ * {@code [a~=v]}, {@code [a|=v]}, {@code [a^=v]}, {@code [a$=v]}, {@code [a*=v]}), {@code :first-child} and
+ * {@code :link}, joined by descendant, child ({@code >}) and adjacent sibling ({@code +}) combinators; a selector with
+ * anything else is ignored. Matching and specificity follow Flying Saucer's newmatch (LGPL, e02852faa3; its licence is
+ * recorded, not acted on): axes, conditions, and specificity as ids, then classes, attributes and pseudo-classes,
+ * then elements. Properties: {@code color},
  * {@code background-color}, {@code font-weight}, {@code font-style}, {@code text-decoration}, {@code text-align}, the box
  * model in px: {@code margin} and {@code padding} (one to four values, or one side: {@code margin-top} ...),
  * {@code border} (width, {@code solid}/{@code none}, colour), {@code border-width}, {@code border-color},
@@ -63,9 +68,51 @@ public final class HtmlStyles {
 	/** Alignments. */
 	public static final int LEFT = 0, CENTER = 1, RIGHT = 2;
 
-	/* one rule per selector: tag (or null), class (or null), specificity, declarations, order */
-	private final List<String[]> selectors = new ArrayList<>();
-	private final List<int[]> declarations = new ArrayList<>();
+	/* the rules of the sheets, one per selector, in sheet order */
+	private final List<Rule> rules = new ArrayList<>();
+
+	/**
+	 * An element as the parser holds it, with its ancestors and their previous siblings: level {@code up} 0 is the
+	 * element's own level, 1 its parent's, and so on; at a level, {@code back} 0 is the element (or the ancestor) and
+	 * {@code back} k its k-th previous element sibling.
+	 */
+	public interface Path {
+		/** The number of levels: the element and its ancestors. */
+		int depth();
+
+		/** The number of element siblings before the element (or the ancestor) at level {@code up}. */
+		int siblings(int up);
+
+		/** The tag, lower case, of the element at ({@code up}, {@code back}). */
+		String tag(int up, int back);
+
+		/** An attribute of the element at ({@code up}, {@code back}), or null. */
+		String attribute(int up, int back, String name);
+	}
+
+	/* attribute operators: [a], [a=v], [a~=v] (a word of a list), [a|=v] (v or v-...), [a^=v], [a$=v], [a*=v] */
+	private static final int EXISTS = 0, EQUALS = 1, WORD = 2, DASH = 3, PREFIX = 4, SUFFIX = 5, SUBSTRING = 6;
+
+	/*
+	 * one compound selector: a tag (null: any), an id, classes, attribute tests (name, operator, value), first-child,
+	 * :link
+	 */
+	private record Compound(String tag, String id, String[] classes, String[] attributes, int[] operators, String[] values,
+			boolean firstChild, boolean link) {
+	}
+
+	/*
+	 * a selector: compounds from the outermost to the subject; axes[i] joins compound i - 1 and i: ' ' descendant, '>'
+	 * child, '+' immediate sibling (Flying Saucer's Selector axes); specificity B (ids), C (classes, attributes,
+	 * pseudo-classes), D (elements) as one int; sheet order breaks ties
+	 */
+	private record Rule(Compound[] compounds, char[] axes, int specificity, int order, int[] declarations) {
+	}
+
+	private static final java.util.regex.Pattern COMPOUND = java.util.regex.Pattern.compile(
+			"(\\*|[a-z][a-z0-9-]*)?((?:#[a-z_][\\w-]*|\\.[a-z_][\\w-]*|\\[[a-z_][\\w-]*(?:[~|^$*]?=(?:\"[^\"]*\"|'[^']*'|[\\w-]*))?\\]|:[a-z-]+)*)");
+	private static final java.util.regex.Pattern PART = java.util.regex.Pattern.compile(
+			"#([a-z_][\\w-]*)|\\.([a-z_][\\w-]*)|\\[([a-z_][\\w-]*)(?:([~|^$*]?=)(\"[^\"]*\"|'[^']*'|[\\w-]*))?\\]|:([a-z-]+)");
 
 	/** Adds the rules of a style sheet. */
 	public void addSheet(String css) {
@@ -76,16 +123,159 @@ public final class HtmlStyles {
 			if (open < 0 || close < 0) break;
 			int[] decls = parse(text.substring(open + 1, close), emptyDelta());
 			for (String selector : text.substring(i, open).split(",")) {
-				String s = selector.trim().toLowerCase(Locale.ROOT);
-				if (!s.matches("[a-z][a-z0-9]*|\\.[a-z_][a-z0-9_-]*|[a-z][a-z0-9]*\\.[a-z_][a-z0-9_-]*")) continue;
-				int dot = s.indexOf('.');
-				String tag = dot == 0 ? null : dot < 0 ? s : s.substring(0, dot);
-				String cls = dot < 0 ? null : s.substring(dot + 1);
-				selectors.add(new String[] { tag, cls, String.valueOf((tag != null ? 1 : 0) + (cls != null ? 10 : 0)) });
-				declarations.add(decls);
+				Rule rule = rule(selector.trim().toLowerCase(Locale.ROOT), decls);
+				if (rule != null) rules.add(rule);
 			}
 			i = close + 1;
 		}
+	}
+
+	/* a selector of compounds joined by descendant, child and sibling axes; null for anything else (never matches) */
+	private Rule rule(String selector, int[] decls) {
+		String[] tokens = selector.replace(">", " > ").replace("+", " + ").trim().split("\\s+");
+		List<Compound> compounds = new ArrayList<>();
+		StringBuilder axes = new StringBuilder();
+		char axis = ' ';
+		boolean pending = false;
+		int b = 0, c = 0, d = 0;
+		for (String token : tokens) {
+			if (token.isEmpty()) return null;
+			if (token.equals(">") || token.equals("+")) {
+				if (compounds.isEmpty() || pending) return null;
+				axis = token.charAt(0);
+				pending = true;
+				continue;
+			}
+			Compound compound = compound(token);
+			if (compound == null) return null;
+			axes.append(compounds.isEmpty() ? ' ' : axis);
+			compounds.add(compound);
+			axis = ' ';
+			pending = false;
+			b += compound.id() != null ? 1 : 0;
+			c += compound.classes().length + compound.attributes().length + (compound.firstChild() ? 1 : 0) + (compound.link() ? 1 : 0);
+			d += compound.tag() != null ? 1 : 0;
+		}
+		if (compounds.isEmpty() || pending) return null;
+		return new Rule(compounds.toArray(new Compound[0]), axes.toString().toCharArray(), b * 10000 + c * 100 + d, rules.size(), decls);
+	}
+
+	/* one compound; null when it has a pseudo-class this subset does not know (as Flying Saucer's unsupported condition) */
+	private static Compound compound(String token) {
+		java.util.regex.Matcher m = COMPOUND.matcher(token);
+		if (!m.matches()) return null;
+		String tag = m.group(1) == null || m.group(1).equals("*") ? null : m.group(1), id = null;
+		List<String> classes = new ArrayList<>(), attributes = new ArrayList<>(), values = new ArrayList<>();
+		List<Integer> operators = new ArrayList<>();
+		boolean firstChild = false, link = false;
+		java.util.regex.Matcher part = PART.matcher(m.group(2));
+		while (part.find()) {
+			if (part.group(1) != null) {
+				if (id != null) return null;
+				id = part.group(1);
+			} else if (part.group(2) != null) {
+				classes.add(part.group(2));
+			} else if (part.group(3) != null) {
+				attributes.add(part.group(3));
+				String op = part.group(4), value = part.group(5);
+				operators.add(op == null ? EXISTS : switch (op) {
+					case "~=" -> WORD;
+					case "|=" -> DASH;
+					case "^=" -> PREFIX;
+					case "$=" -> SUFFIX;
+					case "*=" -> SUBSTRING;
+					default -> EQUALS;
+				});
+				values.add(value == null ? null : value.startsWith("\"") || value.startsWith("'") ? value.substring(1, value.length() - 1) : value);
+			} else {
+				switch (part.group(6)) {
+					case "first-child" -> firstChild = true;
+					case "link" -> link = true;
+					default -> {
+						return null;
+					}
+				}
+			}
+		}
+		int[] ops = new int[operators.size()];
+		for (int k = 0; k < ops.length; k++) ops[k] = operators.get(k);
+		return new Compound(tag, id, classes.toArray(new String[0]), attributes.toArray(new String[0]), ops,
+				values.toArray(new String[0]), firstChild, link);
+	}
+
+	/*
+	 * whether compounds 0..i of a rule match with compound i at (up, back): right to left, backtracking over the
+	 * ancestors for a descendant axis (Flying Saucer's Selector.matches)
+	 */
+	private static boolean matches(Rule rule, int i, Path path, int up, int back) {
+		if (!matches(rule.compounds()[i], path, up, back)) return false;
+		if (i == 0) return true;
+		return switch (rule.axes()[i]) {
+			case '>' -> up + 1 < path.depth() && matches(rule, i - 1, path, up + 1, 0);
+			case '+' -> back + 1 <= path.siblings(up) && matches(rule, i - 1, path, up, back + 1);
+			default -> {
+				for (int a = up + 1; a < path.depth(); a++) if (matches(rule, i - 1, path, a, 0)) yield true;
+				yield false;
+			}
+		};
+	}
+
+	private static boolean matches(Compound c, Path path, int up, int back) {
+		String tag = path.tag(up, back);
+		if (c.tag() != null && !c.tag().equals(tag)) return false;
+		if (c.firstChild() && path.siblings(up) - back != 0) return false;
+		if (c.link() && !("a".equals(tag) && path.attribute(up, back, "href") != null)) return false;
+		if (c.id() != null && !c.id().equals(lower(path.attribute(up, back, "id")))) return false;
+		if (c.classes().length > 0) {
+			String cls = path.attribute(up, back, "class");
+			if (cls == null) return false;
+			String[] own = cls.trim().toLowerCase(Locale.ROOT).split("\\s+");
+			for (String want : c.classes()) if (!contains(own, want)) return false;
+		}
+		for (int k = 0; k < c.attributes().length; k++) {
+			String value = lower(path.attribute(up, back, c.attributes()[k])), want = c.values()[k];
+			if (value == null) return false;
+			boolean ok = switch (c.operators()[k]) {
+				case EQUALS -> value.equals(want);
+				case WORD -> contains(value.trim().split("\\s+"), want);
+				case DASH -> value.equals(want) || value.startsWith(want + "-");
+				case PREFIX -> !want.isEmpty() && value.startsWith(want);
+				case SUFFIX -> !want.isEmpty() && value.endsWith(want);
+				case SUBSTRING -> !want.isEmpty() && value.contains(want);
+				default -> true;
+			};
+			if (!ok) return false;
+		}
+		return true;
+	}
+
+	private static String lower(String value) {
+		return value == null ? null : value.toLowerCase(Locale.ROOT);
+	}
+
+	/* an element with no ancestors and no siblings, from its tag and class attribute */
+	private static Path single(String tag, String classes) {
+		return new Path() {
+			@Override
+			public int depth() {
+				return 1;
+			}
+
+			@Override
+			public int siblings(int up) {
+				return 0;
+			}
+
+			@Override
+			public String tag(int up, int back) {
+				return tag;
+			}
+
+			@Override
+			public String attribute(int up, int back, String name) {
+				return name.equals("class") ? classes : null;
+			}
+		};
 	}
 
 	/**
@@ -97,22 +287,25 @@ public final class HtmlStyles {
 	 * @param inline  the style attribute, or null
 	 */
 	public int[] compute(int[] parent, String tag, String classes, String inline) {
+		return compute(parent, single(tag, classes), inline);
+	}
+
+	/**
+	 * The computed style of the element {@code path} starts at: the rules that match it, in specificity order (ids,
+	 * then classes, attributes and pseudo-classes, then elements; sheet order among equals), then its {@code style}
+	 * attribute.
+	 */
+	public int[] compute(int[] parent, Path path, String inline) {
 		int[] style = new int[SLOTS];
 		style[COLOR] = parent[COLOR];
 		style[BITS] = parent[BITS];
 		style[ALIGN] = parent[ALIGN];
 		style[POS_TOP] = AUTO;
 		style[POS_LEFT] = AUTO;
-		String[] own = classes == null ? new String[0] : classes.trim().toLowerCase(Locale.ROOT).split("\\s+");
-		for (int specificity : new int[] { 1, 10, 11 }) {
-			for (int r = 0; r < selectors.size(); r++) {
-				String[] s = selectors.get(r);
-				if (Integer.parseInt(s[2]) != specificity) continue;
-				if (s[0] != null && !s[0].equals(tag)) continue;
-				if (s[1] != null && !contains(own, s[1])) continue;
-				apply(style, declarations.get(r));
-			}
-		}
+		List<Rule> matched = new ArrayList<>();
+		for (Rule rule : rules) if (matches(rule, rule.compounds().length - 1, path, 0, 0)) matched.add(rule);
+		matched.sort(java.util.Comparator.comparingInt(Rule::specificity).thenComparingInt(Rule::order));
+		for (Rule rule : matched) apply(style, rule.declarations());
 		if (inline != null) apply(style, parse(inline, emptyDelta()));
 		return style;
 	}

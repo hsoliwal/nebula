@@ -161,6 +161,12 @@ public final class HtmlDocument {
 		int cssDepth;
 		int[][] frames = { HtmlStyles.root() };
 		String[] frameTags = { "" };
+		/* per open element: its attributes, and its place among its parent's element children */
+		String[][] frameAttributes = { new String[0] };
+		int[] frameIndex = { 0 };
+		/* per level: the tags and attributes of the element children so far of the element open at that level */
+		java.util.List<java.util.List<String>> kidTags = new java.util.ArrayList<>();
+		java.util.List<java.util.List<String[]>> kidAttributes = new java.util.ArrayList<>();
 		int depth;
 		int listDepth;
 		int[] ordinals = new int[8];   // per list depth: next ordinal, or BULLET for ul
@@ -175,8 +181,9 @@ public final class HtmlDocument {
 			}
 			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")
 					&& !name.equals("input")) {
-				push(name, styles.compute(frames[depth], name, HtmlTokenizer.attribute(attributes, "class"),
-						HtmlTokenizer.attribute(attributes, "style")));
+				push(name, attributes, styles.compute(frames[depth], path(name, attributes), HtmlTokenizer.attribute(attributes, "style")));
+			} else {
+				sibling(name, attributes); // a void element is a sibling of the elements after it
 			}
 			switch (name) {
 				case "script" -> skip += selfClosing ? 0 : 1;
@@ -584,13 +591,63 @@ public final class HtmlDocument {
 			};
 		}
 
-		void push(String tag, int[] frame) {
+		void push(String tag, String[] attributes, int[] frame) {
+			int index = kids(depth).size();
+			sibling(tag, attributes);
 			if (++depth == frames.length) {
 				frames = Arrays.copyOf(frames, 2 * frames.length);
 				frameTags = Arrays.copyOf(frameTags, 2 * frameTags.length);
+				frameAttributes = Arrays.copyOf(frameAttributes, 2 * frameAttributes.length);
+				frameIndex = Arrays.copyOf(frameIndex, 2 * frameIndex.length);
 			}
 			frames[depth] = frame;
 			frameTags[depth] = tag;
+			frameAttributes[depth] = attributes;
+			frameIndex[depth] = index;
+			kids(depth).clear(); // the new element has no children yet
+			kidAttributes.get(depth).clear();
+		}
+
+		/* the element children so far of the element open at a level */
+		java.util.List<String> kids(int level) {
+			while (kidTags.size() <= level) {
+				kidTags.add(new java.util.ArrayList<>());
+				kidAttributes.add(new java.util.ArrayList<>());
+			}
+			return kidTags.get(level);
+		}
+
+		void sibling(String tag, String[] attributes) {
+			kids(depth).add(tag);
+			kidAttributes.get(depth).add(attributes);
+		}
+
+		/* the element being opened (level 0), its ancestors and their previous element siblings, for the cascade */
+		HtmlStyles.Path path(String name, String[] attributes) {
+			int open = depth, before = kids(depth).size();
+			return new HtmlStyles.Path() {
+				@Override
+				public int depth() {
+					return open + 1;
+				}
+
+				@Override
+				public int siblings(int up) {
+					return up == 0 ? before : frameIndex[open - up + 1];
+				}
+
+				@Override
+				public String tag(int up, int back) {
+					if (back == 0) return up == 0 ? name : frameTags[open - up + 1];
+					return kidTags.get(open - up).get(siblings(up) - back);
+				}
+
+				@Override
+				public String attribute(int up, int back, String key) {
+					String[] attrs = back > 0 ? kidAttributes.get(open - up).get(siblings(up) - back) : up == 0 ? attributes : frameAttributes[open - up + 1];
+					return HtmlTokenizer.attribute(attrs, key);
+				}
+			};
 		}
 
 		/* closes the innermost open element of that tag and every element opened inside it (misnested tags) */
