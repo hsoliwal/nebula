@@ -32,6 +32,9 @@ jobs:
           src=widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/model
           javac --release 21 -Xlint:all -Werror -d "$output" \
             "$src/RowView.java" \
+            "$src/RowComparator.java" \
+            "$src/RowPredicate.java" \
+            "$src/IntPermutationSort.java" \
             "$src/RowPermutation.java" \
             releng/verification/grid-cpu-sort/RowPermutationCpuCancellationContract.java
           java -ea -cp "$output" org.eclipse.nebula.widgets.grid.model.RowPermutationCpuCancellationContract
