@@ -14,7 +14,10 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -24,6 +27,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.SWTException;
 
 /**
  * CPU jobs of the Grid model with a batch threshold: small jobs run inline on the UI thread,
@@ -47,6 +52,249 @@ public final class GridModelJobs {
 	 * request, even when both captured the same RowPermutation version. Weak keys
 	 * avoid retaining Grids once their applications release them. */
 	private static final Map<Grid, Object> latestSort = new WeakHashMap<>();
+
+	/*
+	 * Opt-in latest-only CPU sort lane. A weak Grid key and weak Grid reference
+	 * prevent the scheduler map from making otherwise abandoned widgets immortal.
+	 * Grid and RowPermutation are inspected or mutated only by the SWT UI thread.
+	 */
+	private static final Map<Grid, CpuSortLane> cpuSortLanes = new WeakHashMap<>();
+
+	private static final class CpuSortJob {
+		final RowPermutation permutation;
+		final int version;
+		final int[] keys;
+		final int rows;
+		final boolean descending;
+		final Object token = new Object();
+		final CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+		CpuSortJob(RowPermutation permutation, int[] keys, boolean descending) {
+			this.permutation = permutation;
+			this.version = permutation.getVersion();
+			this.rows = permutation.getModelCount();
+			this.keys = keys;
+			this.descending = descending;
+		}
+	}
+
+	private static final class CpuSortResult {
+		final CpuSortJob job;
+		final int[] order;
+		final Throwable failure;
+		final boolean cancelled;
+
+		CpuSortResult(CpuSortJob job, int[] order, Throwable failure, boolean cancelled) {
+			this.job = job;
+			this.order = order;
+			this.failure = failure;
+			this.cancelled = cancelled;
+		}
+	}
+
+	private static final class CpuSortLane {
+		private final WeakReference<Grid> owner;
+		private final Display display;
+		private final Thread uiThread;
+		private final Listener onDispose = this::disposed;
+		private CpuSortJob queued, active;
+		private CpuSortResult ready;
+		private boolean working, uiQueued;
+		private volatile boolean closed;
+
+		CpuSortLane(Grid grid) {
+			owner = new WeakReference<>(grid);
+			display = grid.getDisplay();
+			uiThread = display.getThread();
+			grid.addListener(SWT.Dispose, onDispose);
+		}
+
+		/**
+		 * Called on the SWT thread; rejection does not invalidate previously
+		 * accepted work. A worker already active drains only the newest queued job.
+		 */
+		void submit(CpuSortJob next, Executor executor, Grid grid) {
+			CpuSortJob oldQueued, oldActive, oldReady;
+			synchronized (this) {
+				if (closed) throw new IllegalStateException("disposed Grid CPU sort lane");
+				oldQueued = queued;
+				oldActive = active;
+				oldReady = ready == null ? null : ready.job;
+				queued = next;
+				if (!working) {
+					working = true;
+					try {
+						executor.execute(this::drain);
+					} catch (RuntimeException error) {
+						queued = oldQueued;
+						working = false;
+						throw error;
+					}
+				}
+			}
+			// Only after successful admission may earlier accepted jobs be retired.
+			latestSort.put(grid, next.token);
+			if (oldQueued != null) oldQueued.future.complete(Boolean.FALSE);
+			if (oldActive != null) oldActive.future.complete(Boolean.FALSE);
+			if (oldReady != null) oldReady.future.complete(Boolean.FALSE);
+		}
+
+		private void drain() {
+			if (Thread.currentThread() == uiThread) {
+				throw new IllegalArgumentException("CPU sort executor ran on SWT event thread");
+			}
+			for (;;) {
+				final CpuSortJob job;
+				synchronized (this) {
+					if (closed || queued == null) {
+						working = false;
+						active = null;
+						return;
+					}
+					job = queued;
+					queued = null;
+					active = job;
+				}
+				if (job.future.isDone()) continue;
+				try {
+					int[] order = RowPermutation.sortedOrder(job.keys, job.rows,
+							job.descending, () -> closed || job.future.isDone()
+								|| Thread.currentThread().isInterrupted());
+					if (!closed && !job.future.isDone())
+						publish(new CpuSortResult(job, order, null, false));
+				} catch (CancellationException cancelled) {
+					if (!closed && !job.future.isDone())
+						publish(new CpuSortResult(job, null, null, true));
+				} catch (RuntimeException | Error failure) {
+					if (!closed && !job.future.isDone())
+						publish(new CpuSortResult(job, null, failure, false));
+				}
+			}
+		}
+
+		private void publish(CpuSortResult completed) {
+			boolean post;
+			synchronized (this) {
+				if (closed) return;
+				ready = completed;
+				post = !uiQueued;
+				if (post) uiQueued = true;
+			}
+			if (post) postUi();
+		}
+
+		private void postUi() {
+			try {
+				display.asyncExec(this::apply);
+			} catch (SWTException disposed) {
+				CpuSortResult lost;
+				synchronized (this) {
+					lost = ready;
+					ready = null;
+					uiQueued = false;
+				}
+				if (lost != null) lost.job.future.complete(Boolean.FALSE);
+			}
+		}
+
+		private void apply() {
+			CpuSortResult completed;
+			synchronized (this) {
+				completed = ready;
+				ready = null;
+			}
+			try {
+				if (completed == null || completed.job.future.isDone()) return;
+				CpuSortJob job = completed.job;
+				Grid grid = owner.get();
+				if (closed || grid == null || grid.isDisposed()
+						|| latestSort.get(grid) != job.token
+						|| grid.getRowPermutation() != job.permutation
+						|| job.permutation.getVersion() != job.version
+						|| completed.cancelled) {
+					job.future.complete(Boolean.FALSE);
+					return;
+				}
+				if (completed.failure != null) {
+					job.future.completeExceptionally(completed.failure);
+					return;
+				}
+				try {
+					job.permutation.setOrder(completed.order);
+					grid.refreshRowPermutation();
+					job.future.complete(Boolean.TRUE);
+				} catch (RuntimeException | Error error) {
+					job.future.completeExceptionally(error);
+				}
+			} finally {
+				Grid grid = owner.get();
+				if (grid != null && !grid.isDisposed() && completed != null
+						&& latestSort.get(grid) == completed.job.token) {
+					latestSort.remove(grid);
+				}
+				boolean repost;
+				synchronized (this) {
+					uiQueued = false;
+					repost = ready != null && !closed;
+					if (repost) uiQueued = true;
+				}
+				if (repost) postUi();
+			}
+		}
+
+		private void disposed(Event event) {
+			closed = true;
+			Grid grid = (Grid) event.widget;
+			cpuSortLanes.remove(grid);
+			latestSort.remove(grid);
+			CpuSortJob waiting, computing;
+			CpuSortResult published;
+			synchronized (this) {
+				waiting = queued;
+				computing = active;
+				published = ready;
+				queued = active = null;
+				ready = null;
+			}
+			if (waiting != null) waiting.future.complete(Boolean.FALSE);
+			if (computing != null) computing.future.complete(Boolean.FALSE);
+			if (published != null) published.job.future.complete(Boolean.FALSE);
+		}
+	}
+
+	/**
+	 * Asynchronous CPU-only Grid sort at every model size. Unlike the legacy
+	 * thresholded method, this method never sorts on the SWT event thread.
+	 * One worker drain per Grid coalesces pending requests; older requests
+	 * complete false, and only the latest matching model/version is applied.
+	 * A rejected executor leaves the previous accepted request untouched.
+	 *
+	 * <p>Provide a genuine background `Executor`, not `Runnable::run`.
+	 * The executor and RowPermutation sorted-order computation must not access
+	 * any SWT widgets. Results are installed solely through Display.asyncExec.
+	 * This method is additive; original sortByIntKeys behavior is unchanged.</p>
+	 *
+	 * @since 1.2
+	 */
+	public static CompletableFuture<Boolean> sortByIntKeysCpuLatest(
+			final Grid grid, final int[] keys, final boolean descending,
+			final Executor executor) {
+		Objects.requireNonNull(grid, "grid");
+		Objects.requireNonNull(keys, "keys");
+		Objects.requireNonNull(executor, "executor");
+		final RowPermutation permutation = grid.getRowPermutation();
+		if (permutation == null) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		final int rows = permutation.getModelCount();
+		if (keys.length < rows) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		final CpuSortJob job = new CpuSortJob(permutation, java.util.Arrays.copyOf(keys, rows), descending);
+		CpuSortLane lane = cpuSortLanes.get(grid);
+		if (lane == null) {
+			lane = new CpuSortLane(grid);
+			cpuSortLanes.put(grid, lane);
+		}
+		lane.submit(job, executor, grid);
+		return job.future;
+	}
 
 	private GridModelJobs() {
 	}
