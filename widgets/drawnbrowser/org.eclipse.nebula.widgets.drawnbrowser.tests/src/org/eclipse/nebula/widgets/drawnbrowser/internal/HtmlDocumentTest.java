@@ -32,6 +32,47 @@ import org.junit.Test;
 /** The drawn browser's document lanes, tag by tag of prasser/swtbrowser's handlers. */
 public class HtmlDocumentTest {
 
+	@Test
+	public void flexShrinkLanesGrowAndAnonymousItemsKeepTheirDefault() {
+		StringBuilder html = new StringBuilder("<div style='display:flex;flex-shrink:0'>anonymous");
+		for (int i = 0; i < 40; i++) {
+			html.append("<div style='flex:0 ").append(i % 2 == 0 ? "0" : ".25").append(" 80px'>item ")
+					.append(i).append("</div>");
+		}
+		html.append("<div>default</div></div>");
+		HtmlDocument d = HtmlDocument.parse(html.toString());
+		assertEquals(42, d.blockCount);
+		assertEquals(1, d.cellShrink[0], 0);
+		for (int i = 0; i < 40; i++) {
+			assertEquals(i % 2 == 0 ? 0 : .25, d.cellShrink[i + 1], 0);
+			assertEquals(80, d.cellBasis[i + 1]);
+			assertEquals(i + 1, d.cellColumn[i + 1]);
+		}
+		assertEquals("container shrink does not inherit", 1, d.cellShrink[41], 0);
+	}
+
+	@Test
+	public void hiddenFlexItemsDoNotLeakShrinkStateIntoFollowingItems() {
+		HtmlDocument d = HtmlDocument.parse("<style>.fixed{flex:0 0 240px}.soft{flex-shrink:.125}</style>"
+				+ "<div style='display:flex'><div class='fixed'>sidebar</div>"
+				+ "<div style='display:none;flex-shrink:99'>hidden</div><div class='soft'>content</div><div>plain</div></div>");
+		assertEquals(3, d.blockCount);
+		assertEquals(0, d.cellShrink[0], 0);
+		assertEquals(.125, d.cellShrink[1], 0);
+		assertEquals(1, d.cellShrink[2], 0);
+		assertEquals(240, d.cellBasis[0]);
+	}
+
+	@Test
+	public void anAutoFlexBasisUsesWidthInEitherDeclarationOrder() {
+		for (String flex : new String[] { "none", "auto", "initial", "1 0 auto" }) {
+			HtmlDocument d = HtmlDocument.parse("<div style='display:flex'><div style='width:120px;flex:" + flex
+					+ "'>i</div><div style='flex:" + flex + ";width:120px'>j</div></div>");
+			assertEquals(flex, 120, d.cellBasis[0]);
+			assertEquals(flex, 120, d.cellBasis[1]);
+		}
+	}
+
 	/* each block as kind:level:marker:text */
 	private static String[] blocks(HtmlDocument d) {
 		String[] out = new String[d.blockCount];

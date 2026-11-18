@@ -676,16 +676,19 @@ public final class HtmlLayout {
 			return columnX[t] = GridTracks.layout(tracks, min, max, availableWidth, doc.tableGap[t], doc.tableJustify[t]);
 		}
 		if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_FLEX) {
-			// a flex row: x then width per item, by the flex algorithm (Yoga's steps)
-			int[] basis = new int[n], grow = new int[n];
+			// A flex row: preserve outer geometry while shrink weights use each original inner content basis.
+			int[] basis = new int[n], grow = new int[n], insets = new int[n];
+			double[] shrink = new double[n];
 			for (int k = 0; k < doc.blockCount; k++) {
 				if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t) continue;
 				int c = doc.cellColumn[k];
-				basis[c] = doc.cellBasis[k] >= 0 ? doc.cellBasis[k] + insetH(k) : -1;
+				insets[c] = insetH(k);
+				basis[c] = doc.cellBasis[k] >= 0 ? (int) Math.min(Integer.MAX_VALUE, (long) doc.cellBasis[k] + insets[c]) : -1;
 				grow[c] = doc.cellGrow[k];
+				shrink[c] = doc.cellShrink[k];
 			}
 			columnAvailableWidth[t] = availableWidth;
-			return columnX[t] = FlexRow.layout(min, max, basis, grow, availableWidth, doc.tableGap[t], doc.tableJustify[t]);
+			return columnX[t] = FlexRow.layout(min, max, basis, grow, shrink, insets, availableWidth, doc.tableGap[t], doc.tableJustify[t]);
 		}
 		columnAvailableWidth[t] = availableWidth;
 		return columnX[t] = TableColumns.edges(min, max, availableWidth);
