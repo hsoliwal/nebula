@@ -73,7 +73,7 @@ modification of native structures. Queued old requests never launch at all.
 
 - Original Grid JUnit test class has offload, burst, disposal, rejection, stale
   version and cancellation tests.
-- `.github/workflows/grid-cpu-ui-sort.yml` builds **real** RowPermutation
+- `.github/workflows/grid-model-selection-contract.yml` builds **real** RowPermutation
   and GridModelJobs Java 21 sources with strict SWT-thread stubs and runs
   non-native assertions.
 - Source identity and fixed-point Maven/OpenRewrite evidence:
