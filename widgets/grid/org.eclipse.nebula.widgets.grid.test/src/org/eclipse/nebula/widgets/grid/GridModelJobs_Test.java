@@ -121,8 +121,8 @@ public class GridModelJobs_Test {
 			display.readAndDispatch();
 		}
 		assertTrue("Both queued results must complete", old.isDone() && newer.isDone());
-		assertFalse("The superseded result must not commit", old.join());
-		assertTrue("The last submitted sort must commit", newer.join());
+		assertFalse("The superseded result must not commit", old.join().booleanValue());
+		assertTrue("The last submitted sort must commit", newer.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(keys, rows, true), view(grid.getRowPermutation()));
 	}
 
@@ -146,7 +146,7 @@ public class GridModelJobs_Test {
 				keys(GridModelJobs.BATCH_THRESHOLD), false, workers::add);
 		grid.dispose();
 		assertTrue(done.isDone());
-		assertFalse(done.join());
+		assertFalse(done.join().booleanValue());
 	}
 
 	@Test
@@ -196,7 +196,7 @@ public class GridModelJobs_Test {
 					worker.start();
 					pumpUntil(newest.get());
 					worker.join(2_000);
-					assertTrue("latest sort must apply", newest.get().join()); //$NON-NLS-1$
+					assertTrue("latest sort must apply", newest.get().join().booleanValue()); //$NON-NLS-1$
 					assertArrayEquals(RowPermutation.sortedOrder(keys, rows, true), view(grid.getRowPermutation()));
 				} finally {
 					allowOldWorker.countDown();
@@ -238,7 +238,7 @@ public class GridModelJobs_Test {
 		pumpUntil(done);
 		worker.join(2000);
 		assertTrue(calculatedOffUi.get());
-		assertTrue(done.join());
+		assertTrue(done.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(keys(rows), rows, false),
 				view(grid.getRowPermutation()));
 	}
@@ -264,7 +264,7 @@ public class GridModelJobs_Test {
 		worker.start();
 		pumpUntil(done);
 		worker.join(2000);
-		assertTrue(done.join());
+		assertTrue(done.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(expected, rows, false), view(grid.getRowPermutation()));
 	}
 
@@ -282,14 +282,14 @@ public class GridModelJobs_Test {
 				grid, input, true, submitted::add);
 		assertEquals("one worker drain must serve the newest request", 1, submitted.size());
 		assertTrue(first.isDone());
-		assertFalse(first.join());
+		assertFalse(first.join().booleanValue());
 		assertTrue(second.isDone());
-		assertFalse(second.join());
+		assertFalse(second.join().booleanValue());
 		final Thread worker = new Thread(submitted.get(0), "nebula-coalesced-cpu");
 		worker.start();
 		pumpUntil(last);
 		worker.join(2000);
-		assertTrue(last.join());
+		assertTrue(last.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(input, rows, true), view(grid.getRowPermutation()));
 	}
 
@@ -317,14 +317,14 @@ public class GridModelJobs_Test {
 		worker.start();
 		pumpUntil(stale);
 		worker.join(2000);
-		assertFalse(stale.join());
+		assertFalse(stale.join().booleanValue());
 
 		final List<Runnable> pending = new ArrayList<>();
 		final CompletableFuture<Boolean> disposed = GridModelJobs.sortByIntKeysCpuLatest(
 				grid, keys(rows), true, pending::add);
 		grid.dispose();
 		assertTrue(disposed.isDone());
-		assertFalse(disposed.join());
+		assertFalse(disposed.join().booleanValue());
 		// An accepted executor task can still start after disposal; it must be inert.
 		final Thread trailing = new Thread(pending.get(0), "nebula-disposed-cpu");
 		trailing.start();

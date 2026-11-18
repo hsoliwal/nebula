@@ -66,12 +66,26 @@ public final class GridModelJobs {
 			keys = ownedCopy;
 		}
 
+		/**
+		 * Copies the first {@code rows} keys into a detached immutable snapshot.
+		 *
+		 * @param source the keys to copy
+		 * @param rows the number of keys to include
+		 * @return a snapshot that owns its copy of the keys
+		 * @throws NullPointerException if {@code source} is {@code null}
+		 * @throws IndexOutOfBoundsException if {@code rows} is negative or exceeds the source length
+		 */
 		public static IntKeySnapshot copyOf(int[] source, int rows) {
 			Objects.requireNonNull(source, "source");
 			if (rows < 0 || rows > source.length) throw new IndexOutOfBoundsException("rows");
 			return new IntKeySnapshot(java.util.Arrays.copyOf(source, rows));
 		}
 
+		/**
+		 * Returns the number of keys in this snapshot.
+		 *
+		 * @return the number of copied keys
+		 */
 		public int size() {
 			return keys.length;
 		}

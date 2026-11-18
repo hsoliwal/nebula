@@ -325,8 +325,7 @@ public class GridPinnedRows_Test {
 		assertEquals("last child ends the group; the pinned subheading moves up",
 				chrome + aChildren[39].getHeight() + 1 - aHeight,
 				grid.getOrigin(column, a).y);
-		assertEquals("a moving subheading cannot host an un-clipped native editor",
-				false, grid.isShown(a));
+		assertFalse("a moving subheading cannot host an un-clipped native editor", grid.isShown(a));
 		assertSame("the outer ancestor remains at the top", root,
 				grid.getItem(new Point(16, chrome + 2)));
 		grid.setTopIndex(bChildren[10].getRowIndex());

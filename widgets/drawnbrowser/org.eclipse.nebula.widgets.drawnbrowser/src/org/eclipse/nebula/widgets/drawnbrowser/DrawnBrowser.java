@@ -84,6 +84,34 @@ public class DrawnBrowser extends Canvas {
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
 	private java.util.concurrent.ExecutorService pageLoader;
 
+	/** A completed, exclusively owned backend result; publication transfers its document to the UI thread. */
+	static final class PreparedPage {
+		final String text;
+		private final HtmlDocument document;
+		private final Throwable failure;
+
+		private PreparedPage(String text, HtmlDocument document, Throwable failure) {
+			this.text = text;
+			this.document = document;
+			this.failure = failure;
+		}
+
+		static PreparedPage prepare(String text) {
+			try {
+				return new PreparedPage(text, HtmlDocument.parse(text), null);
+			} catch (RuntimeException | Error failure) {
+				// Preserve the original UI-dispatch failure policy after stale-arrival admission.
+				return new PreparedPage(text, null, failure);
+			}
+		}
+
+		HtmlDocument document() {
+			if (failure instanceof RuntimeException exception) throw exception;
+			if (failure instanceof Error error) throw error;
+			return document;
+		}
+	}
+
 	/**
 	 * @param parent a composite
 	 * @param style  the Canvas styles; {@link SWT#V_SCROLL} is always added
@@ -116,7 +144,7 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	/**
-	 * Loads the page at {@code url} off the UI thread: {@link LocationListener#changing} first (a listener may veto
+	 * Loads and parses the page at {@code url} off the UI thread: {@link LocationListener#changing} first (a listener may veto
 	 * it), then, once the page is shown, {@link LocationListener#changed}. A page that cannot be loaded leaves the
 	 * current one; a newer navigation replaces an older one still loading. URLs are those {@link java.net.URLConnection}
 	 * opens (file:, http:, https:).
@@ -164,8 +192,13 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	private void show(String text) {
-		html = text;
-		document = HtmlDocument.parse(text);
+		show(PreparedPage.prepare(text));
+	}
+
+	/* UI-thread installation only: parsing has finished, and the published document has no remaining writer. */
+	private void show(PreparedPage page) {
+		html = page.text;
+		document = page.document();
 		positionedOrder = null;
 		// the page's form state, apart from the widgets that show it; the old page's widgets go
 		for (Control widget : widgets) if (widget != null) widget.dispose();
@@ -546,7 +579,7 @@ public class DrawnBrowser extends Canvas {
 		if (target != null) navigate(pages.resolve(target), PageHistory.PUSH);
 	}
 
-	/* changing (vetoable), then the page loads off the UI thread, then it is shown and changed is sent */
+	/* changing (vetoable), then loading and parsing off the UI thread, then UI installation and changed */
 	private boolean navigate(String url, int mode) {
 		LocationEvent changing = new LocationEvent(this);
 		changing.location = url;
@@ -565,12 +598,20 @@ public class DrawnBrowser extends Canvas {
 		org.eclipse.swt.widgets.Display display = getDisplay();
 		pageLoader.execute(() -> {
 			String page = fetch(url);
-			if (page != null && !display.isDisposed()) display.asyncExec(() -> arrived(url, mode, expected, page));
+			if (page == null || display.isDisposed()) return;
+			PreparedPage prepared = PreparedPage.prepare(page);
+			if (display.isDisposed()) return;
+			try {
+				display.asyncExec(() -> arrived(url, mode, expected, prepared));
+			} catch (org.eclipse.swt.SWTException failure) {
+				// The Display may close between the check above and queue admission.
+				if (failure.code != SWT.ERROR_DEVICE_DISPOSED) throw failure;
+			}
 		});
 		return true;
 	}
 
-	private void arrived(String url, int mode, int expected, String page) {
+	private void arrived(String url, int mode, int expected, PreparedPage page) {
 		if (isDisposed() || !pages.arrive(url, mode, expected)) return;
 		show(page);
 		LocationEvent changed = new LocationEvent(this);
