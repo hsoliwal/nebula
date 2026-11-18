@@ -148,6 +148,18 @@ public class SegmentsModel extends WebModel implements SegmentsApi {
 		return mode == STEPPER ? rowHeight() * 2 : mode == TILES ? itemExtent - gap() : rowHeight();
 	}
 
+
+	@Override
+	public int hitTest(int x, int y) {
+		// Only these original leaf owners use the resident-only layout hook.
+		// In this family layoutSegment addresses raw indices, not itemAt().
+		Class<?> leaf = getClass();
+		if (leaf != SegmentsModel.class && leaf != NavigationModel.class) {
+			return super.hitTest(x, y);
+		}
+		return hitTestProjected(x, y, null, window[2], window[3]);
+	}
+
 	@Override
 	protected void emit(WebPaint p) {
 		if (mode == SEGMENTED || mode == TOGGLE) {

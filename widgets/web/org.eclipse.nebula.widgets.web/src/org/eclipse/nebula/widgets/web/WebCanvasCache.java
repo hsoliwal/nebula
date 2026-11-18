@@ -40,6 +40,9 @@ final class WebCanvasCache {
 	private int[] rgbs = new int[16], fontKeys = new int[4];
 	private Color[] colors = new Color[16];
 	private Font[] fonts = new Font[4];
+	private String[] fontFamilies = new String[4];
+	private Font fontBase;
+	private String baseFamily;
 	private int nc, nf;
 
 	WebCanvasCache(Device device) {
@@ -63,18 +66,30 @@ final class WebCanvasCache {
 
 	Font font(Font base, int style) {
 		int key = style & (0xff | WebPaint.BOLD | WebPaint.MONO);
+		String family = (key & WebPaint.MONO) != 0 ? "Consolas" : family(base);
 		for (int i = 0; i < nf; i++) {
-			if (fontKeys[i] == key) {
+			if (fontKeys[i] == key && fontFamilies[i].equals(family)) {
 				return fonts[i];
 			}
 		}
 		if (nf == fonts.length) {
 			fonts = Arrays.copyOf(fonts, nf * 2);
 			fontKeys = Arrays.copyOf(fontKeys, nf * 2);
+			fontFamilies = Arrays.copyOf(fontFamilies, nf * 2);
 		}
 		fontKeys[nf] = key;
+		fontFamilies[nf] = family;
 		fonts[nf] = new Font(device, WebCanvas.scaled(base, key & 0xff, key));
 		return fonts[nf++];
+	}
+
+	private String family(Font base) {
+		if (fontBase == null || fontBase.isDisposed() || !fontBase.equals(base)) {
+			String name = base.getFontData()[0].getName();
+			fontBase = base;
+			baseFamily = name;
+		}
+		return baseFamily;
 	}
 
 	void dispose() {
@@ -83,8 +98,12 @@ final class WebCanvasCache {
 		}
 		for (int i = 0; i < nf; i++) {
 			fonts[i].dispose();
+			fonts[i] = null;
+			fontFamilies[i] = null;
 		}
 		nc = nf = 0;
+		fontBase = null;
+		baseFamily = null;
 	}
 
 	static int accRole(String role) {
