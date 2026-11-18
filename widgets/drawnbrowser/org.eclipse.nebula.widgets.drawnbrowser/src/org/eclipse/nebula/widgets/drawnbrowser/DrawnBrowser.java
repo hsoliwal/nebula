@@ -85,6 +85,8 @@ public class DrawnBrowser extends Canvas {
 	private static final int AUTO_SCROLL_MS = 40;
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
 	private java.util.concurrent.ExecutorService pageLoader;
+	/* UI-owned handle; workers only read the captured, detached cancellation flag. */
+	private java.util.concurrent.atomic.AtomicBoolean pageCancelled;
 
 	/* Optional remote-image mode; native SWT Image stays owned by this Canvas. */
 	private final RemoteFrameWindow remoteFrames = new RemoteFrameWindow();
@@ -125,6 +127,7 @@ public class DrawnBrowser extends Canvas {
 		remoteFrameImage = next;
 		if (first) {
 			pages.stop(); // Cancel an older HTML navigation before it can replace the remote surface.
+			cancelPage();
 			getDisplay().timerExec(-1, autoScroll);
 			selection.clear();
 			for (Control widget : widgets) if (widget != null && !widget.isDisposed()) widget.setVisible(false);
@@ -186,6 +189,16 @@ public class DrawnBrowser extends Canvas {
 			}
 		}
 
+		/* A cancelled preparation never publishes a partial document or a synthetic parser failure. */
+		static PreparedPage prepare(String text, java.util.function.BooleanSupplier cancelled) {
+			try {
+				HtmlDocument document = HtmlDocument.parse(text, cancelled);
+				return document == null ? null : new PreparedPage(text, document, null);
+			} catch (RuntimeException | Error failure) {
+				return new PreparedPage(text, null, failure);
+			}
+		}
+
 		HtmlDocument document() {
 			if (failure instanceof RuntimeException exception) throw exception;
 			if (failure instanceof Error error) throw error;
@@ -220,6 +233,7 @@ public class DrawnBrowser extends Canvas {
 		checkWidget();
 		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		pages.setText();
+		cancelPage();
 		show(text);
 		return true;
 	}
@@ -270,6 +284,14 @@ public class DrawnBrowser extends Canvas {
 	public void stop() {
 		checkWidget();
 		pages.stop();
+		cancelPage();
+	}
+
+	private void cancelPage() {
+		if (pageCancelled != null) {
+			pageCancelled.set(true);
+			pageCancelled = null;
+		}
 	}
 
 	private void show(String text) {
@@ -483,6 +505,7 @@ public class DrawnBrowser extends Canvas {
 				clearRemoteFrameInternal(false);
 				getDisplay().timerExec(-1, autoScroll);
 				pages.stop();
+				cancelPage();
 				layout.dispose();
 				images.dispose();
 				if (pageLoader != null) pageLoader.shutdownNow();
@@ -700,6 +723,9 @@ public class DrawnBrowser extends Canvas {
 		for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) listener.changing(changing);
 		if (!changing.doit) return false;
 		int expected = pages.begin();
+		cancelPage();
+		java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+		pageCancelled = cancelled;
 		if (pageLoader == null) {
 			pageLoader = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
 				Thread thread = new Thread(r, "DrawnBrowser pages");
@@ -709,10 +735,11 @@ public class DrawnBrowser extends Canvas {
 		}
 		org.eclipse.swt.widgets.Display display = getDisplay();
 		pageLoader.execute(() -> {
+			if (cancelled.get()) return;
 			String page = fetch(url);
-			if (page == null || display.isDisposed()) return;
-			PreparedPage prepared = PreparedPage.prepare(page);
-			if (display.isDisposed()) return;
+			if (page == null || cancelled.get() || display.isDisposed()) return;
+			PreparedPage prepared = PreparedPage.prepare(page, cancelled::get);
+			if (prepared == null || cancelled.get() || display.isDisposed()) return;
 			try {
 				display.asyncExec(() -> arrived(url, mode, expected, prepared));
 			} catch (org.eclipse.swt.SWTException failure) {
