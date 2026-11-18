@@ -79,6 +79,39 @@ public final class HeadlessGridCpuUiContract {
         require(Arrays.equals(RowPermutation.sortedOrder(immutableInput, 1200, true),
                 order(grid.getRowPermutation())), "wrong stable sorted permutation");
 
+        // A finished CPU result still in the SWT queue must not supersede a newer request.
+        Grid queuedResultGrid = new Grid(display, 320);
+        int[] keys320 = keys(320);
+        List<Runnable> firstWorker = new ArrayList<>();
+        CompletableFuture<Boolean> firstReady = GridModelJobs.sortByIntKeysCpuLatest(
+                queuedResultGrid, keys320, false, firstWorker::add);
+        worker(firstWorker.remove(0)); // computed but SWT has not applied its result
+        require(!firstReady.isDone(), "CPU worker completed old future before GUI publication");
+        List<Runnable> secondWorker = new ArrayList<>();
+        CompletableFuture<Boolean> secondReady = GridModelJobs.sortByIntKeysCpuLatest(
+                queuedResultGrid, keys320, true, secondWorker::add);
+        require(firstReady.isDone() && !firstReady.join(), "queued old UI result was not superseded");
+        worker(secondWorker.remove(0));
+        complete(display, secondReady);
+        require(secondReady.join(), "new UI result was not published");
+        require(queuedResultGrid.refreshCount() == 1, "old frame mutated UI after new request");
+
+        // A rejected executor must preserve the previously accepted queued UI result.
+        Grid rejectionGrid = new Grid(display, 81);
+        List<Runnable> acceptedWorker = new ArrayList<>();
+        CompletableFuture<Boolean> accepted = GridModelJobs.sortByIntKeysCpuLatest(
+                rejectionGrid, keys(81), false, acceptedWorker::add);
+        worker(acceptedWorker.remove(0));
+        try {
+            GridModelJobs.sortByIntKeysCpuLatest(rejectionGrid, keys(81), true,
+                    runnable -> { throw new java.util.concurrent.RejectedExecutionException("pool closed"); });
+            throw new AssertionError("rejected executor unexpectedly accepted CPU work");
+        } catch (java.util.concurrent.RejectedExecutionException expected) {
+            // The earlier generation is still current and must remain eligible.
+        }
+        complete(display, accepted);
+        require(accepted.join(), "rejected second request invalidated accepted sort");
+
         Grid staleGrid = new Grid(display, 512);
         List<Runnable> staleJobs = new ArrayList<>();
         CompletableFuture<Boolean> stale = GridModelJobs.sortByIntKeysCpuLatest(staleGrid,
