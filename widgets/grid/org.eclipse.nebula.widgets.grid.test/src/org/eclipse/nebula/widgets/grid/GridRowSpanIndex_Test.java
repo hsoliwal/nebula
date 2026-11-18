@@ -140,28 +140,36 @@ public class GridRowSpanIndex_Test {
 	@Test
 	public void cacheMaskDistinguishesAllFromNoneAndOwnsItsSnapshot() throws Exception {
 		java.lang.reflect.Method compare = GridRowSpanIndex.class.getDeclaredMethod("sameVisibility", boolean[].class);
-		java.lang.reflect.Method copy = GridRowSpanIndex.class.getDeclaredMethod("copyVisibility", boolean[].class);
+		java.lang.reflect.Method capture = GridRowSpanIndex.class.getDeclaredMethod("captureVisibility", boolean[].class);
 		java.lang.reflect.Field cached = GridRowSpanIndex.class.getDeclaredField("projectedVisibleColumns");
 		compare.setAccessible(true);
-		copy.setAccessible(true);
+		capture.setAccessible(true);
 		cached.setAccessible(true);
 		GridRowSpanIndex index = new GridRowSpanIndex();
 		boolean[][] masks = {null, new boolean[0], {false}, {true}, {true, false}};
 		for (boolean[] a : masks) {
-			boolean[] snapshot = (boolean[]) copy.invoke(null, (Object) a);
+			capture.invoke(index, (Object) a);
+			boolean[] snapshot = (boolean[]) cached.get(index);
 			assertArrayEquals(a, snapshot);
 			if (a != null) assertNotSame(a, snapshot);
-			cached.set(index, snapshot);
 			for (boolean[] c : masks) {
 				assertEquals(java.lang.Boolean.valueOf(java.util.Arrays.equals(a, c)), compare.invoke(index, (Object) c));
 			}
 		}
 		boolean[] caller = {true, false};
-		boolean[] snapshot = (boolean[]) copy.invoke(null, (Object) caller);
-		cached.set(index, snapshot);
+		capture.invoke(index, (Object) caller);
+		boolean[] snapshot = (boolean[]) cached.get(index);
 		caller[0] = false;
 		assertFalse(((Boolean) compare.invoke(index, (Object) caller)).booleanValue());
 		assertArrayEquals(new boolean[] {true, false}, snapshot);
+		for (int edit = 0; edit < 4096; edit++) {
+			boolean[] mask = {(edit & 1) == 0, (edit & 2) == 0};
+			capture.invoke(index, (Object) mask);
+			assertSame("fixed column count must reuse the cached primitive mask", snapshot, cached.get(index));
+			assertArrayEquals(mask, (boolean[]) cached.get(index));
+			mask[0] = !mask[0];
+			assertFalse(((Boolean) compare.invoke(index, (Object) mask)).booleanValue());
+		}
 	}
 
 	private static int linear(int target, int[] starts, long[] ends) {

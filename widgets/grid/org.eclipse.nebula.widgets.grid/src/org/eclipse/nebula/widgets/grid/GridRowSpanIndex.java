@@ -176,7 +176,7 @@ final class GridRowSpanIndex {
 			prefixMaxEnds[i] = max;
 		}
 		// Publish the copied cache key before marking the complete projection reusable.
-		projectedVisibleColumns = copyVisibility(visibleColumns);
+		captureVisibility(visibleColumns);
 		projectionDirty = false;
 	}
 
@@ -215,11 +215,17 @@ final class GridRowSpanIndex {
 		return java.util.Arrays.equals(projectedVisibleColumns, visibleColumns);
 	}
 
-	private static boolean[] copyVisibility(boolean[] visibleColumns) {
-		if (visibleColumns == null) return null;
-		boolean[] copy = new boolean[visibleColumns.length];
-		System.arraycopy(visibleColumns, 0, copy, 0, visibleColumns.length);
-		return copy;
+	private void captureVisibility(boolean[] visibleColumns) {
+		if (visibleColumns == null) {
+			projectedVisibleColumns = null;
+			return;
+		}
+		if (projectedVisibleColumns == null || projectedVisibleColumns.length != visibleColumns.length) {
+			projectedVisibleColumns = new boolean[visibleColumns.length];
+		}
+		// Keep our own key because the caller may reuse or mutate its mask.
+		// Column visibility changes now reuse the array when its shape is stable.
+		System.arraycopy(visibleColumns, 0, projectedVisibleColumns, 0, visibleColumns.length);
 	}
 
 	private void ensureOwnerCapacity(int required) {
