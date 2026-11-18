@@ -8,6 +8,8 @@ package org.eclipse.nebula.widgets.vnc;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
@@ -15,6 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -31,6 +35,8 @@ final class RfbConnection implements AutoCloseable {
     private static final int MAX_TEXT = 1_048_576;
     private static final int MAX_NAME = 65_536;
     private static final int MAX_RECTS = 8_192;
+    private static final int MAX_COMPRESSED = 64 * 1024 * 1024;
+    private static final int[] ENCODINGS = {16, 6, 5, 2, 1, 0, -223, -224};
 
     private final Socket socket;
     private final DataInputStream in;
@@ -39,6 +45,8 @@ final class RfbConnection implements AutoCloseable {
     private final Object writeLock = new Object();
     private final RfbFramebuffer framebuffer;
     private final String serverName;
+    private final Inflater zlib = new Inflater();
+    private final Inflater zrle = new Inflater();
     private volatile boolean closed;
 
     RfbConnection(Socket socket, char[] password, Listener listener) throws IOException {
@@ -136,7 +144,8 @@ final class RfbConnection implements AutoCloseable {
         }
 
         // Protocol 3.3 with None security has no SecurityResult message.
-        if (minor != 3 || security != 1) {
+        // RFB 3.7 with None also omits SecurityResult. RFB 3.8 sends it.
+        if (security == 2 || minor >= 8) {
             int result = in.readInt();
             if (result != 0) {
                 String detail = minor >= 8 ? readReason() : "authentication failed";
@@ -190,11 +199,8 @@ final class RfbConnection implements AutoCloseable {
         synchronized (writeLock) {
             out.writeByte(2); // SetEncodings
             out.writeByte(0);
-            out.writeShort(4);
-            out.writeInt(1);    // CopyRect
-            out.writeInt(5);    // Hextile (16x16 CPU tiles)
-            out.writeInt(0);    // Raw
-            out.writeInt(-223); // DesktopSize
+            out.writeShort(ENCODINGS.length);
+            for (int encoding : ENCODINGS) out.writeInt(encoding);
             out.flush();
         }
     }
@@ -257,11 +263,15 @@ final class RfbConnection implements AutoCloseable {
             int w = in.readUnsignedShort();
             int h = in.readUnsignedShort();
             int encoding = in.readInt();
+            if (encoding == -224) break; // LastRect sentinel
             switch (encoding) {
                 case 0 -> framebuffer.readRaw(in, x, y, w, h);
                 case 1 -> framebuffer.copyRect(x, y, w, h,
                         in.readUnsignedShort(), in.readUnsignedShort());
+                case 2 -> readRre(x, y, w, h);
                 case 5 -> readHextile(x, y, w, h);
+                case 6 -> readZlib(x, y, w, h);
+                case 16 -> readZrle(x, y, w, h);
                 case -223 -> {
                     if (x != 0 || y != 0) throw new IOException("Invalid DesktopSize update");
                     framebuffer.resize(w, h);
@@ -272,6 +282,144 @@ final class RfbConnection implements AutoCloseable {
         }
         listener.changed(framebuffer);
         requestUpdate(!resized);
+    }
+
+    private void validateRectangle(int x, int y, int width, int height) throws IOException {
+        if (width < 1 || height < 1 || (long) x + width > framebuffer.width()
+                || (long) y + height > framebuffer.height()) {
+            throw new IOException("Invalid RFB encoded rectangle");
+        }
+    }
+
+    /** Rectangle overlays, after the background is filled in the original owner. */
+    private void readRre(int x, int y, int w, int h) throws IOException {
+        validateRectangle(x, y, w, h);
+        long count = Integer.toUnsignedLong(in.readInt());
+        if (count > (long) w * h) throw new IOException("RRE subrectangle count exceeds tile");
+        framebuffer.fillRectangle(x, y, w, h, readColor());
+        for (long i = 0; i < count; i++) {
+            int color = readColor();
+            int rx = in.readUnsignedShort(), ry = in.readUnsignedShort();
+            int rw = in.readUnsignedShort(), rh = in.readUnsignedShort();
+            if (rw < 1 || rh < 1 || (long) rx + rw > w || (long) ry + rh > h) {
+                throw new IOException("RRE subrectangle outside tile");
+            }
+            framebuffer.fillRectangle(x + rx, y + ry, rw, rh, color);
+        }
+    }
+
+    /** Zlib and ZRLE each retain their own stream dictionary across rectangles. */
+    private byte[] inflateRectangle(Inflater inflater, int limit) throws IOException {
+        int length = checkedLength(in.readInt(), MAX_COMPRESSED, "compressed rectangle");
+        byte[] compressed = readBytes(length);
+        if (!inflater.needsInput()) throw new IOException("Previous RFB zlib segment was not consumed");
+        inflater.setInput(compressed);
+        ByteArrayOutputStream output = new ByteArrayOutputStream(Math.min(limit, 8192));
+        byte[] buffer = new byte[8192];
+        try {
+            while (true) {
+                int read = inflater.inflate(buffer);
+                if (read > 0) {
+                    if (read > limit - output.size()) throw new IOException("RFB decompression exceeds bounds");
+                    output.write(buffer, 0, read);
+                } else if (inflater.needsInput() || inflater.finished()) {
+                    break;
+                } else if (inflater.needsDictionary()) {
+                    throw new IOException("Unexpected RFB zlib dictionary");
+                } else {
+                    throw new IOException("RFB compressed stream did not progress");
+                }
+            }
+        } catch (DataFormatException malformed) {
+            throw new IOException("Invalid RFB compressed stream", malformed);
+        }
+        if (inflater.getRemaining() != 0) throw new IOException("Trailing RFB compressed bytes");
+        return output.toByteArray();
+    }
+
+    private void readZlib(int x, int y, int w, int h) throws IOException {
+        validateRectangle(x, y, w, h);
+        byte[] decompressed = inflateRectangle(zlib, w * h * 4);
+        if (decompressed.length != w * h * 4) throw new EOFException("Truncated RFB Zlib rectangle");
+        int[] pixels = new int[w * h];
+        for (int i = 0, at = 0; i < pixels.length; i++, at += 4) {
+            pixels[i] = 0xff000000 | (decompressed[at + 2] & 0xff) << 16
+                    | (decompressed[at + 1] & 0xff) << 8 | (decompressed[at] & 0xff);
+        }
+        framebuffer.writePixels(x, y, w, h, pixels);
+    }
+
+    /** Compact ZRLE pixels omit the unused fourth byte in our 32-bit format. */
+    private static int compactPixel(DataInputStream input) throws IOException {
+        int blue = input.readUnsignedByte(), green = input.readUnsignedByte(), red = input.readUnsignedByte();
+        return 0xff000000 | red << 16 | green << 8 | blue;
+    }
+
+    private static int runLength(DataInputStream input, int remaining) throws IOException {
+        int count = 1, next;
+        do {
+            next = input.readUnsignedByte();
+            count += next;
+            if (count > remaining) throw new IOException("ZRLE run exceeds tile");
+        } while (next == 255);
+        return count;
+    }
+
+    /** ZRLE tiles: raw, solid, packed palette, plain RLE and palette RLE. */
+    private void readZrle(int x, int y, int w, int h) throws IOException {
+        validateRectangle(x, y, w, h);
+        long tiles = ((w + 63L) / 64) * ((h + 63L) / 64);
+        int limit = Math.toIntExact(Math.min(8L * w * h + 1024L * tiles,
+                8L * RfbFramebuffer.MAX_PIXELS));
+        byte[] expanded = inflateRectangle(zrle, limit);
+        DataInputStream input = new DataInputStream(new ByteArrayInputStream(expanded));
+        for (int ty = 0; ty < h; ty += 64) {
+            for (int tx = 0; tx < w; tx += 64) {
+                int tw = Math.min(64, w - tx), th = Math.min(64, h - ty);
+                int encoding = input.readUnsignedByte();
+                int paletteSize = encoding & 0x7f;
+                boolean rle = (encoding & 0x80) != 0;
+                if (!rle && paletteSize > 16) throw new IOException("ZRLE palette too large");
+                int[] palette = new int[paletteSize];
+                for (int i = 0; i < paletteSize; i++) palette[i] = compactPixel(input);
+                int[] tile = new int[tw * th];
+                if (!rle && paletteSize == 0) {
+                    for (int i = 0; i < tile.length; i++) tile[i] = compactPixel(input);
+                } else if (!rle && paletteSize == 1) {
+                    Arrays.fill(tile, palette[0]);
+                } else if (!rle) {
+                    int bits = paletteSize <= 2 ? 1 : paletteSize <= 4 ? 2 : 4;
+                    int mask = (1 << bits) - 1;
+                    for (int row = 0; row < th; row++) {
+                        int packed = 0;
+                        for (int col = 0; col < tw; col++) {
+                            if ((col * bits & 7) == 0) packed = input.readUnsignedByte();
+                            int index = packed >>> (8 - bits - (col * bits & 7)) & mask;
+                            if (index >= paletteSize) throw new IOException("ZRLE invalid palette index");
+                            tile[row * tw + col] = palette[index];
+                        }
+                    }
+                } else {
+                    int at = 0;
+                    while (at < tile.length) {
+                        int color, count;
+                        if (paletteSize == 0) {
+                            color = compactPixel(input);
+                            count = runLength(input, tile.length - at);
+                        } else {
+                            int index = input.readUnsignedByte();
+                            if ((index & 0x7f) >= paletteSize) throw new IOException("ZRLE invalid RLE palette index");
+                            color = palette[index & 0x7f];
+                            count = (index & 0x80) == 0 ? 1 : runLength(input, tile.length - at);
+                        }
+                        Arrays.fill(tile, at, at + count, color);
+                        at += count;
+                    }
+                }
+                framebuffer.writePixels(x + tx, y + ty, tw, th, tile);
+            }
+        }
+        if (input.available() != 0) throw new IOException("Trailing ZRLE tile bytes");
     }
 
     /**
@@ -369,6 +517,8 @@ final class RfbConnection implements AutoCloseable {
     @Override
     public void close() {
         closed = true;
+        zlib.end();
+        zrle.end();
         try {
             socket.close();
         } catch (IOException ignored) {
