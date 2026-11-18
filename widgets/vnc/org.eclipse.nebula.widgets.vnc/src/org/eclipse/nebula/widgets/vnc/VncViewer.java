@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
@@ -72,6 +73,7 @@ public class VncViewer extends Canvas {
     private Rectangle displayedBounds = new Rectangle(0, 0, 0, 0);
     private int pointerButtons;
 
+    @SuppressWarnings("this-escape") // SWT widgets register their listeners in the constructor.
     public VncViewer(Composite parent, int style) {
         super(parent, style | SWT.DOUBLE_BUFFERED);
         display = getDisplay();
@@ -174,7 +176,7 @@ public class VncViewer extends Canvas {
                     public void changed(RfbFramebuffer newFramebuffer) {
                         if (generation.get() == epoch) {
                             framebuffer = newFramebuffer;
-                            queueRedraw(epoch);
+                            queueRedraw();
                         }
                     }
 
@@ -192,7 +194,7 @@ public class VncViewer extends Canvas {
                     public void failed(IOException exception) {
                         if (generation.get() == epoch) {
                             status = "RFB error: " + exception.getMessage();
-                            queueRedraw(epoch);
+                            queueRedraw();
                         }
                     }
                 };
@@ -201,12 +203,12 @@ public class VncViewer extends Canvas {
                 connection = client;
                 framebuffer = client.framebuffer();
                 status = "Connected: " + client.serverName();
-                queueRedraw(epoch);
+                queueRedraw();
                 client.readLoop();
             } catch (IOException | IllegalArgumentException failure) {
                 if (generation.get() == epoch) {
                     status = "RFB error: " + failure.getMessage();
-                    queueRedraw(epoch);
+                    queueRedraw();
                 }
             } finally {
                 Arrays.fill(password, '\0');
@@ -221,7 +223,7 @@ public class VncViewer extends Canvas {
                 if (generation.get() == epoch) {
                     connection = null;
                     if (status.startsWith("Connected:")) status = "Disconnected";
-                    queueRedraw(epoch);
+                    queueRedraw();
                 }
             }
         });
@@ -268,12 +270,43 @@ public class VncViewer extends Canvas {
         }
     }
 
-    private void queueRedraw(int epoch) {
+    private void queueRedraw() {
         if (display.isDisposed() || !redrawQueued.compareAndSet(false, true)) return;
         display.asyncExec(() -> {
             redrawQueued.set(false);
-            if (!isDisposed() && generation.get() == epoch) redraw();
+            // A pending callback from an old connection may be the only one
+            // queued when a new connection publishes its first framebuffer.
+            // Repaint the latest owner, not the callback's stale epoch.
+            if (!isDisposed()) redrawChangedFrame();
         });
+    }
+
+    private void redrawChangedFrame() {
+        RfbFramebuffer current = framebuffer;
+        Rectangle target = displayedBounds;
+        if (current == null || current != cachedOwner || cachedImage == null
+                || target.width == 0 || target.height == 0) {
+            redraw();
+            return;
+        }
+        RfbFramebuffer.Damage damage = current.damageSince(cachedRevision);
+        if (damage.complete() || damage.width() == 0 || damage.height() == 0) {
+            redraw();
+            return;
+        }
+        // Floor the leading edge, ceil the trailing edge, and keep a one-pixel
+        // interpolation guard. GC clipping then limits native screen painting
+        // to the area affected by Raw, Hextile or CopyRect.
+        Rectangle view = getClientArea();
+        int x0 = (int) Math.max(view.x, (long) target.x
+                + (long) damage.x() * target.width / current.width() - 1);
+        int y0 = (int) Math.max(view.y, (long) target.y
+                + (long) damage.y() * target.height / current.height() - 1);
+        int x1 = (int) Math.min((long) view.x + view.width, (long) target.x
+                + Math.ceilDiv((long) (damage.x() + damage.width()) * target.width, current.width()) + 1);
+        int y1 = (int) Math.min((long) view.y + view.height, (long) target.y
+                + Math.ceilDiv((long) (damage.y() + damage.height()) * target.height, current.height()) + 1);
+        if (x1 > x0 && y1 > y0) redraw(x0, y0, x1 - x0, y1 - y0, false);
     }
 
     private void discardImage() {
@@ -291,17 +324,31 @@ public class VncViewer extends Canvas {
             return;
         }
         if (cachedOwner != current || cachedRevision != current.revision()) {
-            RfbFramebuffer.Snapshot snap = current.snapshot();
-            ImageData data = new ImageData(snap.width(), snap.height(), 24,
-                    new PaletteData(0x00ff0000, 0x0000ff00, 0x000000ff));
-            for (int row = 0; row < snap.height(); row++) {
-                data.setPixels(0, row, snap.width(), snap.pixels(), row * snap.width());
+            RfbFramebuffer.FrameUpdate change = current.snapshotSince(
+                    cachedOwner == current && cachedImage != null ? cachedRevision : -1);
+            if (change.complete()) {
+                // Initial frame, resize, or an update too old for the bounded
+                // damage interval: install a complete native SWT image.
+                Image next = new Image(display, imageData(change));
+                discardImage();
+                cachedImage = next;
+            } else if (change.changedWidth() > 0 && change.changedHeight() > 0) {
+                // Normal RFB Raw/Hextile/CopyRect: upload only changed pixels
+                // to the retained image. Do not allocate/copy the full screen.
+                Image patch = new Image(display, imageData(change));
+                try {
+                    GC target = new GC(cachedImage);
+                    try {
+                        target.drawImage(patch, change.x(), change.y());
+                    } finally {
+                        target.dispose();
+                    }
+                } finally {
+                    patch.dispose();
+                }
             }
-            Image next = new Image(display, data);
-            discardImage();
-            cachedImage = next;
             cachedOwner = current;
-            cachedRevision = snap.revision();
+            cachedRevision = change.revision();
         }
         Rectangle bounds = getClientArea();
         if (bounds.width == 0 || bounds.height == 0) return;
@@ -314,6 +361,16 @@ public class VncViewer extends Canvas {
         displayedBounds = new Rectangle(x, y, scaledWidth, scaledHeight);
         event.gc.drawImage(cachedImage, 0, 0, cachedImage.getBounds().width,
                 cachedImage.getBounds().height, x, y, scaledWidth, scaledHeight);
+    }
+
+    private static ImageData imageData(RfbFramebuffer.FrameUpdate change) {
+        int width = change.changedWidth(), height = change.changedHeight();
+        ImageData data = new ImageData(width, height, 24,
+                new PaletteData(0x00ff0000, 0x0000ff00, 0x000000ff));
+        for (int row = 0; row < height; row++) {
+            data.setPixels(0, row, width, change.pixels(), row * width);
+        }
+        return data;
     }
 
     private static int mouseButton(int button) {
@@ -396,7 +453,7 @@ public class VncViewer extends Canvas {
 
     private void inputFailure(IOException error) {
         status = "RFB input error: " + error.getMessage();
-        queueRedraw(generation.get());
+        queueRedraw();
     }
 
     private void sendKey(Event event, boolean down) {
