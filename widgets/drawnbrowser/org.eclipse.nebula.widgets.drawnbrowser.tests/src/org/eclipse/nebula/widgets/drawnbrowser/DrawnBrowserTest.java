@@ -412,6 +412,18 @@ public class DrawnBrowserTest {
 		assertTrue("the fill stops at its column: " + red[1], red[1] < browser.getClientArea().width / 2);
 	}
 
+
+	@Test
+	public void aBoxPaintsItsBorderAndItsBackgroundInsideItsMargins() {
+		open("<p style='margin:10px 30px 10px 30px; padding:10px; border:4px solid #0000ff; background-color:#ff0000'>boxed</p>");
+		int[] blue = pixels(new org.eclipse.swt.graphics.RGB(0, 0, 255), 80);
+		int[] red = pixels(new org.eclipse.swt.graphics.RGB(255, 0, 0), 80);
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		assertTrue("border pixels " + blue[0], blue[0] > 2 * (area.width - 60) * 4 / 2);
+		assertTrue("the border ends at the right margin: " + blue[1], blue[1] == area.width - 30 - 1);
+		assertTrue("background pixels " + red[0], red[0] > 100);
+		assertTrue("the background stays inside the border: " + red[1], red[1] < area.width - 30 - 4);
+	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");

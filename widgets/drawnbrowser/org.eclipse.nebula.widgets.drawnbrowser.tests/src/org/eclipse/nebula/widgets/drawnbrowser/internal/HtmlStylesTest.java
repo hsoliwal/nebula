@@ -71,4 +71,38 @@ public class HtmlStylesTest {
 		assertEquals(0, p[INDENT]);
 		assertEquals(HtmlStyles.LEFT, p[ALIGN]);
 	}
+
+	@Test
+	public void boxModelShorthandsSidesAndBorders() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet("p { margin: 10px 20px 30px 40px; padding: 5px; border: 2px solid red } div { margin: 4px 8px; padding: 1px 2px 3px }"
+				+ " h1 { margin: 2em; border-width: 3px; border-color: #00f }");
+		int[] root = HtmlStyles.root(), p = styles.compute(root, "p", null, null);
+		assertEquals(10, p[HtmlStyles.MARGIN_TOP]);
+		assertEquals(20, p[HtmlStyles.MARGIN_RIGHT]);
+		assertEquals(30, p[HtmlStyles.MARGIN_BOTTOM]);
+		assertEquals("the left margin is the indent", 40, p[INDENT]);
+		for (int side : new int[] { HtmlStyles.PADDING_TOP, HtmlStyles.PADDING_RIGHT, HtmlStyles.PADDING_BOTTOM, HtmlStyles.PADDING_LEFT }) {
+			assertEquals(5, p[side]);
+		}
+		assertEquals(2, p[HtmlStyles.BORDER_WIDTH]);
+		assertEquals(0xFFFF0000, p[HtmlStyles.BORDER_COLOR]);
+		int[] div = styles.compute(root, "div", null, null);
+		assertEquals("two values: vertical", 4, div[HtmlStyles.MARGIN_BOTTOM]);
+		assertEquals("and horizontal", 8, div[INDENT]);
+		assertEquals("three values: the left repeats the right", 2, div[HtmlStyles.PADDING_LEFT]);
+		assertEquals(3, div[HtmlStyles.PADDING_BOTTOM]);
+		int[] h1 = styles.compute(root, "h1", null, null);
+		assertEquals("em is not a px length: ignored", 0, h1[HtmlStyles.MARGIN_TOP]);
+		assertEquals(3, h1[HtmlStyles.BORDER_WIDTH]);
+		assertEquals(0xFF0000FF, h1[HtmlStyles.BORDER_COLOR]);
+		int[] own = styles.compute(root, "p", null, "padding-left: 9px; border-style: none");
+		assertEquals(9, own[HtmlStyles.PADDING_LEFT]);
+		assertEquals(5, own[HtmlStyles.PADDING_TOP]);
+		assertEquals("border-style none removes the border", 0, own[HtmlStyles.BORDER_WIDTH]);
+		int[] child = styles.compute(p, "span", null, null);
+		assertEquals("the box is not inherited", 0, child[HtmlStyles.MARGIN_TOP]);
+		assertEquals(0, child[HtmlStyles.BORDER_WIDTH]);
+		assertEquals(0, child[HtmlStyles.PADDING_LEFT]);
+	}
 }

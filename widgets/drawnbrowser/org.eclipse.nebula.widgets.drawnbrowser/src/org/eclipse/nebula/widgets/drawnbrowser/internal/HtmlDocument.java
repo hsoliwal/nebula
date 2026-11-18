@@ -57,6 +57,14 @@ public final class HtmlDocument {
 			textEnd = new int[16], firstRun = new int[16], runCount = new int[16], image = new int[16];
 	/** Per block, from CSS: background (ARGB, 0 none), alignment ({@link HtmlStyles#LEFT} ...), extra indent px. */
 	public int[] blockBackground = new int[16], blockAlign = new int[16], blockIndent = new int[16];
+	/**
+	 * Per block, the CSS box of its own element (0 when not set; table cells have none): top, right and bottom
+	 * margins, the four paddings, the border width (px) and the border's ARGB colour (0: the widget's foreground).
+	 * The left margin is {@link #blockIndent}.
+	 */
+	public int[] blockMarginTop = new int[16], blockMarginRight = new int[16], blockMarginBottom = new int[16],
+			blockPadTop = new int[16], blockPadRight = new int[16], blockPadBottom = new int[16], blockPadLeft = new int[16],
+			blockBorder = new int[16], blockBorderColor = new int[16];
 	/** Per block: its table, row (numbered across the page) and column if it is a {@link #CELL}, else -1. */
 	public int[] cellTable = new int[16], cellRow = new int[16], cellColumn = new int[16];
 
@@ -433,6 +441,15 @@ public final class HtmlDocument {
 				d.cellTable = Arrays.copyOf(d.cellTable, capacity);
 				d.cellRow = Arrays.copyOf(d.cellRow, capacity);
 				d.cellColumn = Arrays.copyOf(d.cellColumn, capacity);
+				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
+				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
+				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
+				d.blockPadTop = Arrays.copyOf(d.blockPadTop, capacity);
+				d.blockPadRight = Arrays.copyOf(d.blockPadRight, capacity);
+				d.blockPadBottom = Arrays.copyOf(d.blockPadBottom, capacity);
+				d.blockPadLeft = Arrays.copyOf(d.blockPadLeft, capacity);
+				d.blockBorder = Arrays.copyOf(d.blockBorder, capacity);
+				d.blockBorderColor = Arrays.copyOf(d.blockBorderColor, capacity);
 			}
 			open = d.blockCount++;
 			d.cellTable[open] = d.cellRow[open] = d.cellColumn[open] = -1;
@@ -449,6 +466,16 @@ public final class HtmlDocument {
 			d.blockBackground[open] = own ? frame[HtmlStyles.BACKGROUND] : 0;
 			d.blockIndent[open] = (own ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
 			d.blockAlign[open] = frame[HtmlStyles.ALIGN];
+			boolean box = own && kind != CELL;
+			d.blockMarginTop[open] = box ? frame[HtmlStyles.MARGIN_TOP] : 0;
+			d.blockMarginRight[open] = box ? frame[HtmlStyles.MARGIN_RIGHT] : 0;
+			d.blockMarginBottom[open] = box ? frame[HtmlStyles.MARGIN_BOTTOM] : 0;
+			d.blockPadTop[open] = box ? frame[HtmlStyles.PADDING_TOP] : 0;
+			d.blockPadRight[open] = box ? frame[HtmlStyles.PADDING_RIGHT] : 0;
+			d.blockPadBottom[open] = box ? frame[HtmlStyles.PADDING_BOTTOM] : 0;
+			d.blockPadLeft[open] = box ? frame[HtmlStyles.PADDING_LEFT] : 0;
+			d.blockBorder[open] = box ? frame[HtmlStyles.BORDER_WIDTH] : 0;
+			d.blockBorderColor[open] = box ? frame[HtmlStyles.BORDER_COLOR] : 0;
 			space = false;
 		}
 

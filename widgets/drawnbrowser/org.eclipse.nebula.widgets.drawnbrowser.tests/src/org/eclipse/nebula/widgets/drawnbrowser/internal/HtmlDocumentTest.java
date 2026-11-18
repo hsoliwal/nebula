@@ -208,4 +208,23 @@ public class HtmlDocumentTest {
 		HtmlDocument d = HtmlDocument.parse("<p>open <b>bold <i>both</p> after</b> < lone <p");
 		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:open bold both", PARAGRAPH + ":0:0:after < lone <p" }, blocks(d));
 	}
+
+	@Test
+	public void aBlockKeepsTheBoxOfItsOwnElement() {
+		HtmlDocument d = HtmlDocument.parse("<p style='margin:1px 2px 3px 4px; padding:5px 6px 7px 8px; border:9px solid #00ff00'>"
+				+ "a <span style='padding:20px'>b</span></p><p>plain</p><table><tr><td style='padding:30px'>c</td></tr></table>");
+		assertEquals(1, d.blockMarginTop[0]);
+		assertEquals(2, d.blockMarginRight[0]);
+		assertEquals(3, d.blockMarginBottom[0]);
+		assertEquals(4, d.blockIndent[0]);
+		assertEquals(5, d.blockPadTop[0]);
+		assertEquals(6, d.blockPadRight[0]);
+		assertEquals(7, d.blockPadBottom[0]);
+		assertEquals(8, d.blockPadLeft[0]);
+		assertEquals(9, d.blockBorder[0]);
+		assertEquals(0xFF00FF00, d.blockBorderColor[0]);
+		assertEquals("an inline element's box is not the block's", 5, d.blockPadTop[0]);
+		assertEquals("a plain block has none", 0, d.blockPadTop[1] + d.blockBorder[1] + d.blockMarginTop[1]);
+		assertEquals("a table cell keeps its cell padding", 0, d.blockPadTop[2]);
+	}
 }

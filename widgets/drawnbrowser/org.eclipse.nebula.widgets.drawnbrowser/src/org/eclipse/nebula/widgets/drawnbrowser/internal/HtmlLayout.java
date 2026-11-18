@@ -150,15 +150,50 @@ public final class HtmlLayout {
 		return measured;
 	}
 
-	/** The x where block {@code b}'s content starts (list indent; a cell's column and padding). */
+	/** The x where block {@code b}'s content starts (list indent, left margin, border and padding; a cell's column and padding). */
 	public int indent(int b) {
 		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + CELL_PADDING;
+		return boxLeft(b) + doc.blockBorder[b] + doc.blockPadLeft[b];
+	}
+
+	/** How far below its top block {@code b}'s content starts: the gap and top margin, border and padding; a cell's padding. */
+	public int contentTop(int b) {
+		return doc.kind[b] == HtmlDocument.CELL ? CELL_PADDING : gapTop(b) + doc.blockBorder[b] + doc.blockPadTop[b];
+	}
+
+	/** Whether block {@code b} has a CSS box of its own (a border, padding, or a top, right or bottom margin). */
+	public boolean hasBox(int b) {
+		return doc.blockBorder[b] > 0 || doc.blockPadTop[b] > 0 || doc.blockPadRight[b] > 0 || doc.blockPadBottom[b] > 0
+				|| doc.blockPadLeft[b] > 0 || doc.blockMarginTop[b] > 0 || doc.blockMarginRight[b] > 0
+				|| doc.blockMarginBottom[b] > 0;
+	}
+
+	/** The left edge of block {@code b}'s border box: list indent and left margin. */
+	public int boxLeft(int b) {
 		return (doc.kind[b] == HtmlDocument.LIST_ITEM ? doc.level[b] * LIST_INDENT : 0) + doc.blockIndent[b];
 	}
 
-	/** How far below its top block {@code b}'s content starts: the block gap, or a cell's padding. */
-	public int contentTop(int b) {
-		return doc.kind[b] == HtmlDocument.CELL ? CELL_PADDING : BLOCK_GAP;
+	/** The page y of the top of block {@code b}'s border box. */
+	public int boxTop(int b) {
+		return top(b) + gapTop(b);
+	}
+
+	/** The width of block {@code b}'s border box: the view less the left edge and the right margin. */
+	public int boxWidth(int b) {
+		return Math.max(0, width - boxLeft(b) - doc.blockMarginRight[b]);
+	}
+
+	/** The height of block {@code b}'s border box. */
+	public int boxHeight(int b) {
+		return height(b) - gapTop(b) - gapBottom(b);
+	}
+
+	private int gapTop(int b) {
+		return BLOCK_GAP + doc.blockMarginTop[b];
+	}
+
+	private int gapBottom(int b) {
+		return BLOCK_GAP + doc.blockMarginBottom[b];
 	}
 
 	/** The left edge of cell {@code b}'s box. */
@@ -295,7 +330,8 @@ public final class HtmlLayout {
 		} else {
 			h = textHeight(b);
 		}
-		height[b] = h + 2 * BLOCK_GAP;
+		// the block gap and the CSS margins outside the border box; the border and the padding inside it
+		height[b] = h + gapTop(b) + gapBottom(b) + 2 * doc.blockBorder[b] + doc.blockPadTop[b] + doc.blockPadBottom[b];
 		top[b + 1] = top[b] + height[b];
 		measured++;
 	}
@@ -356,7 +392,8 @@ public final class HtmlLayout {
 	/* pre does not wrap; a cell wraps to its column, other blocks to the view less their indent */
 	private TextLayout make(int b) {
 		boolean pre = doc.kind[b] == HtmlDocument.PRE, cell = doc.kind[b] == HtmlDocument.CELL;
-		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - 2 * CELL_PADDING : width - indent(b)));
+		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - 2 * CELL_PADDING
+				: width - indent(b) - doc.blockBorder[b] - doc.blockPadRight[b] - doc.blockMarginRight[b]));
 	}
 
 	/* block b's text and styles laid out to the wrap width (-1: no wrapping) */

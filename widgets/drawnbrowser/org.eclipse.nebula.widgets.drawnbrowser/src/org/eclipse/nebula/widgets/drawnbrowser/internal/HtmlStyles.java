@@ -17,13 +17,15 @@ import java.util.Locale;
  * <p>
  * Rules come from {@code <style>} elements and declarations from {@code style} attributes. Selectors are a tag, a
  * {@code .class}, a {@code tag.class}, or comma-separated lists of these. Properties: {@code color},
- * {@code background-color}, {@code font-weight}, {@code font-style}, {@code text-decoration}, {@code text-align} and
- * {@code margin-left} (px). Anything else is ignored, never an error.
+ * {@code background-color}, {@code font-weight}, {@code font-style}, {@code text-decoration}, {@code text-align}, the box
+ * model in px: {@code margin} and {@code padding} (one to four values, or one side: {@code margin-top} ...),
+ * {@code border} (width, {@code solid}/{@code none}, colour), {@code border-width}, {@code border-color},
+ * {@code border-style}. Anything else (other units, other border styles) is ignored, never an error.
  * </p>
  * <p>
  * The cascade applies the rules that match an element in specificity order (tag, class, tag.class; a later rule wins
  * a tie), then the element's own {@code style} attribute. Text properties (color, weight, style, decoration) inherit;
- * so does text-align; background and indent belong to the element that sets them. A computed style is an
+ * so does text-align; background, indent and the box (margins, padding, border) belong to the element that sets them. A computed style is an
  * int array indexed by the constants below, no object per element.
  * </p>
  * <p>
@@ -33,8 +35,18 @@ import java.util.Locale;
  */
 public final class HtmlStyles {
 
-	/** Computed style slots: ARGB colour (0 inherits the widget's), background, set style bits, align, indent px. */
-	public static final int COLOR = 0, BACKGROUND = 1, BITS = 2, ALIGN = 3, INDENT = 4, SLOTS = 5;
+	/**
+	 * Computed style slots: ARGB colour (0 inherits the widget's), background, set style bits, align, indent px (the
+	 * left margin); then the box, px: top, right and bottom margins, the four paddings, the border's width and its ARGB
+	 * colour (0: the widget's foreground).
+	 */
+	public static final int COLOR = 0, BACKGROUND = 1, BITS = 2, ALIGN = 3, INDENT = 4, MARGIN_TOP = 5,
+			MARGIN_RIGHT = 6, MARGIN_BOTTOM = 7, PADDING_TOP = 8, PADDING_RIGHT = 9, PADDING_BOTTOM = 10,
+			PADDING_LEFT = 11, BORDER_WIDTH = 12, BORDER_COLOR = 13, SLOTS = 14;
+
+	/* the numeric box slots, "not set" (-1) in a declaration delta */
+	private static final int[] BOX = { MARGIN_TOP, MARGIN_RIGHT, MARGIN_BOTTOM, PADDING_TOP, PADDING_RIGHT,
+			PADDING_BOTTOM, PADDING_LEFT, BORDER_WIDTH };
 
 	/** Alignments. */
 	public static final int LEFT = 0, CENTER = 1, RIGHT = 2;
@@ -50,7 +62,7 @@ public final class HtmlStyles {
 		while (i < text.length()) {
 			int open = text.indexOf('{', i), close = open < 0 ? -1 : text.indexOf('}', open);
 			if (open < 0 || close < 0) break;
-			int[] decls = parse(text.substring(open + 1, close), new int[] { 0, 0, 0, -1, -1 });
+			int[] decls = parse(text.substring(open + 1, close), emptyDelta());
 			for (String selector : text.substring(i, open).split(",")) {
 				String s = selector.trim().toLowerCase(Locale.ROOT);
 				if (!s.matches("[a-z][a-z0-9]*|\\.[a-z_][a-z0-9_-]*|[a-z][a-z0-9]*\\.[a-z_][a-z0-9_-]*")) continue;
@@ -73,7 +85,10 @@ public final class HtmlStyles {
 	 * @param inline  the style attribute, or null
 	 */
 	public int[] compute(int[] parent, String tag, String classes, String inline) {
-		int[] style = { parent[COLOR], 0, parent[BITS], parent[ALIGN], 0 };
+		int[] style = new int[SLOTS];
+		style[COLOR] = parent[COLOR];
+		style[BITS] = parent[BITS];
+		style[ALIGN] = parent[ALIGN];
 		String[] own = classes == null ? new String[0] : classes.trim().toLowerCase(Locale.ROOT).split("\\s+");
 		for (int specificity : new int[] { 1, 10, 11 }) {
 			for (int r = 0; r < selectors.size(); r++) {
@@ -84,13 +99,49 @@ public final class HtmlStyles {
 				apply(style, declarations.get(r));
 			}
 		}
-		if (inline != null) apply(style, parse(inline, new int[] { 0, 0, 0, -1, -1 }));
+		if (inline != null) apply(style, parse(inline, emptyDelta()));
 		return style;
 	}
 
 	/** The style of the document root: the widget's colours, nothing set. */
 	public static int[] root() {
-		return new int[] { 0, 0, 0, LEFT, 0 };
+		return new int[SLOTS];
+	}
+
+	/* a declaration delta with nothing set */
+	private static int[] emptyDelta() {
+		int[] delta = new int[SLOTS];
+		delta[ALIGN] = -1;
+		delta[INDENT] = -1;
+		for (int slot : BOX) delta[slot] = -1;
+		return delta;
+	}
+
+	/* a length in px ("12px", "12", "0"), or -1 when it is not one */
+	private static int px(String value) {
+		return value.matches("\\d{1,4}(px)?") ? Integer.parseInt(value.replace("px", "")) : -1;
+	}
+
+	/* one to four lengths: top, right, bottom, left as CSS repeats them */
+	private static void sides(int[] delta, String value, int top, int right, int bottom, int left) {
+		String[] v = value.trim().split("\\s+");
+		if (v.length > 4) return;
+		int[] n = new int[v.length];
+		for (int i = 0; i < v.length; i++) if ((n[i] = px(v[i])) < 0) return;
+		int t = n[0], r = v.length > 1 ? n[1] : t, b = v.length > 2 ? n[2] : t, l = v.length > 3 ? n[3] : r;
+		delta[top] = t;
+		delta[right] = r;
+		delta[bottom] = b;
+		delta[left] = l;
+	}
+
+	/* border shorthand: a width, a style (solid, or none / hidden for no border) and a colour, in any order */
+	private static void border(int[] delta, String value) {
+		for (String part : value.trim().split("\\s+")) {
+			if (px(part) >= 0) delta[BORDER_WIDTH] = px(part);
+			else if (part.equals("none") || part.equals("hidden")) delta[BORDER_WIDTH] = 0;
+			else if (color(part) != 0) delta[BORDER_COLOR] = color(part);
+		}
 	}
 
 	private static boolean contains(String[] values, String value) {
@@ -125,6 +176,29 @@ public final class HtmlStyles {
 				case "margin-left" -> {
 					if (value.matches("\\d{1,4}(px)?")) delta[INDENT] = Integer.parseInt(value.replace("px", ""));
 				}
+				case "margin" -> sides(delta, value, MARGIN_TOP, MARGIN_RIGHT, MARGIN_BOTTOM, INDENT);
+				case "margin-top", "margin-right", "margin-bottom" -> {
+					int slot = name.equals("margin-top") ? MARGIN_TOP : name.equals("margin-right") ? MARGIN_RIGHT : MARGIN_BOTTOM;
+					if (px(value) >= 0) delta[slot] = px(value);
+				}
+				case "padding" -> sides(delta, value, PADDING_TOP, PADDING_RIGHT, PADDING_BOTTOM, PADDING_LEFT);
+				case "padding-top", "padding-right", "padding-bottom", "padding-left" -> {
+					int slot = switch (name) {
+						case "padding-top" -> PADDING_TOP;
+						case "padding-right" -> PADDING_RIGHT;
+						case "padding-bottom" -> PADDING_BOTTOM;
+						default -> PADDING_LEFT;
+					};
+					if (px(value) >= 0) delta[slot] = px(value);
+				}
+				case "border" -> border(delta, value);
+				case "border-width" -> {
+					if (px(value) >= 0) delta[BORDER_WIDTH] = px(value);
+				}
+				case "border-color" -> delta[BORDER_COLOR] = color(value);
+				case "border-style" -> {
+					if (value.equals("none") || value.equals("hidden")) delta[BORDER_WIDTH] = 0;
+				}
 				default -> {
 				}
 			}
@@ -145,6 +219,8 @@ public final class HtmlStyles {
 		style[BITS] = (style[BITS] | set) & ~cleared;
 		if (delta[ALIGN] >= 0) style[ALIGN] = delta[ALIGN];
 		if (delta[INDENT] >= 0) style[INDENT] = delta[INDENT];
+		for (int slot : BOX) if (delta[slot] >= 0) style[slot] = delta[slot];
+		if (delta[BORDER_COLOR] != 0) style[BORDER_COLOR] = delta[BORDER_COLOR];
 	}
 
 	/** An opaque ARGB colour from #rgb, #rrggbb, rgb(r, g, b) or a basic colour name; 0 when not one of these. */
