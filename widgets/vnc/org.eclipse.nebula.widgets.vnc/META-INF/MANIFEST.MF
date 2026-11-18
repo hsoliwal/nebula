@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula VNC Viewer
+Bundle-SymbolicName: org.eclipse.nebula.widgets.vnc
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Eclipse Nebula
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.eclipse.swt;bundle-version="[3.136.0,4.0.0)"
+Export-Package: org.eclipse.nebula.widgets.vnc
+Automatic-Module-Name: org.eclipse.nebula.widgets.vnc
