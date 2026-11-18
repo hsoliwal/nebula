@@ -45,4 +45,8 @@
          id="org.eclipse.nebula.widgets.timeline"
          version="0.0.0"/>
 
+   <plugin
+         id="org.eclipse.nebula.widgets.terminal"
+         version="0.0.0"/>
+
 </feature>
