@@ -129,6 +129,93 @@ public class GridPinnedRows_Test {
 		assertEquals("first scrolled row under the plane", 200 + 2, grid.indexOf(below));
 	}
 
+
+	@Test
+	public void treeAncestorsStayAboveScrolledChildrenAndBelowTheColumnHeader() throws Exception {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 470, 400);
+		grid.setHeaderVisible(true);
+		final GridColumn treeColumn = new GridColumn(grid, SWT.NONE);
+		treeColumn.setTree(true);
+		treeColumn.setFixed(true);
+		treeColumn.setWidth(190);
+		new GridColumn(grid, SWT.NONE).setWidth(300);
+		final GridItem first = new GridItem(grid, SWT.NONE);
+		first.setText(0, "Project A");
+		final GridItem branch = new GridItem(first, SWT.NONE);
+		branch.setText(0, "Package A");
+		final GridItem[] leaves = new GridItem[65];
+		for (int i = 0; i < leaves.length; i++) {
+			leaves[i] = new GridItem(branch, SWT.NONE);
+			leaves[i].setText(0, "Source " + i);
+		}
+		first.setExpanded(true);
+		branch.setExpanded(true);
+		final GridItem second = new GridItem(grid, SWT.NONE);
+		second.setText(0, "Project B");
+		final GridItem branchB = new GridItem(second, SWT.NONE);
+		branchB.setText(0, "Package B");
+		final GridItem[] other = new GridItem[65];
+		for (int i = 0; i < other.length; i++) {
+			other[i] = new GridItem(branchB, SWT.NONE);
+			other[i].setText(0, "Other " + i);
+		}
+		second.setExpanded(true);
+		branchB.setExpanded(true);
+		assertEquals(false, grid.getStickyAncestorRows());
+		grid.setStickyAncestorRows(true);
+		assertTrue(grid.getStickyAncestorRows());
+		grid.setTopIndex(leaves[12].getRowIndex());
+		flush();
+		final int top = grid.getHeaderHeight(), row = first.getHeight() + 1;
+		assertSame(first, grid.getItem(new Point(25, top + 2)));
+		assertSame(branch, grid.getItem(new Point(25, top + row + 2)));
+		assertEquals(top, grid.getOrigin(treeColumn, first).y);
+		assertEquals(top + row, grid.getOrigin(treeColumn, branch).y);
+		final Rectangle pinned = new Rectangle(0, top, grid.getClientArea().width, 2 * row);
+		final GridSwtScreenshotCapture.GridClientFrame before = snapshot(grid);
+		grid.setTopIndex(leaves[39].getRowIndex());
+		flush();
+		final GridSwtScreenshotCapture.GridClientFrame after = snapshot(grid);
+		final String[] hashes = GridSwtScreenshotCapture.comparableGridClientHashes(
+				grid, before, after, pinned);
+		assertEquals("ancestor headers remain unchanged over scrolling descendants", hashes[0], hashes[1]);
+		assertSame(first, grid.getItem(new Point(25, top + 2)));
+		assertSame(branch, grid.getItem(new Point(25, top + row + 2)));
+		grid.setTopIndex(other[15].getRowIndex());
+		flush();
+		assertSame(second, grid.getItem(new Point(25, top + 2)));
+		assertSame(branchB, grid.getItem(new Point(25, top + row + 2)));
+		grid.setStickyAncestorRows(false);
+		flush();
+		assertSame(other[15], grid.getItem(new Point(25, top + 2)));
+	}
+
+	@Test
+	public void stickyAncestorsDoNotChangeFlatGridPinningOrTreeRowSelection() {
+		final Grid flat = grid(0);
+		assertEquals(false, flat.getStickyAncestorRows());
+		flat.setStickyAncestorRows(true);
+		flat.setPinnedRowCount(2, 1);
+		assertEquals(2, flat.getPinnedTopRowCount());
+		assertSame(flat.getItem(0), flat.getItem(new Point(25, flat.getHeaderHeight() + 2)));
+		final Grid tree = new Grid(shell, SWT.V_SCROLL);
+		tree.setBounds(470, 30, 460, 390);
+		new GridColumn(tree, SWT.NONE).setTree(true);
+		final GridItem root = new GridItem(tree, SWT.NONE);
+		final GridItem child = new GridItem(root, SWT.NONE);
+		root.setExpanded(true);
+		tree.setStickyAncestorRows(true);
+		try {
+			tree.setPinnedRowCount(1, 0);
+			fail("flat pinned-row API still refuses a hierarchical Grid");
+		} catch (IllegalArgumentException expected) {
+			// the original flat-grid pin API is forbidden for tree rows
+		}
+		assertSame(root, child.getParentItem());
+		assertEquals(true, tree.getStickyAncestorRows());
+	}
+
 	@Test
 	public void permutationChoosesThePinnedModelRows() throws Exception {
 		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL);
