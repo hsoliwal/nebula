@@ -54,7 +54,7 @@ public class RfbConnectionTest {
                         assertEquals(2, in.readUnsignedByte()); // SetEncodings
                         in.readUnsignedByte(); // pad
                         int encodings = in.readUnsignedShort();
-                        assertEquals(3, encodings);
+                        assertEquals(4, encodings);
                         for (int i = 0; i < encodings; i++) in.readInt();
                         byte[] firstRequest = new byte[10];
                         in.readFully(firstRequest);

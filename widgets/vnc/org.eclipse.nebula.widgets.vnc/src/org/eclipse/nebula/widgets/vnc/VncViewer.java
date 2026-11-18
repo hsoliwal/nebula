@@ -328,6 +328,9 @@ public class VncViewer extends Canvas {
     /** X11 keysyms used on the RFB wire. */
     private static int keysym(Event event) {
         return switch (event.keyCode) {
+            case SWT.SHIFT -> 0xffe1;
+            case SWT.CTRL -> 0xffe3;
+            case SWT.ALT -> 0xffe9;
             case SWT.BS -> 0xff08;
             case SWT.TAB -> 0xff09;
             case SWT.CR, SWT.KEYPAD_CR -> 0xff0d;
@@ -347,7 +350,8 @@ public class VncViewer extends Canvas {
                     yield 0xffbe + (event.keyCode - SWT.F1);
                 }
                 int ch = event.character != 0 ? event.character : event.keyCode;
-                yield ch >= 32 && ch <= 0x10ffff
+                yield ch >= 32 && ch < 0xd800
+                        || ch >= 0xe000 && ch <= 0xffff
                         ? (ch > 0xff ? 0x01000000 | ch : ch) : 0;
             }
         };

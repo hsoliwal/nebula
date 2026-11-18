@@ -190,8 +190,9 @@ final class RfbConnection implements AutoCloseable {
         synchronized (writeLock) {
             out.writeByte(2); // SetEncodings
             out.writeByte(0);
-            out.writeShort(3);
+            out.writeShort(4);
             out.writeInt(1);    // CopyRect
+            out.writeInt(5);    // Hextile (16x16 CPU tiles)
             out.writeInt(0);    // Raw
             out.writeInt(-223); // DesktopSize
             out.flush();
@@ -249,6 +250,7 @@ final class RfbConnection implements AutoCloseable {
         in.readUnsignedByte(); // padding
         int count = in.readUnsignedShort();
         if (count > MAX_RECTS) throw new IOException("Too many RFB rectangles");
+        boolean resized = false;
         for (int i = 0; i < count; i++) {
             int x = in.readUnsignedShort();
             int y = in.readUnsignedShort();
@@ -259,15 +261,73 @@ final class RfbConnection implements AutoCloseable {
                 case 0 -> framebuffer.readRaw(in, x, y, w, h);
                 case 1 -> framebuffer.copyRect(x, y, w, h,
                         in.readUnsignedShort(), in.readUnsignedShort());
+                case 5 -> readHextile(x, y, w, h);
                 case -223 -> {
                     if (x != 0 || y != 0) throw new IOException("Invalid DesktopSize update");
                     framebuffer.resize(w, h);
+                    resized = true;
                 }
                 default -> throw new IOException("Unrequested RFB encoding " + encoding);
             }
         }
         listener.changed(framebuffer);
-        requestUpdate(true);
+        requestUpdate(!resized);
+    }
+
+    /**
+     * Hextile is built tile-by-tile on the CPU, then published as bounded
+     * rectangle writes. Colors persist between tiles as required by RFB.
+     */
+    private void readHextile(int x, int y, int width, int height) throws IOException {
+        if (width < 0 || height < 0 || (long) x + width > framebuffer.width()
+                || (long) y + height > framebuffer.height()) {
+            throw new IOException("Invalid Hextile rectangle");
+        }
+        int background = 0xff000000;
+        int foreground = 0xff000000;
+        for (int ty = y; ty < y + height; ty += 16) {
+            int th = Math.min(16, y + height - ty);
+            for (int tx = x; tx < x + width; tx += 16) {
+                int tw = Math.min(16, x + width - tx);
+                int subencoding = in.readUnsignedByte();
+                if ((subencoding & ~31) != 0) throw new IOException("Invalid Hextile flags");
+                if ((subencoding & 1) != 0) {
+                    framebuffer.readRaw(in, tx, ty, tw, th);
+                    continue;
+                }
+                if ((subencoding & 2) != 0) background = readColor();
+                if ((subencoding & 4) != 0) foreground = readColor();
+                int[] tile = new int[tw * th];
+                Arrays.fill(tile, background);
+                if ((subencoding & 8) != 0) {
+                    int subrectangles = in.readUnsignedByte();
+                    for (int i = 0; i < subrectangles; i++) {
+                        int color = (subencoding & 16) != 0 ? readColor() : foreground;
+                        int position = in.readUnsignedByte();
+                        int size = in.readUnsignedByte();
+                        int sx = position >>> 4;
+                        int sy = position & 15;
+                        int sw = (size >>> 4) + 1;
+                        int sh = (size & 15) + 1;
+                        if (sx + sw > tw || sy + sh > th) {
+                            throw new IOException("Hextile subrectangle outside tile");
+                        }
+                        for (int row = sy; row < sy + sh; row++) {
+                            Arrays.fill(tile, row * tw + sx, row * tw + sx + sw, color);
+                        }
+                    }
+                }
+                framebuffer.writePixels(tx, ty, tw, th, tile);
+            }
+        }
+    }
+
+    private int readColor() throws IOException {
+        int b = in.readUnsignedByte();
+        int g = in.readUnsignedByte();
+        int r = in.readUnsignedByte();
+        in.readUnsignedByte(); // padding (32-bit true-colour)
+        return 0xff000000 | r << 16 | g << 8 | b;
     }
 
     void sendPointer(int x, int y, int buttonMask) throws IOException {

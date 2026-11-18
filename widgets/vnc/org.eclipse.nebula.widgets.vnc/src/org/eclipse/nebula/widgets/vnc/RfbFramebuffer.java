@@ -93,6 +93,17 @@ final class RfbFramebuffer {
         }
     }
 
+    synchronized void writePixels(int x, int y, int w, int h, int[] patch) {
+        requireRectangle(x, y, w, h);
+        if (patch.length != w * h) {
+            throw new IllegalArgumentException("Invalid tile length");
+        }
+        for (int row = 0; row < h; row++) {
+            System.arraycopy(patch, row * w, pixels, (y + row) * width + x, w);
+        }
+        revision++;
+    }
+
     synchronized void copyRect(int x, int y, int w, int h, int sourceX, int sourceY) {
         requireRectangle(x, y, w, h);
         requireRectangle(sourceX, sourceY, w, h);

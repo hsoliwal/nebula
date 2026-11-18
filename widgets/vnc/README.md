@@ -8,7 +8,7 @@ coalesced before painting, and the image is scaled with aspect ratio preserved.
 Supported in this first integration:
 - RFB protocol 3.3, 3.7 and 3.8; None or legacy VNC DES challenge security.
 - Client-initiated 32-bit true-colour pixel format.
-- Raw, CopyRect, DesktopSize, clipboard notifications and Bell.
+- Raw, CopyRect, Hextile (16x16 tiles), DesktopSize, clipboard notifications and Bell.
 - Key and pointer events, wheel events, and explicit client clipboard sending.
 - Byte/rectangle/dimension limits, overlapping CopyRect, disposed-widget
   cancellation and decoupled SWT/network ownership.
@@ -28,7 +28,7 @@ the architecture reference; the original project components were
 See https://www.eclipse.org/lists/ecf-dev/msg02002.html. The code here is
 EPL-2.0. Original upstream code and third-party notices are not repackaged.
 
-Not yet supported: Tight/ZRLE/Hextile, cursor pseudorectangles, VeNCrypt/TLS,
+Not yet supported: Tight/ZRLE, cursor pseudorectangles, VeNCrypt/TLS,
 RFB 4.x, extended keyboard layouts, dedicated scaling/native-layer paths,
 automatic clipboard integration, or audio. They require separate protocol
 qualification and are intentionally not advertised as complete.
