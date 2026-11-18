@@ -151,7 +151,7 @@ final class RfbConnection implements AutoCloseable {
     }
 
     /** Legacy VNC challenge/response; use only inside an SSH/TLS tunnel. */
-    private static byte[] vncChallengeResponse(byte[] challenge, char[] password) throws IOException {
+    static byte[] vncChallengeResponse(byte[] challenge, char[] password) throws IOException {
         byte[] key = new byte[8];
         try {
             for (int i = 0; i < Math.min(password.length, key.length); i++) {

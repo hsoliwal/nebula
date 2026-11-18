@@ -20,6 +20,19 @@ import org.junit.Test;
 
 public class RfbConnectionTest {
     @Test
+    public void vncPasswordUsesBitReversedDesKey() throws Exception {
+        byte[] challenge = new byte[16];
+        for (int i = 0; i < challenge.length; i++) challenge[i] = (byte) i;
+        // Independent OpenSSL DES-ECB vector for "secret", challenge 00..0f.
+        assertArrayEquals(new byte[] {
+                (byte) 0xee, 0x22, 0x53, (byte) 0x9f,
+                0x33, (byte) 0xa5, (byte) 0x98, 0x3e,
+                (byte) 0xc1, 0x2f, (byte) 0x9c, 0x2e,
+                (byte) 0xdb, (byte) 0xc9, (byte) 0x95, (byte) 0xdd
+        }, RfbConnection.vncChallengeResponse(challenge, "secret".toCharArray()));
+    }
+
+    @Test
     public void loopbackRfb38NegotiatesAndReceivesRawPixels() throws Exception {
         try (ServerSocket server = new ServerSocket(0)) {
             ExecutorService threads = Executors.newSingleThreadExecutor();
