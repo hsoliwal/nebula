@@ -35,6 +35,8 @@ public final class HtmlDocument {
 	 * th (level 1) of a table.
 	 */
 	public static final int PARAGRAPH = 0, HEADING = 1, LIST_ITEM = 2, IMAGE = 3, PRE = 4, RULE = 5, CELL = 6;
+	/** Box roles retain the existing automatic table/row/cell layout within positioned containers. */
+	public static final int NORMAL_BOX = 0, TABLE_BOX = 1, ROW_BOX = 2, CELL_BOX = 3;
 
 	/** Style bits of a run; code is monospace (code, tt, kbd, samp, and all of pre). */
 	public static final int BOLD = 1, ITALIC = 2, UNDERLINE = 4, STRIKE = 8, LINK = 16, CODE = 32;
@@ -72,6 +74,33 @@ public final class HtmlDocument {
 	public int[] blockPosition = new int[16], blockTop = new int[16], blockLeft = new int[16], blockZ = new int[16];
 	/** Per block: its table, row (numbered across the page) and column if it is a {@link #CELL}, else -1. */
 	public int[] cellTable = new int[16], cellRow = new int[16], cellColumn = new int[16];
+	/** The nearest owning block box of each flat block. */
+	public int[] blockBox = new int[16];
+
+	/**
+	 * Block-box tree in document preorder; box 0 is the document root. Children and siblings are linked by indices,
+	 * with -1 for none. A box's [firstBlock,endBlock) includes descendant fragments; an empty box remains in the tree.
+	 * Inline elements and elements flattened inside a table cell do not introduce boxes.
+	 */
+	public int boxCount = 1;
+	public int[] boxParent = new int[16], boxFirstChild = new int[16], boxNextSibling = new int[16],
+			boxFirstBlock = new int[16], boxEndBlock = new int[16], boxRole = new int[16], boxPosition = new int[16],
+			boxLeft = new int[16], boxTop = new int[16], boxRight = new int[16], boxBottom = new int[16],
+			boxWidth = new int[16], boxHeight = new int[16], boxZIndex = new int[16], boxBackground = new int[16],
+			boxIndent = new int[16];
+	/** Z auto is distinct from explicit zero and from every signed integer z-index. */
+	public boolean[] boxZAuto = new boolean[16];
+	/** Per element box, the same non-inherited box model as the flat block lanes; table cells keep their table padding. */
+	public int[] boxMarginTop = new int[16], boxMarginRight = new int[16], boxMarginBottom = new int[16],
+			boxPadTop = new int[16], boxPadRight = new int[16], boxPadBottom = new int[16], boxPadLeft = new int[16],
+			boxBorder = new int[16], boxBorderColor = new int[16];
+	/** Whether a supported box requests non-static positioning or an explicit width/height. */
+	public boolean positioned;
+	/**
+	 * Whether sizes, right/bottom offsets, empty boxes or ancestry require the resolved box scene. Flat nonempty
+	 * positioned blocks using only top/left/z-index retain the existing flat layout and painting path.
+	 */
+	public boolean boxLayout;
 
 	public int tableCount;
 	/** Per table: number of columns (its widest row), and the border attribute in px (0: none). */
@@ -92,13 +121,16 @@ public final class HtmlDocument {
 	public int[] imageWidth = new int[4], imageHeight = new int[4];
 
 	private HtmlDocument() {
+		boxParent[0] = boxFirstChild[0] = boxNextSibling[0] = -1;
+		boxLeft[0] = boxTop[0] = boxRight[0] = boxBottom[0] = boxWidth[0] = boxHeight[0] = HtmlStyles.AUTO;
+		boxZAuto[0] = true;
 	}
 
 	/** Parses {@code html}; never fails. */
 	public static HtmlDocument parse(String html) {
 		Builder builder = new Builder();
 		HtmlTokenizer.tokenize(html, builder);
-		builder.closeCell();
+		builder.finish();
 		builder.doc.text = builder.chars.toString();
 		return builder.doc;
 	}
@@ -127,16 +159,23 @@ public final class HtmlDocument {
 		int table = -1, row = -1, rows, column;
 		boolean rowOpen;               // a row of the outermost table has started and not ended
 		boolean cellOpen;              // the open block is a cell: block elements inside it are line breaks
+		int implicitCellDepth = -1;    // an anonymous text cell closes its synthetic frame together with its block
 		/* CSS: the sheet, the text of a style element being read, and one computed style per open element */
 		final HtmlStyles styles = new HtmlStyles();
 		final StringBuilder css = new StringBuilder();
 		int cssDepth;
 		int[][] frames = { HtmlStyles.root() };
 		String[] frameTags = { "" };
+		int[] frameBox = { 0 }, frameOwnBox = { -1 };
+		int[] lastChild = new int[16];
 		int depth;
 		int listDepth;
 		int[] ordinals = new int[8];   // per list depth: next ordinal, or BULLET for ul
 		boolean space;                 // a collapsed space is pending
+
+		Builder() {
+			Arrays.fill(lastChild, -1);
+		}
 
 		@Override
 		public void startTag(String name, String[] attributes, boolean selfClosing) {
@@ -145,9 +184,15 @@ public final class HtmlDocument {
 				cssDepth += selfClosing ? 0 : 1;
 				return;
 			}
-			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")) {
-				push(name, styles.compute(frames[depth], name, HtmlTokenizer.attribute(attributes, "class"),
-						HtmlTokenizer.attribute(attributes, "style")));
+			boolean ownBox = boxTag(name) && boxSupported(name);
+			if (ownBox) beforeBox(name);
+			if (ownBox && (name.equals("td") || name.equals("th"))) ensureRowBox();
+			boolean temporary = ownBox && (selfClosing || name.equals("img") || name.equals("hr"));
+			if (temporary || !selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")) {
+				int[] computed = styles.compute(frames[depth], name, HtmlTokenizer.attribute(attributes, "class"),
+						HtmlTokenizer.attribute(attributes, "style"));
+				int box = ownBox ? addBox(frameBox[depth], name, computed) : -1;
+				push(name, computed, box);
 			}
 			switch (name) {
 				case "script" -> skip += selfClosing ? 0 : 1;
@@ -218,6 +263,10 @@ public final class HtmlDocument {
 				default -> {
 				}
 			}
+			if (temporary) {
+				closeBlock();
+				closeFrames(depth);
+			}
 		}
 
 		@Override
@@ -230,7 +279,6 @@ public final class HtmlDocument {
 				}
 				return;
 			}
-			pop(name);
 			switch (name) {
 				case "script" -> skip = Math.max(0, skip - 1);
 				case "td", "th" -> {
@@ -271,6 +319,7 @@ public final class HtmlDocument {
 				default -> {
 				}
 			}
+			pop(name);
 		}
 
 		@Override
@@ -345,6 +394,13 @@ public final class HtmlDocument {
 		void openCell(int header) {
 			if (!rowOpen) startRow();
 			else closeCell();
+			if (tables == 1 && doc.boxRole[frameBox[depth]] != CELL_BOX) {
+				ensureRowBox();
+				int[] inherited = styles.compute(frames[depth], "", null, null);
+				int box = addBox(frameBox[depth], "td", inherited);
+				push("td", inherited, box);
+				implicitCellDepth = depth;
+			}
 			openBlock(CELL, header, 0);
 			HtmlDocument d = doc;
 			d.cellTable[open] = table;
@@ -360,6 +416,10 @@ public final class HtmlDocument {
 		void closeCell() {
 			cellOpen = false;
 			closeBlock();
+			if (implicitCellDepth >= 0) {
+				closeFrames(implicitCellDepth);
+				implicitCellDepth = -1;
+			}
 		}
 
 		/* inside a cell a block element, or a nested table's row or cell, separates its text and opens no block */
@@ -446,6 +506,7 @@ public final class HtmlDocument {
 				d.cellTable = Arrays.copyOf(d.cellTable, capacity);
 				d.cellRow = Arrays.copyOf(d.cellRow, capacity);
 				d.cellColumn = Arrays.copyOf(d.cellColumn, capacity);
+				d.blockBox = Arrays.copyOf(d.blockBox, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
 				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
@@ -469,11 +530,13 @@ public final class HtmlDocument {
 			d.firstRun[open] = d.runTotal;
 			d.runCount[open] = 0;
 			d.image[open] = -1;
+			d.blockBox[open] = frameBox[depth];
 			// an explicit block's own element is the top frame; an implicit paragraph only inherits the alignment
 			int[] frame = frames[depth];
 			boolean own = kind != IMAGE && depth > 0 && blockTag(frameTags[depth]);
+			boolean ownLeaf = depth > 0 && (kind == IMAGE && frameTags[depth].equals("img") || kind == RULE && frameTags[depth].equals("hr"));
 			d.blockBackground[open] = own ? frame[HtmlStyles.BACKGROUND] : 0;
-			d.blockIndent[open] = (own ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
+			d.blockIndent[open] = (own || ownLeaf ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
 			d.blockAlign[open] = frame[HtmlStyles.ALIGN];
 			boolean box = own && kind != CELL;
 			d.blockMarginTop[open] = box ? frame[HtmlStyles.MARGIN_TOP] : 0;
@@ -499,23 +562,183 @@ public final class HtmlDocument {
 			};
 		}
 
-		void push(String tag, int[] frame) {
+		static boolean boxTag(String tag) {
+			return switch (tag) {
+				case "body", "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "blockquote", "ul", "ol",
+						"table", "tr", "td", "th", "caption", "img", "hr" -> true;
+				default -> false;
+			};
+		}
+
+		boolean boxSupported(String tag) {
+			return switch (tag) {
+				case "table" -> tables == 0;
+				case "tr", "td", "th", "caption" -> tables == 1;
+				default -> !cellOpen;
+			};
+		}
+
+		/* End the preceding fragment before recording a box range, including omitted cell/row end tags. */
+		void beforeBox(String tag) {
+			if (tables == 1 && (tag.equals("tr") || tag.equals("td") || tag.equals("th") || tag.equals("caption"))) {
+				closeCell();
+				int from = -1;
+				for (int k = depth; k > 0; k--) {
+					String openTag = frameTags[k];
+					if (openTag.equals("table")) break;
+					if (openTag.equals("tr")) {
+						if (tag.equals("tr") || tag.equals("caption")) from = k;
+						break;
+					}
+					if (openTag.equals("td") || openTag.equals("th") || openTag.equals("caption")) from = k;
+				}
+				if (from >= 0) closeFrames(from);
+			} else {
+				closeBlock();
+			}
+		}
+
+		/* The flat table parser already implies a row for td/th without tr; preserve that row in the box tree too. */
+		void ensureRowBox() {
+			for (int k = depth; k > 0; k--) {
+				if (frameTags[k].equals("tr")) return;
+				if (frameTags[k].equals("table")) break;
+			}
+			// Anonymous boxes inherit text, but must not acquire declarations from a real tr selector.
+			int[] inherited = styles.compute(frames[depth], "", null, null);
+			int box = addBox(frameBox[depth], "tr", inherited);
+			push("tr", inherited, box);
+		}
+
+		int addBox(int parent, String tag, int[] frame) {
+			HtmlDocument d = doc;
+			if (d.boxCount == d.boxParent.length) growBoxes();
+			int box = d.boxCount++;
+			d.boxParent[box] = parent;
+			d.boxFirstChild[box] = d.boxNextSibling[box] = -1;
+			if (lastChild[parent] < 0) d.boxFirstChild[parent] = box;
+			else d.boxNextSibling[lastChild[parent]] = box;
+			lastChild[parent] = box;
+			d.boxFirstBlock[box] = d.boxEndBlock[box] = d.blockCount;
+			d.boxRole[box] = switch (tag) {
+				case "table" -> TABLE_BOX;
+				case "tr" -> ROW_BOX;
+				case "td", "th" -> CELL_BOX;
+				default -> NORMAL_BOX;
+			};
+			d.boxPosition[box] = frame[HtmlStyles.POSITION];
+			d.boxLeft[box] = frame[HtmlStyles.OFFSET_LEFT];
+			d.boxTop[box] = frame[HtmlStyles.OFFSET_TOP];
+			d.boxRight[box] = frame[HtmlStyles.OFFSET_RIGHT];
+			d.boxBottom[box] = frame[HtmlStyles.OFFSET_BOTTOM];
+			d.boxWidth[box] = frame[HtmlStyles.WIDTH];
+			d.boxHeight[box] = frame[HtmlStyles.HEIGHT];
+			d.boxZIndex[box] = frame[HtmlStyles.Z_INDEX];
+			d.boxZAuto[box] = frame[HtmlStyles.Z_AUTO] != 0;
+			d.boxBackground[box] = frame[HtmlStyles.BACKGROUND];
+			boolean boxModel = d.boxRole[box] != CELL_BOX;
+			d.boxIndent[box] = boxModel ? frame[HtmlStyles.INDENT] : 0;
+			d.boxMarginTop[box] = boxModel ? frame[HtmlStyles.MARGIN_TOP] : 0;
+			d.boxMarginRight[box] = boxModel ? frame[HtmlStyles.MARGIN_RIGHT] : 0;
+			d.boxMarginBottom[box] = boxModel ? frame[HtmlStyles.MARGIN_BOTTOM] : 0;
+			d.boxPadTop[box] = boxModel ? frame[HtmlStyles.PADDING_TOP] : 0;
+			d.boxPadRight[box] = boxModel ? frame[HtmlStyles.PADDING_RIGHT] : 0;
+			d.boxPadBottom[box] = boxModel ? frame[HtmlStyles.PADDING_BOTTOM] : 0;
+			d.boxPadLeft[box] = boxModel ? frame[HtmlStyles.PADDING_LEFT] : 0;
+			d.boxBorder[box] = boxModel ? frame[HtmlStyles.BORDER_WIDTH] : 0;
+			d.boxBorderColor[box] = boxModel ? frame[HtmlStyles.BORDER_COLOR] : 0;
+			d.positioned |= d.boxPosition[box] != HtmlStyles.STATIC || d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO;
+			return box;
+		}
+
+		void growBoxes() {
+			HtmlDocument d = doc;
+			int old = d.boxParent.length, capacity = 2 * old;
+			d.boxParent = Arrays.copyOf(d.boxParent, capacity);
+			d.boxFirstChild = Arrays.copyOf(d.boxFirstChild, capacity);
+			d.boxNextSibling = Arrays.copyOf(d.boxNextSibling, capacity);
+			d.boxFirstBlock = Arrays.copyOf(d.boxFirstBlock, capacity);
+			d.boxEndBlock = Arrays.copyOf(d.boxEndBlock, capacity);
+			d.boxRole = Arrays.copyOf(d.boxRole, capacity);
+			d.boxPosition = Arrays.copyOf(d.boxPosition, capacity);
+			d.boxLeft = Arrays.copyOf(d.boxLeft, capacity);
+			d.boxTop = Arrays.copyOf(d.boxTop, capacity);
+			d.boxRight = Arrays.copyOf(d.boxRight, capacity);
+			d.boxBottom = Arrays.copyOf(d.boxBottom, capacity);
+			d.boxWidth = Arrays.copyOf(d.boxWidth, capacity);
+			d.boxHeight = Arrays.copyOf(d.boxHeight, capacity);
+			d.boxZIndex = Arrays.copyOf(d.boxZIndex, capacity);
+			d.boxZAuto = Arrays.copyOf(d.boxZAuto, capacity);
+			d.boxBackground = Arrays.copyOf(d.boxBackground, capacity);
+			d.boxIndent = Arrays.copyOf(d.boxIndent, capacity);
+			d.boxMarginTop = Arrays.copyOf(d.boxMarginTop, capacity);
+			d.boxMarginRight = Arrays.copyOf(d.boxMarginRight, capacity);
+			d.boxMarginBottom = Arrays.copyOf(d.boxMarginBottom, capacity);
+			d.boxPadTop = Arrays.copyOf(d.boxPadTop, capacity);
+			d.boxPadRight = Arrays.copyOf(d.boxPadRight, capacity);
+			d.boxPadBottom = Arrays.copyOf(d.boxPadBottom, capacity);
+			d.boxPadLeft = Arrays.copyOf(d.boxPadLeft, capacity);
+			d.boxBorder = Arrays.copyOf(d.boxBorder, capacity);
+			d.boxBorderColor = Arrays.copyOf(d.boxBorderColor, capacity);
+			lastChild = Arrays.copyOf(lastChild, capacity);
+			Arrays.fill(lastChild, old, capacity, -1);
+		}
+
+		void push(String tag, int[] frame, int ownBox) {
 			if (++depth == frames.length) {
 				frames = Arrays.copyOf(frames, 2 * frames.length);
 				frameTags = Arrays.copyOf(frameTags, 2 * frameTags.length);
+				frameBox = Arrays.copyOf(frameBox, 2 * frameBox.length);
+				frameOwnBox = Arrays.copyOf(frameOwnBox, 2 * frameOwnBox.length);
 			}
 			frames[depth] = frame;
 			frameTags[depth] = tag;
+			frameOwnBox[depth] = ownBox;
+			frameBox[depth] = ownBox >= 0 ? ownBox : frameBox[depth - 1];
 		}
 
 		/* closes the innermost open element of that tag and every element opened inside it (misnested tags) */
 		void pop(String tag) {
 			for (int k = depth; k > 0; k--) {
 				if (frameTags[k].equals(tag)) {
-					depth = k - 1;
+					for (int f = depth; f >= k; f--) {
+						if (frameOwnBox[f] < 0) continue;
+						if (doc.boxRole[frameOwnBox[f]] == CELL_BOX) closeCell();
+						else closeBlock();
+					}
+					closeFrames(k);
 					return;
 				}
 			}
+		}
+
+		void closeFrames(int from) {
+			for (int k = depth; k >= from; k--) {
+				int box = frameOwnBox[k];
+				if (box >= 0) doc.boxEndBlock[box] = doc.blockCount;
+			}
+			depth = from - 1;
+		}
+
+		void finish() {
+			closeCell();
+			closeFrames(1);
+			doc.boxEndBlock[0] = doc.blockCount;
+			doc.boxLayout = needsBoxLayout();
+		}
+
+		/* Route only extensions to the resolved scene; a flat fragment remains the authority for its existing path. */
+		boolean needsBoxLayout() {
+			HtmlDocument d = doc;
+			for (int box = 1; box < d.boxCount; box++) {
+				if (d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO
+						|| d.boxRight[box] != HtmlStyles.AUTO || d.boxBottom[box] != HtmlStyles.AUTO) return true;
+				if (d.boxPosition[box] == HtmlStyles.STATIC) continue;
+				int first = d.boxFirstBlock[box];
+				if (d.boxParent[box] != 0 || d.boxFirstChild[box] >= 0 || first == d.boxEndBlock[box]
+						|| d.blockBox[first] != box || d.blockPosition[first] != d.boxPosition[box]) return true;
+			}
+			return false;
 		}
 
 		void closeBlock() {
