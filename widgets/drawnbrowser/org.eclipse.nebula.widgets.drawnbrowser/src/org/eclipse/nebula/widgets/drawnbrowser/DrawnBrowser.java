@@ -532,7 +532,7 @@ public class DrawnBrowser extends Canvas {
 			gc.fillRectangle(boxX, boxY, boxWidth, boxHeight);
 			gc.setBackground(getBackground());
 		}
-		int border = cell && !layout.flexItem(b) ? 0 : document.blockBorder[b];
+		int border = cell && !layout.boxedItem(b) ? 0 : document.blockBorder[b];
 		if (border > 0) {
 			int argb = document.blockBorderColor[b];
 			gc.setBackground(argb != 0 ? layout.color(argb) : getForeground());

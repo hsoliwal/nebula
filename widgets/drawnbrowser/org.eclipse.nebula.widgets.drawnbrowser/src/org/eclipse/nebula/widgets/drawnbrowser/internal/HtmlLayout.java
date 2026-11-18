@@ -158,13 +158,13 @@ public final class HtmlLayout {
 
 	/** The x where block {@code b}'s content starts (list indent, left margin, border and padding; a cell's column and padding). */
 	public int indent(int b) {
-		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + (flexItem(b) ? doc.blockBorder[b] + doc.blockPadLeft[b] : CELL_PADDING);
+		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + (boxedItem(b) ? doc.blockBorder[b] + doc.blockPadLeft[b] : CELL_PADDING);
 		return boxLeft(b) + doc.blockBorder[b] + doc.blockPadLeft[b];
 	}
 
 	/** How far below its top block {@code b}'s content starts: the gap and top margin, border and padding; a cell's padding. */
 	public int contentTop(int b) {
-		if (doc.kind[b] == HtmlDocument.CELL) return flexItem(b) ? doc.blockBorder[b] + doc.blockPadTop[b] : CELL_PADDING;
+		if (doc.kind[b] == HtmlDocument.CELL) return boxedItem(b) ? doc.blockBorder[b] + doc.blockPadTop[b] : CELL_PADDING;
 		return gapTop(b) + doc.blockBorder[b] + doc.blockPadTop[b];
 	}
 
@@ -259,25 +259,29 @@ public final class HtmlLayout {
 		return doc.blockIndent[b] + columns(doc.cellTable[b])[doc.cellColumn[b]];
 	}
 
-	/** Whether block {@code b} is an item of a flex container (a cell that keeps its CSS box). */
-	public boolean flexItem(int b) {
-		return doc.kind[b] == HtmlDocument.CELL && doc.tableFlex[doc.cellTable[b]] == 1;
+	/** Whether block {@code b} is an item of a flex or grid container (a cell that keeps its CSS box). */
+	public boolean boxedItem(int b) {
+		return doc.kind[b] == HtmlDocument.CELL && doc.tableDisplay[doc.cellTable[b]] != HtmlStyles.DISPLAY_DEFAULT;
 	}
 
 	/* the vertical and horizontal room a cell's text leaves: a flex item's border and padding, a table cell's padding */
 	private int insetV(int b) {
-		return flexItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadTop[b] + doc.blockPadBottom[b] : 2 * CELL_PADDING;
+		return boxedItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadTop[b] + doc.blockPadBottom[b] : 2 * CELL_PADDING;
 	}
 
 	private int insetH(int b) {
-		return flexItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadLeft[b] + doc.blockPadRight[b] : 2 * CELL_PADDING;
+		return boxedItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadLeft[b] + doc.blockPadRight[b] : 2 * CELL_PADDING;
 	}
 
 	/** The width of cell {@code b}'s box (its columns' width). */
 	public int cellWidth(int b) {
 		int t = doc.cellTable[b];
 		int[] x = columns(t);
-		if (doc.tableFlex[t] == 1) return x[doc.tableColumns[t] + doc.cellColumn[b]];
+		if (doc.tableDisplay[t] != HtmlStyles.DISPLAY_DEFAULT) {
+			// x then width per column (flex items, grid tracks): from the first column's x to the last one's end
+			int n = doc.tableColumns[t], last = doc.cellColumn[b] + doc.cellSpan[b] - 1;
+			return x[last] + x[n + last] - x[doc.cellColumn[b]];
+		}
 		return x[doc.cellColumn[b] + doc.cellSpan[b]] - x[doc.cellColumn[b]];
 	}
 
@@ -419,6 +423,7 @@ public final class HtmlLayout {
 	 * of one row; a spanning cell taller than its rows grows the last of them, and is as tall as the rows it spans
 	 */
 	private void measureRow(int b) {
+		int table = doc.cellTable[b], rowGap = doc.tableRowGap[table];
 		int[] rowStart = new int[4], rowHeight = new int[4];
 		int rowsInGroup = 0, reach = 0, k = b;
 		while (k < doc.blockCount && doc.kind[k] == HtmlDocument.CELL && doc.cellTable[k] == doc.cellTable[b]
@@ -439,21 +444,22 @@ public final class HtmlLayout {
 			for (int c = rowStart[r]; c < (r + 1 < rowsInGroup ? rowStart[r + 1] : k); c++) {
 				if (doc.cellRowSpan[c] == 1) continue;
 				int last = Math.min(rowsInGroup, r + doc.cellRowSpan[c]) - 1, have = 0;
-				for (int s = r; s <= last; s++) have += rowHeight[s];
+				for (int s = r; s <= last; s++) have += rowHeight[s] + (s < last ? rowGap : 0);
 				int need = textHeight(c) + insetV(c);
 				if (need > have) rowHeight[last] += need - have;
 			}
 		}
-		int y = top[b];
+		// a grid's rows are rowGap apart: this group's first row follows an earlier row of the same table
+		int y = top[b] + (b > 0 && doc.kind[b - 1] == HtmlDocument.CELL && doc.cellTable[b - 1] == table ? rowGap : 0);
 		for (int r = 0; r < rowsInGroup; r++) {
 			int end = r + 1 < rowsInGroup ? rowStart[r + 1] : k;
 			for (int c = rowStart[r]; c < end; c++) {
 				top[c] = y;
 				int last = Math.min(rowsInGroup, r + doc.cellRowSpan[c]) - 1, h = 0;
-				for (int s = r; s <= last; s++) h += rowHeight[s];
+				for (int s = r; s <= last; s++) h += rowHeight[s] + (s < last ? rowGap : 0);
 				height[c] = h;
 			}
-			y += rowHeight[r];
+			y += rowHeight[r] + (r + 1 < rowsInGroup ? rowGap : 0);
 		}
 		top[k] = y;
 		measured = k;
@@ -507,7 +513,12 @@ public final class HtmlLayout {
 			}
 		}
 		for (int c = 0; c < n; c++) max[c] = Math.max(max[c], min[c]);
-		if (doc.tableFlex[t] == 1) {
+		if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_GRID) {
+			// a grid: x then width per column, by the grid track sizing algorithm (Taffy's steps)
+			int[] tracks = Arrays.copyOfRange(doc.tracks, doc.tableTrackStart[t], doc.tableTrackStart[t] + n);
+			return columnX[t] = GridTracks.layout(tracks, min, max, width - doc.blockIndent[first], doc.tableGap[t], doc.tableJustify[t]);
+		}
+		if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_FLEX) {
 			// a flex row: x then width per item, by the flex algorithm (Yoga's steps)
 			int[] basis = new int[n], grow = new int[n];
 			for (int k = 0; k < doc.blockCount; k++) {

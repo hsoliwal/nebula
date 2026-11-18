@@ -234,6 +234,23 @@ public class HtmlLayoutTest {
 		assertEquals("the row is as tall as the boxed item", l.textLayout(2).getBounds().height + 2 * 2 + 6 + 6, l.height(2));
 		assertEquals("the flow continues below", l.top(0) + l.height(0), l.top(3));
 	}
+
+	@Test
+	public void gridItemsSitInTheirTracksWithRowAndColumnGaps() {
+		HtmlLayout l = layout("<div style='display:grid; grid-template-columns: 100px 1fr 2fr; gap: 6px 10px'>"
+				+ "<div>a</div><div>b</div><div>c</div><div style='grid-column: span 2'>d</div><div style='padding:5px'>e</div></div><p>after</p>", 400);
+		l.ensure(Integer.MAX_VALUE);
+		// 400 less two column gaps: 380; 100 fixed, 280 shared 1:2; d spans the first two tracks and the gap between
+		assertArrayEquals(new int[] { 0, 110, 213, 0, 213 }, new int[] { l.cellX(0), l.cellX(1), l.cellX(2), l.cellX(3), l.cellX(4) });
+		assertArrayEquals(new int[] { 100, 93, 187, 203, 187 },
+				new int[] { l.cellWidth(0), l.cellWidth(1), l.cellWidth(2), l.cellWidth(3), l.cellWidth(4) });
+		assertEquals(l.top(0), l.top(2));
+		assertEquals("the second row is a row gap below the first", l.top(0) + l.height(0) + 6, l.top(3));
+		assertEquals(l.top(3), l.top(4));
+		assertEquals("the flow continues below the last row", l.top(3) + l.height(3), l.top(5));
+		assertEquals("a grid item's content is inset by its padding", l.cellX(4) + 5, l.indent(4));
+		assertEquals(5, l.contentTop(4));
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);

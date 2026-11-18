@@ -25,9 +25,11 @@ import java.util.Locale;
  * {@code background-color}, {@code font-weight}, {@code font-style}, {@code text-decoration}, {@code text-align}, the box
  * model in px: {@code margin} and {@code padding} (one to four values, or one side: {@code margin-top} ...),
  * {@code border} (width, {@code solid}/{@code none}, colour), {@code border-width}, {@code border-color},
- * {@code border-style}; {@code display} (none, flex, others kept as the element's default), and for a flex row
+ * {@code border-style}; {@code display} (none, flex, grid, others kept as the element's default), and for a flex row
  * {@code flex-direction} row, {@code justify-content}, {@code gap}, and on its items {@code flex-grow},
- * {@code flex-basis} and {@code width} (px); positioning: {@code position} (static, relative, absolute, fixed), {@code top} and {@code left}
+ * {@code flex-basis} and {@code width} (px); for a grid {@code grid-template-columns} ({@link GridTracks}),
+ * {@code justify-content}, {@code gap} (row and column), {@code row-gap}, {@code column-gap}, and on its items
+ * {@code grid-column} or {@code grid-column-end} {@code span N} (or {@code 1 / -1}, the whole row); positioning: {@code position} (static, relative, absolute, fixed), {@code top} and {@code left}
  * (px, negative allowed, or auto) and {@code z-index}. Anything else (other units, other border styles) is ignored,
  * never an error.
  * </p>
@@ -52,10 +54,18 @@ public final class HtmlStyles {
 	public static final int COLOR = 0, BACKGROUND = 1, BITS = 2, ALIGN = 3, INDENT = 4, MARGIN_TOP = 5,
 			MARGIN_RIGHT = 6, MARGIN_BOTTOM = 7, PADDING_TOP = 8, PADDING_RIGHT = 9, PADDING_BOTTOM = 10,
 			PADDING_LEFT = 11, BORDER_WIDTH = 12, BORDER_COLOR = 13, POSITION = 14, POS_TOP = 15, POS_LEFT = 16,
-			Z_INDEX = 17, DISPLAY = 18, FLEX_GROW = 19, FLEX_BASIS = 20, JUSTIFY = 21, GAP = 22, SLOTS = 23;
+			Z_INDEX = 17, DISPLAY = 18, FLEX_GROW = 19, FLEX_BASIS = 20, JUSTIFY = 21, GAP = 22, ROW_GAP = 23,
+			TRACKS = 24, COLUMN_SPAN = 25, SLOTS = 26;
 
-	/** Displays ({@link #DISPLAY}): as its element is by default, none (not shown at all), flex (a row flex container). */
-	public static final int DISPLAY_DEFAULT = 0, DISPLAY_NONE = 1, DISPLAY_FLEX = 2;
+	/**
+	 * Displays ({@link #DISPLAY}): as its element is by default, none (not shown at all), flex (a row flex container),
+	 * grid (a grid container: {@link #TRACKS} names its columns through {@link #tracks(int)}, {@link #GAP} is its column
+	 * gap and {@link #ROW_GAP} its row gap; an item spans {@link #COLUMN_SPAN} columns, 0 meaning 1).
+	 */
+	public static final int DISPLAY_DEFAULT = 0, DISPLAY_NONE = 1, DISPLAY_FLEX = 2, DISPLAY_GRID = 3;
+
+	/* grid-column span N */
+	private static final java.util.regex.Pattern SPAN = java.util.regex.Pattern.compile("span\\s+(\\d{1,4})");
 
 	/** Positions ({@link #POSITION}). */
 	public static final int STATIC = 0, RELATIVE = 1, ABSOLUTE = 2, FIXED = 3;
@@ -118,6 +128,20 @@ public final class HtmlStyles {
 			"(\\*|[a-z][a-z0-9-]*)?((?:#[a-z_][\\w-]*|\\.[a-z_][\\w-]*|\\[[a-z_][\\w-]*(?:[~|^$*]?=(?:\"[^\"]*\"|'[^']*'|[\\w-]*))?\\]|:[a-z-]+)*)");
 	private static final java.util.regex.Pattern PART = java.util.regex.Pattern.compile(
 			"#([a-z_][\\w-]*)|\\.([a-z_][\\w-]*)|\\[([a-z_][\\w-]*)(?:([~|^$*]?=)(\"[^\"]*\"|'[^']*'|[\\w-]*))?\\]|:([a-z-]+)");
+
+	/* the grid track lists the declarations name, each once; a TRACKS slot holds its index + 1 */
+	private final List<int[]> trackLists = new ArrayList<>();
+
+	/** The tracks ({@link GridTracks}) a computed style's {@link #TRACKS} slot names; empty for none. */
+	public int[] tracks(int ref) {
+		return ref <= 0 || ref > trackLists.size() ? new int[0] : trackLists.get(ref - 1).clone();
+	}
+
+	private int trackRef(int[] tracks) {
+		for (int i = 0; i < trackLists.size(); i++) if (java.util.Arrays.equals(trackLists.get(i), tracks)) return i + 1;
+		trackLists.add(tracks);
+		return trackLists.size();
+	}
 
 	/** Adds the rules of a style sheet. */
 	public void addSheet(String css) {
@@ -340,6 +364,9 @@ public final class HtmlStyles {
 		delta[FLEX_BASIS] = NOT_SET;
 		delta[JUSTIFY] = -1;
 		delta[GAP] = -1;
+		delta[ROW_GAP] = -1;
+		delta[TRACKS] = -1;
+		delta[COLUMN_SPAN] = -1;
 		return delta;
 	}
 
@@ -382,7 +409,7 @@ public final class HtmlStyles {
 	}
 
 	/* declarations as a delta: 0 colour/background = not set, BITS = bits set | (bits cleared << 8), -1 = not set */
-	private static int[] parse(String block, int[] delta) {
+	private int[] parse(String block, int[] delta) {
 		for (String declaration : block.split(";")) {
 			int colon = declaration.indexOf(':');
 			if (colon < 0) continue;
@@ -440,7 +467,12 @@ public final class HtmlStyles {
 				};
 				case "top" -> delta[POS_TOP] = offset(value);
 				case "left" -> delta[POS_LEFT] = offset(value);
-				case "display" -> delta[DISPLAY] = value.equals("none") ? DISPLAY_NONE : value.equals("flex") ? DISPLAY_FLEX : DISPLAY_DEFAULT;
+				case "display" -> delta[DISPLAY] = switch (value) {
+					case "none" -> DISPLAY_NONE;
+					case "flex", "inline-flex" -> DISPLAY_FLEX;
+					case "grid", "inline-grid" -> DISPLAY_GRID;
+					default -> DISPLAY_DEFAULT;
+				};
 				case "flex-grow" -> {
 					if (value.matches("\\d{1,4}")) delta[FLEX_GROW] = Integer.parseInt(value);
 				}
@@ -459,8 +491,29 @@ public final class HtmlStyles {
 					case "space-between" -> FlexRow.SPACE_BETWEEN;
 					default -> FlexRow.START;
 				};
-				case "gap", "column-gap" -> {
+				case "gap" -> {
+					String[] parts = value.split("\\s+");
+					int row = px(parts[0]), column = parts.length > 1 ? px(parts[1]) : row;
+					if (parts.length <= 2 && row >= 0 && column >= 0) {
+						delta[ROW_GAP] = row;
+						delta[GAP] = column;
+					}
+				}
+				case "column-gap" -> {
 					if (px(value) >= 0) delta[GAP] = px(value);
+				}
+				case "row-gap" -> {
+					if (px(value) >= 0) delta[ROW_GAP] = px(value);
+				}
+				case "grid-template-columns" -> {
+					int[] tracks = GridTracks.parse(value);
+					if (tracks != null) delta[TRACKS] = trackRef(tracks);
+					else if (value.equals("none")) delta[TRACKS] = 0;
+				}
+				case "grid-column", "grid-column-end" -> {
+					java.util.regex.Matcher span = SPAN.matcher(value);
+					if (span.find()) delta[COLUMN_SPAN] = Math.max(1, Integer.parseInt(span.group(1)));
+					else if (value.replace(" ", "").equals("1/-1")) delta[COLUMN_SPAN] = GridTracks.MAX_TRACKS;
 				}
 				case "z-index" -> {
 					if (value.equals("auto")) delta[Z_INDEX] = 0;
@@ -497,6 +550,9 @@ public final class HtmlStyles {
 		if (delta[FLEX_BASIS] != NOT_SET) style[FLEX_BASIS] = delta[FLEX_BASIS];
 		if (delta[JUSTIFY] >= 0) style[JUSTIFY] = delta[JUSTIFY];
 		if (delta[GAP] >= 0) style[GAP] = delta[GAP];
+		if (delta[ROW_GAP] >= 0) style[ROW_GAP] = delta[ROW_GAP];
+		if (delta[TRACKS] >= 0) style[TRACKS] = delta[TRACKS];
+		if (delta[COLUMN_SPAN] >= 0) style[COLUMN_SPAN] = delta[COLUMN_SPAN];
 	}
 
 	/** An opaque ARGB colour from #rgb, #rrggbb, rgb(r, g, b) or a basic colour name; 0 when not one of these. */

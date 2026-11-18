@@ -15,6 +15,7 @@ import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.CENTER
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.COLOR;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.INDENT;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.RIGHT;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -152,5 +153,30 @@ public class HtmlStylesTest {
 		assertEquals("display is not inherited", HtmlStyles.DISPLAY_DEFAULT, child[HtmlStyles.DISPLAY]);
 		assertEquals(-1, child[HtmlStyles.FLEX_BASIS]);
 		assertEquals(0, child[HtmlStyles.GAP]);
+	}
+
+	@Test
+	public void gridProperties() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".g { display: grid; grid-template-columns: 100px repeat(2, 1fr); gap: 8px 12px }"
+				+ " .h { display: inline-grid; grid-template-columns: 100px 1fr 1fr; row-gap: 3px; column-gap: 4px }"
+				+ " .wide { grid-column: span 2 } .full { grid-column: 1 / -1 } .bad { grid-template-columns: 1em }");
+		int[] root = HtmlStyles.root(), g = styles.compute(root, "div", "g", null), h = styles.compute(root, "div", "h", null);
+		assertEquals(HtmlStyles.DISPLAY_GRID, g[HtmlStyles.DISPLAY]);
+		assertArrayEquals(new int[] { 100, GridTracks.FR | 100, GridTracks.FR | 100 }, styles.tracks(g[HtmlStyles.TRACKS]));
+		assertEquals("gap: the row gap, then the column gap", 8, g[HtmlStyles.ROW_GAP]);
+		assertEquals(12, g[HtmlStyles.GAP]);
+		assertEquals("the same list is kept once", g[HtmlStyles.TRACKS], h[HtmlStyles.TRACKS]);
+		assertEquals(HtmlStyles.DISPLAY_GRID, h[HtmlStyles.DISPLAY]);
+		assertEquals(3, h[HtmlStyles.ROW_GAP]);
+		assertEquals(4, h[HtmlStyles.GAP]);
+		assertEquals(2, styles.compute(root, "div", "wide", null)[HtmlStyles.COLUMN_SPAN]);
+		assertEquals("1 / -1: the whole row", GridTracks.MAX_TRACKS, styles.compute(root, "div", "full", null)[HtmlStyles.COLUMN_SPAN]);
+		assertEquals("a list not understood is ignored", 0, styles.compute(root, "div", "bad", null)[HtmlStyles.TRACKS]);
+		assertEquals(0, styles.tracks(0).length);
+		int[] child = styles.compute(g, "div", null, null);
+		assertEquals("grid properties are not inherited", 0, child[HtmlStyles.TRACKS]);
+		assertEquals(0, child[HtmlStyles.ROW_GAP]);
+		assertEquals(0, child[HtmlStyles.COLUMN_SPAN]);
 	}
 }
