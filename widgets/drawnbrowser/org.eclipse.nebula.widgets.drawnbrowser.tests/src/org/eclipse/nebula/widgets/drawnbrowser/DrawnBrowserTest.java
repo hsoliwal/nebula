@@ -622,6 +622,47 @@ public class DrawnBrowserTest {
 		assertEquals("across the gap", green, rgbAt(shown, width / 2, y + 2));
 		assertEquals(green, rgbAt(shown, 3 * width / 4, y + 2));
 	}
+
+	@Test
+	public void aStickyHeaderStaysOnTopWhileItsSectionScrollsUnderIt() {
+		StringBuilder html = new StringBuilder("<div><h2 style='position:sticky; top:0px; background-color:#ff0000'>Section</h2>");
+		for (int i = 0; i < 20; i++) html.append("<p>line ").append(i).append("</p>");
+		html.append("</div>").append(paragraphs(60));
+		open(html.toString());
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0);
+		assertTrue("the header is drawn", findRow(shot(), red) >= 0);
+		for (int y : new int[] { 30, 75, 160, 140, 400, 395 }) {
+			browser.setScrollY(y);
+			settle();
+			int[] shown = capture();
+			assertEquals("the header is at the top at " + y, red, rgbAt(shot(), 3, 3));
+			browser.redraw();
+			settle();
+			assertEquals("the scrolled pixels equal a full repaint at " + y, -1, firstDifferentRow(shown, capture()));
+		}
+		browser.setScrollY(1000);
+		settle();
+		assertTrue("scrolled past its section, it is gone", findRow(shot(), red) < 0);
+	}
+
+	@Test
+	public void aStickyTableHeaderRowStaysWhileTheTableScrolls() {
+		StringBuilder html = new StringBuilder("<table border=1><tr><th style='position:sticky; top:0; background-color:#0000ff'>Name</th>"
+				+ "<th style='position:sticky; top:0; background-color:#0000ff'>Value</th></tr>");
+		for (int i = 0; i < 40; i++) html.append("<tr><td>row ").append(i).append("</td><td>").append(i * 7).append("</td></tr>");
+		html.append("</table>").append(paragraphs(40));
+		open(html.toString());
+		org.eclipse.swt.graphics.RGB blue = new org.eclipse.swt.graphics.RGB(0, 0, 255);
+		for (int y : new int[] { 50, 120, 90 }) {
+			browser.setScrollY(y);
+			settle();
+			int[] pixels = capture();
+			assertEquals("the header row at the top at " + y, blue, rgbAt(shot(), 5, 3));
+			browser.redraw();
+			settle();
+			assertEquals("the scrolled pixels equal a full repaint at " + y, -1, firstDifferentRow(pixels, capture()));
+		}
+	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");
