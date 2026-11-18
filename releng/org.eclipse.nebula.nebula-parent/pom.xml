@@ -382,6 +382,7 @@ Contributors:
 		<module>../../widgets/datechooser</module>
 		<module>../../widgets/pagination</module>
 		<module>../../widgets/picture</module>
+		<module>../../widgets/vnc</module>
 		<module>../../widgets/timeline</module>
 
 		<module>../../examples/org.eclipse.nebula.examples</module>
