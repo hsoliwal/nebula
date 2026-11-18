@@ -325,4 +325,13 @@ public class HtmlDocumentTest {
 		assertArrayEquals("columns", new int[] { 0, 2, 0, 1, 2 }, java.util.Arrays.copyOf(d.cellColumn, 5));
 		assertArrayEquals("spans; a bad or zero colspan is 1", new int[] { 2, 1, 1, 1, 1 }, java.util.Arrays.copyOf(d.cellSpan, 5));
 	}
+
+	@Test
+	public void rowspanCoversColumnsInTheRowsBelow() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td rowspan=2>tall</td><td>a</td></tr><tr><td>b</td></tr>"
+				+ "<tr><td>c</td><td>d</td></tr><tr><td rowspan=x>e</td></tr></table>");
+		assertArrayEquals("b skips the column tall covers", new int[] { 0, 1, 1, 0, 1, 0 }, java.util.Arrays.copyOf(d.cellColumn, 6));
+		assertArrayEquals("a bad rowspan is 1", new int[] { 2, 1, 1, 1, 1, 1 }, java.util.Arrays.copyOf(d.cellRowSpan, 6));
+		assertEquals(2, d.tableColumns[0]);
+	}
 }

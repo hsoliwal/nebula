@@ -78,6 +78,8 @@ public final class HtmlDocument {
 	public int[] cellTable = new int[16], cellRow = new int[16], cellColumn = new int[16];
 	/** Per block: the number of columns a cell spans (its colspan, at least 1); 1 for any other block. */
 	public int[] cellSpan = new int[16];
+	/** Per block: the number of rows a cell spans (its rowspan, at least 1); 1 for any other block. */
+	public int[] cellRowSpan = new int[16];
 
 	public int tableCount;
 	/** Per table: number of columns (its widest row), and the border attribute in px (0: none). */
@@ -149,6 +151,8 @@ public final class HtmlDocument {
 		boolean preStart;              // a newline right after <pre> is not content
 		int quote;                     // blockquote depth
 		int tables;                    // table depth: only the outermost table's td, th and tr make cells and rows
+		int[] spanRows = new int[8];   // per column: rows below the current one still covered by a rowspan from above
+		boolean[] taken = new boolean[8]; // per column: covered in the current row by a rowspan from above
 		int table = -1, row = -1, rows, column;
 		boolean rowOpen;               // a row of the outermost table has started and not ended
 		boolean cellOpen;              // the open block is a cell: block elements inside it are line breaks
@@ -211,7 +215,8 @@ public final class HtmlDocument {
 					else if (tables > 1) lineBreak('\n');
 				}
 				case "td", "th" -> {
-					if (tables == 1) openCell(name.equals("th") ? 1 : 0, Math.max(1, Math.min(1000, number(HtmlTokenizer.attribute(attributes, "colspan")))));
+					if (tables == 1) openCell(name.equals("th") ? 1 : 0, Math.max(1, Math.min(1000, number(HtmlTokenizer.attribute(attributes, "colspan")))),
+							Math.max(1, Math.min(65534, number(HtmlTokenizer.attribute(attributes, "rowspan")))));
 					else if (tables > 1) lineBreak(' ');
 				}
 				case "caption" -> {
@@ -424,25 +429,48 @@ public final class HtmlDocument {
 			String border = HtmlTokenizer.attribute(attributes, "border");
 			d.tableBorder[table] = border == null ? 0 : border.isBlank() ? 1 : Math.max(0, size(border));
 			rowOpen = false;
+			Arrays.fill(spanRows, 0);
 		}
 
+		/* a row starts: the columns rowspans from above still cover are taken in it (HTML's table model) */
 		void startRow() {
 			closeCell();
 			row = rows++;
 			column = 0;
 			rowOpen = true;
+			for (int c = 0; c < spanRows.length; c++) {
+				taken[c] = spanRows[c] > 0;
+				if (taken[c]) spanRows[c]--;
+			}
+		}
+
+		/* grows the per-column lanes to hold column c */
+		void columns(int c) {
+			if (c < spanRows.length) return;
+			int capacity = Math.max(2 * spanRows.length, c + 1);
+			spanRows = Arrays.copyOf(spanRows, capacity);
+			taken = Arrays.copyOf(taken, capacity);
 		}
 
 		/* a td or th of the outermost table: one block of span columns, placed in the current row (a row starts if none has) */
 		void openCell(int header, int span) {
+			openCell(header, span, 1);
+		}
+
+		void openCell(int header, int span, int rowSpan) {
 			if (!rowOpen) startRow();
 			else closeCell();
 			openBlock(CELL, header, 0);
 			HtmlDocument d = doc;
+			columns(column);
+			while (taken[column]) columns(++column); // past the columns rowspans from above cover
 			d.cellTable[open] = table;
 			d.cellRow[open] = row;
 			d.cellColumn[open] = column;
 			d.cellSpan[open] = span;
+			d.cellRowSpan[open] = rowSpan;
+			columns(column + span);
+			for (int c = column; c < column + span; c++) spanRows[c] = Math.max(spanRows[c], rowSpan - 1);
 			column += span;
 			d.tableColumns[table] = Math.max(d.tableColumns[table], column);
 			d.blockIndent[open] = quote * QUOTE_INDENT;
@@ -542,6 +570,7 @@ public final class HtmlDocument {
 				d.cellColumn = Arrays.copyOf(d.cellColumn, capacity);
 				d.blockControl = Arrays.copyOf(d.blockControl, capacity);
 				d.cellSpan = Arrays.copyOf(d.cellSpan, capacity);
+				d.cellRowSpan = Arrays.copyOf(d.cellRowSpan, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
 				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
@@ -560,6 +589,7 @@ public final class HtmlDocument {
 			d.cellTable[open] = d.cellRow[open] = d.cellColumn[open] = -1;
 			d.blockControl[open] = -1;
 			d.cellSpan[open] = 1;
+			d.cellRowSpan[open] = 1;
 			d.kind[open] = kind;
 			d.level[open] = level;
 			d.marker[open] = mark;
