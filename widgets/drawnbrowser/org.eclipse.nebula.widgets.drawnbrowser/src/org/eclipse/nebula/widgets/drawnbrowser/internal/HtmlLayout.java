@@ -8,6 +8,7 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
+import java.text.BreakIterator;
 import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
@@ -56,6 +57,7 @@ public final class HtmlLayout {
 
 	private static final int CACHE = 64;
 
+	private final BreakIterator lineBreaks = BreakIterator.getLineInstance();
 	private final Device device;
 	private final HtmlDocument doc;
 	private final FontData base;
@@ -541,14 +543,21 @@ public final class HtmlLayout {
 		return columnX[t] = TableColumns.edges(min, max, width - doc.blockIndent[first]);
 	}
 
-	/* the width of the widest run of text between spaces and line ends, laid out unwrapped */
-	private static int widestWord(TextLayout layout, String text) {
+	/*
+	 * Draw2D FlowUtilities uses Unicode line-break opportunities for text flow.
+	 * Table min-content is the widest unbreakable run, not the widest sequence
+	 * between ASCII spaces: CJK can break without a space. Measure glyph bounds
+	 * rather than subtracting caret x positions (which can reverse in bidi runs).
+	 */
+	private int widestWord(TextLayout layout, String text) {
 		int widest = 0;
-		for (int start = 0, n = text.length(); start < n;) {
-			int end = start;
-			while (end < n && text.charAt(end) != ' ' && text.charAt(end) != '\n') end++;
-			if (end > start) widest = Math.max(widest, layout.getLocation(end - 1, true).x - layout.getLocation(start, false).x);
-			start = end + 1;
+		lineBreaks.setText(text);
+		for (int start = lineBreaks.first(), end = lineBreaks.next();
+				end != BreakIterator.DONE; start = end, end = lineBreaks.next()) {
+			int first = start, last = end;
+			while (first < last && Character.isWhitespace(text.charAt(first))) first++;
+			while (last > first && Character.isWhitespace(text.charAt(last - 1))) last--;
+			if (last > first) widest = Math.max(widest, layout.getBounds(first, last - 1).width);
 		}
 		return widest;
 	}

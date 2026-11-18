@@ -98,6 +98,46 @@ public class HtmlLayoutTest {
 		assertEquals(HtmlLayout.CELL_PADDING, l.contentTop(0));
 	}
 
+
+	@Test
+	public void unicodeLineBreaksKeepCjkTableColumnsWithinAvailableWidth() {
+		TextLayout probe = new TextLayout(display);
+		int full, single, other;
+		try {
+			probe.setFont(display.getSystemFont());
+			probe.setText("漢字漢字");
+			full = probe.getBounds().width;
+			probe.setText("漢");
+			single = probe.getBounds().width;
+			probe.setText("x");
+			other = probe.getBounds().width;
+		} finally {
+			probe.dispose();
+		}
+		assertTrue("the sequence is wider than one ideograph", full > single);
+		int available = single + other + 4 * HtmlLayout.CELL_PADDING + (full - single) / 2;
+		HtmlLayout l = layout("<table><tr><td>漢字漢字</td><td>x</td></tr></table>", available);
+		assertEquals("Unicode line breaks let the table fit", available, l.cellX(1) + l.cellWidth(1));
+		assertTrue("the CJK column need not keep the whole run together",
+				l.cellWidth(0) < full + 2 * HtmlLayout.CELL_PADDING);
+	}
+
+	@Test
+	public void rightToLeftWordHasPositiveMinimumWidth() {
+		String hebrew = "שלום";
+		HtmlLayout l = layout("<table><tr><td>" + hebrew + "</td><td>x</td></tr></table>", 1);
+		TextLayout probe = new TextLayout(display);
+		try {
+			probe.setFont(l.textLayout(0).getFont());
+			probe.setText(hebrew);
+			assertTrue("the glyphs occupy a positive width", probe.getBounds().width > 0);
+			assertTrue("minimum width uses glyph bounds, not bidi caret subtraction",
+					l.cellWidth(0) >= probe.getBounds().width + 2 * HtmlLayout.CELL_PADDING);
+		} finally {
+			probe.dispose();
+		}
+	}
+
 	@Test
 	public void aColumnIsNeverNarrowerThanItsWidestWordAndAHeaderIsBold() {
 		HtmlLayout l = layout("<table><tr><th>supercalifragilistic</th><td>a b c d e f g h i j k l m n o p q r s</td></tr></table>", 150);
