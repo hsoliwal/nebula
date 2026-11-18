@@ -8,6 +8,9 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.BOLD;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.BULLET;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.CODE;
@@ -410,5 +413,69 @@ public class HtmlDocumentTest {
 		assertEquals("an element still open at the end: the last block", block(d, "end"), d.blockStickyEnd[open]);
 		assertEquals(-1, d.blockStickyEnd[block(d, "after")]);
 		assertEquals(HtmlStyles.STATIC, d.blockPosition[block(d, "x")]);
+	}
+
+	@Test
+	public void tokenizerNumericReferencesAcceptOptionalSemicolonsAndSupplementaryScalars() {
+		String raw = "&#65;&#x1f600;! &#65";
+		assertEquals("A😀! A", HtmlTokenizer.decode(raw, 0, raw.length()));
+		raw = "&#x10FFFF; &#128; &#x99;";
+		assertEquals(new String(Character.toChars(0x10FFFF)) + " € ™", HtmlTokenizer.decode(raw, 0, raw.length()));
+	}
+
+	@Test
+	public void tokenizerInvalidUnicodeScalarsBecomeReplacementButUnknownNamesStayLiteral() {
+		String raw = "&#0; &#xD800; &#1114112; &#99999999999999999999; &not-a-name; &#x; &#;";
+		assertEquals("� � � � &not-a-name; &#x; &#;", HtmlTokenizer.decode(raw, 0, raw.length()));
+		raw = "&amp; &lt; &gt; &quot; &apos; &nbsp; &nosuch;";
+		assertEquals("& < > \" ' \u00a0 &nosuch;", HtmlTokenizer.decode(raw, 0, raw.length()));
+	}
+
+	@Test(timeout = 15000)
+	public void tokenizerAdversarialAmpersandRunIsBoundedAndPreservesText() {
+		String raw = "&".repeat(131_072) + "end &amp;";
+		assertEquals("&".repeat(131_072) + "end &", HtmlTokenizer.decode(raw, 0, raw.length()));
+	}
+
+	@Test
+	public void tokenizerRawTextClosesOnlyAtCompleteCaseInsensitiveEndTags() {
+		List<String> events = new ArrayList<>();
+		HtmlTokenizer.tokenize("<script>var s='</scripture>'; &amp; </ScRiPt ><style>a{content:'</stylesheet>'}</STYLE><p>ok</p>",
+				tokenizerHandler(events));
+		assertEquals(List.of("start:script", "text:var s='</scripture>'; &amp; ", "end:script",
+				"start:style", "text:a{content:'</stylesheet>'}", "end:style",
+				"start:p", "text:ok", "end:p"), events);
+	}
+
+	@Test
+	public void tokenizerPrefixEndTagWithoutRealClosingTagRemainsRaw() {
+		List<String> events = new ArrayList<>();
+		HtmlTokenizer.tokenize("<script>before </scriptX> after", tokenizerHandler(events));
+		assertEquals(List.of("start:script", "text:before </scriptX> after"), events);
+	}
+
+	@Test
+	public void tokenizerNumericAttributeReferencesShareDecoder() {
+		List<String> events = new ArrayList<>();
+		HtmlTokenizer.tokenize("<p title='&#x1F600; &copy; &#0;' data-code=&#65;>x</p>", new HtmlTokenizer.Handler() {
+			@Override
+			public void startTag(String name, String[] attrs, boolean selfClosing) {
+				events.add(name + ":" + HtmlTokenizer.attribute(attrs, "title") + ":"
+						+ HtmlTokenizer.attribute(attrs, "data-code"));
+			}
+			@Override public void endTag(String name) { }
+			@Override public void text(String text) { }
+		});
+		assertEquals(List.of("p:😀 © �:A"), events);
+	}
+
+	private static HtmlTokenizer.Handler tokenizerHandler(List<String> events) {
+		return new HtmlTokenizer.Handler() {
+			@Override public void startTag(String name, String[] attributes, boolean selfClosing) {
+				events.add("start:" + name);
+			}
+			@Override public void endTag(String name) { events.add("end:" + name); }
+			@Override public void text(String text) { events.add("text:" + text); }
+		};
 	}
 }
