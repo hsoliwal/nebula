@@ -34,6 +34,7 @@ public final class VncViewer extends Canvas {
     private final AtomicBoolean repaintQueued = new AtomicBoolean();
     private volatile boolean stopping;
     private volatile RfbClient client;
+    private RfbInputDispatcher inputDispatcher;
     private Consumer<IOException> failureListener = error -> { };
     private Image surface;
     private int remoteWidth;
@@ -55,6 +56,9 @@ public final class VncViewer extends Canvas {
         });
         addDisposeListener(event -> {
             stopping = true;
+            if (inputDispatcher != null) {
+                inputDispatcher.close();
+            }
             RfbClient current = client;
             if (current != null) {
                 try {
@@ -117,6 +121,7 @@ public final class VncViewer extends Canvas {
             throw new IllegalStateException("VNC client already attached");
         }
         client = Objects.requireNonNull(authorizedClient, "authorizedClient");
+        inputDispatcher = new RfbInputDispatcher(authorizedClient, this::reportFailure);
         present(authorizedClient.currentFrame());
         Thread.ofVirtual().name("nebula-vnc-frame-receiver").start(() -> {
             try {
@@ -124,13 +129,7 @@ public final class VncViewer extends Canvas {
                     present(authorizedClient.nextFrame());
                 }
             } catch (IOException exception) {
-                if (!stopping && !display.isDisposed()) {
-                    display.asyncExec(() -> {
-                        if (!isDisposed()) {
-                            failureListener.accept(exception);
-                        }
-                    });
-                }
+                reportFailure(exception);
             }
         });
     }
@@ -147,6 +146,22 @@ public final class VncViewer extends Canvas {
     public void setFailureListener(Consumer<IOException> listener) {
         checkWidget();
         failureListener = Objects.requireNonNull(listener, "listener");
+    }
+
+    private void reportFailure(IOException error) {
+        if (!stopping && !display.isDisposed()) {
+            display.asyncExec(() -> {
+                if (!isDisposed()) {
+                    failureListener.accept(error);
+                }
+            });
+        }
+    }
+
+    private void rejectOverflow() {
+        inputEnabled = false;
+        buttons = 0;
+        failureListener.accept(new IOException("RFB outbound input queue full or closed"));
     }
 
     private void present(RfbFramebuffer.Frame frame) {
@@ -194,10 +209,8 @@ public final class VncViewer extends Canvas {
         }
         int rx = Math.clamp((int) ((long) x * remoteWidth / r.width), 0, remoteWidth - 1);
         int ry = Math.clamp((int) ((long) y * remoteHeight / r.height), 0, remoteHeight - 1);
-        try {
-            current.sendPointer(rx, ry, mask);
-        } catch (IOException e) {
-            failureListener.accept(e);
+        if (inputDispatcher == null || !inputDispatcher.offerPointer(rx, ry, mask)) {
+            rejectOverflow();
         }
     }
 
@@ -220,10 +233,8 @@ public final class VncViewer extends Canvas {
         if (keysym == 0) {
             return;
         }
-        try {
-            client.sendKey(pressed, keysym);
-        } catch (IOException e) {
-            failureListener.accept(e);
+        if (inputDispatcher == null || !inputDispatcher.offerKey(pressed, keysym)) {
+            rejectOverflow();
         }
     }
 }
