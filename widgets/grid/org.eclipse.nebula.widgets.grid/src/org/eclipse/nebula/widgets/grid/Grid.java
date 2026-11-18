@@ -4954,6 +4954,20 @@ public class Grid extends Canvas {
 			return false;
 		}
 
+		// A tree ancestor may be physically visible in the pinned header plane
+		// even though its logical row is above the scrolled body's first row.
+		// GridEditor.getBoundsCorrected uses this answer: return true only while
+		// the ancestor actually occupies pixels between the column header and footer.
+		if (stickyAncestorRows && isTree) {
+			final int pinnedY = stickyAncestorTop(itemIndex);
+			final int bodyTop = columnHeadersVisible ? headerHeight() : 0;
+			final int bodyBottom = getClientArea().height - (columnFootersVisible ? footerHeight() : 0);
+			if (pinnedY >= bodyTop && pinnedY < bodyBottom
+					&& (long) pinnedY + item.getHeight() + 1L > bodyTop) {
+				return true;
+			}
+		}
+
 		final int firstVisibleIndex = getTopIndex();
 		final int lastVisibleIndex = getBottomIndex();
 

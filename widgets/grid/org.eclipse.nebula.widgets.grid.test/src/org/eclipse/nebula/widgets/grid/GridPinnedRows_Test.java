@@ -216,6 +216,78 @@ public class GridPinnedRows_Test {
 		assertEquals(true, tree.getStickyAncestorRows());
 	}
 
+
+	@Test
+	public void stickyAncestorsAreShownForCorrectedBoundsAndNativeCellEditors() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 470, 400);
+		grid.setHeaderVisible(true);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setTree(true);
+		column.setFixed(true);
+		column.setWidth(220);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		root.setText(0, "Root folder");
+		final GridItem folder = new GridItem(root, SWT.NONE);
+		folder.setText(0, "Package folder");
+		final GridItem[] sources = new GridItem[70];
+		for (int i = 0; i < sources.length; i++) {
+			sources[i] = new GridItem(folder, SWT.NONE);
+			sources[i].setText(0, "Source " + i);
+		}
+		root.setExpanded(true);
+		folder.setExpanded(true);
+		grid.setStickyAncestorRows(true);
+		grid.setTopIndex(sources[35].getRowIndex());
+		final int y = grid.getHeaderHeight();
+		assertTrue("root is visible in the fixed ancestor plane", grid.isShown(root));
+		assertTrue("folder is visible in the fixed ancestor plane", grid.isShown(folder));
+		assertEquals(y, root.getBoundsCorrected(0).y);
+		assertEquals(y + root.getHeight() + 1, folder.getBoundsCorrected(0).y);
+		assertSame(root, grid.getItem(new Point(25, y + 2)));
+		final Text control = new Text(grid, SWT.SINGLE);
+		final GridEditor editor = new GridEditor(grid);
+		try {
+			editor.setEditor(control, root, 0);
+			editor.layout();
+			assertEquals("editor follows the visible ancestor's cell geometry",
+					root.getBoundsCorrected(0).y, control.getBounds().y);
+			grid.setTopIndex(sources[58].getRowIndex());
+			editor.layout();
+			assertEquals("editor remains fixed while source rows move beneath it",
+					root.getBoundsCorrected(0).y, control.getBounds().y);
+			grid.setStickyAncestorRows(false);
+			editor.layout();
+			assertEquals(false, grid.isShown(root));
+			assertEquals(-1000, root.getBoundsCorrected(0).x);
+			assertEquals(-1000, control.getBounds().y);
+		} finally {
+			editor.dispose();
+		}
+	}
+
+	@Test
+	public void ancestorsClippedBeyondTheBodyAreNotReportedShown() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 30, 260, 92);
+		grid.setHeaderVisible(true);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setTree(true);
+		column.setWidth(200);
+		final GridItem[] chain = new GridItem[14];
+		chain[0] = new GridItem(grid, SWT.NONE);
+		for (int i = 1; i < chain.length; i++) {
+			chain[i] = new GridItem(chain[i - 1], SWT.NONE);
+			chain[i - 1].setExpanded(true);
+		}
+		grid.setStickyAncestorRows(true);
+		grid.setTopIndex(chain[chain.length - 1].getRowIndex());
+		assertTrue("root remains in the first ancestor band", grid.isShown(chain[0]));
+		assertEquals(false, grid.isShown(chain[6]));
+		assertEquals("clipped sticky rows must not show an editor", -1000,
+				chain[6].getBoundsCorrected(0).y);
+	}
+
 	@Test
 	public void permutationChoosesThePinnedModelRows() throws Exception {
 		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL);
