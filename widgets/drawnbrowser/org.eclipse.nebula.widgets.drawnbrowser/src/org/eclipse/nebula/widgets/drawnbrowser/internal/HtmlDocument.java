@@ -68,7 +68,7 @@ public final class HtmlDocument {
 	 */
 	public int[] blockMarginTop = new int[16], blockMarginRight = new int[16], blockMarginBottom = new int[16],
 			blockPadTop = new int[16], blockPadRight = new int[16], blockPadBottom = new int[16], blockPadLeft = new int[16],
-			blockBorder = new int[16], blockBorderColor = new int[16];
+			blockBorder = new int[16], blockBorderColor = new int[16], blockBorderStyle = new int[16];
 	/**
 	 * Per block, the position of its own element: {@link HtmlStyles#STATIC} (also for table cells, unless sticky),
 	 * relative, absolute, fixed or sticky; its top and left offsets in px ({@link HtmlStyles#AUTO} when not given) and
@@ -653,6 +653,7 @@ public final class HtmlDocument {
 				d.blockPadLeft = Arrays.copyOf(d.blockPadLeft, capacity);
 				d.blockBorder = Arrays.copyOf(d.blockBorder, capacity);
 				d.blockBorderColor = Arrays.copyOf(d.blockBorderColor, capacity);
+				d.blockBorderStyle = Arrays.copyOf(d.blockBorderStyle, capacity);
 				d.blockPosition = Arrays.copyOf(d.blockPosition, capacity);
 				d.blockTop = Arrays.copyOf(d.blockTop, capacity);
 				d.blockLeft = Arrays.copyOf(d.blockLeft, capacity);
@@ -689,6 +690,7 @@ public final class HtmlDocument {
 			d.blockPadLeft[open] = box ? frame[HtmlStyles.PADDING_LEFT] : 0;
 			d.blockBorder[open] = box ? frame[HtmlStyles.BORDER_WIDTH] : 0;
 			d.blockBorderColor[open] = box ? frame[HtmlStyles.BORDER_COLOR] : 0;
+			d.blockBorderStyle[open] = box ? frame[HtmlStyles.BORDER_STYLE] : HtmlStyles.BORDER_SOLID;
 			d.blockPosition[open] = box ? frame[HtmlStyles.POSITION] : HtmlStyles.STATIC;
 			d.blockTop[open] = box ? frame[HtmlStyles.POS_TOP] : HtmlStyles.AUTO;
 			d.blockLeft[open] = box ? frame[HtmlStyles.POS_LEFT] : HtmlStyles.AUTO;

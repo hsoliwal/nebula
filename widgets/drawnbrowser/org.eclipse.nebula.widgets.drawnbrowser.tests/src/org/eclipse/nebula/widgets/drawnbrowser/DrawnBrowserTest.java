@@ -414,6 +414,38 @@ public class DrawnBrowserTest {
 
 
 	@Test
+	public void schemeInsetAndOutsetBordersInvertHighlightAndShadowEdges() {
+		org.eclipse.swt.graphics.RGB dark = new org.eclipse.swt.graphics.RGB(64, 64, 64);
+		org.eclipse.swt.graphics.RGB light = new org.eclipse.swt.graphics.RGB(191, 191, 191);
+		for (String kind : new String[] {"inset", "outset"}) {
+			open("<p style='margin:12px; padding:12px; border:4px " + kind + " #808080; background-color:white'>box</p>");
+			ImageData shown = shot();
+			int right = browser.getClientArea().width - 14;
+			assertEquals(kind + " left", kind.equals("inset") ? dark : light, rgbAt(shown, 13, 32));
+			assertEquals(kind + " right", kind.equals("inset") ? light : dark, rgbAt(shown, right, 32));
+		}
+	}
+
+	@Test
+	public void schemeGrooveRidgeAndDoubleHaveInsetBands() {
+		org.eclipse.swt.graphics.RGB dark = new org.eclipse.swt.graphics.RGB(64, 64, 64);
+		org.eclipse.swt.graphics.RGB light = new org.eclipse.swt.graphics.RGB(191, 191, 191);
+		for (String kind : new String[] {"groove", "ridge"}) {
+			open("<p style='margin:12px; padding:12px; border:4px " + kind + " #808080; background-color:white'>box</p>");
+			ImageData shown = shot();
+			assertEquals(kind + " outer", kind.equals("groove") ? dark : light, rgbAt(shown, 28, 20));
+			assertEquals(kind + " inner", kind.equals("groove") ? light : dark, rgbAt(shown, 28, 22));
+		}
+		open("<p style='margin:12px; padding:12px; border:6px double #808080; background-color:white'>box</p>");
+		ImageData shown = shot();
+		org.eclipse.swt.graphics.RGB border = new org.eclipse.swt.graphics.RGB(128, 128, 128);
+		org.eclipse.swt.graphics.RGB white = new org.eclipse.swt.graphics.RGB(255, 255, 255);
+		assertEquals("double outer", border, rgbAt(shown, 28, 20));
+		assertEquals("double gap", white, rgbAt(shown, 28, 22));
+		assertEquals("double inner", border, rgbAt(shown, 28, 24));
+	}
+
+	@Test
 	public void aBoxPaintsItsBorderAndItsBackgroundInsideItsMargins() {
 		open("<p style='margin:10px 30px 10px 30px; padding:10px; border:4px solid #0000ff; background-color:#ff0000'>boxed</p>");
 		int[] blue = pixels(new org.eclipse.swt.graphics.RGB(0, 0, 255), 80);
