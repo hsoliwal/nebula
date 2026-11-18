@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Nebula VNC RFB Tests
+Bundle-Vendor: Eclipse Nebula
 Bundle-SymbolicName: org.eclipse.nebula.widgets.vnc.tests
 Bundle-Version: 1.0.0.qualifier
 Fragment-Host: org.eclipse.nebula.widgets.vnc

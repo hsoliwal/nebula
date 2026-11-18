@@ -40,6 +40,7 @@ import org.eclipse.swt.widgets.Event;
  * explicitly opt into an insecure remote connection.</p>
  */
 public class VncViewer extends Canvas {
+    private static final int PAINT_TILE = 512;
     private interface SocketOpener {
         Socket open() throws IOException;
     }
@@ -66,9 +67,6 @@ public class VncViewer extends Canvas {
     private volatile RfbFramebuffer framebuffer;
     private volatile String status = "Disconnected";
     private volatile String clipboardText = "";
-    private Image cachedImage;
-    private RfbFramebuffer cachedOwner;
-    private long cachedRevision = -1;
     private Rectangle displayedBounds = new Rectangle(0, 0, 0, 0);
     private int pointerButtons;
 
@@ -104,7 +102,7 @@ public class VncViewer extends Canvas {
             if (active != null) active.close();
             pendingMotion.set(null);
             outbound.shutdownNow();
-            discardImage();
+            resetViewportBounds();
         });
     }
 
@@ -239,7 +237,7 @@ public class VncViewer extends Canvas {
         pointerButtons = 0;
         clipboardText = "";
         status = "Disconnected";
-        discardImage();
+        resetViewportBounds();
         redraw();
     }
 
@@ -276,11 +274,7 @@ public class VncViewer extends Canvas {
         });
     }
 
-    private void discardImage() {
-        if (cachedImage != null && !cachedImage.isDisposed()) cachedImage.dispose();
-        cachedImage = null;
-        cachedOwner = null;
-        cachedRevision = -1;
+    private void resetViewportBounds() {
         displayedBounds = new Rectangle(0, 0, 0, 0);
     }
 
@@ -290,30 +284,44 @@ public class VncViewer extends Canvas {
             event.gc.drawText(status, 8, 8, true);
             return;
         }
-        if (cachedOwner != current || cachedRevision != current.revision()) {
-            RfbFramebuffer.Snapshot snap = current.snapshot();
-            ImageData data = new ImageData(snap.width(), snap.height(), 24,
-                    new PaletteData(0x00ff0000, 0x0000ff00, 0x000000ff));
-            for (int row = 0; row < snap.height(); row++) {
-                data.setPixels(0, row, snap.width(), snap.pixels(), row * snap.width());
-            }
-            Image next = new Image(display, data);
-            discardImage();
-            cachedImage = next;
-            cachedOwner = current;
-            cachedRevision = snap.revision();
-        }
         Rectangle bounds = getClientArea();
         if (bounds.width == 0 || bounds.height == 0) return;
-        double scale = Math.min((double) bounds.width / cachedImage.getBounds().width,
-                (double) bounds.height / cachedImage.getBounds().height);
-        int scaledWidth = Math.max(1, (int) Math.round(cachedImage.getBounds().width * scale));
-        int scaledHeight = Math.max(1, (int) Math.round(cachedImage.getBounds().height * scale));
+        int frameWidth = current.width(), frameHeight = current.height();
+        double scale = Math.min((double) bounds.width / frameWidth,
+                (double) bounds.height / frameHeight);
+        int scaledWidth = Math.max(1, (int) Math.round(frameWidth * scale));
+        int scaledHeight = Math.max(1, (int) Math.round(frameHeight * scale));
         int x = bounds.x + (bounds.width - scaledWidth) / 2;
         int y = bounds.y + (bounds.height - scaledHeight) / 2;
         displayedBounds = new Rectangle(x, y, scaledWidth, scaledHeight);
-        event.gc.drawImage(cachedImage, 0, 0, cachedImage.getBounds().width,
-                cachedImage.getBounds().height, x, y, scaledWidth, scaledHeight);
+        Rectangle dirty = new Rectangle(event.x, event.y, event.width, event.height);
+        event.gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+        event.gc.fillRectangle(dirty);
+        Rectangle visible = dirty.intersection(displayedBounds);
+        if (visible.width < 1 || visible.height < 1) return;
+
+        // The original SWT GC remains the compositor and clipping owner. A
+        // 512x512 temporary Image bounds both native and heap paint residency,
+        // even when the full RFB desktop is many megapixels larger than the UI.
+        for (int ty = visible.y; ty < visible.y + visible.height; ty += PAINT_TILE) {
+            int th = Math.min(PAINT_TILE, visible.y + visible.height - ty);
+            for (int tx = visible.x; tx < visible.x + visible.width; tx += PAINT_TILE) {
+                int tw = Math.min(PAINT_TILE, visible.x + visible.width - tx);
+                RfbFramebuffer.Snapshot tile = current.snapshotScaled(tx, ty, tw, th,
+                        x, y, scaledWidth, scaledHeight);
+                ImageData data = new ImageData(tw, th, 24,
+                        new PaletteData(0x00ff0000, 0x0000ff00, 0x000000ff));
+                for (int row = 0; row < th; row++) {
+                    data.setPixels(0, row, tw, tile.pixels(), row * tw);
+                }
+                Image image = new Image(display, data);
+                try {
+                    event.gc.drawImage(image, tx, ty);
+                } finally {
+                    image.dispose();
+                }
+            }
+        }
     }
 
     private static int mouseButton(int button) {

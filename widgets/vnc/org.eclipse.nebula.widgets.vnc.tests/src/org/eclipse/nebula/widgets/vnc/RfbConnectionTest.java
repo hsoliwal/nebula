@@ -67,8 +67,11 @@ public class RfbConnectionTest {
                         assertEquals(2, in.readUnsignedByte()); // SetEncodings
                         in.readUnsignedByte(); // pad
                         int encodings = in.readUnsignedShort();
-                        assertEquals(4, encodings);
-                        for (int i = 0; i < encodings; i++) in.readInt();
+                        assertEquals(8, encodings);
+                        java.util.Set<Integer> advertised = new java.util.HashSet<>();
+                        for (int i = 0; i < encodings; i++) advertised.add(in.readInt());
+                        org.junit.Assert.assertTrue(advertised.containsAll(
+                                java.util.List.of(16, 6, 5, 2, 1, 0, -223, -224)));
                         byte[] firstRequest = new byte[10];
                         in.readFully(firstRequest);
                         assertEquals(3, firstRequest[0]);

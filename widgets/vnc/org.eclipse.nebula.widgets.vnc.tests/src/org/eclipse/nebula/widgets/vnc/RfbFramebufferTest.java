@@ -57,4 +57,21 @@ public class RfbFramebufferTest {
         assertThrows(IllegalArgumentException.class, () -> f.resize(8192, 8192));
         assertThrows(IllegalArgumentException.class, () -> new RfbFramebuffer(0, 2));
     }
+
+    @Test
+    public void visiblePaintTilesDoNotCopyTheEntireSourceOrExposeItsArray() {
+        RfbFramebuffer f = new RfbFramebuffer(4, 2);
+        f.writePixels(0, 0, 4, 2, new int[] {
+                0xff010101, 0xff020202, 0xff030303, 0xff040404,
+                0xff050505, 0xff060606, 0xff070707, 0xff080808
+        });
+        assertArrayEquals(new int[] {0xff010101, 0xff030303},
+                f.snapshotScaled(0, 0, 2, 1, 0, 0, 2, 1).pixels());
+        RfbFramebuffer.Snapshot tile = f.snapshot(1, 1, 2, 1);
+        assertArrayEquals(new int[] {0xff060606, 0xff070707}, tile.pixels());
+        tile.pixels()[0] = 0;
+        assertEquals(0xff060606, f.snapshot(1, 1, 1, 1).pixels()[0]);
+        assertThrows(IllegalArgumentException.class,
+                () -> f.snapshotScaled(0, 0, 0, 1, 0, 0, 1, 1));
+    }
 }
