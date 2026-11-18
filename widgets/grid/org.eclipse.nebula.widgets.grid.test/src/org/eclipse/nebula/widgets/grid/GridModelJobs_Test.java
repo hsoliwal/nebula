@@ -184,6 +184,31 @@ public class GridModelJobs_Test {
 	}
 
 	@Test
+	public void cpuPreparedImmutableKeysAvoidUiSideModelCopy() throws InterruptedException {
+		final int rows = 800;
+		final int[] caller = keys(rows);
+		final int[] expected = caller.clone();
+		final java.util.concurrent.atomic.AtomicReference<GridModelJobs.IntKeySnapshot> frozen =
+				new java.util.concurrent.atomic.AtomicReference<>();
+		final Thread preparer = new Thread(() ->
+				frozen.set(GridModelJobs.IntKeySnapshot.copyOf(caller, rows)), "key-copy-backend");
+		preparer.start();
+		preparer.join(2000);
+		assertTrue(frozen.get() != null);
+		final Grid grid = grid(rows);
+		final List<Runnable> pending = new ArrayList<>();
+		final CompletableFuture<Boolean> done = GridModelJobs.sortByIntKeysCpuLatest(
+				grid, frozen.get(), false, pending::add);
+		caller[0] = Integer.MAX_VALUE;
+		final Thread worker = new Thread(pending.get(0), "grid-key-cpu");
+		worker.start();
+		pumpUntil(done);
+		worker.join(2000);
+		assertTrue(done.join());
+		assertArrayEquals(RowPermutation.sortedOrder(expected, rows, false), view(grid.getRowPermutation()));
+	}
+
+	@Test
 	public void cpuLatestSortCoalescesBurstAndCancelsOlderFutures() throws InterruptedException {
 		final int rows = 1200;
 		final Grid grid = grid(rows);
