@@ -32,6 +32,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -66,6 +67,12 @@ public class DrawnBrowserNavigationTest {
 		ImageLoader loader = new ImageLoader();
 		loader.data = new ImageData[] { red };
 		loader.save(site.resolve("red.png").toString(), SWT.IMAGE_PNG);
+		// Keep the padded 24-bit fixture: a PNG encoder stride defect must fail here, before navigation.
+		ImageData[] decoded = new ImageLoader().load(site.resolve("red.png").toString());
+		assertEquals(1, decoded.length);
+		assertEquals(30, decoded[0].width);
+		assertEquals(20, decoded[0].height);
+		assertEquals("PNG fixture must retain every red pixel", 30 * 20, redPixels(decoded[0]));
 		browser.addLocationListener(new LocationListener() {
 			@Override
 			public void changing(LocationEvent event) {
@@ -120,13 +127,20 @@ public class DrawnBrowserNavigationTest {
 	private int redPixels() {
 		browser.update();
 		Image shot = new Image(display, 80, 80);
-		GC gc = new GC(browser);
-		gc.copyArea(shot, 0, 0);
-		gc.dispose();
-		ImageData data = shot.getImageData();
-		shot.dispose();
+		GC gc = new GC(display);
+		try {
+			Point origin = browser.toDisplay(0, 0);
+			gc.copyArea(shot, origin.x, origin.y);
+			return redPixels(shot.getImageData());
+		} finally {
+			gc.dispose();
+			shot.dispose();
+		}
+	}
+
+	private static int redPixels(ImageData data) {
 		int red = 0;
-		for (int y = 0; y < 80; y++) for (int x = 0; x < 80; x++) {
+		for (int y = 0; y < data.height; y++) for (int x = 0; x < data.width; x++) {
 			RGB rgb = data.palette.getRGB(data.getPixel(x, y));
 			if (rgb.red > 200 && rgb.green < 60 && rgb.blue < 60) red++;
 		}
