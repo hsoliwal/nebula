@@ -15,6 +15,8 @@
 package org.eclipse.nebula.widgets.pshelf;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +73,50 @@ public class PShelfViewportGeometryTest {
 					PShelfViewportGeometry.animated(count, previous, next, y, height, itemHeight, p, true));
 		}
 	}
+
+    @Test
+    public void reusableLaneMatchesFreshGeometryWithoutChangingItsIdentity() {
+        final Random random = new Random(0x50335348454c46L);
+        for (int count = 0; count < 300; count++) {
+            final int[] lane = new int[count];
+            for (int trial = 0; trial < 20; trial++) {
+                final int open = random.nextInt(count + 1) - 1;
+                final int previous = random.nextInt(count + 1) - 1;
+                final int y = random.nextInt(), height = random.nextInt(), header = random.nextInt();
+                final double progress = trial % 3 == 0 ? 0 : random.nextDouble();
+                final boolean bottom = random.nextBoolean();
+                final int[] expectedSteady = originalSteady(count, open, y, height, header);
+                final int[] returned = lane;
+                PShelfViewportGeometry.steadyInto(lane, count, open, y, height, header);
+                assertSame("steady uses the provided lane", returned, lane);
+                assertArrayEquals("steady parity", expectedSteady, lane);
+
+                final int[] expectedAnimation = originalAnimated(count, previous, open, y, height,
+                        header, progress, bottom);
+                PShelfViewportGeometry.animatedInto(lane, count, previous, open, y, height,
+                        header, progress, bottom);
+                assertSame("animation uses the provided lane", returned, lane);
+                assertArrayEquals("animation parity", expectedAnimation, lane);
+            }
+        }
+    }
+
+    @Test
+    public void mismatchedCoordinateLaneFailsBeforeMutatingIt() {
+        final int[] lane = { 17, 23, 31 };
+        try {
+            PShelfViewportGeometry.steadyInto(lane, 2, 1, 0, 100, 10);
+            fail("expected a length check");
+        } catch (IllegalArgumentException expected) {
+            assertArrayEquals(new int[] { 17, 23, 31 }, lane);
+        }
+        try {
+            PShelfViewportGeometry.animatedInto(lane, 4, 0, 2, 0, 100, 10, .5, false);
+            fail("expected a length check");
+        } catch (IllegalArgumentException expected) {
+            assertArrayEquals(new int[] { 17, 23, 31 }, lane);
+        }
+    }
 
 	/** The steady layout loop of the original PShelf. */
 	private static int[] originalSteady(final int count, final int open, final int clientY, final int clientH,

@@ -277,9 +277,16 @@ public class PShelf extends Canvas {
     private void computeItemYCoordinates()
     {
         Rectangle client = getClientArea();
-        // PShelf itself owns the header projection; no per-header Integer state.
-        yCoordinates = PShelfViewportGeometry.steady(items.size(),
+        // Keep one parent-owned coordinate lane across layout and animation frames.
+        ensureCoordinateLane();
+        PShelfViewportGeometry.steadyInto(yCoordinates, items.size(),
                 items.indexOf(openItem), client.y, client.height, itemHeight);
+    }
+
+    private void ensureCoordinateLane() {
+        if (yCoordinates.length != items.size()) {
+            yCoordinates = new int[items.size()];
+        }
     }
 
 	void createItem(PShelfItem item,int index){
@@ -373,8 +380,9 @@ public class PShelf extends Canvas {
         {
             Rectangle client = getClientArea();
             // Resolve existing item positions once per animation frame, not per header.
-            // Stage the primitive lane before native client sizing/redraw callbacks.
-            yCoordinates = PShelfViewportGeometry.animated(items.size(),
+            // Stage the existing primitive lane before native client sizing/redraw callbacks.
+            ensureCoordinateLane();
+            PShelfViewportGeometry.animatedInto(yCoordinates, items.size(),
                     items.indexOf(previousItem), items.indexOf(newItem),
                     client.y, client.height, itemHeight,
                     percentOfWork, openFromBottom);
