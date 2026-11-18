@@ -30,7 +30,7 @@ import org.eclipse.swt.widgets.Display;
  */
 public final class VncViewer extends Canvas {
     private final Display display;
-    private final AtomicReference<RfbFramebuffer.Frame> pending = new AtomicReference<>();
+    private final AtomicReference<ImageData> pending = new AtomicReference<>();
     private final AtomicBoolean repaintQueued = new AtomicBoolean();
     private volatile boolean stopping;
     private volatile RfbClient client;
@@ -61,11 +61,14 @@ public final class VncViewer extends Canvas {
             }
             RfbClient current = client;
             if (current != null) {
-                try {
-                    current.close();
-                } catch (IOException ignored) {
-                    // A disposed widget has no UI recipient for close failures.
-                }
+                // Closing caller-supplied streams can block; never do it on SWT.
+                Thread.ofVirtual().name("nebula-vnc-close").start(() -> {
+                    try {
+                        current.close();
+                    } catch (IOException ignored) {
+                        // No UI recipient remains after disposal.
+                    }
+                });
             }
             if (surface != null) {
                 surface.dispose();
@@ -122,7 +125,6 @@ public final class VncViewer extends Canvas {
         }
         client = Objects.requireNonNull(authorizedClient, "authorizedClient");
         inputDispatcher = new RfbInputDispatcher(authorizedClient, this::reportFailure);
-        present(authorizedClient.currentFrame());
         Thread.ofVirtual().name("nebula-vnc-frame-receiver").start(() -> {
             try {
                 while (!stopping) {
@@ -168,28 +170,30 @@ public final class VncViewer extends Canvas {
         if (stopping || display.isDisposed()) {
             return;
         }
-        pending.set(frame);
+        // ImageData is Java-side pixel storage; conversion stays on the
+        // receiver worker, while SWT Image allocation stays on the UI thread.
+        ImageData data = new ImageData(frame.width(), frame.height(), 24,
+                new PaletteData(0xff0000, 0x00ff00, 0x0000ff));
+        int[] pixels = frame.argb();
+        for (int y = 0; y < frame.height(); y++) {
+            data.setPixels(0, y, frame.width(), pixels, y * frame.width());
+        }
+        pending.set(data);
         if (repaintQueued.compareAndSet(false, true)) {
             display.asyncExec(() -> {
                 repaintQueued.set(false);
                 if (isDisposed()) {
                     return;
                 }
-                RfbFramebuffer.Frame current = pending.getAndSet(null);
+                ImageData current = pending.getAndSet(null);
                 if (current == null) {
                     return;
                 }
-                ImageData data = new ImageData(current.width(), current.height(), 24,
-                        new PaletteData(0xff0000, 0x00ff00, 0x0000ff));
-                int[] pixels = current.argb();
-                for (int y = 0; y < current.height(); y++) {
-                    data.setPixels(0, y, current.width(), pixels, y * current.width());
-                }
-                Image next = new Image(display, data);
+                Image next = new Image(display, current);
                 Image previous = surface;
                 surface = next;
-                remoteWidth = current.width();
-                remoteHeight = current.height();
+                remoteWidth = current.width;
+                remoteHeight = current.height;
                 if (previous != null) {
                     previous.dispose();
                 }

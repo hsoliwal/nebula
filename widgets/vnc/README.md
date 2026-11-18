@@ -9,6 +9,7 @@ This bundle provides an embeddable SWT VNC viewer backed by a bounded, pure-Java
 * Negotiates 32-bpp, depth-24, little-endian true colour; Raw, overlap-safe CopyRect and DesktopSize updates.
 * Maximum 8192 pixels per axis, 16,777,216 total pixels, 4096 rectangles/update, 4096-byte server name and 65536-byte ignored clipboard message. Unknown encodings and malformed rectangles fail closed.
 * Emits immutable whole-frame snapshots. The SWT viewer coalesces frame updates to one queued UI refresh and disposes images with the widget.
+* Framebuffer decoding and Java-side ImageData conversion run off the SWT event thread. Only native SWT Image creation, painting and disposal run on the UI thread; closing transport streams is also dispatched off the UI thread.
 * Remote keyboard and pointer forwarding are **off by default** and must be explicitly enabled after the caller's authorization.
 * Authorized input is sent by a bounded, serial virtual-thread queue; SWT event handlers never write directly to network streams. Overflow disables further remote input and reports failure. Open the RFB client off the UI thread.
 
