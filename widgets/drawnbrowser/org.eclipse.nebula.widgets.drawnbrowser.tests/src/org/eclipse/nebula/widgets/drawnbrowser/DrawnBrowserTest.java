@@ -424,6 +424,80 @@ public class DrawnBrowserTest {
 		assertTrue("background pixels " + red[0], red[0] > 100);
 		assertTrue("the background stays inside the border: " + red[1], red[1] < area.width - 30 - 4);
 	}
+
+	@Test
+	public void positionedBoxesPaintInZIndexOrderAroundTheFlow() {
+		open("<p style='background-color:#00ff00'>flow row</p>"
+				+ "<div style='position:absolute; top:60px; left:20px; z-index:2; background-color:#ff0000; padding:5px'>a</div>"
+				+ "<div style='position:absolute; top:70px; left:30px; z-index:1; background-color:#0000ff; padding:40px'>b</div>"
+				+ "<div style='position:absolute; top:0px; left:150px; z-index:-1; background-color:#0000ff; padding:30px'>under</div>");
+		ImageData shown = shot();
+		// boxes start a block gap (8 px) below their top offset; an absolute box keeps the width of its flow place
+		assertEquals("z-index 2 over z-index 1, whatever the document order", new org.eclipse.swt.graphics.RGB(255, 0, 0), rgbAt(shown, 45, 82));
+		assertEquals("z-index 1 shows where 2 does not", new org.eclipse.swt.graphics.RGB(0, 0, 255), rgbAt(shown, 45, 150));
+		assertEquals("a negative z-index is under the flow", new org.eclipse.swt.graphics.RGB(0, 255, 0), rgbAt(shown, 170, 15));
+	}
+
+	@Test
+	public void aRelativeBoxIsShiftedAndAFixedBoxStaysThroughAScroll() {
+		StringBuilder html = new StringBuilder("<div style='position:fixed; top:0px; left:0px; background-color:#ff0000; padding:6px'>bar</div>"
+				+ "<p style='position:relative; left:60px; background-color:#0000ff; padding:4px'>shifted</p>");
+		for (int i = 0; i < 60; i++) html.append("<p>line ").append(i).append("</p>");
+		open(html.toString());
+		ImageData before = shot();
+		assertEquals(new org.eclipse.swt.graphics.RGB(255, 0, 0), rgbAt(before, 3, 12));
+		int shiftedY = findRow(before, new org.eclipse.swt.graphics.RGB(0, 0, 255));
+		assertTrue("the relative box is drawn", shiftedY >= 0);
+		assertTrue("shifted right by 60 px", !rgbAt(before, 30, shiftedY).equals(new org.eclipse.swt.graphics.RGB(0, 0, 255))
+				&& rgbAt(before, 80, shiftedY).equals(new org.eclipse.swt.graphics.RGB(0, 0, 255)));
+		browser.setScrollY(100);
+		settle();
+		assertEquals("the fixed bar is still at the top of the view", new org.eclipse.swt.graphics.RGB(255, 0, 0), rgbAt(shot(), 3, 12));
+	}
+
+	@Test
+	public void aClickHitsTheTopmostPositionedLink() {
+		List<String> changing = new ArrayList<>();
+		browser.addLocationListener(new LocationListener() {
+			@Override
+			public void changing(LocationEvent event) {
+				changing.add(event.location);
+				event.doit = false;
+			}
+
+			@Override
+			public void changed(LocationEvent event) {
+			}
+		});
+		open("<p><a href='http://flow.example/'>flow link flow link flow link</a></p>"
+				+ "<div style='position:absolute; top:0px; left:0px; z-index:1'><a href='http://top.example/'>top link top link</a></div>");
+		click(30, 16);
+		assertEquals("[http://top.example/]", changing.toString());
+	}
+
+	/* the view's pixels */
+	private ImageData shot() {
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		Image image = new Image(display, area.width, area.height);
+		GC gc = new GC(browser);
+		gc.copyArea(image, 0, 0);
+		gc.dispose();
+		ImageData data = image.getImageData();
+		image.dispose();
+		return data;
+	}
+
+	private static org.eclipse.swt.graphics.RGB rgbAt(ImageData data, int x, int y) {
+		return data.palette.getRGB(data.getPixel(x, y));
+	}
+
+	/* the first row with a pixel of the colour, or -1 */
+	private static int findRow(ImageData data, org.eclipse.swt.graphics.RGB rgb) {
+		for (int y = 0; y < data.height; y++) {
+			for (int x = 0; x < data.width; x++) if (rgbAt(data, x, y).equals(rgb)) return y;
+		}
+		return -1;
+	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");

@@ -135,6 +135,36 @@ public class HtmlLayoutTest {
 		assertEquals("a link or an offset starts at the content", 0, l.offsetAt(l.indent(1), l.top(1) + l.contentTop(1) + 1)
 				- text.length());
 	}
+
+	@Test
+	public void anAbsoluteBoxTakesNoFlowSpaceAndOffsetsPlaceBoxes() {
+		HtmlLayout l = layout("<p>first</p><div style='position:absolute; top:200px; left:50px'>abs</div><p>second</p>"
+				+ "<p style='position:relative; top:7px; left:9px'>rel</p><div style='position:fixed; top:10px'>bar</div><p>last</p>", 300);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals("the absolute box adds no height to the flow", l.top(1), l.top(2));
+		assertTrue("but it has a height of its own", l.height(1) > 0);
+		assertEquals("a y in the flow finds the flow's block", 2, l.blockAt(l.top(2) + 1));
+		assertEquals(true, l.outOfFlow(1));
+		assertEquals(false, l.outOfFlow(3));
+		assertEquals(true, l.positioned(3));
+		assertEquals(false, l.positioned(0));
+		assertEquals("absolute: its box starts at its left offset", 50, l.boxLeft(1) + l.offsetX(1));
+		assertEquals("and its top at its top offset in the page", 200, l.top(1) + l.offsetY(1, 0));
+		assertEquals("an absolute box ignores the scroll", 200, l.top(1) + l.offsetY(1, 999));
+		assertEquals("relative: shifted from its place", 9, l.offsetX(3));
+		assertEquals(7, l.offsetY(3, 0));
+		assertEquals("fixed: at its top offset in the view", 10 + 500, l.top(4) + l.offsetY(4, 500));
+		assertEquals("left auto: no horizontal shift", 0, l.offsetX(4));
+		assertEquals("the fixed box takes no flow space either", l.top(4), l.top(5));
+		assertEquals(0, l.offsetY(0, 0));
+		l.dispose();
+		// three absolute boxes share the next block's top: a y exactly there still finds the flow's block
+		l = layout("<p>a</p><div style='position:absolute'>x</div><div style='position:absolute'>y</div>"
+				+ "<div style='position:absolute'>z</div><p>b</p>", 300);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals(l.top(1), l.top(4));
+		assertEquals("the flow's block, not a box out of the flow", 4, l.blockAt(l.top(4)));
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);

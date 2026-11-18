@@ -116,6 +116,8 @@ public final class HtmlLayout {
 		int index = Arrays.binarySearch(top, 0, measured + 1, y);
 		int b = Math.max(0, Math.min(index >= 0 ? index : -index - 2, measured - 1));
 		while (b > 0 && doc.sameRow(b - 1, b)) b--;
+		// a box out of the flow has no extent there: the block of the flow at that y follows it
+		while (b + 1 < measured && outOfFlow(b) && top[b + 1] <= y) b++;
 		return b;
 	}
 
@@ -186,6 +188,57 @@ public final class HtmlLayout {
 	/** The height of block {@code b}'s border box. */
 	public int boxHeight(int b) {
 		return height(b) - gapTop(b) - gapBottom(b);
+	}
+
+	/** Whether block {@code b} is positioned absolute or fixed: painted at its own place, taking no flow space. */
+	public boolean outOfFlow(int b) {
+		int position = doc.blockPosition[b];
+		return position == HtmlStyles.ABSOLUTE || position == HtmlStyles.FIXED;
+	}
+
+	/** Whether block {@code b} is positioned (relative, absolute or fixed): painted as a layer over the flow. */
+	public boolean positioned(int b) {
+		return doc.blockPosition[b] != HtmlStyles.STATIC;
+	}
+
+	/**
+	 * How far block {@code b} is drawn right of its place in the flow: a relative box by its left offset; an absolute
+	 * or fixed box so that its border box starts at its left offset; 0 when the offset is auto.
+	 */
+	public int offsetX(int b) {
+		int left = doc.blockLeft[b];
+		if (left == HtmlStyles.AUTO || !positioned(b)) return 0;
+		return doc.blockPosition[b] == HtmlStyles.RELATIVE ? left : left - boxLeft(b);
+	}
+
+	/**
+	 * How far block {@code b} is drawn below its place in the flow (page coordinates): a relative box by its top
+	 * offset; an absolute box so that its top is at its top offset in the page; a fixed box at its top offset in the
+	 * view, given the scroll position; 0 when the offset is auto.
+	 */
+	public int offsetY(int b, int scrollY) {
+		int offset = doc.blockTop[b];
+		if (offset == HtmlStyles.AUTO || !positioned(b)) return 0;
+		return switch (doc.blockPosition[b]) {
+			case HtmlStyles.RELATIVE -> offset;
+			case HtmlStyles.FIXED -> scrollY + offset - top(b);
+			default -> offset - top(b);
+		};
+	}
+
+	/** The link target in block {@code b} at ({@code x}, {@code y}) in that block's own page coordinates, or null. */
+	public String linkIn(int b, int x, int y) {
+		if (b < 0 || textless(b)) return null;
+		TextLayout layout = textLayout(b);
+		int lx = x - indent(b), ly = y - top[b] - contentTop(b);
+		if (lx < 0 || ly < 0 || !layout.getBounds().contains(lx, ly)) return null;
+		int[] trailing = new int[1];
+		int offset = layout.getOffset(lx, ly, trailing) + doc.textStart[b];
+		for (int k = 0; k < doc.runCount[b]; k++) {
+			int r = doc.firstRun[b] + k;
+			if (doc.runLink[r] >= 0 && offset >= doc.runStart[r] && offset < doc.runEnd[r]) return doc.href[doc.runLink[r]];
+		}
+		return null;
 	}
 
 	private int gapTop(int b) {
@@ -332,7 +385,8 @@ public final class HtmlLayout {
 		}
 		// the block gap and the CSS margins outside the border box; the border and the padding inside it
 		height[b] = h + gapTop(b) + gapBottom(b) + 2 * doc.blockBorder[b] + doc.blockPadTop[b] + doc.blockPadBottom[b];
-		top[b + 1] = top[b] + height[b];
+		// an absolute or fixed box keeps its height but takes no space in the flow
+		top[b + 1] = top[b] + (outOfFlow(b) ? 0 : height[b]);
 		measured++;
 	}
 
