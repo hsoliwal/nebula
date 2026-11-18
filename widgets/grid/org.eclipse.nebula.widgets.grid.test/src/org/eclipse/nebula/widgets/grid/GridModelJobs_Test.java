@@ -207,6 +207,47 @@ public class GridModelJobs_Test {
 		}
 	}
 
+	@Test
+	public void workerFailureCompletesFutureAndRunsCleanupOnUiThread() throws Exception {
+		/* CompletableFuture's dependent callbacks run inline with completion.
+		 * The failure path must be a Display handoff just like success, even
+		 * for an Error thrown by the detached CPU computation. */
+		final java.lang.reflect.Method handoff = GridModelJobs.class.getDeclaredMethod(
+				"finishWorkerFailure", Display.class, CompletableFuture.class, //$NON-NLS-1$
+				Throwable.class, Runnable.class);
+		handoff.setAccessible(true);
+		for (Throwable failure : new Throwable[] {
+				new IllegalStateException("worker failure"), new AssertionError("worker error") }) { //$NON-NLS-1$ //$NON-NLS-2$
+			final CompletableFuture<Boolean> done = new CompletableFuture<>();
+			final AtomicReference<Thread> completedOn = new AtomicReference<>();
+			final AtomicReference<Thread> cleanedOn = new AtomicReference<>();
+			final AtomicReference<Throwable> invocationFailure = new AtomicReference<>();
+			done.whenComplete((value, error) -> completedOn.set(Thread.currentThread()));
+			final Thread worker = new Thread(() -> {
+				try {
+					handoff.invoke(null, display, done, failure,
+							(Runnable) () -> cleanedOn.set(Thread.currentThread()));
+				} catch (ReflectiveOperationException error) {
+					invocationFailure.set(error);
+				}
+			}, "nebula-failed-cpu-sort"); //$NON-NLS-1$
+			worker.setDaemon(true);
+			worker.start();
+			worker.join(2_000);
+			assertFalse("failure handoff may not finish on a worker", done.isDone()); //$NON-NLS-1$
+			org.junit.Assert.assertNull(invocationFailure.get());
+			pumpUntil(done);
+			org.junit.Assert.assertSame(Thread.currentThread(), completedOn.get());
+			org.junit.Assert.assertSame(Thread.currentThread(), cleanedOn.get());
+			try {
+				done.join();
+				org.junit.Assert.fail("CPU failure must retain its original cause"); //$NON-NLS-1$
+			} catch (java.util.concurrent.CompletionException expected) {
+				org.junit.Assert.assertSame(failure, expected.getCause());
+			}
+		}
+	}
+
 
 	private void pumpUntil(final CompletableFuture<Boolean> future) {
 		final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
