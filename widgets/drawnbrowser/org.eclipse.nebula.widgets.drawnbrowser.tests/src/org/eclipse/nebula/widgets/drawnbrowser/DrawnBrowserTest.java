@@ -603,6 +603,25 @@ public class DrawnBrowserTest {
 		assertEquals("the second half blue", blue, rgbAt(shown, 3 * width / 4, y));
 		assertTrue("the gap between them is neither", !rgbAt(shown, width / 2, y).equals(red) && !rgbAt(shown, width / 2, y).equals(blue));
 	}
+
+	@Test
+	public void gridItemsPaintInTheirTracks() {
+		open("<div style='display:grid; grid-template-columns: 1fr 1fr; gap: 0 20px'>"
+				+ "<div style='background-color:#ff0000'>a</div><div style='background-color:#0000ff'>b</div>"
+				+ "<div style='grid-column: span 2; background-color:#00ff00'>wide</div></div>");
+		ImageData shown = shot();
+		int width = browser.getClientArea().width;
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0), blue = new org.eclipse.swt.graphics.RGB(0, 0, 255),
+				green = new org.eclipse.swt.graphics.RGB(0, 255, 0);
+		assertEquals("the first track is red", red, rgbAt(shown, width / 4, 6));
+		assertEquals("the second blue", blue, rgbAt(shown, 3 * width / 4, 6));
+		assertTrue("the column gap is neither", !rgbAt(shown, width / 2, 6).equals(red) && !rgbAt(shown, width / 2, 6).equals(blue));
+		int y = 6;
+		while (y < 200 && rgbAt(shown, width / 4, y).equals(red)) y++;
+		assertEquals("the spanning item fills the second row", green, rgbAt(shown, width / 4, y + 2));
+		assertEquals("across the gap", green, rgbAt(shown, width / 2, y + 2));
+		assertEquals(green, rgbAt(shown, 3 * width / 4, y + 2));
+	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");

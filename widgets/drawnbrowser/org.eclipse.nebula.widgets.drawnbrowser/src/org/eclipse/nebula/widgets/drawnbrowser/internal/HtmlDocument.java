@@ -85,10 +85,16 @@ public final class HtmlDocument {
 	/** Per table: number of columns (its widest row), and the border attribute in px (0: none). */
 	public int[] tableColumns = new int[4], tableBorder = new int[4];
 	/**
-	 * Per table: 1 when it is a row flex container (its items are the cells of its one row, with their CSS box), its
-	 * justify-content ({@link FlexRow}) and gap px.
+	 * Per table: what made it ({@link HtmlStyles#DISPLAY_DEFAULT} a table element; {@link HtmlStyles#DISPLAY_FLEX} a row
+	 * flex container, its items the cells of its one row; {@link HtmlStyles#DISPLAY_GRID} a grid container, its items
+	 * placed row by row in its columns; flex and grid items keep their CSS box), its justify-content ({@link FlexRow}),
+	 * its column gap and its row gap px.
 	 */
-	public int[] tableFlex = new int[4], tableJustify = new int[4], tableGap = new int[4];
+	public int[] tableDisplay = new int[4], tableJustify = new int[4], tableGap = new int[4], tableRowGap = new int[4];
+	/** Per table: a grid's columns, {@code tableTrackCount} tracks ({@link GridTracks}) from {@code tableTrackStart} in {@link #tracks}. */
+	public int[] tableTrackStart = new int[4], tableTrackCount = new int[4];
+	public int[] tracks = new int[8];
+	public int trackTotal;
 	/** Per block: a flex item's flex-grow, and its flex basis (or width) in px, -1 for none. */
 	public int[] cellGrow = new int[16], cellBasis = new int[16];
 
@@ -158,7 +164,7 @@ public final class HtmlDocument {
 		boolean preStart;              // a newline right after <pre> is not content
 		int quote;                     // blockquote depth
 		int tables;                    // table depth: only the outermost table's td, th and tr make cells and rows
-		int flexFrame;                 // the frame of the open flex container, or 0
+		int containerFrame;            // the frame of the open flex or grid container, or 0
 		boolean[] frameHidden = new boolean[1]; // per open element: display none (it counts in skip)
 		int[] spanRows = new int[8];   // per column: rows below the current one still covered by a rowspan from above
 		boolean[] taken = new boolean[8]; // per column: covered in the current row by a rowspan from above
@@ -209,11 +215,11 @@ public final class HtmlDocument {
 				return;
 			}
 			if (skip > 0) return; // nothing of a hidden element (or a script) is shown
-			if (flexFrame > 0 && depth == flexFrame + 1 && depth > 0 && frameTags[depth].equals(name)) {
-				openItem(); // a child element of a flex container is an item
+			if (containerFrame > 0 && depth == containerFrame + 1 && depth > 0 && frameTags[depth].equals(name)) {
+				openItem(true); // a child element of a flex or grid container is an item
 			} else if (!selfClosing && tables == 0 && depth > 0 && frameTags[depth].equals(name)
-					&& frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_FLEX) {
-				startFlex();
+					&& (frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_FLEX || frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_GRID)) {
+				startContainer();
 				return;
 			}
 			switch (name) {
@@ -327,12 +333,12 @@ public final class HtmlDocument {
 			}
 			int before = depth;
 			pop(name);
-			if (flexFrame > 0) {
-				if (depth < flexFrame) {
-					endFlex(); // the container ended
+			if (containerFrame > 0) {
+				if (depth < containerFrame) {
+					endContainer(); // the container ended
 					return;
 				}
-				if (before >= flexFrame + 1 && depth == flexFrame) closeCell(); // an item ended
+				if (before >= containerFrame + 1 && depth == containerFrame) closeCell(); // an item ended
 			}
 			if (name.equals("script")) {
 				skip = Math.max(0, skip - 1);
@@ -452,7 +458,8 @@ public final class HtmlDocument {
 		/* text needs a block: in a table outside any cell it gets a cell of its own, else a paragraph */
 		void ensureOpen() {
 			if (open >= 0) return;
-			if (tables > 0) openCell(0, 1);
+			if (containerFrame > 0) openItem(false); // loose text in a flex or grid container is an anonymous item
+			else if (tables > 0) openCell(0, 1);
 			else openBlock(PARAGRAPH, 0, 0);
 		}
 
@@ -462,14 +469,19 @@ public final class HtmlDocument {
 			if (d.tableCount == d.tableColumns.length) {
 				d.tableColumns = Arrays.copyOf(d.tableColumns, 2 * d.tableCount);
 				d.tableBorder = Arrays.copyOf(d.tableBorder, 2 * d.tableCount);
-				d.tableFlex = Arrays.copyOf(d.tableFlex, 2 * d.tableCount);
+				d.tableDisplay = Arrays.copyOf(d.tableDisplay, 2 * d.tableCount);
+				d.tableRowGap = Arrays.copyOf(d.tableRowGap, 2 * d.tableCount);
+				d.tableTrackStart = Arrays.copyOf(d.tableTrackStart, 2 * d.tableCount);
+				d.tableTrackCount = Arrays.copyOf(d.tableTrackCount, 2 * d.tableCount);
 				d.tableJustify = Arrays.copyOf(d.tableJustify, 2 * d.tableCount);
 				d.tableGap = Arrays.copyOf(d.tableGap, 2 * d.tableCount);
 			}
 			table = d.tableCount++;
 			String border = HtmlTokenizer.attribute(attributes, "border");
 			d.tableBorder[table] = border == null ? 0 : border.isBlank() ? 1 : Math.max(0, size(border));
-			d.tableFlex[table] = 0;
+			d.tableDisplay[table] = HtmlStyles.DISPLAY_DEFAULT;
+			d.tableRowGap[table] = 0;
+			d.tableTrackCount[table] = 0;
 			rowOpen = false;
 			Arrays.fill(spanRows, 0);
 		}
@@ -649,7 +661,7 @@ public final class HtmlDocument {
 			d.blockBackground[open] = own ? frame[HtmlStyles.BACKGROUND] : 0;
 			d.blockIndent[open] = (own ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
 			d.blockAlign[open] = frame[HtmlStyles.ALIGN];
-			boolean box = own && (kind != CELL || d.tableFlex[table] == 1); // a flex item keeps its CSS box
+			boolean box = own && (kind != CELL || d.tableDisplay[table] != HtmlStyles.DISPLAY_DEFAULT); // a flex or grid item keeps its CSS box
 			d.blockMarginTop[open] = box ? frame[HtmlStyles.MARGIN_TOP] : 0;
 			d.blockMarginRight[open] = box ? frame[HtmlStyles.MARGIN_RIGHT] : 0;
 			d.blockMarginBottom[open] = box ? frame[HtmlStyles.MARGIN_BOTTOM] : 0;
@@ -749,31 +761,58 @@ public final class HtmlDocument {
 			}
 		}
 
-		/* a row flex container opens: a one-row table of its items; inside a table it is a plain block */
-		void startFlex() {
+		/*
+		 * a flex or grid container opens: a table of its items (one row for flex, rows of its columns for grid); inside a
+		 * table it is a plain block
+		 */
+		void startContainer() {
 			int[] frame = frames[depth];
 			tables++;
 			startTable(new String[0]);
 			HtmlDocument d = doc;
-			d.tableFlex[table] = 1;
+			int display = frame[HtmlStyles.DISPLAY];
+			d.tableDisplay[table] = display;
 			d.tableJustify[table] = frame[HtmlStyles.JUSTIFY];
 			d.tableGap[table] = frame[HtmlStyles.GAP];
-			flexFrame = depth;
+			if (display == HtmlStyles.DISPLAY_GRID) {
+				int[] list = styles.tracks(frame[HtmlStyles.TRACKS]);
+				if (list.length == 0) list = new int[] { GridTracks.AUTO }; // no template: one column
+				if (d.trackTotal + list.length > d.tracks.length) {
+					d.tracks = Arrays.copyOf(d.tracks, Math.max(2 * d.tracks.length, d.trackTotal + list.length));
+				}
+				System.arraycopy(list, 0, d.tracks, d.trackTotal, list.length);
+				d.tableTrackStart[table] = d.trackTotal;
+				d.tableTrackCount[table] = list.length;
+				d.trackTotal += list.length;
+				d.tableColumns[table] = list.length;
+				d.tableRowGap[table] = frame[HtmlStyles.ROW_GAP];
+			}
+			containerFrame = depth;
 			startRow();
 		}
 
-		/* an item of the open flex container: a cell with the item element's flex-grow and basis */
-		void openItem() {
-			openCell(0, 1);
-			doc.cellGrow[open] = frames[depth][HtmlStyles.FLEX_GROW];
-			doc.cellBasis[open] = frames[depth][HtmlStyles.FLEX_BASIS];
+		/*
+		 * an item of the open container: a cell; an element item carries its flex-grow, basis and (in a grid) its column
+		 * span; a grid places it in the current row, or at the start of the next when it does not fit (auto-placement)
+		 */
+		void openItem(boolean element) {
+			int[] frame = frames[depth];
+			int span = 1;
+			if (doc.tableDisplay[table] == HtmlStyles.DISPLAY_GRID) {
+				int n = doc.tableTrackCount[table];
+				span = element ? Math.max(1, Math.min(n, frame[HtmlStyles.COLUMN_SPAN])) : 1;
+				if (rowOpen && column > 0 && column + span > n) startRow();
+			}
+			openCell(0, span);
+			doc.cellGrow[open] = element ? frame[HtmlStyles.FLEX_GROW] : 0;
+			doc.cellBasis[open] = element ? frame[HtmlStyles.FLEX_BASIS] : -1;
 		}
 
-		void endFlex() {
+		void endContainer() {
 			closeCell();
 			rowOpen = false;
 			tables = Math.max(0, tables - 1);
-			flexFrame = 0;
+			containerFrame = 0;
 		}
 
 		void closeBlock() {

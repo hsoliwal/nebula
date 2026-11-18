@@ -343,7 +343,7 @@ public class HtmlDocumentTest {
 				+ "<p>shown<script>x</script> end</p>");
 		int one = block(d, "one\ninner"), loose = block(d, "loose text"), three = block(d, "three");
 		assertEquals(HtmlDocument.CELL, d.kind[one]);
-		assertEquals(1, d.tableFlex[d.cellTable[one]]);
+		assertEquals(HtmlStyles.DISPLAY_FLEX, d.tableDisplay[d.cellTable[one]]);
 		assertEquals(8, d.tableGap[d.cellTable[one]]);
 		assertEquals(FlexRow.CENTER, d.tableJustify[d.cellTable[one]]);
 		assertArrayEquals("items in order on one row", new int[] { 0, 1, 2 },
@@ -360,5 +360,36 @@ public class HtmlDocumentTest {
 		}
 		assertEquals("a control in a hidden element is not made", 0, d.controlCount);
 		block(d, "shown end");
+	}
+
+	@Test
+	public void gridItemsArePlacedRowByRowInTheTemplatesColumns() {
+		HtmlDocument d = HtmlDocument.parse("<p>before</p><div style='display:grid; grid-template-columns: 50px 1fr 2fr; gap: 6px 10px'>"
+				+ "<div>a</div><div style='grid-column: span 2; padding: 4px'>b</div><div>c</div><div style='grid-column: span 2'>d</div>"
+				+ "loose<div style='grid-column: span 9'>e</div></div><div style='display:grid'><p>one</p><p>two</p></div><p>after</p>");
+		int a = block(d, "a"), b = block(d, "b"), c = block(d, "c"), dd = block(d, "d"), loose = block(d, "loose"), e = block(d, "e");
+		int t = d.cellTable[a];
+		assertEquals(HtmlStyles.DISPLAY_GRID, d.tableDisplay[t]);
+		assertEquals(3, d.tableColumns[t]);
+		assertArrayEquals(new int[] { 50, GridTracks.FR | 100, GridTracks.FR | 200 },
+				java.util.Arrays.copyOfRange(d.tracks, d.tableTrackStart[t], d.tableTrackStart[t] + d.tableTrackCount[t]));
+		assertEquals(10, d.tableGap[t]);
+		assertEquals(6, d.tableRowGap[t]);
+		int[] items = { a, b, c, dd, loose, e }, column = new int[6], span = new int[6], row = new int[6];
+		for (int i = 0; i < 6; i++) {
+			column[i] = d.cellColumn[items[i]];
+			span[i] = d.cellSpan[items[i]];
+			row[i] = d.cellRow[items[i]] - d.cellRow[a];
+		}
+		assertArrayEquals("an item that does not fit starts the next row", new int[] { 0, 1, 0, 1, 0, 0 }, column);
+		assertArrayEquals("a span wider than the grid is the grid", new int[] { 1, 2, 1, 2, 1, 3 }, span);
+		assertArrayEquals(new int[] { 0, 0, 1, 1, 2, 3 }, row);
+		assertEquals("a grid item keeps its box", 4, d.blockPadLeft[b]);
+		int one = block(d, "one"), two = block(d, "two");
+		assertEquals("no template: one column", 1, d.tableColumns[d.cellTable[one]]);
+		assertEquals("of one auto track", GridTracks.AUTO, d.tracks[d.tableTrackStart[d.cellTable[one]]]);
+		assertEquals(1, d.tableTrackCount[d.cellTable[one]]);
+		assertEquals(d.cellRow[one] + 1, d.cellRow[two]);
+		assertEquals(PARAGRAPH, d.kind[block(d, "after")]);
 	}
 }
