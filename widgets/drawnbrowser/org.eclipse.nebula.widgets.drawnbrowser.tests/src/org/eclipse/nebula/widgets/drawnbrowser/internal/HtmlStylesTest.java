@@ -105,4 +105,30 @@ public class HtmlStylesTest {
 		assertEquals(0, child[HtmlStyles.BORDER_WIDTH]);
 		assertEquals(0, child[HtmlStyles.PADDING_LEFT]);
 	}
+
+	@Test
+	public void positionOffsetsAndZIndex() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".a { position: absolute; top: -12px; left: 30px; z-index: 5 } .f { position: fixed; top: auto; z-index: -2 }"
+				+ " .r { position: relative; left: 4em; z-index: x }");
+		int[] root = HtmlStyles.root(), a = styles.compute(root, "div", "a", null);
+		assertEquals(HtmlStyles.ABSOLUTE, a[HtmlStyles.POSITION]);
+		assertEquals("negative offsets are allowed", -12, a[HtmlStyles.POS_TOP]);
+		assertEquals(30, a[HtmlStyles.POS_LEFT]);
+		assertEquals(5, a[HtmlStyles.Z_INDEX]);
+		int[] f = styles.compute(root, "div", "f", null);
+		assertEquals(HtmlStyles.FIXED, f[HtmlStyles.POSITION]);
+		assertEquals(HtmlStyles.AUTO, f[HtmlStyles.POS_TOP]);
+		assertEquals(HtmlStyles.AUTO, f[HtmlStyles.POS_LEFT]);
+		assertEquals(-2, f[HtmlStyles.Z_INDEX]);
+		int[] r = styles.compute(root, "div", "r", null);
+		assertEquals(HtmlStyles.RELATIVE, r[HtmlStyles.POSITION]);
+		assertEquals("em is not px: auto stays", HtmlStyles.AUTO, r[HtmlStyles.POS_LEFT]);
+		assertEquals("a bad z-index is ignored", 0, r[HtmlStyles.Z_INDEX]);
+		int[] child = styles.compute(a, "span", null, null);
+		assertEquals("the position is not inherited", HtmlStyles.STATIC, child[HtmlStyles.POSITION]);
+		assertEquals(HtmlStyles.AUTO, child[HtmlStyles.POS_TOP]);
+		assertEquals(0, child[HtmlStyles.Z_INDEX]);
+		assertEquals(HtmlStyles.STATIC, styles.compute(root, "div", "a", "position: static")[HtmlStyles.POSITION]);
+	}
 }

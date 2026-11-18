@@ -20,12 +20,14 @@ import java.util.Locale;
  * {@code background-color}, {@code font-weight}, {@code font-style}, {@code text-decoration}, {@code text-align}, the box
  * model in px: {@code margin} and {@code padding} (one to four values, or one side: {@code margin-top} ...),
  * {@code border} (width, {@code solid}/{@code none}, colour), {@code border-width}, {@code border-color},
- * {@code border-style}. Anything else (other units, other border styles) is ignored, never an error.
+ * {@code border-style}; positioning: {@code position} (static, relative, absolute, fixed), {@code top} and {@code left}
+ * (px, negative allowed, or auto) and {@code z-index}. Anything else (other units, other border styles) is ignored,
+ * never an error.
  * </p>
  * <p>
  * The cascade applies the rules that match an element in specificity order (tag, class, tag.class; a later rule wins
  * a tie), then the element's own {@code style} attribute. Text properties (color, weight, style, decoration) inherit;
- * so does text-align; background, indent and the box (margins, padding, border) belong to the element that sets them. A computed style is an
+ * so does text-align; background, indent, the box (margins, padding, border) and the position belong to the element that sets them. A computed style is an
  * int array indexed by the constants below, no object per element.
  * </p>
  * <p>
@@ -42,7 +44,17 @@ public final class HtmlStyles {
 	 */
 	public static final int COLOR = 0, BACKGROUND = 1, BITS = 2, ALIGN = 3, INDENT = 4, MARGIN_TOP = 5,
 			MARGIN_RIGHT = 6, MARGIN_BOTTOM = 7, PADDING_TOP = 8, PADDING_RIGHT = 9, PADDING_BOTTOM = 10,
-			PADDING_LEFT = 11, BORDER_WIDTH = 12, BORDER_COLOR = 13, SLOTS = 14;
+			PADDING_LEFT = 11, BORDER_WIDTH = 12, BORDER_COLOR = 13, POSITION = 14, POS_TOP = 15, POS_LEFT = 16,
+			Z_INDEX = 17, SLOTS = 18;
+
+	/** Positions ({@link #POSITION}). */
+	public static final int STATIC = 0, RELATIVE = 1, ABSOLUTE = 2, FIXED = 3;
+
+	/** {@link #POS_TOP} or {@link #POS_LEFT} not given (auto): the box keeps its place in the flow on that axis. */
+	public static final int AUTO = Integer.MIN_VALUE + 1;
+
+	/* a declaration that does not set a position slot */
+	private static final int NOT_SET = Integer.MIN_VALUE;
 
 	/* the numeric box slots, "not set" (-1) in a declaration delta */
 	private static final int[] BOX = { MARGIN_TOP, MARGIN_RIGHT, MARGIN_BOTTOM, PADDING_TOP, PADDING_RIGHT,
@@ -89,6 +101,8 @@ public final class HtmlStyles {
 		style[COLOR] = parent[COLOR];
 		style[BITS] = parent[BITS];
 		style[ALIGN] = parent[ALIGN];
+		style[POS_TOP] = AUTO;
+		style[POS_LEFT] = AUTO;
 		String[] own = classes == null ? new String[0] : classes.trim().toLowerCase(Locale.ROOT).split("\\s+");
 		for (int specificity : new int[] { 1, 10, 11 }) {
 			for (int r = 0; r < selectors.size(); r++) {
@@ -105,7 +119,10 @@ public final class HtmlStyles {
 
 	/** The style of the document root: the widget's colours, nothing set. */
 	public static int[] root() {
-		return new int[SLOTS];
+		int[] root = new int[SLOTS];
+		root[POS_TOP] = AUTO;
+		root[POS_LEFT] = AUTO;
+		return root;
 	}
 
 	/* a declaration delta with nothing set */
@@ -114,7 +131,17 @@ public final class HtmlStyles {
 		delta[ALIGN] = -1;
 		delta[INDENT] = -1;
 		for (int slot : BOX) delta[slot] = -1;
+		delta[POSITION] = -1;
+		delta[POS_TOP] = NOT_SET;
+		delta[POS_LEFT] = NOT_SET;
+		delta[Z_INDEX] = NOT_SET;
 		return delta;
+	}
+
+	/* a signed length in px ("-12px", "12", "0"), AUTO for auto, NOT_SET when it is neither */
+	private static int offset(String value) {
+		if (value.equals("auto")) return AUTO;
+		return value.matches("-?\\d{1,5}(px)?") ? Integer.parseInt(value.replace("px", "")) : NOT_SET;
 	}
 
 	/* a length in px ("12px", "12", "0"), or -1 when it is not one */
@@ -199,6 +226,19 @@ public final class HtmlStyles {
 				case "border-style" -> {
 					if (value.equals("none") || value.equals("hidden")) delta[BORDER_WIDTH] = 0;
 				}
+				case "position" -> delta[POSITION] = switch (value) {
+					case "static" -> STATIC;
+					case "relative" -> RELATIVE;
+					case "absolute" -> ABSOLUTE;
+					case "fixed" -> FIXED;
+					default -> delta[POSITION];
+				};
+				case "top" -> delta[POS_TOP] = offset(value);
+				case "left" -> delta[POS_LEFT] = offset(value);
+				case "z-index" -> {
+					if (value.equals("auto")) delta[Z_INDEX] = 0;
+					else if (value.matches("-?\\d{1,6}")) delta[Z_INDEX] = Integer.parseInt(value);
+				}
 				default -> {
 				}
 			}
@@ -221,6 +261,10 @@ public final class HtmlStyles {
 		if (delta[INDENT] >= 0) style[INDENT] = delta[INDENT];
 		for (int slot : BOX) if (delta[slot] >= 0) style[slot] = delta[slot];
 		if (delta[BORDER_COLOR] != 0) style[BORDER_COLOR] = delta[BORDER_COLOR];
+		if (delta[POSITION] >= 0) style[POSITION] = delta[POSITION];
+		if (delta[POS_TOP] != NOT_SET) style[POS_TOP] = delta[POS_TOP];
+		if (delta[POS_LEFT] != NOT_SET) style[POS_LEFT] = delta[POS_LEFT];
+		if (delta[Z_INDEX] != NOT_SET) style[Z_INDEX] = delta[Z_INDEX];
 	}
 
 	/** An opaque ARGB colour from #rgb, #rrggbb, rgb(r, g, b) or a basic colour name; 0 when not one of these. */

@@ -65,6 +65,11 @@ public final class HtmlDocument {
 	public int[] blockMarginTop = new int[16], blockMarginRight = new int[16], blockMarginBottom = new int[16],
 			blockPadTop = new int[16], blockPadRight = new int[16], blockPadBottom = new int[16], blockPadLeft = new int[16],
 			blockBorder = new int[16], blockBorderColor = new int[16];
+	/**
+	 * Per block, the position of its own element: {@link HtmlStyles#STATIC} (also for table cells), relative,
+	 * absolute or fixed; its top and left offsets in px ({@link HtmlStyles#AUTO} when not given) and its z-index.
+	 */
+	public int[] blockPosition = new int[16], blockTop = new int[16], blockLeft = new int[16], blockZ = new int[16];
 	/** Per block: its table, row (numbered across the page) and column if it is a {@link #CELL}, else -1. */
 	public int[] cellTable = new int[16], cellRow = new int[16], cellColumn = new int[16];
 
@@ -450,6 +455,10 @@ public final class HtmlDocument {
 				d.blockPadLeft = Arrays.copyOf(d.blockPadLeft, capacity);
 				d.blockBorder = Arrays.copyOf(d.blockBorder, capacity);
 				d.blockBorderColor = Arrays.copyOf(d.blockBorderColor, capacity);
+				d.blockPosition = Arrays.copyOf(d.blockPosition, capacity);
+				d.blockTop = Arrays.copyOf(d.blockTop, capacity);
+				d.blockLeft = Arrays.copyOf(d.blockLeft, capacity);
+				d.blockZ = Arrays.copyOf(d.blockZ, capacity);
 			}
 			open = d.blockCount++;
 			d.cellTable[open] = d.cellRow[open] = d.cellColumn[open] = -1;
@@ -476,6 +485,10 @@ public final class HtmlDocument {
 			d.blockPadLeft[open] = box ? frame[HtmlStyles.PADDING_LEFT] : 0;
 			d.blockBorder[open] = box ? frame[HtmlStyles.BORDER_WIDTH] : 0;
 			d.blockBorderColor[open] = box ? frame[HtmlStyles.BORDER_COLOR] : 0;
+			d.blockPosition[open] = box ? frame[HtmlStyles.POSITION] : HtmlStyles.STATIC;
+			d.blockTop[open] = box ? frame[HtmlStyles.POS_TOP] : HtmlStyles.AUTO;
+			d.blockLeft[open] = box ? frame[HtmlStyles.POS_LEFT] : HtmlStyles.AUTO;
+			d.blockZ[open] = box ? frame[HtmlStyles.Z_INDEX] : 0;
 			space = false;
 		}
 
