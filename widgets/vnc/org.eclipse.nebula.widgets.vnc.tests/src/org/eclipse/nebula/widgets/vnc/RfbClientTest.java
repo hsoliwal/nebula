@@ -116,6 +116,89 @@ public class RfbClientTest {
     }
 
     @Test
+    public void decodesHextileAndDesktopResizeFromRfb33() throws Exception {
+        try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            CountDownLatch updated = new CountDownLatch(1);
+            AtomicReference<RfbClient.Frame> result = new AtomicReference<>();
+            Future<?> peer = executor.submit(() -> {
+                try (Socket socket = server.accept()) {
+                    DataInputStream input = new DataInputStream(
+                            new BufferedInputStream(socket.getInputStream()));
+                    DataOutputStream output = new DataOutputStream(
+                            new BufferedOutputStream(socket.getOutputStream()));
+
+                    output.write("RFB 003.003\n".getBytes(StandardCharsets.US_ASCII));
+                    output.flush();
+                    byte[] clientBanner = new byte[12];
+                    input.readFully(clientBanner);
+                    assertEquals("RFB 003.003\n",
+                            new String(clientBanner, StandardCharsets.US_ASCII));
+                    output.writeInt(1); // None, old RFB 3.3 security type
+                    output.flush();
+                    assertEquals(1, input.readUnsignedByte()); // shared desktop
+
+                    output.writeShort(2);
+                    output.writeShort(2);
+                    output.write(new byte[16]);
+                    output.writeInt(7);
+                    output.write("hextile".getBytes(StandardCharsets.ISO_8859_1));
+                    output.flush();
+
+                    input.skipNBytes(20); // SetPixelFormat
+                    assertEquals(2, input.readUnsignedByte());
+                    input.skipNBytes(1);
+                    int count = input.readUnsignedShort();
+                    assertEquals(4, count);
+                    input.skipNBytes(count * 4L);
+                    assertEquals(3, input.readUnsignedByte()); // initial refresh
+                    input.skipNBytes(9);
+
+                    output.writeByte(0); // FramebufferUpdate
+                    output.writeByte(0);
+                    output.writeShort(2); // Hextile + desktop resize
+                    writeRect(output, 0, 0, 2, 2, 5);
+                    output.writeByte(14); // background, foreground, subrectangles
+                    writeRgb(output, 0x102030); // background
+                    writeRgb(output, 0x445566); // foreground
+                    output.writeByte(1); // one subrectangle
+                    output.writeByte(0x10); // x=1, y=0
+                    output.writeByte(0x01); // width=1, height=2
+                    writeRect(output, 0, 0, 3, 2, -223); // DesktopSize
+                    output.flush();
+                    assertTrue("Client did not decode Hextile", updated.await(3, TimeUnit.SECONDS));
+                } catch (Exception e) {
+                    throw new AssertionError(e);
+                }
+            });
+            RfbClient client = new RfbClient(new RfbClient.Listener() {
+                @Override
+                public void frame(RfbClient.Frame frame) {
+                    if (frame.sequence() >= 2) {
+                        result.set(frame);
+                        updated.countDown();
+                    }
+                }
+            });
+            try {
+                client.connectAsync("127.0.0.1", server.getLocalPort(), null, false);
+                assertTrue("Expected resized framebuffer", updated.await(5, TimeUnit.SECONDS));
+                RfbClient.Frame actual = result.get();
+                assertEquals(3, actual.width());
+                assertEquals(2, actual.height());
+                assertArrayEquals(new int[] {
+                        0x102030, 0x445566, 0,
+                        0x102030, 0x445566, 0
+                }, actual.rgbCopy());
+                peer.get(5, TimeUnit.SECONDS);
+            } finally {
+                client.close();
+                executor.shutdownNow();
+            }
+        }
+    }
+
+    @Test
     public void vncChallengeRejectsInvalidLengthAndNonBytePassword() throws Exception {
         assertThrows(IllegalArgumentException.class,
                 () -> RfbClient.vncResponse(new byte[15], new char[] {'a'}));
