@@ -393,11 +393,24 @@ public class DrawnBrowser extends Canvas {
 		int pageTop = y + scrollY, pageBottom = pageTop + height;
 		for (int b = layout.blockAt(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
 			int top = layout.top(b) - scrollY + layout.contentTop(b), left = layout.indent(b);
-			boolean cell = document.kind[b] == HtmlDocument.CELL;
-			int boxX = cell ? layout.cellX(b) : 0, boxWidth = cell ? layout.cellWidth(b) : getClientArea().width;
+			boolean cell = document.kind[b] == HtmlDocument.CELL, box = !cell && layout.hasBox(b);
+			// a cell's box is its column; a CSS box its border box; any other block keeps its whole row
+			int boxX = cell ? layout.cellX(b) : box ? layout.boxLeft(b) : 0;
+			int boxWidth = cell ? layout.cellWidth(b) : box ? layout.boxWidth(b) : getClientArea().width;
+			int boxY = (box ? layout.boxTop(b) : layout.top(b)) - scrollY, boxHeight = box ? layout.boxHeight(b) : layout.height(b);
 			if (document.blockBackground[b] != 0) {
 				gc.setBackground(layout.color(document.blockBackground[b]));
-				gc.fillRectangle(boxX, layout.top(b) - scrollY, boxWidth, layout.height(b));
+				gc.fillRectangle(boxX, boxY, boxWidth, boxHeight);
+				gc.setBackground(getBackground());
+			}
+			int border = cell ? 0 : document.blockBorder[b];
+			if (border > 0) {
+				int argb = document.blockBorderColor[b];
+				gc.setBackground(argb != 0 ? layout.color(argb) : getForeground());
+				gc.fillRectangle(boxX, boxY, boxWidth, border);
+				gc.fillRectangle(boxX, boxY + boxHeight - border, boxWidth, border);
+				gc.fillRectangle(boxX, boxY, border, boxHeight);
+				gc.fillRectangle(boxX + boxWidth - border, boxY, border, boxHeight);
 				gc.setBackground(getBackground());
 			}
 			if (cell && document.tableBorder[document.cellTable[b]] > 0) {

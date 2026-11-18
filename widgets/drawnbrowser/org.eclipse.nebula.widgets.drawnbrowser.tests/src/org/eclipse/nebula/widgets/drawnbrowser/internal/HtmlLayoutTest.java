@@ -114,6 +114,27 @@ public class HtmlLayoutTest {
 		assertTrue("the other column wraps", l.textLayout(1).getLineCount() > 1);
 	}
 
+
+	@Test
+	public void aBoxInsetsItsContentByBorderAndPaddingInsideItsMargins() {
+		String text = "some words in a box";
+		HtmlLayout l = layout("<p>" + text + "</p><p style='margin:10px 20px 30px 40px; padding:5px; border:2px solid red'>"
+				+ text + "</p>", 300);
+		int h = l.textLayout(1).getBounds().height;
+		assertEquals("a plain block is unchanged", l.textLayout(0).getBounds().height + 2 * HtmlLayout.BLOCK_GAP, l.height(0));
+		assertEquals(false, l.hasBox(0));
+		assertEquals(true, l.hasBox(1));
+		assertEquals(HtmlLayout.BLOCK_GAP + 10 + 2 + 5, l.contentTop(1));
+		assertEquals(40 + 2 + 5, l.indent(1));
+		assertEquals(h + (HtmlLayout.BLOCK_GAP + 10) + (HtmlLayout.BLOCK_GAP + 30) + 2 * 2 + 5 + 5, l.height(1));
+		assertEquals(40, l.boxLeft(1));
+		assertEquals(l.top(1) + HtmlLayout.BLOCK_GAP + 10, l.boxTop(1));
+		assertEquals(300 - 40 - 20, l.boxWidth(1));
+		assertEquals(h + 2 * 2 + 5 + 5, l.boxHeight(1));
+		assertEquals("the text wraps inside the padding", 300 - 47 - 2 - 5 - 20, l.textLayout(1).getWidth());
+		assertEquals("a link or an offset starts at the content", 0, l.offsetAt(l.indent(1), l.top(1) + l.contentTop(1) + 1)
+				- text.length());
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);
