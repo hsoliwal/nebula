@@ -51,14 +51,14 @@ public final class GridModelJobs {
 	/* UI-thread only: an outstanding worker result may not supersede a later sort
 	 * request, even when both captured the same RowPermutation version. Weak keys
 	 * avoid retaining Grids once their applications release them. */
-	private static final Map<Grid, Object> latestSort = new WeakHashMap<>();
+	private static final Map<Grid, Object> latestSort = java.util.Collections.synchronizedMap(new WeakHashMap<>());
 
 	/*
 	 * Opt-in latest-only CPU sort lane. A weak Grid key and weak Grid reference
 	 * prevent the scheduler map from making otherwise abandoned widgets immortal.
 	 * Grid and RowPermutation are inspected or mutated only by the SWT UI thread.
 	 */
-	private static final Map<Grid, CpuSortLane> cpuSortLanes = new WeakHashMap<>();
+	private static final Map<Grid, CpuSortLane> cpuSortLanes = java.util.Collections.synchronizedMap(new WeakHashMap<>());
 
 	private static final class CpuSortJob {
 		final RowPermutation permutation;
@@ -321,7 +321,8 @@ public final class GridModelJobs {
 		}
 		final int rows = permutation.getModelCount();
 		final long perRow = sortNanosPerRow;
-		final boolean inline = perRow == 0L ? rows < BATCH_THRESHOLD : rows * perRow < INLINE_BUDGET_NANOS;
+		final boolean inline = perRow == 0L ? rows < BATCH_THRESHOLD
+				: rows == 0 || (perRow > 0 && perRow < INLINE_BUDGET_NANOS / rows);
 		final long t0 = System.nanoTime();
 		if (inline) {
 			permutation.sortByIntKeys(keys, descending);
