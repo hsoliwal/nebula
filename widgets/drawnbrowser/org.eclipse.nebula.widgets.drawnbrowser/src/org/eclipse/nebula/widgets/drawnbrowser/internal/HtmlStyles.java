@@ -32,11 +32,18 @@ import java.util.Locale;
  * {@code grid-column} or {@code grid-column-end} {@code span N} (or {@code 1 / -1}, the whole row); positioning: {@code position} (static, relative, absolute, fixed, sticky), {@code top} and {@code left}
  * (px, negative allowed, or auto) and {@code z-index}. Anything else (other units, other border styles) is ignored,
  * never an error.
+ * {@code border-style}. Block boxes additionally accept {@code position} (static, relative, absolute, fixed),
+ * {@code left/top/right/bottom}, {@code width/height} and {@code z-index}. Pixel lengths are signed integers;
+ * width and height must be nonnegative. Top and left retain their existing unitless integers (up to five decimal
+ * digits with an optional minus sign); the other lengths accept unitless zero. Percentages, fractional lengths
+ * and other units are ignored.
+ * Geometry reserves {@link #AUTO} ({@code Integer.MIN_VALUE + 1}) for {@code auto}; z-index accepts every signed
+ * int, including that value. Anything else is ignored, never an error.
  * </p>
  * <p>
  * The cascade applies the rules that match an element in specificity order (tag, class, tag.class; a later rule wins
  * a tie), then the element's own {@code style} attribute. Text properties (color, weight, style, decoration) inherit;
- * so does text-align; background, indent, the box (margins, padding, border) and the position belong to the element that sets them. A computed style is an
+ * so does text-align; background, indent and the box (margins, padding, border) belong to the element that sets them. A computed style is an
  * int array indexed by the constants below, no object per element.
  * </p>
  * <p>
@@ -55,7 +62,10 @@ public final class HtmlStyles {
 			MARGIN_RIGHT = 6, MARGIN_BOTTOM = 7, PADDING_TOP = 8, PADDING_RIGHT = 9, PADDING_BOTTOM = 10,
 			PADDING_LEFT = 11, BORDER_WIDTH = 12, BORDER_COLOR = 13, POSITION = 14, POS_TOP = 15, POS_LEFT = 16,
 			Z_INDEX = 17, DISPLAY = 18, FLEX_GROW = 19, FLEX_BASIS = 20, JUSTIFY = 21, GAP = 22, ROW_GAP = 23,
-			TRACKS = 24, COLUMN_SPAN = 25, BORDER_STYLE = 26, SLOTS = 27;
+			TRACKS = 24, COLUMN_SPAN = 25, BORDER_STYLE = 26;
+	/** Positioned-box additions preserve every current table, flex, grid and border slot. */
+	public static final int OFFSET_TOP = POS_TOP, OFFSET_LEFT = POS_LEFT, OFFSET_RIGHT = 27, OFFSET_BOTTOM = 28,
+			WIDTH = 29, HEIGHT = 30, Z_AUTO = 31, SLOTS = 32;
 
 	/** Draw2D SchemeBorder-style highlight/shadow schemes, encoded as scalar CSS. */
 	public static final int BORDER_SOLID = 0, BORDER_INSET = 1, BORDER_OUTSET = 2,
@@ -79,6 +89,7 @@ public final class HtmlStyles {
 
 	/* a declaration that does not set a position slot */
 	private static final int NOT_SET = Integer.MIN_VALUE;
+	private static final int PRESENT = SLOTS;
 
 	/* the numeric box slots, "not set" (-1) in a declaration delta */
 	private static final int[] BOX = { MARGIN_TOP, MARGIN_RIGHT, MARGIN_BOTTOM, PADDING_TOP, PADDING_RIGHT,
@@ -329,7 +340,7 @@ public final class HtmlStyles {
 	 * attribute.
 	 */
 	public int[] compute(int[] parent, Path path, String inline) {
-		int[] style = new int[SLOTS];
+		int[] style = root();
 		style[COLOR] = parent[COLOR];
 		style[BITS] = parent[BITS];
 		style[ALIGN] = parent[ALIGN];
@@ -347,22 +358,17 @@ public final class HtmlStyles {
 	/** The style of the document root: the widget's colours, nothing set. */
 	public static int[] root() {
 		int[] root = new int[SLOTS];
-		root[POS_TOP] = AUTO;
-		root[POS_LEFT] = AUTO;
+		root[POS_TOP] = root[POS_LEFT] = root[OFFSET_RIGHT] = root[OFFSET_BOTTOM] = root[WIDTH] = root[HEIGHT] = AUTO;
+		root[Z_AUTO] = 1;
 		root[FLEX_BASIS] = -1;
 		return root;
 	}
 
 	/* a declaration delta with nothing set */
 	private static int[] emptyDelta() {
-		int[] delta = new int[SLOTS];
-		delta[ALIGN] = -1;
-		delta[INDENT] = -1;
+		int[] delta = new int[SLOTS + 1];
+		delta[ALIGN] = delta[INDENT] = -1;
 		for (int slot : BOX) delta[slot] = -1;
-		delta[POSITION] = -1;
-		delta[POS_TOP] = NOT_SET;
-		delta[POS_LEFT] = NOT_SET;
-		delta[Z_INDEX] = NOT_SET;
 		delta[DISPLAY] = -1;
 		delta[FLEX_GROW] = -1;
 		delta[FLEX_BASIS] = NOT_SET;
@@ -372,12 +378,6 @@ public final class HtmlStyles {
 		delta[TRACKS] = -1;
 		delta[COLUMN_SPAN] = -1;
 		return delta;
-	}
-
-	/* a signed length in px ("-12px", "12", "0"), AUTO for auto, NOT_SET when it is neither */
-	private static int offset(String value) {
-		if (value.equals("auto")) return AUTO;
-		return value.matches("-?\\d{1,5}(px)?") ? Integer.parseInt(value.replace("px", "")) : NOT_SET;
 	}
 
 	/* a length in px ("12px", "12", "0"), or -1 when it is not one */
@@ -434,8 +434,14 @@ public final class HtmlStyles {
 			String name = declaration.substring(0, colon).trim().toLowerCase(Locale.ROOT);
 			String value = declaration.substring(colon + 1).trim().toLowerCase(Locale.ROOT).replace("!important", "").trim();
 			switch (name) {
-				case "color" -> delta[COLOR] = color(value);
-				case "background-color", "background" -> delta[BACKGROUND] = color(value);
+				case "color" -> {
+					int parsed = color(value);
+					if (parsed != 0) delta[COLOR] = parsed;
+				}
+				case "background-color", "background" -> {
+					int parsed = color(value);
+					if (parsed != 0) delta[BACKGROUND] = parsed;
+				}
 				case "font-weight" -> delta[BITS] = bit(delta[BITS], HtmlDocument.BOLD,
 						value.equals("bold") || value.equals("bolder") || value.matches("[6-9]00") ? 1 : value.equals("normal") || value.matches("[1-5]00") ? -1 : 0);
 				case "font-style" -> delta[BITS] = bit(delta[BITS], HtmlDocument.ITALIC,
@@ -472,21 +478,35 @@ public final class HtmlStyles {
 				case "border-width" -> {
 					if (px(value) >= 0) delta[BORDER_WIDTH] = px(value);
 				}
-				case "border-color" -> delta[BORDER_COLOR] = color(value);
+				case "border-color" -> {
+					int parsed = color(value);
+					if (parsed != 0) delta[BORDER_COLOR] = parsed;
+				}
 				case "border-style" -> {
 					if (value.equals("none") || value.equals("hidden")) delta[BORDER_WIDTH] = 0;
 					else if (borderStyle(value) >= 0) delta[BORDER_STYLE] = borderStyle(value);
 				}
-				case "position" -> delta[POSITION] = switch (value) {
-					case "static" -> STATIC;
-					case "relative" -> RELATIVE;
-					case "absolute" -> ABSOLUTE;
-					case "fixed" -> FIXED;
-					case "sticky", "-webkit-sticky" -> STICKY;
-					default -> delta[POSITION];
-				};
-				case "top" -> delta[POS_TOP] = offset(value);
-				case "left" -> delta[POS_LEFT] = offset(value);
+				case "position" -> {
+					int position = switch (value) {
+						case "static" -> STATIC;
+						case "relative" -> RELATIVE;
+						case "absolute" -> ABSOLUTE;
+						case "fixed" -> FIXED;
+						case "sticky", "-webkit-sticky" -> STICKY;
+						default -> -1;
+					};
+					if (position >= 0) set(delta, POSITION, position);
+				}
+				case "left" -> length(delta, OFFSET_LEFT, value, false);
+				case "top" -> length(delta, OFFSET_TOP, value, false);
+				case "right" -> length(delta, OFFSET_RIGHT, value, false);
+				case "bottom" -> length(delta, OFFSET_BOTTOM, value, false);
+				case "width" -> {
+					length(delta, WIDTH, value, true);
+					if (px(value) >= 0) delta[FLEX_BASIS] = px(value);
+					else if (value.equals("auto")) delta[FLEX_BASIS] = -1;
+				}
+				case "height" -> length(delta, HEIGHT, value, true);
 				case "display" -> delta[DISPLAY] = switch (value) {
 					case "none" -> DISPLAY_NONE;
 					case "flex", "inline-flex" -> DISPLAY_FLEX;
@@ -496,7 +516,7 @@ public final class HtmlStyles {
 				case "flex-grow" -> {
 					if (value.matches("\\d{1,4}")) delta[FLEX_GROW] = Integer.parseInt(value);
 				}
-				case "flex-basis", "width" -> {
+				case "flex-basis" -> {
 					if (px(value) >= 0) delta[FLEX_BASIS] = px(value);
 					else if (value.equals("auto")) delta[FLEX_BASIS] = -1;
 				}
@@ -536,14 +556,45 @@ public final class HtmlStyles {
 					else if (value.replace(" ", "").equals("1/-1")) delta[COLUMN_SPAN] = GridTracks.MAX_TRACKS;
 				}
 				case "z-index" -> {
-					if (value.equals("auto")) delta[Z_INDEX] = 0;
-					else if (value.matches("-?\\d{1,6}")) delta[Z_INDEX] = Integer.parseInt(value);
+					if (value.equals("auto")) {
+						set(delta, Z_INDEX, 0);
+						set(delta, Z_AUTO, 1);
+					} else if (value.matches("[+-]?[0-9]+")) {
+						try {
+							set(delta, Z_INDEX, Integer.parseInt(value));
+							set(delta, Z_AUTO, 0);
+						} catch (NumberFormatException ignored) {
+							// Invalid declarations leave an earlier valid declaration in force.
+						}
+					}
 				}
 				default -> {
 				}
 			}
 		}
 		return delta;
+	}
+
+	private static void set(int[] delta, int slot, int value) {
+		delta[slot] = value;
+		delta[PRESENT] |= 1 << slot;
+	}
+
+	private static void length(int[] delta, int slot, String value, boolean nonnegative) {
+		if (value.equals("auto")) {
+			set(delta, slot, AUTO);
+			return;
+		}
+		boolean pixels = value.endsWith("px");
+		String number = pixels ? value.substring(0, value.length() - 2) : value;
+		if (!number.matches("[+-]?[0-9]+")) return;
+		try {
+			int length = Integer.parseInt(number);
+			boolean unitless = slot == POS_TOP || slot == POS_LEFT ? number.matches("-?[0-9]{1,5}") : length == 0;
+			if (length != AUTO && (pixels || unitless) && (!nonnegative || length >= 0)) set(delta, slot, length);
+		} catch (NumberFormatException ignored) {
+			// Overflow is an unsupported length, not auto and not a replacement for an earlier value.
+		}
 	}
 
 	private static int bit(int bits, int bit, int sign) {
@@ -561,10 +612,9 @@ public final class HtmlStyles {
 		if (delta[INDENT] >= 0) style[INDENT] = delta[INDENT];
 		for (int slot : BOX) if (delta[slot] >= 0) style[slot] = delta[slot];
 		if (delta[BORDER_COLOR] != 0) style[BORDER_COLOR] = delta[BORDER_COLOR];
-		if (delta[POSITION] >= 0) style[POSITION] = delta[POSITION];
-		if (delta[POS_TOP] != NOT_SET) style[POS_TOP] = delta[POS_TOP];
-		if (delta[POS_LEFT] != NOT_SET) style[POS_LEFT] = delta[POS_LEFT];
-		if (delta[Z_INDEX] != NOT_SET) style[Z_INDEX] = delta[Z_INDEX];
+		for (int slot = POSITION; slot < SLOTS; slot++) {
+			if ((delta[PRESENT] & (1 << slot)) != 0) style[slot] = delta[slot];
+		}
 		if (delta[DISPLAY] >= 0) style[DISPLAY] = delta[DISPLAY];
 		if (delta[FLEX_GROW] >= 0) style[FLEX_GROW] = delta[FLEX_GROW];
 		if (delta[FLEX_BASIS] != NOT_SET) style[FLEX_BASIS] = delta[FLEX_BASIS];
