@@ -1,0 +1,323 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Contributors to the Nebula project.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
+package org.eclipse.nebula.widgets.vnc;
+
+import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+
+/**
+ * SWT RFB framebuffer viewer. Network work runs on RfbClient's threads;
+ * immutable framebuffer versions are coalesced and converted into SWT Images
+ * only on this widget's Display thread. Disposing the widget closes its socket.
+ */
+public final class VncCanvas extends Canvas {
+
+    public interface Listener {
+        default void connected(String title, int width, int height) { }
+        default void disconnected(IOException cause) { }
+        default void bell() { }
+        default void clipboard(String text) { }
+    }
+
+    private final Display display;
+    private final AtomicReference<RfbClient.Frame> pending = new AtomicReference<>();
+    private final AtomicBoolean redrawQueued = new AtomicBoolean();
+    private volatile RfbClient client;
+    private Listener listener = new Listener() { };
+    private RfbClient.Frame frame;
+    private Image image;
+    private int buttonMask;
+
+    public VncCanvas(Composite parent, int style) {
+        super(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);
+        display = getDisplay();
+        addPaintListener(event -> paintFrame(event.gc, getClientArea()));
+        addMouseMoveListener(this::forwardPointer);
+        addMouseListener(new org.eclipse.swt.events.MouseAdapter() {
+            @Override
+            public void mouseDown(MouseEvent e) {
+                setFocus();
+                buttonMask |= buttonBit(e.button);
+                setCapture(true);
+                forwardPointer(e);
+            }
+
+            @Override
+            public void mouseUp(MouseEvent e) {
+                buttonMask &= ~buttonBit(e.button);
+                forwardPointer(e);
+                if (buttonMask == 0) {
+                    setCapture(false);
+                }
+            }
+        });
+        addMouseWheelListener(e -> {
+            if (client == null) {
+                return;
+            }
+            int clicks = Math.min(16, Math.abs(e.count));
+            int wheelBit = e.count > 0 ? 8 : 16;
+            for (int i = 0; i < clicks; i++) {
+                sendPointer(e.x, e.y, buttonMask | wheelBit);
+                sendPointer(e.x, e.y, buttonMask);
+            }
+        });
+        addKeyListener(new org.eclipse.swt.events.KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                sendKey(e, true);
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                sendKey(e, false);
+            }
+        });
+        addDisposeListener(e -> {
+            RfbClient old = client;
+            client = null;
+            if (old != null) {
+                old.close();
+            }
+            pending.set(null);
+            if (image != null) {
+                image.dispose();
+                image = null;
+            }
+        });
+    }
+
+    public void setSessionListener(Listener listener) {
+        checkWidget();
+        this.listener = Objects.requireNonNull(listener, "listener");
+    }
+
+    /**
+     * Opens asynchronously. Only localhost is permitted by default. To use a
+     * remote server, establish a local SSH tunnel or explicitly acknowledge
+     * the lack of RFB transport encryption.
+     */
+    public void connect(String host, int port, char[] password, boolean allowUnencryptedRemote) {
+        checkWidget();
+        disconnect();
+        RfbClient next = new RfbClient(new RfbClient.Listener() {
+            @Override
+            public void connected(String name, int width, int height) {
+                onUi(() -> {
+                    setToolTipText(name);
+                    listener().connected(name, width, height);
+                });
+            }
+
+            @Override
+            public void frame(RfbClient.Frame snapshot) {
+                pending.set(snapshot);
+                scheduleFrame();
+            }
+
+            @Override
+            public void bell() {
+                onUi(() -> listener().bell());
+            }
+
+            @Override
+            public void clipboard(String text) {
+                onUi(() -> listener().clipboard(text));
+            }
+
+            @Override
+            public void disconnected(IOException cause) {
+                onUi(() -> listener().disconnected(cause));
+            }
+        });
+        client = next;
+        next.connectAsync(host, port, password, allowUnencryptedRemote);
+    }
+
+    public void disconnect() {
+        checkWidget();
+        RfbClient old = client;
+        client = null;
+        if (old != null) {
+            old.close();
+        }
+        buttonMask = 0;
+    }
+
+    public boolean requestRefresh() {
+        checkWidget();
+        return client != null && client.requestRefresh();
+    }
+
+    public boolean sendClipboard(String text) {
+        checkWidget();
+        return client != null && client.sendClipboard(text);
+    }
+
+    public RfbClient.Frame getFrame() {
+        checkWidget();
+        return frame;
+    }
+
+    private Listener listener() {
+        return listener;
+    }
+
+    private void onUi(Runnable action) {
+        if (!display.isDisposed()) {
+            display.asyncExec(() -> {
+                if (!isDisposed()) {
+                    action.run();
+                }
+            });
+        }
+    }
+
+    private void scheduleFrame() {
+        if (display.isDisposed() || !redrawQueued.compareAndSet(false, true)) {
+            return;
+        }
+        display.asyncExec(() -> {
+            redrawQueued.set(false);
+            RfbClient.Frame latest = pending.getAndSet(null);
+            if (isDisposed() || latest == null) {
+                return;
+            }
+            ImageData data = new ImageData(latest.width(), latest.height(), 24,
+                    new PaletteData(0xff0000, 0xff00, 0xff));
+            int[] pixels = latest.rgbForDisplay();
+            for (int y = 0; y < latest.height(); y++) {
+                data.setPixels(0, y, latest.width(), pixels, y * latest.width());
+            }
+            Image replacement = new Image(display, data);
+            Image previous = image;
+            image = replacement;
+            frame = latest;
+            if (previous != null) {
+                previous.dispose();
+            }
+            redraw();
+        });
+    }
+
+    private void paintFrame(org.eclipse.swt.graphics.GC gc, Rectangle area) {
+        gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+        gc.fillRectangle(area);
+        if (image == null || frame == null) {
+            return;
+        }
+        Rectangle target = destination(area);
+        if (target.width > 0 && target.height > 0) {
+            gc.drawImage(image, 0, 0, frame.width(), frame.height(),
+                    target.x, target.y, target.width, target.height);
+        }
+    }
+
+    private Rectangle destination(Rectangle area) {
+        if (frame == null || area.width <= 0 || area.height <= 0) {
+            return new Rectangle(0, 0, 0, 0);
+        }
+        double scale = Math.min(area.width / (double) frame.width(),
+                area.height / (double) frame.height());
+        int w = Math.max(1, (int) Math.round(frame.width() * scale));
+        int h = Math.max(1, (int) Math.round(frame.height() * scale));
+        return new Rectangle(area.x + (area.width - w) / 2,
+                area.y + (area.height - h) / 2, w, h);
+    }
+
+    private static int buttonBit(int button) {
+        return switch (button) {
+            case 1 -> 1;
+            case 2 -> 2;
+            case 3 -> 4;
+            default -> 0;
+        };
+    }
+
+    private void forwardPointer(MouseEvent e) {
+        sendPointer(e.x, e.y, buttonMask);
+    }
+
+    private void sendPointer(int x, int y, int mask) {
+        RfbClient current = client;
+        if (current == null || frame == null) {
+            return;
+        }
+        Rectangle d = destination(getClientArea());
+        if (d.width == 0 || d.height == 0) {
+            return;
+        }
+        int translatedX = Math.max(0, Math.min(frame.width() - 1,
+                (int) (((long) (x - d.x) * frame.width()) / d.width)));
+        int translatedY = Math.max(0, Math.min(frame.height() - 1,
+                (int) (((long) (y - d.y) * frame.height()) / d.height)));
+        current.pointer(mask, translatedX, translatedY);
+    }
+
+    private void sendKey(KeyEvent e, boolean down) {
+        RfbClient current = client;
+        if (current != null) {
+            int sym = toKeysym(e);
+            if (sym != 0) {
+                current.key(down, sym);
+            }
+        }
+    }
+
+    private static int toKeysym(KeyEvent event) {
+        return switch (event.keyCode) {
+            case SWT.ARROW_LEFT -> 0xff51;
+            case SWT.ARROW_UP -> 0xff52;
+            case SWT.ARROW_RIGHT -> 0xff53;
+            case SWT.ARROW_DOWN -> 0xff54;
+            case SWT.HOME -> 0xff50;
+            case SWT.END -> 0xff57;
+            case SWT.PAGE_UP -> 0xff55;
+            case SWT.PAGE_DOWN -> 0xff56;
+            case SWT.INSERT -> 0xff63;
+            case SWT.DEL -> 0xffff;
+            case SWT.BS -> 0xff08;
+            case SWT.TAB -> 0xff09;
+            case SWT.CR, SWT.KEYPAD_CR -> 0xff0d;
+            case SWT.ESC -> 0xff1b;
+            case SWT.F1 -> 0xffbe;
+            case SWT.F2 -> 0xffbf;
+            case SWT.F3 -> 0xffc0;
+            case SWT.F4 -> 0xffc1;
+            case SWT.F5 -> 0xffc2;
+            case SWT.F6 -> 0xffc3;
+            case SWT.F7 -> 0xffc4;
+            case SWT.F8 -> 0xffc5;
+            case SWT.F9 -> 0xffc6;
+            case SWT.F10 -> 0xffc7;
+            case SWT.F11 -> 0xffc8;
+            case SWT.F12 -> 0xffc9;
+            case SWT.SHIFT -> 0xffe1;
+            case SWT.CTRL -> 0xffe3;
+            case SWT.ALT -> 0xffe9;
+            default -> {
+                int codepoint = event.character;
+                if (codepoint >= 0x20 && codepoint <= 0xff) {
+                    yield codepoint;
+                }
+                yield codepoint > 0xff ? 0x01000000 | codepoint : 0;
+            }
+        };
+    }
+}
