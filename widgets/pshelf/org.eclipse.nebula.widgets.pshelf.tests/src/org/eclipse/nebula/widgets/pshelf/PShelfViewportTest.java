@@ -142,6 +142,17 @@ public class PShelfViewportTest {
 	}
 
 	@Test
+	public void coordinateLaneStaysOwnedByTheShelfAcrossAnimationAndResize() {
+		PShelf shelf = shelf(10);
+		int[] initial = shelf.m3Lane();
+		shelf.setSelection(shelf.getItems()[4]);
+		assertSame("animation reuses the parent's primitive lane", initial, shelf.m3Lane());
+		shelf.setSize(200, 260);
+		assertSame("resize reuses the same lane", initial, shelf.m3Lane());
+		assertEquals("one ordinate per item", shelf.getItems().length, shelf.m3Lane().length);
+	}
+
+	@Test
 	public void hoverDamagesTheChangedHeadersOnly() {
 		PShelf shelf = shelf(10);
 		List<Rectangle> paints = recordPaints(shelf);
