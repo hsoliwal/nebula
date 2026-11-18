@@ -53,6 +53,30 @@ public final class GridModelJobs {
 	 * avoid retaining Grids once their applications release them. */
 	private static final Map<Grid, Object> latestSort = java.util.Collections.synchronizedMap(new WeakHashMap<>());
 
+	/**
+	 * Immutable, detached primitive key snapshot. Call {@link #copyOf(int[], int)}
+	 * on a CPU thread before posting the viewport command to SWT to avoid a
+	 * model-sized copy in the GUI event callback. The internal array is never
+	 * returned to clients or mutated by the sort worker.
+	 */
+	public static final class IntKeySnapshot {
+		private final int[] keys;
+
+		private IntKeySnapshot(int[] ownedCopy) {
+			keys = ownedCopy;
+		}
+
+		public static IntKeySnapshot copyOf(int[] source, int rows) {
+			Objects.requireNonNull(source, "source");
+			if (rows < 0 || rows > source.length) throw new IndexOutOfBoundsException("rows");
+			return new IntKeySnapshot(java.util.Arrays.copyOf(source, rows));
+		}
+
+		public int size() {
+			return keys.length;
+		}
+	}
+
 	/*
 	 * Opt-in latest-only CPU sort lane. A weak Grid key and weak Grid reference
 	 * prevent the scheduler map from making otherwise abandoned widgets immortal.
@@ -281,12 +305,30 @@ public final class GridModelJobs {
 			final Executor executor) {
 		Objects.requireNonNull(grid, "grid");
 		Objects.requireNonNull(keys, "keys");
-		Objects.requireNonNull(executor, "executor");
 		final RowPermutation permutation = grid.getRowPermutation();
 		if (permutation == null) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		final int rows = permutation.getModelCount();
 		if (keys.length < rows) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		final CpuSortJob job = new CpuSortJob(permutation, java.util.Arrays.copyOf(keys, rows), descending);
+		return sortByIntKeysCpuLatest(grid, IntKeySnapshot.copyOf(keys, rows), descending, executor);
+	}
+
+	/**
+	 * Zero GUI-side key-copy path. Prepare the {@link IntKeySnapshot} on a CPU
+	 * worker, then submit on SWT's UI thread. No SWT object may be captured by
+	 * the worker preparing the key snapshot; this overload only validates model
+	 * identity and enqueues the existing latest-sort CPU lane.
+	 */
+	public static CompletableFuture<Boolean> sortByIntKeysCpuLatest(
+			final Grid grid, final IntKeySnapshot keys, final boolean descending,
+			final Executor executor) {
+		Objects.requireNonNull(grid, "grid");
+		Objects.requireNonNull(keys, "keys");
+		Objects.requireNonNull(executor, "executor");
+		final RowPermutation permutation = grid.getRowPermutation();
+		if (permutation == null) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		final int rows = permutation.getModelCount();
+		if (keys.size() < rows) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		final CpuSortJob job = new CpuSortJob(permutation, keys.keys, descending);
 		CpuSortLane lane = cpuSortLanes.get(grid);
 		if (lane == null) {
 			lane = new CpuSortLane(grid);
