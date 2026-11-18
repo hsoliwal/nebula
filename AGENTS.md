@@ -1,4 +1,9 @@
 <!-- SPDX-License-Identifier: EPL-2.0 -->
+
+## Owner merge directive — history-complete additive superset (2026-11-18)
+
+Retain every compatible upstream Nebula/SWT API and observable widget contract plus all previously verified fork extensions, native/viewport optimizations and regression tests. Inspect historical commits, branches, tags, PR head/merge refs, deleted/renamed paths and source blobs through available roots; a merged PR alone does not prove the capability survived. Select best-of-best compatible atoms and repair losses through Synexia's canonical recipe, preserving Eclipse/SWT UI-thread, identity, disposal, native and accessibility contracts. Centralize history-loss evidence and dated last-checked checkpoints in `hsoliwal/com.synexia`; this clean product target keeps only eligible code and tests. Preserve EPL-2.0 and third-party rights; use Apache-2.0 only for separately eligible original code, not by relabeling EPL source or LLM paraphrasing copyrighted code.
+
 # Nebula M3 agent instructions
 
 ## Clean output rule (owner directive, 2026-11-14) - read first
