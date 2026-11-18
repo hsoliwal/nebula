@@ -70,7 +70,7 @@ public final class HtmlTokenizer {
 				String raw = tag(html, i, end, handler);
 				if (raw != null) {
 					// script and style hold raw text up to their end tag: markup inside is not parsed
-					int close = indexOfIgnoreCase(html, "</" + raw, end);
+						int close = rawEnd(html, raw, end);
 					int contentEnd = close < 0 ? n : close;
 					if (contentEnd > end) handler.text(html.substring(end, contentEnd));
 					end = contentEnd;
@@ -115,9 +115,16 @@ public final class HtmlTokenizer {
 		return !selfClosing && (name.equals("script") || name.equals("style")) ? name : null;
 	}
 
-	private static int indexOfIgnoreCase(String html, String what, int from) {
+	/* A raw-text end tag must end its name; </scripture> is not </script>. */
+	private static int rawEnd(String html, String name, int from) {
+		String what = "</" + name;
 		for (int i = from, last = html.length() - what.length(); i <= last; i++) {
-			if (html.regionMatches(true, i, what, 0, what.length())) return i;
+			if (!html.regionMatches(true, i, what, 0, what.length())) continue;
+			int after = i + what.length();
+			if (after < html.length()) {
+				char boundary = html.charAt(after);
+				if (boundary == '>' || boundary == '/' || Character.isWhitespace(boundary)) return i;
+			}
 		}
 		return -1;
 	}
@@ -165,32 +172,108 @@ public final class HtmlTokenizer {
 		return null;
 	}
 
-	/* text with character references decoded; an unknown reference stays as written */
+	/*
+	 * Text with character references decoded. Named references use bounded lookahead: a document full of '&'
+	 * cannot repeatedly scan the unconsumed suffix. Numeric references consume ASCII digits once, and accept
+	 * the HTML-standard optional semicolon. Unknown named references remain literal.
+	 */
 	static String decode(String html, int start, int end) {
 		int amp = html.indexOf('&', start);
 		if (amp < 0 || amp >= end) return html.substring(start, end);
 		StringBuilder out = new StringBuilder(end - start);
 		int i = start;
 		while (i < end) {
-			char c = html.charAt(i);
-			int semi = c == '&' ? html.indexOf(';', i) : -1;
-			if (semi > i && semi < end && semi - i <= 10) {
-				int code = reference(html.substring(i + 1, semi));
+			amp = html.indexOf('&', i);
+			if (amp < 0 || amp >= end) {
+				out.append(html, i, end);
+				break;
+			}
+			out.append(html, i, amp);
+			int digitAt = amp + 2;
+			if (amp + 1 < end && html.charAt(amp + 1) == '#') {
+				int radix = 10;
+				if (digitAt < end && (html.charAt(digitAt) == 'x' || html.charAt(digitAt) == 'X')) {
+					radix = 16;
+					digitAt++;
+				}
+				int at = digitAt, code = 0;
+				while (at < end) {
+					int digit = asciiDigit(html.charAt(at), radix);
+					if (digit < 0) break;
+					if (code <= Character.MAX_CODE_POINT) code = code * radix + digit;
+					at++;
+				}
+				if (at > digitAt) {
+					out.appendCodePoint(numericCodePoint(code));
+					i = at < end && html.charAt(at) == ';' ? at + 1 : at;
+					continue;
+				}
+			}
+			// The current named vocabulary fits within a ten-character terminated reference.
+			int semi = -1, limit = amp + Math.min(11, end - amp);
+			for (int j = amp + 1; j < limit; j++) {
+				if (html.charAt(j) == ';') {
+					semi = j;
+					break;
+				}
+			}
+			if (semi > amp) {
+				int code = reference(html.substring(amp + 1, semi));
 				if (code >= 0) {
 					out.appendCodePoint(code);
 					i = semi + 1;
 					continue;
 				}
 			}
-			out.append(c);
-			i++;
+			out.append('&');
+			i = amp + 1;
 		}
 		return out.toString();
 	}
 
+	private static int asciiDigit(char c, int radix) {
+		if (c >= '0' && c <= '9') return c - '0';
+		if (radix == 16 && c >= 'a' && c <= 'f') return c - 'a' + 10;
+		if (radix == 16 && c >= 'A' && c <= 'F') return c - 'A' + 10;
+		return -1;
+	}
+
+	/* The HTML numeric-reference end state: U+0000, surrogates and out-of-range values are replacement characters. */
+	private static int numericCodePoint(int value) {
+		if (value == 0 || value > Character.MAX_CODE_POINT || value >= 0xD800 && value <= 0xDFFF) return 0xFFFD;
+		return switch (value) {
+			case 0x80 -> 0x20AC;
+			case 0x82 -> 0x201A;
+			case 0x83 -> 0x0192;
+			case 0x84 -> 0x201E;
+			case 0x85 -> 0x2026;
+			case 0x86 -> 0x2020;
+			case 0x87 -> 0x2021;
+			case 0x88 -> 0x02C6;
+			case 0x89 -> 0x2030;
+			case 0x8A -> 0x0160;
+			case 0x8B -> 0x2039;
+			case 0x8C -> 0x0152;
+			case 0x8E -> 0x017D;
+			case 0x91 -> 0x2018;
+			case 0x92 -> 0x2019;
+			case 0x93 -> 0x201C;
+			case 0x94 -> 0x201D;
+			case 0x95 -> 0x2022;
+			case 0x96 -> 0x2013;
+			case 0x97 -> 0x2014;
+			case 0x98 -> 0x02DC;
+			case 0x99 -> 0x2122;
+			case 0x9A -> 0x0161;
+			case 0x9B -> 0x203A;
+			case 0x9C -> 0x0153;
+			case 0x9E -> 0x017E;
+			case 0x9F -> 0x0178;
+			default -> value;
+		};
+	}
+
 	private static int reference(String name) {
-		if (name.startsWith("#x") || name.startsWith("#X")) return number(name.substring(2), 16);
-		if (name.startsWith("#")) return number(name.substring(1), 10);
 		switch (name) {
 			case "amp": return '&';
 			case "lt": return '<';
@@ -209,12 +292,4 @@ public final class HtmlTokenizer {
 		}
 	}
 
-	private static int number(String digits, int radix) {
-		try {
-			int code = Integer.parseInt(digits, radix);
-			return Character.isValidCodePoint(code) ? code : -1;
-		} catch (NumberFormatException e) {
-			return -1;
-		}
-	}
 }
