@@ -10,6 +10,7 @@ package org.eclipse.nebula.widgets.drawnbrowser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -19,6 +20,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
+
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.PageHistory;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
@@ -190,5 +194,76 @@ public class DrawnBrowserNavigationTest {
 		end = System.currentTimeMillis() + 1_000;
 		while (System.currentTimeMillis() < end) display.readAndDispatch();
 		assertEquals("about:blank", browser.getUrl());
+	}
+
+	private PageHistory history() throws Exception {
+		var field = DrawnBrowser.class.getDeclaredField("pages");
+		field.setAccessible(true);
+		return (PageHistory) field.get(browser);
+	}
+
+	private HtmlDocument document() throws Exception {
+		var field = DrawnBrowser.class.getDeclaredField("document");
+		field.setAccessible(true);
+		return (HtmlDocument) field.get(browser);
+	}
+
+	private void arrive(String url, int generation, DrawnBrowser.PreparedPage page) throws Exception {
+		var method = DrawnBrowser.class.getDeclaredMethod("arrived", String.class, int.class, int.class,
+				DrawnBrowser.PreparedPage.class);
+		method.setAccessible(true);
+		method.invoke(browser, url, PageHistory.PUSH, generation, page);
+	}
+
+	@Test
+	public void aPreparedPageIsInstalledOnUiWithoutReparsing() throws Exception {
+		String text = "<h1>Prepared</h1><p>viewport</p>";
+		DrawnBrowser.PreparedPage page;
+		try (var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+			page = worker.submit(() -> DrawnBrowser.PreparedPage.prepare(text)).get(10, java.util.concurrent.TimeUnit.SECONDS);
+		}
+		browser.addLocationListener(LocationListener.changedAdapter(event -> {
+			assertSame(display.getThread(), Thread.currentThread());
+			assertEquals(text, browser.getText());
+		}));
+		arrive(url("prepared.html"), history().begin(), page);
+		assertSame("the UI must accept the worker's completed arrays", page.document(), document());
+		assertEquals(text, browser.getText());
+		assertEquals(List.of("changed prepared.html"), calls);
+	}
+
+	@Test
+	public void stopRejectsAPreparedFailureBeforeItTouchesUiState() throws Exception {
+		browser.setText("<p>retained</p>");
+		HtmlDocument retained = document();
+		int generation = history().begin();
+		DrawnBrowser.PreparedPage failure = DrawnBrowser.PreparedPage.prepare(null);
+		browser.stop();
+		arrive(url("stopped.html"), generation, failure);
+		assertSame(retained, document());
+		assertEquals("<p>retained</p>", browser.getText());
+		assertEquals("about:blank", browser.getUrl());
+		assertTrue(calls.isEmpty());
+	}
+
+	@Test
+	public void aNewGenerationRejectsAnOlderPreparedPage() throws Exception {
+		int older = history().begin();
+		int newer = history().begin();
+		DrawnBrowser.PreparedPage page = DrawnBrowser.PreparedPage.prepare("<p>newer</p>");
+		arrive(url("newer.html"), newer, page);
+		arrive(url("older.html"), older, DrawnBrowser.PreparedPage.prepare("<p>older</p>"));
+		assertSame(page.document(), document());
+		assertEquals("<p>newer</p>", browser.getText());
+		assertEquals(url("newer.html"), browser.getUrl());
+		assertEquals(List.of("changed newer.html"), calls);
+	}
+
+	@Test
+	public void disposalRejectsAPreparedFailureWithoutWidgetAccess() throws Exception {
+		int generation = history().begin();
+		browser.dispose();
+		arrive(url("disposed.html"), generation, DrawnBrowser.PreparedPage.prepare(null));
+		assertTrue(calls.isEmpty());
 	}
 }
