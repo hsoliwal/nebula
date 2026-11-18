@@ -10,8 +10,13 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
@@ -39,9 +44,24 @@ public class VncViewer extends Canvas {
         Socket open() throws IOException;
     }
 
+    @FunctionalInterface
+    private interface NetworkInput {
+        void send(RfbConnection client) throws IOException;
+    }
+
+    private record PointerUpdate(RfbConnection client, int x, int y, int buttonMask) { }
+
     private final Display display;
     private final AtomicInteger generation = new AtomicInteger();
     private final AtomicBoolean redrawQueued = new AtomicBoolean();
+    private final ThreadPoolExecutor outbound = new ThreadPoolExecutor(1, 1, 0L,
+            TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(256), runnable -> {
+                Thread thread = new Thread(runnable, "Nebula-RFB-outbound");
+                thread.setDaemon(true);
+                return thread;
+            }, new ThreadPoolExecutor.AbortPolicy());
+    private final AtomicReference<PointerUpdate> pendingMotion = new AtomicReference<>();
+    private final AtomicBoolean motionQueued = new AtomicBoolean();
     private volatile RfbConnection connection;
     private volatile RfbFramebuffer framebuffer;
     private volatile String status = "Disconnected";
@@ -66,7 +86,7 @@ public class VncViewer extends Canvas {
             pointerButtons &= ~mouseButton(event.button);
             sendPointer(event.x, event.y, pointerButtons);
         });
-        addListener(SWT.MouseMove, event -> sendPointer(event.x, event.y, pointerButtons));
+        addListener(SWT.MouseMove, event -> sendPointerCoalesced(event.x, event.y, pointerButtons));
         addListener(SWT.MouseWheel, event -> {
             int wheel = event.count > 0 ? 8 : 16;
             int steps = Math.min(8, Math.abs(event.count));
@@ -82,6 +102,8 @@ public class VncViewer extends Canvas {
             RfbConnection active = connection;
             connection = null;
             if (active != null) active.close();
+            pendingMotion.set(null);
+            outbound.shutdownNow();
             discardImage();
         });
     }
@@ -213,6 +235,7 @@ public class VncViewer extends Canvas {
         connection = null;
         if (active != null) active.close();
         framebuffer = null;
+        pendingMotion.set(null);
         pointerButtons = 0;
         clipboardText = "";
         status = "Disconnected";
@@ -236,10 +259,13 @@ public class VncViewer extends Canvas {
         return clipboardText;
     }
 
-    public void sendClipboardText(String text) throws IOException {
+    public void sendClipboardText(String text) {
         checkWidget();
+        Objects.requireNonNull(text, "text");
         RfbConnection active = connection;
-        if (active != null) active.sendClipboard(Objects.requireNonNull(text, "text"));
+        if (active != null) {
+            queueInput(active, client -> client.sendClipboard(text));
+        }
     }
 
     private void queueRedraw(int epoch) {
@@ -299,18 +325,78 @@ public class VncViewer extends Canvas {
         };
     }
 
-    private void sendPointer(int x, int y, int buttons) {
+    private PointerUpdate pointerUpdate(int x, int y, int buttons) {
         RfbConnection active = connection;
         RfbFramebuffer current = framebuffer;
         Rectangle target = displayedBounds;
-        if (active == null || current == null || target.width == 0 || target.height == 0) return;
+        if (active == null || current == null || target.width == 0 || target.height == 0) {
+            return null;
+        }
         int px = (int) ((long) (x - target.x) * current.width() / target.width);
         int py = (int) ((long) (y - target.y) * current.height() / target.height);
-        try {
-            active.sendPointer(px, py, buttons);
-        } catch (IOException failed) {
-            status = "RFB input error: " + failed.getMessage();
+        return new PointerUpdate(active, px, py, buttons);
+    }
+
+    private void sendPointer(int x, int y, int buttons) {
+        PointerUpdate update = pointerUpdate(x, y, buttons);
+        if (update != null) {
+            // Preserve mouse-down, mouse-up and wheel press/release events.
+            queueInput(update.client(), client -> client.sendPointer(update.x(),
+                    update.y(), update.buttonMask()));
         }
+    }
+
+    private void sendPointerCoalesced(int x, int y, int buttons) {
+        PointerUpdate update = pointerUpdate(x, y, buttons);
+        if (update != null) {
+            // Never enqueue one network write for every high-frequency move.
+            pendingMotion.set(update);
+            scheduleMotion();
+        }
+    }
+
+    private void scheduleMotion() {
+        if (!motionQueued.compareAndSet(false, true)) return;
+        try {
+            outbound.execute(() -> {
+                try {
+                    PointerUpdate update;
+                    while ((update = pendingMotion.getAndSet(null)) != null) {
+                        if (connection == update.client()) {
+                            update.client().sendPointer(update.x(), update.y(), update.buttonMask());
+                        }
+                    }
+                } catch (IOException error) {
+                    inputFailure(error);
+                } finally {
+                    motionQueued.set(false);
+                    if (pendingMotion.get() != null) scheduleMotion();
+                }
+            });
+        } catch (RejectedExecutionException rejected) {
+            motionQueued.set(false);
+            inputFailure(new IOException("RFB output queue is saturated", rejected));
+        }
+    }
+
+    private void queueInput(RfbConnection target, NetworkInput input) {
+        try {
+            outbound.execute(() -> {
+                if (connection != target) return;
+                try {
+                    input.send(target);
+                } catch (IOException error) {
+                    inputFailure(error);
+                }
+            });
+        } catch (RejectedExecutionException rejected) {
+            inputFailure(new IOException("RFB output queue is saturated", rejected));
+        }
+    }
+
+    private void inputFailure(IOException error) {
+        status = "RFB input error: " + error.getMessage();
+        queueRedraw(generation.get());
     }
 
     private void sendKey(Event event, boolean down) {
@@ -318,11 +404,7 @@ public class VncViewer extends Canvas {
         if (active == null) return;
         int keysym = keysym(event);
         if (keysym == 0) return;
-        try {
-            active.sendKey(keysym, down);
-        } catch (IOException failed) {
-            status = "RFB input error: " + failed.getMessage();
-        }
+        queueInput(active, client -> client.sendKey(keysym, down));
     }
 
     /** X11 keysyms used on the RFB wire. */
