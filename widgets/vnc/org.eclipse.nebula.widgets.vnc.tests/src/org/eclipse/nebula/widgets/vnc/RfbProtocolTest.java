@@ -76,4 +76,77 @@ public final class RfbProtocolTest {
         assertThrows(IOException.class,
                 () -> RfbClient.open(new ByteArrayInputStream(incompatible), new ByteArrayOutputStream(), true));
     }
+    @Test
+    public void unsupportedVersionAndMalformedInitializationFailClosed() throws IOException {
+        byte[] version = scriptedServer(1, 2, 1, update());
+        version[10] = '7';
+        assertThrows(IOException.class,
+                () -> RfbClient.open(new ByteArrayInputStream(version), new ByteArrayOutputStream(), true));
+        byte[] zeroWidth = scriptedServer(1, 0, 1, update());
+        assertThrows(IOException.class,
+                () -> RfbClient.open(new ByteArrayInputStream(zeroWidth), new ByteArrayOutputStream(), true));
+        assertThrows(IOException.class,
+                () -> RfbClient.open(new ByteArrayInputStream(new byte[] {1,2,3}),
+                        new ByteArrayOutputStream(), true));
+    }
+
+    @Test
+    public void unknownEncodingAndOutOfBoundsRectangleFailClosed() throws IOException {
+        ByteArrayOutputStream unknown = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(unknown);
+        out.writeByte(0); out.writeByte(0); out.writeShort(1);
+        out.writeShort(0); out.writeShort(0); out.writeShort(2); out.writeShort(1);
+        out.writeInt(42);
+        try (RfbClient client = RfbClient.open(new ByteArrayInputStream(scriptedServer(1,2,1,unknown.toByteArray())),
+                new ByteArrayOutputStream(), true)) {
+            assertThrows(IOException.class, client::nextFrame);
+        }
+        ByteArrayOutputStream outside = new ByteArrayOutputStream();
+        DataOutputStream dst = new DataOutputStream(outside);
+        dst.writeByte(0); dst.writeByte(0); dst.writeShort(1);
+        dst.writeShort(1); dst.writeShort(0); dst.writeShort(2); dst.writeShort(1);
+        dst.writeInt(0);
+        try (RfbClient client = RfbClient.open(new ByteArrayInputStream(scriptedServer(1,2,1,outside.toByteArray())),
+                new ByteArrayOutputStream(), true)) {
+            assertThrows(IOException.class, client::nextFrame);
+        }
+    }
+
+    @Test
+    public void desktopResizeRequestsFullRefresh() throws IOException {
+        ByteArrayOutputStream update = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(update);
+        out.writeByte(0); out.writeByte(0); out.writeShort(1);
+        out.writeShort(0); out.writeShort(0); out.writeShort(3); out.writeShort(2);
+        out.writeInt(-223); // DesktopSize
+        ByteArrayOutputStream wire = new ByteArrayOutputStream();
+        try (RfbClient client = RfbClient.open(new ByteArrayInputStream(scriptedServer(1,2,1,update.toByteArray())),
+                wire, true)) {
+            RfbFramebuffer.Frame frame = client.nextFrame();
+            assertEquals(3,frame.width());
+            assertEquals(2,frame.height());
+        }
+        byte[] sent = wire.toByteArray();
+        assertEquals(3, sent[sent.length - 10] & 0xff); // FramebufferUpdateRequest
+        assertEquals(0, sent[sent.length - 9] & 0xff); // full, not incremental
+    }
+
+    @Test
+    public void oversizedServerClipboardAndTruncatedRawFailClosed() throws IOException {
+        ByteArrayOutputStream clipboard = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(clipboard);
+        out.writeByte(3); out.write(new byte[3]); out.writeInt(65_537);
+        try (RfbClient client = RfbClient.open(new ByteArrayInputStream(
+                scriptedServer(1,2,1,clipboard.toByteArray())), new ByteArrayOutputStream(), true)) {
+            assertThrows(IOException.class, client::nextFrame);
+        }
+        byte[] complete = update();
+        byte[] truncated = new byte[complete.length - 1];
+        System.arraycopy(complete,0,truncated,0,truncated.length);
+        try (RfbClient client = RfbClient.open(new ByteArrayInputStream(
+                scriptedServer(1,2,1,truncated)),new ByteArrayOutputStream(),true)) {
+            assertThrows(IOException.class,client::nextFrame);
+        }
+    }
+
 }
