@@ -175,6 +175,26 @@ public class HtmlLayoutTest {
 		assertEquals(l.controlHeight(0) + 2 * HtmlLayout.BLOCK_GAP, l.height(0));
 		assertEquals("a control has no text layout", null, l.textLayout(0));
 	}
+
+	@Test
+	public void aSpanningCellCoversItsColumnsAndWidensThem() {
+		HtmlLayout l = layout("<table><tr><td colspan=2>head</td><td>x</td></tr><tr><td>a</td><td>b</td><td>c</td></tr></table>", 400);
+		assertEquals("the spanning cell starts at the first column", l.cellX(2), l.cellX(0));
+		assertEquals("and is as wide as its two columns", l.cellWidth(2) + l.cellWidth(3), l.cellWidth(0));
+		assertEquals(l.cellX(4), l.cellX(1));
+		l.dispose();
+		String word = "unbreakablewordwiderthanbothnarrowcolumns";
+		l = layout("<table><tr><td colspan=2>" + word + "</td></tr><tr><td>a</td><td>b</td></tr></table>", 1000);
+		TextLayout probe = new TextLayout(display);
+		try {
+			probe.setFont(l.textLayout(0).getFont());
+			probe.setText(word);
+			assertTrue("the spanned columns together hold the word", l.cellWidth(1) + l.cellWidth(2) >= probe.getBounds().width + 2 * HtmlLayout.CELL_PADDING);
+		} finally {
+			probe.dispose();
+		}
+		assertTrue("and share it", Math.abs(l.cellWidth(1) - l.cellWidth(2)) <= 1);
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);

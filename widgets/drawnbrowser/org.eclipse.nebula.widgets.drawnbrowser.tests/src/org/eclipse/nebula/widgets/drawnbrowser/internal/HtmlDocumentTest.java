@@ -316,4 +316,13 @@ public class HtmlDocumentTest {
 		assertEquals("two siblings back", 0xFF00FFFF, colorOf(chain, block(chain, "c"), "c"));
 		assertEquals(0, colorOf(chain, block(chain, "b"), "b"));
 	}
+
+	@Test
+	public void colspanPlacesTheNextCellsAfterIt() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td colspan=2>wide</td><td>c</td></tr><tr><td>a</td><td colspan=x>b</td>"
+				+ "<td colspan=0>c2</td></tr></table>");
+		assertEquals(3, d.tableColumns[0]);
+		assertArrayEquals("columns", new int[] { 0, 2, 0, 1, 2 }, java.util.Arrays.copyOf(d.cellColumn, 5));
+		assertArrayEquals("spans; a bad or zero colspan is 1", new int[] { 2, 1, 1, 1, 1 }, java.util.Arrays.copyOf(d.cellSpan, 5));
+	}
 }

@@ -254,10 +254,10 @@ public final class HtmlLayout {
 		return doc.blockIndent[b] + columns(doc.cellTable[b])[doc.cellColumn[b]];
 	}
 
-	/** The width of cell {@code b}'s box (its column's width). */
+	/** The width of cell {@code b}'s box (its columns' width). */
 	public int cellWidth(int b) {
 		int[] x = columns(doc.cellTable[b]);
-		return x[doc.cellColumn[b] + 1] - x[doc.cellColumn[b]];
+		return x[doc.cellColumn[b] + doc.cellSpan[b]] - x[doc.cellColumn[b]];
 	}
 
 	/** The block's text layout, made and cached on demand; null for an image block. */
@@ -421,15 +421,20 @@ public final class HtmlLayout {
 		if (columnX[t] != null) return columnX[t];
 		int n = doc.tableColumns[t], first = -1;
 		int[] min = new int[n], max = new int[n];
-		for (int k = 0; k < doc.blockCount; k++) {
-			if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t) continue;
-			if (first < 0) first = k;
-			TextLayout layout = make(k, -1);
-			int c = doc.cellColumn[k];
-			max[c] = Math.max(max[c], layout.getBounds().width + 2 * CELL_PADDING);
-			min[c] = Math.max(min[c], widestWord(layout, doc.blockText(k)) + 2 * CELL_PADDING);
-			layout.dispose();
+		// cells of one column first; then a spanning cell spreads what its columns lack over them (CSS 2.1 17.5.2.2)
+		for (int pass = 0; pass < 2; pass++) {
+			for (int k = 0; k < doc.blockCount; k++) {
+				if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t || (doc.cellSpan[k] > 1) != (pass == 1)) continue;
+				if (first < 0 || k < first) first = k;
+				TextLayout layout = make(k, -1);
+				int c = doc.cellColumn[k], span = doc.cellSpan[k];
+				int cellMax = layout.getBounds().width + 2 * CELL_PADDING, cellMin = widestWord(layout, doc.blockText(k)) + 2 * CELL_PADDING;
+				layout.dispose();
+				TableColumns.spread(min, c, span, cellMin);
+				TableColumns.spread(max, c, span, cellMax);
+			}
 		}
+		for (int c = 0; c < n; c++) max[c] = Math.max(max[c], min[c]);
 		return columnX[t] = TableColumns.edges(min, max, width - doc.blockIndent[first]);
 	}
 
