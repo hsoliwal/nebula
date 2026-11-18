@@ -41,7 +41,7 @@ import org.eclipse.swt.widgets.ScrollBar;
  * location: {@link LocationListener#changing} (a listener may veto it with {@code doit = false}), then, once the page
  * has loaded and is shown, {@link LocationListener#changed}. Supported HTML: p, div, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
  * pre (white space kept, no wrap, monospace), code/tt/kbd/samp (monospace), blockquote (indented), hr,
- * img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script is ignored;
+ * table/caption/tr/td/th (automatic column widths, the border attribute; text only in cells, no spans), img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script is ignored;
  * style elements and style attributes give the CSS subset of colour, background, weight, style, decoration, alignment
  * and left margin.
  * </p>
@@ -259,7 +259,7 @@ public class DrawnBrowser extends Canvas {
 		if (text == null) return;
 		int local = offset - document.textStart[b];
 		Rectangle line = text.getLineBounds(text.getLineIndex(local));
-		int top = layout.top(b) + HtmlLayout.BLOCK_GAP + line.y, view = getClientArea().height;
+		int top = layout.top(b) + layout.contentTop(b) + line.y, view = getClientArea().height;
 		if (top < viewport.y() || top + line.height > viewport.y() + view) scrollTo(top - view / 3);
 	}
 
@@ -392,11 +392,18 @@ public class DrawnBrowser extends Canvas {
 		int scrollY = viewport.y();
 		int pageTop = y + scrollY, pageBottom = pageTop + height;
 		for (int b = layout.blockAt(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
-			int top = layout.top(b) - scrollY + HtmlLayout.BLOCK_GAP, left = layout.indent(b);
+			int top = layout.top(b) - scrollY + layout.contentTop(b), left = layout.indent(b);
+			boolean cell = document.kind[b] == HtmlDocument.CELL;
+			int boxX = cell ? layout.cellX(b) : 0, boxWidth = cell ? layout.cellWidth(b) : getClientArea().width;
 			if (document.blockBackground[b] != 0) {
 				gc.setBackground(layout.color(document.blockBackground[b]));
-				gc.fillRectangle(0, layout.top(b) - scrollY, getClientArea().width, layout.height(b));
+				gc.fillRectangle(boxX, layout.top(b) - scrollY, boxWidth, layout.height(b));
 				gc.setBackground(getBackground());
+			}
+			if (cell && document.tableBorder[document.cellTable[b]] > 0) {
+				gc.setForeground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+				gc.drawRectangle(boxX, layout.top(b) - scrollY, boxWidth - 1, layout.height(b) - 1);
+				gc.setForeground(getForeground());
 			}
 			if (document.kind[b] == HtmlDocument.RULE) {
 				gc.setBackground(getDisplay().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));

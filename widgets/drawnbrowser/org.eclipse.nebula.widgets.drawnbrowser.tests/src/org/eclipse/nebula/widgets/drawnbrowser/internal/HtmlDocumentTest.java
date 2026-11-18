@@ -163,6 +163,47 @@ public class HtmlDocumentTest {
 	}
 
 	@Test
+	public void tableCellsAreBlocksWithTheirTableRowAndColumn() {
+		HtmlDocument d = HtmlDocument.parse("<p>before</p><table border=1><caption>Cap</caption><tr><th>Name</th><th>Size</th></tr>"
+				+ "<tr><td>a <b>b</b></td><td></td></tr><tr><td>only</td></tr></table><p>after</p>");
+		int cell = HtmlDocument.CELL;
+		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:before", PARAGRAPH + ":0:0:Cap", cell + ":1:0:Name", cell + ":1:0:Size",
+				cell + ":0:0:a b", cell + ":0:0:", cell + ":0:0:only", PARAGRAPH + ":0:0:after" }, blocks(d));
+		assertEquals(1, d.tableCount);
+		assertEquals("the widest row", 2, d.tableColumns[0]);
+		assertEquals(1, d.tableBorder[0]);
+		assertArrayEquals(new int[] { -1, -1, 0, 0, 1, 1, 2, -1 }, java.util.Arrays.copyOf(d.cellRow, 8));
+		assertArrayEquals(new int[] { -1, -1, 0, 1, 0, 1, 0, -1 }, java.util.Arrays.copyOf(d.cellColumn, 8));
+		assertArrayEquals(new int[] { -1, -1, 0, 0, 0, 0, 0, -1 }, java.util.Arrays.copyOf(d.cellTable, 8));
+		assertEquals("caption centred", HtmlStyles.CENTER, d.blockAlign[1]);
+		assertEquals("th centred", HtmlStyles.CENTER, d.blockAlign[2]);
+		assertEquals(HtmlStyles.LEFT, d.blockAlign[4]);
+		assertEquals(true, d.sameRow(2, 3));
+		assertEquals(false, d.sameRow(3, 4));
+		assertEquals(false, d.sameRow(0, 1));
+	}
+
+	@Test
+	public void blockElementsInACellAreLineBreaksAndANestedTableFlattens() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td><p>one</p><p>two</p><ul><li>three</li></ul><img src=x.png>"
+				+ "<table><tr><td>in</td><td>ner</td></tr><tr><td>row</td></tr></table></td><td>next</td></tr></table><p>after</p>");
+		int cell = HtmlDocument.CELL;
+		assertArrayEquals(new String[] { cell + ":0:0:one\ntwo\nthree\nin ner\nrow", cell + ":0:0:next", PARAGRAPH + ":0:0:after" }, blocks(d));
+		assertEquals("one table", 1, d.tableCount);
+		assertEquals("no image in a cell yet", 0, d.imageCount);
+		assertEquals(true, d.sameRow(0, 1));
+	}
+
+	@Test
+	public void strayTextInATableGetsACellAndAnOpenCellEndsWithThePage() {
+		HtmlDocument d = HtmlDocument.parse("<blockquote><table>stray<tr><td>x ");
+		int cell = HtmlDocument.CELL;
+		assertArrayEquals(new String[] { cell + ":0:0:stray", cell + ":0:0:x" }, blocks(d));
+		assertArrayEquals(new int[] { 0, 1 }, java.util.Arrays.copyOf(d.cellRow, 2));
+		assertEquals("in a blockquote", HtmlDocument.QUOTE_INDENT, d.blockIndent[1]);
+	}
+
+	@Test
 	public void malformedInputNeverFails() {
 		HtmlDocument d = HtmlDocument.parse("<p>open <b>bold <i>both</p> after</b> < lone <p");
 		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:open bold both", PARAGRAPH + ":0:0:after < lone <p" }, blocks(d));

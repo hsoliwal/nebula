@@ -61,6 +61,71 @@ public class HtmlLayoutTest {
 	}
 
 	@Test
+	public void cellsOfARowShareTheirTopAndTheTallestHeight() {
+		// the tallest cell is not the last: the row takes the maximum, not the last measured
+		HtmlLayout l = layout("<p>before</p><table><tr><td>a much longer cell that has to wrap onto several lines at this "
+				+ "width</td><td>short</td></tr><tr><td>next</td></tr></table>", 300);
+		assertEquals(l.top(1), l.top(2));
+		assertEquals(l.height(1), l.height(2));
+		assertTrue("the long cell wraps", l.textLayout(1).getLineCount() > 1);
+		assertEquals(1, l.textLayout(2).getLineCount());
+		assertEquals("as tall as the tallest", l.textLayout(1).getBounds().height + 2 * HtmlLayout.CELL_PADDING, l.height(2));
+		assertEquals("the next row", l.top(1) + l.height(1), l.top(3));
+		assertEquals("a row is found by its first cell", 1, l.blockAt(l.top(1)));
+		assertEquals(1, l.blockAt(l.top(1) + l.height(1) - 1));
+		assertEquals(2, l.blockAt(l.cellX(2) + 1, l.top(1) + 2));
+		assertEquals(1, l.blockAt(l.cellX(2) - 1, l.top(1) + 2));
+		assertEquals("the table fills the view", 300, l.cellX(2) + l.cellWidth(2));
+	}
+
+	@Test
+	public void columnsAreAsWideAsTheirContentWhenItFits() {
+		HtmlLayout l = layout("<blockquote><table><tr><td>ab</td><td>abcdef</td></tr><tr><td>x</td></tr></table></blockquote>", 600);
+		TextLayout probe = new TextLayout(display);
+		try {
+			probe.setFont(l.textLayout(0).getFont());
+			probe.setText("abcdef");
+			assertEquals(probe.getBounds().width + 2 * HtmlLayout.CELL_PADDING, l.cellWidth(1));
+			probe.setText("ab");
+			assertEquals(probe.getBounds().width + 2 * HtmlLayout.CELL_PADDING, l.cellWidth(0));
+		} finally {
+			probe.dispose();
+		}
+		assertEquals("indented by the blockquote", HtmlDocument.QUOTE_INDENT, l.cellX(0));
+		assertEquals(l.cellX(0) + l.cellWidth(0), l.cellX(1));
+		assertEquals("a column keeps its width in every row", l.cellWidth(0), l.cellWidth(2));
+		assertEquals(l.cellX(0) + HtmlLayout.CELL_PADDING, l.indent(0));
+		assertEquals(HtmlLayout.CELL_PADDING, l.contentTop(0));
+	}
+
+	@Test
+	public void aColumnIsNeverNarrowerThanItsWidestWordAndAHeaderIsBold() {
+		HtmlLayout l = layout("<table><tr><th>supercalifragilistic</th><td>a b c d e f g h i j k l m n o p q r s</td></tr></table>", 150);
+		TextLayout probe = new TextLayout(display);
+		try {
+			probe.setFont(l.textLayout(0).getFont());
+			probe.setText("supercalifragilistic");
+			assertTrue(l.cellWidth(0) + " holds the word", l.cellWidth(0) >= probe.getBounds().width + 2 * HtmlLayout.CELL_PADDING);
+		} finally {
+			probe.dispose();
+		}
+		assertTrue("th is bold", (l.textLayout(0).getFont().getFontData()[0].getStyle() & SWT.BOLD) != 0);
+		assertEquals("td is not", 0, l.textLayout(1).getFont().getFontData()[0].getStyle() & SWT.BOLD);
+		assertTrue("the other column wraps", l.textLayout(1).getLineCount() > 1);
+	}
+
+	@Test
+	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
+		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);
+		int y = l.top(0) + HtmlLayout.CELL_PADDING + 2;
+		assertEquals("r", l.linkAt(l.indent(1) + 2, y));
+		assertNull(l.linkAt(l.indent(0) + 2, y));
+		assertEquals("the second cell's text starts after the first's", 4, l.offsetAt(l.indent(1), y));
+		assertEquals(0, l.offsetAt(l.indent(0), y));
+		assertEquals("after the table", 2, l.blockAt(l.top(0) + l.height(0)));
+	}
+
+	@Test
 	public void onlyWhatIsAskedForIsMeasured() {
 		HtmlLayout l = layout(paragraphs(1000), 400);
 		assertEquals(0, l.blockAt(5));

@@ -372,6 +372,46 @@ public class DrawnBrowserTest {
 		assertEquals("clamped to the page", new org.eclipse.swt.graphics.Point(0, 12), browser.getSelection());
 	}
 
+	/* the number of pixels of the colour in the top rows of the view, and the rightmost x holding one (-1 none) */
+	private int[] pixels(org.eclipse.swt.graphics.RGB rgb, int rows) {
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		Image shot = new Image(display, area.width, rows);
+		GC gc = new GC(browser);
+		gc.copyArea(shot, 0, 0);
+		gc.dispose();
+		ImageData data = shot.getImageData();
+		shot.dispose();
+		int count = 0, right = -1;
+		for (int y = 0; y < rows; y++) {
+			for (int x = 0; x < area.width; x++) {
+				if (data.palette.getRGB(data.getPixel(x, y)).equals(rgb)) {
+					count++;
+					right = Math.max(right, x);
+				}
+			}
+		}
+		return new int[] { count, right };
+	}
+
+	@Test
+	public void aBorderedTableDrawsItsCellBoxes() {
+		org.eclipse.swt.graphics.RGB shadow = display.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW).getRGB();
+		open("<table><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>");
+		int plain = pixels(shadow, 80)[0];
+		open("<table border=1><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>");
+		int bordered = pixels(shadow, 80)[0];
+		// four boxes, each at least as tall as a line of text on both sides
+		assertTrue("border pixels " + bordered + " vs " + plain, bordered - plain >= 4 * 2 * 2 * 10);
+	}
+
+	@Test
+	public void aCellBackgroundFillsOnlyItsCell() {
+		open("<table><tr><td style=\"background-color: #ff0000\">red</td><td>plain</td></tr></table>");
+		int[] red = pixels(new org.eclipse.swt.graphics.RGB(255, 0, 0), 40);
+		assertTrue("red pixels " + red[0], red[0] > 100);
+		assertTrue("the fill stops at its column: " + red[1], red[1] < browser.getClientArea().width / 2);
+	}
+
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");
