@@ -380,6 +380,8 @@ public final class HtmlLayout {
 			h = shownHeight(doc.image[b]);
 		} else if (doc.kind[b] == HtmlDocument.RULE) {
 			h = RULE_HEIGHT;
+		} else if (doc.kind[b] == HtmlDocument.CONTROL) {
+			h = controlHeight(b);
 		} else {
 			h = textHeight(b);
 		}
@@ -490,7 +492,7 @@ public final class HtmlLayout {
 
 	/** Whether block {@code b} has no text to lay out (an image or a rule). */
 	private boolean textless(int b) {
-		return doc.kind[b] == HtmlDocument.IMAGE || doc.kind[b] == HtmlDocument.RULE;
+		return doc.kind[b] == HtmlDocument.IMAGE || doc.kind[b] == HtmlDocument.RULE || doc.kind[b] == HtmlDocument.CONTROL;
 	}
 
 	/** The colour of an opaque ARGB value (CSS), made on first use and disposed with the layout. */
@@ -502,5 +504,51 @@ public final class HtmlLayout {
 		for (int s = 0; s < cacheSize; s++) cached[s].dispose();
 		Arrays.fill(cached, null);
 		cacheSize = 0;
+	}
+
+	/* the height of a line of body text, px, measured once */
+	private int lineHeight;
+
+	private int lineHeight() {
+		if (lineHeight == 0) {
+			TextLayout probe = new TextLayout(device);
+			probe.setFont(font(0, 0));
+			probe.setText("Mg");
+			lineHeight = Math.max(1, probe.getBounds().height);
+			probe.dispose();
+		}
+		return lineHeight;
+	}
+
+	/**
+	 * The height of control block {@code b}'s widget: a line and a margin for a field, a button or a list; the rows of a
+	 * text area (2 when not given); a line for a check box or a radio.
+	 */
+	public int controlHeight(int b) {
+		int c = doc.blockControl[b], line = lineHeight();
+		return switch (doc.controlType[c]) {
+			case HtmlDocument.TEXTAREA -> (doc.controlRows[c] > 0 ? doc.controlRows[c] : 2) * line + 8;
+			case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> line + 2;
+			default -> line + 10;
+		};
+	}
+
+	/**
+	 * The width of control block {@code b}'s widget: a field or a text area by its columns (20 when not given), a list
+	 * by its longest option, a button by its label, a check box or a radio by a line.
+	 */
+	public int controlWidth(int b) {
+		int c = doc.blockControl[b], line = lineHeight(), character = Math.max(1, line / 2);
+		return switch (doc.controlType[c]) {
+			case HtmlDocument.TEXT, HtmlDocument.PASSWORD, HtmlDocument.TEXTAREA ->
+				(doc.controlCols[c] > 0 ? doc.controlCols[c] : 20) * character + 8;
+			case HtmlDocument.SELECT -> {
+				int longest = 4;
+				for (String option : doc.controlOptions[c]) longest = Math.max(longest, option.length());
+				yield longest * character + 32;
+			}
+			case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> line + 4;
+			default -> Math.max(60, doc.controlLabel[c].length() * character + 24);
+		};
 	}
 }

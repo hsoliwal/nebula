@@ -227,4 +227,34 @@ public class HtmlDocumentTest {
 		assertEquals("a plain block has none", 0, d.blockPadTop[1] + d.blockBorder[1] + d.blockMarginTop[1]);
 		assertEquals("a table cell keeps its cell padding", 0, d.blockPadTop[2]);
 	}
+
+	@Test
+	public void formControlsAreControlBlocksWithTheirLanes() {
+		HtmlDocument d = HtmlDocument.parse("<form action='http://example.test/search'><input name=q value=hi><input type=password name=pw><input type=checkbox name=agree checked><input type=radio name=c value=a><input type=radio name=c value=b checked><input type=hidden name=h value=x><select name=s><option>one<option selected>two</select><textarea name=t rows=3 cols=10>\nline1\nline2</textarea><button name=go value=1>Go now</button></form><p>after <input name=outside></p>");
+		int controls = 0;
+		for (int b = 0; b < d.blockCount; b++) if (d.kind[b] == HtmlDocument.CONTROL) controls++;
+		assertEquals("every control but the hidden input has a block", 9, controls);
+		assertEquals(10, d.controlCount);
+		assertEquals(1, d.formCount);
+		assertEquals("http://example.test/search", d.formAction[0]);
+		int[] types = { HtmlDocument.TEXT, HtmlDocument.PASSWORD, HtmlDocument.CHECKBOX, HtmlDocument.RADIO, HtmlDocument.RADIO,
+				HtmlDocument.HIDDEN, HtmlDocument.SELECT, HtmlDocument.TEXTAREA, HtmlDocument.SUBMIT, HtmlDocument.TEXT };
+		assertArrayEquals(types, java.util.Arrays.copyOf(d.controlType, 10));
+		assertEquals("hi", d.controlValue[0]);
+		assertEquals("on", d.controlValue[2]);
+		assertEquals(1, d.controlChecked[2]);
+		assertEquals(0, d.controlChecked[3]);
+		assertEquals(1, d.controlChecked[4]);
+		assertEquals("x", d.controlValue[5]);
+		assertArrayEquals(new String[] { "one", "two" }, d.controlOptions[6]);
+		assertEquals("the selected option", 1, d.controlChecked[6]);
+		assertEquals("the newline after <textarea> is not content", "line1\nline2", d.controlValue[7]);
+		assertEquals(3, d.controlRows[7]);
+		assertEquals(10, d.controlCols[7]);
+		assertEquals("Go now", d.controlLabel[8]);
+		assertEquals("1", d.controlValue[8]);
+		assertEquals(0, d.controlForm[8]);
+		assertEquals("outside the form", -1, d.controlForm[9]);
+		assertEquals("text after a control is a paragraph again", "after", d.blockText(d.blockCount - 2));
+	}
 }

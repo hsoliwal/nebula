@@ -498,6 +498,80 @@ public class DrawnBrowserTest {
 		}
 		return -1;
 	}
+
+	/* the n-th child button (in the order they were made) with the style bit, or null */
+	private org.eclipse.swt.widgets.Button button(int style, int n) {
+		List<org.eclipse.swt.widgets.Button> buttons = new ArrayList<>();
+		for (org.eclipse.swt.widgets.Button b : children(org.eclipse.swt.widgets.Button.class)) if ((b.getStyle() & style) != 0) buttons.add(b);
+		buttons.sort(java.util.Comparator.comparingInt(b -> b.getBounds().y));
+		return n < buttons.size() ? buttons.get(n) : null;
+	}
+
+	/* the browser's child widgets of a type */
+	private <T> List<T> children(Class<T> type) {
+		List<T> out = new ArrayList<>();
+		for (org.eclipse.swt.widgets.Control child : browser.getChildren()) if (type.isInstance(child)) out.add(type.cast(child));
+		return out;
+	}
+
+	@Test
+	public void formControlsAreNativeWidgetsAndSubmitTheirForm() {
+		List<String> changing = new ArrayList<>();
+		browser.addLocationListener(new LocationListener() {
+			@Override
+			public void changing(LocationEvent event) {
+				changing.add(event.location);
+				event.doit = false;
+			}
+
+			@Override
+			public void changed(LocationEvent event) {
+			}
+		});
+		open("<form action='http://example.test/search'><input name=q value=hi><input type=password name=pw><input type=checkbox name=agree checked><input type=radio name=c value=a><input type=radio name=c value=b checked><input type=hidden name=h value=x><select name=s><option>one<option selected>two</select><textarea name=t rows=3 cols=10>\nline1\nline2</textarea><button name=go value=1>Go now</button></form><p>after <input name=outside></p>");
+		List<org.eclipse.swt.widgets.Text> texts = children(org.eclipse.swt.widgets.Text.class);
+		assertTrue("fields and the text area in view are native: " + texts.size(), texts.size() >= 3);
+		org.eclipse.swt.widgets.Text q = texts.get(0);
+		assertEquals("hi", q.getText());
+		assertTrue(q.getVisible());
+		assertEquals("the field sits in its block", org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout.BLOCK_GAP, q.getBounds().y);
+		q.setText("typed words");
+		org.eclipse.swt.widgets.Button agree = button(SWT.CHECK, 0), radioA = button(SWT.RADIO, 0), radioB = button(SWT.RADIO, 1);
+		assertTrue(agree.getSelection());
+		assertTrue(radioB.getSelection());
+		radioA.setSelection(true);
+		radioA.notifyListeners(SWT.Selection, new Event());
+		assertTrue("radios of one name exclude each other", !radioB.getSelection());
+		assertEquals("the submit button is below the view: not made yet", null, button(SWT.PUSH, 0));
+		browser.setScrollY(100000);
+		settle();
+		org.eclipse.swt.widgets.Button go = button(SWT.PUSH, 0);
+		assertEquals("Go now", go.getText());
+		go.notifyListeners(SWT.Selection, new Event());
+		assertEquals("[http://example.test/search?q=typed+words&pw=&agree=on&c=a&h=x&s=two&t=line1%0Aline2&go=1]", changing.toString());
+		open("<p>another page</p>");
+		assertEquals("a new page disposes the old widgets", 0, browser.getChildren().length);
+	}
+
+	@Test
+	public void aControlBelowTheViewIsMadeWhenScrolledTo() {
+		StringBuilder html = new StringBuilder();
+		for (int i = 0; i < 60; i++) html.append("<p>line ").append(i).append("</p>");
+		html.append("<input name=far value=deep>");
+		open(html.toString());
+		assertEquals("not made before it is in view", 0, browser.getChildren().length);
+		browser.setScrollY(100000);
+		settle();
+		List<org.eclipse.swt.widgets.Text> texts = children(org.eclipse.swt.widgets.Text.class);
+		assertEquals(1, texts.size());
+		assertEquals("deep", texts.get(0).getText());
+		assertTrue(texts.get(0).getVisible());
+		int y = texts.get(0).getBounds().y;
+		assertTrue("inside the view: " + y, y >= 0 && y < browser.getClientArea().height);
+		browser.setScrollY(0);
+		settle();
+		assertTrue("hidden when out of view", !texts.get(0).getVisible());
+	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {
 		open("<hr><p>after</p>");

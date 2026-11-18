@@ -32,9 +32,13 @@ public final class HtmlDocument {
 
 	/**
 	 * Block kinds: pre keeps its white space and does not wrap; a rule (hr) has no text; a cell is a td (level 0) or a
-	 * th (level 1) of a table.
+	 * th (level 1) of a table; a control is a form control (input, textarea, select, button), drawn as a native widget.
 	 */
-	public static final int PARAGRAPH = 0, HEADING = 1, LIST_ITEM = 2, IMAGE = 3, PRE = 4, RULE = 5, CELL = 6;
+	public static final int PARAGRAPH = 0, HEADING = 1, LIST_ITEM = 2, IMAGE = 3, PRE = 4, RULE = 5, CELL = 6, CONTROL = 7;
+
+	/** Form control types ({@link #controlType}). A hidden input has no block: it is only submitted. */
+	public static final int TEXT = 0, PASSWORD = 1, CHECKBOX = 2, RADIO = 3, SUBMIT = 4, BUTTON = 5, TEXTAREA = 6,
+			SELECT = 7, HIDDEN = 8;
 
 	/** Style bits of a run; code is monospace (code, tt, kbd, samp, and all of pre). */
 	public static final int BOLD = 1, ITALIC = 2, UNDERLINE = 4, STRIKE = 8, LINK = 16, CODE = 32;
@@ -86,6 +90,25 @@ public final class HtmlDocument {
 	public int linkCount;
 	public String[] href = new String[8];
 
+	/** Per block: its form control if it is a {@link #CONTROL}, else -1. */
+	public int[] blockControl = new int[16];
+
+	public int controlCount;
+	/**
+	 * Per form control: type, name (null when unnamed), value (the text of a text field or text area, the value an
+	 * checked box, radio or button submits, a button's label), checked (check box and radio: 1 when checked; select:
+	 * the selected option), options (select), rows and columns (text area; a text field's size in columns; 0 when
+	 * not given), its form (-1 outside any) and, for a button, its label.
+	 */
+	public int[] controlType = new int[4], controlChecked = new int[4], controlRows = new int[4], controlCols = new int[4],
+			controlForm = new int[4];
+	public String[] controlName = new String[4], controlValue = new String[4], controlLabel = new String[4];
+	public String[][] controlOptions = new String[4][];
+
+	public int formCount;
+	/** Per form: its action (null: the page's own location). */
+	public String[] formAction = new String[2];
+
 	public int imageCount;
 	/** Per image: source, and width and height from the tag (or -1). */
 	public String[] source = new String[4];
@@ -127,6 +150,11 @@ public final class HtmlDocument {
 		int table = -1, row = -1, rows, column;
 		boolean rowOpen;               // a row of the outermost table has started and not ended
 		boolean cellOpen;              // the open block is a cell: block elements inside it are line breaks
+		int form = -1;                 // the open form, or -1
+		int collecting = -1;           // the control whose text is being read (text area, option, button), or -1
+		final StringBuilder collected = new StringBuilder();
+		int selectFor = -1, selected;  // the open select, and its selected option
+		final java.util.List<String> options = new java.util.ArrayList<>();
 		/* CSS: the sheet, the text of a style element being read, and one computed style per open element */
 		final HtmlStyles styles = new HtmlStyles();
 		final StringBuilder css = new StringBuilder();
@@ -145,7 +173,8 @@ public final class HtmlDocument {
 				cssDepth += selfClosing ? 0 : 1;
 				return;
 			}
-			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")) {
+			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")
+					&& !name.equals("input")) {
 				push(name, styles.compute(frames[depth], name, HtmlTokenizer.attribute(attributes, "class"),
 						HtmlTokenizer.attribute(attributes, "style")));
 			}
@@ -190,6 +219,33 @@ public final class HtmlDocument {
 					space = false;
 				}
 				case "img" -> image(attributes);
+				case "form" -> form = addForm(HtmlTokenizer.attribute(attributes, "action"));
+				case "input" -> input(attributes);
+				case "textarea" -> {
+					int c = controlBlock(TEXTAREA, attributes);
+					if (c >= 0) {
+						doc.controlRows[c] = number(HtmlTokenizer.attribute(attributes, "rows"));
+						doc.controlCols[c] = number(HtmlTokenizer.attribute(attributes, "cols"));
+						collect(c);
+					}
+				}
+				case "select" -> {
+					selectFor = controlBlock(SELECT, attributes);
+					options.clear();
+					selected = 0;
+				}
+				case "option" -> {
+					if (selectFor >= 0) {
+						endOption();
+						if (HtmlTokenizer.attribute(attributes, "selected") != null) selected = options.size();
+						collect(selectFor);
+					}
+				}
+				case "button" -> {
+					String type = HtmlTokenizer.attribute(attributes, "type");
+					int c = controlBlock("button".equalsIgnoreCase(type) ? BUTTON : SUBMIT, attributes);
+					if (c >= 0) collect(c);
+				}
 				case "pre" -> {
 					openBlock(PRE, 0, 0);
 					pre++;
@@ -233,6 +289,29 @@ public final class HtmlDocument {
 			pop(name);
 			switch (name) {
 				case "script" -> skip = Math.max(0, skip - 1);
+				case "form" -> form = -1;
+				case "textarea" -> {
+					if (collecting >= 0 && doc.controlType[collecting] == TEXTAREA) {
+						String value = collected.toString().replace("\r\n", "\n").replace('\r', '\n');
+						doc.controlValue[collecting] = value.startsWith("\n") ? value.substring(1) : value;
+						collecting = -1;
+					}
+				}
+				case "option" -> endOption();
+				case "select" -> {
+					endOption();
+					if (selectFor >= 0) {
+						doc.controlOptions[selectFor] = options.toArray(new String[0]);
+						doc.controlChecked[selectFor] = Math.min(selected, Math.max(0, options.size() - 1));
+					}
+					selectFor = -1;
+				}
+				case "button" -> {
+					if (collecting >= 0 && doc.controlType[collecting] != TEXTAREA && doc.controlType[collecting] != SELECT) {
+						doc.controlLabel[collecting] = collected.toString().trim().replaceAll("\\s+", " ");
+						collecting = -1;
+					}
+				}
 				case "td", "th" -> {
 					if (tables == 1) closeCell();
 				}
@@ -280,6 +359,10 @@ public final class HtmlDocument {
 				return;
 			}
 			if (skip > 0) return;
+			if (collecting >= 0) {
+				collected.append(text); // a text area's value, an option's or a button's label
+				return;
+			}
 			if (pre > 0) {
 				preformatted(text);
 				return;
@@ -446,6 +529,7 @@ public final class HtmlDocument {
 				d.cellTable = Arrays.copyOf(d.cellTable, capacity);
 				d.cellRow = Arrays.copyOf(d.cellRow, capacity);
 				d.cellColumn = Arrays.copyOf(d.cellColumn, capacity);
+				d.blockControl = Arrays.copyOf(d.blockControl, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
 				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
@@ -462,6 +546,7 @@ public final class HtmlDocument {
 			}
 			open = d.blockCount++;
 			d.cellTable[open] = d.cellRow[open] = d.cellColumn[open] = -1;
+			d.blockControl[open] = -1;
 			d.kind[open] = kind;
 			d.level[open] = level;
 			d.marker[open] = mark;
@@ -525,7 +610,7 @@ public final class HtmlDocument {
 			HtmlDocument d = doc;
 			d.textEnd[open] = chars.length();
 			int k = d.kind[open];
-			boolean empty = d.textEnd[open] == d.textStart[open] && d.image[open] < 0 && k != LIST_ITEM && k != RULE && k != CELL;
+			boolean empty = d.textEnd[open] == d.textStart[open] && d.image[open] < 0 && k != LIST_ITEM && k != RULE && k != CELL && k != CONTROL;
 			if (empty) d.blockCount--;
 			open = -1;
 			space = false;
@@ -548,6 +633,90 @@ public final class HtmlDocument {
 			if (doc.runEnd[last] == end && --doc.runEnd[last] == doc.runStart[last]) {
 				doc.runTotal--;
 				doc.runCount[open]--;
+			}
+		}
+
+		int addForm(String action) {
+			HtmlDocument d = doc;
+			if (d.formCount == d.formAction.length) d.formAction = Arrays.copyOf(d.formAction, 2 * d.formCount);
+			d.formAction[d.formCount] = action;
+			return d.formCount++;
+		}
+
+		/* a form control; it has a block of its own unless it is hidden (or in a table cell, where it is not shown yet) */
+		int addControl(int type, String[] attributes) {
+			HtmlDocument d = doc;
+			if (d.controlCount == d.controlType.length) {
+				int capacity = 2 * d.controlCount;
+				d.controlType = Arrays.copyOf(d.controlType, capacity);
+				d.controlChecked = Arrays.copyOf(d.controlChecked, capacity);
+				d.controlRows = Arrays.copyOf(d.controlRows, capacity);
+				d.controlCols = Arrays.copyOf(d.controlCols, capacity);
+				d.controlForm = Arrays.copyOf(d.controlForm, capacity);
+				d.controlName = Arrays.copyOf(d.controlName, capacity);
+				d.controlValue = Arrays.copyOf(d.controlValue, capacity);
+				d.controlLabel = Arrays.copyOf(d.controlLabel, capacity);
+				d.controlOptions = Arrays.copyOf(d.controlOptions, capacity);
+			}
+			int c = d.controlCount++;
+			d.controlType[c] = type;
+			d.controlName[c] = HtmlTokenizer.attribute(attributes, "name");
+			String value = HtmlTokenizer.attribute(attributes, "value");
+			d.controlValue[c] = value != null ? value : type == CHECKBOX || type == RADIO ? "on" : "";
+			d.controlLabel[c] = value != null ? value : type == SUBMIT ? "Submit" : "";
+			d.controlChecked[c] = HtmlTokenizer.attribute(attributes, "checked") != null ? 1 : 0;
+			d.controlForm[c] = form;
+			d.controlOptions[c] = new String[0];
+			return c;
+		}
+
+		/* a control with a block: -1 inside a table cell (not shown there yet) */
+		int controlBlock(int type, String[] attributes) {
+			if (cellOpen) return -1;
+			int c = addControl(type, attributes);
+			openBlock(CONTROL, 0, 0);
+			doc.blockControl[open] = c;
+			closeBlock();
+			return c;
+		}
+
+		void input(String[] attributes) {
+			String type = HtmlTokenizer.attribute(attributes, "type");
+			int kind = switch (type == null ? "text" : type.toLowerCase(java.util.Locale.ROOT)) {
+				case "password" -> PASSWORD;
+				case "checkbox" -> CHECKBOX;
+				case "radio" -> RADIO;
+				case "submit" -> SUBMIT;
+				case "button", "reset" -> BUTTON;
+				case "hidden" -> HIDDEN;
+				default -> TEXT;
+			};
+			if (kind == HIDDEN) {
+				addControl(HIDDEN, attributes);
+				return;
+			}
+			int c = controlBlock(kind, attributes);
+			if (c >= 0) doc.controlCols[c] = number(HtmlTokenizer.attribute(attributes, "size"));
+		}
+
+		void collect(int control) {
+			collecting = control;
+			collected.setLength(0);
+		}
+
+		/* an option of the open select ends: its text, collapsed */
+		void endOption() {
+			if (selectFor < 0 || collecting != selectFor) return;
+			options.add(collected.toString().trim().replaceAll("\\s+", " "));
+			collecting = -1;
+		}
+
+		int number(String value) {
+			if (value == null) return 0;
+			try {
+				return Math.max(0, Integer.parseInt(value.trim()));
+			} catch (NumberFormatException e) {
+				return 0;
 			}
 		}
 

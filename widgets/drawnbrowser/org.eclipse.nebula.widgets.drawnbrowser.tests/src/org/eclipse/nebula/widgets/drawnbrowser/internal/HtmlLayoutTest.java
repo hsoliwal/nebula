@@ -165,6 +165,16 @@ public class HtmlLayoutTest {
 		assertEquals(l.top(1), l.top(4));
 		assertEquals("the flow's block, not a box out of the flow", 4, l.blockAt(l.top(4)));
 	}
+
+	@Test
+	public void controlBlocksReserveTheirWidgetsSize() {
+		HtmlLayout l = layout("<input name=a><textarea rows=5></textarea><input type=checkbox><input size=40>", 400);
+		assertTrue("a text area of 5 rows is taller than a field", l.controlHeight(1) > 2 * l.controlHeight(0));
+		assertTrue("a check box is shorter than a field", l.controlHeight(2) < l.controlHeight(0));
+		assertTrue("a field of 40 columns is wider than one of 20", l.controlWidth(3) > l.controlWidth(0) * 3 / 2);
+		assertEquals(l.controlHeight(0) + 2 * HtmlLayout.BLOCK_GAP, l.height(0));
+		assertEquals("a control has no text layout", null, l.textLayout(0));
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);

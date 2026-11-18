@@ -24,7 +24,11 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -58,6 +62,11 @@ public class DrawnBrowser extends Canvas {
 	private HtmlDocument document = HtmlDocument.parse("");
 	/* the positioned blocks of the page in painting order (null: not computed yet for this page) */
 	private int[] positionedOrder;
+	/* the page's form controls: their widgets (made when first in view), the values and checked states they show */
+	private Control[] widgets = new Control[0];
+	private String[] formValues = new String[0];
+	private int[] formChecked = new int[0], placed = new int[0];
+	private int placeStamp;
 	private HtmlLayout layout;
 	/* images of every page shown, loaded when their block is painted */
 	private final ImageStore images;
@@ -78,7 +87,8 @@ public class DrawnBrowser extends Canvas {
 	 */
 	@SuppressWarnings("this-escape") // an SWT widget registers its listeners while it is constructed
 	public DrawnBrowser(Composite parent, int style) {
-		super(parent, style | SWT.V_SCROLL | SWT.NO_BACKGROUND);
+		// radios of a page group by their name and form, not by their parent: SWT's automatic group is off
+		super(parent, style | SWT.V_SCROLL | SWT.NO_BACKGROUND | SWT.NO_RADIO_GROUP);
 		layout = newLayout();
 		images = new ImageStore(getDisplay(), 64, this::imageLoaded);
 		Listener listener = this::handle;
@@ -154,6 +164,12 @@ public class DrawnBrowser extends Canvas {
 		html = text;
 		document = HtmlDocument.parse(text);
 		positionedOrder = null;
+		// the page's form state, apart from the widgets that show it; the old page's widgets go
+		for (Control widget : widgets) if (widget != null) widget.dispose();
+		widgets = new Control[document.controlCount];
+		placed = new int[document.controlCount];
+		formValues = java.util.Arrays.copyOf(document.controlValue, document.controlCount);
+		formChecked = java.util.Arrays.copyOf(document.controlChecked, document.controlCount);
 		layout.dispose();
 		layout = newLayout();
 		viewport.reset();
@@ -353,6 +369,7 @@ public class DrawnBrowser extends Canvas {
 		sync();
 		updateBar();
 		redraw();
+		placeWidgets();
 	}
 
 	/* the viewport learns the view height and how far the page is laid out; the scroll position is clamped */
@@ -386,6 +403,7 @@ public class DrawnBrowser extends Canvas {
 			}
 		}
 		updateBar();
+		placeWidgets();
 	}
 
 	private void paint(GC gc, int x, int y, int width, int height) {
@@ -546,6 +564,7 @@ public class DrawnBrowser extends Canvas {
 			}
 			return;
 		}
+		if (document.kind[b] == HtmlDocument.CONTROL) return; // a native widget shows it
 		TextLayout text = layout.textLayout(b);
 		if (document.kind[b] == HtmlDocument.LIST_ITEM) {
 			String marker = document.marker[b] == HtmlDocument.BULLET ? "\u2022" : document.marker[b] + ".";
@@ -618,5 +637,103 @@ public class DrawnBrowser extends Canvas {
 			redraw(0, top, width, height, false);
 			redraw(0, top - delta, width, height, false);
 		}
+	}
+
+	/* the form controls of the blocks in view, made on first sight; those out of view are hidden */
+	private void placeWidgets() {
+		if (widgets.length == 0) return;
+		int stamp = ++placeStamp, scrollY = viewport.y(), viewBottom = scrollY + getClientArea().height;
+		for (int b = layout.blockAt(scrollY); b >= 0 && b < document.blockCount && layout.top(b) < viewBottom; b++) {
+			int c = document.blockControl[b];
+			if (c < 0 || document.kind[b] != HtmlDocument.CONTROL) continue;
+			Control widget = widget(c);
+			widget.setBounds(layout.indent(b), layout.top(b) + layout.contentTop(b) - scrollY, layout.controlWidth(b),
+					layout.controlHeight(b));
+			widget.setVisible(true);
+			placed[c] = stamp;
+		}
+		for (int c = 0; c < widgets.length; c++) {
+			if (widgets[c] != null && placed[c] != stamp && widgets[c].getVisible()) widgets[c].setVisible(false);
+		}
+	}
+
+	/* the native widget of form control c, made once */
+	private Control widget(int c) {
+		if (widgets[c] != null) return widgets[c];
+		int type = document.controlType[c];
+		Control made;
+		switch (type) {
+			case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> {
+				Button box = new Button(this, type == HtmlDocument.CHECKBOX ? SWT.CHECK : SWT.RADIO);
+				box.setSelection(formChecked[c] == 1);
+				box.addListener(SWT.Selection, e -> checked(c, box.getSelection()));
+				made = box;
+			}
+			case HtmlDocument.SUBMIT, HtmlDocument.BUTTON -> {
+				Button button = new Button(this, SWT.PUSH);
+				button.setText(document.controlLabel[c]);
+				if (type == HtmlDocument.SUBMIT) button.addListener(SWT.Selection, e -> submit(c));
+				made = button;
+			}
+			case HtmlDocument.SELECT -> {
+				Combo combo = new Combo(this, SWT.READ_ONLY | SWT.DROP_DOWN);
+				combo.setItems(document.controlOptions[c]);
+				if (document.controlOptions[c].length > 0) combo.select(formChecked[c]);
+				combo.addListener(SWT.Selection, e -> formChecked[c] = combo.getSelectionIndex());
+				made = combo;
+			}
+			default -> {
+				int style = SWT.BORDER | (type == HtmlDocument.TEXTAREA ? SWT.MULTI | SWT.WRAP | SWT.V_SCROLL : SWT.SINGLE)
+						| (type == HtmlDocument.PASSWORD ? SWT.PASSWORD : 0);
+				Text text = new Text(this, style);
+				text.setText(formValues[c]);
+				text.addListener(SWT.Modify, e -> formValues[c] = text.getText());
+				made = text;
+			}
+		}
+		return widgets[c] = made;
+	}
+
+	/* a check box or a radio changes; a radio clears the other radios of its name in its form */
+	private void checked(int c, boolean on) {
+		formChecked[c] = on ? 1 : 0;
+		if (!on || document.controlType[c] != HtmlDocument.RADIO) return;
+		for (int o = 0; o < document.controlCount; o++) {
+			if (o == c || document.controlType[o] != HtmlDocument.RADIO || document.controlForm[o] != document.controlForm[c]
+					|| !java.util.Objects.equals(document.controlName[o], document.controlName[c])) continue;
+			formChecked[o] = 0;
+			if (widgets[o] != null) ((Button) widgets[o]).setSelection(false);
+		}
+	}
+
+	/*
+	 * a submit button sends its form: the named values of the form's controls (checked boxes and radios, the selected
+	 * option, the clicked button), URL encoded, as the query of the form's action (GET)
+	 */
+	private void submit(int button) {
+		int form = document.controlForm[button];
+		StringBuilder query = new StringBuilder();
+		for (int c = 0; c < document.controlCount; c++) {
+			String name = document.controlName[c];
+			if (document.controlForm[c] != form || name == null) continue;
+			String value = switch (document.controlType[c]) {
+				case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> formChecked[c] == 1 ? document.controlValue[c] : null;
+				case HtmlDocument.SELECT -> document.controlOptions[c].length == 0 ? null : document.controlOptions[c][formChecked[c]];
+				case HtmlDocument.SUBMIT -> c == button ? document.controlValue[c] : null;
+				case HtmlDocument.BUTTON -> null;
+				default -> formValues[c];
+			};
+			if (value == null) continue;
+			if (query.length() > 0) query.append('&');
+			query.append(java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8)).append('=')
+					.append(java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8));
+		}
+		String action = form >= 0 ? document.formAction[form] : null;
+		String target = pages.resolve(action != null ? action : pages.location());
+		int cut = target.indexOf('#');
+		if (cut >= 0) target = target.substring(0, cut);
+		cut = target.indexOf('?');
+		if (cut >= 0) target = target.substring(0, cut);
+		navigate(target + "?" + query, PageHistory.PUSH);
 	}
 }
