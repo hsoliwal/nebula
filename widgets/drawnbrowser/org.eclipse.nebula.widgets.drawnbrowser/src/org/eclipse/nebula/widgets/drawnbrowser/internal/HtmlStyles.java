@@ -55,6 +55,17 @@ import java.util.Locale;
  */
 public final class HtmlStyles {
 
+	private final Runnable checkpoint;
+
+	/** Creates a style sheet with the ordinary, non-cancellable parsing policy. */
+	public HtmlStyles() {
+		this(HtmlTokenizer.UNCHECKED);
+	}
+
+	HtmlStyles(Runnable checkpoint) {
+		this.checkpoint = checkpoint;
+	}
+
 	/**
 	 * Computed style slots: ARGB colour (0 inherits the widget's), background, set style bits, align, indent px (the
 	 * left margin); then the box, px: top, right and bottom margins, the four paddings, the border's width and its ARGB
@@ -162,20 +173,26 @@ public final class HtmlStyles {
 	}
 
 	private int trackRef(int[] tracks) {
-		for (int i = 0; i < trackLists.size(); i++) if (java.util.Arrays.equals(trackLists.get(i), tracks)) return i + 1;
+		for (int i = 0; i < trackLists.size(); i++) {
+			checkpoint.run();
+			if (java.util.Arrays.equals(trackLists.get(i), tracks)) return i + 1;
+		}
 		trackLists.add(tracks);
 		return trackLists.size();
 	}
 
 	/** Adds the rules of a style sheet. */
 	public void addSheet(String css) {
+		checkpoint.run();
 		String text = css.replaceAll("(?s)/\\*.*?\\*/", "");
 		int i = 0;
 		while (i < text.length()) {
+			checkpoint.run();
 			int open = text.indexOf('{', i), close = open < 0 ? -1 : text.indexOf('}', open);
 			if (open < 0 || close < 0) break;
 			int[] decls = parse(text.substring(open + 1, close), emptyDelta());
 			for (String selector : text.substring(i, open).split(",")) {
+				checkpoint.run();
 				Rule rule = rule(selector.trim().toLowerCase(Locale.ROOT), decls);
 				if (rule != null) rules.add(rule);
 			}
@@ -192,6 +209,7 @@ public final class HtmlStyles {
 		boolean pending = false;
 		int b = 0, c = 0, d = 0;
 		for (String token : tokens) {
+			checkpoint.run();
 			if (token.isEmpty()) return null;
 			if (token.equals(">") || token.equals("+")) {
 				if (compounds.isEmpty() || pending) return null;
@@ -214,7 +232,8 @@ public final class HtmlStyles {
 	}
 
 	/* one compound; null when it has a pseudo-class this subset does not know (as Flying Saucer's unsupported condition) */
-	private static Compound compound(String token) {
+	private Compound compound(String token) {
+		checkpoint.run();
 		java.util.regex.Matcher m = COMPOUND.matcher(token);
 		if (!m.matches()) return null;
 		String tag = m.group(1) == null || m.group(1).equals("*") ? null : m.group(1), id = null;
@@ -223,6 +242,7 @@ public final class HtmlStyles {
 		boolean firstChild = false, link = false;
 		java.util.regex.Matcher part = PART.matcher(m.group(2));
 		while (part.find()) {
+			checkpoint.run();
 			if (part.group(1) != null) {
 				if (id != null) return null;
 				id = part.group(1);
@@ -260,7 +280,8 @@ public final class HtmlStyles {
 	 * whether compounds 0..i of a rule match with compound i at (up, back): right to left, backtracking over the
 	 * ancestors for a descendant axis (Flying Saucer's Selector.matches)
 	 */
-	private static boolean matches(Rule rule, int i, Path path, int up, int back) {
+	private boolean matches(Rule rule, int i, Path path, int up, int back) {
+		checkpoint.run();
 		if (!matches(rule.compounds()[i], path, up, back)) return false;
 		if (i == 0) return true;
 		return switch (rule.axes()[i]) {
@@ -273,7 +294,7 @@ public final class HtmlStyles {
 		};
 	}
 
-	private static boolean matches(Compound c, Path path, int up, int back) {
+	private boolean matches(Compound c, Path path, int up, int back) {
 		String tag = path.tag(up, back);
 		if (c.tag() != null && !c.tag().equals(tag)) return false;
 		if (c.firstChild() && path.siblings(up) - back != 0) return false;
@@ -349,6 +370,7 @@ public final class HtmlStyles {
 	 * attribute.
 	 */
 	public int[] compute(int[] parent, Path path, String inline) {
+		checkpoint.run();
 		int[] style = root();
 		style[COLOR] = parent[COLOR];
 		style[BITS] = parent[BITS];
@@ -359,7 +381,10 @@ public final class HtmlStyles {
 		List<Rule> matched = new ArrayList<>();
 		for (Rule rule : rules) if (matches(rule, rule.compounds().length - 1, path, 0, 0)) matched.add(rule);
 		matched.sort(java.util.Comparator.comparingInt(Rule::specificity).thenComparingInt(Rule::order));
-		for (Rule rule : matched) apply(style, rule.declarations());
+		for (Rule rule : matched) {
+			checkpoint.run();
+			apply(style, rule.declarations());
+		}
 		if (inline != null) apply(style, parse(inline, emptyDelta()));
 		return style;
 	}
@@ -505,6 +530,7 @@ public final class HtmlStyles {
 	/* declarations as a delta: 0 colour/background = not set, BITS = bits set | (bits cleared << 8), -1 = not set */
 	private int[] parse(String block, int[] delta) {
 		for (String declaration : block.split(";")) {
+			checkpoint.run();
 			int colon = declaration.indexOf(':');
 			if (colon < 0) continue;
 			String name = declaration.substring(0, colon).trim().toLowerCase(Locale.ROOT);

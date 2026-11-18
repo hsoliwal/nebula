@@ -176,11 +176,44 @@ public final class HtmlDocument {
 
 	/** Parses {@code html}; never fails. */
 	public static HtmlDocument parse(String html) {
-		Builder builder = new Builder();
-		HtmlTokenizer.tokenize(html, builder);
+		return parseChecked(html, HtmlTokenizer.UNCHECKED);
+	}
+
+	/**
+	 * Parses detached asynchronous input, or returns null when cancellation is observed. The supplier must
+	 * inspect detached state only; it must not call SWT widgets. Cancellation is cooperative at parser
+	 * checkpoints, not a deadline for an individual JDK operation. The ordinary {@link #parse(String)}
+	 * entry point never observes this supplier or the thread's interrupt status.
+	 */
+	public static HtmlDocument parse(String html, java.util.function.BooleanSupplier cancelled) {
+		java.util.Objects.requireNonNull(cancelled);
+		try {
+			return parseChecked(html, () -> {
+				if (cancelled.getAsBoolean()) throw new ParseCancelled();
+			});
+		} catch (ParseCancelled cancelledParse) {
+			return null;
+		}
+	}
+
+	private static final class ParseCancelled extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		ParseCancelled() {
+			super(null, null, false, false);
+		}
+	}
+
+	private static HtmlDocument parseChecked(String html, Runnable checkpoint) {
+		checkpoint.run();
+		Builder builder = new Builder(checkpoint);
+		HtmlTokenizer.tokenize(html, builder, checkpoint);
+		checkpoint.run();
 		builder.finish();
 		builder.unstick(-1); // close the remaining sticky containing elements
+		checkpoint.run();
 		builder.doc.text = builder.chars.toString();
+		checkpoint.run();
 		return builder.doc;
 	}
 
@@ -195,6 +228,7 @@ public final class HtmlDocument {
 	}
 
 	private static final class Builder implements HtmlTokenizer.Handler {
+		final Runnable checkpoint;
 		final HtmlDocument doc = new HtmlDocument();
 		final StringBuilder chars = new StringBuilder();
 		int open = -1;                 // the block being filled, or -1
@@ -224,7 +258,7 @@ public final class HtmlDocument {
 		int anonymousContainerBox = -1;
 		int implicitCellDepth = -1;    // an anonymous text cell closes its synthetic frame together with its block
 		/* CSS: the sheet, the text of a style element being read, and one computed style per open element */
-		final HtmlStyles styles = new HtmlStyles();
+		final HtmlStyles styles;
 		final StringBuilder css = new StringBuilder();
 		int cssDepth;
 		int[][] frames = { HtmlStyles.root() };
@@ -242,12 +276,15 @@ public final class HtmlDocument {
 		int[] ordinals = new int[8];   // per list depth: next ordinal, or BULLET for ul
 		boolean space;                 // a collapsed space is pending
 
-		Builder() {
+		Builder(Runnable checkpoint) {
+			this.checkpoint = checkpoint;
+			styles = new HtmlStyles(checkpoint);
 			Arrays.fill(lastChild, -1);
 		}
 
 		@Override
 		public void startTag(String name, String[] attributes, boolean selfClosing) {
+			checkpoint.run();
 			flushSpace();
 			if (name.equals("style")) {
 				cssDepth += selfClosing ? 0 : 1;
@@ -385,6 +422,7 @@ public final class HtmlDocument {
 
 		@Override
 		public void endTag(String name) {
+			checkpoint.run();
 			endElement(name);
 			unstick(depth); // the sticky boxes of the elements that ended end with their last block
 		}
@@ -479,6 +517,7 @@ public final class HtmlDocument {
 
 		@Override
 		public void text(String text) {
+			checkpoint.run();
 			if (cssDepth > 0) {
 				css.append(text);
 				return;
@@ -493,6 +532,7 @@ public final class HtmlDocument {
 				return;
 			}
 			for (int i = 0, n = text.length(); i < n; i++) {
+				if ((i & 1023) == 0) checkpoint.run();
 				char c = text.charAt(i);
 				if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f') {
 					space = true;
@@ -508,6 +548,7 @@ public final class HtmlDocument {
 		/* text inside pre: every character kept, line ends as \n, except a newline right after <pre> */
 		void preformatted(String text) {
 			for (int i = 0, n = text.length(); i < n; i++) {
+				if ((i & 1023) == 0) checkpoint.run();
 				char c = text.charAt(i);
 				if (c == '\r') {
 					if (i + 1 < n && text.charAt(i + 1) == '\n') continue;
@@ -561,6 +602,7 @@ public final class HtmlDocument {
 			column = 0;
 			rowOpen = true;
 			for (int c = 0; c < spanRows.length; c++) {
+				checkpoint.run();
 				taken[c] = spanRows[c] > 0;
 				if (taken[c]) spanRows[c]--;
 			}
@@ -795,6 +837,7 @@ public final class HtmlDocument {
 		/* the elements deeper than {@code level} have ended: the sticky blocks they contain end at the last block so far */
 		void unstick(int level) {
 			while (stickyCount > 0 && stickyDepth[stickyCount - 1] > level) {
+				checkpoint.run();
 				doc.blockStickyEnd[stickyOpen[--stickyCount]] = doc.blockCount - 1;
 			}
 		}
@@ -831,6 +874,7 @@ public final class HtmlDocument {
 		/* the element children so far of the element open at a level */
 		java.util.List<String> kids(int level) {
 			while (kidTags.size() <= level) {
+				checkpoint.run();
 				kidTags.add(new java.util.ArrayList<>());
 				kidAttributes.add(new java.util.ArrayList<>());
 			}
@@ -894,6 +938,7 @@ public final class HtmlDocument {
 				closeCell();
 				int from = -1;
 				for (int k = depth; k > 0; k--) {
+					checkpoint.run();
 					String openTag = frameTags[k];
 					if (openTag.equals("table")) break;
 					if (openTag.equals("tr")) {
@@ -911,6 +956,7 @@ public final class HtmlDocument {
 		/* The flat table parser already implies a row for td/th without tr; preserve that row in the box tree too. */
 		void ensureRowBox() {
 			for (int k = depth; k > 0; k--) {
+				checkpoint.run();
 				if (frameTags[k].equals("tr")) return;
 				if (frameTags[k].equals("table")) break;
 			}
@@ -1003,8 +1049,10 @@ public final class HtmlDocument {
 		/* closes the innermost open element of that tag and every element opened inside it (misnested tags) */
 		void pop(String tag) {
 			for (int k = depth; k > 0; k--) {
+				checkpoint.run();
 				if (frameTags[k].equals(tag)) {
 					for (int f = depth; f >= k; f--) {
+						checkpoint.run();
 						if (frameOwnBox[f] < 0) continue;
 						if (doc.boxRole[frameOwnBox[f]] == CELL_BOX) closeCell();
 						else closeBlock();
@@ -1078,6 +1126,7 @@ public final class HtmlDocument {
 
 		void closeFrames(int from) {
 			for (int k = depth; k >= from; k--) {
+				checkpoint.run();
 				int box = frameOwnBox[k];
 				if (box >= 0) doc.boxEndBlock[box] = doc.blockCount;
 				if (frameHidden[k]) {
@@ -1099,6 +1148,7 @@ public final class HtmlDocument {
 		boolean needsBoxLayout() {
 			HtmlDocument d = doc;
 			for (int box = 1; box < d.boxCount; box++) {
+				checkpoint.run();
 				if (d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO
 						|| d.boxRight[box] != HtmlStyles.AUTO || d.boxBottom[box] != HtmlStyles.AUTO) return true;
 				if (d.boxPosition[box] == HtmlStyles.STATIC) continue;
