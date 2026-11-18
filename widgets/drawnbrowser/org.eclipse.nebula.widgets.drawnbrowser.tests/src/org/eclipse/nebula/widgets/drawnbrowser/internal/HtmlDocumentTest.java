@@ -334,4 +334,31 @@ public class HtmlDocumentTest {
 		assertArrayEquals("a bad rowspan is 1", new int[] { 2, 1, 1, 1, 1, 1 }, java.util.Arrays.copyOf(d.cellRowSpan, 6));
 		assertEquals(2, d.tableColumns[0]);
 	}
+
+	@Test
+	public void aFlexContainersChildrenAreItemsAndDisplayNoneHides() {
+		HtmlDocument d = HtmlDocument.parse("<p>before</p><div style='display:flex; gap:8px; justify-content:center'>"
+				+ "<div style='flex-grow:2; padding:5px'>one <p>inner</p></div>loose text<div style='width:70px'>three</div></div>"
+				+ "<p>after</p><p style='display:none'>hidden <b>bold</b><input name=gone></p><div style='display:none'><p>deep</p></div>"
+				+ "<p>shown<script>x</script> end</p>");
+		int one = block(d, "one\ninner"), loose = block(d, "loose text"), three = block(d, "three");
+		assertEquals(HtmlDocument.CELL, d.kind[one]);
+		assertEquals(1, d.tableFlex[d.cellTable[one]]);
+		assertEquals(8, d.tableGap[d.cellTable[one]]);
+		assertEquals(FlexRow.CENTER, d.tableJustify[d.cellTable[one]]);
+		assertArrayEquals("items in order on one row", new int[] { 0, 1, 2 },
+				new int[] { d.cellColumn[one], d.cellColumn[loose], d.cellColumn[three] });
+		assertEquals(true, d.sameRow(one, three));
+		assertEquals(2, d.cellGrow[one]);
+		assertEquals(5, d.blockPadLeft[one]);
+		assertEquals("an anonymous item has no box", 0, d.blockPadLeft[loose]);
+		assertEquals(70, d.cellBasis[three]);
+		assertEquals(-1, d.cellBasis[one]);
+		assertEquals(PARAGRAPH, d.kind[block(d, "after")]);
+		for (int b = 0; b < d.blockCount; b++) {
+			assertEquals("nothing hidden is a block", false, d.blockText(b).contains("hidden") || d.blockText(b).contains("deep"));
+		}
+		assertEquals("a control in a hidden element is not made", 0, d.controlCount);
+		block(d, "shown end");
+	}
 }

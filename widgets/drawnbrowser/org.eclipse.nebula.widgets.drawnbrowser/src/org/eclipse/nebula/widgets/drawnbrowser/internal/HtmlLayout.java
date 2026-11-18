@@ -158,13 +158,14 @@ public final class HtmlLayout {
 
 	/** The x where block {@code b}'s content starts (list indent, left margin, border and padding; a cell's column and padding). */
 	public int indent(int b) {
-		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + CELL_PADDING;
+		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + (flexItem(b) ? doc.blockBorder[b] + doc.blockPadLeft[b] : CELL_PADDING);
 		return boxLeft(b) + doc.blockBorder[b] + doc.blockPadLeft[b];
 	}
 
 	/** How far below its top block {@code b}'s content starts: the gap and top margin, border and padding; a cell's padding. */
 	public int contentTop(int b) {
-		return doc.kind[b] == HtmlDocument.CELL ? CELL_PADDING : gapTop(b) + doc.blockBorder[b] + doc.blockPadTop[b];
+		if (doc.kind[b] == HtmlDocument.CELL) return flexItem(b) ? doc.blockBorder[b] + doc.blockPadTop[b] : CELL_PADDING;
+		return gapTop(b) + doc.blockBorder[b] + doc.blockPadTop[b];
 	}
 
 	/** Whether block {@code b} has a CSS box of its own (a border, padding, or a top, right or bottom margin). */
@@ -258,9 +259,25 @@ public final class HtmlLayout {
 		return doc.blockIndent[b] + columns(doc.cellTable[b])[doc.cellColumn[b]];
 	}
 
+	/** Whether block {@code b} is an item of a flex container (a cell that keeps its CSS box). */
+	public boolean flexItem(int b) {
+		return doc.kind[b] == HtmlDocument.CELL && doc.tableFlex[doc.cellTable[b]] == 1;
+	}
+
+	/* the vertical and horizontal room a cell's text leaves: a flex item's border and padding, a table cell's padding */
+	private int insetV(int b) {
+		return flexItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadTop[b] + doc.blockPadBottom[b] : 2 * CELL_PADDING;
+	}
+
+	private int insetH(int b) {
+		return flexItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadLeft[b] + doc.blockPadRight[b] : 2 * CELL_PADDING;
+	}
+
 	/** The width of cell {@code b}'s box (its columns' width). */
 	public int cellWidth(int b) {
-		int[] x = columns(doc.cellTable[b]);
+		int t = doc.cellTable[b];
+		int[] x = columns(t);
+		if (doc.tableFlex[t] == 1) return x[doc.tableColumns[t] + doc.cellColumn[b]];
 		return x[doc.cellColumn[b] + doc.cellSpan[b]] - x[doc.cellColumn[b]];
 	}
 
@@ -413,17 +430,17 @@ public final class HtmlLayout {
 			rowStart[rowsInGroup] = k;
 			int h = 0, first = k;
 			for (; k < doc.blockCount && doc.sameRow(first, k); k++) {
-				if (doc.cellRowSpan[k] == 1) h = Math.max(h, textHeight(k));
+				if (doc.cellRowSpan[k] == 1) h = Math.max(h, textHeight(k) + insetV(k));
 				reach = Math.max(reach, rowsInGroup + doc.cellRowSpan[k] - 1);
 			}
-			rowHeight[rowsInGroup++] = h + 2 * CELL_PADDING;
+			rowHeight[rowsInGroup++] = h;
 		}
 		for (int r = 0; r < rowsInGroup; r++) {
 			for (int c = rowStart[r]; c < (r + 1 < rowsInGroup ? rowStart[r + 1] : k); c++) {
 				if (doc.cellRowSpan[c] == 1) continue;
 				int last = Math.min(rowsInGroup, r + doc.cellRowSpan[c]) - 1, have = 0;
 				for (int s = r; s <= last; s++) have += rowHeight[s];
-				int need = textHeight(c) + 2 * CELL_PADDING;
+				int need = textHeight(c) + insetV(c);
 				if (need > have) rowHeight[last] += need - have;
 			}
 		}
@@ -483,13 +500,24 @@ public final class HtmlLayout {
 				if (first < 0 || k < first) first = k;
 				TextLayout layout = make(k, -1);
 				int c = doc.cellColumn[k], span = doc.cellSpan[k];
-				int cellMax = layout.getBounds().width + 2 * CELL_PADDING, cellMin = widestWord(layout, doc.blockText(k)) + 2 * CELL_PADDING;
+				int cellMax = layout.getBounds().width + insetH(k), cellMin = widestWord(layout, doc.blockText(k)) + insetH(k);
 				layout.dispose();
 				TableColumns.spread(min, c, span, cellMin);
 				TableColumns.spread(max, c, span, cellMax);
 			}
 		}
 		for (int c = 0; c < n; c++) max[c] = Math.max(max[c], min[c]);
+		if (doc.tableFlex[t] == 1) {
+			// a flex row: x then width per item, by the flex algorithm (Yoga's steps)
+			int[] basis = new int[n], grow = new int[n];
+			for (int k = 0; k < doc.blockCount; k++) {
+				if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t) continue;
+				int c = doc.cellColumn[k];
+				basis[c] = doc.cellBasis[k] >= 0 ? doc.cellBasis[k] + insetH(k) : -1;
+				grow[c] = doc.cellGrow[k];
+			}
+			return columnX[t] = FlexRow.layout(min, max, basis, grow, width - doc.blockIndent[first], doc.tableGap[t], doc.tableJustify[t]);
+		}
 		return columnX[t] = TableColumns.edges(min, max, width - doc.blockIndent[first]);
 	}
 
@@ -508,7 +536,7 @@ public final class HtmlLayout {
 	/* pre does not wrap; a cell wraps to its column, other blocks to the view less their indent */
 	private TextLayout make(int b) {
 		boolean pre = doc.kind[b] == HtmlDocument.PRE, cell = doc.kind[b] == HtmlDocument.CELL;
-		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - 2 * CELL_PADDING
+		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - insetH(b)
 				: width - indent(b) - doc.blockBorder[b] - doc.blockPadRight[b] - doc.blockMarginRight[b]));
 	}
 

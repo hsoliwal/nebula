@@ -216,6 +216,24 @@ public class HtmlLayoutTest {
 		assertTrue("a tall spanning cell grows the last row: " + l.height(2) + " vs " + l.height(1), l.height(2) > l.height(1));
 		assertEquals("and fits its text", l.textLayout(0).getBounds().height + 2 * HtmlLayout.CELL_PADDING, l.height(0));
 	}
+
+	@Test
+	public void flexItemsSitSideBySideAndShareFreeSpaceByGrow() {
+		HtmlLayout l = layout("<div style='display:flex; gap:10px'><div style='flex-grow:1'>a</div><div style='flex-grow:3'>b</div>"
+				+ "<div style='padding:6px; border:2px solid red'>c</div></div><p>after</p>", 400);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals("one row: a shared top", l.top(0), l.top(2));
+		assertEquals(l.height(0), l.height(2));
+		assertEquals(l.cellX(0) + l.cellWidth(0) + 10, l.cellX(1));
+		assertEquals(l.cellX(1) + l.cellWidth(1) + 10, l.cellX(2));
+		assertEquals("the line is full", 400, l.cellX(2) + l.cellWidth(2));
+		int grownA = l.cellWidth(0), grownB = l.cellWidth(1);
+		assertTrue("b grows three times as much as a: " + grownA + " " + grownB, grownB > 2 * grownA);
+		assertEquals("an item's content is inset by its border and padding", l.cellX(2) + 2 + 6, l.indent(2));
+		assertEquals(2 + 6, l.contentTop(2));
+		assertEquals("the row is as tall as the boxed item", l.textLayout(2).getBounds().height + 2 * 2 + 6 + 6, l.height(2));
+		assertEquals("the flow continues below", l.top(0) + l.height(0), l.top(3));
+	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {
 		HtmlLayout l = layout("<table><tr><td>left</td><td><a href='r'>right</a></td></tr></table><p>after</p>", 400);

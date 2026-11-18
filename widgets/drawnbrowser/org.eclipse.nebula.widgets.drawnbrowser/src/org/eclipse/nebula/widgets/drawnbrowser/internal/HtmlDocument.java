@@ -84,6 +84,13 @@ public final class HtmlDocument {
 	public int tableCount;
 	/** Per table: number of columns (its widest row), and the border attribute in px (0: none). */
 	public int[] tableColumns = new int[4], tableBorder = new int[4];
+	/**
+	 * Per table: 1 when it is a row flex container (its items are the cells of its one row, with their CSS box), its
+	 * justify-content ({@link FlexRow}) and gap px.
+	 */
+	public int[] tableFlex = new int[4], tableJustify = new int[4], tableGap = new int[4];
+	/** Per block: a flex item's flex-grow, and its flex basis (or width) in px, -1 for none. */
+	public int[] cellGrow = new int[16], cellBasis = new int[16];
 
 	public int runTotal;
 	/** Per run: start and end in {@link #text}, style bits, link index or -1. */
@@ -151,6 +158,8 @@ public final class HtmlDocument {
 		boolean preStart;              // a newline right after <pre> is not content
 		int quote;                     // blockquote depth
 		int tables;                    // table depth: only the outermost table's td, th and tr make cells and rows
+		int flexFrame;                 // the frame of the open flex container, or 0
+		boolean[] frameHidden = new boolean[1]; // per open element: display none (it counts in skip)
 		int[] spanRows = new int[8];   // per column: rows below the current one still covered by a rowspan from above
 		boolean[] taken = new boolean[8]; // per column: covered in the current row by a rowspan from above
 		int table = -1, row = -1, rows, column;
@@ -188,8 +197,24 @@ public final class HtmlDocument {
 			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")
 					&& !name.equals("input")) {
 				push(name, attributes, styles.compute(frames[depth], path(name, attributes), HtmlTokenizer.attribute(attributes, "style")));
+				if (frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_NONE) {
+					frameHidden[depth] = true;
+					skip++;
+				}
 			} else {
 				sibling(name, attributes); // a void element is a sibling of the elements after it
+			}
+			if (name.equals("script")) {
+				skip += selfClosing ? 0 : 1; // a script's content is not text
+				return;
+			}
+			if (skip > 0) return; // nothing of a hidden element (or a script) is shown
+			if (flexFrame > 0 && depth == flexFrame + 1 && depth > 0 && frameTags[depth].equals(name)) {
+				openItem(); // a child element of a flex container is an item
+			} else if (!selfClosing && tables == 0 && depth > 0 && frameTags[depth].equals(name)
+					&& frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_FLEX) {
+				startFlex();
+				return;
 			}
 			switch (name) {
 				case "script" -> skip += selfClosing ? 0 : 1;
@@ -300,7 +325,20 @@ public final class HtmlDocument {
 				}
 				return;
 			}
+			int before = depth;
 			pop(name);
+			if (flexFrame > 0) {
+				if (depth < flexFrame) {
+					endFlex(); // the container ended
+					return;
+				}
+				if (before >= flexFrame + 1 && depth == flexFrame) closeCell(); // an item ended
+			}
+			if (name.equals("script")) {
+				skip = Math.max(0, skip - 1);
+				return;
+			}
+			if (skip > 0) return;
 			switch (name) {
 				case "script" -> skip = Math.max(0, skip - 1);
 				case "form" -> form = -1;
@@ -424,10 +462,14 @@ public final class HtmlDocument {
 			if (d.tableCount == d.tableColumns.length) {
 				d.tableColumns = Arrays.copyOf(d.tableColumns, 2 * d.tableCount);
 				d.tableBorder = Arrays.copyOf(d.tableBorder, 2 * d.tableCount);
+				d.tableFlex = Arrays.copyOf(d.tableFlex, 2 * d.tableCount);
+				d.tableJustify = Arrays.copyOf(d.tableJustify, 2 * d.tableCount);
+				d.tableGap = Arrays.copyOf(d.tableGap, 2 * d.tableCount);
 			}
 			table = d.tableCount++;
 			String border = HtmlTokenizer.attribute(attributes, "border");
 			d.tableBorder[table] = border == null ? 0 : border.isBlank() ? 1 : Math.max(0, size(border));
+			d.tableFlex[table] = 0;
 			rowOpen = false;
 			Arrays.fill(spanRows, 0);
 		}
@@ -571,6 +613,8 @@ public final class HtmlDocument {
 				d.blockControl = Arrays.copyOf(d.blockControl, capacity);
 				d.cellSpan = Arrays.copyOf(d.cellSpan, capacity);
 				d.cellRowSpan = Arrays.copyOf(d.cellRowSpan, capacity);
+				d.cellGrow = Arrays.copyOf(d.cellGrow, capacity);
+				d.cellBasis = Arrays.copyOf(d.cellBasis, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
 				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
@@ -590,6 +634,8 @@ public final class HtmlDocument {
 			d.blockControl[open] = -1;
 			d.cellSpan[open] = 1;
 			d.cellRowSpan[open] = 1;
+			d.cellGrow[open] = 0;
+			d.cellBasis[open] = -1;
 			d.kind[open] = kind;
 			d.level[open] = level;
 			d.marker[open] = mark;
@@ -603,7 +649,7 @@ public final class HtmlDocument {
 			d.blockBackground[open] = own ? frame[HtmlStyles.BACKGROUND] : 0;
 			d.blockIndent[open] = (own ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
 			d.blockAlign[open] = frame[HtmlStyles.ALIGN];
-			boolean box = own && kind != CELL;
+			boolean box = own && (kind != CELL || d.tableFlex[table] == 1); // a flex item keeps its CSS box
 			d.blockMarginTop[open] = box ? frame[HtmlStyles.MARGIN_TOP] : 0;
 			d.blockMarginRight[open] = box ? frame[HtmlStyles.MARGIN_RIGHT] : 0;
 			d.blockMarginBottom[open] = box ? frame[HtmlStyles.MARGIN_BOTTOM] : 0;
@@ -635,6 +681,7 @@ public final class HtmlDocument {
 				frameTags = Arrays.copyOf(frameTags, 2 * frameTags.length);
 				frameAttributes = Arrays.copyOf(frameAttributes, 2 * frameAttributes.length);
 				frameIndex = Arrays.copyOf(frameIndex, 2 * frameIndex.length);
+				frameHidden = Arrays.copyOf(frameHidden, 2 * frameHidden.length);
 			}
 			frames[depth] = frame;
 			frameTags[depth] = tag;
@@ -690,10 +737,43 @@ public final class HtmlDocument {
 		void pop(String tag) {
 			for (int k = depth; k > 0; k--) {
 				if (frameTags[k].equals(tag)) {
+					for (int h = depth; h >= k; h--) {
+						if (frameHidden[h]) {
+							frameHidden[h] = false;
+							skip = Math.max(0, skip - 1);
+						}
+					}
 					depth = k - 1;
 					return;
 				}
 			}
+		}
+
+		/* a row flex container opens: a one-row table of its items; inside a table it is a plain block */
+		void startFlex() {
+			int[] frame = frames[depth];
+			tables++;
+			startTable(new String[0]);
+			HtmlDocument d = doc;
+			d.tableFlex[table] = 1;
+			d.tableJustify[table] = frame[HtmlStyles.JUSTIFY];
+			d.tableGap[table] = frame[HtmlStyles.GAP];
+			flexFrame = depth;
+			startRow();
+		}
+
+		/* an item of the open flex container: a cell with the item element's flex-grow and basis */
+		void openItem() {
+			openCell(0, 1);
+			doc.cellGrow[open] = frames[depth][HtmlStyles.FLEX_GROW];
+			doc.cellBasis[open] = frames[depth][HtmlStyles.FLEX_BASIS];
+		}
+
+		void endFlex() {
+			closeCell();
+			rowOpen = false;
+			tables = Math.max(0, tables - 1);
+			flexFrame = 0;
 		}
 
 		void closeBlock() {
