@@ -306,6 +306,47 @@ public class GridPinnedRows_Test {
 		assertEquals("a foreign item is never an accessible child", -1, grid.accessibleRowOf(foreign));
 	}
 
+
+	@Test
+	public void virtualTreeAccessibilityEnumeratesRootsWithoutMaterializingUnreadChildren() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL);
+		grid.setBounds(0, 30, 460, 380);
+		new GridColumn(grid, SWT.NONE).setTree(true);
+		final GridItem first = new GridItem(grid, SWT.NONE);
+		final GridItem second = new GridItem(grid, SWT.NONE);
+		final GridItem third = new GridItem(grid, SWT.NONE);
+		first.setItemCount(10_000);
+		second.setItemCount(3);
+		assertEquals("tree rows include unread descendants", 10_006, grid.getItemCount());
+		final int materializedBefore = grid.rowTree().materializedCount();
+		assertEquals("only three root items are accessible children", 3, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(10_001), Integer.valueOf(10_005)
+		}, grid.accessibleRootChildren());
+		assertEquals("accessible root enumeration must not instantiate cold descendants",
+				materializedBefore, grid.rowTree().materializedCount());
+		first.setExpanded(true);
+		second.setExpanded(true);
+		assertEquals(3, grid.accessibleRootCount());
+		third.dispose();
+		assertEquals(2, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(10_001)
+		}, grid.accessibleRootChildren());
+	}
+
+	@Test
+	public void flatAccessibilityStillExposesEachLogicalRow() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL);
+		grid.setBounds(0, 30, 460, 380);
+		grid.setItemCount(5);
+		assertEquals(5, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2),
+				Integer.valueOf(3), Integer.valueOf(4)
+		}, grid.accessibleRootChildren());
+	}
+
 	@Test
 	public void stickyAncestorKeepsItsOriginalAccessibleRowIdAfterScroll() {
 		final Grid grid = new Grid(shell, SWT.V_SCROLL);

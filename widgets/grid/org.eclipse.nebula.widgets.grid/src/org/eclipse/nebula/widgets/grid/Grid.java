@@ -12964,6 +12964,25 @@ public class Grid extends Canvas {
 		return isRowOf(item, row) ? row : -1;
 	}
 
+	/** The number of actual root items (unread virtual descendants are not roots). */
+	int accessibleRootCount() {
+		return isTree ? rootItems.size() : items.size();
+	}
+
+	/**
+	 * Complete root enumeration requested by accessibility. A tree already owns
+	 * the root list, so no descendant row is visited or materialized. This is
+	 * O(number of roots), not O(number of all logical descendants).
+	 */
+	Object[] accessibleRootChildren() {
+		final int count = accessibleRootCount();
+		final Object[] children = new Object[count];
+		for (int i = 0; i < count; i++) {
+			children[i] = Integer.valueOf(isTree ? rootItems.get(i).getRowIndex() : i);
+		}
+		return children;
+	}
+
 	/**
 	 * Initialize accessibility.
 	 */
@@ -13060,50 +13079,14 @@ public class Grid extends Canvas {
 			@Override
 			public void getChildCount(final AccessibleControlEvent e) {
 				if (e.childID == ACC.CHILDID_SELF) {
-					int length = items.size();
-
-					if (isTree) {
-						// Child count for parent. Here if the item parent
-						// is not an other item,
-						// it is consider as children of Grid
-						for (final GridItem item : materializedItems()) {
-							if (item.getParentItem() != null) {
-								length--;
-							}
-						}
-					}
-					e.detail = length;
+					e.detail = accessibleRootCount();
 				}
 			}
 
 			@Override
 			public void getChildren(final AccessibleControlEvent e) {
 				if (e.childID == ACC.CHILDID_SELF) {
-					int length = items.size();
-					if (isTree) {
-						for (final GridItem item : materializedItems()) {
-							if (item.getParentItem() != null) {
-								length--;
-							}
-						}
-
-						final Object[] children = new Object[length];
-						int j = 0;
-
-						for (int i = 0; i < items.size(); i++) {
-							if (items.get(i).getParentItem() == null) {
-								children[j] = Integer.valueOf(i);
-								j++;
-							}
-						}
-						e.children = children;
-					} else {
-						final Object[] children = new Object[length];
-						for (int i = 0; i < items.size(); i++) {
-							children[i] = Integer.valueOf(i);
-						}
-						e.children = children;
-					}
+					e.children = accessibleRootChildren();
 				}
 			}
 
