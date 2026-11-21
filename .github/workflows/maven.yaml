@@ -52,7 +52,7 @@ jobs:
       run: |
         set -euo pipefail
         mvn -version | tee "$RUNNER_TEMP/nebula-maven-version.txt"
-        grep -Eq '^Apache Maven 3\\.(9|10)\\.' "$RUNNER_TEMP/nebula-maven-version.txt"
+        grep -Eq '^Apache Maven 3[.](9|10)[.]' "$RUNNER_TEMP/nebula-maven-version.txt"
     - name: Checkout the qualified SWT receiver
       uses: actions/checkout@v4
       with:
