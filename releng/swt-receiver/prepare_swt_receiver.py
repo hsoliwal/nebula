@@ -90,8 +90,10 @@ def prepare(source, output, repository):
         typename = 'CompositeMetadataRepository' if family == 'metadata' else 'CompositeArtifactRepository'
         tree = ET.Element('repository', {'name': 'Pinned SWT receiving proof with Eclipse platform',
             'type': 'org.eclipse.equinox.internal.p2.' + family + '.repository.' + typename, 'version': '1.0.0'})
-        children = ET.SubElement(tree, 'children', {'size': '2'})
-        for uri in [repository.as_uri(), 'https://download.eclipse.org/eclipse/updates/latest']:
+        children = ET.SubElement(tree, 'children', {'size': '3'})
+        for uri in [repository.as_uri(),
+                    'https://download.eclipse.org/eclipse/updates/4.42-I-builds/I20261112-2300/',
+                    'https://download.eclipse.org/eclipse/updates/latest']:
             ET.SubElement(children, 'child', {'location': uri})
         header = '<?xml version="1.0" encoding="UTF-8"?>\n<?composite' + ('Metadata' if family == 'metadata' else 'Artifact') + 'Repository version="1.0.0"?>\n'
         (composite / ('composite' + kind + '.xml')).write_text(header + ET.tostring(tree, encoding='unicode') + '\n')
