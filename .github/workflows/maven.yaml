@@ -47,10 +47,12 @@ jobs:
         distribution: 'temurin' # See 'Supported distributions' for available options
         java-version: ${{ matrix.java }}
         cache: 'maven'
-    - name: Set up Maven
-      uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-      with:
-        maven-version: 3.9.11
+    - name: Verify preinstalled Maven (avoid rate-limited Maven Central archive)
+      shell: bash
+      run: |
+        set -euo pipefail
+        mvn -version | tee "$RUNNER_TEMP/nebula-maven-version.txt"
+        grep -Eq '^Apache Maven 3\\.(9|10)\\.' "$RUNNER_TEMP/nebula-maven-version.txt"
     - name: Checkout the qualified SWT receiver
       uses: actions/checkout@v4
       with:
