@@ -120,7 +120,13 @@ public final class VncCanvas extends Canvas {
         checkWidget();
         disconnect();
         long session = sessionGeneration.incrementAndGet();
-        RfbClient next = new RfbClient(new RfbClient.Listener() {
+        RfbClient next = createListenerClient(session);
+        client = next;
+        next.connectAsync(host, port, password, allowUnencryptedRemote);
+    }
+
+    private RfbClient createListenerClient(long session) {
+        return new RfbClient(new RfbClient.Listener() {
             @Override
             public void connected(String name, int width, int height) {
                 onUi(session, () -> {
@@ -152,8 +158,17 @@ public final class VncCanvas extends Canvas {
                 onUi(session, () -> listener().disconnected(cause));
             }
         });
+    }
+
+    /** Connect to an RFB server wrapped in direct TLS with strict certificate
+     * and hostname validation, without plaintext fallback. */
+    public void connectTls(String host, int port, char[] password) {
+        checkWidget();
+        disconnect();
+        long session = sessionGeneration.incrementAndGet();
+        RfbClient next = createListenerClient(session);
         client = next;
-        next.connectAsync(host, port, password, allowUnencryptedRemote);
+        next.connectTlsAsync(host, port, password);
     }
 
     public void disconnect() {
