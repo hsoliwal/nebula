@@ -31,3 +31,10 @@ Native SWT/JNI acceptance and performance benchmarking remain separate gates.
 Protocol: RFC 6143, https://www.rfc-editor.org/rfc/rfc6143
 Historical donor: org.eclipse.tml.protocol, org.eclipse.tml.vncviewer,
 org.eclipse.tml.vncviewer.vncviews (Eclipse TmL, EPL).
+
+
+Extended RFB decoding now negotiates RRE (2), TRLE (15), and ZRLE (16) with bounded
+inflation and per-connection continuous zlib state. `VncCanvas.connectTls(host,
+port, password)` supports *direct TLS* using the JVM truststore and strict
+hostname verification; it does not negotiate VeNCrypt. The legacy RFB clipboard
+is Latin-1 only and rejects characters it cannot represent.
