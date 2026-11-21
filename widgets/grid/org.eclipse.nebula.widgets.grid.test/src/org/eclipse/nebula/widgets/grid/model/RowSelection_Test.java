@@ -82,6 +82,42 @@ public class RowSelection_Test {
 	}
 
 	@Test
+	public void clearingLastCellReleasesSparseRowStorage() throws Exception {
+		final RowSelection selection = new RowSelection(20_000);
+		selection.setCellSelected(1, 1, true);
+		selection.setCellSelected(3, 97, true);
+		selection.setCellSelected(3, 129, true);
+		selection.setCellSelected(5, 65, true);
+		selection.setCellSelected(3, 97, false);
+		assertTrue("clearing one bit must preserve another column", selection.isCellSelected(3, 129));
+		assertEquals(3, selection.getCellRowCount());
+		selection.setCellSelected(3, 129, false);
+		assertEquals(2, selection.getCellRowCount());
+		assertTrue(selection.isCellSelected(1, 1));
+		assertTrue(selection.isCellSelected(5, 65));
+		for (int row = 10; row < 8_202; row++) {
+			final int column = (row & 31) + 64;
+			selection.setCellSelected(row, column, true);
+			selection.setCellSelected(row, column, false);
+		}
+		assertEquals(2, selection.getCellCount());
+		assertEquals(2, selection.getCellRowCount());
+		final java.lang.reflect.Field slots = RowSelection.class.getDeclaredField("cellRowCount"); //$NON-NLS-1$
+		slots.setAccessible(true);
+		assertEquals("inactive rows must not remain as sparse owners", 2, slots.getInt(selection));
+		selection.setCellSelected(1, 1, false);
+		selection.setCellSelected(5, 65, false);
+		assertEquals(0, selection.getCellCount());
+		assertEquals(0, selection.getCellRowCount());
+		assertEquals(0, slots.getInt(selection));
+		final java.lang.reflect.Field columns = RowSelection.class.getDeclaredField("cellColumns"); //$NON-NLS-1$
+		columns.setAccessible(true);
+		for (final int[] words : (int[][]) columns.get(selection)) {
+			org.junit.Assert.assertNull("cleared row column arrays must be released", words);
+		}
+	}
+
+	@Test
 	public void denseSelectionWalksFilteredViewAndSkipsCollapsedGroupHeaders() {
 		final int n = 100_000;
 		final RowSelection selection = new RowSelection(n);
