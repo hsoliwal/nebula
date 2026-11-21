@@ -171,6 +171,19 @@ public final class VncCanvas extends Canvas {
         next.connectTlsAsync(host, port, password);
     }
 
+    /**
+     * Negotiate VeNCrypt 0.2 with a certificate-validated X509None/X509Vnc
+     * subtype. This never falls back to unencrypted or anonymous TLS.
+     */
+    public void connectVeNCrypt(String host, int port, char[] password) {
+        checkWidget();
+        disconnect();
+        long session = sessionGeneration.incrementAndGet();
+        RfbClient next = createListenerClient(session);
+        client = next;
+        next.connectVeNCryptAsync(host, port, password);
+    }
+
     public void disconnect() {
         checkWidget();
         sessionGeneration.incrementAndGet();
