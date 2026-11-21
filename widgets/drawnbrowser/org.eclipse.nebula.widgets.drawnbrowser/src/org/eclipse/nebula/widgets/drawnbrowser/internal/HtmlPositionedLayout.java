@@ -18,8 +18,9 @@ import java.util.Arrays;
  * <p>
  * The root's containing-block size is the viewport, even when the document is taller. Physical integer pixel insets
  * and sizes use the CSS left-to-right rules. Margins, padding and borders belong to their owning box; legacy block
- * gaps remain outside a styled leaf's border. Percentages, inline positioning, floats, transforms and
- * overflow clips are outside this subset. Overflow remains visible. Positioned documents resolve their geometry as
+ * gaps remain outside a styled leaf's border. The {@code overflow: hidden/clip} panel subset clips descendants to
+ * the padding edge without creating nested scrollbars. Percentages, inline positioning, floats and transforms remain
+ * outside this subset. Positioned documents resolve their geometry as
  * a whole; ordinary documents retain {@link HtmlLayout}'s lazy prefix layout. TextLayout residency remains bounded.
  * </p>
  */
@@ -36,6 +37,8 @@ public final class HtmlPositionedLayout {
 	private final HtmlDocument doc;
 	private final HtmlPaintOrder order;
 	private final int[] x, y, width, height, localY, containing, tableOf;
+	/* Nearest clipping ancestor, excluding the box itself; preorder makes this a linear one-time construction. */
+	private final int[] clipAncestor;
 	private final int[] before, after, leadGap, trailGap, extraIndent, accountedIndent;
 	private final boolean[] fixed;
 	private final int[] blockX, blockY, blockWidth, blockHeight, blockInset, blockContentTop;
@@ -58,6 +61,12 @@ public final class HtmlPositionedLayout {
 		order = new HtmlPaintOrder(document);
 		int n = doc.boxCount, b = doc.blockCount;
 		x = new int[n]; y = new int[n]; width = new int[n]; height = new int[n]; localY = new int[n];
+		clipAncestor = new int[n];
+		clipAncestor[0] = -1;
+		for (int e = 1; e < n; e++) {
+			int parent = doc.boxParent[e];
+			clipAncestor[e] = doc.boxOverflow[parent] == HtmlStyles.OVERFLOW_HIDDEN ? parent : clipAncestor[parent];
+		}
 		containing = new int[n]; tableOf = new int[n]; fixed = new boolean[n];
 		motionOwner = new int[n]; motionParent = new int[n]; stickyBoxes = new int[n]; stickyShift = new int[n];
 		before = new int[n]; after = new int[n]; leadGap = new int[n]; trailGap = new int[n];
@@ -99,7 +108,7 @@ public final class HtmlPositionedLayout {
 			int e = doc.blockBox[b];
 			blockX[b] = add(contentX(e), blockInset[b]);
 			blockY[b] = add(doc.kind[b] == HtmlDocument.CELL ? y[e] : contentY(e), blockY[b]);
-			if (!fixed[e]) totalHeight = Math.max(totalHeight, add(blockY[b], blockHeight[b]));
+			if (!fixed[e]) totalHeight = Math.max(totalHeight, visibleBottom(e, true, add(blockY[b], blockHeight[b])));
 		}
 		totalHeight = Math.max(0, totalHeight);
 		indexIntervals();
@@ -502,7 +511,7 @@ public final class HtmlPositionedLayout {
 			}
 		}
 		hasFixed |= fixed[e];
-		if (!fixed[e]) totalHeight = Math.max(totalHeight, clamp((long) y[e] + height[e] + after[e]));
+		if (!fixed[e]) totalHeight = Math.max(totalHeight, visibleBottom(e, false, clamp((long) y[e] + height[e] + after[e])));
 	}
 
 	/* Bound sticky projection by the original containing box (table cells use the entire table). */
@@ -572,6 +581,54 @@ public final class HtmlPositionedLayout {
 	public int boxWidth(int box) { return width[box]; }
 	public int boxHeight(int box) { return height[box]; }
 
+	private int firstClip(int box, boolean content) {
+		return content && doc.boxOverflow[box] == HtmlStyles.OVERFLOW_HIDDEN ? box : clipAncestor[box];
+	}
+
+	/*
+	 * Offscreen descendants still participate in local layout, but cannot extend the root scrollbar
+	 * past a clipping ancestor. Reuse the exact parent-owned clip chain used by painting and picking.
+	 * This method runs at layout publication, never per paint fragment.
+	 */
+	private int visibleBottom(int box, boolean content, int bottom) {
+		for (int clip = firstClip(box, content); clip >= 0; clip = clipAncestor[clip]) {
+			bottom = Math.min(bottom, clamp((long) y[clip] + height[clip] - doc.boxBorder[clip]));
+		}
+		return bottom;
+	}
+
+	/** Whether a paint fragment inherits an overflow clip; a box's own border/background is not self-clipped. */
+	public boolean hasClip(int box, boolean content) { return firstClip(box, content) >= 0; }
+
+	/**
+	 * Intersects a viewport-coordinate rectangle [left, top, right, bottom) with all clipping ancestors. The caller
+	 * owns the four-integer scratch rectangle. No SWT clipping state, Region, or per-fragment object is retained here.
+	 */
+	public boolean clipBounds(int box, boolean content, int scroll, int[] bounds) {
+		for (int clip = firstClip(box, content); clip >= 0; clip = clipAncestor[clip]) {
+			int border = doc.boxBorder[clip];
+			int left = add(x[clip], border), top = add(add(boxY(clip, scroll), -scroll), border);
+			int right = add(x[clip], clamp((long) width[clip] - border));
+			int bottom = add(add(boxY(clip, scroll), -scroll), clamp((long) height[clip] - border));
+			bounds[0] = Math.max(bounds[0], left);
+			bounds[1] = Math.max(bounds[1], top);
+			bounds[2] = Math.min(bounds[2], right);
+			bounds[3] = Math.min(bounds[3], bottom);
+			if (bounds[0] >= bounds[2] || bounds[1] >= bounds[3]) return false;
+		}
+		return bounds[0] < bounds[2] && bounds[1] < bounds[3];
+	}
+
+	private boolean withinClip(int box, boolean content, int px, int py, int scroll) {
+		for (int clip = firstClip(box, content); clip >= 0; clip = clipAncestor[clip]) {
+			int border = doc.boxBorder[clip];
+			if (!contains(px, py, add(x[clip], border), add(boxY(clip, scroll), border),
+					Math.max(0, clamp((long) width[clip] - 2L * border)),
+					Math.max(0, clamp((long) height[clip] - 2L * border)))) return false;
+		}
+		return true;
+	}
+
 	/** Topmost eligible block or an empty box (-1), using the exact reverse of the paint sequence. */
 	public int blockAt(int px, int py, int scroll) {
 		int count = collectVisible(py, 1, scroll);
@@ -581,12 +638,14 @@ public final class HtmlPositionedLayout {
 			if (order.isBackground(s)) {
 				// A structural row must not mask a cell that spans into it from an earlier row.
 				if (doc.boxRole[i] == HtmlDocument.ROW_BOX && doc.boxBackground[i] == 0 && doc.boxBorder[i] == 0) continue;
-				if (i != 0 && contains(px, py, x[i], boxY(i, scroll), width[i], height[i])) {
+				if (i != 0 && contains(px, py, x[i], boxY(i, scroll), width[i], height[i])
+						&& withinClip(i, false, px, py, scroll)) {
 					int b = doc.boxFirstBlock[i];
 					return b < doc.boxEndBlock[i] && doc.blockBox[b] == i ? b : -1;
 				}
 			} else {
-				if (contains(px, py, blockX[i], blockY(i, scroll), blockWidth[i], blockHeight[i])) return i;
+				if (contains(px, py, blockX[i], blockY(i, scroll), blockWidth[i], blockHeight[i])
+						&& withinClip(doc.blockBox[i], true, px, py, scroll)) return i;
 			}
 		}
 		return -1;
@@ -596,11 +655,23 @@ public final class HtmlPositionedLayout {
 	public int nearestBlock(int px, int py, int scroll) {
 		long vertical = Long.MAX_VALUE, horizontal = Long.MAX_VALUE;
 		int found = -1;
+		int[] bounds = new int[4];
 		for (int s = order.size() - 1; s >= 0; s--) {
 			if (order.isBackground(s)) continue;
 			int b = order.index(s), top = blockY(b, scroll);
-			long dx = Math.max(0L, Math.max((long) blockX[b] - px, (long) px - blockX[b] - blockWidth[b]));
-			long dy = Math.max(0L, Math.max((long) top - py, (long) py - top - blockHeight[b]));
+			long dx, dy;
+			if (hasClip(doc.blockBox[b], true)) {
+				int viewTop = add(top, -scroll);
+				bounds[0] = blockX[b]; bounds[1] = viewTop;
+				bounds[2] = add(blockX[b], blockWidth[b]); bounds[3] = add(viewTop, blockHeight[b]);
+				if (!clipBounds(doc.blockBox[b], true, scroll, bounds)) continue;
+				int viewY = add(py, -scroll);
+				dx = Math.max(0L, Math.max((long) bounds[0] - px, (long) px - bounds[2]));
+				dy = Math.max(0L, Math.max((long) bounds[1] - viewY, (long) viewY - bounds[3]));
+			} else {
+				dx = Math.max(0L, Math.max((long) blockX[b] - px, (long) px - blockX[b] - blockWidth[b]));
+				dy = Math.max(0L, Math.max((long) top - py, (long) py - top - blockHeight[b]));
+			}
 			if (dy < vertical || dy == vertical && dx < horizontal) {
 				vertical = dy; horizontal = dx; found = b;
 			}

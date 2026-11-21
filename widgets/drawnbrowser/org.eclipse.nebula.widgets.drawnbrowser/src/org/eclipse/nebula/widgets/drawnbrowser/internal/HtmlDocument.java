@@ -101,14 +101,14 @@ public final class HtmlDocument {
 			boxFirstBlock = new int[16], boxEndBlock = new int[16], boxRole = new int[16], boxPosition = new int[16],
 			boxLeft = new int[16], boxTop = new int[16], boxRight = new int[16], boxBottom = new int[16],
 			boxWidth = new int[16], boxHeight = new int[16], boxZIndex = new int[16], boxBackground = new int[16],
-			boxIndent = new int[16];
+			boxOverflow = new int[16], boxIndent = new int[16];
 	/** Z auto is distinct from explicit zero and from every signed integer z-index. */
 	public boolean[] boxZAuto = new boolean[16];
 	/** Per element box, the same non-inherited box model as the flat block lanes; table cells keep their table padding. */
 	public int[] boxMarginTop = new int[16], boxMarginRight = new int[16], boxMarginBottom = new int[16],
 			boxPadTop = new int[16], boxPadRight = new int[16], boxPadBottom = new int[16], boxPadLeft = new int[16],
 			boxBorder = new int[16], boxBorderColor = new int[16], boxBorderStyle = new int[16];
-	/** Whether a supported box requests non-static positioning or an explicit width/height. */
+	/** Whether a supported box requests non-static positioning, explicit sizing or a clipping boundary. */
 	public boolean positioned;
 	/**
 	 * Whether sizes, right/bottom offsets, empty boxes or ancestry require the resolved box scene. Flat nonempty
@@ -992,6 +992,7 @@ public final class HtmlDocument {
 			d.boxZIndex[box] = frame[HtmlStyles.Z_INDEX];
 			d.boxZAuto[box] = frame[HtmlStyles.Z_AUTO] != 0;
 			d.boxBackground[box] = frame[HtmlStyles.BACKGROUND];
+			d.boxOverflow[box] = frame[HtmlStyles.OVERFLOW];
 			boolean boxModel = d.boxRole[box] != CELL_BOX;
 			d.boxIndent[box] = boxModel ? frame[HtmlStyles.INDENT] : 0;
 			d.boxMarginTop[box] = boxModel ? frame[HtmlStyles.MARGIN_TOP] : 0;
@@ -1004,7 +1005,8 @@ public final class HtmlDocument {
 			d.boxBorder[box] = boxModel ? frame[HtmlStyles.BORDER_WIDTH] : 0;
 			d.boxBorderColor[box] = boxModel ? frame[HtmlStyles.BORDER_COLOR] : 0;
 			d.boxBorderStyle[box] = boxModel ? frame[HtmlStyles.BORDER_STYLE] : HtmlStyles.BORDER_SOLID;
-			d.positioned |= d.boxPosition[box] != HtmlStyles.STATIC || d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO;
+			d.positioned |= d.boxPosition[box] != HtmlStyles.STATIC || d.boxWidth[box] != HtmlStyles.AUTO
+					|| d.boxHeight[box] != HtmlStyles.AUTO || d.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE;
 			return box;
 		}
 
@@ -1027,6 +1029,7 @@ public final class HtmlDocument {
 			d.boxZIndex = Arrays.copyOf(d.boxZIndex, capacity);
 			d.boxZAuto = Arrays.copyOf(d.boxZAuto, capacity);
 			d.boxBackground = Arrays.copyOf(d.boxBackground, capacity);
+			d.boxOverflow = Arrays.copyOf(d.boxOverflow, capacity);
 			d.boxIndent = Arrays.copyOf(d.boxIndent, capacity);
 			d.boxMarginTop = Arrays.copyOf(d.boxMarginTop, capacity);
 			d.boxMarginRight = Arrays.copyOf(d.boxMarginRight, capacity);
@@ -1148,6 +1151,7 @@ public final class HtmlDocument {
 		boolean needsBoxLayout() {
 			HtmlDocument d = doc;
 			for (int box = 1; box < d.boxCount; box++) {
+				if (d.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE) return true;
 				checkpoint.run();
 				if (d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO
 						|| d.boxRight[box] != HtmlStyles.AUTO || d.boxBottom[box] != HtmlStyles.AUTO) return true;

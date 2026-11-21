@@ -47,10 +47,12 @@ jobs:
         distribution: 'temurin' # See 'Supported distributions' for available options
         java-version: ${{ matrix.java }}
         cache: 'maven'
-    - name: Set up Maven
-      uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-      with:
-        maven-version: 3.9.11
+    - name: Verify preinstalled Maven (avoid rate-limited Maven Central archive)
+      shell: bash
+      run: |
+        set -euo pipefail
+        mvn -version | tee "$RUNNER_TEMP/nebula-maven-version.txt"
+        grep -Eq '^Apache Maven 3[.](9|10)[.]' "$RUNNER_TEMP/nebula-maven-version.txt"
     - name: Checkout the qualified SWT receiver
       uses: actions/checkout@v4
       with:
@@ -74,6 +76,49 @@ jobs:
         mvn -B -f releng/swt-receiver/swt-receiver-p2/pom.xml \
           -Dm3.swt.source="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
         cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
+    - name: Run the excluded DrawnBrowser reactor under pinned GTK3/X11
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The root Nebula <modules> list omits widgets/drawnbrowser.
+        # Qualify the original HTML renderer explicitly with its real native SWT dependencies.
+        sudo apt-get install -y xvfb x11-xserver-utils openbox wmctrl
+        xvfb-run --auto-servernum bash -c '
+          set -euo pipefail
+          openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/drawnbrowser-openbox.log" 2>&1 &
+          wm_pid=$!
+          trap "kill $wm_pid 2>/dev/null || true" EXIT
+          for attempt in $(seq 1 100); do
+            if wmctrl -m >/dev/null 2>&1; then break; fi
+            kill -0 "$wm_pid" 2>/dev/null || exit 1
+            sleep 0.1
+          done
+          wmctrl -m
+          "$@"
+        ' drawnbrowser-wm mvn -V -B --fail-at-end -f widgets/drawnbrowser/pom.xml clean verify \
+          -Dtycho.localArtifacts=ignore \
+          -DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false \
+          -Dtests.vmargs=-Xcheck:jni \
+          "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing pinned GC digest}" \
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing platform}"
+        python3 - <<'PY'
+        import glob, sys, xml.etree.ElementTree as ET
+        reports = sorted(glob.glob('widgets/drawnbrowser/**/target/surefire-reports/TEST-*.xml', recursive=True))
+        if not reports:
+            sys.exit('FAIL: absent DrawnBrowser JUnit reports')
+        tests = failed = skipped = 0
+        for f in reports:
+            root = ET.parse(f).getroot()
+            suites = [root] if root.tag.endswith('testsuite') else list(root)
+            for suite in suites:
+                if suite.tag.endswith('testsuite'):
+                    tests += int(suite.get('tests', '0'))
+                    failed += int(suite.get('failures', '0')) + int(suite.get('errors', '0'))
+                    skipped += int(suite.get('skipped', '0'))
+        print(f'DrawnBrowser tests={tests} failures+errors={failed} skipped={skipped}')
+        if tests < 318 or failed or skipped:
+            sys.exit('FAIL: expected at least 318 native+headless tests, zero failed/skipped')
+        PY
     - name: Build All Widgets
       shell: bash
       env:
