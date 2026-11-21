@@ -165,6 +165,8 @@ public final class RfbClient implements AutoCloseable {
                 }
                 connection.connect(new InetSocketAddress(address, port), 10_000);
                 connection.setTcpNoDelay(true);
+                // Bound the negotiation against peers that stall after TCP connect.
+                connection.setSoTimeout(15_000);
                 if (tls) {
                     SSLSocket secure = (SSLSocket) ((SSLSocketFactory) SSLSocketFactory.getDefault())
                             .createSocket(connection, host, port, true);
@@ -172,6 +174,7 @@ public final class RfbClient implements AutoCloseable {
                     SSLParameters params = secure.getSSLParameters();
                     params.setEndpointIdentificationAlgorithm("HTTPS");
                     secure.setSSLParameters(params);
+                    secure.setSoTimeout(15_000);
                     secure.startHandshake();
                     connection = secure;
                 }
@@ -188,6 +191,11 @@ public final class RfbClient implements AutoCloseable {
                 output = streams.output();
                 Arrays.fill(secret, '\0');
                 initialize(input, output);
+                // After negotiation, idle desktops must not time out.
+                Socket established = socket;
+                if (established != null) {
+                    established.setSoTimeout(0);
+                }
                 if (closed.get()) {
                     return;
                 }
@@ -291,6 +299,7 @@ public final class RfbClient implements AutoCloseable {
             SSLParameters params = secure.getSSLParameters();
             params.setEndpointIdentificationAlgorithm("HTTPS");
             secure.setSSLParameters(params);
+            secure.setSoTimeout(15_000);
             secure.startHandshake();
             input = new DataInputStream(new BufferedInputStream(secure.getInputStream()));
             output = new DataOutputStream(new BufferedOutputStream(secure.getOutputStream()));
