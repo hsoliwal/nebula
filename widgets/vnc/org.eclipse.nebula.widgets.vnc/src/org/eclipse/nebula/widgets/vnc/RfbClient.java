@@ -24,6 +24,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 /**
  * Standalone RFB 3.3/3.7/3.8 client with a single framebuffer reader and a
@@ -84,9 +87,13 @@ public final class RfbClient implements AutoCloseable {
     private static final int ENCODING_RAW = 0;
     private static final int ENCODING_COPY_RECT = 1;
     private static final int ENCODING_HEXTILE = 5;
+    private static final int ENCODING_RRE = 2;
+    private static final int ENCODING_TRLE = 15;
+    private static final int ENCODING_ZRLE = 16;
     private static final int ENCODING_DESKTOP_SIZE = -223;
 
     private final Listener listener;
+    private final RfbTileDecoder tileDecoder = new RfbTileDecoder();
     private final BlockingQueue<byte[]> outbound = new ArrayBlockingQueue<>(MAX_QUEUE_SIZE);
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -111,6 +118,20 @@ public final class RfbClient implements AutoCloseable {
      * @param allowUnencryptedRemote explicit opt-in to non-loopback plaintext
      */
     public void connectAsync(String host, int port, char[] password, boolean allowUnencryptedRemote) {
+        start(host, port, password, allowUnencryptedRemote, false);
+    }
+
+    /**
+     * Connect to an RFB endpoint that is already wrapped in direct TLS.
+     * Standard JVM trust anchors and HTTPS-style hostname verification apply.
+     * This is intentionally not VeNCrypt security negotiation.
+     */
+    public void connectTlsAsync(String host, int port, char[] password) {
+        start(host, port, password, false, true);
+    }
+
+    private void start(String host, int port, char[] password,
+            boolean allowUnencryptedRemote, boolean tls) {
         Objects.requireNonNull(host, "host");
         if (host.isBlank() || port < 1 || port > 65535) {
             throw new IllegalArgumentException("Invalid RFB address or port");
@@ -123,7 +144,7 @@ public final class RfbClient implements AutoCloseable {
             IOException problem = null;
             try {
                 InetAddress address = InetAddress.getByName(host);
-                if (!address.isLoopbackAddress() && !allowUnencryptedRemote) {
+                if (!tls && !address.isLoopbackAddress() && !allowUnencryptedRemote) {
                     throw new IOException("Unencrypted remote RFB requires explicit opt-in; use an SSH tunnel");
                 }
                 Socket connection = new Socket();
@@ -133,6 +154,16 @@ public final class RfbClient implements AutoCloseable {
                 }
                 connection.connect(new InetSocketAddress(address, port), 10_000);
                 connection.setTcpNoDelay(true);
+                if (tls) {
+                    SSLSocket secure = (SSLSocket) ((SSLSocketFactory) SSLSocketFactory.getDefault())
+                            .createSocket(connection, host, port, true);
+                    socket = secure;
+                    SSLParameters params = secure.getSSLParameters();
+                    params.setEndpointIdentificationAlgorithm("HTTPS");
+                    secure.setSSLParameters(params);
+                    secure.startHandshake();
+                    connection = secure;
+                }
                 DataInputStream input = new DataInputStream(
                         new BufferedInputStream(connection.getInputStream()));
                 DataOutputStream output = new DataOutputStream(
@@ -163,6 +194,7 @@ public final class RfbClient implements AutoCloseable {
                     problem = writerFailure;
                 }
                 close();
+                tileDecoder.close();
                 listener.disconnected(problem);
             }
         }, "Nebula-RFB-reader");
@@ -243,13 +275,13 @@ public final class RfbClient implements AutoCloseable {
             throw new IllegalArgumentException("VNC challenge must have 16 bytes");
         }
         byte[] key = new byte[8];
-        for (int i = 0; i < Math.min(8, password.length); i++) {
-            if (password[i] > 255) {
-                throw new IOException("VNC authentication only supports single-byte characters");
-            }
-            key[i] = (byte) (Integer.reverse(password[i] & 0xff) >>> 24);
-        }
         try {
+            for (int i = 0; i < Math.min(8, password.length); i++) {
+                if (password[i] > 255) {
+                    throw new IOException("VNC authentication only supports single-byte characters");
+                }
+                key[i] = (byte) (Integer.reverse(password[i] & 0xff) >>> 24);
+            }
             Cipher des = Cipher.getInstance("DES/ECB/NoPadding");
             des.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "DES"));
             return des.doFinal(challenge);
@@ -289,9 +321,12 @@ public final class RfbClient implements AutoCloseable {
 
         output.writeByte(2); // SetEncodings
         output.writeByte(0);
-        output.writeShort(4);
+        output.writeShort(7);
+        output.writeInt(ENCODING_ZRLE);
+        output.writeInt(ENCODING_TRLE);
         output.writeInt(ENCODING_HEXTILE);
         output.writeInt(ENCODING_COPY_RECT);
+        output.writeInt(ENCODING_RRE);
         output.writeInt(ENCODING_RAW);
         output.writeInt(ENCODING_DESKTOP_SIZE);
         output.write(requestUpdate(false));
@@ -338,6 +373,9 @@ public final class RfbClient implements AutoCloseable {
                 case ENCODING_RAW -> decodeRaw(input, x, y, w, h);
                 case ENCODING_COPY_RECT -> decodeCopy(input, x, y, w, h);
                 case ENCODING_HEXTILE -> decodeHextile(input, x, y, w, h);
+                case ENCODING_RRE -> tileDecoder.decodeRre(input, framebuffer, width, x, y, w, h);
+                case ENCODING_TRLE -> tileDecoder.decodeTrle(input, framebuffer, width, x, y, w, h);
+                case ENCODING_ZRLE -> tileDecoder.decodeZrle(input, framebuffer, width, x, y, w, h);
                 default -> throw new IOException("Unrequested RFB encoding: " + encoding);
             }
         }
@@ -362,14 +400,17 @@ public final class RfbClient implements AutoCloseable {
         int sourceX = input.readUnsignedShort();
         int sourceY = input.readUnsignedShort();
         validateRect(sourceX, sourceY, w, h);
-        int[] copy = new int[w * h];
-        for (int row = 0; row < h; row++) {
-            System.arraycopy(framebuffer, (sourceY + row) * width + sourceX,
-                    copy, row * w, w);
-        }
-        for (int row = 0; row < h; row++) {
-            System.arraycopy(copy, row * w, framebuffer,
-                    (y + row) * width + x, w);
+        // Overlap-safe row-wise CopyRect, without a w*h scratch allocation.
+        if (y > sourceY) {
+            for (int row = h - 1; row >= 0; row--) {
+                System.arraycopy(framebuffer, (sourceY + row) * width + sourceX,
+                        framebuffer, (y + row) * width + x, w);
+            }
+        } else {
+            for (int row = 0; row < h; row++) {
+                System.arraycopy(framebuffer, (sourceY + row) * width + sourceX,
+                        framebuffer, (y + row) * width + x, w);
+            }
         }
     }
 
@@ -507,6 +548,9 @@ public final class RfbClient implements AutoCloseable {
 
     public boolean sendClipboard(String text) {
         Objects.requireNonNull(text, "text");
+        if (text.chars().anyMatch(ch -> ch > 255)) {
+            throw new IllegalArgumentException("RFB 3.x clipboard supports Latin-1 only");
+        }
         byte[] bytes = text.getBytes(StandardCharsets.ISO_8859_1);
         if (bytes.length > MAX_CLIPBOARD_BYTES) {
             throw new IllegalArgumentException("Clipboard exceeds 1 MiB");
