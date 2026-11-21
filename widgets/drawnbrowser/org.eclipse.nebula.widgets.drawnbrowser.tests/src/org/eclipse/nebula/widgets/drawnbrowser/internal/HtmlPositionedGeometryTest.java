@@ -69,6 +69,26 @@ public class HtmlPositionedGeometryTest {
 	}
 
 	@Test
+	public void farAbsoluteDescendantsDoNotGrowAnOuterClippedPanelScrollbar() {
+		String far = "<p style='position:absolute;top:5000px;width:20px;height:200px'>far</p></div>";
+		for (String overflow : new String[] { "hidden", "clip" }) {
+			Scene clipped = new Scene("<div style='position:relative;height:40px;overflow:" + overflow + "'>" + far, 200, 100);
+			assertEquals("an invisible descendant cannot inflate the outer scroll range", 40, clipped.layout.totalHeight());
+		}
+		Scene visible = new Scene("<div style='position:relative;height:40px;overflow:visible'>" + far, 200, 100);
+		assertTrue("visible overflow must still extend the outer scroll range", visible.layout.totalHeight() >= 5200);
+	}
+
+	@Test
+	public void clippedRelativeOverflowDoesNotHideLaterFlowSiblings() {
+		Scene scene = new Scene("<div style='position:relative;height:40px;overflow:hidden'>"
+				+ "<p style='position:relative;top:5000px;height:200px'>moved</p></div>"
+				+ "<p>following</p>", 200, 100);
+		assertTrue("subsequent visible siblings still extend document height", scene.layout.totalHeight() >= 70);
+		assertTrue("hidden relative content cannot create a long outer scroll range", scene.layout.totalHeight() < 200);
+	}
+
+	@Test
 	public void relativeVisualOverflowExtendsTheScrollableExtent() {
 		Scene scene = new Scene("<p style='position:relative;top:70px'>first</p><p>second</p>", 200, 100);
 		assertEquals(30, scene.layout.blockY(1, 0));

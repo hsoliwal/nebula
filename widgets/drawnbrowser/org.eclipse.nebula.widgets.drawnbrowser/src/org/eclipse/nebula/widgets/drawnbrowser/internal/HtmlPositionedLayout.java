@@ -108,7 +108,7 @@ public final class HtmlPositionedLayout {
 			int e = doc.blockBox[b];
 			blockX[b] = add(contentX(e), blockInset[b]);
 			blockY[b] = add(doc.kind[b] == HtmlDocument.CELL ? y[e] : contentY(e), blockY[b]);
-			if (!fixed[e]) totalHeight = Math.max(totalHeight, add(blockY[b], blockHeight[b]));
+			if (!fixed[e]) totalHeight = Math.max(totalHeight, visibleBottom(e, true, add(blockY[b], blockHeight[b])));
 		}
 		totalHeight = Math.max(0, totalHeight);
 		indexIntervals();
@@ -511,7 +511,7 @@ public final class HtmlPositionedLayout {
 			}
 		}
 		hasFixed |= fixed[e];
-		if (!fixed[e]) totalHeight = Math.max(totalHeight, clamp((long) y[e] + height[e] + after[e]));
+		if (!fixed[e]) totalHeight = Math.max(totalHeight, visibleBottom(e, false, clamp((long) y[e] + height[e] + after[e])));
 	}
 
 	/* Bound sticky projection by the original containing box (table cells use the entire table). */
@@ -583,6 +583,18 @@ public final class HtmlPositionedLayout {
 
 	private int firstClip(int box, boolean content) {
 		return content && doc.boxOverflow[box] == HtmlStyles.OVERFLOW_HIDDEN ? box : clipAncestor[box];
+	}
+
+	/*
+	 * Offscreen descendants still participate in local layout, but cannot extend the root scrollbar
+	 * past a clipping ancestor. Reuse the exact parent-owned clip chain used by painting and picking.
+	 * This method runs at layout publication, never per paint fragment.
+	 */
+	private int visibleBottom(int box, boolean content, int bottom) {
+		for (int clip = firstClip(box, content); clip >= 0; clip = clipAncestor[clip]) {
+			bottom = Math.min(bottom, clamp((long) y[clip] + height[clip] - doc.boxBorder[clip]));
+		}
+		return bottom;
 	}
 
 	/** Whether a paint fragment inherits an overflow clip; a box's own border/background is not self-clipped. */
