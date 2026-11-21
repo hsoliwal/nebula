@@ -63,12 +63,17 @@ jobs:
       run: bash releng/swt-receiver/test-retry-transient-maven-503.sh
     - name: Build and bind the pinned SWT GTK3 distribution
       run: |
+        set -euo pipefail
         sudo apt-get update -qq
         sudo apt-get install -qq -y libgtk-3-dev freeglut3-dev
+        # Build every source-pinned SWT platform fragment expected by the P2
+        # receiver. Only GTK x86_64 compiles native .so files on this host;
+        # Cocoa/Win32/other architectures are Java/OSGi resolution inputs only.
+        swt_fragments=':org.eclipse.swt.cocoa.macosx.aarch64,:org.eclipse.swt.cocoa.macosx.x86_64,:org.eclipse.swt.gtk.linux.aarch64,:org.eclipse.swt.gtk.linux.ppc64le,:org.eclipse.swt.gtk.linux.riscv64,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.win32.win32.aarch64,:org.eclipse.swt.win32.win32.x86_64'
         GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
           bash releng/swt-receiver/retry-transient-maven-503.sh \
           mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
-          -Dtycho.baseline.replace=none -pl :org.eclipse.swt.gtk.linux.x86_64 -am package
+          -Dtycho.baseline.replace=none -pl "$swt_fragments" -am package
         python3 releng/swt-receiver/prepare_swt_receiver.py .m3-swt releng/swt-receiver/swt-receiver-p2/target/binding \
           releng/swt-receiver/swt-receiver-p2/target/repository
         mvn -B -f releng/swt-receiver/swt-receiver-p2/pom.xml \
