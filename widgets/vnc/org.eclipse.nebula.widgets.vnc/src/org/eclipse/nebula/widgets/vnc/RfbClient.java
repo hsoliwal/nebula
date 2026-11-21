@@ -268,13 +268,19 @@ public final class RfbClient implements AutoCloseable {
                 security = RfbVeNCrypt.SECURITY_TYPE;
             } else if (vnc && password.length > 0) {
                 security = 2;
-            } else if (none) {
+            } else if (none && password.length == 0) {
                 security = 1;
             } else {
+                // A caller supplying credentials must never silently get
+                // an unauthenticated session instead of an authenticated one.
                 throw new IOException("Server requires unsupported RFB security or a password");
             }
             output.writeByte(security);
             output.flush();
+        }
+
+        if (!vencrypt && security == 1 && password.length > 0) {
+            throw new IOException("Server offered unauthenticated RFB while credentials were supplied");
         }
 
         if (security == RfbVeNCrypt.SECURITY_TYPE) {
