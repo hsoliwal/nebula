@@ -227,6 +227,23 @@ public final class RowSelection {
 			bits[column >>> 5] |= 1 << (column & 31);
 		} else {
 			bits[column >>> 5] &= ~(1 << (column & 31));
+			// Empty cell rows cannot retain their column words after deselection.
+			boolean anySelected = false;
+			for (final int word : bits) {
+				if (word != 0) {
+					anySelected = true;
+					break;
+				}
+			}
+			if (!anySelected) {
+				final int trailing = cellRowCount - at - 1;
+				if (trailing > 0) {
+					System.arraycopy(cellRows, at + 1, cellRows, at, trailing);
+					System.arraycopy(cellColumns, at + 1, cellColumns, at, trailing);
+				}
+				cellColumns[--cellRowCount] = null;
+				cellRows[cellRowCount] = 0;
+			}
 		}
 	}
 
