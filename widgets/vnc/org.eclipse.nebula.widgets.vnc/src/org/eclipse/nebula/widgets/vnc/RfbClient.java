@@ -118,7 +118,7 @@ public final class RfbClient implements AutoCloseable {
      * @param allowUnencryptedRemote explicit opt-in to non-loopback plaintext
      */
     public void connectAsync(String host, int port, char[] password, boolean allowUnencryptedRemote) {
-        start(host, port, password, allowUnencryptedRemote, false);
+        start(host, port, password, allowUnencryptedRemote, false, false);
     }
 
     /**
@@ -127,11 +127,22 @@ public final class RfbClient implements AutoCloseable {
      * This is intentionally not VeNCrypt security negotiation.
      */
     public void connectTlsAsync(String host, int port, char[] password) {
-        start(host, port, password, false, true);
+        start(host, port, password, false, true, false);
     }
 
+    /**
+     * Negotiate VeNCrypt v0.2 and require X509None or X509Vnc, with default
+     * JVM certificate trust and hostname verification. Never silently
+     * downgrade to RFB None, VNCAuth or anonymous TLS.
+     */
+    public void connectVeNCryptAsync(String host, int port, char[] password) {
+        start(host, port, password, false, false, true);
+    }
+
+    private record SessionStreams(DataInputStream input, DataOutputStream output) { }
+
     private void start(String host, int port, char[] password,
-            boolean allowUnencryptedRemote, boolean tls) {
+            boolean allowUnencryptedRemote, boolean tls, boolean vencrypt) {
         Objects.requireNonNull(host, "host");
         if (host.isBlank() || port < 1 || port > 65535) {
             throw new IllegalArgumentException("Invalid RFB address or port");
@@ -144,7 +155,7 @@ public final class RfbClient implements AutoCloseable {
             IOException problem = null;
             try {
                 InetAddress address = InetAddress.getByName(host);
-                if (!tls && !address.isLoopbackAddress() && !allowUnencryptedRemote) {
+                if (!tls && !vencrypt && !address.isLoopbackAddress() && !allowUnencryptedRemote) {
                     throw new IOException("Unencrypted remote RFB requires explicit opt-in; use an SSH tunnel");
                 }
                 Socket connection = new Socket();
@@ -164,17 +175,24 @@ public final class RfbClient implements AutoCloseable {
                     secure.startHandshake();
                     connection = secure;
                 }
-                DataInputStream input = new DataInputStream(
-                        new BufferedInputStream(connection.getInputStream()));
-                DataOutputStream output = new DataOutputStream(
-                        new BufferedOutputStream(connection.getOutputStream()));
-                authenticate(input, output, secret);
+                // Unbuffered pre-TLS VeNCrypt streams prevent byte-ahead reads
+                // from stealing the first bytes of the TLS handshake.
+                DataInputStream input = new DataInputStream(vencrypt
+                        ? connection.getInputStream()
+                        : new BufferedInputStream(connection.getInputStream()));
+                DataOutputStream output = new DataOutputStream(vencrypt
+                        ? connection.getOutputStream()
+                        : new BufferedOutputStream(connection.getOutputStream()));
+                SessionStreams streams = authenticate(input, output, secret, vencrypt, connection, host, port);
+                input = streams.input();
+                output = streams.output();
                 Arrays.fill(secret, '\0');
                 initialize(input, output);
                 if (closed.get()) {
                     return;
                 }
-                writerThread = new Thread(() -> writeLoop(output), "Nebula-RFB-writer");
+                final DataOutputStream sessionOutput = output;
+                writerThread = new Thread(() -> writeLoop(sessionOutput), "Nebula-RFB-writer");
                 writerThread.setDaemon(true);
                 writerThread.start();
                 listener.connected(title, width, height);
@@ -202,8 +220,9 @@ public final class RfbClient implements AutoCloseable {
         readerThread.start();
     }
 
-    private void authenticate(DataInputStream input, DataOutputStream output,
-            char[] password) throws IOException {
+    private SessionStreams authenticate(DataInputStream input, DataOutputStream output,
+            char[] password, boolean vencrypt, Socket connection, String host, int port)
+            throws IOException {
         byte[] banner = new byte[12];
         input.readFully(banner);
         String version = new String(banner, StandardCharsets.US_ASCII);
@@ -211,7 +230,13 @@ public final class RfbClient implements AutoCloseable {
             throw new IOException("Unsupported RFB protocol banner");
         }
         int offered = Integer.parseInt(version.substring(8, 11));
+        if (offered < 3) {
+            throw new IOException("Unsupported RFB protocol version: " + version.trim());
+        }
         int minor = offered >= 8 ? 8 : offered >= 7 ? 7 : 3;
+        if (vencrypt && minor < 7) {
+            throw new IOException("VeNCrypt requires RFB 3.7 or later");
+        }
         output.write(("RFB 003.00" + minor + "\n").getBytes(StandardCharsets.US_ASCII));
         output.flush();
 
@@ -230,11 +255,18 @@ public final class RfbClient implements AutoCloseable {
             input.readFully(methods);
             boolean none = false;
             boolean vnc = false;
+            boolean supportedVeNCrypt = false;
             for (byte method : methods) {
                 none |= method == 1;
                 vnc |= method == 2;
+                supportedVeNCrypt |= (method & 0xff) == RfbVeNCrypt.SECURITY_TYPE;
             }
-            if (vnc && password.length > 0) {
+            if (vencrypt) {
+                if (!supportedVeNCrypt) {
+                    throw new IOException("Server does not offer VeNCrypt; refusing plaintext downgrade");
+                }
+                security = RfbVeNCrypt.SECURITY_TYPE;
+            } else if (vnc && password.length > 0) {
                 security = 2;
             } else if (none) {
                 security = 1;
@@ -243,6 +275,20 @@ public final class RfbClient implements AutoCloseable {
             }
             output.writeByte(security);
             output.flush();
+        }
+
+        if (security == RfbVeNCrypt.SECURITY_TYPE) {
+            int subtype = RfbVeNCrypt.negotiate(input, output, password.length > 0);
+            SSLSocket secure = (SSLSocket) ((SSLSocketFactory) SSLSocketFactory.getDefault())
+                    .createSocket(connection, host, port, true);
+            socket = secure;
+            SSLParameters params = secure.getSSLParameters();
+            params.setEndpointIdentificationAlgorithm("HTTPS");
+            secure.setSSLParameters(params);
+            secure.startHandshake();
+            input = new DataInputStream(new BufferedInputStream(secure.getInputStream()));
+            output = new DataOutputStream(new BufferedOutputStream(secure.getOutputStream()));
+            security = subtype == RfbVeNCrypt.X509_VNC ? 2 : 1;
         }
 
         if (security == 2) {
@@ -261,13 +307,14 @@ public final class RfbClient implements AutoCloseable {
         }
 
         // RFB 3.7 with security None has no SecurityResult.
-        if (minor == 8 || security == 2) {
+        if (minor == 8 || security == 2 || vencrypt) {
             int result = input.readInt();
             if (result != 0) {
                 String reason = minor == 8 ? readText(input, MAX_TITLE_BYTES) : "authentication rejected";
                 throw new IOException("RFB security failed: " + reason);
             }
         }
+        return new SessionStreams(input, output);
     }
 
     static byte[] vncResponse(byte[] challenge, char[] password) throws IOException {
