@@ -26,6 +26,7 @@ import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.STRI
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.UNDERLINE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -149,6 +150,23 @@ public class HtmlDocumentTest {
 	public void scriptsStylesAndCommentsAreNotText() {
 		HtmlDocument d = HtmlDocument.parse("<style>p{color:red}</style><!-- note --><p>x<script>var a = '<p>no</p>';</script>y</p>");
 		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:xy" }, blocks(d));
+	}
+
+	@Test
+	public void clipBoundariesStayWithParentOwnedBoxesAcrossCapacityGrowth() {
+		StringBuilder html = new StringBuilder("<div style='overflow:hidden'>");
+		for (int i = 0; i < 24; i++) html.append("<div>");
+		html.append("<p>deep</p>");
+		for (int i = 0; i < 24; i++) html.append("</div>");
+		html.append("</div><div style='overflow:visible'>outside</div>");
+		HtmlDocument doc = HtmlDocument.parse(html.toString());
+		assertTrue(doc.boxCount > 16);
+		assertTrue("a normal-flow clip requires the context-aware scene", doc.boxLayout);
+		assertTrue(doc.positioned);
+		assertEquals(HtmlStyles.OVERFLOW_HIDDEN, doc.boxOverflow[1]);
+		for (int box = 2; box < doc.boxCount; box++) {
+			assertEquals("clipping is never copied into descendants", HtmlStyles.OVERFLOW_VISIBLE, doc.boxOverflow[box]);
+		}
 	}
 
 	@Test

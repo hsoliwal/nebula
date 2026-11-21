@@ -83,6 +83,35 @@ public class DrawnBrowserPositionedTest {
 		assertTrue(children[0].isDisposed());
 	}
 
+	@Test
+	public void nestedPanelClipsAbsoluteChildPixelsButKeepsItsOwnBorder() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		show("<div style='position:relative;left:20px;top:10px;width:80px;height:50px;"
+				+ "border:4px solid blue;overflow:hidden;background:lime'>"
+				+ "<div style='position:absolute;left:60px;top:10px;width:100px;height:30px;background:red'></div></div>");
+		assertEquals(new RGB(0, 255, 0), pixel(40, 35));
+		assertEquals(new RGB(255, 0, 0), pixel(95, 35));
+		assertEquals("parent border cannot be overpainted by clipped child", new RGB(0, 0, 255), pixel(106, 35));
+		assertEquals("child must not leak beyond parent", new RGB(255, 255, 255), pixel(120, 35));
+	}
+
+	@Test
+	public void responsivePanelHidesPartiallyClippedNativeControlWithoutDisposingIt() {
+		show("<div style='overflow:hidden;height:55px;border:2px solid red'>"
+				+ "<input name=field size=18 value=kept></div>");
+		org.eclipse.swt.widgets.Control[] controls = browser.getChildren();
+		assertEquals(1, controls.length);
+		assertTrue(controls[0].getVisible());
+		shell.setSize(120, 240);
+		settle();
+		assertTrue("a partially cut native Text cannot leak beyond its panel", !controls[0].getVisible());
+		assertTrue(!controls[0].isDisposed());
+		shell.setSize(320, 240);
+		settle();
+		assertTrue("the same native Text returns when its panel fits", controls[0].getVisible());
+		assertTrue(controls[0] == browser.getChildren()[0]);
+	}
+
 	@Before
 	public void setUp() {
 		display = Display.getDefault();

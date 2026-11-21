@@ -605,21 +605,42 @@ public class DrawnBrowser extends Canvas {
 		HtmlPaintOrder order = scene.order();
 		int scroll = viewport.y();
 		int count = scene.collectVisible(damageY + scroll, damageHeight, scroll);
+		Rectangle originalClip = gc.getClipping();
+		int[] clip = new int[4];
 		for (int v = 0; v < count; v++) {
 			int s = scene.visibleStep(v);
 			int i = order.index(s);
-			if (order.isBackground(s)) {
+			boolean background = order.isBackground(s);
+			int owner = background ? i : document.blockBox[i];
+			if (background) {
 				int color = document.boxBackground[i];
 				int border = document.boxBorder[i];
 				if (color == 0 && border == 0) continue;
 				int x = scene.boxX(i), y = scene.boxY(i, scroll) - scroll, w = scene.boxWidth(i), h = scene.boxHeight(i);
 				if (!intersects(x, y, w, h, damageX, damageY, damageWidth, damageHeight)) continue;
-				paintBox(gc, x, y, w, h, color, border, document.boxBorderColor[i], document.boxBorderStyle[i]);
 			} else {
-				int y = scene.blockY(i, scroll) - scroll, box = document.blockBox[i];
+				int y = scene.blockY(i, scroll) - scroll;
 				// PRE, list markers and images may overflow their box; let the widget's damage clip bound drawing.
 				if ((long) y + scene.blockHeight(i) <= damageY || y >= (long) damageY + damageHeight) continue;
-				paintBlock(gc, i, y + layout.contentTop(i), scene.blockX(i), scene.boxX(box), scene.boxWidth(box));
+			}
+			boolean clipped = scene.hasClip(owner, !background);
+			if (clipped) {
+				clip[0] = originalClip.x; clip[1] = originalClip.y;
+				clip[2] = originalClip.x + originalClip.width;
+				clip[3] = originalClip.y + originalClip.height;
+				if (!scene.clipBounds(owner, !background, scroll, clip)) continue;
+				gc.setClipping(clip[0], clip[1], clip[2] - clip[0], clip[3] - clip[1]);
+			}
+			try {
+				if (background) {
+					paintBox(gc, scene.boxX(i), scene.boxY(i, scroll) - scroll, scene.boxWidth(i), scene.boxHeight(i),
+							document.boxBackground[i], document.boxBorder[i], document.boxBorderColor[i], document.boxBorderStyle[i]);
+				} else {
+					int y = scene.blockY(i, scroll) - scroll;
+					paintBlock(gc, i, y + layout.contentTop(i), scene.blockX(i), scene.boxX(owner), scene.boxWidth(owner));
+				}
+			} finally {
+				if (clipped) gc.setClipping(originalClip);
 			}
 		}
 	}
@@ -936,6 +957,7 @@ public class DrawnBrowser extends Canvas {
 		if (remoteFrameImage != null || widgets.length == 0) return;
 		int stamp = ++placeStamp, scrollY = viewport.y(), viewBottom = scrollY + getClientArea().height;
 		HtmlPositionedLayout scene = layout.positioned();
+		int[] clip = new int[4];
 		int visible = scene == null ? 0 : scene.collectVisible(scrollY, getClientArea().height, scrollY);
 		for (int step = scene == null ? layout.blockAt(scrollY) : 0;
 				step >= 0 && (scene == null ? step < document.blockCount && layout.top(step) < viewBottom : step < visible); step++) {
@@ -948,9 +970,17 @@ public class DrawnBrowser extends Canvas {
 			}
 			int c = document.blockControl[b];
 			if (c < 0 || document.kind[b] != HtmlDocument.CONTROL) continue;
+			int x = scene == null ? layout.indent(b) : scene.blockX(b);
+			int y = (scene == null ? layout.top(b) : scene.blockY(b, scrollY)) + layout.contentTop(b) - scrollY;
+			int width = layout.controlWidth(b), height = layout.controlHeight(b);
+			if (scene != null && scene.hasClip(document.blockBox[b], true)) {
+				clip[0] = x; clip[1] = y; clip[2] = x + width; clip[3] = y + height;
+				// SWT owns native Control painting: an intersecting but partially clipped control stays hidden.
+				if (!scene.clipBounds(document.blockBox[b], true, scrollY, clip)
+						|| clip[0] != x || clip[1] != y || clip[2] != x + width || clip[3] != y + height) continue;
+			}
 			Control widget = widget(c);
-			widget.setBounds(layout.indent(b), layout.top(b) + layout.contentTop(b) - scrollY, layout.controlWidth(b),
-					layout.controlHeight(b));
+			widget.setBounds(x, y, width, height);
 			widget.setVisible(true);
 			placed[c] = stamp;
 		}

@@ -31,6 +31,44 @@ public class HtmlPositionedGeometryTest {
 	}
 
 	@Test
+	public void overflowClipRestrictsChildPaintAndPickingWithoutClippingOwnBorder() {
+		Scene scene = new Scene("<div style='position:relative;width:100px;height:40px;overflow:hidden;border:2px solid red'>"
+				+ "<p style='position:absolute;left:80px;top:5px;width:60px;height:20px'>child</p></div>", 400, 200);
+		int parent = scene.document.boxParent[scene.document.blockBox[0]], child = scene.document.blockBox[0];
+		assertTrue("panel background draws before its own clip", !scene.layout.hasClip(parent, false));
+		assertTrue(scene.layout.hasClip(parent, true));
+		assertTrue(scene.layout.hasClip(child, false));
+		int[] clip = { 0, 0, 400, 200 };
+		assertTrue(scene.layout.clipBounds(child, true, 0, clip));
+		assertEquals(scene.layout.boxX(parent) + 2, clip[0]);
+		assertEquals(scene.layout.boxX(parent) + scene.layout.boxWidth(parent) - 2, clip[2]);
+		assertEquals(0, scene.layout.blockAt(clip[2] - 8, 12, 0));
+		assertEquals(-1, scene.layout.blockAt(clip[2] + 8, 12, 0));
+	}
+
+	@Test
+	public void nestedFixedOverflowClipsRemainInViewportCoordinatesAcrossScroll() {
+		Scene scene = new Scene("<div style='position:fixed;left:20px;top:12px;width:110px;height:50px;overflow:hidden;border:3px solid blue'>"
+				+ "<div style='position:relative;left:60px;top:10px;width:70px;height:40px;overflow:clip;border:2px solid red'>"
+				+ "<p>nested</p></div></div><p>normal</p>", 400, 180);
+		int block = scene.document.blockBox[0];
+		int[] original = { 0, 0, 400, 180 }, scrolled = { 0, 0, 400, 180 };
+		assertTrue(scene.layout.clipBounds(block, true, 0, original));
+		assertTrue(scene.layout.clipBounds(block, true, 125, scrolled));
+		assertArrayEquals("both clips of a fixed subtree use screen pixels", original, scrolled);
+		assertEquals(scene.layout.boxX(1) + scene.layout.boxWidth(1) - 3, original[2]);
+	}
+
+	@Test
+	public void nearestTextSelectionSkipsFullyHiddenOverflowChildren() {
+		Scene scene = new Scene("<div style='position:relative;width:30px;height:30px;overflow:hidden'>"
+				+ "<p style='position:absolute;left:80px;top:1px;width:20px;height:10px'>hidden</p></div>"
+				+ "<p>visible</p>", 200, 100);
+		assertEquals(-1, scene.layout.blockAt(85, 5, 0));
+		assertEquals("selection must not lock onto completely invisible text", 1, scene.layout.nearestBlock(85, 5, 0));
+	}
+
+	@Test
 	public void relativeVisualOverflowExtendsTheScrollableExtent() {
 		Scene scene = new Scene("<p style='position:relative;top:70px'>first</p><p>second</p>", 200, 100);
 		assertEquals(30, scene.layout.blockY(1, 0));
