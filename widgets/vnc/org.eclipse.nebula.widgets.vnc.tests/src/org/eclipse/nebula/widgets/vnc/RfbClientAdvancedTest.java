@@ -116,11 +116,11 @@ public class RfbClientAdvancedTest {
                     socket.setSoTimeout(5000);
                     DataInputStream in = new DataInputStream(socket.getInputStream());
                     DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                    out.write("RFB 003.008\\n".getBytes(StandardCharsets.US_ASCII));
+                    out.write("RFB 003.008\n".getBytes(StandardCharsets.US_ASCII));
                     out.flush();
                     byte[] banner = new byte[12];
                     in.readFully(banner);
-                    assertEquals("RFB 003.008\\n",
+                    assertEquals("RFB 003.008\n",
                             new String(banner, StandardCharsets.US_ASCII));
                     out.writeByte(1); out.writeByte(1); // only None security
                     out.flush();
