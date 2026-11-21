@@ -96,7 +96,7 @@ public final class TerminalWidget extends Composite implements ITerminalListener
 
     public boolean paste(String text) {
         checkWidget();
-        return terminal.paste(Objects.requireNonNull(text, "text"));
+        return terminal.pasteString(Objects.requireNonNull(text, "text"));
     }
 
     public String getSelectionText() {
