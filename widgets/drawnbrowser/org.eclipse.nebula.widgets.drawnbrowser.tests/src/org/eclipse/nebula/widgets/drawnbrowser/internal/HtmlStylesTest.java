@@ -173,7 +173,7 @@ public class HtmlStylesTest {
 		assertEquals(-3, panel[HtmlStyles.Z_INDEX]);
 		assertEquals("overflow is not inherited", HtmlStyles.OVERFLOW_VISIBLE,
 				styles.compute(panel, "div", null, null)[HtmlStyles.OVERFLOW]);
-		assertEquals(HtmlStyles.OVERFLOW_HIDDEN,
+		assertEquals(HtmlStyles.OVERFLOW_CLIP,
 				styles.compute(root, "div", null, "overflow: clip")[HtmlStyles.OVERFLOW]);
 		assertEquals(HtmlStyles.OVERFLOW_VISIBLE,
 				styles.compute(panel, "div", "visible", "overflow: hidden; overflow: visible")[HtmlStyles.OVERFLOW]);

@@ -26,12 +26,93 @@ import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.STRI
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.UNDERLINE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 /** The drawn browser's document lanes, tag by tag of prasser/swtbrowser's handlers. */
 public class HtmlDocumentTest {
+
+	@Test
+	public void semanticContainersOwnTheirFragmentsAndKeepChildrenInSourceOrder() {
+		for (String tag : new String[] { "main", "section", "article", "nav", "aside", "header", "footer" }) {
+			HtmlDocument d = HtmlDocument.parse("<" + tag + " style='padding:3px;background:red'>head<p>child</p>tail</"
+					+ tag + "><p>after</p>");
+			assertEquals(tag, 4, d.blockCount);
+			assertEquals(tag, 4, d.boxCount);
+			assertEquals(tag, "head", d.blockText(0));
+			assertEquals(tag, "child", d.blockText(1));
+			assertEquals(tag, "tail", d.blockText(2));
+			assertEquals(tag, "after", d.blockText(3));
+			assertEquals(tag, 1, d.blockBox[0]);
+			assertEquals(tag, 2, d.blockBox[1]);
+			assertEquals(tag, 1, d.blockBox[2]);
+			assertEquals(tag, 0, d.boxParent[3]);
+			assertEquals(tag, 1, d.boxParent[2]);
+			assertEquals(tag, 3, d.boxEndBlock[1]);
+			assertEquals(tag, 0xFFFF0000, d.boxBackground[1]);
+			assertEquals(tag, 0, d.boxBackground[2]);
+			assertEquals(tag, 3, d.boxPadLeft[1]);
+			assertEquals(tag, 0, d.boxPadLeft[2]);
+			assertTrue(tag + " wrapper decoration belongs to one resolved box", d.boxLayout);
+		}
+	}
+
+	@Test
+	public void ordinarySemanticLeavesRetainFlatLayoutAndEmptyPanelsKeepTheirBox() {
+		HtmlDocument leaves = HtmlDocument.parse("<header style='padding:3px;background:blue'>heading</header>"
+				+ "<main><section>content</section></main><footer>ending</footer>");
+		assertEquals(3, leaves.blockCount);
+		assertFalse("unstyled wrappers and single styled leaves still use the lazy path", leaves.boxLayout);
+		assertEquals(3, leaves.blockPadLeft[0]);
+		assertEquals(0xFF0000FF, leaves.blockBackground[0]);
+		assertEquals(0, leaves.blockPadLeft[1]);
+		for (String tag : new String[] { "div", "section", "article" }) {
+			HtmlDocument empty = HtmlDocument.parse("<" + tag + " style='padding:4px;border:2px solid red'></" + tag + ">");
+			assertEquals(tag, 0, empty.blockCount);
+			assertEquals(tag, 2, empty.boxCount);
+			assertTrue(tag + " empty decoration must not vanish with the empty text fragment", empty.boxLayout);
+		}
+	}
+
+	@Test
+	public void semanticSelectorAncestrySurvivesGrowthAndHiddenContainers() {
+		StringBuilder html = new StringBuilder("<style>main > section.panel {padding:7px;background:blue} "
+				+ "aside.hidden {display:none}</style><main><section class=panel>");
+		for (int i = 0; i < 40; i++) html.append("<article>");
+		html.append("<p>deep</p>");
+		for (int i = 0; i < 40; i++) html.append("</article>");
+		html.append("</section><aside class=hidden><section>invisible</section></aside></main><footer>end</footer>");
+		HtmlDocument d = HtmlDocument.parse(html.toString());
+		assertEquals(2, d.blockCount);
+		assertEquals("deep", d.blockText(0));
+		assertEquals("end", d.blockText(1));
+		assertTrue(d.boxCount > 32);
+		assertEquals(1, d.boxParent[2]);
+		assertEquals(7, d.boxPadLeft[2]);
+		assertEquals(0xFF0000FF, d.boxBackground[2]);
+		assertEquals(0, d.boxPadLeft[3]);
+		assertEquals(0, d.boxParent[d.blockBox[1]]);
+		assertTrue(d.boxLayout);
+	}
+
+	@Test
+	public void semanticContainersKeepTheExistingFlatCellAndFlexItemSubset() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td>A<section>B</section>C</td><td>D</td></tr></table>"
+				+ "<main style='display:flex'><article style='flex:0 0 80px'>E<section>F</section>G</article>"
+				+ "<aside>H</aside></main>");
+		assertEquals(2, d.tableCount);
+		assertEquals(4, d.blockCount);
+		assertEquals("A\nBC", d.blockText(0));
+		assertEquals("E\nFG", d.blockText(2));
+		assertEquals(HtmlDocument.CELL, d.kind[2]);
+		assertEquals(HtmlDocument.CELL_BOX, d.boxRole[d.blockBox[2]]);
+		assertEquals(HtmlDocument.FLEX_BOX, d.boxRole[d.boxParent[d.blockBox[2]]]);
+		assertEquals(80, d.cellBasis[2]);
+		assertEquals(0, d.cellShrink[2], 0);
+		assertEquals(1, d.cellShrink[3], 0);
+	}
 
 	@Test
 	public void flexShrinkLanesGrowAndAnonymousItemsKeepTheirDefault() {

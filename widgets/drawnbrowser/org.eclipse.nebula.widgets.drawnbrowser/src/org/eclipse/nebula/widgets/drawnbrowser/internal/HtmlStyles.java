@@ -83,8 +83,8 @@ public final class HtmlStyles {
 	private static final int SHRINK_HIGH = 32, SHRINK_LOW = 33;
 	/** Number of primitive computed-style slots. Existing slots retain their indices. */
 	public static final int OVERFLOW = 34, SLOTS = 35;
-	/** Parent-owned clip modes; CSS clip/hidden share clipping, not scrollbars. */
-	public static final int OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1;
+	/** Parent-owned modes: hidden/clip share paint clipping, but only hidden establishes a sticky scroll reference. */
+	public static final int OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1, OVERFLOW_CLIP = 2;
 
 	/** Draw2D SchemeBorder-style highlight/shadow schemes, encoded as scalar CSS. */
 	public static final int BORDER_SOLID = 0, BORDER_INSET = 1, BORDER_OUTSET = 2,
@@ -616,7 +616,8 @@ public final class HtmlStyles {
 				case "height" -> length(delta, HEIGHT, value, true);
 				case "overflow" -> {
 					if (value.equals("visible")) delta[OVERFLOW] = OVERFLOW_VISIBLE;
-					else if (value.equals("hidden") || value.equals("clip")) delta[OVERFLOW] = OVERFLOW_HIDDEN;
+					else if (value.equals("hidden")) delta[OVERFLOW] = OVERFLOW_HIDDEN;
+					else if (value.equals("clip")) delta[OVERFLOW] = OVERFLOW_CLIP;
 				}
 				case "display" -> delta[DISPLAY] = switch (value) {
 					case "none" -> DISPLAY_NONE;

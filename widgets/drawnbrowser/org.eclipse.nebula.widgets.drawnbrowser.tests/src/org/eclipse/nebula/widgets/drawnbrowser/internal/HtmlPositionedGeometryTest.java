@@ -21,6 +21,125 @@ import org.junit.Test;
 public class HtmlPositionedGeometryTest {
 
 	@Test
+	public void staticSemanticPanelOwnsItsPaddingAndMarginsAroundItsChildrenOnce() {
+		for (String tag : new String[] { "div", "main", "section", "article", "nav", "aside", "header", "footer" }) {
+			Scene scene = new Scene("<" + tag + " style='margin:5px;padding:10px;border:2px solid blue;background:red'>"
+					+ "<p>inner</p></" + tag + "><p>after</p>", 300, 200);
+			int panel = scene.document.boxParent[scene.document.blockBox[0]];
+			assertTrue(tag, scene.document.boxLayout);
+			assertEquals(tag, 5, scene.layout.boxX(panel));
+			assertEquals(tag, 5, scene.layout.boxY(panel, 0));
+			assertEquals(tag, 290, scene.layout.boxWidth(panel));
+			assertEquals(tag, 54, scene.layout.boxHeight(panel));
+			assertEquals(tag, 17, scene.layout.blockX(0));
+			assertEquals(tag, 17, scene.layout.blockY(0, 0));
+			assertEquals(tag, 64, scene.layout.blockY(1, 0));
+			assertEquals(tag, 94, scene.layout.totalHeight());
+		}
+	}
+
+	@Test
+	public void emptySemanticPanelsKeepDecorationAndTheFollowingFlowPosition() {
+		Scene scene = new Scene("<main style='padding:4px;border:2px solid red'></main><p>after</p>", 200, 100);
+		assertTrue(scene.document.boxLayout);
+		assertEquals(12, scene.layout.boxHeight(1));
+		assertEquals(12, scene.layout.blockY(0, 0));
+		assertEquals(42, scene.layout.totalHeight());
+	}
+
+	@Test
+	public void aClippedOwnTextFragmentCannotCreateBlankOuterScrollRange() {
+		Scene scene = new Scene("<section style='height:40px;overflow:clip'>long content</section><p>after</p>",
+				200, 100, 700, 20);
+		assertEquals(40, scene.layout.boxHeight(1));
+		assertEquals(40, scene.layout.blockY(1, 0));
+		assertEquals(60, scene.layout.totalHeight());
+	}
+
+	@Test
+	public void viewportFixedBoxesAndTheirNormalChildrenEscapeAncestorClips() {
+		for (String ancestor : new String[] { "", "position:relative;" }) {
+			for (String content : new String[] { "fixed", "<p>ordinary child</p>" }) {
+				Scene scene = new Scene("<section style='" + ancestor + "width:40px;height:40px;overflow:hidden'>"
+						+ "<aside style='position:fixed;left:120px;top:15px;width:50px;height:30px'>"
+						+ content + "</aside></section>", 300, 180, 12);
+				int owner = scene.document.blockBox[0];
+				assertTrue("a viewport-fixed box escapes the intermediate overflow ancestor", !scene.layout.hasClip(owner, true));
+				for (int scroll : new int[] { 0, 70 }) {
+					int[] bounds = { 0, 0, 300, 180 };
+					assertTrue(scene.layout.clipBounds(owner, true, scroll, bounds));
+					assertArrayEquals(new int[] { 0, 0, 300, 180 }, bounds);
+					assertEquals(0, scene.layout.blockAt(125, 20 + scroll, scroll));
+					assertEquals(0, scene.layout.nearestBlock(125, 20 + scroll, scroll));
+				}
+			}
+		}
+	}
+
+	@Test
+	public void absoluteBoxesSkipInterveningClipsButKeepTheirContainingBlockClip() {
+		for (String content : new String[] { "absolute", "<p>ordinary child</p>" }) {
+			Scene scene = new Scene("<main style='position:relative;width:140px;height:70px;overflow:hidden'>"
+					+ "<section style='width:40px;height:40px;overflow:hidden'>"
+					+ "<article style='position:absolute;left:120px;top:15px;width:50px;height:30px'>"
+					+ content + "</article></section></main>", 300, 180, 12);
+			int[] bounds = { 0, 0, 300, 180 };
+			assertTrue(scene.layout.clipBounds(scene.document.blockBox[0], true, 0, bounds));
+			assertArrayEquals("the actual 140px containing block clips, the intervening 40px box does not",
+					new int[] { 0, 0, 140, 70 }, bounds);
+			assertEquals(0, scene.layout.blockAt(125, 20, 0));
+			assertEquals(-1, scene.layout.blockAt(150, 20, 0));
+		}
+	}
+
+	@Test
+	public void anAbsoluteChildOfAFixedClippingBoxKeepsItsViewportClip() {
+		Scene scene = new Scene("<nav style='position:fixed;left:40px;top:20px;width:100px;height:60px;overflow:clip'>"
+				+ "<p style='position:absolute;left:80px;top:0;width:40px;height:20px'>clipped</p></nav>", 300, 180, 12);
+		for (int scroll : new int[] { 0, 70 }) {
+			int[] bounds = { 0, 0, 300, 180 };
+			assertTrue(scene.layout.clipBounds(scene.document.blockBox[0], true, scroll, bounds));
+			assertArrayEquals(new int[] { 40, 20, 140, 80 }, bounds);
+			assertEquals(0, scene.layout.blockAt(125, 25 + scroll, scroll));
+			assertEquals(-1, scene.layout.blockAt(150, 25 + scroll, scroll));
+		}
+	}
+
+	@Test
+	public void clippedVisualOverflowDoesNotPropagateIntoTheOuterScrollRange() {
+		for (String overflow : new String[] { "hidden", "clip", "visible" }) {
+			for (String position : new String[] { "absolute", "relative" }) {
+				Scene scene = new Scene("<section style='position:relative;width:80px;height:40px;overflow:" + overflow + "'>"
+						+ "<article style='position:" + position + ";top:500px;width:40px;height:20px'></article></section>"
+						+ "<footer style='height:20px'></footer>", 300, 180);
+				assertEquals(overflow + " " + position, overflow.equals("visible") ? 520 : 60, scene.layout.totalHeight());
+			}
+		}
+	}
+
+	@Test
+	public void absoluteOverflowEscapingAnIntermediateClipKeepsItsOuterScrollRange() {
+		Scene scene = new Scene("<main style='position:relative;width:80px;height:40px'>"
+				+ "<section style='height:20px;overflow:hidden'>"
+				+ "<article style='position:absolute;top:500px;width:40px;height:20px'></article>"
+				+ "</section></main><footer style='height:20px'></footer>", 300, 180);
+		assertEquals(520, scene.layout.totalHeight());
+	}
+
+	@Test
+	public void hiddenAndClipPanelsKeepTheirDifferentStickyScrollReferences() {
+		for (String overflow : new String[] { "hidden", "clip" }) {
+			Scene scene = new Scene("<section style='height:300px;overflow:" + overflow + "'>"
+					+ "<header style='position:sticky;top:0;height:20px;background:red'></header></section>"
+					+ "<footer style='height:300px'></footer>", 300, 180);
+			assertEquals(0, scene.layout.boxY(2, 0));
+			assertEquals(overflow + " establishes " + (overflow.equals("hidden") ? "a local" : "no local") + " scrollport",
+					overflow.equals("hidden") ? 0 : 100, scene.layout.boxY(2, 100));
+			assertEquals(0, scene.layout.boxY(2, 0));
+		}
+	}
+
+	@Test
 	public void relativeOffsetsPreserveNormalFlowAllocation() {
 		Scene scene = new Scene("<p style='position:relative;left:7px;top:20px'>first</p><p>second</p>", 200, 100);
 		assertEquals(7, scene.layout.blockX(0));

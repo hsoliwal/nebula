@@ -19,8 +19,10 @@ import java.util.Arrays;
  * The root's containing-block size is the viewport, even when the document is taller. Physical integer pixel insets
  * and sizes use the CSS left-to-right rules. Margins, padding and borders belong to their owning box; legacy block
  * gaps remain outside a styled leaf's border. The {@code overflow: hidden/clip} panel subset clips descendants to
- * the padding edge without creating nested scrollbars. Percentages, inline positioning, floats and transforms remain
- * outside this subset. Positioned documents resolve their geometry as
+ * the padding edge through containing-block ancestry. Hidden establishes an unscrolled local reference for sticky
+ * descendants; clip retains the enclosing scroll reference. Nested scroll offsets, scrollbars, overflow axes and
+ * overflow-clip-margin are not implemented. Percentages, inline positioning, floats and transforms remain
+ * outside this subset. Positioned and decorated container documents resolve their geometry as
  * a whole; ordinary documents retain {@link HtmlLayout}'s lazy prefix layout. TextLayout residency remains bounded.
  * </p>
  */
@@ -37,8 +39,8 @@ public final class HtmlPositionedLayout {
 	private final HtmlDocument doc;
 	private final HtmlPaintOrder order;
 	private final int[] x, y, width, height, localY, containing, tableOf;
-	/* Nearest clipping ancestor, excluding the box itself; preorder makes this a linear one-time construction. */
-	private final int[] clipAncestor;
+	/* Effective clip and hidden-scrollport ancestors; out-of-flow boxes start at their containing block. */
+	private final int[] clipAncestor, scrollAncestor;
 	private final int[] before, after, leadGap, trailGap, extraIndent, accountedIndent;
 	private final boolean[] fixed;
 	private final int[] blockX, blockY, blockWidth, blockHeight, blockInset, blockContentTop;
@@ -62,11 +64,9 @@ public final class HtmlPositionedLayout {
 		int n = doc.boxCount, b = doc.blockCount;
 		x = new int[n]; y = new int[n]; width = new int[n]; height = new int[n]; localY = new int[n];
 		clipAncestor = new int[n];
+		scrollAncestor = new int[n];
 		clipAncestor[0] = -1;
-		for (int e = 1; e < n; e++) {
-			int parent = doc.boxParent[e];
-			clipAncestor[e] = doc.boxOverflow[parent] == HtmlStyles.OVERFLOW_HIDDEN ? parent : clipAncestor[parent];
-		}
+		scrollAncestor[0] = -1;
 		containing = new int[n]; tableOf = new int[n]; fixed = new boolean[n];
 		motionOwner = new int[n]; motionParent = new int[n]; stickyBoxes = new int[n]; stickyShift = new int[n];
 		before = new int[n]; after = new int[n]; leadGap = new int[n]; trailGap = new int[n];
@@ -108,7 +108,7 @@ public final class HtmlPositionedLayout {
 			int e = doc.blockBox[b];
 			blockX[b] = add(contentX(e), blockInset[b]);
 			blockY[b] = add(doc.kind[b] == HtmlDocument.CELL ? y[e] : contentY(e), blockY[b]);
-			if (!fixed[e]) totalHeight = Math.max(totalHeight, visibleBottom(e, true, add(blockY[b], blockHeight[b])));
+			if (!fixed[e] && firstClip(e, true) < 0) totalHeight = Math.max(totalHeight, add(blockY[b], blockHeight[b]));
 		}
 		totalHeight = Math.max(0, totalHeight);
 		indexIntervals();
@@ -286,6 +286,10 @@ public final class HtmlPositionedLayout {
 		int p = doc.boxParent[e];
 		containing[e] = doc.boxPosition[e] == HtmlStyles.FIXED ? 0
 				: doc.boxPosition[p] != HtmlStyles.STATIC ? p : containing[p];
+		// CSS overflow does not clip an out-of-flow descendant between the box and its containing block.
+		int clipParent = outOfFlow(e) ? containing[e] : p;
+		clipAncestor[e] = doc.boxOverflow[clipParent] != HtmlStyles.OVERFLOW_VISIBLE ? clipParent : clipAncestor[clipParent];
+		scrollAncestor[e] = doc.boxOverflow[clipParent] == HtmlStyles.OVERFLOW_HIDDEN ? clipParent : scrollAncestor[clipParent];
 		tableOf[e] = tableOf[p];
 		int cb = containing[e], edges = horizontalEdges(e);
 		int reference = outOfFlow(e) ? cb == 0 ? viewportWidth : clamp((long) width[cb] - 2L * doc.boxBorder[cb]) : contentWidth(p);
@@ -511,7 +515,8 @@ public final class HtmlPositionedLayout {
 			}
 		}
 		hasFixed |= fixed[e];
-		if (!fixed[e]) totalHeight = Math.max(totalHeight, visibleBottom(e, false, clamp((long) y[e] + height[e] + after[e])));
+		// A clipping ancestor already contributes its own border extent; hidden descendants add no outer scroll range.
+		if (!fixed[e] && clipAncestor[e] < 0) totalHeight = Math.max(totalHeight, clamp((long) y[e] + height[e] + after[e]));
 	}
 
 	/* Bound sticky projection by the original containing box (table cells use the entire table). */
@@ -533,7 +538,11 @@ public final class HtmlPositionedLayout {
 			int first = doc.boxFirstBlock[e];
 			int gap = first < doc.boxEndBlock[e] && doc.blockBox[first] == e && doc.kind[first] != HtmlDocument.CELL
 					&& leadGap[e] == 0 ? HtmlLayout.BLOCK_GAP : 0;
-			long requested = (long) scroll + doc.boxTop[e] - y[e] - gap - inherited;
+			// Hidden supplies an unscrolled local scrollport; clip only cuts paint and retains viewport stickiness.
+			int scrollBox = scrollAncestor[e];
+			int scrollMotion = scrollBox >= 0 && motionOwner[scrollBox] >= 0 ? stickyShift[motionOwner[scrollBox]] : 0;
+			long scrollTop = scrollBox < 0 ? scroll : (long) y[scrollBox] + doc.boxBorder[scrollBox] + scrollMotion;
+			long requested = scrollTop + doc.boxTop[e] - y[e] - gap - inherited;
 			long limit = end - y[e] - height[e] - after[e] - inherited;
 			stickyShift[e] = clamp(inherited + Math.max(0L, Math.min(requested, limit)));
 		}
@@ -582,19 +591,7 @@ public final class HtmlPositionedLayout {
 	public int boxHeight(int box) { return height[box]; }
 
 	private int firstClip(int box, boolean content) {
-		return content && doc.boxOverflow[box] == HtmlStyles.OVERFLOW_HIDDEN ? box : clipAncestor[box];
-	}
-
-	/*
-	 * Offscreen descendants still participate in local layout, but cannot extend the root scrollbar
-	 * past a clipping ancestor. Reuse the exact parent-owned clip chain used by painting and picking.
-	 * This method runs at layout publication, never per paint fragment.
-	 */
-	private int visibleBottom(int box, boolean content, int bottom) {
-		for (int clip = firstClip(box, content); clip >= 0; clip = clipAncestor[clip]) {
-			bottom = Math.min(bottom, clamp((long) y[clip] + height[clip] - doc.boxBorder[clip]));
-		}
-		return bottom;
+		return content && doc.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE ? box : clipAncestor[box];
 	}
 
 	/** Whether a paint fragment inherits an overflow clip; a box's own border/background is not self-clipped. */

@@ -22,6 +22,11 @@ import java.util.Arrays;
  * line break.
  * </p>
  * <p>
+ * The semantic containers main, section, article, nav, aside, header and footer use the same block and box
+ * ownership as div. Their own backgrounds, borders, padding and margins surround their children once; ordinary
+ * unstyled containers retain the lazy block path. This structural subset does not assign accessibility landmarks.
+ * </p>
+ * <p>
  * A table is its cells: one {@link #CELL} block per td or th, with its table, row and column in three lanes; the cells
  * of a row are consecutive blocks. Inside a cell, block elements become line breaks (the cell stays one block), images
  * are not shown, and a nested table's cells and rows become spaces and line breaks. A caption is a centred paragraph;
@@ -319,7 +324,7 @@ public final class HtmlDocument {
 			}
 			switch (name) {
 				case "script" -> skip += selfClosing ? 0 : 1;
-				case "p", "div" -> openBlock(PARAGRAPH, 0, 0);
+				case "p", "div", "main", "section", "article", "nav", "aside", "header", "footer" -> openBlock(PARAGRAPH, 0, 0);
 				case "h1", "h2", "h3", "h4", "h5", "h6" -> openBlock(HEADING, name.charAt(1) - '0', 0);
 				case "ul", "ol" -> {
 					closeBlock();
@@ -491,7 +496,8 @@ public final class HtmlDocument {
 					}
 					tables = Math.max(0, tables - 1);
 				}
-				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "caption" -> closeBlock();
+				case "p", "div", "main", "section", "article", "nav", "aside", "header", "footer",
+						"h1", "h2", "h3", "h4", "h5", "h6", "li", "caption" -> closeBlock();
 				case "ul", "ol" -> {
 					closeBlock();
 					listDepth = Math.max(0, listDepth - 1);
@@ -844,7 +850,8 @@ public final class HtmlDocument {
 
 		static boolean blockTag(String tag) {
 			return switch (tag) {
-				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "td", "th", "caption" -> true;
+				case "p", "div", "main", "section", "article", "nav", "aside", "header", "footer",
+						"h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "td", "th", "caption" -> true;
 				default -> false;
 			};
 		}
@@ -916,7 +923,8 @@ public final class HtmlDocument {
 
 		static boolean boxTag(String tag) {
 			return switch (tag) {
-				case "body", "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "blockquote", "ul", "ol",
+				case "body", "p", "div", "main", "section", "article", "nav", "aside", "header", "footer",
+						"h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "blockquote", "ul", "ol",
 						"table", "tr", "td", "th", "caption", "img", "hr" -> true;
 				default -> false;
 			};
@@ -1155,8 +1163,11 @@ public final class HtmlDocument {
 				checkpoint.run();
 				if (d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO
 						|| d.boxRight[box] != HtmlStyles.AUTO || d.boxBottom[box] != HtmlStyles.AUTO) return true;
-				if (d.boxPosition[box] == HtmlStyles.STATIC) continue;
 				int first = d.boxFirstBlock[box];
+				// A single leaf fragment can carry its own decoration; a wrapper or empty box cannot.
+				if (d.boxRole[box] == NORMAL_BOX && decoratedBox(box)
+						&& (d.boxFirstChild[box] >= 0 || first + 1 != d.boxEndBlock[box] || d.blockBox[first] != box)) return true;
+				if (d.boxPosition[box] == HtmlStyles.STATIC) continue;
 				// Keep the current simple sticky owner; nested sticky containers need their descendants projected together.
 				if (d.boxPosition[box] == HtmlStyles.STICKY && d.boxFirstChild[box] < 0 && first < d.boxEndBlock[box]
 						&& d.blockBox[first] == box && d.blockPosition[first] == HtmlStyles.STICKY) continue;
@@ -1164,6 +1175,13 @@ public final class HtmlDocument {
 						|| d.blockBox[first] != box || d.blockPosition[first] != d.boxPosition[box]) return true;
 			}
 			return false;
+		}
+
+		boolean decoratedBox(int box) {
+			HtmlDocument d = doc;
+			return d.boxBackground[box] != 0 || d.boxBorder[box] > 0 || d.boxIndent[box] > 0
+					|| d.boxMarginTop[box] > 0 || d.boxMarginRight[box] > 0 || d.boxMarginBottom[box] > 0
+					|| d.boxPadTop[box] > 0 || d.boxPadRight[box] > 0 || d.boxPadBottom[box] > 0 || d.boxPadLeft[box] > 0;
 		}
 
 		void closeBlock() {
