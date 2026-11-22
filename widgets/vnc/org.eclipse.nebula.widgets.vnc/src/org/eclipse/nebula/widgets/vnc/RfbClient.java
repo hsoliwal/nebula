@@ -49,6 +49,7 @@ public final class RfbClient implements AutoCloseable {
         default void frame(Frame frame) { }
         default void bell() { }
         default void clipboard(String text) { }
+        default void cursor(CursorFrame shape) { }
         default void disconnected(IOException cause) { }
     }
 
@@ -123,6 +124,26 @@ public final class RfbClient implements AutoCloseable {
         int[] rgbForDisplay() { return rgb; }
     }
 
+    /** Immutable remote cursor shape; null in Listener.cursor means use default. */
+    public static final class CursorFrame {
+        private final int width, height, hotspotX, hotspotY;
+        private final int[] argb;
+
+        private CursorFrame(RfbCursorDecoder.Shape decoded) {
+            this.width = decoded.width();
+            this.height = decoded.height();
+            this.hotspotX = decoded.hotspotX();
+            this.hotspotY = decoded.hotspotY();
+            this.argb = decoded.argbCopy();
+        }
+        public int width() { return width; }
+        public int height() { return height; }
+        public int hotspotX() { return hotspotX; }
+        public int hotspotY() { return hotspotY; }
+        public int[] argbCopy() { return argb.clone(); }
+        int[] argbForDisplay() { return argb; }
+    }
+
     private static final int MAX_PIXELS = 16_777_216;
     private static final int MAX_TITLE_BYTES = 65_536;
     private static final int MAX_CLIPBOARD_BYTES = 1_048_576;
@@ -135,6 +156,8 @@ public final class RfbClient implements AutoCloseable {
     private static final int ENCODING_TRLE = 15;
     private static final int ENCODING_ZRLE = 16;
     private static final int ENCODING_TIGHT = 7;
+    private static final int ENCODING_RICH_CURSOR = -239;
+    private static final int ENCODING_X_CURSOR = -240;
     private static final int ENCODING_DESKTOP_SIZE = -223;
 
     private final Listener listener;
@@ -439,7 +462,9 @@ public final class RfbClient implements AutoCloseable {
 
         output.writeByte(2); // SetEncodings
         output.writeByte(0);
-        output.writeShort(8);
+        output.writeShort(10);
+        output.writeInt(ENCODING_RICH_CURSOR);
+        output.writeInt(ENCODING_X_CURSOR);
         output.writeInt(ENCODING_ZRLE);
         output.writeInt(ENCODING_TIGHT);
         output.writeInt(ENCODING_TRLE);
@@ -494,6 +519,15 @@ public final class RfbClient implements AutoCloseable {
                 }
                 resize(w, h);
                 resized = true;
+                continue;
+            }
+            // Cursor pseudo-encoding x/y are hotspot coordinates, not
+            // framebuffer coordinates. Never apply regular rect validation.
+            if (encoding == ENCODING_RICH_CURSOR || encoding == ENCODING_X_CURSOR) {
+                RfbCursorDecoder.Shape decoded = encoding == ENCODING_RICH_CURSOR
+                        ? RfbCursorDecoder.readRich(input, x, y, w, h)
+                        : RfbCursorDecoder.readX(input, x, y, w, h);
+                listener.cursor(decoded == null ? null : new CursorFrame(decoded));
                 continue;
             }
             validateRect(x, y, w, h);
