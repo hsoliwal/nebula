@@ -111,7 +111,8 @@ jobs:
           -Dtycho.localArtifacts=ignore \
           -Dnebula.grid.viewport.screenshots.screen=true \
           "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
-          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}"
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}" \
+          "-Dm3.test.pixels.dir=${RUNNER_TEMP:?missing runner temp}/nebula-widget-pixels"
     - name: Qualify Grid native screen pixels with OpenCV
       run: |
         python3 -m venv /tmp/nebula-vision
@@ -132,6 +133,15 @@ jobs:
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-native-oracle-screenshots/
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
+    - name: Upload original native widget pixel mismatch PNGs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-native-pixel-diagnostics
+        if-no-files-found: warn
+        path: |
+          ${{ runner.temp }}/nebula-widget-pixels/*.png
+          /tmp/m3-widget-pixels/*.png
     - name: Upload all widget test reports
       if: always()
       uses: actions/upload-artifact@v4
