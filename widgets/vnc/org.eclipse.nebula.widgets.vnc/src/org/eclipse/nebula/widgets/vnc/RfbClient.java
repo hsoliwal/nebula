@@ -158,6 +158,7 @@ public final class RfbClient implements AutoCloseable {
     private static final int ENCODING_TIGHT = 7;
     private static final int ENCODING_RICH_CURSOR = -239;
     private static final int ENCODING_X_CURSOR = -240;
+    private static final int ENCODING_LAST_RECT = -224;
     private static final int ENCODING_DESKTOP_SIZE = -223;
 
     private final Listener listener;
@@ -462,7 +463,7 @@ public final class RfbClient implements AutoCloseable {
 
         output.writeByte(2); // SetEncodings
         output.writeByte(0);
-        output.writeShort(10);
+        output.writeShort(11);
         output.writeInt(ENCODING_RICH_CURSOR);
         output.writeInt(ENCODING_X_CURSOR);
         output.writeInt(ENCODING_ZRLE);
@@ -473,6 +474,7 @@ public final class RfbClient implements AutoCloseable {
         output.writeInt(ENCODING_RRE);
         output.writeInt(ENCODING_RAW);
         output.writeInt(ENCODING_DESKTOP_SIZE);
+        output.writeInt(ENCODING_LAST_RECT);
         output.write(requestUpdate(false));
         output.flush();
     }
@@ -513,10 +515,13 @@ public final class RfbClient implements AutoCloseable {
             int h = input.readUnsignedShort();
             int encoding = input.readInt();
 
+            if (encoding == ENCODING_LAST_RECT) {
+                // LastRect terminates an update even if the advertised count
+                // was 65535. It carries no further payload.
+                break;
+            }
             if (encoding == ENCODING_DESKTOP_SIZE) {
-                if (x != 0 || y != 0) {
-                    throw new IOException("DesktopSize rectangle must start at origin");
-                }
+                // RFC 6143 §7.8.2 explicitly says x and y are ignored.
                 resize(w, h);
                 resized = true;
                 continue;

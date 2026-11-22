@@ -147,3 +147,12 @@ non-Raw flag combinations and subrectangles outside tile bounds fail closed.
 An independent Java 21 contract runs these cases on Linux, Windows and macOS,
 and Tycho runs the corresponding JUnit suite. These tests do not replace
 native SWT or live-server interoperability.
+
+## LastRect and DesktopSize interoperability
+
+The client advertises LastRect (-224) and ends the current FramebufferUpdate
+when that pseudo-rectangle arrives, even when the server advertised a large
+placeholder rectangle count such as 65535. DesktopSize (-223) ignores the
+rectangle's x/y fields as required by RFC 6143 and preserves overlapping
+previous framebuffer contents while resizing. Neither pseudo-rectangle
+contains additional payload. The Tycho scripted peer tests both cases.

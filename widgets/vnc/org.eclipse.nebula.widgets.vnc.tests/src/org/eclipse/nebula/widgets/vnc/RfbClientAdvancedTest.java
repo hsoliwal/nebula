@@ -71,7 +71,7 @@ public class RfbClientAdvancedTest {
                     assertEquals(2, input.readUnsignedByte());
                     input.skipNBytes(1);
                     int count = input.readUnsignedShort();
-                    assertEquals(10, count);
+                    assertEquals(11, count);
                     int[] codecs = new int[count];
                     for (int i = 0; i < count; i++) codecs[i] = input.readInt();
                     assertTrue(Arrays.stream(codecs).anyMatch(value -> value == -239));
@@ -269,7 +269,7 @@ public class RfbClientAdvancedTest {
                     assertEquals(2, in.readUnsignedByte());
                     in.skipNBytes(1);
                     int n = in.readUnsignedShort();
-                    assertEquals(10, n);
+                    assertEquals(11, n);
                     int[] negotiated = new int[n];
                     for (int i = 0; i < n; i++) negotiated[i] = in.readInt();
                     assertTrue(Arrays.stream(negotiated).anyMatch(value -> value == encoding));

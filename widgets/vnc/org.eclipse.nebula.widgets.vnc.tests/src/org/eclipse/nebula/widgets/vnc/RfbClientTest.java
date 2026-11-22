@@ -63,14 +63,14 @@ public class RfbClientTest {
                     assertEquals(2, input.readUnsignedByte()); // SetEncodings
                     input.skipNBytes(1);
                     int count = input.readUnsignedShort();
-                    assertEquals(10, count);
+                    assertEquals(11, count);
                     input.skipNBytes(count * 4L);
                     assertEquals(3, input.readUnsignedByte());
                     input.skipNBytes(9);
 
                     output.writeByte(0); // FramebufferUpdate
                     output.writeByte(0);
-                    output.writeShort(2); // Raw and CopyRect
+                    output.writeShort(65535); // LastRect ends the update; count is a placeholder
                     writeRect(output, 0, 0, 3, 1, 0);
                     writeRgb(output, 0x112233);
                     writeRgb(output, 0x445566);
@@ -78,6 +78,7 @@ public class RfbClientTest {
                     writeRect(output, 1, 1, 2, 1, 1);
                     output.writeShort(0); // copy source x
                     output.writeShort(0); // copy source y
+                    writeRect(output, 0, 0, 0, 0, -224); // LastRect marker
                     output.flush();
                     updated.await(3, TimeUnit.SECONDS);
                 } catch (Exception e) {
@@ -149,7 +150,7 @@ public class RfbClientTest {
                     assertEquals(2, input.readUnsignedByte());
                     input.skipNBytes(1);
                     int count = input.readUnsignedShort();
-                    assertEquals(10, count);
+                    assertEquals(11, count);
                     input.skipNBytes(count * 4L);
                     assertEquals(3, input.readUnsignedByte()); // initial refresh
                     input.skipNBytes(9);
@@ -164,7 +165,7 @@ public class RfbClientTest {
                     output.writeByte(1); // one subrectangle
                     output.writeByte(0x10); // x=1, y=0
                     output.writeByte(0x01); // width=1, height=2
-                    writeRect(output, 0, 0, 3, 2, -223); // DesktopSize
+                    writeRect(output, 1, 1, 3, 2, -223); // DesktopSize x/y ignored per RFC
                     output.flush();
                     assertTrue("Client did not decode Hextile", updated.await(3, TimeUnit.SECONDS));
                 } catch (Exception e) {

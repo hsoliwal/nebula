@@ -101,7 +101,7 @@ public final class VncCanvasNativeTest {
                     assertEquals(2, input.readUnsignedByte());
                     input.skipNBytes(1);
                     int n = input.readUnsignedShort();
-                    assertEquals(10, n);
+                    assertEquals(11, n);
                     input.skipNBytes(4L * n);
                     assertEquals(3, input.readUnsignedByte());
                     input.skipNBytes(9);
