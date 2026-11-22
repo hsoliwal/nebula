@@ -37,6 +37,7 @@ public final class TerminalWidget extends Composite implements ITerminalListener
 
     private final Display display;
     private final ITerminalViewControl terminal;
+    private boolean terminalDisposed;
     private final CopyOnWriteArrayList<ITerminalListener> listeners = new CopyOnWriteArrayList<>();
 
     /**
@@ -50,6 +51,17 @@ public final class TerminalWidget extends Composite implements ITerminalListener
         setLayout(new FillLayout());
         ITerminalConnector[] initial = Objects.requireNonNull(connectors, "connectors").clone();
         terminal = TerminalViewControlFactory.makeControl(this, this, initial, false);
+        // SWT's parent-driven release bypasses a Java dispose() override.
+        // SWT.Dispose is fired for both direct disposal and parent teardown,
+        // before children are released. Close the emulator's clipboard,
+        // streams and JFace listeners exactly once at that event.
+        addDisposeListener(event -> {
+            if (!terminalDisposed) {
+                terminalDisposed = true;
+                listeners.clear();
+                terminal.disposeTerminal();
+            }
+        });
     }
 
     /**
@@ -119,15 +131,6 @@ public final class TerminalWidget extends Composite implements ITerminalListener
         checkWidget();
         terminal.setFocus();
         return terminal.getControl().isFocusControl();
-    }
-
-    @Override
-    public void dispose() {
-        if (!isDisposed()) {
-            listeners.clear();
-            terminal.disposeTerminal();
-        }
-        super.dispose();
     }
 
     private void notifyOnUi(Consumer<ITerminalListener> event) {
