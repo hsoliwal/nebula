@@ -34,7 +34,7 @@ import javax.net.ssl.SSLSocketFactory;
  * bounded asynchronous outgoing queue. No SWT objects are accessed by its
  * I/O threads. Designed for embedding by {@link VncCanvas} or other widgets.
  *
- * Supported encodings: Raw, CopyRect, Hextile and DesktopSize. Only requested
+ * Supported encodings: Raw, CopyRect, RRE, Hextile, Tight, TRLE, ZRLE and DesktopSize. Only requested
  * encodings are accepted. Wire pixels use negotiated 32-bit little-endian
  * true color (8 bits each of red, green and blue).
  *
@@ -134,10 +134,12 @@ public final class RfbClient implements AutoCloseable {
     private static final int ENCODING_RRE = 2;
     private static final int ENCODING_TRLE = 15;
     private static final int ENCODING_ZRLE = 16;
+    private static final int ENCODING_TIGHT = 7;
     private static final int ENCODING_DESKTOP_SIZE = -223;
 
     private final Listener listener;
     private final RfbTileDecoder tileDecoder = new RfbTileDecoder();
+    private final RfbTightDecoder tightDecoder = new RfbTightDecoder();
     private final BlockingQueue<byte[]> outbound = new ArrayBlockingQueue<>(MAX_QUEUE_SIZE);
     private final AtomicInteger queuedBytes = new AtomicInteger();
     private final AtomicBoolean started = new AtomicBoolean();
@@ -268,6 +270,7 @@ public final class RfbClient implements AutoCloseable {
                 }
                 close();
                 tileDecoder.close();
+                tightDecoder.close();
                 listener.disconnected(problem);
             }
         }, "Nebula-RFB-reader");
@@ -436,8 +439,9 @@ public final class RfbClient implements AutoCloseable {
 
         output.writeByte(2); // SetEncodings
         output.writeByte(0);
-        output.writeShort(7);
+        output.writeShort(8);
         output.writeInt(ENCODING_ZRLE);
+        output.writeInt(ENCODING_TIGHT);
         output.writeInt(ENCODING_TRLE);
         output.writeInt(ENCODING_HEXTILE);
         output.writeInt(ENCODING_COPY_RECT);
@@ -500,6 +504,7 @@ public final class RfbClient implements AutoCloseable {
                 case ENCODING_RRE -> tileDecoder.decodeRre(input, framebuffer, width, x, y, w, h);
                 case ENCODING_TRLE -> tileDecoder.decodeTrle(input, framebuffer, width, x, y, w, h);
                 case ENCODING_ZRLE -> tileDecoder.decodeZrle(input, framebuffer, width, x, y, w, h);
+                case ENCODING_TIGHT -> tightDecoder.decode(input, framebuffer, width, x, y, w, h);
                 default -> throw new IOException("Unrequested RFB encoding: " + encoding);
             }
             damageX = Math.min(damageX, x);
@@ -770,6 +775,7 @@ public final class RfbClient implements AutoCloseable {
             // No reader thread will ever own the Inflater if never started.
             if (!started.get()) {
                 tileDecoder.close();
+                tightDecoder.close();
             }
             Socket current = socket;
             if (current != null) {
