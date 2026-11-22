@@ -703,17 +703,28 @@ public final class RfbClient implements AutoCloseable {
      * though the client is nominally bounded. Reserve a byte budget before
      * publishing a message, and roll it back on queue rejection.
      */
-    private boolean enqueue(byte[] packet) {
-        if (!started.get() || closed.get() || packet.length > MAX_QUEUE_BYTES) {
+    /**
+     * Atomic byte-budget admission, also exercised by the headless concurrent
+     * queue test. The caller must release the reservation exactly once.
+     */
+    static boolean reserveQueueBytes(AtomicInteger budget, int bytes) {
+        if (bytes < 0 || bytes > MAX_QUEUE_BYTES) {
             return false;
         }
         int previous;
         do {
-            previous = queuedBytes.get();
-            if (previous > MAX_QUEUE_BYTES - packet.length || closed.get()) {
+            previous = budget.get();
+            if (previous < 0 || previous > MAX_QUEUE_BYTES - bytes) {
                 return false;
             }
-        } while (!queuedBytes.compareAndSet(previous, previous + packet.length));
+        } while (!budget.compareAndSet(previous, previous + bytes));
+        return true;
+    }
+
+    private boolean enqueue(byte[] packet) {
+        if (!started.get() || closed.get() || !reserveQueueBytes(queuedBytes, packet.length)) {
+            return false;
+        }
         if (closed.get() || !outbound.offer(packet)) {
             queuedBytes.addAndGet(-packet.length);
             return false;
@@ -755,6 +766,7 @@ public final class RfbClient implements AutoCloseable {
             // Never retain unsent clipboard data in a defunct session.
             byte[] packet;
             while ((packet = outbound.poll()) != null) {
+                queuedBytes.addAndGet(-packet.length);
                 Arrays.fill(packet, (byte) 0);
             }
         }
