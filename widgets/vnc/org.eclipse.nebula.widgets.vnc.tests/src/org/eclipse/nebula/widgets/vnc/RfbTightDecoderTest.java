@@ -132,18 +132,30 @@ public class RfbTightDecoderTest {
         }
     }
 
-    @Test public void fourKWideTightFillIsValidWhenPixelBudgetAllows() throws Exception {
+    @Test public void tightRectanglesMustSplitAcrossFourKDesktop() throws Exception {
         int width = 4096;
         int[] pixels = new int[width * 2];
-        byte[] fill = packet(out -> {
+        byte[] leftFill = packet(out -> {
             out.writeByte(0x80);
             rgb(out, 0x23a4f1);
         });
+        byte[] rightFill = packet(out -> {
+            out.writeByte(0x80);
+            rgb(out, 0x174a32);
+        });
         try (RfbTightDecoder decoder = new RfbTightDecoder()) {
-            decoder.decode(input(fill), pixels, width, 0, 0, width, 2);
+            // RFC 6143 / RFB protocol 7.6.7: max 2048 pixels per Tight
+            // rectangle; the destination framebuffer itself may be wider.
+            decoder.decode(input(leftFill), pixels, width, 0, 0, 2048, 2);
+            decoder.decode(input(rightFill), pixels, width, 2048, 0, 2048, 2);
+            assertThrows(IOException.class, () ->
+                    decoder.decode(input(leftFill), pixels, width, 0, 0, 2049, 2));
         }
-        for (int color : pixels) {
-            assertEquals(0x23a4f1, color);
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < width; col++) {
+                assertEquals(col < 2048 ? 0x23a4f1 : 0x174a32,
+                        pixels[row * width + col]);
+            }
         }
     }
 

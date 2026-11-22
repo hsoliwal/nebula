@@ -45,7 +45,8 @@ final class RfbTightDecoder implements AutoCloseable {
             throw new IOException("Tight decoder disposed");
         }
         if (framebuffer == null || stride < 1 || width < 1 || height < 1 || x < 0 || y < 0
-                || (long) x + width > stride
+                // RFB Tight 7.6.7 caps *individual rectangles*, not desktop width.
+                || width > 2048 || (long) x + width > stride
                 || (long) (y + height) * stride > framebuffer.length
                 || (long) width * height > MAX_PIXELS) {
             throw new IOException("Invalid Tight framebuffer rectangle");
