@@ -13,11 +13,15 @@ count=0
 [[ ! -f "$state" ]] || count=$(<"$state")
 count=$((count + 1))
 printf '%s\n' "$count" > "$state"
-if [[ "$mode" == transient && "$count" -eq 1 || "$mode" == persistent ]]; then
+if [[ "$mode" == transient && "$count" -eq 1 || "$mode" == persistent || "$mode" == mixedfatal ]]; then
   echo '[ERROR] status code: 503, reason phrase: Service Temporarily Unavailable (503)'
-  exit 22
+  if [[ "$mode" != mixedfatal ]]; then exit 22; fi
 fi
-if [[ "$mode" == fatal ]]; then
+if [[ "$mode" == locktransient && "$count" -eq 1 || "$mode" == lockpersistent ]]; then
+  echo "Suppressed: java.lang.IllegalStateException: Attempt 1: Could not acquire write lock for 'metadata:org.eclipse:eclipse-sdk-prereqs:4.42.0-SNAPSHOT' in 30 SECONDS"
+  exit 19
+fi
+if [[ "$mode" == fatal || "$mode" == mixedfatal ]]; then
   echo '[ERROR] compilation failure: missing method'
   exit 17
 fi
@@ -31,4 +35,10 @@ if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/b" fatal >/dev
 [[ $(<"$tmp/b") == 1 ]] || exit 1
 if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/c" persistent >/dev/null 2>&1; then exit 1; fi
 [[ $(<"$tmp/c") == 3 ]] || exit 1
-printf 'PASS: HTTP503 transient retry=2, compile failure=1 (fatal), persistent503=3 (fatal)\n'
+bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/d" locktransient >/dev/null
+[[ $(<"$tmp/d") == 2 ]] || exit 1
+if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/e" lockpersistent >/dev/null 2>&1; then exit 1; fi
+[[ $(<"$tmp/e") == 3 ]] || exit 1
+if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/f" mixedfatal >/dev/null 2>&1; then exit 1; fi
+[[ $(<"$tmp/f") == 1 ]] || exit 1
+printf 'PASS: HTTP503 & Eclipse metadata lock transient retry=2, product compiler failures=1, persistent failures=3\n'
