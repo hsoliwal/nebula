@@ -39,8 +39,10 @@ public final class VncCanvas extends Canvas {
         default void clipboard(String text) { }
     }
 
+    private record PendingFrame(long generation, RfbClient.Frame snapshot) { }
+
     private final Display display;
-    private final AtomicReference<RfbClient.Frame> pending = new AtomicReference<>();
+    private final AtomicReference<PendingFrame> pending = new AtomicReference<>();
     private final AtomicBoolean redrawQueued = new AtomicBoolean();
     private final AtomicLong sessionGeneration = new AtomicLong();
     private volatile RfbClient client;
@@ -150,9 +152,19 @@ public final class VncCanvas extends Canvas {
 
             @Override
             public void frame(RfbClient.Frame snapshot) {
+                // A previous generation may report one last frame just as a
+                // new session is opened. Guard the atomic publication AND the
+                // SWT consumer with the generation, not just a prior read.
+                pending.updateAndGet(previous -> {
+                    if (sessionGeneration.get() != session) {
+                        return previous;
+                    }
+                    RfbClient.Frame prior = previous != null
+                            && previous.generation() == session
+                            ? previous.snapshot() : null;
+                    return new PendingFrame(session, snapshot.withAdditionalDamage(prior));
+                });
                 if (sessionGeneration.get() == session) {
-                    pending.accumulateAndGet(snapshot,
-                            (previous, latest) -> latest.withAdditionalDamage(previous));
                     scheduleFrame();
                 }
             }
@@ -252,10 +264,12 @@ public final class VncCanvas extends Canvas {
         }
         display.asyncExec(() -> {
             redrawQueued.set(false);
-            RfbClient.Frame latest = pending.getAndSet(null);
-            if (isDisposed() || latest == null) {
+            PendingFrame queued = pending.getAndSet(null);
+            if (isDisposed() || queued == null
+                    || queued.generation() != sessionGeneration.get()) {
                 return;
             }
+            RfbClient.Frame latest = queued.snapshot();
             // Keep the existing native Image for small updates. Only the
             // dirty rectangle becomes a temporary SWT Image, so a 4K desktop
             // with a blinking caret does not churn full-screen native bitmaps.
