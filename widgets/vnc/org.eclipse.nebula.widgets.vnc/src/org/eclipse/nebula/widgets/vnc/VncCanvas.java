@@ -6,6 +6,8 @@
 package org.eclipse.nebula.widgets.vnc;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -46,6 +48,10 @@ public final class VncCanvas extends Canvas {
     private RfbClient.Frame frame;
     private Image image;
     private int buttonMask;
+    private int lastRemoteX;
+    private int lastRemoteY;
+    // Only accessed on SWT's Display thread, not on the RFB I/O threads.
+    private final Map<Long, Integer> keysDown = new HashMap<>();
 
     public VncCanvas(Composite parent, int style) {
         super(parent, style | SWT.DOUBLE_BUFFERED | SWT.NO_BACKGROUND);
@@ -74,7 +80,7 @@ public final class VncCanvas extends Canvas {
             if (client == null) {
                 return;
             }
-            int clicks = Math.min(16, Math.abs(e.count));
+            int clicks = (int) Math.min(16L, Math.abs((long) e.count));
             int wheelBit = e.count > 0 ? 8 : 16;
             for (int i = 0; i < clicks; i++) {
                 sendPointer(e.x, e.y, buttonMask | wheelBit);
@@ -90,6 +96,12 @@ public final class VncCanvas extends Canvas {
             @Override
             public void keyReleased(KeyEvent e) {
                 sendKey(e, false);
+            }
+        });
+        addFocusListener(new org.eclipse.swt.events.FocusAdapter() {
+            @Override
+            public void focusLost(org.eclipse.swt.events.FocusEvent event) {
+                releaseRemoteInput();
             }
         });
         addDisposeListener(e -> {
@@ -188,6 +200,7 @@ public final class VncCanvas extends Canvas {
 
     public void disconnect() {
         checkWidget();
+        releaseRemoteInput();
         sessionGeneration.incrementAndGet();
         RfbClient old = client;
         client = null;
@@ -367,17 +380,53 @@ public final class VncCanvas extends Canvas {
                 (int) (((long) (x - d.x) * frame.width()) / d.width)));
         int translatedY = Math.max(0, Math.min(frame.height() - 1,
                 (int) (((long) (y - d.y) * frame.height()) / d.height)));
+        lastRemoteX = translatedX;
+        lastRemoteY = translatedY;
         current.pointer(mask, translatedX, translatedY);
     }
 
     private void sendKey(KeyEvent e, boolean down) {
         RfbClient current = client;
-        if (current != null) {
-            int sym = toKeysym(e);
-            if (sym != 0) {
-                current.key(down, sym);
+        if (current == null) {
+            return;
+        }
+        // KeyReleased often carries character=0 (or a changed case/layout).
+        // Remember the exact keysym sent for KeyPressed and release THAT symbol.
+        long identity = (((long) (e.keyCode != 0 ? e.keyCode : e.character)) << 32)
+                | (e.keyLocation & 0xffffffffL);
+        if (down) {
+            int keysym = toKeysym(e);
+            if (keysym != 0) {
+                Integer previous = keysDown.put(identity, keysym);
+                if (previous != null && previous.intValue() != keysym) {
+                    current.key(false, previous);
+                }
+                current.key(true, keysym);
+            }
+        } else {
+            Integer remembered = keysDown.remove(identity);
+            int keysym = remembered != null ? remembered : toKeysym(e);
+            if (keysym != 0) {
+                current.key(false, keysym);
             }
         }
+    }
+
+    private void releaseRemoteInput() {
+        RfbClient current = client;
+        if (current != null) {
+            for (int keysym : keysDown.values()) {
+                current.key(false, keysym);
+            }
+            if (buttonMask != 0 && frame != null) {
+                current.pointer(0, lastRemoteX, lastRemoteY);
+            }
+        }
+        keysDown.clear();
+        if (buttonMask != 0 && !isDisposed()) {
+            setCapture(false);
+        }
+        buttonMask = 0;
     }
 
     private static int toKeysym(KeyEvent event) {
@@ -413,6 +462,12 @@ public final class VncCanvas extends Canvas {
             case SWT.ALT -> 0xffe9;
             default -> {
                 int codepoint = event.character;
+                // Ctrl+letter may arrive as a C0 control character; RFB
+                // still needs the underlying alphabetic keysym with Ctrl down.
+                if (codepoint < 0x20 && event.keyCode >= 'a'
+                        && event.keyCode <= 'z') {
+                    yield event.keyCode;
+                }
                 if (codepoint >= 0x20 && codepoint <= 0xff) {
                     yield codepoint;
                 }
