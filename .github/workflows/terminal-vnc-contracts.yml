@@ -2,6 +2,13 @@
 name: Nebula Terminal and RFB/VNC contracts
 
 on:
+  push:
+    branches:
+      - feature/terminal-rfb-nebula-20261118
+    paths:
+      - 'widgets/terminal/**'
+      - 'widgets/vnc/**'
+      - '.github/workflows/terminal-vnc-contracts.yml'
   workflow_dispatch:
   pull_request:
     paths:
