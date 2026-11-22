@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
@@ -138,7 +139,8 @@ public final class VncCanvas extends Canvas {
             @Override
             public void frame(RfbClient.Frame snapshot) {
                 if (sessionGeneration.get() == session) {
-                    pending.set(snapshot);
+                    pending.accumulateAndGet(snapshot,
+                            (previous, latest) -> latest.withAdditionalDamage(previous));
                     scheduleFrame();
                 }
             }
@@ -241,21 +243,77 @@ public final class VncCanvas extends Canvas {
             if (isDisposed() || latest == null) {
                 return;
             }
-            ImageData data = new ImageData(latest.width(), latest.height(), 24,
+            // Keep the existing native Image for small updates. Only the
+            // dirty rectangle becomes a temporary SWT Image, so a 4K desktop
+            // with a blinking caret does not churn full-screen native bitmaps.
+            Rectangle existingBounds = image == null ? null : image.getBounds();
+            boolean dimensionsMatch = existingBounds != null
+                    && existingBounds.width == latest.width()
+                    && existingBounds.height == latest.height();
+            long dirtyArea = (long) latest.dirtyWidth() * latest.dirtyHeight();
+            long frameArea = (long) latest.width() * latest.height();
+            boolean partial = dimensionsMatch && dirtyArea > 0
+                    && dirtyArea * 2 < frameArea;
+            int x = partial ? latest.dirtyX() : 0;
+            int y = partial ? latest.dirtyY() : 0;
+            int w = partial ? latest.dirtyWidth() : latest.width();
+            int h = partial ? latest.dirtyHeight() : latest.height();
+            ImageData data = new ImageData(w, h, 24,
                     new PaletteData(0xff0000, 0xff00, 0xff));
             int[] pixels = latest.rgbForDisplay();
-            for (int y = 0; y < latest.height(); y++) {
-                data.setPixels(0, y, latest.width(), pixels, y * latest.width());
+            for (int row = 0; row < h; row++) {
+                data.setPixels(0, row, w, pixels, (y + row) * latest.width() + x);
             }
             Image replacement = new Image(display, data);
-            Image previous = image;
-            image = replacement;
-            frame = latest;
-            if (previous != null) {
-                previous.dispose();
+            if (partial) {
+                try {
+                    GC target = new GC(image);
+                    try {
+                        target.drawImage(replacement, x, y);
+                    } finally {
+                        target.dispose();
+                    }
+                } finally {
+                    replacement.dispose();
+                }
+                frame = latest;
+                redrawDamaged(latest);
+            } else {
+                Image previous = image;
+                image = replacement;
+                frame = latest;
+                if (previous != null) {
+                    previous.dispose();
+                }
+                redraw();
             }
-            redraw();
         });
+    }
+
+    /** Map changed remote pixels into the scaled/letterboxed SWT viewport. */
+    private void redrawDamaged(RfbClient.Frame snapshot) {
+        Rectangle client = getClientArea();
+        Rectangle target = destination(client);
+        if (target.width == 0 || target.height == 0) {
+            return;
+        }
+        int left = target.x + (int) Math.floor(
+                snapshot.dirtyX() * (double) target.width / snapshot.width()) - 2;
+        int top = target.y + (int) Math.floor(
+                snapshot.dirtyY() * (double) target.height / snapshot.height()) - 2;
+        int right = target.x + (int) Math.ceil(
+                (snapshot.dirtyX() + snapshot.dirtyWidth()) *
+                (double) target.width / snapshot.width()) + 2;
+        int bottom = target.y + (int) Math.ceil(
+                (snapshot.dirtyY() + snapshot.dirtyHeight()) *
+                (double) target.height / snapshot.height()) + 2;
+        left = Math.max(client.x, left);
+        top = Math.max(client.y, top);
+        right = Math.min(client.x + client.width, right);
+        bottom = Math.min(client.y + client.height, bottom);
+        if (right > left && bottom > top) {
+            redraw(left, top, right - left, bottom - top, false);
+        }
     }
 
     private void paintFrame(org.eclipse.swt.graphics.GC gc, Rectangle area) {
