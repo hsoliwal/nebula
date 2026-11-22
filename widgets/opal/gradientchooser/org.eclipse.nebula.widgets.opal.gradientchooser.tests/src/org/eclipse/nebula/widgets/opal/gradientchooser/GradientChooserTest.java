@@ -116,6 +116,7 @@ public class GradientChooserTest {
 
 	@Test
 	public void addRemoveSelectAndPixels() {
+		paints.clear(); // observe native Paint after applying model deltas
 		int stop = chooser.addStop(0.75f, new RGB(0, 255, 0));
 		assertEquals(3, stop);
 		assertEquals(5, chooser.getStopCount());
@@ -126,8 +127,13 @@ public class GradientChooserTest {
 		chooser.removeStop(2);
 		assertEquals(-1, chooser.getSelectedStop());
 		GradientChooser fresh = new GradientChooser(shell, SWT.NONE);
+		List<Rectangle> freshPaints = TestSupport.recordPaints(fresh);
 		fresh.setBounds(0, 60, 400, 50);
 		fresh.setStops(new float[] { 0f, 0.5f, 1f }, new RGB[] { new RGB(0, 0, 160), new RGB(255, 230, 0), new RGB(200, 0, 0) });
+		// These must be real native Paint events, not synthetic SWT.Paint events
+		// or a redraw inserted solely to satisfy the pixel comparison.
+		TestSupport.awaitNativePaint(chooser, paints, 1, "updated gradient did not paint natively");
+		TestSupport.awaitNativePaint(fresh, freshPaints, 1, "reference gradient did not paint natively");
 		TestSupport.flush(display);
 		TestSupport.assertSamePixels("gradient-after-deltas", TestSupport.pixels(fresh), TestSupport.pixels(chooser));
 	}

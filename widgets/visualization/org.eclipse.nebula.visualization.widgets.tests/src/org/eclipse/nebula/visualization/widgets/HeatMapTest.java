@@ -272,6 +272,7 @@ public class HeatMapTest {
 
 	@Test
 	public void pixelsMatchACellByCellReference() {
+		paints.clear(); // observe real Paint after the final cell-model mutations
 		map.setGridSize(40, 50);
 		map.setCellSize(9, 7);
 		Random random = new Random(7);
@@ -285,6 +286,9 @@ public class HeatMapTest {
 		assertEquals("a grid larger than the client scrolls", new Point(13, 9), map.getOrigin());
 		flush();
 		map.update();
+		// Wait for actual native Paint completion before copying GC pixels.
+		// No forced redraw, fake paint event, or substitute image is permitted.
+		TestSupport.awaitNativePaint(map, paints, 1, "updated HeatMap did not paint natively");
 		Rectangle client = map.getClientArea();
 		Image actual = new Image(display, client.width, client.height);
 		GC gc = new GC(map);
