@@ -39,17 +39,30 @@ jobs:
       - uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
         with:
           maven-version: 3.9.11
-      - name: Install SWT GTK3 test dependencies
+      - name: Install SWT GTK3 native screen test dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq xvfb libgtk-3-0 dbus-x11
-      - name: Verify VNC headless protocol through the real Tycho reactor
+          sudo apt-get install -y -qq xvfb libgtk-3-0 dbus-x11 openbox wmctrl
+      - name: Verify RFB protocol and native screen pixels through Tycho
+        shell: bash
         run: |
           dbus-run-session -- xvfb-run --auto-servernum -s '-screen 0 1280x800x24' \
-            mvn -B -ntp -f widgets/vnc/pom.xml \
-              -pl :org.eclipse.nebula.widgets.vnc.tests -am \
-              -Dtycho.localArtifacts=ignore \
-              -DfailIfNoTests=true clean verify
+            bash -ec '
+              openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/nebula-vnc-openbox.log" 2>&1 &
+              wm_pid=$!
+              trap "kill $wm_pid 2>/dev/null || true" EXIT
+              for attempt in $(seq 1 100); do
+                if wmctrl -m >/dev/null 2>&1; then
+                  break
+                fi
+                sleep 0.1
+              done
+              wmctrl -m >/dev/null || { echo "native window manager unavailable" >&2; exit 1; }
+              mvn -B -ntp -f widgets/vnc/pom.xml \
+                -pl :org.eclipse.nebula.widgets.vnc.tests -am \
+                -Dtycho.localArtifacts=ignore \
+                -DfailIfNoTests=true clean verify
+            '
       - name: Require all protocol test classes with no failures or skips
         run: |
           python3 - <<'PY'
@@ -76,9 +89,10 @@ jobs:
           required = {'RfbClientTest', 'RfbClientAdvancedTest',
                       'RfbTileDecoderTest', 'RfbVeNCryptTest',
                       'RfbFrameDamageTest',
-                      'RfbCodecPropertyTest', 'RfbQueueBudgetTest'}
+                      'RfbCodecPropertyTest', 'RfbQueueBudgetTest',
+                      'VncCanvasNativeTest'
           assert required <= found, f'missing tests: {required - found}'
-          assert executed >= 25, f'expected at least 25 tests, got {executed}'
+          assert executed >= 26, f'expected at least 26 tests, got {executed}'
           print('NEBULA_RFB_TYCHO_PROTOCOL_TESTS=PASSED', executed)
           PY
       - name: Upload protocol test results
