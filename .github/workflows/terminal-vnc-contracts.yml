@@ -8,6 +8,7 @@ on:
     paths:
       - 'widgets/terminal/**'
       - 'widgets/vnc/**'
+      - 'releng/swt-receiver/**'
       - '.github/workflows/terminal-vnc-contracts.yml'
   workflow_dispatch:
   pull_request:
@@ -15,10 +16,12 @@ on:
       - 'widgets/terminal/**'
       - 'widgets/vnc/**'
       - 'releng/org.eclipse.nebula.nebula-parent/pom.xml'
+      - 'releng/swt-receiver/**'
       - '.github/workflows/terminal-vnc-contracts.yml'
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: terminal-vnc-${{ github.event.pull_request.number || github.ref }}
@@ -65,7 +68,42 @@ jobs:
           tar -xzf "$archive" -C "$RUNNER_TEMP/maven-pinned"
           echo "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin/mvn" -version
+      - name: Prove receipt validator rejects tampering
+        shell: bash
+        run: |
+          python3 -m unittest discover -v -s releng/swt-receiver/tests -p test_verify_reusable_receiver.py
+      - name: Restore pinned verified SWT receiver from immutable cache
+        uses: actions/cache/restore@v4
+        id: swt-cache
+        with:
+          key: nebula-swt3.136-gtk3-25e637e40-20261122-v1
+          path: |
+            releng/swt-receiver/swt-receiver-p2/target/binding/
+            releng/swt-receiver/swt-receiver-p2/target/repository/
+      - name: Rehydrate known successful pinned SWT receiver artifact
+        id: swt-proof
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          target=releng/swt-receiver/swt-receiver-p2/target
+          if [[ '${{ steps.swt-cache.outputs.cache-hit }}' == 'true' ]]; then
+            echo 'SWT receiver restored from pinned Actions cache'
+            python3 releng/swt-receiver/verify_reusable_receiver.py "$target"
+            echo 'reused=true' >> "$GITHUB_OUTPUT"
+          elif gh run download 44986161156 --repo hsoliwal/nebula \
+              --name nebula-terminal-vnc-pinned-swt --dir "$target"; then
+            echo 'Restored exact SWT receiver from successful run 44986161156'
+            python3 releng/swt-receiver/verify_reusable_receiver.py "$target"
+            echo 'reused=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'No qualified cached artifact; building exact pinned SWT receiver' >&2
+            rm -rf "$target"
+            echo 'reused=false' >> "$GITHUB_OUTPUT"
+          fi
       - name: Checkout exact SWT receiver source
+        if: steps.swt-proof.outputs.reused != 'true'
         uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
@@ -74,6 +112,7 @@ jobs:
           fetch-depth: 0
           lfs: false
       - name: Build and bind the pinned GTK3 SWT 3.136 receiver
+        if: steps.swt-proof.outputs.reused != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -94,11 +133,25 @@ jobs:
             "-Dm3.swt.source=$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/composite/compositeContent.xml
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env
+      - name: Verify SWT receiver from cache or source build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 releng/swt-receiver/verify_reusable_receiver.py \
+            releng/swt-receiver/swt-receiver-p2/target
+      - name: Retain qualified receiver for subsequent feature commits
+        if: steps.swt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: nebula-swt3.136-gtk3-25e637e40-20261122-v1
+          path: |
+            releng/swt-receiver/swt-receiver-p2/target/binding/
+            releng/swt-receiver/swt-receiver-p2/target/repository/
       - name: Distribute pinned SWT and composite p2 repository
         uses: actions/upload-artifact@v4
         with:
           name: nebula-terminal-vnc-pinned-swt
-          retention-days: 1
+          retention-days: 30
           if-no-files-found: error
           path: |
             releng/swt-receiver/swt-receiver-p2/target/binding/composite/
@@ -162,6 +215,8 @@ jobs:
           set -euo pipefail
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/composite/compositeContent.xml
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env
+          python3 releng/swt-receiver/verify_reusable_receiver.py \
+            releng/swt-receiver/swt-receiver-p2/target
           cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
       - name: Install SWT GTK3 native screen test dependencies
         run: |
@@ -306,6 +361,8 @@ jobs:
           set -euo pipefail
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/composite/compositeContent.xml
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env
+          python3 releng/swt-receiver/verify_reusable_receiver.py \
+            releng/swt-receiver/swt-receiver-p2/target
           cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
       - name: Install SWT GTK3 Terminal native acceptance dependencies
         run: |
