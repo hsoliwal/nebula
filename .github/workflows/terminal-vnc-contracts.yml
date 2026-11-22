@@ -39,9 +39,32 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-        with:
-          maven-version: 3.9.11
+      - name: Install pinned Maven 3.9.11 with SHA-512 verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=3.9.11
+          expected=bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978
+          archive="$RUNNER_TEMP/apache-maven-$version-bin.tar.gz"
+          base="apache-maven-$version-bin.tar.gz"
+          success=0
+          for url in \
+            "https://archive.apache.org/dist/maven/maven-3/$version/binaries/$base" \
+            "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$version/$base"; do
+            if curl --fail --location --silent --show-error --retry 6 --retry-delay 5 \
+                --retry-all-errors --connect-timeout 20 --max-time 160 \
+                "$url" --output "$archive" \
+                && printf '%s  %s\n' "$expected" "$archive" | sha512sum --check --status; then
+              success=1
+              break
+            fi
+            rm -f "$archive"
+          done
+          test "$success" = 1 || { echo "Verified Maven 3.9.11 unavailable" >&2; exit 1; }
+          mkdir -p "$RUNNER_TEMP/maven-pinned"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/maven-pinned"
+          echo "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin/mvn" -version
       - name: Checkout exact SWT receiver source
         uses: actions/checkout@v4
         with:
@@ -101,9 +124,32 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-        with:
-          maven-version: 3.9.11
+      - name: Install pinned Maven 3.9.11 with SHA-512 verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=3.9.11
+          expected=bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978
+          archive="$RUNNER_TEMP/apache-maven-$version-bin.tar.gz"
+          base="apache-maven-$version-bin.tar.gz"
+          success=0
+          for url in \
+            "https://archive.apache.org/dist/maven/maven-3/$version/binaries/$base" \
+            "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$version/$base"; do
+            if curl --fail --location --silent --show-error --retry 6 --retry-delay 5 \
+                --retry-all-errors --connect-timeout 20 --max-time 160 \
+                "$url" --output "$archive" \
+                && printf '%s  %s\n' "$expected" "$archive" | sha512sum --check --status; then
+              success=1
+              break
+            fi
+            rm -f "$archive"
+          done
+          test "$success" = 1 || { echo "Verified Maven 3.9.11 unavailable" >&2; exit 1; }
+          mkdir -p "$RUNNER_TEMP/maven-pinned"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/maven-pinned"
+          echo "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin/mvn" -version
       - name: Bind pinned SWT p2 composite in identical checkout layout
         uses: actions/download-artifact@v4
         with:
@@ -222,9 +268,32 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-        with:
-          maven-version: 3.9.11
+      - name: Install pinned Maven 3.9.11 with SHA-512 verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=3.9.11
+          expected=bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978
+          archive="$RUNNER_TEMP/apache-maven-$version-bin.tar.gz"
+          base="apache-maven-$version-bin.tar.gz"
+          success=0
+          for url in \
+            "https://archive.apache.org/dist/maven/maven-3/$version/binaries/$base" \
+            "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$version/$base"; do
+            if curl --fail --location --silent --show-error --retry 6 --retry-delay 5 \
+                --retry-all-errors --connect-timeout 20 --max-time 160 \
+                "$url" --output "$archive" \
+                && printf '%s  %s\n' "$expected" "$archive" | sha512sum --check --status; then
+              success=1
+              break
+            fi
+            rm -f "$archive"
+          done
+          test "$success" = 1 || { echo "Verified Maven 3.9.11 unavailable" >&2; exit 1; }
+          mkdir -p "$RUNNER_TEMP/maven-pinned"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/maven-pinned"
+          echo "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin/mvn" -version
       - name: Bind pinned SWT p2 composite in identical checkout layout
         uses: actions/download-artifact@v4
         with:
