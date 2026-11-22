@@ -62,19 +62,33 @@ public final class RfbClient implements AutoCloseable {
         private final int[] rgb;
         private final String title;
         private final long sequence;
+        private final int dirtyX;
+        private final int dirtyY;
+        private final int dirtyWidth;
+        private final int dirtyHeight;
 
-        private Frame(int width, int height, int[] rgb, String title, long sequence) {
+        private Frame(int width, int height, int[] rgb, String title, long sequence,
+                int dirtyX, int dirtyY, int dirtyWidth, int dirtyHeight) {
             this.width = width;
             this.height = height;
             this.rgb = rgb.clone();
             this.title = title;
             this.sequence = sequence;
+            this.dirtyX = dirtyX;
+            this.dirtyY = dirtyY;
+            this.dirtyWidth = dirtyWidth;
+            this.dirtyHeight = dirtyHeight;
         }
 
         public int width() { return width; }
         public int height() { return height; }
         public String title() { return title; }
         public long sequence() { return sequence; }
+        /** Inclusive top-left of the changed region in remote pixel coordinates. */
+        public int dirtyX() { return dirtyX; }
+        public int dirtyY() { return dirtyY; }
+        public int dirtyWidth() { return dirtyWidth; }
+        public int dirtyHeight() { return dirtyHeight; }
         public int[] rgbCopy() { return rgb.clone(); }
 
         // Widget-side read-only use. No pixels array escapes to public callers.
@@ -422,6 +436,11 @@ public final class RfbClient implements AutoCloseable {
     private void readFramebufferUpdate(DataInputStream input) throws IOException {
         input.readUnsignedByte(); // padding
         int rectangles = input.readUnsignedShort();
+        int damageX = Integer.MAX_VALUE;
+        int damageY = Integer.MAX_VALUE;
+        int damageRight = 0;
+        int damageBottom = 0;
+        boolean resized = false;
         for (int r = 0; r < rectangles; r++) {
             int x = input.readUnsignedShort();
             int y = input.readUnsignedShort();
@@ -430,7 +449,11 @@ public final class RfbClient implements AutoCloseable {
             int encoding = input.readInt();
 
             if (encoding == ENCODING_DESKTOP_SIZE) {
+                if (x != 0 || y != 0) {
+                    throw new IOException("DesktopSize rectangle must start at origin");
+                }
                 resize(w, h);
+                resized = true;
                 continue;
             }
             validateRect(x, y, w, h);
@@ -443,8 +466,19 @@ public final class RfbClient implements AutoCloseable {
                 case ENCODING_ZRLE -> tileDecoder.decodeZrle(input, framebuffer, width, x, y, w, h);
                 default -> throw new IOException("Unrequested RFB encoding: " + encoding);
             }
+            damageX = Math.min(damageX, x);
+            damageY = Math.min(damageY, y);
+            damageRight = Math.max(damageRight, x + w);
+            damageBottom = Math.max(damageBottom, y + h);
         }
-        publish();
+        // DesktopSize invalidates the complete old image, including if
+        // update rectangles were sent before/after the pseudo encoding.
+        if (resized) {
+            publish();
+        } else if (damageX != Integer.MAX_VALUE) {
+            publish(damageX, damageY, damageRight - damageX, damageBottom - damageY);
+        }
+        // Zero-rectangle updates must not clone an unchanged framebuffer.
         if (!enqueue(requestUpdate(true))) {
             throw new IOException("RFB outgoing queue full or connection closing");
         }
@@ -545,7 +579,12 @@ public final class RfbClient implements AutoCloseable {
     }
 
     private void publish() {
-        listener.frame(new Frame(width, height, framebuffer, title, ++sequence));
+        publish(0, 0, width, height);
+    }
+
+    private void publish(int x, int y, int w, int h) {
+        listener.frame(new Frame(width, height, framebuffer, title, ++sequence,
+                x, y, w, h));
     }
 
     private static int readRgb(DataInputStream in) throws IOException {
