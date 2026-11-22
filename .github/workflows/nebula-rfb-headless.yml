@@ -54,4 +54,4 @@ jobs:
             releng/vnc-protocol/src/org/eclipse/nebula/widgets/vnc/HeadlessRfbContracts.java
           java -Xmx128m -cp "$dest" \
             org.eclipse.nebula.widgets.vnc.HeadlessRfbContracts | tee "$RUNNER_TEMP/nebula-rfb-headless-result.txt"
-          grep -Fx 'NEBULA_RFB_HEADLESS=PASSED 6' "$RUNNER_TEMP/nebula-rfb-headless-result.txt"
+          grep -Fx 'NEBULA_RFB_HEADLESS=PASSED 7' "$RUNNER_TEMP/nebula-rfb-headless-result.txt"
