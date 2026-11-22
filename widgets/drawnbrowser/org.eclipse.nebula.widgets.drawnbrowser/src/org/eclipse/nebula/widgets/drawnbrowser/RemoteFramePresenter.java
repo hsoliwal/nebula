@@ -25,6 +25,9 @@ import org.eclipse.swt.widgets.Display;
  * one decoded frame are retained, with latest-wins coalescing and epoch guards.
  */
 public final class RemoteFramePresenter implements AutoCloseable {
+    // One presenter owns one Canvas at a time. Multiple independent epochs on the
+    // same native widget could otherwise let one adapter clear another session.
+    private static final String OWNER_KEY = RemoteFramePresenter.class.getName() + ".owner";
     public record Failure(long epoch, long revision, IOException error) { }
 
     private record Incoming(long epoch, long revision, int cssWidth, int cssHeight,
@@ -49,12 +52,18 @@ public final class RemoteFramePresenter implements AutoCloseable {
     public RemoteFramePresenter(DrawnBrowser browser) {
         this.browser = Objects.requireNonNull(browser, "browser");
         display = browser.getDisplay(); // SWT checks the constructing UI thread
+        if (browser.getData(OWNER_KEY) != null) {
+            throw new IllegalStateException("DrawnBrowser already has a remote frame presenter");
+        }
         decoder = Executors.newSingleThreadExecutor(runnable -> {
             Thread thread = new Thread(runnable, "Nebula-remote-browser-decode");
             thread.setDaemon(true);
             return thread;
         });
-        browser.addDisposeListener(event -> shutdown());
+        // The widget is the sole owner of this capability; release the marker
+        // before reattaching after close. Disposal itself releases widget data.
+        browser.setData(OWNER_KEY, this);
+        browser.addDisposeListener(event -> shutdown(false));
     }
 
     /** The UI-thread recipient of the latest decoder/presentation failure. */
@@ -101,11 +110,12 @@ public final class RemoteFramePresenter implements AutoCloseable {
         browser.clearRemoteFrame();
     }
 
-    /** Shutdown is UI-thread-only; disposing DrawnBrowser also stops this worker. */
+    /** Shutdown is UI-thread-only, idempotent even after widget disposal. */
     @Override
     public void close() {
-        requireUi();
-        shutdown();
+        if (Thread.currentThread() != display.getThread()) SWT.error(SWT.ERROR_THREAD_INVALID_ACCESS);
+        if (closed) return;
+        shutdown(true);
         if (!browser.isDisposed()) browser.clearRemoteFrame();
     }
 
@@ -219,7 +229,7 @@ public final class RemoteFramePresenter implements AutoCloseable {
         if (closed || browser.isDisposed()) throw new IllegalStateException("Remote frame presenter closed");
     }
 
-    private synchronized void shutdown() {
+    private synchronized void shutdown(boolean releaseOwnership) {
         if (closed) return;
         closed = true;
         retiredEpoch = Math.max(retiredEpoch, acceptedEpoch);
@@ -227,5 +237,10 @@ public final class RemoteFramePresenter implements AutoCloseable {
         ready.set(null);
         lastFailure.set(null);
         decoder.shutdownNow();
+        // Do not access SWT widget data during SWT.Dispose: the Widget itself
+        // removes it. An explicit close releases the slot for a new presenter.
+        if (releaseOwnership && !browser.isDisposed() && browser.getData(OWNER_KEY) == this) {
+            browser.setData(OWNER_KEY, null);
+        }
     }
 }

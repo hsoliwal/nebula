@@ -49,6 +49,34 @@ public class DrawnBrowserRemoteFramePresenterTest {
         }
     }
 
+    @Test public void aCanvasHasOneSessionOwnerAndCloseIsIdempotent() {
+        Display display = Display.getDefault();
+        Shell shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+        try {
+            shell.setLayout(new FillLayout());
+            DrawnBrowser browser = new DrawnBrowser(shell, SWT.NONE);
+            RemoteFramePresenter first = new RemoteFramePresenter(browser);
+            assertThrows(IllegalStateException.class, () -> new RemoteFramePresenter(browser));
+            first.close();
+            first.close(); // AutoCloseable contract; does not clear another session
+            RemoteFramePresenter second = new RemoteFramePresenter(browser);
+            assertThrows(IllegalStateException.class, () -> new RemoteFramePresenter(browser));
+            second.close();
+        } finally {
+            shell.dispose();
+        }
+    }
+
+    @Test public void disposeRetiresPresenterAndCloseCanBeCalledAgain() {
+        Display display = Display.getDefault();
+        Shell shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+        RemoteFramePresenter presenter = new RemoteFramePresenter(
+                new DrawnBrowser(shell, SWT.NONE));
+        shell.dispose();
+        presenter.close(); // native dispose already closed the decode executor
+        assertFalse(presenter.offer(1, 0, 100, 100, RemoteFrameDecode.Format.PNG, new byte[0]));
+    }
+
     private static byte[] png() throws Exception {
         BufferedImage image = new BufferedImage(200, 100, BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < image.getHeight(); y++) for (int x = 0; x < image.getWidth(); x++) {
