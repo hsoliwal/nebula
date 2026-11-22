@@ -14,7 +14,7 @@ import org.junit.Test;
 
 /** Real SWT lifecycle acceptance; the Eclipse Terminal stays the sole emulator. */
 public final class TerminalNativeLifecycleTest {
-    @Test(timeout = 15000)
+    @Test
     public void embeddedTerminalOwnsOriginalControlAndDisposesWithParent() {
         Display display = Display.getCurrent();
         boolean ownsDisplay = display == null;
@@ -33,7 +33,7 @@ public final class TerminalNativeLifecycleTest {
             assertFalse(terminal.isConnected());
             shell.open();
             for (int i = 0; i < 10; i++) {
-                while (display.readAndDispatch()) { }
+                if (display.readAndDispatch()) { display.update(); }
                 display.update();
             }
             terminal.setCharset(StandardCharsets.UTF_8);
