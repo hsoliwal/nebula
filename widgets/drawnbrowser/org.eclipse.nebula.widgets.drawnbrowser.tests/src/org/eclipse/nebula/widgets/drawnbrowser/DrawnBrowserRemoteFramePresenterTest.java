@@ -82,6 +82,39 @@ public class DrawnBrowserRemoteFramePresenterTest {
         assertFalse(presenter.offer(1, 0, 100, 100, RemoteFrameDecode.Format.PNG, new byte[0]));
     }
 
+    @Test public void reattachedPresenterReportsRetiredCanvasEpoch() throws Exception {
+        Display display = Display.getDefault();
+        Shell shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+        try {
+            shell.setLayout(new FillLayout());
+            DrawnBrowser browser = new DrawnBrowser(shell, SWT.NONE);
+            shell.setBounds(35, 35, 320, 240);
+            shell.open();
+            byte[] image = png();
+            RemoteFramePresenter original = new RemoteFramePresenter(browser);
+            List<String> painted = new ArrayList<>();
+            browser.setRemoteFramePaintListener((epoch, revision) -> painted.add(epoch + ":" + revision));
+            assertTrue(original.offer(40, 1, 200, 100, RemoteFrameDecode.Format.PNG, image));
+            pumpUntil(display, browser, () -> painted.contains("40:1"));
+            original.close();
+            RemoteFramePresenter replacement = new RemoteFramePresenter(browser);
+            List<RemoteFramePresenter.Failure> errors = new ArrayList<>();
+            replacement.setFailureListener(errors::add);
+            // 40 was explicitly retired on the original Canvas. The new
+            // presenter must not mistake its own acceptance for a native paint.
+            assertTrue(replacement.offer(40, 2, 200, 100, RemoteFrameDecode.Format.PNG, image));
+            pumpUntil(display, browser, () -> !errors.isEmpty());
+            assertEquals(40, errors.getFirst().epoch());
+            assertEquals(2, errors.getFirst().revision());
+            assertFalse(painted.contains("40:2"));
+            assertTrue(replacement.offer(41, 0, 200, 100, RemoteFrameDecode.Format.PNG, image));
+            pumpUntil(display, browser, () -> painted.contains("41:0"));
+            replacement.close();
+        } finally {
+            shell.dispose();
+        }
+    }
+
     private static byte[] png() throws Exception {
         BufferedImage image = new BufferedImage(200, 100, BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < image.getHeight(); y++) for (int x = 0; x < image.getWidth(); x++) {

@@ -180,8 +180,13 @@ public final class RemoteFramePresenter implements AutoCloseable {
             if (frame != null && current(frame.source())) {
                 try {
                     Incoming source = frame.source();
-                    browser.presentRemoteFrame(source.epoch(), source.revision(),
-                            source.cssWidth(), source.cssHeight(), frame.pixels());
+                    if (!browser.presentRemoteFrame(source.epoch(), source.revision(),
+                            source.cssWidth(), source.cssHeight(), frame.pixels()) && current(source)) {
+                        // A newly attached presenter may use an epoch that the native
+                        // Canvas has already retired. Never silently claim delivery.
+                        lastFailure.set(new Failure(source.epoch(), source.revision(),
+                                new IOException("Native browser rejected stale or retired frame")));
+                    }
                 } catch (RuntimeException exception) {
                     Incoming source = frame.source();
                     lastFailure.set(new Failure(source.epoch(), source.revision(),
