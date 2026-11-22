@@ -136,7 +136,7 @@ public final class HeadlessRfbContracts {
     /** Tests actual RFB 3.8 packets without SWT, Tycho, or external servers. */
     private static void inputEventsOverLoopback() throws Exception {
         try (ServerSocket server = new ServerSocket(
-                    0, 1, InetAddress.getLoopbackAddress())) {
+                    0, 1, InetAddress.getByName("127.0.0.1"))) {
             ExecutorService peerPool = Executors.newSingleThreadExecutor();
             CountDownLatch connected = new CountDownLatch(1);
             Future<?> peer = peerPool.submit(() -> {
