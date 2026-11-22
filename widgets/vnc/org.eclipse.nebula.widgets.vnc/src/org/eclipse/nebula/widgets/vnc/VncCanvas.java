@@ -351,8 +351,18 @@ public final class VncCanvas extends Canvas {
         }
         Rectangle target = destination(area);
         if (target.width > 0 && target.height > 0) {
-            gc.drawImage(image, 0, 0, frame.width(), frame.height(),
-                    target.x, target.y, target.width, target.height);
+            // Remote framebuffer pixels are discrete, not a photograph.
+            // SWT.DEFAULT may apply bilinear filtering and leak neighbouring
+            // RGB channels into large scaled pixels (observed on GTK3).
+            // Preserve exact remote colors when stretching the framebuffer.
+            int previousInterpolation = gc.getInterpolation();
+            try {
+                gc.setInterpolation(SWT.NONE);
+                gc.drawImage(image, 0, 0, frame.width(), frame.height(),
+                        target.x, target.y, target.width, target.height);
+            } finally {
+                gc.setInterpolation(previousInterpolation);
+            }
         }
     }
 
