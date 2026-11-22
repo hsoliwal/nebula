@@ -69,15 +69,43 @@ public final class RfbClient implements AutoCloseable {
 
         private Frame(int width, int height, int[] rgb, String title, long sequence,
                 int dirtyX, int dirtyY, int dirtyWidth, int dirtyHeight) {
+            this(width, height, rgb, title, sequence,
+                    dirtyX, dirtyY, dirtyWidth, dirtyHeight, true);
+        }
+
+        private Frame(int width, int height, int[] rgb, String title, long sequence,
+                int dirtyX, int dirtyY, int dirtyWidth, int dirtyHeight,
+                boolean copyPixels) {
             this.width = width;
             this.height = height;
-            this.rgb = rgb.clone();
+            this.rgb = copyPixels ? rgb.clone() : rgb;
             this.title = title;
             this.sequence = sequence;
             this.dirtyX = dirtyX;
             this.dirtyY = dirtyY;
             this.dirtyWidth = dirtyWidth;
             this.dirtyHeight = dirtyHeight;
+        }
+
+        /**
+         * Merge damage from a frame that the SWT event thread has not yet
+         * presented. The newest immutable pixels remain authoritative, and
+         * no second framebuffer clone is needed to widen the damage bounds.
+         */
+        Frame withAdditionalDamage(Frame previous) {
+            if (previous == null) {
+                return this;
+            }
+            if (previous.width != width || previous.height != height) {
+                return new Frame(width, height, rgb, title, sequence,
+                        0, 0, width, height, false);
+            }
+            int x0 = Math.min(dirtyX, previous.dirtyX);
+            int y0 = Math.min(dirtyY, previous.dirtyY);
+            int right = Math.max(dirtyX + dirtyWidth, previous.dirtyX + previous.dirtyWidth);
+            int bottom = Math.max(dirtyY + dirtyHeight, previous.dirtyY + previous.dirtyHeight);
+            return new Frame(width, height, rgb, title, sequence,
+                    x0, y0, right - x0, bottom - y0, false);
         }
 
         public int width() { return width; }
