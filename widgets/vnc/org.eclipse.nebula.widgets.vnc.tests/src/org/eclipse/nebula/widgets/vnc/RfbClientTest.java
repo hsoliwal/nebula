@@ -63,7 +63,7 @@ public class RfbClientTest {
                     assertEquals(2, input.readUnsignedByte()); // SetEncodings
                     input.skipNBytes(1);
                     int count = input.readUnsignedShort();
-                    assertEquals(7, count);
+                    assertEquals(8, count);
                     input.skipNBytes(count * 4L);
                     assertEquals(3, input.readUnsignedByte());
                     input.skipNBytes(9);
@@ -149,7 +149,7 @@ public class RfbClientTest {
                     assertEquals(2, input.readUnsignedByte());
                     input.skipNBytes(1);
                     int count = input.readUnsignedShort();
-                    assertEquals(7, count);
+                    assertEquals(8, count);
                     input.skipNBytes(count * 4L);
                     assertEquals(3, input.readUnsignedByte()); // initial refresh
                     input.skipNBytes(9);

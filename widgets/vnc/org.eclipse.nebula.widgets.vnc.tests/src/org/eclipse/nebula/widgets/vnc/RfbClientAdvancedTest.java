@@ -28,6 +28,16 @@ import org.junit.Test;
 
 /** Scripted end-to-end RFB server tests for additional codecs and direct TLS. */
 public class RfbClientAdvancedTest {
+    @Test public void tightFillEndToEnd() throws Exception {
+        byte[] payload = bytes(out -> {
+            out.writeByte(0x80); // Tight fill, no inflater resets
+            out.writeByte(0x12); // Tight 24-bit compact pixels are RGB
+            out.writeByte(0x34);
+            out.writeByte(0x56);
+        });
+        runPeer(7, payload, new int[] {0x123456, 0x123456});
+    }
+
     @Test public void rreEndToEnd() throws Exception {
         byte[] payload = bytes(d -> {
             d.writeInt(1); pixel(d, 0x112233);
@@ -183,7 +193,7 @@ public class RfbClientAdvancedTest {
                     assertEquals(2, in.readUnsignedByte());
                     in.skipNBytes(1);
                     int n = in.readUnsignedShort();
-                    assertEquals(7, n);
+                    assertEquals(8, n);
                     int[] negotiated = new int[n];
                     for (int i = 0; i < n; i++) negotiated[i] = in.readInt();
                     assertTrue(Arrays.stream(negotiated).anyMatch(value -> value == encoding));

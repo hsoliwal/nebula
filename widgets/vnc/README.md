@@ -33,7 +33,7 @@ VeNCrypt anonymous TLS, Plain, and other unvalidated subtypes are not enabled.
 
 - RFB protocol versions 3.3, 3.7, 3.8, legacy VNC challenge-response, None,
   and VeNCrypt 0.2 X509None/X509Vnc with checked TLS.
-- Framebuffer Raw (0), CopyRect (1), RRE (2), Hextile (5), TRLE (15),
+- Framebuffer Raw (0), CopyRect (1), RRE (2), Hextile (5), Tight (7), TRLE (15),
   ZRLE (16) and DesktopSize (-223).
 - 32-bit little-endian true-color RGB888 and compact pixels, 16x16 TRLE
   and 64x64 ZRLE tiles, packed palettes, palette reuse, plain/palette RLE,
@@ -47,12 +47,12 @@ VeNCrypt anonymous TLS, Plain, and other unvalidated subtypes are not enabled.
 
 ## Acceptance limitations
 
-This PR is **not yet a complete native/OSGi qualification**. Tight, VeNCrypt
+This PR is **not yet a complete native/OSGi qualification**. VeNCrypt
 X509Plain/SASL, encrypted clipboard extensions, software cursor pseudoencoding,
 comprehensive international keyboards/IME, multiscreen/fence extensions and
-live-server interoperability have not been implemented or verified. The
-current SWT viewer also recreates the native Image per published frame; large
-screen/dirty-region optimization and memory/CPU benchmarks remain necessary.
+non-Linux live-server interoperability have not been implemented or verified. The
+viewer now reuses native Images for small updates; full framebuffer copies,
+resource lifetime under prolonged load, and performance budgets still require qualification.
 
 The standalone decoder tests exercise malformed inputs, palette variants and
 continuous compression. Tycho/JUnit scripted-peer tests cover several actual
@@ -103,3 +103,18 @@ decoder test is **not** a passing native screenshot or Windows/Cocoa check.
 The full Nebula reactor and the SWT receiver/native resource gates remain
 separate acceptance requirements. Do not merge or declare cross-platform
 parity until each exact-head CI and native lane has executed successfully.
+
+## Tight encoding (7)
+
+Tight rectangles use four persistent zlib streams with reset-bit semantics,
+compact RGB888 pixels, Fill, no-zlib Basic, palette, gradient and JPEG image
+subtypes. Compressed byte counts, expanded pixel counts, JPEG dimensions and
+palette indices are bounded before decoding. JPEG uses the JDK ImageIO codec
+on the protocol worker, never the SWT UI thread. The host product must include
+a Java 21 runtime with java.desktop for JPEG decoding.
+
+The Tight decoder was checked locally against seven deterministic smoke
+scenarios and 400 randomized no-zlib cases; the focused Tycho protocol
+suite also contains codec, rejection and scripted-peer tests. These tests
+are not a claim of compatibility with every TightVNC/TurboVNC version until
+actual server interoperability has run with Tight negotiated.
