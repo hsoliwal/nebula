@@ -132,6 +132,21 @@ public class RfbTightDecoderTest {
         }
     }
 
+    @Test public void fourKWideTightFillIsValidWhenPixelBudgetAllows() throws Exception {
+        int width = 4096;
+        int[] pixels = new int[width * 2];
+        byte[] fill = packet(out -> {
+            out.writeByte(0x80);
+            rgb(out, 0x23a4f1);
+        });
+        try (RfbTightDecoder decoder = new RfbTightDecoder()) {
+            decoder.decode(input(fill), pixels, width, 0, 0, width, 2);
+        }
+        for (int color : pixels) {
+            assertEquals(0x23a4f1, color);
+        }
+    }
+
     @Test public void malformedDimensionsAndSubencodingsFailClosed() throws Exception {
         int[] frame = new int[5];
         try (RfbTightDecoder decoder = new RfbTightDecoder()) {
