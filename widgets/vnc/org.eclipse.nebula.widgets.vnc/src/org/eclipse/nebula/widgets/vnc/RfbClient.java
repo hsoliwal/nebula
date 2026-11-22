@@ -129,7 +129,7 @@ public final class RfbClient implements AutoCloseable {
         private final int width, height, hotspotX, hotspotY;
         private final int[] argb;
 
-        private CursorFrame(RfbCursorDecoder.Shape decoded) {
+        CursorFrame(RfbCursorDecoder.Shape decoded) {
             this.width = decoded.width();
             this.height = decoded.height();
             this.hotspotX = decoded.hotspotX();

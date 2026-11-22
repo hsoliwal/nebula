@@ -118,3 +118,19 @@ scenarios and 400 randomized no-zlib cases; the focused Tycho protocol
 suite also contains codec, rejection and scripted-peer tests. These tests
 are not a claim of compatibility with every TightVNC/TurboVNC version until
 actual server interoperability has run with Tight negotiated.
+
+
+## Remote cursor shapes
+
+RichCursor (-239) and XCursor (-240) are negotiated as cursor pseudo-encodings.
+Cursor rectangles use their origin as the hotspot, *not* the framebuffer
+position. The network reader validates the 512x512 shape maximum and decodes
+RGB, foreground/background and row-aligned alpha masks on the worker thread.
+The immutable cursor shape is sent to \`VncCanvas\` on the SWT event thread.
+The Canvas owns each native SWT Cursor, disposing old resources on replacement,
+disconnect and parent-driven widget disposal. The cursor parser and native
+ownership tests are mandatory in the focused Tycho workflow.
+
+Remote PointerPos, cursor alpha extensions and cross-platform cursor
+rendering are not yet qualified. Server-supplied cursor positions must not
+be conflated with local mouse input events.

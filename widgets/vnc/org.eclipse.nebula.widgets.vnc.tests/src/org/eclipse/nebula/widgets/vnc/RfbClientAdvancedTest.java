@@ -38,6 +38,82 @@ public class RfbClientAdvancedTest {
         runPeer(7, payload, new int[] {0x123456, 0x123456});
     }
 
+
+    @Test public void richCursorUpdateIsPublishedWithoutFramebufferDamage() throws Exception {
+        try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            CountDownLatch received = new CountDownLatch(1);
+            AtomicReference<RfbClient.CursorFrame> last = new AtomicReference<>();
+            Future<?> peer = executor.submit(() -> {
+                try (Socket socket = server.accept()) {
+                    socket.setSoTimeout(5000);
+                    DataInputStream input = new DataInputStream(socket.getInputStream());
+                    DataOutputStream output = new DataOutputStream(socket.getOutputStream());
+                    output.write("RFB 003.008\n".getBytes(StandardCharsets.US_ASCII));
+                    output.flush();
+                    byte[] clientBanner = new byte[12];
+                    input.readFully(clientBanner);
+                    assertEquals("RFB 003.008\n", new String(clientBanner, StandardCharsets.US_ASCII));
+                    output.writeByte(1);
+                    output.writeByte(1); // None, loopback only
+                    output.flush();
+                    assertEquals(1, input.readUnsignedByte());
+                    output.writeInt(0);
+                    output.flush();
+                    assertEquals(1, input.readUnsignedByte()); // shared desktop
+                    output.writeShort(3);
+                    output.writeShort(2);
+                    output.write(new byte[16]); // server pixel format
+                    output.writeInt(6);
+                    output.write("cursor".getBytes(StandardCharsets.ISO_8859_1));
+                    output.flush();
+                    input.skipNBytes(20); // negotiated 32-bit RGB888 pixel format
+                    assertEquals(2, input.readUnsignedByte());
+                    input.skipNBytes(1);
+                    int count = input.readUnsignedShort();
+                    assertEquals(10, count);
+                    int[] codecs = new int[count];
+                    for (int i = 0; i < count; i++) codecs[i] = input.readInt();
+                    assertTrue(Arrays.stream(codecs).anyMatch(value -> value == -239));
+                    assertTrue(Arrays.stream(codecs).anyMatch(value -> value == -240));
+                    assertEquals(3, input.readUnsignedByte());
+                    input.skipNBytes(9);
+
+                    output.writeByte(0); // FramebufferUpdate
+                    output.writeByte(0); // pad
+                    output.writeShort(1); // one RichCursor pseudo-rectangle
+                    writeRect(output, 1, 0, 2, 1, -239); // hotspot 1,0
+                    writeRgb(output, 0xff0000);
+                    writeRgb(output, 0x00ff00);
+                    output.writeByte(0xc0); // both pixels opaque
+                    output.flush();
+                    assertTrue("No RichCursor callback", received.await(4, TimeUnit.SECONDS));
+                } catch (Exception error) {
+                    throw new AssertionError(error);
+                }
+            });
+            RfbClient client = new RfbClient(new RfbClient.Listener() {
+                @Override public void cursor(RfbClient.CursorFrame shape) {
+                    last.set(shape);
+                    received.countDown();
+                }
+            });
+            try {
+                client.connectAsync("127.0.0.1", server.getLocalPort(), null, false);
+                assertTrue("RichCursor not published", received.await(5, TimeUnit.SECONDS));
+                RfbClient.CursorFrame got = last.get();
+                assertNotNull(got);
+                assertEquals(1, got.hotspotX());
+                assertEquals(0, got.hotspotY());
+                assertArrayEquals(new int[] {0xffff0000, 0xff00ff00}, got.argbCopy());
+                peer.get(5, TimeUnit.SECONDS);
+            } finally {
+                client.close();
+                executor.shutdownNow();
+            }
+        }
+    }
+
     @Test public void rreEndToEnd() throws Exception {
         byte[] payload = bytes(d -> {
             d.writeInt(1); pixel(d, 0x112233);
@@ -193,7 +269,7 @@ public class RfbClientAdvancedTest {
                     assertEquals(2, in.readUnsignedByte());
                     in.skipNBytes(1);
                     int n = in.readUnsignedShort();
-                    assertEquals(8, n);
+                    assertEquals(10, n);
                     int[] negotiated = new int[n];
                     for (int i = 0; i < n; i++) negotiated[i] = in.readInt();
                     assertTrue(Arrays.stream(negotiated).anyMatch(value -> value == encoding));
