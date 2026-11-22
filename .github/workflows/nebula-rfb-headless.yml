@@ -55,10 +55,11 @@ jobs:
           javac --release 21 -encoding UTF-8 -Xlint:all -Werror -d "$dest" \
             "$src/RfbClient.java" \
             "$src/RfbTileDecoder.java" \
+            "$src/RfbHextileDecoder.java" \
             "$src/RfbTightDecoder.java" \
             "$src/RfbCursorDecoder.java" \
             "$src/RfbVeNCrypt.java" \
             releng/vnc-protocol/src/org/eclipse/nebula/widgets/vnc/HeadlessRfbContracts.java
           java -Xmx128m -cp "$dest" \
             org.eclipse.nebula.widgets.vnc.HeadlessRfbContracts | tee .nebula-rfb-headless-result.txt
-          grep -Fx 'NEBULA_RFB_HEADLESS=PASSED 7' .nebula-rfb-headless-result.txt
+          grep -Fx 'NEBULA_RFB_HEADLESS=PASSED 8' .nebula-rfb-headless-result.txt

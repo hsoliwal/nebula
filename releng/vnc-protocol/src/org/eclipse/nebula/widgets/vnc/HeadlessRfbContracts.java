@@ -36,7 +36,8 @@ public final class HeadlessRfbContracts {
         boundedAtomicQueue();
         legacyVncResponse();
         inputEventsOverLoopback();
-        System.out.println("NEBULA_RFB_HEADLESS=PASSED 7");
+        hextileTileStatesAndRawFlags();
+        System.out.println("NEBULA_RFB_HEADLESS=PASSED 8");
     }
 
     private static void tightFourKDesktopAsLegalRects() throws IOException {
@@ -131,6 +132,42 @@ public final class HeadlessRfbContracts {
         byte[] answer = RfbClient.vncResponse(challenge, new char[] {'s','e','c','r','e','t'});
         check(answer.length == 16, "Legacy VNC challenge-response length");
         Arrays.fill(answer, (byte) 0);
+    }
+
+    /** RFC 6143 Hextile raw-bit precedence and carried color invariants. */
+    private static void hextileTileStatesAndRawFlags() throws IOException {
+        // Raw ignores all other flag bits; wire pixels are B,G,R,pad.
+        int[] raw = new int[1];
+        RfbHextileDecoder.decode(input(new byte[] {
+                (byte) 0xff, 0x33, 0x22, 0x11, 0
+        }), raw, 1, 0, 0, 1, 1);
+        check(raw[0] == 0x112233, "Hextile Raw should ignore non-Raw flags");
+
+        // A 17x1 rectangle has two tiles; background carries to tile two.
+        int[] carried = new int[17];
+        RfbHextileDecoder.decode(input(new byte[] {
+                2, 0x33, 0x22, 0x11, 0, 0
+        }), carried, 17, 0, 0, 17, 1);
+        for (int rgb : carried) {
+            check(rgb == 0x112233, "Hextile background did not carry");
+        }
+        boolean invalid = false;
+        try {
+            RfbHextileDecoder.decode(input(new byte[] {0}), new int[1],
+                    1, 0, 0, 1, 1);
+        } catch (IOException expected) {
+            invalid = true;
+        }
+        check(invalid, "Hextile first non-Raw tile must supply background");
+
+        invalid = false;
+        try {
+            RfbHextileDecoder.decode(input(new byte[] {30}), new int[1],
+                    1, 0, 0, 1, 1);
+        } catch (IOException expected) {
+            invalid = true;
+        }
+        check(invalid, "Hextile colored subrectangles cannot specify foreground");
     }
 
     /** Tests actual RFB 3.8 packets without SWT, Tycho, or external servers. */

@@ -134,3 +134,16 @@ ownership tests are mandatory in the focused Tycho workflow.
 Remote PointerPos, cursor alpha extensions and cross-platform cursor
 rendering are not yet qualified. Server-supplied cursor positions must not
 be conflated with local mouse input events.
+
+## RFC 6143 Hextile tile rules
+
+The worker-side `RfbHextileDecoder` enforces per-rectangle background and
+foreground carry state. A Raw tile's other subencoding bits are ignored
+per the RFB protocol; Raw also invalidates the prior carried background and
+foreground. A colored-subrectangle tile invalidates the previous foreground,
+and an uncolored subrectangle requires an established foreground. Unknown
+non-Raw flag combinations and subrectangles outside tile bounds fail closed.
+
+An independent Java 21 contract runs these cases on Linux, Windows and macOS,
+and Tycho runs the corresponding JUnit suite. These tests do not replace
+native SWT or live-server interoperability.
