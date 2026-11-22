@@ -75,9 +75,10 @@ jobs:
                   executed += counts['tests']
           required = {'RfbClientTest', 'RfbClientAdvancedTest',
                       'RfbTileDecoderTest', 'RfbVeNCryptTest',
-                      'RfbFrameDamageTest'}
+                      'RfbFrameDamageTest',
+                      'RfbCodecPropertyTest', 'RfbQueueBudgetTest'}
           assert required <= found, f'missing tests: {required - found}'
-          assert executed >= 17, f'expected at least 17 tests, got {executed}'
+          assert executed >= 25, f'expected at least 25 tests, got {executed}'
           print('NEBULA_RFB_TYCHO_PROTOCOL_TESTS=PASSED', executed)
           PY
       - name: Upload protocol test results
