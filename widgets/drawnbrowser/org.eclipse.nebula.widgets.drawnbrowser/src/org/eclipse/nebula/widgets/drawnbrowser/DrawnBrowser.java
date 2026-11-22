@@ -937,6 +937,7 @@ public class DrawnBrowser extends Canvas {
 		int stamp = ++placeStamp, scrollY = viewport.y(), viewBottom = scrollY + getClientArea().height;
 		HtmlPositionedLayout scene = layout.positioned();
 		int visible = scene == null ? 0 : scene.collectVisible(scrollY, getClientArea().height, scrollY);
+		Control below = null;
 		for (int step = scene == null ? layout.blockAt(scrollY) : 0;
 				step >= 0 && (scene == null ? step < document.blockCount && layout.top(step) < viewBottom : step < visible); step++) {
 			int b;
@@ -949,10 +950,14 @@ public class DrawnBrowser extends Canvas {
 			int c = document.blockControl[b];
 			if (c < 0 || document.kind[b] != HtmlDocument.CONTROL) continue;
 			Control widget = widget(c);
-			widget.setBounds(layout.indent(b), layout.top(b) + layout.contentTop(b) - scrollY, layout.controlWidth(b),
+			widget.setBounds(layout.indent(b) + layout.offsetX(b),
+					layout.top(b) + layout.offsetY(b, scrollY) + layout.contentTop(b) - scrollY, layout.controlWidth(b),
 					layout.controlHeight(b));
+			// Native sibling order follows the same plan even when a higher control first enters view later.
+			if (scene != null && below != null) widget.moveAbove(below);
 			widget.setVisible(true);
 			placed[c] = stamp;
+			below = widget;
 		}
 		for (int c = 0; c < widgets.length; c++) {
 			if (widgets[c] != null && placed[c] != stamp && widgets[c].getVisible()) widgets[c].setVisible(false);
