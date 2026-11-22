@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -37,6 +38,7 @@ public final class VncCanvas extends Canvas {
         default void disconnected(IOException cause) { }
         default void bell() { }
         default void clipboard(String text) { }
+        default void cursorChanged(RfbClient.CursorFrame shape) { }
     }
 
     private record PendingFrame(long generation, RfbClient.Frame snapshot) { }
@@ -49,6 +51,7 @@ public final class VncCanvas extends Canvas {
     private Listener listener = new Listener() { };
     private RfbClient.Frame frame;
     private Image image;
+    private Cursor ownedCursor;
     private int buttonMask;
     private int lastRemoteX;
     private int lastRemoteY;
@@ -114,6 +117,10 @@ public final class VncCanvas extends Canvas {
                 old.close();
             }
             pending.set(null);
+            if (ownedCursor != null) {
+                ownedCursor.dispose();
+                ownedCursor = null;
+            }
             if (image != null) {
                 image.dispose();
                 image = null;
@@ -180,6 +187,14 @@ public final class VncCanvas extends Canvas {
             }
 
             @Override
+            public void cursor(RfbClient.CursorFrame shape) {
+                onUi(session, () -> {
+                    installCursor(shape);
+                    listener().cursorChanged(shape);
+                });
+            }
+
+            @Override
             public void disconnected(IOException cause) {
                 onUi(session, () -> listener().disconnected(cause));
             }
@@ -222,6 +237,7 @@ public final class VncCanvas extends Canvas {
         buttonMask = 0;
         pending.set(null);
         frame = null;
+        installCursor(null);
         if (image != null) {
             image.dispose();
             image = null;
@@ -255,6 +271,44 @@ public final class VncCanvas extends Canvas {
                     action.run();
                 }
             });
+        }
+    }
+
+    /** Install an RFB-defined native cursor, owned by this SWT widget. */
+    void installCursor(RfbClient.CursorFrame shape) {
+        checkWidget();
+        Cursor replacement = null;
+        if (shape != null) {
+            int w = shape.width();
+            int h = shape.height();
+            ImageData data = new ImageData(w, h, 24,
+                    new PaletteData(0xff0000, 0xff00, 0xff));
+            data.alphaData = new byte[w * h];
+            int[] argb = shape.argbForDisplay();
+            int[] rgbRow = new int[w];
+            for (int y = 0; y < h; y++) {
+                int offset = y * w;
+                for (int x = 0; x < w; x++) {
+                    int pixel = argb[offset + x];
+                    rgbRow[x] = pixel & 0xffffff;
+                    data.alphaData[offset + x] = (byte) (pixel >>> 24);
+                }
+                data.setPixels(0, y, w, rgbRow, 0);
+            }
+            replacement = new Cursor(display, data, shape.hotspotX(), shape.hotspotY());
+        }
+        Cursor old = ownedCursor;
+        try {
+            setCursor(replacement);
+            ownedCursor = replacement;
+        } catch (RuntimeException | Error error) {
+            if (replacement != null) {
+                replacement.dispose();
+            }
+            throw error;
+        }
+        if (old != null) {
+            old.dispose();
         }
     }
 
