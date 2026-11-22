@@ -120,11 +120,21 @@ public class GridScrollPaint_Test {
 	 * (frame-coalesced drag paints use timers, which a test desktop may fire late)
 	 */
 	private void settle() {
-		long idleSince = System.currentTimeMillis();
-		final long deadline = idleSince + 5000;
-		while (System.currentTimeMillis() - idleSince < 200 || dragFramePending() && System.currentTimeMillis() < deadline) {
+		final long started = System.nanoTime();
+		long idleSince = started;
+		int dispatched = 0;
+		for (;;) {
+			final long now = System.nanoTime();
+			if (now - idleSince >= 200_000_000L && !dragFramePending()) {
+				return;
+			}
+			if (now - started >= 5_000_000_000L) {
+				fail("GridScrollPaint_Test did not settle within five seconds; dispatched "
+						+ dispatched + " SWT events, idle " + (now - idleSince) / 1_000_000L + " ms");
+			}
 			if (display.readAndDispatch()) {
-				idleSince = System.currentTimeMillis();
+				dispatched++;
+				idleSince = System.nanoTime();
 			} else {
 				try {
 					Thread.sleep(5);
