@@ -358,12 +358,18 @@ public final class RfbClient implements AutoCloseable {
                 throw new IOException("RFB VNC authentication requires a password");
             }
             byte[] challenge = new byte[16];
-            input.readFully(challenge);
-            byte[] response = vncResponse(challenge, password);
-            output.write(response);
-            output.flush();
-            Arrays.fill(response, (byte) 0);
-            Arrays.fill(challenge, (byte) 0);
+            byte[] response = null;
+            try {
+                input.readFully(challenge);
+                response = vncResponse(challenge, password);
+                output.write(response);
+                output.flush();
+            } finally {
+                if (response != null) {
+                    Arrays.fill(response, (byte) 0);
+                }
+                Arrays.fill(challenge, (byte) 0);
+            }
         } else if (security != 1) {
             throw new IOException("Unsupported RFB security scheme: " + security);
         }
