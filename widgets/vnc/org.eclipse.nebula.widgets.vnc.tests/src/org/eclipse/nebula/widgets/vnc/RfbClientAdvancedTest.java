@@ -318,6 +318,23 @@ public class RfbClientAdvancedTest {
         return buffer.toByteArray();
     }
 
+    private static void writeRect(DataOutputStream out, int x, int y,
+            int width, int height, int encoding) throws IOException {
+        out.writeShort(x);
+        out.writeShort(y);
+        out.writeShort(width);
+        out.writeShort(height);
+        out.writeInt(encoding);
+    }
+
+    private static void writeRgb(DataOutputStream out, int rgb) throws IOException {
+        // RichCursor pixels use negotiated 32-bit little-endian RGB888.
+        out.writeByte(rgb);
+        out.writeByte(rgb >>> 8);
+        out.writeByte(rgb >>> 16);
+        out.writeByte(0);
+    }
+
     private static void compact(DataOutputStream out, int rgb) throws IOException {
         out.writeByte(rgb);
         out.writeByte(rgb >>> 8);
