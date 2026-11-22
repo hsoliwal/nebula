@@ -55,13 +55,18 @@ public class DrawnBrowserRemoteFramePresenterTest {
         try {
             shell.setLayout(new FillLayout());
             DrawnBrowser browser = new DrawnBrowser(shell, SWT.NONE);
+            int originalDisposeListeners = browser.getListeners(SWT.Dispose).length;
             RemoteFramePresenter first = new RemoteFramePresenter(browser);
+            assertEquals(originalDisposeListeners + 1, browser.getListeners(SWT.Dispose).length);
             assertThrows(IllegalStateException.class, () -> new RemoteFramePresenter(browser));
             first.close();
             first.close(); // AutoCloseable contract; does not clear another session
+            assertEquals("closed presenter must not leak widget listeners",
+                    originalDisposeListeners, browser.getListeners(SWT.Dispose).length);
             RemoteFramePresenter second = new RemoteFramePresenter(browser);
             assertThrows(IllegalStateException.class, () -> new RemoteFramePresenter(browser));
             second.close();
+            assertEquals(originalDisposeListeners, browser.getListeners(SWT.Dispose).length);
         } finally {
             shell.dispose();
         }

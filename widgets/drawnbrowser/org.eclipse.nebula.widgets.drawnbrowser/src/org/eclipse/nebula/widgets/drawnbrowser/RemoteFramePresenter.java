@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.eclipse.nebula.widgets.drawnbrowser.internal.RemoteFrameDecode;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
@@ -37,6 +38,7 @@ public final class RemoteFramePresenter implements AutoCloseable {
     private final DrawnBrowser browser;
     private final Display display;
     private final ExecutorService decoder;
+    private final DisposeListener disposal;
     private final AtomicReference<Incoming> pending = new AtomicReference<>();
     private final AtomicReference<Ready> ready = new AtomicReference<>();
     private final AtomicReference<Failure> lastFailure = new AtomicReference<>();
@@ -62,8 +64,9 @@ public final class RemoteFramePresenter implements AutoCloseable {
         });
         // The widget is the sole owner of this capability; release the marker
         // before reattaching after close. Disposal itself releases widget data.
+        disposal = event -> shutdown(false);
         browser.setData(OWNER_KEY, this);
-        browser.addDisposeListener(event -> shutdown(false));
+        browser.addDisposeListener(disposal);
     }
 
     /** The UI-thread recipient of the latest decoder/presentation failure. */
@@ -239,8 +242,11 @@ public final class RemoteFramePresenter implements AutoCloseable {
         decoder.shutdownNow();
         // Do not access SWT widget data during SWT.Dispose: the Widget itself
         // removes it. An explicit close releases the slot for a new presenter.
-        if (releaseOwnership && !browser.isDisposed() && browser.getData(OWNER_KEY) == this) {
-            browser.setData(OWNER_KEY, null);
+        if (releaseOwnership && !browser.isDisposed()) {
+            // Repeated attach/close cycles must not retain a closure per session
+            // in the long-lived Canvas's native listener list.
+            browser.removeDisposeListener(disposal);
+            if (browser.getData(OWNER_KEY) == this) browser.setData(OWNER_KEY, null);
         }
     }
 }
