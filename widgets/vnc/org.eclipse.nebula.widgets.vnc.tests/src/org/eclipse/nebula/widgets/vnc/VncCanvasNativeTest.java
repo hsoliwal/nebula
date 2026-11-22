@@ -42,6 +42,26 @@ public final class VncCanvasNativeTest {
     @Test(timeout = 20000)
     public void nativeCanvasRendersDecodedPixelsAndDisposesItsResources() throws Exception {
         Display display = Display.getDefault();
+        AtomicReference<Throwable> failed = new AtomicReference<>();
+        display.syncExec(() -> {
+            try {
+                runOnDisplayThread(display);
+            } catch (Throwable error) {
+                failed.set(error);
+            }
+        });
+        Throwable error = failed.get();
+        if (error instanceof Exception exception) {
+            throw exception;
+        }
+        if (error instanceof Error fatal) {
+            throw fatal;
+        }
+    }
+
+    private static void runOnDisplayThread(Display display) throws Exception {
+        assertEquals("Native test did not run on the SWT UI thread",
+                display.getThread(), Thread.currentThread());
         ExecutorService peers = Executors.newSingleThreadExecutor();
         CountDownLatch releasePeer = new CountDownLatch(1);
         try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
