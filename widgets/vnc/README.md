@@ -67,3 +67,39 @@ This code is an EPL-2.0 implementation, not a copied subtree.
 Specifications:
 - https://www.rfc-editor.org/rfc/rfc6143
 - https://github.com/rfbproto/rfbproto/blob/master/rfbproto.rst
+
+## CPU/GUI ownership and native repainting
+
+`RfbClient` decodes network rectangles on its single I/O worker and publishes
+immutable versioned `Frame` snapshots. Each snapshot includes a conservative
+dirty rectangle. `VncCanvas` coalesces pending frame damage by session
+generation, so old/reconnecting sessions cannot repaint a newer connection.
+
+The SWT event thread owns the Canvas, Image, GC, selection, focus and native
+resources. For small framebuffer updates, the existing native Image is reused
+and only a dirty sub-image is copied through a short-lived SWT GC. Full-size
+and resized updates rebuild the image. Paint invalidation maps changed pixels
+into the scaled/letterboxed viewport with a two-pixel boundary margin.
+
+This is **not yet zero-copy**: each published immutable snapshot still clones
+the full RGB array. Large desktops require explicit frame-rate/CPU and native
+heap qualification before a throughput claim can be made.
+
+Keysyms are retained across KeyPressed/KeyReleased so releases do not use a
+different character mapping; focus loss releases outstanding keys and pointer
+buttons. Full IME/compound Unicode and platform-specific physical key mapping
+remain open.
+
+## Focused qualification
+
+The `.github/workflows/terminal-vnc-contracts.yml` workflow compiles the
+Terminal widget separately and runs the VNC Tycho/JUnit bundle with a native
+GTK3/Xvfb/Openbox window manager. Its fail-closed contract requires the
+decoder/handshake tests, 900 deterministic property cases, queue-budget
+concurrency tests, coalesced immutable-frame damage tests and actual visible
+screen captures for initial and incremental RFB painting. A passing headless
+decoder test is **not** a passing native screenshot or Windows/Cocoa check.
+
+The full Nebula reactor and the SWT receiver/native resource gates remain
+separate acceptance requirements. Do not merge or declare cross-platform
+parity until each exact-head CI and native lane has executed successfully.

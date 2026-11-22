@@ -16,3 +16,20 @@ terminal.connect("registered.connector.id"); // resolve the ID in the host produ
 
 The control, input, clipboard, scrollback and focus semantics remain those of
 \`ITerminalViewControl\`. Only an optional embeddable Nebula host widget is added.
+
+## API and lifecycle constraints
+
+- This widget embeds the upstream Eclipse terminal emulator rather than
+  implementing another VT100 state machine. External process/local/SSH/Telnet
+  connectors must be installed and licensed independently; their native PTY
+  compatibility depends on the chosen Eclipse Platform/CDT distribution.
+- `TerminalWidget.paste(String)` uses the widely available upstream
+  `ITerminalViewControl.pasteString(String)` API for cross-version
+  compatibility. That method is a programmatic send-text operation; it is not
+  a guarantee of bracketed-paste semantics. Do not send untrusted commands.
+- Core runtime/Equinox dependencies must expose `CoreException` through the
+  OSGi manifest. Native lifecycle and UI thread confinement remain those of
+  SWT and Eclipse's terminal control.
+- Java 21 compile verification is covered by the dedicated
+  `.github/workflows/terminal-vnc-contracts.yml` workflow. Native launch
+  connectors and real PTY behavior still require per-OS acceptance.
