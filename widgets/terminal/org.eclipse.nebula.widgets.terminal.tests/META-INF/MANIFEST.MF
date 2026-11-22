@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Nebula Terminal Widget Native Tests
+Bundle-SymbolicName: org.eclipse.nebula.widgets.terminal.tests
+Bundle-Version: 1.0.0.qualifier
+Bundle-Vendor: Eclipse Nebula
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Fragment-Host: org.eclipse.nebula.widgets.terminal
+Require-Bundle: org.junit
+Automatic-Module-Name: org.eclipse.nebula.widgets.terminal.tests

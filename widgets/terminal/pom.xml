@@ -11,5 +11,5 @@
  </parent>
  <artifactId>terminal</artifactId>
  <packaging>pom</packaging>
- <modules><module>org.eclipse.nebula.widgets.terminal</module></modules>
+ <modules><module>org.eclipse.nebula.widgets.terminal</module><module>org.eclipse.nebula.widgets.terminal.tests</module></modules>
 </project>
