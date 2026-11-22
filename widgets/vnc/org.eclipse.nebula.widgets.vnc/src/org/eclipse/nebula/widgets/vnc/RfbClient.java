@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -84,6 +85,7 @@ public final class RfbClient implements AutoCloseable {
     private static final int MAX_TITLE_BYTES = 65_536;
     private static final int MAX_CLIPBOARD_BYTES = 1_048_576;
     private static final int MAX_QUEUE_SIZE = 256;
+    private static final int MAX_QUEUE_BYTES = 4 * 1024 * 1024;
     private static final int ENCODING_RAW = 0;
     private static final int ENCODING_COPY_RECT = 1;
     private static final int ENCODING_HEXTILE = 5;
@@ -95,6 +97,7 @@ public final class RfbClient implements AutoCloseable {
     private final Listener listener;
     private final RfbTileDecoder tileDecoder = new RfbTileDecoder();
     private final BlockingQueue<byte[]> outbound = new ArrayBlockingQueue<>(MAX_QUEUE_SIZE);
+    private final AtomicInteger queuedBytes = new AtomicInteger();
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private volatile Socket socket;
@@ -628,14 +631,34 @@ public final class RfbClient implements AutoCloseable {
         return enqueue(raw.toByteArray());
     }
 
+    /**
+     * A count-only queue permits 256 one-megabyte clipboard messages, even
+     * though the client is nominally bounded. Reserve a byte budget before
+     * publishing a message, and roll it back on queue rejection.
+     */
     private boolean enqueue(byte[] packet) {
-        return started.get() && !closed.get() && outbound.offer(packet);
+        if (!started.get() || closed.get() || packet.length > MAX_QUEUE_BYTES) {
+            return false;
+        }
+        int previous;
+        do {
+            previous = queuedBytes.get();
+            if (previous > MAX_QUEUE_BYTES - packet.length || closed.get()) {
+                return false;
+            }
+        } while (!queuedBytes.compareAndSet(previous, previous + packet.length));
+        if (closed.get() || !outbound.offer(packet)) {
+            queuedBytes.addAndGet(-packet.length);
+            return false;
+        }
+        return true;
     }
 
     private void writeLoop(DataOutputStream output) {
         try {
             while (!closed.get()) {
                 byte[] packet = outbound.take();
+                queuedBytes.addAndGet(-packet.length);
                 output.write(packet);
                 output.flush();
             }
@@ -661,6 +684,11 @@ public final class RfbClient implements AutoCloseable {
             Thread writer = writerThread;
             if (writer != null) {
                 writer.interrupt();
+            }
+            // Never retain unsent clipboard data in a defunct session.
+            byte[] packet;
+            while ((packet = outbound.poll()) != null) {
+                Arrays.fill(packet, (byte) 0);
             }
         }
     }
