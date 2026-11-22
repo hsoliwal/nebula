@@ -40,10 +40,19 @@ public final class VncCanvasNativeTest {
     private static final int[] EXPECTED = {0xff0000, 0x00ff00, 0x0000ff, 0xffffff};
     private static final int[] PATCHED = {0x00ffff, 0x00ff00, 0x0000ff, 0xffffff};
 
-    @Test(timeout = 20000)
+    @Test
     public void nativeCanvasRendersDecodedPixelsAndDisposesItsResources() throws Exception {
+        // Tycho's SWT UI-harness invokes tests on its Display thread.
+        // JUnit @Test(timeout=...) moves the body to a worker and can
+        // deadlock against Display.syncExec while JUnit waits on that worker.
+        // Keep explicit bounded socket/frame deadlines inside the test
+        // instead of using JUnit's separate timeout thread.
         Display display = Display.getDefault();
         AtomicReference<Throwable> failed = new AtomicReference<>();
+        if (Display.getCurrent() == display) {
+            runOnDisplayThread(display);
+            return;
+        }
         display.syncExec(() -> {
             try {
                 runOnDisplayThread(display);
