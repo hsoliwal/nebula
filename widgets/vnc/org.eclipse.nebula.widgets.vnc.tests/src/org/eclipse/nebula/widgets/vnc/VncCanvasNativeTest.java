@@ -38,6 +38,7 @@ import org.junit.Test;
  */
 public final class VncCanvasNativeTest {
     private static final int[] EXPECTED = {0xff0000, 0x00ff00, 0x0000ff, 0xffffff};
+    private static final int[] PATCHED = {0x00ffff, 0x00ff00, 0x0000ff, 0xffffff};
 
     @Test(timeout = 20000)
     public void nativeCanvasRendersDecodedPixelsAndDisposesItsResources() throws Exception {
@@ -64,6 +65,7 @@ public final class VncCanvasNativeTest {
                 display.getThread(), Thread.currentThread());
         ExecutorService peers = Executors.newSingleThreadExecutor();
         CountDownLatch releasePeer = new CountDownLatch(1);
+        CountDownLatch requestPatch = new CountDownLatch(1);
         try (ServerSocket server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             Future<?> serverTask = peers.submit(() -> {
                 try (Socket socket = server.accept()) {
@@ -107,6 +109,22 @@ public final class VncCanvasNativeTest {
                         output.writeByte(0);
                     }
                     output.flush();
+                    if (requestPatch.await(8, TimeUnit.SECONDS)) {
+                        // The next incremental request must precede the patch.
+                        assertEquals(3, input.readUnsignedByte());
+                        input.skipNBytes(9);
+                        output.writeByte(0);
+                        output.writeByte(0);
+                        output.writeShort(1);
+                        output.writeShort(0); output.writeShort(0);
+                        output.writeShort(1); output.writeShort(1);
+                        output.writeInt(0); // Raw single-pixel damage
+                        output.writeByte(0xff); // blue
+                        output.writeByte(0xff); // green
+                        output.writeByte(0x00); // red
+                        output.writeByte(0x00); // pad
+                        output.flush();
+                    }
                     releasePeer.await(10, TimeUnit.SECONDS);
                 } catch (Exception error) {
                     throw new AssertionError(error);
@@ -148,7 +166,26 @@ public final class VncCanvasNativeTest {
                 assertArrayEquals("Real SWT screen must show remote pixels",
                         EXPECTED, actual);
                 assertEquals("Require two settled matching captures", 2, stable);
+
+                requestPatch.countDown();
+                long updateDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                stable = 0;
+                while (System.nanoTime() < updateDeadline && stable < 2) {
+                    while (display.readAndDispatch()) {
+                        // Deliver the incremental one-pixel update.
+                    }
+                    if (canvas.getFrame() != null && canvas.getFrame().sequence() >= 3) {
+                        actual = captureFromScreen(display, canvas);
+                        stable = Arrays.equals(PATCHED, actual) ? stable + 1 : 0;
+                    }
+                    Thread.sleep(50);
+                }
+                assertNull("RFB peer failed during partial update", failure.get());
+                assertArrayEquals("Native image patch must replace only changed pixels",
+                        PATCHED, actual);
+                assertEquals(2, stable);
             } finally {
+                requestPatch.countDown();
                 releasePeer.countDown();
                 if (!canvas.isDisposed()) {
                     canvas.disconnect();
@@ -158,6 +195,7 @@ public final class VncCanvasNativeTest {
             serverTask.get(5, TimeUnit.SECONDS);
             assertTrue("SWT Canvas still alive after Shell disposal", canvas.isDisposed());
         } finally {
+            requestPatch.countDown();
             releasePeer.countDown();
             peers.shutdownNow();
         }
