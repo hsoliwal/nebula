@@ -24,7 +24,7 @@ jobs:
     env:
       SWT_GTK4: '0'
       GDK_BACKEND: x11
-      JAVA_TOOL_OPTIONS: -Dswt.widget.mode.Grid=${{ matrix.mode }}
+      JAVA_TOOL_OPTIONS: -Dswt.widget.mode.Grid=${{ matrix.mode }} -Dgrid.differential.out=${{ runner.temp }}/grid-native-pixels-${{ matrix.mode }}
       MAVEN_OPTS: -Xmx2g
     steps:
       - uses: actions/checkout@v5
@@ -77,6 +77,11 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb dbus-x11 libgtk-3-0
+      - name: Create native pixel evidence directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/grid-native-pixels-${{ matrix.mode }}"
       - name: Run original and viewport Tycho contracts in independent JVMs
         shell: bash
         run: |
@@ -136,3 +141,4 @@ jobs:
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/**/*surefire*.xml
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/*.xml
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/**/*.log
+            ${{ runner.temp }}/grid-native-pixels-${{ matrix.mode }}/*.png
