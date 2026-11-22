@@ -23,6 +23,11 @@
 					<useUIHarness>true</useUIHarness>
 					<useUIThread>true</useUIThread>
 					<failIfNoTests>true</failIfNoTests>
+					<systemProperties>
+						<!-- The existing differential fixture documents these worker settings. -->
+						<org.eclipse.nebula.visualization.xygraph.decimation.minSamples>2</org.eclipse.nebula.visualization.xygraph.decimation.minSamples>
+						<org.eclipse.nebula.visualization.xygraph.decimation.waitMillis>60000</org.eclipse.nebula.visualization.xygraph.decimation.waitMillis>
+					</systemProperties>
 					<excludes>
 						<!-- The ordinary suite does not claim a source-receiver qualification. -->
 						<exclude>**/Draw2dSourceReceiverTest.java</exclude>
