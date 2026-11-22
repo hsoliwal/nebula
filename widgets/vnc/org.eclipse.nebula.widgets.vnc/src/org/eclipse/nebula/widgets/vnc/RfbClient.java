@@ -534,7 +534,7 @@ public final class RfbClient implements AutoCloseable {
             switch (encoding) {
                 case ENCODING_RAW -> decodeRaw(input, x, y, w, h);
                 case ENCODING_COPY_RECT -> decodeCopy(input, x, y, w, h);
-                case ENCODING_HEXTILE -> decodeHextile(input, x, y, w, h);
+                case ENCODING_HEXTILE -> RfbHextileDecoder.decode(input, framebuffer, width, x, y, w, h);
                 case ENCODING_RRE -> tileDecoder.decodeRre(input, framebuffer, width, x, y, w, h);
                 case ENCODING_TRLE -> tileDecoder.decodeTrle(input, framebuffer, width, x, y, w, h);
                 case ENCODING_ZRLE -> tileDecoder.decodeZrle(input, framebuffer, width, x, y, w, h);
@@ -593,58 +593,6 @@ public final class RfbClient implements AutoCloseable {
                 System.arraycopy(framebuffer, (sourceY + row) * width + sourceX,
                         framebuffer, (y + row) * width + x, w);
             }
-        }
-    }
-
-    private void decodeHextile(DataInputStream input, int x, int y, int w, int h)
-            throws IOException {
-        int background = 0;
-        int foreground = 0;
-        for (int top = y; top < y + h; top += 16) {
-            for (int left = x; left < x + w; left += 16) {
-                int tw = Math.min(16, x + w - left);
-                int th = Math.min(16, y + h - top);
-                int flags = input.readUnsignedByte();
-                if ((flags & ~31) != 0 || (flags & 1) != 0 && flags != 1) {
-                    throw new IOException("Invalid Hextile subencoding flags");
-                }
-                if ((flags & 1) != 0) {
-                    decodeRaw(input, left, top, tw, th);
-                    continue;
-                }
-                if ((flags & 2) != 0) {
-                    background = readRgb(input);
-                }
-                if ((flags & 4) != 0) {
-                    foreground = readRgb(input);
-                }
-                fill(left, top, tw, th, background);
-                if ((flags & 8) != 0) {
-                    int count = input.readUnsignedByte();
-                    for (int i = 0; i < count; i++) {
-                        int color = (flags & 16) != 0 ? readRgb(input) : foreground;
-                        int pos = input.readUnsignedByte();
-                        int size = input.readUnsignedByte();
-                        int sx = pos >>> 4;
-                        int sy = pos & 15;
-                        int sw = (size >>> 4) + 1;
-                        int sh = (size & 15) + 1;
-                        if (sx + sw > tw || sy + sh > th) {
-                            throw new IOException("Hextile subrectangle exceeds tile");
-                        }
-                        fill(left + sx, top + sy, sw, sh, color);
-                    }
-                } else if ((flags & 16) != 0) {
-                    throw new IOException("Invalid Hextile colored-subrect flag");
-                }
-            }
-        }
-    }
-
-    private void fill(int x, int y, int w, int h, int rgb) {
-        for (int row = 0; row < h; row++) {
-            int start = (y + row) * width + x;
-            Arrays.fill(framebuffer, start, start + w, rgb);
         }
     }
 
