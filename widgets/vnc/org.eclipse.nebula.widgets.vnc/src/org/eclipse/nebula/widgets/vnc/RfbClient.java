@@ -67,7 +67,7 @@ public final class RfbClient implements AutoCloseable {
         private final int dirtyWidth;
         private final int dirtyHeight;
 
-        private Frame(int width, int height, int[] rgb, String title, long sequence,
+        Frame(int width, int height, int[] rgb, String title, long sequence,
                 int dirtyX, int dirtyY, int dirtyWidth, int dirtyHeight) {
             this(width, height, rgb, title, sequence,
                     dirtyX, dirtyY, dirtyWidth, dirtyHeight, true);
