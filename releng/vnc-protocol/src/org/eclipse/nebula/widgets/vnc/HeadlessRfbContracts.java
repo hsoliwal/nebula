@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Pure Java, no-JUnit/no-Maven smoke gate for the exact RFB product sources.
@@ -176,6 +177,8 @@ public final class HeadlessRfbContracts {
                     0, 1, InetAddress.getByName("127.0.0.1"))) {
             ExecutorService peerPool = Executors.newSingleThreadExecutor();
             CountDownLatch connected = new CountDownLatch(1);
+            CountDownLatch frameReady = new CountDownLatch(1);
+            AtomicReference<RfbClient.Frame> receivedFrame = new AtomicReference<>();
             Future<?> peer = peerPool.submit(() -> {
                 try (Socket socket = server.accept()) {
                     socket.setSoTimeout(5000);
@@ -231,6 +234,23 @@ public final class HeadlessRfbContracts {
                     check("café".equals(new String(clipboard,
                             StandardCharsets.ISO_8859_1)),
                             "Latin-1 clipboard wire contents");
+
+                    // A legal LastRect ends the update despite a placeholder
+                    // count of 65535, without waiting for any more rectangles.
+                    out.writeByte(0); // FramebufferUpdate
+                    out.writeByte(0); // padding
+                    out.writeShort(65535);
+                    out.writeShort(0); out.writeShort(0); // Raw rect origin
+                    out.writeShort(2); out.writeShort(1); // 2x1
+                    out.writeInt(0); // Raw
+                    out.write(new byte[] {0x33, 0x22, 0x11, 0,
+                            0x66, 0x55, 0x44, 0});
+                    out.writeShort(0); out.writeShort(0); // LastRect pos
+                    out.writeShort(0); out.writeShort(0); // LastRect empty
+                    out.writeInt(-224);
+                    out.flush();
+                    check(frameReady.await(4, TimeUnit.SECONDS),
+                            "LastRect did not complete the advertised update");
                 } catch (Exception error) {
                     throw new AssertionError("RFB scripted loopback peer failed", error);
                 }
@@ -240,6 +260,14 @@ public final class HeadlessRfbContracts {
                 public void connected(String title, int width, int height) {
                     check(width == 2 && height == 1, "ServerInit dimensions");
                     connected.countDown();
+                }
+
+                @Override
+                public void frame(RfbClient.Frame snapshot) {
+                    if (snapshot.sequence() >= 2) {
+                        receivedFrame.set(snapshot);
+                        frameReady.countDown();
+                    }
                 }
             })) {
                 client.connectAsync("127.0.0.1", server.getLocalPort(), null, false);
@@ -258,6 +286,11 @@ public final class HeadlessRfbContracts {
                 }
                 check(refused, "Unsupported legacy clipboard Unicode accepted");
                 peer.get(6, TimeUnit.SECONDS);
+                check(frameReady.await(3, TimeUnit.SECONDS),
+                        "Frame not published after LastRect");
+                check(Arrays.equals(receivedFrame.get().rgbCopy(),
+                        new int[] {0x112233, 0x445566}),
+                        "Decoded LastRect pixel data incorrect");
             } finally {
                 peerPool.shutdownNow();
             }
