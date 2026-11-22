@@ -149,6 +149,8 @@ public final class RfbClient implements AutoCloseable {
     private volatile int width;
     private volatile int height;
     private int[] framebuffer;
+    // Reused exclusively by the single RFB reader thread (including Hextile).
+    private byte[] rawScanline = new byte[0];
     private String title = "";
     private long sequence;
 
@@ -514,10 +516,18 @@ public final class RfbClient implements AutoCloseable {
 
     private void decodeRaw(DataInputStream input, int x, int y, int w, int h)
             throws IOException {
+        int required = w * 4; // negotiated 32-bit little-endian RGB888
+        if (rawScanline.length < required) {
+            rawScanline = new byte[required];
+        }
         for (int row = 0; row < h; row++) {
+            input.readFully(rawScanline, 0, required);
             int offset = (y + row) * width + x;
-            for (int col = 0; col < w; col++) {
-                framebuffer[offset + col] = readRgb(input);
+            for (int col = 0, bytePos = 0; col < w; col++, bytePos += 4) {
+                int blue = rawScanline[bytePos] & 0xff;
+                int green = rawScanline[bytePos + 1] & 0xff;
+                int red = rawScanline[bytePos + 2] & 0xff;
+                framebuffer[offset + col] = (red << 16) | (green << 8) | blue;
             }
         }
     }
@@ -550,7 +560,7 @@ public final class RfbClient implements AutoCloseable {
                 int tw = Math.min(16, x + w - left);
                 int th = Math.min(16, y + h - top);
                 int flags = input.readUnsignedByte();
-                if ((flags & ~31) != 0) {
+                if ((flags & ~31) != 0 || (flags & 1) != 0 && flags != 1) {
                     throw new IOException("Invalid Hextile subencoding flags");
                 }
                 if ((flags & 1) != 0) {
@@ -751,6 +761,10 @@ public final class RfbClient implements AutoCloseable {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
+            // No reader thread will ever own the Inflater if never started.
+            if (!started.get()) {
+                tileDecoder.close();
+            }
             Socket current = socket;
             if (current != null) {
                 try {
