@@ -109,7 +109,7 @@ jobs:
                              for k in ('failures', 'errors', 'skipped'))
           if set(found) != expected:
               raise SystemExit(f'RFB_WIRE_HOLD missing/extra suites: {found!r}')
-          if min(found.values()) < 1 or sum(found.values()) < 27 or nonpass:
+          if min(found.values()) < 1 or sum(found.values()) < 29 or nonpass:
               raise SystemExit(f'RFB_WIRE_HOLD suites={found!r} nonpass={nonpass}')
           print(f'RFB_WIRE_JAVA21_PASS tests={sum(found.values())} nonpass=0')
           RFB_PROOF

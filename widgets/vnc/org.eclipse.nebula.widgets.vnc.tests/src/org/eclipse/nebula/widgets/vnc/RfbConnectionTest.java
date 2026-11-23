@@ -199,4 +199,61 @@ public class RfbConnectionTest {
         }
     }
 
+    /**
+     * The connection takes ownership of the accepted transport before it
+     * begins the RFB handshake. An EOF must not strand that socket.
+     */
+    @Test
+    public void handshakeEofClosesAcceptedSocket() throws Exception {
+        java.util.concurrent.atomic.AtomicBoolean wasClosed =
+                new java.util.concurrent.atomic.AtomicBoolean();
+        Socket accepted = new Socket() {
+            @Override public void setSoTimeout(int timeout) { }
+            @Override public InputStream getInputStream() {
+                return new java.io.ByteArrayInputStream(
+                        "RFB 003.008\n".getBytes(StandardCharsets.US_ASCII));
+            }
+            @Override public OutputStream getOutputStream() { return new ByteArrayOutputStream(); }
+            @Override public synchronized void close() { wasClosed.set(true); }
+        };
+        assertThrows(java.io.EOFException.class, () -> new RfbConnection(accepted, new char[0],
+                new RfbConnection.Listener() {
+                    @Override public void changed(RfbFramebuffer f) { }
+                    @Override public void bell() { }
+                    @Override public void clipboard(String text) { }
+                    @Override public void failed(IOException exception) { }
+                }));
+        assertTrue("failed handshake leaked accepted socket", wasClosed.get());
+    }
+
+    /** A close failure is suppressed; the original handshake error wins. */
+    @Test
+    public void handshakeCloseFailureIsSuppressed() throws Exception {
+        IOException closeFailure = new IOException("synthetic transport close error");
+        java.util.concurrent.atomic.AtomicBoolean closeCalled =
+                new java.util.concurrent.atomic.AtomicBoolean();
+        Socket accepted = new Socket() {
+            @Override public void setSoTimeout(int timeout) { }
+            @Override public InputStream getInputStream() {
+                return new java.io.ByteArrayInputStream(
+                        "RFB 003.008\n".getBytes(StandardCharsets.US_ASCII));
+            }
+            @Override public OutputStream getOutputStream() { return new ByteArrayOutputStream(); }
+            @Override public synchronized void close() throws IOException {
+                closeCalled.set(true);
+                throw closeFailure;
+            }
+        };
+        IOException handshakeFailure = assertThrows(java.io.EOFException.class,
+                () -> new RfbConnection(accepted, new char[0], new RfbConnection.Listener() {
+                    @Override public void changed(RfbFramebuffer f) { }
+                    @Override public void bell() { }
+                    @Override public void clipboard(String text) { }
+                    @Override public void failed(IOException exception) { }
+                }));
+        assertTrue(closeCalled.get());
+        assertEquals(1, handshakeFailure.getSuppressed().length);
+        assertTrue("close failure replaced or lost", handshakeFailure.getSuppressed()[0] == closeFailure);
+    }
+
 }
