@@ -41,6 +41,9 @@ public final class HtmlPositionedLayout {
 	private final int[] x, y, width, height, localY, containing, tableOf;
 	/* Effective clip and hidden-scrollport ancestors; out-of-flow boxes start at their containing block. */
 	private final int[] clipAncestor, scrollAncestor;
+	/* Parent-owned programmatic scroll lanes; content indexes retain stable geometry during projection. */
+	private final int[] panelScrollY, panelScrollLimit, panelBottom;
+	private int activePanels;
 	private final int[] before, after, leadGap, trailGap, extraIndent, accountedIndent;
 	private final boolean[] fixed;
 	private final int[] blockX, blockY, blockWidth, blockHeight, blockInset, blockContentTop;
@@ -65,6 +68,7 @@ public final class HtmlPositionedLayout {
 		x = new int[n]; y = new int[n]; width = new int[n]; height = new int[n]; localY = new int[n];
 		clipAncestor = new int[n];
 		scrollAncestor = new int[n];
+		panelScrollY = new int[n]; panelScrollLimit = new int[n]; panelBottom = new int[n];
 		clipAncestor[0] = -1;
 		scrollAncestor[0] = -1;
 		containing = new int[n]; tableOf = new int[n]; fixed = new boolean[n];
@@ -85,6 +89,7 @@ public final class HtmlPositionedLayout {
 		Arrays.fill(columns, null);
 		Arrays.fill(tableOf, -1);
 		Arrays.fill(minimum, 0);
+		Arrays.fill(panelBottom, Integer.MIN_VALUE);
 		Arrays.fill(preferred, 0);
 		prepareBoxes();
 		boolean shrink = false;
@@ -111,6 +116,29 @@ public final class HtmlPositionedLayout {
 			if (!fixed[e] && firstClip(e, true) < 0) totalHeight = Math.max(totalHeight, add(blockY[b], blockHeight[b]));
 		}
 		totalHeight = Math.max(0, totalHeight);
+		// Descendants feed only their nearest effective hidden scroll container. Nested
+		// scrollports contribute their own border box to their enclosing container.
+		for (int e = 1; e < doc.boxCount; e++) {
+			int panel = scrollAncestor[e];
+			if (panel >= 0) panelBottom[panel] = Math.max(panelBottom[panel],
+					add(add(y[e], height[e]), after[e]));
+		}
+		for (int b = 0; b < doc.blockCount; b++) {
+			int owner = doc.blockBox[b];
+			int panel = doc.boxOverflow[owner] == HtmlStyles.OVERFLOW_HIDDEN
+					? owner : scrollAncestor[owner];
+			if (panel >= 0) {
+				panelBottom[panel] = Math.max(panelBottom[panel], add(blockY[b], blockHeight[b]));
+			}
+		}
+		activePanels = 0;
+		for (int e = 1; e < doc.boxCount; e++) {
+			if (doc.boxOverflow[e] != HtmlStyles.OVERFLOW_HIDDEN) continue;
+			int viewportBottom = add(add(y[e], height[e]), -doc.boxBorder[e]);
+			panelScrollLimit[e] = Math.max(0, clamp((long) panelBottom[e] - viewportBottom));
+			panelScrollY[e] = Math.min(panelScrollY[e], panelScrollLimit[e]);
+			if (panelScrollY[e] != 0) activePanels++;
+		}
 		indexIntervals();
 	}
 
@@ -199,6 +227,18 @@ public final class HtmlPositionedLayout {
 		visibleCount = 0;
 		if (extent <= 0) return 0;
 		projectSticky(scroll);
+		if (activePanels != 0) {
+			// The ordinary interval tree is based on unscrolled content. Until nested
+			// translated interval indexes exist, use exact paint-order geometry.
+			long bottom = (long) pageTop + extent;
+			for (int step = 0; step < order.size(); step++) {
+				int i = order.index(step);
+				int top = order.isBackground(step) ? boxY(i, scroll) : blockY(i, scroll);
+				int h = stepHeight(step);
+				if (h > 0 && top < bottom && (long) top + h > pageTop) visible[visibleCount++] = step;
+			}
+			return visibleCount;
+		}
 		collect(normalKeys, normalMax, 1, 0, normalMax.length / 2, pageTop, (long) pageTop + extent);
 		if (fixedKeys.length != 0 && ((fixedKeys[0] >> 32) + scroll < Integer.MIN_VALUE + 1L
 				|| (fixedKeys[fixedKeys.length - 1] >> 32) + scroll > Integer.MAX_VALUE)) {
@@ -543,7 +583,8 @@ public final class HtmlPositionedLayout {
 			// Hidden supplies an unscrolled local scrollport; clip only cuts paint and retains viewport stickiness.
 			int scrollBox = scrollAncestor[e];
 			int scrollMotion = scrollBox >= 0 && motionOwner[scrollBox] >= 0 ? stickyShift[motionOwner[scrollBox]] : 0;
-			long scrollTop = scrollBox < 0 ? scroll : (long) y[scrollBox] + doc.boxBorder[scrollBox] + scrollMotion;
+			long scrollTop = scrollBox < 0 ? scroll : (long) y[scrollBox] + doc.boxBorder[scrollBox]
+					+ scrollMotion + panelScrollY[scrollBox];
 			long requested = scrollTop + doc.boxTop[e] - y[e] - gap - inherited;
 			long limit = end - y[e] - height[e] - after[e] - inherited;
 			stickyShift[e] = clamp(inherited + Math.max(0L, Math.min(requested, limit)));
@@ -583,12 +624,58 @@ public final class HtmlPositionedLayout {
 	public boolean hasFixed() { return hasFixed; }
 	public boolean hasSticky() { return stickyCount != 0; }
 	public int blockX(int block) { return blockX[block]; }
-	public int blockY(int block, int scroll) { return add(blockY[block], projection(doc.blockBox[block], scroll)); }
+	public int blockY(int block, int scroll) {
+		int box = doc.blockBox[block];
+		int displacement = panelDisplacement(box);
+		if (doc.boxOverflow[box] == HtmlStyles.OVERFLOW_HIDDEN) {
+			displacement = add(displacement, panelScrollY[box]);
+		}
+		return add(add(blockY[block], projection(box, scroll)), -displacement);
+	}
 	public int blockWidth(int block) { return blockWidth[block]; }
 	public int blockHeight(int block) { return blockHeight[block]; }
 	public int blockContentTop(int block) { return blockContentTop[block]; }
 	public int boxX(int box) { return x[box]; }
-	public int boxY(int box, int scroll) { return add(y[box], projection(box, scroll)); }
+	public int boxY(int box, int scroll) {
+		return add(add(y[box], projection(box, scroll)), -panelDisplacement(box));
+	}
+
+	private int panelDisplacement(int box) {
+		if (activePanels == 0) return 0;
+		long value = 0;
+		for (int parent = scrollAncestor[box]; parent >= 0; parent = scrollAncestor[parent]) {
+			value += panelScrollY[parent];
+		}
+		return clamp(value);
+	}
+
+	/** Current vertical offset within one HTML box (index lifetime: current document only). */
+	public int panelScrollY(int box) {
+		return box >= 0 && box < panelScrollY.length ? panelScrollY[box] : 0;
+	}
+
+	/** Maximum programmatic vertical offset; clip and visible never become scrollports. */
+	public int panelScrollLimit(int box) {
+		return box >= 0 && box < panelScrollLimit.length ? panelScrollLimit[box] : 0;
+	}
+
+	/**
+	 * Scroll only CSS overflow:hidden, never overflow:clip. No SWT state is touched:
+	 * the owning Canvas must invalidate paint and reposition native controls.
+	 * Returns false when rejected or unchanged.
+	 */
+	public boolean scrollPanelTo(int box, int targetY) {
+		if (box <= 0 || box >= panelScrollY.length
+				|| doc.boxOverflow[box] != HtmlStyles.OVERFLOW_HIDDEN) return false;
+		int next = Math.max(0, Math.min(targetY, panelScrollLimit[box]));
+		int previous = panelScrollY[box];
+		if (next == previous) return false;
+		panelScrollY[box] = next;
+		if (previous == 0 && next != 0) activePanels++;
+		else if (previous != 0 && next == 0) activePanels--;
+		projectionValid = false;
+		return true;
+	}
 	public int boxWidth(int box) { return width[box]; }
 	public int boxHeight(int box) { return height[box]; }
 

@@ -461,6 +461,28 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	/** Scrolls so that page y {@code y} is at the top (clamped). */
+	/**
+	 * Programmatic scrolling in one CSS overflow:hidden panel. Indices are scoped
+	 * to the current parsed document and must not be persisted across navigation.
+	 * CSS overflow:clip always refuses this operation.
+	 */
+	public boolean scrollPanelTo(int box, int offset) {
+		checkWidget();
+		if (remoteFrameImage != null) return false;
+		HtmlPositionedLayout scene = layout.positioned();
+		if (scene == null || !scene.scrollPanelTo(box, offset)) return false;
+		redraw();
+		placeWidgets();
+		return true;
+	}
+
+	/** Current programmatic panel offset (0 for an invalid or non-scrollable box). */
+	public int panelScrollY(int box) {
+		checkWidget();
+		HtmlPositionedLayout scene = layout.positioned();
+		return scene == null ? 0 : scene.panelScrollY(box);
+	}
+
 	public void setScrollY(int y) {
 		checkWidget();
 		scrollTo(y);

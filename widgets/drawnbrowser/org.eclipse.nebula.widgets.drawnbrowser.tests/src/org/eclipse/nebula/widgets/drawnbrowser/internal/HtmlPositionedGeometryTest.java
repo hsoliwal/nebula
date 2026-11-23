@@ -616,6 +616,80 @@ public class HtmlPositionedGeometryTest {
 		assertEquals(Integer.MAX_VALUE, scene.layout.blockY(0, 0));
 	}
 
+	@Test
+	public void hiddenPanelCanProgrammaticallyScrollWithoutGrowingOuterDocument() {
+		Scene scene = new Scene("<section style='position:relative;height:40px;overflow:hidden'>"
+				+ "<p style='position:absolute;top:120px;width:20px;height:20px'>hidden</p></section>"
+				+ "<p>after</p>", 200, 100);
+		int content = scene.document.blockBox[0];
+		int panel = scene.document.boxParent[content];
+		assertEquals(70, scene.layout.totalHeight());
+		assertTrue(scene.layout.panelScrollLimit(panel) >= 100);
+		int before = scene.layout.blockY(0, 0);
+		assertTrue(scene.layout.scrollPanelTo(panel, 50));
+		assertEquals(50, scene.layout.panelScrollY(panel));
+		assertEquals(before - 50, scene.layout.blockY(0, 0));
+		assertEquals("panel border stays stationary", 0, scene.layout.boxY(panel, 0));
+		assertEquals("following flow unaffected", 40, scene.layout.blockY(1, 0));
+		assertEquals(70, scene.layout.totalHeight());
+		assertVisible(scene, 0, 40, 0);
+		assertTrue(scene.layout.scrollPanelTo(panel, Integer.MAX_VALUE));
+		assertEquals(scene.layout.panelScrollLimit(panel), scene.layout.panelScrollY(panel));
+	}
+
+	@Test
+	public void panelsCanScrollTheirOwnTextWithoutMovingTheirBorder() {
+		Scene scene = new Scene("<section style='height:40px;overflow:hidden'>plain own text</section>"
+				+ "<p>after</p>", 200, 100, 200, 20);
+		int box = scene.document.blockBox[0];
+		assertTrue(scene.layout.panelScrollLimit(box) >= 160);
+		int before = scene.layout.blockY(0, 0), borderY = scene.layout.boxY(box, 0);
+		assertTrue(scene.layout.scrollPanelTo(box, 50));
+		assertEquals(before - 50, scene.layout.blockY(0, 0));
+		assertEquals(borderY, scene.layout.boxY(box, 0));
+		assertEquals("following sibling remains stationary", 40, scene.layout.blockY(1, 0));
+	}
+
+	@Test
+	public void clipPanelRejectsProgrammaticScrollAndHasNoScrollLimit() {
+		Scene scene = new Scene("<section style='position:relative;height:40px;overflow:clip'>"
+				+ "<p style='position:absolute;top:100px;width:20px;height:20px'>clipped</p>"
+				+ "</section>", 200, 100);
+		int box = scene.document.boxParent[scene.document.blockBox[0]];
+		int before = scene.layout.blockY(0, 0);
+		assertEquals(0, scene.layout.panelScrollLimit(box));
+		assertTrue(!scene.layout.scrollPanelTo(box, 100));
+		assertEquals(before, scene.layout.blockY(0, 0));
+	}
+
+	@Test
+	public void panelOffsetIsClampedPreservedOnRelayoutAndReturnedToZero() {
+		Scene scene = new Scene("<main style='position:relative;height:30px;overflow:hidden'>"
+				+ "<p style='position:absolute;top:90px;width:20px;height:20px'>child</p>"
+				+ "</main>", 200, 100);
+		int box = scene.document.boxParent[scene.document.blockBox[0]];
+		assertTrue(scene.layout.scrollPanelTo(box, 55));
+		assertEquals(55, scene.layout.panelScrollY(box));
+		scene.layout.layout(250, 100, scene.metrics);
+		assertEquals(55, scene.layout.panelScrollY(box));
+		assertTrue(scene.layout.scrollPanelTo(box, -20));
+		assertEquals(0, scene.layout.panelScrollY(box));
+		assertTrue(!scene.layout.scrollPanelTo(box, 0));
+	}
+
+	@Test
+	public void fixedDescendantDoesNotMoveWithAnUnrelatedHiddenPanelScroll() {
+		Scene scene = new Scene("<section style='position:relative;height:40px;overflow:hidden'>"
+				+ "<p style='position:fixed;top:10px;width:20px;height:20px'>fixed</p>"
+				+ "<p style='position:absolute;top:100px;width:20px;height:20px'>normal</p>"
+				+ "</section>", 200, 100);
+		int box = scene.document.boxParent[scene.document.blockBox[0]];
+		int fixedY = scene.layout.blockY(0, 0), moving = scene.layout.blockY(1, 0);
+		assertTrue(scene.layout.scrollPanelTo(box, 80));
+		assertEquals(fixedY, scene.layout.blockY(0, 0));
+		assertEquals(moving - 80, scene.layout.blockY(1, 0));
+	}
+
 	private static void assertVisible(Scene scene, int top, int extent, int scroll) {
 		HtmlPaintOrder order = scene.layout.order();
 		int[] expected = new int[order.size()];
