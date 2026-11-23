@@ -43,6 +43,10 @@ final class RfbConnection implements AutoCloseable {
     private final DataOutputStream out;
     private final Listener listener;
     private final Object writeLock = new Object();
+    /** Never hold this lock across socket reads or decompression. */
+    private final Object decoderLifecycle = new Object();
+    private int readingPackets;
+    private boolean inflatersReleased;
     private final RfbFramebuffer framebuffer;
     private final String serverName;
     private final Inflater zlib = new Inflater();
@@ -50,10 +54,13 @@ final class RfbConnection implements AutoCloseable {
     private volatile boolean closed;
 
     RfbConnection(Socket socket, char[] password, Listener listener) throws IOException {
-        this.socket = Objects.requireNonNull(socket, "socket");
-        this.listener = Objects.requireNonNull(listener, "listener");
-        Objects.requireNonNull(password, "password");
-        socket.setSoTimeout(10_000);
+        this.socket = socket;
+        this.listener = listener;
+        try {
+            Objects.requireNonNull(socket, "socket");
+            Objects.requireNonNull(listener, "listener");
+            Objects.requireNonNull(password, "password");
+            socket.setSoTimeout(10_000);
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
         int minor = negotiateProtocol();
@@ -71,6 +78,12 @@ final class RfbConnection implements AutoCloseable {
         configureEncodings();
         requestUpdate(false);
         socket.setSoTimeout(0); // idle sessions remain connected until explicitly closed
+        } catch (IOException | RuntimeException failure) {
+            // A constructor that fails never exposes a connection to close().
+            zlib.end();
+            zrle.end();
+            throw failure;
+        }
     }
 
     RfbFramebuffer framebuffer() {
@@ -233,8 +246,14 @@ final class RfbConnection implements AutoCloseable {
 
     /** One packet, exposed to package tests; only the receiver thread calls it. */
     void readPacket() throws IOException {
-        int message = in.readUnsignedByte();
-        switch (message) {
+        synchronized (decoderLifecycle) {
+            if (closed) throw new IOException("RFB connection is closed");
+            if (readingPackets != 0) throw new IOException("Concurrent RFB packet reader");
+            readingPackets++;
+        }
+        try {
+            int message = in.readUnsignedByte();
+            switch (message) {
             case 0 -> readFramebufferUpdate();
             case 1 -> {
                 in.readUnsignedByte(); // padding
@@ -249,7 +268,21 @@ final class RfbConnection implements AutoCloseable {
                 listener.clipboard(new String(readBytes(length), StandardCharsets.ISO_8859_1));
             }
             default -> throw new IOException("Unsupported RFB server message " + message);
+            }
+        } finally {
+            synchronized (decoderLifecycle) {
+                readingPackets--;
+                if (closed && readingPackets == 0) releaseInflaters();
+            }
         }
+    }
+
+    /** Guarded by decoderLifecycle; never release while a packet uses zlib. */
+    private void releaseInflaters() {
+        if (inflatersReleased) return;
+        inflatersReleased = true;
+        zlib.end();
+        zrle.end();
     }
 
     private void readFramebufferUpdate() throws IOException {
@@ -535,13 +568,18 @@ final class RfbConnection implements AutoCloseable {
 
     @Override
     public void close() {
-        closed = true;
-        zlib.end();
-        zrle.end();
+        // The UI thread must interrupt socket reads without waiting for the
+        // decoder: native Inflaters are released by its final packet exit.
+        synchronized (decoderLifecycle) {
+            closed = true;
+        }
         try {
             socket.close();
         } catch (IOException ignored) {
             // Closing on shutdown must never prevent SWT disposal.
+        }
+        synchronized (decoderLifecycle) {
+            if (readingPackets == 0) releaseInflaters();
         }
     }
 }
