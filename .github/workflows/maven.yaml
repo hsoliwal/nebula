@@ -171,15 +171,28 @@ jobs:
             'HtmlControlStylesTest',
             'HtmlStackingCompositionTest',
         }
+        required_scroll_methods = {
+            'hiddenPanelCanProgrammaticallyScrollWithoutGrowingOuterDocument',
+            'panelsCanScrollTheirOwnTextWithoutMovingTheirBorder',
+            'clipPanelRejectsProgrammaticScrollAndHasNoScrollLimit',
+            'panelOffsetIsClampedPreservedOnRelayoutAndReturnedToZero',
+            'fixedDescendantDoesNotMoveWithAnUnrelatedHiddenPanelScroll',
+        }
         seen = set()
+        seen_scroll_methods = set()
         for f in reports:
             doc = ET.parse(f).getroot()
             for case in doc.iter('testcase'):
-                seen.add(case.attrib.get('classname', '').rsplit('.', 1)[-1])
+                classname = case.attrib.get('classname', '').rsplit('.', 1)[-1]
+                seen.add(classname)
+                if classname == 'HtmlPositionedGeometryTest':
+                    seen_scroll_methods.add(case.attrib.get('name', ''))
         missing = sorted(required - seen)
-        print(f'DrawnBrowser tests={tests} failures+errors={failed} skipped={skipped} missing_classes={missing}')
-        if tests < 389 or failed or skipped or missing:
-            sys.exit('FAIL: expected >=389 GTK3 native tests, five stacking/control test classes, zero failed/skipped')
+        missing_scroll = sorted(required_scroll_methods - seen_scroll_methods)
+        print(f'DrawnBrowser tests={tests} failures+errors={failed} skipped={skipped} '
+              f'missing_classes={missing} missing_scroll_methods={missing_scroll}')
+        if tests < 394 or failed or skipped or missing or missing_scroll:
+            sys.exit('FAIL: require >=394 GTK3 cases, five control classes, five panel-scroll methods, zero failure/skip')
         PY
     - name: Build All Widgets
       shell: bash
