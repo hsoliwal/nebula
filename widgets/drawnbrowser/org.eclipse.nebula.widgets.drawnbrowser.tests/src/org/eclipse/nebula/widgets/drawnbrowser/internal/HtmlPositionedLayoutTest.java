@@ -9,6 +9,7 @@
 package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -43,6 +44,41 @@ public class HtmlPositionedLayoutTest {
 		assertEquals(30, l.top(0));
 		assertEquals(80, l.textLayout(0).getWidth());
 		assertTrue(l.textLayout(0).getLineCount() > 1);
+	}
+
+	@Test
+	public void overflowClipsChildrenAndReversePaintOrderHitTesting() {
+		HtmlLayout l = layout("<div style='position:relative;width:100px;height:40px;border:2px solid red;overflow:hidden'>"
+				+ "<div style='position:absolute;left:80px;top:5px;width:60px;height:20px'>"
+				+ "<a href='child'>child</a></div></div>", 400, 200);
+		HtmlPositionedLayout scene = l.positioned();
+		assertTrue(scene.hasClip(1, true));
+		assertTrue("a panel paints its own border before clipping its content", !scene.hasClip(1, false));
+		assertTrue(scene.hasClip(2, false));
+		int[] region = { 0, 0, 400, 200 };
+		assertTrue(scene.clipBounds(2, false, 0, region));
+		assertEquals(scene.boxX(1) + 2, region[0]);
+		assertEquals(scene.boxX(1) + scene.boxWidth(1) - 2, region[2]);
+		int y = scene.boxY(2, 0) + 10;
+		assertEquals("visible child remains pickable", 0, scene.blockAt(region[2] - 8, y, 0));
+		assertEquals("a fragment outside its panel cannot intercept input", -1, scene.blockAt(region[2] + 5, y, 0));
+	}
+
+	@Test
+	public void nestedOverflowClipsIntersectAndFixedProjectionKeepsScreenClip() {
+		HtmlLayout l = layout("<div style='position:fixed;top:12px;left:20px;width:110px;height:50px;overflow:hidden;border:3px solid blue'>"
+				+ "<div style='position:relative;left:60px;top:10px;width:70px;height:40px;overflow:clip;border:2px solid red'>"
+				+ "<p>nested link text</p></div></div>" + "<p>scroll</p>".repeat(60), 400, 180);
+		HtmlPositionedLayout scene = l.positioned();
+		assertTrue(scene.hasClip(3, true));
+		int[] before = { 0, 0, 400, 180 };
+		assertTrue(scene.clipBounds(3, true, 0, before));
+		assertEquals("outer right edge still constrains the inner clip", scene.boxX(1) + scene.boxWidth(1) - 3, before[2]);
+		l.setViewport(180, 125);
+		scene = l.positioned();
+		int[] after = { 0, 0, 400, 180 };
+		assertTrue(scene.clipBounds(3, true, 125, after));
+		assertArrayEquals("fixed panel clips in viewport pixels while scrolling", before, after);
 	}
 
 	@Test

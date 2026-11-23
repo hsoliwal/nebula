@@ -45,6 +45,47 @@ public class HtmlLayoutTest {
 	}
 
 	@Test
+	public void aFixedSidebarKeepsItsBasisWhileTheContentPanelShrinksAndResizes() {
+		HtmlLayout l = layout("<div style='display:flex;gap:10px'><div style='flex:0 0 240px'>i</div>"
+				+ "<div style='flex:0 1 200px'>j</div></div>", 320);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 240, 70 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(250, l.cellX(1));
+		l.setWidth(400);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 240, 150 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(400, l.cellX(1) + l.cellWidth(1));
+	}
+
+	@Test
+	public void fractionalPanelShrinkMayLeaveOverflow() {
+		HtmlLayout l = layout("<div style='display:flex'><div style='flex:0 .25 100px'>i</div>"
+				+ "<div style='flex:0 .25 100px'>j</div></div>", 100);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 75, 75 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals("half the original deficit remains", 150, l.cellX(1) + l.cellWidth(1));
+	}
+
+	@Test
+	public void panelPaddingIsExcludedFromShrinkWeights() {
+		HtmlLayout l = layout("<div style='display:flex'><div style='flex:0 1 100px;padding:10px'>i</div>"
+				+ "<div style='flex:0 1 100px'>j</div></div>", 120);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 70, 50 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(10, l.indent(0));
+		assertEquals(70, l.cellX(1));
+	}
+
+	@Test
+	public void fixedPanelsResolveAutoBasisAgainstWidthInEitherDeclarationOrder() {
+		HtmlLayout l = layout("<div style='display:flex'><div style='width:120px;flex:none'>i</div>"
+				+ "<div style='flex:none;width:120px'>j</div></div>", 150);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 120, 120 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(120, l.cellX(1));
+	}
+
+	@Test
 	public void preDoesNotWrapIsMonospaceAndARuleIsThin() {
 		String line = "a long line of code that would wrap at this narrow width without pre";
 		HtmlLayout l = layout("<p>" + line + "</p><pre>" + line + "</pre><hr><p>after <code>x</code></p>", 120);

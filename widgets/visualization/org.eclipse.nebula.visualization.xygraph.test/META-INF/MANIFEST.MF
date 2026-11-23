@@ -6,5 +6,7 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: Eclipse Nebula
 Fragment-Host: org.eclipse.nebula.visualization.xygraph
 Bundle-RequiredExecutionEnvironment: JavaSE-11
-Require-Bundle: org.junit
+Require-Bundle: org.junit,
+ org.eclipse.core.runtime,
+ org.eclipse.osgi
 Automatic-Module-Name: org.eclipse.nebula.widgets.tablecombo.example
