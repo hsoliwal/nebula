@@ -42,7 +42,11 @@ public final class HtmlPositionedLayout {
 	/* Effective clip and hidden-scrollport ancestors; out-of-flow boxes start at their containing block. */
 	private final int[] clipAncestor, scrollAncestor;
 	/* Parent-owned programmatic scroll lanes; content indexes retain stable geometry during projection. */
-	private final int[] panelScrollY, panelScrollLimit, panelBottom;
+	private final int[] panelScrollY, panelScrollLimit, panelBottom, panelAccumulatedY;
+	private boolean panelAccumulationDirty = true;
+	/* Same original interval-index owner, partitioned by nearest scrollport. */
+	private final long[][] panelNormalKeys, panelFixedKeys, panelNormalMax, panelFixedMax;
+	private int[] indexedPanels = new int[0];
 	private int activePanels;
 	private final int[] before, after, leadGap, trailGap, extraIndent, accountedIndent;
 	private final boolean[] fixed;
@@ -69,6 +73,9 @@ public final class HtmlPositionedLayout {
 		clipAncestor = new int[n];
 		scrollAncestor = new int[n];
 		panelScrollY = new int[n]; panelScrollLimit = new int[n]; panelBottom = new int[n];
+		panelAccumulatedY = new int[n];
+		panelNormalKeys = new long[n][]; panelFixedKeys = new long[n][];
+		panelNormalMax = new long[n][]; panelFixedMax = new long[n][];
 		clipAncestor[0] = -1;
 		scrollAncestor[0] = -1;
 		containing = new int[n]; tableOf = new int[n]; fixed = new boolean[n];
@@ -139,6 +146,7 @@ public final class HtmlPositionedLayout {
 			panelScrollY[e] = Math.min(panelScrollY[e], panelScrollLimit[e]);
 			if (panelScrollY[e] != 0) activePanels++;
 		}
+		panelAccumulationDirty = true;
 		indexIntervals();
 	}
 
@@ -188,28 +196,60 @@ public final class HtmlPositionedLayout {
 
 	private void indexIntervals() {
 		int ordinary = 0, stationary = 0, moving = 0;
+		int[] normalCounts = new int[doc.boxCount], fixedCounts = new int[doc.boxCount];
 		for (int s = 0; s < order.size(); s++) {
-			if (stepMoving(s)) moving++; else if (stepFixed(s)) stationary++; else ordinary++;
+			int panel = stepScrollOwner(s);
+			if (stepMoving(s)) moving++;
+			else if (panel >= 0) {
+				if (stepFixed(s)) fixedCounts[panel]++; else normalCounts[panel]++;
+			} else if (stepFixed(s)) stationary++;
+			else ordinary++;
 		}
 		if (normalKeys.length != ordinary) normalKeys = new long[ordinary];
 		if (fixedKeys.length != stationary) fixedKeys = new long[stationary];
 		if (movingSteps.length != moving) movingSteps = new int[moving];
+		int panels = 0;
+		for (int e = 1; e < doc.boxCount; e++) {
+			if (normalCounts[e] != 0 || fixedCounts[e] != 0) panels++;
+			panelNormalKeys[e] = arrayOf(panelNormalKeys[e], normalCounts[e]);
+			panelFixedKeys[e] = arrayOf(panelFixedKeys[e], fixedCounts[e]);
+		}
+		indexedPanels = new int[panels];
+		int[] normalOffsets = new int[doc.boxCount], fixedOffsets = new int[doc.boxCount];
+		panels = 0;
+		for (int e = 1; e < doc.boxCount; e++)
+			if (normalCounts[e] != 0 || fixedCounts[e] != 0) indexedPanels[panels++] = e;
 		ordinary = stationary = moving = 0;
 		for (int s = 0; s < order.size(); s++) {
 			long key = (long) stepY(s) << 32 | s & 0xFFFFFFFFL;
+			int panel = stepScrollOwner(s);
 			if (stepMoving(s)) movingSteps[moving++] = s;
-			else if (stepFixed(s)) fixedKeys[stationary++] = key; else normalKeys[ordinary++] = key;
+			else if (panel >= 0) {
+				if (stepFixed(s)) panelFixedKeys[panel][fixedOffsets[panel]++] = key;
+				else panelNormalKeys[panel][normalOffsets[panel]++] = key;
+			} else if (stepFixed(s)) fixedKeys[stationary++] = key;
+			else normalKeys[ordinary++] = key;
 		}
 		Arrays.sort(normalKeys);
 		Arrays.sort(fixedKeys);
 		normalMax = maxima(normalKeys, normalMax);
 		fixedMax = maxima(fixedKeys, fixedMax);
+		for (int panel : indexedPanels) {
+			Arrays.sort(panelNormalKeys[panel]);
+			Arrays.sort(panelFixedKeys[panel]);
+			panelNormalMax[panel] = maxima(panelNormalKeys[panel], panelNormalMax[panel]);
+			panelFixedMax[panel] = maxima(panelFixedKeys[panel], panelFixedMax[panel]);
+		}
+	}
+
+	private static long[] arrayOf(long[] source, int length) {
+		return source != null && source.length == length ? source : new long[length];
 	}
 
 	private long[] maxima(long[] keys, long[] tree) {
 		int leaves = 1;
 		while (leaves < keys.length) leaves *= 2;
-		if (tree.length != 2 * leaves) tree = new long[2 * leaves];
+		if (tree == null || tree.length != 2 * leaves) tree = new long[2 * leaves];
 		Arrays.fill(tree, Long.MIN_VALUE);
 		for (int k = 0; k < keys.length; k++) {
 			int step = (int) keys[k];
@@ -227,18 +267,6 @@ public final class HtmlPositionedLayout {
 		visibleCount = 0;
 		if (extent <= 0) return 0;
 		projectSticky(scroll);
-		if (activePanels != 0) {
-			// The ordinary interval tree is based on unscrolled content. Until nested
-			// translated interval indexes exist, use exact paint-order geometry.
-			long bottom = (long) pageTop + extent;
-			for (int step = 0; step < order.size(); step++) {
-				int i = order.index(step);
-				int top = order.isBackground(step) ? boxY(i, scroll) : blockY(i, scroll);
-				int h = stepHeight(step);
-				if (h > 0 && top < bottom && (long) top + h > pageTop) visible[visibleCount++] = step;
-			}
-			return visibleCount;
-		}
 		collect(normalKeys, normalMax, 1, 0, normalMax.length / 2, pageTop, (long) pageTop + extent);
 		if (fixedKeys.length != 0 && ((fixedKeys[0] >> 32) + scroll < Integer.MIN_VALUE + 1L
 				|| (fixedKeys[fixedKeys.length - 1] >> 32) + scroll > Integer.MAX_VALUE)) {
@@ -250,6 +278,13 @@ public final class HtmlPositionedLayout {
 		} else {
 			collect(fixedKeys, fixedMax, 1, 0, fixedMax.length / 2, (long) pageTop - scroll, (long) pageTop - scroll + extent);
 		}
+		for (int panel : indexedPanels) {
+			int displacement = add(panelDisplacement(panel), panelScrollY[panel]);
+			collectPanel(panelNormalKeys[panel], panelNormalMax[panel], displacement, 0,
+					pageTop, extent, scroll);
+			collectPanel(panelFixedKeys[panel], panelFixedMax[panel], displacement, scroll,
+					pageTop, extent, scroll);
+		}
 		for (int step : movingSteps) {
 			int i = order.index(step);
 			int top = order.isBackground(step) ? boxY(i, scroll) : blockY(i, scroll);
@@ -258,6 +293,32 @@ public final class HtmlPositionedLayout {
 		}
 		Arrays.sort(visible, 0, visibleCount);
 		return visibleCount;
+	}
+
+	/**
+	 * Indexed per-panel query. Only endpoint saturation takes the bounded fallback
+	 * because the original scene clamps intermediate int coordinates.
+	 */
+	private void collectPanel(long[] keys, long[] tree, long displacement, int fixedMotion,
+			int pageTop, int extent, int scroll) {
+		if (keys.length == 0) return;
+		long first = keys[0] >> 32, last = keys[keys.length - 1] >> 32;
+		long movedFirst = first + fixedMotion, movedLast = last + fixedMotion;
+		long projectedFirst = movedFirst - displacement, projectedLast = movedLast - displacement;
+		if (movedFirst < Integer.MIN_VALUE + 1L || movedLast > Integer.MAX_VALUE
+				|| projectedFirst < Integer.MIN_VALUE + 1L || projectedLast > Integer.MAX_VALUE) {
+			for (long key : keys) {
+				int step = (int) key, index = order.index(step);
+				int y = order.isBackground(step) ? boxY(index, scroll) : blockY(index, scroll);
+				int h = stepHeight(step);
+				if (h > 0 && y < (long) pageTop + extent && (long) y + h > pageTop)
+					visible[visibleCount++] = step;
+			}
+			return;
+		}
+		collect(keys, tree, 1, 0, tree.length / 2,
+				(long) pageTop - fixedMotion + displacement,
+				(long) pageTop + extent - fixedMotion + displacement);
 	}
 
 	/* Tree depth is logarithmic in the number of fragments, independent of HTML nesting depth. */
@@ -274,6 +335,13 @@ public final class HtmlPositionedLayout {
 	}
 
 	public int visibleStep(int index) { return visible[index]; }
+
+	/* Backgrounds stay fixed to their own panel; direct text is scrolled by that panel. */
+	private int stepScrollOwner(int step) {
+		int index = order.index(step), box = order.isBackground(step) ? index : doc.blockBox[index];
+		return !order.isBackground(step) && doc.boxOverflow[box] == HtmlStyles.OVERFLOW_HIDDEN
+				? box : scrollAncestor[box];
+	}
 
 	private boolean stepMoving(int step) {
 		int i = order.index(step);
@@ -642,11 +710,16 @@ public final class HtmlPositionedLayout {
 
 	private int panelDisplacement(int box) {
 		if (activePanels == 0) return 0;
-		long value = 0;
-		for (int parent = scrollAncestor[box]; parent >= 0; parent = scrollAncestor[parent]) {
-			value += panelScrollY[parent];
+		if (panelAccumulationDirty) {
+			panelAccumulatedY[0] = 0;
+			for (int e = 1; e < doc.boxCount; e++) {
+				int parent = scrollAncestor[e];
+				panelAccumulatedY[e] = parent < 0 ? 0
+						: add(panelAccumulatedY[parent], panelScrollY[parent]);
+			}
+			panelAccumulationDirty = false;
 		}
-		return clamp(value);
+		return panelAccumulatedY[box];
 	}
 
 	/** Current vertical offset within one HTML box (index lifetime: current document only). */
@@ -674,6 +747,7 @@ public final class HtmlPositionedLayout {
 		if (previous == 0 && next != 0) activePanels++;
 		else if (previous != 0 && next == 0) activePanels--;
 		projectionValid = false;
+		panelAccumulationDirty = true;
 		return true;
 	}
 	public int boxWidth(int box) { return width[box]; }
