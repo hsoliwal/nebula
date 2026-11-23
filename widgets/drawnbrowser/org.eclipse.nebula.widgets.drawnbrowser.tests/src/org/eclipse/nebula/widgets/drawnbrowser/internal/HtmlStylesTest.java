@@ -163,6 +163,23 @@ public class HtmlStylesTest {
 	}
 
 	@Test
+	public void overflowClipsAreExplicitNotInheritedAndDoNotCollideWithPositionMask() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".panel { overflow: hidden; position: fixed; z-index: -3 } .visible { overflow: visible }");
+		int[] root = HtmlStyles.root();
+		int[] panel = styles.compute(root, "div", "panel", "overflow: nonsense");
+		assertEquals(HtmlStyles.OVERFLOW_HIDDEN, panel[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.FIXED, panel[HtmlStyles.POSITION]);
+		assertEquals(-3, panel[HtmlStyles.Z_INDEX]);
+		assertEquals("overflow is not inherited", HtmlStyles.OVERFLOW_VISIBLE,
+				styles.compute(panel, "div", null, null)[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_CLIP,
+				styles.compute(root, "div", null, "overflow: clip")[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_VISIBLE,
+				styles.compute(panel, "div", "visible", "overflow: hidden; overflow: visible")[HtmlStyles.OVERFLOW]);
+	}
+
+	@Test
 	public void boxModelShorthandsSidesAndBorders() {
 		HtmlStyles styles = new HtmlStyles();
 		styles.addSheet("p { margin: 10px 20px 30px 40px; padding: 5px; border: 2px solid red } div { margin: 4px 8px; padding: 1px 2px 3px }"
