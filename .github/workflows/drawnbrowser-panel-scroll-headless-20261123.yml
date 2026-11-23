@@ -1,0 +1,137 @@
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+# Source-only Java 21 proof. Native SWT/GTK/JNI remains mandatory in the original Maven workflow.
+name: DrawnBrowser nested panel scroll (pure Java 21 geometry)
+
+on:
+  pull_request:
+    paths:
+      - 'widgets/drawnbrowser/**'
+      - '.github/workflows/drawnbrowser-panel-scroll-headless-20261123.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  geometry:
+    if: github.repository == 'hsoliwal/nebula' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Strictly compile exact original Java geometry sources and run every original test
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser/src/org/eclipse/nebula/widgets/drawnbrowser/internal
+          tests=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser.tests/src/org/eclipse/nebula/widgets/drawnbrowser/internal
+          scratch="$RUNNER_TEMP/drawnbrowser-panel-scroll-source-only"
+          classes="$scratch/classes"
+          mkdir -p "$scratch/stub/org/eclipse/nebula/widgets/drawnbrowser/internal" "$scratch/stub/org/junit" "$classes"
+          # The real HtmlLayout owns these three published layout constants but imports SWT.
+          # Stub only its constants in the pure-source proof; full SWT/JNI tests remain separate.
+          cat >"$scratch/stub/org/eclipse/nebula/widgets/drawnbrowser/internal/HtmlLayout.java" <<'JAVA'
+          package org.eclipse.nebula.widgets.drawnbrowser.internal;
+          public final class HtmlLayout {
+              public static final int BLOCK_GAP=8, LIST_INDENT=24, CELL_PADDING=4;
+              private HtmlLayout() {}
+          }
+          JAVA
+          cat >"$scratch/stub/org/junit/Test.java" <<'JAVA'
+          package org.junit;
+          @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+          @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD)
+          public @interface Test {}
+          JAVA
+          cat >"$scratch/stub/org/junit/Assert.java" <<'JAVA'
+          package org.junit;
+          import java.util.Arrays;
+          import java.util.Objects;
+          public final class Assert {
+              private Assert() {}
+              public static void assertTrue(boolean ok) { assertTrue("expected true", ok); }
+              public static void assertTrue(String message, boolean ok) {
+                  if (!ok) throw new AssertionError(message);
+              }
+              public static void assertEquals(Object expected, Object actual) {
+                  assertEquals("mismatch", expected, actual);
+              }
+              public static void assertEquals(String message, Object expected, Object actual) {
+                  if (!Objects.equals(expected, actual))
+                      throw new AssertionError(message + ": expected=" + expected + " actual=" + actual);
+              }
+              public static void assertEquals(long expected, long actual) {
+                  assertEquals("mismatch", expected, actual);
+              }
+              public static void assertEquals(String message, long expected, long actual) {
+                  if (expected != actual)
+                      throw new AssertionError(message + ": expected=" + expected + " actual=" + actual);
+              }
+              public static void assertEquals(double expected, double actual, double tolerance) {
+                  assertEquals("mismatch", expected, actual, tolerance);
+              }
+              public static void assertEquals(String message, double expected, double actual, double tolerance) {
+                  if (Double.compare(expected, actual) != 0 && !(Math.abs(expected-actual) <= tolerance))
+                      throw new AssertionError(message + ": expected=" + expected + " actual=" + actual);
+              }
+              public static void assertArrayEquals(int[] expected, int[] actual) {
+                  assertArrayEquals("array mismatch", expected, actual);
+              }
+              public static void assertArrayEquals(String message, int[] expected, int[] actual) {
+                  if (!Arrays.equals(expected, actual))
+                      throw new AssertionError(message + ": expected=" + Arrays.toString(expected)
+                          + " actual=" + Arrays.toString(actual));
+              }
+          }
+          JAVA
+          cat >"$scratch/RunHeadlessGeometry.java" <<'JAVA'
+          import java.lang.reflect.InvocationTargetException;
+          import java.lang.reflect.Method;
+          import java.util.Arrays;
+          import java.util.Comparator;
+          import org.junit.Test;
+          import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStylesTest;
+          import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlPositionedGeometryTest;
+          public final class RunHeadlessGeometry {
+              public static void main(String[] args) throws Exception {
+                  int count = 0, failures = 0;
+                  for (Class<?> owner : new Class<?>[] {
+                          HtmlStylesTest.class, HtmlPositionedGeometryTest.class }) {
+                      Object fixture = owner.getConstructor().newInstance();
+                      Method[] methods = owner.getMethods();
+                      Arrays.sort(methods, Comparator.comparing(Method::getName));
+                      int local = 0;
+                      for (Method method : methods) {
+                          if (!method.isAnnotationPresent(Test.class)) continue;
+                          local++; count++;
+                          try {
+                              method.invoke(fixture);
+                          } catch (InvocationTargetException thrown) {
+                              failures++;
+                              System.err.println("FAIL " + owner.getSimpleName() + "." + method.getName());
+                              thrown.getCause().printStackTrace();
+                          }
+                      }
+                      System.out.println(owner.getSimpleName() + ": executed=" + local);
+                  }
+                  if (count < 69 || failures != 0)
+                      throw new AssertionError("Geometry tests=" + count + " failures=" + failures
+                              + " (minimum 69; no skipped or missing owners)");
+                  System.out.println("SOURCE_ONLY_GTK_NOT_RUN: PASS " + count
+                          + " actual original @Test methods, zero failures");
+              }
+          }
+          JAVA
+          javac --release 21 -Xlint:all -Werror -d "$classes" \
+            "$scratch/stub/org/eclipse/nebula/widgets/drawnbrowser/internal/HtmlLayout.java" \
+            "$scratch/stub/org/junit/Test.java" "$scratch/stub/org/junit/Assert.java" \
+            "$src/FlexRow.java" "$src/GridTracks.java" "$src/HtmlTokenizer.java" \
+            "$src/HtmlDocument.java" "$src/HtmlStyles.java" "$src/HtmlPaintOrder.java" \
+            "$src/HtmlPositionedLayout.java" "$src/TableColumns.java" \
+            "$tests/HtmlStylesTest.java" "$tests/HtmlPositionedGeometryTest.java" \
+            "$scratch/RunHeadlessGeometry.java"
+          java -ea -cp "$classes" RunHeadlessGeometry

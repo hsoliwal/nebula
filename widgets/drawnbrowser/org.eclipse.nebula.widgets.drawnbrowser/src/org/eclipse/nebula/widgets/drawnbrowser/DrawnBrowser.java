@@ -63,7 +63,7 @@ import org.eclipse.swt.widgets.ScrollBar;
  * </p>
  * <p>
  * The overflow subset supports visible content and padding-edge clipping for hidden/clip. Hidden establishes an
- * unscrolled local reference for sticky descendants; clip retains the enclosing scroll reference. Nested scrolling,
+ * unscrolled local reference for sticky descendants; clip retains the enclosing scroll reference. Nested vertical scrolling supports auto/scroll wheel input and hidden programmatic offsets; native panel scrollbar thumbs,
  * per-axis overflow and rounded clips are not supported. Partly clipped native form controls remain hidden until
  * fully inside their panel; their existing widget identity is retained.
  * </p>
@@ -510,7 +510,17 @@ public class DrawnBrowser extends Canvas {
 				setCursor(linkAt(e.x, e.y) != null ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : null);
 			}
 			case SWT.MouseWheel -> {
-				scrollTo(viewport.y() - e.count * LINE);
+				int requested = (int) Math.max(Integer.MIN_VALUE + 1L,
+						Math.min(Integer.MAX_VALUE, -(long) e.count * LINE));
+				HtmlPositionedLayout scene = layout.positioned();
+				if (scene != null && scene.scrollWheelAt(e.x, e.y, viewport.y(), requested) != 0) {
+					// Inner scrollports keep their own offset; root ScrollBar does not move.
+					redraw();
+					placeWidgets();
+				} else {
+					scrollTo((int) Math.max(Integer.MIN_VALUE + 1L,
+							Math.min(Integer.MAX_VALUE, (long) viewport.y() + requested)));
+				}
 				e.doit = false;
 			}
 			case SWT.KeyDown -> key(e);
