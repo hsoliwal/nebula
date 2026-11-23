@@ -43,6 +43,10 @@ final class RfbConnection implements AutoCloseable {
     private final DataOutputStream out;
     private final Listener listener;
     private final Object writeLock = new Object();
+    /** Never hold this lock across socket reads or decompression. */
+    private final Object decoderLifecycle = new Object();
+    private int readingPackets;
+    private boolean inflatersReleased;
     private final RfbFramebuffer framebuffer;
     private final String serverName;
     private final Inflater zlib = new Inflater();
@@ -50,10 +54,13 @@ final class RfbConnection implements AutoCloseable {
     private volatile boolean closed;
 
     RfbConnection(Socket socket, char[] password, Listener listener) throws IOException {
-        this.socket = Objects.requireNonNull(socket, "socket");
-        this.listener = Objects.requireNonNull(listener, "listener");
-        Objects.requireNonNull(password, "password");
-        socket.setSoTimeout(10_000);
+        this.socket = socket;
+        this.listener = listener;
+        try {
+            Objects.requireNonNull(socket, "socket");
+            Objects.requireNonNull(listener, "listener");
+            Objects.requireNonNull(password, "password");
+            socket.setSoTimeout(10_000);
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
         int minor = negotiateProtocol();
@@ -71,6 +78,12 @@ final class RfbConnection implements AutoCloseable {
         configureEncodings();
         requestUpdate(false);
         socket.setSoTimeout(0); // idle sessions remain connected until explicitly closed
+        } catch (IOException | RuntimeException failure) {
+            // A constructor that fails never exposes a connection to close().
+            zlib.end();
+            zrle.end();
+            throw failure;
+        }
     }
 
     RfbFramebuffer framebuffer() {
@@ -233,8 +246,14 @@ final class RfbConnection implements AutoCloseable {
 
     /** One packet, exposed to package tests; only the receiver thread calls it. */
     void readPacket() throws IOException {
-        int message = in.readUnsignedByte();
-        switch (message) {
+        synchronized (decoderLifecycle) {
+            if (closed) throw new IOException("RFB connection is closed");
+            if (readingPackets != 0) throw new IOException("Concurrent RFB packet reader");
+            readingPackets++;
+        }
+        try {
+            int message = in.readUnsignedByte();
+            switch (message) {
             case 0 -> readFramebufferUpdate();
             case 1 -> {
                 in.readUnsignedByte(); // padding
@@ -249,7 +268,21 @@ final class RfbConnection implements AutoCloseable {
                 listener.clipboard(new String(readBytes(length), StandardCharsets.ISO_8859_1));
             }
             default -> throw new IOException("Unsupported RFB server message " + message);
+            }
+        } finally {
+            synchronized (decoderLifecycle) {
+                readingPackets--;
+                if (closed && readingPackets == 0) releaseInflaters();
+            }
         }
+    }
+
+    /** Guarded by decoderLifecycle; never release while a packet uses zlib. */
+    private void releaseInflaters() {
+        if (inflatersReleased) return;
+        inflatersReleased = true;
+        zlib.end();
+        zrle.end();
     }
 
     private void readFramebufferUpdate() throws IOException {
@@ -377,6 +410,8 @@ final class RfbConnection implements AutoCloseable {
                 8L * RfbFramebuffer.MAX_PIXELS));
         byte[] expanded = inflateRectangle(zrle, limit);
         DataInputStream input = new DataInputStream(new ByteArrayInputStream(expanded));
+        // Retain all tiles detached until the complete rectangle is valid.
+        int[] rectangle = new int[w * h];
         for (int ty = 0; ty < h; ty += 64) {
             for (int tx = 0; tx < w; tx += 64) {
                 int tw = Math.min(64, w - tx), th = Math.min(64, h - ty);
@@ -420,58 +455,71 @@ final class RfbConnection implements AutoCloseable {
                         at += count;
                     }
                 }
-                framebuffer.writePixels(x + tx, y + ty, tw, th, tile);
+                for (int row = 0; row < th; row++) {
+                    System.arraycopy(tile, row * tw, rectangle,
+                            (ty + row) * w + tx, tw);
+                }
             }
         }
         if (input.available() != 0) throw new IOException("Trailing ZRLE tile bytes");
+        framebuffer.writePixels(x, y, w, h, rectangle);
     }
 
     /**
      * Hextile is built tile-by-tile on the CPU, then published as bounded
      * rectangle writes. Colors persist between tiles as required by RFB.
      */
+    /**
+     * Decode Hextile into a detached rectangle. Malformed later tiles must
+     * never publish earlier tiles or advance the parent's damage revision.
+     * Background/foreground colors still persist across tiles per RFB.
+     */
     private void readHextile(int x, int y, int width, int height) throws IOException {
-        if (width < 0 || height < 0 || (long) x + width > framebuffer.width()
-                || (long) y + height > framebuffer.height()) {
-            throw new IOException("Invalid Hextile rectangle");
-        }
+        validateRectangle(x, y, width, height);
+        int[] rectangle = new int[width * height];
         int background = 0xff000000;
         int foreground = 0xff000000;
-        for (int ty = y; ty < y + height; ty += 16) {
-            int th = Math.min(16, y + height - ty);
-            for (int tx = x; tx < x + width; tx += 16) {
-                int tw = Math.min(16, x + width - tx);
+        for (int ty = 0; ty < height; ty += 16) {
+            int th = Math.min(16, height - ty);
+            for (int tx = 0; tx < width; tx += 16) {
+                int tw = Math.min(16, width - tx);
                 int subencoding = in.readUnsignedByte();
                 if ((subencoding & ~31) != 0) throw new IOException("Invalid Hextile flags");
-                if ((subencoding & 1) != 0) {
-                    framebuffer.readRaw(in, tx, ty, tw, th);
-                    continue;
-                }
-                if ((subencoding & 2) != 0) background = readColor();
-                if ((subencoding & 4) != 0) foreground = readColor();
                 int[] tile = new int[tw * th];
-                Arrays.fill(tile, background);
-                if ((subencoding & 8) != 0) {
-                    int subrectangles = in.readUnsignedByte();
-                    for (int i = 0; i < subrectangles; i++) {
-                        int color = (subencoding & 16) != 0 ? readColor() : foreground;
-                        int position = in.readUnsignedByte();
-                        int size = in.readUnsignedByte();
-                        int sx = position >>> 4;
-                        int sy = position & 15;
-                        int sw = (size >>> 4) + 1;
-                        int sh = (size & 15) + 1;
-                        if (sx + sw > tw || sy + sh > th) {
-                            throw new IOException("Hextile subrectangle outside tile");
-                        }
-                        for (int row = sy; row < sy + sh; row++) {
-                            Arrays.fill(tile, row * tw + sx, row * tw + sx + sw, color);
+                if ((subencoding & 1) != 0) {
+                    if (subencoding != 1) throw new IOException("Conflicting Hextile raw flags");
+                    // Raw Hextile tile uses the already negotiated B,G,R,pad order.
+                    for (int i = 0; i < tile.length; i++) tile[i] = readColor();
+                } else {
+                    if ((subencoding & 2) != 0) background = readColor();
+                    if ((subencoding & 4) != 0) foreground = readColor();
+                    Arrays.fill(tile, background);
+                    if ((subencoding & 8) != 0) {
+                        int subrectangles = in.readUnsignedByte();
+                        for (int i = 0; i < subrectangles; i++) {
+                            int color = (subencoding & 16) != 0 ? readColor() : foreground;
+                            int position = in.readUnsignedByte();
+                            int size = in.readUnsignedByte();
+                            int sx = position >>> 4;
+                            int sy = position & 15;
+                            int sw = (size >>> 4) + 1;
+                            int sh = (size & 15) + 1;
+                            if (sx + sw > tw || sy + sh > th) {
+                                throw new IOException("Hextile subrectangle outside tile");
+                            }
+                            for (int row = sy; row < sy + sh; row++) {
+                                Arrays.fill(tile, row * tw + sx, row * tw + sx + sw, color);
+                            }
                         }
                     }
                 }
-                framebuffer.writePixels(tx, ty, tw, th, tile);
+                for (int row = 0; row < th; row++) {
+                    System.arraycopy(tile, row * tw, rectangle,
+                            (ty + row) * width + tx, tw);
+                }
             }
         }
+        framebuffer.writePixels(x, y, width, height, rectangle);
     }
 
     private int readColor() throws IOException {
@@ -520,13 +568,18 @@ final class RfbConnection implements AutoCloseable {
 
     @Override
     public void close() {
-        closed = true;
-        zlib.end();
-        zrle.end();
+        // The UI thread must interrupt socket reads without waiting for the
+        // decoder: native Inflaters are released by its final packet exit.
+        synchronized (decoderLifecycle) {
+            closed = true;
+        }
         try {
             socket.close();
         } catch (IOException ignored) {
             // Closing on shutdown must never prevent SWT disposal.
+        }
+        synchronized (decoderLifecycle) {
+            if (readingPackets == 0) releaseInflaters();
         }
     }
 }

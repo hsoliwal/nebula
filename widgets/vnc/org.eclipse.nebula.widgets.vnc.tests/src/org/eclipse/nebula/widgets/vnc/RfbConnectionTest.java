@@ -5,7 +5,14 @@ package org.eclipse.nebula.widgets.vnc;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.CountDownLatch;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.ServerSocket;
@@ -116,4 +123,80 @@ public class RfbConnectionTest {
             }
         }
     }
+    /**
+     * A deterministic original-RFB socket fixture. It blocks halfway through
+     * a packet until close() interrupts the input, without a real network.
+     */
+    @Test
+    public void uiCloseInterruptsActivePacketAndRefusesConcurrentReaders() throws Exception {
+        ByteArrayOutputStream wire = new ByteArrayOutputStream();
+        DataOutputStream greeting = new DataOutputStream(wire);
+        greeting.write("RFB 003.008\n".getBytes(StandardCharsets.US_ASCII));
+        greeting.writeByte(1); // one offered authentication scheme
+        greeting.writeByte(1); // None
+        greeting.writeInt(0);  // successful 3.8 SecurityResult
+        greeting.writeShort(1);
+        greeting.writeShort(1);
+        greeting.write(new byte[16]);
+        greeting.writeInt(0);  // zero-length server name
+        greeting.writeByte(0); // FramebufferUpdate begins
+        greeting.writeByte(0); // padding, but rectangle count never arrives
+        byte[] message = wire.toByteArray();
+        CountDownLatch readIsBlocked = new CountDownLatch(1);
+        CountDownLatch closedSocket = new CountDownLatch(1);
+
+        Socket source = new Socket() {
+            private int position;
+            private final InputStream bytes = new InputStream() {
+                @Override
+                public int read() throws IOException {
+                    if (position < message.length) return message[position++] & 0xff;
+                    readIsBlocked.countDown();
+                    try {
+                        if (!closedSocket.await(5, TimeUnit.SECONDS)) {
+                            throw new IOException("Socket did not close");
+                        }
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("RFB reader interrupted", interrupted);
+                    }
+                    return -1;
+                }
+            };
+            private final OutputStream output = new ByteArrayOutputStream();
+
+            @Override public InputStream getInputStream() { return bytes; }
+            @Override public OutputStream getOutputStream() { return output; }
+            @Override public void setSoTimeout(int timeout) { }
+            @Override public void close() { closedSocket.countDown(); }
+        };
+
+        ExecutorService readers = Executors.newSingleThreadExecutor();
+        try (RfbConnection connection = new RfbConnection(source, new char[0],
+                new RfbConnection.Listener() {
+                    @Override public void changed(RfbFramebuffer framebuffer) { }
+                    @Override public void bell() { }
+                    @Override public void clipboard(String text) { }
+                    @Override public void failed(IOException failure) { }
+                })) {
+            Future<?> active = readers.submit(() ->
+                    assertThrows(IOException.class, connection::readPacket));
+            assertTrue("decoder must reach the incomplete packet",
+                    readIsBlocked.await(5, TimeUnit.SECONDS));
+            assertThrows("a second reader must not enter the same decoder",
+                    IOException.class, connection::readPacket);
+            long begin = System.nanoTime();
+            connection.close();
+            assertTrue("UI disconnect waited for socket decoding",
+                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - begin) < 1500);
+            active.get(5, TimeUnit.SECONDS);
+            connection.close();
+            assertThrows("closed decoders must refuse new packets",
+                    IOException.class, connection::readPacket);
+        } finally {
+            closedSocket.countDown();
+            readers.shutdownNow();
+        }
+    }
+
 }

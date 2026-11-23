@@ -261,4 +261,119 @@ public class RfbAdvancedEncodingsTest {
                     0xff000000, 0xff000000, 0xff000000}, frame.snapshot().pixels());
         });
     }
+    @Test public void trailingZrleBytesDoNotPublishDecodedPixelsOrDamage() throws Exception {
+        ByteArrayOutputStream tile = new ByteArrayOutputStream();
+        DataOutputStream tileOut = new DataOutputStream(tile);
+        tileOut.writeByte(1); compact(tileOut, RED);
+        tileOut.writeByte(99); // malformed extra byte after an otherwise valid solid tile
+        byte[] compressed = zip(tile.toByteArray());
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(message);
+        packet(out, 1); rect(out, 0, 0, 3, 2, 16);
+        out.writeInt(compressed.length); out.write(compressed);
+        exchange(8, message.toByteArray(), 0, client -> {
+            RfbFramebuffer frame = client.framebuffer();
+            long previousRevision = frame.revision();
+            int[] originalPixels = frame.snapshot().pixels();
+            assertThrows(IOException.class, client::readPacket);
+            assertEquals("malformed ZRLE cannot publish a partial tile",
+                    previousRevision, frame.revision());
+            assertArrayEquals("malformed ZRLE must retain original pixels",
+                    originalPixels, frame.snapshot().pixels());
+        });
+    }
+
+    @Test public void twoZrleTilesCommitExactlyOneFullRectangleDamage() throws Exception {
+        ByteArrayOutputStream tiles = new ByteArrayOutputStream();
+        DataOutputStream tileOut = new DataOutputStream(tiles);
+        tileOut.writeByte(1); compact(tileOut, RED); // 64 x 2
+        tileOut.writeByte(1); compact(tileOut, GREEN); // 1 x 2
+        byte[] compressed = zip(tiles.toByteArray());
+        ByteArrayOutputStream messages = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(messages);
+        packet(out, 1); rect(out, 0, 0, 65, 2, -223); // negotiated DesktopSize
+        packet(out, 1); rect(out, 0, 0, 65, 2, 16);
+        out.writeInt(compressed.length); out.write(compressed);
+        exchange(8, messages.toByteArray(), 2, client -> {
+            RfbFramebuffer frame = client.framebuffer();
+            client.readPacket(); // resize to 65 x 2
+            long previousRevision = frame.revision();
+            client.readPacket(); // two tiles should be one atomic RFB rectangle
+            assertEquals(previousRevision + 1, frame.revision());
+            int[] pixels = frame.snapshot().pixels();
+            assertEquals(130, pixels.length);
+            for (int row = 0; row < 2; row++) {
+                for (int col = 0; col < 65; col++) {
+                    assertEquals("tile pixel " + row + "," + col,
+                            col < 64 ? RED : GREEN, pixels[row * 65 + col]);
+                }
+            }
+        });
+    }
+
+    @Test public void malformedSecondHextileTileCannotPublishFirstTile() throws Exception {
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(message);
+        packet(out, 1); rect(out, 0, 0, 17, 2, -223); // make two 16-column tiles
+        packet(out, 1); rect(out, 0, 0, 17, 2, 5);
+        out.writeByte(2); pixel(out, RED); // first 16x2 tile decodes successfully
+        out.writeByte(0x20); // second tile has reserved Hextile flag
+        exchange(8, message.toByteArray(), 1, client -> {
+            client.readPacket();
+            RfbFramebuffer frame = client.framebuffer();
+            long originalRevision = frame.revision();
+            int[] originalPixels = frame.snapshot().pixels();
+            assertThrows(IOException.class, client::readPacket);
+            assertEquals("no partial first tile or damage revision",
+                    originalRevision, frame.revision());
+            assertArrayEquals(originalPixels, frame.snapshot().pixels());
+        });
+    }
+
+    @Test public void validTwoHextileTilesPublishExactlyOneDamageRevision() throws Exception {
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(message);
+        packet(out, 1); rect(out, 0, 0, 17, 2, -223);
+        packet(out, 1); rect(out, 0, 0, 17, 2, 5);
+        out.writeByte(2); pixel(out, RED); // 16x2
+        out.writeByte(2); pixel(out, GREEN); // 1x2
+        exchange(8, message.toByteArray(), 2, client -> {
+            client.readPacket();
+            RfbFramebuffer frame = client.framebuffer();
+            long before = frame.revision();
+            client.readPacket();
+            assertEquals(before + 1, frame.revision());
+            int[] pixels = frame.snapshot().pixels();
+            assertEquals(34, pixels.length);
+            for (int row = 0; row < 2; row++) {
+                for (int col = 0; col < 17; col++) {
+                    assertEquals("pixel " + row + "," + col,
+                            col < 16 ? RED : GREEN, pixels[row * 17 + col]);
+                }
+            }
+        });
+    }
+
+    @Test public void rawHextileTileAndSolidTileUseOriginalPixelFormat() throws Exception {
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(message);
+        packet(out, 1); rect(out, 0, 0, 17, 1, -223);
+        packet(out, 1); rect(out, 0, 0, 17, 1, 5);
+        out.writeByte(1); // 16 raw 32-bit little endian B,G,R,pad pixels
+        for (int i = 0; i < 16; i++) pixel(out, RED);
+        out.writeByte(2); pixel(out, GREEN); // final 1x1 solid tile
+        exchange(8, message.toByteArray(), 2, client -> {
+            client.readPacket();
+            RfbFramebuffer frame = client.framebuffer();
+            long before = frame.revision();
+            client.readPacket();
+            assertEquals(before + 1, frame.revision());
+            int[] pixels = frame.snapshot().pixels();
+            assertEquals(17, pixels.length);
+            for (int i = 0; i < 17; i++) {
+                assertEquals(i < 16 ? RED : GREEN, pixels[i]);
+            }
+        });
+    }
+
 }
