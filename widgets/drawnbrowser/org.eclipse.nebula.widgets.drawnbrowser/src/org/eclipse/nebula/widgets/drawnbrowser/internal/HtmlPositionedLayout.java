@@ -279,7 +279,7 @@ public final class HtmlPositionedLayout {
 			collect(fixedKeys, fixedMax, 1, 0, fixedMax.length / 2, (long) pageTop - scroll, (long) pageTop - scroll + extent);
 		}
 		for (int panel : indexedPanels) {
-			long displacement = (long) panelDisplacement(panel) + panelScrollY[panel];
+			int displacement = add(panelDisplacement(panel), panelScrollY[panel]);
 			collectPanel(panelNormalKeys[panel], panelNormalMax[panel], displacement, 0,
 					pageTop, extent, scroll);
 			collectPanel(panelFixedKeys[panel], panelFixedMax[panel], displacement, scroll,
