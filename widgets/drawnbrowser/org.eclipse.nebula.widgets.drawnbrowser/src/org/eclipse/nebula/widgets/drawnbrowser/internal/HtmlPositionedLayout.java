@@ -597,8 +597,13 @@ public final class HtmlPositionedLayout {
 		return delta;
 	}
 
-	/** Wheel scrolling follows reverse paint order and bubbles to a scrollable outer panel. */
+	/**
+	 * Wheel scrolling follows reverse paint order. Each scrollable panel consumes only its available signed pixels;
+	 * the remainder continues to an outer panel. The returned total is the portion consumed by panels, leaving the
+	 * root viewport's remainder to the caller. No per-wheel scratch object is allocated.
+	 */
 	public int scrollWheelAt(int px, int viewportY, int rootScroll, int requestedDelta) {
+		if (requestedDelta == 0) return 0;
 		int py = add(viewportY, rootScroll);
 		int count = collectVisible(py, 1, rootScroll);
 		for (int v = count - 1; v >= 0; v--) {
@@ -613,14 +618,16 @@ public final class HtmlPositionedLayout {
 					: contains(px, py, blockX[i], blockY(i, rootScroll), blockWidth[i], blockHeight[i])
 							&& withinClip(box, true, px, py, rootScroll);
 			if (!inside) continue;
+			int remaining = requestedDelta;
 			for (int panel = panelScrollport(box) ? box : scrollOwner[box]; panel > 0;
 					panel = scrollOwner[panel]) {
 				int mode = doc.boxOverflow[panel];
 				if (mode != HtmlStyles.OVERFLOW_AUTO && mode != HtmlStyles.OVERFLOW_SCROLL) continue;
-				int applied = scrollPanel(panel, clamp((long) panelScrollY[panel] + requestedDelta));
-				if (applied != 0) return applied;
+				int applied = scrollPanel(panel, clamp((long) panelScrollY[panel] + remaining));
+				remaining -= applied;
+				if (remaining == 0) return requestedDelta;
 			}
-			return 0;
+			return requestedDelta - remaining;
 		}
 		return 0;
 	}
