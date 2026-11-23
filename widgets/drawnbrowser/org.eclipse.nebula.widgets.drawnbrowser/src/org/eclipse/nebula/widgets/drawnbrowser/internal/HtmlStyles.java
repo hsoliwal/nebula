@@ -82,7 +82,9 @@ public final class HtmlStyles {
 	/** Two primitive words preserve a finite double shrink factor without reusing the positional presence mask. */
 	private static final int SHRINK_HIGH = 32, SHRINK_LOW = 33;
 	/** Number of primitive computed-style slots. Existing slots retain their indices. */
-	public static final int SLOTS = 34;
+	public static final int OVERFLOW = 34, SLOTS = 35;
+	/** Parent-owned modes: hidden/clip share paint clipping, but only hidden establishes a sticky scroll reference. */
+	public static final int OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1, OVERFLOW_CLIP = 2;
 
 	/** Draw2D SchemeBorder-style highlight/shadow schemes, encoded as scalar CSS. */
 	public static final int BORDER_SOLID = 0, BORDER_INSET = 1, BORDER_OUTSET = 2,
@@ -106,6 +108,7 @@ public final class HtmlStyles {
 
 	/* a declaration that does not set a position slot */
 	private static final int NOT_SET = Integer.MIN_VALUE;
+	/* Only original position slots 14..31 use the 32-bit presence mask. New lanes use explicit sentinels. */
 	private static final int PRESENT = SLOTS;
 	private static final int SHRINK_PRESENT = SLOTS + 1;
 	private static final java.util.regex.Pattern NUMBER = java.util.regex.Pattern.compile(
@@ -394,6 +397,7 @@ public final class HtmlStyles {
 		int[] root = new int[SLOTS];
 		root[POS_TOP] = root[POS_LEFT] = root[OFFSET_RIGHT] = root[OFFSET_BOTTOM] = root[WIDTH] = root[HEIGHT] = AUTO;
 		root[Z_AUTO] = 1;
+		root[OVERFLOW] = OVERFLOW_VISIBLE;
 		root[FLEX_BASIS] = -1;
 		putShrink(root, 1);
 		return root;
@@ -478,6 +482,7 @@ public final class HtmlStyles {
 		delta[ROW_GAP] = -1;
 		delta[TRACKS] = -1;
 		delta[COLUMN_SPAN] = -1;
+		delta[OVERFLOW] = -1;
 		return delta;
 	}
 
@@ -609,6 +614,11 @@ public final class HtmlStyles {
 					else if (value.equals("auto")) delta[FLEX_BASIS] = -1;
 				}
 				case "height" -> length(delta, HEIGHT, value, true);
+				case "overflow" -> {
+					if (value.equals("visible")) delta[OVERFLOW] = OVERFLOW_VISIBLE;
+					else if (value.equals("hidden")) delta[OVERFLOW] = OVERFLOW_HIDDEN;
+					else if (value.equals("clip")) delta[OVERFLOW] = OVERFLOW_CLIP;
+				}
 				case "display" -> delta[DISPLAY] = switch (value) {
 					case "none" -> DISPLAY_NONE;
 					case "flex", "inline-flex" -> DISPLAY_FLEX;
@@ -718,6 +728,7 @@ public final class HtmlStyles {
 			if ((delta[PRESENT] & (1 << slot)) != 0) style[slot] = delta[slot];
 		}
 		if (delta[SHRINK_PRESENT] != 0) putShrink(style, shrink(delta));
+		if (delta[OVERFLOW] >= 0) style[OVERFLOW] = delta[OVERFLOW];
 		if (delta[DISPLAY] >= 0) style[DISPLAY] = delta[DISPLAY];
 		if (delta[FLEX_GROW] >= 0) style[FLEX_GROW] = delta[FLEX_GROW];
 		if (delta[FLEX_BASIS] != NOT_SET) style[FLEX_BASIS] = delta[FLEX_BASIS];

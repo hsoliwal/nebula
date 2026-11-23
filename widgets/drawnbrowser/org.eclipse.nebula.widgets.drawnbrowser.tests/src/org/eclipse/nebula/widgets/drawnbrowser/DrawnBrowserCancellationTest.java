@@ -151,7 +151,12 @@ public class DrawnBrowserCancellationTest {
 		}
 		assertTrue("the retained native image must finish painting", painted[0]);
 		var area = browser.getClientArea();
-		assertEquals(new org.eclipse.swt.graphics.Point(1, 1), browser.remoteCssPoint(1, 1, area.width / 2, area.height / 2));
+		int side = Math.min(area.width, area.height);
+		assertTrue("the fitted frame must provide an interior sample", side >= 4);
+		// An odd-sized frame's floored midpoint is still in the first source pixel. Sample inside the lower-right quarter.
+		int offset = 3 * side / 4;
+		assertEquals(new org.eclipse.swt.graphics.Point(1, 1), browser.remoteCssPoint(1, 1,
+				(area.width - side) / 2 + offset, (area.height - side) / 2 + offset));
 		assertEquals("<p>retained</p>", browser.getText());
 		assertEquals(0, changed);
 		browser.clearRemoteFrame();

@@ -159,13 +159,16 @@ public class XViewerViewport_Test {
       viewer.setSelection(new org.eclipse.jface.viewers.StructuredSelection(Integer.valueOf(4)));
       tree.setTopItem(tree.getItem(0));
       pump();
+      // Native SWT can scroll the selected row into view. Restore the actual
+      // visible anchor when testing a round trip, not a different fixed row.
+      TreeItem topBefore = tree.getTopItem();
       String before = state(viewer);
       String pixels = pixels(tree);
 
       tree.setTopItem(tree.getItem(19_999));
       tree.update();
       pump();
-      tree.setTopItem(tree.getItem(0));
+      tree.setTopItem(topBefore);
       tree.update();
       pump();
       assertEquals(before, state(viewer));
