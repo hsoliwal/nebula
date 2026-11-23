@@ -9,7 +9,9 @@ coalesced before painting, and the image is scaled with aspect ratio preserved.
 Supported in this first integration:
 - RFB protocol 3.3, 3.7 and 3.8; None or legacy VNC DES challenge security.
 - Client-initiated 32-bit true-colour pixel format.
-- Raw, CopyRect, Hextile (16x16 tiles), DesktopSize, clipboard notifications and Bell.
+- Raw, CopyRect, RRE, Hextile (16x16 tiles), streaming Zlib and ZRLE
+  (raw, solid, packed palette and run-length tiles), DesktopSize, LastRect,
+  clipboard notifications and Bell.
 - Key and pointer events, wheel events, and explicit client clipboard sending.
 - Byte/rectangle/dimension limits, overlapping CopyRect, disposed-widget
   cancellation and decoupled SWT/network ownership.
@@ -29,14 +31,16 @@ the architecture reference; the original project components were
 See https://www.eclipse.org/lists/ecf-dev/msg02002.html. The code here is
 EPL-2.0. Original upstream code and third-party notices are not repackaged.
 
-Not yet supported: Tight/ZRLE, cursor pseudorectangles, VeNCrypt/TLS,
+Not yet supported: Tight/JPEG, cursor pseudorectangles, VeNCrypt/TLS,
 RFB 4.x, extended keyboard layouts, dedicated scaling/native-layer paths,
 automatic clipboard integration, or audio. They require separate protocol
 qualification and are intentionally not advertised as complete.
 
-The Tycho feature is incubating; headless framebuffer and loopback RFB tests
-are in `org.eclipse.nebula.widgets.vnc.tests`. Native pixel tests must also
-qualify on Windows, GTK and Cocoa before release.
+The Tycho feature is incubating; headless framebuffer, compression, malformed
+stream and loopback RFB tests are in `org.eclipse.nebula.widgets.vnc.tests`.
+`VncViewerNativeTest` captures the *visible screen* using SWT `GC.copyArea`;
+it and the other native pixel tests must actually run on Windows, GTK and
+Cocoa before release.
 
 ## Native Z-order and layered applications
 

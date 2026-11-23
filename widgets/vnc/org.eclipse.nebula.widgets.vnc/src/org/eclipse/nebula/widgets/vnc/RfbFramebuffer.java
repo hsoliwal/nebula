@@ -102,6 +102,39 @@ public final class RfbFramebuffer {
         return new Snapshot(width, height, revision, pixels.clone());
     }
 
+    /** Defensively copies just a visible source tile, not the entire desktop. */
+    synchronized Snapshot snapshot(int x, int y, int w, int h) {
+        requireRectangle(x, y, w, h);
+        int[] tile = new int[w * h];
+        for (int row = 0; row < h; row++) {
+            System.arraycopy(pixels, (y + row) * width + x, tile, row * w, w);
+        }
+        return new Snapshot(w, h, revision, tile);
+    }
+
+    /**
+     * Maps only the visible native paint clip into a primitive pixel tile.
+     * Even when a large desktop is fitted into a small Canvas, no full-size
+     * SWT Image or temporary copy of the remote framebuffer is materialized.
+     */
+    synchronized Snapshot snapshotScaled(int x, int y, int w, int h,
+            int drawX, int drawY, int drawW, int drawH) {
+        if (w < 1 || h < 1 || drawW < 1 || drawH < 1 || (long) w * h > MAX_PIXELS) {
+            throw new IllegalArgumentException("Invalid visible framebuffer tile");
+        }
+        int[] tile = new int[w * h];
+        for (int row = 0; row < h; row++) {
+            long sy = ((long) y + row - drawY) * height / drawH;
+            int sourceY = (int) Math.max(0, Math.min(height - 1, sy));
+            for (int col = 0; col < w; col++) {
+                long sx = ((long) x + col - drawX) * width / drawW;
+                int sourceX = (int) Math.max(0, Math.min(width - 1, sx));
+                tile[row * w + col] = pixels[sourceY * width + sourceX];
+            }
+        }
+        return new Snapshot(w, h, revision, tile);
+    }
+
     /** An immutable whole-frame snapshot for {@link RfbClient#currentFrame()} and {@link RfbClient#nextFrame()}. */
     synchronized Frame frame() {
         return new Frame(width, height, pixels);
@@ -198,6 +231,14 @@ public final class RfbFramebuffer {
         }
         for (int row = 0; row < h; row++) {
             System.arraycopy(patch, row * w, pixels, (y + row) * width + x, w);
+        }
+        changed(x, y, w, h);
+    }
+
+    synchronized void fillRectangle(int x, int y, int w, int h, int argb) {
+        requireRectangle(x, y, w, h);
+        for (int row = y; row < y + h; row++) {
+            Arrays.fill(pixels, row * width + x, row * width + x + w, argb);
         }
         changed(x, y, w, h);
     }
