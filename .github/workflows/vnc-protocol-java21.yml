@@ -1,0 +1,123 @@
+# SPDX-License-Identifier: EPL-2.0
+# Run the original Nebula RFB loopback tests without Eclipse SWT P2/JNI.
+name: VNC Java 21 wire-protocol JUnit
+on:
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - 'widgets/vnc/**'
+      - '.github/workflows/vnc-protocol-java21.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  original-rfb-wire-junit:
+    if: github.repository == 'hsoliwal/nebula'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.11
+      - name: Execute original RFB connection, framebuffer, Hextile and advanced JUnit4
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in RfbConnection.java RfbFramebuffer.java; do
+            test -f "widgets/vnc/org.eclipse.nebula.widgets.vnc/src/org/eclipse/nebula/widgets/vnc/$file"
+          done
+          mkdir -p "$RUNNER_TEMP/vnc-wire-junit"
+          cat > "$RUNNER_TEMP/vnc-wire-junit/pom.xml" <<'RFB_POM'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <project xmlns="http://maven.apache.org/POM/4.0.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+            <modelVersion>4.0.0</modelVersion>
+            <groupId>org.eclipse.nebula.tests</groupId>
+            <artifactId>original-rfb-wire-junit</artifactId><version>1</version>
+            <properties>
+              <maven.compiler.release>21</maven.compiler.release>
+              <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+            </properties>
+            <dependencies>
+              <dependency>
+                <groupId>junit</groupId><artifactId>junit</artifactId>
+                <version>4.13.2</version><scope>test</scope>
+              </dependency>
+            </dependencies>
+            <build>
+              <sourceDirectory>${env.GITHUB_WORKSPACE}/widgets/vnc/org.eclipse.nebula.widgets.vnc/src</sourceDirectory>
+              <testSourceDirectory>${env.GITHUB_WORKSPACE}/widgets/vnc/org.eclipse.nebula.widgets.vnc.tests/src</testSourceDirectory>
+              <plugins>
+                <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <version>3.14.1</version>
+                  <configuration>
+                    <release>21</release>
+                    <includes>
+                      <include>org/eclipse/nebula/widgets/vnc/RfbConnection.java</include>
+                      <include>org/eclipse/nebula/widgets/vnc/RfbFramebuffer.java</include>
+                    </includes>
+                    <testIncludes>
+                      <testInclude>org/eclipse/nebula/widgets/vnc/RfbConnectionTest.java</testInclude>
+                      <testInclude>org/eclipse/nebula/widgets/vnc/RfbFramebufferTest.java</testInclude>
+                      <testInclude>org/eclipse/nebula/widgets/vnc/RfbHextileTest.java</testInclude>
+                      <testInclude>org/eclipse/nebula/widgets/vnc/RfbAdvancedEncodingsTest.java</testInclude>
+                    </testIncludes>
+                  </configuration>
+                </plugin>
+                <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-surefire-plugin</artifactId>
+                  <version>3.5.4</version>
+                  <configuration>
+                    <failIfNoTests>true</failIfNoTests>
+                    <failIfNoSpecifiedTests>true</failIfNoSpecifiedTests>
+                    <reuseForks>false</reuseForks>
+                  </configuration>
+                </plugin>
+              </plugins>
+            </build>
+          </project>
+          RFB_POM
+          mvn -V -B -ntp -f "$RUNNER_TEMP/vnc-wire-junit/pom.xml" \
+            -Dtest=RfbConnectionTest,RfbFramebufferTest,RfbHextileTest,RfbAdvancedEncodingsTest test
+          python3 - "$RUNNER_TEMP/vnc-wire-junit/target/surefire-reports" <<'RFB_PROOF'
+          from pathlib import Path
+          import sys
+          import xml.etree.ElementTree as ET
+          reports = sorted(Path(sys.argv[1]).glob('TEST-*.xml'))
+          expected = {'RfbConnectionTest', 'RfbFramebufferTest',
+                      'RfbHextileTest', 'RfbAdvancedEncodingsTest'}
+          found = {}
+          nonpass = 0
+          for path in reports:
+              suite = ET.parse(path).getroot()
+              name = suite.attrib['name'].split('.')[-1]
+              found[name] = int(suite.attrib.get('tests', '0'))
+              nonpass += sum(int(suite.attrib.get(k, '0'))
+                             for k in ('failures', 'errors', 'skipped'))
+          if set(found) != expected:
+              raise SystemExit(f'RFB_WIRE_HOLD missing/extra suites: {found!r}')
+          if min(found.values()) < 1 or sum(found.values()) < 23 or nonpass:
+              raise SystemExit(f'RFB_WIRE_HOLD suites={found!r} nonpass={nonpass}')
+          print(f'RFB_WIRE_JAVA21_PASS tests={sum(found.values())} nonpass=0')
+          RFB_PROOF
+      - name: Upload original wire-protocol JUnit XML reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-vnc-wire-junit21
+          if-no-files-found: warn
+          retention-days: 30
+          path: ${{ runner.temp }}/vnc-wire-junit/target/surefire-reports/TEST-*.xml
