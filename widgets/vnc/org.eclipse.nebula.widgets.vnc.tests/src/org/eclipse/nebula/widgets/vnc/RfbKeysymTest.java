@@ -43,7 +43,7 @@ public final class RfbKeysymTest {
 
     @Test public void navigationUsesStandardX11SpecialKeys() {
         assertEquals(0xff51, VncCanvas.toKeysym(key(SWT.ARROW_LEFT, '\0', 0, SWT.NONE)));
-        assertEquals(0xffc9, VncCanvas.toKeysym(key(SWT.F11, '\0', 0, SWT.NONE)));
+        assertEquals(0xffc8, VncCanvas.toKeysym(key(SWT.F11, '\0', 0, SWT.NONE)));
         assertEquals(0xffff, VncCanvas.toKeysym(key(SWT.DEL, '\0', 0, SWT.NONE)));
         assertEquals(0, VncCanvas.toKeysym(key(0, '\0', 0, SWT.NONE)));
     }
