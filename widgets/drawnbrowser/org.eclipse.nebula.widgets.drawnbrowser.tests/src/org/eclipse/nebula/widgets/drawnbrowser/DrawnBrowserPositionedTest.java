@@ -297,11 +297,12 @@ public class DrawnBrowserPositionedTest {
 		return image.palette.getRGB(image.getPixel(x, y));
 	}
 
-	private static int[] rgbPixels(ImageData image) {
-		int[] pixels = new int[image.width * image.height];
-		for (int y = 0; y < image.height; y++) for (int x = 0; x < image.width; x++) {
+	private static int[] rgbPixels(ImageData image, int contentWidth) {
+		assertTrue("content width must fit the capture", contentWidth > 0 && contentWidth <= image.width);
+		int[] pixels = new int[contentWidth * image.height];
+		for (int y = 0; y < image.height; y++) for (int x = 0; x < contentWidth; x++) {
 			RGB rgb = image.palette.getRGB(image.getPixel(x, y));
-			pixels[y * image.width + x] = rgb.red << 16 | rgb.green << 8 | rgb.blue;
+			pixels[y * contentWidth + x] = rgb.red << 16 | rgb.green << 8 | rgb.blue;
 		}
 		return pixels;
 	}
@@ -391,7 +392,16 @@ public class DrawnBrowserPositionedTest {
 			ImageData moved = capture();
 			browser.redraw();
 			settle();
-			assertArrayEquals("scroll " + scroll, rgbPixels(moved), rgbPixels(capture()));
+			ImageData repainted = capture();
+			assertEquals("capture width", moved.width, repainted.width);
+			assertEquals("capture height", moved.height, repainted.height);
+			org.eclipse.swt.widgets.ScrollBar bar = browser.getVerticalBar();
+			assertEquals("native bar selection " + scroll, scroll, bar.getSelection());
+			int contentWidth = moved.width;
+			if (bar.getVisible() && browser.getClientArea().width == browser.getSize().x) {
+				contentWidth -= bar.getSize().x; // GTK overlay bar paints inside the client.
+			}
+			assertArrayEquals("scroll " + scroll, rgbPixels(moved, contentWidth), rgbPixels(repainted, contentWidth));
 		}
 	}
 
