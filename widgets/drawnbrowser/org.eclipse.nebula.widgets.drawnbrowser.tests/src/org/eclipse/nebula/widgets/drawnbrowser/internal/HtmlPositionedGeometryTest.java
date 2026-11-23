@@ -633,6 +633,11 @@ public class HtmlPositionedGeometryTest {
 		assertEquals("following flow unaffected", 40, scene.layout.blockY(1, 0));
 		assertEquals(70, scene.layout.totalHeight());
 		assertVisible(scene, 0, 40, 0);
+		for (int scroll : new int[] { 0, 11, 120, Integer.MAX_VALUE, Integer.MIN_VALUE + 1 }) {
+			for (int pageTop : new int[] { -20, 0, 20, 50, 115, 500, Integer.MAX_VALUE - 32 }) {
+				assertVisible(scene, pageTop, 45, scroll);
+			}
+		}
 		assertTrue(scene.layout.scrollPanelTo(panel, Integer.MAX_VALUE));
 		assertEquals(scene.layout.panelScrollLimit(panel), scene.layout.panelScrollY(panel));
 	}
@@ -648,6 +653,26 @@ public class HtmlPositionedGeometryTest {
 		assertEquals(before - 50, scene.layout.blockY(0, 0));
 		assertEquals(borderY, scene.layout.boxY(box, 0));
 		assertEquals("following sibling remains stationary", 40, scene.layout.blockY(1, 0));
+		for (int scroll : new int[] { 0, 40, 200 }) {
+			assertVisible(scene, 0, 90, scroll);
+		}
+		Scene nested = new Scene("<main style='position:relative;height:55px;overflow:hidden'>"
+				+ "<section style='position:relative;height:30px;overflow:hidden'>"
+				+ "<p style='position:absolute;top:90px;width:25px;height:20px'>deep</p></section>"
+				+ "<p style='position:absolute;top:120px;width:25px;height:20px'>outer</p>"
+				+ "</main>", 250, 120);
+		int inner = nested.document.boxParent[nested.document.blockBox[0]];
+		int outer = nested.document.boxParent[inner];
+		int deepBefore = nested.layout.blockY(0, 0), outerBefore = nested.layout.blockY(1, 0);
+		assertTrue(nested.layout.scrollPanelTo(inner, 10));
+		assertTrue(nested.layout.scrollPanelTo(outer, 18));
+		assertEquals(deepBefore - 28, nested.layout.blockY(0, 0));
+		assertEquals(outerBefore - 18, nested.layout.blockY(1, 0));
+		for (int scroll : new int[] { 0, 17, 100, Integer.MAX_VALUE }) {
+			for (int pageTop : new int[] { -30, 0, 25, 55, 110, 200 }) {
+				assertVisible(nested, pageTop, 38, scroll);
+			}
+		}
 	}
 
 	@Test
