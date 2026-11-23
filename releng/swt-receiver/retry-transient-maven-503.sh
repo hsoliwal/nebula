@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
-# Retry documented upstream HTTP 503 and Eclipse/Tycho metadata-lock resolution faults.
+# Retry bounded upstream HTTP 503, Eclipse metadata locks and the specific
+# published Tycho 4.0.12 extension's transient Maven Central lookup failure.
 # Never mask compiler, test, or application failures.
 set -euo pipefail
 if (( $# == 0 )); then
@@ -32,6 +33,10 @@ for (( attempt = 1; attempt <= attempts; attempt++ )); do
   elif grep -Eq "Could not acquire (read|write) lock for 'metadata:org\.eclipse:" "$log"; then
     # Parallel Tycho metadata resolution can report only a lock timeout.
     reason='Eclipse Maven metadata lock timeout'
+  elif grep -Eq 'Could not find artifact org\.eclipse\.tycho:tycho-maven-plugin:jar:4\.0\.12 in central' "$log"; then
+    # 4.0.12 is a confirmed Maven Central release; retry only this precise
+    # extension-resolution failure, never an arbitrary 404 or missing source.
+    reason='published Tycho 4.0.12 Maven Central lookup failure'
   else
     echo "M3: non-transient failure; no retry (exit $rc)" >&2
     exit "$rc"

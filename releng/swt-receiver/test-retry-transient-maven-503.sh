@@ -21,6 +21,10 @@ if [[ "$mode" == locktransient && "$count" -eq 1 || "$mode" == lockpersistent ]]
   echo "Suppressed: java.lang.IllegalStateException: Attempt 1: Could not acquire write lock for 'metadata:org.eclipse:eclipse-sdk-prereqs:4.42.0-SNAPSHOT' in 30 SECONDS"
   exit 19
 fi
+if [[ "$mode" == tychotransient && "$count" -eq 1 || "$mode" == tychopersistent ]]; then
+  echo '[ERROR] Could not find artifact org.eclipse.tycho:tycho-maven-plugin:jar:4.0.12 in central (https://repo.maven.apache.org/maven2)'
+  exit 18
+fi
 if [[ "$mode" == fatal || "$mode" == mixedfatal ]]; then
   echo '[ERROR] compilation failure: missing method'
   exit 17
@@ -41,4 +45,8 @@ if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/e" lockpersist
 [[ $(<"$tmp/e") == 3 ]] || exit 1
 if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/f" mixedfatal >/dev/null 2>&1; then exit 1; fi
 [[ $(<"$tmp/f") == 1 ]] || exit 1
-printf 'PASS: HTTP503 & Eclipse metadata lock transient retry=2, product compiler failures=1, persistent failures=3\n'
+bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/g" tychotransient >/dev/null
+[[ $(<"$tmp/g") == 2 ]] || exit 1
+if bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/h" tychopersistent >/dev/null 2>&1; then exit 1; fi
+[[ $(<"$tmp/h") == 3 ]] || exit 1
+printf 'PASS: HTTP503, Eclipse locks, Tycho 4.0.12 Central transient retry=2; product failures fatal; persistent failures=3\n'

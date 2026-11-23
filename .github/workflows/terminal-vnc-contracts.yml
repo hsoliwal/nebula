@@ -383,11 +383,13 @@ jobs:
                 sleep 0.1
               done
               wmctrl -m >/dev/null || { echo "native window manager unavailable" >&2; exit 1; }
-              mvn -B -ntp -f widgets/terminal/pom.xml \
-                -pl :org.eclipse.nebula.widgets.terminal.tests -am \
-                -Dtycho.localArtifacts=ignore \
-                "-Dtarget-platform-platform=$M3_SWT_PLATFORM" \
-                -DfailIfNoTests=true clean verify
+              M3_HTTP503_ATTEMPTS=3 M3_HTTP503_RETRY_DELAY_SECONDS=12 \
+                bash releng/swt-receiver/retry-transient-maven-503.sh \
+                  mvn -B -U -ntp -f widgets/terminal/pom.xml \
+                    -pl :org.eclipse.nebula.widgets.terminal.tests -am \
+                    -Dtycho.localArtifacts=ignore \
+                    "-Dtarget-platform-platform=$M3_SWT_PLATFORM" \
+                    -DfailIfNoTests=true clean verify
             '
       - name: Require parent-cascade and direct Terminal resource tests
         run: |
