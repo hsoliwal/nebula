@@ -436,48 +436,57 @@ final class RfbConnection implements AutoCloseable {
      * Hextile is built tile-by-tile on the CPU, then published as bounded
      * rectangle writes. Colors persist between tiles as required by RFB.
      */
+    /**
+     * Decode Hextile into a detached rectangle. Malformed later tiles must
+     * never publish earlier tiles or advance the parent's damage revision.
+     * Background/foreground colors still persist across tiles per RFB.
+     */
     private void readHextile(int x, int y, int width, int height) throws IOException {
-        if (width < 0 || height < 0 || (long) x + width > framebuffer.width()
-                || (long) y + height > framebuffer.height()) {
-            throw new IOException("Invalid Hextile rectangle");
-        }
+        validateRectangle(x, y, width, height);
+        int[] rectangle = new int[width * height];
         int background = 0xff000000;
         int foreground = 0xff000000;
-        for (int ty = y; ty < y + height; ty += 16) {
-            int th = Math.min(16, y + height - ty);
-            for (int tx = x; tx < x + width; tx += 16) {
-                int tw = Math.min(16, x + width - tx);
+        for (int ty = 0; ty < height; ty += 16) {
+            int th = Math.min(16, height - ty);
+            for (int tx = 0; tx < width; tx += 16) {
+                int tw = Math.min(16, width - tx);
                 int subencoding = in.readUnsignedByte();
                 if ((subencoding & ~31) != 0) throw new IOException("Invalid Hextile flags");
-                if ((subencoding & 1) != 0) {
-                    framebuffer.readRaw(in, tx, ty, tw, th);
-                    continue;
-                }
-                if ((subencoding & 2) != 0) background = readColor();
-                if ((subencoding & 4) != 0) foreground = readColor();
                 int[] tile = new int[tw * th];
-                Arrays.fill(tile, background);
-                if ((subencoding & 8) != 0) {
-                    int subrectangles = in.readUnsignedByte();
-                    for (int i = 0; i < subrectangles; i++) {
-                        int color = (subencoding & 16) != 0 ? readColor() : foreground;
-                        int position = in.readUnsignedByte();
-                        int size = in.readUnsignedByte();
-                        int sx = position >>> 4;
-                        int sy = position & 15;
-                        int sw = (size >>> 4) + 1;
-                        int sh = (size & 15) + 1;
-                        if (sx + sw > tw || sy + sh > th) {
-                            throw new IOException("Hextile subrectangle outside tile");
-                        }
-                        for (int row = sy; row < sy + sh; row++) {
-                            Arrays.fill(tile, row * tw + sx, row * tw + sx + sw, color);
+                if ((subencoding & 1) != 0) {
+                    if (subencoding != 1) throw new IOException("Conflicting Hextile raw flags");
+                    // Raw Hextile tile uses the already negotiated B,G,R,pad order.
+                    for (int i = 0; i < tile.length; i++) tile[i] = readColor();
+                } else {
+                    if ((subencoding & 2) != 0) background = readColor();
+                    if ((subencoding & 4) != 0) foreground = readColor();
+                    Arrays.fill(tile, background);
+                    if ((subencoding & 8) != 0) {
+                        int subrectangles = in.readUnsignedByte();
+                        for (int i = 0; i < subrectangles; i++) {
+                            int color = (subencoding & 16) != 0 ? readColor() : foreground;
+                            int position = in.readUnsignedByte();
+                            int size = in.readUnsignedByte();
+                            int sx = position >>> 4;
+                            int sy = position & 15;
+                            int sw = (size >>> 4) + 1;
+                            int sh = (size & 15) + 1;
+                            if (sx + sw > tw || sy + sh > th) {
+                                throw new IOException("Hextile subrectangle outside tile");
+                            }
+                            for (int row = sy; row < sy + sh; row++) {
+                                Arrays.fill(tile, row * tw + sx, row * tw + sx + sw, color);
+                            }
                         }
                     }
                 }
-                framebuffer.writePixels(tx, ty, tw, th, tile);
+                for (int row = 0; row < th; row++) {
+                    System.arraycopy(tile, row * tw, rectangle,
+                            (ty + row) * width + tx, tw);
+                }
             }
         }
+        framebuffer.writePixels(x, y, width, height, rectangle);
     }
 
     private int readColor() throws IOException {
