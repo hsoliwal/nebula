@@ -171,9 +171,12 @@ public class GradientChooserTest {
 			chooser.setStopColor(2, new RGB(i & 0xff, 230, 0));
 		});
 		GradientChooser fresh = build(60);
+		List<Rectangle> freshPaints = TestSupport.recordPaints(fresh);
 		fresh.moveStop(1, chooser.getStopPosition(1));
 		fresh.setStopColor(2, chooser.getStopColor(2));
 		TestSupport.flush(display);
+		TestSupport.awaitNativePaint(fresh, freshPaints, 1,
+				"reference gradient after hidden deltas did not paint natively");
 		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(chooser).data);
 	}
 

@@ -237,16 +237,22 @@ public class HeatMapTest {
 
 	@Test
 	public void deltaRepaintsOnlyTheRowsOnScreen() {
+		// Complete the initial native paint before observing model damage.
+		TestSupport.awaitNativePaint(map, paints, 1,
+				"initial HeatMap did not paint natively");
+		paints.clear();
 		map.setGridSize(1000, 10);
 		map.setCellSize(10, 10);
 		map.setRange(0f, 1f);
-		flush();
+		TestSupport.awaitNativePaint(map, paints, 1,
+				"configured HeatMap did not paint natively");
 		paints.clear();
 		map.update(500, 600);
 		flush();
 		assertTrue(paints.isEmpty());
 		map.update(2, 3);
-		flush();
+		TestSupport.awaitNativePaint(map, paints, 1,
+				"visible HeatMap rows did not paint natively");
 		assertEquals(1, paints.size());
 		assertEquals(20, paints.get(0).y);
 		assertEquals(20, paints.get(0).height);
@@ -255,13 +261,15 @@ public class HeatMapTest {
 		flush();
 		assertTrue(paints.isEmpty());
 		map.setValue(1, 1, 0.5f);
-		flush();
+		TestSupport.awaitNativePaint(map, paints, 1,
+				"visible HeatMap cell did not paint natively");
 		assertEquals(1, paints.size());
 		assertEquals(new Rectangle(10, 10, 10, 10), paints.get(0));
 		paints.clear();
 		map.update(-5, 2000);
 		map.update(3, 2);
-		flush();
+		TestSupport.awaitNativePaint(map, paints, 1,
+				"visible HeatMap row range did not paint natively");
 		assertEquals(1, paints.size());
 		map.setGridSize(0, 0);
 		map.update(0, 0);
@@ -272,6 +280,8 @@ public class HeatMapTest {
 
 	@Test
 	public void pixelsMatchACellByCellReference() {
+		// Keep native scrollbars outside the cell pixels compared by this reference.
+		map.setScrollbarsMode(SWT.NONE);
 		paints.clear(); // observe real Paint after the final cell-model mutations
 		map.setGridSize(40, 50);
 		map.setCellSize(9, 7);
