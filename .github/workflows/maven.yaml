@@ -178,21 +178,33 @@ jobs:
             'panelOffsetIsClampedPreservedOnRelayoutAndReturnedToZero',
             'fixedDescendantDoesNotMoveWithAnUnrelatedHiddenPanelScroll',
         }
+        required_methods = {
+            ('HtmlStylesTest', 'overflowScrollModesDoNotAliasTheMaskOrInherit'),
+            ('HtmlPositionedGeometryTest', 'hiddenProgrammaticScrollPreservesTheParentBorderButClipRefusesScroll'),
+            ('HtmlPositionedGeometryTest', 'autoAndScrollPanelsConsumeWheelWithoutMovingRoot'),
+            ('HtmlPositionedGeometryTest', 'nestedPanelScrollOffsetsAddAndFixedChildrenEscapeThem'),
+            ('DrawnBrowserPositionedTest', 'nestedWheelScrollMovesPanelPixelsWithoutMovingTheRootPage'),
+        }
         seen = set()
         seen_scroll_methods = set()
+        methods = set()
         for f in reports:
             doc = ET.parse(f).getroot()
             for case in doc.iter('testcase'):
-                classname = case.attrib.get('classname', '').rsplit('.', 1)[-1]
-                seen.add(classname)
-                if classname == 'HtmlPositionedGeometryTest':
+                cls = case.attrib.get('classname', '').rsplit('.', 1)[-1]
+                seen.add(cls)
+                methods.add((cls, case.attrib.get('name', '')))
+                if cls == 'HtmlPositionedGeometryTest':
                     seen_scroll_methods.add(case.attrib.get('name', ''))
         missing = sorted(required - seen)
         missing_scroll = sorted(required_scroll_methods - seen_scroll_methods)
+        missing_methods = sorted(required_methods - methods)
         print(f'DrawnBrowser tests={tests} failures+errors={failed} skipped={skipped} '
-              f'missing_classes={missing} missing_scroll_methods={missing_scroll}')
-        if tests < 394 or failed or skipped or missing or missing_scroll:
-            sys.exit('FAIL: require >=394 GTK3 cases, five control classes, five panel-scroll methods, zero failure/skip')
+              f'missing_classes={missing} missing_scroll_methods={missing_methods} '
+              f'missing_hidden_panel_methods={missing_scroll}')
+        if tests < 399 or failed or skipped or missing or missing_methods or missing_scroll:
+            sys.exit('FAIL: expected >=399 GTK3 native tests, five stacking classes, '
+                     'five original scrolling methods, five hidden-panel scroll methods, zero failed/skipped')
         PY
     - name: Build All Widgets
       shell: bash
