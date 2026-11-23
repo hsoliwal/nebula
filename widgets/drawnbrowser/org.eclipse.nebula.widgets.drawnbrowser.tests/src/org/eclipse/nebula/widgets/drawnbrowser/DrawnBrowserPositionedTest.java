@@ -103,6 +103,29 @@ public class DrawnBrowserPositionedTest {
 	}
 
 	@Test
+	public void rootScrollStartsOnTheNextEventAfterThePanelReachesItsLimit() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		show("<section style='position:relative;width:100px;height:40px;overflow:auto;background:lime'>"
+				+ "<article style='position:relative;top:60px;width:60px;height:20px;background:red'></article>"
+				+ "</section><aside style='height:500px'></aside>");
+		Event wheel = new Event();
+		wheel.x = 10; wheel.y = 10; wheel.count = -10; wheel.doit = true;
+		browser.notifyListeners(SWT.MouseWheel, wheel);
+		settle();
+		assertTrue("the SWT default wheel action stays cancelled", !wheel.doit);
+		assertEquals("the panel consumed part of the event; root stays put", 0, browser.getScrollY());
+		Event afterBoundary = new Event();
+		afterBoundary.x = 10; afterBoundary.y = 10; afterBoundary.count = -10; afterBoundary.doit = true;
+		browser.notifyListeners(SWT.MouseWheel, afterBoundary);
+		settle();
+		assertTrue(!afterBoundary.doit);
+		assertEquals("the next event reaches the root after saturation", 160, browser.getScrollY());
+		browser.setScrollY(0);
+		settle();
+		assertEquals("local panel offset is retained after root scroll", new RGB(255, 0, 0), pixel(10, 30));
+	}
+
+	@Test
 	public void nestedPanelClipsAbsoluteChildPixelsButKeepsItsOwnBorder() {
 		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 		show("<div style='position:relative;left:20px;top:10px;width:80px;height:50px;"
