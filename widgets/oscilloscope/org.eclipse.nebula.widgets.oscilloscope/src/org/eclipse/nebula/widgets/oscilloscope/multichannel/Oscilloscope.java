@@ -163,6 +163,7 @@ public class Oscilloscope extends Canvas {
 				}
 				top = 0;
 				bottom = 0;
+				storedValues = 0;
 			}
 		}
 

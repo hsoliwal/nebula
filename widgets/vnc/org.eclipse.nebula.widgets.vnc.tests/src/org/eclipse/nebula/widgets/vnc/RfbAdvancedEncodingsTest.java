@@ -139,7 +139,7 @@ public class RfbAdvancedEncodingsTest {
         exchange(8, messages.toByteArray(), 2, client -> {
             client.readPacket(); client.readPacket();
             assertArrayEquals(new int[] {RED, GREEN, 0xff000000},
-                    client.framebuffer().snapshot(0, 0, 3, 1).pixels());
+                    Arrays.copyOf(client.framebuffer().snapshot().pixels(), 3));
         });
     }
 
@@ -221,6 +221,44 @@ public class RfbAdvancedEncodingsTest {
             assertThrows(IOException.class, client::readPacket);
             assertArrayEquals(new int[6], java.util.Arrays.stream(
                     client.framebuffer().snapshot().pixels()).map(v -> v & 0xffffff).toArray());
+        });
+    }
+
+    @Test public void rrePublishesExactExistingDamageWithoutASecondFramebuffer() throws Exception {
+        ByteArrayOutputStream messages = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(messages);
+        packet(out, 1);
+        rect(out, 1, 0, 2, 1, 2);
+        out.writeInt(1); pixel(out, BLUE);
+        pixel(out, RED); out.writeShort(0); out.writeShort(0);
+        out.writeShort(1); out.writeShort(1);
+        exchange(8, messages.toByteArray(), 1, connection -> {
+            RfbFramebuffer frame = connection.framebuffer();
+            long seen = frame.snapshotSince(-1).revision();
+            connection.readPacket();
+            RfbFramebuffer.FrameUpdate patch = frame.snapshotSince(seen);
+            assertFalse(patch.complete());
+            assertEquals(1, patch.x());
+            assertEquals(0, patch.y());
+            assertArrayEquals(new int[] {RED, BLUE}, patch.pixels());
+            assertSame(frame, connection.framebuffer());
+        });
+    }
+
+    @Test public void malformedRreSubrectangleDoesNotPublishPartialBackground() throws Exception {
+        ByteArrayOutputStream messages = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(messages);
+        packet(out, 1); rect(out, 0, 0, 3, 2, 2);
+        out.writeInt(1); pixel(out, BLUE);
+        pixel(out, RED); out.writeShort(2); out.writeShort(1);
+        out.writeShort(2); out.writeShort(2); // subrect extends outside 3x2
+        exchange(8, messages.toByteArray(), 0, connection -> {
+            RfbFramebuffer frame = connection.framebuffer();
+            long seen = frame.revision();
+            assertThrows(IOException.class, connection::readPacket);
+            assertEquals(seen, frame.revision());
+            assertArrayEquals(new int[] {0xff000000, 0xff000000, 0xff000000,
+                    0xff000000, 0xff000000, 0xff000000}, frame.snapshot().pixels());
         });
     }
 }

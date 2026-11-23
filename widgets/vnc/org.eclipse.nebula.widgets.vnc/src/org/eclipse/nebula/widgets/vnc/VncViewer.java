@@ -17,9 +17,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
@@ -38,9 +40,14 @@ import org.eclipse.swt.widgets.Event;
  * standard host/port connector intentionally permits loopback only. Forward a
  * remote VNC port through SSH/TLS, pass an already connected secure Socket, or
  * explicitly opt into an insecure remote connection.</p>
+ *
+ * <p>{@link #attach(RfbClient)} instead presents a caller-authorized
+ * {@link RfbClient#open caller-owned stream session}. Its framebuffer is
+ * painted by the same retained-image pipeline; remote pointer and keyboard
+ * events for it are disabled until {@link #setInputEnabled(boolean)} and are
+ * sent by a bounded serial dispatcher that never writes on the SWT thread.</p>
  */
 public class VncViewer extends Canvas {
-    private static final int PAINT_TILE = 512;
     private interface SocketOpener {
         Socket open() throws IOException;
     }
@@ -67,9 +74,19 @@ public class VncViewer extends Canvas {
     private volatile RfbFramebuffer framebuffer;
     private volatile String status = "Disconnected";
     private volatile String clipboardText = "";
+    private Image cachedImage;
+    private RfbFramebuffer cachedOwner;
+    private long cachedRevision = -1;
     private Rectangle displayedBounds = new Rectangle(0, 0, 0, 0);
-    private int pointerButtons;
+    private final RfbViewportInput pointerInput = new RfbViewportInput();
+    /* A caller-attached stream session (attach); its input is opt-in. */
+    private volatile RfbClient attachedClient;
+    private RfbInputDispatcher inputDispatcher;
+    private Consumer<IOException> failureListener = error -> { };
+    private boolean inputEnabled;
+    private final RfbViewportInput attachedInput = new RfbViewportInput();
 
+    @SuppressWarnings("this-escape") // SWT widgets register their listeners in the constructor.
     public VncViewer(Composite parent, int style) {
         super(parent, style | SWT.DOUBLE_BUFFERED);
         display = getDisplay();
@@ -77,32 +94,59 @@ public class VncViewer extends Canvas {
         addListener(SWT.Resize, event -> redraw());
         addListener(SWT.MouseDown, event -> {
             setFocus();
-            pointerButtons |= mouseButton(event.button);
-            sendPointer(event.x, event.y, pointerButtons);
+            // Presses in letterbox margins must not start a remote drag.
+            sendCaptured(pointerInput.press(mouseButton(event.button), mappedPointer(event.x, event.y)));
         });
         addListener(SWT.MouseUp, event -> {
-            pointerButtons &= ~mouseButton(event.button);
-            sendPointer(event.x, event.y, pointerButtons);
+            // Drop unsent movement before the release. If the pointer has left
+            // the image, release at the last captured remote pixel.
+            pendingMotion.set(null);
+            sendCaptured(pointerInput.release(mouseButton(event.button), mappedPointer(event.x, event.y)));
         });
-        addListener(SWT.MouseMove, event -> sendPointerCoalesced(event.x, event.y, pointerButtons));
+        addListener(SWT.MouseMove, event -> {
+            int[] command = pointerInput.move(mappedPointer(event.x, event.y));
+            if (command != null) sendPointerCoalesced(command);
+        });
         addListener(SWT.MouseWheel, event -> {
             int wheel = event.count > 0 ? 8 : 16;
             int steps = Math.min(8, Math.abs(event.count));
+            int mask = pointerInput.buttons();
             for (int i = 0; i < steps; i++) {
-                sendPointer(event.x, event.y, pointerButtons | wheel);
-                sendPointer(event.x, event.y, pointerButtons);
+                sendPointer(event.x, event.y, mask | wheel);
+                sendPointer(event.x, event.y, mask);
             }
         });
         addListener(SWT.KeyDown, event -> sendKey(event, true));
         addListener(SWT.KeyUp, event -> sendKey(event, false));
+        // Attached stream sessions: separate capture state, explicit input opt-in.
+        addListener(SWT.MouseDown, event -> sendAttached(attachedInput.press(
+                mouseButton(event.button), attachedPointer(event.x, event.y))));
+        addListener(SWT.MouseUp, event -> sendAttached(attachedInput.release(
+                mouseButton(event.button), attachedPointer(event.x, event.y))));
+        addListener(SWT.MouseMove, event -> sendAttached(attachedInput.move(
+                attachedPointer(event.x, event.y))));
+        addListener(SWT.MouseWheel, event -> {
+            int[] at = attachedPointer(event.x, event.y);
+            if (at == null || event.count == 0) return;
+            int pulse = event.count > 0 ? 8 : 16;
+            int mask = attachedInput.buttons();
+            for (int i = 0; i < Math.min(Math.abs(event.count), 16); i++) {
+                sendAttached(new int[] { at[0], at[1], mask | pulse });
+                sendAttached(new int[] { at[0], at[1], mask });
+            }
+        });
+        addListener(SWT.KeyDown, event -> sendAttachedKey(event, true));
+        addListener(SWT.KeyUp, event -> sendAttachedKey(event, false));
         addDisposeListener(event -> {
             generation.incrementAndGet();
+            detachClient();
             RfbConnection active = connection;
             connection = null;
             if (active != null) active.close();
             pendingMotion.set(null);
+            pointerInput.reset();
             outbound.shutdownNow();
-            resetViewportBounds();
+            discardImage();
         });
     }
 
@@ -172,7 +216,7 @@ public class VncViewer extends Canvas {
                     public void changed(RfbFramebuffer newFramebuffer) {
                         if (generation.get() == epoch) {
                             framebuffer = newFramebuffer;
-                            queueRedraw(epoch);
+                            queueRedraw();
                         }
                     }
 
@@ -190,7 +234,7 @@ public class VncViewer extends Canvas {
                     public void failed(IOException exception) {
                         if (generation.get() == epoch) {
                             status = "RFB error: " + exception.getMessage();
-                            queueRedraw(epoch);
+                            queueRedraw();
                         }
                     }
                 };
@@ -199,12 +243,12 @@ public class VncViewer extends Canvas {
                 connection = client;
                 framebuffer = client.framebuffer();
                 status = "Connected: " + client.serverName();
-                queueRedraw(epoch);
+                queueRedraw();
                 client.readLoop();
             } catch (IOException | IllegalArgumentException failure) {
                 if (generation.get() == epoch) {
                     status = "RFB error: " + failure.getMessage();
-                    queueRedraw(epoch);
+                    queueRedraw();
                 }
             } finally {
                 Arrays.fill(password, '\0');
@@ -219,31 +263,81 @@ public class VncViewer extends Canvas {
                 if (generation.get() == epoch) {
                     connection = null;
                     if (status.startsWith("Connected:")) status = "Disconnected";
-                    queueRedraw(epoch);
+                    queueRedraw();
                 }
             }
         });
+    }
+
+    /** Takes ownership of an initialized client; callers must open transport first. */
+    public void attach(RfbClient authorizedClient) {
+        checkWidget();
+        Objects.requireNonNull(authorizedClient, "authorizedClient");
+        if (attachedClient != null) {
+            throw new IllegalStateException("VNC client already attached");
+        }
+        RfbFramebuffer remote = authorizedClient.streamFramebuffer();
+        disconnect();
+        int epoch = generation.incrementAndGet();
+        attachedClient = authorizedClient;
+        inputDispatcher = new RfbInputDispatcher(authorizedClient, this::reportFailure);
+        framebuffer = remote;
+        status = "Connected: " + authorizedClient.desktopName();
+        queueRedraw();
+        Thread.ofVirtual().name("nebula-vnc-frame-receiver").start(() -> {
+            try {
+                while (generation.get() == epoch) {
+                    authorizedClient.readStreamUpdate();
+                    if (generation.get() == epoch) queueRedraw();
+                }
+            } catch (IOException exception) {
+                if (generation.get() == epoch) {
+                    status = "RFB error: " + exception.getMessage();
+                    queueRedraw();
+                    reportFailure(exception);
+                }
+            }
+        });
+    }
+
+    /**
+     * Remote pointer and keyboard events of an attached session are disabled
+     * until explicitly enabled. Sessions opened by connect() are unaffected.
+     */
+    public void setInputEnabled(boolean enabled) {
+        checkWidget();
+        inputEnabled = enabled;
+        if (!enabled) {
+            attachedInput.reset();
+        }
+    }
+
+    /** Receives transport and input failures of an attached session on the SWT thread. */
+    public void setFailureListener(Consumer<IOException> listener) {
+        checkWidget();
+        failureListener = Objects.requireNonNull(listener, "listener");
     }
 
     /** Disconnects and releases the last cached SWT framebuffer. */
     public void disconnect() {
         checkWidget();
         generation.incrementAndGet();
+        detachClient();
         RfbConnection active = connection;
         connection = null;
         if (active != null) active.close();
         framebuffer = null;
         pendingMotion.set(null);
-        pointerButtons = 0;
+        pointerInput.reset();
         clipboardText = "";
         status = "Disconnected";
-        resetViewportBounds();
+        discardImage();
         redraw();
     }
 
     public boolean isConnected() {
         checkWidget();
-        return connection != null;
+        return connection != null || attachedClient != null;
     }
 
     public String getConnectionStatus() {
@@ -266,15 +360,50 @@ public class VncViewer extends Canvas {
         }
     }
 
-    private void queueRedraw(int epoch) {
+    private void queueRedraw() {
         if (display.isDisposed() || !redrawQueued.compareAndSet(false, true)) return;
         display.asyncExec(() -> {
             redrawQueued.set(false);
-            if (!isDisposed() && generation.get() == epoch) redraw();
+            // A pending callback from an old connection may be the only one
+            // queued when a new connection publishes its first framebuffer.
+            // Repaint the latest owner, not the callback's stale epoch.
+            if (!isDisposed()) redrawChangedFrame();
         });
     }
 
-    private void resetViewportBounds() {
+    private void redrawChangedFrame() {
+        RfbFramebuffer current = framebuffer;
+        Rectangle target = displayedBounds;
+        if (current == null || current != cachedOwner || cachedImage == null
+                || target.width == 0 || target.height == 0) {
+            redraw();
+            return;
+        }
+        RfbFramebuffer.Damage damage = current.damageSince(cachedRevision);
+        if (damage.complete() || damage.width() == 0 || damage.height() == 0) {
+            redraw();
+            return;
+        }
+        // Floor the leading edge, ceil the trailing edge, and keep a one-pixel
+        // interpolation guard. GC clipping then limits native screen painting
+        // to the area affected by Raw, Hextile or CopyRect.
+        Rectangle view = getClientArea();
+        int x0 = (int) Math.max(view.x, (long) target.x
+                + (long) damage.x() * target.width / current.width() - 1);
+        int y0 = (int) Math.max(view.y, (long) target.y
+                + (long) damage.y() * target.height / current.height() - 1);
+        int x1 = (int) Math.min((long) view.x + view.width, (long) target.x
+                + Math.ceilDiv((long) (damage.x() + damage.width()) * target.width, current.width()) + 1);
+        int y1 = (int) Math.min((long) view.y + view.height, (long) target.y
+                + Math.ceilDiv((long) (damage.y() + damage.height()) * target.height, current.height()) + 1);
+        if (x1 > x0 && y1 > y0) redraw(x0, y0, x1 - x0, y1 - y0, false);
+    }
+
+    private void discardImage() {
+        if (cachedImage != null && !cachedImage.isDisposed()) cachedImage.dispose();
+        cachedImage = null;
+        cachedOwner = null;
+        cachedRevision = -1;
         displayedBounds = new Rectangle(0, 0, 0, 0);
     }
 
@@ -284,44 +413,54 @@ public class VncViewer extends Canvas {
             event.gc.drawText(status, 8, 8, true);
             return;
         }
+        if (cachedOwner != current || cachedRevision != current.revision()) {
+            RfbFramebuffer.FrameUpdate change = current.snapshotSince(
+                    cachedOwner == current && cachedImage != null ? cachedRevision : -1);
+            if (change.complete()) {
+                // Initial frame, resize, or an update too old for the bounded
+                // damage interval: install a complete native SWT image.
+                Image next = new Image(display, imageData(change));
+                discardImage();
+                cachedImage = next;
+            } else if (change.changedWidth() > 0 && change.changedHeight() > 0) {
+                // Normal RFB Raw/Hextile/CopyRect: upload only changed pixels
+                // to the retained image. Do not allocate/copy the full screen.
+                Image patch = new Image(display, imageData(change));
+                try {
+                    GC target = new GC(cachedImage);
+                    try {
+                        target.drawImage(patch, change.x(), change.y());
+                    } finally {
+                        target.dispose();
+                    }
+                } finally {
+                    patch.dispose();
+                }
+            }
+            cachedOwner = current;
+            cachedRevision = change.revision();
+        }
         Rectangle bounds = getClientArea();
         if (bounds.width == 0 || bounds.height == 0) return;
-        int frameWidth = current.width(), frameHeight = current.height();
-        double scale = Math.min((double) bounds.width / frameWidth,
-                (double) bounds.height / frameHeight);
-        int scaledWidth = Math.max(1, (int) Math.round(frameWidth * scale));
-        int scaledHeight = Math.max(1, (int) Math.round(frameHeight * scale));
+        double scale = Math.min((double) bounds.width / cachedImage.getBounds().width,
+                (double) bounds.height / cachedImage.getBounds().height);
+        int scaledWidth = Math.max(1, (int) Math.round(cachedImage.getBounds().width * scale));
+        int scaledHeight = Math.max(1, (int) Math.round(cachedImage.getBounds().height * scale));
         int x = bounds.x + (bounds.width - scaledWidth) / 2;
         int y = bounds.y + (bounds.height - scaledHeight) / 2;
         displayedBounds = new Rectangle(x, y, scaledWidth, scaledHeight);
-        Rectangle dirty = new Rectangle(event.x, event.y, event.width, event.height);
-        event.gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-        event.gc.fillRectangle(dirty);
-        Rectangle visible = dirty.intersection(displayedBounds);
-        if (visible.width < 1 || visible.height < 1) return;
+        event.gc.drawImage(cachedImage, 0, 0, cachedImage.getBounds().width,
+                cachedImage.getBounds().height, x, y, scaledWidth, scaledHeight);
+    }
 
-        // The original SWT GC remains the compositor and clipping owner. A
-        // 512x512 temporary Image bounds both native and heap paint residency,
-        // even when the full RFB desktop is many megapixels larger than the UI.
-        for (int ty = visible.y; ty < visible.y + visible.height; ty += PAINT_TILE) {
-            int th = Math.min(PAINT_TILE, visible.y + visible.height - ty);
-            for (int tx = visible.x; tx < visible.x + visible.width; tx += PAINT_TILE) {
-                int tw = Math.min(PAINT_TILE, visible.x + visible.width - tx);
-                RfbFramebuffer.Snapshot tile = current.snapshotScaled(tx, ty, tw, th,
-                        x, y, scaledWidth, scaledHeight);
-                ImageData data = new ImageData(tw, th, 24,
-                        new PaletteData(0x00ff0000, 0x0000ff00, 0x000000ff));
-                for (int row = 0; row < th; row++) {
-                    data.setPixels(0, row, tw, tile.pixels(), row * tw);
-                }
-                Image image = new Image(display, data);
-                try {
-                    event.gc.drawImage(image, tx, ty);
-                } finally {
-                    image.dispose();
-                }
-            }
+    private static ImageData imageData(RfbFramebuffer.FrameUpdate change) {
+        int width = change.changedWidth(), height = change.changedHeight();
+        ImageData data = new ImageData(width, height, 24,
+                new PaletteData(0x00ff0000, 0x0000ff00, 0x000000ff));
+        for (int row = 0; row < height; row++) {
+            data.setPixels(0, row, width, change.pixels(), row * width);
         }
+        return data;
     }
 
     private static int mouseButton(int button) {
@@ -337,12 +476,28 @@ public class VncViewer extends Canvas {
         RfbConnection active = connection;
         RfbFramebuffer current = framebuffer;
         Rectangle target = displayedBounds;
-        if (active == null || current == null || target.width == 0 || target.height == 0) {
-            return null;
+        // A newly decoded frame cannot receive input until its exact revision
+        // has actually been painted. Do not send to stale/letterboxed geometry.
+        if (active == null || current == null || cachedOwner != current
+                || cachedRevision != current.revision()) return null;
+        int remoteWidth = current.width();
+        int remoteHeight = current.height();
+        if (cachedRevision != current.revision()) return null;
+        int[] xy = RfbViewportInput.map(x, y, target.x, target.y, target.width,
+                target.height, remoteWidth, remoteHeight);
+        return xy == null ? null : new PointerUpdate(active, xy[0], xy[1], buttons);
+    }
+
+    private int[] mappedPointer(int x, int y) {
+        PointerUpdate update = pointerUpdate(x, y, 0);
+        return update == null ? null : new int[] { update.x(), update.y() };
+    }
+
+    private void sendCaptured(int[] command) {
+        RfbConnection active = connection;
+        if (active != null && command != null) {
+            queueInput(active, client -> client.sendPointer(command[0], command[1], command[2]));
         }
-        int px = (int) ((long) (x - target.x) * current.width() / target.width);
-        int py = (int) ((long) (y - target.y) * current.height() / target.height);
-        return new PointerUpdate(active, px, py, buttons);
     }
 
     private void sendPointer(int x, int y, int buttons) {
@@ -354,11 +509,11 @@ public class VncViewer extends Canvas {
         }
     }
 
-    private void sendPointerCoalesced(int x, int y, int buttons) {
-        PointerUpdate update = pointerUpdate(x, y, buttons);
-        if (update != null) {
+    private void sendPointerCoalesced(int[] command) {
+        RfbConnection active = connection;
+        if (active != null) {
             // Never enqueue one network write for every high-frequency move.
-            pendingMotion.set(update);
+            pendingMotion.set(new PointerUpdate(active, command[0], command[1], command[2]));
             scheduleMotion();
         }
     }
@@ -402,9 +557,66 @@ public class VncViewer extends Canvas {
         }
     }
 
+    private void detachClient() {
+        RfbInputDispatcher dispatcher = inputDispatcher;
+        inputDispatcher = null;
+        if (dispatcher != null) dispatcher.close();
+        attachedInput.reset();
+        RfbClient attached = attachedClient;
+        attachedClient = null;
+        if (attached != null) {
+            // Closing caller-supplied streams can block; never do it on SWT.
+            Thread.ofVirtual().name("nebula-vnc-close").start(attached::close);
+        }
+    }
+
+    private void reportFailure(IOException error) {
+        if (!display.isDisposed()) {
+            display.asyncExec(() -> {
+                if (!isDisposed()) {
+                    failureListener.accept(error);
+                }
+            });
+        }
+    }
+
+    private void rejectOverflow() {
+        inputEnabled = false;
+        attachedInput.reset();
+        failureListener.accept(new IOException("RFB outbound input queue full or closed"));
+    }
+
+    /* Same painted-geometry rule as connect() sessions, for an enabled attached session. */
+    private int[] attachedPointer(int x, int y) {
+        RfbFramebuffer current = framebuffer;
+        if (!inputEnabled || attachedClient == null || current == null
+                || cachedOwner != current || cachedRevision != current.revision()) return null;
+        Rectangle target = displayedBounds;
+        return RfbViewportInput.map(x, y, target.x, target.y, target.width,
+                target.height, current.width(), current.height());
+    }
+
+    private void sendAttached(int[] command) {
+        if (command == null || !inputEnabled || attachedClient == null) return;
+        RfbInputDispatcher dispatcher = inputDispatcher;
+        if (dispatcher == null || !dispatcher.offerPointer(command[0], command[1], command[2])) {
+            rejectOverflow();
+        }
+    }
+
+    private void sendAttachedKey(Event event, boolean down) {
+        if (!inputEnabled || attachedClient == null) return;
+        int keysym = keysym(event);
+        if (keysym == 0) return;
+        RfbInputDispatcher dispatcher = inputDispatcher;
+        if (dispatcher == null || !dispatcher.offerKey(down, keysym)) {
+            rejectOverflow();
+        }
+    }
+
     private void inputFailure(IOException error) {
         status = "RFB input error: " + error.getMessage();
-        queueRedraw(generation.get());
+        queueRedraw();
     }
 
     private void sendKey(Event event, boolean down) {

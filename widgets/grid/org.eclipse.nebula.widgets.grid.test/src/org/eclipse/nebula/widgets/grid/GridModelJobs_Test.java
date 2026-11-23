@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
@@ -119,8 +121,8 @@ public class GridModelJobs_Test {
 			display.readAndDispatch();
 		}
 		assertTrue("Both queued results must complete", old.isDone() && newer.isDone());
-		assertFalse("The superseded result must not commit", old.join());
-		assertTrue("The last submitted sort must commit", newer.join());
+		assertFalse("The superseded result must not commit", old.join().booleanValue());
+		assertTrue("The last submitted sort must commit", newer.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(keys, rows, true), view(grid.getRowPermutation()));
 	}
 
@@ -144,7 +146,106 @@ public class GridModelJobs_Test {
 				keys(GridModelJobs.BATCH_THRESHOLD), false, workers::add);
 		grid.dispose();
 		assertTrue(done.isDone());
-		assertFalse(done.join());
+		assertFalse(done.join().booleanValue());
+	}
+
+	@Test
+	public void busySortCannotOverrideNewerRequestAdmittedDuringNestedUiPump() throws Exception {
+		/* Force the old busy method's worker branch regardless of measurements
+		 * left by other tests. Its nested SWT event loop must not let an older
+		 * order supersede either kind of newer asynchronous request. */
+		final java.lang.reflect.Field cost = GridModelJobs.class.getDeclaredField("sortNanosPerRow"); //$NON-NLS-1$
+		cost.setAccessible(true);
+		final long originalCost = cost.getLong(null);
+		try {
+			for (boolean newestCpuLane : new boolean[] { false, true }) {
+				cost.setLong(null, GridModelJobs.INLINE_BUDGET_NANOS);
+				final int rows = GridModelJobs.BATCH_THRESHOLD;
+				final Grid grid = grid(rows);
+				final int[] keys = keys(rows);
+				final CountDownLatch allowOldWorker = new CountDownLatch(1);
+				final List<Runnable> workers = new ArrayList<>();
+				final AtomicReference<CompletableFuture<Boolean>> newest = new AtomicReference<>();
+				try {
+					display.asyncExec(() -> {
+						newest.set(newestCpuLane
+								? GridModelJobs.sortByIntKeysCpuLatest(grid, keys, true, workers::add)
+								: GridModelJobs.sortByIntKeys(grid, keys, true, workers::add));
+						allowOldWorker.countDown();
+					});
+					final boolean olderApplied = GridModelJobs.sortByIntKeysBusy(grid, keys, false, task -> {
+						final Thread worker = new Thread(() -> {
+							try {
+								if (!allowOldWorker.await(5, TimeUnit.SECONDS)) {
+									throw new IllegalStateException("SWT busy event loop did not dispatch newer sort"); //$NON-NLS-1$
+								}
+								task.run();
+							} catch (InterruptedException failure) {
+								Thread.currentThread().interrupt();
+								throw new IllegalStateException(failure);
+							}
+						}, "nebula-older-busy-sort"); //$NON-NLS-1$
+						worker.setDaemon(true);
+						worker.start();
+					});
+					assertFalse("newer request must invalidate pending busy result", olderApplied); //$NON-NLS-1$
+					assertFalse("older result must not mutate permutation", grid.getRowPermutation().isSorted()); //$NON-NLS-1$
+					assertEquals(1, workers.size());
+					final Thread worker = new Thread(workers.get(0), "nebula-newer-sort"); //$NON-NLS-1$
+					worker.setDaemon(true);
+					worker.start();
+					pumpUntil(newest.get());
+					worker.join(2_000);
+					assertTrue("latest sort must apply", newest.get().join().booleanValue()); //$NON-NLS-1$
+					assertArrayEquals(RowPermutation.sortedOrder(keys, rows, true), view(grid.getRowPermutation()));
+				} finally {
+					allowOldWorker.countDown();
+				}
+			}
+		} finally {
+			cost.setLong(null, originalCost);
+		}
+	}
+
+	@Test
+	public void workerFailureCompletesFutureAndRunsCleanupOnUiThread() throws Exception {
+		/* CompletableFuture's dependent callbacks run inline with completion.
+		 * The failure path must be a Display handoff just like success, even
+		 * for an Error thrown by the detached CPU computation. */
+		final java.lang.reflect.Method handoff = GridModelJobs.class.getDeclaredMethod(
+				"finishWorkerFailure", Display.class, CompletableFuture.class, //$NON-NLS-1$
+				Throwable.class, Runnable.class);
+		handoff.setAccessible(true);
+		for (Throwable failure : new Throwable[] {
+				new IllegalStateException("worker failure"), new AssertionError("worker error") }) { //$NON-NLS-1$ //$NON-NLS-2$
+			final CompletableFuture<Boolean> done = new CompletableFuture<>();
+			final AtomicReference<Thread> completedOn = new AtomicReference<>();
+			final AtomicReference<Thread> cleanedOn = new AtomicReference<>();
+			final AtomicReference<Throwable> invocationFailure = new AtomicReference<>();
+			done.whenComplete((value, error) -> completedOn.set(Thread.currentThread()));
+			final Thread worker = new Thread(() -> {
+				try {
+					handoff.invoke(null, display, done, failure,
+							(Runnable) () -> cleanedOn.set(Thread.currentThread()));
+				} catch (ReflectiveOperationException error) {
+					invocationFailure.set(error);
+				}
+			}, "nebula-failed-cpu-sort"); //$NON-NLS-1$
+			worker.setDaemon(true);
+			worker.start();
+			worker.join(2_000);
+			assertFalse("failure handoff may not finish on a worker", done.isDone()); //$NON-NLS-1$
+			org.junit.Assert.assertNull(invocationFailure.get());
+			pumpUntil(done);
+			org.junit.Assert.assertSame(Thread.currentThread(), completedOn.get());
+			org.junit.Assert.assertSame(Thread.currentThread(), cleanedOn.get());
+			try {
+				done.join();
+				org.junit.Assert.fail("CPU failure must retain its original cause"); //$NON-NLS-1$
+			} catch (java.util.concurrent.CompletionException expected) {
+				org.junit.Assert.assertSame(failure, expected.getCause());
+			}
+		}
 	}
 
 
@@ -178,7 +279,7 @@ public class GridModelJobs_Test {
 		pumpUntil(done);
 		worker.join(2000);
 		assertTrue(calculatedOffUi.get());
-		assertTrue(done.join());
+		assertTrue(done.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(keys(rows), rows, false),
 				view(grid.getRowPermutation()));
 	}
@@ -204,7 +305,7 @@ public class GridModelJobs_Test {
 		worker.start();
 		pumpUntil(done);
 		worker.join(2000);
-		assertTrue(done.join());
+		assertTrue(done.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(expected, rows, false), view(grid.getRowPermutation()));
 	}
 
@@ -222,14 +323,14 @@ public class GridModelJobs_Test {
 				grid, input, true, submitted::add);
 		assertEquals("one worker drain must serve the newest request", 1, submitted.size());
 		assertTrue(first.isDone());
-		assertFalse(first.join());
+		assertFalse(first.join().booleanValue());
 		assertTrue(second.isDone());
-		assertFalse(second.join());
+		assertFalse(second.join().booleanValue());
 		final Thread worker = new Thread(submitted.get(0), "nebula-coalesced-cpu");
 		worker.start();
 		pumpUntil(last);
 		worker.join(2000);
-		assertTrue(last.join());
+		assertTrue(last.join().booleanValue());
 		assertArrayEquals(RowPermutation.sortedOrder(input, rows, true), view(grid.getRowPermutation()));
 	}
 
@@ -257,14 +358,14 @@ public class GridModelJobs_Test {
 		worker.start();
 		pumpUntil(stale);
 		worker.join(2000);
-		assertFalse(stale.join());
+		assertFalse(stale.join().booleanValue());
 
 		final List<Runnable> pending = new ArrayList<>();
 		final CompletableFuture<Boolean> disposed = GridModelJobs.sortByIntKeysCpuLatest(
 				grid, keys(rows), true, pending::add);
 		grid.dispose();
 		assertTrue(disposed.isDone());
-		assertFalse(disposed.join());
+		assertFalse(disposed.join().booleanValue());
 		// An accepted executor task can still start after disposal; it must be inert.
 		final Thread trailing = new Thread(pending.get(0), "nebula-disposed-cpu");
 		trailing.start();

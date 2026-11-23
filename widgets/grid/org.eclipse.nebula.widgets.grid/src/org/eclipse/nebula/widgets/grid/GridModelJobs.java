@@ -66,12 +66,26 @@ public final class GridModelJobs {
 			keys = ownedCopy;
 		}
 
+		/**
+		 * Copies the first {@code rows} keys into a detached immutable snapshot.
+		 *
+		 * @param source the keys to copy
+		 * @param rows the number of keys to include
+		 * @return a snapshot that owns its copy of the keys
+		 * @throws NullPointerException if {@code source} is {@code null}
+		 * @throws IndexOutOfBoundsException if {@code rows} is negative or exceeds the source length
+		 */
 		public static IntKeySnapshot copyOf(int[] source, int rows) {
 			Objects.requireNonNull(source, "source");
 			if (rows < 0 || rows > source.length) throw new IndexOutOfBoundsException("rows");
 			return new IntKeySnapshot(java.util.Arrays.copyOf(source, rows));
 		}
 
+		/**
+		 * Returns the number of keys in this snapshot.
+		 *
+		 * @return the number of copied keys
+		 */
 		public int size() {
 			return keys.length;
 		}
@@ -379,10 +393,17 @@ public final class GridModelJobs {
 		final int version = permutation.getVersion();
 		final CompletableFuture<int[]> order = CompletableFuture
 				.supplyAsync(() -> RowPermutation.sortedOrder(snapshot, rows, descending), executor);
+		/* BusyIndicator runs a nested SWT event loop while the CPU job completes.
+		 * Publish this request to the same latest-sort owner as the asynchronous
+		 * entry points: a newer request may be admitted before this sort returns,
+		 * without having changed the permutation version yet. */
+		final Object request = new Object();
+		latestSort.put(grid, request);
 		BusyIndicator.showWhile(order);
 		final int[] result = order.join();
 		measured(rows, System.nanoTime() - t0);
-		if (grid.isDisposed() || grid.getRowPermutation() != permutation || permutation.getVersion() != version) {
+		if (grid.isDisposed() || grid.getRowPermutation() != permutation
+				|| permutation.getVersion() != version || latestSort.get(grid) != request) {
 			return false;
 		}
 		permutation.setOrder(result);
@@ -444,15 +465,10 @@ public final class GridModelJobs {
 				final int[] order;
 				try {
 					order = RowPermutation.sortedOrder(snapshot, rows, descending);
-				} catch (final RuntimeException failure) {
-					done.completeExceptionally(failure);
-					try {
-						display.asyncExec(() -> {
-							if (!grid.isDisposed()) grid.removeListener(SWT.Dispose, onDispose);
-						});
-					} catch (final org.eclipse.swt.SWTException disposed) {
-						/* The Grid's disposal listener has already completed the future. */
-					}
+				} catch (final RuntimeException | Error failure) {
+					finishWorkerFailure(display, done, failure, () -> {
+						if (!grid.isDisposed()) grid.removeListener(SWT.Dispose, onDispose);
+					});
 					return;
 				}
 				try {
@@ -488,5 +504,27 @@ public final class GridModelJobs {
 			throw rejected;
 		}
 		return done;
+	}
+
+	/*
+	 * Future callbacks may update SWT widgets. CompletableFuture invokes
+	 * non-async continuations on its completing thread, so even a failed CPU
+	 * sort must complete on the Display thread while that thread is live.
+	 */
+	private static void finishWorkerFailure(final Display display,
+			final CompletableFuture<Boolean> done, final Throwable failure,
+			final Runnable onUiCleanup) {
+		try {
+			display.asyncExec(() -> {
+				try {
+					done.completeExceptionally(failure);
+				} finally {
+					onUiCleanup.run();
+				}
+			});
+		} catch (final SWTException disposed) {
+			// The Display cannot deliver another UI callback after disposal.
+			done.complete(Boolean.FALSE);
+		}
 	}
 }

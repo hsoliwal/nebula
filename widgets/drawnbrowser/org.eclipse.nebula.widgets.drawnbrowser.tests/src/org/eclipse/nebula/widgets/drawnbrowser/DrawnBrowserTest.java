@@ -77,6 +77,38 @@ public class DrawnBrowserTest {
 	}
 
 	@Test
+	public void aNonShrinkingSidebarKeepsItsPaintedEdgeWhenTheWindowNarrows() {
+		open("<div style='display:flex;gap:10px'><div style='flex:0 0 240px;background:#ff0000'>i</div>"
+				+ "<div style='flex:0 1 200px;background:#0000ff'>j</div></div>");
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0);
+		org.eclipse.swt.graphics.RGB blue = new org.eclipse.swt.graphics.RGB(0, 0, 255);
+		for (int width : new int[] { 320, 280, 360 }) {
+			shell.setSize(width, 240);
+			shell.layout();
+			settle();
+			ImageData shown = visibleShot();
+			assertEquals("the sidebar ends at its authored 240px", red, rgbAt(shown, 239, 6));
+			assertEquals("the following panel starts after the 10px gap", blue, rgbAt(shown, 260, 6));
+			assertTrue("the gap remains clear", !red.equals(rgbAt(shown, 245, 6)) && !blue.equals(rgbAt(shown, 245, 6)));
+		}
+	}
+
+	/* Capture the actual visible Display pixels, independently of the widget's offscreen/print path. */
+	private ImageData visibleShot() {
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		org.eclipse.swt.graphics.Point origin = browser.toDisplay(area.x, area.y);
+		Image image = new Image(display, area.width, area.height);
+		GC gc = new GC(display);
+		try {
+			gc.copyArea(image, origin.x, origin.y);
+			return image.getImageData();
+		} finally {
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+	@Test
 	public void scrollingRepaintsOnlyTheExposedBand() {
 		open(paragraphs(300));
 		int height = browser.getClientArea().height;

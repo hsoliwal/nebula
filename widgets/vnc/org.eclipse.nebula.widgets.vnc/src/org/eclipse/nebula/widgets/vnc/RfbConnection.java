@@ -291,12 +291,13 @@ final class RfbConnection implements AutoCloseable {
         }
     }
 
-    /** Rectangle overlays, after the background is filled in the original owner. */
+    /** Decode RRE atomically, publishing one bounded damage interval only after validation. */
     private void readRre(int x, int y, int w, int h) throws IOException {
         validateRectangle(x, y, w, h);
         long count = Integer.toUnsignedLong(in.readInt());
         if (count > (long) w * h) throw new IOException("RRE subrectangle count exceeds tile");
-        framebuffer.fillRectangle(x, y, w, h, readColor());
+        int[] tile = new int[w * h];
+        Arrays.fill(tile, readColor());
         for (long i = 0; i < count; i++) {
             int color = readColor();
             int rx = in.readUnsignedShort(), ry = in.readUnsignedShort();
@@ -304,8 +305,11 @@ final class RfbConnection implements AutoCloseable {
             if (rw < 1 || rh < 1 || (long) rx + rw > w || (long) ry + rh > h) {
                 throw new IOException("RRE subrectangle outside tile");
             }
-            framebuffer.fillRectangle(x + rx, y + ry, rw, rh, color);
+            for (int row = ry; row < ry + rh; row++) {
+                Arrays.fill(tile, row * w + rx, row * w + rx + rw, color);
+            }
         }
+        framebuffer.writePixels(x, y, w, h, tile);
     }
 
     /** Zlib and ZRLE each retain their own stream dictionary across rectangles. */
