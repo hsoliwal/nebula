@@ -294,7 +294,8 @@ jobs:
                       'RfbCodecPropertyTest', 'RfbQueueBudgetTest',
                       'VncCanvasNativeTest', 'RfbRealServerTest',
                       'RfbTightDecoderTest', 'RfbCursorDecoderTest',
-                      'RfbHextileDecoderTest', 'VncCursorNativeTest'}
+                      'RfbHextileDecoderTest', 'RfbKeysymTest',
+                      'VncCursorNativeTest'}
           assert required <= found, f'missing tests: {required - found}'
           assert executed >= 45, f'expected at least 45 tests, got {executed}'
           print('NEBULA_RFB_TYCHO_PROTOCOL_TESTS=PASSED', executed)
