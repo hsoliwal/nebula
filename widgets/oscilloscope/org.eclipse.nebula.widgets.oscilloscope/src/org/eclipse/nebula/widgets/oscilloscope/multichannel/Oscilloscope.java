@@ -1357,10 +1357,9 @@ public class Oscilloscope extends Canvas {
 	}
 
 	protected void widgetDisposed(Event e) {
-		bg.dispose();
-		for (Data element : chan) {
-			element.fg.dispose();
-		}
+		// Display system colors and foreground colors supplied by callers are not
+		// owned by this widget. Our separately allocated grid colors are disposed
+		// by the existing SWT.Dispose listener installed in the constructor.
 	}
 
 	/**
