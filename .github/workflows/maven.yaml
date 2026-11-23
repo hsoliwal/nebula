@@ -24,6 +24,99 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  remote-browser-cpu-junit:
+    # This independent source/JUnit gate must not depend on Eclipse snapshot
+    # resolution. It does NOT replace the SWT/Tycho/native build below.
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Maven 3.9.11
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.11
+      - name: Verify remote browser CPU decoder and frame geometry with real JUnit4
+        shell: bash
+        run: |
+          set -euo pipefail
+          production=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser/src/org/eclipse/nebula/widgets/drawnbrowser/internal
+          tests=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser.tests/src/org/eclipse/nebula/widgets/drawnbrowser/internal
+          if [[ ! -f "$production/RemoteFrameDecode.java" ]]; then
+            echo 'NOT_APPLICABLE: no RemoteFrameDecode.java on this ref (not a passing decoder acceptance test)'
+            exit 0
+          fi
+          for source in "$production/RemoteFrameDecode.java" "$production/RemoteFrameWindow.java" \
+              "$tests/RemoteFrameDecodeTest.java" "$tests/RemoteFrameWindowTest.java"; do
+            if [[ ! -f "$source" ]]; then
+              echo "INCOMPLETE_DECODER_PROOF: missing $source" >&2
+              exit 1
+            fi
+          done
+          work="$RUNNER_TEMP/nebula-remote-cpu-junit"
+          pkg=org/eclipse/nebula/widgets/drawnbrowser/internal
+          mkdir -p "$work/src/main/java/$pkg" "$work/src/test/java/$pkg"
+          cp "$production/RemoteFrameDecode.java" "$production/RemoteFrameWindow.java" \
+            "$work/src/main/java/$pkg/"
+          cp "$tests/RemoteFrameDecodeTest.java" "$tests/RemoteFrameWindowTest.java" \
+            "$work/src/test/java/$pkg/"
+          cat > "$work/pom.xml" <<'M3_POM'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <project xmlns="http://maven.apache.org/POM/4.0.0">
+            <modelVersion>4.0.0</modelVersion>
+            <groupId>org.eclipse.nebula.verification</groupId>
+            <artifactId>remote-browser-cpu-junit</artifactId>
+            <version>2026.11.23</version>
+            <properties>
+              <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+              <maven.compiler.release>21</maven.compiler.release>
+            </properties>
+            <dependencies>
+              <dependency><groupId>junit</groupId><artifactId>junit</artifactId>
+                <version>4.13.2</version><scope>test</scope></dependency>
+            </dependencies>
+            <build><plugins>
+              <plugin><groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version>
+                <configuration><release>21</release>
+                  <compilerArgs><arg>-Xlint:all</arg><arg>-Werror</arg></compilerArgs>
+                </configuration>
+              </plugin>
+              <plugin><groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId><version>3.5.4</version>
+                <configuration><failIfNoTests>true</failIfNoTests></configuration>
+              </plugin>
+            </plugins></build>
+          </project>
+          M3_POM
+          mvn -B -ntp -f "$work/pom.xml" clean test -Dstyle.color=never
+          python3 - "$work/target/surefire-reports" <<'M3_CHECK'
+          import pathlib, sys, xml.etree.ElementTree as ET
+          folder = pathlib.Path(sys.argv[1])
+          tests = errors = failures = skipped = 0
+          files = list(folder.glob('TEST-*.xml'))
+          for path in files:
+              suite = ET.parse(path).getroot()
+              tests += int(suite.attrib.get('tests', 0))
+              errors += int(suite.attrib.get('errors', 0))
+              failures += int(suite.attrib.get('failures', 0))
+              skipped += int(suite.attrib.get('skipped', 0))
+          if len(files) != 2 or tests < 10 or errors or failures or skipped:
+              raise SystemExit(f'INCOMPLETE_CPU_JUNIT files={len(files)} tests={tests} '
+                               f'errors={errors} failures={failures} skipped={skipped}')
+          print(f'NEBULA_REMOTE_CPU_JUNIT_PASS suites={len(files)} tests={tests} '
+                f'errors={errors} failures={failures} skipped={skipped}; '
+                'SWT_NATIVE_NOT_QUALIFIED')
+          M3_CHECK
+
   build:
     # Fork guard: run only in hsoliwal/nebula and only for same-repository PR heads.
     if: >-
@@ -47,10 +140,12 @@ jobs:
         distribution: 'temurin' # See 'Supported distributions' for available options
         java-version: ${{ matrix.java }}
         cache: 'maven'
-    - name: Set up Maven
-      uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-      with:
-        maven-version: 3.9.11
+    - name: Verify preinstalled Maven (avoid rate-limited Maven Central archive)
+      shell: bash
+      run: |
+        set -euo pipefail
+        mvn -version | tee "$RUNNER_TEMP/nebula-maven-version.txt"
+        grep -Eq '^Apache Maven 3[.](9|10)[.]' "$RUNNER_TEMP/nebula-maven-version.txt"
     - name: Checkout the qualified SWT receiver
       uses: actions/checkout@v4
       with:
@@ -59,19 +154,54 @@ jobs:
         path: .m3-swt
         fetch-depth: 0
         lfs: false
-    # Pin the original upstream 4.42 parent from immutable source, not a
-    # mutable remote 4.42.0-SNAPSHOT POM that may return HTTP 503.
-    - name: Checkout source-pinned Eclipse Platform parent
+    # Parent source is a separate original Eclipse EDL-1.0 project, not Synexia code.
+    # The SWT POM requests ../eclipse-platform-parent; keep the exact source identity.
+    - name: Checkout exact Eclipse 4.42 parent source
       uses: actions/checkout@v4
       with:
         repository: eclipse-platform/eclipse.platform.releng.aggregator
         ref: 8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec
         path: .m3-eclipse-releng
+        sparse-checkout: eclipse-platform-parent
+        sparse-checkout-cone-mode: true
         fetch-depth: 1
-        lfs: false
         persist-credentials: false
-        sparse-checkout: |
-          eclipse-platform-parent
+        lfs: false
+    - name: Bind pinned upstream Eclipse parent without changing SWT source
+      shell: bash
+      run: |
+        set -euo pipefail
+        src=.m3-eclipse-releng/eclipse-platform-parent/pom.xml
+        test "$(git -C .m3-eclipse-releng rev-parse HEAD)" = "8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec"
+        test "$(git hash-object "$src")" = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
+        printf '%s  %s\n' "121b6c26d986874391d26d114377e3beda91723b0d675146bdd194dbfe01e264" "$src" | sha256sum --check
+        test "$(git -C .m3-swt rev-parse HEAD)" = "c25cb33505465b28980e563acc99097ce3e33fee"
+        test "$(git hash-object .m3-swt/pom.xml)" = "341c07d199041c55d89a99fcc93560074e425716"
+        test ! -e eclipse-platform-parent
+        mkdir -p eclipse-platform-parent
+        cp "$src" eclipse-platform-parent/pom.xml
+        test "$(git hash-object eclipse-platform-parent/pom.xml)" = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
+        python3 - <<'PY'
+        from pathlib import Path
+        from xml.etree import ElementTree as ET
+        ns = "{http://maven.apache.org/POM/4.0.0}"
+        parent = ET.parse("eclipse-platform-parent/pom.xml").getroot()
+        swt = ET.parse(".m3-swt/pom.xml").getroot()
+        def value(element, path):
+            node = element.find(path)
+            return node.text.strip() if node is not None and node.text else None
+        assert (value(parent, ns+"groupId"), value(parent, ns+"artifactId"),
+                value(parent, ns+"version"), value(parent, ns+"packaging")) == (
+                    "org.eclipse", "eclipse-platform-parent", "4.42.0-SNAPSHOT", "pom")
+        expected = swt.find(ns+"parent")
+        assert expected is not None
+        assert (value(expected, ns+"groupId"), value(expected, ns+"artifactId"),
+                value(expected, ns+"version"), value(expected, ns+"relativePath")) == (
+                    "org.eclipse", "eclipse-platform-parent", "4.42.0-SNAPSHOT",
+                    "../eclipse-platform-parent")
+        assert "Eclipse Distribution License v1.0" in Path("eclipse-platform-parent/pom.xml").read_text()
+        print("SWT_LOCAL_PARENT_SOURCE_IDENTITY=PASS")
+        PY
     - name: Verify Eclipse parent source before building pinned SWT
       shell: bash
       run: |
@@ -98,6 +228,49 @@ jobs:
         mvn -B -f releng/swt-receiver/swt-receiver-p2/pom.xml \
           -Dm3.swt.source="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
         cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
+    - name: Run the excluded DrawnBrowser reactor under pinned GTK3/X11
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The root Nebula <modules> list omits widgets/drawnbrowser.
+        # Qualify the original HTML renderer explicitly with its real native SWT dependencies.
+        sudo apt-get install -y xvfb x11-xserver-utils openbox wmctrl
+        xvfb-run --auto-servernum bash -c '
+          set -euo pipefail
+          openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/drawnbrowser-openbox.log" 2>&1 &
+          wm_pid=$!
+          trap "kill $wm_pid 2>/dev/null || true" EXIT
+          for attempt in $(seq 1 100); do
+            if wmctrl -m >/dev/null 2>&1; then break; fi
+            kill -0 "$wm_pid" 2>/dev/null || exit 1
+            sleep 0.1
+          done
+          wmctrl -m
+          "$@"
+        ' drawnbrowser-wm mvn -V -B --fail-at-end -f widgets/drawnbrowser/pom.xml clean verify \
+          -Dtycho.localArtifacts=ignore \
+          -DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false \
+          -Dtests.vmargs=-Xcheck:jni \
+          "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing pinned GC digest}" \
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing platform}"
+        python3 - <<'PY'
+        import glob, sys, xml.etree.ElementTree as ET
+        reports = sorted(glob.glob('widgets/drawnbrowser/**/target/surefire-reports/TEST-*.xml', recursive=True))
+        if not reports:
+            sys.exit('FAIL: absent DrawnBrowser JUnit reports')
+        tests = failed = skipped = 0
+        for f in reports:
+            root = ET.parse(f).getroot()
+            suites = [root] if root.tag.endswith('testsuite') else list(root)
+            for suite in suites:
+                if suite.tag.endswith('testsuite'):
+                    tests += int(suite.get('tests', '0'))
+                    failed += int(suite.get('failures', '0')) + int(suite.get('errors', '0'))
+                    skipped += int(suite.get('skipped', '0'))
+        print(f'DrawnBrowser tests={tests} failures+errors={failed} skipped={skipped}')
+        if tests < 318 or failed or skipped:
+            sys.exit('FAIL: expected at least 318 native+headless tests, zero failed/skipped')
+        PY
     - name: Build All Widgets
       shell: bash
       env:
@@ -135,7 +308,8 @@ jobs:
           -Dtycho.localArtifacts=ignore \
           -Dnebula.grid.viewport.screenshots.screen=true \
           "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
-          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}"
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}" \
+          "-Dm3.test.pixels.dir=${RUNNER_TEMP:?missing runner temp}/nebula-widget-pixels"
     - name: Qualify Grid native screen pixels with OpenCV
       if: ${{ !cancelled() }}
       run: |
@@ -157,6 +331,15 @@ jobs:
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-visible-range-screenshots/
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/m3-native-oracle-screenshots/
           widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
+    - name: Upload original native widget pixel mismatch PNGs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-native-pixel-diagnostics
+        if-no-files-found: warn
+        path: |
+          ${{ runner.temp }}/nebula-widget-pixels/*.png
+          /tmp/m3-widget-pixels/*.png
     - name: Upload all widget test reports
       if: always()
       uses: actions/upload-artifact@v4

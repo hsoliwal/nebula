@@ -22,7 +22,9 @@ import org.eclipse.swt.graphics.Rectangle;
  * <p>The mask is intentionally primitive: callers can decide plane residency
  * without allocating command objects on every SWT.Paint. The z-order is
  * background -> body -> fixed overlay -> chrome -> transient overlay.
- * Header and footer share the chrome rank because their rectangles do not overlap.</p>
+ * Header and footer share a chrome rank; their actual extents are defined by
+ * the Grid layout, and paint planning conservatively handles both even if
+ * an unusually small client area lets those extents overlap.</p>
  */
 final class GridPaintDAG {
 
@@ -45,18 +47,21 @@ final class GridPaintDAG {
         if (clientArea == null) {
             throw new IllegalArgumentException("clientArea");
         }
-        if (clip.isEmpty() || clientArea.isEmpty() || !clip.intersects(clientArea)) {
+        // The native Rectangle endpoints are int, but x + width and
+        // y + height need wide arithmetic for signed coordinate extremes.
+        if (clip.isEmpty() || clientArea.isEmpty()
+                || !GridViewportDamage.intersectsRegion(clip, clientArea.x,
+                        clientArea.y, clientArea.width, clientArea.height)) {
             return 0;
         }
 
         int plan = BACKGROUND;
         int header = headerVisible ? Math.max(0, headerHeight) : 0;
         int footer = footerVisible ? Math.max(0, footerHeight) : 0;
-        int bodyTop = clientArea.y + Math.max(0, header);
-        int bodyBottom = clientArea.y + clientArea.height - Math.max(0, footer);
-        int bodyHeight = Math.max(0, bodyBottom - bodyTop);
-        if (clientArea.width > 0 && bodyHeight > 0
-                && clip.intersects(clientArea.x, bodyTop, clientArea.width, bodyHeight)) {
+        long bodyTop = (long) clientArea.y + header;
+        long bodyBottom = (long) clientArea.y + clientArea.height - footer;
+        if (GridViewportDamage.intersectsRegion(clip, clientArea.x, bodyTop,
+                clientArea.width, bodyBottom - bodyTop)) {
             plan |= BODY;
             if (fixedOverlayActive) {
                 plan |= FIXED;

@@ -24,6 +24,69 @@ import org.junit.Test;
 public class HtmlStylesTest {
 
 	@Test
+	public void shrinkAcceptsFiniteCssNumbersAndDoesNotInherit() {
+		HtmlStyles styles = new HtmlStyles();
+		assertEquals(1, HtmlStyles.shrink(HtmlStyles.root()), 0);
+		assertEquals(1, HtmlStyles.shrink(new int[32]), 0);
+		String[] values = { "0", "+0", "-0", ".5", "+1.25", "2e-3", "1e308" };
+		double[] expected = { 0, 0, 0, .5, 1.25, .002, 1e308 };
+		for (int i = 0; i < values.length; i++) {
+			int[] style = styles.compute(HtmlStyles.root(), "div", null, "flex-shrink:" + values[i]);
+			assertEquals(values[i], expected[i], HtmlStyles.shrink(style), 0);
+			assertEquals("not inherited: " + values[i], 1,
+					HtmlStyles.shrink(styles.compute(style, "div", null, null)), 0);
+		}
+	}
+
+	@Test
+	public void invalidShrinkDeclarationsLeaveThePrecedingValue() {
+		HtmlStyles styles = new HtmlStyles();
+		for (String invalid : new String[] { "-0.01", "NaN", "Infinity", "1e309", "0x1.0p0", "1f", "1.", "1 2", "--1", "" }) {
+			assertEquals(invalid, .25, HtmlStyles.shrink(styles.compute(HtmlStyles.root(), "div", null,
+					"flex-shrink:.25;flex-shrink:" + invalid)), 0);
+		}
+		styles.addSheet(".panel {flex-shrink:.5} .panel {flex-shrink:2e-1}");
+		assertEquals(.2, HtmlStyles.shrink(styles.compute(HtmlStyles.root(), "div", "panel", "flex-shrink:NaN")), 0);
+		assertEquals(.75, HtmlStyles.shrink(styles.compute(HtmlStyles.root(), "div", "panel", "flex-shrink:.75")), 0);
+	}
+
+	@Test
+	public void flexShorthandResetsAndCarriesTheShrinkFactor() {
+		HtmlStyles styles = new HtmlStyles();
+		String[] values = { "none", "auto", "initial", "0 0 240px", "1 0", "1 10px", "1", "2 .125 auto", "40px" };
+		int[] grow = { 0, 1, 0, 0, 1, 1, 1, 2, 1 }, basis = { -1, -1, -1, 240, 0, 10, 0, -1, 40 };
+		double[] shrink = { 0, 1, 1, 0, 0, 1, 1, .125, 1 };
+		for (int i = 0; i < values.length; i++) {
+			int[] style = styles.compute(HtmlStyles.root(), "div", null, "flex:3 .75 90px;flex:" + values[i]);
+			assertEquals(values[i], grow[i], style[HtmlStyles.FLEX_GROW]);
+			assertEquals(values[i], basis[i], style[HtmlStyles.FLEX_BASIS]);
+			assertEquals(values[i], shrink[i], HtmlStyles.shrink(style), 0);
+		}
+	}
+
+	@Test
+	public void anInvalidFlexShorthandDoesNotPartiallyOverwriteTheCascade() {
+		HtmlStyles styles = new HtmlStyles();
+		for (String invalid : new String[] { "1 -1 20px", "1 NaN 20px", "1 1e309 20px", "1 .5 garbage", "1 2 30px extra" }) {
+			int[] style = styles.compute(HtmlStyles.root(), "div", null, "flex:2 .25 90px;flex:" + invalid);
+			assertEquals(invalid, 2, style[HtmlStyles.FLEX_GROW]);
+			assertEquals(invalid, 90, style[HtmlStyles.FLEX_BASIS]);
+			assertEquals(invalid, .25, HtmlStyles.shrink(style), 0);
+		}
+	}
+
+	@Test
+	public void shrinkStorageCannotAliasTheExistingPositionalMask() {
+		HtmlStyles styles = new HtmlStyles();
+		String css = "color:blue;background:red;position:relative;top:-3px;right:5px;z-index:0;width:70px;border:2px inset gray";
+		int[] original = styles.compute(HtmlStyles.root(), "div", null, css);
+		int[] extended = styles.compute(HtmlStyles.root(), "div", null, css + ";flex-shrink:4.9e-324");
+		org.junit.Assert.assertArrayEquals(java.util.Arrays.copyOf(original, 32), java.util.Arrays.copyOf(extended, 32));
+		assertEquals(Double.MIN_VALUE, HtmlStyles.shrink(extended), 0);
+		assertEquals(0, extended[HtmlStyles.Z_AUTO]);
+	}
+
+	@Test
 	public void coloursParseAndOthersAreNone() {
 		assertEquals(0xFFFF0000, HtmlStyles.color("#f00"));
 		assertEquals(0xFF1A2B3C, HtmlStyles.color("#1A2B3C"));
@@ -97,6 +160,23 @@ public class HtmlStylesTest {
 		HtmlDocument document = HtmlDocument.parse("<p style='border:4px inset #808080'>a</p><p style='border:4px outset #808080'>b</p>");
 		assertEquals(HtmlStyles.BORDER_INSET, document.blockBorderStyle[0]);
 		assertEquals(HtmlStyles.BORDER_OUTSET, document.blockBorderStyle[1]);
+	}
+
+	@Test
+	public void overflowClipsAreExplicitNotInheritedAndDoNotCollideWithPositionMask() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".panel { overflow: hidden; position: fixed; z-index: -3 } .visible { overflow: visible }");
+		int[] root = HtmlStyles.root();
+		int[] panel = styles.compute(root, "div", "panel", "overflow: nonsense");
+		assertEquals(HtmlStyles.OVERFLOW_HIDDEN, panel[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.FIXED, panel[HtmlStyles.POSITION]);
+		assertEquals(-3, panel[HtmlStyles.Z_INDEX]);
+		assertEquals("overflow is not inherited", HtmlStyles.OVERFLOW_VISIBLE,
+				styles.compute(panel, "div", null, null)[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_CLIP,
+				styles.compute(root, "div", null, "overflow: clip")[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_VISIBLE,
+				styles.compute(panel, "div", "visible", "overflow: hidden; overflow: visible")[HtmlStyles.OVERFLOW]);
 	}
 
 	@Test
