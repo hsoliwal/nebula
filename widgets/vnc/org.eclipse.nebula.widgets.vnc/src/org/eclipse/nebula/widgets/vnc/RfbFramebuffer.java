@@ -6,16 +6,42 @@ package org.eclipse.nebula.widgets.vnc;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * CPU-owned RFB framebuffer. The network thread writes it and the SWT thread
  * takes versioned snapshots. No SWT Image, GC, or Control is used here.
+ *
+ * <p>The class is public only so that callers of the caller-owned stream
+ * session ({@link RfbClient#open}) can use its immutable {@link Frame}
+ * snapshots; the decoder-facing members remain package-private.</p>
  */
-final class RfbFramebuffer {
+public final class RfbFramebuffer {
     static final int MAX_DIMENSION = 8192;
     static final long MAX_PIXELS = 16_777_216L;
 
-    record Snapshot(int width, int height, long revision, int[] pixels) { }
+    record Snapshot(int width, int height, long revision, int[] pixels) {
+        /** A defensive ARGB copy; snapshot pixels never alias the framebuffer. */
+        int[] argb() {
+            return pixels.clone();
+        }
+    }
+
+    /** Immutable snapshot. Pixel ownership never escapes to a consumer. */
+    public record Frame(int width, int height, int[] argb) {
+        public Frame {
+            Objects.requireNonNull(argb, "argb");
+            if (width <= 0 || height <= 0 || (long) width * height != argb.length) {
+                throw new IllegalArgumentException("frame dimensions do not match pixels");
+            }
+            argb = argb.clone();
+        }
+
+        @Override
+        public int[] argb() {
+            return argb.clone();
+        }
+    }
 
     /**
      * A single, defensively copied update for the only SWT image consumer.
@@ -74,6 +100,11 @@ final class RfbFramebuffer {
 
     synchronized Snapshot snapshot() {
         return new Snapshot(width, height, revision, pixels.clone());
+    }
+
+    /** An immutable whole-frame snapshot for {@link RfbClient#currentFrame()} and {@link RfbClient#nextFrame()}. */
+    synchronized Frame frame() {
+        return new Frame(width, height, pixels);
     }
 
     /**

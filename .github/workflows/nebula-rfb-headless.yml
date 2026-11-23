@@ -59,6 +59,7 @@ jobs:
             "$src/RfbTightDecoder.java" \
             "$src/RfbCursorDecoder.java" \
             "$src/RfbVeNCrypt.java" \
+            "$src/RfbFramebuffer.java" \
             releng/vnc-protocol/src/org/eclipse/nebula/widgets/vnc/HeadlessRfbContracts.java
           java -Xmx128m -cp "$dest" \
             org.eclipse.nebula.widgets.vnc.HeadlessRfbContracts | tee .nebula-rfb-headless-result.txt
