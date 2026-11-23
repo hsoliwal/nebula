@@ -5,10 +5,11 @@ CPU-managed framebuffer decoded by a dedicated network thread. SWT images are
 created and disposed only on the UI thread. Frame updates are versioned and
 coalesced before painting, and the image is scaled with aspect ratio preserved.
 
-Supported in this first integration:
+Supported in this current integration:
 - RFB protocol 3.3, 3.7 and 3.8; None or legacy VNC DES challenge security.
 - Client-initiated 32-bit true-colour pixel format.
-- Raw, CopyRect, Hextile (16x16 tiles), DesktopSize, clipboard notifications and Bell.
+- Raw, CopyRect, RRE, Zlib, ZRLE (64x64 tiles), Hextile (16x16 tiles),
+  DesktopSize, LastRect, clipboard notifications and Bell.
 - Key and pointer events, wheel events, and explicit client clipboard sending.
 - Byte/rectangle/dimension limits, overlapping CopyRect, disposed-widget
   cancellation and decoupled SWT/network ownership.
@@ -20,6 +21,13 @@ or caller-managed secure `Socket`; `connectInsecureRemote` is a deliberate
 opt-in for trusted test networks. Never use legacy VNC password authentication
 as a substitute for encryption.
 
+**Transport lifetime:** The viewer takes ownership of a supplied or opened
+socket. If protocol negotiation or ServerInit fails, the RFB connection closes
+the socket as well as its native decoders. A secondary socket-close failure is
+suppressed on the original handshake exception rather than replacing it.
+A successful connection still owns its socket until disconnect/disposal.
+The native inflater lifetime remains guarded by the packet-reader exit.
+
 **Scope:** This is a new Nebula RFB implementation, not a literal copy of the
 historical Eclipse TmL bundles. TmL's protocol / viewer / view separation is
 the architecture reference; the original project components were
@@ -28,7 +36,7 @@ the architecture reference; the original project components were
 See https://www.eclipse.org/lists/ecf-dev/msg02002.html. The code here is
 EPL-2.0. Original upstream code and third-party notices are not repackaged.
 
-Not yet supported: Tight/ZRLE, cursor pseudorectangles, VeNCrypt/TLS,
+Not yet supported: Tight, cursor pseudorectangles, VeNCrypt/TLS,
 RFB 4.x, extended keyboard layouts, dedicated scaling/native-layer paths,
 automatic clipboard integration, or audio. They require separate protocol
 qualification and are intentionally not advertised as complete.
