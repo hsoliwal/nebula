@@ -10,8 +10,10 @@ package org.eclipse.nebula.widgets.drawnbrowser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +23,53 @@ import org.junit.Test;
 
 /** CPU preparation and ownership transfer require no SWT Display or native resource. */
 public class DrawnBrowserPreparationTest {
+
+	@Test
+	public void cancelledPreparationReleasesTheSingleWorkerForItsReplacement() throws Exception {
+		var entered = new java.util.concurrent.CountDownLatch(1);
+		var resume = new java.util.concurrent.CountDownLatch(1);
+		var cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+		var checks = new java.util.concurrent.atomic.AtomicInteger();
+		try (var workers = Executors.newSingleThreadExecutor()) {
+			var obsolete = workers.submit(() -> DrawnBrowser.PreparedPage.prepare("<a ".repeat(20_000), () -> {
+				if (checks.incrementAndGet() == 32) {
+					entered.countDown();
+					try {
+						if (!resume.await(5, TimeUnit.SECONDS)) throw new AssertionError("cancellation was not released");
+					} catch (InterruptedException failure) {
+						Thread.currentThread().interrupt();
+						throw new AssertionError(failure);
+					}
+				}
+				return cancelled.get();
+			}));
+			try {
+				assertTrue("the old parser must actually reach CPU checkpoints", entered.await(5, TimeUnit.SECONDS));
+				var latest = workers.submit(() -> DrawnBrowser.PreparedPage.prepare("<p>latest</p>", () -> false));
+				cancelled.set(true);
+				resume.countDown();
+				assertNull(obsolete.get(5, TimeUnit.SECONDS));
+				assertEquals(32, checks.get());
+				assertEquals("latest", latest.get(5, TimeUnit.SECONDS).document().text);
+			} finally {
+				cancelled.set(true);
+				resume.countDown();
+			}
+		}
+	}
+
+	@Test
+	public void genuineAsyncFailuresRemainOriginalFailures() {
+		DrawnBrowser.PreparedPage invalid = DrawnBrowser.PreparedPage.prepare(null, () -> false);
+		NullPointerException original = assertThrows(NullPointerException.class, invalid::document);
+		assertSame(original, assertThrows(NullPointerException.class, invalid::document));
+		var cancellation = new java.util.concurrent.CancellationException("genuine failure");
+		DrawnBrowser.PreparedPage failed = DrawnBrowser.PreparedPage.prepare("<p>page</p>", () -> { throw cancellation; });
+		assertSame(cancellation, assertThrows(java.util.concurrent.CancellationException.class, failed::document));
+		AssertionError error = new AssertionError("genuine error");
+		DrawnBrowser.PreparedPage errored = DrawnBrowser.PreparedPage.prepare("<p>page</p>", () -> { throw error; });
+		assertSame(error, assertThrows(AssertionError.class, errored::document));
+	}
 
 	@Test
 	public void aWorkerPublishesOneCompletedDocument() throws Exception {

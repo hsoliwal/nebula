@@ -104,6 +104,20 @@ public class GridPaintDAG_Test {
         }
     }
 
+    @Test public void positiveCoordinateOverflowPreservesHeaderBodyAndChromeRank() {
+        int max = Integer.MAX_VALUE, min = Integer.MIN_VALUE;
+        Rectangle high = new Rectangle(max - 3, max - 3, 9, 9);
+        assertEquals(1 | 8 | 32, actual(
+                new Rectangle(max - 2, max - 2, 1, 1), high, 3, 3, 15));
+        assertEquals(1 | 2 | 4 | 32, actual(
+                new Rectangle(max - 2, max, 1, 1), high, 3, 3, 15));
+        Rectangle low = new Rectangle(min + 3, min + 3, 10, 10);
+        assertEquals(1 | 16 | 32, actual(
+                new Rectangle(min + 4, min + 11, 1, 1), low, 2, 4, 15));
+        assertEquals(0, actual(new Rectangle(max, 0, 1, 1),
+                new Rectangle(min, 0, 1, 1), 1, 1, 15));
+    }
+
     static int actual(Rectangle clip, Rectangle area, int header, int footer, int flags) {
         return GridPaintDAG.plan(clip, area, header, footer,
                 (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0);

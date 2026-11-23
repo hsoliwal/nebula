@@ -16,21 +16,24 @@ import java.util.Objects;
  * image, rule or cell block contributes a content fragment. Painting walks forward
  * and picking walks backward through the same sequence.
  * <p>
- * The root and positioned boxes with an integer z-index form atomic stacking
- * contexts; fixed boxes do so even with an automatic z-index. A relatively or
+ * The root, positioned boxes with an integer z-index, and flex/grid items with an
+ * integer z-index form atomic stacking contexts; fixed and sticky boxes do so even
+ * with an automatic z-index. A relatively or
  * absolutely positioned box with an automatic z-index is only a paint group: its
  * positioned descendants still belong to the nearest actual stacking context.
- * Static boxes ignore z-index. Negative contexts paint after their context's own
+ * Other static boxes ignore z-index. Negative contexts paint after their context's own
  * background, before its normal-flow content. Equal stack levels retain document
- * tree order. These are the block/content phases of CSS 2.2 section 9.9 and
- * Appendix E; floats, inline-blocks, opacity and transforms are outside this
- * renderer's current layout subset.
+ * tree order. Within an ordinary table's flow backgrounds, every row precedes
+ * every cell, including cells spanning later rows. These are the block/content
+ * phases of CSS 2.2 section 9.9, Appendix E and section 17.5.1, with the item
+ * z-index rules of Flexbox section 4.3 and Grid section 6.5. Floats, arbitrary
+ * inline-blocks, opacity and transforms are outside this renderer's current subset.
  * </p>
  * <p>
  * The plan snapshots the document's style lanes. Rebuild it after changing those
  * lanes, not on each repaint or scroll. Construction uses primitive arrays,
  * O((boxes + blocks) log(boxes + blocks)) work and linear temporary storage, with
- * no recursion or per-entry objects. A page without positioned boxes takes a
+ * no recursion or per-entry objects. A page without paint groups takes a
  * linear path. A stacking context does not imply a clip or a coordinate system.
  * </p>
  */
@@ -46,16 +49,17 @@ public final class HtmlPaintOrder {
 	public HtmlPaintOrder(HtmlDocument document) {
 		Objects.requireNonNull(document, "document");
 		steps = new int[Math.addExact(document.boxCount, document.blockCount)];
-		int positioned = 0;
+		int groups = 0;
 		for (int box = 1; box < document.boxCount; box++) {
-			if (document.boxPosition[box] != HtmlStyles.STATIC) positioned++;
+			if (isPaintGroup(document, box)) groups++;
 		}
-		if (positioned == 0) {
-			for (int box = 0; box < document.boxCount; box++) steps[box] = ~box;
+		int[] backgroundRank = backgroundRanks(document);
+		if (groups == 0) {
+			for (int box = 0; box < document.boxCount; box++) steps[backgroundRank == null ? box : backgroundRank[box]] = ~box;
 			for (int block = 0; block < document.blockCount; block++) steps[document.boxCount + block] = block;
 			return;
 		}
-		build(document, positioned);
+		build(document, groups, backgroundRank);
 	}
 
 	/** Number of background and content fragments in this snapshot. */
@@ -74,9 +78,54 @@ public final class HtmlPaintOrder {
 		return entry < 0 ? ~entry : entry;
 	}
 
-	private void build(HtmlDocument document, int positioned) {
+	/* A layout item with integer z-index changes painting, never its positioning or containing block. */
+	private static boolean isPaintGroup(HtmlDocument document, int box) {
+		if (document.boxPosition[box] != HtmlStyles.STATIC) return true;
+		if (document.boxZAuto[box] || document.boxRole[box] != HtmlDocument.CELL_BOX) return false;
+		int parent = document.boxParent[box];
+		return parent >= 0 && (document.boxRole[parent] == HtmlDocument.FLEX_BOX || document.boxRole[parent] == HtmlDocument.GRID_BOX);
+	}
+
+	/*
+	 * Stable partition of each table's row/cell background slots. Other slots, including captions and unrelated
+	 * siblings, keep their original ranks; a global cell phase would wrongly lift cells over later subtrees.
+	 * The parser's ordinary table boxes have direct rows with direct cells. Every child edge is visited a bounded
+	 * number of times, and one primitive workspace is reused across tables. Positioned groups retain their phases.
+	 */
+	private static int[] backgroundRanks(HtmlDocument document) {
+		int[] rank = null, slots = null;
+		for (int table = 1; table < document.boxCount; table++) {
+			if (document.boxRole[table] != HtmlDocument.TABLE_BOX) continue;
+			if (rank == null) {
+				rank = new int[document.boxCount];
+				slots = new int[document.boxCount];
+				for (int box = 0; box < rank.length; box++) rank[box] = box;
+			}
+			int count = 0;
+			for (int row = document.boxFirstChild[table]; row >= 0; row = document.boxNextSibling[row]) {
+				if (document.boxRole[row] != HtmlDocument.ROW_BOX) continue;
+				slots[count++] = row;
+				for (int cell = document.boxFirstChild[row]; cell >= 0; cell = document.boxNextSibling[cell]) {
+					if (document.boxRole[cell] == HtmlDocument.CELL_BOX) slots[count++] = cell;
+				}
+			}
+			int next = 0;
+			for (int row = document.boxFirstChild[table]; row >= 0; row = document.boxNextSibling[row]) {
+				if (document.boxRole[row] == HtmlDocument.ROW_BOX) rank[row] = slots[next++];
+			}
+			for (int row = document.boxFirstChild[table]; row >= 0; row = document.boxNextSibling[row]) {
+				if (document.boxRole[row] != HtmlDocument.ROW_BOX) continue;
+				for (int cell = document.boxFirstChild[row]; cell >= 0; cell = document.boxNextSibling[cell]) {
+					if (document.boxRole[cell] == HtmlDocument.CELL_BOX) rank[cell] = slots[next++];
+				}
+			}
+		}
+		return rank;
+	}
+
+	private void build(HtmlDocument document, int groups, int[] backgroundRank) {
 		int boxes = document.boxCount;
-		int entries = Math.addExact(steps.length, positioned);
+		int entries = Math.addExact(steps.length, groups);
 		int[] owner = new int[entries], index = new int[entries];
 		byte[] phase = new byte[entries];
 		int[] context = new int[boxes], group = new int[boxes];
@@ -84,12 +133,12 @@ public final class HtmlPaintOrder {
 		for (int box = 0; box < boxes; box++) {
 			if (box != 0) {
 				int parent = document.boxParent[box];
-				boolean isPositioned = document.boxPosition[box] != HtmlStyles.STATIC;
-				boolean isContext = isPositioned && (!document.boxZAuto[box]
+				boolean hasGroup = isPaintGroup(document, box);
+				boolean isContext = hasGroup && (!document.boxZAuto[box]
 						|| document.boxPosition[box] == HtmlStyles.FIXED || document.boxPosition[box] == HtmlStyles.STICKY);
 				context[box] = isContext ? box : context[parent];
-				group[box] = isPositioned ? box : group[parent];
-				if (isPositioned) {
+				group[box] = hasGroup ? box : group[parent];
+				if (hasGroup) {
 					int z = document.boxZAuto[box] ? 0 : document.boxZIndex[box];
 					owner[entry] = context[parent];
 					index[entry] = box;
@@ -113,12 +162,12 @@ public final class HtmlPaintOrder {
 			start[owner[e] + 1]++;
 		}
 		for (int box = 1; box <= boxes; box++) start[box] += start[box - 1];
-		sort(order, owner, phase, index, document);
+		sort(order, owner, phase, index, document, backgroundRank);
 		emit(order, start, phase, index, boxes);
 	}
 
 	/* Sort by owning group, CSS phase, stack level, then the original tree order. */
-	private static void sort(int[] order, int[] owner, byte[] phase, int[] index, HtmlDocument document) {
+	private static void sort(int[] order, int[] owner, byte[] phase, int[] index, HtmlDocument document, int[] backgroundRank) {
 		int[] work = new int[order.length];
 		for (int width = 1; width < order.length;) {
 			int begin = 0;
@@ -127,7 +176,7 @@ public final class HtmlPaintOrder {
 				int end = middle + Math.min(width, order.length - middle);
 				int left = begin, right = middle;
 				for (int target = begin; target < end; target++) {
-					if (right == end || (left < middle && before(order[left], order[right], owner, phase, index, document))) {
+					if (right == end || (left < middle && before(order[left], order[right], owner, phase, index, document, backgroundRank))) {
 						work[target] = order[left++];
 					} else {
 						work[target] = order[right++];
@@ -141,13 +190,14 @@ public final class HtmlPaintOrder {
 		}
 	}
 
-	private static boolean before(int a, int b, int[] owner, byte[] phase, int[] index, HtmlDocument document) {
+	private static boolean before(int a, int b, int[] owner, byte[] phase, int[] index, HtmlDocument document, int[] backgroundRank) {
 		if (owner[a] != owner[b]) return owner[a] < owner[b];
 		if (phase[a] != phase[b]) return phase[a] < phase[b];
 		if (phase[a] == NEGATIVE || phase[a] == POSITIVE) {
 			int az = document.boxZIndex[index[a]], bz = document.boxZIndex[index[b]];
 			if (az != bz) return az < bz;
 		}
+		if (phase[a] == FLOW_BACKGROUND && backgroundRank != null) return backgroundRank[index[a]] <= backgroundRank[index[b]];
 		return index[a] <= index[b];
 	}
 
