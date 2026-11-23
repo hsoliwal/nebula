@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
 # Source-only Java 21 proof. Native SWT/GTK/JNI remains mandatory in the original Maven workflow.
-name: DrawnBrowser indexed hidden-panel scroll (source-only Java 21 geometry)
+name: DrawnBrowser indexed panel overflow modes (source-only Java 21 geometry)
 
 on:
   pull_request:
@@ -129,9 +129,20 @@ jobs:
                       if (!method.isAnnotationPresent(Test.class))
                           throw new AssertionError("required @Test missing: " + required);
                   }
-                  if (count < 70 || failures != 0)
+                  for (String required : new String[] {
+                          "hiddenProgrammaticScrollPreservesTheParentBorderButClipRefusesScroll",
+                          "autoAndScrollPanelsConsumeWheelWithoutMovingRoot",
+                          "nestedPanelScrollOffsetsAddAndFixedChildrenEscapeThem" }) {
+                      Method method = HtmlPositionedGeometryTest.class.getMethod(required);
+                      if (!method.isAnnotationPresent(Test.class))
+                          throw new AssertionError("auto/scroll @Test missing: " + required);
+                  }
+                  if (!HtmlStylesTest.class.getMethod("overflowScrollModesDoNotAliasTheMaskOrInherit")
+                          .isAnnotationPresent(Test.class))
+                      throw new AssertionError("overflow CSS cascade test missing");
+                  if (count < 74 || failures != 0)
                       throw new AssertionError("Geometry tests=" + count + " failures=" + failures
-                              + " (minimum 70; no skipped or missing owners)");
+                              + " (minimum 74; no skipped or missing owners)");
                   System.out.println("SOURCE_ONLY_GTK_NOT_RUN: PASS " + count
                           + " actual original @Test methods, zero failures");
               }

@@ -87,6 +87,30 @@ public class HtmlStylesTest {
 	}
 
 	@Test
+	public void overflowScrollModesDoNotAliasTheMaskOrInherit() {
+		HtmlStyles styles = new HtmlStyles();
+		int[] root = HtmlStyles.root();
+		int[] auto = styles.compute(root, "section", null,
+				"overflow:auto;position:relative;z-index:-3;flex-shrink:.25");
+		assertEquals(HtmlStyles.OVERFLOW_AUTO, auto[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.RELATIVE, auto[HtmlStyles.POSITION]);
+		assertEquals(-3, auto[HtmlStyles.Z_INDEX]);
+		assertEquals(.25, HtmlStyles.shrink(auto), 0);
+		assertEquals("non-inherited overflow", HtmlStyles.OVERFLOW_VISIBLE,
+				styles.compute(auto, "div", null, null)[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_SCROLL,
+				styles.compute(root, "div", null, "overflow:scroll")[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_AUTO,
+				styles.compute(root, "div", null, "overflow:overlay")[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_AUTO,
+				styles.compute(root, "div", null, "overflow:auto;overflow:garbage")[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_CLIP,
+				styles.compute(root, "div", null, "overflow:clip")[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_HIDDEN,
+				styles.compute(root, "div", null, "overflow:hidden")[HtmlStyles.OVERFLOW]);
+	}
+
+	@Test
 	public void coloursParseAndOthersAreNone() {
 		assertEquals(0xFFFF0000, HtmlStyles.color("#f00"));
 		assertEquals(0xFF1A2B3C, HtmlStyles.color("#1A2B3C"));
