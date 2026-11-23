@@ -83,8 +83,9 @@ public final class HtmlStyles {
 	private static final int SHRINK_HIGH = 32, SHRINK_LOW = 33;
 	/** Number of primitive computed-style slots. Existing slots retain their indices. */
 	public static final int OVERFLOW = 34, SLOTS = 35;
-	/** Parent-owned modes: hidden/clip share paint clipping, but only hidden establishes a sticky scroll reference. */
-	public static final int OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1, OVERFLOW_CLIP = 2;
+	/** Parent-owned modes: hidden/auto/scroll are local scrollports; clip paints only. */
+	public static final int OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1, OVERFLOW_CLIP = 2,
+			OVERFLOW_AUTO = 3, OVERFLOW_SCROLL = 4;
 
 	/** Draw2D SchemeBorder-style highlight/shadow schemes, encoded as scalar CSS. */
 	public static final int BORDER_SOLID = 0, BORDER_INSET = 1, BORDER_OUTSET = 2,
@@ -618,6 +619,8 @@ public final class HtmlStyles {
 					if (value.equals("visible")) delta[OVERFLOW] = OVERFLOW_VISIBLE;
 					else if (value.equals("hidden")) delta[OVERFLOW] = OVERFLOW_HIDDEN;
 					else if (value.equals("clip")) delta[OVERFLOW] = OVERFLOW_CLIP;
+					else if (value.equals("auto") || value.equals("overlay")) delta[OVERFLOW] = OVERFLOW_AUTO;
+					else if (value.equals("scroll")) delta[OVERFLOW] = OVERFLOW_SCROLL;
 				}
 				case "display" -> delta[DISPLAY] = switch (value) {
 					case "none" -> DISPLAY_NONE;

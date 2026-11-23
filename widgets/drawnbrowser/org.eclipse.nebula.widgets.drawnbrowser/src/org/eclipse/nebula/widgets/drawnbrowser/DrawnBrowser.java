@@ -63,7 +63,7 @@ import org.eclipse.swt.widgets.ScrollBar;
  * </p>
  * <p>
  * The overflow subset supports visible content and padding-edge clipping for hidden/clip. Hidden establishes an
- * unscrolled local reference for sticky descendants; clip retains the enclosing scroll reference. Nested scrolling,
+ * unscrolled local reference for sticky descendants; clip retains the enclosing scroll reference. Nested vertical scrolling supports auto/scroll wheel input and hidden programmatic offsets; native panel scrollbar thumbs,
  * per-axis overflow and rounded clips are not supported. Partly clipped native form controls remain hidden until
  * fully inside their panel; their existing widget identity is retained.
  * </p>
@@ -510,7 +510,17 @@ public class DrawnBrowser extends Canvas {
 				setCursor(linkAt(e.x, e.y) != null ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : null);
 			}
 			case SWT.MouseWheel -> {
-				scrollTo(viewport.y() - e.count * LINE);
+				int requested = (int) Math.max(Integer.MIN_VALUE + 1L,
+						Math.min(Integer.MAX_VALUE, -(long) e.count * LINE));
+				HtmlPositionedLayout scene = layout.positioned();
+				if (scene != null && scene.scrollWheelAt(e.x, e.y, viewport.y(), requested) != 0) {
+					// Inner scrollports keep their own offset; root ScrollBar does not move.
+					redraw();
+					placeWidgets();
+				} else {
+					scrollTo((int) Math.max(Integer.MIN_VALUE + 1L,
+							Math.min(Integer.MAX_VALUE, (long) viewport.y() + requested)));
+				}
 				e.doit = false;
 			}
 			case SWT.KeyDown -> key(e);
@@ -994,6 +1004,7 @@ public class DrawnBrowser extends Canvas {
 		HtmlPositionedLayout scene = layout.positioned();
 		int[] clip = new int[4];
 		int visible = scene == null ? 0 : scene.collectVisible(scrollY, getClientArea().height, scrollY);
+		Control below = null;
 		for (int step = scene == null ? layout.blockAt(scrollY) : 0;
 				step >= 0 && (scene == null ? step < document.blockCount && layout.top(step) < viewBottom : step < visible); step++) {
 			int b;
@@ -1005,8 +1016,8 @@ public class DrawnBrowser extends Canvas {
 			}
 			int c = document.blockControl[b];
 			if (c < 0 || document.kind[b] != HtmlDocument.CONTROL) continue;
-			int x = scene == null ? layout.indent(b) : scene.blockX(b);
-			int y = (scene == null ? layout.top(b) : scene.blockY(b, scrollY)) + layout.contentTop(b) - scrollY;
+			int x = layout.indent(b) + layout.offsetX(b);
+			int y = layout.top(b) + layout.offsetY(b, scrollY) + layout.contentTop(b) - scrollY;
 			int width = layout.controlWidth(b), height = layout.controlHeight(b);
 			if (scene != null && scene.hasClip(document.blockBox[b], true)) {
 				clip[0] = x; clip[1] = y; clip[2] = x + width; clip[3] = y + height;
@@ -1016,8 +1027,11 @@ public class DrawnBrowser extends Canvas {
 			}
 			Control widget = widget(c);
 			widget.setBounds(x, y, width, height);
+			// Native sibling order follows the same plan even when a higher control first enters view later.
+			if (scene != null && below != null) widget.moveAbove(below);
 			widget.setVisible(true);
 			placed[c] = stamp;
+			below = widget;
 		}
 		for (int c = 0; c < widgets.length; c++) {
 			if (widgets[c] != null && placed[c] != stamp && widgets[c].getVisible()) widgets[c].setVisible(false);

@@ -21,6 +21,67 @@ import org.junit.Test;
 public class HtmlPositionedGeometryTest {
 
 	@Test
+	public void hiddenProgrammaticScrollPreservesTheParentBorderButClipRefusesScroll() {
+		for (String mode : new String[] { "hidden", "clip" }) {
+			Scene scene = new Scene("<section style='position:relative;height:40px;overflow:" + mode + ";border:2px solid red'>"
+					+ "<article style='position:relative;top:100px;height:20px;width:20px'>moved</article></section>",
+					200, 150);
+			int panel = scene.document.boxParent[scene.document.blockBox[0]];
+			int child = scene.document.blockBox[0], before = scene.layout.boxY(child, 0);
+			int applied = scene.layout.scrollPanel(panel, 15);
+			assertEquals(mode, mode.equals("hidden") ? 15 : 0, applied);
+			assertEquals(mode, mode.equals("hidden") ? before - 15 : before,
+					scene.layout.boxY(child, 0));
+			assertEquals("panel border remains in place", 0, scene.layout.boxY(panel, 0));
+			assertEquals("clipped content cannot enlarge root scroll", 44, scene.layout.totalHeight());
+		}
+	}
+
+	@Test
+	public void autoAndScrollPanelsConsumeWheelWithoutMovingRoot() {
+		for (String mode : new String[] { "auto", "scroll" }) {
+			Scene scene = new Scene("<section style='height:40px;width:100px;overflow:" + mode + "'>"
+					+ "<article style='height:300px'>inner</article></section>", 240, 180);
+			int panel = scene.document.boxParent[scene.document.blockBox[0]];
+			int child = scene.document.blockBox[0];
+			int top = scene.layout.boxY(child, 0);
+			assertTrue(mode, scene.layout.panelMaximumY(panel) > 30);
+			assertEquals(mode, 30, scene.layout.scrollWheelAt(10, 10, 0, 30));
+			assertEquals(30, scene.layout.panelScrollY(panel));
+			assertEquals(top - 30, scene.layout.boxY(child, 0));
+			assertEquals("outer root stays at the panel's 40px height", 40, scene.layout.totalHeight());
+			assertVisible(scene, 0, 180, 0);
+			assertEquals("bounded scrolling clamps", scene.layout.panelMaximumY(panel) - 30,
+					scene.layout.scrollPanel(panel, Integer.MAX_VALUE));
+			assertEquals("no additional pixels at the end", 0, scene.layout.scrollPanel(panel, Integer.MAX_VALUE));
+		}
+	}
+
+	@Test
+	public void nestedPanelScrollOffsetsAddAndFixedChildrenEscapeThem() {
+		Scene scene = new Scene("<section style='position:relative;height:50px;overflow:auto'>"
+				+ "<article style='height:40px;overflow:auto'>"
+				+ "<nav style='position:relative;top:200px;height:20px'>nested</nav>"
+				+ "<header style='position:fixed;top:5px;height:10px;width:20px'>fixed</header>"
+				+ "</article>"
+				+ "<footer style='position:relative;top:150px;height:20px'>far outer</footer>"
+				+ "</section>", 240, 180);
+		int inner = scene.document.boxParent[scene.document.blockBox[0]];
+		int outer = scene.document.boxParent[inner];
+		int moving = scene.document.blockBox[0], fixed = scene.document.blockBox[1];
+		int before = scene.layout.boxY(moving, 0);
+		int fixedBefore = scene.layout.boxY(fixed, 0);
+		assertTrue(scene.layout.panelMaximumY(inner) >= 30);
+		assertTrue(scene.layout.panelMaximumY(outer) >= 15);
+		assertEquals(30, scene.layout.scrollPanel(inner, 30));
+		assertEquals(15, scene.layout.scrollPanel(outer, 15));
+		assertEquals(before - 45, scene.layout.boxY(moving, 0));
+		assertEquals(fixedBefore, scene.layout.boxY(fixed, 0));
+		assertEquals(50, scene.layout.totalHeight());
+		assertVisible(scene, 0, 180, 0);
+	}
+
+	@Test
 	public void staticSemanticPanelOwnsItsPaddingAndMarginsAroundItsChildrenOnce() {
 		for (String tag : new String[] { "div", "main", "section", "article", "nav", "aside", "header", "footer" }) {
 			Scene scene = new Scene("<" + tag + " style='margin:5px;padding:10px;border:2px solid blue;background:red'>"
