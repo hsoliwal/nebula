@@ -101,6 +101,54 @@ public class OscilloscopeEnvelopeTest {
 		shell.dispose();
 	}
 
+	/**
+	 * Clear must discard logical occupancy as well as the physical words,
+	 * including a wrapped full ring and a partially consumed ring.
+	 */
+	@Test
+	public void fifoClearResetsOccupancyAcrossWrapAndReuse() {
+		Display display = Display.getDefault();
+		Shell shell = new Shell(display);
+		try {
+			Oscilloscope scope = new Oscilloscope(1, null, shell, SWT.NONE);
+			Oscilloscope.IntegerFiFoCircularStack ring = scope.new IntegerFiFoCircularStack(3);
+			ring.push(10);
+			ring.push(20);
+			ring.push(30);
+			ring.push(40);
+			assertTrue(ring.isFull());
+			assertEquals(3, ring.getLoad());
+			assertEquals(20, ring.peek(-1));
+			ring.clear();
+			assertEquals(0, ring.getLoad());
+			assertTrue(ring.isEmpty());
+			assertTrue(!ring.isFull());
+			assertEquals(-1, ring.peek(-1));
+			assertEquals(-1, ring.pop(-1));
+			ring.push(51);
+			assertEquals(1, ring.getLoad());
+			assertEquals(51, ring.pop(-1));
+			assertTrue(ring.isEmpty());
+			ring.push(61);
+			ring.push(62);
+			assertEquals(61, ring.pop(-1));
+			ring.clear();
+			assertEquals(0, ring.getLoad());
+			assertTrue(ring.isEmpty());
+			ring.push(81);
+			ring.push(82);
+			ring.push(83);
+			Oscilloscope.IntegerFiFoCircularStack smaller = scope.new IntegerFiFoCircularStack(2, ring);
+			assertTrue(ring.isEmpty());
+			assertEquals(2, smaller.getLoad());
+			assertEquals(82, smaller.pop(-1));
+			assertEquals(83, smaller.pop(-1));
+			assertTrue(smaller.isEmpty());
+		} finally {
+			shell.dispose();
+		}
+	}
+
 	private static int[] lines(Oscilloscope scope, String name) throws Exception {
 		Field chanF = Oscilloscope.class.getDeclaredField("chan"); //$NON-NLS-1$
 		chanF.setAccessible(true);
