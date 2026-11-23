@@ -23,7 +23,7 @@ import org.junit.Test;
  *
  * <p>Original rectangle-based expressions are intentionally retained only in
  * this test. They must agree with the primitive-coordinate production path,
- * including zero-sized bounds and the integer overflow semantics of SWT.</p>
+ * including zero-sized bounds and long-coordinate endpoint semantics.</p>
  */
 public class GridViewportDamageAtoms_Test {
 
@@ -80,46 +80,84 @@ public class GridViewportDamageAtoms_Test {
 	}
 
 	private static boolean originalHeader(Rectangle clip, Rectangle client, int height) {
-		return height > 0 && clip.intersects(new Rectangle(client.x, client.y,
-				client.width, Math.min(height, client.height)));
-	}
+        return height > 0 && independentOverlap(clip, client.x, client.y,
+                client.width, Math.min(height, client.height));
+    }
 
-	private static boolean originalFooter(Rectangle clip, Rectangle client, int height) {
-		if (height <= 0) {
-			return false;
-		}
-		int visible = Math.min(height, client.height);
-		return clip.intersects(new Rectangle(client.x, client.y + client.height - visible,
-				client.width, visible));
-	}
+    private static boolean originalFooter(Rectangle clip, Rectangle client, int height) {
+        if (height <= 0) return false;
+        long footer = Math.min(height, client.height);
+        return independentOverlap(clip, client.x,
+                (long) client.y + client.height - footer, client.width, footer);
+    }
 
-	private static int originalPlan(Rectangle clip, Rectangle client, int headerHeight,
-			int footerHeight, boolean headerVisible, boolean footerVisible,
-			boolean fixedOverlay, boolean transientOverlay) {
-		if (clip.isEmpty() || client.isEmpty() || !clip.intersects(client)) {
-			return 0;
-		}
-		int result = GridPaintDAG.BACKGROUND;
-		int header = headerVisible ? Math.max(0, headerHeight) : 0;
-		int footer = footerVisible ? Math.max(0, footerHeight) : 0;
-		int top = client.y + Math.max(0, header);
-		int bottom = client.y + client.height - Math.max(0, footer);
-		Rectangle body = new Rectangle(client.x, top, client.width, Math.max(0, bottom - top));
-		if (body.width > 0 && body.height > 0 && clip.intersects(body)) {
-			result |= GridPaintDAG.BODY;
-			if (fixedOverlay) {
-				result |= GridPaintDAG.FIXED;
-			}
-		}
-		if (headerVisible && originalHeader(clip, client, header)) {
-			result |= GridPaintDAG.HEADER;
-		}
-		if (footerVisible && originalFooter(clip, client, footer)) {
-			result |= GridPaintDAG.FOOTER;
-		}
-		if (transientOverlay) {
-			result |= GridPaintDAG.OVERLAY;
-		}
-		return result;
-	}
+    private static int originalPlan(Rectangle clip, Rectangle client, int headerHeight,
+            int footerHeight, boolean headerVisible, boolean footerVisible,
+            boolean fixedOverlay, boolean transientOverlay) {
+        if (!independentOverlap(clip, client.x, client.y, client.width, client.height)) {
+            return 0;
+        }
+        int result = GridPaintDAG.BACKGROUND;
+        long header = headerVisible ? Math.max(0, headerHeight) : 0;
+        long footer = footerVisible ? Math.max(0, footerHeight) : 0;
+        if (independentOverlap(clip, client.x, (long) client.y + header,
+                client.width, client.height - header - footer)) {
+            result |= GridPaintDAG.BODY;
+            if (fixedOverlay) result |= GridPaintDAG.FIXED;
+        }
+        if (headerVisible && originalHeader(clip, client, headerHeight)) result |= GridPaintDAG.HEADER;
+        if (footerVisible && originalFooter(clip, client, footerHeight)) result |= GridPaintDAG.FOOTER;
+        if (transientOverlay) result |= GridPaintDAG.OVERLAY;
+        return result;
+    }
+
+    /** Independently compare widened half-open endpoints without SWT Rectangle.intersects. */
+    private static boolean independentOverlap(Rectangle clip, long x, long y, long width, long height) {
+        return clip.width > 0 && clip.height > 0 && width > 0 && height > 0
+                && (long) clip.x < x + width && x < (long) clip.x + clip.width
+                && (long) clip.y < y + height && y < (long) clip.y + clip.height;
+    }
+
+    @Test
+    public void extremeViewportScrollRectanglesNeverWrapTheSignedPixelAxis() {
+        Random random = new Random(0x20261123L);
+        for (int caseId = 0; caseId < 16384; caseId++) {
+            int origin = COORDINATES[random.nextInt(COORDINATES.length)];
+            int height = EXTENTS[random.nextInt(EXTENTS.length)];
+            int header = EXTENTS[random.nextInt(EXTENTS.length)];
+            int footer = EXTENTS[random.nextInt(EXTENTS.length)];
+            Rectangle client = new Rectangle(20, origin, 120, height);
+            Rectangle actual = GridViewportDamage.scrollDamage(client, header, footer, false);
+            long top = (long) origin + Math.max(0, header);
+            long bottom = (long) origin + height - Math.max(0, footer);
+            long expectedTop = Math.min(top, Integer.MAX_VALUE);
+            long expectedBottom = Math.min(bottom, (long) Integer.MAX_VALUE + 1);
+            long expectedHeight = top > Integer.MAX_VALUE ? 0
+                    : Math.max(0, expectedBottom - expectedTop);
+            assertEquals("top " + caseId, expectedTop, actual.y);
+            assertEquals("height " + caseId, expectedHeight, actual.height);
+            assertEquals("width " + caseId, 120, actual.width);
+        }
+    }
+
+    @Test
+    public void positiveExtremaPlanesAgreeWithWideHalfOpenOracle() {
+        Random random = new Random(0x574944454cL);
+        for (int caseId = 0; caseId < 4096; caseId++) {
+            Rectangle client = rectangle(random);
+            Rectangle clip = rectangle(random);
+            int header = EXTENTS[random.nextInt(EXTENTS.length)];
+            int footer = EXTENTS[random.nextInt(EXTENTS.length)];
+            for (int flags = 0; flags < 16; flags++) {
+                int expected = originalPlan(clip, client, header, footer,
+                        (flags & 1) != 0, (flags & 2) != 0,
+                        (flags & 4) != 0, (flags & 8) != 0);
+                int actual = GridPaintDAG.plan(clip, client, header, footer,
+                        (flags & 1) != 0, (flags & 2) != 0,
+                        (flags & 4) != 0, (flags & 8) != 0);
+                assertEquals("wide plan " + caseId + " flags " + flags, expected, actual);
+            }
+        }
+    }
+
 }

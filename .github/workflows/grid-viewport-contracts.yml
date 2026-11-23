@@ -24,7 +24,7 @@ jobs:
     env:
       SWT_GTK4: '0'
       GDK_BACKEND: x11
-      JAVA_TOOL_OPTIONS: -Dswt.widget.mode.Grid=${{ matrix.mode }}
+      JAVA_TOOL_OPTIONS: -Dswt.widget.mode.Grid=${{ matrix.mode }} -Dgrid.differential.out=${{ github.workspace }}/grid-native-pixels-${{ matrix.mode }}
       MAVEN_OPTS: -Xmx2g
     steps:
       - uses: actions/checkout@v5
@@ -38,10 +38,37 @@ jobs:
           cache: maven
       # Keep Tycho's Maven runtime aligned with the existing nebula Java CI.
       # The unpinned runner Maven produced a missing MavenTargetLocationFactory binding.
-      - name: Set up pinned Maven for Tycho
-        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-        with:
-          maven-version: 3.9.11
+      # Preserve Tycho's exact Maven 3.9.11 requirement without a single
+      # rate-limited Maven Central download path. Refuse any checksum drift.
+      - name: Install SHA-512-pinned Maven 3.9.11 for Tycho
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=3.9.11
+          expected_sha512=bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978
+          name="apache-maven-${version}-bin.tar.gz"
+          archive="$RUNNER_TEMP/$name"
+          urls=(
+            "https://archive.apache.org/dist/maven/maven-3/${version}/binaries/$name"
+            "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${version}/$name"
+          )
+          for url in "${urls[@]}"; do
+            rm -f "$archive"
+            if curl --fail --location --silent --show-error --retry 4 \
+                --retry-all-errors --retry-delay 5 --connect-timeout 20 \
+                --max-time 240 --output "$archive" "$url"; then
+              if printf '%s  %s\n' "$expected_sha512" "$archive" | sha512sum --check --status; then
+                echo "Pinned Maven distribution checksum verified"
+                break
+              fi
+            fi
+          done
+          test -s "$archive"
+          printf '%s  %s\n' "$expected_sha512" "$archive" | sha512sum --check
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-${version}/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/apache-maven-${version}/bin/mvn" -version |
+            grep -m1 '^Apache Maven 3[.]9[.]11 '
       - name: Record Maven and Tycho versions
         run: |
           mvn -version
@@ -50,6 +77,11 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq xvfb dbus-x11 libgtk-3-0
+      - name: Create native pixel evidence directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ github.workspace }}/grid-native-pixels-${{ matrix.mode }}"
       - name: Run original and viewport Tycho contracts in independent JVMs
         shell: bash
         run: |
@@ -58,21 +90,46 @@ jobs:
             mvn -B -ntp -f widgets/grid/pom.xml -Pfull-grid-contracts \
               -pl org.eclipse.nebula.widgets.grid.test -am \
               -DfailIfNoTests=true verify
-      - name: Reject absent, failed or skipped new API tests
+      - name: Reject absent, failed or skipped Grid viewport and sticky TreeGrid JUnit
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import xml.etree.ElementTree as ET
-          matches=list(Path('widgets/grid/org.eclipse.nebula.widgets.grid.test/target').rglob('*GridViewportItemRange_Test*.xml'))
-          assert matches, 'no executed GridViewportItemRange_Test report'
-          count=0
-          for p in matches:
-              r=ET.parse(p).getroot()
-              assert all(int(r.attrib.get(k,'0')) == 0 for k in ('failures','errors','skipped')), p
-              count+=int(r.attrib.get('tests','0'))
-          assert count >= 4, f'expected at least 4 executed API cases, got {count}'
+          root = Path('widgets/grid/org.eclipse.nebula.widgets.grid.test/target')
+          viewport = list(root.rglob('*GridViewportItemRange_Test*.xml'))
+          assert viewport, 'no executed GridViewportItemRange_Test report'
+          count = 0
+          for p in viewport:
+              suite = ET.parse(p).getroot()
+              assert all(int(suite.attrib.get(k, '0')) == 0 for k in ('failures','errors','skipped')), p
+              count += int(suite.attrib.get('tests', '0'))
+          assert count >= 4, f'expected at least four executed API cases, got {count}'
+
+          sticky = list(root.rglob('*GridPinnedRows_Test*.xml'))
+          assert sticky, 'no executed native GridPinnedRows_Test JUnit report'
+          actual = set()
+          for p in sticky:
+              xml = ET.parse(p).getroot()
+              suites = [e for e in xml.iter() if e.tag.rsplit('}', 1)[-1] == 'testsuite']
+              assert suites, f'no testsuite node in {p}'
+              for suite in suites:
+                  assert all(int(suite.attrib.get(k, '0')) == 0
+                             for k in ('failures','errors','skipped')), p
+              actual.update(e.attrib.get('name') for e in xml.iter()
+                            if e.tag.rsplit('}', 1)[-1] == 'testcase')
+          required = {
+              'pinnedPlanesKeepTheirPixelsWhileTheBodyScrolls',
+              'treeAncestorsStayAboveScrolledChildrenAndBelowTheColumnHeader',
+              'stickyAncestorsAreShownForCorrectedBoundsAndNativeCellEditors',
+              'ancestorsClippedBeyondTheBodyAreNotReportedShown',
+              'stickySubheadingPushesAwayAtItsLastDescendant',
+              'stickyAncestorKeepsItsOriginalAccessibleRowIdAfterScroll'
+          }
+          assert required <= actual, f'unexecuted sticky native cases: {sorted(required - actual)}'
+          assert len(actual) >= 18, f'expected 18 executed GridPinnedRows_Test cases, got {len(actual)}'
           print('GRID_VIEWPORT_ITEM_RANGE_TESTS=PASSED', count)
+          print('GRID_STICKY_ANCESTOR_NATIVE_JUNIT=PASSED', len(actual))
           PY
       - name: Archive native test reports
         if: always()
@@ -84,3 +141,4 @@ jobs:
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/**/*surefire*.xml
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/*.xml
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/**/*.log
+            ${{ github.workspace }}/grid-native-pixels-${{ matrix.mode }}/*.png
