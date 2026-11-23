@@ -62,6 +62,54 @@ jobs:
         path: .m3-swt
         fetch-depth: 0
         lfs: false
+    # Parent source is a separate original Eclipse EDL-1.0 project, not Synexia code.
+    # The SWT POM requests ../eclipse-platform-parent; keep the exact source identity.
+    - name: Checkout exact Eclipse 4.42 parent source
+      uses: actions/checkout@v4
+      with:
+        repository: eclipse-platform/eclipse.platform.releng.aggregator
+        ref: 8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec
+        path: .m3-eclipse-releng
+        sparse-checkout: eclipse-platform-parent
+        sparse-checkout-cone-mode: true
+        fetch-depth: 1
+        persist-credentials: false
+        lfs: false
+    - name: Bind pinned upstream Eclipse parent without changing SWT source
+      shell: bash
+      run: |
+        set -euo pipefail
+        src=.m3-eclipse-releng/eclipse-platform-parent/pom.xml
+        test "$(git -C .m3-eclipse-releng rev-parse HEAD)" = "8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec"
+        test "$(git hash-object "$src")" = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
+        printf '%s  %s\n' "121b6c26d986874391d26d114377e3beda91723b0d675146bdd194dbfe01e264" "$src" | sha256sum --check
+        test "$(git -C .m3-swt rev-parse HEAD)" = "25e637e40c5243f5210586007a74206d8dce7953"
+        test "$(git hash-object .m3-swt/pom.xml)" = "f0e7537f58999feb562d17602f2f75dd1db3e80f"
+        test ! -e eclipse-platform-parent
+        mkdir -p eclipse-platform-parent
+        cp "$src" eclipse-platform-parent/pom.xml
+        test "$(git hash-object eclipse-platform-parent/pom.xml)" = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
+        python3 - <<'PY'
+        from pathlib import Path
+        from xml.etree import ElementTree as ET
+        ns = "{http://maven.apache.org/POM/4.0.0}"
+        parent = ET.parse("eclipse-platform-parent/pom.xml").getroot()
+        swt = ET.parse(".m3-swt/pom.xml").getroot()
+        def value(element, path):
+            node = element.find(path)
+            return node.text.strip() if node is not None and node.text else None
+        assert (value(parent, ns+"groupId"), value(parent, ns+"artifactId"),
+                value(parent, ns+"version"), value(parent, ns+"packaging")) == (
+                    "org.eclipse", "eclipse-platform-parent", "4.42.0-SNAPSHOT", "pom")
+        expected = swt.find(ns+"parent")
+        assert expected is not None
+        assert (value(expected, ns+"groupId"), value(expected, ns+"artifactId"),
+                value(expected, ns+"version"), value(expected, ns+"relativePath")) == (
+                    "org.eclipse", "eclipse-platform-parent", "4.42.0-SNAPSHOT",
+                    "../eclipse-platform-parent")
+        assert "Eclipse Distribution License v1.0" in Path("eclipse-platform-parent/pom.xml").read_text()
+        print("SWT_LOCAL_PARENT_SOURCE_IDENTITY=PASS")
+        PY
     - name: Qualify fail-closed HTTP 429/503 retry behavior
       run: bash releng/swt-receiver/test-retry-transient-maven-503.sh
     - name: Build and bind the pinned SWT GTK3 distribution
