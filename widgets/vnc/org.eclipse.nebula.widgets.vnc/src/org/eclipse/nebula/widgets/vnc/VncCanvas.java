@@ -507,7 +507,7 @@ public final class VncCanvas extends Canvas {
         buttonMask = 0;
     }
 
-    private static int toKeysym(KeyEvent event) {
+    static int toKeysym(KeyEvent event) {
         return switch (event.keyCode) {
             case SWT.ARROW_LEFT -> 0xff51;
             case SWT.ARROW_UP -> 0xff52;
@@ -535,21 +535,33 @@ public final class VncCanvas extends Canvas {
             case SWT.F10 -> 0xffc7;
             case SWT.F11 -> 0xffc8;
             case SWT.F12 -> 0xffc9;
-            case SWT.SHIFT -> 0xffe1;
-            case SWT.CTRL -> 0xffe3;
-            case SWT.ALT -> 0xffe9;
+            case SWT.SHIFT -> event.keyLocation == SWT.RIGHT ? 0xffe2 : 0xffe1;
+            case SWT.CTRL -> event.keyLocation == SWT.RIGHT ? 0xffe4 : 0xffe3;
+            case SWT.ALT -> event.keyLocation == SWT.RIGHT ? 0xffea : 0xffe9;
+            case SWT.COMMAND -> event.keyLocation == SWT.RIGHT ? 0xffec : 0xffeb;
             default -> {
                 int codepoint = event.character;
-                // Ctrl+letter may arrive as a C0 control character; RFB
-                // still needs the underlying alphabetic keysym with Ctrl down.
-                if (codepoint < 0x20 && event.keyCode >= 'a'
-                        && event.keyCode <= 'z') {
-                    yield event.keyCode;
+                // Ctrl+letter often arrives as a C0 control character. SWT's
+                // physical keyCode may be uppercase or lowercase depending on
+                // platform/layout. Let the separately-sent Shift keysym carry
+                // case, but respect Ctrl+Shift for the letter keysym itself.
+                if (codepoint < 0x20) {
+                    int letter = event.keyCode;
+                    if (letter >= 'A' && letter <= 'Z') {
+                        letter += 'a' - 'A';
+                    }
+                    if (letter >= 'a' && letter <= 'z') {
+                        yield (event.stateMask & SWT.SHIFT) != 0
+                                ? Character.toUpperCase((char) letter) : letter;
+                    }
                 }
                 if (codepoint >= 0x20 && codepoint <= 0xff) {
                     yield codepoint;
                 }
-                yield codepoint > 0xff ? 0x01000000 | codepoint : 0;
+                // KeyEvent.character is only one UTF-16 code unit: a lone
+                // surrogate is NOT a Unicode scalar value or an X11 keysym.
+                yield codepoint > 0xff && !Character.isSurrogate((char) codepoint)
+                        ? 0x01000000 | codepoint : 0;
             }
         };
     }
