@@ -508,14 +508,19 @@ public final class HtmlLayout {
 				int content;
 				if (doc.kind[b] == HtmlDocument.IMAGE) content = shownHeight(doc.image[b]);
 				else if (doc.kind[b] == HtmlDocument.RULE) content = RULE_HEIGHT;
-				else if (doc.kind[b] == HtmlDocument.CONTROL) content = controlHeight(b);
+				else if (doc.kind[b] == HtmlDocument.CONTROL) {
+					content = controlHeight(b);
+					// A control's own absolute/fixed box is anchored by CSS, without ordinary block-flow gaps.
+					if (doc.boxRole[doc.blockBox[b]] == HtmlDocument.CONTROL_BOX && outOfFlow(b)) return content;
+				}
 				else {
 					TextLayout text = make(b, doc.kind[b] == HtmlDocument.PRE ? -1 : wrapWidth);
 					try { content = text.getBounds().height; }
 					finally { text.dispose(); }
 				}
 				// The scene owns margin/border/padding once per element, even across multiple fragments.
-				return content + 2 * (doc.kind[b] == HtmlDocument.CELL ? boxedItem(b) ? 0 : CELL_PADDING : BLOCK_GAP);
+				return (int) Math.min(Integer.MAX_VALUE, (long) content
+						+ 2 * (doc.kind[b] == HtmlDocument.CELL ? boxedItem(b) ? 0 : CELL_PADDING : BLOCK_GAP));
 			}
 
 			@Override
@@ -791,9 +796,12 @@ public final class HtmlLayout {
 
 	/**
 	 * The height of control block {@code b}'s widget: a line and a margin for a field, a button or a list; the rows of a
-	 * text area (2 when not given); a line for a check box or a radio.
+	 * text area (2 when not given); a line for a check box or a radio. An explicit CSS height on the control's own box
+	 * takes precedence; its containing element's height does not replace these intrinsic metrics.
 	 */
 	public int controlHeight(int b) {
+		int box = doc.blockBox[b];
+		if (doc.boxRole[box] == HtmlDocument.CONTROL_BOX && doc.boxHeight[box] != HtmlStyles.AUTO) return doc.boxHeight[box];
 		int c = doc.blockControl[b], line = lineHeight();
 		return switch (doc.controlType[c]) {
 			case HtmlDocument.TEXTAREA -> (doc.controlRows[c] > 0 ? doc.controlRows[c] : 2) * line + 8;
@@ -804,9 +812,12 @@ public final class HtmlLayout {
 
 	/**
 	 * The width of control block {@code b}'s widget: a field or a text area by its columns (20 when not given), a list
-	 * by its longest option, a button by its label, a check box or a radio by a line.
+	 * by its longest option, a button by its label, a check box or a radio by a line. An explicit CSS width on the
+	 * control's own box takes precedence; an automatic width retains the intrinsic metric.
 	 */
 	public int controlWidth(int b) {
+		int box = doc.blockBox[b];
+		if (doc.boxRole[box] == HtmlDocument.CONTROL_BOX && doc.boxWidth[box] != HtmlStyles.AUTO) return doc.boxWidth[box];
 		int c = doc.blockControl[b], line = lineHeight(), character = Math.max(1, line / 2);
 		return switch (doc.controlType[c]) {
 			case HtmlDocument.TEXT, HtmlDocument.PASSWORD, HtmlDocument.TEXTAREA ->

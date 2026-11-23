@@ -30,16 +30,30 @@ final class GridViewportDamage {
 		if (horizontal) {
 			return new Rectangle(clientArea.x, clientArea.y, clientArea.width, clientArea.height);
 		}
-		int top = clientArea.y + Math.max(0, headerHeight);
-		int bottom = clientArea.y + clientArea.height - Math.max(0, footerHeight);
-		return new Rectangle(clientArea.x, top, clientArea.width, Math.max(0, bottom - top));
+        long top = (long) clientArea.y + Math.max(0, headerHeight);
+        long bottom = (long) clientArea.y + clientArea.height - Math.max(0, footerHeight);
+        // The body may extend beyond the representable SWT Rectangle pixel axis.
+        // Return only the representable part; never wrap into a negative y.
+        if (top > Integer.MAX_VALUE) {
+            return new Rectangle(clientArea.x, Integer.MAX_VALUE, clientArea.width, 0);
+        }
+        long representedBottom = Math.min((long) Integer.MAX_VALUE + 1, bottom);
+        return new Rectangle(clientArea.x, (int) top, clientArea.width,
+                (int) Math.max(0, representedBottom - top));
 	}
+
+    /** Strict half-open intersection with endpoints widened before addition. */
+    static boolean intersectsRegion(Rectangle clip, long x, long y, long width, long height) {
+        return clip.width > 0 && clip.height > 0 && width > 0 && height > 0
+                && Math.max((long) clip.x, x) < Math.min((long) clip.x + clip.width, x + width)
+                && Math.max((long) clip.y, y) < Math.min((long) clip.y + clip.height, y + height);
+    }
 
 	static boolean intersectsHeader(Rectangle clip, Rectangle clientArea, int headerHeight) {
         if (headerHeight <= 0) {
             return false;
         }
-        return clip.intersects(clientArea.x, clientArea.y, clientArea.width,
+        return intersectsRegion(clip, clientArea.x, clientArea.y, clientArea.width,
                 Math.min(headerHeight, clientArea.height));
     }
 
@@ -48,7 +62,7 @@ final class GridViewportDamage {
             return false;
         }
         int height = Math.min(footerHeight, clientArea.height);
-        return clip.intersects(clientArea.x,
-                clientArea.y + clientArea.height - height, clientArea.width, height);
+        return intersectsRegion(clip, clientArea.x,
+                (long) clientArea.y + clientArea.height - height, clientArea.width, height);
     }
 }

@@ -47,6 +47,9 @@ jobs:
     #   - https://gh.io/using-larger-runners
     # Consider using larger runners for possible analysis time improvements.
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    env:
+      SWT_GTK4: '0'
+      GDK_BACKEND: x11
     timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
       # required for all workflows
@@ -74,6 +77,7 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
+        build-mode: manual
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
@@ -87,6 +91,11 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Set up Maven
+      uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
+      with:
+        maven-version: 3.9.11
+
     - name: Install SHA-512-pinned Maven 3.9.11 for Tycho
       shell: bash
       run: |
@@ -116,20 +125,49 @@ jobs:
         echo "$RUNNER_TEMP/apache-maven-${version}/bin" >> "$GITHUB_PATH"
         "$RUNNER_TEMP/apache-maven-${version}/bin/mvn" -version |
           grep -m1 '^Apache Maven 3[.]9[.]11 '
-    # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
-    # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
 
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+    # CodeQL must trace the same source-pinned SWT JNI receiver that compiles
+    # Nebula's inherited Canvas layer API. Upstream SWT lacks these methods.
+    - name: Checkout source-pinned SWT GTK3 receiver
+      uses: actions/checkout@v4
+      with:
+        repository: hsoliwal/eclipse.platform.swt
+        ref: c25cb33505465b28980e563acc99097ce3e33fee
+        path: .m3-swt
+        fetch-depth: 0
+        lfs: false
 
-    #   If the Autobuild fails above, remove it and uncomment the following three lines.
-    #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
+    - name: Validate receiver 503 refusal and build exact SWT GTK3 natives
+      shell: bash
+      run: |
+        set -euo pipefail
+        bash releng/swt-receiver/test-retry-transient-maven-503.sh
+        sudo apt-get update -qq
+        sudo apt-get install -qq -y libgtk-3-dev freeglut3-dev
+        # Build every source-pinned SWT platform fragment expected by the P2
+        # receiver. Only GTK x86_64 compiles native .so files on this host;
+        # Cocoa/Win32/other architectures are Java/OSGi resolution inputs only.
+        swt_fragments=':org.eclipse.swt.cocoa.macosx.aarch64,:org.eclipse.swt.cocoa.macosx.x86_64,:org.eclipse.swt.gtk.linux.aarch64,:org.eclipse.swt.gtk.linux.ppc64le,:org.eclipse.swt.gtk.linux.riscv64,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.win32.win32.aarch64,:org.eclipse.swt.win32.win32.x86_64'
+        GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
+          bash releng/swt-receiver/retry-transient-maven-503.sh \
+          mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
+          -Dtycho.baseline.replace=none -DskipTests=true -pl "$swt_fragments" -am package
+        python3 releng/swt-receiver/prepare_swt_receiver.py .m3-swt \
+          releng/swt-receiver/swt-receiver-p2/target/binding \
+          releng/swt-receiver/swt-receiver-p2/target/repository
+        mvn -B -f releng/swt-receiver/swt-receiver-p2/pom.xml \
+          -Dm3.swt.source="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
+        cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
 
-    # - run: |
-    #     echo "Run, Build Application using script"
-    #     ./location_of_script_within_repo/buildscript.sh
+    - name: Trace exact-source Nebula compile with test sources for CodeQL
+      shell: bash
+      run: |
+        set -euo pipefail
+        mvn -V -B --fail-at-end clean package -DskipTests=true \
+          -Dtycho.localArtifacts=ignore \
+          "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}"
+        # CodeQL analysis follows only after a successful complete compilation.
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

@@ -24,6 +24,99 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  remote-browser-cpu-junit:
+    # This independent source/JUnit gate must not depend on Eclipse snapshot
+    # resolution. It does NOT replace the SWT/Tycho/native build below.
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Maven 3.9.11
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.11
+      - name: Verify remote browser CPU decoder and frame geometry with real JUnit4
+        shell: bash
+        run: |
+          set -euo pipefail
+          production=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser/src/org/eclipse/nebula/widgets/drawnbrowser/internal
+          tests=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser.tests/src/org/eclipse/nebula/widgets/drawnbrowser/internal
+          if [[ ! -f "$production/RemoteFrameDecode.java" ]]; then
+            echo 'NOT_APPLICABLE: no RemoteFrameDecode.java on this ref (not a passing decoder acceptance test)'
+            exit 0
+          fi
+          for source in "$production/RemoteFrameDecode.java" "$production/RemoteFrameWindow.java" \
+              "$tests/RemoteFrameDecodeTest.java" "$tests/RemoteFrameWindowTest.java"; do
+            if [[ ! -f "$source" ]]; then
+              echo "INCOMPLETE_DECODER_PROOF: missing $source" >&2
+              exit 1
+            fi
+          done
+          work="$RUNNER_TEMP/nebula-remote-cpu-junit"
+          pkg=org/eclipse/nebula/widgets/drawnbrowser/internal
+          mkdir -p "$work/src/main/java/$pkg" "$work/src/test/java/$pkg"
+          cp "$production/RemoteFrameDecode.java" "$production/RemoteFrameWindow.java" \
+            "$work/src/main/java/$pkg/"
+          cp "$tests/RemoteFrameDecodeTest.java" "$tests/RemoteFrameWindowTest.java" \
+            "$work/src/test/java/$pkg/"
+          cat > "$work/pom.xml" <<'M3_POM'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <project xmlns="http://maven.apache.org/POM/4.0.0">
+            <modelVersion>4.0.0</modelVersion>
+            <groupId>org.eclipse.nebula.verification</groupId>
+            <artifactId>remote-browser-cpu-junit</artifactId>
+            <version>2026.11.23</version>
+            <properties>
+              <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+              <maven.compiler.release>21</maven.compiler.release>
+            </properties>
+            <dependencies>
+              <dependency><groupId>junit</groupId><artifactId>junit</artifactId>
+                <version>4.13.2</version><scope>test</scope></dependency>
+            </dependencies>
+            <build><plugins>
+              <plugin><groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version>
+                <configuration><release>21</release>
+                  <compilerArgs><arg>-Xlint:all</arg><arg>-Werror</arg></compilerArgs>
+                </configuration>
+              </plugin>
+              <plugin><groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId><version>3.5.4</version>
+                <configuration><failIfNoTests>true</failIfNoTests></configuration>
+              </plugin>
+            </plugins></build>
+          </project>
+          M3_POM
+          mvn -B -ntp -f "$work/pom.xml" clean test -Dstyle.color=never
+          python3 - "$work/target/surefire-reports" <<'M3_CHECK'
+          import pathlib, sys, xml.etree.ElementTree as ET
+          folder = pathlib.Path(sys.argv[1])
+          tests = errors = failures = skipped = 0
+          files = list(folder.glob('TEST-*.xml'))
+          for path in files:
+              suite = ET.parse(path).getroot()
+              tests += int(suite.attrib.get('tests', 0))
+              errors += int(suite.attrib.get('errors', 0))
+              failures += int(suite.attrib.get('failures', 0))
+              skipped += int(suite.attrib.get('skipped', 0))
+          if len(files) != 2 or tests < 10 or errors or failures or skipped:
+              raise SystemExit(f'INCOMPLETE_CPU_JUNIT files={len(files)} tests={tests} '
+                               f'errors={errors} failures={failures} skipped={skipped}')
+          print(f'NEBULA_REMOTE_CPU_JUNIT_PASS suites={len(files)} tests={tests} '
+                f'errors={errors} failures={failures} skipped={skipped}; '
+                'SWT_NATIVE_NOT_QUALIFIED')
+          M3_CHECK
+
   build:
     # Fork guard: run only in hsoliwal/nebula and only for same-repository PR heads.
     if: >-
@@ -47,15 +140,17 @@ jobs:
         distribution: 'temurin' # See 'Supported distributions' for available options
         java-version: ${{ matrix.java }}
         cache: 'maven'
-    - name: Set up Maven
-      uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f # v4.5
-      with:
-        maven-version: 3.9.11
+    - name: Verify preinstalled Maven (avoid rate-limited Maven Central archive)
+      shell: bash
+      run: |
+        set -euo pipefail
+        mvn -version | tee "$RUNNER_TEMP/nebula-maven-version.txt"
+        grep -Eq '^Apache Maven 3[.](9|10)[.]' "$RUNNER_TEMP/nebula-maven-version.txt"
     - name: Checkout the qualified SWT receiver
       uses: actions/checkout@v4
       with:
         repository: hsoliwal/eclipse.platform.swt
-        ref: 25e637e40c5243f5210586007a74206d8dce7953
+        ref: c25cb33505465b28980e563acc99097ce3e33fee
         path: .m3-swt
         fetch-depth: 0
         lfs: false
@@ -111,17 +206,65 @@ jobs:
       run: bash releng/swt-receiver/test-retry-transient-maven-503.sh
     - name: Build and bind the pinned SWT GTK3 distribution
       run: |
+        set -euo pipefail
         sudo apt-get update -qq
         sudo apt-get install -qq -y libgtk-3-dev freeglut3-dev
+        # Build every source-pinned SWT platform fragment expected by the P2
+        # receiver. Only GTK x86_64 compiles native .so files on this host;
+        # Cocoa/Win32/other architectures are Java/OSGi resolution inputs only.
+        swt_fragments=':org.eclipse.swt.cocoa.macosx.aarch64,:org.eclipse.swt.cocoa.macosx.x86_64,:org.eclipse.swt.gtk.linux.aarch64,:org.eclipse.swt.gtk.linux.ppc64le,:org.eclipse.swt.gtk.linux.riscv64,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.win32.win32.aarch64,:org.eclipse.swt.win32.win32.x86_64'
         GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
           bash releng/swt-receiver/retry-transient-maven-503.sh \
           mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
-          -Dtycho.baseline.replace=none -pl :org.eclipse.swt.gtk.linux.x86_64 -am package
+          -Dtycho.baseline.replace=none -DskipTests=true -pl "$swt_fragments" -am package
         python3 releng/swt-receiver/prepare_swt_receiver.py .m3-swt releng/swt-receiver/swt-receiver-p2/target/binding \
           releng/swt-receiver/swt-receiver-p2/target/repository
         mvn -B -f releng/swt-receiver/swt-receiver-p2/pom.xml \
           -Dm3.swt.source="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
         cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
+    - name: Run the excluded DrawnBrowser reactor under pinned GTK3/X11
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The root Nebula <modules> list omits widgets/drawnbrowser.
+        # Qualify the original HTML renderer explicitly with its real native SWT dependencies.
+        sudo apt-get install -y xvfb x11-xserver-utils openbox wmctrl
+        xvfb-run --auto-servernum bash -c '
+          set -euo pipefail
+          openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/drawnbrowser-openbox.log" 2>&1 &
+          wm_pid=$!
+          trap "kill $wm_pid 2>/dev/null || true" EXIT
+          for attempt in $(seq 1 100); do
+            if wmctrl -m >/dev/null 2>&1; then break; fi
+            kill -0 "$wm_pid" 2>/dev/null || exit 1
+            sleep 0.1
+          done
+          wmctrl -m
+          "$@"
+        ' drawnbrowser-wm mvn -V -B --fail-at-end -f widgets/drawnbrowser/pom.xml clean verify \
+          -Dtycho.localArtifacts=ignore \
+          -DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false \
+          -Dtests.vmargs=-Xcheck:jni \
+          "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing pinned GC digest}" \
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing platform}"
+        python3 - <<'PY'
+        import glob, sys, xml.etree.ElementTree as ET
+        reports = sorted(glob.glob('widgets/drawnbrowser/**/target/surefire-reports/TEST-*.xml', recursive=True))
+        if not reports:
+            sys.exit('FAIL: absent DrawnBrowser JUnit reports')
+        tests = failed = skipped = 0
+        for f in reports:
+            root = ET.parse(f).getroot()
+            suites = [root] if root.tag.endswith('testsuite') else list(root)
+            for suite in suites:
+                if suite.tag.endswith('testsuite'):
+                    tests += int(suite.get('tests', '0'))
+                    failed += int(suite.get('failures', '0')) + int(suite.get('errors', '0'))
+                    skipped += int(suite.get('skipped', '0'))
+        print(f'DrawnBrowser tests={tests} failures+errors={failed} skipped={skipped}')
+        if tests < 318 or failed or skipped:
+            sys.exit('FAIL: expected at least 318 native+headless tests, zero failed/skipped')
+        PY
     - name: Build All Widgets
       shell: bash
       env:
@@ -162,6 +305,7 @@ jobs:
           "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}" \
           "-Dm3.test.pixels.dir=${RUNNER_TEMP:?missing runner temp}/nebula-widget-pixels"
     - name: Qualify Grid native screen pixels with OpenCV
+      if: ${{ !cancelled() }}
       run: |
         python3 -m venv /tmp/nebula-vision
         /tmp/nebula-vision/bin/pip install opencv-python-headless==4.12.0.88 numpy==2.2.6
