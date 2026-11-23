@@ -18,8 +18,11 @@ import java.util.Arrays;
  * <p>
  * The root's containing-block size is the viewport, even when the document is taller. Physical integer pixel insets
  * and sizes use the CSS left-to-right rules. Margins, padding and borders belong to their owning box; legacy block
- * gaps remain outside a styled leaf's border. Percentages, inline positioning, floats, transforms and
- * overflow clips are outside this subset. Overflow remains visible. Positioned documents resolve their geometry as
+ * gaps remain outside a styled leaf's border. The {@code overflow: hidden/clip} panel subset clips descendants to
+ * the padding edge through containing-block ancestry. Hidden establishes an unscrolled local reference for sticky
+ * descendants; clip retains the enclosing scroll reference. Nested scroll offsets, scrollbars, overflow axes and
+ * overflow-clip-margin are not implemented. Percentages, inline positioning, floats and transforms remain
+ * outside this subset. Positioned and decorated container documents resolve their geometry as
  * a whole; ordinary documents retain {@link HtmlLayout}'s lazy prefix layout. TextLayout residency remains bounded.
  * </p>
  */
@@ -36,6 +39,8 @@ public final class HtmlPositionedLayout {
 	private final HtmlDocument doc;
 	private final HtmlPaintOrder order;
 	private final int[] x, y, width, height, localY, containing, tableOf;
+	/* Effective clip and hidden-scrollport ancestors; out-of-flow boxes start at their containing block. */
+	private final int[] clipAncestor, scrollAncestor;
 	private final int[] before, after, leadGap, trailGap, extraIndent, accountedIndent;
 	private final boolean[] fixed;
 	private final int[] blockX, blockY, blockWidth, blockHeight, blockInset, blockContentTop;
@@ -43,6 +48,11 @@ public final class HtmlPositionedLayout {
 	private final int[][] columns;
 	private int viewportWidth, viewportHeight, totalHeight;
 	private boolean hasFixed;
+	/* Sticky motion is projected once per scroll; ordinary/fixed interval queries retain their existing indexes. */
+	private final int[] motionOwner, motionParent, stickyBoxes, stickyShift;
+	private int stickyCount, projectedScroll;
+	private boolean projectionValid;
+	private int[] movingSteps = new int[0];
 	/* Sorted vertical intervals and segment maxima: viewport queries skip entire offscreen subtrees. */
 	private long[] normalKeys = new long[0], fixedKeys = new long[0], normalMax = new long[0], fixedMax = new long[0];
 	private final int[] visible;
@@ -53,7 +63,12 @@ public final class HtmlPositionedLayout {
 		order = new HtmlPaintOrder(document);
 		int n = doc.boxCount, b = doc.blockCount;
 		x = new int[n]; y = new int[n]; width = new int[n]; height = new int[n]; localY = new int[n];
+		clipAncestor = new int[n];
+		scrollAncestor = new int[n];
+		clipAncestor[0] = -1;
+		scrollAncestor[0] = -1;
 		containing = new int[n]; tableOf = new int[n]; fixed = new boolean[n];
+		motionOwner = new int[n]; motionParent = new int[n]; stickyBoxes = new int[n]; stickyShift = new int[n];
 		before = new int[n]; after = new int[n]; leadGap = new int[n]; trailGap = new int[n];
 		extraIndent = new int[n]; accountedIndent = new int[n];
 		minimum = new int[n]; preferred = new int[n];
@@ -85,12 +100,15 @@ public final class HtmlPositionedLayout {
 		fixed[0] = false;
 		totalHeight = height[0];
 		hasFixed = false;
+		stickyCount = 0; projectionValid = false;
+		Arrays.fill(motionOwner, -1);
+		Arrays.fill(motionParent, -1);
 		for (int e = 1; e < doc.boxCount; e++) resolvePosition(e);
 		for (int b = 0; b < doc.blockCount; b++) {
 			int e = doc.blockBox[b];
 			blockX[b] = add(contentX(e), blockInset[b]);
-			blockY[b] = add(contentY(e), blockY[b]);
-			if (!fixed[e]) totalHeight = Math.max(totalHeight, add(blockY[b], blockHeight[b]));
+			blockY[b] = add(doc.kind[b] == HtmlDocument.CELL ? y[e] : contentY(e), blockY[b]);
+			if (!fixed[e] && firstClip(e, true) < 0) totalHeight = Math.max(totalHeight, add(blockY[b], blockHeight[b]));
 		}
 		totalHeight = Math.max(0, totalHeight);
 		indexIntervals();
@@ -109,7 +127,7 @@ public final class HtmlPositionedLayout {
 			before[e] = styled ? add(doc.boxMarginTop[e], leadGap[e]) : 0;
 			after[e] = styled ? add(doc.boxMarginBottom[e], trailGap[e]) : 0;
 			int inherited = accountedIndent[doc.boxParent[e]], wanted = inherited;
-			if (doc.boxRole[e] == HtmlDocument.TABLE_BOX) {
+			if (doc.boxRole[e] == HtmlDocument.TABLE_BOX || doc.boxRole[e] == HtmlDocument.FLEX_BOX || doc.boxRole[e] == HtmlDocument.GRID_BOX) {
 				for (int b = first; b < end; b++) {
 					if (doc.kind[b] == HtmlDocument.CELL) { wanted = doc.blockIndent[b]; break; }
 				}
@@ -140,16 +158,18 @@ public final class HtmlPositionedLayout {
 	private int contentWidth(int e) { return Math.max(0, add(width[e], -horizontalEdges(e))); }
 
 	private void indexIntervals() {
-		int ordinary = 0, stationary = 0;
+		int ordinary = 0, stationary = 0, moving = 0;
 		for (int s = 0; s < order.size(); s++) {
-			if (stepFixed(s)) stationary++; else ordinary++;
+			if (stepMoving(s)) moving++; else if (stepFixed(s)) stationary++; else ordinary++;
 		}
 		if (normalKeys.length != ordinary) normalKeys = new long[ordinary];
 		if (fixedKeys.length != stationary) fixedKeys = new long[stationary];
-		ordinary = stationary = 0;
+		if (movingSteps.length != moving) movingSteps = new int[moving];
+		ordinary = stationary = moving = 0;
 		for (int s = 0; s < order.size(); s++) {
 			long key = (long) stepY(s) << 32 | s & 0xFFFFFFFFL;
-			if (stepFixed(s)) fixedKeys[stationary++] = key; else normalKeys[ordinary++] = key;
+			if (stepMoving(s)) movingSteps[moving++] = s;
+			else if (stepFixed(s)) fixedKeys[stationary++] = key; else normalKeys[ordinary++] = key;
 		}
 		Arrays.sort(normalKeys);
 		Arrays.sort(fixedKeys);
@@ -177,6 +197,7 @@ public final class HtmlPositionedLayout {
 	public int collectVisible(int pageTop, int extent, int scroll) {
 		visibleCount = 0;
 		if (extent <= 0) return 0;
+		projectSticky(scroll);
 		collect(normalKeys, normalMax, 1, 0, normalMax.length / 2, pageTop, (long) pageTop + extent);
 		if (fixedKeys.length != 0 && ((fixedKeys[0] >> 32) + scroll < Integer.MIN_VALUE + 1L
 				|| (fixedKeys[fixedKeys.length - 1] >> 32) + scroll > Integer.MAX_VALUE)) {
@@ -187,6 +208,12 @@ public final class HtmlPositionedLayout {
 			}
 		} else {
 			collect(fixedKeys, fixedMax, 1, 0, fixedMax.length / 2, (long) pageTop - scroll, (long) pageTop - scroll + extent);
+		}
+		for (int step : movingSteps) {
+			int i = order.index(step);
+			int top = order.isBackground(step) ? boxY(i, scroll) : blockY(i, scroll);
+			int h = stepHeight(step);
+			if (h > 0 && top < (long) pageTop + extent && (long) top + h > pageTop) visible[visibleCount++] = step;
 		}
 		Arrays.sort(visible, 0, visibleCount);
 		return visibleCount;
@@ -206,6 +233,11 @@ public final class HtmlPositionedLayout {
 	}
 
 	public int visibleStep(int index) { return visible[index]; }
+
+	private boolean stepMoving(int step) {
+		int i = order.index(step);
+		return motionOwner[order.isBackground(step) ? i : doc.blockBox[i]] >= 0;
+	}
 
 	private boolean stepFixed(int step) {
 		int i = order.index(step);
@@ -230,12 +262,12 @@ public final class HtmlPositionedLayout {
 			preferred[e] = Math.max(preferred[e], add((int) pair, inset));
 		}
 		for (int e = doc.boxCount - 1; e > 0; e--) {
-			if (doc.boxRole[e] == HtmlDocument.TABLE_BOX) {
+			if (doc.boxRole[e] == HtmlDocument.TABLE_BOX || doc.boxRole[e] == HtmlDocument.FLEX_BOX || doc.boxRole[e] == HtmlDocument.GRID_BOX) {
 				int table = tableIndex(e);
 				if (table >= 0) {
 					int[] min = metrics.columns(table, 0), max = metrics.columns(table, Integer.MAX_VALUE);
-					minimum[e] = min[min.length - 1];
-					preferred[e] = max[max.length - 1];
+					minimum[e] = tableExtent(table, min);
+					preferred[e] = tableExtent(table, max);
 				}
 			}
 			if (doc.boxWidth[e] != HtmlStyles.AUTO) minimum[e] = preferred[e] = doc.boxWidth[e];
@@ -254,6 +286,10 @@ public final class HtmlPositionedLayout {
 		int p = doc.boxParent[e];
 		containing[e] = doc.boxPosition[e] == HtmlStyles.FIXED ? 0
 				: doc.boxPosition[p] != HtmlStyles.STATIC ? p : containing[p];
+		// CSS overflow does not clip an out-of-flow descendant between the box and its containing block.
+		int clipParent = outOfFlow(e) ? containing[e] : p;
+		clipAncestor[e] = doc.boxOverflow[clipParent] != HtmlStyles.OVERFLOW_VISIBLE ? clipParent : clipAncestor[clipParent];
+		scrollAncestor[e] = doc.boxOverflow[clipParent] == HtmlStyles.OVERFLOW_HIDDEN ? clipParent : scrollAncestor[clipParent];
 		tableOf[e] = tableOf[p];
 		int cb = containing[e], edges = horizontalEdges(e);
 		int reference = outOfFlow(e) ? cb == 0 ? viewportWidth : clamp((long) width[cb] - 2L * doc.boxBorder[cb]) : contentWidth(p);
@@ -270,20 +306,32 @@ public final class HtmlPositionedLayout {
 		} else {
 			width[e] = Math.max(edges, available);
 		}
-		if (doc.boxRole[e] == HtmlDocument.TABLE_BOX) {
+		if (doc.boxRole[e] == HtmlDocument.TABLE_BOX || doc.boxRole[e] == HtmlDocument.FLEX_BOX || doc.boxRole[e] == HtmlDocument.GRID_BOX) {
 			int t = tableIndex(e);
 			if (t >= 0) {
 				tableOf[e] = t;
 				columns[t] = metrics.columns(t, contentWidth(e));
-				width[e] = add(columns[t][columns[t].length - 1], edges);
+				if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_DEFAULT) width[e] = add(tableExtent(t, columns[t]), edges);
 			}
 		} else if (doc.boxRole[e] == HtmlDocument.CELL_BOX && doc.boxFirstBlock[e] < doc.boxEndBlock[e]) {
 			int b = doc.boxFirstBlock[e], t = doc.cellTable[b];
 			if (t >= 0 && columns[t] != null) {
 				int c = doc.cellColumn[b];
-				width[e] = columns[t][c + 1] - columns[t][c];
+				int last = c + doc.cellSpan[b] - 1;
+				width[e] = doc.tableDisplay[t] != HtmlStyles.DISPLAY_DEFAULT
+						? columns[t][last] + columns[t][doc.tableColumns[t] + last] - columns[t][c]
+						: columns[t][c + doc.cellSpan[b]] - columns[t][c];
 			}
 		}
+	}
+
+	private int tableExtent(int table, int[] values) {
+		int n = doc.tableColumns[table];
+		return doc.tableDisplay[table] != HtmlStyles.DISPLAY_DEFAULT ? n == 0 ? 0 : add(values[n - 1], values[2 * n - 1]) : values[values.length - 1];
+	}
+
+	private boolean boxedItem(int block) {
+		return doc.kind[block] == HtmlDocument.CELL && doc.tableDisplay[doc.cellTable[block]] != HtmlStyles.DISPLAY_DEFAULT;
 	}
 
 	private int tableIndex(int box) {
@@ -300,20 +348,22 @@ public final class HtmlPositionedLayout {
 
 	/* Merge the direct block fragments with child boxes in source order, including empty boxes at the same offset. */
 	private void measureContents(int e, Metrics metrics) {
+		if (doc.boxRole[e] == HtmlDocument.GRID_BOX) { measureGridRows(e); return; }
 		int cursor = 0, child = doc.boxFirstChild[e], b = doc.boxFirstBlock[e], end = doc.boxEndBlock[e];
-		boolean row = doc.boxRole[e] == HtmlDocument.ROW_BOX;
+		boolean row = doc.boxRole[e] == HtmlDocument.ROW_BOX || doc.boxRole[e] == HtmlDocument.FLEX_BOX;
+		if (doc.boxRole[e] == HtmlDocument.TABLE_BOX) resolveRowSpans(e);
 		while (child >= 0 || b < end) {
 			if (child >= 0 && doc.boxFirstBlock[child] <= b) {
 				localY[child] = add(row ? 0 : cursor, before[child]);
 				int allocation = clamp((long) before[child] + height[child] + after[child]);
-				if (!outOfFlow(child)) cursor = row ? Math.max(cursor, allocation) : add(cursor, allocation);
+				if (!outOfFlow(child) && (!row || cellSpanRows(child) == 1)) cursor = row ? Math.max(cursor, allocation) : add(cursor, allocation);
 				b = Math.max(b, doc.boxEndBlock[child]);
 				child = doc.boxNextSibling[child];
 			} else if (b < end) {
 				if (doc.blockBox[b] == e) {
 					blockInset[b] = inset(b);
 					blockWidth[b] = Math.max(0, add(contentWidth(e), -blockInset[b]));
-					if (doc.kind[b] == HtmlDocument.CELL) blockWidth[b] = Math.max(0, width[e] - 2 * HtmlLayout.CELL_PADDING);
+					if (doc.kind[b] == HtmlDocument.CELL) blockWidth[b] = Math.max(0, boxedItem(b) ? contentWidth(e) : width[e] - 2 * HtmlLayout.CELL_PADDING);
 					if (doc.kind[b] == HtmlDocument.PRE || doc.kind[b] == HtmlDocument.IMAGE) {
 						blockWidth[b] = Math.max(blockWidth[b], (int) metrics.intrinsicWidths(b));
 					}
@@ -323,7 +373,8 @@ public final class HtmlPositionedLayout {
 					int inside = Math.max(0, subtract(raw, leading, trailing));
 					blockY[b] = cursor;
 					blockHeight[b] = inside;
-					blockContentTop[b] = doc.kind[b] == HtmlDocument.CELL ? HtmlLayout.CELL_PADDING : HtmlLayout.BLOCK_GAP - leading;
+					blockContentTop[b] = doc.kind[b] == HtmlDocument.CELL
+							? boxedItem(b) ? add(doc.boxBorder[e], doc.boxPadTop[e]) : HtmlLayout.CELL_PADDING : HtmlLayout.BLOCK_GAP - leading;
 					if (leading != 0) {
 						int firstEdges = clamp((long) before[e] + doc.boxBorder[e] + doc.boxPadTop[e]);
 						blockY[b] = add(blockY[b], -firstEdges);
@@ -343,7 +394,7 @@ public final class HtmlPositionedLayout {
 		height[e] = add(e != 0 && doc.boxHeight[e] != HtmlStyles.AUTO && !imageBox(e) ? doc.boxHeight[e] : cursor, verticalEdges(e));
 		if (row) {
 			for (int c = doc.boxFirstChild[e]; c >= 0; c = doc.boxNextSibling[c]) {
-				if (doc.boxRole[c] != HtmlDocument.CELL_BOX || outOfFlow(c)) continue;
+				if (doc.boxRole[c] != HtmlDocument.CELL_BOX || outOfFlow(c) || cellSpanRows(c) != 1) continue;
 				height[c] = Math.max(height[c], Math.max(0, clamp((long) height[e] - verticalEdges(e) - before[c] - after[c])));
 				int cell = doc.boxFirstBlock[c];
 				if (cell < doc.boxEndBlock[c]) blockHeight[cell] = height[c];
@@ -351,8 +402,72 @@ public final class HtmlPositionedLayout {
 		}
 	}
 
+	/* The existing GridTracks owner sizes columns; cells in the same implicit row share its height. */
+	private void measureGridRows(int e) {
+		int table = tableIndex(e), cursor = 0, rowHeight = 0, previous = -1, first = -1;
+		int gap = table >= 0 ? doc.tableRowGap[table] : 0;
+		for (int child = doc.boxFirstChild[e]; child >= 0; child = doc.boxNextSibling[child]) {
+			int b = doc.boxFirstBlock[child], row = b < doc.boxEndBlock[child] ? doc.cellRow[b] : previous;
+			if (first >= 0 && row != previous) {
+				stretchGridRow(first, child, rowHeight);
+				cursor = clamp((long) cursor + rowHeight + gap);
+				rowHeight = 0;
+				first = -1;
+			}
+			if (first < 0) first = child;
+			previous = row;
+			localY[child] = add(cursor, before[child]);
+			if (!outOfFlow(child)) rowHeight = Math.max(rowHeight, clamp((long) before[child] + height[child] + after[child]));
+		}
+		if (first >= 0) stretchGridRow(first, -1, rowHeight);
+		cursor = add(cursor, rowHeight);
+		height[e] = add(doc.boxHeight[e] != HtmlStyles.AUTO ? doc.boxHeight[e] : cursor, verticalEdges(e));
+	}
+
+	private void stretchGridRow(int first, int end, int rowHeight) {
+		for (int child = first; child != end && child >= 0; child = doc.boxNextSibling[child]) {
+			if (outOfFlow(child)) continue;
+			height[child] = Math.max(height[child], Math.max(0, clamp((long) rowHeight - before[child] - after[child])));
+			int b = doc.boxFirstBlock[child];
+			if (b < doc.boxEndBlock[child]) blockHeight[b] = height[child];
+		}
+	}
+
+	private int cellSpanRows(int box) {
+		int b = doc.boxFirstBlock[box];
+		return b < doc.boxEndBlock[box] && doc.kind[b] == HtmlDocument.CELL ? Math.max(1, doc.cellRowSpan[b]) : 1;
+	}
+
+	/* Keep the original table owner's row-span rule: content deficits extend the last covered row. */
+	private void resolveRowSpans(int table) {
+		int count = 0;
+		for (int row = doc.boxFirstChild[table]; row >= 0; row = doc.boxNextSibling[row]) if (doc.boxRole[row] == HtmlDocument.ROW_BOX) count++;
+		int[] rows = new int[count];
+		int at = 0;
+		for (int row = doc.boxFirstChild[table]; row >= 0; row = doc.boxNextSibling[row]) if (doc.boxRole[row] == HtmlDocument.ROW_BOX) rows[at++] = row;
+		for (int r = 0; r < count; r++) {
+			for (int cell = doc.boxFirstChild[rows[r]]; cell >= 0; cell = doc.boxNextSibling[cell]) {
+				int span = cellSpanRows(cell), last = Math.min(count, r + span) - 1;
+				if (span <= 1 || outOfFlow(cell)) continue;
+				long have = 0;
+				for (int k = r; k <= last; k++) have += height[rows[k]];
+				if (height[cell] > have) height[rows[last]] = add(height[rows[last]], clamp(height[cell] - have));
+			}
+		}
+		for (int r = 0; r < count; r++) {
+			for (int cell = doc.boxFirstChild[rows[r]]; cell >= 0; cell = doc.boxNextSibling[cell]) {
+				if (outOfFlow(cell)) continue;
+				long have = 0;
+				for (int k = r, end = Math.min(count, r + cellSpanRows(cell)); k < end; k++) have += height[rows[k]];
+				height[cell] = clamp(have);
+				int b = doc.boxFirstBlock[cell];
+				if (b < doc.boxEndBlock[cell]) blockHeight[b] = height[cell];
+			}
+		}
+	}
+
 	private int inset(int b) {
-		if (doc.kind[b] == HtmlDocument.CELL) return HtmlLayout.CELL_PADDING;
+		if (doc.kind[b] == HtmlDocument.CELL) return boxedItem(b) ? 0 : HtmlLayout.CELL_PADDING;
 		return Math.max(0, add(legacyInset(b), -accountedIndent[doc.blockBox[b]]));
 	}
 
@@ -391,8 +506,54 @@ public final class HtmlPositionedLayout {
 				y[e] = add(y[e], offset(doc.boxTop[e], doc.boxBottom[e]));
 			}
 		}
+		if (!fixed[e]) {
+			motionOwner[e] = motionOwner[outOfFlow(e) ? containing[e] : p];
+			if (position == HtmlStyles.STICKY) {
+				motionParent[e] = motionOwner[e];
+				motionOwner[e] = e;
+				stickyBoxes[stickyCount++] = e;
+			}
+		}
 		hasFixed |= fixed[e];
-		if (!fixed[e]) totalHeight = Math.max(totalHeight, clamp((long) y[e] + height[e] + after[e]));
+		// A clipping ancestor already contributes its own border extent; hidden descendants add no outer scroll range.
+		if (!fixed[e] && clipAncestor[e] < 0) totalHeight = Math.max(totalHeight, clamp((long) y[e] + height[e] + after[e]));
+	}
+
+	/* Bound sticky projection by the original containing box (table cells use the entire table). */
+	private void projectSticky(int scroll) {
+		if (projectionValid && projectedScroll == scroll) return;
+		projectedScroll = scroll;
+		projectionValid = true;
+		for (int k = 0; k < stickyCount; k++) {
+			int e = stickyBoxes[k], inherited = motionParent[e] >= 0 ? stickyShift[motionParent[e]] : 0;
+			stickyShift[e] = inherited;
+			if (doc.boxTop[e] == HtmlStyles.AUTO) continue;
+			int parent = doc.boxParent[e];
+			if (doc.boxRole[e] == HtmlDocument.CELL_BOX) {
+				while (parent > 0 && doc.boxRole[parent] != HtmlDocument.TABLE_BOX
+						&& doc.boxRole[parent] != HtmlDocument.FLEX_BOX && doc.boxRole[parent] != HtmlDocument.GRID_BOX) parent = doc.boxParent[parent];
+			}
+			int parentMotion = motionOwner[parent] >= 0 ? stickyShift[motionOwner[parent]] : fixed[parent] ? scroll : 0;
+			long end = (long) y[parent] + height[parent] + parentMotion;
+			int first = doc.boxFirstBlock[e];
+			int gap = first < doc.boxEndBlock[e] && doc.blockBox[first] == e && doc.kind[first] != HtmlDocument.CELL
+					&& leadGap[e] == 0 ? HtmlLayout.BLOCK_GAP : 0;
+			// Hidden supplies an unscrolled local scrollport; clip only cuts paint and retains viewport stickiness.
+			int scrollBox = scrollAncestor[e];
+			int scrollMotion = scrollBox >= 0 && motionOwner[scrollBox] >= 0 ? stickyShift[motionOwner[scrollBox]] : 0;
+			long scrollTop = scrollBox < 0 ? scroll : (long) y[scrollBox] + doc.boxBorder[scrollBox] + scrollMotion;
+			long requested = scrollTop + doc.boxTop[e] - y[e] - gap - inherited;
+			long limit = end - y[e] - height[e] - after[e] - inherited;
+			stickyShift[e] = clamp(inherited + Math.max(0L, Math.min(requested, limit)));
+		}
+	}
+
+	private int projection(int box, int scroll) {
+		if (fixed[box]) return scroll;
+		int owner = motionOwner[box];
+		if (owner < 0) return 0;
+		projectSticky(scroll);
+		return stickyShift[owner];
 	}
 
 	private boolean outOfFlow(int box) {
@@ -418,15 +579,52 @@ public final class HtmlPositionedLayout {
 	public HtmlPaintOrder order() { return order; }
 	public int totalHeight() { return totalHeight; }
 	public boolean hasFixed() { return hasFixed; }
+	public boolean hasSticky() { return stickyCount != 0; }
 	public int blockX(int block) { return blockX[block]; }
-	public int blockY(int block, int scroll) { return add(blockY[block], fixed[doc.blockBox[block]] ? scroll : 0); }
+	public int blockY(int block, int scroll) { return add(blockY[block], projection(doc.blockBox[block], scroll)); }
 	public int blockWidth(int block) { return blockWidth[block]; }
 	public int blockHeight(int block) { return blockHeight[block]; }
 	public int blockContentTop(int block) { return blockContentTop[block]; }
 	public int boxX(int box) { return x[box]; }
-	public int boxY(int box, int scroll) { return add(y[box], fixed[box] ? scroll : 0); }
+	public int boxY(int box, int scroll) { return add(y[box], projection(box, scroll)); }
 	public int boxWidth(int box) { return width[box]; }
 	public int boxHeight(int box) { return height[box]; }
+
+	private int firstClip(int box, boolean content) {
+		return content && doc.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE ? box : clipAncestor[box];
+	}
+
+	/** Whether a paint fragment inherits an overflow clip; a box's own border/background is not self-clipped. */
+	public boolean hasClip(int box, boolean content) { return firstClip(box, content) >= 0; }
+
+	/**
+	 * Intersects a viewport-coordinate rectangle [left, top, right, bottom) with all clipping ancestors. The caller
+	 * owns the four-integer scratch rectangle. No SWT clipping state, Region, or per-fragment object is retained here.
+	 */
+	public boolean clipBounds(int box, boolean content, int scroll, int[] bounds) {
+		for (int clip = firstClip(box, content); clip >= 0; clip = clipAncestor[clip]) {
+			int border = doc.boxBorder[clip];
+			int left = add(x[clip], border), top = add(add(boxY(clip, scroll), -scroll), border);
+			int right = add(x[clip], clamp((long) width[clip] - border));
+			int bottom = add(add(boxY(clip, scroll), -scroll), clamp((long) height[clip] - border));
+			bounds[0] = Math.max(bounds[0], left);
+			bounds[1] = Math.max(bounds[1], top);
+			bounds[2] = Math.min(bounds[2], right);
+			bounds[3] = Math.min(bounds[3], bottom);
+			if (bounds[0] >= bounds[2] || bounds[1] >= bounds[3]) return false;
+		}
+		return bounds[0] < bounds[2] && bounds[1] < bounds[3];
+	}
+
+	private boolean withinClip(int box, boolean content, int px, int py, int scroll) {
+		for (int clip = firstClip(box, content); clip >= 0; clip = clipAncestor[clip]) {
+			int border = doc.boxBorder[clip];
+			if (!contains(px, py, add(x[clip], border), add(boxY(clip, scroll), border),
+					Math.max(0, clamp((long) width[clip] - 2L * border)),
+					Math.max(0, clamp((long) height[clip] - 2L * border)))) return false;
+		}
+		return true;
+	}
 
 	/** Topmost eligible block or an empty box (-1), using the exact reverse of the paint sequence. */
 	public int blockAt(int px, int py, int scroll) {
@@ -435,12 +633,16 @@ public final class HtmlPositionedLayout {
 			int s = visible[v];
 			int i = order.index(s);
 			if (order.isBackground(s)) {
-				if (i != 0 && contains(px, py, x[i], boxY(i, scroll), width[i], height[i])) {
+				// A structural row must not mask a cell that spans into it from an earlier row.
+				if (doc.boxRole[i] == HtmlDocument.ROW_BOX && doc.boxBackground[i] == 0 && doc.boxBorder[i] == 0) continue;
+				if (i != 0 && contains(px, py, x[i], boxY(i, scroll), width[i], height[i])
+						&& withinClip(i, false, px, py, scroll)) {
 					int b = doc.boxFirstBlock[i];
 					return b < doc.boxEndBlock[i] && doc.blockBox[b] == i ? b : -1;
 				}
 			} else {
-				if (contains(px, py, blockX[i], blockY(i, scroll), blockWidth[i], blockHeight[i])) return i;
+				if (contains(px, py, blockX[i], blockY(i, scroll), blockWidth[i], blockHeight[i])
+						&& withinClip(doc.blockBox[i], true, px, py, scroll)) return i;
 			}
 		}
 		return -1;
@@ -450,11 +652,23 @@ public final class HtmlPositionedLayout {
 	public int nearestBlock(int px, int py, int scroll) {
 		long vertical = Long.MAX_VALUE, horizontal = Long.MAX_VALUE;
 		int found = -1;
+		int[] bounds = new int[4];
 		for (int s = order.size() - 1; s >= 0; s--) {
 			if (order.isBackground(s)) continue;
 			int b = order.index(s), top = blockY(b, scroll);
-			long dx = Math.max(0L, Math.max((long) blockX[b] - px, (long) px - blockX[b] - blockWidth[b]));
-			long dy = Math.max(0L, Math.max((long) top - py, (long) py - top - blockHeight[b]));
+			long dx, dy;
+			if (hasClip(doc.blockBox[b], true)) {
+				int viewTop = add(top, -scroll);
+				bounds[0] = blockX[b]; bounds[1] = viewTop;
+				bounds[2] = add(blockX[b], blockWidth[b]); bounds[3] = add(viewTop, blockHeight[b]);
+				if (!clipBounds(doc.blockBox[b], true, scroll, bounds)) continue;
+				int viewY = add(py, -scroll);
+				dx = Math.max(0L, Math.max((long) bounds[0] - px, (long) px - bounds[2]));
+				dy = Math.max(0L, Math.max((long) bounds[1] - viewY, (long) viewY - bounds[3]));
+			} else {
+				dx = Math.max(0L, Math.max((long) blockX[b] - px, (long) px - blockX[b] - blockWidth[b]));
+				dy = Math.max(0L, Math.max((long) top - py, (long) py - top - blockHeight[b]));
+			}
 			if (dy < vertical || dy == vertical && dx < horizontal) {
 				vertical = dy; horizontal = dx; found = b;
 			}

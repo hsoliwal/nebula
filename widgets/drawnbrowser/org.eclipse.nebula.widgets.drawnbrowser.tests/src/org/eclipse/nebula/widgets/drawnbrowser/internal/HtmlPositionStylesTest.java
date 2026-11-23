@@ -54,7 +54,7 @@ public class HtmlPositionStylesTest {
 
 	@Test
 	public void invalidLaterValuesNeverEraseEarlierDeclarations() {
-		int[] style = computed("position:fixed; position:sticky; left:7px; left:2em; top:8px; top:9em; right:9px; right:1.2px;"
+		int[] style = computed("position:fixed; position:unsupported; left:7px; left:2em; top:8px; top:9em; right:9px; right:1.2px;"
 				+ "bottom:10px; bottom:20%; width:11px; width:-1px; height:12px; height:2147483648px;"
 				+ "z-index:-3; z-index:999999999999; color:red; color:bogus; background:blue; background:bogus");
 		assertEquals(HtmlStyles.FIXED, style[HtmlStyles.POSITION]);
@@ -116,7 +116,7 @@ public class HtmlPositionStylesTest {
 	@Test
 	public void invalidHigherSpecificityAndInlineLeaveValidLowerRule() {
 		HtmlStyles styles = new HtmlStyles();
-		styles.addSheet("div {position:relative; left:4px; width:20px; z-index:2} .bad {position:sticky; left:4%; width:-1px; z-index:1.5}");
+		styles.addSheet("div {position:relative; left:4px; width:20px; z-index:2} .bad {position:unsupported; left:4%; width:-1px; z-index:1.5}");
 		int[] style = styles.compute(HtmlStyles.root(), "div", "bad", "left:bogus; width:1em; z-index:999999999999");
 		assertEquals(HtmlStyles.RELATIVE, style[HtmlStyles.POSITION]);
 		assertEquals(4, style[HtmlStyles.OFFSET_LEFT]);

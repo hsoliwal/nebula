@@ -776,6 +776,15 @@ public class Grid extends Canvas {
 	/** Number of trailing items frozen above the column footer (pinned plane). */
 	private int pinnedBottomRows;
 
+	/** Opt-in ancestor headers of a tree; independent of the flat Grid's pinned-row plane. */
+	private boolean stickyAncestorRows;
+	/** Reused primitive row indices: nearest ancestor first, root last. */
+	private int[] stickyAncestorPath = new int[4];
+	private int stickyAncestorDepth;
+	/** Stable, reusable item-identity snapshot during a possibly reentrant paint. */
+	private GridItem[] stickyPaintItems = new GridItem[4];
+	private boolean stickyPaintBusy;
+
 	/** True while {@link #onPaint(PaintEvent)} runs. */
 	private boolean painting;
 
@@ -2274,6 +2283,10 @@ public class Grid extends Canvas {
 			y2 += headerHeight();
 		}
 
+		final int stickyRow = stickyAncestorRowAt(p.y);
+		if (stickyRow >= 0) {
+			return items.get(stickyRow);
+		}
 		final int pinnedRow = pinnedRowAt(p.y);
 		if (pinnedRow >= 0) {
 			return items.get(pinnedRow);
@@ -4941,6 +4954,14 @@ public class Grid extends Canvas {
 			return false;
 		}
 
+		// A tree ancestor may be physically visible in the pinned header plane
+		// even though its logical row is above the scrolled body's first row.
+		// GridEditor.getBoundsCorrected uses this answer: return true only while
+		// the ancestor actually occupies pixels between the column header and footer.
+		if (stickyAncestorRows && isTree && stickyAncestorEditorShown(itemIndex)) {
+			return true;
+		}
+
 		final int firstVisibleIndex = getTopIndex();
 		final int lastVisibleIndex = getBottomIndex();
 
@@ -6189,6 +6210,10 @@ public class Grid extends Canvas {
 				&& GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
 			paintPinnedRows(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive);
 		}
+		// Z2c: sticky ancestors remain below the native header but above ordinary tree rows.
+		if (stickyAncestorRows && isTree && GridPaintDAG.includes(paintPlan, GridPaintDAG.BODY)) {
+			paintStickyAncestorRows(gc, originalClipping, clientArea, extraFill, hscroll, fixed, fixedOverlayActive);
+		}
 
 	}
 
@@ -6228,6 +6253,181 @@ public class Grid extends Canvas {
 		cellProbe.x = column;
 		cellProbe.y = row;
 		return cellProbe;
+	}
+
+
+	/**
+	 * Opt into the ancestor-header plane of a hierarchical Grid.
+	 * The ancestors of its first visible row remain directly below the
+	 * column header, root to nearest parent, while its body scrolls beneath.
+	 * Columns keep their current horizontal scrolling/frozen semantics.
+	 * This setting does not affect flat Grids or the separate pinned-row API.
+	 *
+	 * @param enabled true to show ancestors above the scrolling rows
+	 * @since 1.2
+	 */
+	public void setStickyAncestorRows(final boolean enabled) {
+		checkWidget();
+		if (stickyAncestorRows == enabled) return;
+		stickyAncestorRows = enabled;
+		redraw();
+	}
+
+	/** @return whether the Grid's tree-ancestor header plane is enabled. */
+	public boolean getStickyAncestorRows() {
+		checkWidget();
+		return stickyAncestorRows;
+	}
+
+	/*
+	 * Resolve the first visible row's parent chain. O(tree depth), never
+	 * proportional to the logical row count. Row indices, not another set
+	 * of GridItems or SWT Controls, are kept in this parent-owned lane.
+	 * Rebuild every query: expanded/removed nodes can change the chain
+	 * without changing the integer top index.
+	 */
+	private int resolveStickyAncestors() {
+		stickyAncestorDepth = 0;
+		if (!stickyAncestorRows || !isTree || items.isEmpty()) return 0;
+		final int top = getTopIndex();
+		if (top < 0 || top >= items.size()) return 0;
+		GridItem parent = items.get(top).getParentItem();
+		while (parent != null) {
+			if (parent.isVisible()) {
+				if (stickyAncestorDepth == stickyAncestorPath.length) {
+					stickyAncestorPath = Arrays.copyOf(stickyAncestorPath, stickyAncestorPath.length * 2);
+				}
+				stickyAncestorPath[stickyAncestorDepth++] = parent.getRowIndex();
+			}
+			parent = parent.getParentItem();
+		}
+		return stickyAncestorDepth;
+	}
+
+	/*
+	 * A sticky row stops at its original subtree's trailing pixel boundary.
+	 * The counted primitive row tree answers the end extent in O(log n)
+	 * even when the subtree contains millions of unmaterialized descendants.
+	 * Original (non-indexed) mode retains the static pinned behavior rather
+	 * than walking all rows to find a moving boundary on a native callback.
+	 */
+	private int pushedStickyTop(final GridItem item, final int slotTop) {
+		final GridRowTree rows = rowTree();
+		if (rows == null) return slotTop;
+		final long next = (long) item.lastDescendantRow() + 1L;
+		final int after = (int) Math.min((long) items.size(), next);
+		final int first = getTopIndex();
+		if (after <= first) return slotTop;
+		final long extent = rows.extentBefore(after) - rows.extentBefore(first);
+		if (extent < 0) return slotTop;
+		final int chromeTop = columnHeadersVisible ? headerHeight() : 0;
+		final long end = extent >= Long.MAX_VALUE - chromeTop
+				? Long.MAX_VALUE : extent + chromeTop;
+		return stickyPushedTop(end, (long) item.getHeight() + 1L, slotTop);
+	}
+
+	/** Pure clamped geometry; the sentinel for a missing ancestor is never returned. */
+	static int stickyPushedTop(final long subtreeEndY, final long pixelHeight, final int slotTop) {
+		final long wanted = subtreeEndY < Long.MIN_VALUE + pixelHeight
+				? Long.MIN_VALUE : subtreeEndY - pixelHeight;
+		return (int) Math.max(-(1L << 28), Math.min((long) slotTop, wanted));
+	}
+
+	/* The editor is a native Control: never let it cover another clipped header band. */
+	private boolean stickyAncestorEditorShown(final int rowIndex) {
+		int slot = columnHeadersVisible ? headerHeight() : 0;
+		final int bottom = getClientArea().height - (columnFootersVisible ? footerHeight() : 0);
+		final int depth = resolveStickyAncestors();
+		for (int i = depth - 1; i >= 0 && slot < bottom; i--) {
+			final int row = stickyAncestorPath[i];
+			final GridItem ancestor = items.get(row);
+			final int height = ancestor.getHeight() + 1;
+			if (row == rowIndex) {
+				final int actual = pushedStickyTop(ancestor, slot);
+				return actual == slot && (long) actual + height <= bottom;
+			}
+			slot = (int) Math.min((long) bottom, (long) slot + height);
+		}
+		return false;
+	}
+
+	/* Find a sticky ancestor's painted screen Y, including the push-away motion. */
+	private int stickyAncestorTop(final int rowIndex) {
+		int slot = columnHeadersVisible ? headerHeight() : 0;
+		final int depth = resolveStickyAncestors();
+		for (int i = depth - 1; i >= 0; i--) {
+			final int row = stickyAncestorPath[i];
+			final GridItem ancestor = items.get(row);
+			if (row == rowIndex) return pushedStickyTop(ancestor, slot);
+			slot += ancestor.getHeight() + 1;
+		}
+		return Integer.MIN_VALUE;
+	}
+
+	/** Hit-test exactly the visible part of a pushing header, not the hidden area above its slot. */
+	private int stickyAncestorRowAt(final int y) {
+		if (!stickyAncestorRows || !isTree) return -1;
+		int slot = columnHeadersVisible ? headerHeight() : 0;
+		final int bottom = getClientArea().height - (columnFootersVisible ? footerHeight() : 0);
+		final int depth = resolveStickyAncestors();
+		for (int i = depth - 1; i >= 0 && slot < bottom; i--) {
+			final int row = stickyAncestorPath[i];
+			final GridItem ancestor = items.get(row);
+			final int top = pushedStickyTop(ancestor, slot);
+			final int end = (int) Math.min((long) bottom, (long) top + ancestor.getHeight() + 1L);
+			if (y >= slot && y < end) return row;
+			slot = (int) Math.min((long) bottom, (long) slot + ancestor.getHeight() + 1L);
+		}
+		return -1;
+	}
+
+	/*
+	 * Paint root to nearest parent over the body. Reuse the very same
+	 * renderers, per-cell clipping and fixed-column overlay as pinned rows.
+	 * No widget, editor, or backing-store image is created for these headers.
+	 */
+	private void paintStickyAncestorRows(final GC gc, final Rectangle originalClipping,
+			final Rectangle clientArea, final int extraFill, final int hscroll,
+			final FixedGridColumns fixed, final boolean fixedOverlayActive) {
+		int y = columnHeadersVisible ? headerHeight() : 0;
+		final int bottom = clientArea.height - (columnFootersVisible ? footerHeight() : 0);
+		final int depth = resolveStickyAncestors();
+		final GridItem[] frame;
+		if (stickyPaintBusy) {
+			// A nested paint must not overwrite the outer pass's stable item identities.
+			frame = new GridItem[depth];
+		} else {
+			if (stickyPaintItems.length < depth) {
+				stickyPaintItems = Arrays.copyOf(stickyPaintItems, Math.max(depth, stickyPaintItems.length * 2));
+			}
+			frame = stickyPaintItems;
+			stickyPaintBusy = true;
+		}
+		try {
+			for (int i = 0; i < depth; i++) frame[i] = items.get(stickyAncestorPath[i]);
+			for (int i = depth - 1; i >= 0 && y < bottom; i--) {
+				if (isDisposed()) return;
+				final GridItem item = frame[i];
+				if (item.isDisposed() || !item.isVisible()) continue;
+				final int row = item.getRowIndex();
+				if (row < 0 || row >= items.size() || items.get(row) != item) continue;
+				final int extent = item.getHeight() + 1;
+				final int pushed = pushedStickyTop(item, y);
+				// A pushing subheading travels underneath its parent's reserved
+				// slot; never paint on the pinned parent or the real column header.
+				final Rectangle band = new Rectangle(clientArea.x, y, clientArea.width,
+						Math.max(0, bottom - y));
+				final Rectangle clip = originalClipping.intersection(band);
+				if (!clip.isEmpty()) {
+					paintPinnedPlane(gc, clip, clientArea, extraFill, hscroll,
+							fixed, fixedOverlayActive, row, 1, pushed);
+				}
+				y = (int) Math.min((long) bottom, (long) y + extent);
+			}
+		} finally {
+			Arrays.fill(frame, 0, depth, null);
+			if (frame == stickyPaintItems) stickyPaintBusy = false;
+		}
 	}
 
 	private void paintPinnedRows(final GC gc, final Rectangle originalClipping, final Rectangle clientArea,
@@ -9315,7 +9515,7 @@ public class Grid extends Canvas {
 			resizedArea = now;
 			if (before == null || before.isEmpty() || now.isEmpty() || frozenPlanes != 0
 					|| vScroll.getSelection() != vBefore || hScroll.getSelection() != hBefore
-					|| pinnedTopRows + pinnedBottomRows > 0 || columnScrolling
+					|| pinnedTopRows + pinnedBottomRows > 0 || (stickyAncestorRows && isTree) || columnScrolling
 					|| (getStyle() & SWT.RIGHT_TO_LEFT) != 0 || isFocusControl() && focusItem != null
 					|| now.width != before.width && getExtraFill(new Point(1 << 20, 0)) > 0) {
 				redraw();
@@ -9811,7 +10011,7 @@ public class Grid extends Canvas {
 	}
 
 	private boolean blitSafe() {
-		if ((!rowsIndexed() && (hasDifferingHeights || isTree)) || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || draggingColumn
+		if ((!rowsIndexed() && (hasDifferingHeights || isTree)) || hasSpanning || pinnedTopRows + pinnedBottomRows > 0 || (stickyAncestorRows && isTree) || draggingColumn
 				|| insertMarkItem != null || !hoveringDetail.isEmpty() || getChildren().length > 0
 				|| !blitSafeRenderer(emptyCellRenderer, DefaultEmptyCellRenderer.class)
 				|| (rowHeaderVisible && rowHeaderRenderer.getClass() != DefaultRowHeaderRenderer.class)) {
@@ -9906,6 +10106,10 @@ public class Grid extends Canvas {
 			}
 		}
 
+		if (item != null && stickyAncestorRows && isTree) {
+			final int pinnedY = stickyAncestorTop(item.getRowIndex());
+			if (pinnedY != Integer.MIN_VALUE) y = pinnedY;
+		}
 		return new Point(x, y);
 	}
 
@@ -12631,7 +12835,7 @@ public class Grid extends Canvas {
 	/* a row delta can be applied alone: the viewport mode's row index, no spans, pinned planes or frozen paint */
 	private boolean rowDeltaPossible(final GridItem item) {
 		return viewport != null && !usesSparseVirtualItems() && !hasSpanning && frozenPlanes == 0
-				&& pinnedTopRows + pinnedBottomRows == 0 && !item.isDisposed();
+				&& pinnedTopRows + pinnedBottomRows == 0 && !(stickyAncestorRows && isTree) && !item.isDisposed();
 	}
 
 	/**
@@ -12802,6 +13006,36 @@ public class Grid extends Canvas {
 	}
 
 	/**
+	 * The child ID of a materialized GridItem. The same source-owned identity
+	 * check used by editor and scroll visibility avoids materializing a virtual
+	 * row during accessibility hit resolution. Return -1 for a foreign/stale
+	 * facade, exactly as an unsuccessful original identity search did.
+	 */
+	int accessibleRowOf(final GridItem item) {
+		final int row = item.getRowIndex();
+		return isRowOf(item, row) ? row : -1;
+	}
+
+	/** The number of actual root items (unread virtual descendants are not roots). */
+	int accessibleRootCount() {
+		return isTree ? rootItems.size() : items.size();
+	}
+
+	/**
+	 * Complete root enumeration requested by accessibility. A tree already owns
+	 * the root list, so no descendant row is visited or materialized. This is
+	 * O(number of roots), not O(number of all logical descendants).
+	 */
+	Object[] accessibleRootChildren() {
+		final int count = accessibleRootCount();
+		final Object[] children = new Object[count];
+		for (int i = 0; i < count; i++) {
+			children[i] = Integer.valueOf(isTree ? rootItems.get(i).getRowIndex() : i);
+		}
+		return children;
+	}
+
+	/**
 	 * Initialize accessibility.
 	 */
 	private void initAccessible() {
@@ -12849,14 +13083,15 @@ public class Grid extends Canvas {
 				final Point location = toControl(e.x, e.y);
 				e.childID = ACC.CHILDID_SELF;
 
-				// Grid Items
+				// The viewport and pinned ancestors both return the original item.
+				// Resolve its stable row index directly, rather than walking every
+				// row (and materializing cold SWT.VIRTUAL items) for each screen reader hit.
 				final GridItem item = getItem(location);
 				if (item != null) {
-					for (int i = 0; i < getItemCount(); i++) {
-						if (item.equals(getItem(i))) {
-							e.childID = i;
-							return;
-						}
+					final int row = accessibleRowOf(item);
+					if (row >= 0) {
+						e.childID = row;
+						return;
 					}
 				} else {
 					// Column Headers
@@ -12896,50 +13131,14 @@ public class Grid extends Canvas {
 			@Override
 			public void getChildCount(final AccessibleControlEvent e) {
 				if (e.childID == ACC.CHILDID_SELF) {
-					int length = items.size();
-
-					if (isTree) {
-						// Child count for parent. Here if the item parent
-						// is not an other item,
-						// it is consider as children of Grid
-						for (final GridItem item : materializedItems()) {
-							if (item.getParentItem() != null) {
-								length--;
-							}
-						}
-					}
-					e.detail = length;
+					e.detail = accessibleRootCount();
 				}
 			}
 
 			@Override
 			public void getChildren(final AccessibleControlEvent e) {
 				if (e.childID == ACC.CHILDID_SELF) {
-					int length = items.size();
-					if (isTree) {
-						for (final GridItem item : materializedItems()) {
-							if (item.getParentItem() != null) {
-								length--;
-							}
-						}
-
-						final Object[] children = new Object[length];
-						int j = 0;
-
-						for (int i = 0; i < items.size(); i++) {
-							if (items.get(i).getParentItem() == null) {
-								children[j] = Integer.valueOf(i);
-								j++;
-							}
-						}
-						e.children = children;
-					} else {
-						final Object[] children = new Object[length];
-						for (int i = 0; i < items.size(); i++) {
-							children[i] = Integer.valueOf(i);
-						}
-						e.children = children;
-					}
+					e.children = accessibleRootChildren();
 				}
 			}
 

@@ -86,7 +86,7 @@ public final class HtmlPaintOrder {
 				int parent = document.boxParent[box];
 				boolean isPositioned = document.boxPosition[box] != HtmlStyles.STATIC;
 				boolean isContext = isPositioned && (!document.boxZAuto[box]
-						|| document.boxPosition[box] == HtmlStyles.FIXED);
+						|| document.boxPosition[box] == HtmlStyles.FIXED || document.boxPosition[box] == HtmlStyles.STICKY);
 				context[box] = isContext ? box : context[parent];
 				group[box] = isPositioned ? box : group[parent];
 				if (isPositioned) {

@@ -15,12 +15,76 @@ import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.CENTER
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.COLOR;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.INDENT;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.RIGHT;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 /** The drawn browser's CSS subset: colours, the cascade, inheritance. */
 public class HtmlStylesTest {
+
+	@Test
+	public void shrinkAcceptsFiniteCssNumbersAndDoesNotInherit() {
+		HtmlStyles styles = new HtmlStyles();
+		assertEquals(1, HtmlStyles.shrink(HtmlStyles.root()), 0);
+		assertEquals(1, HtmlStyles.shrink(new int[32]), 0);
+		String[] values = { "0", "+0", "-0", ".5", "+1.25", "2e-3", "1e308" };
+		double[] expected = { 0, 0, 0, .5, 1.25, .002, 1e308 };
+		for (int i = 0; i < values.length; i++) {
+			int[] style = styles.compute(HtmlStyles.root(), "div", null, "flex-shrink:" + values[i]);
+			assertEquals(values[i], expected[i], HtmlStyles.shrink(style), 0);
+			assertEquals("not inherited: " + values[i], 1,
+					HtmlStyles.shrink(styles.compute(style, "div", null, null)), 0);
+		}
+	}
+
+	@Test
+	public void invalidShrinkDeclarationsLeaveThePrecedingValue() {
+		HtmlStyles styles = new HtmlStyles();
+		for (String invalid : new String[] { "-0.01", "NaN", "Infinity", "1e309", "0x1.0p0", "1f", "1.", "1 2", "--1", "" }) {
+			assertEquals(invalid, .25, HtmlStyles.shrink(styles.compute(HtmlStyles.root(), "div", null,
+					"flex-shrink:.25;flex-shrink:" + invalid)), 0);
+		}
+		styles.addSheet(".panel {flex-shrink:.5} .panel {flex-shrink:2e-1}");
+		assertEquals(.2, HtmlStyles.shrink(styles.compute(HtmlStyles.root(), "div", "panel", "flex-shrink:NaN")), 0);
+		assertEquals(.75, HtmlStyles.shrink(styles.compute(HtmlStyles.root(), "div", "panel", "flex-shrink:.75")), 0);
+	}
+
+	@Test
+	public void flexShorthandResetsAndCarriesTheShrinkFactor() {
+		HtmlStyles styles = new HtmlStyles();
+		String[] values = { "none", "auto", "initial", "0 0 240px", "1 0", "1 10px", "1", "2 .125 auto", "40px" };
+		int[] grow = { 0, 1, 0, 0, 1, 1, 1, 2, 1 }, basis = { -1, -1, -1, 240, 0, 10, 0, -1, 40 };
+		double[] shrink = { 0, 1, 1, 0, 0, 1, 1, .125, 1 };
+		for (int i = 0; i < values.length; i++) {
+			int[] style = styles.compute(HtmlStyles.root(), "div", null, "flex:3 .75 90px;flex:" + values[i]);
+			assertEquals(values[i], grow[i], style[HtmlStyles.FLEX_GROW]);
+			assertEquals(values[i], basis[i], style[HtmlStyles.FLEX_BASIS]);
+			assertEquals(values[i], shrink[i], HtmlStyles.shrink(style), 0);
+		}
+	}
+
+	@Test
+	public void anInvalidFlexShorthandDoesNotPartiallyOverwriteTheCascade() {
+		HtmlStyles styles = new HtmlStyles();
+		for (String invalid : new String[] { "1 -1 20px", "1 NaN 20px", "1 1e309 20px", "1 .5 garbage", "1 2 30px extra" }) {
+			int[] style = styles.compute(HtmlStyles.root(), "div", null, "flex:2 .25 90px;flex:" + invalid);
+			assertEquals(invalid, 2, style[HtmlStyles.FLEX_GROW]);
+			assertEquals(invalid, 90, style[HtmlStyles.FLEX_BASIS]);
+			assertEquals(invalid, .25, HtmlStyles.shrink(style), 0);
+		}
+	}
+
+	@Test
+	public void shrinkStorageCannotAliasTheExistingPositionalMask() {
+		HtmlStyles styles = new HtmlStyles();
+		String css = "color:blue;background:red;position:relative;top:-3px;right:5px;z-index:0;width:70px;border:2px inset gray";
+		int[] original = styles.compute(HtmlStyles.root(), "div", null, css);
+		int[] extended = styles.compute(HtmlStyles.root(), "div", null, css + ";flex-shrink:4.9e-324");
+		org.junit.Assert.assertArrayEquals(java.util.Arrays.copyOf(original, 32), java.util.Arrays.copyOf(extended, 32));
+		assertEquals(Double.MIN_VALUE, HtmlStyles.shrink(extended), 0);
+		assertEquals(0, extended[HtmlStyles.Z_AUTO]);
+	}
 
 	@Test
 	public void coloursParseAndOthersAreNone() {
@@ -70,6 +134,49 @@ public class HtmlStylesTest {
 		assertEquals(0, p[COLOR]);
 		assertEquals(0, p[INDENT]);
 		assertEquals(HtmlStyles.LEFT, p[ALIGN]);
+	}
+
+	@Test
+	public void schemeBordersAreParsedAndNotInherited() {
+		HtmlStyles styles = new HtmlStyles();
+		for (String name : new String[] {"solid", "inset", "outset", "groove", "ridge", "double"}) {
+			int expected = switch (name) {
+				case "inset" -> HtmlStyles.BORDER_INSET;
+				case "outset" -> HtmlStyles.BORDER_OUTSET;
+				case "groove" -> HtmlStyles.BORDER_GROOVE;
+				case "ridge" -> HtmlStyles.BORDER_RIDGE;
+				case "double" -> HtmlStyles.BORDER_DOUBLE;
+				default -> HtmlStyles.BORDER_SOLID;
+			};
+			int[] box = styles.compute(HtmlStyles.root(), "p", null, "border: 4px " + name + " #808080");
+			assertEquals(name, expected, box[HtmlStyles.BORDER_STYLE]);
+			assertEquals(4, box[HtmlStyles.BORDER_WIDTH]);
+			assertEquals("style is not inherited", HtmlStyles.BORDER_SOLID,
+					styles.compute(box, "span", null, null)[HtmlStyles.BORDER_STYLE]);
+		}
+		assertEquals(HtmlStyles.BORDER_OUTSET,
+				styles.compute(HtmlStyles.root(), "p", null, "border: 4px solid red; border-style: outset")[HtmlStyles.BORDER_STYLE]);
+		assertEquals(0, styles.compute(HtmlStyles.root(), "p", null, "border: 4px ridge red; border-style: none")[HtmlStyles.BORDER_WIDTH]);
+		HtmlDocument document = HtmlDocument.parse("<p style='border:4px inset #808080'>a</p><p style='border:4px outset #808080'>b</p>");
+		assertEquals(HtmlStyles.BORDER_INSET, document.blockBorderStyle[0]);
+		assertEquals(HtmlStyles.BORDER_OUTSET, document.blockBorderStyle[1]);
+	}
+
+	@Test
+	public void overflowClipsAreExplicitNotInheritedAndDoNotCollideWithPositionMask() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".panel { overflow: hidden; position: fixed; z-index: -3 } .visible { overflow: visible }");
+		int[] root = HtmlStyles.root();
+		int[] panel = styles.compute(root, "div", "panel", "overflow: nonsense");
+		assertEquals(HtmlStyles.OVERFLOW_HIDDEN, panel[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.FIXED, panel[HtmlStyles.POSITION]);
+		assertEquals(-3, panel[HtmlStyles.Z_INDEX]);
+		assertEquals("overflow is not inherited", HtmlStyles.OVERFLOW_VISIBLE,
+				styles.compute(panel, "div", null, null)[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_CLIP,
+				styles.compute(root, "div", null, "overflow: clip")[HtmlStyles.OVERFLOW]);
+		assertEquals(HtmlStyles.OVERFLOW_VISIBLE,
+				styles.compute(panel, "div", "visible", "overflow: hidden; overflow: visible")[HtmlStyles.OVERFLOW]);
 	}
 
 	@Test
@@ -130,5 +237,62 @@ public class HtmlStylesTest {
 		assertEquals(HtmlStyles.AUTO, child[HtmlStyles.POS_TOP]);
 		assertEquals(0, child[HtmlStyles.Z_INDEX]);
 		assertEquals(HtmlStyles.STATIC, styles.compute(root, "div", "a", "position: static")[HtmlStyles.POSITION]);
+	}
+
+	@Test
+	public void displayAndFlexProperties() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".row { display: flex; justify-content: space-between; gap: 12px } .grow { flex: 2 1 40px }"
+				+ " .w { width: 90px; flex-grow: 1 } .gone { display: none }");
+		int[] root = HtmlStyles.root(), row = styles.compute(root, "div", "row", null);
+		assertEquals(HtmlStyles.DISPLAY_FLEX, row[HtmlStyles.DISPLAY]);
+		assertEquals(FlexRow.SPACE_BETWEEN, row[HtmlStyles.JUSTIFY]);
+		assertEquals(12, row[HtmlStyles.GAP]);
+		int[] grow = styles.compute(root, "div", "grow", null);
+		assertEquals("flex: grow shrink basis", 2, grow[HtmlStyles.FLEX_GROW]);
+		assertEquals(40, grow[HtmlStyles.FLEX_BASIS]);
+		int[] w = styles.compute(root, "div", "w", null);
+		assertEquals("width is the basis", 90, w[HtmlStyles.FLEX_BASIS]);
+		assertEquals(1, w[HtmlStyles.FLEX_GROW]);
+		assertEquals(HtmlStyles.DISPLAY_NONE, styles.compute(root, "p", "gone", null)[HtmlStyles.DISPLAY]);
+		int[] child = styles.compute(row, "span", null, null);
+		assertEquals("display is not inherited", HtmlStyles.DISPLAY_DEFAULT, child[HtmlStyles.DISPLAY]);
+		assertEquals(-1, child[HtmlStyles.FLEX_BASIS]);
+		assertEquals(0, child[HtmlStyles.GAP]);
+	}
+
+	@Test
+	public void gridProperties() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet(".g { display: grid; grid-template-columns: 100px repeat(2, 1fr); gap: 8px 12px }"
+				+ " .h { display: inline-grid; grid-template-columns: 100px 1fr 1fr; row-gap: 3px; column-gap: 4px }"
+				+ " .wide { grid-column: span 2 } .full { grid-column: 1 / -1 } .bad { grid-template-columns: 1em }");
+		int[] root = HtmlStyles.root(), g = styles.compute(root, "div", "g", null), h = styles.compute(root, "div", "h", null);
+		assertEquals(HtmlStyles.DISPLAY_GRID, g[HtmlStyles.DISPLAY]);
+		assertArrayEquals(new int[] { 100, GridTracks.FR | 100, GridTracks.FR | 100 }, styles.tracks(g[HtmlStyles.TRACKS]));
+		assertEquals("gap: the row gap, then the column gap", 8, g[HtmlStyles.ROW_GAP]);
+		assertEquals(12, g[HtmlStyles.GAP]);
+		assertEquals("the same list is kept once", g[HtmlStyles.TRACKS], h[HtmlStyles.TRACKS]);
+		assertEquals(HtmlStyles.DISPLAY_GRID, h[HtmlStyles.DISPLAY]);
+		assertEquals(3, h[HtmlStyles.ROW_GAP]);
+		assertEquals(4, h[HtmlStyles.GAP]);
+		assertEquals(2, styles.compute(root, "div", "wide", null)[HtmlStyles.COLUMN_SPAN]);
+		assertEquals("1 / -1: the whole row", GridTracks.MAX_TRACKS, styles.compute(root, "div", "full", null)[HtmlStyles.COLUMN_SPAN]);
+		assertEquals("a list not understood is ignored", 0, styles.compute(root, "div", "bad", null)[HtmlStyles.TRACKS]);
+		assertEquals(0, styles.tracks(0).length);
+		int[] child = styles.compute(g, "div", null, null);
+		assertEquals("grid properties are not inherited", 0, child[HtmlStyles.TRACKS]);
+		assertEquals(0, child[HtmlStyles.ROW_GAP]);
+		assertEquals(0, child[HtmlStyles.COLUMN_SPAN]);
+	}
+
+	@Test
+	public void positionSticky() {
+		HtmlStyles styles = new HtmlStyles();
+		styles.addSheet("h2 { position: sticky; top: 3px } th { position: -webkit-sticky }");
+		int[] root = HtmlStyles.root(), h2 = styles.compute(root, "h2", null, null);
+		assertEquals(HtmlStyles.STICKY, h2[HtmlStyles.POSITION]);
+		assertEquals(3, h2[HtmlStyles.POS_TOP]);
+		assertEquals(HtmlStyles.STICKY, styles.compute(root, "th", null, null)[HtmlStyles.POSITION]);
 	}
 }

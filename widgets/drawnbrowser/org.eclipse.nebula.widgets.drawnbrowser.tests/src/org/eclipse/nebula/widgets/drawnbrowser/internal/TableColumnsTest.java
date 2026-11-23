@@ -43,4 +43,17 @@ public class TableColumnsTest {
 		assertArrayEquals(new int[] { 0, 10 }, TableColumns.edges(new int[] { 10 }, new int[] { 5 }, 100));
 		assertArrayEquals("no columns", new int[] { 0 }, TableColumns.edges(new int[0], new int[0], 100));
 	}
+
+	@Test
+	public void aSpanningCellSpreadsWhatItsColumnsLack() {
+		int[] widths = { 10, 20, 30 };
+		TableColumns.spread(widths, 0, 3, 71);
+		assertArrayEquals("11 lacking: 4, 4, 3", new int[] { 14, 24, 33 }, widths);
+		TableColumns.spread(widths, 0, 3, 50);
+		assertArrayEquals("nothing lacking: unchanged", new int[] { 14, 24, 33 }, widths);
+		TableColumns.spread(widths, 1, 1, 40);
+		assertArrayEquals("one column: a plain maximum", new int[] { 14, 40, 33 }, widths);
+		TableColumns.spread(widths, 2, 5, 40);
+		assertArrayEquals("a span past the last column stops there", new int[] { 14, 40, 40 }, widths);
+	}
 }

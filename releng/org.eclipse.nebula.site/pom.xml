@@ -27,4 +27,9 @@ Contributors:
 
 	<name>Eclipse Nebula Updates</name>
 
+	<!-- Terminal control 1.2 needs SWT 3.136 in this consumer's target. -->
+	<properties>
+		<target-platform-platform>https://download.eclipse.org/eclipse/updates/4.42-I-builds/I20261112-2300/</target-platform-platform>
+	</properties>
+
 </project>

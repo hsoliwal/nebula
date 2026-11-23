@@ -45,6 +45,47 @@ public class HtmlLayoutTest {
 	}
 
 	@Test
+	public void aFixedSidebarKeepsItsBasisWhileTheContentPanelShrinksAndResizes() {
+		HtmlLayout l = layout("<div style='display:flex;gap:10px'><div style='flex:0 0 240px'>i</div>"
+				+ "<div style='flex:0 1 200px'>j</div></div>", 320);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 240, 70 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(250, l.cellX(1));
+		l.setWidth(400);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 240, 150 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(400, l.cellX(1) + l.cellWidth(1));
+	}
+
+	@Test
+	public void fractionalPanelShrinkMayLeaveOverflow() {
+		HtmlLayout l = layout("<div style='display:flex'><div style='flex:0 .25 100px'>i</div>"
+				+ "<div style='flex:0 .25 100px'>j</div></div>", 100);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 75, 75 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals("half the original deficit remains", 150, l.cellX(1) + l.cellWidth(1));
+	}
+
+	@Test
+	public void panelPaddingIsExcludedFromShrinkWeights() {
+		HtmlLayout l = layout("<div style='display:flex'><div style='flex:0 1 100px;padding:10px'>i</div>"
+				+ "<div style='flex:0 1 100px'>j</div></div>", 120);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 70, 50 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(10, l.indent(0));
+		assertEquals(70, l.cellX(1));
+	}
+
+	@Test
+	public void fixedPanelsResolveAutoBasisAgainstWidthInEitherDeclarationOrder() {
+		HtmlLayout l = layout("<div style='display:flex'><div style='width:120px;flex:none'>i</div>"
+				+ "<div style='flex:none;width:120px'>j</div></div>", 150);
+		l.ensure(Integer.MAX_VALUE);
+		assertArrayEquals(new int[] { 120, 120 }, new int[] { l.cellWidth(0), l.cellWidth(1) });
+		assertEquals(120, l.cellX(1));
+	}
+
+	@Test
 	public void preDoesNotWrapIsMonospaceAndARuleIsThin() {
 		String line = "a long line of code that would wrap at this narrow width without pre";
 		HtmlLayout l = layout("<p>" + line + "</p><pre>" + line + "</pre><hr><p>after <code>x</code></p>", 120);
@@ -96,6 +137,46 @@ public class HtmlLayoutTest {
 		assertEquals("a column keeps its width in every row", l.cellWidth(0), l.cellWidth(2));
 		assertEquals(l.cellX(0) + HtmlLayout.CELL_PADDING, l.indent(0));
 		assertEquals(HtmlLayout.CELL_PADDING, l.contentTop(0));
+	}
+
+
+	@Test
+	public void unicodeLineBreaksKeepCjkTableColumnsWithinAvailableWidth() {
+		TextLayout probe = new TextLayout(display);
+		int full, single, other;
+		try {
+			probe.setFont(display.getSystemFont());
+			probe.setText("漢字漢字");
+			full = probe.getBounds().width;
+			probe.setText("漢");
+			single = probe.getBounds().width;
+			probe.setText("x");
+			other = probe.getBounds().width;
+		} finally {
+			probe.dispose();
+		}
+		assertTrue("the sequence is wider than one ideograph", full > single);
+		int available = single + other + 4 * HtmlLayout.CELL_PADDING + (full - single) / 2;
+		HtmlLayout l = layout("<table><tr><td>漢字漢字</td><td>x</td></tr></table>", available);
+		assertEquals("Unicode line breaks let the table fit", available, l.cellX(1) + l.cellWidth(1));
+		assertTrue("the CJK column need not keep the whole run together",
+				l.cellWidth(0) < full + 2 * HtmlLayout.CELL_PADDING);
+	}
+
+	@Test
+	public void rightToLeftWordHasPositiveMinimumWidth() {
+		String hebrew = "שלום";
+		HtmlLayout l = layout("<table><tr><td>" + hebrew + "</td><td>x</td></tr></table>", 1);
+		TextLayout probe = new TextLayout(display);
+		try {
+			probe.setFont(l.textLayout(0).getFont());
+			probe.setText(hebrew);
+			assertTrue("the glyphs occupy a positive width", probe.getBounds().width > 0);
+			assertTrue("minimum width uses glyph bounds, not bidi caret subtraction",
+					l.cellWidth(0) >= probe.getBounds().width + 2 * HtmlLayout.CELL_PADDING);
+		} finally {
+			probe.dispose();
+		}
 	}
 
 	@Test
@@ -164,6 +245,108 @@ public class HtmlLayoutTest {
 		l.ensure(Integer.MAX_VALUE);
 		assertEquals(l.top(1), l.top(4));
 		assertEquals("the flow's block, not a box out of the flow", 4, l.blockAt(l.top(4)));
+	}
+
+	@Test
+	public void controlBlocksReserveTheirWidgetsSize() {
+		HtmlLayout l = layout("<input name=a><textarea rows=5></textarea><input type=checkbox><input size=40>", 400);
+		assertTrue("a text area of 5 rows is taller than a field", l.controlHeight(1) > 2 * l.controlHeight(0));
+		assertTrue("a check box is shorter than a field", l.controlHeight(2) < l.controlHeight(0));
+		assertTrue("a field of 40 columns is wider than one of 20", l.controlWidth(3) > l.controlWidth(0) * 3 / 2);
+		assertEquals(l.controlHeight(0) + 2 * HtmlLayout.BLOCK_GAP, l.height(0));
+		assertEquals("a control has no text layout", null, l.textLayout(0));
+	}
+
+	@Test
+	public void aSpanningCellCoversItsColumnsAndWidensThem() {
+		HtmlLayout l = layout("<table><tr><td colspan=2>head</td><td>x</td></tr><tr><td>a</td><td>b</td><td>c</td></tr></table>", 400);
+		assertEquals("the spanning cell starts at the first column", l.cellX(2), l.cellX(0));
+		assertEquals("and is as wide as its two columns", l.cellWidth(2) + l.cellWidth(3), l.cellWidth(0));
+		assertEquals(l.cellX(4), l.cellX(1));
+		l.dispose();
+		String word = "unbreakablewordwiderthanbothnarrowcolumns";
+		l = layout("<table><tr><td colspan=2>" + word + "</td></tr><tr><td>a</td><td>b</td></tr></table>", 1000);
+		TextLayout probe = new TextLayout(display);
+		try {
+			probe.setFont(l.textLayout(0).getFont());
+			probe.setText(word);
+			assertTrue("the spanned columns together hold the word", l.cellWidth(1) + l.cellWidth(2) >= probe.getBounds().width + 2 * HtmlLayout.CELL_PADDING);
+		} finally {
+			probe.dispose();
+		}
+		assertTrue("and share it", Math.abs(l.cellWidth(1) - l.cellWidth(2)) <= 1);
+	}
+
+	@Test
+	public void aSpanningCellIsAsTallAsItsRowsAndGrowsTheLast() {
+		HtmlLayout l = layout("<table><tr><td rowspan=2>tall</td><td>a</td></tr><tr><td>b</td></tr><tr><td>c</td><td>d</td></tr></table>"
+				+ "<p>after</p>", 400);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals("the second row starts below the first", l.top(1) + l.height(1), l.top(2));
+		assertEquals("the spanning cell covers both rows", l.height(1) + l.height(2), l.height(0));
+		assertEquals("the third row follows", l.top(2) + l.height(2), l.top(3));
+		assertEquals("a point in the second row, in the first column, is the spanning cell", 0, l.blockAt(l.cellX(0) + 2, l.top(2) + 2));
+		assertEquals("and in the second column the second row's cell", 2, l.blockAt(l.cellX(2) + 2, l.top(2) + 2));
+		assertEquals("painting a band in the second row starts at the spanning cell", 0, l.paintStart(l.top(2) + 1));
+		assertEquals(3, l.paintStart(l.top(3) + 1));
+		l.dispose();
+		StringBuilder words = new StringBuilder();
+		for (int i = 0; i < 40; i++) words.append("word ").append(i).append(' ');
+		l = layout("<table><tr><td rowspan=2>" + words + "</td><td>a</td></tr><tr><td>b</td></tr></table>", 300);
+		l.ensure(Integer.MAX_VALUE);
+		assertTrue("a tall spanning cell grows the last row: " + l.height(2) + " vs " + l.height(1), l.height(2) > l.height(1));
+		assertEquals("and fits its text", l.textLayout(0).getBounds().height + 2 * HtmlLayout.CELL_PADDING, l.height(0));
+	}
+
+	@Test
+	public void flexItemsSitSideBySideAndShareFreeSpaceByGrow() {
+		HtmlLayout l = layout("<div style='display:flex; gap:10px'><div style='flex-grow:1'>a</div><div style='flex-grow:3'>b</div>"
+				+ "<div style='padding:6px; border:2px solid red'>c</div></div><p>after</p>", 400);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals("one row: a shared top", l.top(0), l.top(2));
+		assertEquals(l.height(0), l.height(2));
+		assertEquals(l.cellX(0) + l.cellWidth(0) + 10, l.cellX(1));
+		assertEquals(l.cellX(1) + l.cellWidth(1) + 10, l.cellX(2));
+		assertEquals("the line is full", 400, l.cellX(2) + l.cellWidth(2));
+		int grownA = l.cellWidth(0), grownB = l.cellWidth(1);
+		assertTrue("b grows three times as much as a: " + grownA + " " + grownB, grownB > 2 * grownA);
+		assertEquals("an item's content is inset by its border and padding", l.cellX(2) + 2 + 6, l.indent(2));
+		assertEquals(2 + 6, l.contentTop(2));
+		assertEquals("the row is as tall as the boxed item", l.textLayout(2).getBounds().height + 2 * 2 + 6 + 6, l.height(2));
+		assertEquals("the flow continues below", l.top(0) + l.height(0), l.top(3));
+	}
+
+	@Test
+	public void gridItemsSitInTheirTracksWithRowAndColumnGaps() {
+		HtmlLayout l = layout("<div style='display:grid; grid-template-columns: 100px 1fr 2fr; gap: 6px 10px'>"
+				+ "<div>a</div><div>b</div><div>c</div><div style='grid-column: span 2'>d</div><div style='padding:5px'>e</div></div><p>after</p>", 400);
+		l.ensure(Integer.MAX_VALUE);
+		// 400 less two column gaps: 380; 100 fixed, 280 shared 1:2; d spans the first two tracks and the gap between
+		assertArrayEquals(new int[] { 0, 110, 213, 0, 213 }, new int[] { l.cellX(0), l.cellX(1), l.cellX(2), l.cellX(3), l.cellX(4) });
+		assertArrayEquals(new int[] { 100, 93, 187, 203, 187 },
+				new int[] { l.cellWidth(0), l.cellWidth(1), l.cellWidth(2), l.cellWidth(3), l.cellWidth(4) });
+		assertEquals(l.top(0), l.top(2));
+		assertEquals("the second row is a row gap below the first", l.top(0) + l.height(0) + 6, l.top(3));
+		assertEquals(l.top(3), l.top(4));
+		assertEquals("the flow continues below the last row", l.top(3) + l.height(3), l.top(5));
+		assertEquals("a grid item's content is inset by its padding", l.cellX(4) + 5, l.indent(4));
+		assertEquals(5, l.contentTop(4));
+	}
+
+	@Test
+	public void aStickyBoxSticksUntilItsContainingElementEnds() {
+		StringBuilder html = new StringBuilder("<div><h2 style='position:sticky; top:5px'>A</h2>");
+		for (int i = 0; i < 20; i++) html.append("<p>a").append(i).append("</p>");
+		html.append("</div><p>after</p>");
+		HtmlLayout l = layout(html.toString(), 300);
+		l.ensure(Integer.MAX_VALUE);
+		assertEquals("not scrolled to yet", 0, l.offsetY(0, 0));
+		int scroll = l.boxTop(0) + 40;
+		assertEquals("stuck 5 px below the view's top", scroll + 5, l.boxTop(0) + l.offsetY(0, scroll));
+		int end = l.top(20) + l.height(20);
+		assertEquals("pushed up by its element's end", end, l.top(0) + l.height(0) + l.offsetY(0, end));
+		assertEquals("and no further", end, l.top(0) + l.height(0) + l.offsetY(0, end + 500));
+		assertTrue("it stays in the flow", l.top(1) == l.top(0) + l.height(0));
 	}
 	@Test
 	public void linksAndOffsetsAreFoundInTheCellUnderThePointer() {

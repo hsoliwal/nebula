@@ -8,6 +8,9 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.BOLD;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.BULLET;
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.CODE;
@@ -23,11 +26,134 @@ import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.STRI
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.UNDERLINE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 /** The drawn browser's document lanes, tag by tag of prasser/swtbrowser's handlers. */
 public class HtmlDocumentTest {
+
+	@Test
+	public void semanticContainersOwnTheirFragmentsAndKeepChildrenInSourceOrder() {
+		for (String tag : new String[] { "main", "section", "article", "nav", "aside", "header", "footer" }) {
+			HtmlDocument d = HtmlDocument.parse("<" + tag + " style='padding:3px;background:red'>head<p>child</p>tail</"
+					+ tag + "><p>after</p>");
+			assertEquals(tag, 4, d.blockCount);
+			assertEquals(tag, 4, d.boxCount);
+			assertEquals(tag, "head", d.blockText(0));
+			assertEquals(tag, "child", d.blockText(1));
+			assertEquals(tag, "tail", d.blockText(2));
+			assertEquals(tag, "after", d.blockText(3));
+			assertEquals(tag, 1, d.blockBox[0]);
+			assertEquals(tag, 2, d.blockBox[1]);
+			assertEquals(tag, 1, d.blockBox[2]);
+			assertEquals(tag, 0, d.boxParent[3]);
+			assertEquals(tag, 1, d.boxParent[2]);
+			assertEquals(tag, 3, d.boxEndBlock[1]);
+			assertEquals(tag, 0xFFFF0000, d.boxBackground[1]);
+			assertEquals(tag, 0, d.boxBackground[2]);
+			assertEquals(tag, 3, d.boxPadLeft[1]);
+			assertEquals(tag, 0, d.boxPadLeft[2]);
+			assertTrue(tag + " wrapper decoration belongs to one resolved box", d.boxLayout);
+		}
+	}
+
+	@Test
+	public void ordinarySemanticLeavesRetainFlatLayoutAndEmptyPanelsKeepTheirBox() {
+		HtmlDocument leaves = HtmlDocument.parse("<header style='padding:3px;background:blue'>heading</header>"
+				+ "<main><section>content</section></main><footer>ending</footer>");
+		assertEquals(3, leaves.blockCount);
+		assertFalse("unstyled wrappers and single styled leaves still use the lazy path", leaves.boxLayout);
+		assertEquals(3, leaves.blockPadLeft[0]);
+		assertEquals(0xFF0000FF, leaves.blockBackground[0]);
+		assertEquals(0, leaves.blockPadLeft[1]);
+		for (String tag : new String[] { "div", "section", "article" }) {
+			HtmlDocument empty = HtmlDocument.parse("<" + tag + " style='padding:4px;border:2px solid red'></" + tag + ">");
+			assertEquals(tag, 0, empty.blockCount);
+			assertEquals(tag, 2, empty.boxCount);
+			assertTrue(tag + " empty decoration must not vanish with the empty text fragment", empty.boxLayout);
+		}
+	}
+
+	@Test
+	public void semanticSelectorAncestrySurvivesGrowthAndHiddenContainers() {
+		StringBuilder html = new StringBuilder("<style>main > section.panel {padding:7px;background:blue} "
+				+ "aside.hidden {display:none}</style><main><section class=panel>");
+		for (int i = 0; i < 40; i++) html.append("<article>");
+		html.append("<p>deep</p>");
+		for (int i = 0; i < 40; i++) html.append("</article>");
+		html.append("</section><aside class=hidden><section>invisible</section></aside></main><footer>end</footer>");
+		HtmlDocument d = HtmlDocument.parse(html.toString());
+		assertEquals(2, d.blockCount);
+		assertEquals("deep", d.blockText(0));
+		assertEquals("end", d.blockText(1));
+		assertTrue(d.boxCount > 32);
+		assertEquals(1, d.boxParent[2]);
+		assertEquals(7, d.boxPadLeft[2]);
+		assertEquals(0xFF0000FF, d.boxBackground[2]);
+		assertEquals(0, d.boxPadLeft[3]);
+		assertEquals(0, d.boxParent[d.blockBox[1]]);
+		assertTrue(d.boxLayout);
+	}
+
+	@Test
+	public void semanticContainersKeepTheExistingFlatCellAndFlexItemSubset() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td>A<section>B</section>C</td><td>D</td></tr></table>"
+				+ "<main style='display:flex'><article style='flex:0 0 80px'>E<section>F</section>G</article>"
+				+ "<aside>H</aside></main>");
+		assertEquals(2, d.tableCount);
+		assertEquals(4, d.blockCount);
+		assertEquals("A\nBC", d.blockText(0));
+		assertEquals("E\nFG", d.blockText(2));
+		assertEquals(HtmlDocument.CELL, d.kind[2]);
+		assertEquals(HtmlDocument.CELL_BOX, d.boxRole[d.blockBox[2]]);
+		assertEquals(HtmlDocument.FLEX_BOX, d.boxRole[d.boxParent[d.blockBox[2]]]);
+		assertEquals(80, d.cellBasis[2]);
+		assertEquals(0, d.cellShrink[2], 0);
+		assertEquals(1, d.cellShrink[3], 0);
+	}
+
+	@Test
+	public void flexShrinkLanesGrowAndAnonymousItemsKeepTheirDefault() {
+		StringBuilder html = new StringBuilder("<div style='display:flex;flex-shrink:0'>anonymous");
+		for (int i = 0; i < 40; i++) {
+			html.append("<div style='flex:0 ").append(i % 2 == 0 ? "0" : ".25").append(" 80px'>item ")
+					.append(i).append("</div>");
+		}
+		html.append("<div>default</div></div>");
+		HtmlDocument d = HtmlDocument.parse(html.toString());
+		assertEquals(42, d.blockCount);
+		assertEquals(1, d.cellShrink[0], 0);
+		for (int i = 0; i < 40; i++) {
+			assertEquals(i % 2 == 0 ? 0 : .25, d.cellShrink[i + 1], 0);
+			assertEquals(80, d.cellBasis[i + 1]);
+			assertEquals(i + 1, d.cellColumn[i + 1]);
+		}
+		assertEquals("container shrink does not inherit", 1, d.cellShrink[41], 0);
+	}
+
+	@Test
+	public void hiddenFlexItemsDoNotLeakShrinkStateIntoFollowingItems() {
+		HtmlDocument d = HtmlDocument.parse("<style>.fixed{flex:0 0 240px}.soft{flex-shrink:.125}</style>"
+				+ "<div style='display:flex'><div class='fixed'>sidebar</div>"
+				+ "<div style='display:none;flex-shrink:99'>hidden</div><div class='soft'>content</div><div>plain</div></div>");
+		assertEquals(3, d.blockCount);
+		assertEquals(0, d.cellShrink[0], 0);
+		assertEquals(.125, d.cellShrink[1], 0);
+		assertEquals(1, d.cellShrink[2], 0);
+		assertEquals(240, d.cellBasis[0]);
+	}
+
+	@Test
+	public void anAutoFlexBasisUsesWidthInEitherDeclarationOrder() {
+		for (String flex : new String[] { "none", "auto", "initial", "1 0 auto" }) {
+			HtmlDocument d = HtmlDocument.parse("<div style='display:flex'><div style='width:120px;flex:" + flex
+					+ "'>i</div><div style='flex:" + flex + ";width:120px'>j</div></div>");
+			assertEquals(flex, 120, d.cellBasis[0]);
+			assertEquals(flex, 120, d.cellBasis[1]);
+		}
+	}
 
 	/* each block as kind:level:marker:text */
 	private static String[] blocks(HtmlDocument d) {
@@ -105,6 +231,23 @@ public class HtmlDocumentTest {
 	public void scriptsStylesAndCommentsAreNotText() {
 		HtmlDocument d = HtmlDocument.parse("<style>p{color:red}</style><!-- note --><p>x<script>var a = '<p>no</p>';</script>y</p>");
 		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:xy" }, blocks(d));
+	}
+
+	@Test
+	public void clipBoundariesStayWithParentOwnedBoxesAcrossCapacityGrowth() {
+		StringBuilder html = new StringBuilder("<div style='overflow:hidden'>");
+		for (int i = 0; i < 24; i++) html.append("<div>");
+		html.append("<p>deep</p>");
+		for (int i = 0; i < 24; i++) html.append("</div>");
+		html.append("</div><div style='overflow:visible'>outside</div>");
+		HtmlDocument doc = HtmlDocument.parse(html.toString());
+		assertTrue(doc.boxCount > 16);
+		assertTrue("a normal-flow clip requires the context-aware scene", doc.boxLayout);
+		assertTrue(doc.positioned);
+		assertEquals(HtmlStyles.OVERFLOW_HIDDEN, doc.boxOverflow[1]);
+		for (int box = 2; box < doc.boxCount; box++) {
+			assertEquals("clipping is never copied into descendants", HtmlStyles.OVERFLOW_VISIBLE, doc.boxOverflow[box]);
+		}
 	}
 
 	@Test
@@ -226,5 +369,253 @@ public class HtmlDocumentTest {
 		assertEquals("an inline element's box is not the block's", 5, d.blockPadTop[0]);
 		assertEquals("a plain block has none", 0, d.blockPadTop[1] + d.blockBorder[1] + d.blockMarginTop[1]);
 		assertEquals("a table cell keeps its cell padding", 0, d.blockPadTop[2]);
+	}
+
+	@Test
+	public void formControlsAreControlBlocksWithTheirLanes() {
+		HtmlDocument d = HtmlDocument.parse("<form action='http://example.test/search'><input name=q value=hi><input type=password name=pw><input type=checkbox name=agree checked><input type=radio name=c value=a><input type=radio name=c value=b checked><input type=hidden name=h value=x><select name=s><option>one<option selected>two</select><textarea name=t rows=3 cols=10>\nline1\nline2</textarea><button name=go value=1>Go now</button></form><p>after <input name=outside></p>");
+		int controls = 0;
+		for (int b = 0; b < d.blockCount; b++) if (d.kind[b] == HtmlDocument.CONTROL) controls++;
+		assertEquals("every control but the hidden input has a block", 9, controls);
+		assertEquals(10, d.controlCount);
+		assertEquals(1, d.formCount);
+		assertEquals("http://example.test/search", d.formAction[0]);
+		int[] types = { HtmlDocument.TEXT, HtmlDocument.PASSWORD, HtmlDocument.CHECKBOX, HtmlDocument.RADIO, HtmlDocument.RADIO,
+				HtmlDocument.HIDDEN, HtmlDocument.SELECT, HtmlDocument.TEXTAREA, HtmlDocument.SUBMIT, HtmlDocument.TEXT };
+		assertArrayEquals(types, java.util.Arrays.copyOf(d.controlType, 10));
+		assertEquals("hi", d.controlValue[0]);
+		assertEquals("on", d.controlValue[2]);
+		assertEquals(1, d.controlChecked[2]);
+		assertEquals(0, d.controlChecked[3]);
+		assertEquals(1, d.controlChecked[4]);
+		assertEquals("x", d.controlValue[5]);
+		assertArrayEquals(new String[] { "one", "two" }, d.controlOptions[6]);
+		assertEquals("the selected option", 1, d.controlChecked[6]);
+		assertEquals("the newline after <textarea> is not content", "line1\nline2", d.controlValue[7]);
+		assertEquals(3, d.controlRows[7]);
+		assertEquals(10, d.controlCols[7]);
+		assertEquals("Go now", d.controlLabel[8]);
+		assertEquals("1", d.controlValue[8]);
+		assertEquals(0, d.controlForm[8]);
+		assertEquals("outside the form", -1, d.controlForm[9]);
+		assertEquals("text after a control is a paragraph again", "after", d.blockText(d.blockCount - 2));
+	}
+
+	/* the first block whose text is this */
+	private static int block(HtmlDocument d, String text) {
+		for (int b = 0; b < d.blockCount; b++) if (d.blockText(b).equals(text)) return b;
+		throw new AssertionError("no block " + text);
+	}
+
+	/* the colour of the run of a block that holds this text */
+	private static int colorOf(HtmlDocument d, int b, String text) {
+		int at = d.textStart[b] + d.blockText(b).indexOf(text);
+		for (int k = 0; k < d.runCount[b]; k++) {
+			int r = d.firstRun[b] + k;
+			if (at >= d.runStart[r] && at < d.runEnd[r]) return d.runColor[r];
+		}
+		return 0;
+	}
+
+	private static int styleOf(HtmlDocument d, int b, String text) {
+		int at = d.textStart[b] + d.blockText(b).indexOf(text);
+		for (int k = 0; k < d.runCount[b]; k++) {
+			int r = d.firstRun[b] + k;
+			if (at >= d.runStart[r] && at < d.runEnd[r]) return d.runStyle[r];
+		}
+		return 0;
+	}
+
+	@Test
+	public void selectorsAxesAttributeConditionsAndSpecificity() {
+		HtmlDocument d = HtmlDocument.parse("<style>"
+				+ "div p { color: #ff0000 } div > p { color: #0000ff } h1 + p { color: #008000 } p:first-child { font-weight: bold }"
+				+ " a[href^='http'] { color: #808080 } #main .note { color: #800000 } .note { color: #000080 }"
+				+ " [lang|=en] { color: #800080 } p:hover { color: #ffff00 } span.x.y { text-decoration: underline }"
+				+ " p + p + p { color: #00ffff }</style>"
+				+ "<div><section><p>deep</p></section><p>child</p></div>"
+				+ "<h1>t</h1><p>next</p>"
+				+ "<div id=main><p class=note>main note</p></div><p class=note>plain note</p>"
+				+ "<p><a href='http://x'>web</a> <a href='mailto:y'>mail</a></p>"
+				+ "<p lang=en-GB>english</p><p><span class='x y'>both</span> <span class=x>one</span></p>");
+		assertEquals("descendant", 0xFFFF0000, colorOf(d, block(d, "deep"), "deep"));
+		assertEquals("child beats descendant by sheet order at equal specificity", 0xFF0000FF, colorOf(d, block(d, "child"), "child"));
+		assertEquals("adjacent sibling", 0xFF008000, colorOf(d, block(d, "next"), "next"));
+		assertEquals("first child", BOLD, styleOf(d, block(d, "deep"), "deep") & BOLD);
+		assertEquals("not the first child", 0, styleOf(d, block(d, "child"), "child") & BOLD);
+		assertEquals("an id outweighs a later class", 0xFF800000, colorOf(d, block(d, "main note"), "main note"));
+		assertEquals(0xFF000080, colorOf(d, block(d, "plain note"), "plain note"));
+		int links = block(d, "web mail");
+		assertEquals("attribute prefix", 0xFF808080, colorOf(d, links, "web"));
+		assertEquals("no match: the link colour stays", 0, colorOf(d, links, "mail"));
+		assertEquals("attribute dash match", 0xFF800080, colorOf(d, block(d, "english"), "english"));
+		int spans = block(d, "both one");
+		assertEquals("both classes", UNDERLINE, styleOf(d, spans, "both") & UNDERLINE);
+		assertEquals("one class is not enough", 0, styleOf(d, spans, "one") & UNDERLINE);
+		for (int b = 0; b < d.blockCount; b++) {
+			assertEquals("an unsupported pseudo-class never matches", false, colorOf(d, b, d.blockText(b)) == 0xFFFFFF00);
+		}
+		HtmlDocument chain = HtmlDocument.parse("<style>p + p + p { color: #00ffff }</style><p>a</p><p>b</p><p>c</p>");
+		assertEquals("two siblings back", 0xFF00FFFF, colorOf(chain, block(chain, "c"), "c"));
+		assertEquals(0, colorOf(chain, block(chain, "b"), "b"));
+	}
+
+	@Test
+	public void colspanPlacesTheNextCellsAfterIt() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td colspan=2>wide</td><td>c</td></tr><tr><td>a</td><td colspan=x>b</td>"
+				+ "<td colspan=0>c2</td></tr></table>");
+		assertEquals(3, d.tableColumns[0]);
+		assertArrayEquals("columns", new int[] { 0, 2, 0, 1, 2 }, java.util.Arrays.copyOf(d.cellColumn, 5));
+		assertArrayEquals("spans; a bad or zero colspan is 1", new int[] { 2, 1, 1, 1, 1 }, java.util.Arrays.copyOf(d.cellSpan, 5));
+	}
+
+	@Test
+	public void rowspanCoversColumnsInTheRowsBelow() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td rowspan=2>tall</td><td>a</td></tr><tr><td>b</td></tr>"
+				+ "<tr><td>c</td><td>d</td></tr><tr><td rowspan=x>e</td></tr></table>");
+		assertArrayEquals("b skips the column tall covers", new int[] { 0, 1, 1, 0, 1, 0 }, java.util.Arrays.copyOf(d.cellColumn, 6));
+		assertArrayEquals("a bad rowspan is 1", new int[] { 2, 1, 1, 1, 1, 1 }, java.util.Arrays.copyOf(d.cellRowSpan, 6));
+		assertEquals(2, d.tableColumns[0]);
+	}
+
+	@Test
+	public void aFlexContainersChildrenAreItemsAndDisplayNoneHides() {
+		HtmlDocument d = HtmlDocument.parse("<p>before</p><div style='display:flex; gap:8px; justify-content:center'>"
+				+ "<div style='flex-grow:2; padding:5px'>one <p>inner</p></div>loose text<div style='width:70px'>three</div></div>"
+				+ "<p>after</p><p style='display:none'>hidden <b>bold</b><input name=gone></p><div style='display:none'><p>deep</p></div>"
+				+ "<p>shown<script>x</script> end</p>");
+		int one = block(d, "one\ninner"), loose = block(d, "loose text"), three = block(d, "three");
+		assertEquals(HtmlDocument.CELL, d.kind[one]);
+		assertEquals(HtmlStyles.DISPLAY_FLEX, d.tableDisplay[d.cellTable[one]]);
+		assertEquals(8, d.tableGap[d.cellTable[one]]);
+		assertEquals(FlexRow.CENTER, d.tableJustify[d.cellTable[one]]);
+		assertArrayEquals("items in order on one row", new int[] { 0, 1, 2 },
+				new int[] { d.cellColumn[one], d.cellColumn[loose], d.cellColumn[three] });
+		assertEquals(true, d.sameRow(one, three));
+		assertEquals(2, d.cellGrow[one]);
+		assertEquals(5, d.blockPadLeft[one]);
+		assertEquals("an anonymous item has no box", 0, d.blockPadLeft[loose]);
+		assertEquals(70, d.cellBasis[three]);
+		assertEquals(-1, d.cellBasis[one]);
+		assertEquals(PARAGRAPH, d.kind[block(d, "after")]);
+		for (int b = 0; b < d.blockCount; b++) {
+			assertEquals("nothing hidden is a block", false, d.blockText(b).contains("hidden") || d.blockText(b).contains("deep"));
+		}
+		assertEquals("a control in a hidden element is not made", 0, d.controlCount);
+		block(d, "shown end");
+	}
+
+	@Test
+	public void gridItemsArePlacedRowByRowInTheTemplatesColumns() {
+		HtmlDocument d = HtmlDocument.parse("<p>before</p><div style='display:grid; grid-template-columns: 50px 1fr 2fr; gap: 6px 10px'>"
+				+ "<div>a</div><div style='grid-column: span 2; padding: 4px'>b</div><div>c</div><div style='grid-column: span 2'>d</div>"
+				+ "loose<div style='grid-column: span 9'>e</div></div><div style='display:grid'><p>one</p><p>two</p></div><p>after</p>");
+		int a = block(d, "a"), b = block(d, "b"), c = block(d, "c"), dd = block(d, "d"), loose = block(d, "loose"), e = block(d, "e");
+		int t = d.cellTable[a];
+		assertEquals(HtmlStyles.DISPLAY_GRID, d.tableDisplay[t]);
+		assertEquals(3, d.tableColumns[t]);
+		assertArrayEquals(new int[] { 50, GridTracks.FR | 100, GridTracks.FR | 200 },
+				java.util.Arrays.copyOfRange(d.tracks, d.tableTrackStart[t], d.tableTrackStart[t] + d.tableTrackCount[t]));
+		assertEquals(10, d.tableGap[t]);
+		assertEquals(6, d.tableRowGap[t]);
+		int[] items = { a, b, c, dd, loose, e }, column = new int[6], span = new int[6], row = new int[6];
+		for (int i = 0; i < 6; i++) {
+			column[i] = d.cellColumn[items[i]];
+			span[i] = d.cellSpan[items[i]];
+			row[i] = d.cellRow[items[i]] - d.cellRow[a];
+		}
+		assertArrayEquals("an item that does not fit starts the next row", new int[] { 0, 1, 0, 1, 0, 0 }, column);
+		assertArrayEquals("a span wider than the grid is the grid", new int[] { 1, 2, 1, 2, 1, 3 }, span);
+		assertArrayEquals(new int[] { 0, 0, 1, 1, 2, 3 }, row);
+		assertEquals("a grid item keeps its box", 4, d.blockPadLeft[b]);
+		int one = block(d, "one"), two = block(d, "two");
+		assertEquals("no template: one column", 1, d.tableColumns[d.cellTable[one]]);
+		assertEquals("of one auto track", GridTracks.AUTO, d.tracks[d.tableTrackStart[d.cellTable[one]]]);
+		assertEquals(1, d.tableTrackCount[d.cellTable[one]]);
+		assertEquals(d.cellRow[one] + 1, d.cellRow[two]);
+		assertEquals(PARAGRAPH, d.kind[block(d, "after")]);
+	}
+
+	@Test
+	public void aStickyBoxEndsWithItsContainingElement() {
+		HtmlDocument d = HtmlDocument.parse("<div><h2 style='position:sticky; top:0'>A</h2><p>a1</p><p>a2</p></div>"
+				+ "<div><h2 style='position:sticky; top:4px'>B</h2><p>b1</p></div><p>after</p>"
+				+ "<table><tr><th style='position:sticky; top:0'>h1</th><th style='position:sticky; top:0'>h2</th></tr>"
+				+ "<tr><td>x</td><td>y</td></tr></table><p>last</p><h3 style='position:sticky; top:1px'>open</h3><p>end</p>");
+		int a = block(d, "A"), b = block(d, "B"), h1 = block(d, "h1"), h2 = block(d, "h2"), open = block(d, "open");
+		assertEquals(HtmlStyles.STICKY, d.blockPosition[a]);
+		assertEquals(block(d, "a2"), d.blockStickyEnd[a]);
+		assertEquals(block(d, "b1"), d.blockStickyEnd[b]);
+		assertEquals(4, d.blockTop[b]);
+		assertEquals("a sticky header cell", HtmlStyles.STICKY, d.blockPosition[h1]);
+		assertEquals("ends with its table, not its row", block(d, "y"), d.blockStickyEnd[h1]);
+		assertEquals(block(d, "y"), d.blockStickyEnd[h2]);
+		assertEquals("an element still open at the end: the last block", block(d, "end"), d.blockStickyEnd[open]);
+		assertEquals(-1, d.blockStickyEnd[block(d, "after")]);
+		assertEquals(HtmlStyles.STATIC, d.blockPosition[block(d, "x")]);
+	}
+
+	@Test
+	public void tokenizerNumericReferencesAcceptOptionalSemicolonsAndSupplementaryScalars() {
+		String raw = "&#65;&#x1f600;! &#65";
+		assertEquals("A😀! A", HtmlTokenizer.decode(raw, 0, raw.length()));
+		raw = "&#x10FFFF; &#128; &#x99;";
+		assertEquals(new String(Character.toChars(0x10FFFF)) + " € ™", HtmlTokenizer.decode(raw, 0, raw.length()));
+	}
+
+	@Test
+	public void tokenizerInvalidUnicodeScalarsBecomeReplacementButUnknownNamesStayLiteral() {
+		String raw = "&#0; &#xD800; &#1114112; &#99999999999999999999; &not-a-name; &#x; &#;";
+		assertEquals("� � � � &not-a-name; &#x; &#;", HtmlTokenizer.decode(raw, 0, raw.length()));
+		raw = "&amp; &lt; &gt; &quot; &apos; &nbsp; &nosuch;";
+		assertEquals("& < > \" ' \u00a0 &nosuch;", HtmlTokenizer.decode(raw, 0, raw.length()));
+	}
+
+	@Test(timeout = 15000)
+	public void tokenizerAdversarialAmpersandRunIsBoundedAndPreservesText() {
+		String raw = "&".repeat(131_072) + "end &amp;";
+		assertEquals("&".repeat(131_072) + "end &", HtmlTokenizer.decode(raw, 0, raw.length()));
+	}
+
+	@Test
+	public void tokenizerRawTextClosesOnlyAtCompleteCaseInsensitiveEndTags() {
+		List<String> events = new ArrayList<>();
+		HtmlTokenizer.tokenize("<script>var s='</scripture>'; &amp; </ScRiPt ><style>a{content:'</stylesheet>'}</STYLE><p>ok</p>",
+				tokenizerHandler(events));
+		assertEquals(List.of("start:script", "text:var s='</scripture>'; &amp; ", "end:script",
+				"start:style", "text:a{content:'</stylesheet>'}", "end:style",
+				"start:p", "text:ok", "end:p"), events);
+	}
+
+	@Test
+	public void tokenizerPrefixEndTagWithoutRealClosingTagRemainsRaw() {
+		List<String> events = new ArrayList<>();
+		HtmlTokenizer.tokenize("<script>before </scriptX> after", tokenizerHandler(events));
+		assertEquals(List.of("start:script", "text:before </scriptX> after"), events);
+	}
+
+	@Test
+	public void tokenizerNumericAttributeReferencesShareDecoder() {
+		List<String> events = new ArrayList<>();
+		HtmlTokenizer.tokenize("<p title='&#x1F600; &copy; &#0;' data-code=&#65;>x</p>", new HtmlTokenizer.Handler() {
+			@Override
+			public void startTag(String name, String[] attrs, boolean selfClosing) {
+				events.add(name + ":" + HtmlTokenizer.attribute(attrs, "title") + ":"
+						+ HtmlTokenizer.attribute(attrs, "data-code"));
+			}
+			@Override public void endTag(String name) { }
+			@Override public void text(String text) { }
+		});
+		assertEquals(List.of("p:😀 © �:A"), events);
+	}
+
+	private static HtmlTokenizer.Handler tokenizerHandler(List<String> events) {
+		return new HtmlTokenizer.Handler() {
+			@Override public void startTag(String name, String[] attributes, boolean selfClosing) {
+				events.add("start:" + name);
+			}
+			@Override public void endTag(String name) { events.add("end:" + name); }
+			@Override public void text(String text) { events.add("text:" + text); }
+		};
 	}
 }

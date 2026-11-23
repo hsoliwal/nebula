@@ -8,6 +8,7 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
+import java.text.BreakIterator;
 import java.util.Arrays;
 
 import org.eclipse.swt.SWT;
@@ -56,6 +57,7 @@ public final class HtmlLayout {
 
 	private static final int CACHE = 64;
 
+	private final BreakIterator lineBreaks = BreakIterator.getLineInstance();
 	private final Device device;
 	private final HtmlDocument doc;
 	private final FontData base;
@@ -158,6 +160,10 @@ public final class HtmlLayout {
 		}
 		int b = blockAt(y);
 		if (b < 0 || doc.kind[b] != HtmlDocument.CELL) return b;
+		// a cell of an earlier row whose rowspan reaches y, under x, comes first
+		for (int k = b - 1; k >= 0 && b - k <= SPAN_LOOKBACK && doc.kind[k] == HtmlDocument.CELL && doc.cellTable[k] == doc.cellTable[b]; k--) {
+			if (doc.cellRowSpan[k] > 1 && top[k] + height[k] > y && x >= cellX(k) && x < cellX(k) + cellWidth(k)) return k;
+		}
 		int hit = b;
 		for (int k = b; k < doc.blockCount && doc.sameRow(b, k); k++) if (x >= cellX(k)) hit = k;
 		return hit;
@@ -195,7 +201,7 @@ public final class HtmlLayout {
 			ensurePositioned();
 			return positioned.blockX(b);
 		}
-		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + CELL_PADDING;
+		if (doc.kind[b] == HtmlDocument.CELL) return cellX(b) + (boxedItem(b) ? doc.blockBorder[b] + doc.blockPadLeft[b] : CELL_PADDING);
 		return boxLeft(b) + doc.blockBorder[b] + doc.blockPadLeft[b];
 	}
 
@@ -205,7 +211,8 @@ public final class HtmlLayout {
 			ensurePositioned();
 			return positioned.blockContentTop(b);
 		}
-		return doc.kind[b] == HtmlDocument.CELL ? CELL_PADDING : gapTop(b) + doc.blockBorder[b] + doc.blockPadTop[b];
+		if (doc.kind[b] == HtmlDocument.CELL) return boxedItem(b) ? doc.blockBorder[b] + doc.blockPadTop[b] : CELL_PADDING;
+		return gapTop(b) + doc.blockBorder[b] + doc.blockPadTop[b];
 	}
 
 	/** Whether block {@code b} has a CSS box of its own (a border, padding, or a top, right or bottom margin). */
@@ -277,7 +284,8 @@ public final class HtmlLayout {
 	/**
 	 * How far block {@code b} is drawn below its place in the flow (page coordinates): a relative box by its top
 	 * offset; an absolute box so that its top is at its top offset in the page; a fixed box at its top offset in the
-	 * view, given the scroll position; 0 when the offset is auto.
+	 * view, given the scroll position; a sticky box, once the view has scrolled its top above its top offset from the
+	 * view's top, by as much, but not past the end of its containing element; 0 when the offset is auto.
 	 */
 	public int offsetY(int b, int scrollY) {
 		if (positioned != null) {
@@ -289,8 +297,16 @@ public final class HtmlLayout {
 		return switch (doc.blockPosition[b]) {
 			case HtmlStyles.RELATIVE -> offset;
 			case HtmlStyles.FIXED -> scrollY + offset - top(b);
+			case HtmlStyles.STICKY -> sticky(b, scrollY, offset);
 			default -> offset - top(b);
 		};
+	}
+
+	/* how far a sticky box is carried down to stay {@code inset} px below the view's top, within its containing element */
+	private int sticky(int b, int scrollY, int inset) {
+		int boxTop = doc.kind[b] == HtmlDocument.CELL ? top(b) : boxTop(b), end = doc.blockStickyEnd[b];
+		int limit = end >= b ? top(end) + height(end) : top(b) + height(b);
+		return Math.max(0, Math.min(scrollY + inset - boxTop, limit - top(b) - height(b)));
 	}
 
 	/** The link target in block {@code b} at ({@code x}, {@code y}) in that block's own page coordinates, or null. */
@@ -325,14 +341,34 @@ public final class HtmlLayout {
 		return doc.blockIndent[b] + columns(doc.cellTable[b])[doc.cellColumn[b]];
 	}
 
-	/** The width of cell {@code b}'s box (its column's width). */
+	/** Whether block {@code b} is an item of a flex or grid container (a cell that keeps its CSS box). */
+	public boolean boxedItem(int b) {
+		return doc.kind[b] == HtmlDocument.CELL && doc.tableDisplay[doc.cellTable[b]] != HtmlStyles.DISPLAY_DEFAULT;
+	}
+
+	/* the vertical and horizontal room a cell's text leaves: a flex item's border and padding, a table cell's padding */
+	private int insetV(int b) {
+		return boxedItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadTop[b] + doc.blockPadBottom[b] : 2 * CELL_PADDING;
+	}
+
+	private int insetH(int b) {
+		return boxedItem(b) ? 2 * doc.blockBorder[b] + doc.blockPadLeft[b] + doc.blockPadRight[b] : 2 * CELL_PADDING;
+	}
+
+	/** The width of cell {@code b}'s box (its columns' width). */
 	public int cellWidth(int b) {
 		if (positioned != null) {
 			ensurePositioned();
 			return positioned.boxWidth(doc.blockBox[b]);
 		}
-		int[] x = columns(doc.cellTable[b]);
-		return x[doc.cellColumn[b] + 1] - x[doc.cellColumn[b]];
+		int t = doc.cellTable[b];
+		int[] x = columns(t);
+		if (doc.tableDisplay[t] != HtmlStyles.DISPLAY_DEFAULT) {
+			// x then width per column (flex items, grid tracks): from the first column's x to the last one's end
+			int n = doc.tableColumns[t], last = doc.cellColumn[b] + doc.cellSpan[b] - 1;
+			return x[last] + x[n + last] - x[doc.cellColumn[b]];
+		}
+		return x[doc.cellColumn[b] + doc.cellSpan[b]] - x[doc.cellColumn[b]];
 	}
 
 	/** The block's text layout, made and cached on demand; null for an image block. */
@@ -472,13 +508,14 @@ public final class HtmlLayout {
 				int content;
 				if (doc.kind[b] == HtmlDocument.IMAGE) content = shownHeight(doc.image[b]);
 				else if (doc.kind[b] == HtmlDocument.RULE) content = RULE_HEIGHT;
+				else if (doc.kind[b] == HtmlDocument.CONTROL) content = controlHeight(b);
 				else {
 					TextLayout text = make(b, doc.kind[b] == HtmlDocument.PRE ? -1 : wrapWidth);
 					try { content = text.getBounds().height; }
 					finally { text.dispose(); }
 				}
 				// The scene owns margin/border/padding once per element, even across multiple fragments.
-				return content + 2 * (doc.kind[b] == HtmlDocument.CELL ? CELL_PADDING : BLOCK_GAP);
+				return content + 2 * (doc.kind[b] == HtmlDocument.CELL ? boxedItem(b) ? 0 : CELL_PADDING : BLOCK_GAP);
 			}
 
 			@Override
@@ -486,6 +523,7 @@ public final class HtmlLayout {
 				int min, max;
 				if (doc.kind[b] == HtmlDocument.IMAGE) min = max = shownWidth(doc.image[b]);
 				else if (doc.kind[b] == HtmlDocument.RULE) min = max = 0;
+				else if (doc.kind[b] == HtmlDocument.CONTROL) min = max = controlWidth(b);
 				else {
 					TextLayout text = make(b, -1);
 					try {
@@ -493,7 +531,7 @@ public final class HtmlLayout {
 						min = doc.kind[b] == HtmlDocument.PRE ? max : widestWord(text, doc.blockText(b));
 					} finally { text.dispose(); }
 				}
-				if (doc.kind[b] == HtmlDocument.CELL) { min += 2 * CELL_PADDING; max += 2 * CELL_PADDING; }
+				if (doc.kind[b] == HtmlDocument.CELL && !boxedItem(b)) { min += 2 * CELL_PADDING; max += 2 * CELL_PADDING; }
 				return (long) min << 32 | max & 0xFFFFFFFFL;
 			}
 
@@ -518,6 +556,8 @@ public final class HtmlLayout {
 			h = shownHeight(doc.image[b]);
 		} else if (doc.kind[b] == HtmlDocument.RULE) {
 			h = RULE_HEIGHT;
+		} else if (doc.kind[b] == HtmlDocument.CONTROL) {
+			h = controlHeight(b);
 		} else {
 			h = textHeight(b);
 		}
@@ -528,16 +568,69 @@ public final class HtmlLayout {
 	}
 
 	/* the cells of the row starting at block b share its top; the row is as tall as its tallest cell */
+	/*
+	 * the row starting at block b, and the rows its rowspans reach, measured as one group: a row is as tall as its cells
+	 * of one row; a spanning cell taller than its rows grows the last of them, and is as tall as the rows it spans
+	 */
 	private void measureRow(int b) {
-		int end = b, h = 0;
-		while (end < doc.blockCount && doc.sameRow(b, end)) h = Math.max(h, textHeight(end++));
-		for (int k = b; k < end; k++) {
-			top[k] = top[b];
-			height[k] = h + 2 * CELL_PADDING;
+		int table = doc.cellTable[b], rowGap = doc.tableRowGap[table];
+		int[] rowStart = new int[4], rowHeight = new int[4];
+		int rowsInGroup = 0, reach = 0, k = b;
+		while (k < doc.blockCount && doc.kind[k] == HtmlDocument.CELL && doc.cellTable[k] == doc.cellTable[b]
+				&& (rowsInGroup == 0 || rowsInGroup <= reach)) {
+			if (rowsInGroup == rowStart.length) {
+				rowStart = Arrays.copyOf(rowStart, 2 * rowsInGroup);
+				rowHeight = Arrays.copyOf(rowHeight, 2 * rowsInGroup);
+			}
+			rowStart[rowsInGroup] = k;
+			int h = 0, first = k;
+			for (; k < doc.blockCount && doc.sameRow(first, k); k++) {
+				if (doc.cellRowSpan[k] == 1) h = Math.max(h, textHeight(k) + insetV(k));
+				reach = Math.max(reach, rowsInGroup + doc.cellRowSpan[k] - 1);
+			}
+			rowHeight[rowsInGroup++] = h;
 		}
-		top[end] = top[b] + h + 2 * CELL_PADDING;
-		measured = end;
+		for (int r = 0; r < rowsInGroup; r++) {
+			for (int c = rowStart[r]; c < (r + 1 < rowsInGroup ? rowStart[r + 1] : k); c++) {
+				if (doc.cellRowSpan[c] == 1) continue;
+				int last = Math.min(rowsInGroup, r + doc.cellRowSpan[c]) - 1, have = 0;
+				for (int s = r; s <= last; s++) have += rowHeight[s] + (s < last ? rowGap : 0);
+				int need = textHeight(c) + insetV(c);
+				if (need > have) rowHeight[last] += need - have;
+			}
+		}
+		// a grid's rows are rowGap apart: this group's first row follows an earlier row of the same table
+		int y = top[b] + (b > 0 && doc.kind[b - 1] == HtmlDocument.CELL && doc.cellTable[b - 1] == table ? rowGap : 0);
+		for (int r = 0; r < rowsInGroup; r++) {
+			int end = r + 1 < rowsInGroup ? rowStart[r + 1] : k;
+			for (int c = rowStart[r]; c < end; c++) {
+				top[c] = y;
+				int last = Math.min(rowsInGroup, r + doc.cellRowSpan[c]) - 1, h = 0;
+				for (int s = r; s <= last; s++) h += rowHeight[s] + (s < last ? rowGap : 0);
+				height[c] = h;
+			}
+			y += rowHeight[r] + (r + 1 < rowsInGroup ? rowGap : 0);
+		}
+		top[k] = y;
+		measured = k;
 	}
+
+	/**
+	 * The first block to paint for a band starting at page y {@code y}: {@link #blockAt(int)}, or an earlier cell of the
+	 * same table whose rowspan reaches down to {@code y}.
+	 */
+	public int paintStart(int y) {
+		int b = blockAt(y);
+		if (b < 0 || doc.kind[b] != HtmlDocument.CELL) return b;
+		int start = b;
+		for (int k = b - 1; k >= 0 && b - k <= SPAN_LOOKBACK && doc.kind[k] == HtmlDocument.CELL && doc.cellTable[k] == doc.cellTable[b]; k--) {
+			if (top[k] + height[k] > y) start = k;
+		}
+		return start;
+	}
+
+	/* how many cells before a row the hit test and the painting look back for a rowspan reaching into it */
+	private static final int SPAN_LOOKBACK = 256;
 
 	/* the height of block b's text, from its cached layout or one made and disposed */
 	private int textHeight(int b) {
@@ -563,26 +656,59 @@ public final class HtmlLayout {
 		if (columnX[t] != null && columnAvailableWidth[t] == availableWidth) return columnX[t];
 		int n = doc.tableColumns[t];
 		int[] min = new int[n], max = new int[n];
-		for (int k = 0; k < doc.blockCount; k++) {
-			if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t) continue;
-			TextLayout layout = make(k, -1);
-			int c = doc.cellColumn[k];
-			max[c] = Math.max(max[c], layout.getBounds().width + 2 * CELL_PADDING);
-			min[c] = Math.max(min[c], widestWord(layout, doc.blockText(k)) + 2 * CELL_PADDING);
-			layout.dispose();
+		// cells of one column first; then a spanning cell spreads what its columns lack over them (CSS 2.1 17.5.2.2)
+		for (int pass = 0; pass < 2; pass++) {
+			for (int k = 0; k < doc.blockCount; k++) {
+				if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t || (doc.cellSpan[k] > 1) != (pass == 1)) continue;
+				TextLayout layout = make(k, -1);
+				int c = doc.cellColumn[k], span = doc.cellSpan[k];
+				int cellMax = layout.getBounds().width + insetH(k), cellMin = widestWord(layout, doc.blockText(k)) + insetH(k);
+				layout.dispose();
+				TableColumns.spread(min, c, span, cellMin);
+				TableColumns.spread(max, c, span, cellMax);
+			}
+		}
+		for (int c = 0; c < n; c++) max[c] = Math.max(max[c], min[c]);
+		if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_GRID) {
+			// a grid: x then width per column, by the grid track sizing algorithm (Taffy's steps)
+			int[] tracks = Arrays.copyOfRange(doc.tracks, doc.tableTrackStart[t], doc.tableTrackStart[t] + n);
+			columnAvailableWidth[t] = availableWidth;
+			return columnX[t] = GridTracks.layout(tracks, min, max, availableWidth, doc.tableGap[t], doc.tableJustify[t]);
+		}
+		if (doc.tableDisplay[t] == HtmlStyles.DISPLAY_FLEX) {
+			// A flex row: preserve outer geometry while shrink weights use each original inner content basis.
+			int[] basis = new int[n], grow = new int[n], insets = new int[n];
+			double[] shrink = new double[n];
+			for (int k = 0; k < doc.blockCount; k++) {
+				if (doc.kind[k] != HtmlDocument.CELL || doc.cellTable[k] != t) continue;
+				int c = doc.cellColumn[k];
+				insets[c] = insetH(k);
+				basis[c] = doc.cellBasis[k] >= 0 ? (int) Math.min(Integer.MAX_VALUE, (long) doc.cellBasis[k] + insets[c]) : -1;
+				grow[c] = doc.cellGrow[k];
+				shrink[c] = doc.cellShrink[k];
+			}
+			columnAvailableWidth[t] = availableWidth;
+			return columnX[t] = FlexRow.layout(min, max, basis, grow, shrink, insets, availableWidth, doc.tableGap[t], doc.tableJustify[t]);
 		}
 		columnAvailableWidth[t] = availableWidth;
 		return columnX[t] = TableColumns.edges(min, max, availableWidth);
 	}
 
-	/* the width of the widest run of text between spaces and line ends, laid out unwrapped */
-	private static int widestWord(TextLayout layout, String text) {
+	/*
+	 * Draw2D FlowUtilities uses Unicode line-break opportunities for text flow.
+	 * Table min-content is the widest unbreakable run, not the widest sequence
+	 * between ASCII spaces: CJK can break without a space. Measure glyph bounds
+	 * rather than subtracting caret x positions (which can reverse in bidi runs).
+	 */
+	private int widestWord(TextLayout layout, String text) {
 		int widest = 0;
-		for (int start = 0, n = text.length(); start < n;) {
-			int end = start;
-			while (end < n && text.charAt(end) != ' ' && text.charAt(end) != '\n') end++;
-			if (end > start) widest = Math.max(widest, layout.getLocation(end - 1, true).x - layout.getLocation(start, false).x);
-			start = end + 1;
+		lineBreaks.setText(text);
+		for (int start = lineBreaks.first(), end = lineBreaks.next();
+				end != BreakIterator.DONE; start = end, end = lineBreaks.next()) {
+			int first = start, last = end;
+			while (first < last && Character.isWhitespace(text.charAt(first))) first++;
+			while (last > first && Character.isWhitespace(text.charAt(last - 1))) last--;
+			if (last > first) widest = Math.max(widest, layout.getBounds(first, last - 1).width);
 		}
 		return widest;
 	}
@@ -591,7 +717,7 @@ public final class HtmlLayout {
 	private TextLayout make(int b) {
 		boolean pre = doc.kind[b] == HtmlDocument.PRE, cell = doc.kind[b] == HtmlDocument.CELL;
 		if (positioned != null) return make(b, pre ? -1 : Math.max(1, positioned.blockWidth(b)));
-		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - 2 * CELL_PADDING
+		return make(b, pre ? -1 : Math.max(1, cell ? cellWidth(b) - insetH(b)
 				: width - indent(b) - doc.blockBorder[b] - doc.blockPadRight[b] - doc.blockMarginRight[b]));
 	}
 
@@ -635,7 +761,7 @@ public final class HtmlLayout {
 
 	/** Whether block {@code b} has no text to lay out (an image or a rule). */
 	private boolean textless(int b) {
-		return doc.kind[b] == HtmlDocument.IMAGE || doc.kind[b] == HtmlDocument.RULE;
+		return doc.kind[b] == HtmlDocument.IMAGE || doc.kind[b] == HtmlDocument.RULE || doc.kind[b] == HtmlDocument.CONTROL;
 	}
 
 	/** The colour of an opaque ARGB value (CSS), made on first use and disposed with the layout. */
@@ -647,5 +773,51 @@ public final class HtmlLayout {
 		for (int s = 0; s < cacheSize; s++) cached[s].dispose();
 		Arrays.fill(cached, null);
 		cacheSize = 0;
+	}
+
+	/* the height of a line of body text, px, measured once */
+	private int lineHeight;
+
+	private int lineHeight() {
+		if (lineHeight == 0) {
+			TextLayout probe = new TextLayout(device);
+			probe.setFont(font(0, 0));
+			probe.setText("Mg");
+			lineHeight = Math.max(1, probe.getBounds().height);
+			probe.dispose();
+		}
+		return lineHeight;
+	}
+
+	/**
+	 * The height of control block {@code b}'s widget: a line and a margin for a field, a button or a list; the rows of a
+	 * text area (2 when not given); a line for a check box or a radio.
+	 */
+	public int controlHeight(int b) {
+		int c = doc.blockControl[b], line = lineHeight();
+		return switch (doc.controlType[c]) {
+			case HtmlDocument.TEXTAREA -> (doc.controlRows[c] > 0 ? doc.controlRows[c] : 2) * line + 8;
+			case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> line + 2;
+			default -> line + 10;
+		};
+	}
+
+	/**
+	 * The width of control block {@code b}'s widget: a field or a text area by its columns (20 when not given), a list
+	 * by its longest option, a button by its label, a check box or a radio by a line.
+	 */
+	public int controlWidth(int b) {
+		int c = doc.blockControl[b], line = lineHeight(), character = Math.max(1, line / 2);
+		return switch (doc.controlType[c]) {
+			case HtmlDocument.TEXT, HtmlDocument.PASSWORD, HtmlDocument.TEXTAREA ->
+				(doc.controlCols[c] > 0 ? doc.controlCols[c] : 20) * character + 8;
+			case HtmlDocument.SELECT -> {
+				int longest = 4;
+				for (String option : doc.controlOptions[c]) longest = Math.max(longest, option.length());
+				yield longest * character + 32;
+			}
+			case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> line + 4;
+			default -> Math.max(60, doc.controlLabel[c].length() * character + 24);
+		};
 	}
 }

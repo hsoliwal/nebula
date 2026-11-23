@@ -24,6 +24,7 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -38,6 +39,173 @@ public class DrawnBrowserPositionedTest {
 	private Display display;
 	private Shell shell;
 	private DrawnBrowser browser;
+
+	@Test
+	public void currentBorderSchemesPaintOnEmptyNestedPositionedBoxes() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		RGB dark = new RGB(64, 64, 64), light = new RGB(191, 191, 191);
+		RGB base = new RGB(128, 128, 128), white = new RGB(255, 255, 255);
+		for (String kind : new String[] {"solid", "inset", "outset", "groove", "ridge", "double"}) {
+			show("<div style='position:relative;left:17px;top:11px;width:200px;height:150px'>"
+					+ "<div style='position:absolute;left:13px;top:19px;width:80px;height:60px;"
+					+ "border:6px " + kind + " #808080;background:white'></div></div>");
+			ImageData image = capture();
+			RGB outer = kind.equals("solid") || kind.equals("double") ? base
+					: kind.equals("inset") || kind.equals("groove") ? dark : light;
+			RGB opposite = kind.equals("solid") || kind.equals("double") ? base
+					: kind.equals("inset") || kind.equals("groove") ? light : dark;
+			assertEquals(kind + " outer left", outer, image.palette.getRGB(image.getPixel(31, 50)));
+			assertEquals(kind + " outer right", opposite, image.palette.getRGB(image.getPixel(120, 50)));
+			if (kind.equals("groove") || kind.equals("ridge")) {
+				assertEquals(kind + " inner left", opposite, image.palette.getRGB(image.getPixel(34, 50)));
+			} else if (kind.equals("double")) {
+				assertEquals("double gap", white, image.palette.getRGB(image.getPixel(33, 50)));
+				assertEquals("double inner", base, image.palette.getRGB(image.getPixel(35, 50)));
+			}
+			assertEquals(kind + " exterior", white, image.palette.getRGB(image.getPixel(29, 50)));
+			assertEquals(kind + " interior", white, image.palette.getRGB(image.getPixel(40, 50)));
+		}
+	}
+
+	@Test
+	public void positionedInputKeepsItsNativeIdentityAndContainingBlockBounds() {
+		show("<div style='position:relative;left:40px;top:20px;width:240px;height:100px'><input name=field value=hello></div>");
+		org.eclipse.swt.widgets.Control[] children = browser.getChildren();
+		assertEquals(1, children.length);
+		assertTrue(children[0] instanceof org.eclipse.swt.widgets.Text);
+		assertEquals("hello", ((org.eclipse.swt.widgets.Text) children[0]).getText());
+		assertEquals(40, children[0].getBounds().x);
+		assertEquals(28, children[0].getBounds().y);
+		assertTrue(children[0].getVisible());
+		browser.redraw();
+		settle();
+		assertTrue(children[0] == browser.getChildren()[0]);
+		browser.setText("<p>replacement</p>");
+		assertTrue(children[0].isDisposed());
+	}
+
+	@Test
+	public void nestedPanelClipsAbsoluteChildPixelsButKeepsItsOwnBorder() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		show("<div style='position:relative;left:20px;top:10px;width:80px;height:50px;"
+				+ "border:4px solid blue;overflow:hidden;background:lime'>"
+				+ "<div style='position:absolute;left:60px;top:10px;width:100px;height:30px;background:red'></div></div>");
+		assertEquals(new RGB(0, 255, 0), pixel(40, 35));
+		assertEquals(new RGB(255, 0, 0), pixel(95, 35));
+		assertEquals("parent border cannot be overpainted by clipped child", new RGB(0, 0, 255), pixel(106, 35));
+		assertEquals("child must not leak beyond parent", new RGB(255, 255, 255), pixel(120, 35));
+	}
+
+	@Test
+	public void responsivePanelHidesPartiallyClippedNativeControlWithoutDisposingIt() {
+		show("<div style='overflow:hidden;height:55px;border:2px solid red'>"
+				+ "<input name=field size=18 value=kept></div>");
+		org.eclipse.swt.widgets.Control[] controls = browser.getChildren();
+		assertEquals(1, controls.length);
+		assertTrue(controls[0].getVisible());
+		shell.setSize(120, 240);
+		settle();
+		assertTrue("a partially cut native Text cannot leak beyond its panel", !controls[0].getVisible());
+		assertTrue(!controls[0].isDisposed());
+		shell.setSize(320, 240);
+		settle();
+		assertTrue("the same native Text returns when its panel fits", controls[0].getVisible());
+		assertTrue(controls[0] == browser.getChildren()[0]);
+	}
+
+	@Test
+	public void semanticPanelsPaintTheirOwnDecorationAndKeepFollowingContentInFlow() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		show("<main style='padding:10px;border:3px solid blue;background:lime'>"
+				+ "<section style='height:30px;background:red'></section></main>"
+				+ "<footer style='height:20px;background:yellow'></footer>");
+		assertEquals(new RGB(0, 0, 255), pixel(1, 20));
+		assertEquals(new RGB(0, 255, 0), pixel(7, 20));
+		assertEquals(new RGB(255, 0, 0), pixel(20, 20));
+		assertEquals(new RGB(255, 255, 0), pixel(20, 60));
+		assertEquals(new RGB(255, 255, 255), pixel(20, 80));
+	}
+
+	@Test
+	public void fixedSemanticPanelEscapesAncestorClipOnScreen() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		show("<main style='position:relative;width:40px;height:40px;overflow:hidden;background:lime'>"
+				+ "<aside style='position:fixed;left:120px;top:15px;width:50px;height:25px;background:red'></aside></main>");
+		assertEquals(new RGB(0, 255, 0), pixel(10, 20));
+		assertEquals("viewport-fixed content escapes the ancestor's 40px clip", new RGB(255, 0, 0), pixel(130, 25));
+		assertEquals(new RGB(255, 255, 255), pixel(180, 25));
+	}
+
+	@Test
+	public void panelPaintingPreservesDisjointCallerRegionsAndTheirHoles() {
+		show("<section style='height:80px;overflow:hidden;background:red'>"
+				+ "<article style='height:80px;background:blue'></article></section>");
+		Image image = new Image(display, 200, 80);
+		GC gc = new GC(image);
+		Region caller = new Region(display), restored = new Region(display);
+		try {
+			gc.setBackground(display.getSystemColor(SWT.COLOR_GREEN));
+			gc.fillRectangle(0, 0, 200, 80);
+			caller.add(0, 0, 20, 80);
+			caller.add(180, 0, 20, 80);
+			caller.subtract(5, 10, 5, 10);
+			gc.setClipping(caller);
+			paintWithCallerGC(gc, 200, 80);
+			assertTrue(gc.isClipped());
+			gc.getClipping(restored);
+			assertTrue(restored.contains(2, 20));
+			assertTrue(restored.contains(190, 20));
+			assertTrue("the disjoint gap must remain", !restored.contains(100, 20));
+			assertTrue("the hole inside one island must remain", !restored.contains(7, 15));
+			ImageData data = image.getImageData();
+			assertEquals(new RGB(0, 255, 0), data.palette.getRGB(data.getPixel(100, 20)));
+			assertEquals(new RGB(0, 255, 0), data.palette.getRGB(data.getPixel(7, 15)));
+			assertEquals(new RGB(0, 0, 255), data.palette.getRGB(data.getPixel(2, 20)));
+		} finally {
+			restored.dispose();
+			caller.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+	@Test
+	public void panelPaintingRestoresTheInitialCallerClipArea() {
+		show("<section style='height:40px;overflow:clip'><article style='height:80px;background:blue'></article></section>");
+		Image image = new Image(display, 200, 80);
+		GC gc = new GC(image);
+		Region initial = new Region(display), restored = new Region(display);
+		try {
+			assertTrue(!gc.isClipped());
+			gc.getClipping(initial);
+			paintWithCallerGC(gc, 200, 80);
+			gc.getClipping(restored);
+			assertEquals(initial.getBounds(), restored.getBounds());
+			restored.subtract(initial);
+			assertTrue("restored clip cannot add any pixels", restored.isEmpty());
+			gc.getClipping(restored);
+			initial.subtract(restored);
+			assertTrue("restored clip cannot remove any pixels", initial.isEmpty());
+			// GTK's null reset restores the original area but may report isClipped()==true afterward.
+			gc.setBackground(display.getSystemColor(SWT.COLOR_GREEN));
+			gc.fillRectangle(120, 60, 10, 10);
+			ImageData data = image.getImageData();
+			assertEquals("caller can draw beyond the previous panel clip", new RGB(0, 255, 0), data.palette.getRGB(data.getPixel(125, 65)));
+		} finally {
+			restored.dispose();
+			initial.dispose();
+			gc.dispose();
+			image.dispose();
+		}
+	}
+
+	private void paintWithCallerGC(GC gc, int width, int height) {
+		Event event = new Event();
+		event.gc = gc;
+		event.width = width;
+		event.height = height;
+		browser.notifyListeners(SWT.Paint, event);
+	}
 
 	@Before
 	public void setUp() {

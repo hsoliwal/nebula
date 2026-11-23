@@ -14,6 +14,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
@@ -57,18 +59,53 @@ public class DrawnBrowserTest {
 	}
 
 	private void settle() {
-		for (int i = 0; i < 50; i++) {
-			while (display.readAndDispatch()) {
-				// drain
-			}
+		long end = System.nanoTime() + 150_000_000L;
+		do {
+			while (display.readAndDispatch()) { }
 			browser.update();
-		}
+			try { Thread.sleep(2); } catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new AssertionError(e);
+			}
+		} while (System.nanoTime() < end);
 	}
 
 	private static String paragraphs(int n) {
 		StringBuilder html = new StringBuilder();
 		for (int i = 0; i < n; i++) html.append("<p>Paragraph ").append(i).append(" of the drawn browser.</p>");
 		return html.toString();
+	}
+
+	@Test
+	public void aNonShrinkingSidebarKeepsItsPaintedEdgeWhenTheWindowNarrows() {
+		open("<div style='display:flex;gap:10px'><div style='flex:0 0 240px;background:#ff0000'>i</div>"
+				+ "<div style='flex:0 1 200px;background:#0000ff'>j</div></div>");
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0);
+		org.eclipse.swt.graphics.RGB blue = new org.eclipse.swt.graphics.RGB(0, 0, 255);
+		for (int width : new int[] { 320, 280, 360 }) {
+			shell.setSize(width, 240);
+			shell.layout();
+			settle();
+			ImageData shown = visibleShot();
+			assertEquals("the sidebar ends at its authored 240px", red, rgbAt(shown, 239, 6));
+			assertEquals("the following panel starts after the 10px gap", blue, rgbAt(shown, 260, 6));
+			assertTrue("the gap remains clear", !red.equals(rgbAt(shown, 245, 6)) && !blue.equals(rgbAt(shown, 245, 6)));
+		}
+	}
+
+	/* Capture the actual visible Display pixels, independently of the widget's offscreen/print path. */
+	private ImageData visibleShot() {
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		org.eclipse.swt.graphics.Point origin = browser.toDisplay(area.x, area.y);
+		Image image = new Image(display, area.width, area.height);
+		GC gc = new GC(display);
+		try {
+			gc.copyArea(image, origin.x, origin.y);
+			return image.getImageData();
+		} finally {
+			gc.dispose();
+			image.dispose();
+		}
 	}
 
 	@Test
@@ -79,6 +116,7 @@ public class DrawnBrowserTest {
 		browser.addListener(SWT.Paint, e -> clips.add(new int[] { e.y, e.height }));
 		browser.setScrollY(24);
 		browser.update();
+		settle();
 		assertEquals(24, browser.getScrollY());
 		assertTrue("paints", !clips.isEmpty());
 		int painted = clips.stream().mapToInt(c -> c[1]).sum();
@@ -89,6 +127,7 @@ public class DrawnBrowserTest {
 		clips.clear();
 		browser.setScrollY(10);
 		browser.update();
+		settle();
 		assertTrue("paints", !clips.isEmpty());
 		for (int[] clip : clips) {
 			assertTrue("scrolling up exposes the top band, painted y " + clip[0] + " h " + clip[1], clip[0] == 0 && clip[1] <= 14 + 1);
@@ -414,6 +453,38 @@ public class DrawnBrowserTest {
 
 
 	@Test
+	public void schemeInsetAndOutsetBordersInvertHighlightAndShadowEdges() {
+		org.eclipse.swt.graphics.RGB dark = new org.eclipse.swt.graphics.RGB(64, 64, 64);
+		org.eclipse.swt.graphics.RGB light = new org.eclipse.swt.graphics.RGB(191, 191, 191);
+		for (String kind : new String[] {"inset", "outset"}) {
+			open("<p style='margin:12px; padding:12px; border:4px " + kind + " #808080; background-color:white'>box</p>");
+			ImageData shown = shot();
+			int right = browser.getClientArea().width - 14;
+			assertEquals(kind + " left", kind.equals("inset") ? dark : light, rgbAt(shown, 13, 32));
+			assertEquals(kind + " right", kind.equals("inset") ? light : dark, rgbAt(shown, right, 32));
+		}
+	}
+
+	@Test
+	public void schemeGrooveRidgeAndDoubleHaveInsetBands() {
+		org.eclipse.swt.graphics.RGB dark = new org.eclipse.swt.graphics.RGB(64, 64, 64);
+		org.eclipse.swt.graphics.RGB light = new org.eclipse.swt.graphics.RGB(191, 191, 191);
+		for (String kind : new String[] {"groove", "ridge"}) {
+			open("<p style='margin:12px; padding:12px; border:4px " + kind + " #808080; background-color:white'>box</p>");
+			ImageData shown = shot();
+			assertEquals(kind + " outer", kind.equals("groove") ? dark : light, rgbAt(shown, 28, 20));
+			assertEquals(kind + " inner", kind.equals("groove") ? light : dark, rgbAt(shown, 28, 22));
+		}
+		open("<p style='margin:12px; padding:12px; border:6px double #808080; background-color:white'>box</p>");
+		ImageData shown = shot();
+		org.eclipse.swt.graphics.RGB border = new org.eclipse.swt.graphics.RGB(128, 128, 128);
+		org.eclipse.swt.graphics.RGB white = new org.eclipse.swt.graphics.RGB(255, 255, 255);
+		assertEquals("double outer", border, rgbAt(shown, 28, 20));
+		assertEquals("double gap", white, rgbAt(shown, 28, 22));
+		assertEquals("double inner", border, rgbAt(shown, 28, 24));
+	}
+
+	@Test
 	public void aBoxPaintsItsBorderAndItsBackgroundInsideItsMargins() {
 		open("<p style='margin:10px 30px 10px 30px; padding:10px; border:4px solid #0000ff; background-color:#ff0000'>boxed</p>");
 		int[] blue = pixels(new org.eclipse.swt.graphics.RGB(0, 0, 255), 80);
@@ -497,6 +568,193 @@ public class DrawnBrowserTest {
 			for (int x = 0; x < data.width; x++) if (rgbAt(data, x, y).equals(rgb)) return y;
 		}
 		return -1;
+	}
+
+	/* the n-th child button (in the order they were made) with the style bit, or null */
+	private org.eclipse.swt.widgets.Button button(int style, int n) {
+		List<org.eclipse.swt.widgets.Button> buttons = new ArrayList<>();
+		for (org.eclipse.swt.widgets.Button b : children(org.eclipse.swt.widgets.Button.class)) if ((b.getStyle() & style) != 0) buttons.add(b);
+		buttons.sort(java.util.Comparator.comparingInt(b -> b.getBounds().y));
+		return n < buttons.size() ? buttons.get(n) : null;
+	}
+
+	/* the browser's child widgets of a type */
+	private <T> List<T> children(Class<T> type) {
+		List<T> out = new ArrayList<>();
+		for (org.eclipse.swt.widgets.Control child : browser.getChildren()) if (type.isInstance(child)) out.add(type.cast(child));
+		return out;
+	}
+
+	@Test
+	public void formControlsAreNativeWidgetsAndSubmitTheirForm() {
+		List<String> changing = new ArrayList<>();
+		browser.addLocationListener(new LocationListener() {
+			@Override
+			public void changing(LocationEvent event) {
+				changing.add(event.location);
+				event.doit = false;
+			}
+
+			@Override
+			public void changed(LocationEvent event) {
+			}
+		});
+		open("<form action='http://example.test/search'><input name=q value=hi><input type=password name=pw><input type=checkbox name=agree checked><input type=radio name=c value=a><input type=radio name=c value=b checked><input type=hidden name=h value=x><select name=s><option>one<option selected>two</select><textarea name=t rows=3 cols=10>\nline1\nline2</textarea><button name=go value=1>Go now</button></form><p>after <input name=outside></p>");
+		// Size this fixture from the platform font: show the text area but keep the submit below the view.
+		HtmlDocument document = HtmlDocument.parse(browser.getText());
+		HtmlLayout formLayout = new HtmlLayout(display, document, browser.getFont(),
+				display.getSystemColor(SWT.COLOR_LINK_FOREGROUND));
+		int submitTop = -1;
+		try {
+			formLayout.setWidth(browser.getClientArea().width);
+			formLayout.ensure(Integer.MAX_VALUE);
+			for (int b = 0; b < document.blockCount; b++) {
+				int control = document.blockControl[b];
+				if (control >= 0 && document.controlType[control] == HtmlDocument.SUBMIT) {
+					submitTop = formLayout.top(b);
+					break;
+				}
+			}
+		} finally {
+			formLayout.dispose();
+		}
+		assertTrue("the form has a submit block below its text area", submitTop > 0);
+		shell.setSize(shell.getSize().x, shell.getSize().y + submitTop - browser.getClientArea().height);
+		shell.layout();
+		settle();
+		List<org.eclipse.swt.widgets.Text> texts = children(org.eclipse.swt.widgets.Text.class);
+		assertTrue("fields and the text area in view are native: " + texts.size(), texts.size() >= 3);
+		org.eclipse.swt.widgets.Text q = texts.get(0);
+		assertEquals("hi", q.getText());
+		assertTrue(q.getVisible());
+		assertEquals("the field sits in its block", org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout.BLOCK_GAP, q.getBounds().y);
+		q.setText("typed words");
+		org.eclipse.swt.widgets.Button agree = button(SWT.CHECK, 0), radioA = button(SWT.RADIO, 0), radioB = button(SWT.RADIO, 1);
+		assertTrue(agree.getSelection());
+		assertTrue(radioB.getSelection());
+		radioA.setSelection(true);
+		radioA.notifyListeners(SWT.Selection, new Event());
+		assertTrue("radios of one name exclude each other", !radioB.getSelection());
+		assertEquals("the submit button is below the view: not made yet", null, button(SWT.PUSH, 0));
+		browser.setScrollY(100000);
+		settle();
+		org.eclipse.swt.widgets.Button go = button(SWT.PUSH, 0);
+		assertEquals("Go now", go.getText());
+		go.notifyListeners(SWT.Selection, new Event());
+		assertEquals("[http://example.test/search?q=typed+words&pw=&agree=on&c=a&h=x&s=two&t=line1%0Aline2&go=1]", changing.toString());
+		open("<p>another page</p>");
+		assertEquals("a new page disposes the old widgets", 0, browser.getChildren().length);
+	}
+
+	@Test
+	public void aControlBelowTheViewIsMadeWhenScrolledTo() {
+		StringBuilder html = new StringBuilder();
+		for (int i = 0; i < 60; i++) html.append("<p>line ").append(i).append("</p>");
+		html.append("<input name=far value=deep>");
+		open(html.toString());
+		assertEquals("not made before it is in view", 0, browser.getChildren().length);
+		browser.setScrollY(100000);
+		settle();
+		List<org.eclipse.swt.widgets.Text> texts = children(org.eclipse.swt.widgets.Text.class);
+		assertEquals(1, texts.size());
+		assertEquals("deep", texts.get(0).getText());
+		assertTrue(texts.get(0).getVisible());
+		int y = texts.get(0).getBounds().y;
+		assertTrue("inside the view: " + y, y >= 0 && y < browser.getClientArea().height);
+		browser.setScrollY(0);
+		settle();
+		assertTrue("hidden when out of view", !texts.get(0).getVisible());
+	}
+
+	@Test
+	public void aBandBelowASpanningCellsFirstRowRepaintsIt() {
+		open("<table><tr><td rowspan=2 style='background-color:#ff0000'>tall cell</td><td>first row</td></tr>"
+				+ "<tr><td>second row</td></tr></table>");
+		ImageData full = shot();
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0);
+		int bottom = -1;
+		for (int y = 0; y < full.height; y++) if (rgbAt(full, 4, y).equals(red)) bottom = y;
+		assertTrue("the spanning cell is painted", bottom > 0);
+		int band = bottom - 4; // in the second row
+		GC gc = new GC(browser);
+		gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.fillRectangle(0, band, browser.getClientArea().width, 3);
+		gc.dispose();
+		browser.redraw(0, band, browser.getClientArea().width, 3, false);
+		settle();
+		assertEquals("only the band was damaged, and the spanning cell is painted in it", red, rgbAt(shot(), 4, band + 1));
+	}
+
+	@Test
+	public void flexItemsPaintSideBySideWithTheirBoxes() {
+		open("<div style='display:flex; gap:20px'><div style='flex-grow:1; background-color:#ff0000'>left</div>"
+				+ "<div style='flex-grow:1; background-color:#0000ff'>right</div></div><p style='display:none'>hidden text</p>");
+		ImageData shown = shot();
+		int width = browser.getClientArea().width, y = 6;
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0), blue = new org.eclipse.swt.graphics.RGB(0, 0, 255);
+		assertEquals("the first half is red", red, rgbAt(shown, width / 4, y));
+		assertEquals("the second half blue", blue, rgbAt(shown, 3 * width / 4, y));
+		assertTrue("the gap between them is neither", !rgbAt(shown, width / 2, y).equals(red) && !rgbAt(shown, width / 2, y).equals(blue));
+	}
+
+	@Test
+	public void gridItemsPaintInTheirTracks() {
+		open("<div style='display:grid; grid-template-columns: 1fr 1fr; gap: 0 20px'>"
+				+ "<div style='background-color:#ff0000'>a</div><div style='background-color:#0000ff'>b</div>"
+				+ "<div style='grid-column: span 2; background-color:#00ff00'>wide</div></div>");
+		ImageData shown = shot();
+		int width = browser.getClientArea().width;
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0), blue = new org.eclipse.swt.graphics.RGB(0, 0, 255),
+				green = new org.eclipse.swt.graphics.RGB(0, 255, 0);
+		assertEquals("the first track is red", red, rgbAt(shown, width / 4, 6));
+		assertEquals("the second blue", blue, rgbAt(shown, 3 * width / 4, 6));
+		assertTrue("the column gap is neither", !rgbAt(shown, width / 2, 6).equals(red) && !rgbAt(shown, width / 2, 6).equals(blue));
+		int y = 6;
+		while (y < 200 && rgbAt(shown, width / 4, y).equals(red)) y++;
+		assertEquals("the spanning item fills the second row", green, rgbAt(shown, width / 4, y + 2));
+		assertEquals("across the gap", green, rgbAt(shown, width / 2, y + 2));
+		assertEquals(green, rgbAt(shown, 3 * width / 4, y + 2));
+	}
+
+	@Test
+	public void aStickyHeaderStaysOnTopWhileItsSectionScrollsUnderIt() {
+		StringBuilder html = new StringBuilder("<div><h2 style='position:sticky; top:0px; background-color:#ff0000'>Section</h2>");
+		for (int i = 0; i < 20; i++) html.append("<p>line ").append(i).append("</p>");
+		html.append("</div>").append(paragraphs(60));
+		open(html.toString());
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0);
+		assertTrue("the header is drawn", findRow(shot(), red) >= 0);
+		for (int y : new int[] { 30, 75, 160, 140, 400, 395 }) {
+			browser.setScrollY(y);
+			settle();
+			int[] shown = capture();
+			assertEquals("the header is at the top at " + y, red, rgbAt(shot(), 3, 3));
+			browser.redraw();
+			settle();
+			assertEquals("the scrolled pixels equal a full repaint at " + y, -1, firstDifferentRow(shown, capture()));
+		}
+		browser.setScrollY(1000);
+		settle();
+		assertTrue("scrolled past its section, it is gone", findRow(shot(), red) < 0);
+	}
+
+	@Test
+	public void aStickyTableHeaderRowStaysWhileTheTableScrolls() {
+		StringBuilder html = new StringBuilder("<table border=1><tr><th style='position:sticky; top:0; background-color:#0000ff'>Name</th>"
+				+ "<th style='position:sticky; top:0; background-color:#0000ff'>Value</th></tr>");
+		for (int i = 0; i < 40; i++) html.append("<tr><td>row ").append(i).append("</td><td>").append(i * 7).append("</td></tr>");
+		html.append("</table>").append(paragraphs(40));
+		open(html.toString());
+		org.eclipse.swt.graphics.RGB blue = new org.eclipse.swt.graphics.RGB(0, 0, 255);
+		for (int y : new int[] { 50, 120, 90 }) {
+			browser.setScrollY(y);
+			settle();
+			int[] pixels = capture();
+			assertEquals("the header row at the top at " + y, blue, rgbAt(shot(), 5, 3));
+			browser.redraw();
+			settle();
+			assertEquals("the scrolled pixels equal a full repaint at " + y, -1, firstDifferentRow(pixels, capture()));
+		}
 	}
 	@Test
 	public void aRuleIsPaintedAcrossTheView() {

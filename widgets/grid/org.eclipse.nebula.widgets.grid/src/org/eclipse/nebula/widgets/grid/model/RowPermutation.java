@@ -15,6 +15,9 @@
 package org.eclipse.nebula.widgets.grid.model;
 
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.concurrent.CancellationException;
+import java.util.function.BooleanSupplier;
 
 /**
  * Packed sort and filter index over {@code modelCount} model rows.
@@ -161,7 +164,7 @@ public final class RowPermutation implements RowView {
 	 * @param target   destination
 	 * @param offset   first destination slot
 	 * @param length   maximum number of rows to copy
-	 * @return the number of rows copied
+	 * @return the number of rows copied, or zero when the nonnegative start is beyond the view
 	 */
 	public int copyModelRows(final int fromView, final int[] target, final int offset, final int length) {
 		final int count = getViewCount();
@@ -169,6 +172,8 @@ public final class RowPermutation implements RowView {
 			throw new IndexOutOfBoundsException("fromView=" + fromView + ", offset=" + offset + ", length=" + length);
 		}
 		final int n = Math.max(0, Math.min(length, Math.min(count - fromView, target.length - offset)));
+		// A zero copy may begin past the backing array; arraycopy still validates its source offset.
+		if (n == 0) return 0;
 		if ((flags & COMPACT) != 0) {
 			System.arraycopy(visible, fromView, target, offset, n);
 		} else if ((flags & SORTED) != 0) {
@@ -338,8 +343,28 @@ public final class RowPermutation implements RowView {
 		}
 		final int[] a = new int[modelCount];
 		final int[] b = new int[modelCount];
-		final int[] sorted = radix(keys, modelCount, descending, a, b, new int[RADIX + 1]);
-		return sorted;
+		return radix(keys, modelCount, descending, a, b, new int[RADIX + 1]);
+	}
+
+	/**
+	 * CPU-only stable radix sort with cooperative cancellation for stale viewport
+	 * requests. The key lane must be a detached immutable snapshot; neither the
+	 * installed RowPermutation nor any SWT widget is read or mutated.
+	 *
+	 * @param cancelled a non-blocking cancellation signal checked at bounded intervals
+	 * @throws CancellationException if the request is obsolete
+	 * @since 1.2
+	 */
+	public static int[] sortedOrder(final int[] keys, final int modelCount,
+			final boolean descending, final BooleanSupplier cancelled) {
+		Objects.requireNonNull(cancelled, "cancelled");
+		if (modelCount < 0 || keys.length < modelCount) {
+			throw new IllegalArgumentException("keys.length=" + keys.length + ", modelCount=" + modelCount);
+		}
+		if (cancelled.getAsBoolean()) throw new CancellationException("obsolete sort");
+		final int[] a = new int[modelCount];
+		final int[] b = new int[modelCount];
+		return radix(keys, modelCount, descending, a, b, new int[RADIX + 1], cancelled);
 	}
 
 	/**
@@ -349,14 +374,20 @@ public final class RowPermutation implements RowView {
 	 */
 	private static int[] radix(final int[] keys, final int n, final boolean descending, final int[] a, final int[] b,
 			final int[] count) {
+		return radix(keys, n, descending, a, b, count, null);
+	}
+
+	private static int[] radix(final int[] keys, final int n, final boolean descending, final int[] a, final int[] b,
+			final int[] count, final BooleanSupplier cancelled) {
 		int[] src = a;
 		int[] dst = b;
 		for (int i = 0; i < n; i++) {
+			checkCancelled(cancelled, i);
 			src[i] = i;
 		}
 		final int flip = descending ? -1 : 0;
 		for (int shift = 0; shift < 32; shift += 11) {
-			if (radixPass(keys, n, src, dst, shift, flip, count)) {
+			if (radixPass(keys, n, src, dst, shift, flip, count, cancelled)) {
 				final int[] t = src;
 				src = dst;
 				dst = t;
@@ -365,12 +396,19 @@ public final class RowPermutation implements RowView {
 		return src;
 	}
 
+	private static void checkCancelled(final BooleanSupplier cancelled, final int index) {
+		if (cancelled != null && (index & 4095) == 0 && cancelled.getAsBoolean()) {
+			throw new CancellationException("obsolete sort");
+		}
+	}
+
 	/** One stable counting pass; returns false (no scatter) when every row has the same digit. */
 	private static boolean radixPass(final int[] keys, final int n, final int[] src, final int[] dst, final int shift,
-			final int flip, final int[] count) {
+			final int flip, final int[] count, final BooleanSupplier cancelled) {
 		final int mask = shift == 22 ? 0x3ff : 0x7ff;
 		Arrays.fill(count, 0);
 		for (int i = 0; i < n; i++) {
+			checkCancelled(cancelled, i);
 			count[((((keys[src[i]] ^ Integer.MIN_VALUE) ^ flip) >>> shift) & mask) + 1]++;
 		}
 		for (int d = 1; d <= RADIX; d++) {
@@ -382,6 +420,7 @@ public final class RowPermutation implements RowView {
 			count[d] += count[d - 1];
 		}
 		for (int i = 0; i < n; i++) {
+			checkCancelled(cancelled, i);
 			final int m = src[i];
 			dst[count[(((keys[m] ^ Integer.MIN_VALUE) ^ flip) >>> shift) & mask]++] = m;
 		}

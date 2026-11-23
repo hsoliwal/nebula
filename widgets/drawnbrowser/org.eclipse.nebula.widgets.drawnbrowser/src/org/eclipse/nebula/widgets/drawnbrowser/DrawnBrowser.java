@@ -12,21 +12,29 @@ import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlPaintOrder;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlPositionedLayout;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.ImageStore;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageFind;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageHistory;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageSelection;
 import org.eclipse.nebula.widgets.drawnbrowser.internal.PageViewport;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.RemoteFrameWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.TextLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -35,17 +43,29 @@ import org.eclipse.swt.widgets.ScrollBar;
 /**
  * A browser that SWT draws itself: HTML becomes one drawn, scrolled view instead of a control per element. Only
  * the blocks of the damaged area are painted. Scrolling moves the window's own pixels ({@link #scroll}) and repaints
- * only the band that comes into view; the page is laid out lazily, as far down as it is shown.
+ * only the band that comes into view. Ordinary block documents are laid out lazily, as far down as they are shown;
+ * styled containers and positioned boxes resolve their geometry together while retaining a bounded text-layout cache.
  * <p>
  * The API keeps the names of {@link org.eclipse.swt.browser.Browser}: {@link #setText(String)}, {@link #setUrl(String)},
  * {@link #getText()}, {@link #getUrl()}, {@link #back()}, {@link #forward()}, {@link #stop()},
  * {@link #addLocationListener(LocationListener)}. A click on a link navigates to it, resolved against the page's
  * location: {@link LocationListener#changing} (a listener may veto it with {@code doit = false}), then, once the page
- * has loaded and is shown, {@link LocationListener#changed}. Supported HTML: p, div, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
+ * has loaded and is shown, {@link LocationListener#changed}. Supported HTML: p, div, main, section, article, nav,
+ * aside, header, footer, h1-h6, br, b/strong, i/em, u, s/strike/del, a, ul, ol, li,
  * pre (white space kept, no wrap, monospace), code/tt/kbd/samp (monospace), blockquote (indented), hr,
- * table/caption/tr/td/th (automatic column widths, the border attribute; text only in cells, no spans), img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown); script is ignored;
- * style elements and style attributes give the CSS subset of colour, background, weight, style, decoration, alignment
- * and left margin.
+ * table/caption/tr/td/th (automatic column widths, column and row spans, the border attribute; text only in cells),
+ * img (data:, file:, http: and https: sources, loaded off the UI thread when their block is shown), and native form
+ * controls. Script content is ignored; this widget does not provide a local JavaScript engine.
+ * Style elements and style attributes provide the CSS subset described by {@link HtmlStyles}, including colour,
+ * text formatting, box spacing and borders, positioning, single-line flex rows and grid column tracks. Semantic
+ * containers own their backgrounds, spacing and borders around their children. Table cells and flex/grid items
+ * still flatten inner blocks to text; nested flex/grid formatting is not supported.
+ * </p>
+ * <p>
+ * The overflow subset supports visible content and padding-edge clipping for hidden/clip. Hidden establishes an
+ * unscrolled local reference for sticky descendants; clip retains the enclosing scroll reference. Nested scrolling,
+ * per-axis overflow and rounded clips are not supported. Partly clipped native form controls remain hidden until
+ * fully inside their panel; their existing widget identity is retained.
  * </p>
  * <p>
  * Pattern: prasser/swtbrowser (Apache-2.0, 92120bef61) builds a StyledText per block; this widget draws the same
@@ -60,6 +80,11 @@ public class DrawnBrowser extends Canvas {
 	private HtmlDocument document = HtmlDocument.parse("");
 	/* The existing flat positioned-block order; box scenes use their context-aware fragment plan. */
 	private int[] positionedOrder;
+	/* the page's form controls: their widgets (made when first in view), the values and checked states they show */
+	private Control[] widgets = new Control[0];
+	private String[] formValues = new String[0];
+	private int[] formChecked = new int[0], placed = new int[0];
+	private int placeStamp;
 	private HtmlLayout layout;
 	/* images of every page shown, loaded when their block is painted */
 	private final ImageStore images;
@@ -73,6 +98,126 @@ public class DrawnBrowser extends Canvas {
 	private static final int AUTO_SCROLL_MS = 40;
 	private final java.util.List<LocationListener> locationListeners = new java.util.ArrayList<>();
 	private java.util.concurrent.ExecutorService pageLoader;
+	/* UI-owned handle; workers only read the captured, detached cancellation flag. */
+	private java.util.concurrent.atomic.AtomicBoolean pageCancelled;
+
+	/* Optional remote-image mode; native SWT Image stays owned by this Canvas. */
+	private final RemoteFrameWindow remoteFrames = new RemoteFrameWindow();
+	private Image remoteFrameImage;
+	private boolean previousVerticalBarVisible;
+	private RemoteFramePaintListener remoteFramePaintListener;
+
+	/** A frame's exact epoch/revision completed an SWT GC paint callback (not OS scan-out). */
+	@FunctionalInterface
+	public interface RemoteFramePaintListener {
+		void painted(long epoch, long revision);
+	}
+
+	/** UI-thread callback, fired only after the matching entire image content was drawn. */
+	public void setRemoteFramePaintListener(RemoteFramePaintListener listener) {
+		checkWidget();
+		remoteFramePaintListener = listener;
+	}
+
+	/**
+	 * Accept one already-decoded full remote browser image on the SWT UI thread.
+	 * The embedding host owns an authenticated CDP/other transport, compression
+	 * limits and decoding on its worker; this widget does not connect to a host.
+	 * Stale epochs/revisions fail closed. The image data are copied by SWT Image.
+	 */
+	public boolean presentRemoteFrame(long epoch, long revision, int cssWidth, int cssHeight, ImageData pixels) {
+		checkWidget();
+		if (pixels == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
+		if (!remoteFrames.canReceive(epoch, revision, pixels.width, pixels.height, cssWidth, cssHeight)) {
+			return false;
+		}
+		// Allocate the next image before publishing the revision or disposing the old one.
+		Image next = new Image(getDisplay(), pixels);
+		boolean first = remoteFrameImage == null;
+		if (first) previousVerticalBarVisible = getVerticalBar().getVisible();
+		remoteFrames.receive(epoch, revision, pixels.width, pixels.height, cssWidth, cssHeight);
+		Image previous = remoteFrameImage;
+		remoteFrameImage = next;
+		if (first) {
+			pages.stop(); // Cancel an older HTML navigation before it can replace the remote surface.
+			cancelPage();
+			getDisplay().timerExec(-1, autoScroll);
+			selection.clear();
+			for (Control widget : widgets) if (widget != null && !widget.isDisposed()) widget.setVisible(false);
+			getVerticalBar().setVisible(false);
+			setCursor(null);
+		}
+		if (previous != null) previous.dispose();
+		redraw();
+		return true;
+	}
+
+	/**
+	 * Pure coordinate lookup for the painted image, not remote input authorization.
+	 * The host must separately authorize user input and guard session ownership.
+	 */
+	public Point remoteCssPoint(long epoch, long revision, int x, int y) {
+		checkWidget();
+		int[] point = remoteFrames.cssPoint(epoch, revision, x, y);
+		return point == null ? null : new Point(point[0], point[1]);
+	}
+
+	/** Return from remote image mode to the existing local HTML document. */
+	public void clearRemoteFrame() {
+		checkWidget();
+		boolean active = remoteFrameImage != null;
+		clearRemoteFrameInternal(true);
+		if (active) relayout();
+	}
+
+	private void clearRemoteFrameInternal(boolean restoreBar) {
+		remoteFrames.retire();
+		Image image = remoteFrameImage;
+		remoteFrameImage = null;
+		if (image != null) {
+			image.dispose();
+			if (restoreBar) getVerticalBar().setVisible(previousVerticalBarVisible);
+		}
+	}
+
+
+	/** A completed, exclusively owned backend result; publication transfers its document to the UI thread. */
+	static final class PreparedPage {
+		final String text;
+		private final HtmlDocument document;
+		private final Throwable failure;
+
+		private PreparedPage(String text, HtmlDocument document, Throwable failure) {
+			this.text = text;
+			this.document = document;
+			this.failure = failure;
+		}
+
+		static PreparedPage prepare(String text) {
+			try {
+				return new PreparedPage(text, HtmlDocument.parse(text), null);
+			} catch (RuntimeException | Error failure) {
+				// Preserve the original UI-dispatch failure policy after stale-arrival admission.
+				return new PreparedPage(text, null, failure);
+			}
+		}
+
+		/* A cancelled preparation never publishes a partial document or a synthetic parser failure. */
+		static PreparedPage prepare(String text, java.util.function.BooleanSupplier cancelled) {
+			try {
+				HtmlDocument document = HtmlDocument.parse(text, cancelled);
+				return document == null ? null : new PreparedPage(text, document, null);
+			} catch (RuntimeException | Error failure) {
+				return new PreparedPage(text, null, failure);
+			}
+		}
+
+		HtmlDocument document() {
+			if (failure instanceof RuntimeException exception) throw exception;
+			if (failure instanceof Error error) throw error;
+			return document;
+		}
+	}
 
 	/**
 	 * @param parent a composite
@@ -80,7 +225,8 @@ public class DrawnBrowser extends Canvas {
 	 */
 	@SuppressWarnings("this-escape") // an SWT widget registers its listeners while it is constructed
 	public DrawnBrowser(Composite parent, int style) {
-		super(parent, style | SWT.V_SCROLL | SWT.NO_BACKGROUND);
+		// radios of a page group by their name and form, not by their parent: SWT's automatic group is off
+		super(parent, style | SWT.V_SCROLL | SWT.NO_BACKGROUND | SWT.NO_RADIO_GROUP);
 		layout = newLayout();
 		images = new ImageStore(getDisplay(), 64, this::imageLoaded);
 		Listener listener = this::handle;
@@ -100,12 +246,13 @@ public class DrawnBrowser extends Canvas {
 		checkWidget();
 		if (text == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
 		pages.setText();
+		cancelPage();
 		show(text);
 		return true;
 	}
 
 	/**
-	 * Loads the page at {@code url} off the UI thread: {@link LocationListener#changing} first (a listener may veto
+	 * Loads and parses the page at {@code url} off the UI thread: {@link LocationListener#changing} first (a listener may veto
 	 * it), then, once the page is shown, {@link LocationListener#changed}. A page that cannot be loaded leaves the
 	 * current one; a newer navigation replaces an older one still loading. URLs are those {@link java.net.URLConnection}
 	 * opens (file:, http:, https:).
@@ -150,12 +297,33 @@ public class DrawnBrowser extends Canvas {
 	public void stop() {
 		checkWidget();
 		pages.stop();
+		cancelPage();
+	}
+
+	private void cancelPage() {
+		if (pageCancelled != null) {
+			pageCancelled.set(true);
+			pageCancelled = null;
+		}
 	}
 
 	private void show(String text) {
-		html = text;
-		document = HtmlDocument.parse(text);
+		show(PreparedPage.prepare(text));
+	}
+
+	/* UI-thread installation only: parsing has finished, and the published document has no remaining writer. */
+	private void show(PreparedPage page) {
+		HtmlDocument incoming = page.document();
+		clearRemoteFrameInternal(true);
+		html = page.text;
+		document = incoming;
 		positionedOrder = null;
+		// the page's form state, apart from the widgets that show it; the old page's widgets go
+		for (Control widget : widgets) if (widget != null) widget.dispose();
+		widgets = new Control[document.controlCount];
+		placed = new int[document.controlCount];
+		formValues = java.util.Arrays.copyOf(document.controlValue, document.controlCount);
+		formChecked = java.util.Arrays.copyOf(document.controlChecked, document.controlCount);
 		layout.dispose();
 		layout = newLayout();
 		viewport.reset();
@@ -304,9 +472,19 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	private void handle(Event e) {
+		// Remote mode has no implicit keyboard, pointer or DOM-event forwarding.
+		if (remoteFrameImage != null && e.type != SWT.Paint && e.type != SWT.Resize && e.type != SWT.Dispose) {
+			if (e.type == SWT.MouseDown) setFocus();
+			return;
+		}
 		switch (e.type) {
 			case SWT.Paint -> paint(e.gc, e.x, e.y, e.width, e.height);
-			case SWT.Resize -> relayout();
+			case SWT.Resize -> {
+				if (remoteFrameImage != null) {
+					remoteFrames.invalidatePaint();
+					redraw();
+				} else relayout();
+			}
 			case SWT.MouseDown -> {
 				if (e.button == 1) {
 					redrawRange(selection.start(), selection.end());
@@ -337,8 +515,10 @@ public class DrawnBrowser extends Canvas {
 			}
 			case SWT.KeyDown -> key(e);
 			case SWT.Dispose -> {
+				clearRemoteFrameInternal(false);
 				getDisplay().timerExec(-1, autoScroll);
 				pages.stop();
+				cancelPage();
 				layout.dispose();
 				images.dispose();
 				if (pageLoader != null) pageLoader.shutdownNow();
@@ -356,6 +536,7 @@ public class DrawnBrowser extends Canvas {
 		sync();
 		updateBar();
 		redraw();
+		placeWidgets();
 	}
 
 	/* the viewport learns the view height and how far the page is laid out; the scroll position is clamped */
@@ -376,13 +557,14 @@ public class DrawnBrowser extends Canvas {
 	 * the view that leaves rows between them stale, so the exposed band is damaged explicitly (as StyledText does).
 	 */
 	private void scrollTo(int y) {
+		if (remoteFrameImage != null) return;
 		layout.ensure(Math.max(0, y) + getClientArea().height);
 		sync();
 		int delta = viewport.scrollTo(y);
 		layout.setViewport(getClientArea().height, viewport.y());
 		if (delta != 0) {
 			HtmlPositionedLayout scene = layout.positioned();
-			if (viewport.isFullRepaint(delta) || scene != null && scene.hasFixed()) {
+			if (viewport.isFullRepaint(delta) || scene != null && (scene.hasFixed() || scene.hasSticky())) {
 				redraw();
 			} else {
 				int width = getClientArea().width;
@@ -392,9 +574,27 @@ public class DrawnBrowser extends Canvas {
 			}
 		}
 		updateBar();
+		placeWidgets();
 	}
 
 	private void paint(GC gc, int x, int y, int width, int height) {
+		if (remoteFrameImage != null) {
+			gc.setBackground(getBackground());
+			gc.fillRectangle(x, y, width, height);
+			Rectangle area = getClientArea();
+			RemoteFrameWindow.Rect box = remoteFrames.content(area.width, area.height);
+			if (box != null) {
+				Rectangle image = remoteFrameImage.getBounds();
+				long epoch = remoteFrames.epoch(), revision = remoteFrames.revision();
+				gc.drawImage(remoteFrameImage, 0, 0, image.width, image.height,
+						area.x + box.x(), area.y + box.y(), box.width(), box.height());
+				if (remoteFrames.markPainted(epoch, revision, area.width, area.height,
+						x - area.x, y - area.y, width, height) && remoteFramePaintListener != null) {
+					remoteFramePaintListener.painted(epoch, revision);
+				}
+			}
+			return;
+		}
 		gc.setBackground(getBackground());
 		gc.fillRectangle(x, y, width, height);
 		gc.setForeground(getForeground());
@@ -407,7 +607,7 @@ public class DrawnBrowser extends Canvas {
 		int scrollY = viewport.y();
 		int pageTop = y + scrollY, pageBottom = pageTop + height;
 		paintPositioned(gc, scrollY, pageTop, pageBottom, true);
-		for (int b = layout.blockAt(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
+		for (int b = layout.paintStart(pageTop); b >= 0 && b < document.blockCount && layout.top(b) < pageBottom; b++) {
 			if (!layout.positioned(b)) paintLegacyBlock(gc, b, 0, -scrollY);
 		}
 		paintPositioned(gc, scrollY, pageTop, pageBottom, false);
@@ -418,21 +618,64 @@ public class DrawnBrowser extends Canvas {
 		HtmlPaintOrder order = scene.order();
 		int scroll = viewport.y();
 		int count = scene.collectVisible(damageY + scroll, damageHeight, scroll);
-		for (int v = 0; v < count; v++) {
-			int s = scene.visibleStep(v);
-			int i = order.index(s);
-			if (order.isBackground(s)) {
-				int color = document.boxBackground[i];
-				int border = document.boxBorder[i];
-				if (color == 0 && border == 0) continue;
-				int x = scene.boxX(i), y = scene.boxY(i, scroll) - scroll, w = scene.boxWidth(i), h = scene.boxHeight(i);
-				if (!intersects(x, y, w, h, damageX, damageY, damageWidth, damageHeight)) continue;
-				paintBox(gc, x, y, w, h, color, border, document.boxBorderColor[i]);
-			} else {
-				int y = scene.blockY(i, scroll) - scroll, box = document.blockBox[i];
-				// PRE, list markers and images may overflow their box; let the widget's damage clip bound drawing.
-				if ((long) y + scene.blockHeight(i) <= damageY || y >= (long) damageY + damageHeight) continue;
-				paintBlock(gc, i, y + layout.contentTop(i), scene.blockX(i), scene.boxX(box), scene.boxWidth(box));
+		Region originalClip = null, paintClip = null;
+		Rectangle originalBounds = null;
+		boolean hadClip = gc.isClipped();
+		int[] clip = new int[4];
+		try {
+			for (int v = 0; v < count; v++) {
+				int s = scene.visibleStep(v);
+				int i = order.index(s);
+				boolean background = order.isBackground(s);
+				int owner = background ? i : document.blockBox[i];
+				if (background) {
+					int color = document.boxBackground[i];
+					int border = document.boxBorder[i];
+					if (color == 0 && border == 0) continue;
+					int x = scene.boxX(i), y = scene.boxY(i, scroll) - scroll, w = scene.boxWidth(i), h = scene.boxHeight(i);
+					if (!intersects(x, y, w, h, damageX, damageY, damageWidth, damageHeight)) continue;
+				} else {
+					int y = scene.blockY(i, scroll) - scroll;
+					// PRE, list markers and images may overflow their box; let the widget's damage clip bound drawing.
+					if ((long) y + scene.blockHeight(i) <= damageY || y >= (long) damageY + damageHeight) continue;
+				}
+				boolean clipped = scene.hasClip(owner, !background);
+				if (clipped) {
+					if (originalClip == null) {
+						originalClip = new Region(gc.getDevice());
+						gc.getClipping(originalClip);
+						originalBounds = originalClip.getBounds();
+						paintClip = new Region(gc.getDevice());
+					}
+					clip[0] = originalBounds.x; clip[1] = originalBounds.y;
+					clip[2] = originalBounds.x + originalBounds.width;
+					clip[3] = originalBounds.y + originalBounds.height;
+					if (!scene.clipBounds(owner, !background, scroll, clip)) continue;
+					// Keep disjoint damage and holes: a bounding rectangle is not the caller's clipping region.
+					paintClip.subtract(originalBounds);
+					paintClip.add(originalClip);
+					paintClip.intersect(clip[0], clip[1], clip[2] - clip[0], clip[3] - clip[1]);
+					if (paintClip.isEmpty()) continue;
+					gc.setClipping(paintClip);
+				}
+				try {
+					if (background) {
+						paintBox(gc, scene.boxX(i), scene.boxY(i, scroll) - scroll, scene.boxWidth(i), scene.boxHeight(i),
+								document.boxBackground[i], document.boxBorder[i], document.boxBorderColor[i], document.boxBorderStyle[i]);
+					} else {
+						int y = scene.blockY(i, scroll) - scroll;
+						paintBlock(gc, i, y + layout.contentTop(i), scene.blockX(i), scene.boxX(owner), scene.boxWidth(owner));
+					}
+				} finally {
+					if (clipped) gc.setClipping(hadClip ? originalClip : null);
+				}
+			}
+		} finally {
+			try {
+				if (originalClip != null) gc.setClipping(hadClip ? originalClip : null);
+			} finally {
+				if (paintClip != null) paintClip.dispose();
+				if (originalClip != null) originalClip.dispose();
 			}
 		}
 	}
@@ -443,20 +686,13 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	/* A box's background and border paint together, before its negative-z descendants and content. */
-	private void paintBox(GC gc, int x, int y, int width, int height, int background, int border, int borderColor) {
+	private void paintBox(GC gc, int x, int y, int width, int height, int background, int border, int borderColor, int borderStyle) {
 		if (width <= 0 || height <= 0) return;
 		if (background != 0) {
 			gc.setBackground(layout.color(background));
 			gc.fillRectangle(x, y, width, height);
 		}
-		if (border > 0) {
-			gc.setBackground(borderColor == 0 ? getForeground() : layout.color(borderColor));
-			int horizontal = Math.min(border, height), vertical = Math.min(border, width);
-			gc.fillRectangle(x, y, width, horizontal);
-			gc.fillRectangle(x, y + height - horizontal, width, horizontal);
-			gc.fillRectangle(x, y, vertical, height);
-			gc.fillRectangle(x + width - vertical, y, vertical, height);
-		}
+		if (border > 0) paintBorder(gc, x, y, width, height, border, borderColor, borderStyle);
 		gc.setBackground(getBackground());
 	}
 
@@ -469,7 +705,8 @@ public class DrawnBrowser extends Canvas {
 		int boxY = (box ? layout.boxTop(b) : layout.top(b)) + dy;
 		int boxHeight = box ? layout.boxHeight(b) : layout.height(b);
 		paintBox(gc, boxX, boxY, boxWidth, boxHeight, document.blockBackground[b],
-				cell ? 0 : document.blockBorder[b], document.blockBorderColor[b]);
+				cell && !layout.boxedItem(b) ? 0 : document.blockBorder[b], document.blockBorderColor[b],
+				document.blockBorderStyle[b]);
 		paintBlock(gc, b, top, left, boxX, boxWidth);
 	}
 
@@ -500,6 +737,7 @@ public class DrawnBrowser extends Canvas {
 			}
 			return;
 		}
+		if (document.kind[b] == HtmlDocument.CONTROL) return; // the original native widget owns its pixels
 		TextLayout text = layout.textLayout(b);
 		if (document.kind[b] == HtmlDocument.LIST_ITEM) {
 			String marker = document.marker[b] == HtmlDocument.BULLET ? "\u2022" : document.marker[b] + ".";
@@ -532,7 +770,7 @@ public class DrawnBrowser extends Canvas {
 		if (target != null) navigate(pages.resolve(target), PageHistory.PUSH);
 	}
 
-	/* changing (vetoable), then the page loads off the UI thread, then it is shown and changed is sent */
+	/* changing (vetoable), then loading and parsing off the UI thread, then UI installation and changed */
 	private boolean navigate(String url, int mode) {
 		LocationEvent changing = new LocationEvent(this);
 		changing.location = url;
@@ -541,6 +779,9 @@ public class DrawnBrowser extends Canvas {
 		for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) listener.changing(changing);
 		if (!changing.doit) return false;
 		int expected = pages.begin();
+		cancelPage();
+		java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+		pageCancelled = cancelled;
 		if (pageLoader == null) {
 			pageLoader = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
 				Thread thread = new Thread(r, "DrawnBrowser pages");
@@ -550,13 +791,22 @@ public class DrawnBrowser extends Canvas {
 		}
 		org.eclipse.swt.widgets.Display display = getDisplay();
 		pageLoader.execute(() -> {
+			if (cancelled.get()) return;
 			String page = fetch(url);
-			if (page != null && !display.isDisposed()) display.asyncExec(() -> arrived(url, mode, expected, page));
+			if (page == null || cancelled.get() || display.isDisposed()) return;
+			PreparedPage prepared = PreparedPage.prepare(page, cancelled::get);
+			if (prepared == null || cancelled.get() || display.isDisposed()) return;
+			try {
+				display.asyncExec(() -> arrived(url, mode, expected, prepared));
+			} catch (org.eclipse.swt.SWTException failure) {
+				// The Display may close between the check above and queue admission.
+				if (failure.code != SWT.ERROR_DEVICE_DISPOSED) throw failure;
+			}
 		});
 		return true;
 	}
 
-	private void arrived(String url, int mode, int expected, String page) {
+	private void arrived(String url, int mode, int expected, PreparedPage page) {
 		if (isDisposed() || !pages.arrive(url, mode, expected)) return;
 		show(page);
 		LocationEvent changed = new LocationEvent(this);
@@ -612,6 +862,66 @@ public class DrawnBrowser extends Canvas {
 			}
 		}
 	}
+
+	/** One CSS border scheme in the original SWT GC; no Figure or Control per box. */
+	private void paintBorder(GC gc, int x, int y, int width, int height, int thickness, int argb, int style) {
+		Color base = argb != 0 ? layout.color(argb) : getForeground();
+		if (style == HtmlStyles.BORDER_SOLID || (style == HtmlStyles.BORDER_DOUBLE && thickness < 3)) {
+			// Exact original solid-border pixels.
+			gc.setBackground(base);
+			int horizontal = Math.min(thickness, height), vertical = Math.min(thickness, width);
+			gc.fillRectangle(x, y, width, horizontal);
+			gc.fillRectangle(x, y + height - horizontal, width, horizontal);
+			gc.fillRectangle(x, y, vertical, height);
+			gc.fillRectangle(x + width - vertical, y, vertical, height);
+		} else if (style == HtmlStyles.BORDER_DOUBLE) {
+			int stripe = Math.max(1, thickness / 3);
+			borderBand(gc, x, y, width, height, 0, stripe, base, base);
+			borderBand(gc, x, y, width, height, thickness - stripe, stripe, base, base);
+		} else {
+			// Draw2D SchemeBorder: light/dark top-left vs bottom-right side colours.
+			int color = argb;
+			if (color == 0) {
+				org.eclipse.swt.graphics.RGB rgb = getForeground().getRGB();
+				color = 0xFF000000 | rgb.red << 16 | rgb.green << 8 | rgb.blue;
+			}
+			Color light = layout.color(shadeBorder(color, true));
+			Color dark = layout.color(shadeBorder(color, false));
+			boolean lower = style == HtmlStyles.BORDER_INSET || style == HtmlStyles.BORDER_GROOVE;
+			Color tl = lower ? dark : light, br = lower ? light : dark;
+			if (style == HtmlStyles.BORDER_GROOVE || style == HtmlStyles.BORDER_RIDGE) {
+				int outer = (thickness + 1) / 2;
+				borderBand(gc, x, y, width, height, 0, outer, tl, br);
+				borderBand(gc, x, y, width, height, outer, thickness - outer, br, tl);
+			} else {
+				borderBand(gc, x, y, width, height, 0, thickness, tl, br);
+			}
+		}
+		gc.setBackground(getBackground());
+	}
+
+	private static int shadeBorder(int color, boolean lighter) {
+		int red = color >>> 16 & 255, green = color >>> 8 & 255, blue = color & 255;
+		red = lighter ? red + (255 - red) / 2 : red / 2;
+		green = lighter ? green + (255 - green) / 2 : green / 2;
+		blue = lighter ? blue + (255 - blue) / 2 : blue / 2;
+		return 0xFF000000 | red << 16 | green << 8 | blue;
+	}
+
+	private static void borderBand(GC gc, int x, int y, int width, int height,
+			int inset, int thickness, Color topLeft, Color bottomRight) {
+		int w = width - 2 * inset, h = height - 2 * inset;
+		if (w <= 0 || h <= 0 || thickness <= 0) return;
+		int t = Math.min(thickness, Math.min(w, h));
+		int xx = x + inset, yy = y + inset;
+		gc.setBackground(topLeft);
+		gc.fillRectangle(xx, yy, w, t);
+		gc.fillRectangle(xx, yy, t, h);
+		gc.setBackground(bottomRight);
+		gc.fillRectangle(xx, yy + h - t, w, t);
+		gc.fillRectangle(xx + w - t, yy, t, h);
+	}
+
 	/*
 	 * the positioned boxes in z-index order (document order among equals): those with a negative z-index when below,
 	 * the others otherwise; only boxes that reach the damaged page band are painted
@@ -660,15 +970,137 @@ public class DrawnBrowser extends Canvas {
 	}
 
 	/*
-	 * a fixed box stays where it is in the view, but the scroll moved its pixels with the page: its place and the place
-	 * its pixels were moved to are damaged
+	 * a fixed box stays where it is in the view, and a stuck sticky box moves less than the page, but the scroll moved
+	 * their pixels with the page: where such a box is now and where its pixels were moved to are damaged
 	 */
 	private void redrawFixed(int delta, int width) {
+		int scrollY = viewport.y(), before = scrollY - delta;
 		for (int b : positionedOrder()) {
-			if (document.blockPosition[b] != org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.FIXED) continue;
-			int top = layout.top(b) + layout.offsetY(b, viewport.y()) - viewport.y(), height = layout.height(b);
+			int position = document.blockPosition[b];
+			if (position != org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.FIXED
+					&& position != org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlStyles.STICKY) continue;
+			int height = layout.height(b), top = layout.top(b) + layout.offsetY(b, scrollY) - scrollY;
+			int moved = layout.top(b) + layout.offsetY(b, before) - before - delta;
+			if (moved == top) continue; // it moved with the page
 			redraw(0, top, width, height, false);
-			redraw(0, top - delta, width, height, false);
+			redraw(0, moved, width, height, false);
 		}
+	}
+
+	/* the form controls of the blocks in view, made on first sight; those out of view are hidden */
+	private void placeWidgets() {
+		if (remoteFrameImage != null || widgets.length == 0) return;
+		int stamp = ++placeStamp, scrollY = viewport.y(), viewBottom = scrollY + getClientArea().height;
+		HtmlPositionedLayout scene = layout.positioned();
+		int[] clip = new int[4];
+		int visible = scene == null ? 0 : scene.collectVisible(scrollY, getClientArea().height, scrollY);
+		for (int step = scene == null ? layout.blockAt(scrollY) : 0;
+				step >= 0 && (scene == null ? step < document.blockCount && layout.top(step) < viewBottom : step < visible); step++) {
+			int b;
+			if (scene == null) b = step;
+			else {
+				int paint = scene.visibleStep(step);
+				if (scene.order().isBackground(paint)) continue;
+				b = scene.order().index(paint);
+			}
+			int c = document.blockControl[b];
+			if (c < 0 || document.kind[b] != HtmlDocument.CONTROL) continue;
+			int x = scene == null ? layout.indent(b) : scene.blockX(b);
+			int y = (scene == null ? layout.top(b) : scene.blockY(b, scrollY)) + layout.contentTop(b) - scrollY;
+			int width = layout.controlWidth(b), height = layout.controlHeight(b);
+			if (scene != null && scene.hasClip(document.blockBox[b], true)) {
+				clip[0] = x; clip[1] = y; clip[2] = x + width; clip[3] = y + height;
+				// SWT owns native Control painting: an intersecting but partially clipped control stays hidden.
+				if (!scene.clipBounds(document.blockBox[b], true, scrollY, clip)
+						|| clip[0] != x || clip[1] != y || clip[2] != x + width || clip[3] != y + height) continue;
+			}
+			Control widget = widget(c);
+			widget.setBounds(x, y, width, height);
+			widget.setVisible(true);
+			placed[c] = stamp;
+		}
+		for (int c = 0; c < widgets.length; c++) {
+			if (widgets[c] != null && placed[c] != stamp && widgets[c].getVisible()) widgets[c].setVisible(false);
+		}
+	}
+
+	/* the native widget of form control c, made once */
+	private Control widget(int c) {
+		if (widgets[c] != null) return widgets[c];
+		int type = document.controlType[c];
+		Control made;
+		switch (type) {
+			case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> {
+				Button box = new Button(this, type == HtmlDocument.CHECKBOX ? SWT.CHECK : SWT.RADIO);
+				box.setSelection(formChecked[c] == 1);
+				box.addListener(SWT.Selection, e -> checked(c, box.getSelection()));
+				made = box;
+			}
+			case HtmlDocument.SUBMIT, HtmlDocument.BUTTON -> {
+				Button button = new Button(this, SWT.PUSH);
+				button.setText(document.controlLabel[c]);
+				if (type == HtmlDocument.SUBMIT) button.addListener(SWT.Selection, e -> submit(c));
+				made = button;
+			}
+			case HtmlDocument.SELECT -> {
+				Combo combo = new Combo(this, SWT.READ_ONLY | SWT.DROP_DOWN);
+				combo.setItems(document.controlOptions[c]);
+				if (document.controlOptions[c].length > 0) combo.select(formChecked[c]);
+				combo.addListener(SWT.Selection, e -> formChecked[c] = combo.getSelectionIndex());
+				made = combo;
+			}
+			default -> {
+				int style = SWT.BORDER | (type == HtmlDocument.TEXTAREA ? SWT.MULTI | SWT.WRAP | SWT.V_SCROLL : SWT.SINGLE)
+						| (type == HtmlDocument.PASSWORD ? SWT.PASSWORD : 0);
+				Text text = new Text(this, style);
+				text.setText(formValues[c]);
+				text.addListener(SWT.Modify, e -> formValues[c] = text.getText());
+				made = text;
+			}
+		}
+		return widgets[c] = made;
+	}
+
+	/* a check box or a radio changes; a radio clears the other radios of its name in its form */
+	private void checked(int c, boolean on) {
+		formChecked[c] = on ? 1 : 0;
+		if (!on || document.controlType[c] != HtmlDocument.RADIO) return;
+		for (int o = 0; o < document.controlCount; o++) {
+			if (o == c || document.controlType[o] != HtmlDocument.RADIO || document.controlForm[o] != document.controlForm[c]
+					|| !java.util.Objects.equals(document.controlName[o], document.controlName[c])) continue;
+			formChecked[o] = 0;
+			if (widgets[o] != null) ((Button) widgets[o]).setSelection(false);
+		}
+	}
+
+	/*
+	 * a submit button sends its form: the named values of the form's controls (checked boxes and radios, the selected
+	 * option, the clicked button), URL encoded, as the query of the form's action (GET)
+	 */
+	private void submit(int button) {
+		int form = document.controlForm[button];
+		StringBuilder query = new StringBuilder();
+		for (int c = 0; c < document.controlCount; c++) {
+			String name = document.controlName[c];
+			if (document.controlForm[c] != form || name == null) continue;
+			String value = switch (document.controlType[c]) {
+				case HtmlDocument.CHECKBOX, HtmlDocument.RADIO -> formChecked[c] == 1 ? document.controlValue[c] : null;
+				case HtmlDocument.SELECT -> document.controlOptions[c].length == 0 ? null : document.controlOptions[c][formChecked[c]];
+				case HtmlDocument.SUBMIT -> c == button ? document.controlValue[c] : null;
+				case HtmlDocument.BUTTON -> null;
+				default -> formValues[c];
+			};
+			if (value == null) continue;
+			if (query.length() > 0) query.append('&');
+			query.append(java.net.URLEncoder.encode(name, java.nio.charset.StandardCharsets.UTF_8)).append('=')
+					.append(java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8));
+		}
+		String action = form >= 0 ? document.formAction[form] : null;
+		String target = pages.resolve(action != null ? action : pages.location());
+		int cut = target.indexOf('#');
+		if (cut >= 0) target = target.substring(0, cut);
+		cut = target.indexOf('?');
+		if (cut >= 0) target = target.substring(0, cut);
+		navigate(target + "?" + query, PageHistory.PUSH);
 	}
 }

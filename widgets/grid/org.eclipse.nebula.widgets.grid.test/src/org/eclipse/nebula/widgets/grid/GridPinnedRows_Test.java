@@ -15,6 +15,7 @@
 package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -127,6 +128,324 @@ public class GridPinnedRows_Test {
 		assertSame(grid.getItem(ROWS - 1), grid.getItem(new Point(30, bottom.y + 2)));
 		final GridItem below = grid.getItem(new Point(30, top.y + top.height + 2));
 		assertEquals("first scrolled row under the plane", 200 + 2, grid.indexOf(below));
+	}
+
+
+	@Test
+	public void treeAncestorsStayAboveScrolledChildrenAndBelowTheColumnHeader() throws Exception {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 470, 400);
+		grid.setHeaderVisible(true);
+		final GridColumn treeColumn = new GridColumn(grid, SWT.NONE);
+		treeColumn.setTree(true);
+		treeColumn.setFixed(true);
+		treeColumn.setWidth(190);
+		new GridColumn(grid, SWT.NONE).setWidth(300);
+		final GridItem first = new GridItem(grid, SWT.NONE);
+		first.setText(0, "Project A");
+		final GridItem branch = new GridItem(first, SWT.NONE);
+		branch.setText(0, "Package A");
+		final GridItem[] leaves = new GridItem[65];
+		for (int i = 0; i < leaves.length; i++) {
+			leaves[i] = new GridItem(branch, SWT.NONE);
+			leaves[i].setText(0, "Source " + i);
+		}
+		first.setExpanded(true);
+		branch.setExpanded(true);
+		final GridItem second = new GridItem(grid, SWT.NONE);
+		second.setText(0, "Project B");
+		final GridItem branchB = new GridItem(second, SWT.NONE);
+		branchB.setText(0, "Package B");
+		final GridItem[] other = new GridItem[65];
+		for (int i = 0; i < other.length; i++) {
+			other[i] = new GridItem(branchB, SWT.NONE);
+			other[i].setText(0, "Other " + i);
+		}
+		second.setExpanded(true);
+		branchB.setExpanded(true);
+		assertFalse(grid.getStickyAncestorRows());
+		grid.setStickyAncestorRows(true);
+		assertTrue(grid.getStickyAncestorRows());
+		grid.setTopIndex(leaves[12].getRowIndex());
+		flush();
+		final int top = grid.getHeaderHeight(), row = first.getHeight() + 1;
+		assertSame(first, grid.getItem(new Point(25, top + 2)));
+		assertSame(branch, grid.getItem(new Point(25, top + row + 2)));
+		assertEquals(top, grid.getOrigin(treeColumn, first).y);
+		assertEquals(top + row, grid.getOrigin(treeColumn, branch).y);
+		final Rectangle pinned = new Rectangle(0, top, grid.getClientArea().width, 2 * row);
+		final GridSwtScreenshotCapture.GridClientFrame before = snapshot(grid);
+		grid.setTopIndex(leaves[39].getRowIndex());
+		flush();
+		final GridSwtScreenshotCapture.GridClientFrame after = snapshot(grid);
+		final String[] hashes = GridSwtScreenshotCapture.comparableGridClientHashes(
+				grid, before, after, pinned);
+		assertEquals("ancestor headers remain unchanged over scrolling descendants", hashes[0], hashes[1]);
+		assertSame(first, grid.getItem(new Point(25, top + 2)));
+		assertSame(branch, grid.getItem(new Point(25, top + row + 2)));
+		grid.setTopIndex(other[15].getRowIndex());
+		flush();
+		assertSame(second, grid.getItem(new Point(25, top + 2)));
+		assertSame(branchB, grid.getItem(new Point(25, top + row + 2)));
+		grid.setStickyAncestorRows(false);
+		flush();
+		assertSame(other[15], grid.getItem(new Point(25, top + 2)));
+	}
+
+	@Test
+	public void stickyAncestorsDoNotChangeFlatGridPinningOrTreeRowSelection() {
+		final Grid flat = grid(0);
+		assertFalse(flat.getStickyAncestorRows());
+		flat.setStickyAncestorRows(true);
+		flat.setPinnedRowCount(2, 1);
+		assertEquals(2, flat.getPinnedTopRowCount());
+		assertSame(flat.getItem(0), flat.getItem(new Point(25, flat.getHeaderHeight() + 2)));
+		final Grid tree = new Grid(shell, SWT.V_SCROLL);
+		tree.setBounds(470, 30, 460, 390);
+		new GridColumn(tree, SWT.NONE).setTree(true);
+		final GridItem root = new GridItem(tree, SWT.NONE);
+		final GridItem child = new GridItem(root, SWT.NONE);
+		root.setExpanded(true);
+		tree.setStickyAncestorRows(true);
+		try {
+			tree.setPinnedRowCount(1, 0);
+			fail("flat pinned-row API still refuses a hierarchical Grid");
+		} catch (IllegalArgumentException expected) {
+			// the original flat-grid pin API is forbidden for tree rows
+		}
+		assertSame(root, child.getParentItem());
+		assertTrue(tree.getStickyAncestorRows());
+	}
+
+
+	@Test
+	public void stickyAncestorsAreShownForCorrectedBoundsAndNativeCellEditors() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 470, 400);
+		grid.setHeaderVisible(true);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setTree(true);
+		column.setFixed(true);
+		column.setWidth(220);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		root.setText(0, "Root folder");
+		final GridItem folder = new GridItem(root, SWT.NONE);
+		folder.setText(0, "Package folder");
+		final GridItem[] sources = new GridItem[70];
+		for (int i = 0; i < sources.length; i++) {
+			sources[i] = new GridItem(folder, SWT.NONE);
+			sources[i].setText(0, "Source " + i);
+		}
+		root.setExpanded(true);
+		folder.setExpanded(true);
+		grid.setStickyAncestorRows(true);
+		grid.setTopIndex(sources[35].getRowIndex());
+		final int y = grid.getHeaderHeight();
+		assertTrue("root is visible in the fixed ancestor plane", grid.isShown(root));
+		assertTrue("folder is visible in the fixed ancestor plane", grid.isShown(folder));
+		assertEquals(y, root.getBoundsCorrected(0).y);
+		assertEquals(y + root.getHeight() + 1, folder.getBoundsCorrected(0).y);
+		assertSame(root, grid.getItem(new Point(25, y + 2)));
+		final Text control = new Text(grid, SWT.SINGLE);
+		final GridEditor editor = new GridEditor(grid);
+		try {
+			editor.setEditor(control, root, 0);
+			editor.layout();
+			assertEquals("editor follows the visible ancestor's cell geometry",
+					root.getBoundsCorrected(0).y, control.getBounds().y);
+			grid.setTopIndex(sources[58].getRowIndex());
+			editor.layout();
+			assertEquals("editor remains fixed while source rows move beneath it",
+					root.getBoundsCorrected(0).y, control.getBounds().y);
+			grid.setStickyAncestorRows(false);
+			editor.layout();
+			assertFalse(grid.isShown(root));
+			assertEquals(-1000, root.getBoundsCorrected(0).x);
+			assertEquals(-1000, control.getBounds().y);
+		} finally {
+			editor.dispose();
+		}
+	}
+
+	@Test
+	public void ancestorsClippedBeyondTheBodyAreNotReportedShown() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 30, 260, 92);
+		grid.setHeaderVisible(true);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setTree(true);
+		column.setWidth(200);
+		final GridItem[] chain = new GridItem[14];
+		chain[0] = new GridItem(grid, SWT.NONE);
+		for (int i = 1; i < chain.length; i++) {
+			chain[i] = new GridItem(chain[i - 1], SWT.NONE);
+			chain[i - 1].setExpanded(true);
+		}
+		grid.setStickyAncestorRows(true);
+		grid.setTopIndex(chain[chain.length - 1].getRowIndex());
+		assertTrue("root remains in the first ancestor band", grid.isShown(chain[0]));
+		assertFalse(grid.isShown(chain[6]));
+		assertEquals("clipped sticky rows must not show an editor", -1000,
+				chain[6].getBoundsCorrected(0).y);
+	}
+
+
+
+	@Test
+	public void stickySubheadingPushesAwayAtItsLastDescendant() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 460, 400);
+		grid.setHeaderVisible(true);
+		final GridColumn column = new GridColumn(grid, SWT.NONE);
+		column.setTree(true);
+		column.setFixed(true);
+		column.setWidth(220);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		final GridItem a = new GridItem(root, SWT.NONE);
+		final GridItem[] aChildren = new GridItem[40];
+		for (int i = 0; i < aChildren.length; i++) {
+			aChildren[i] = new GridItem(a, SWT.NONE);
+		}
+		final GridItem b = new GridItem(root, SWT.NONE);
+		final GridItem[] bChildren = new GridItem[40];
+		for (int i = 0; i < bChildren.length; i++) bChildren[i] = new GridItem(b, SWT.NONE);
+		root.setExpanded(true);
+		a.setExpanded(true);
+		b.setExpanded(true);
+		grid.setStickyAncestorRows(true);
+		final int chrome = grid.getHeaderHeight();
+		final int rootHeight = root.getHeight() + 1;
+		final int aHeight = a.getHeight() + 1;
+		grid.setTopIndex(aChildren[35].getRowIndex());
+		assertEquals(chrome, grid.getOrigin(column, root).y);
+		assertEquals(chrome + rootHeight, grid.getOrigin(column, a).y);
+		assertTrue(grid.isShown(a));
+		assertSame(a, grid.getItem(new Point(16, chrome + rootHeight + 2)));
+		grid.setTopIndex(aChildren[39].getRowIndex());
+		assertEquals("last child ends the group; the pinned subheading moves up",
+				chrome + aChildren[39].getHeight() + 1 - aHeight,
+				grid.getOrigin(column, a).y);
+		assertFalse("a moving subheading cannot host an un-clipped native editor", grid.isShown(a));
+		assertSame("the outer ancestor remains at the top", root,
+				grid.getItem(new Point(16, chrome + 2)));
+		grid.setTopIndex(bChildren[10].getRowIndex());
+		assertEquals("the next subtree restores its own sticky subheading",
+				chrome + rootHeight, grid.getOrigin(column, b).y);
+		assertSame(b, grid.getItem(new Point(16, chrome + rootHeight + 2)));
+	}
+
+	@Test
+	public void stickySubtreePushGeometryClampsWithoutOverflow() {
+		assertEquals(30, Grid.stickyPushedTop(Long.MAX_VALUE, 20, 30));
+		assertEquals(30, Grid.stickyPushedTop(1_000L, 20, 30));
+		assertEquals(24, Grid.stickyPushedTop(44L, 20, 30));
+		assertEquals(0, Grid.stickyPushedTop(20L, 20, 30));
+		assertEquals(-(1 << 28), Grid.stickyPushedTop(Long.MIN_VALUE, 20, 30));
+		for (int end = 1; end < 250; end++) {
+			final int actual = Grid.stickyPushedTop(end, 19, 40);
+			assertTrue(actual <= 40);
+			assertTrue(actual <= Grid.stickyPushedTop(end + 1L, 19, 40));
+		}
+	}
+
+
+	@Test
+	public void stickyPushGeometryMatchesExactLongOracle() {
+		final java.util.Random random = new java.util.Random(0x20261118L);
+		for (int i = 0; i < 20_000; i++) {
+			final long end = random.nextLong();
+			final long height = 1L + random.nextInt(2000);
+			final int slot = random.nextInt(4000);
+			final java.math.BigInteger expected = java.math.BigInteger.valueOf(end)
+					.subtract(java.math.BigInteger.valueOf(height))
+					.max(java.math.BigInteger.valueOf(-(1L << 28)))
+					.min(java.math.BigInteger.valueOf(slot));
+			assertEquals("case " + i, expected.intValueExact(),
+					Grid.stickyPushedTop(end, height, slot));
+		}
+	}
+
+	@Test
+	public void accessibilityHitIndexIsBoundedForMillionVirtualRows() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL);
+		grid.setBounds(0, 30, 460, 400);
+		new GridColumn(grid, SWT.NONE).setWidth(170);
+		grid.setItemCount(1_000_000);
+		final GridItem first = grid.getItem(0);
+		final GridItem last = grid.getItem(999_999);
+		assertEquals("first logical row", 0, grid.accessibleRowOf(first));
+		assertEquals("last logical row", 999_999, grid.accessibleRowOf(last));
+		assertEquals("stale row lookup must not alter item identities",
+				last, grid.getItem(grid.accessibleRowOf(last)));
+		final Grid other = new Grid(shell, SWT.NONE);
+		final GridItem foreign = new GridItem(other, SWT.NONE);
+		assertEquals("a foreign item is never an accessible child", -1, grid.accessibleRowOf(foreign));
+	}
+
+
+	@Test
+	public void virtualTreeAccessibilityEnumeratesRootsWithoutMaterializingUnreadChildren() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL);
+		grid.setBounds(0, 30, 460, 380);
+		new GridColumn(grid, SWT.NONE).setTree(true);
+		final GridItem first = new GridItem(grid, SWT.NONE);
+		final GridItem second = new GridItem(grid, SWT.NONE);
+		final GridItem third = new GridItem(grid, SWT.NONE);
+		first.setItemCount(10_000);
+		second.setItemCount(3);
+		assertEquals("tree rows include unread descendants", 10_006, grid.getItemCount());
+		final int materializedBefore = grid.rowTree().materializedCount();
+		assertEquals("only three root items are accessible children", 3, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(10_001), Integer.valueOf(10_005)
+		}, grid.accessibleRootChildren());
+		assertEquals("accessible root enumeration must not instantiate cold descendants",
+				materializedBefore, grid.rowTree().materializedCount());
+		first.setExpanded(true);
+		second.setExpanded(true);
+		assertEquals(3, grid.accessibleRootCount());
+		third.dispose();
+		assertEquals(2, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(10_001)
+		}, grid.accessibleRootChildren());
+	}
+
+	@Test
+	public void flatAccessibilityStillExposesEachLogicalRow() {
+		final Grid grid = new Grid(shell, SWT.VIRTUAL);
+		grid.setBounds(0, 30, 460, 380);
+		grid.setItemCount(5);
+		assertEquals(5, grid.accessibleRootCount());
+		org.junit.Assert.assertArrayEquals(new Object[] {
+				Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2),
+				Integer.valueOf(3), Integer.valueOf(4)
+		}, grid.accessibleRootChildren());
+	}
+
+	@Test
+	public void stickyAncestorKeepsItsOriginalAccessibleRowIdAfterScroll() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL);
+		grid.setBounds(0, 30, 460, 400);
+		grid.setHeaderVisible(true);
+		new GridColumn(grid, SWT.NONE).setTree(true);
+		final GridItem root = new GridItem(grid, SWT.NONE);
+		final GridItem parent = new GridItem(root, SWT.NONE);
+		final GridItem[] children = new GridItem[90];
+		for (int i = 0; i < children.length; i++) {
+			children[i] = new GridItem(parent, SWT.NONE);
+		}
+		root.setExpanded(true);
+		parent.setExpanded(true);
+		grid.setStickyAncestorRows(true);
+		grid.setTopIndex(children[55].getRowIndex());
+		final int top = grid.getHeaderHeight();
+		assertSame("sticky point returns the original row", root,
+				grid.getItem(new Point(12, top + 2)));
+		assertEquals("the pinned visual header retains the original child ID",
+				root.getRowIndex(), grid.accessibleRowOf(root));
+		assertEquals(parent.getRowIndex(), grid.accessibleRowOf(parent));
+		assertEquals(children[55].getRowIndex(), grid.accessibleRowOf(children[55]));
 	}
 
 	@Test
