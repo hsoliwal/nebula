@@ -8,11 +8,29 @@ import static org.junit.Assert.assertEquals;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Shell;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /** SWT keyboard translation contracts for RFB 3.x KeyEvent keysyms. */
 public final class RfbKeysymTest {
+    private Shell source;
+
+    @Before public void createEventSource() {
+        // TypedEvent extends EventObject: a synthetic SWT Event must have a
+        // non-null originating Widget. Tycho runs SWT tests on Display thread.
+        source = new Shell(Display.getDefault(), SWT.NONE);
+    }
+
+    @After public void disposeEventSource() {
+        if (source != null && !source.isDisposed()) {
+            source.dispose();
+        }
+    }
+
 
     @Test public void ctrlLetterNormalizesPlatformKeycodeCase() {
         assertEquals('a', VncCanvas.toKeysym(key('a', '\u0001', SWT.CTRL, SWT.NONE)));
@@ -48,8 +66,10 @@ public final class RfbKeysymTest {
         assertEquals(0, VncCanvas.toKeysym(key(0, '\0', 0, SWT.NONE)));
     }
 
-    private static KeyEvent key(int keyCode, char character, int stateMask, int location) {
+    private KeyEvent key(int keyCode, char character, int stateMask, int location) {
         Event event = new Event();
+        event.widget = source;
+        event.display = source.getDisplay();
         event.keyCode = keyCode;
         event.character = character;
         event.stateMask = stateMask;
