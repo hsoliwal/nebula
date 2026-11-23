@@ -311,4 +311,69 @@ public class RfbAdvancedEncodingsTest {
         });
     }
 
+    @Test public void malformedSecondHextileTileCannotPublishFirstTile() throws Exception {
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(message);
+        packet(out, 1); rect(out, 0, 0, 17, 2, -223); // make two 16-column tiles
+        packet(out, 1); rect(out, 0, 0, 17, 2, 5);
+        out.writeByte(2); pixel(out, RED); // first 16x2 tile decodes successfully
+        out.writeByte(0x20); // second tile has reserved Hextile flag
+        exchange(8, message.toByteArray(), 1, client -> {
+            client.readPacket();
+            RfbFramebuffer frame = client.framebuffer();
+            long originalRevision = frame.revision();
+            int[] originalPixels = frame.snapshot().pixels();
+            assertThrows(IOException.class, client::readPacket);
+            assertEquals("no partial first tile or damage revision",
+                    originalRevision, frame.revision());
+            assertArrayEquals(originalPixels, frame.snapshot().pixels());
+        });
+    }
+
+    @Test public void validTwoHextileTilesPublishExactlyOneDamageRevision() throws Exception {
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(message);
+        packet(out, 1); rect(out, 0, 0, 17, 2, -223);
+        packet(out, 1); rect(out, 0, 0, 17, 2, 5);
+        out.writeByte(2); pixel(out, RED); // 16x2
+        out.writeByte(2); pixel(out, GREEN); // 1x2
+        exchange(8, message.toByteArray(), 2, client -> {
+            client.readPacket();
+            RfbFramebuffer frame = client.framebuffer();
+            long before = frame.revision();
+            client.readPacket();
+            assertEquals(before + 1, frame.revision());
+            int[] pixels = frame.snapshot().pixels();
+            assertEquals(34, pixels.length);
+            for (int row = 0; row < 2; row++) {
+                for (int col = 0; col < 17; col++) {
+                    assertEquals("pixel " + row + "," + col,
+                            col < 16 ? RED : GREEN, pixels[row * 17 + col]);
+                }
+            }
+        });
+    }
+
+    @Test public void rawHextileTileAndSolidTileUseOriginalPixelFormat() throws Exception {
+        ByteArrayOutputStream message = new ByteArrayOutputStream();
+        DataOutputStream out = new DataOutputStream(message);
+        packet(out, 1); rect(out, 0, 0, 17, 1, -223);
+        packet(out, 1); rect(out, 0, 0, 17, 1, 5);
+        out.writeByte(1); // 16 raw 32-bit little endian B,G,R,pad pixels
+        for (int i = 0; i < 16; i++) pixel(out, RED);
+        out.writeByte(2); pixel(out, GREEN); // final 1x1 solid tile
+        exchange(8, message.toByteArray(), 2, client -> {
+            client.readPacket();
+            RfbFramebuffer frame = client.framebuffer();
+            long before = frame.revision();
+            client.readPacket();
+            assertEquals(before + 1, frame.revision());
+            int[] pixels = frame.snapshot().pixels();
+            assertEquals(17, pixels.length);
+            for (int i = 0; i < 17; i++) {
+                assertEquals(i < 16 ? RED : GREEN, pixels[i]);
+            }
+        });
+    }
+
 }
