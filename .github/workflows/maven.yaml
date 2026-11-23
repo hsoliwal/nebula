@@ -92,7 +92,11 @@ jobs:
         GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
           bash releng/swt-receiver/retry-transient-maven-503.sh \
           mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
-          -Dtycho.baseline.replace=none -DskipTests=true -pl "$swt_fragments" -am package
+          -Dtycho.baseline.replace=none -DskipTests=true \
+          -Dtycho-snapshot-repo.url=https://repo.maven.apache.org/maven2/ \
+          -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ \
+          -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ \
+          -pl "$swt_fragments" -am package
         python3 releng/swt-receiver/prepare_swt_receiver.py .m3-swt releng/swt-receiver/swt-receiver-p2/target/binding \
           releng/swt-receiver/swt-receiver-p2/target/repository
         mvn -B -f releng/swt-receiver/swt-receiver-p2/pom.xml \
