@@ -18,6 +18,7 @@
 		<module>org.eclipse.nebula.visualization.widgets</module>
 		<module>org.eclipse.nebula.visualization.xygraph</module>
 		<module>org.eclipse.nebula.visualization.widgets.tests</module>
+		<module>org.eclipse.nebula.visualization.xygraph.test</module>
 		<module>org.eclipse.nebula.visualization.feature</module>
 		<module>org.eclipse.nebula.visualization.example</module>
 		<module>org.eclipse.nebula.visualization.xygraph.exampleview</module>

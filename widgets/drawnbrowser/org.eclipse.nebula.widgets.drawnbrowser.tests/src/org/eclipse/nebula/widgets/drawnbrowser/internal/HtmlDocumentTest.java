@@ -26,11 +26,134 @@ import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.STRI
 import static org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument.UNDERLINE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 /** The drawn browser's document lanes, tag by tag of prasser/swtbrowser's handlers. */
 public class HtmlDocumentTest {
+
+	@Test
+	public void semanticContainersOwnTheirFragmentsAndKeepChildrenInSourceOrder() {
+		for (String tag : new String[] { "main", "section", "article", "nav", "aside", "header", "footer" }) {
+			HtmlDocument d = HtmlDocument.parse("<" + tag + " style='padding:3px;background:red'>head<p>child</p>tail</"
+					+ tag + "><p>after</p>");
+			assertEquals(tag, 4, d.blockCount);
+			assertEquals(tag, 4, d.boxCount);
+			assertEquals(tag, "head", d.blockText(0));
+			assertEquals(tag, "child", d.blockText(1));
+			assertEquals(tag, "tail", d.blockText(2));
+			assertEquals(tag, "after", d.blockText(3));
+			assertEquals(tag, 1, d.blockBox[0]);
+			assertEquals(tag, 2, d.blockBox[1]);
+			assertEquals(tag, 1, d.blockBox[2]);
+			assertEquals(tag, 0, d.boxParent[3]);
+			assertEquals(tag, 1, d.boxParent[2]);
+			assertEquals(tag, 3, d.boxEndBlock[1]);
+			assertEquals(tag, 0xFFFF0000, d.boxBackground[1]);
+			assertEquals(tag, 0, d.boxBackground[2]);
+			assertEquals(tag, 3, d.boxPadLeft[1]);
+			assertEquals(tag, 0, d.boxPadLeft[2]);
+			assertTrue(tag + " wrapper decoration belongs to one resolved box", d.boxLayout);
+		}
+	}
+
+	@Test
+	public void ordinarySemanticLeavesRetainFlatLayoutAndEmptyPanelsKeepTheirBox() {
+		HtmlDocument leaves = HtmlDocument.parse("<header style='padding:3px;background:blue'>heading</header>"
+				+ "<main><section>content</section></main><footer>ending</footer>");
+		assertEquals(3, leaves.blockCount);
+		assertFalse("unstyled wrappers and single styled leaves still use the lazy path", leaves.boxLayout);
+		assertEquals(3, leaves.blockPadLeft[0]);
+		assertEquals(0xFF0000FF, leaves.blockBackground[0]);
+		assertEquals(0, leaves.blockPadLeft[1]);
+		for (String tag : new String[] { "div", "section", "article" }) {
+			HtmlDocument empty = HtmlDocument.parse("<" + tag + " style='padding:4px;border:2px solid red'></" + tag + ">");
+			assertEquals(tag, 0, empty.blockCount);
+			assertEquals(tag, 2, empty.boxCount);
+			assertTrue(tag + " empty decoration must not vanish with the empty text fragment", empty.boxLayout);
+		}
+	}
+
+	@Test
+	public void semanticSelectorAncestrySurvivesGrowthAndHiddenContainers() {
+		StringBuilder html = new StringBuilder("<style>main > section.panel {padding:7px;background:blue} "
+				+ "aside.hidden {display:none}</style><main><section class=panel>");
+		for (int i = 0; i < 40; i++) html.append("<article>");
+		html.append("<p>deep</p>");
+		for (int i = 0; i < 40; i++) html.append("</article>");
+		html.append("</section><aside class=hidden><section>invisible</section></aside></main><footer>end</footer>");
+		HtmlDocument d = HtmlDocument.parse(html.toString());
+		assertEquals(2, d.blockCount);
+		assertEquals("deep", d.blockText(0));
+		assertEquals("end", d.blockText(1));
+		assertTrue(d.boxCount > 32);
+		assertEquals(1, d.boxParent[2]);
+		assertEquals(7, d.boxPadLeft[2]);
+		assertEquals(0xFF0000FF, d.boxBackground[2]);
+		assertEquals(0, d.boxPadLeft[3]);
+		assertEquals(0, d.boxParent[d.blockBox[1]]);
+		assertTrue(d.boxLayout);
+	}
+
+	@Test
+	public void semanticContainersKeepTheExistingFlatCellAndFlexItemSubset() {
+		HtmlDocument d = HtmlDocument.parse("<table><tr><td>A<section>B</section>C</td><td>D</td></tr></table>"
+				+ "<main style='display:flex'><article style='flex:0 0 80px'>E<section>F</section>G</article>"
+				+ "<aside>H</aside></main>");
+		assertEquals(2, d.tableCount);
+		assertEquals(4, d.blockCount);
+		assertEquals("A\nBC", d.blockText(0));
+		assertEquals("E\nFG", d.blockText(2));
+		assertEquals(HtmlDocument.CELL, d.kind[2]);
+		assertEquals(HtmlDocument.CELL_BOX, d.boxRole[d.blockBox[2]]);
+		assertEquals(HtmlDocument.FLEX_BOX, d.boxRole[d.boxParent[d.blockBox[2]]]);
+		assertEquals(80, d.cellBasis[2]);
+		assertEquals(0, d.cellShrink[2], 0);
+		assertEquals(1, d.cellShrink[3], 0);
+	}
+
+	@Test
+	public void flexShrinkLanesGrowAndAnonymousItemsKeepTheirDefault() {
+		StringBuilder html = new StringBuilder("<div style='display:flex;flex-shrink:0'>anonymous");
+		for (int i = 0; i < 40; i++) {
+			html.append("<div style='flex:0 ").append(i % 2 == 0 ? "0" : ".25").append(" 80px'>item ")
+					.append(i).append("</div>");
+		}
+		html.append("<div>default</div></div>");
+		HtmlDocument d = HtmlDocument.parse(html.toString());
+		assertEquals(42, d.blockCount);
+		assertEquals(1, d.cellShrink[0], 0);
+		for (int i = 0; i < 40; i++) {
+			assertEquals(i % 2 == 0 ? 0 : .25, d.cellShrink[i + 1], 0);
+			assertEquals(80, d.cellBasis[i + 1]);
+			assertEquals(i + 1, d.cellColumn[i + 1]);
+		}
+		assertEquals("container shrink does not inherit", 1, d.cellShrink[41], 0);
+	}
+
+	@Test
+	public void hiddenFlexItemsDoNotLeakShrinkStateIntoFollowingItems() {
+		HtmlDocument d = HtmlDocument.parse("<style>.fixed{flex:0 0 240px}.soft{flex-shrink:.125}</style>"
+				+ "<div style='display:flex'><div class='fixed'>sidebar</div>"
+				+ "<div style='display:none;flex-shrink:99'>hidden</div><div class='soft'>content</div><div>plain</div></div>");
+		assertEquals(3, d.blockCount);
+		assertEquals(0, d.cellShrink[0], 0);
+		assertEquals(.125, d.cellShrink[1], 0);
+		assertEquals(1, d.cellShrink[2], 0);
+		assertEquals(240, d.cellBasis[0]);
+	}
+
+	@Test
+	public void anAutoFlexBasisUsesWidthInEitherDeclarationOrder() {
+		for (String flex : new String[] { "none", "auto", "initial", "1 0 auto" }) {
+			HtmlDocument d = HtmlDocument.parse("<div style='display:flex'><div style='width:120px;flex:" + flex
+					+ "'>i</div><div style='flex:" + flex + ";width:120px'>j</div></div>");
+			assertEquals(flex, 120, d.cellBasis[0]);
+			assertEquals(flex, 120, d.cellBasis[1]);
+		}
+	}
 
 	/* each block as kind:level:marker:text */
 	private static String[] blocks(HtmlDocument d) {
@@ -108,6 +231,23 @@ public class HtmlDocumentTest {
 	public void scriptsStylesAndCommentsAreNotText() {
 		HtmlDocument d = HtmlDocument.parse("<style>p{color:red}</style><!-- note --><p>x<script>var a = '<p>no</p>';</script>y</p>");
 		assertArrayEquals(new String[] { PARAGRAPH + ":0:0:xy" }, blocks(d));
+	}
+
+	@Test
+	public void clipBoundariesStayWithParentOwnedBoxesAcrossCapacityGrowth() {
+		StringBuilder html = new StringBuilder("<div style='overflow:hidden'>");
+		for (int i = 0; i < 24; i++) html.append("<div>");
+		html.append("<p>deep</p>");
+		for (int i = 0; i < 24; i++) html.append("</div>");
+		html.append("</div><div style='overflow:visible'>outside</div>");
+		HtmlDocument doc = HtmlDocument.parse(html.toString());
+		assertTrue(doc.boxCount > 16);
+		assertTrue("a normal-flow clip requires the context-aware scene", doc.boxLayout);
+		assertTrue(doc.positioned);
+		assertEquals(HtmlStyles.OVERFLOW_HIDDEN, doc.boxOverflow[1]);
+		for (int box = 2; box < doc.boxCount; box++) {
+			assertEquals("clipping is never copied into descendants", HtmlStyles.OVERFLOW_VISIBLE, doc.boxOverflow[box]);
+		}
 	}
 
 	@Test
