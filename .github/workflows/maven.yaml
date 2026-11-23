@@ -175,8 +175,8 @@ jobs:
         test "$(git -C .m3-eclipse-releng rev-parse HEAD)" = "8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec"
         test "$(git hash-object "$src")" = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
         printf '%s  %s\n' "121b6c26d986874391d26d114377e3beda91723b0d675146bdd194dbfe01e264" "$src" | sha256sum --check
-        test "$(git -C .m3-swt rev-parse HEAD)" = "25e637e40c5243f5210586007a74206d8dce7953"
-        test "$(git hash-object .m3-swt/pom.xml)" = "f0e7537f58999feb562d17602f2f75dd1db3e80f"
+        test "$(git -C .m3-swt rev-parse HEAD)" = "c25cb33505465b28980e563acc99097ce3e33fee"
+        test "$(git hash-object .m3-swt/pom.xml)" = "341c07d199041c55d89a99fcc93560074e425716"
         test ! -e eclipse-platform-parent
         mkdir -p eclipse-platform-parent
         cp "$src" eclipse-platform-parent/pom.xml
@@ -202,6 +202,12 @@ jobs:
         assert "Eclipse Distribution License v1.0" in Path("eclipse-platform-parent/pom.xml").read_text()
         print("SWT_LOCAL_PARENT_SOURCE_IDENTITY=PASS")
         PY
+    - name: Verify Eclipse parent source before building pinned SWT
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 -m unittest discover -s releng/swt-receiver -p 'test_prepare_eclipse_platform_parent.py'
+        python3 releng/swt-receiver/prepare_eclipse_platform_parent.py .m3-eclipse-releng .m3-swt
     - name: Qualify fail-closed upstream HTTP 503 retry behavior
       run: bash releng/swt-receiver/test-retry-transient-maven-503.sh
     - name: Build and bind the pinned SWT GTK3 distribution

@@ -136,6 +136,25 @@ jobs:
         path: .m3-swt
         fetch-depth: 0
         lfs: false
+    # Pin the original upstream 4.42 parent from immutable source, not a
+    # mutable remote 4.42.0-SNAPSHOT POM that may return HTTP 503.
+    - name: Checkout source-pinned Eclipse Platform parent
+      uses: actions/checkout@v4
+      with:
+        repository: eclipse-platform/eclipse.platform.releng.aggregator
+        ref: 8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec
+        path: .m3-eclipse-releng
+        fetch-depth: 1
+        lfs: false
+        persist-credentials: false
+        sparse-checkout: |
+          eclipse-platform-parent
+    - name: Verify Eclipse parent source before building pinned SWT
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 -m unittest discover -s releng/swt-receiver -p 'test_prepare_eclipse_platform_parent.py'
+        python3 releng/swt-receiver/prepare_eclipse_platform_parent.py .m3-eclipse-releng .m3-swt
 
     - name: Validate receiver 503 refusal and build exact SWT GTK3 natives
       shell: bash
