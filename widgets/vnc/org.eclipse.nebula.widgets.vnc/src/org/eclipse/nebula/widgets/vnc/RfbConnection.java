@@ -82,6 +82,15 @@ final class RfbConnection implements AutoCloseable {
             // A constructor that fails never exposes a connection to close().
             zlib.end();
             zrle.end();
+            // Ownership transfers to this connection on construction. Even a
+            // failed handshake must close its socket, without masking failure.
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException closeFailure) {
+                    failure.addSuppressed(closeFailure);
+                }
+            }
             throw failure;
         }
     }

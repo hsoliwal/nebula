@@ -122,8 +122,9 @@ public final class HtmlPositionedLayout {
 			int first = doc.boxFirstBlock[e], end = doc.boxEndBlock[e];
 			boolean ownFirst = first < end && doc.blockBox[first] == e && doc.kind[first] != HtmlDocument.CELL;
 			boolean ownLast = first < end && doc.blockBox[end - 1] == e && doc.kind[end - 1] != HtmlDocument.CELL;
-			leadGap[e] = styled && ownFirst ? HtmlLayout.BLOCK_GAP : 0;
-			trailGap[e] = styled && ownLast ? HtmlLayout.BLOCK_GAP : 0;
+			int gap = doc.boxRole[e] == HtmlDocument.CONTROL_BOX && outOfFlow(e) ? 0 : HtmlLayout.BLOCK_GAP;
+			leadGap[e] = styled && ownFirst ? gap : 0;
+			trailGap[e] = styled && ownLast ? gap : 0;
 			before[e] = styled ? add(doc.boxMarginTop[e], leadGap[e]) : 0;
 			after[e] = styled ? add(doc.boxMarginBottom[e], trailGap[e]) : 0;
 			int inherited = accountedIndent[doc.boxParent[e]], wanted = inherited;
@@ -374,7 +375,8 @@ public final class HtmlPositionedLayout {
 					blockY[b] = cursor;
 					blockHeight[b] = inside;
 					blockContentTop[b] = doc.kind[b] == HtmlDocument.CELL
-							? boxedItem(b) ? add(doc.boxBorder[e], doc.boxPadTop[e]) : HtmlLayout.CELL_PADDING : HtmlLayout.BLOCK_GAP - leading;
+							? boxedItem(b) ? add(doc.boxBorder[e], doc.boxPadTop[e]) : HtmlLayout.CELL_PADDING
+							: (doc.boxRole[e] == HtmlDocument.CONTROL_BOX && outOfFlow(e) ? 0 : HtmlLayout.BLOCK_GAP) - leading;
 					if (leading != 0) {
 						int firstEdges = clamp((long) before[e] + doc.boxBorder[e] + doc.boxPadTop[e]);
 						blockY[b] = add(blockY[b], -firstEdges);
