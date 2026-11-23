@@ -58,6 +58,45 @@ public class HtmlPositionedGeometryTest {
 	}
 
 	@Test
+	public void partialInnerWheelDeltaContinuesToTheOuterPanelWithoutDuplication() {
+		Scene scene = new Scene("<section style='position:relative;width:100px;height:80px;overflow:auto'>"
+				+ "<article style='height:40px;overflow:auto;background:lime'>"
+				+ "<nav style='position:relative;top:120px;height:20px'>inner</nav></article>"
+				+ "<footer style='position:relative;top:120px;height:20px'>outer</footer>"
+				+ "</section><aside style='height:300px'></aside>", 240, 180);
+		int inner = scene.document.boxParent[scene.document.blockBox[0]];
+		int outer = scene.document.boxParent[inner];
+		int innerMax = scene.layout.panelMaximumY(inner);
+		assertTrue("inner panel has a reachable boundary", innerMax > 7);
+		assertTrue("outer panel has capacity for the residual", scene.layout.panelMaximumY(outer) > 13);
+		assertEquals(innerMax - 7, scene.layout.scrollPanel(inner, innerMax - 7));
+		assertEquals("the same 20 pixels are distributed once", 20, scene.layout.scrollWheelAt(10, 10, 0, 20));
+		assertEquals(innerMax, scene.layout.panelScrollY(inner));
+		assertEquals(13, scene.layout.panelScrollY(outer));
+		assertEquals("a zero request does not change an ancestor", 0, scene.layout.scrollWheelAt(10, 10, 0, 0));
+		assertEquals(13, scene.layout.panelScrollY(outer));
+	}
+
+	@Test
+	public void negativeWheelResidualNeverReversesAtTheInnerBoundary() {
+		Scene scene = new Scene("<section style='width:100px;height:80px;overflow:auto'>"
+				+ "<article style='height:40px;overflow:auto'>"
+				+ "<nav style='position:relative;top:120px;height:20px'>inner</nav></article>"
+				+ "<footer style='position:relative;top:120px;height:20px'>outer</footer>"
+				+ "</section><aside style='height:300px'></aside>", 240, 180);
+		int inner = scene.document.boxParent[scene.document.blockBox[0]];
+		int outer = scene.document.boxParent[inner];
+		assertTrue(scene.layout.panelMaximumY(inner) > 7);
+		assertEquals(7, scene.layout.scrollPanel(inner, 7));
+		assertEquals("only seven of twenty upward pixels are available", -7,
+				scene.layout.scrollWheelAt(10, 10, 0, -20));
+		assertEquals(0, scene.layout.panelScrollY(inner));
+		assertEquals(0, scene.layout.panelScrollY(outer));
+		assertEquals("repeated upward wheel has no panel effect", 0,
+				scene.layout.scrollWheelAt(10, 10, 0, -20));
+	}
+
+	@Test
 	public void nestedPanelScrollOffsetsAddAndFixedChildrenEscapeThem() {
 		Scene scene = new Scene("<section style='position:relative;height:50px;overflow:auto'>"
 				+ "<article style='height:40px;overflow:auto'>"

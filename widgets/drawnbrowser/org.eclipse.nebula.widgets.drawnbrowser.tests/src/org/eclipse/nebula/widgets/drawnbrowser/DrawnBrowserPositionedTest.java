@@ -103,6 +103,29 @@ public class DrawnBrowserPositionedTest {
 	}
 
 	@Test
+	public void rootScrollStartsOnTheNextEventAfterThePanelReachesItsLimit() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		show("<section style='position:relative;width:100px;height:40px;overflow:auto;background:lime'>"
+				+ "<article style='position:relative;top:60px;width:60px;height:20px;background:red'></article>"
+				+ "</section><aside style='height:500px'></aside>");
+		Event wheel = new Event();
+		wheel.x = 10; wheel.y = 10; wheel.count = -10; wheel.doit = true;
+		browser.notifyListeners(SWT.MouseWheel, wheel);
+		settle();
+		assertTrue("the SWT default wheel action stays cancelled", !wheel.doit);
+		assertEquals("the panel consumed part of the event; root stays put", 0, browser.getScrollY());
+		Event afterBoundary = new Event();
+		afterBoundary.x = 10; afterBoundary.y = 10; afterBoundary.count = -10; afterBoundary.doit = true;
+		browser.notifyListeners(SWT.MouseWheel, afterBoundary);
+		settle();
+		assertTrue(!afterBoundary.doit);
+		assertEquals("the next event reaches the root after saturation", 160, browser.getScrollY());
+		browser.setScrollY(0);
+		settle();
+		assertEquals("local panel offset is retained after root scroll", new RGB(255, 0, 0), pixel(10, 30));
+	}
+
+	@Test
 	public void nestedPanelClipsAbsoluteChildPixelsButKeepsItsOwnBorder() {
 		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 		show("<div style='position:relative;left:20px;top:10px;width:80px;height:50px;"
@@ -274,11 +297,12 @@ public class DrawnBrowserPositionedTest {
 		return image.palette.getRGB(image.getPixel(x, y));
 	}
 
-	private static int[] rgbPixels(ImageData image) {
-		int[] pixels = new int[image.width * image.height];
-		for (int y = 0; y < image.height; y++) for (int x = 0; x < image.width; x++) {
+	private static int[] rgbPixels(ImageData image, int contentWidth) {
+		assertTrue("content width must fit the capture", contentWidth > 0 && contentWidth <= image.width);
+		int[] pixels = new int[contentWidth * image.height];
+		for (int y = 0; y < image.height; y++) for (int x = 0; x < contentWidth; x++) {
 			RGB rgb = image.palette.getRGB(image.getPixel(x, y));
-			pixels[y * image.width + x] = rgb.red << 16 | rgb.green << 8 | rgb.blue;
+			pixels[y * contentWidth + x] = rgb.red << 16 | rgb.green << 8 | rgb.blue;
 		}
 		return pixels;
 	}
@@ -368,7 +392,16 @@ public class DrawnBrowserPositionedTest {
 			ImageData moved = capture();
 			browser.redraw();
 			settle();
-			assertArrayEquals("scroll " + scroll, rgbPixels(moved), rgbPixels(capture()));
+			ImageData repainted = capture();
+			assertEquals("capture width", moved.width, repainted.width);
+			assertEquals("capture height", moved.height, repainted.height);
+			org.eclipse.swt.widgets.ScrollBar bar = browser.getVerticalBar();
+			assertEquals("native bar selection " + scroll, scroll, bar.getSelection());
+			int contentWidth = moved.width;
+			if (bar.getVisible() && browser.getClientArea().width == browser.getSize().x) {
+				contentWidth -= bar.getSize().x; // GTK overlay bar paints inside the client.
+			}
+			assertArrayEquals("scroll " + scroll, rgbPixels(moved, contentWidth), rgbPixels(repainted, contentWidth));
 		}
 	}
 
