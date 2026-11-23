@@ -44,6 +44,9 @@ public final class HtmlPositionedLayout {
 	/* Parent-owned panel scroll lanes, one scalar per document box; no per-element SWT peers. */
 	private final int[] panelScrollY, panelMaximumY, panelShiftY, scrollOwner;
 	private boolean panelProjectionDirty = true;
+	/* Same original interval-index owner, partitioned by nearest scrollport. */
+	private final long[][] panelNormalKeys, panelFixedKeys, panelNormalMax, panelFixedMax;
+	private int[] indexedPanels = new int[0];
 	private final int[] before, after, leadGap, trailGap, extraIndent, accountedIndent;
 	private final boolean[] fixed;
 	private final int[] blockX, blockY, blockWidth, blockHeight, blockInset, blockContentTop;
@@ -69,6 +72,8 @@ public final class HtmlPositionedLayout {
 		clipAncestor = new int[n];
 		scrollAncestor = new int[n];
 		panelScrollY = new int[n]; panelMaximumY = new int[n]; panelShiftY = new int[n]; scrollOwner = new int[n];
+		panelNormalKeys = new long[n][]; panelFixedKeys = new long[n][];
+		panelNormalMax = new long[n][]; panelFixedMax = new long[n][];
 		clipAncestor[0] = -1;
 		scrollAncestor[0] = -1;
 		Arrays.fill(scrollOwner, -1);
@@ -166,28 +171,60 @@ public final class HtmlPositionedLayout {
 
 	private void indexIntervals() {
 		int ordinary = 0, stationary = 0, moving = 0;
+		int[] normalCounts = new int[doc.boxCount], fixedCounts = new int[doc.boxCount];
 		for (int s = 0; s < order.size(); s++) {
-			if (stepMoving(s)) moving++; else if (stepFixed(s)) stationary++; else ordinary++;
+			int panel = stepScrollOwner(s);
+			if (stepMoving(s)) moving++;
+			else if (panel >= 0) {
+				if (stepFixed(s)) fixedCounts[panel]++; else normalCounts[panel]++;
+			} else if (stepFixed(s)) stationary++;
+			else ordinary++;
 		}
 		if (normalKeys.length != ordinary) normalKeys = new long[ordinary];
 		if (fixedKeys.length != stationary) fixedKeys = new long[stationary];
 		if (movingSteps.length != moving) movingSteps = new int[moving];
+		int panels = 0;
+		for (int e = 1; e < doc.boxCount; e++) {
+			if (normalCounts[e] != 0 || fixedCounts[e] != 0) panels++;
+			panelNormalKeys[e] = arrayOf(panelNormalKeys[e], normalCounts[e]);
+			panelFixedKeys[e] = arrayOf(panelFixedKeys[e], fixedCounts[e]);
+		}
+		indexedPanels = new int[panels];
+		int[] normalOffsets = new int[doc.boxCount], fixedOffsets = new int[doc.boxCount];
+		panels = 0;
+		for (int e = 1; e < doc.boxCount; e++)
+			if (normalCounts[e] != 0 || fixedCounts[e] != 0) indexedPanels[panels++] = e;
 		ordinary = stationary = moving = 0;
 		for (int s = 0; s < order.size(); s++) {
 			long key = (long) stepY(s) << 32 | s & 0xFFFFFFFFL;
+			int panel = stepScrollOwner(s);
 			if (stepMoving(s)) movingSteps[moving++] = s;
-			else if (stepFixed(s)) fixedKeys[stationary++] = key; else normalKeys[ordinary++] = key;
+			else if (panel >= 0) {
+				if (stepFixed(s)) panelFixedKeys[panel][fixedOffsets[panel]++] = key;
+				else panelNormalKeys[panel][normalOffsets[panel]++] = key;
+			} else if (stepFixed(s)) fixedKeys[stationary++] = key;
+			else normalKeys[ordinary++] = key;
 		}
 		Arrays.sort(normalKeys);
 		Arrays.sort(fixedKeys);
 		normalMax = maxima(normalKeys, normalMax);
 		fixedMax = maxima(fixedKeys, fixedMax);
+		for (int panel : indexedPanels) {
+			Arrays.sort(panelNormalKeys[panel]);
+			Arrays.sort(panelFixedKeys[panel]);
+			panelNormalMax[panel] = maxima(panelNormalKeys[panel], panelNormalMax[panel]);
+			panelFixedMax[panel] = maxima(panelFixedKeys[panel], panelFixedMax[panel]);
+		}
+	}
+
+	private static long[] arrayOf(long[] source, int length) {
+		return source != null && source.length == length ? source : new long[length];
 	}
 
 	private long[] maxima(long[] keys, long[] tree) {
 		int leaves = 1;
 		while (leaves < keys.length) leaves *= 2;
-		if (tree.length != 2 * leaves) tree = new long[2 * leaves];
+		if (tree == null || tree.length != 2 * leaves) tree = new long[2 * leaves];
 		Arrays.fill(tree, Long.MIN_VALUE);
 		for (int k = 0; k < keys.length; k++) {
 			int step = (int) keys[k];
@@ -216,6 +253,14 @@ public final class HtmlPositionedLayout {
 		} else {
 			collect(fixedKeys, fixedMax, 1, 0, fixedMax.length / 2, (long) pageTop - scroll, (long) pageTop - scroll + extent);
 		}
+		for (int panel : indexedPanels) {
+			// Every step owned by one scrollport moves by the same parent-owned panel lane displacement.
+			long displacement = (long) panelScrollY[panel] - panelShiftY[panel];
+			collectPanel(panelNormalKeys[panel], panelNormalMax[panel], displacement, 0,
+					pageTop, extent, scroll);
+			collectPanel(panelFixedKeys[panel], panelFixedMax[panel], displacement, scroll,
+					pageTop, extent, scroll);
+		}
 		for (int step : movingSteps) {
 			int i = order.index(step);
 			int top = order.isBackground(step) ? boxY(i, scroll) : blockY(i, scroll);
@@ -224,6 +269,33 @@ public final class HtmlPositionedLayout {
 		}
 		Arrays.sort(visible, 0, visibleCount);
 		return visibleCount;
+	}
+
+	/**
+	 * Indexed per-panel query. Only endpoint saturation (or a saturated panel shift lane) takes the bounded
+	 * fallback because the original scene clamps intermediate int coordinates.
+	 */
+	private void collectPanel(long[] keys, long[] tree, long displacement, int fixedMotion,
+			int pageTop, int extent, int scroll) {
+		if (keys.length == 0) return;
+		long first = keys[0] >> 32, last = keys[keys.length - 1] >> 32;
+		long movedFirst = first + fixedMotion, movedLast = last + fixedMotion;
+		long projectedFirst = movedFirst - displacement, projectedLast = movedLast - displacement;
+		if (displacement >= Integer.MAX_VALUE
+				|| movedFirst < Integer.MIN_VALUE + 1L || movedLast > Integer.MAX_VALUE
+				|| projectedFirst < Integer.MIN_VALUE + 1L || projectedLast > Integer.MAX_VALUE) {
+			for (long key : keys) {
+				int step = (int) key, index = order.index(step);
+				int y = order.isBackground(step) ? boxY(index, scroll) : blockY(index, scroll);
+				int h = stepHeight(step);
+				if (h > 0 && y < (long) pageTop + extent && (long) y + h > pageTop)
+					visible[visibleCount++] = step;
+			}
+			return;
+		}
+		collect(keys, tree, 1, 0, tree.length / 2,
+				(long) pageTop - fixedMotion + displacement,
+				(long) pageTop + extent - fixedMotion + displacement);
 	}
 
 	/* Tree depth is logarithmic in the number of fragments, independent of HTML nesting depth. */
@@ -241,11 +313,16 @@ public final class HtmlPositionedLayout {
 
 	public int visibleStep(int index) { return visible[index]; }
 
+	/* Backgrounds stay fixed to their own panel; direct text is scrolled by that panel. */
+	private int stepScrollOwner(int step) {
+		int index = order.index(step), box = order.isBackground(step) ? index : doc.blockBox[index];
+		return !order.isBackground(step) && panelScrollport(box) ? box : scrollOwner[box];
+	}
+
+	/* Sticky steps move individually; panel-scrolled steps (stepScrollOwner >= 0) use their panel's index. */
 	private boolean stepMoving(int step) {
 		int i = order.index(step);
-		int box = order.isBackground(step) ? i : doc.blockBox[i];
-		return motionOwner[box] >= 0 || scrollOwner[box] >= 0
-				|| !order.isBackground(step) && panelScrollport(box);
+		return motionOwner[order.isBackground(step) ? i : doc.blockBox[i]] >= 0;
 	}
 
 	private boolean stepFixed(int step) {
@@ -578,7 +655,7 @@ public final class HtmlPositionedLayout {
 				|| overflow == HtmlStyles.OVERFLOW_SCROLL;
 	}
 
-	/** Independent vertical panel offset, zero on ordinary/clip boxes. */
+	/** Independent vertical panel offset, zero on ordinary/clip boxes (index lifetime: current document only). */
 	public int panelScrollY(int box) { return box > 0 && box < doc.boxCount ? panelScrollY[box] : 0; }
 
 	/** Maximum vertical offset, recomputed after layout and never inferred from root overflow. */
@@ -705,6 +782,16 @@ public final class HtmlPositionedLayout {
 		projectPanelScroll();
 		return clamp((long) y[box] + projected + panelShiftY[box]);
 	}
+
+	/** Maximum programmatic vertical offset; clip and visible never become scrollports. Same lane as {@link #panelMaximumY(int)}. */
+	public int panelScrollLimit(int box) { return panelMaximumY(box); }
+
+	/**
+	 * Scroll only a CSS scrollport (overflow:hidden, or auto/scroll), never overflow:clip. No SWT state is touched:
+	 * the owning Canvas must invalidate paint and reposition native controls.
+	 * Returns false when rejected or unchanged; the offset is clamped exactly as by {@link #scrollPanel(int, int)}.
+	 */
+	public boolean scrollPanelTo(int box, int targetY) { return scrollPanel(box, targetY) != 0; }
 	public int boxWidth(int box) { return width[box]; }
 	public int boxHeight(int box) { return height[box]; }
 

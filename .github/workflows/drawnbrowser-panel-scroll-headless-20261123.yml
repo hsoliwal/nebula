@@ -118,9 +118,9 @@ jobs:
                       }
                       System.out.println(owner.getSimpleName() + ": executed=" + local);
                   }
-                  if (count < 69 || failures != 0)
+                  if (count < 74 || failures != 0)
                       throw new AssertionError("Geometry tests=" + count + " failures=" + failures
-                              + " (minimum 69; no skipped or missing owners)");
+                              + " (minimum 74; no skipped or missing owners)");
                   System.out.println("SOURCE_ONLY_GTK_NOT_RUN: PASS " + count
                           + " actual original @Test methods, zero failures");
               }
