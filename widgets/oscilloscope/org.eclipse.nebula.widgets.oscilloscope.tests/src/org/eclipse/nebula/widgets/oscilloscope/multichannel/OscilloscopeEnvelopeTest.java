@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Random;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
@@ -147,6 +149,54 @@ public class OscilloscopeEnvelopeTest {
 		} finally {
 			shell.dispose();
 		}
+	}
+
+	/**
+	 * A disposed scope must not invalidate SWT system colors or a Color
+	 * supplied through its foreground setter. The original grid colors
+	 * retain their separate widget-owned disposal listener.
+	 */
+	@Test
+	public void disposingScopePreservesSystemAndCallerColors() throws Exception {
+		Display display = Display.getDefault();
+		Shell shell = new Shell(display);
+		Color caller = new Color(display, 17, 34, 51);
+		try {
+			Oscilloscope scope = new Oscilloscope(2, null, shell, SWT.NONE);
+			Color originalBackground = (Color) field(scope, "bg");
+			Color originalForeground = scope.getForeground(0);
+			Color secondForeground = scope.getForeground(1);
+			Color ownedGridBackground = (Color) field(scope, "gridBackground");
+			Color ownedGridForeground = (Color) field(scope, "gridForeground");
+			scope.setForeground(0, caller);
+			assertTrue(!originalBackground.isDisposed());
+			assertTrue(!originalForeground.isDisposed());
+			assertTrue(!secondForeground.isDisposed());
+			scope.dispose();
+			assertTrue(scope.isDisposed());
+			assertTrue("widget-owned grid background must be released", ownedGridBackground.isDisposed());
+			assertTrue("widget-owned grid foreground must be released", ownedGridForeground.isDisposed());
+			assertTrue("original system background must outlive the widget",
+					!originalBackground.isDisposed());
+			assertTrue("original system foreground must outlive the widget",
+					!originalForeground.isDisposed());
+			assertTrue("second channel's system foreground must outlive the widget",
+					!secondForeground.isDisposed());
+			assertTrue("caller foreground must not be disposed by the widget",
+					!caller.isDisposed());
+			assertEquals(new RGB(17, 34, 51), caller.getRGB());
+		} finally {
+			if (!shell.isDisposed()) {
+				shell.dispose();
+			}
+			caller.dispose();
+		}
+	}
+
+	private static Object field(Object target, String name) throws Exception {
+		Field member = target.getClass().getDeclaredField(name);
+		member.setAccessible(true);
+		return member.get(target);
 	}
 
 	private static int[] lines(Oscilloscope scope, String name) throws Exception {
