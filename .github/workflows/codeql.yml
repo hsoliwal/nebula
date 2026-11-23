@@ -96,6 +96,36 @@ jobs:
       with:
         maven-version: 3.9.11
 
+    - name: Install SHA-512-pinned Maven 3.9.11 for Tycho
+      shell: bash
+      run: |
+        set -euo pipefail
+        version=3.9.11
+        expected_sha512=bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978
+        name="apache-maven-${version}-bin.tar.gz"
+        archive="$RUNNER_TEMP/$name"
+        urls=(
+          "https://archive.apache.org/dist/maven/maven-3/${version}/binaries/$name"
+          "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${version}/$name"
+        )
+        for url in "${urls[@]}"; do
+          rm -f "$archive"
+          if curl --fail --location --silent --show-error --retry 4 \
+              --retry-all-errors --retry-delay 5 --connect-timeout 20 \
+              --max-time 240 --output "$archive" "$url"; then
+            if printf '%s  %s\n' "$expected_sha512" "$archive" | sha512sum --check --status; then
+              echo "Pinned Maven distribution checksum verified"
+              break
+            fi
+          fi
+        done
+        test -s "$archive"
+        printf '%s  %s\n' "$expected_sha512" "$archive" | sha512sum --check
+        tar -xzf "$archive" -C "$RUNNER_TEMP"
+        echo "$RUNNER_TEMP/apache-maven-${version}/bin" >> "$GITHUB_PATH"
+        "$RUNNER_TEMP/apache-maven-${version}/bin/mvn" -version |
+          grep -m1 '^Apache Maven 3[.]9[.]11 '
+
     # CodeQL must trace the same source-pinned SWT JNI receiver that compiles
     # Nebula's inherited Canvas layer API. Upstream SWT lacks these methods.
     - name: Checkout source-pinned SWT GTK3 receiver
