@@ -2,7 +2,6 @@ package org.eclipse.nebula.widgets.cdatetime.css;
 
 import java.io.StringReader;
 
-import org.eclipse.e4.ui.css.core.engine.CSSErrorHandler;
 import org.eclipse.e4.ui.css.swt.dom.SWTElementProvider;
 import org.eclipse.e4.ui.css.swt.engine.CSSSWTEngineImpl;
 import org.eclipse.nebula.cwt.test.AbstractVTestCase;
@@ -58,11 +57,8 @@ public class BaseCSSThemingTest extends AbstractVTestCase {
 			}
 		};
 		engine.setElementProvider(new SWTElementProvider());
-		engine.setErrorHandler(new CSSErrorHandler() {
-			public void error(Exception e) {
-				e.printStackTrace();
-			}
-		});
+		// The current Eclipse CSS engine reports parse and property errors through
+		// its platform ILog; the removed CSSErrorHandler callback is not needed.
 	}
 
 	protected void checkColor(final String property, final ColorGetter getter) {

@@ -14,6 +14,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlDocument;
+import org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlLayout;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
@@ -57,18 +59,53 @@ public class DrawnBrowserTest {
 	}
 
 	private void settle() {
-		for (int i = 0; i < 50; i++) {
-			while (display.readAndDispatch()) {
-				// drain
-			}
+		long end = System.nanoTime() + 150_000_000L;
+		do {
+			while (display.readAndDispatch()) { }
 			browser.update();
-		}
+			try { Thread.sleep(2); } catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new AssertionError(e);
+			}
+		} while (System.nanoTime() < end);
 	}
 
 	private static String paragraphs(int n) {
 		StringBuilder html = new StringBuilder();
 		for (int i = 0; i < n; i++) html.append("<p>Paragraph ").append(i).append(" of the drawn browser.</p>");
 		return html.toString();
+	}
+
+	@Test
+	public void aNonShrinkingSidebarKeepsItsPaintedEdgeWhenTheWindowNarrows() {
+		open("<div style='display:flex;gap:10px'><div style='flex:0 0 240px;background:#ff0000'>i</div>"
+				+ "<div style='flex:0 1 200px;background:#0000ff'>j</div></div>");
+		org.eclipse.swt.graphics.RGB red = new org.eclipse.swt.graphics.RGB(255, 0, 0);
+		org.eclipse.swt.graphics.RGB blue = new org.eclipse.swt.graphics.RGB(0, 0, 255);
+		for (int width : new int[] { 320, 280, 360 }) {
+			shell.setSize(width, 240);
+			shell.layout();
+			settle();
+			ImageData shown = visibleShot();
+			assertEquals("the sidebar ends at its authored 240px", red, rgbAt(shown, 239, 6));
+			assertEquals("the following panel starts after the 10px gap", blue, rgbAt(shown, 260, 6));
+			assertTrue("the gap remains clear", !red.equals(rgbAt(shown, 245, 6)) && !blue.equals(rgbAt(shown, 245, 6)));
+		}
+	}
+
+	/* Capture the actual visible Display pixels, independently of the widget's offscreen/print path. */
+	private ImageData visibleShot() {
+		org.eclipse.swt.graphics.Rectangle area = browser.getClientArea();
+		org.eclipse.swt.graphics.Point origin = browser.toDisplay(area.x, area.y);
+		Image image = new Image(display, area.width, area.height);
+		GC gc = new GC(display);
+		try {
+			gc.copyArea(image, origin.x, origin.y);
+			return image.getImageData();
+		} finally {
+			gc.dispose();
+			image.dispose();
+		}
 	}
 
 	@Test
@@ -79,6 +116,7 @@ public class DrawnBrowserTest {
 		browser.addListener(SWT.Paint, e -> clips.add(new int[] { e.y, e.height }));
 		browser.setScrollY(24);
 		browser.update();
+		settle();
 		assertEquals(24, browser.getScrollY());
 		assertTrue("paints", !clips.isEmpty());
 		int painted = clips.stream().mapToInt(c -> c[1]).sum();
@@ -89,6 +127,7 @@ public class DrawnBrowserTest {
 		clips.clear();
 		browser.setScrollY(10);
 		browser.update();
+		settle();
 		assertTrue("paints", !clips.isEmpty());
 		for (int[] clip : clips) {
 			assertTrue("scrolling up exposes the top band, painted y " + clip[0] + " h " + clip[1], clip[0] == 0 && clip[1] <= 14 + 1);
@@ -561,6 +600,28 @@ public class DrawnBrowserTest {
 			}
 		});
 		open("<form action='http://example.test/search'><input name=q value=hi><input type=password name=pw><input type=checkbox name=agree checked><input type=radio name=c value=a><input type=radio name=c value=b checked><input type=hidden name=h value=x><select name=s><option>one<option selected>two</select><textarea name=t rows=3 cols=10>\nline1\nline2</textarea><button name=go value=1>Go now</button></form><p>after <input name=outside></p>");
+		// Size this fixture from the platform font: show the text area but keep the submit below the view.
+		HtmlDocument document = HtmlDocument.parse(browser.getText());
+		HtmlLayout formLayout = new HtmlLayout(display, document, browser.getFont(),
+				display.getSystemColor(SWT.COLOR_LINK_FOREGROUND));
+		int submitTop = -1;
+		try {
+			formLayout.setWidth(browser.getClientArea().width);
+			formLayout.ensure(Integer.MAX_VALUE);
+			for (int b = 0; b < document.blockCount; b++) {
+				int control = document.blockControl[b];
+				if (control >= 0 && document.controlType[control] == HtmlDocument.SUBMIT) {
+					submitTop = formLayout.top(b);
+					break;
+				}
+			}
+		} finally {
+			formLayout.dispose();
+		}
+		assertTrue("the form has a submit block below its text area", submitTop > 0);
+		shell.setSize(shell.getSize().x, shell.getSize().y + submitTop - browser.getClientArea().height);
+		shell.layout();
+		settle();
 		List<org.eclipse.swt.widgets.Text> texts = children(org.eclipse.swt.widgets.Text.class);
 		assertTrue("fields and the text area in view are native: " + texts.size(), texts.size() >= 3);
 		org.eclipse.swt.widgets.Text q = texts.get(0);

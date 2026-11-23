@@ -200,6 +200,29 @@ public class RowPermutation_Test {
 	}
 
 	@Test
+	public void emptyCopyBeyondViewIsRepresentationIndependent() {
+		final RowPermutation permutation = new RowPermutation(6);
+		final int[] target = { 17, 19, 23 };
+		assertEmptyCopyBeyondEnd(permutation, target); // identity, no backing order
+		permutation.sortByIntKeys(new int[] { 6, 5, 4, 3, 2, 1 }, false);
+		assertEmptyCopyBeyondEnd(permutation, target); // sorted, backing int[] order
+		permutation.setFilter(row -> (row & 1) == 0);
+		assertEmptyCopyBeyondEnd(permutation, target); // filtered, compacted view
+		permutation.setPinnedRows(new int[] { 5 }, new int[] { 0 });
+		assertEmptyCopyBeyondEnd(permutation, target); // pinned and filtered
+	}
+
+	private static void assertEmptyCopyBeyondEnd(final RowPermutation p, final int[] target) {
+		final int[] unchanged = target.clone();
+		assertEquals(0, p.copyModelRows(Integer.MAX_VALUE, target, 1, 2));
+		assertArrayEquals(unchanged, target);
+		assertEquals(0, p.copyModelRows(Integer.MAX_VALUE, target, target.length, 7));
+		assertArrayEquals(unchanged, target);
+		assertEquals(0, p.copyModelRows(p.getViewCount(), target, 0, target.length));
+		assertArrayEquals(unchanged, target);
+	}
+
+	@Test
 	public void versionChangesOnEveryMutationAndSizeResetsToIdentity() {
 		final RowPermutation p = new RowPermutation(5);
 		final int v0 = p.getVersion();

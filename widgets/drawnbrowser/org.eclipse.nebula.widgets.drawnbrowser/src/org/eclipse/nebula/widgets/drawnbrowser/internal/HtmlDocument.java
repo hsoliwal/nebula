@@ -22,6 +22,11 @@ import java.util.Arrays;
  * line break.
  * </p>
  * <p>
+ * The semantic containers main, section, article, nav, aside, header and footer use the same block and box
+ * ownership as div. Their own backgrounds, borders, padding and margins surround their children once; ordinary
+ * unstyled containers retain the lazy block path. This structural subset does not assign accessibility landmarks.
+ * </p>
+ * <p>
  * A table is its cells: one {@link #CELL} block per td or th, with its table, row and column in three lanes; the cells
  * of a row are consecutive blocks. Inside a cell, block elements become line breaks (the cell stays one block), images
  * are not shown, and a nested table's cells and rows become spaces and line breaks. A caption is a centred paragraph;
@@ -39,6 +44,10 @@ public final class HtmlDocument {
 	/** Form control types ({@link #controlType}). A hidden input has no block: it is only submitted. */
 	public static final int TEXT = 0, PASSWORD = 1, CHECKBOX = 2, RADIO = 3, SUBMIT = 4, BUTTON = 5, TEXTAREA = 6,
 			SELECT = 7, HIDDEN = 8;
+	/** Box roles retain the existing automatic table/row/cell layout within positioned containers. */
+	public static final int NORMAL_BOX = 0, TABLE_BOX = 1, ROW_BOX = 2, CELL_BOX = 3, FLEX_BOX = 4, GRID_BOX = 5;
+	/** A native control's own CSS box, distinct from its containing block and its intrinsic widget dimensions. */
+	public static final int CONTROL_BOX = 6;
 
 	/** Style bits of a run; code is monospace (code, tt, kbd, samp, and all of pre). */
 	public static final int BOLD = 1, ITALIC = 2, UNDERLINE = 4, STRIKE = 8, LINK = 16, CODE = 32;
@@ -86,6 +95,33 @@ public final class HtmlDocument {
 	public int[] cellSpan = new int[16];
 	/** Per block: the number of rows a cell spans (its rowspan, at least 1); 1 for any other block. */
 	public int[] cellRowSpan = new int[16];
+	/** The nearest owning block box of each flat block. */
+	public int[] blockBox = new int[16];
+
+	/**
+	 * Block-box tree in document preorder; box 0 is the document root. Children and siblings are linked by indices,
+	 * with -1 for none. A box's [firstBlock,endBlock) includes descendant fragments; an empty box remains in the tree.
+	 * Inline elements and elements flattened inside a table cell do not introduce boxes.
+	 */
+	public int boxCount = 1;
+	public int[] boxParent = new int[16], boxFirstChild = new int[16], boxNextSibling = new int[16],
+			boxFirstBlock = new int[16], boxEndBlock = new int[16], boxRole = new int[16], boxPosition = new int[16],
+			boxLeft = new int[16], boxTop = new int[16], boxRight = new int[16], boxBottom = new int[16],
+			boxWidth = new int[16], boxHeight = new int[16], boxZIndex = new int[16], boxBackground = new int[16],
+			boxOverflow = new int[16], boxIndent = new int[16];
+	/** Z auto is distinct from explicit zero and from every signed integer z-index. */
+	public boolean[] boxZAuto = new boolean[16];
+	/** Per element box, the same non-inherited box model as the flat block lanes; table cells keep their table padding. */
+	public int[] boxMarginTop = new int[16], boxMarginRight = new int[16], boxMarginBottom = new int[16],
+			boxPadTop = new int[16], boxPadRight = new int[16], boxPadBottom = new int[16], boxPadLeft = new int[16],
+			boxBorder = new int[16], boxBorderColor = new int[16], boxBorderStyle = new int[16];
+	/** Whether a supported box requests non-static positioning, explicit sizing or a clipping boundary. */
+	public boolean positioned;
+	/**
+	 * Whether sizes, right/bottom offsets, empty boxes or ancestry require the resolved box scene. Flat nonempty
+	 * positioned blocks using only top/left/z-index retain the existing flat layout and painting path.
+	 */
+	public boolean boxLayout;
 
 	public int tableCount;
 	/** Per table: number of columns (its widest row), and the border attribute in px (0: none). */
@@ -103,6 +139,8 @@ public final class HtmlDocument {
 	public int trackTotal;
 	/** Per block: a flex item's flex-grow, and its flex basis (or width) in px, -1 for none. */
 	public int[] cellGrow = new int[16], cellBasis = new int[16];
+	/** Per flex item, its finite nonnegative flex-shrink factor; anonymous items use the initial value 1. */
+	public double[] cellShrink = new double[16];
 
 	public int runTotal;
 	/** Per run: start and end in {@link #text}, style bits, link index or -1. */
@@ -138,15 +176,51 @@ public final class HtmlDocument {
 	public int[] imageWidth = new int[4], imageHeight = new int[4];
 
 	private HtmlDocument() {
+		boxParent[0] = boxFirstChild[0] = boxNextSibling[0] = -1;
+		boxLeft[0] = boxTop[0] = boxRight[0] = boxBottom[0] = boxWidth[0] = boxHeight[0] = HtmlStyles.AUTO;
+		boxZAuto[0] = true;
 	}
 
 	/** Parses {@code html}; never fails. */
 	public static HtmlDocument parse(String html) {
-		Builder builder = new Builder();
-		HtmlTokenizer.tokenize(html, builder);
-		builder.closeCell();
-		builder.unstick(-1); // the sticky boxes of elements still open at the end end with the last block
+		return parseChecked(html, HtmlTokenizer.UNCHECKED);
+	}
+
+	/**
+	 * Parses detached asynchronous input, or returns null when cancellation is observed. The supplier must
+	 * inspect detached state only; it must not call SWT widgets. Cancellation is cooperative at parser
+	 * checkpoints, not a deadline for an individual JDK operation. The ordinary {@link #parse(String)}
+	 * entry point never observes this supplier or the thread's interrupt status.
+	 */
+	public static HtmlDocument parse(String html, java.util.function.BooleanSupplier cancelled) {
+		java.util.Objects.requireNonNull(cancelled);
+		try {
+			return parseChecked(html, () -> {
+				if (cancelled.getAsBoolean()) throw new ParseCancelled();
+			});
+		} catch (ParseCancelled cancelledParse) {
+			return null;
+		}
+	}
+
+	private static final class ParseCancelled extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		ParseCancelled() {
+			super(null, null, false, false);
+		}
+	}
+
+	private static HtmlDocument parseChecked(String html, Runnable checkpoint) {
+		checkpoint.run();
+		Builder builder = new Builder(checkpoint);
+		HtmlTokenizer.tokenize(html, builder, checkpoint);
+		checkpoint.run();
+		builder.finish();
+		builder.unstick(-1); // close the remaining sticky containing elements
+		checkpoint.run();
 		builder.doc.text = builder.chars.toString();
+		checkpoint.run();
 		return builder.doc;
 	}
 
@@ -161,6 +235,7 @@ public final class HtmlDocument {
 	}
 
 	private static final class Builder implements HtmlTokenizer.Handler {
+		final Runnable checkpoint;
 		final HtmlDocument doc = new HtmlDocument();
 		final StringBuilder chars = new StringBuilder();
 		int open = -1;                 // the block being filled, or -1
@@ -187,8 +262,11 @@ public final class HtmlDocument {
 		final StringBuilder collected = new StringBuilder();
 		int selectFor = -1, selected;  // the open select, and its selected option
 		final java.util.List<String> options = new java.util.ArrayList<>();
+		int anonymousContainerBox = -1;
+		int implicitCellDepth = -1;    // an anonymous text cell closes its synthetic frame together with its block
+		boolean controlContainerStyle; // a parent's former control-fragment decoration needs its real container box
 		/* CSS: the sheet, the text of a style element being read, and one computed style per open element */
-		final HtmlStyles styles = new HtmlStyles();
+		final HtmlStyles styles;
 		final StringBuilder css = new StringBuilder();
 		int cssDepth;
 		int[][] frames = { HtmlStyles.root() };
@@ -199,35 +277,60 @@ public final class HtmlDocument {
 		/* per level: the tags and attributes of the element children so far of the element open at that level */
 		java.util.List<java.util.List<String>> kidTags = new java.util.ArrayList<>();
 		java.util.List<java.util.List<String[]>> kidAttributes = new java.util.ArrayList<>();
+		int[] frameBox = { 0 }, frameOwnBox = { -1 };
+		int[] lastChild = new int[16];
 		int depth;
 		int listDepth;
 		int[] ordinals = new int[8];   // per list depth: next ordinal, or BULLET for ul
 		boolean space;                 // a collapsed space is pending
 
+		Builder(Runnable checkpoint) {
+			this.checkpoint = checkpoint;
+			styles = new HtmlStyles(checkpoint);
+			Arrays.fill(lastChild, -1);
+		}
+
 		@Override
 		public void startTag(String name, String[] attributes, boolean selfClosing) {
+			checkpoint.run();
 			flushSpace();
 			if (name.equals("style")) {
 				cssDepth += selfClosing ? 0 : 1;
 				return;
 			}
-			if (!selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr") && !name.equals("script")
-					&& !name.equals("input")) {
-				push(name, attributes, styles.compute(frames[depth], path(name, attributes), HtmlTokenizer.attribute(attributes, "style")));
-				if (frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_NONE) {
-					frameHidden[depth] = true;
-					skip++;
+			boolean flexItem = containerFrame > 0 && depth == containerFrame && !selfClosing;
+			// Table/flex/grid control flattening stays with its existing owner; hidden inputs remain submission-only.
+			boolean nativeControl = tables == 0 && !cellOpen && controlTag(name)
+					&& !(name.equals("input") && "hidden".equalsIgnoreCase(HtmlTokenizer.attribute(attributes, "type")));
+			// An invisible control must not split its surrounding text before its visibility is known.
+			int[] controlStyle = nativeControl && skip == 0
+					? styles.compute(frames[depth], path(name, attributes), HtmlTokenizer.attribute(attributes, "style")) : null;
+			boolean ownBox = skip == 0 && (nativeControl || flexItem || boxTag(name) && boxSupported(name));
+			if (ownBox && (controlStyle == null || controlStyle[HtmlStyles.DISPLAY] != HtmlStyles.DISPLAY_NONE)) beforeBox(name);
+			if (ownBox && (name.equals("td") || name.equals("th"))) ensureRowBox();
+			boolean temporary = ownBox && (selfClosing || name.equals("img") || name.equals("hr")
+					|| nativeControl && name.equals("input"));
+			if (temporary || !selfClosing && !name.equals("br") && !name.equals("img") && !name.equals("hr")
+					&& !name.equals("script") && !name.equals("input")) {
+				int[] computed = controlStyle != null ? controlStyle
+						: styles.compute(frames[depth], path(name, attributes), HtmlTokenizer.attribute(attributes, "style"));
+				boolean hidden = computed[HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_NONE;
+				int box = ownBox && !hidden ? addBox(frameBox[depth], name, computed) : -1;
+				if (box >= 0 && nativeControl && depth > 0 && blockTag(frameTags[depth]) && decorated(frames[depth])) {
+					controlContainerStyle = true;
 				}
+				push(name, attributes, computed, box);
+				if (hidden) { frameHidden[depth] = true; skip++; }
 			} else {
-				sibling(name, attributes); // a void element is a sibling of the elements after it
+				sibling(name, attributes);
 			}
 			if (name.equals("script")) {
-				skip += selfClosing ? 0 : 1; // a script's content is not text
+				skip += selfClosing ? 0 : 1;
 				return;
 			}
-			if (skip > 0) return; // nothing of a hidden element (or a script) is shown
+			if (skip > 0) { if (temporary) closeFrames(depth); return; }
 			if (containerFrame > 0 && depth == containerFrame + 1 && depth > 0 && frameTags[depth].equals(name)) {
-				openItem(true); // a child element of a flex or grid container is an item
+				openItem(true);
 			} else if (!selfClosing && tables == 0 && depth > 0 && frameTags[depth].equals(name)
 					&& (frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_FLEX || frames[depth][HtmlStyles.DISPLAY] == HtmlStyles.DISPLAY_GRID)) {
 				startContainer();
@@ -235,7 +338,7 @@ public final class HtmlDocument {
 			}
 			switch (name) {
 				case "script" -> skip += selfClosing ? 0 : 1;
-				case "p", "div" -> openBlock(PARAGRAPH, 0, 0);
+				case "p", "div", "main", "section", "article", "nav", "aside", "header", "footer" -> openBlock(PARAGRAPH, 0, 0);
 				case "h1", "h2", "h3", "h4", "h5", "h6" -> openBlock(HEADING, name.charAt(1) - '0', 0);
 				case "ul", "ol" -> {
 					closeBlock();
@@ -330,10 +433,15 @@ public final class HtmlDocument {
 				default -> {
 				}
 			}
+			if (temporary) {
+				closeBlock();
+				closeFrames(depth);
+			}
 		}
 
 		@Override
 		public void endTag(String name) {
+			checkpoint.run();
 			endElement(name);
 			unstick(depth); // the sticky boxes of the elements that ended end with their last block
 		}
@@ -402,7 +510,8 @@ public final class HtmlDocument {
 					}
 					tables = Math.max(0, tables - 1);
 				}
-				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "caption" -> closeBlock();
+				case "p", "div", "main", "section", "article", "nav", "aside", "header", "footer",
+						"h1", "h2", "h3", "h4", "h5", "h6", "li", "caption" -> closeBlock();
 				case "ul", "ol" -> {
 					closeBlock();
 					listDepth = Math.max(0, listDepth - 1);
@@ -428,6 +537,7 @@ public final class HtmlDocument {
 
 		@Override
 		public void text(String text) {
+			checkpoint.run();
 			if (cssDepth > 0) {
 				css.append(text);
 				return;
@@ -442,6 +552,7 @@ public final class HtmlDocument {
 				return;
 			}
 			for (int i = 0, n = text.length(); i < n; i++) {
+				if ((i & 1023) == 0) checkpoint.run();
 				char c = text.charAt(i);
 				if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f') {
 					space = true;
@@ -457,6 +568,7 @@ public final class HtmlDocument {
 		/* text inside pre: every character kept, line ends as \n, except a newline right after <pre> */
 		void preformatted(String text) {
 			for (int i = 0, n = text.length(); i < n; i++) {
+				if ((i & 1023) == 0) checkpoint.run();
 				char c = text.charAt(i);
 				if (c == '\r') {
 					if (i + 1 < n && text.charAt(i + 1) == '\n') continue;
@@ -510,6 +622,7 @@ public final class HtmlDocument {
 			column = 0;
 			rowOpen = true;
 			for (int c = 0; c < spanRows.length; c++) {
+				checkpoint.run();
 				taken[c] = spanRows[c] > 0;
 				if (taken[c]) spanRows[c]--;
 			}
@@ -531,7 +644,19 @@ public final class HtmlDocument {
 		void openCell(int header, int span, int rowSpan) {
 			if (!rowOpen) startRow();
 			else closeCell();
+			if (tables == 1 && containerFrame == 0 && doc.boxRole[frameBox[depth]] != CELL_BOX) {
+				ensureRowBox();
+				int[] inherited = styles.compute(frames[depth], "", null, null);
+				int box = addBox(frameBox[depth], "td", inherited);
+				push("td", inherited, box);
+				implicitCellDepth = depth;
+			}
+			if (containerFrame > 0 && depth == containerFrame) {
+				int[] inherited = styles.compute(frames[depth], "", null, null);
+				anonymousContainerBox = addBox(frameBox[depth], "td", inherited);
+			}
 			openBlock(CELL, header, 0);
+			if (anonymousContainerBox >= 0) doc.blockBox[open] = anonymousContainerBox;
 			HtmlDocument d = doc;
 			columns(column);
 			while (taken[column]) columns(++column); // past the columns rowspans from above cover
@@ -553,6 +678,14 @@ public final class HtmlDocument {
 		void closeCell() {
 			cellOpen = false;
 			closeBlock();
+			if (anonymousContainerBox >= 0) {
+				doc.boxEndBlock[anonymousContainerBox] = doc.blockCount;
+				anonymousContainerBox = -1;
+			}
+			if (implicitCellDepth >= 0) {
+				closeFrames(implicitCellDepth);
+				implicitCellDepth = -1;
+			}
 		}
 
 		/* inside a cell a block element, or a nested table's row or cell, separates its text and opens no block */
@@ -644,6 +777,8 @@ public final class HtmlDocument {
 				d.cellRowSpan = Arrays.copyOf(d.cellRowSpan, capacity);
 				d.cellGrow = Arrays.copyOf(d.cellGrow, capacity);
 				d.cellBasis = Arrays.copyOf(d.cellBasis, capacity);
+				d.cellShrink = Arrays.copyOf(d.cellShrink, capacity);
+				d.blockBox = Arrays.copyOf(d.blockBox, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
 				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
@@ -674,11 +809,14 @@ public final class HtmlDocument {
 			d.firstRun[open] = d.runTotal;
 			d.runCount[open] = 0;
 			d.image[open] = -1;
+			d.blockBox[open] = frameBox[depth];
 			// an explicit block's own element is the top frame; an implicit paragraph only inherits the alignment
 			int[] frame = frames[depth];
-			boolean own = kind != IMAGE && depth > 0 && blockTag(frameTags[depth]);
+			boolean own = kind != IMAGE && depth > 0 && (blockTag(frameTags[depth])
+					|| kind == CONTROL && d.boxRole[d.blockBox[open]] == CONTROL_BOX);
+			boolean ownLeaf = depth > 0 && (kind == IMAGE && frameTags[depth].equals("img") || kind == RULE && frameTags[depth].equals("hr"));
 			d.blockBackground[open] = own ? frame[HtmlStyles.BACKGROUND] : 0;
-			d.blockIndent[open] = (own ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
+			d.blockIndent[open] = (own || ownLeaf ? frame[HtmlStyles.INDENT] : 0) + quote * QUOTE_INDENT;
 			d.blockAlign[open] = frame[HtmlStyles.ALIGN];
 			boolean box = own && (kind != CELL || d.tableDisplay[table] != HtmlStyles.DISPLAY_DEFAULT); // a flex or grid item keeps its CSS box
 			d.blockMarginTop[open] = box ? frame[HtmlStyles.MARGIN_TOP] : 0;
@@ -720,18 +858,35 @@ public final class HtmlDocument {
 		/* the elements deeper than {@code level} have ended: the sticky blocks they contain end at the last block so far */
 		void unstick(int level) {
 			while (stickyCount > 0 && stickyDepth[stickyCount - 1] > level) {
+				checkpoint.run();
 				doc.blockStickyEnd[stickyOpen[--stickyCount]] = doc.blockCount - 1;
 			}
 		}
 
 		static boolean blockTag(String tag) {
 			return switch (tag) {
-				case "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "td", "th", "caption" -> true;
+				case "p", "div", "main", "section", "article", "nav", "aside", "header", "footer",
+						"h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "td", "th", "caption" -> true;
 				default -> false;
 			};
 		}
 
-		void push(String tag, String[] attributes, int[] frame) {
+		static boolean controlTag(String tag) {
+			return switch (tag) {
+				case "input", "textarea", "select", "button" -> true;
+				default -> false;
+			};
+		}
+
+		/* Preserve a block parent's existing decoration when its control fragment receives a separate own style. */
+		static boolean decorated(int[] frame) {
+			return frame[HtmlStyles.BACKGROUND] != 0 || frame[HtmlStyles.BORDER_WIDTH] > 0 || frame[HtmlStyles.INDENT] > 0
+					|| frame[HtmlStyles.MARGIN_TOP] > 0 || frame[HtmlStyles.MARGIN_RIGHT] > 0 || frame[HtmlStyles.MARGIN_BOTTOM] > 0
+					|| frame[HtmlStyles.PADDING_TOP] > 0 || frame[HtmlStyles.PADDING_RIGHT] > 0
+					|| frame[HtmlStyles.PADDING_BOTTOM] > 0 || frame[HtmlStyles.PADDING_LEFT] > 0;
+		}
+
+		void push(String tag, String[] attributes, int[] frame, int ownBox) {
 			int index = kids(depth).size();
 			sibling(tag, attributes);
 			if (++depth == frames.length) {
@@ -740,9 +895,13 @@ public final class HtmlDocument {
 				frameAttributes = Arrays.copyOf(frameAttributes, 2 * frameAttributes.length);
 				frameIndex = Arrays.copyOf(frameIndex, 2 * frameIndex.length);
 				frameHidden = Arrays.copyOf(frameHidden, 2 * frameHidden.length);
+				frameBox = Arrays.copyOf(frameBox, 2 * frameBox.length);
+				frameOwnBox = Arrays.copyOf(frameOwnBox, 2 * frameOwnBox.length);
 			}
 			frames[depth] = frame;
 			frameTags[depth] = tag;
+			frameOwnBox[depth] = ownBox;
+			frameBox[depth] = ownBox >= 0 ? ownBox : frameBox[depth - 1];
 			frameAttributes[depth] = attributes;
 			frameIndex[depth] = index;
 			kids(depth).clear(); // the new element has no children yet
@@ -752,6 +911,7 @@ public final class HtmlDocument {
 		/* the element children so far of the element open at a level */
 		java.util.List<String> kids(int level) {
 			while (kidTags.size() <= level) {
+				checkpoint.run();
 				kidTags.add(new java.util.ArrayList<>());
 				kidAttributes.add(new java.util.ArrayList<>());
 			}
@@ -791,17 +951,155 @@ public final class HtmlDocument {
 			};
 		}
 
+		static boolean boxTag(String tag) {
+			return switch (tag) {
+				case "body", "p", "div", "main", "section", "article", "nav", "aside", "header", "footer",
+						"h1", "h2", "h3", "h4", "h5", "h6", "li", "pre", "blockquote", "ul", "ol",
+						"table", "tr", "td", "th", "caption", "img", "hr" -> true;
+				default -> false;
+			};
+		}
+
+		boolean boxSupported(String tag) {
+			return switch (tag) {
+				case "table" -> tables == 0;
+				case "tr", "td", "th", "caption" -> tables == 1;
+				default -> !cellOpen;
+			};
+		}
+
+		/* End the preceding fragment before recording a box range, including omitted cell/row end tags. */
+		void beforeBox(String tag) {
+			if (containerFrame > 0 && depth == containerFrame) {
+				closeCell();
+			} else if (tables == 1 && (tag.equals("tr") || tag.equals("td") || tag.equals("th") || tag.equals("caption"))) {
+				closeCell();
+				int from = -1;
+				for (int k = depth; k > 0; k--) {
+					checkpoint.run();
+					String openTag = frameTags[k];
+					if (openTag.equals("table")) break;
+					if (openTag.equals("tr")) {
+						if (tag.equals("tr") || tag.equals("caption")) from = k;
+						break;
+					}
+					if (openTag.equals("td") || openTag.equals("th") || openTag.equals("caption")) from = k;
+				}
+				if (from >= 0) closeFrames(from);
+			} else {
+				closeBlock();
+			}
+		}
+
+		/* The flat table parser already implies a row for td/th without tr; preserve that row in the box tree too. */
+		void ensureRowBox() {
+			for (int k = depth; k > 0; k--) {
+				checkpoint.run();
+				if (frameTags[k].equals("tr")) return;
+				if (frameTags[k].equals("table")) break;
+			}
+			// Anonymous boxes inherit text, but must not acquire declarations from a real tr selector.
+			int[] inherited = styles.compute(frames[depth], "", null, null);
+			int box = addBox(frameBox[depth], "tr", inherited);
+			push("tr", new String[0], inherited, box);
+		}
+
+		int addBox(int parent, String tag, int[] frame) {
+			HtmlDocument d = doc;
+			if (d.boxCount == d.boxParent.length) growBoxes();
+			int box = d.boxCount++;
+			d.boxParent[box] = parent;
+			d.boxFirstChild[box] = d.boxNextSibling[box] = -1;
+			if (lastChild[parent] < 0) d.boxFirstChild[parent] = box;
+			else d.boxNextSibling[lastChild[parent]] = box;
+			lastChild[parent] = box;
+			d.boxFirstBlock[box] = d.boxEndBlock[box] = d.blockCount;
+			d.boxRole[box] = switch (tag) {
+				case "table" -> TABLE_BOX;
+				case "tr" -> ROW_BOX;
+				case "td", "th" -> CELL_BOX;
+				case "input", "textarea", "select", "button" -> CONTROL_BOX;
+				default -> NORMAL_BOX;
+			};
+			d.boxPosition[box] = frame[HtmlStyles.POSITION];
+			d.boxLeft[box] = frame[HtmlStyles.OFFSET_LEFT];
+			d.boxTop[box] = frame[HtmlStyles.OFFSET_TOP];
+			d.boxRight[box] = frame[HtmlStyles.OFFSET_RIGHT];
+			d.boxBottom[box] = frame[HtmlStyles.OFFSET_BOTTOM];
+			d.boxWidth[box] = frame[HtmlStyles.WIDTH];
+			d.boxHeight[box] = frame[HtmlStyles.HEIGHT];
+			d.boxZIndex[box] = frame[HtmlStyles.Z_INDEX];
+			d.boxZAuto[box] = frame[HtmlStyles.Z_AUTO] != 0;
+			d.boxBackground[box] = frame[HtmlStyles.BACKGROUND];
+			d.boxOverflow[box] = frame[HtmlStyles.OVERFLOW];
+			boolean boxModel = d.boxRole[box] != CELL_BOX;
+			d.boxIndent[box] = boxModel ? frame[HtmlStyles.INDENT] : 0;
+			d.boxMarginTop[box] = boxModel ? frame[HtmlStyles.MARGIN_TOP] : 0;
+			d.boxMarginRight[box] = boxModel ? frame[HtmlStyles.MARGIN_RIGHT] : 0;
+			d.boxMarginBottom[box] = boxModel ? frame[HtmlStyles.MARGIN_BOTTOM] : 0;
+			d.boxPadTop[box] = boxModel ? frame[HtmlStyles.PADDING_TOP] : 0;
+			d.boxPadRight[box] = boxModel ? frame[HtmlStyles.PADDING_RIGHT] : 0;
+			d.boxPadBottom[box] = boxModel ? frame[HtmlStyles.PADDING_BOTTOM] : 0;
+			d.boxPadLeft[box] = boxModel ? frame[HtmlStyles.PADDING_LEFT] : 0;
+			d.boxBorder[box] = boxModel ? frame[HtmlStyles.BORDER_WIDTH] : 0;
+			d.boxBorderColor[box] = boxModel ? frame[HtmlStyles.BORDER_COLOR] : 0;
+			d.boxBorderStyle[box] = boxModel ? frame[HtmlStyles.BORDER_STYLE] : HtmlStyles.BORDER_SOLID;
+			d.positioned |= d.boxPosition[box] != HtmlStyles.STATIC || d.boxWidth[box] != HtmlStyles.AUTO
+					|| d.boxHeight[box] != HtmlStyles.AUTO || d.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE;
+			return box;
+		}
+
+		void growBoxes() {
+			HtmlDocument d = doc;
+			int old = d.boxParent.length, capacity = 2 * old;
+			d.boxParent = Arrays.copyOf(d.boxParent, capacity);
+			d.boxFirstChild = Arrays.copyOf(d.boxFirstChild, capacity);
+			d.boxNextSibling = Arrays.copyOf(d.boxNextSibling, capacity);
+			d.boxFirstBlock = Arrays.copyOf(d.boxFirstBlock, capacity);
+			d.boxEndBlock = Arrays.copyOf(d.boxEndBlock, capacity);
+			d.boxRole = Arrays.copyOf(d.boxRole, capacity);
+			d.boxPosition = Arrays.copyOf(d.boxPosition, capacity);
+			d.boxLeft = Arrays.copyOf(d.boxLeft, capacity);
+			d.boxTop = Arrays.copyOf(d.boxTop, capacity);
+			d.boxRight = Arrays.copyOf(d.boxRight, capacity);
+			d.boxBottom = Arrays.copyOf(d.boxBottom, capacity);
+			d.boxWidth = Arrays.copyOf(d.boxWidth, capacity);
+			d.boxHeight = Arrays.copyOf(d.boxHeight, capacity);
+			d.boxZIndex = Arrays.copyOf(d.boxZIndex, capacity);
+			d.boxZAuto = Arrays.copyOf(d.boxZAuto, capacity);
+			d.boxBackground = Arrays.copyOf(d.boxBackground, capacity);
+			d.boxOverflow = Arrays.copyOf(d.boxOverflow, capacity);
+			d.boxIndent = Arrays.copyOf(d.boxIndent, capacity);
+			d.boxMarginTop = Arrays.copyOf(d.boxMarginTop, capacity);
+			d.boxMarginRight = Arrays.copyOf(d.boxMarginRight, capacity);
+			d.boxMarginBottom = Arrays.copyOf(d.boxMarginBottom, capacity);
+			d.boxPadTop = Arrays.copyOf(d.boxPadTop, capacity);
+			d.boxPadRight = Arrays.copyOf(d.boxPadRight, capacity);
+			d.boxPadBottom = Arrays.copyOf(d.boxPadBottom, capacity);
+			d.boxPadLeft = Arrays.copyOf(d.boxPadLeft, capacity);
+			d.boxBorder = Arrays.copyOf(d.boxBorder, capacity);
+			d.boxBorderColor = Arrays.copyOf(d.boxBorderColor, capacity);
+			d.boxBorderStyle = Arrays.copyOf(d.boxBorderStyle, capacity);
+			lastChild = Arrays.copyOf(lastChild, capacity);
+			Arrays.fill(lastChild, old, capacity, -1);
+		}
+
+		void push(String tag, int[] frame, int ownBox) {
+			push(tag, new String[0], frame, ownBox);
+		}
+
 		/* closes the innermost open element of that tag and every element opened inside it (misnested tags) */
 		void pop(String tag) {
 			for (int k = depth; k > 0; k--) {
+				checkpoint.run();
 				if (frameTags[k].equals(tag)) {
-					for (int h = depth; h >= k; h--) {
-						if (frameHidden[h]) {
-							frameHidden[h] = false;
-							skip = Math.max(0, skip - 1);
-						}
+					for (int f = depth; f >= k; f--) {
+						checkpoint.run();
+						if (frameOwnBox[f] < 0) continue;
+						if (doc.boxRole[frameOwnBox[f]] == CELL_BOX) closeCell();
+						else closeBlock();
 					}
-					depth = k - 1;
+					closeFrames(k);
 					return;
 				}
 			}
@@ -818,6 +1116,7 @@ public final class HtmlDocument {
 			HtmlDocument d = doc;
 			int display = frame[HtmlStyles.DISPLAY];
 			d.tableDisplay[table] = display;
+			d.boxRole[frameBox[depth]] = display == HtmlStyles.DISPLAY_FLEX ? FLEX_BOX : GRID_BOX;
 			d.tableJustify[table] = frame[HtmlStyles.JUSTIFY];
 			d.tableGap[table] = frame[HtmlStyles.GAP];
 			if (display == HtmlStyles.DISPLAY_GRID) {
@@ -842,6 +1141,7 @@ public final class HtmlDocument {
 		 * span; a grid places it in the current row, or at the start of the next when it does not fit (auto-placement)
 		 */
 		void openItem(boolean element) {
+			if (element) doc.boxRole[frameBox[depth]] = CELL_BOX;
 			int[] frame = frames[depth];
 			int span = 1;
 			if (doc.tableDisplay[table] == HtmlStyles.DISPLAY_GRID) {
@@ -852,6 +1152,11 @@ public final class HtmlDocument {
 			openCell(0, span);
 			doc.cellGrow[open] = element ? frame[HtmlStyles.FLEX_GROW] : 0;
 			doc.cellBasis[open] = element ? frame[HtmlStyles.FLEX_BASIS] : -1;
+			// An auto flex basis uses the independently computed width; shorthand declaration order cannot erase it.
+			if (element && doc.cellBasis[open] < 0 && frame[HtmlStyles.WIDTH] != HtmlStyles.AUTO) {
+				doc.cellBasis[open] = frame[HtmlStyles.WIDTH];
+			}
+			doc.cellShrink[open] = element ? HtmlStyles.shrink(frame) : 1;
 		}
 
 		void endContainer() {
@@ -859,6 +1164,62 @@ public final class HtmlDocument {
 			rowOpen = false;
 			tables = Math.max(0, tables - 1);
 			containerFrame = 0;
+		}
+
+		void closeFrames(int from) {
+			for (int k = depth; k >= from; k--) {
+				checkpoint.run();
+				int box = frameOwnBox[k];
+				if (box >= 0) doc.boxEndBlock[box] = doc.blockCount;
+				if (frameHidden[k]) {
+					frameHidden[k] = false;
+					skip = Math.max(0, skip - 1);
+				}
+			}
+			depth = from - 1;
+		}
+
+		void finish() {
+			closeCell();
+			closeFrames(1);
+			doc.boxEndBlock[0] = doc.blockCount;
+			doc.boxLayout = needsBoxLayout();
+		}
+
+		/* Route only extensions to the resolved scene; a flat fragment remains the authority for its existing path. */
+		boolean needsBoxLayout() {
+			HtmlDocument d = doc;
+			if (controlContainerStyle) return true;
+			for (int box = 1; box < d.boxCount; box++) {
+				if (d.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE) return true;
+				checkpoint.run();
+				if (d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO
+						|| d.boxRight[box] != HtmlStyles.AUTO || d.boxBottom[box] != HtmlStyles.AUTO) return true;
+				// Static flex/grid items with an integer z-index still establish an atomic stacking context.
+				int parent = d.boxParent[box];
+				if (d.boxRole[box] == CELL_BOX && !d.boxZAuto[box] && parent >= 0
+						&& (d.boxRole[parent] == FLEX_BOX || d.boxRole[parent] == GRID_BOX)) return true;
+				int first = d.boxFirstBlock[box];
+				// A single leaf fragment can carry its own decoration; a wrapper or empty box cannot.
+				if (d.boxRole[box] == NORMAL_BOX && decoratedBox(box)
+						&& (d.boxFirstChild[box] >= 0 || first + 1 != d.boxEndBlock[box] || d.blockBox[first] != box)) return true;
+				if (d.boxPosition[box] == HtmlStyles.STATIC) continue;
+				// Native visibility and scrolling use the scene's projected coordinates, including root-level controls.
+				if (d.boxRole[box] == CONTROL_BOX) return true;
+				// Keep the current simple sticky owner; nested sticky containers need their descendants projected together.
+				if (d.boxPosition[box] == HtmlStyles.STICKY && d.boxFirstChild[box] < 0 && first < d.boxEndBlock[box]
+						&& d.blockBox[first] == box && d.blockPosition[first] == HtmlStyles.STICKY) continue;
+				if (d.boxParent[box] != 0 || d.boxFirstChild[box] >= 0 || first == d.boxEndBlock[box]
+						|| d.blockBox[first] != box || d.blockPosition[first] != d.boxPosition[box]) return true;
+			}
+			return false;
+		}
+
+		boolean decoratedBox(int box) {
+			HtmlDocument d = doc;
+			return d.boxBackground[box] != 0 || d.boxBorder[box] > 0 || d.boxIndent[box] > 0
+					|| d.boxMarginTop[box] > 0 || d.boxMarginRight[box] > 0 || d.boxMarginBottom[box] > 0
+					|| d.boxPadTop[box] > 0 || d.boxPadRight[box] > 0 || d.boxPadBottom[box] > 0 || d.boxPadLeft[box] > 0;
 		}
 
 		void closeBlock() {

@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/model/**'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridModelJobs.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridModelJobs_Test.java'
+      - 'releng/verification/grid-cpu-sort/**'
       - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/model/**'
       - '.github/workflows/grid-model-selection-contract.yml'
   workflow_dispatch:
@@ -41,3 +44,30 @@ jobs:
             "$src/RowSelection.java" \
             "$test/RowSelectionMaskedCountContract.java"
           java -cp "$output" org.eclipse.nebula.widgets.grid.model.RowSelectionMaskedCountContract
+      - name: Verify real RowPermutation and GridModelJobs CPU/UI contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(mktemp -d)"
+          trap 'rm -rf "$output"' EXIT
+          src=widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid
+          model="$src/model"
+          stub=releng/verification/grid-cpu-sort/stubs
+          javac --release 21 -Xlint:all -Werror -d "$output" \
+            "$model/RowView.java" \
+            "$model/RowComparator.java" \
+            "$model/RowPredicate.java" \
+            "$model/IntPermutationSort.java" \
+            "$model/RowPermutation.java" \
+            "$stub/org/eclipse/swt/SWT.java" \
+            "$stub/org/eclipse/swt/SWTException.java" \
+            "$stub/org/eclipse/swt/widgets/Event.java" \
+            "$stub/org/eclipse/swt/widgets/Listener.java" \
+            "$stub/org/eclipse/swt/widgets/Display.java" \
+            "$stub/org/eclipse/swt/custom/BusyIndicator.java" \
+            "$stub/org/eclipse/nebula/widgets/grid/Grid.java" \
+            "$src/GridModelJobs.java" \
+            releng/verification/grid-cpu-sort/RowPermutationCpuCancellationContract.java \
+            releng/verification/grid-cpu-sort/HeadlessGridCpuUiContract.java
+          java -ea -cp "$output" org.eclipse.nebula.widgets.grid.model.RowPermutationCpuCancellationContract
+          java -ea -cp "$output" org.eclipse.nebula.widgets.grid.HeadlessGridCpuUiContract

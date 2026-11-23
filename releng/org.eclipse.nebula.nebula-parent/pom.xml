@@ -367,8 +367,6 @@ Contributors:
 		<module>../../widgets/segmentedbar</module>
 		<module>../../widgets/splitbutton</module>
 		<module>../../widgets/statuspane</module>
-		<module>../../widgets/terminal</module>
-		<module>../../widgets/vnc</module>
 		<module>../../widgets/stepbar</module>
 		<module>../../widgets/tablecombo</module>
 		<module>../../widgets/tiles</module>
@@ -384,6 +382,8 @@ Contributors:
 		<module>../../widgets/datechooser</module>
 		<module>../../widgets/pagination</module>
 		<module>../../widgets/picture</module>
+		<module>../../widgets/terminal</module>
+		<module>../../widgets/vnc</module>
 		<module>../../widgets/timeline</module>
 
 		<module>../../examples/org.eclipse.nebula.examples</module>
@@ -505,6 +505,93 @@ Contributors:
 				<target-platform-gef>${m3.p2.mirror.url}</target-platform-gef>
 				<target-platform-swtbot>${m3.p2.mirror.url}</target-platform-swtbot>
 			</properties>
+		</profile>
+		<profile>
+			<!--
+				Opt in to a locally published, source-built Draw2D bundle. The caller
+				must supply the real qualified version and hashes from that build;
+				there is no fallback artifact, snapshot coordinate or default digest.
+				The XYGraph test fragment checks the bundle actually loaded by OSGi.
+			-->
+			<id>draw2d-source-receiver</id>
+			<properties>
+				<target-platform-gef>${nebula.draw2d.repository}</target-platform-gef>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.tycho</groupId>
+						<artifactId>target-platform-configuration</artifactId>
+						<version>${tycho-version}</version>
+						<configuration>
+							<filters>
+								<filter>
+									<type>eclipse-plugin</type>
+									<id>org.eclipse.draw2d</id>
+									<restrictTo>
+										<version>${nebula.draw2d.bundle.version}</version>
+									</restrictTo>
+								</filter>
+							</filters>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-enforcer-plugin</artifactId>
+						<version>3.5.0</version>
+						<executions>
+							<execution>
+								<id>require-draw2d-source-receiver</id>
+								<phase>validate</phase>
+								<goals><goal>enforce</goal></goals>
+								<configuration>
+									<rules>
+										<requireProperty>
+											<property>nebula.draw2d.repository</property>
+											<regex>file:/[^\r\n]+</regex>
+											<message>Supply the file URI of the real source-built Draw2D P2 repository.</message>
+										</requireProperty>
+										<requireProperty>
+											<property>nebula.draw2d.bundle.version</property>
+											<regex>(?!.*(?:qualifier|SNAPSHOT))[0-9]+\.[0-9]+\.[0-9]+\.[A-Za-z0-9_-]+</regex>
+											<message>Supply the exact qualified Bundle-Version of the built Draw2D artifact.</message>
+										</requireProperty>
+										<requireProperty>
+											<property>nebula.draw2d.source.commit</property>
+											<regex>[0-9a-f]{40}</regex>
+											<message>Supply the full source commit recorded by the Draw2D build.</message>
+										</requireProperty>
+										<requireProperty>
+											<property>nebula.draw2d.bundle.sha256</property>
+											<regex>[0-9a-f]{64}</regex>
+											<message>Supply the measured SHA-256 of the built Draw2D bundle JAR.</message>
+										</requireProperty>
+										<requireProperty>
+											<property>nebula.draw2d.figure.sha256</property>
+											<regex>[0-9a-f]{64}</regex>
+											<message>Supply the measured SHA-256 of Figure.class from the same bundle.</message>
+										</requireProperty>
+									</rules>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.eclipse.tycho</groupId>
+						<artifactId>tycho-surefire-plugin</artifactId>
+						<version>${tycho-version}</version>
+						<configuration>
+							<systemProperties>
+								<nebula.draw2d.receiver.required>true</nebula.draw2d.receiver.required>
+								<nebula.draw2d.bundle.version>${nebula.draw2d.bundle.version}</nebula.draw2d.bundle.version>
+								<nebula.draw2d.source.commit>${nebula.draw2d.source.commit}</nebula.draw2d.source.commit>
+								<nebula.draw2d.bundle.sha256>${nebula.draw2d.bundle.sha256}</nebula.draw2d.bundle.sha256>
+								<nebula.draw2d.figure.sha256>${nebula.draw2d.figure.sha256}</nebula.draw2d.figure.sha256>
+							</systemProperties>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 
