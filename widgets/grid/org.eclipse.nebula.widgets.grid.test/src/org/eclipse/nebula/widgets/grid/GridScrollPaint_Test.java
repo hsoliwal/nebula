@@ -116,15 +116,28 @@ public class GridScrollPaint_Test {
 	}
 
 	/*
-	 * runs the event loop until it has been idle for 200 ms and no Grid waits for a drag frame
-	 * (frame-coalesced drag paints use timers, which a test desktop may fire late)
+	 * Pump native events until the Grid's body paints are stable for 200 ms
+	 * and no drag frame is queued. Other desktop events cannot extend a Grid
+	 * paint-quiescence interval. The total five-second limit still fails closed.
 	 */
 	private void settle() {
-		long idleSince = System.currentTimeMillis();
-		final long deadline = idleSince + 5000;
-		while (System.currentTimeMillis() - idleSince < 200 || dragFramePending() && System.currentTimeMillis() < deadline) {
+		final long started = System.nanoTime();
+		long bodyPaintIdleSince = started;
+		long observedBodyPaints = bodyPaintTotal();
+		int dispatched = 0;
+		for (;;) {
+			final long now = System.nanoTime();
+			if (now - bodyPaintIdleSince >= 200_000_000L && !dragFramePending()) {
+				return;
+			}
+			if (now - started >= 5_000_000_000L) {
+				fail("Grid body paints did not settle within five seconds; dispatched "
+						+ dispatched + " SWT events, body paints " + observedBodyPaints
+						+ ", quiet " + (now - bodyPaintIdleSince) / 1_000_000L
+						+ " ms, drag pending " + dragFramePending());
+			}
 			if (display.readAndDispatch()) {
-				idleSince = System.currentTimeMillis();
+				dispatched++;
 			} else {
 				try {
 					Thread.sleep(5);
@@ -133,7 +146,23 @@ public class GridScrollPaint_Test {
 					return;
 				}
 			}
+			final long currentBodyPaints = bodyPaintTotal();
+			if (currentBodyPaints != observedBodyPaints) {
+				observedBodyPaints = currentBodyPaints;
+				bodyPaintIdleSince = System.nanoTime();
+			}
 		}
+	}
+
+	/** Count scrolling-body paints on this shell without adding SWT listeners. */
+	private long bodyPaintTotal() {
+		long paints = 0;
+		for (final org.eclipse.swt.widgets.Control child : shell.getChildren()) {
+			if (child instanceof Grid) {
+				paints += ((Grid) child).bodyPaintCount;
+			}
+		}
+		return paints;
 	}
 
 	private boolean dragFramePending() {

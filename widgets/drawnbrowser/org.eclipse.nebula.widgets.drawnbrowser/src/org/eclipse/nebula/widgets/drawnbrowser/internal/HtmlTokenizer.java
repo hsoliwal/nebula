@@ -35,28 +35,36 @@ public final class HtmlTokenizer {
 	}
 
 	private static final String[] NO_ATTRIBUTES = new String[0];
+	static final Runnable UNCHECKED = () -> { };
 
 	private HtmlTokenizer() {
 	}
 
 	/** Reports the tokens of {@code html} to {@code handler}. */
 	public static void tokenize(String html, Handler handler) {
+		tokenize(html, handler, UNCHECKED);
+	}
+
+	/* The document parser supplies a detached cancellation checkpoint only for asynchronous input. */
+	static void tokenize(String html, Handler handler, Runnable checkpoint) {
 		int n = html.length(), i = 0, textStart = 0;
 		while (i < n) {
+			if ((i & 1023) == 0) checkpoint.run();
 			if (html.charAt(i) != '<' || i + 1 >= n) {
 				i++;
 				continue;
 			}
+			checkpoint.run();
 			char next = html.charAt(i + 1);
 			int end;
 			if (html.startsWith("<!--", i)) {
-				end = html.indexOf("-->", i + 4);
+				end = indexOf(html, "-->", i + 4, n, checkpoint);
 				end = end < 0 ? n : end + 3;
 			} else if (next == '!' || next == '?') {
-				end = html.indexOf('>', i);
+				end = indexOf(html, '>', i, n, checkpoint);
 				end = end < 0 ? n : end + 1;
 			} else if (next == '/' || Character.isLetter(next)) {
-				end = tagEnd(html, i);
+				end = tagEnd(html, i, checkpoint);
 				if (end < 0) {
 					i++;
 					continue;
@@ -65,12 +73,12 @@ public final class HtmlTokenizer {
 				i++;
 				continue;
 			}
-			if (i > textStart) handler.text(decode(html, textStart, i));
+			if (i > textStart) handler.text(decode(html, textStart, i, checkpoint));
 			if (next == '/' || Character.isLetter(next)) {
-				String raw = tag(html, i, end, handler);
+				String raw = tag(html, i, end, handler, checkpoint);
 				if (raw != null) {
 					// script and style hold raw text up to their end tag: markup inside is not parsed
-						int close = rawEnd(html, raw, end);
+					int close = rawEnd(html, raw, end, checkpoint);
 					int contentEnd = close < 0 ? n : close;
 					if (contentEnd > end) handler.text(html.substring(end, contentEnd));
 					end = contentEnd;
@@ -78,13 +86,40 @@ public final class HtmlTokenizer {
 			}
 			i = textStart = end;
 		}
-		if (n > textStart) handler.text(decode(html, textStart, n));
+		if (n > textStart) handler.text(decode(html, textStart, n, checkpoint));
+	}
+
+	/* Bound asynchronous library scans too; keep the ordinary tokenizer's single intrinsic scan. */
+	private static int indexOf(String text, int character, int start, int end, Runnable checkpoint) {
+		if (checkpoint == UNCHECKED) return text.indexOf(character, start, end);
+		for (int from = start; from < end;) {
+			checkpoint.run();
+			int limit = from + Math.min(1024, end - from);
+			int found = text.indexOf(character, from, limit);
+			if (found >= 0) return found;
+			from = limit;
+		}
+		return -1;
+	}
+
+	private static int indexOf(String text, String token, int start, int end, Runnable checkpoint) {
+		if (checkpoint == UNCHECKED) return text.indexOf(token, start, end);
+		for (int from = start; from < end;) {
+			checkpoint.run();
+			int limit = from + Math.min(1024, end - from);
+			// Include the token suffix so a terminator crossing a chunk boundary is still found.
+			int found = text.indexOf(token, from, limit + Math.min(token.length() - 1, end - limit));
+			if (found >= 0) return found;
+			from = limit;
+		}
+		return -1;
 	}
 
 	/* the index after the tag's '>', quotes respected; -1 when the tag never closes */
-	private static int tagEnd(String html, int start) {
+	private static int tagEnd(String html, int start, Runnable checkpoint) {
 		char quote = 0;
 		for (int i = start + 1, n = html.length(); i < n; i++) {
+			if ((i & 1023) == 0) checkpoint.run();
 			char c = html.charAt(i);
 			if (quote != 0) {
 				if (c == quote) quote = 0;
@@ -98,27 +133,31 @@ public final class HtmlTokenizer {
 	}
 
 	/* reports one tag; answers the name of a raw-text element (script, style) whose content follows, else null */
-	private static String tag(String html, int start, int end, Handler handler) {
+	private static String tag(String html, int start, int end, Handler handler, Runnable checkpoint) {
 		int i = start + 1, close = end - 1;
 		boolean endTag = html.charAt(i) == '/';
 		if (endTag) i++;
 		int nameStart = i;
-		while (i < close && !Character.isWhitespace(html.charAt(i)) && html.charAt(i) != '/') i++;
+		while (i < close && !Character.isWhitespace(html.charAt(i)) && html.charAt(i) != '/') {
+			if ((i & 1023) == 0) checkpoint.run();
+			i++;
+		}
 		String name = html.substring(nameStart, i).toLowerCase(java.util.Locale.ROOT);
 		if (endTag) {
 			handler.endTag(name);
 			return null;
 		}
 		boolean selfClosing = html.charAt(close - 1) == '/';
-		String[] attributes = attributes(html, i, selfClosing ? close - 1 : close);
+		String[] attributes = attributes(html, i, selfClosing ? close - 1 : close, checkpoint);
 		handler.startTag(name, attributes, selfClosing);
 		return !selfClosing && (name.equals("script") || name.equals("style")) ? name : null;
 	}
 
 	/* A raw-text end tag must end its name; </scripture> is not </script>. */
-	private static int rawEnd(String html, String name, int from) {
+	private static int rawEnd(String html, String name, int from, Runnable checkpoint) {
 		String what = "</" + name;
 		for (int i = from, last = html.length() - what.length(); i <= last; i++) {
+			if ((i & 1023) == 0) checkpoint.run();
 			if (!html.regionMatches(true, i, what, 0, what.length())) continue;
 			int after = i + what.length();
 			if (after < html.length()) {
@@ -129,32 +168,48 @@ public final class HtmlTokenizer {
 		return -1;
 	}
 
-	private static String[] attributes(String html, int i, int end) {
+	private static String[] attributes(String html, int i, int end, Runnable checkpoint) {
 		String[] pairs = NO_ATTRIBUTES;
 		int count = 0;
 		while (i < end) {
-			while (i < end && Character.isWhitespace(html.charAt(i))) i++;
+			checkpoint.run();
+			while (i < end && Character.isWhitespace(html.charAt(i))) {
+				if ((i & 1023) == 0) checkpoint.run();
+				i++;
+			}
 			int nameStart = i;
-			while (i < end && html.charAt(i) != '=' && !Character.isWhitespace(html.charAt(i))) i++;
+			while (i < end && html.charAt(i) != '=' && !Character.isWhitespace(html.charAt(i))) {
+				if ((i & 1023) == 0) checkpoint.run();
+				i++;
+			}
 			if (i == nameStart) break;
 			String name = html.substring(nameStart, i).toLowerCase(java.util.Locale.ROOT), value = "";
-			while (i < end && Character.isWhitespace(html.charAt(i))) i++;
+			while (i < end && Character.isWhitespace(html.charAt(i))) {
+				if ((i & 1023) == 0) checkpoint.run();
+				i++;
+			}
 			if (i < end && html.charAt(i) == '=') {
 				i++;
-				while (i < end && Character.isWhitespace(html.charAt(i))) i++;
+				while (i < end && Character.isWhitespace(html.charAt(i))) {
+					if ((i & 1023) == 0) checkpoint.run();
+					i++;
+				}
 				char quote = i < end ? html.charAt(i) : 0;
 				int valueStart, valueEnd;
 				if (quote == '"' || quote == '\'') {
 					valueStart = i + 1;
-					valueEnd = html.indexOf(quote, valueStart);
+					valueEnd = indexOf(html, quote, valueStart, end, checkpoint);
 					if (valueEnd < 0 || valueEnd > end) valueEnd = end;
 					i = Math.min(end, valueEnd + 1);
 				} else {
 					valueStart = i;
-					while (i < end && !Character.isWhitespace(html.charAt(i))) i++;
+					while (i < end && !Character.isWhitespace(html.charAt(i))) {
+						if ((i & 1023) == 0) checkpoint.run();
+						i++;
+					}
 					valueEnd = i;
 				}
-				value = decode(html, valueStart, valueEnd);
+				value = decode(html, valueStart, valueEnd, checkpoint);
 			}
 			if (2 * count + 2 > pairs.length) pairs = java.util.Arrays.copyOf(pairs, Math.max(4, 2 * pairs.length));
 			pairs[2 * count] = name;
@@ -178,12 +233,18 @@ public final class HtmlTokenizer {
 	 * the HTML-standard optional semicolon. Unknown named references remain literal.
 	 */
 	static String decode(String html, int start, int end) {
-		int amp = html.indexOf('&', start);
+		return decode(html, start, end, UNCHECKED);
+	}
+
+	private static String decode(String html, int start, int end, Runnable checkpoint) {
+		checkpoint.run();
+		int amp = indexOf(html, '&', start, end, checkpoint);
 		if (amp < 0 || amp >= end) return html.substring(start, end);
 		StringBuilder out = new StringBuilder(end - start);
 		int i = start;
 		while (i < end) {
-			amp = html.indexOf('&', i);
+			checkpoint.run();
+			amp = indexOf(html, '&', i, end, checkpoint);
 			if (amp < 0 || amp >= end) {
 				out.append(html, i, end);
 				break;
@@ -198,6 +259,7 @@ public final class HtmlTokenizer {
 				}
 				int at = digitAt, code = 0;
 				while (at < end) {
+					if ((at & 1023) == 0) checkpoint.run();
 					int digit = asciiDigit(html.charAt(at), radix);
 					if (digit < 0) break;
 					if (code <= Character.MAX_CODE_POINT) code = code * radix + digit;

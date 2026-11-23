@@ -6,16 +6,42 @@ package org.eclipse.nebula.widgets.vnc;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * CPU-owned RFB framebuffer. The network thread writes it and the SWT thread
  * takes versioned snapshots. No SWT Image, GC, or Control is used here.
+ *
+ * <p>The class is public only so that callers of the caller-owned stream
+ * session ({@link RfbClient#open}) can use its immutable {@link Frame}
+ * snapshots; the decoder-facing members remain package-private.</p>
  */
-final class RfbFramebuffer {
+public final class RfbFramebuffer {
     static final int MAX_DIMENSION = 8192;
     static final long MAX_PIXELS = 16_777_216L;
 
-    record Snapshot(int width, int height, long revision, int[] pixels) { }
+    record Snapshot(int width, int height, long revision, int[] pixels) {
+        /** A defensive ARGB copy; snapshot pixels never alias the framebuffer. */
+        int[] argb() {
+            return pixels.clone();
+        }
+    }
+
+    /** Immutable snapshot. Pixel ownership never escapes to a consumer. */
+    public record Frame(int width, int height, int[] argb) {
+        public Frame {
+            Objects.requireNonNull(argb, "argb");
+            if (width <= 0 || height <= 0 || (long) width * height != argb.length) {
+                throw new IllegalArgumentException("frame dimensions do not match pixels");
+            }
+            argb = argb.clone();
+        }
+
+        @Override
+        public int[] argb() {
+            return argb.clone();
+        }
+    }
 
     /**
      * A single, defensively copied update for the only SWT image consumer.
@@ -74,6 +100,44 @@ final class RfbFramebuffer {
 
     synchronized Snapshot snapshot() {
         return new Snapshot(width, height, revision, pixels.clone());
+    }
+
+    /** Defensively copies just a visible source tile, not the entire desktop. */
+    synchronized Snapshot snapshot(int x, int y, int w, int h) {
+        requireRectangle(x, y, w, h);
+        int[] tile = new int[w * h];
+        for (int row = 0; row < h; row++) {
+            System.arraycopy(pixels, (y + row) * width + x, tile, row * w, w);
+        }
+        return new Snapshot(w, h, revision, tile);
+    }
+
+    /**
+     * Maps only the visible native paint clip into a primitive pixel tile.
+     * Even when a large desktop is fitted into a small Canvas, no full-size
+     * SWT Image or temporary copy of the remote framebuffer is materialized.
+     */
+    synchronized Snapshot snapshotScaled(int x, int y, int w, int h,
+            int drawX, int drawY, int drawW, int drawH) {
+        if (w < 1 || h < 1 || drawW < 1 || drawH < 1 || (long) w * h > MAX_PIXELS) {
+            throw new IllegalArgumentException("Invalid visible framebuffer tile");
+        }
+        int[] tile = new int[w * h];
+        for (int row = 0; row < h; row++) {
+            long sy = ((long) y + row - drawY) * height / drawH;
+            int sourceY = (int) Math.max(0, Math.min(height - 1, sy));
+            for (int col = 0; col < w; col++) {
+                long sx = ((long) x + col - drawX) * width / drawW;
+                int sourceX = (int) Math.max(0, Math.min(width - 1, sx));
+                tile[row * w + col] = pixels[sourceY * width + sourceX];
+            }
+        }
+        return new Snapshot(w, h, revision, tile);
+    }
+
+    /** An immutable whole-frame snapshot for {@link RfbClient#currentFrame()} and {@link RfbClient#nextFrame()}. */
+    synchronized Frame frame() {
+        return new Frame(width, height, pixels);
     }
 
     /**
@@ -167,6 +231,14 @@ final class RfbFramebuffer {
         }
         for (int row = 0; row < h; row++) {
             System.arraycopy(patch, row * w, pixels, (y + row) * width + x, w);
+        }
+        changed(x, y, w, h);
+    }
+
+    synchronized void fillRectangle(int x, int y, int w, int h, int argb) {
+        requireRectangle(x, y, w, h);
+        for (int row = y; row < y + h; row++) {
+            Arrays.fill(pixels, row * width + x, row * width + x + w, argb);
         }
         changed(x, y, w, h);
     }
