@@ -15,6 +15,7 @@
 package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -162,7 +163,7 @@ public class GridPinnedRows_Test {
 		}
 		second.setExpanded(true);
 		branchB.setExpanded(true);
-		assertEquals(false, grid.getStickyAncestorRows());
+		assertFalse(grid.getStickyAncestorRows());
 		grid.setStickyAncestorRows(true);
 		assertTrue(grid.getStickyAncestorRows());
 		grid.setTopIndex(leaves[12].getRowIndex());
@@ -194,7 +195,7 @@ public class GridPinnedRows_Test {
 	@Test
 	public void stickyAncestorsDoNotChangeFlatGridPinningOrTreeRowSelection() {
 		final Grid flat = grid(0);
-		assertEquals(false, flat.getStickyAncestorRows());
+		assertFalse(flat.getStickyAncestorRows());
 		flat.setStickyAncestorRows(true);
 		flat.setPinnedRowCount(2, 1);
 		assertEquals(2, flat.getPinnedTopRowCount());
@@ -213,7 +214,7 @@ public class GridPinnedRows_Test {
 			// the original flat-grid pin API is forbidden for tree rows
 		}
 		assertSame(root, child.getParentItem());
-		assertEquals(true, tree.getStickyAncestorRows());
+		assertTrue(tree.getStickyAncestorRows());
 	}
 
 
@@ -258,7 +259,7 @@ public class GridPinnedRows_Test {
 					root.getBoundsCorrected(0).y, control.getBounds().y);
 			grid.setStickyAncestorRows(false);
 			editor.layout();
-			assertEquals(false, grid.isShown(root));
+			assertFalse(grid.isShown(root));
 			assertEquals(-1000, root.getBoundsCorrected(0).x);
 			assertEquals(-1000, control.getBounds().y);
 		} finally {
@@ -283,7 +284,7 @@ public class GridPinnedRows_Test {
 		grid.setStickyAncestorRows(true);
 		grid.setTopIndex(chain[chain.length - 1].getRowIndex());
 		assertTrue("root remains in the first ancestor band", grid.isShown(chain[0]));
-		assertEquals(false, grid.isShown(chain[6]));
+		assertFalse(grid.isShown(chain[6]));
 		assertEquals("clipped sticky rows must not show an editor", -1000,
 				chain[6].getBoundsCorrected(0).y);
 	}
@@ -324,8 +325,7 @@ public class GridPinnedRows_Test {
 		assertEquals("last child ends the group; the pinned subheading moves up",
 				chrome + aChildren[39].getHeight() + 1 - aHeight,
 				grid.getOrigin(column, a).y);
-		assertEquals("a moving subheading cannot host an un-clipped native editor",
-				false, grid.isShown(a));
+		assertFalse("a moving subheading cannot host an un-clipped native editor", grid.isShown(a));
 		assertSame("the outer ancestor remains at the top", root,
 				grid.getItem(new Point(16, chrome + 2)));
 		grid.setTopIndex(bChildren[10].getRowIndex());

@@ -9,6 +9,7 @@
 package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 
@@ -54,5 +55,89 @@ public class FlexRowTest {
 		// everything at its minimum: the line overflows
 		assertArrayEquals(new int[] { 0, 150, 150, 150 },
 				FlexRow.layout(new int[] { 150, 150 }, new int[] { 200, 200 }, new int[] { -1, -1 }, new int[] { 0, 0 }, 200, 0, FlexRow.START));
+	}
+
+	@Test
+	public void aZeroShrinkFactorKeepsTheSidebarAtItsBasis() {
+		assertArrayEquals(new int[] { 0, 120, 120, 30 }, row(new int[2], new int[] { 120, 80 }, new double[] { 0, 1 }, 150));
+		assertArrayEquals(new int[] { 0, 120, 120, 80 }, row(new int[2], new int[] { 120, 80 }, new double[] { 0, 0 }, 150));
+	}
+
+	@Test
+	public void fractionalFactorsWeightTheOriginalBases() {
+		assertArrayEquals(new int[] { 0, 110, 110, 60 }, row(new int[2], new int[] { 120, 80 }, new double[] { 1, 3 }, 170));
+		assertArrayEquals(new int[] { 0, 170, 170, 70 }, row(new int[2], new int[] { 200, 100 }, new double[] { 1, 2 }, 240));
+		assertArrayEquals(new int[] { 0, 75, 75, 25 }, row(new int[2], new int[] { 100, 100 }, new double[] { .5, 1.5 }, 100));
+	}
+
+	@Test
+	public void factorsSummingBelowOneIntentionallyLeaveOverflow() {
+		assertArrayEquals(new int[] { 0, 75, 75, 75 }, row(new int[2], new int[] { 100, 100 }, new double[] { .25, .25 }, 100));
+		assertArrayEquals(new int[] { 0, 100, 100, 50 }, row(new int[2], new int[] { 100, 100 }, new double[] { 0, .5 }, 100));
+		assertArrayEquals(new int[] { 0, 90, 90, 75 }, row(new int[] { 90, 0 }, new int[] { 100, 100 }, new double[] { .25, .25 }, 100));
+	}
+
+	@Test
+	public void minimumFreezingRestartsFromOriginalBasesAndFactors() {
+		assertArrayEquals(new int[] { 0, 0, 0, 80 }, row(new int[2], new int[] { 50, 150 }, new double[] { 10, 1 }, 80));
+		assertArrayEquals(new int[] { 0, 0, 0, 90 }, row(new int[2], new int[] { 50, 150 }, new double[] { 10, .5 }, 80));
+		assertArrayEquals(new int[] { 0, 0, 40, 0, 40, 70 }, row(new int[3], new int[] { 20, 100, 100 }, new double[] { 10, 2, 1 }, 110));
+		assertArrayEquals(new int[] { 0, 80, 80, 20 }, row(new int[] { 80, 0 }, new int[] { 100, 100 }, new double[] { 1, 1 }, 100));
+	}
+
+	@Test
+	public void paddingAndBordersDoNotIncreaseTheShrinkWeight() {
+		assertArrayEquals(new int[] { 0, 70, 70, 50 }, FlexRow.layout(new int[] { 20, 0 }, new int[] { 120, 100 },
+				new int[] { 120, 100 }, new int[2], new double[] { 1, 1 }, new int[] { 20, 0 }, 120, 0, FlexRow.START));
+		assertArrayEquals(new int[] { 0, 40, 40, 40 }, FlexRow.layout(new int[] { 40, 0 }, new int[] { 50, 100 },
+				new int[] { 50, 100 }, new int[2], new double[] { 10, 1 }, new int[] { 40, 0 }, 80, 0, FlexRow.START));
+	}
+
+	@Test
+	public void finiteHugeFactorsAndBasesDoNotOverflow() {
+		assertArrayEquals(new int[] { 0, 60, 60, 60 }, row(new int[2], new int[] { 120, 80 }, new double[] { 1e308, 5e307 }, 120));
+		assertArrayEquals(new int[] { 0, 50, 50, 50 }, row(new int[2], new int[] { 100, 100 },
+				new double[] { Double.MAX_VALUE, Double.MAX_VALUE }, 100));
+		assertArrayEquals(new int[] { 0, 700000000, 1400000000, 700000000, 700000000, 700000000 },
+				row(new int[3], new int[] { 2000000000, 2000000000, 2000000000 }, new double[] { 1, 1, 1 }, 2100000000));
+	}
+
+	@Test
+	public void aHugeFactorOnZeroContentCannotEraseAnotherItemsPositiveWeight() {
+		assertArrayEquals(new int[] { 0, 0, 0, 0 },
+				row(new int[2], new int[] { 0, 100 }, new double[] { 1e308, Double.MIN_VALUE }, 0));
+		assertArrayEquals(new int[] { 0, 20, 20, 0 }, FlexRow.layout(new int[] { 20, 0 }, new int[] { 20, 100 },
+				new int[] { 20, 100 }, new int[2], new double[] { 1e308, Double.MIN_VALUE }, new int[] { 20, 0 },
+				20, 0, FlexRow.START));
+	}
+
+	@Test
+	public void weightedPathSaturatesUnrepresentableCoordinatesAndExactGrowProducts() {
+		int largest = Integer.MAX_VALUE;
+		assertArrayEquals(new int[] { 0, largest, largest, largest, largest, largest },
+				row(new int[3], new int[] { largest, largest, largest }, new double[3], 0));
+		assertArrayEquals(new int[] { 0, 715827882, 1431655764, 715827882, 715827882, 715827883 },
+				FlexRow.layout(new int[3], new int[3], NONE, new int[] { largest, largest, largest }, new double[] { 1, 1, 1 },
+						largest, 0, FlexRow.START));
+	}
+
+	@Test
+	public void invalidFactorsAreRejectedBeforeLayoutAndInputsStayUnchanged() {
+		int[] min = { 20, 0 }, base = { 120, 80 }, grow = { 0, 0 }, inset = { 20, 0 };
+		double[] factors = { .5, 1.5 };
+		FlexRow.layout(min, base, base, grow, factors, inset, 100, 0, FlexRow.START);
+		assertArrayEquals(new int[] { 20, 0 }, min);
+		assertArrayEquals(new int[] { 120, 80 }, base);
+		assertArrayEquals(new int[] { 0, 0 }, grow);
+		assertArrayEquals(new int[] { 20, 0 }, inset);
+		assertArrayEquals(new double[] { .5, 1.5 }, factors, 0);
+		for (double invalid : new double[] { -1, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY }) {
+			assertThrows(IllegalArgumentException.class, () -> row(min, base, new double[] { invalid, 1 }, 100));
+		}
+		assertThrows(IllegalArgumentException.class, () -> row(min, base, new double[] { 1 }, 100));
+	}
+
+	private static int[] row(int[] min, int[] bases, double[] factors, int available) {
+		return FlexRow.layout(min, bases, bases, new int[min.length], factors, available, 0, FlexRow.START);
 	}
 }

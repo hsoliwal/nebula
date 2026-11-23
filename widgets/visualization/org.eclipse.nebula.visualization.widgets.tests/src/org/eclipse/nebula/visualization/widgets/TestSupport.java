@@ -172,24 +172,47 @@ public final class TestSupport {
 				for (int x = 0; x < expected.width; x++) {
 					RGB e = expected.palette.getRGB(expected.getPixel(x, y)), a = actual.palette.getRGB(actual.getPixel(x, y));
 					if (!e.equals(a)) {
-						save(name, expected, actual);
-						throw new AssertionError(name + ": first difference at (" + x + "," + y + "): expected " + e + " but was " + a);
+						throw mismatch(name, expected, actual,
+								name + ": first difference at (" + x + "," + y + "): expected " + e + " but was " + a);
 					}
 				}
 			}
 			return;
 		}
-		save(name, expected, actual);
-		throw new AssertionError(name + ": size " + expected.width + "x" + expected.height + " vs " + actual.width + "x" + actual.height);
+		throw mismatch(name, expected, actual,
+				name + ": size " + expected.width + "x" + expected.height + " vs " + actual.width + "x" + actual.height);
+	}
+
+	/**
+	 * The real pixel mismatch is the primary assertion failure. A missing
+	 * screenshot directory must never replace the first differing pixel.
+	 */
+	private static AssertionError mismatch(String name, ImageData expected,
+			ImageData actual, String message) {
+		AssertionError difference = new AssertionError(message);
+		try {
+			save(name, expected, actual);
+		} catch (RuntimeException | org.eclipse.swt.SWTError diagnosticFailure) {
+			difference.addSuppressed(diagnosticFailure);
+		}
+		return difference;
 	}
 
 	private static void save(String name, ImageData expected, ImageData actual) {
-		String dir = System.getProperty("m3.test.pixels.dir", "S:/m3-scratch/custom-widgets/logs"); //$NON-NLS-1$ //$NON-NLS-2$
+		String configured = System.getProperty("m3.test.pixels.dir");
+		java.nio.file.Path directory = configured == null || configured.isBlank()
+				? java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "m3-widget-pixels")
+				: java.nio.file.Path.of(configured);
+		try {
+			java.nio.file.Files.createDirectories(directory);
+		} catch (java.io.IOException failure) {
+			throw new java.io.UncheckedIOException("Cannot create diagnostic PNG directory " + directory, failure);
+		}
 		ImageLoader loader = new ImageLoader();
 		loader.data = new ImageData[] { expected };
-		loader.save(dir + "/pixels-" + name + "-expected.png", SWT.IMAGE_PNG); //$NON-NLS-1$ //$NON-NLS-2$
+		loader.save(directory.resolve("pixels-" + name + "-expected.png").toString(), SWT.IMAGE_PNG);
 		loader.data = new ImageData[] { actual };
-		loader.save(dir + "/pixels-" + name + "-actual.png", SWT.IMAGE_PNG); //$NON-NLS-1$ //$NON-NLS-2$
+		loader.save(directory.resolve("pixels-" + name + "-actual.png").toString(), SWT.IMAGE_PNG);
 	}
 
 	/** the on-screen pixels of a control's client area, after pending paints */

@@ -77,4 +77,58 @@ public class GridTracksTest {
 		assertArrayEquals(new int[] { 250, 350, 100, 50 }, GridTracks.layout(tracks, none, none, 400, 0, FlexRow.END));
 		assertArrayEquals(new int[] { 0, 350, 100, 50 }, GridTracks.layout(tracks, none, none, 400, 0, FlexRow.SPACE_BETWEEN));
 	}
+
+	@Test
+	public void hugeFixedTracksSaturateNativeCoordinatesInsteadOfWrapping() {
+		int[] tracks = new int[32];
+		java.util.Arrays.fill(tracks, GridTracks.MAX_PX);
+		int[] result = GridTracks.layout(tracks, new int[32], new int[32],
+				Integer.MAX_VALUE, 7, FlexRow.START);
+		assertArrayEquals(new int[] { 0, GridTracks.MAX_PX + 7, 2 * GridTracks.MAX_PX + 14 },
+				new int[] { result[0], result[1], result[2] });
+		for (int i = 0; i < tracks.length; i++) {
+			org.junit.Assert.assertTrue("x must not wrap at " + i, result[i] >= 0);
+			org.junit.Assert.assertEquals(GridTracks.MAX_PX, result[tracks.length + i]);
+			if (i > 0) org.junit.Assert.assertTrue("monotonic x", result[i] >= result[i - 1]);
+		}
+		org.junit.Assert.assertEquals(Integer.MAX_VALUE, result[31]);
+	}
+
+	@Test
+	public void thousandLargeFrFactorsRetainExactCumulativeEdges() {
+		int n = 1000;
+		int[] tracks = new int[n];
+		java.util.Arrays.fill(tracks, FR | 100_000_000);
+		int[] result = GridTracks.layout(tracks, new int[n], new int[n],
+				Integer.MAX_VALUE, 0, FlexRow.START);
+		long total = 0;
+		for (int i = 0; i < n; i++) {
+			long expectedStart = (long) Integer.MAX_VALUE * i / n;
+			long expectedEnd = (long) Integer.MAX_VALUE * (i + 1) / n;
+			org.junit.Assert.assertEquals("x at " + i, expectedStart, result[i]);
+			org.junit.Assert.assertEquals("width at " + i, expectedEnd - expectedStart, result[n + i]);
+			total += result[n + i];
+		}
+		org.junit.Assert.assertEquals(Integer.MAX_VALUE, total);
+	}
+
+	@Test
+	public void oversizedFrFactorComparisonFreezesLargeMinimum() {
+		int n = 1000;
+		int[] tracks = new int[n], min = new int[n];
+		java.util.Arrays.fill(tracks, FR | 100_000_000);
+		min[0] = 2_000_000_000;
+		int[] result = GridTracks.layout(tracks, min, new int[n],
+				Integer.MAX_VALUE, 0, FlexRow.START);
+		org.junit.Assert.assertEquals(2_000_000_000, result[n]);
+		org.junit.Assert.assertEquals(0, result[0]);
+		org.junit.Assert.assertEquals(2_000_000_000, result[1]);
+		long width = 0;
+		for (int i = 0; i < n; i++) {
+			org.junit.Assert.assertTrue("nonnegative width", result[n + i] >= 0);
+			width += result[n + i];
+		}
+		org.junit.Assert.assertEquals(Integer.MAX_VALUE, width);
+	}
+
 }

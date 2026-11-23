@@ -6405,7 +6405,7 @@ public class Grid extends Canvas {
 		}
 		try {
 			for (int i = 0; i < depth; i++) frame[i] = items.get(stickyAncestorPath[i]);
-			for (int i = depth - 1; i >= 0 && y < bottom; i++) {
+			for (int i = depth - 1; i >= 0 && y < bottom; i--) {
 				if (isDisposed()) return;
 				final GridItem item = frame[i];
 				if (item.isDisposed() || !item.isVisible()) continue;

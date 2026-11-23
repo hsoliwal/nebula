@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
+   <feature id="org.eclipse.nebula.widgets.vnc.feature" version="0.0.0">
+      <category name="Nebula Individual Incubation Widgets"/>
+   </feature>
+   <feature id="org.eclipse.nebula.widgets.terminal.feature" version="0.0.0">
+      <category name="Nebula Individual Incubation Widgets"/>
+   </feature>
    <feature id="org.eclipse.nebula.widgets.xviewer.feature" version="0.0.0">
       <category name="Nebula Individual Mature Widgets"/>
    </feature>
@@ -246,7 +252,4 @@
       </description>
    </category-def>
    <category-def name="Nebula Individual Incubation Widgets" label="Nebula Individual Incubation Widgets"/>
-   <feature id="org.eclipse.nebula.widgets.vnc.feature" version="0.0.0">
-      <category name="Nebula Individual Incubation Widgets"/>
-   </feature>
 </site>
