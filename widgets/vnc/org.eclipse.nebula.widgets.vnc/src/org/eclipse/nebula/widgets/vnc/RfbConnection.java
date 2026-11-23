@@ -377,6 +377,8 @@ final class RfbConnection implements AutoCloseable {
                 8L * RfbFramebuffer.MAX_PIXELS));
         byte[] expanded = inflateRectangle(zrle, limit);
         DataInputStream input = new DataInputStream(new ByteArrayInputStream(expanded));
+        // Retain all tiles detached until the complete rectangle is valid.
+        int[] rectangle = new int[w * h];
         for (int ty = 0; ty < h; ty += 64) {
             for (int tx = 0; tx < w; tx += 64) {
                 int tw = Math.min(64, w - tx), th = Math.min(64, h - ty);
@@ -420,10 +422,14 @@ final class RfbConnection implements AutoCloseable {
                         at += count;
                     }
                 }
-                framebuffer.writePixels(x + tx, y + ty, tw, th, tile);
+                for (int row = 0; row < th; row++) {
+                    System.arraycopy(tile, row * tw, rectangle,
+                            (ty + row) * w + tx, tw);
+                }
             }
         }
         if (input.available() != 0) throw new IOException("Trailing ZRLE tile bytes");
+        framebuffer.writePixels(x, y, w, h, rectangle);
     }
 
     /**
