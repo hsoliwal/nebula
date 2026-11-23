@@ -164,7 +164,7 @@ public final class RowPermutation implements RowView {
 	 * @param target   destination
 	 * @param offset   first destination slot
 	 * @param length   maximum number of rows to copy
-	 * @return the number of rows copied
+	 * @return the number of rows copied, or zero when the nonnegative start is beyond the view
 	 */
 	public int copyModelRows(final int fromView, final int[] target, final int offset, final int length) {
 		final int count = getViewCount();
@@ -172,6 +172,8 @@ public final class RowPermutation implements RowView {
 			throw new IndexOutOfBoundsException("fromView=" + fromView + ", offset=" + offset + ", length=" + length);
 		}
 		final int n = Math.max(0, Math.min(length, Math.min(count - fromView, target.length - offset)));
+		// A zero copy may begin past the backing array; arraycopy still validates its source offset.
+		if (n == 0) return 0;
 		if ((flags & COMPACT) != 0) {
 			System.arraycopy(visible, fromView, target, offset, n);
 		} else if ((flags & SORTED) != 0) {
