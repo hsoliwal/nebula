@@ -220,8 +220,10 @@ jobs:
           # from a jar with SWT-Arch: aarch64 and Platform.exitIfNotLoadable() ended the JVM.
           # Excluding it with -pl '!:...' next to -am was refused (run 45441558339: "Could not
           # find the selected project in the reactor"). This list is run 45433289163's
-          # reactor minus the aarch64 fragment. The assembly step above built all eight
-          # fragments, and prepare_swt_receiver.py binds those jars unchanged.
+          # reactor minus the aarch64 fragment. This step rebuilds org.eclipse.swt and the
+          # gtk.linux.x86_64 fragment (the guard's package pass, then verify), and those are
+          # the core and x86_64 jars that prepare_swt_receiver.py binds; the seven non-host
+          # fragment jars it binds come from the assembly step above.
           export M3_SWT_HOST_PROJECTS=':eclipse.platform.swt,:org.eclipse.swt,:eclipse.platform.swt.binaries,:org.eclipse.swt.svg,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.tests'
           # Native flags for the forked test JVM. The test POM's argLine is
           # "@{tycho.testArgLine} -Xcheck:jni ... ${os-jvm-flags}". Surefire's @{...}
@@ -232,7 +234,8 @@ jobs:
           # property overrides the empty root-POM value (Linux has no profile value).
           export M3_SWT_TEST_JVM_FLAGS="-Dswt.library.path=$M3_SWT_NATIVE_DIR -Xlog:library=info:file=$M3_SWT_NATIVE_LOG"
           # Before any test runs, require the test bundle's resolved classpath to contain
-          # exactly one SWT platform fragment, the source-built GTK x86_64 one.
+          # exactly one SWT platform fragment, the source-built GTK x86_64 one
+          # (releng/swt-receiver/verify_test_classpath.py, tested against run 45433289163).
           cp_file=.m3-swt/tests/org.eclipse.swt.tests/target/m3-test-classpath.txt
           rm -f "$cp_file"
           bash releng/swt-receiver/retry-transient-maven-503.sh \
@@ -244,22 +247,7 @@ jobs:
               -Dmdep.outputFile=target/m3-test-classpath.txt \
               -pl "$M3_SWT_HOST_PROJECTS" \
               package org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath
-          python3 - "$cp_file" "$M3_SWT_NATIVE_DIR" <<'PY'
-          import re, sys
-          from pathlib import Path
-          path, native_dir = Path(sys.argv[1]), Path(sys.argv[2])
-          entries = [e for e in path.read_text(encoding="utf-8").strip().split(":") if e]
-          pattern = re.compile(r"org\.eclipse\.swt\.(?:gtk|win32|cocoa)\.[a-z0-9]+\.[a-z0-9_]+")
-          fragments = [(e, sorted(set(pattern.findall(e)))) for e in entries if pattern.search(e)]
-          for entry, ids in fragments:
-              print("SWT fragment on test classpath:", ids, entry)
-          assert len(entries) > 1, "empty test classpath"
-          assert len(fragments) == 1, "expected exactly one SWT platform fragment, found %d" % len(fragments)
-          entry, ids = fragments[0]
-          assert ids == ["org.eclipse.swt.gtk.linux.x86_64"], ids
-          assert Path(entry).resolve().is_relative_to(native_dir.resolve()), entry
-          print("SWT_TEST_CLASSPATH_HOST_FRAGMENT=PASS")
-          PY
+          python3 releng/swt-receiver/verify_test_classpath.py "$cp_file" "$M3_SWT_NATIVE_DIR"
           dbus-run-session -- xvfb-run --auto-servernum -s '-screen 0 1280x800x24 -noreset' \
             bash -ec '
               openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/nebula-swt-host-openbox.log" 2>&1 &
