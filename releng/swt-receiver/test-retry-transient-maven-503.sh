@@ -46,6 +46,24 @@ if [[ "$mode" == gateway504 && "$count" -eq 1 ]]; then
   echo '[ERROR] Could not transfer artifact a:b:pom:1 from/to central (https://repo.maven.apache.org/maven2): status code: 504, reason phrase: Gateway Timeout (504)'
   exit 1
 fi
+# Tolerated [WARNING] 429/503 lines (the first fixture line is one) next to a failure
+# whose cause is something else.
+missing='[ERROR] Failed to execute goal on project demo: Could not resolve dependencies for project org.example:demo:jar:1.0: Could not find artifact org.example:missing:jar:1.0 in central (https://repo.maven.apache.org/maven2) -> [Help 1]'
+case "$mode" in
+  warn429code13) head -n 1 "$REAL429"
+    echo '[ERROR] Failed to execute goal org.eclipse.tycho:tycho-surefire-plugin:5.0.4:test (default-test) on project org.eclipse.swt.tests: An unexpected error occured while launching the test runtime (process returned error code 13). Please check the log for details. -> [Help 1]'
+    exit 1 ;;
+  warn429forktimeout) head -n 1 "$REAL429"
+    echo '[ERROR] Failed to execute goal org.apache.maven.plugins:maven-surefire-plugin:3.6.1:test (test) on project org.eclipse.swt.tests: There was a timeout in the fork -> [Help 1]'
+    exit 1 ;;
+  warn503other) echo '[WARNING] Could not transfer metadata a:b/maven-metadata.xml from/to central (https://repo.maven.apache.org/maven2): status code: 503, reason phrase: Service Temporarily Unavailable (503)'
+    echo '[ERROR] Failed to execute goal org.apache.maven.plugins:maven-antrun-plugin:3.2.0:run (build-native-binaries) on project x: An Ant BuildException has occured -> [Help 1]'
+    exit 1 ;;
+  missingartifact) echo "$missing"; exit 1 ;;
+  real429missingartifact) cat "$REAL429"; echo "$missing"; exit 1 ;;
+  tychomissingother) echo '[ERROR] Could not find artifact org.eclipse.tycho:tycho-maven-plugin:jar:4.0.12 in central (https://repo.maven.apache.org/maven2)'
+    echo "$missing"; exit 1 ;;
+esac
 case "$mode" in
   fatal401) echo '[ERROR] Could not transfer artifact a:b:pom:1 from/to central (https://repo.maven.apache.org/maven2): status code: 401, reason phrase: Unauthorized (401)'; exit 1 ;;
   fatal403) echo '[ERROR] Could not transfer artifact a:b:pom:1 from/to central (https://repo.maven.apache.org/maven2): status code: 403, reason phrase: Forbidden (403)'; exit 1 ;;
@@ -79,10 +97,18 @@ fails "$tmp/j" real429persistent; calls "$tmp/j" 3
 grep -q 'upstream HTTP 429 (rate limited) persists after 3 attempts; failing closed' "$tmp/stderr"
 wrapper "$tmp/k" gateway502 >/dev/null 2>&1; calls "$tmp/k" 2
 wrapper "$tmp/l" gateway504 >/dev/null 2>&1; calls "$tmp/l" 2
-# 401, 403, 404 and checksum failures stay non-transient, also next to a 429.
-for mode in fatal401 fatal403 fatal404 fatalchecksum real429with404; do
+# 401, 403, 404, checksum and Maven's "Could not find artifact" stay non-transient,
+# also next to a 429 that is reported as an [ERROR].
+for mode in fatal401 fatal403 fatal404 fatalchecksum real429with404 missingartifact real429missingartifact \
+            tychomissingother; do
   fails "$tmp/m-$mode" "$mode"; calls "$tmp/m-$mode" 1
   grep -q 'non-transient repository failure' "$tmp/stderr"
+done
+# Only an [ERROR] line counts: a tolerated [WARNING] 429 or 503 does not make another
+# failure retryable (Tycho test runtime error code 13, surefire fork timeout, Ant).
+for mode in warn429code13 warn429forktimeout warn503other; do
+  fails "$tmp/w-$mode" "$mode"; calls "$tmp/w-$mode" 1
+  grep -q 'M3: non-transient failure; no retry (exit 1)' "$tmp/stderr"
 done
 # Backoff, recorded instead of slept: exponential with jitter in [base, 1.5 base].
 export M3_RETRY_SLEEP_RECORD="$tmp/waits"
@@ -112,7 +138,12 @@ fails "$tmp/r" real429retryafterhuge; calls "$tmp/r" 1
 grep -q 'a 999s wait would exceed the 900s retry budget after 1 attempts; failing closed' "$tmp/stderr"
 [[ ! -e "$tmp/waits" ]]
 unset M3_RETRY_SLEEP_RECORD
-# Invalid configuration is refused before running anything.
-if M3_RETRY_MAX_TOTAL_SECONDS=abc wrapper "$tmp/s" transient >/dev/null 2>&1; then exit 1; fi
-[[ ! -e "$tmp/s" ]]
-printf 'PASS: HTTP 429/502/503/504, Eclipse locks, Tycho 4.0.12 Central transient retry=2; product, 401/403/404 and checksum failures fatal; persistent failures=attempts; exponential backoff with jitter, cap, Retry-After and total budget\n'
+# Invalid configuration, including a leading zero that bash would read as octal, is
+# refused before running anything, with the usage exit status.
+for setting in M3_RETRY_MAX_TOTAL_SECONDS=abc M3_HTTP503_RETRY_DELAY_SECONDS=08 M3_RETRY_MAX_DELAY_SECONDS=09 \
+               M3_RETRY_MAX_TOTAL_SECONDS=010 M3_HTTP503_ATTEMPTS=0 M3_HTTP503_RETRY_DELAY_SECONDS=10000; do
+  rc=0
+  env "$setting" bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/s" transient >/dev/null 2>&1 || rc=$?
+  [[ $rc -eq 64 && ! -e "$tmp/s" ]] || { echo "$setting: expected refusal (64) before running, got $rc" >&2; exit 1; }
+done
+printf 'PASS: [ERROR] HTTP 429/502/503/504, Eclipse locks, Tycho 4.0.12 Central transient retry=2; [WARNING]-only codes, product, 401/403/404, missing-artifact and checksum failures run once; persistent failures=attempts; exponential backoff with jitter, cap, Retry-After and total budget; no leading-zero settings\n'
