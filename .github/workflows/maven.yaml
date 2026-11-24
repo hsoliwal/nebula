@@ -368,6 +368,32 @@ jobs:
           "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
           "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}" \
           "-Dm3.test.pixels.dir=${RUNNER_TEMP:?missing runner temp}/nebula-widget-pixels"
+    # Index exact original Tycho/JUnit XML when the reactor reports native
+    # failures. This cannot make a failed Build All Widgets step succeed.
+    - name: Index native JUnit failures without changing the Maven verdict
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        classes="$RUNNER_TEMP/native-test-diagnostics-classes"
+        out="$RUNNER_TEMP/native-test-diagnostics"
+        mkdir -p "$classes" "$out"
+        javac --release 21 -Xlint:all -Werror -d "$classes" \
+          releng/native-test-diagnostics/src/main/java/org/eclipse/nebula/releng/NativeTestFailureIndex.java \
+          releng/native-test-diagnostics/src/test/java/org/eclipse/nebula/releng/NativeTestFailureIndexTest.java
+        java -ea -cp "$classes" org.eclipse.nebula.releng.NativeTestFailureIndexTest
+        java -cp "$classes" org.eclipse.nebula.releng.NativeTestFailureIndex \
+          widgets "$out/native-test-failures.tsv" "$out/native-test-summary.md"
+        cat "$out/native-test-summary.md" >> "$GITHUB_STEP_SUMMARY"
+    - name: Upload original native JUnit failure index
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-native-failure-index
+        if-no-files-found: error
+        path: |
+          ${{ runner.temp }}/native-test-diagnostics/native-test-failures.tsv
+          ${{ runner.temp }}/native-test-diagnostics/native-test-summary.md
     - name: Index original native Surefire failures without changing Tycho verdict
       if: always()
       shell: bash
@@ -382,11 +408,13 @@ jobs:
         java -ea -cp "$classes" NativeFailureIndexTest
         java -cp "$classes" NativeFailureIndex "$PWD" "$destination"
         cat "$destination/summary.md" >> "${GITHUB_STEP_SUMMARY:?}"
+    # Distinct artifact name: upload-artifact@v4 refuses a second
+    # nebula-native-failure-index artifact in the same workflow run.
     - name: Upload native Surefire failure index and original report hashes
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: nebula-native-failure-index
+        name: nebula-native-surefire-failure-index
         if-no-files-found: error
         path: ${{ runner.temp }}/nebula-native-failure-index/
     - name: Qualify Grid native screen pixels with OpenCV
@@ -419,6 +447,26 @@ jobs:
         path: |
           ${{ runner.temp }}/nebula-widget-pixels/*.png
           /tmp/m3-widget-pixels/*.png
+    # Diagnostic only; original Maven still owns the release verdict.
+    - name: Classify exact native Surefire failures and skips
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        work="${RUNNER_TEMP:?}/nebula-native-census"
+        mkdir -p "$work/classes" "$work/reports"
+        javac --release 21 -Xlint:all -Werror -d "$work/classes" \
+          releng/native-census/NativeSurefireCensus.java \
+          releng/native-census/NativeSurefireCensusProof.java
+        java -cp "$work/classes" NativeSurefireCensusProof
+        java -cp "$work/classes" NativeSurefireCensus . "$work/reports"
+    - name: Upload native Surefire failure census
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-native-junit-census
+        if-no-files-found: warn
+        path: ${{ runner.temp }}/nebula-native-census/reports/*.tsv
     - name: Upload all widget test reports
       if: always()
       uses: actions/upload-artifact@v4
