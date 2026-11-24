@@ -275,8 +275,32 @@ jobs:
         import glob, sys, xml.etree.ElementTree as ET
         reports = sorted(glob.glob('widgets/drawnbrowser/**/target/surefire-reports/TEST-*.xml', recursive=True))
         if not reports:
-            sys.exit('FAIL: absent DrawnBrowser JUnit reports')
+            sys.exit('FAIL: absent DrawnBrowser native JUnit reports')
         tests = failed = skipped = 0
+        required_classes = {
+            'DrawnBrowserFormPositionTest',
+            'DrawnBrowserStackingCompositionTest',
+            'HtmlControlLayoutTest',
+            'HtmlControlStylesTest',
+            'HtmlStackingCompositionTest',
+        }
+        required_hidden = {
+            'hiddenPanelCanProgrammaticallyScrollWithoutGrowingOuterDocument',
+            'panelsCanScrollTheirOwnTextWithoutMovingTheirBorder',
+            'clipPanelRejectsProgrammaticScrollAndHasNoScrollLimit',
+            'panelOffsetIsClampedPreservedOnRelayoutAndReturnedToZero',
+            'fixedDescendantDoesNotMoveWithAnUnrelatedHiddenPanelScroll',
+        }
+        required_auto = {
+            ('HtmlStylesTest', 'overflowScrollModesDoNotAliasTheMaskOrInherit'),
+            ('HtmlPositionedGeometryTest', 'hiddenProgrammaticScrollPreservesTheParentBorderButClipRefusesScroll'),
+            ('HtmlPositionedGeometryTest', 'autoAndScrollPanelsConsumeWheelWithoutMovingRoot'),
+            ('HtmlPositionedGeometryTest', 'nestedPanelScrollOffsetsAddAndFixedChildrenEscapeThem'),
+            ('DrawnBrowserPositionedTest', 'nestedWheelScrollMovesPanelPixelsWithoutMovingTheRootPage'),
+        }
+        required_chrome = ('DrawnBrowserTest', 'gtkScrollbarChromeDoesNotOverlayThePixelScrollViewport')
+        seen_classes, seen_hidden, seen_auto = set(), set(), set()
+        seen_chrome = False
         for f in reports:
             root = ET.parse(f).getroot()
             suites = [root] if root.tag.endswith('testsuite') else list(root)
@@ -285,9 +309,25 @@ jobs:
                     tests += int(suite.get('tests', '0'))
                     failed += int(suite.get('failures', '0')) + int(suite.get('errors', '0'))
                     skipped += int(suite.get('skipped', '0'))
-        print(f'DrawnBrowser tests={tests} failures+errors={failed} skipped={skipped}')
-        if tests < 318 or failed or skipped:
-            sys.exit('FAIL: expected at least 318 native+headless tests, zero failed/skipped')
+            for case in root.iter('testcase'):
+                cls = case.attrib.get('classname', '').rsplit('.', 1)[-1]
+                name = case.attrib.get('name', '')
+                seen_classes.add(cls)
+                if cls == 'HtmlPositionedGeometryTest':
+                    seen_hidden.add(name)
+                if (cls, name) in required_auto:
+                    seen_auto.add((cls, name))
+                if (cls, name) == required_chrome:
+                    seen_chrome = True
+        missing_classes = sorted(required_classes - seen_classes)
+        missing_hidden = sorted(required_hidden - seen_hidden)
+        missing_auto = sorted(required_auto - seen_auto)
+        print(f'DrawnBrowser native tests={tests} failures+errors={failed} skipped={skipped} '
+              f'missing_classes={missing_classes} missing_hidden={missing_hidden} '
+              f'missing_auto={missing_auto} chrome_test_seen={seen_chrome}')
+        if tests < 399 or failed or skipped or missing_classes or missing_hidden or missing_auto or not seen_chrome:
+            sys.exit('FAIL: require >=399 real native cases, five native classes, five hidden tests, '
+                     'five auto/scroll tests, GTK scrollbar chrome regression, zero failed/skipped')
         PY
     - name: Build All Widgets
       shell: bash

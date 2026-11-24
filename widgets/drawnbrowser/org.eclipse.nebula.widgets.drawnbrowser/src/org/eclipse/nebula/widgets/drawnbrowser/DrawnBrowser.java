@@ -227,6 +227,10 @@ public class DrawnBrowser extends Canvas {
 	public DrawnBrowser(Composite parent, int style) {
 		// radios of a page group by their name and form, not by their parent: SWT's automatic group is off
 		super(parent, style | SWT.V_SCROLL | SWT.NO_BACKGROUND | SWT.NO_RADIO_GROUP);
+		// GTK's native Canvas.scroll() forces a full redraw when scrollbars overlay its
+		// blit surface. Own an inset scroll bar so retained content pixels can move
+		// independently of scrollbar chrome; other SWT platforms keep their default.
+		if ("gtk".equals(SWT.getPlatform())) setScrollbarsMode(SWT.NONE);
 		layout = newLayout();
 		images = new ImageStore(getDisplay(), 64, this::imageLoaded);
 		Listener listener = this::handle;
