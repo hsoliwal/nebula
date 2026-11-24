@@ -368,6 +368,32 @@ jobs:
           "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
           "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}" \
           "-Dm3.test.pixels.dir=${RUNNER_TEMP:?missing runner temp}/nebula-widget-pixels"
+    # Index exact original Tycho/JUnit XML when the reactor reports native
+    # failures. This cannot make a failed Build All Widgets step succeed.
+    - name: Index native JUnit failures without changing the Maven verdict
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        classes="$RUNNER_TEMP/native-test-diagnostics-classes"
+        out="$RUNNER_TEMP/native-test-diagnostics"
+        mkdir -p "$classes" "$out"
+        javac --release 21 -Xlint:all -Werror -d "$classes" \
+          releng/native-test-diagnostics/src/main/java/org/eclipse/nebula/releng/NativeTestFailureIndex.java \
+          releng/native-test-diagnostics/src/test/java/org/eclipse/nebula/releng/NativeTestFailureIndexTest.java
+        java -ea -cp "$classes" org.eclipse.nebula.releng.NativeTestFailureIndexTest
+        java -cp "$classes" org.eclipse.nebula.releng.NativeTestFailureIndex \
+          widgets "$out/native-test-failures.tsv" "$out/native-test-summary.md"
+        cat "$out/native-test-summary.md" >> "$GITHUB_STEP_SUMMARY"
+    - name: Upload original native JUnit failure index
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-native-failure-index
+        if-no-files-found: error
+        path: |
+          ${{ runner.temp }}/native-test-diagnostics/native-test-failures.tsv
+          ${{ runner.temp }}/native-test-diagnostics/native-test-summary.md
     - name: Qualify Grid native screen pixels with OpenCV
       if: ${{ !cancelled() }}
       run: |
