@@ -60,7 +60,11 @@ public class ColorButtonTest {
 		focusSink.setBounds(200, 90, 100, 20);
 		shell.open();
 		focusSink.setFocus();
-		TestSupport.flush(display);
+		// The button background changes with real native hover, independently of focus.
+		// Park the pointer on a neutral sibling before comparing with the y-offset
+		// reference button; never synthesize MouseExit or relax the pixel oracle.
+		display.setCursorLocation(focusSink.toDisplay(5, 5));
+		TestSupport.spin(display, 60);
 	}
 
 	@After
