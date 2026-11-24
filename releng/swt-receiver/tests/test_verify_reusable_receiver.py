@@ -238,6 +238,28 @@ class ReusableReceiverTest(unittest.TestCase):
         self.assertIn('-pl "$swt_fragments" -am package', workflow)
         self.assertIn("python3 releng/swt-receiver/prepare_eclipse_platform_parent.py", workflow)
 
+    def test_host_test_step_runs_only_the_host_fragment_with_native_flags(self):
+        # Run 45433289163: the -am closure put the gtk.linux.aarch64 jar ahead of
+        # x86_64 on the surefire classpath, and -Dtycho.testArgLine never reached the
+        # forked JVM. The host step must exclude every non-host fragment, prove the
+        # classpath before the tests, and pass the native flags through ${os-jvm-flags}.
+        workflow = (HERE.parents[1] / ".github/workflows/terminal-vnc-contracts.yml").read_text()
+        step = workflow.split("      - name: Run original SWT AllTests on the source-built GTK3 host\n", 1)[1]
+        step = step.split("      - name:", 1)[0]
+        projects = re.search(r"export M3_SWT_HOST_PROJECTS='([^']+)'", step).group(1).split(",")
+        self.assertEqual(len(projects), len(set(projects)))
+        self.assertEqual(set(projects), {":org.eclipse.swt.gtk.linux.x86_64", ":org.eclipse.swt.tests"}
+                         | {"!:org.eclipse.swt." + platform for platform in PLATFORMS})
+        self.assertEqual(step.count('-pl "$M3_SWT_HOST_PROJECTS" -am'), 2)
+        flags = re.search(r'export M3_SWT_TEST_JVM_FLAGS="([^"]+)"', step).group(1).split()
+        self.assertEqual(flags, ["-Dswt.library.path=$M3_SWT_NATIVE_DIR",
+                                 "-Xlog:library=info:file=$M3_SWT_NATIVE_LOG"])
+        self.assertIn('"-Dos-jvm-flags=$M3_SWT_TEST_JVM_FLAGS"', step)
+        self.assertNotIn("-Dtycho.testArgLine=", step)
+        guard = step.index("SWT_TEST_CLASSPATH_HOST_FRAGMENT=PASS")
+        self.assertLess(step.index("maven-dependency-plugin:3.8.1:build-classpath"), guard)
+        self.assertLess(guard, step.index("-DskipTests=false"))
+
     def test_receipt_cannot_claim_native_runtime_qualification(self):
         path = self.target / "binding/expected.json"
         data = json.loads(path.read_text())
