@@ -451,6 +451,22 @@ public class GridViewportDifferential_Test {
 		}
 	}
 
+	/* Preserve the legacy latest-frame alias and every bounded diagnostic failure. */
+	private static final long MAX_CAPTURE_HISTORY = 512L;
+	private static final java.util.concurrent.atomic.AtomicLong CAPTURE_SEQUENCE =
+			new java.util.concurrent.atomic.AtomicLong();
+
+	private static void persistDiagnostic(final ImageLoader loader, final File dir,
+			final String name, final long sequence) {
+		if (sequence < 1 || sequence > MAX_CAPTURE_HISTORY) {
+			throw new IllegalStateException("diagnostic PNG history budget exceeded: " + sequence);
+		}
+		loader.save(new File(dir, name + ".png").getPath(), SWT.IMAGE_PNG);
+		loader.save(new File(dir, name + "-capture-" + ProcessHandle.current().pid()
+				+ "-" + sequence + ".png").getPath(), SWT.IMAGE_PNG);
+	}
+
+	/** Save latest name.png and a separate PNG for the individual failing frame. */
 	static void save(final ImageData data, final String name) {
 		final String dir = System.getProperty("grid.differential.out");
 		if (dir == null) {
@@ -458,6 +474,47 @@ public class GridViewportDifferential_Test {
 		}
 		final ImageLoader loader = new ImageLoader();
 		loader.data = new ImageData[] { data };
-		loader.save(new File(dir, name + ".png").getPath(), SWT.IMAGE_PNG);
+		persistDiagnostic(loader, new File(dir), name, CAPTURE_SEQUENCE.incrementAndGet());
+	}
+
+	@Test
+	public void diagnosticFailureFramesRetainHistoryAndBoundStorage() throws Exception {
+		final java.nio.file.Path path = java.nio.file.Files.createTempDirectory("grid-native-pixels-");
+		try {
+			final var palette = new org.eclipse.swt.graphics.PaletteData(0xff0000, 0xff00, 0xff);
+			final ImageData red = new ImageData(8, 8, 24, palette);
+			final ImageData blue = new ImageData(8, 8, 24, palette);
+			red.setPixel(1, 1, 0xff0000);
+			blue.setPixel(1, 1, 0xff);
+			final ImageLoader loader = new ImageLoader();
+			loader.data = new ImageData[] { red };
+			persistDiagnostic(loader, path.toFile(), "failure", 1);
+			loader.data = new ImageData[] { blue };
+			persistDiagnostic(loader, path.toFile(), "failure", 2);
+			final String prefix = "failure-capture-" + ProcessHandle.current().pid() + "-";
+			assertEquals(red.getPixel(1, 1),
+					new ImageData(path.resolve(prefix + "1.png").toString()).getPixel(1, 1));
+			assertEquals(blue.getPixel(1, 1),
+					new ImageData(path.resolve(prefix + "2.png").toString()).getPixel(1, 1));
+			assertEquals(blue.getPixel(1, 1),
+					new ImageData(path.resolve("failure.png").toString()).getPixel(1, 1));
+			try (var files = java.nio.file.Files.list(path)) {
+				assertEquals(3L, files.count());
+			}
+			try {
+				persistDiagnostic(loader, path.toFile(), "failure", MAX_CAPTURE_HISTORY + 1);
+				fail("exhausted history budget must refuse before writing");
+			} catch (final IllegalStateException expected) {
+				org.junit.Assert.assertTrue(expected.getMessage().contains("budget"));
+			}
+			try (var files = java.nio.file.Files.list(path)) {
+				assertEquals(3L, files.count());
+			}
+		} finally {
+			try (var files = java.nio.file.Files.list(path)) {
+				for (final var entry : files.toList()) java.nio.file.Files.deleteIfExists(entry);
+			}
+			java.nio.file.Files.deleteIfExists(path);
+		}
 	}
 }
