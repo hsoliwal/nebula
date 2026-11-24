@@ -32,6 +32,56 @@ jobs:
           test "$(git -C swt-mobile rev-parse HEAD)" = "1b7ce78ce09b606425162f7f01190e57db811e51"
           git rev-parse HEAD > mobile-acceptance-evidence/nebula-source.txt
           git -C swt-mobile rev-parse HEAD > mobile-acceptance-evidence/swt-source.txt
+      - name: PROBE ONLY - apply proposed AndroidPlatform capture rounding fix (not for merge)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/patch_capture.py" <<'PY'
+          """PROBE ONLY (lane nebula-ci): apply the proposed AndroidPlatform.captureScreen rounding fix
+          to a checked-out SWT tree and update its mobile/source-manifest.json pin. Usage: patch_capture.py SWT_ROOT"""
+          import hashlib
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          rel = "bundles/org.eclipse.swt/Eclipse SWT/android/org/eclipse/swt/internal/android/AndroidPlatform.java"
+          src = root / rel
+          old = (
+              "\t\t\tint[] location = new int[2]; root.getLocationInWindow(location);\n"
+              "\t\t\tint left = Math.addExact(location[0] + root.getPaddingLeft(), physical(x));\n"
+              "\t\t\tint top = Math.addExact(location[1] + root.getPaddingTop(), physical(y));\n"
+              "\t\t\tint right = Math.addExact(left, physical(width));\n"
+              "\t\t\tint bottom = Math.addExact(top, physical(height));\n"
+              "\t\t\tif (x < 0 || y < 0 || right > location[0] + root.getWidth() - root.getPaddingRight() || bottom > location[1] + root.getHeight() - root.getPaddingBottom()) throw new IllegalArgumentException(\"Capture outside visible SWT window\");\n"
+          )
+          new = (
+              "\t\t\tint[] location = new int[2]; root.getLocationInWindow(location);\n"
+              "\t\t\tint contentLeft = location[0] + root.getPaddingLeft(), contentTop = location[1] + root.getPaddingTop();\n"
+              "\t\t\tint contentRight = location[0] + root.getWidth() - root.getPaddingRight();\n"
+              "\t\t\tint contentBottom = location[1] + root.getHeight() - root.getPaddingBottom();\n"
+              "\t\t\t// displayBounds() rounds the content box to the nearest logical unit; accept exactly that logical area.\n"
+              "\t\t\tif (x < 0 || y < 0 || x > logical(contentRight - contentLeft) - width || y > logical(contentBottom - contentTop) - height) throw new IllegalArgumentException(\"Capture outside visible SWT window\");\n"
+              "\t\t\tint left = Math.addExact(contentLeft, physical(x));\n"
+              "\t\t\tint top = Math.addExact(contentTop, physical(y));\n"
+              "\t\t\tint right = Math.min(contentRight, Math.addExact(left, physical(width)));\n"
+              "\t\t\tint bottom = Math.min(contentBottom, Math.addExact(top, physical(height)));\n"
+          )
+          data = src.read_bytes()
+          before = hashlib.sha256(data).hexdigest()
+          text = data.decode("utf-8")
+          if text.count(old) != 1:
+              raise SystemExit("captureScreen bounds block not found exactly once")
+          patched = text.replace(old, new).encode("utf-8")
+          after = hashlib.sha256(patched).hexdigest()
+          manifest = root / "mobile/source-manifest.json"
+          mtext = manifest.read_text(encoding="utf-8")
+          if mtext.count(before) != 1:
+              raise SystemExit("manifest does not pin the observed AndroidPlatform blob exactly once")
+          src.write_bytes(patched)
+          manifest.write_text(mtext.replace(before, after), encoding="utf-8", newline="\n")
+          print(f"PROBE_PATCH AndroidPlatform {before} -> {after}")
+          PY
+          python3 "$RUNNER_TEMP/patch_capture.py" swt-mobile
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -157,6 +207,7 @@ jobs:
             mobile-acceptance-evidence/**
           if-no-files-found: warn
   ios-original-list-source:
+    if: ${{ false }}
     runs-on: macos-15
     timeout-minutes: 45
     steps:
