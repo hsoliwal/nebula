@@ -85,6 +85,24 @@ public class DrawnBrowserPositionedTest {
 	}
 
 	@Test
+	public void nestedWheelScrollMovesPanelPixelsWithoutMovingTheRootPage() {
+		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		for (String mode : new String[] { "auto", "scroll" }) {
+			show("<section style='position:relative;width:100px;height:45px;overflow:" + mode + ";background:lime'>"
+					+ "<article style='position:relative;top:70px;width:60px;height:20px;background:red'></article>"
+					+ "</section><aside style='height:300px'></aside>");
+			assertEquals("before wheel " + mode, new RGB(0, 255, 0), pixel(10, 30));
+			Event wheel = new Event();
+			wheel.x = 10; wheel.y = 30; wheel.count = -3;
+			browser.notifyListeners(SWT.MouseWheel, wheel);
+			settle();
+			assertEquals("root scrollbar must stay unchanged " + mode, 0, browser.getScrollY());
+			assertEquals("panel scrolled inner red item into view " + mode, new RGB(255, 0, 0), pixel(10, 30));
+			assertEquals("panel cannot paint outside its scrollport " + mode, new RGB(255, 255, 255), pixel(10, 55));
+		}
+	}
+
+	@Test
 	public void nestedPanelClipsAbsoluteChildPixelsButKeepsItsOwnBorder() {
 		browser.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 		show("<div style='position:relative;left:20px;top:10px;width:80px;height:50px;"
