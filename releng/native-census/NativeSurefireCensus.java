@@ -60,7 +60,7 @@ public final class NativeSurefireCensus {
                     .filter(p -> p.getFileName().toString().startsWith("TEST-")
                             && p.getFileName().toString().endsWith(".xml"))
                     .filter(p -> p.getParent().getFileName().toString().equals("surefire-reports"))
-                    .sorted(Comparator.comparing(Path::toString)).limit(MAX_REPORTS + 1L).toList();
+                    .limit(MAX_REPORTS + 1L).sorted(Comparator.comparing(Path::toString)).toList();
         }
         if (reports.isEmpty() || reports.size() > MAX_REPORTS) {
             throw new IOException("no JUnit reports, or excessive report count: " + reports.size());
