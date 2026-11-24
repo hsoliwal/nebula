@@ -394,6 +394,29 @@ jobs:
         path: |
           ${{ runner.temp }}/native-test-diagnostics/native-test-failures.tsv
           ${{ runner.temp }}/native-test-diagnostics/native-test-summary.md
+    - name: Index original native Surefire failures without changing Tycho verdict
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        classes="${RUNNER_TEMP:?}/nebula-native-failure-index-classes"
+        destination="${RUNNER_TEMP:?}/nebula-native-failure-index"
+        mkdir -p "$classes" "$destination"
+        javac --release 21 -Xlint:all -Werror -d "$classes" \
+          releng/swt-receiver/NativeFailureIndex.java \
+          releng/swt-receiver/NativeFailureIndexTest.java
+        java -ea -cp "$classes" NativeFailureIndexTest
+        java -cp "$classes" NativeFailureIndex "$PWD" "$destination"
+        cat "$destination/summary.md" >> "${GITHUB_STEP_SUMMARY:?}"
+    # Distinct artifact name: upload-artifact@v4 refuses a second
+    # nebula-native-failure-index artifact in the same workflow run.
+    - name: Upload native Surefire failure index and original report hashes
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-native-surefire-failure-index
+        if-no-files-found: error
+        path: ${{ runner.temp }}/nebula-native-failure-index/
     - name: Qualify Grid native screen pixels with OpenCV
       if: ${{ !cancelled() }}
       run: |
