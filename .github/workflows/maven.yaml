@@ -232,6 +232,20 @@ jobs:
         mvn -B -f releng/swt-receiver/swt-receiver-p2/pom.xml \
           -Dm3.swt.source="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
         cat releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env >> "$GITHUB_ENV"
+    # Nebula's Tycho 4.0.12 reactor requires an independently pinned Maven
+    # toolchain; the SWT Tycho 5.0.4 source build above uses the newer runner.
+    # Maven 3.10.1 + Tycho 4.0.12 failed injecting MavenTargetLocationFactory.
+    - name: Set up Maven 3.9.11 for Nebula Tycho 4.0.12
+      uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+      with:
+        maven-version: 3.9.11
+    - name: Qualify legacy Tycho/Maven pairing before native widget tests
+      shell: bash
+      run: |
+        set -euo pipefail
+        grep -Fx -- '-Dtycho-version=4.0.12' .mvn/maven.config
+        mvn -version | tee "$RUNNER_TEMP/nebula-legacy-tycho-maven.txt"
+        grep -Eq '^Apache Maven 3[.]9[.]11([[:space:]]|$)' "$RUNNER_TEMP/nebula-legacy-tycho-maven.txt"
     - name: Run the excluded DrawnBrowser reactor under pinned GTK3/X11
       shell: bash
       run: |
