@@ -16,10 +16,15 @@
 #   "HTTP/<v> NNN" or "Unexpected HTTP response: NNN" for NNN = 429, 502, 503 or
 #   504, or with "Too Many Requests (429)", "Service Temporarily Unavailable
 #   (503)", "Bad Gateway (502)" or "Gateway Timeout (504)";
-#   a Maven 3.10 failure that names an artifact without a status code ("could not
-#   be resolved", "Failed to read artifact descriptor for <g:a[:type]:v>") when
-#   the output has "GET request to <url> failed (attempt N of M) due to status
-#   NNN" (NNN as above) for that artifact's repository path;
+#   a Maven 3.10 transport failure: a resolution clause on the failure lines names
+#   an artifact ("<g:a[:type]:v> or one of its dependencies could not be resolved",
+#   "Failed to read artifact descriptor for <g:a[:type]:v>", "The following
+#   artifacts could not be resolved: <g:a[:type]:v> (absent), ..."); no failure
+#   line naming it carries a status code other than 429/502/503/504; and the
+#   output has "GET request to <url> failed (attempt N of M) due to status NNN"
+#   (NNN as above) where <url> is exactly <root>/<group path>/<artifact>/
+#   <version>/<artifact>-<version>... for a known repository root, with no later
+#   "Downloaded from <id>: <url>" (Maven's own retry recovered it);
 #   anywhere in the output, as before: "Could not acquire read|write lock for
 #   'metadata:org.eclipse:" (Tycho) and "Could not find artifact
 #   org.eclipse.tycho:tycho-maven-plugin:jar:4.0.12 in central".
@@ -60,25 +65,80 @@ code='(status code:|HTTP Status:|HTTP/[0-9.]+|Unexpected HTTP response:)[[:space
 log=$(mktemp)
 trap 'rm -f "$log"' EXIT
 
+coordinate='[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+(:[a-z-]+)?:[0-9][A-Za-z0-9_.-]*'
+
+# Artifacts that a resolution clause on the failure lines names itself:
+# "<coordinates> or one of its dependencies could not be resolved", "Failed to read
+# artifact descriptor for <coordinates>" and "The following artifacts could not be
+# resolved: <coordinates> (absent|present...), ...". Other coordinates on the same
+# lines, such as the plugin in "Failed to execute goal <g:a:v>:<goal>", do not count.
+named_artifacts() {
+  {
+    grep -Eo "${coordinate} or one of its dependencies could not be resolved" <<< "$failure" \
+      | grep -Eo "^${coordinate}" || true
+    grep -Eo "Failed to read artifact descriptor for ${coordinate}" <<< "$failure" \
+      | grep -Eo "${coordinate}\$" || true
+    grep -Eo "The following artifacts could not be resolved: (${coordinate} \\([^)]*\\)(, )?)+" <<< "$failure" \
+      | sed 's/^The following artifacts could not be resolved: //' | grep -Eo "${coordinate} \\(" \
+      | grep -Eo "^${coordinate}" || true
+  } | sort -u
+}
+
+# Repository roots: Maven Central, every root printed as "from/to <id> (<root>)", and
+# every Maven 3.10 prefix-file URL "<root>/.meta/prefixes.txt".
+repository_roots() {
+  {
+    printf '%s\n' 'https://repo.maven.apache.org/maven2'
+    grep -Eo 'from/to [^[:space:]]+ \(https?://[^)[:space:]]+\)' "$log" | sed -E 's/^.*\((.*)\)$/\1/' || true
+    grep -Eo 'https?://[^[:space:]]+/\.meta/prefixes\.txt' "$log" | sed -E 's#/\.meta/prefixes\.txt$##' || true
+  } | sed -E 's#/+$##' | sort -u
+}
+
 # Status (429, 502, 503 or 504) of a Maven 3.10 transport warning for an artifact
-# that the failure names without a code; empty when there is none.
+# that a resolution clause names; empty when there is none. Such a warning counts
+# only when its URL is exactly <root>/<group path>/<artifact>/<version>/<artifact>-
+# <version>(-<classifier>).<extension> for a known repository root, Maven's own retry
+# did not recover it (no later "Downloaded from <id>: <same URL>"), and no failure
+# line naming the artifact carries any status code other than 429/502/503/504.
 transport_status() {
-  grep -Eq 'could not be resolved|Failed to read artifact descriptor for' <<< "$failure" || return 0
-  local coords group rest artifact version path status
+  local artifacts roots coords group rest artifact version gesc vesc named bad
+  local entry number url status root prefix matched recovered
+  artifacts=$(named_artifacts)
+  [[ -n "$artifacts" ]] || return 0
+  roots=$(repository_roots)
   while IFS= read -r coords; do
     group=${coords%%:*}
     rest=${coords#*:}
     artifact=${rest%%:*}
     version=${coords##*:}
-    path="/${group//.//}/$artifact/$version/"
-    status=$(grep -F -- "$path" "$log" \
-      | grep -Eo 'GET request to [^[:space:]]+ failed \(attempt [0-9]+ of [0-9]+\) due to status (429|502|503|504)\b' \
-      | grep -F -- "$path" | grep -Eo '[0-9]{3}$' | head -n 1 || true)
-    if [[ -n "$status" ]]; then
+    gesc=$(sed 's/[.]/\\./g' <<< "$group:$artifact")
+    vesc=$(sed 's/[.]/\\./g' <<< "$version")
+    named=$(grep -E "(^|[^A-Za-z0-9_.-])${gesc}(:[A-Za-z0-9_-]+)*:${vesc}([^A-Za-z0-9_.-]|\$)" <<< "$failure" || true)
+    bad=$(grep -Eo "${code}[0-9]{3}" <<< "$named" | grep -Ev '(429|502|503|504)$' || true)
+    [[ -z "$bad" ]] || continue
+    while IFS= read -r entry; do
+      [[ -n "$entry" ]] || continue
+      number=${entry%%:*}
+      url=$(sed -E 's/^.*GET request to ([^[:space:]]+) failed .*$/\1/' <<< "$entry")
+      status=$(sed -E 's/^.*due to status ([0-9]{3}).*$/\1/' <<< "$entry")
+      matched=''
+      while IFS= read -r root; do
+        prefix="$root/${group//.//}/$artifact/$version/$artifact-$version"
+        if [[ "$url" == "$prefix".* || "$url" == "$prefix"-* ]]; then
+          matched=1
+          break
+        fi
+      done <<< "$roots"
+      [[ -n "$matched" ]] || continue
+      recovered=$(awk -v url="$url" -v after="$number" 'NR > after && index($0, "Downloaded from ") {
+          at = index($0, ": " url)
+          if (at && (length($0) == at + length(url) + 1 || substr($0, at + length(url) + 2, 1) == " ")) { print NR; exit }
+        }' "$log")
+      [[ -z "$recovered" ]] || continue
       printf '%s' "$status"
       return 0
-    fi
-  done < <(grep -Eo '[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+(:[a-z-]+)?:[0-9][A-Za-z0-9_.-]*' <<< "$failure" | sort -u)
+    done < <(grep -nE 'GET request to [^[:space:]]+ failed \(attempt [0-9]+ of [0-9]+\) due to status (429|502|503|504)\b' "$log" || true)
+  done <<< "$artifacts"
 }
 
 slept=0

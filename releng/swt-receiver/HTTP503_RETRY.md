@@ -46,9 +46,36 @@ checks below. NNN stands for 429, 502, 503 or 504.
 | Condition | Detected strings |
 |---|---|
 | HTTP 429, 503, 502/504 on a failure line | `status code: NNN` (Maven 3.9), `HTTP Status: NNN` (Maven 3.10), `HTTP/<version> NNN`, `Unexpected HTTP response: NNN`, `Too Many Requests (429)`, `Service Temporarily Unavailable (503)`, `Bad Gateway (502)`, `Gateway Timeout (504)` or `Gateway Time-out (504)` |
-| Maven 3.10 transport failure for the failing artifact | the failure lines name an artifact `<group>:<artifact>[:<type>]:<version>` with `could not be resolved` or `Failed to read artifact descriptor for`, but no status code; the output also has `GET request to <url> failed (attempt N of M) due to status NNN` whose URL contains that artifact's repository path `/<group with slashes>/<artifact>/<version>/`. This is the `tycho-build` extension case of run 44992024856 |
+| Maven 3.10 transport failure for the failing artifact | all of the conditions listed below the table; this is the `tycho-build` extension case of run 44992024856 |
 | Eclipse metadata lock | anywhere in the output: `Could not acquire read lock for 'metadata:org.eclipse:` or `... write lock ...` |
 | Tycho 4.0.12 lookup | anywhere in the output: `Could not find artifact org.eclipse.tycho:tycho-maven-plugin:jar:4.0.12 in central` |
+
+**The Maven 3.10 transport rule.** It applies only when all four conditions
+hold:
+
+1. **The artifact is named by a resolution clause on the failure lines.** The
+   accepted clauses are:
+   - `<coordinates> or one of its dependencies could not be resolved`
+   - `Failed to read artifact descriptor for <coordinates>`
+   - `The following artifacts could not be resolved: <coordinates> (absent),
+     ...` (or `(present, ...)`)
+
+   `<coordinates>` is `<group>:<artifact>[:<type>]:<version>`. Other
+   coordinates on the same lines do not count, for example the plugin in
+   `Failed to execute goal <g:a:v>:<goal>`.
+2. **No failure line that names the artifact carries any other status code.**
+   Any `status code:`, `HTTP Status:`, `HTTP/<version>` or `Unexpected HTTP
+   response:` code other than 429, 502, 503 or 504 (for example 500, 407 or
+   410) disables the rule for that artifact.
+3. **The output has a transport warning at that artifact's exact repository
+   path.** The warning is `GET request to <url> failed (attempt N of M) due to
+   status NNN`, and `<url>` must be exactly `<root>/<group path>/<artifact>/
+   <version>/<artifact>-<version>` followed by `.` or `-`. `<root>` is a known
+   repository root: Maven Central (`https://repo.maven.apache.org/maven2`), a
+   root printed as `from/to <id> (<root>)`, or `<root>/.meta/prefixes.txt`. A
+   group such as `com.x.org.foo` therefore does not match `org.foo`.
+4. **Maven's own retry did not recover that request.** There must be no later
+   `Downloaded from <id>: <url>` line for the same URL.
 
 **Non-transient: never retried, even next to a transient line.**
 
@@ -117,7 +144,17 @@ It checks:
     "timeout in the fork";
   - a `[WARNING]`-only 503 next to an Ant failure;
   - Maven 3.10 transport warnings for `tycho-build` next to a failure that names
-    a different artifact, or next to Tycho's "error code 13".
+    a different artifact, or next to Tycho's "error code 13";
+  - a 429 on the `maven-dependency-plugin` POM that Maven recovered ("Downloaded
+    from central"), then a "Blocked mirror" resolution failure of
+    `org.foo:bar:jar:1.0` (the review's case A);
+  - the same without the recovery line, where only the clause rule applies;
+  - the same with a clause that names the plugin, where only the recovery rule
+    applies;
+  - 429 warnings for `tycho-build`'s POM next to a failure line with `HTTP
+    Status: 500` for it;
+  - a 429 for `com.x.org.foo:bar:1.0` next to a resolution failure of
+    `org.foo:bar:1.0`.
 - **Backoff:** exponential growth with jitter, the per-wait cap, an exactly
   honoured `Retry-After: 7` and Maven 3.10's 60 s Retry-After, and the total
   budget. A test hook (`M3_RETRY_SLEEP_RECORD`) records each wait instead of

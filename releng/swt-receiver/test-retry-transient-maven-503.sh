@@ -61,6 +61,30 @@ case "$mode" in
   m310code13) head -n 8 "$M310_EXTENSION"
     echo '[ERROR] Failed to execute goal org.eclipse.tycho:tycho-surefire-plugin:5.0.4:test (default-test) on project org.eclipse.swt.tests: An unexpected error occured while launching the test runtime (process returned error code 13). Please check the log for details. -> [Help 1]'
     exit 1 ;;
+  # The plugin POM had a 429 that Maven's own retry recovered; another artifact then fails
+  # without any status code (the review's case A).
+  m310recoveredplugin|m310unrecoveredplugin|m310recoveredclause)
+    pom='https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-dependency-plugin/3.8.1/maven-dependency-plugin-3.8.1.pom'
+    echo "[WARNING] GET request to $pom failed (attempt 1 of 4) due to status 429. Retrying in 5000 ms (due to retryInterval 5000 ms multiplied by execution count 1)..."
+    [[ "$mode" == m310unrecoveredplugin ]] || echo "[INFO] Downloaded from central: $pom (11 kB at 52 kB/s)"
+    if [[ "$mode" == m310recoveredclause ]]; then
+      echo '[ERROR] Plugin org.apache.maven.plugins:maven-dependency-plugin:3.8.1 or one of its dependencies could not be resolved: The following artifacts could not be resolved: org.foo:bar:jar:1.0 (absent): Could not transfer artifact org.foo:bar:jar:1.0 from/to maven-default-http-blocker (http://0.0.0.0/): Blocked mirror for repositories: [legacy (http://legacy.example/repo, default, releases)] -> [Help 1]'
+    else
+      echo '[ERROR] Failed to execute goal org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath (default-cli) on project demo: Could not resolve dependencies for project org.example:demo:jar:1.0: The following artifacts could not be resolved: org.foo:bar:jar:1.0 (absent): Could not transfer artifact org.foo:bar:jar:1.0 from/to maven-default-http-blocker (http://0.0.0.0/): Blocked mirror for repositories: [legacy (http://legacy.example/repo, default, releases)] -> [Help 1]'
+    fi
+    exit 1 ;;
+  # 429 transport warnings for the artifact, but a failure line reports HTTP 500 for it.
+  m310status500) sed -n 6,8p "$M310_EXTENSION"
+    echo '[ERROR] Plugin org.eclipse.tycho:tycho-build:5.0.4 or one of its dependencies could not be resolved:'
+    printf '\tFailed to read artifact descriptor for org.eclipse.tycho:tycho-build:jar:5.0.4\n'
+    echo '[ERROR] Could not transfer artifact org.eclipse.tycho:tycho-build:pom:5.0.4 from/to central (https://repo.maven.apache.org/maven2): HTTP Status: 500'
+    exit 1 ;;
+  # The 429 is for com.x.org.foo:bar:1.0, whose path contains /org/foo/bar/1.0/; the failure is org.foo:bar:1.0.
+  m310collision)
+    echo '[WARNING] GET request to https://repo.maven.apache.org/maven2/com/x/org/foo/bar/1.0/bar-1.0.pom failed (attempt 3 of 4) due to status 429. Retrying in 15000 ms (due to retryInterval 5000 ms multiplied by execution count 3)...'
+    echo '[ERROR] Plugin org.foo:bar:1.0 or one of its dependencies could not be resolved:'
+    printf '\tFailed to read artifact descriptor for org.foo:bar:jar:1.0\n'
+    exit 1 ;;
   m310status404) echo '[ERROR] Could not transfer artifact a:b:pom:1 from/to central (https://repo.maven.apache.org/maven2): HTTP Status: 404'; exit 1 ;;
   real429testerrors) cat "$REAL429"; echo '[ERROR] Tests run: 5, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 1.2 s <<< FAILURE!'; exit 1 ;;
   warn429code13) head -n 1 "$REAL429"
@@ -139,7 +163,11 @@ fails "$tmp/t2" m310extensionpersistent; calls "$tmp/t2" 3
 # Its Retry-After of 60 s is recorded, not slept (checked below).
 M3_RETRY_SLEEP_RECORD="$tmp/ignored-waits" wrapper "$tmp/t3" m310parent >/dev/null 2>"$tmp/stderr"; calls "$tmp/t3" 2
 grep -q 'upstream HTTP 503 (attempt 1/3)' "$tmp/stderr"
-for mode in m310otherartifact m310code13; do
+# Only artifacts named by the resolution clause count, a warning that Maven's own retry
+# recovered does not, a non-transient status for the artifact wins, and the URL must be
+# that artifact's exact repository path.
+for mode in m310otherartifact m310code13 m310recoveredplugin m310unrecoveredplugin m310recoveredclause \
+            m310status500 m310collision; do
   fails "$tmp/t-$mode" "$mode"; calls "$tmp/t-$mode" 1
   grep -q 'M3: non-transient failure; no retry (exit 1)' "$tmp/stderr"
 done
