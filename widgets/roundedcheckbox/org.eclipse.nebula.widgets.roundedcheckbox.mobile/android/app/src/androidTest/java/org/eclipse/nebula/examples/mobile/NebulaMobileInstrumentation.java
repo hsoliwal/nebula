@@ -129,7 +129,12 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
             activity = (NebulaMobileActivity) startActivitySync(new Intent(getTargetContext(), NebulaMobileActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             NebulaMobileActivity current = activity;
-            await(() -> NebulaMobileMain.state != null && windowReady(current), "Nebula source construction");
+            try {
+                await(() -> NebulaMobileMain.state != null && windowReady(current), "Nebula source construction");
+            } catch (AssertionError timeout) {
+                throw new AssertionError(timeout.getMessage() + " (SWT state constructed: "
+                        + (NebulaMobileMain.state != null) + "; " + windowGeometry(current) + ")", timeout);
+            }
             int[] checkboxTap = location(surface(current), 42, 86);
             int[] veto = location(surface(current), 42, 158);
             int[] disabled = location(surface(current), 42, 230);
@@ -727,6 +732,32 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
         return ready.get();
     }
 
+    /** Physical geometry of the SWT root, for failure messages; it neither waits nor asserts. */
+    private String windowGeometry(Activity host) {
+        AtomicReference<String> text = new AtomicReference<>();
+        runOnMainSync(() -> {
+            ViewGroup content = host.findViewById(android.R.id.content);
+            View root = content == null || content.getChildCount() == 0 ? null : content.getChildAt(0);
+            if (root == null) {
+                text.set("SWT root not attached, window focus " + host.getWindow().getDecorView().hasWindowFocus());
+                return;
+            }
+            int[] at = new int[2];
+            root.getLocationInWindow(at);
+            WindowInsets insets = root.getRootWindowInsets();
+            text.set("root " + root.getWidth() + "x" + root.getHeight() + " at " + at[0] + "," + at[1]
+                    + " padding " + root.getPaddingLeft() + "," + root.getPaddingTop() + ","
+                    + root.getPaddingRight() + "," + root.getPaddingBottom()
+                    + " density " + root.getResources().getDisplayMetrics().density
+                    + " shown " + root.isShown() + " window focus " + root.hasWindowFocus()
+                    + (insets == null ? " insets none" : " systemBars " + insets.getInsets(WindowInsets.Type.systemBars())
+                            + " cutout " + insets.getInsets(WindowInsets.Type.displayCutout())
+                            + " ime " + insets.getInsets(WindowInsets.Type.ime())
+                            + " imeVisible " + insets.isVisible(WindowInsets.Type.ime())));
+        });
+        return text.get();
+    }
+
     private void cancelPointer(int[] location) {
         long down = SystemClock.uptimeMillis();
         MotionEvent first = MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, location[0], location[1], 0);
@@ -953,32 +984,39 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
         await(drawn::get, "A fresh native window frame before SWT screen capture");
         AtomicReference<int[]> pixels = new AtomicReference<>();
         int[] size = new int[2];
-        display.syncExec(() -> {
-            Rectangle area = display.getClientArea();
-            size[0] = area.width;
-            size[1] = area.height;
-            Image snapshot = new Image(display, area.width, area.height);
-            try {
-                GC screen = new GC(display);
+        String geometryBefore = windowGeometry(activity);
+        try {
+            display.syncExec(() -> {
+                Rectangle area = display.getClientArea();
+                size[0] = area.width;
+                size[1] = area.height;
+                Image snapshot = new Image(display, area.width, area.height);
                 try {
-                    screen.copyArea(snapshot, area.x, area.y);
-                } finally {
-                    screen.dispose();
-                }
-                ImageData data = snapshot.getImageData();
-                int[] argb = new int[Math.multiplyExact(data.width, data.height)];
-                for (int y = 0; y < data.height; y++) {
-                    for (int x = 0; x < data.width; x++) {
-                        RGB color = data.palette.getRGB(data.getPixel(x, y));
-                        argb[y * data.width + x] = data.getAlpha(x, y) << 24
-                                | color.red << 16 | color.green << 8 | color.blue;
+                    GC screen = new GC(display);
+                    try {
+                        screen.copyArea(snapshot, area.x, area.y);
+                    } finally {
+                        screen.dispose();
                     }
+                    ImageData data = snapshot.getImageData();
+                    int[] argb = new int[Math.multiplyExact(data.width, data.height)];
+                    for (int y = 0; y < data.height; y++) {
+                        for (int x = 0; x < data.width; x++) {
+                            RGB color = data.palette.getRGB(data.getPixel(x, y));
+                            argb[y * data.width + x] = data.getAlpha(x, y) << 24
+                                    | color.red << 16 | color.green << 8 | color.blue;
+                        }
+                    }
+                    pixels.set(argb);
+                } finally {
+                    snapshot.dispose();
                 }
-                pixels.set(argb);
-            } finally {
-                snapshot.dispose();
-            }
-        });
+            });
+        } catch (RuntimeException refused) {
+            throw new AssertionError("SWT GC(Display).copyArea refused " + filename + " for Display client area "
+                    + size[0] + "x" + size[1] + "; window before: " + geometryBefore
+                    + "; window after: " + windowGeometry(activity), refused);
+        }
         int[] argb = pixels.get();
         require(argb != null && argb.length > 0, "Missing SWT visible-screen pixels");
         boolean varied = false;
