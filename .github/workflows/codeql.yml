@@ -127,7 +127,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: hsoliwal/eclipse.platform.swt
-        ref: f339049f4eeea7cbfbc80a6a4a565d0eac14d3f3
+        ref: d1d5f1e62f5a2a2a58af8ac16639eb0525ce9fe7
         path: .m3-swt
         fetch-depth: 0
         lfs: false
