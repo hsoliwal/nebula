@@ -1013,7 +1013,7 @@ public final class NebulaMobileInstrumentation extends Instrumentation {
                 }
             });
         } catch (RuntimeException refused) {
-            throw new AssertionError("SWT GC(Display).copyArea refused " + filename + " for Display client area "
+            throw new AssertionError("SWT GC(Display) capture of " + filename + " failed for Display client area "
                     + size[0] + "x" + size[1] + "; window before: " + geometryBefore
                     + "; window after: " + windowGeometry(activity), refused);
         }
