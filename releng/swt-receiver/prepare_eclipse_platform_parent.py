@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 AGGREGATOR_COMMIT = "8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec"
 PARENT_BLOB = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
 PARENT_SHA256 = "121b6c26d986874391d26d114377e3beda91723b0d675146bdd194dbfe01e264"
-SWT_COMMIT = "c25cb33505465b28980e563acc99097ce3e33fee"
+SWT_COMMIT = "3ae28fa38dc1cdbe449d0b079ec7869ca9cea2a6"
 NS = "{http://maven.apache.org/POM/4.0.0}"
 
 
