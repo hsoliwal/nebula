@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: Apache-2.0 OR EPL-2.0
+name: Nebula Grid exact geometry JUnit4 (GTK3, Java21)
+on:
+  pull_request:
+    paths:
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridPaintDAG.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid/src/org/eclipse/nebula/widgets/grid/GridViewportDamage.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridPaintDAG_Test.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/src/org/eclipse/nebula/widgets/grid/GridViewportDamageAtoms_Test.java'
+      - 'widgets/grid/org.eclipse.nebula.widgets.grid.test/pom.xml'
+      - '.github/workflows/grid-geometry-junit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-swt-geometry:
+    if: >-
+      github.repository == 'hsoliwal/nebula' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [original, viewport]
+        test_class: [GridPaintDAG_Test, GridViewportDamageAtoms_Test]
+    env:
+      SWT_GTK4: '0'
+      GDK_BACKEND: x11
+      JAVA_TOOL_OPTIONS: -Dswt.widget.mode.Grid=${{ matrix.mode }}
+      MAVEN_OPTS: -Xmx2g
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      # Reuse the exact Maven/Tycho pairing of the existing GTK3 Grid workflow.
+      - name: Install Maven 3.9.11 for Nebula Tycho 4.0.12
+        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
+        with:
+          maven-version: 3.9.11
+      - name: Verify the selected Java and Tycho toolchains
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -version
+          mvn -version | tee "$RUNNER_TEMP/grid-geometry-maven-version.txt"
+          grep -Eq '^Apache Maven 3[.]9[.]11([[:space:]]|$)' "$RUNNER_TEMP/grid-geometry-maven-version.txt"
+          grep -Fx -- '-Dtycho-version=4.0.12' .mvn/maven.config
+      - name: Install GTK3 and isolated X11 test session
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb dbus-x11 libgtk-3-0
+      - name: Execute one real SWT JUnit4 geometry class in an independent JVM
+        shell: bash
+        run: |
+          set -euo pipefail
+          dbus-run-session -- xvfb-run -a -s '-screen 0 1200x800x24 -noreset' \
+            mvn -B -ntp -f widgets/grid/pom.xml \
+              -pl org.eclipse.nebula.widgets.grid.test -am \
+              '-Dtest=${{ matrix.test_class }}' \
+              -DfailIfNoTests=true -DskipTests=false \
+              -Dmaven.test.failure.ignore=false verify
+      - name: Require the exact requested suite, every case executed, no omissions
+        shell: bash
+        env:
+          REQUESTED: ${{ matrix.test_class }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          expected = {'GridPaintDAG_Test': 7, 'GridViewportDamageAtoms_Test': 4}
+          name = os.environ['REQUESTED']
+          root = Path('widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports')
+          files = sorted(root.rglob('TEST-*.xml'))
+          selected = [p for p in files if p.stem.endswith(name)]
+          assert name in expected and len(selected) == 1, (
+              f'missing/duplicate JUnit suite {name}: {selected}')
+          assert len(files) == 1, f'nonselected JUnit tests executed: {files}'
+          doc = ET.parse(selected[0]).getroot()
+          suites = [node for node in doc.iter()
+                    if node.tag.rsplit('}', 1)[-1] == 'testsuite']
+          assert len(suites) == 1, f'missing or duplicate testsuite node: {selected[0]}'
+          suite = suites[0]
+          metrics = {key: int(suite.attrib.get(key, '0'))
+                     for key in ('tests', 'failures', 'errors', 'skipped')}
+          cases = [node for node in suite.iter()
+                   if node.tag.rsplit('}', 1)[-1] == 'testcase']
+          assert metrics['tests'] >= expected[name], (name, metrics)
+          assert metrics['tests'] == len(cases), (name, metrics, len(cases))
+          assert not any(metrics[key] for key in ('failures', 'errors', 'skipped')), metrics
+          assert all(case.attrib.get('classname', '').endswith('.' + name) for case in cases)
+          required = {
+              'GridPaintDAG_Test': 'positiveCoordinateOverflowPreservesHeaderBodyAndChromeRank',
+              'GridViewportDamageAtoms_Test': 'extremeViewportScrollRectanglesNeverWrapTheSignedPixelAxis',
+          }
+          assert required[name] in {case.attrib.get('name') for case in cases}, (
+              f'missing wide-endpoint regression {required[name]}')
+          print(f'NEBULA_GEOMETRY_REAL_SWT_JUNIT_PASS class={name} '
+                f'tests={metrics["tests"]} mode={os.environ.get("JAVA_TOOL_OPTIONS")}')
+          PY
+      - name: Preserve real GTK test reports for independent inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grid-geometry-${{ matrix.mode }}-${{ matrix.test_class }}
+          if-no-files-found: warn
+          path: widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/
