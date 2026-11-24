@@ -7,24 +7,46 @@ condition. Everything else fails on the first attempt, and so does a transient
 condition that persists through every attempt. (The file name predates the
 429/502/504 support and is kept because the workflows call it.)
 
+## Call sites and Maven versions
+
+| Call site | Maven | Attempts, base delay | Waits |
+|---|---|---|---|
+| `terminal-vnc-contracts.yml`: SWT assembly, classpath guard, SWT AllTests (3) | pinned 3.9.11 | 5, 15 s | 15-22, 30-45, 60-90, 120-180 s (at most about 5.6 minutes) |
+| `terminal-vnc-contracts.yml`: Terminal tests (1) | pinned 3.9.11 | 3, 12 s | 12-18, 24-36 s (at most 54 s) |
+| `codeql.yml`: SWT build (1) | pinned 3.9.11 | defaults: 3, 10 s | 10-15, 20-30 s |
+| `maven.yaml`: "Build and bind the pinned SWT GTK3 distribution" (1) | the runner's preinstalled 3.9 or 3.10 (3.10.1 in runs 44992024856 and 45108815443) | defaults: 3, 10 s | 10-15, 20-30 s, or a logged Retry-After |
+
+The `maven.yaml` site uses the runner's Maven on purpose. Commit 9f46414a
+stopped downloading Maven there after the archive download hit HTTP 429. The
+job sets up Maven 3.9.11 only after the SWT build, for Nebula's Tycho 4.0.12
+reactor (eaa4a05a). The wrapper therefore also reads Maven 3.10's output.
+
 ## What is detected
 
-A repository response counts only on a line that reports the failure, that is
-a line starting with `[ERROR]`. Maven also logs many tolerated responses and
-continues, for example `[WARNING] Could not transfer metadata ... status code:
-429, reason phrase: Too Many Requests (429)`. Run 45457730531 has 44 such
-warnings per attempt, some in a step that ended in BUILD SUCCESS. Those lines
-never make a failure retryable, so a Tycho "process returned error code 13" or
-a surefire "There was a timeout in the fork" next to them still runs once.
+A repository response counts only when it reports the failure, on one of these:
+- a line starting with `[ERROR]` or `[FATAL]`;
+- an indented continuation line of such a line (Maven puts "Failed to read
+  artifact descriptor for ..." on a tab-indented line).
+
+Maven also logs many tolerated responses and continues, and these never count on
+their own:
+- `[WARNING] Could not transfer metadata ... status code: 429, reason phrase:
+  Too Many Requests (429)` (Maven 3.9);
+- `[WARNING] ... HTTP Status: 429` (Maven 3.10);
+- `[WARNING] GET request to <url> failed (attempt N of 4) due to status 429`
+  (Maven 3.10).
+
+Run 45457730531 has 44 Maven 3.9 warnings per attempt, some in a step that ended
+in BUILD SUCCESS. So a Tycho "process returned error code 13" or a surefire
+"There was a timeout in the fork" next to such warnings still runs once.
 
 **Transient: retried.** These checks run in this order, after the non-transient
-checks below:
+checks below. NNN stands for 429, 502, 503 or 504.
 
 | Condition | Detected strings |
 |---|---|
-| HTTP 429 | an `[ERROR]` line with `status code: 429`, `Too Many Requests (429)` or `HTTP/<version> 429` |
-| HTTP 503 | an `[ERROR]` line with `status code: 503`, `Service Temporarily Unavailable (503)` or `HTTP/<version> 503` |
-| HTTP 502/504 | an `[ERROR]` line with `status code: 502`, `status code: 504`, `Bad Gateway (502)`, `Gateway Timeout (504)` (or `Gateway Time-out (504)`), or `HTTP/<version> 502` or `504` |
+| HTTP 429, 503, 502/504 on a failure line | `status code: NNN` (Maven 3.9), `HTTP Status: NNN` (Maven 3.10), `HTTP/<version> NNN`, `Unexpected HTTP response: NNN`, `Too Many Requests (429)`, `Service Temporarily Unavailable (503)`, `Bad Gateway (502)`, `Gateway Timeout (504)` or `Gateway Time-out (504)` |
+| Maven 3.10 transport failure for the failing artifact | the failure lines name an artifact `<group>:<artifact>[:<type>]:<version>` with `could not be resolved` or `Failed to read artifact descriptor for`, but no status code; the output also has `GET request to <url> failed (attempt N of M) due to status NNN` whose URL contains that artifact's repository path `/<group with slashes>/<artifact>/<version>/`. This is the `tycho-build` extension case of run 44992024856 |
 | Eclipse metadata lock | anywhere in the output: `Could not acquire read lock for 'metadata:org.eclipse:` or `... write lock ...` |
 | Tycho 4.0.12 lookup | anywhere in the output: `Could not find artifact org.eclipse.tycho:tycho-maven-plugin:jar:4.0.12 in central` |
 
@@ -32,9 +54,9 @@ checks below:
 
 | Condition | Detected strings |
 |---|---|
-| Product failure (checked first) | anywhere in the output: `Compilation failure`, `There are test failures`, `Tests run: N, Failures: M` with M > 0, `The method ... is undefined for the type` |
-| Authentication, not found, checksum | an `[ERROR]` line with `status code: 401`, `403` or `404`; `reason phrase: Unauthorized`, `Forbidden` or `Not Found`; `HTTP/<version> 401`, `403` or `404`; `Checksum validation failed`; `ChecksumFailureException`; `checksum verification fail` or `checksum validation fail` |
-| Missing artifact | an `[ERROR]` line with Maven 3.9's `Could not find artifact <coordinates> in <repository> (<url>)`, for anything but the Tycho 4.0.12 case above |
+| Product failure (checked first) | anywhere in the output: `Compilation failure`, `COMPILATION ERROR`, `There are test failures`, `Tests run: N, Failures: M` with M > 0, `Tests run: N, Failures: M, Errors: E` with E > 0, `[ERROR] ... cannot find symbol`, `The method ... is undefined for the type` |
+| Authentication, not found, checksum | a failure line with `status code:`, `HTTP Status:`, `HTTP/<version>` or `Unexpected HTTP response:` followed by 401, 403 or 404; `reason phrase: Unauthorized`, `Forbidden` or `Not Found`; `Checksum validation failed`; `ChecksumFailureException`; `checksum verification fail` or `checksum validation fail` |
+| Missing artifact | a failure line with `Could not find artifact <coordinates> in <repository> (<url>)`, for anything but the Tycho 4.0.12 case above |
 
 **Anything else** is not retried.
 
@@ -44,8 +66,10 @@ checks below:
 `M3_HTTP503_RETRY_DELAY_SECONDS` sets the base delay (default 10).
 
 Between attempts the wrapper waits:
-- the numeric `Retry-After` value, if the captured output contains one. Maven
-  3.9 does not log that header today, so in practice the next rule applies;
+- the largest Retry-After value in the captured output, if it fits the remaining
+  budget. Two forms are read: `Retry-After: N`, and Maven 3.10's `due to
+  Retry-After header with seconds value N` (60 in run 45108815443). Maven 3.9
+  does not log the header;
 - otherwise `base x 2^(attempt-1)` plus a random jitter of up to half that,
   capped at `M3_RETRY_MAX_DELAY_SECONDS` (default 300).
 
@@ -55,14 +79,6 @@ that would exceed the remaining budget fails closed instead of sleeping.
 The three seconds settings must be decimal numbers from 0 to 9999 without a
 leading zero; bash arithmetic would read `08` as invalid octal. Any other value
 is refused with exit status 64 before the command runs.
-
-Waits with the current settings:
-
-| Call site | Settings | Waits |
-|---|---|---|
-| SWT assembly and AllTests steps in `terminal-vnc-contracts.yml` | 5 attempts, base 15 s | 15-22, 30-45, 60-90, 120-180 s (at most about 5.6 minutes) |
-| Terminal tests in `terminal-vnc-contracts.yml` | 3 attempts, base 12 s | 12-18, 24-36 s (at most 54 s) |
-| `maven.yaml`, `codeql.yml` | defaults: 3 attempts, base 10 s | 10-15, 20-30 s |
 
 Each retry re-runs the original command. Every wrapped call passes `mvn -U`.
 That matters for HTTP 429: Maven caches a failed transfer ("resolution is not
@@ -74,28 +90,38 @@ alter result reports.
 ## Tests
 
 Run `bash releng/swt-receiver/test-retry-transient-maven-503.sh`. It feeds the
-wrapper the verbatim Maven Central 429 output of nebula run 45457730531, attempt
-2 (`tests/data/run-45457730531-attempt2-maven-429.log`). That output is where
-`maven-dependency-plugin:3.8.1` could not be resolved and the previous wrapper
-logged "non-transient failure; no retry". Its first line is a tolerated
-`[WARNING]` 429.
+wrapper three verbatim outputs from `tests/data/`:
+
+| Fixture | Maven | What happened |
+|---|---|---|
+| `run-45457730531-attempt2-maven-429.log` | 3.9.11 | `maven-dependency-plugin:3.8.1` could not be resolved after HTTP 429 on an `[ERROR]` line. The fixture's first line is a tolerated `[WARNING]` 429 |
+| `run-44992024856-maven-3.10.1-429-extension.log` | 3.10.1 | the `tycho-build` extension could not be resolved after `GET request ... failed (attempt 3 of 4) due to status 429` for its POM; no `[ERROR]` line carries a status code |
+| `run-45108815443-maven-3.10.1-503-parent.log` | 3.10.1 | `[ERROR] ... HTTP Status: 503` for the Eclipse parent POM, with `Retry-After header with seconds value 60` |
+
+Replayed through master's wrapper, each runs once and logs "non-transient
+failure; no retry". This PR's first two heads (3cbccf35 and 50fe6de6) did the
+same for the two Maven 3.10.1 outputs.
 
 It checks:
-- **Retried, success on the second attempt:** an `[ERROR]` 429, 502, 503 or 504,
-  metadata locks and the Tycho 4.0.12 lookup.
-- **Retried, then failed closed after every attempt:** persistent 429, 503,
-  locks and Tycho lookup.
+- **Retried, success on the second attempt:** all three real outputs, the
+  `[ERROR]` 502 and 504, metadata locks and the Tycho 4.0.12 lookup.
+- **Retried, then failed closed after every attempt:** persistent 429 (Maven 3.9
+  and 3.10 extension), 503, locks and Tycho lookup.
 - **Exactly one run:**
-  - compile failures;
-  - 401, 403, 404 and checksum failures;
+  - compile failures and test errors;
+  - 401, 403, 404 (including Maven 3.10's `HTTP Status: 404`) and checksum
+    failures;
   - Maven's "Could not find artifact" wording, alone, next to the real `[ERROR]`
     429, and next to the Tycho 4.0.12 line;
-  - a `[WARNING]`-only 429 next to Tycho's "error code 13" or surefire's "timeout
-    in the fork";
-  - a `[WARNING]`-only 503 next to an Ant failure.
+  - a `[WARNING]`-only 429 next to Tycho's "error code 13" or surefire's
+    "timeout in the fork";
+  - a `[WARNING]`-only 503 next to an Ant failure;
+  - Maven 3.10 transport warnings for `tycho-build` next to a failure that names
+    a different artifact, or next to Tycho's "error code 13".
 - **Backoff:** exponential growth with jitter, the per-wait cap, an exactly
-  honoured `Retry-After`, and the total budget. A test hook
-  (`M3_RETRY_SLEEP_RECORD`) records each wait instead of sleeping.
+  honoured `Retry-After: 7` and Maven 3.10's 60 s Retry-After, and the total
+  budget. A test hook (`M3_RETRY_SLEEP_RECORD`) records each wait instead of
+  sleeping.
 - **Configuration:** invalid values, including `08`, `09` and `010`, are refused
   with exit status 64 before the command runs.
 

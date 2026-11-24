@@ -50,6 +50,19 @@ fi
 # whose cause is something else.
 missing='[ERROR] Failed to execute goal on project demo: Could not resolve dependencies for project org.example:demo:jar:1.0: Could not find artifact org.example:missing:jar:1.0 in central (https://repo.maven.apache.org/maven2) -> [Help 1]'
 case "$mode" in
+  # Verbatim Maven 3.10.1 outputs (the runner's preinstalled Maven in maven.yaml).
+  m310extension) if (( count == 1 )); then cat "$M310_EXTENSION"; exit 1; fi ;;
+  m310extensionpersistent) cat "$M310_EXTENSION"; exit 1 ;;
+  m310parent) if (( count == 1 )); then cat "$M310_PARENT"; exit 1; fi ;;
+  m310otherartifact) head -n 8 "$M310_EXTENSION"
+    echo '[ERROR] Plugin org.example:other:1.0 or one of its dependencies could not be resolved:'
+    printf '\tFailed to read artifact descriptor for org.example:other:jar:1.0\n'
+    exit 1 ;;
+  m310code13) head -n 8 "$M310_EXTENSION"
+    echo '[ERROR] Failed to execute goal org.eclipse.tycho:tycho-surefire-plugin:5.0.4:test (default-test) on project org.eclipse.swt.tests: An unexpected error occured while launching the test runtime (process returned error code 13). Please check the log for details. -> [Help 1]'
+    exit 1 ;;
+  m310status404) echo '[ERROR] Could not transfer artifact a:b:pom:1 from/to central (https://repo.maven.apache.org/maven2): HTTP Status: 404'; exit 1 ;;
+  real429testerrors) cat "$REAL429"; echo '[ERROR] Tests run: 5, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 1.2 s <<< FAILURE!'; exit 1 ;;
   warn429code13) head -n 1 "$REAL429"
     echo '[ERROR] Failed to execute goal org.eclipse.tycho:tycho-surefire-plugin:5.0.4:test (default-test) on project org.eclipse.swt.tests: An unexpected error occured while launching the test runtime (process returned error code 13). Please check the log for details. -> [Help 1]'
     exit 1 ;;
@@ -78,6 +91,13 @@ echo 'BUILD SUCCESS'
 FAKE
 chmod +x "$tmp/fake"
 export REAL429="$real429"
+# Verbatim Maven 3.10.1 outputs from maven.yaml's SWT build step: run 44992024856 (HTTP 429
+# while resolving the tycho-build extension; no [ERROR] line carries a status code) and
+# run 45108815443 (HTTP 503 on the [ERROR] line as "HTTP Status: 503", Retry-After 60).
+export M310_EXTENSION="$selfdir/tests/data/run-44992024856-maven-3.10.1-429-extension.log"
+export M310_PARENT="$selfdir/tests/data/run-45108815443-maven-3.10.1-503-parent.log"
+grep -q 'due to status 429' "$M310_EXTENSION"
+grep -q 'HTTP Status: 503' "$M310_PARENT"
 wrapper() { bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$@"; }
 fails() { if wrapper "$@" >/dev/null 2>"$tmp/stderr"; then echo "unexpected success: $*" >&2; exit 1; fi; }
 calls() { [[ $(<"$1") == "$2" ]] || { echo "$1: expected $2 invocations, got $(<"$1")" >&2; exit 1; }; }
@@ -110,6 +130,23 @@ for mode in warn429code13 warn429forktimeout warn503other; do
   fails "$tmp/w-$mode" "$mode"; calls "$tmp/w-$mode" 1
   grep -q 'M3: non-transient failure; no retry (exit 1)' "$tmp/stderr"
 done
+# Maven 3.10.1: both real outputs retry. The extension case is tied to the artifact in
+# the failure; a 3.10 transport warning for another artifact, or next to an unrelated
+# failure, does not count. "HTTP Status: 404" stays non-transient, and test errors win.
+wrapper "$tmp/t1" m310extension >/dev/null 2>"$tmp/stderr"; calls "$tmp/t1" 2
+grep -q 'upstream HTTP 429 for an artifact the failure names (Maven 3.10 transport) (attempt 1/3)' "$tmp/stderr"
+fails "$tmp/t2" m310extensionpersistent; calls "$tmp/t2" 3
+# Its Retry-After of 60 s is recorded, not slept (checked below).
+M3_RETRY_SLEEP_RECORD="$tmp/ignored-waits" wrapper "$tmp/t3" m310parent >/dev/null 2>"$tmp/stderr"; calls "$tmp/t3" 2
+grep -q 'upstream HTTP 503 (attempt 1/3)' "$tmp/stderr"
+for mode in m310otherartifact m310code13; do
+  fails "$tmp/t-$mode" "$mode"; calls "$tmp/t-$mode" 1
+  grep -q 'M3: non-transient failure; no retry (exit 1)' "$tmp/stderr"
+done
+fails "$tmp/t4" m310status404; calls "$tmp/t4" 1
+grep -q 'non-transient repository failure' "$tmp/stderr"
+fails "$tmp/t5" real429testerrors; calls "$tmp/t5" 1
+grep -q 'product compilation/test failure' "$tmp/stderr"
 # Backoff, recorded instead of slept: exponential with jitter in [base, 1.5 base].
 export M3_RETRY_SLEEP_RECORD="$tmp/waits"
 M3_HTTP503_ATTEMPTS=4 M3_HTTP503_RETRY_DELAY_SECONDS=4 fails "$tmp/n" real429persistent; calls "$tmp/n" 4
@@ -127,6 +164,11 @@ rm -f "$tmp/waits"
 M3_HTTP503_ATTEMPTS=2 M3_HTTP503_RETRY_DELAY_SECONDS=30 fails "$tmp/p" real429retryafter; calls "$tmp/p" 2
 [[ $(<"$tmp/waits") == 7 ]] || { echo "Retry-After not honoured: $(<"$tmp/waits")" >&2; exit 1; }
 grep -q 'retrying original command in 7s (Retry-After)' "$tmp/stderr"
+# Maven 3.10's wording, from the real run 45108815443 output, is honoured too.
+rm -f "$tmp/waits"
+M3_HTTP503_ATTEMPTS=2 wrapper "$tmp/p3" m310parent >/dev/null 2>"$tmp/stderr"; calls "$tmp/p3" 2
+[[ $(<"$tmp/waits") == 60 ]] || { echo "Maven 3.10 Retry-After not honoured: $(<"$tmp/waits")" >&2; exit 1; }
+grep -q 'retrying original command in 60s (Retry-After)' "$tmp/stderr"
 # The total sleep budget is bounded and fails closed, without sleeping past it.
 rm -f "$tmp/waits"
 M3_HTTP503_ATTEMPTS=5 M3_HTTP503_RETRY_DELAY_SECONDS=10 M3_RETRY_MAX_TOTAL_SECONDS=15 \
@@ -146,4 +188,4 @@ for setting in M3_RETRY_MAX_TOTAL_SECONDS=abc M3_HTTP503_RETRY_DELAY_SECONDS=08 
   env "$setting" bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/s" transient >/dev/null 2>&1 || rc=$?
   [[ $rc -eq 64 && ! -e "$tmp/s" ]] || { echo "$setting: expected refusal (64) before running, got $rc" >&2; exit 1; }
 done
-printf 'PASS: [ERROR] HTTP 429/502/503/504, Eclipse locks, Tycho 4.0.12 Central transient retry=2; [WARNING]-only codes, product, 401/403/404, missing-artifact and checksum failures run once; persistent failures=attempts; exponential backoff with jitter, cap, Retry-After and total budget; no leading-zero settings\n'
+printf 'PASS: Maven 3.9 and 3.10 [ERROR]/[FATAL] HTTP 429/502/503/504, Maven 3.10 transport status for the failing artifact, Eclipse locks, Tycho 4.0.12 Central transient retry=2; [WARNING]-only codes, product, 401/403/404, missing-artifact and checksum failures run once; persistent failures=attempts; exponential backoff with jitter, cap, Retry-After and total budget; no leading-zero settings\n'
