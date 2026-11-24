@@ -17,7 +17,7 @@ java -cp /tmp/native-census NativeSurefireCensus . /tmp/native-census-results
 
 The JDK-only proof exercises deterministic sorting, error/failure/skip classification,
 malformed/absent report rejection and DTD/external entity denial. Runtime collection
-writes native-suites.tsv and native-cases.tsv through atomic replacement. It scans
+writes native-modules.tsv, native-suites.tsv and native-cases.tsv through atomic replacement. It scans
 only original **/target/surefire-reports/TEST-*.xml: max 16 MiB per report, 20,000
 reports and 1,000,000 declared tests. No GUI objects, JNI calls, network or browser
 connections are used.
@@ -36,7 +36,7 @@ Do not duplicate that candidate or weaken the exact screen-pixel assertion.
 ## Release gates
 
 The CI census step runs after Build All Widgets under if: always(), then uploads
-its two TSVs as a separate diagnostic artifact. The unchanged original native
+its three TSVs as a separate diagnostic artifact. The unchanged original native
 Maven step, independent real JUnit4 CPU gate, required DrawnBrowser 409 cases,
 Grid pixel/OpenCV checks, report retention, SWT source pins, and CodeQL remain
 the authoritative release gates. A successful census means only that diagnostic

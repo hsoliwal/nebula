@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.TreeMap;
+import java.util.Map;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -58,7 +60,7 @@ public final class NativeSurefireCensus {
                     .filter(p -> p.getFileName().toString().startsWith("TEST-")
                             && p.getFileName().toString().endsWith(".xml"))
                     .filter(p -> p.getParent().getFileName().toString().equals("surefire-reports"))
-                    .sorted(Comparator.comparing(Path::toString)).toList();
+                    .sorted(Comparator.comparing(Path::toString)).limit(MAX_REPORTS + 1L).toList();
         }
         if (reports.isEmpty() || reports.size() > MAX_REPORTS) {
             throw new IOException("no JUnit reports, or excessive report count: " + reports.size());
@@ -92,6 +94,19 @@ public final class NativeSurefireCensus {
         for (Case c : failures) caseTsv.append(tsv(c.module())).append('\t').append(tsv(c.suite()))
                 .append('\t').append(tsv(c.method())).append('\t').append(c.status())
                 .append('\t').append(tsv(c.message())).append('\n');
+        Map<String, long[]> modules = new TreeMap<>();
+        for (Suite s : suites) {
+            long[] tally = modules.computeIfAbsent(s.module(), unused -> new long[5]);
+            tally[0]++; tally[1] += s.tests(); tally[2] += s.failures();
+            tally[3] += s.errors(); tally[4] += s.skipped();
+        }
+        StringBuilder moduleTsv = new StringBuilder("module\tsuites\ttests\tfailures\terrors\tskipped\n");
+        for (Map.Entry<String, long[]> e : modules.entrySet()) {
+            moduleTsv.append(tsv(e.getKey()));
+            for (long count : e.getValue()) moduleTsv.append('\t').append(count);
+            moduleTsv.append('\n');
+        }
+        writeAtomically(dir.resolve("native-modules.tsv"), moduleTsv.toString());
         writeAtomically(dir.resolve("native-suites.tsv"), suiteTsv.toString());
         writeAtomically(dir.resolve("native-cases.tsv"), caseTsv.toString());
         return new Census(List.copyOf(suites), List.copyOf(failures), tests, failed, errors, skipped);
