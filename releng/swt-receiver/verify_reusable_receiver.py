@@ -17,10 +17,15 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile
 
+# Must equal PIN/GC_SHA256, the jar version and the composite children written by
+# prepare_swt_receiver.py, which produces the receipt verified here.
 PIN = "c25cb33505465b28980e563acc99097ce3e33fee"
 GC_SOURCE_SHA256 = "51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768c8c9"
+SWT_BUNDLE_SUFFIX = "-3.138.0-SNAPSHOT.jar"
+PLATFORM_IBUILD = "https://download.eclipse.org/eclipse/updates/4.42-I-builds/I20261112-2300/"
 PLATFORM_UPDATE = "https://download.eclipse.org/eclipse/updates/latest"
-TERMINAL_UPDATE = "https://download.eclipse.org/eclipse/updates/4.42-I-builds/I20261112-2300/"
+# Name used by the Terminal/VNC alignment for the same pinned 4.42 I-build child.
+TERMINAL_UPDATE = PLATFORM_IBUILD
 RECEIVER_BACKEND = "GTK3/X11 only; GTK4 payload is not qualified"
 REQUIRED_NATIVES = ("libswt-gtk-", "libswt-pi3-gtk-", "libswt-cairo-gtk-", "libswt-atk-gtk-")
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
@@ -57,11 +62,11 @@ def verify(target: Path) -> dict:
     bundle_manifest = manifest.get("bundleSha256")
     if not isinstance(bundle_manifest, dict) or len(bundle_manifest) != 9:
         fail("expected exactly nine source-built SWT and platform-fragment bundles")
-    if "org.eclipse.swt-3.138.0-SNAPSHOT.jar" not in bundle_manifest or \
-            "org.eclipse.swt.gtk.linux.x86_64-3.138.0-SNAPSHOT.jar" not in bundle_manifest:
+    if "org.eclipse.swt" + SWT_BUNDLE_SUFFIX not in bundle_manifest or \
+            "org.eclipse.swt.gtk.linux.x86_64" + SWT_BUNDLE_SUFFIX not in bundle_manifest:
         fail("required SWT core/GTK fragment absent")
     for filename, value in bundle_manifest.items():
-        if Path(filename).name != filename or not filename.endswith("-3.138.0-SNAPSHOT.jar"):
+        if Path(filename).name != filename or not filename.endswith(SWT_BUNDLE_SUFFIX):
             fail("unexpected bundle filename in proof")
         if not isinstance(value, str) or not HEX64.fullmatch(value):
             fail("invalid bundle checksum in proof")
@@ -75,7 +80,7 @@ def verify(target: Path) -> dict:
         if expected not in published:
             fail("source-built bundle missing or modified in p2 repository: " + filename)
 
-    gtk_digest = bundle_manifest["org.eclipse.swt.gtk.linux.x86_64-3.138.0-SNAPSHOT.jar"]
+    gtk_digest = bundle_manifest["org.eclipse.swt.gtk.linux.x86_64" + SWT_BUNDLE_SUFFIX]
     gtk_jar = published[gtk_digest]
     with ZipFile(gtk_jar) as archive:
         if digest(archive.read("org/eclipse/swt/graphics/GC.class")) != class_digest:
@@ -96,12 +101,13 @@ def verify(target: Path) -> dict:
                    for extension in (".xml", ".jar", ".xml.xz")):
             fail("p2 repository does not contain " + index_name + " metadata")
 
-    expected_composite_locations = {repo.as_uri(), TERMINAL_UPDATE, PLATFORM_UPDATE}
+    expected_composite_locations = {repo.as_uri(), PLATFORM_IBUILD, PLATFORM_UPDATE}
     composite = binding / "composite"
     for filename in ("compositeContent.xml", "compositeArtifacts.xml"):
         tree = ET.parse(composite / filename)
         locations = [child.attrib.get("location") for child in tree.findall("./children/child")]
-        if len(locations) != 3 or set(locations) != expected_composite_locations:
+        if len(locations) != len(expected_composite_locations) or \
+                set(locations) != expected_composite_locations:
             fail("composite points to unqualified repositories: " + filename)
 
     env_lines = (binding / "receiver.env").read_text(encoding="utf-8").splitlines()

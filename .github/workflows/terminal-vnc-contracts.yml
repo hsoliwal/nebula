@@ -162,7 +162,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s releng/swt-receiver -p 'test_prepare_eclipse_platform_parent.py'
           python3 releng/swt-receiver/prepare_eclipse_platform_parent.py .m3-eclipse-releng .m3-swt
-      - name: Assemble all pinned SWT fragments without foreign-platform execution
+      - name: Assemble all pinned SWT 3.138 fragments without foreign-platform execution
         if: steps.swt-proof.outputs.reused != 'true'
         shell: bash
         run: |
@@ -171,12 +171,28 @@ jobs:
           sudo apt-get install -y -qq libgtk-3-dev freeglut3-dev libwebkit2gtk-4.1-0 xvfb dbus-x11 openbox wmctrl
           bash releng/swt-receiver/test-retry-transient-maven-503.sh
           export M3_HTTP503_ATTEMPTS=5 M3_HTTP503_RETRY_DELAY_SECONDS=15
+          # prepare_swt_receiver.py binds all nine SWT jars (core + eight platform
+          # fragments). Name every fragment, as maven.yaml does for the same pin;
+          # only GTK x86_64 compiles native .so files on this host.
           # Preserve the current receiver's complete eight-fragment input set.
+          # The mvn arguments are token-for-token those of maven.yaml's "Build and
+          # bind the pinned SWT GTK3 distribution" step (and codeql.yml), plus
+          # -Dmaven.test.skip=false (Maven's default, stated explicitly as in the
+          # original GTK host-test step below):
+          # - -DskipTests=true: SWT binaries/pom.xml binds the maven-surefire-plugin
+          #   'execute-tests' execution (goal test) to every fragment, so without it
+          #   the Win32 fragments' unit tests would run on this Linux host.
+          # - The three *-repo.url overrides point eclipse-platform-parent's
+          #   <pluginRepositories> at Maven Central, so plugins and the [3.39,) ECJ
+          #   compiler range resolve as in maven.yaml, not from Eclipse snapshots.
           swt_fragments=':org.eclipse.swt.cocoa.macosx.aarch64,:org.eclipse.swt.cocoa.macosx.x86_64,:org.eclipse.swt.gtk.linux.aarch64,:org.eclipse.swt.gtk.linux.ppc64le,:org.eclipse.swt.gtk.linux.riscv64,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.win32.win32.aarch64,:org.eclipse.swt.win32.win32.x86_64'
           GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
             bash releng/swt-receiver/retry-transient-maven-503.sh \
               mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
                 -Dtycho.baseline.replace=none -DskipTests=true -Dmaven.test.skip=false \
+                -Dtycho-snapshot-repo.url=https://repo.maven.apache.org/maven2/ \
+                -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ \
+                -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ \
                 -pl "$swt_fragments" -am package
       - name: Run original SWT AllTests on the source-built GTK3 host
         id: swt-host
@@ -186,6 +202,8 @@ jobs:
           set -euo pipefail
           # The original test POM owns AllTests and retains -Xcheck:jni/strict checks.
           # Foreign fragments are resolution artifacts; only Linux GTK can execute here.
+          # It rebuilds the GTK fragment that is bound below, so plugins resolve from
+          # the same Maven Central overrides as the assembly step above.
           rm -rf .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports
           proof="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/gtk-host-tests"
           mkdir -p "$proof/native"
@@ -208,6 +226,9 @@ jobs:
                 mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
                   -Dtycho.baseline.replace=none -DskipTests=false -Dmaven.test.skip=false \
                   -Dmaven.test.failure.ignore=false -DskipNativeTests=false -DfailIfNoTests=false \
+                  -Dtycho-snapshot-repo.url=https://repo.maven.apache.org/maven2/ \
+                  -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ \
+                  -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ \
                   "-Dtycho.testArgLine=-Dswt.library.path=$M3_SWT_NATIVE_DIR -Xlog:library=info:file=$M3_SWT_NATIVE_LOG" \
                   -pl :org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.tests -am verify
             '

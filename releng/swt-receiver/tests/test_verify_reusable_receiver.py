@@ -46,9 +46,10 @@ def build_fixture(root: Path, *, pin=EXPECTED_PIN, gc_source=EXPECTED_GC,
     plugins.mkdir(parents=True)
     composite = binding / "composite"
     composite.mkdir(parents=True)
-    names = ["org.eclipse.swt-" + version + ".jar",
-             "org.eclipse.swt.gtk.linux.x86_64-" + version + ".jar"]
-    names += ["org.eclipse.swt." + p + "-" + version + ".jar" for p in PLATFORMS]
+    suffix = "-" + version + ".jar"
+    names = ["org.eclipse.swt" + suffix,
+             "org.eclipse.swt.gtk.linux.x86_64" + suffix]
+    names += ["org.eclipse.swt." + p + suffix for p in PLATFORMS]
     native = {prefix + "123.so": b"\x7fELF" + bytes([i])
               for i, prefix in enumerate(reuse.REQUIRED_NATIVES)}
     gc_class = b"qualified GC.class fixture"
@@ -105,7 +106,7 @@ class ReusableReceiverTest(unittest.TestCase):
             reuse.verify(self.target)
 
     def test_modified_published_bundle_fails(self):
-        path = self.target / "repository/plugins/org.eclipse.swt-3.138.0-SNAPSHOT.jar"
+        path = self.target / ("repository/plugins/org.eclipse.swt" + reuse.SWT_BUNDLE_SUFFIX)
         path.write_bytes(path.read_bytes() + b"bad")
         with self.assertRaises(ValueError):
             reuse.verify(self.target)
@@ -122,6 +123,27 @@ class ReusableReceiverTest(unittest.TestCase):
         path = self.target / "binding/composite/compositeContent.xml"
         path.write_text(path.read_text().replace(
             reuse.PLATFORM_UPDATE, "https://example.invalid/untrusted"))
+        with self.assertRaises(ValueError):
+            reuse.verify(self.target)
+
+    def test_missing_pinned_ibuild_child_fails(self):
+        path = self.target / "binding/composite/compositeContent.xml"
+        tree = ET.fromstring(path.read_text())
+        children = tree.find("children")
+        pinned = [child for child in children.findall("child")
+                  if child.get("location") == reuse.PLATFORM_IBUILD]
+        self.assertEqual(len(pinned), 1)
+        children.remove(pinned[0])
+        path.write_text(ET.tostring(tree, encoding="unicode"))
+        with self.assertRaises(ValueError):
+            reuse.verify(self.target)
+
+    def test_superseded_swt_receipt_fails(self):
+        path = self.target / "binding/expected.json"
+        data = json.loads(path.read_text())
+        superseded = "25e637e40c5243f5210586007a74206d8dce7953"
+        data["sourceCommit"] = data["sourceWorktreeHead"] = superseded
+        path.write_text(json.dumps(data))
         with self.assertRaises(ValueError):
             reuse.verify(self.target)
 
@@ -190,6 +212,15 @@ class ReusableReceiverTest(unittest.TestCase):
         self.assertEqual(versions, {EXPECTED_VERSION})
         self.assertEqual({value for value in literals if value.startswith("https://")},
                          set(EXPECTED_UPDATES))
+
+    def test_verifier_constants_match_independent_expectations(self):
+        # The verifier's named constants must agree with the independent
+        # expectations above, so neither side can drift without failing here.
+        self.assertEqual(reuse.PIN, EXPECTED_PIN)
+        self.assertEqual(reuse.GC_SOURCE_SHA256, EXPECTED_GC)
+        self.assertEqual(reuse.SWT_BUNDLE_SUFFIX, "-" + EXPECTED_VERSION + ".jar")
+        self.assertEqual((reuse.PLATFORM_IBUILD, reuse.PLATFORM_UPDATE), EXPECTED_UPDATES)
+        self.assertEqual(reuse.TERMINAL_UPDATE, reuse.PLATFORM_IBUILD)
 
     def test_workflow_source_cache_and_fragments_match_the_preparer(self):
         workflow = (HERE.parents[1] / ".github/workflows/terminal-vnc-contracts.yml").read_text()

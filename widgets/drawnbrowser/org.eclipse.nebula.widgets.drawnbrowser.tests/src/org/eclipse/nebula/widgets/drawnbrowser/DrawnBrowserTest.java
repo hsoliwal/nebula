@@ -109,6 +109,19 @@ public class DrawnBrowserTest {
 	}
 
 	@Test
+	public void gtkScrollbarChromeDoesNotOverlayThePixelScrollViewport() {
+		open(paragraphs(300));
+		assertTrue("the original SWT vertical scroll bar remains present", browser.getVerticalBar() != null);
+		if ("gtk".equals(SWT.getPlatform())) {
+			assertEquals("GTK Canvas.scroll must not copy native scrollbar chrome into document pixels",
+					SWT.NONE, browser.getScrollbarsMode());
+		}
+		browser.setScrollY(24);
+		settle();
+		assertEquals("inset mode does not replace the root scroll owner", 24, browser.getScrollY());
+	}
+
+	@Test
 	public void scrollingRepaintsOnlyTheExposedBand() {
 		open(paragraphs(300));
 		int height = browser.getClientArea().height;

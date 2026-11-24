@@ -33,7 +33,11 @@ public class VncViewerNativeTest {
     @Test public void capturesDecodedRfbPixelsFromTheVisibleScreen() throws Exception {
         try (ServerSocket server = new ServerSocket(0)) {
             ExecutorService peer = Executors.newSingleThreadExecutor();
-            Display display = new Display();
+            // Tycho's SWT UI harness (useUIHarness) already owns the Display
+            // and runs this test on its thread; only a plain JUnit run creates one.
+            Display display = Display.getCurrent();
+            boolean ownsDisplay = display == null;
+            if (ownsDisplay) display = new Display();
             try {
                 Shell shell = new Shell(display);
                 try {
@@ -91,7 +95,8 @@ public class VncViewerNativeTest {
                         boolean visible = false;
                         while (!visible && System.nanoTime() < deadline) {
                             viewer.redraw(); viewer.update();
-                            while (display.readAndDispatch()) { /* flush SWT paint */ }
+                            for (int dispatched = 0; dispatched < 1000
+                                    && display.readAndDispatch(); dispatched++) { /* flush SWT paint */ }
                             GC screen = new GC(display);
                             try { screen.copyArea(capture, origin.x, origin.y); }
                             finally { screen.dispose(); }
@@ -116,7 +121,7 @@ public class VncViewerNativeTest {
                     shell.dispose();
                 }
             } finally {
-                display.dispose();
+                if (ownsDisplay && !display.isDisposed()) display.dispose();
                 peer.shutdownNow();
             }
         }
