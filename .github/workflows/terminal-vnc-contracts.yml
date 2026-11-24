@@ -76,7 +76,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: swt-cache
         with:
-          key: nebula-swt3.138-gtk3-16b74941-20261124-v2
+          key: nebula-swt3.138-gtk3-bac6a7d5-20261124-v2
           path: |
             releng/swt-receiver/swt-receiver-p2/target/binding/
             releng/swt-receiver/swt-receiver-p2/target/repository/
@@ -101,7 +101,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: hsoliwal/eclipse.platform.swt
-          ref: 16b74941166fed0a20b026cb80bc32914ecb5d95
+          ref: bac6a7d5544e98c6b4df3fb17c2a302f7bb5d618
           path: .m3-swt
           fetch-depth: 0
           lfs: false
@@ -128,7 +128,7 @@ jobs:
           test "$(git -C .m3-eclipse-releng rev-parse HEAD)" = "8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec"
           test "$(git hash-object "$src")" = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
           printf '%s  %s\n' "121b6c26d986874391d26d114377e3beda91723b0d675146bdd194dbfe01e264" "$src" | sha256sum --check
-          test "$(git -C .m3-swt rev-parse HEAD)" = "16b74941166fed0a20b026cb80bc32914ecb5d95"
+          test "$(git -C .m3-swt rev-parse HEAD)" = "bac6a7d5544e98c6b4df3fb17c2a302f7bb5d618"
           test "$(git hash-object .m3-swt/pom.xml)" = "341c07d199041c55d89a99fcc93560074e425716"
           test ! -e eclipse-platform-parent
           mkdir -p eclipse-platform-parent
@@ -298,7 +298,7 @@ jobs:
         if: steps.swt-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          key: nebula-swt3.138-gtk3-16b74941-20261124-v2
+          key: nebula-swt3.138-gtk3-bac6a7d5-20261124-v2
           path: |
             releng/swt-receiver/swt-receiver-p2/target/binding/
             releng/swt-receiver/swt-receiver-p2/target/repository/
