@@ -9,9 +9,11 @@ import static org.junit.Assert.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -32,6 +34,7 @@ import org.junit.Test;
 public class VncViewerNativeTest {
     @Test public void capturesDecodedRfbPixelsFromTheVisibleScreen() throws Exception {
         try (ServerSocket server = new ServerSocket(0)) {
+            CountDownLatch captureComplete = new CountDownLatch(1);
             ExecutorService peer = Executors.newSingleThreadExecutor();
             // Tycho's SWT UI harness (useUIHarness) already owns the Display
             // and runs this test on its thread; only a plain JUnit run creates one.
@@ -39,7 +42,7 @@ public class VncViewerNativeTest {
             boolean ownsDisplay = display == null;
             if (ownsDisplay) display = new Display();
             try {
-                Shell shell = new Shell(display);
+                Shell shell = new Shell(display, SWT.ON_TOP | SWT.SHELL_TRIM);
                 try {
                     shell.setLayout(new FillLayout());
                     VncViewer viewer = new VncViewer(shell, SWT.NONE);
@@ -70,6 +73,11 @@ public class VncViewerNativeTest {
                             output.write("ready".getBytes(StandardCharsets.US_ASCII));
                             output.flush();
                             input.skipNBytes(10);
+                            // Do not turn end-of-stream into a false native-paint fence.
+                            // The RFB desktop stays live until actual screen sampling finishes.
+                            if (!captureComplete.await(15, TimeUnit.SECONDS)) {
+                                throw new IOException("native screen capture never completed");
+                            }
                         } catch (Exception error) {
                             throw new RuntimeException(error);
                         }
@@ -85,39 +93,55 @@ public class VncViewerNativeTest {
                     }
                     assertEquals("RFB frame/clipboard did not arrive", "ready", viewer.getRemoteClipboardText());
                     Rectangle area = viewer.getClientArea();
-                    double scale = Math.min(area.width / 2.0, (double) area.height);
-                    int dw = (int) Math.round(2 * scale), dh = (int) Math.round(scale);
-                    int captureWidth = Math.min(100, dw), captureHeight = Math.min(32, dh);
-                    Point origin = viewer.toDisplay(area.x + (area.width - captureWidth) / 2,
-                            area.y + (area.height - captureHeight) / 2);
-                    Image capture = new Image(display, captureWidth, captureHeight);
+                    assertTrue("SWT viewer has no client area", area.width > 0 && area.height > 0);
+                    Field frameField = VncViewer.class.getDeclaredField("displayedBounds");
+                    frameField.setAccessible(true);
+                    Point origin = viewer.toDisplay(area.x, area.y);
+                    Image capture = new Image(display, area.width, area.height);
                     try {
                         boolean visible = false;
-                        while (!visible && System.nanoTime() < deadline) {
-                            viewer.redraw(); viewer.update();
+                        String observed = "no painted frame bounds";
+                        // Clipboard arrival proves protocol receipt, not GUI presentation.
+                        long paintDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                        while (!visible && System.nanoTime() < paintDeadline) {
+                            viewer.redraw();
+                            viewer.update();
                             for (int dispatched = 0; dispatched < 1000
                                     && display.readAndDispatch(); dispatched++) { /* flush SWT paint */ }
-                            GC screen = new GC(display);
-                            try { screen.copyArea(capture, origin.x, origin.y); }
-                            finally { screen.dispose(); }
-                            ImageData pixels = capture.getImageData();
-                            org.eclipse.swt.graphics.RGB left = pixels.palette.getRGB(
-                                    pixels.getPixel(captureWidth / 4, captureHeight / 2));
-                            org.eclipse.swt.graphics.RGB right = pixels.palette.getRGB(
-                                    pixels.getPixel(captureWidth * 3 / 4, captureHeight / 2));
-                            visible = left.red == 255 && left.green == 0 && left.blue == 0
-                                    && right.red == 0 && right.green == 255 && right.blue == 0;
+                            display.update();
+                            Rectangle frame = (Rectangle) frameField.get(viewer);
+                            if (frame.width >= 4 && frame.height >= 1) {
+                                int x0 = frame.x - area.x + frame.width / 4;
+                                int x1 = frame.x - area.x + frame.width * 3 / 4;
+                                int y = frame.y - area.y + frame.height / 2;
+                                if (x0 >= 0 && x1 < area.width && y >= 0 && y < area.height) {
+                                    GC screen = new GC(display);
+                                    try { screen.copyArea(capture, origin.x, origin.y); }
+                                    finally { screen.dispose(); }
+                                    ImageData pixels = capture.getImageData();
+                                    org.eclipse.swt.graphics.RGB left = pixels.palette.getRGB(pixels.getPixel(x0, y));
+                                    org.eclipse.swt.graphics.RGB right = pixels.palette.getRGB(pixels.getPixel(x1, y));
+                                    visible = left.red == 255 && left.green == 0 && left.blue == 0
+                                            && right.red == 0 && right.green == 255 && right.blue == 0;
+                                    observed = "left=" + left + " right=" + right + " bounds=" + frame
+                                            + " status=" + viewer.getConnectionStatus();
+                                } else {
+                                    observed = "painted bounds outside native client area: " + frame;
+                                }
+                            }
                             if (!visible) {
                                 display.timerExec(30, () -> { });
                                 display.sleep();
                             }
                         }
-                        assertTrue("SWT visible-screen pixels did not match the RFB frame", visible);
+                        assertTrue("SWT visible-screen RFB pixels mismatch; " + observed, visible);
                     } finally {
                         capture.dispose();
                     }
+                    captureComplete.countDown();
                     sender.get(5, TimeUnit.SECONDS);
                 } finally {
+                    captureComplete.countDown();
                     shell.dispose();
                 }
             } finally {
