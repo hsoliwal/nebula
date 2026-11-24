@@ -24,6 +24,8 @@ GC_SOURCE_SHA256 = "51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768
 SWT_BUNDLE_SUFFIX = "-3.138.0-SNAPSHOT.jar"
 PLATFORM_IBUILD = "https://download.eclipse.org/eclipse/updates/4.42-I-builds/I20261112-2300/"
 PLATFORM_UPDATE = "https://download.eclipse.org/eclipse/updates/latest"
+# Name used by the Terminal/VNC alignment for the same pinned 4.42 I-build child.
+TERMINAL_UPDATE = PLATFORM_IBUILD
 RECEIVER_BACKEND = "GTK3/X11 only; GTK4 payload is not qualified"
 REQUIRED_NATIVES = ("libswt-gtk-", "libswt-pi3-gtk-", "libswt-cairo-gtk-", "libswt-atk-gtk-")
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
