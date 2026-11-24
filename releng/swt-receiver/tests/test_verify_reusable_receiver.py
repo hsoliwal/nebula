@@ -251,17 +251,27 @@ class ReusableReceiverTest(unittest.TestCase):
         self.assertEqual(set(projects), {":eclipse.platform.swt", ":org.eclipse.swt",
                                          ":eclipse.platform.swt.binaries", ":org.eclipse.swt.svg",
                                          ":org.eclipse.swt.gtk.linux.x86_64", ":org.eclipse.swt.tests"})
-        # Tycho's -am closure ignores the target environment, so the host step must not use it.
-        self.assertNotRegex(step, r"(?m)^\s+-pl .*-am\b")
+        # Tycho's -am closure ignores the target environment, so no command in the step may
+        # pass a standalone -am token, on any line (comments are not commands).
+        commands = "\n".join(line for line in step.splitlines() if not line.lstrip().startswith("#"))
+        self.assertNotRegex(commands, r"(?m)(^|\s)-am(\s|$)")
         self.assertEqual(len(re.findall(r'-pl "\$M3_SWT_HOST_PROJECTS" (?:\\|verify)\n', step)), 2)
         flags = re.search(r'export M3_SWT_TEST_JVM_FLAGS="([^"]+)"', step).group(1).split()
         self.assertEqual(flags, ["-Dswt.library.path=$M3_SWT_NATIVE_DIR",
                                  "-Xlog:library=info:file=$M3_SWT_NATIVE_LOG"])
         self.assertIn('"-Dos-jvm-flags=$M3_SWT_TEST_JVM_FLAGS"', step)
         self.assertNotIn("-Dtycho.testArgLine=", step)
-        guard = step.index("SWT_TEST_CLASSPATH_HOST_FRAGMENT=PASS")
+        # The guard is the tested verify_test_classpath.py, run on the file build-classpath
+        # writes for the test bundle, after that pass and before the tests.
+        self.assertIn("cp_file=.m3-swt/tests/org.eclipse.swt.tests/target/m3-test-classpath.txt\n", step)
+        self.assertIn("-Dmdep.outputFile=target/m3-test-classpath.txt \\\n", step)
+        guard = step.index('python3 releng/swt-receiver/verify_test_classpath.py "$cp_file" "$M3_SWT_NATIVE_DIR"\n')
         self.assertLess(step.index("maven-dependency-plugin:3.8.1:build-classpath"), guard)
         self.assertLess(guard, step.index("-DskipTests=false"))
+        self.assertNotIn("<<'PY'", step)
+        script = (HERE / "verify_test_classpath.py").read_text()
+        self.assertIn('HOST_FRAGMENT = "org.eclipse.swt.gtk.linux.x86_64"', script)
+        self.assertIn("SWT_TEST_CLASSPATH_HOST_FRAGMENT=PASS", script)
 
     def test_receipt_cannot_claim_native_runtime_qualification(self):
         path = self.target / "binding/expected.json"
