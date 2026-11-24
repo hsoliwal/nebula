@@ -29,7 +29,7 @@ EXPECTED_UPDATES = (
 )
 OLD_PIN = "25e637e40c5243f5210586007a74206d8dce7953"
 OLD_GC = "b68e4dc52b4d009972b01b46eb191eb1a30269345a3044ad2d02c850fce53c76"
-EXPECTED_CACHE = "nebula-swt3.138-gtk3-c25cb335-20261124-v1"
+EXPECTED_CACHE = "nebula-swt3.138-gtk3-c25cb335-20261124-v2"
 PLATFORMS = (
     "cocoa.macosx.aarch64", "cocoa.macosx.x86_64", "gtk.linux.aarch64",
     "gtk.linux.ppc64le", "gtk.linux.riscv64", "win32.win32.aarch64",

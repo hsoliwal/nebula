@@ -71,12 +71,12 @@ jobs:
       - name: Prove receipt validator rejects tampering
         shell: bash
         run: |
-          python3 -m unittest discover -v -s releng/swt-receiver/tests -p test_verify_reusable_receiver.py
+          python3 -m unittest discover -v -s releng/swt-receiver/tests -p 'test_verify*.py'
       - name: Restore pinned verified SWT receiver from immutable cache
         uses: actions/cache/restore@v4
         id: swt-cache
         with:
-          key: nebula-swt3.138-gtk3-c25cb335-20261124-v1
+          key: nebula-swt3.138-gtk3-c25cb335-20261124-v2
           path: |
             releng/swt-receiver/swt-receiver-p2/target/binding/
             releng/swt-receiver/swt-receiver-p2/target/repository/
@@ -89,6 +89,7 @@ jobs:
           if [[ '${{ steps.swt-cache.outputs.cache-hit }}' == 'true' ]]; then
             echo 'SWT receiver restored from pinned Actions cache'
             python3 releng/swt-receiver/verify_reusable_receiver.py "$target"
+            python3 releng/swt-receiver/verify_gtk_host_tests.py verify "$target"
             echo 'reused=true' >> "$GITHUB_OUTPUT"
           else
             echo 'No current verified cache; build the exact pinned SWT receiver' >&2
@@ -161,13 +162,13 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s releng/swt-receiver -p 'test_prepare_eclipse_platform_parent.py'
           python3 releng/swt-receiver/prepare_eclipse_platform_parent.py .m3-eclipse-releng .m3-swt
-      - name: Build and bind the pinned GTK3 SWT 3.138 receiver
+      - name: Assemble all pinned SWT fragments without foreign-platform execution
         if: steps.swt-proof.outputs.reused != 'true'
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq libgtk-3-dev freeglut3-dev
+          sudo apt-get install -y -qq libgtk-3-dev freeglut3-dev libwebkit2gtk-4.1-0 xvfb dbus-x11 openbox wmctrl
           bash releng/swt-receiver/test-retry-transient-maven-503.sh
           export M3_HTTP503_ATTEMPTS=5 M3_HTTP503_RETRY_DELAY_SECONDS=15
           # Preserve the current receiver's complete eight-fragment input set.
@@ -175,8 +176,49 @@ jobs:
           GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations \
             bash releng/swt-receiver/retry-transient-maven-503.sh \
               mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
-                -Dtycho.baseline.replace=none \
+                -Dtycho.baseline.replace=none -DskipTests=true -Dmaven.test.skip=false \
                 -pl "$swt_fragments" -am package
+      - name: Run original SWT AllTests on the source-built GTK3 host
+        id: swt-host
+        if: steps.swt-proof.outputs.reused != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The original test POM owns AllTests and retains -Xcheck:jni/strict checks.
+          # Foreign fragments are resolution artifacts; only Linux GTK can execute here.
+          rm -rf .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports
+          proof="$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/gtk-host-tests"
+          mkdir -p "$proof/native"
+          export SWT_GTK4=0 GDK_BACKEND=x11 GTK_VERSION=3.0
+          export GTK_XCFLAGS=-Wno-deprecated-declarations
+          export M3_HTTP503_ATTEMPTS=5 M3_HTTP503_RETRY_DELAY_SECONDS=15
+          export M3_SWT_NATIVE_DIR="$PWD/.m3-swt/binaries/org.eclipse.swt.gtk.linux.x86_64"
+          export M3_SWT_NATIVE_LOG="$proof/native/native-library-%p.log"
+          dbus-run-session -- xvfb-run --auto-servernum -s '-screen 0 1280x800x24 -noreset' \
+            bash -ec '
+              openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/nebula-swt-host-openbox.log" 2>&1 &
+              wm_pid=$!
+              trap "kill $wm_pid 2>/dev/null || true" EXIT
+              for attempt in $(seq 1 100); do
+                if wmctrl -m >/dev/null 2>&1; then break; fi
+                sleep 0.1
+              done
+              wmctrl -m >/dev/null || { echo "native window manager unavailable" >&2; exit 1; }
+              bash releng/swt-receiver/retry-transient-maven-503.sh \
+                mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 \
+                  -Dtycho.baseline.replace=none -DskipTests=false -Dmaven.test.skip=false \
+                  -Dmaven.test.failure.ignore=false -DskipNativeTests=false -DfailIfNoTests=false \
+                  "-Dtycho.testArgLine=-Dswt.library.path=$M3_SWT_NATIVE_DIR -Xlog:library=info:file=$M3_SWT_NATIVE_LOG" \
+                  -pl :org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.tests -am verify
+            '
+          python3 .m3-swt/tools/release/check_junit_coverage.py --strict \
+            --reports-root .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports \
+            --json-out "$proof/original-sparse-coverage.json"
+      - name: Bind receiver only after original GTK host tests succeed
+        if: steps.swt-proof.outputs.reused != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 releng/swt-receiver/prepare_swt_receiver.py \
             .m3-swt \
             releng/swt-receiver/swt-receiver-p2/target/binding \
@@ -185,17 +227,21 @@ jobs:
             "-Dm3.swt.source=$PWD/releng/swt-receiver/swt-receiver-p2/target/binding/input" verify
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/composite/compositeContent.xml
           test -f releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env
+          python3 releng/swt-receiver/verify_gtk_host_tests.py capture \
+            releng/swt-receiver/swt-receiver-p2/target --source .m3-swt
       - name: Verify SWT receiver from cache or source build
         shell: bash
         run: |
           set -euo pipefail
           python3 releng/swt-receiver/verify_reusable_receiver.py \
             releng/swt-receiver/swt-receiver-p2/target
+          python3 releng/swt-receiver/verify_gtk_host_tests.py verify \
+            releng/swt-receiver/swt-receiver-p2/target
       - name: Retain qualified receiver for subsequent feature commits
         if: steps.swt-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          key: nebula-swt3.138-gtk3-c25cb335-20261124-v1
+          key: nebula-swt3.138-gtk3-c25cb335-20261124-v2
           path: |
             releng/swt-receiver/swt-receiver-p2/target/binding/
             releng/swt-receiver/swt-receiver-p2/target/repository/
@@ -208,8 +254,20 @@ jobs:
           path: |
             releng/swt-receiver/swt-receiver-p2/target/binding/composite/
             releng/swt-receiver/swt-receiver-p2/target/binding/expected.json
+            releng/swt-receiver/swt-receiver-p2/target/binding/gtk-host-tests/
             releng/swt-receiver/swt-receiver-p2/target/binding/receiver.env
             releng/swt-receiver/swt-receiver-p2/target/repository/
+      - name: Preserve original GTK host test evidence
+        if: always() && steps.swt-host.outcome != 'skipped' && steps.swt-proof.outputs.reused != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nebula-original-swt-gtk-host-test-evidence
+          retention-days: 30
+          include-hidden-files: true
+          if-no-files-found: warn
+          path: |
+            .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports/
+            releng/swt-receiver/swt-receiver-p2/target/binding/gtk-host-tests/
 
   vnc-protocol:
     needs: swt-receiver
