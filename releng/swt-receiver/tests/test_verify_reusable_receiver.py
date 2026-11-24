@@ -23,9 +23,10 @@ def build_fixture(root: Path) -> Path:
     plugins.mkdir(parents=True)
     composite = binding / "composite"
     composite.mkdir(parents=True)
-    names = ["org.eclipse.swt-3.136.0-SNAPSHOT.jar",
-             "org.eclipse.swt.gtk.linux.x86_64-3.136.0-SNAPSHOT.jar"]
-    names += ["org.eclipse.swt." + p + "-3.136.0-SNAPSHOT.jar" for p in (
+    suffix = reuse.SWT_BUNDLE_SUFFIX
+    names = ["org.eclipse.swt" + suffix,
+             "org.eclipse.swt.gtk.linux.x86_64" + suffix]
+    names += ["org.eclipse.swt." + p + suffix for p in (
         "cocoa.macosx.aarch64", "cocoa.macosx.x86_64", "gtk.linux.aarch64",
         "gtk.linux.ppc64le", "gtk.linux.riscv64", "win32.win32.aarch64",
         "win32.win32.x86_64")]
@@ -56,8 +57,9 @@ def build_fixture(root: Path) -> Path:
     for family, local in (("Content", "content"), ("Artifacts", "artifacts")):
         (repo / (local + ".xml")).write_text("<repository/>")
         (composite / ("composite" + family + ".xml")).write_text(
-            '<repository><children size="2"><child location="'
+            '<repository><children size="3"><child location="'
             + repo.resolve().as_uri() + '"/><child location="'
+            + reuse.PLATFORM_IBUILD + '"/><child location="'
             + reuse.PLATFORM_UPDATE + '"/></children></repository>')
     return target
 
@@ -82,7 +84,7 @@ class ReusableReceiverTest(unittest.TestCase):
             reuse.verify(self.target)
 
     def test_modified_published_bundle_fails(self):
-        path = self.target / "repository/plugins/org.eclipse.swt-3.136.0-SNAPSHOT.jar"
+        path = self.target / ("repository/plugins/org.eclipse.swt" + reuse.SWT_BUNDLE_SUFFIX)
         path.write_bytes(path.read_bytes() + b"bad")
         with self.assertRaises(ValueError):
             reuse.verify(self.target)
@@ -99,6 +101,22 @@ class ReusableReceiverTest(unittest.TestCase):
         path = self.target / "binding/composite/compositeContent.xml"
         path.write_text(path.read_text().replace(
             reuse.PLATFORM_UPDATE, "https://example.invalid/untrusted"))
+        with self.assertRaises(ValueError):
+            reuse.verify(self.target)
+
+    def test_missing_pinned_ibuild_child_fails(self):
+        path = self.target / "binding/composite/compositeContent.xml"
+        path.write_text(path.read_text().replace(
+            '<child location="' + reuse.PLATFORM_IBUILD + '"/>', ""))
+        with self.assertRaises(ValueError):
+            reuse.verify(self.target)
+
+    def test_superseded_swt_receipt_fails(self):
+        path = self.target / "binding/expected.json"
+        data = json.loads(path.read_text())
+        superseded = "25e637e40c5243f5210586007a74206d8dce7953"
+        data["sourceCommit"] = data["sourceWorktreeHead"] = superseded
+        path.write_text(json.dumps(data))
         with self.assertRaises(ValueError):
             reuse.verify(self.target)
 
