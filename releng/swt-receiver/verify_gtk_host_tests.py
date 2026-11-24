@@ -18,7 +18,7 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile
 
-PIN = "d1d5f1e62f5a2a2a58af8ac16639eb0525ce9fe7"
+PIN = "c97ca3f4c37090a070331abcd0057b0985192eb1"
 SCHEMA = "NEBULA_SWT_GTK_HOST_ALLTESTS_V1"
 GTK_JAR = "org.eclipse.swt.gtk.linux.x86_64-3.138.0-SNAPSHOT.jar"
 TEST_ROOT = Path("tests/org.eclipse.swt.tests")

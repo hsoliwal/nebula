@@ -20,7 +20,7 @@ spec.loader.exec_module(reuse)
 
 # Independent source-bound expectations: a verifier edit cannot silently update
 # both sides of this fixture. The unchanged prepare owner is checked below.
-EXPECTED_PIN = "d1d5f1e62f5a2a2a58af8ac16639eb0525ce9fe7"
+EXPECTED_PIN = "c97ca3f4c37090a070331abcd0057b0985192eb1"
 EXPECTED_GC = "51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768c8c9"
 EXPECTED_VERSION = "3.138.0-SNAPSHOT"
 EXPECTED_UPDATES = (
@@ -29,7 +29,7 @@ EXPECTED_UPDATES = (
 )
 OLD_PIN = "25e637e40c5243f5210586007a74206d8dce7953"
 OLD_GC = "b68e4dc52b4d009972b01b46eb191eb1a30269345a3044ad2d02c850fce53c76"
-EXPECTED_CACHE = "nebula-swt3.138-gtk3-d1d5f1e6-20261124-v2"
+EXPECTED_CACHE = "nebula-swt3.138-gtk3-c97ca3f4-20261124-v2"
 PLATFORMS = (
     "cocoa.macosx.aarch64", "cocoa.macosx.x86_64", "gtk.linux.aarch64",
     "gtk.linux.ppc64le", "gtk.linux.riscv64", "win32.win32.aarch64",
