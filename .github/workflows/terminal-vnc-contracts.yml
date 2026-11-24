@@ -212,13 +212,17 @@ jobs:
           export M3_HTTP503_ATTEMPTS=5 M3_HTTP503_RETRY_DELAY_SECONDS=15
           export M3_SWT_NATIVE_DIR="$PWD/.m3-swt/binaries/org.eclipse.swt.gtk.linux.x86_64"
           export M3_SWT_NATIVE_LOG="$proof/native/native-library-%p.log"
-          # Host-only reactor. In run 45433289163 the -am closure of :org.eclipse.swt.tests
-          # also built org.eclipse.swt.gtk.linux.aarch64; its jar was surefire classpath
-          # entry 7, ahead of x86_64 (entry 138), so Library.class came from a jar with
-          # SWT-Arch: aarch64 and Platform.exitIfNotLoadable() ended the JVM. Exclude
-          # every non-host fragment here; the assembly step above built all eight, and
-          # prepare_swt_receiver.py binds those jars unchanged.
-          export M3_SWT_HOST_PROJECTS=':org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.tests,!:org.eclipse.swt.cocoa.macosx.aarch64,!:org.eclipse.swt.cocoa.macosx.x86_64,!:org.eclipse.swt.gtk.linux.aarch64,!:org.eclipse.swt.gtk.linux.ppc64le,!:org.eclipse.swt.gtk.linux.riscv64,!:org.eclipse.swt.win32.win32.aarch64,!:org.eclipse.swt.win32.win32.x86_64'
+          # Host-only reactor, listed explicitly and without -am. In run 45433289163 the
+          # -am closure of :org.eclipse.swt.tests also built org.eclipse.swt.gtk.linux.aarch64:
+          # Tycho 5.0.4's TychoGraphBuilder adds -am dependency projects "without filtering
+          # for the context", that is, without the linux/gtk/x86_64 environment. That jar was
+          # surefire classpath entry 7, ahead of x86_64 (entry 138), so Library.class came
+          # from a jar with SWT-Arch: aarch64 and Platform.exitIfNotLoadable() ended the JVM.
+          # Excluding it with -pl '!:...' next to -am was refused (run 45441558339: "Could not
+          # find the selected project in the reactor"). This list is run 45433289163's
+          # reactor minus the aarch64 fragment. The assembly step above built all eight
+          # fragments, and prepare_swt_receiver.py binds those jars unchanged.
+          export M3_SWT_HOST_PROJECTS=':eclipse.platform.swt,:org.eclipse.swt,:eclipse.platform.swt.binaries,:org.eclipse.swt.svg,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.tests'
           # Native flags for the forked test JVM. The test POM's argLine is
           # "@{tycho.testArgLine} -Xcheck:jni ... ${os-jvm-flags}". Surefire's @{...}
           # late replacement reads project properties, and the POM declares
@@ -238,7 +242,7 @@ jobs:
               -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ \
               -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ \
               -Dmdep.outputFile=target/m3-test-classpath.txt \
-              -pl "$M3_SWT_HOST_PROJECTS" -am \
+              -pl "$M3_SWT_HOST_PROJECTS" \
               package org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath
           python3 - "$cp_file" "$M3_SWT_NATIVE_DIR" <<'PY'
           import re, sys
@@ -274,7 +278,7 @@ jobs:
                   -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ \
                   -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ \
                   "-Dos-jvm-flags=$M3_SWT_TEST_JVM_FLAGS" \
-                  -pl "$M3_SWT_HOST_PROJECTS" -am verify
+                  -pl "$M3_SWT_HOST_PROJECTS" verify
             '
           python3 .m3-swt/tools/release/check_junit_coverage.py --strict \
             --reports-root .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports \

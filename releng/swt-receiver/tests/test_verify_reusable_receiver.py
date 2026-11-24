@@ -241,16 +241,19 @@ class ReusableReceiverTest(unittest.TestCase):
     def test_host_test_step_runs_only_the_host_fragment_with_native_flags(self):
         # Run 45433289163: the -am closure put the gtk.linux.aarch64 jar ahead of
         # x86_64 on the surefire classpath, and -Dtycho.testArgLine never reached the
-        # forked JVM. The host step must exclude every non-host fragment, prove the
+        # forked JVM. The host step must list only host projects without -am, prove the
         # classpath before the tests, and pass the native flags through ${os-jvm-flags}.
         workflow = (HERE.parents[1] / ".github/workflows/terminal-vnc-contracts.yml").read_text()
         step = workflow.split("      - name: Run original SWT AllTests on the source-built GTK3 host\n", 1)[1]
         step = step.split("      - name:", 1)[0]
         projects = re.search(r"export M3_SWT_HOST_PROJECTS='([^']+)'", step).group(1).split(",")
         self.assertEqual(len(projects), len(set(projects)))
-        self.assertEqual(set(projects), {":org.eclipse.swt.gtk.linux.x86_64", ":org.eclipse.swt.tests"}
-                         | {"!:org.eclipse.swt." + platform for platform in PLATFORMS})
-        self.assertEqual(step.count('-pl "$M3_SWT_HOST_PROJECTS" -am'), 2)
+        self.assertEqual(set(projects), {":eclipse.platform.swt", ":org.eclipse.swt",
+                                         ":eclipse.platform.swt.binaries", ":org.eclipse.swt.svg",
+                                         ":org.eclipse.swt.gtk.linux.x86_64", ":org.eclipse.swt.tests"})
+        # Tycho's -am closure ignores the target environment, so the host step must not use it.
+        self.assertNotRegex(step, r"(?m)^\s+-pl .*-am\b")
+        self.assertEqual(len(re.findall(r'-pl "\$M3_SWT_HOST_PROJECTS" (?:\\|verify)\n', step)), 2)
         flags = re.search(r'export M3_SWT_TEST_JVM_FLAGS="([^"]+)"', step).group(1).split()
         self.assertEqual(flags, ["-Dswt.library.path=$M3_SWT_NATIVE_DIR",
                                  "-Xlog:library=info:file=$M3_SWT_NATIVE_LOG"])
