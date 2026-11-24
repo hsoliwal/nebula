@@ -379,8 +379,8 @@ jobs:
         out="$RUNNER_TEMP/native-test-diagnostics"
         mkdir -p "$classes" "$out"
         javac --release 21 -Xlint:all -Werror -d "$classes" \
-          releng/native-test-diagnostics/src/org/eclipse/nebula/releng/NativeTestFailureIndex.java \
-          releng/native-test-diagnostics/src/org/eclipse/nebula/releng/NativeTestFailureIndexTest.java
+          releng/native-test-diagnostics/src/main/java/org/eclipse/nebula/releng/NativeTestFailureIndex.java \
+          releng/native-test-diagnostics/src/test/java/org/eclipse/nebula/releng/NativeTestFailureIndexTest.java
         java -ea -cp "$classes" org.eclipse.nebula.releng.NativeTestFailureIndexTest
         java -cp "$classes" org.eclipse.nebula.releng.NativeTestFailureIndex \
           widgets "$out/native-test-failures.tsv" "$out/native-test-summary.md"
