@@ -461,9 +461,11 @@ public class GridViewportDifferential_Test {
 		if (sequence < 1 || sequence > MAX_CAPTURE_HISTORY) {
 			throw new IllegalStateException("diagnostic PNG history budget exceeded: " + sequence);
 		}
-		loader.save(new File(dir, name + ".png").getPath(), SWT.IMAGE_PNG);
+		// Commit evidence before updating the legacy latest alias: a failed history
+		// write must never replace the previous valid diagnostic screenshot.
 		loader.save(new File(dir, name + "-capture-" + ProcessHandle.current().pid()
 				+ "-" + sequence + ".png").getPath(), SWT.IMAGE_PNG);
+		loader.save(new File(dir, name + ".png").getPath(), SWT.IMAGE_PNG);
 	}
 
 	/** Save latest name.png and a separate PNG for the individual failing frame. */
@@ -496,6 +498,29 @@ public class GridViewportDifferential_Test {
 					new ImageData(path.resolve(prefix + "1.png").toString()).getPixel(1, 1));
 			assertEquals(blue.getPixel(1, 1),
 					new ImageData(path.resolve(prefix + "2.png").toString()).getPixel(1, 1));
+			assertEquals(blue.getPixel(1, 1),
+					new ImageData(path.resolve("failure.png").toString()).getPixel(1, 1));
+			try (var files = java.nio.file.Files.list(path)) {
+				assertEquals(3L, files.count());
+			}
+			// Deliberately reject the historical output. The latest alias must stay
+			// on the preceding good frame, not a later unarchived failure.
+			final ImageLoader failingHistory = new ImageLoader() {
+				@Override
+				public void save(final String filename, final int format) {
+					if (filename.contains("-capture-")) {
+						throw new IllegalStateException("injected historical write failure");
+					}
+					super.save(filename, format);
+				}
+			};
+			failingHistory.data = new ImageData[] { red };
+			try {
+				persistDiagnostic(failingHistory, path.toFile(), "failure", 3);
+				fail("failed history write must remain fatal");
+			} catch (final IllegalStateException expected) {
+				org.junit.Assert.assertTrue(expected.getMessage().contains("injected"));
+			}
 			assertEquals(blue.getPixel(1, 1),
 					new ImageData(path.resolve("failure.png").toString()).getPixel(1, 1));
 			try (var files = java.nio.file.Files.list(path)) {
