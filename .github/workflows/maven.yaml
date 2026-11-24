@@ -417,6 +417,60 @@ jobs:
         name: nebula-native-surefire-failure-index
         if-no-files-found: error
         path: ${{ runner.temp }}/nebula-native-failure-index/
+    # A full reactor may fail in an unrelated widget: keep the two original
+    # SCREEN method receipts independently fatal and independently visible.
+    - name: Require executed GradientChooser and HeatMap visible-screen JUnit
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 - <<'M3_NATIVE_SCREEN_JUNIT'
+        # SPDX-License-Identifier: Apache-2.0
+        """Require original GC(Display) JUnit4 reports without synthesizing a pass."""
+        from pathlib import Path
+        import xml.etree.ElementTree as ET
+        
+        CASES = (
+            (
+                "widgets/opal/gradientchooser/org.eclipse.nebula.widgets.opal.gradientchooser.tests/target/surefire-reports/TEST-org.eclipse.nebula.widgets.opal.gradientchooser.GradientChooserDisplayScreenTest.xml",
+                "org.eclipse.nebula.widgets.opal.gradientchooser.GradientChooserDisplayScreenTest",
+                "realDisplayShowsBothColorPlanesAfterStopReplacement",
+            ),
+            (
+                "widgets/visualization/org.eclipse.nebula.visualization.widgets.tests/target/surefire-reports/TEST-org.eclipse.nebula.visualization.widgets.HeatMapDisplayScreenTest.xml",
+                "org.eclipse.nebula.visualization.widgets.HeatMapDisplayScreenTest",
+                "realDisplayShowsChangedAndUnchangedCellPlanes",
+            ),
+        )
+        
+        def verify(root):
+            for relative, classname, method in CASES:
+                path = root / relative
+                if not path.is_file():
+                    raise AssertionError("Required native SCREEN JUnit XML missing: " + relative)
+                if path.stat().st_size > 8 * 1024 * 1024:
+                    raise AssertionError("Oversized native SCREEN JUnit XML: " + relative)
+                data = path.read_bytes()
+                if b"<!DOCTYPE" in data or b"<!ENTITY" in data:
+                    raise AssertionError("Untrusted XML declaration in native SCREEN report: " + relative)
+                suite = ET.fromstring(data)
+                if suite.tag != "testsuite":
+                    raise AssertionError("Expected a single original JUnit testsuite: " + relative)
+                cases = list(suite.iter("testcase"))
+                if len(cases) != 1 or any(suite.get(attr) != value for attr, value in (
+                    ("tests", "1"), ("errors", "0"), ("failures", "0"), ("skipped", "0"),
+                )):
+                    raise AssertionError("Inconsistent native SCREEN JUnit suite counters: " + relative)
+                case = cases[0]
+                if case.get("classname") != classname or case.get("name") != method:
+                    raise AssertionError("Wrong native SCREEN JUnit method identity: " + relative)
+                if any(case.find(tag) is not None for tag in ("failure", "error", "skipped")):
+                    raise AssertionError("Native SCREEN JUnit failed, errored or skipped: " + relative)
+                print("NATIVE_SCREEN_JUNIT_PASS: " + classname + "." + method)
+            return 2
+        
+        assert verify(Path(".")) == 2
+        M3_NATIVE_SCREEN_JUNIT
     - name: Qualify Grid native screen pixels with OpenCV
       if: ${{ !cancelled() }}
       run: |
