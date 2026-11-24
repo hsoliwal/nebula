@@ -398,6 +398,26 @@ jobs:
         path: |
           ${{ runner.temp }}/nebula-widget-pixels/*.png
           /tmp/m3-widget-pixels/*.png
+    # Diagnostic only; original Maven still owns the release verdict.
+    - name: Classify exact native Surefire failures and skips
+      if: always()
+      shell: bash
+      run: |
+        set -euo pipefail
+        work="${RUNNER_TEMP:?}/nebula-native-census"
+        mkdir -p "$work/classes" "$work/reports"
+        javac --release 21 -Xlint:all -Werror -d "$work/classes" \
+          releng/native-census/NativeSurefireCensus.java \
+          releng/native-census/NativeSurefireCensusProof.java
+        java -cp "$work/classes" NativeSurefireCensusProof
+        java -cp "$work/classes" NativeSurefireCensus . "$work/reports"
+    - name: Upload native Surefire failure census
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: nebula-native-junit-census
+        if-no-files-found: warn
+        path: ${{ runner.temp }}/nebula-native-census/reports/*.tsv
     - name: Upload all widget test reports
       if: always()
       uses: actions/upload-artifact@v4

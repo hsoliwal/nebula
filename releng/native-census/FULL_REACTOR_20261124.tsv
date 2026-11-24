@@ -1,0 +1,21 @@
+module	suite	method	outcome	symptom_family	current_candidate
+widgets/opal/colorbutton	org.eclipse.nebula.widgets.opal.colorbutton.ColorButtonTest	colorChangeRepaintsTheSwatchOnly	FAILURE	native-pixel	
+widgets/opal/colorbutton	org.eclipse.nebula.widgets.opal.colorbutton.ColorButtonTest	resizeSweepIsAViewportDelta	FAILURE	native-pixel	
+widgets/oscilloscope	org.eclipse.nebula.widgets.oscilloscope.multichannel.OscilloscopeEnvelopeTest	drawnColumnsAreTheFoldsOfThePushedSamples	FAILURE	envelope-raster	
+widgets/oscilloscope	org.eclipse.nebula.widgets.oscilloscope.multichannel.OscilloscopeEnvelopeTest	envelopeColumnsCoverTheSamePixelsAsAllSamples	FAILURE	envelope-raster	
+widgets/pgroup	org.eclipse.nebula.widgets.pgroup.CollapsiblePaneTest	collapsedContentIsAHiddenViewport	FAILURE	hidden-panel-paint	
+widgets/pgroup	org.eclipse.nebula.widgets.pgroup.TaskPaneTest	titleBarClickTogglesAndRepaintsTheChevron	FAILURE	hidden-panel-paint	
+widgets/progresscircle	org.eclipse.nebula.widgets.progresscircle.BusyLabelTest	framePixelsEqualADirectPaint	FAILURE	native-damage	
+widgets/progresscircle	org.eclipse.nebula.widgets.progresscircle.BusyLabelTest	frameRepaintsTheIconOnly	FAILURE	native-damage	
+widgets/progresscircle	org.eclipse.nebula.widgets.progresscircle.BusyLabelTest	textChangeRepaintsTheTextStripOnly	FAILURE	native-damage	
+widgets/pshelf	org.eclipse.nebula.widgets.pshelf.PShelfViewportTest	hiddenOpenEndsLikeTheShownAnimation	FAILURE	native-damage	
+widgets/pshelf	org.eclipse.nebula.widgets.pshelf.PShelfViewportTest	hoverDamagesTheChangedHeadersOnly	FAILURE	native-damage	
+widgets/pshelf	org.eclipse.nebula.widgets.pshelf.PShelfViewportTest	setTextDamagesOneHeaderAndCullsTheOthers	FAILURE	native-damage	
+widgets/tablecombo	org.eclipse.nebula.widgets.tablecombo.TableComboTests	testClosePopupAfterSelectionFalseKeepsPopupOpen	FAILURE	popup-visibility	
+widgets/tablecombo	org.eclipse.nebula.widgets.tablecombo.TableComboTests	testClosePopupAfterSelectionTrueClosesPopup	FAILURE	popup-visibility	
+widgets/visualization	org.eclipse.nebula.visualization.xygraph.figures.XYGraphSetterDamageTest	theErrorBarSettersShowAtOnce	FAILURE	native-damage	
+widgets/vnc	org.eclipse.nebula.widgets.vnc.VncViewerNativeTest	capturesDecodedRfbPixelsFromTheVisibleScreen	FAILURE	screen-frame	https://github.com/hsoliwal/nebula/pull/662
+widgets/web	org.eclipse.nebula.widgets.web.WebCanvasExactClip_Test	originallyUnclippedStateRemainsUnclipped	FAILURE	GC-clip-ownership	
+widgets/web	org.eclipse.nebula.widgets.web.WebCanvasExactClip_Test	paintClipLazilyReusesThreeOwnedSnapshotsAndDisposesThem	FAILURE	GC-clip-ownership	
+widgets/web	org.eclipse.nebula.widgets.web.WebCanvasExactClip_Test	warmCache120FramesRespectCanvasAndRecordedGCOwnership	FAILURE	GC-clip-ownership	
+widgets/xviewer	org.eclipse.nebula.widgets.xviewer.tests.XViewerViewport_Test	stateSurvivesScrollingAwayAndBack	FAILURE	viewport-state	
