@@ -175,7 +175,46 @@ def _read(source: Path, full_name: str) -> dict:
         r"\bimport\s+((?:" + IDENT + r"\.)+(" + IDENT + r"))\s*;", mask))
     return {"class": full_name, "sourcePath": relative.as_posix(), "sourceGitBlob": _blob(raw),
             "clean": clean, "mask": mask, "declaration": declaration.start(), "start": start,
-            "end": end, "imports": imports}
+            "end": end, "imports": imports,
+            "abstract": re.search(r"\babstract\b", _modifiers(mask, declaration.start())) is not None}
+
+
+def _modifiers(mask: str, declaration: int) -> str:
+    """Return the masked modifiers and annotations directly before a class keyword.
+
+    The segment starts after the last ';', '{' or '}' outside parentheses, so a
+    braced annotation argument does not cut it. Comments and literals are masked.
+    """
+    depth, boundary = 0, 0
+    for index in range(declaration):
+        token = mask[index]
+        if token == "(":
+            depth += 1
+        elif token == ")":
+            depth -= 1
+        elif token in ";{}" and depth == 0:
+            boundary = index + 1
+    return mask[boundary:declaration]
+
+
+def _ancestors(source: Path, full_name: str) -> list[str]:
+    """Source-owned superclasses of a class; stops at a parent outside the test package."""
+    result, seen = [], {full_name}
+    owner = _read(source, full_name)
+    while True:
+        header = owner["mask"][owner["declaration"]:owner["start"]]
+        parent = re.search(r"\bextends\s+(" + QUALIFIED + r")\b", header)
+        if parent is None:
+            return result
+        name = _resolve(owner, parent.group(1))
+        if name in seen:
+            raise ValueError("Cyclic source-owned test inheritance")
+        if not re.fullmatch(re.escape(PACKAGE) + r"\." + IDENT, name) or not (
+                source / JAVA_ROOT / Path(*name.split("."))).with_suffix(".java").is_file():
+            return result
+        seen.add(name)
+        result.append(name)
+        owner = _read(source, name)
 
 
 def _resolve(owner: dict, name: str) -> str:
@@ -185,8 +224,14 @@ def _resolve(owner: dict, name: str) -> str:
 
 
 def _selected_inventory(source: Path) -> dict:
-    """Resolve literal registrations recursively, including wrapper suites."""
-    leaves, suites, visited, active = {}, {}, set(), set()
+    """Resolve literal registrations recursively, including wrapper suites.
+
+    A selected class declared abstract in the pinned source is not a leaf: the
+    JUnit platform never executes or reports it. It is kept as an abstract
+    selection with its concrete selected subclasses, and report_summary requires
+    at least one of those to be reported.
+    """
+    leaves, suites, abstracts, visited, active = {}, {}, {}, set(), set()
 
     def visit(full_name: str) -> None:
         if full_name in active:
@@ -217,6 +262,8 @@ def _selected_inventory(source: Path) -> dict:
                 visit(_resolve(owner, match.group(1)))
         elif _annotations(owner["clean"], owner["mask"], "Suite") or full_name.rsplit(".", 1)[1].startswith("All"):
             raise ValueError("Unsupported original suite selection: " + full_name)
+        elif owner["abstract"]:
+            abstracts[full_name] = {key: owner[key] for key in ("class", "sourcePath", "sourceGitBlob")}
         else:
             leaves[full_name] = {key: owner[key] for key in ("class", "sourcePath", "sourceGitBlob")}
         active.remove(full_name)
@@ -225,8 +272,17 @@ def _selected_inventory(source: Path) -> dict:
     visit(PACKAGE + ".AllTests")
     if not leaves:
         raise ValueError("No original AllTests leaf classes")
-    return {"leaves": [leaves[name] for name in sorted(leaves)],
-            "suiteSources": [suites[name] for name in sorted(suites)]}
+    result = {"leaves": [leaves[name] for name in sorted(leaves)],
+              "suiteSources": [suites[name] for name in sorted(suites)]}
+    if abstracts:
+        subclasses = {name: [] for name in abstracts}
+        for leaf in sorted(leaves):
+            for ancestor in _ancestors(source, leaf):
+                if ancestor in subclasses:
+                    subclasses[ancestor].append(leaf)
+        result["abstractSelections"] = [dict(abstracts[name], concreteSubclasses=subclasses[name])
+                                        for name in sorted(abstracts)]
+    return result
 
 
 def selected_leaf_classes(source: Path) -> list[dict]:
@@ -279,7 +335,8 @@ def _methods(owner: dict) -> dict[str, list[dict]]:
                 if name_match and not assigned:
                     name = name_match.group(1)
                     method = {"name": name, "cleanHeader": clean[member_start:index], "maskHeader": header,
-                              "cleanBody": clean[index + 1:end], "maskBody": mask[index + 1:end]}
+                              "cleanBody": clean[index + 1:end], "maskBody": mask[index + 1:end],
+                              "bodyStart": index, "bodyEnd": end}
                     result.setdefault(name, []).append(method)
             index = end
             member_start = end + 1
@@ -427,8 +484,114 @@ def _assumption_permission(clean: str, mask: str, message: str) -> bool:
     return False
 
 
-def permitted_skip(source: Path, full_name: str, testcase_name: str, reason: str) -> dict:
-    """Bind a skip to its exact method or applicable original fixture scope."""
+def skip_reason(skipped: ET.Element) -> str:
+    """Return the reason of a surefire <skipped> element.
+
+    Surefire 3.6.1 writes no message attribute for an aborted (assumption) test;
+    the reason is then the first line(s) of the element text, which begins with
+    exactly the element's exception type: "org.opentest4j.TestAbortedException:
+    Assumption failed: ...". Anything else yields no reason.
+    """
+    message = (skipped.get("message") or "").strip()
+    if message:
+        return message
+    kind = (skipped.get("type") or "").strip()
+    header = []
+    for line in (skipped.text or "").splitlines():
+        if re.match(r"\s+at\s", line) or re.match(r"\s*Caused by:", line):
+            break
+        header.append(line)
+    text = "\n".join(header).strip()
+    if not re.fullmatch(QUALIFIED, kind) or not text.startswith(kind + ": "):
+        return ""
+    return text[len(kind) + 2:].strip()
+
+
+CALL_SITE_RULE = "original-source-call-site-condition"
+SKIP_RULES = ("original-source-declared-condition", "original-source-os-condition", CALL_SITE_RULE)
+FRAME = re.compile(r"\s+at\s+(" + QUALIFIED + r")\.(" + IDENT + r")\(([A-Za-z0-9_$]+\.java):([0-9]+)\)\s*")
+ASSUMPTION_FRAMES = ("org.junit.jupiter.api.Assumptions.", "org.junit.Assume.", "org.opentest4j.")
+
+
+def _line(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
+
+
+def _call_site_permission(source: Path, chain: list[dict], testcase_name: str, message: str, trace: str) -> dict:
+    """Bind a skip to the assumption call that the recorded stack trace names.
+
+    The innermost source-owned frame must be a line of the pinned source holding a
+    direct assumeTrue/assumeFalse/assumeThat call whose literal message equals the
+    reported one. Every frame from there to the outermost source-owned frame must
+    be a top-level class of the test package, with its line inside a method of that
+    name. The outermost one must be the skipped test method in the class
+    hierarchy, or, for surefire's class-level "initializationError", a @BeforeAll
+    method in it. No framework frame may interrupt that path.
+    """
+    name = testcase_name.split("(", 1)[0].split("[", 1)[0]
+    frames = []
+    for line in trace.splitlines():
+        if re.match(r"\s*Caused by:", line):
+            break
+        if re.match(r"\s+at\s", line):
+            match = FRAME.fullmatch(line)
+            frames.append((match.group(1) + "." + match.group(2), match.group(1), match.group(2), match.group(3),
+                           int(match.group(4))) if match else (line.strip(), None, None, None, 0))
+    index = 0
+    while index < len(frames) and frames[index][0].startswith(ASSUMPTION_FRAMES):
+        index += 1
+    path = []
+    while index < len(frames) and frames[index][1] and re.fullmatch(
+            re.escape(PACKAGE) + r"\.[A-Za-z_][A-Za-z0-9_]*", frames[index][1]):
+        path.append(frames[index][1:])
+        index += 1
+    if not path:
+        return {}
+    owners, containing = {}, []
+    for class_name, method_name, file_name, line in path:
+        if file_name != class_name.rsplit(".", 1)[1] + ".java":
+            return {}
+        if class_name not in owners:
+            if not (source / JAVA_ROOT / Path(*class_name.split("."))).with_suffix(".java").is_file():
+                return {}
+            owner = _read(source, class_name)
+            owner["methods"] = _methods(owner)
+            owners[class_name] = owner
+        owner = owners[class_name]
+        spans = [method for method in owner["methods"].get(method_name, [])
+                 if _line(owner["mask"], method["bodyStart"]) <= line <= _line(owner["mask"], method["bodyEnd"])]
+        if len(spans) != 1:
+            return {}
+        containing.append(spans[0])
+    outer_class, outer_method = path[-1][0], path[-1][1]
+    if outer_class not in {owner["class"] for owner in chain}:
+        return {}
+    if name == "initializationError":
+        if not _annotations(containing[-1]["cleanHeader"], containing[-1]["maskHeader"], "BeforeAll"):
+            return {}
+    elif outer_method != name:
+        return {}
+    class_name, method_name, _, line = path[0]
+    owner = owners[class_name]
+    for match in re.finditer(r"\b(assumeTrue|assumeFalse|assumeThat)\s*\(", owner["mask"]):
+        if _line(owner["mask"], match.start()) != line:
+            continue
+        end = _close(owner["mask"], owner["mask"].find("(", match.start()), "(", ")")
+        if _assumption_permission(owner["clean"][match.start():end + 1], owner["mask"][match.start():end + 1], message):
+            return {"conditionOwner": class_name, "conditionMethod": method_name, "conditionLine": line,
+                    "conditionSourcePath": owner["sourcePath"], "conditionSourceGitBlob": owner["sourceGitBlob"],
+                    "callPath": [frame[0] + "." + frame[1] + ":" + str(frame[3]) for frame in path]}
+    return {}
+
+
+def permitted_skip(source: Path, full_name: str, testcase_name: str, reason: str, trace: str = "") -> dict:
+    """Bind a skip to its exact method or applicable original fixture scope.
+
+    When no method or fixture scope declares the condition, the recorded stack
+    trace may still bind it to the exact source assumption call (see
+    _call_site_permission). Surefire's class-level "initializationError" binds
+    only that way, to a @BeforeAll method.
+    """
     name = testcase_name.split("(", 1)[0].split("[", 1)[0]
     if not re.fullmatch(IDENT, name) or not reason:
         raise ValueError("Unknown original skipped testcase identity")
@@ -454,9 +617,12 @@ def permitted_skip(source: Path, full_name: str, testcase_name: str, reason: str
             found_method = True
             break
     if not found_method:
-        raise ValueError("Skipped testcase method absent from original source hierarchy")
+        if name != "initializationError":
+            raise ValueError("Skipped testcase method absent from original source hierarchy")
+        # Class-level initialization: only the recorded @BeforeAll call site binds.
+        scopes = []
     shadowed = set()
-    for owner in chain:
+    for owner in chain if found_method else ():
         for method_name, methods in owner["methods"].items():
             if method_name in shadowed:
                 continue
@@ -480,6 +646,10 @@ def permitted_skip(source: Path, full_name: str, testcase_name: str, reason: str
                     "sourcePath": first["sourcePath"], "sourceGitBlob": first["sourceGitBlob"],
                     "conditionOwner": owner["class"], "conditionMethod": condition_method,
                     "conditionSourcePath": owner["sourcePath"], "conditionSourceGitBlob": owner["sourceGitBlob"], **extra}
+    call_site = _call_site_permission(source, chain, testcase_name, message, trace) if trace else {}
+    if call_site:
+        return {"class": full_name, "name": testcase_name, "reason": reason, "rule": CALL_SITE_RULE,
+                "sourcePath": first["sourcePath"], "sourceGitBlob": first["sourceGitBlob"], **call_site}
     raise ValueError("No applicable original source condition for skipped test: " + full_name + "." + testcase_name)
 
 
@@ -490,7 +660,10 @@ def report_summary(proof: Path, native_directory: str, permitted: list[dict] | N
     if not isinstance(selected, dict) or not selected.get("leaves") or not selected.get("suiteSources"):
         raise ValueError("Original AllTests selection inventory is missing")
     selected_names = set()
-    for row in selected["leaves"] + selected["suiteSources"]:
+    abstract_rows = selected.get("abstractSelections", [])
+    if not isinstance(abstract_rows, list) or ("abstractSelections" in selected and not abstract_rows):
+        raise ValueError("Malformed abstract original selection inventory")
+    for row in selected["leaves"] + selected["suiteSources"] + abstract_rows:
         name = row.get("class", "")
         if not re.fullmatch(re.escape(PACKAGE) + r"\." + IDENT, name) or not re.fullmatch(r"[0-9a-f]{40}", row.get("sourceGitBlob", "")):
             raise ValueError("Malformed original source selection identity")
@@ -501,6 +674,13 @@ def report_summary(proof: Path, native_directory: str, permitted: list[dict] | N
         if row["class"] in selected_names:
             raise ValueError("Duplicate original leaf class")
         selected_names.add(row["class"])
+    abstract_names = [row["class"] for row in abstract_rows]
+    if len(set(abstract_names)) != len(abstract_names) or set(abstract_names) & selected_names:
+        raise ValueError("Abstract original selection overlaps the executable leaves")
+    for row in abstract_rows:
+        subclasses = row.get("concreteSubclasses")
+        if not isinstance(subclasses, list) or not set(subclasses) <= selected_names:
+            raise ValueError("Abstract original selection names a subclass outside the selected leaves")
     if PACKAGE + ".AllTests" not in {row["class"] for row in selected["suiteSources"]}:
         raise ValueError("Original AllTests suite root is absent")
     reports = sorted((proof / "reports").glob("TEST-*.xml"))
@@ -540,16 +720,15 @@ def report_summary(proof: Path, native_directory: str, permitted: list[dict] | N
             if skipped is not None:
                 actual["skipped"] += 1
                 stats["skipped"] += 1
-                reason = skipped.get("message", "").strip()
+                reason = skip_reason(skipped)
                 if short in REQUIRED or not reason:
                     raise ValueError("Required or unexplained skipped original testcase")
                 if source is not None:
-                    skips.append(permitted_skip(source, full_name, name, reason))
+                    skips.append(permitted_skip(source, full_name, name, reason, skipped.text or ""))
                 else:
                     matches = [row for row in permitted or [] if
                                (row.get("class"), row.get("name"), row.get("reason")) == (full_name, name, reason)]
-                    if len(matches) != 1 or matches[0].get("rule") not in (
-                            "original-source-declared-condition", "original-source-os-condition"):
+                    if len(matches) != 1 or matches[0].get("rule") not in SKIP_RULES:
                         raise ValueError("Skipped testcase lacks its explicit source-bound permission")
                     skips.append(matches[0])
             elif case.find("failure") is None and case.find("error") is None:
@@ -566,6 +745,9 @@ def report_summary(proof: Path, native_directory: str, permitted: list[dict] | N
         raise ValueError("Original GTK AllTests did not pass")
     if observed != selected_names:
         raise ValueError("Original AllTests selected leaf classes are missing: " + ", ".join(sorted(selected_names - observed)))
+    for row in abstract_rows:
+        if not set(row["concreteSubclasses"]) & observed:
+            raise ValueError("Abstract original selection has no reported concrete subclass: " + row["class"])
     for name in REQUIRED | NATIVE_CLASSES:
         if classes.get(name, {}).get("passed", 0) <= 0:
             raise ValueError("Required original native test class did not execute: " + name)
