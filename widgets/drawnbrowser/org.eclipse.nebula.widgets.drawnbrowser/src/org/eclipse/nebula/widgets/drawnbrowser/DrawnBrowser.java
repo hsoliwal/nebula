@@ -62,9 +62,10 @@ import org.eclipse.swt.widgets.ScrollBar;
  * still flatten inner blocks to text; nested flex/grid formatting is not supported.
  * </p>
  * <p>
- * The overflow subset supports visible content and padding-edge clipping for hidden/clip. Hidden establishes an
- * unscrolled local reference for sticky descendants; clip retains the enclosing scroll reference. Nested scrolling,
- * per-axis overflow and rounded clips are not supported. Partly clipped native form controls remain hidden until
+ * The overflow subset supports visible content and padding-edge clipping for hidden/clip. Hidden is
+ * programmatically scrollable; auto and scroll also support nested vertical MouseWheel input while clip
+ * remains non-scrollable. Native nested scrollbar thumbs, horizontal/per-axis overflow and rounded clips
+ * remain unsupported. Partly clipped native form controls remain hidden until
  * fully inside their panel; their existing widget identity is retained.
  * </p>
  * <p>
@@ -464,6 +465,34 @@ public class DrawnBrowser extends Canvas {
 		return viewport.y();
 	}
 
+	/**
+	 * Programmatic vertical scrolling in one CSS overflow:hidden/auto/scroll panel.
+	 * The box index is scoped to the current parsed document; overflow:clip refuses scrolling.
+	 */
+	public boolean scrollPanelTo(int box, int offset) {
+		checkWidget();
+		if (remoteFrameImage != null) return false;
+		HtmlPositionedLayout scene = layout.positioned();
+		if (scene == null || scene.scrollPanel(box, offset) == 0) return false;
+		redraw();
+		placeWidgets();
+		return true;
+	}
+
+	/** Current programmatic panel offset (0 for an invalid or non-scrollable box). */
+	public int panelScrollY(int box) {
+		checkWidget();
+		HtmlPositionedLayout scene = layout.positioned();
+		return scene == null ? 0 : scene.panelScrollY(box);
+	}
+
+	/** The largest programmatic vertical offset for this panel in the current document. */
+	public int panelScrollMaximumY(int box) {
+		checkWidget();
+		HtmlPositionedLayout scene = layout.positioned();
+		return scene == null ? 0 : scene.panelMaximumY(box);
+	}
+
 	/** Scrolls so that page y {@code y} is at the top (clamped). */
 	public void setScrollY(int y) {
 		checkWidget();
@@ -514,7 +543,17 @@ public class DrawnBrowser extends Canvas {
 				setCursor(linkAt(e.x, e.y) != null ? getDisplay().getSystemCursor(SWT.CURSOR_HAND) : null);
 			}
 			case SWT.MouseWheel -> {
-				scrollTo(viewport.y() - e.count * LINE);
+				int requested = (int) Math.max(Integer.MIN_VALUE + 1L,
+						Math.min(Integer.MAX_VALUE, -(long) e.count * LINE));
+				HtmlPositionedLayout scene = layout.positioned();
+				if (scene != null && scene.scrollWheelAt(e.x, e.y, viewport.y(), requested) != 0) {
+					// Inner scrollports keep their own offset; root ScrollBar does not move.
+					redraw();
+					placeWidgets();
+				} else {
+					scrollTo((int) Math.max(Integer.MIN_VALUE + 1L,
+							Math.min(Integer.MAX_VALUE, (long) viewport.y() + requested)));
+				}
 				e.doit = false;
 			}
 			case SWT.KeyDown -> key(e);
