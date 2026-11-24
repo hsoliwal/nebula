@@ -20,7 +20,7 @@ spec.loader.exec_module(reuse)
 
 # Independent source-bound expectations: a verifier edit cannot silently update
 # both sides of this fixture. The unchanged prepare owner is checked below.
-EXPECTED_PIN = "c25cb33505465b28980e563acc99097ce3e33fee"
+EXPECTED_PIN = "16b74941166fed0a20b026cb80bc32914ecb5d95"
 EXPECTED_GC = "51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768c8c9"
 EXPECTED_VERSION = "3.138.0-SNAPSHOT"
 EXPECTED_UPDATES = (
@@ -29,7 +29,7 @@ EXPECTED_UPDATES = (
 )
 OLD_PIN = "25e637e40c5243f5210586007a74206d8dce7953"
 OLD_GC = "b68e4dc52b4d009972b01b46eb191eb1a30269345a3044ad2d02c850fce53c76"
-EXPECTED_CACHE = "nebula-swt3.138-gtk3-c25cb335-20261124-v2"
+EXPECTED_CACHE = "nebula-swt3.138-gtk3-16b74941-20261124-v2"
 PLATFORMS = (
     "cocoa.macosx.aarch64", "cocoa.macosx.x86_64", "gtk.linux.aarch64",
     "gtk.linux.ppc64le", "gtk.linux.riscv64", "win32.win32.aarch64",
@@ -237,6 +237,65 @@ class ReusableReceiverTest(unittest.TestCase):
                                     (*PLATFORMS, "gtk.linux.x86_64")})
         self.assertIn('-pl "$swt_fragments" -am package', workflow)
         self.assertIn("python3 releng/swt-receiver/prepare_eclipse_platform_parent.py", workflow)
+
+    HOST_STEP = "      - name: Run original SWT AllTests on the source-built GTK3 host\n"
+    GUARD = 'python3 releng/swt-receiver/verify_test_classpath.py "$cp_file" "$M3_SWT_NATIVE_DIR"'
+
+    def assert_host_test_step(self, workflow):
+        # Run 45433289163: the -am closure put the gtk.linux.aarch64 jar ahead of
+        # x86_64 on the surefire classpath, and -Dtycho.testArgLine never reached the
+        # forked JVM. The host step must list only host projects without -am, prove the
+        # classpath before the tests, and pass the native flags through ${os-jvm-flags}.
+        step = workflow.split(self.HOST_STEP, 1)[1].split("      - name:", 1)[0]
+        # Comments are not commands: every command check reads the step without them.
+        commands = "\n".join(line for line in step.splitlines() if not line.lstrip().startswith("#"))
+        projects = re.search(r"export M3_SWT_HOST_PROJECTS='([^']+)'", commands).group(1).split(",")
+        self.assertEqual(len(projects), len(set(projects)))
+        self.assertEqual(set(projects), {":eclipse.platform.swt", ":org.eclipse.swt",
+                                         ":eclipse.platform.swt.binaries", ":org.eclipse.swt.svg",
+                                         ":org.eclipse.swt.gtk.linux.x86_64", ":org.eclipse.swt.tests"})
+        # Tycho's -am closure ignores the target environment: no -am or --also-make
+        # token on any command line, including one written directly before a backslash.
+        self.assertNotRegex(commands, r"(?m)(^|\s)(-am|--also-make)(\\|=|\s|$)")
+        self.assertEqual(len(re.findall(r'-pl "\$M3_SWT_HOST_PROJECTS" (?:\\|verify)\n', commands)), 2)
+        flags = re.search(r'export M3_SWT_TEST_JVM_FLAGS="([^"]+)"', commands).group(1).split()
+        self.assertEqual(flags, ["-Dswt.library.path=$M3_SWT_NATIVE_DIR",
+                                 "-Xlog:library=info:file=$M3_SWT_NATIVE_LOG"])
+        self.assertIn('"-Dos-jvm-flags=$M3_SWT_TEST_JVM_FLAGS"', commands)
+        self.assertNotIn("-Dtycho.testArgLine=", commands)
+        # The guard is the tested verify_test_classpath.py, run as its own command line on
+        # the file build-classpath writes for the test bundle, after that pass and before
+        # the tests.
+        self.assertIn("cp_file=.m3-swt/tests/org.eclipse.swt.tests/target/m3-test-classpath.txt\n", commands)
+        self.assertIn("-Dmdep.outputFile=target/m3-test-classpath.txt \\\n", commands)
+        guards = list(re.finditer(r"(?m)^\s*" + re.escape(self.GUARD) + r"\s*$", commands))
+        self.assertEqual(len(guards), 1)
+        self.assertLess(commands.index("maven-dependency-plugin:3.8.1:build-classpath"), guards[0].start())
+        self.assertLess(guards[0].start(), commands.index("-DskipTests=false"))
+        self.assertNotIn("<<'PY'", commands)
+        script = (HERE / "verify_test_classpath.py").read_text()
+        self.assertIn('HOST_FRAGMENT = "org.eclipse.swt.gtk.linux.x86_64"', script)
+        self.assertIn("SWT_TEST_CLASSPATH_HOST_FRAGMENT=PASS", script)
+
+    def test_host_test_step_runs_only_the_host_fragment_with_native_flags(self):
+        self.assert_host_test_step((HERE.parents[1] / ".github/workflows/terminal-vnc-contracts.yml").read_text())
+
+    def test_host_test_step_check_rejects_bypassed_guards_and_also_make(self):
+        workflow = (HERE.parents[1] / ".github/workflows/terminal-vnc-contracts.yml").read_text()
+        guard_line = "          " + self.GUARD + "\n"
+        selection = '              -pl "$M3_SWT_HOST_PROJECTS" \\\n'
+        self.assertEqual((workflow.count(guard_line), workflow.count(selection)), (1, 1))
+        variants = {
+            "commented guard": workflow.replace(guard_line, "          # " + self.GUARD + "\n"),
+            "echo guard": workflow.replace(guard_line, "          echo " + self.GUARD + "\n"),
+            "--also-make": workflow.replace(selection, selection + "              --also-make \\\n"),
+            "-am directly before a backslash": workflow.replace(selection, selection + "              -am\\\n"),
+        }
+        for name, variant in variants.items():
+            with self.subTest(variant=name):
+                self.assertNotEqual(variant, workflow)
+                with self.assertRaises(AssertionError):
+                    self.assert_host_test_step(variant)
 
     def test_receipt_cannot_claim_native_runtime_qualification(self):
         path = self.target / "binding/expected.json"
