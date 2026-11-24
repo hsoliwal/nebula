@@ -151,4 +151,57 @@ public final class VncViewerNativeImageTest {
             if (ownsDisplay && display != null && !display.isDisposed()) display.dispose();
         }
     }
+    /**
+     * A scaled remote two-color framebuffer must not blend adjoining cells.
+     * This uses the real SWT.Paint listener and a native offscreen Image/GC.
+     * It deliberately does not claim actual GC(Display) screen pixels.
+     */
+    @Test
+    public void scaledRfbPixelsStayExactAndBorrowedInterpolationIsRestored() throws Exception {
+        Display display = Display.getCurrent();
+        boolean ownsDisplay = display == null;
+        if (ownsDisplay) display = new Display();
+        Shell shell = null;
+        try {
+            shell = new Shell(display);
+            VncViewer viewer = new VncViewer(shell, SWT.NONE);
+            viewer.setSize(220, 160);
+            RfbFramebuffer framebuffer = new RfbFramebuffer(2, 1);
+            framebuffer.writePixels(0, 0, 2, 1, new int[] {0xffff0000, 0xff00ff00});
+            attach(viewer, framebuffer);
+            Image target = new Image(display, 220, 160);
+            try {
+                GC gc = new GC(target);
+                try {
+                    gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+                    gc.fillRectangle(0, 0, 220, 160);
+                    gc.setInterpolation(SWT.HIGH);
+                    Event event = new Event();
+                    event.gc = gc;
+                    event.x = 0;
+                    event.y = 0;
+                    event.width = 220;
+                    event.height = 160;
+                    viewer.notifyListeners(SWT.Paint, event);
+                    assertEquals("caller interpolation must be restored",
+                            SWT.HIGH, gc.getInterpolation());
+                    assertFalse("caller GC must not be disposed", gc.isDisposed());
+                } finally {
+                    gc.dispose();
+                }
+                // Two source cells, fitted to 220x110, centered at y=25.
+                // The source-cell boundary must remain pure red/green.
+                pixel(target, 109, 80, 0xffff0000);
+                pixel(target, 110, 80, 0xff00ff00);
+                pixel(target, 0, 80, 0xffff0000);
+                pixel(target, 219, 80, 0xff00ff00);
+            } finally {
+                target.dispose();
+            }
+        } finally {
+            if (shell != null && !shell.isDisposed()) shell.dispose();
+            if (ownsDisplay && display != null && !display.isDisposed()) display.dispose();
+        }
+    }
+
 }

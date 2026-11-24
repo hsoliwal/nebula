@@ -449,8 +449,18 @@ public class VncViewer extends Canvas {
         int x = bounds.x + (bounds.width - scaledWidth) / 2;
         int y = bounds.y + (bounds.height - scaledHeight) / 2;
         displayedBounds = new Rectangle(x, y, scaledWidth, scaledHeight);
-        event.gc.drawImage(cachedImage, 0, 0, cachedImage.getBounds().width,
-                cachedImage.getBounds().height, x, y, scaledWidth, scaledHeight);
+        // RFB pixels represent exact framebuffer colors. The default native
+        // interpolation may blend neighboring red/green cells when scaled.
+        // Keep all state of the caller-owned paint GC unchanged on return.
+        GC gc = event.gc;
+        int previousInterpolation = gc.getInterpolation();
+        try {
+            gc.setInterpolation(SWT.NONE);
+            gc.drawImage(cachedImage, 0, 0, cachedImage.getBounds().width,
+                    cachedImage.getBounds().height, x, y, scaledWidth, scaledHeight);
+        } finally {
+            gc.setInterpolation(previousInterpolation);
+        }
     }
 
     private static ImageData imageData(RfbFramebuffer.FrameUpdate change) {
