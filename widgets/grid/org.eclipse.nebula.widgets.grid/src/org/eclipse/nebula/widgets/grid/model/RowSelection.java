@@ -205,15 +205,20 @@ public final class RowSelection {
 				return;
 			}
 			at = -at - 1;
+			// Stage every allocation before moving live row IDs. A failed column
+			// allocation must not publish a partially inserted sparse row.
+			final int[] newWords = new int[(column >>> 5) + 1];
 			if (cellRowCount == cellRows.length) {
 				final int next = HeapGrowth.capacity(cellRows.length, cellRowCount + 1, 8);
-				cellRows = Arrays.copyOf(cellRows, next);
-				cellColumns = Arrays.copyOf(cellColumns, next);
+				final int[] largerRows = Arrays.copyOf(cellRows, next);
+				final int[][] largerColumns = Arrays.copyOf(cellColumns, next);
+				cellRows = largerRows;
+				cellColumns = largerColumns;
 			}
 			System.arraycopy(cellRows, at, cellRows, at + 1, cellRowCount - at);
 			System.arraycopy(cellColumns, at, cellColumns, at + 1, cellRowCount - at);
 			cellRows[at] = row;
-			cellColumns[at] = new int[(column >>> 5) + 1];
+			cellColumns[at] = newWords;
 			cellRowCount++;
 		}
 		int[] bits = cellColumns[at];

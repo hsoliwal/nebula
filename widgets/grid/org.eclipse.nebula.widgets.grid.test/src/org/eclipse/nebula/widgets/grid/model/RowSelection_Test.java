@@ -118,6 +118,32 @@ public class RowSelection_Test {
 	}
 
 	@Test
+	public void newCellRowInsertionRetainsOrderedSelectionOwners() throws Exception {
+		final RowSelection selection = new RowSelection(100);
+		selection.setCellSelected(40, 5, true);
+		selection.setCellSelected(10, 129, true);
+		selection.setCellSelected(60, 95, true);
+		selection.setCellSelected(25, 63, true);
+		assertEquals(4, selection.getCellRowCount());
+		assertEquals(4, selection.getCellCount());
+		for (final int row : new int[] { 10, 25, 40, 60 }) {
+			assertTrue("inserting a cell row must not displace another row", //$NON-NLS-1$
+					selection.isCellSelected(row, row == 10 ? 129 : row == 25 ? 63 : row == 40 ? 5 : 95));
+		}
+		final java.lang.reflect.Field keys = RowSelection.class.getDeclaredField("cellRows"); //$NON-NLS-1$
+		final java.lang.reflect.Field count = RowSelection.class.getDeclaredField("cellRowCount"); //$NON-NLS-1$
+		keys.setAccessible(true);
+		count.setAccessible(true);
+		assertArrayEquals(new int[] {10, 25, 40, 60}, java.util.Arrays.copyOf(
+				(int[]) keys.get(selection), count.getInt(selection)));
+		selection.setCellSelected(25, 63, false);
+		assertEquals(3, selection.getCellCount());
+		assertTrue(selection.isCellSelected(10, 129));
+		assertTrue(selection.isCellSelected(40, 5));
+		assertTrue(selection.isCellSelected(60, 95));
+	}
+
+	@Test
 	public void denseSelectionWalksFilteredViewAndSkipsCollapsedGroupHeaders() {
 		final int n = 100_000;
 		final RowSelection selection = new RowSelection(n);
