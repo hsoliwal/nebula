@@ -465,7 +465,30 @@ public class GridViewportDifferential_Test {
 		// write must never replace the previous valid diagnostic screenshot.
 		loader.save(new File(dir, name + "-capture-" + ProcessHandle.current().pid()
 				+ "-" + sequence + ".png").getPath(), SWT.IMAGE_PNG);
-		loader.save(new File(dir, name + ".png").getPath(), SWT.IMAGE_PNG);
+		// Stage the latest alias in the same directory. If PNG I/O fails after
+		// truncating the staged file, the preceding good alias remains intact.
+		final java.nio.file.Path latest = dir.toPath().resolve(name + ".png");
+		final java.nio.file.Path staged;
+		try {
+			staged = java.nio.file.Files.createTempFile(dir.toPath(), ".grid-latest-", ".png");
+		} catch (final java.io.IOException failure) {
+			throw new java.io.UncheckedIOException("cannot stage Grid diagnostic latest PNG", failure);
+		}
+		try {
+			loader.save(staged.toString(), SWT.IMAGE_PNG);
+			// Never replace the alias with a partly-written file or a non-atomic move.
+			java.nio.file.Files.move(staged, latest,
+					java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		} catch (final java.io.IOException failure) {
+			throw new java.io.UncheckedIOException("cannot publish atomic Grid diagnostic latest PNG", failure);
+		} finally {
+			try {
+				java.nio.file.Files.deleteIfExists(staged);
+			} catch (final java.io.IOException failure) {
+				throw new java.io.UncheckedIOException("cannot clean Grid diagnostic staging PNG", failure);
+			}
+		}
 	}
 
 	/** Save latest name.png and a separate PNG for the individual failing frame. */
@@ -526,6 +549,36 @@ public class GridViewportDifferential_Test {
 			try (var files = java.nio.file.Files.list(path)) {
 				assertEquals(3L, files.count());
 			}
+			// Inject a partially-written latest-image staging file: no truncated
+			// alias or abandoned temporary PNG may escape the original JUnit.
+			final ImageLoader failingAlias = new ImageLoader() {
+				@Override
+				public void save(final String filename, final int format) {
+					if (new File(filename).getName().startsWith(".grid-latest-")) {
+						try {
+							java.nio.file.Files.write(java.nio.file.Path.of(filename), new byte[] { 82, 69, 68 });
+						} catch (final java.io.IOException failure) {
+							throw new java.io.UncheckedIOException(failure);
+						}
+						throw new IllegalStateException("injected partial latest alias write");
+					}
+					super.save(filename, format);
+				}
+			};
+			failingAlias.data = new ImageData[] { red };
+			try {
+				persistDiagnostic(failingAlias, path.toFile(), "failure", 4);
+				fail("partial alias writer failure must remain fatal");
+			} catch (final IllegalStateException expected) {
+				org.junit.Assert.assertTrue(expected.getMessage().contains("injected"));
+			}
+			assertEquals(blue.getPixel(1, 1),
+					new ImageData(path.resolve("failure.png").toString()).getPixel(1, 1));
+			assertEquals(red.getPixel(1, 1),
+					new ImageData(path.resolve(prefix + "4.png").toString()).getPixel(1, 1));
+			try (var files = java.nio.file.Files.list(path)) {
+				assertEquals("failed staging temp must be deleted", 4L, files.count());
+			}
 			try {
 				persistDiagnostic(loader, path.toFile(), "failure", MAX_CAPTURE_HISTORY + 1);
 				fail("exhausted history budget must refuse before writing");
@@ -533,7 +586,7 @@ public class GridViewportDifferential_Test {
 				org.junit.Assert.assertTrue(expected.getMessage().contains("budget"));
 			}
 			try (var files = java.nio.file.Files.list(path)) {
-				assertEquals(3L, files.count());
+				assertEquals(4L, files.count());
 			}
 		} finally {
 			try (var files = java.nio.file.Files.list(path)) {
