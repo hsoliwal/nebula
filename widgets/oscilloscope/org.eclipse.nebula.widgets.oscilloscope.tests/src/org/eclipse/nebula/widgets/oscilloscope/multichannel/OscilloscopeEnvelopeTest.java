@@ -69,10 +69,15 @@ public class OscilloscopeEnvelopeTest {
 			folds.add(new int[] { s[0], min, max, s[spc - 1] });
 			scope.pushSamples(0, s, 0, spc);
 		}
-		// one column per paint: after `columns` paints the tail ends with the last pushed column
+		// one column per paint: after `columns` paints the tail ends with the last pushed column. On GTK, update()
+		// returns before the expose arrives through the frame clock, so each frame waits for its real Paint.
+		int[] painted = new int[1];
+		scope.addListener(SWT.Paint, e -> painted[0]++);
 		for (int f = 0; f < columns; f++) {
+			int before = painted[0];
 			scope.redraw();
 			scope.update();
+			awaitNativePaint(display, painted, before + 1);
 		}
 		int[] l2 = lines(scope, "l2");
 		int[] l1 = lines(scope, "l1");
@@ -146,6 +151,24 @@ public class OscilloscopeEnvelopeTest {
 			assertTrue(smaller.isEmpty());
 		} finally {
 			shell.dispose();
+		}
+	}
+
+	/* runs the event loop until the scope has received the given number of actual native Paint events */
+	private static void awaitNativePaint(Display display, int[] painted, int count) {
+		long deadline = System.nanoTime() + 5_000_000_000L;
+		while (painted[0] < count) {
+			if (System.nanoTime() > deadline) {
+				throw new AssertionError("frame not painted natively: " + painted[0] + " of " + count); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(1L);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted awaiting native SWT.Paint", interrupted); //$NON-NLS-1$
+				}
+			}
 		}
 	}
 

@@ -76,19 +76,30 @@ public class ColorButtonTest {
 		return WidgetMode.of("ColorButton", WidgetMode.VIEWPORT) == WidgetMode.VIEWPORT; //$NON-NLS-1$
 	}
 
+	/*
+	 * A reference button painted at the given size. GTK delivers the first native expose of a new control through its
+	 * frame clock, after readAndDispatch() has drained the queue, so wait for that real Paint (never a synthetic one)
+	 * before its on-screen pixels are read.
+	 */
 	ColorButton fresh(int width, int height) {
 		ColorButton other = new ColorButton(shell, SWT.NONE);
+		List<Rectangle> otherPaints = TestSupport.recordPaints(other);
 		other.setBounds(0, 60, width, height);
 		other.setColor(button.getColor());
 		TestSupport.flush(display);
+		TestSupport.awaitNativePaint(other, otherPaints, 1, "reference ColorButton did not paint natively");
 		return other;
 	}
 
 	@Test
 	public void colorChangeRepaintsTheSwatchOnly() {
+		// the expose of the shell's open lands before the colour delta is recorded
+		TestSupport.awaitNativePaint(button, paints, 1, "ColorButton did not paint natively");
 		paints.clear();
 		button.setColor(new RGB(200, 30, 60));
 		button.update();
+		// GTK may post the swatch expose after update() returns: observe the real Paint before checking its clip
+		TestSupport.awaitNativePaint(button, paints, 1, "colour change did not repaint the swatch natively");
 		assertEquals(1, selections);
 		assertEquals(0xc81e3c, button.getPackedColor());
 		if (viewport()) {
@@ -109,6 +120,8 @@ public class ColorButtonTest {
 			button.update();
 		}
 		assertEquals(RepaintCounters.line(), 0, RepaintCounters.fullRepaints);
+		// let the native expose of the last edge strips land before the on-screen pixels are read
+		TestSupport.awaitNativePaint(button, paints, 1, "resized ColorButton did not paint natively");
 		assertArrayEquals(TestSupport.pixels(fresh(60, height)).data, TestSupport.pixels(button).data);
 	}
 

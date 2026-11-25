@@ -198,12 +198,15 @@ public class MonthViewTest {
 			view.setSelection(last[0]);
 		});
 		MonthView fresh = build(shell, SWT.MULTI);
+		List<Rectangle> freshPaints = TestSupport.recordPaints(fresh);
 		fresh.setLocation(0, view.getSize().y + 5);
 		for (long day = JAN_1; day < JAN_1 + 59; day++) {
 			fresh.setFlagged(day, view.isFlagged(day));
 		}
 		fresh.setSelection(view.getSelectionStart());
 		TestSupport.flush(display);
+		// GTK delivers the first expose of the new view through its frame clock: read its pixels after that real Paint
+		TestSupport.awaitNativePaint(fresh, freshPaints, 1, "reference MonthView did not paint natively");
 		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(view).data);
 	}
 
