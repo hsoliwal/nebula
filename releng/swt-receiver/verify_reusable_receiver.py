@@ -19,7 +19,7 @@ from zipfile import ZipFile
 
 # Must equal PIN/GC_SHA256, the jar version and the composite children written by
 # prepare_swt_receiver.py, which produces the receipt verified here.
-PIN = "c449e70083a14030c341c6b2cab6048b20c83e79"
+PIN = "f87d0b656a20135bdc54c954bf7e6e5242eb2248"
 GC_SOURCE_SHA256 = "51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768c8c9"
 SWT_BUNDLE_SUFFIX = "-3.138.0-SNAPSHOT.jar"
 PLATFORM_IBUILD = "https://download.eclipse.org/eclipse/updates/4.42-I-builds/I20261112-2300/"
