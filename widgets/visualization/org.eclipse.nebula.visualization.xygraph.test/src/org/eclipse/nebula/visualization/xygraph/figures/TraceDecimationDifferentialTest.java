@@ -102,6 +102,25 @@ public class TraceDecimationDifferentialTest {
 		}
 	}
 
+	/*
+	 * Runs the event loop until the condition holds (at most 5 s). GTK paints a redraw through its frame clock, after
+	 * update() has returned and the queue has been drained, so a paint-driven counter is read only once it moved.
+	 */
+	private void awaitPainted(java.util.function.BooleanSupplier painted, String message) {
+		long deadline = System.nanoTime() + 5_000_000_000L;
+		while (!painted.getAsBoolean()) {
+			assertTrue(message, System.nanoTime() < deadline);
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(5L);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted awaiting a native paint", interrupted); //$NON-NLS-1$
+				}
+			}
+		}
+	}
+
 	/** Paints the trace once into an offscreen image and returns the recorded polylines. */
 	private List<int[]> record() {
 		Image img = new Image(display, 4, 4);
@@ -320,9 +339,12 @@ public class TraceDecimationDifferentialTest {
 		double[][] d = data(r, 100000, 0);
 		provider.setData(d[0], d[1], 50000);
 		view(r, new double[][] { java.util.Arrays.copyOf(d[0], 50000), java.util.Arrays.copyOf(d[1], 50000) }, 0);
+		int[] paints = new int[1];
+		canvas.addListener(SWT.Paint, e -> paints[0]++);
 		canvas.redraw();
 		canvas.update();
 		settle();
+		awaitPainted(() -> paints[0] > 0, "the canvas did not paint natively"); //$NON-NLS-1$
 		TraceDecimationPainter p = trace.decimationPainter;
 		int decimated = p.decimatedFrames;
 		int loop = p.loopFrames;
@@ -341,6 +363,7 @@ public class TraceDecimationDifferentialTest {
 		canvas.redraw();
 		canvas.update();
 		settle();
+		awaitPainted(() -> p.decimatedFrames > decimated, "caught up once when shown"); //$NON-NLS-1$
 		assertTrue("caught up once when shown", p.decimatedFrames > decimated); //$NON-NLS-1$
 	}
 
