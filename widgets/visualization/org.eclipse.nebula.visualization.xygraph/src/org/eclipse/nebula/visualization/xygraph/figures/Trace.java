@@ -1744,6 +1744,20 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	}
 
 	/**
+	 * Error bars and their caps can extend outside this Trace figure's local
+	 * damage bounds. Invalidate the owning graph so both newly exposed and
+	 * formerly covered pixels are repainted. Before graph attachment, keep
+	 * the original figure repaint behavior.
+	 */
+	private void repaintErrorBarExtent() {
+		if (xyGraph != null) {
+			xyGraph.repaint();
+		} else {
+			repaint();
+		}
+	}
+
+	/**
 	 * @param errorBarEnabled
 	 *            the errorBarEnabled to set
 	 */
@@ -1752,7 +1766,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		this.errorBarEnabled = errorBarEnabled;
-		repaint(); // the error bars show at once, as the other style setters do //FLLDCIM: MARK — every-widget XYGraph setter damage D
+		repaintErrorBarExtent(); // repaint outside the local figure bounds //FLLDCIM: MARK — every-widget XYGraph setter damage D
 	}
 
 	/**
@@ -1764,7 +1778,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		yErrorBarType = errorBarType;
-		repaint();
+		repaintErrorBarExtent();
 	}
 
 	/**
@@ -1776,7 +1790,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		xErrorBarType = errorBarType;
-		repaint();
+		repaintErrorBarExtent();
 	}
 
 	/**
@@ -1788,7 +1802,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		this.drawYErrorInArea = drawYErrorInArea;
-		repaint();
+		repaintErrorBarExtent();
 	}
 
 	/**
@@ -1800,7 +1814,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		this.errorBarCapWidth = errorBarCapWidth;
-		repaint();
+		repaintErrorBarExtent();
 	}
 
 	/**
@@ -1811,7 +1825,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	public void setErrorBarColor(final Color errorBarColor) {
 		this.errorBarColor = errorBarColor;
 		errorBarColorSetFlag = true;
-		repaint();
+		repaintErrorBarExtent();
 	}
 
 	/**
