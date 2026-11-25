@@ -28,6 +28,7 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
 import org.junit.Before;
@@ -125,19 +126,37 @@ public class TaskPaneTest {
 	@Test
 	public void titleBarClickTogglesAndRepaintsTheChevron() {
 		List<Rectangle> paints = TestSupport.recordPaints(panes[0].getTitleBar());
+		TestSupport.spin(display, 200); // the exposes of the shell's open land before the click is recorded
 		paints.clear();
+		boolean[] paneMovedOrResized = new boolean[1];
+		Listener moved = e -> paneMovedOrResized[0] = true;
+		panes[0].addListener(SWT.Move, moved);
+		panes[0].addListener(SWT.Resize, moved);
 		Event down = new Event();
 		down.button = 1;
 		panes[0].getTitleBar().notifyListeners(SWT.MouseDown, down);
 		TestSupport.flush(display);
 		panes[0].getTitleBar().update();
+		// GTK posts the expose through its frame clock, after update() returns: observe the real Paint
+		TestSupport.awaitNativePaint(panes[0].getTitleBar(), paints, 1, "collapse did not repaint the chevron natively");
+		panes[0].removeListener(SWT.Move, moved);
+		panes[0].removeListener(SWT.Resize, moved);
 		assertTrue(panes[0].isCollapsed());
 		if (viewport()) {
-			TestSupport.assertPaintsInside(paints, panes[0].getChevronBounds());
+			if (paneMovedOrResized[0] && "gtk".equals(SWT.getPlatform())) {
+				// GDK's client-side windows repaint a child window whole whenever its parent window moves or resizes
+				// (a pane resize or move alone paints the unchanged title bar's whole area there), and the collapse
+				// shrinks the pane, so the title bar's paint clip cannot show the pane's own chevron damage on GTK.
+				// The chevron must still be repainted.
+				TestSupport.assertSomePaintCovers(paints, panes[0].getChevronBounds());
+			} else {
+				TestSupport.assertPaintsInside(paints, panes[0].getChevronBounds());
+			}
 		}
 		paints.clear();
 		panes[0].setTitle("Renamed");
 		panes[0].getTitleBar().update();
+		TestSupport.awaitNativePaint(panes[0].getTitleBar(), paints, 1, "title change did not repaint natively");
 		assertFalse(paints.isEmpty());
 		assertEquals("Renamed", panes[0].getTitle());
 		panes[0].setSpecial(true);
