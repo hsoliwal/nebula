@@ -165,6 +165,7 @@ public class XViewerViewport_Test {
       String before = state(viewer);
       String pixels = pixels(tree);
       org.eclipse.swt.graphics.ImageData probeBefore = probeImage(tree, "xviewer-before");
+      probeTree("before", tree);
 
       tree.setTopItem(tree.getItem(19_999));
       tree.update();
@@ -173,6 +174,7 @@ public class XViewerViewport_Test {
       tree.update();
       pump();
       org.eclipse.swt.graphics.ImageData probeAfter = probeImage(tree, "xviewer-after");
+      probeTree("after", tree);
       probeDiff("xviewer", probeBefore, probeAfter);
       for (int wait = 0; wait < 6; wait++) {
          long end = System.currentTimeMillis() + 500;
@@ -189,6 +191,18 @@ public class XViewerViewport_Test {
    }
 
    /* PROBE ONLY */
+   static void probeTree(String when, Tree tree) {
+      StringBuilder s = new StringBuilder("PROBE xviewer tree " + when + " focus=" + tree.isFocusControl() + " active="
+         + (tree.getDisplay().getActiveShell() == tree.getShell()) + " header=" + tree.getHeaderHeight() + " itemHeight="
+         + tree.getItemHeight() + " top=" + tree.getTopItem().getText(0) + " topBounds=" + tree.getTopItem().getBounds()
+         + " selection=");
+      for (TreeItem item : tree.getSelection()) {
+         s.append(item.getText(0)).append(item.getBounds()).append(' ');
+      }
+      s.append(" item4=").append(tree.getItem(4).getBounds()).append(" item0=").append(tree.getItem(0).getBounds());
+      System.out.println(s);
+   }
+
    static org.eclipse.swt.graphics.ImageData probeImage(org.eclipse.swt.widgets.Control control, String name) {
       org.eclipse.swt.graphics.Point size = control.getSize();
       Image image = new Image(control.getDisplay(), size.x, size.y);
@@ -198,7 +212,7 @@ public class XViewerViewport_Test {
          org.eclipse.swt.graphics.ImageData data = image.getImageData();
          org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
          loader.data = new org.eclipse.swt.graphics.ImageData[] {data};
-         String dir = System.getProperty("m3.test.pixels.dir", System.getProperty("java.io.tmpdir"));
+         String dir = "/tmp/m3-widget-pixels";
          new java.io.File(dir).mkdirs();
          loader.save(dir + "/probe-" + name + ".png", SWT.IMAGE_PNG);
          return data;

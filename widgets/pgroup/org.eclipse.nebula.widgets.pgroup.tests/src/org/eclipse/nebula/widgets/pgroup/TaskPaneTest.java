@@ -148,6 +148,35 @@ public class TaskPaneTest {
 		assertTrue(panes[0].isSpecial());
 	}
 
+	/* PROBE ONLY: does a resize of the pane alone repaint its unchanged title bar on GTK? */
+	@Test
+	public void probeParentResizeRepaintsTitleBar() {
+		org.eclipse.swt.widgets.Control bar = panes[0].getTitleBar();
+		List<Rectangle> paints = TestSupport.recordPaints(bar);
+		TestSupport.spin(display, 300);
+		paints.clear();
+		org.eclipse.swt.graphics.Point size = panes[0].getSize();
+		Rectangle headerBefore = bar.getBounds();
+		panes[0].setSize(size.x, size.y - 10);
+		TestSupport.spin(display, 300);
+		System.out.println("PROBE taskpane pane-resize-only header paints=" + paints + " header " + headerBefore + " -> " + bar.getBounds());
+		paints.clear();
+		panes[0].setLocation(panes[0].getLocation().x, panes[0].getLocation().y + 3);
+		TestSupport.spin(display, 300);
+		System.out.println("PROBE taskpane pane-move-only header paints=" + paints);
+		paints.clear();
+		bar.redraw(10, 5, 4, 4, false);
+		TestSupport.spin(display, 300);
+		System.out.println("PROBE taskpane own-damage-only header paints=" + paints);
+		paints.clear();
+		panes[0].addListener(SWT.Resize, e -> System.out.println("PROBE taskpane collapse: pane resize " + panes[0].getSize()));
+		Event down = new Event();
+		down.button = 1;
+		bar.notifyListeners(SWT.MouseDown, down);
+		TestSupport.spin(display, 300);
+		System.out.println("PROBE taskpane collapse header paints=" + paints + " chevron=" + panes[0].getChevronBounds());
+	}
+
 	@Test
 	public void resizeSweepIsAViewportDelta() {
 		RepaintCounters.reset();

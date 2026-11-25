@@ -179,7 +179,14 @@ public final class VncCanvasNativeTest {
                         + " actual=" + Arrays.toString(actual) + " stable=" + stable + " visible=" + shell.isVisible()
                         + " active=" + display.getActiveShell() + " shells=" + display.getShells().length
                         + " monitor=" + display.getPrimaryMonitor().getBounds());
+                for (Shell other : display.getShells()) {
+                    System.out.println("PROBE vnc shell " + System.identityHashCode(other) + (other == shell ? " (test)" : "")
+                            + " bounds=" + other.getBounds() + " visible=" + other.isVisible() + " style=0x"
+                            + Integer.toHexString(other.getStyle()) + " text='" + other.getText() + "' children="
+                            + Arrays.toString(Arrays.stream(other.getChildren()).map(c -> c.getClass().getSimpleName()).toArray()));
+                }
                 probeSaveScreen(display, shell.getBounds(), "vnc-shell-screen");
+                probeSaveScreen(display, display.getBounds(), "vnc-whole-screen");
                 probeSavePrint(canvas, "vnc-canvas-print");
                 assertNull("RFB I/O failed", failure.get());
                 assertArrayEquals("Real SWT screen must show remote pixels",
@@ -249,7 +256,7 @@ public final class VncCanvasNativeTest {
     private static void probeSave(ImageData data, String name) {
         org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
         loader.data = new ImageData[] {data};
-        String dir = System.getProperty("m3.test.pixels.dir", System.getProperty("java.io.tmpdir"));
+        String dir = "/tmp/m3-widget-pixels";
         new java.io.File(dir).mkdirs();
         loader.save(dir + "/probe-" + name + ".png", SWT.IMAGE_PNG);
     }

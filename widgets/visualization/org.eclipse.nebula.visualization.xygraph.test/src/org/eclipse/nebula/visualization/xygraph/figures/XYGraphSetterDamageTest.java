@@ -104,6 +104,8 @@ public class XYGraphSetterDamageTest {
 		canvas.update();
 		spin();
 		int[] full2 = pixels();
+		System.out.println("PROBE xygraph " + name + " trace=" + trace.getBounds() + " plot=" + graph.getPlotArea().getBounds()
+				+ " graph=" + graph.getBounds() + " antialias=" + trace.isAntiAliasing());
 		probeDiff(name + " previous-vs-shown", previous, shown);
 		probeDiff(name + " shown-vs-full", shown, full);
 		probeDiff(name + " full-vs-full2", full, full2);
@@ -140,7 +142,7 @@ public class XYGraphSetterDamageTest {
 		}
 		org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
 		loader.data = new ImageData[] { data };
-		String dir = System.getProperty("m3.test.pixels.dir", System.getProperty("java.io.tmpdir"));
+		String dir = "/tmp/m3-widget-pixels";
 		new java.io.File(dir).mkdirs();
 		loader.save(dir + "/probe-xygraph-" + name + ".png", SWT.IMAGE_PNG);
 	}
