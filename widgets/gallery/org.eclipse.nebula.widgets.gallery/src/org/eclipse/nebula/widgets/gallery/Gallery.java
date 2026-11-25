@@ -13,6 +13,7 @@
  *    Tom Schindl      (tom.schindl@bestsolution.at) - fix for bug 174933
  *    Hitesh Soliwal (Synexia) - viewport mode: scroll bar values set only when they change, one client area per layout
  *    Hitesh Soliwal (Synexia) - viewport mode: selection lane with amortized growth (docs/m3/custom-widgets/gallery)
+ *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL range selection as index runs, O(1) verified index hint
  *******************************************************************************/
 
 package org.eclipse.nebula.widgets.gallery;
@@ -112,8 +113,19 @@ public class Gallery extends Canvas {
 
 	private GalleryItem[] selection = null;
 
-	/** Viewport mode: the number of selected items at the front of {@link #selection}, which grows amortized. */
+	/** Viewport mode: the number of selection entries at the front of {@link #selection}, which grows amortized. */
 	private int selectionCount;
+
+	/**
+	 * Viewport mode, SWT.VIRTUAL: entry k of {@link #selection} is a run of children that were selected without being
+	 * created when <code>selectionRuns[2k] &gt;= 0</code>: the children <code>selectionRuns[2k]</code> to
+	 * <code>selectionRuns[2k + 1]</code> (inclusive) of the group <code>selection[k]</code>. Otherwise
+	 * <code>selection[k]</code> is the selected item itself. Null until the first run.
+	 */
+	private int[] selectionRuns;
+
+	/** Viewport mode: the number of selected items the entries name (what getSelectionCount answers). */
+	private int selectionSize;
 
 	/**
 	 * Selection bit flags. Each 'int' contains flags for 32 items.
@@ -661,10 +673,15 @@ public class Gallery extends Canvas {
 
 				break;
 			case SWT.CR:
-				GalleryItem[] selection = getSelection();
 				GalleryItem item = null;
-				if (selection != null && selection.length > 0) {
-					item = selection[0];
+				if (VIEWPORT) {
+					//FLLDCIM: VIEWPORT - the first selected item, without creating the rest of a VIRTUAL selection
+					item = firstSelected();
+				} else {
+					GalleryItem[] selection = getSelection();
+					if (selection != null && selection.length > 0) {
+						item = selection[0];
+					}
 				}
 
 				notifySelectionListeners(item, 0, true);
@@ -886,12 +903,7 @@ public class Gallery extends Canvas {
 
 		if (VIEWPORT) {
 			//FLLDCIM: VIEWPORT - selection lane: amortized growth, no copy per selected item
-			if (selection == null) {
-				selection = new GalleryItem[8];
-			} else if (selectionCount == selection.length) {
-				selection = Arrays.copyOf(selection, selectionCount * 2);
-			}
-			selection[selectionCount++] = item;
+			appendItemEntry(item);
 			return;
 		}
 		if (selection == null) {
@@ -915,17 +927,17 @@ public class Gallery extends Canvas {
             _removeSelection(item.getParentItem(), item);
         }
 
+		if (VIEWPORT) {
+			//FLLDCIM: VIEWPORT - selection lane: in-place shift keeps the selection order, no copy
+			removeSelectionEntry(item);
+			return;
+		}
+
 		int index = _arrayIndexOf(selection, item);
         if (index == -1) {
             return;
         }
 
-		if (VIEWPORT) {
-			//FLLDCIM: VIEWPORT - selection lane: in-place shift keeps the selection order, no copy
-			System.arraycopy(selection, index + 1, selection, index, selectionCount - index - 1);
-			selection[--selectionCount] = null;
-			return;
-		}
 		selection = (GalleryItem[]) _arrayRemoveItem(selection, index);
 
 	}
@@ -933,9 +945,252 @@ public class Gallery extends Canvas {
 	/** The item selected last, or null: the item a Selection event names when one is deselected. */
 	private GalleryItem lastSelected() {
 		if (VIEWPORT) {
-			return selectionCount == 0 ? null : selection[selectionCount - 1];
+			if (selectionCount == 0) {
+				return null;
+			}
+			int k = selectionCount - 1;
+			return isRun(k) ? _getItem(selection[k], selectionRuns[2 * k + 1]) : selection[k];
 		}
 		return selection == null || selection.length == 0 ? null : selection[selection.length - 1];
+	}
+
+	/** Viewport mode: the item selected first, or null, without creating the other items of a VIRTUAL selection. */
+	private GalleryItem firstSelected() {
+		if (selectionCount == 0) {
+			return null;
+		}
+		return isRun(0) ? _getItem(selection[0], selectionRuns[0]) : selection[0];
+	}
+
+	/*
+	 * VIEWPORT selection entries. The selection is the ordered list the original keeps as an item array: entry k is
+	 * either a selected item or, in a SWT.VIRTUAL gallery, a run of children a range selection selected without
+	 * creating them (see selectionRuns). The selection flags of the parents stay the membership answer
+	 * (isSelected); the entries keep the order, the count and the identity of every item that exists.
+	 */
+
+	/** Viewport mode: true when entry k is a run of children selected without being created. */
+	private boolean isRun(int k) {
+		return selectionRuns != null && selectionRuns[2 * k] >= 0;
+	}
+
+	/** Viewport mode: room for one more entry in the selection lanes (amortized growth). */
+	private void growEntries() {
+		if (selection == null) {
+			selection = new GalleryItem[8];
+		} else if (selectionCount == selection.length) {
+			selection = Arrays.copyOf(selection, selectionCount * 2);
+		}
+		if (selectionRuns != null && selectionRuns.length < 2 * selection.length) {
+			int old = selectionRuns.length;
+			selectionRuns = Arrays.copyOf(selectionRuns, 2 * selection.length);
+			Arrays.fill(selectionRuns, old, selectionRuns.length, -1);
+		}
+	}
+
+	/** Viewport mode: appends a selected item. */
+	private void appendItemEntry(GalleryItem item) {
+		growEntries();
+		if (selectionRuns != null) {
+			selectionRuns[2 * selectionCount] = -1;
+		}
+		selection[selectionCount++] = item;
+		selectionSize++;
+	}
+
+	/** Viewport mode: appends child index of parent, which is not created, extending the last run when it ends before. */
+	private void appendRunIndex(GalleryItem parent, int index) {
+		int last = selectionCount - 1;
+		if (last >= 0 && isRun(last) && selection[last] == parent && selectionRuns[2 * last + 1] == index - 1) {
+			selectionRuns[2 * last + 1] = index;
+		} else {
+			growEntries();
+			if (selectionRuns == null) {
+				selectionRuns = new int[2 * selection.length];
+				Arrays.fill(selectionRuns, -1);
+			}
+			selectionRuns[2 * selectionCount] = index;
+			selectionRuns[2 * selectionCount + 1] = index;
+			selection[selectionCount++] = parent;
+		}
+		selectionSize++;
+	}
+
+	/** Viewport mode: opens entry 'at', moving the later entries up. */
+	private void insertEntry(int at) {
+		growEntries();
+		System.arraycopy(selection, at, selection, at + 1, selectionCount - at);
+		if (selectionRuns != null) {
+			System.arraycopy(selectionRuns, 2 * at, selectionRuns, 2 * at + 2, 2 * (selectionCount - at));
+		}
+		selectionCount++;
+	}
+
+	/** Viewport mode: closes entry 'at', moving the later entries down. */
+	private void removeEntry(int at) {
+		System.arraycopy(selection, at + 1, selection, at, selectionCount - at - 1);
+		if (selectionRuns != null) {
+			System.arraycopy(selectionRuns, 2 * at + 2, selectionRuns, 2 * at, 2 * (selectionCount - at - 1));
+		}
+		selection[--selectionCount] = null;
+	}
+
+	/** Viewport mode: true when entry k is a run of parent that names child index. */
+	private boolean runNames(int k, GalleryItem parent, int index) {
+		return isRun(k) && selection[k] == parent && selectionRuns[2 * k] <= index && index <= selectionRuns[2 * k + 1];
+	}
+
+	/**
+	 * Viewport mode: the run at entry k stops naming child index. The item, when one is given, takes its place in
+	 * the selection order (an item entry); otherwise the index leaves the selection.
+	 */
+	private void splitRun(int k, int index, GalleryItem item) {
+		GalleryItem parent = selection[k];
+		int from = selectionRuns[2 * k], to = selectionRuns[2 * k + 1];
+		int at;
+		if (from == to) {
+			removeEntry(k);
+			at = k;
+		} else if (index == from) {
+			selectionRuns[2 * k] = from + 1;
+			at = k;
+		} else if (index == to) {
+			selectionRuns[2 * k + 1] = to - 1;
+			at = k + 1;
+		} else {
+			insertEntry(k + 1);
+			selection[k + 1] = parent;
+			selectionRuns[2 * k + 1] = index - 1;
+			selectionRuns[2 * k + 2] = index + 1;
+			selectionRuns[2 * k + 3] = to;
+			at = k + 1;
+		}
+		if (item == null) {
+			selectionSize--;
+			return;
+		}
+		insertEntry(at);
+		selection[at] = item;
+		selectionRuns[2 * at] = -1;
+	}
+
+	/** Viewport mode: drops the last entry that names item, as the original drops its last occurrence. */
+	private void removeSelectionEntry(GalleryItem item) {
+		GalleryItem parent = item.getParentItem();
+		int index = -2;
+		for (int k = selectionCount - 1; k >= 0; k--) {
+			if (!isRun(k)) {
+				if (selection[k] == item) {
+					removeEntry(k);
+					selectionSize--;
+					return;
+				}
+			} else if (parent != null && selection[k] == parent) {
+				if (index == -2) {
+					index = _indexOf(parent, item);
+				}
+				if (runNames(k, parent, index)) {
+					splitRun(k, index, null);
+					return;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Viewport mode: the children of parent from start on are about to leave its items array (setItemCount shrinks it,
+	 * a VIRTUAL clearAll replaces it). An item that exists keeps its place in the selection as an item entry, as the
+	 * original selection keeps the item; a child that was never created leaves the selection when dropUnread, and is
+	 * otherwise still named by index.
+	 */
+	void releaseRuns(GalleryItem parent, int start, boolean dropUnread) {
+		if (selectionRuns == null) {
+			return;
+		}
+		GalleryItem[] slots = parent.items;
+		for (int k = selectionCount - 1; k >= 0; k--) {
+			if (!isRun(k) || selection[k] != parent) {
+				continue;
+			}
+			int from = selectionRuns[2 * k], to = selectionRuns[2 * k + 1];
+			for (int i = to; i >= Math.max(from, start); i--) {
+				GalleryItem slot = slots != null && i < slots.length ? slots[i] : null;
+				if (slot != null || dropUnread) {
+					splitRun(k, i, slot);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Viewport mode: the children of parent from start on moved by delta (one slot inserted before them, or removed).
+	 * A run around an inserted slot is split so that it keeps naming the same children.
+	 */
+	void shiftRuns(GalleryItem parent, int start, int delta) {
+		if (selectionRuns == null) {
+			return;
+		}
+		for (int k = selectionCount - 1; k >= 0; k--) {
+			if (!isRun(k) || selection[k] != parent) {
+				continue;
+			}
+			int from = selectionRuns[2 * k], to = selectionRuns[2 * k + 1];
+			if (from >= start) {
+				selectionRuns[2 * k] = from + delta;
+				selectionRuns[2 * k + 1] = to + delta;
+			} else if (to >= start) {
+				insertEntry(k + 1);
+				selection[k + 1] = parent;
+				selectionRuns[2 * k + 1] = start - 1;
+				selectionRuns[2 * k + 2] = start + delta;
+				selectionRuns[2 * k + 3] = to + delta;
+			}
+		}
+	}
+
+	/*
+	 * VIEWPORT, SWT.VIRTUAL: GalleryItem.select(from, to), the serial selection of each child and its descendants,
+	 * without creating the children that do not exist yet: their selection flags are set and their indexes appended
+	 * as runs, so no GalleryItem and no SetData is spent on items that are not shown. A child that exists takes the
+	 * serial path (its identity, flags and descendants as in the original). The flags, the order and the count are
+	 * those of the serial loop; the unread children are created when the API hands them out (getSelection).
+	 */
+	//FLLDCIM: VIEWPORT - VIRTUAL range selection: unread children selected by index, no item, no SetData
+	void selectRange(GalleryItem parentItem, int from, int to) {
+		if (!multi) {
+			// A serial step skips a child whose flag is set; any other step deselects everything and selects its child.
+			// So once one child of the range is not selected, the last child ends selected alone; otherwise nothing
+			// changes.
+			if (from <= to) {
+				boolean change = false;
+				for (int i = from; i <= to; i++) {
+					if (parentItem.items[i] == null && i < to) {
+						parentItem.markRangeIndex(i);
+					}
+					change |= !parentItem.isSelectedIndex(i);
+				}
+				GalleryItem last = _getItem(parentItem, to);
+				if (change) {
+					_deselectAll(false);
+					_addSelection(last);
+				}
+				last._selectAll();
+			}
+			return;
+		}
+		for (int i = from; i <= to; i++) {
+			GalleryItem item = parentItem.items[i];
+			if (item != null) {
+				_addSelection(item);
+				item._selectAll();
+				continue;
+			}
+			parentItem.markRangeIndex(i);
+			if (!parentItem.isSelectedIndex(i)) {
+				parentItem.selectIndex(i);
+				appendRunIndex(parentItem, i);
+			}
+		}
 	}
 
 	protected void _removeSelection(GalleryItem parent, GalleryItem item) {
@@ -996,6 +1251,7 @@ public class Gallery extends Canvas {
 				Arrays.fill(selection, 0, selectionCount, null);
 			}
 			selectionCount = 0;
+			selectionSize = 0;
 		} else {
 			this.selection = null;
 		}
@@ -1481,6 +1737,7 @@ public class Gallery extends Canvas {
 
 					galleryItem = new GalleryItem(this, SWT.NONE, i, false);
 					items[i] = galleryItem;
+					galleryItem.indexHint = i;
 
 					if (virtualGroups && !create) {
 						galleryItem.setItemCount(virtualGroupDefaultItemCount);
@@ -1501,6 +1758,7 @@ public class Gallery extends Canvas {
 					galleryItem = new GalleryItem(parentItem, SWT.NONE, i,
 							false);
 					parentItem.items[i] = galleryItem;
+					galleryItem.indexHint = i;
 					setData(galleryItem, i);
 				}
 			}
@@ -1946,6 +2204,7 @@ public class Gallery extends Canvas {
 	private void _addItem(GalleryItem item, int position) {
 		// Insert item
 		items = (GalleryItem[]) _arrayAddItem(items, item, position);
+		item.indexHint = position == -1 ? items.length - 1 : position;
 
 		// Update Gallery
 		updateStructuralValues(null, false);
@@ -2256,6 +2515,13 @@ public class Gallery extends Canvas {
         if (item == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+		if (VIEWPORT) {
+			//FLLDCIM: VIEWPORT - verified index hint: O(1) when the item is still where it was created or last found
+			int hint = item.indexHint;
+			if (hint >= 0 && hint < itemCount && items[hint] == item) {
+				return lastIndexOf = hint;
+			}
+		}
 		if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
             if (items[lastIndexOf] == item) {
                 return lastIndexOf;
@@ -2270,13 +2536,13 @@ public class Gallery extends Canvas {
 		if (lastIndexOf < itemCount / 2) {
 			for (int i = 0; i < itemCount; i++) {
                 if (items[i] == item) {
-                    return lastIndexOf = i;
+                    return lastIndexOf = item.indexHint = i;
                 }
 			}
 		} else {
 			for (int i = itemCount - 1; i >= 0; --i) {
                 if (items[i] == item) {
-                    return lastIndexOf = i;
+                    return lastIndexOf = item.indexHint = i;
                 }
 			}
 		}
@@ -2295,6 +2561,13 @@ public class Gallery extends Canvas {
         if (item == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+		if (VIEWPORT) {
+			//FLLDCIM: VIEWPORT - verified index hint: the paint loop's selection test no longer scans after a jump
+			int hint = item.indexHint;
+			if (hint >= 0 && hint < itemCount && parentItem.items[hint] == item) {
+				return parentItem.lastIndexOf = hint;
+			}
+		}
 		if (1 <= parentItem.lastIndexOf
 				&& parentItem.lastIndexOf < itemCount - 1) {
             if (parentItem.items[parentItem.lastIndexOf] == item) {
@@ -2310,13 +2583,13 @@ public class Gallery extends Canvas {
 		if (parentItem.lastIndexOf < itemCount / 2) {
 			for (int i = 0; i < itemCount; i++) {
                 if (parentItem.items[i] == item) {
-                    return parentItem.lastIndexOf = i;
+                    return parentItem.lastIndexOf = item.indexHint = i;
                 }
 			}
 		} else {
 			for (int i = itemCount - 1; i >= 0; --i) {
                 if (parentItem.items[i] == item) {
-                    return parentItem.lastIndexOf = i;
+                    return parentItem.lastIndexOf = item.indexHint = i;
                 }
 			}
 		}
@@ -2511,10 +2784,44 @@ public class Gallery extends Canvas {
 		this.redraw();
 	}
 
+	/**
+	 * Returns the selected items, in the order they were selected.
+	 * <p>
+	 * In a <code>SWT.VIRTUAL</code> gallery (viewport widget mode, the default), items that a range selection
+	 * (<code>selectAll</code>, shift-click, a group title click) selected before they were ever created are created
+	 * here, each with its SWT.SetData event, as {@link #getItem(int)} creates them.
+	 * </p>
+	 *
+	 * @return the selected items
+	 */
 	public GalleryItem[] getSelection() {
 		if (VIEWPORT) {
-			//FLLDCIM: VIEWPORT - selection lane: the caller gets a copy of the selected prefix, in selection order
-			return selectionCount == 0 ? new GalleryItem[0] : Arrays.copyOf(selection, selectionCount);
+			//FLLDCIM: VIEWPORT - selection lane: the caller gets a fresh array of the selected items, in selection order
+			if (selectionCount == 0) {
+				return new GalleryItem[0];
+			}
+			if (selectionRuns == null) {
+				return Arrays.copyOf(selection, selectionCount);
+			}
+			// A snapshot of the entries: creating an unread item sends SetData, whose listener may change the selection.
+			int count = selectionCount;
+			GalleryItem[] owners = Arrays.copyOf(selection, count);
+			int[] runs = Arrays.copyOf(selectionRuns, 2 * count);
+			GalleryItem[] result = new GalleryItem[selectionSize];
+			int n = 0;
+			for (int k = 0; k < count; k++) {
+				if (runs[2 * k] < 0) {
+					result[n++] = owners[k];
+					continue;
+				}
+				for (int i = runs[2 * k]; i <= runs[2 * k + 1]; i++) {
+					GalleryItem item = _getItem(owners[k], i);
+					if (item != null) {
+						result[n++] = item;
+					}
+				}
+			}
+			return n == result.length ? result : Arrays.copyOf(result, n);
 		}
 		if (selection == null) {
 			return new GalleryItem[0];
@@ -2525,7 +2832,7 @@ public class Gallery extends Canvas {
 
 	public int getSelectionCount() {
 		if (VIEWPORT) {
-			return selectionCount;
+			return selectionSize;
 		}
         if (selection == null) {
             return 0;
@@ -2536,6 +2843,11 @@ public class Gallery extends Canvas {
 
 	/**
 	 * Selects all of the items in the receiver.
+	 * <p>
+	 * In a <code>SWT.VIRTUAL</code> gallery (viewport widget mode, the default), the items that were not created yet
+	 * are selected without creating them (no SWT.SetData is sent for them); {@link #getSelection()} creates them when
+	 * it hands them out.
+	 * </p>
 	 */
 	public void selectAll() {
 		checkWidget();
@@ -2609,8 +2921,45 @@ public class Gallery extends Canvas {
 	}
 
 	protected void _remove(GalleryItem parent, int index) {
-		if (isSelected(parent.items[index])) {
-			setSelected(parent.items[index], false, false);
+		GalleryItem slot = parent.items[index];
+		//FLLDCIM: VIEWPORT - removing a child a range selection went over: what the original does with the item it created
+		boolean ranged = VIEWPORT && slot == null && parent.isRangeIndex(index);
+		if (ranged && selectionRuns != null) {
+			// The original deselects its item (its flag and its last entry) and keeps any other entry of it, stale.
+			// Only an entry beyond the flag's needs an item: then it is created, as the original had created it.
+			int named = 0;
+			for (int k = 0; k < selectionCount; k++) {
+				if (runNames(k, parent, index)) {
+					named++;
+				}
+			}
+			if (named > (parent.isSelectedIndex(index) ? 1 : 0)) {
+				slot = _getItem(parent, index);
+				ranged = false;
+			}
+		}
+		if (isSelected(slot)) {
+			setSelected(slot, false, false);
+		} else if (ranged && parent.isSelectedIndex(index)) {
+			parent.deselectIndex(index);
+			for (int k = selectionCount - 1; k >= 0; k--) {
+				if (runNames(k, parent, index)) {
+					splitRun(k, index, null);
+					break;
+				}
+			}
+		}
+		if (VIEWPORT) {
+			if (selectionRuns != null) {
+				// a run that still names the slot keeps the created item there, as the original keeps it
+				for (int k = selectionCount - 1; k >= 0; k--) {
+					if (runNames(k, parent, index)) {
+						splitRun(k, index, slot);
+					}
+				}
+				shiftRuns(parent, index + 1, -1);
+			}
+			parent.removeRangeIndex(index);
 		}
 
 		parent.items = (GalleryItem[]) this._arrayRemoveItem(parent.items,

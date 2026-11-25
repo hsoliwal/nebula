@@ -10,6 +10,7 @@
  *
  * Contributors :
  *    Nicolas Richeton (nicolas.richeton@gmail.com) - initial API and implementation
+ *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL range selection by index, verified index hint
  *******************************************************************************/
 package org.eclipse.nebula.widgets.gallery;
 
@@ -80,6 +81,12 @@ public class GalleryItem extends Item {
 	 * Last result of indexOf( GalleryItem). Used for optimisation.
 	 */
 	protected int lastIndexOf = 0;
+
+	/**
+	 * The index this item was created at or last found at in its parent. A hint only: the Gallery answers it as the
+	 * index after checking that the slot still holds this item, and searches otherwise.
+	 */
+	int indexHint = -1;
 
 	/**
 	 * True if the Gallery was created wih SWT.VIRTUAL
@@ -188,8 +195,15 @@ public class GalleryItem extends Item {
 		// TODO: ensure that there was no item at this position before using
 		// this item in virtual mode
 
+		if (Gallery.VIEWPORT && position != -1) {
+			// children selected by index move up with their slots
+			parent.shiftRuns(this, position, 1);
+			insertRangeIndex(position);
+		}
+
 		// Insert item
 		items = (GalleryItem[]) parent._arrayAddItem(items, item, position);
+		item.indexHint = position == -1 ? items.length - 1 : position;
 
 		// Update Gallery
 		parent.updateStructuralValues(null, false);
@@ -217,6 +231,11 @@ public class GalleryItem extends Item {
 	 * @param itemCount
 	 */
 	public void setItemCount(int count) {
+		if (Gallery.VIEWPORT && items != null && count < items.length) {
+			// selected children beyond the new count: created ones stay selected as before, unread ones leave
+			parent.releaseRuns(this, count, true);
+			truncateRangeFlags(count);
+		}
 		if (count == 0) {
 			// No items
 			items = null;
@@ -391,6 +410,111 @@ public class GalleryItem extends Item {
 		}
 	}
 
+	/** The selection flag of the child at index, read without the child (Gallery viewport range selection). */
+	boolean isSelectedIndex(int index) {
+		if (selectionFlags == null) {
+			return false;
+		}
+		int n = index >> 5;
+		return n < selectionFlags.length && (selectionFlags[n] & 1 << (index & 0x1f)) != 0;
+	}
+
+	/** Sets the selection flag of the child at index as _addSelection does for the child, without the child. */
+	void selectIndex(int index) {
+		int n = index >> 5;
+		if (selectionFlags == null) {
+			selectionFlags = new int[(items.length + 31) >> 5];
+		} else if (n >= selectionFlags.length) {
+			int[] oldFlags = selectionFlags;
+			selectionFlags = new int[n + 1];
+			System.arraycopy(oldFlags, 0, selectionFlags, 0, oldFlags.length);
+		}
+		selectionFlags[n] |= 1 << (index & 0x1f);
+	}
+
+	/** Clears the selection flag of the child at index, as deselecting the child does. */
+	void deselectIndex(int index) {
+		selectionFlags[index >> 5] &= ~(1 << (index & 0x1f));
+	}
+
+	/**
+	 * Viewport mode, SWT.VIRTUAL: the children a range selection went over while they were not created. The original
+	 * range selection creates every child it goes over; a set flag stands for that item where the original behaviour
+	 * depends on its existence (Gallery._remove). The flags move with the children on insert and remove.
+	 */
+	int[] rangeFlags;
+
+	/** True when a range selection went over the child at index while it was not created. */
+	boolean isRangeIndex(int index) {
+		if (rangeFlags == null) {
+			return false;
+		}
+		int n = index >> 5;
+		return n < rangeFlags.length && (rangeFlags[n] & 1 << (index & 0x1f)) != 0;
+	}
+
+	/** Records that a range selection went over the child at index while it was not created. */
+	void markRangeIndex(int index) {
+		int n = index >> 5;
+		if (rangeFlags == null) {
+			rangeFlags = new int[Math.max(n + 1, (items.length + 31) >> 5)];
+		} else if (n >= rangeFlags.length) {
+			rangeFlags = java.util.Arrays.copyOf(rangeFlags, Math.max(n + 1, (items.length + 31) >> 5));
+		}
+		rangeFlags[n] |= 1 << (index & 0x1f);
+	}
+
+	/** A child slot is inserted at index: the range flags at index and above move up by one. */
+	void insertRangeIndex(int index) {
+		if (rangeFlags == null) {
+			return;
+		}
+		int words = ((items == null ? 0 : items.length) + 1 + 31) >> 5;
+		if (words > rangeFlags.length) {
+			rangeFlags = java.util.Arrays.copyOf(rangeFlags, words);
+		}
+		int w = index >> 5;
+		if (w >= rangeFlags.length) {
+			return;
+		}
+		for (int i = rangeFlags.length - 1; i > w; i--) {
+			rangeFlags[i] = rangeFlags[i] << 1 | rangeFlags[i - 1] >>> 31;
+		}
+		int low = (1 << (index & 0x1f)) - 1;
+		int word = rangeFlags[w];
+		rangeFlags[w] = (word & low) | ((word & ~low) << 1);
+	}
+
+	/** The child slot at index is removed: the range flags above it move down by one. */
+	void removeRangeIndex(int index) {
+		if (rangeFlags == null) {
+			return;
+		}
+		int w = index >> 5;
+		if (w >= rangeFlags.length) {
+			return;
+		}
+		int low = (1 << (index & 0x1f)) - 1;
+		int word = rangeFlags[w];
+		int next = w + 1 < rangeFlags.length ? rangeFlags[w + 1] : 0;
+		rangeFlags[w] = (word & low) | ((word >>> 1) & ~low) | (next << 31);
+		for (int i = w + 1; i < rangeFlags.length; i++) {
+			rangeFlags[i] = rangeFlags[i] >>> 1 | (i + 1 < rangeFlags.length ? rangeFlags[i + 1] << 31 : 0);
+		}
+	}
+
+	/** The children from count on are dropped: so are their range flags. */
+	void truncateRangeFlags(int count) {
+		if (rangeFlags == null) {
+			return;
+		}
+		int w = count >> 5;
+		if (w < rangeFlags.length) {
+			rangeFlags[w] &= (1 << (count & 0x1f)) - 1;
+			java.util.Arrays.fill(rangeFlags, w + 1, rangeFlags.length, 0);
+		}
+	}
+
 	protected boolean isSelected(GalleryItem item) {
         if (item == null) {
             return false;
@@ -416,6 +540,12 @@ public class GalleryItem extends Item {
         if (Gallery.DEBUG) {
             System.out.println("GalleryItem.select(  " + from + "," + to + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         }
+
+		if (Gallery.VIEWPORT && parent.virtual && from >= 0 && to < getItemCount()) {
+			//FLLDCIM: VIEWPORT - VIRTUAL range selection: children not created yet are selected by index
+			parent.selectRange(this, from, to);
+			return;
+		}
 
 		for (int i = from; i <= to; i++) {
 			GalleryItem item = getItem(i);
@@ -671,6 +801,11 @@ public class GalleryItem extends Item {
         }
 
 		if (virtualGallery) {
+			if (Gallery.VIEWPORT) {
+				// selected children that exist keep their identity in the selection, as before
+				parent.releaseRuns(this, 0, false);
+				rangeFlags = null;
+			}
 			items = new GalleryItem[items.length];
 		} else {
 			for (int i = 0; i < items.length; i++) {
