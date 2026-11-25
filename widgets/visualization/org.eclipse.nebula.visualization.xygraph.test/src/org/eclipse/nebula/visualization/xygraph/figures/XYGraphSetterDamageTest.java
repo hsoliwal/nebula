@@ -54,7 +54,14 @@ public class XYGraphSetterDamageTest {
 		for (int i = 0; i < 20; i++) {
 			data.addSample(new Sample(i, Math.sin(i / 3.0) * 10, 2, 3, 0.4, 0.3));
 		}
-		trace = new Trace("trace", graph.getPrimaryXAxis(), graph.getPrimaryYAxis(), data);
+		trace = new Trace("trace", graph.getPrimaryXAxis(), graph.getPrimaryYAxis(), data) {
+			@Override
+			protected void paintFigure(org.eclipse.draw2d.Graphics graphics) {
+				System.out.println("PROBE xygraph trace paint clip=" + graphics.getClip(new org.eclipse.draw2d.geometry.Rectangle())
+						+ " aa(before)=" + graphics.getAntialias() + " advanced=" + graphics.getAdvanced());
+				super.paintFigure(graphics);
+			}
+		};
 		trace.setPointStyle(Trace.PointStyle.CIRCLE);
 		// The damage contract is independent of antialiasing, and cairo (GTK) composites the same antialiased line
 		// one level apart in a partial repaint and in a full one: the error-bar step's damage repaint drew one
@@ -95,15 +102,43 @@ public class XYGraphSetterDamageTest {
 	}
 
 	private void step(String name, Runnable change) {
+		int[] previous = pixels();
+		System.out.println("PROBE xygraph step " + name + " change");
 		change.run();
 		spin();
 		int[] shown = pixels();
+		System.out.println("PROBE xygraph step " + name + " draw2d full repaint");
+		graph.repaint();
+		spin();
+		int[] draw2dFull = pixels();
+		System.out.println("PROBE xygraph step " + name + " canvas redraw");
 		graph.revalidate();
 		spin();
 		canvas.redraw();
 		canvas.update();
 		spin();
-		assertArrayEquals(name + ": the change shows without another repaint", pixels(), shown);
+		int[] full = pixels();
+		probeDiff(name + " previous-vs-shown", previous, shown);
+		probeDiff(name + " shown-vs-draw2dFull", shown, draw2dFull);
+		probeDiff(name + " draw2dFull-vs-full", draw2dFull, full);
+		probeDiff(name + " shown-vs-full", shown, full);
+		assertArrayEquals(name + ": the change shows without another repaint", full, shown);
+	}
+
+	/* PROBE ONLY */
+	private void probeDiff(String name, int[] a, int[] b) {
+		int w = canvas.getBounds().width;
+		int n = 0;
+		StringBuilder first = new StringBuilder();
+		for (int i = 0; i < a.length; i++) {
+			if (a[i] != b[i]) {
+				n++;
+				if (n <= 8) {
+					first.append(" (").append(i % w).append(',').append(i / w).append(' ').append(Integer.toHexString(a[i])).append("->").append(Integer.toHexString(b[i])).append(')');
+				}
+			}
+		}
+		System.out.println("PROBE xygraph " + name + " differing=" + n + first);
 	}
 
 	private int[] pixels() {

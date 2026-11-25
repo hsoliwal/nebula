@@ -164,6 +164,17 @@ public class XViewerViewport_Test {
       TreeItem topBefore = visibleTopItem(tree);
       String before = state(viewer);
       String pixels = pixels(tree);
+      System.out.println("PROBE xviewer env GTK_OVERLAY_SCROLLING=" + System.getenv("GTK_OVERLAY_SCROLLING"));
+      org.eclipse.swt.graphics.Point probeSize = tree.getSize();
+      Image probeBeforeImage = new Image(display, probeSize.x, probeSize.y);
+      org.eclipse.swt.graphics.GC probeGc = new org.eclipse.swt.graphics.GC(probeBeforeImage);
+      tree.print(probeGc);
+      probeGc.dispose();
+      org.eclipse.swt.graphics.ImageLoader probeLoader = new org.eclipse.swt.graphics.ImageLoader();
+      probeLoader.data = new org.eclipse.swt.graphics.ImageData[] {probeBeforeImage.getImageData()};
+      new java.io.File("/tmp/m3-widget-pixels").mkdirs();
+      probeLoader.save("/tmp/m3-widget-pixels/probe4-xviewer-before.png", SWT.IMAGE_PNG);
+      probeBeforeImage.dispose();
 
       tree.setTopItem(tree.getItem(19_999));
       tree.update();
@@ -171,6 +182,13 @@ public class XViewerViewport_Test {
       tree.setTopItem(topBefore);
       tree.update();
       pump();
+      Image probeAfterImage = new Image(display, probeSize.x, probeSize.y);
+      probeGc = new org.eclipse.swt.graphics.GC(probeAfterImage);
+      tree.print(probeGc);
+      probeGc.dispose();
+      probeLoader.data = new org.eclipse.swt.graphics.ImageData[] {probeAfterImage.getImageData()};
+      probeLoader.save("/tmp/m3-widget-pixels/probe4-xviewer-after.png", SWT.IMAGE_PNG);
+      probeAfterImage.dispose();
       assertEquals(before, state(viewer));
       assertEquals(pixels, pixels(tree));
    }
