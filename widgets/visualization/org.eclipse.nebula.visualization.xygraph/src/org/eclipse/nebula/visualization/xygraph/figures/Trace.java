@@ -1743,10 +1743,6 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 		return traceDataProvider;
 	}
 
-	/**
-	 * @param errorBarEnabled
-	 *            the errorBarEnabled to set
-	 */
     /**
      * Error-bar caps may extend beyond the trace figure's own dirty bounds.
      * Invalidate the owning graph, as line/point style setters already do.
@@ -1760,6 +1756,10 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
         }
     }
 
+	/**
+	 * @param errorBarEnabled
+	 *            the errorBarEnabled to set
+	 */
 	public void setErrorBarEnabled(boolean errorBarEnabled) {
 		if (this.errorBarEnabled == errorBarEnabled) {
 			return;
