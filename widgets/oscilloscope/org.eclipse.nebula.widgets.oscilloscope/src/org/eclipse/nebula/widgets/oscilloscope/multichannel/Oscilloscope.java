@@ -1215,12 +1215,16 @@ public class Oscilloscope extends Canvas {
 	 * Turns envelope mode on ({@code samplesPerColumn > 0}) or off (0, the default) for a channel. In envelope mode
 	 * {@link #pushSamples(int, int[], int, int)} folds every {@code samplesPerColumn} samples into one column and the
 	 * scope draws that column's first value, its minimum and maximum in the order in which the samples leave the first
-	 * value and reach the last one, and its last value at one x position, which covers the same pixels as drawing
-	 * every sample at that x, also where the platform strokes line joins. Samples are not stored, only one packed
+	 * value and reach the last one, and its last value at one x position. This covers the same pixels as drawing
+	 * every sample at that x, also where the platform strokes line joins, whenever different sample values are drawn
+	 * on different pixel rows: always for absolute values, and for percentage values ({@link #setPercentage(int, boolean)}) while
+	 * the scope is at least 200 pixels tall. Below that height percentage scaling can draw two different samples on
+	 * the same row; the step directions the fold keeps are those of the pushed values, so the envelope can then differ
+	 * from drawing every sample by a few pixels at the ends of a column. Samples are not stored, only one packed
 	 * envelope per queued column
 	 * (the queue holds the widget's width in columns, like {@link #setValue(int, int)}), so any sample rate costs a
-	 * bounded amount of memory and one comparison pair per sample. {@link #setValue(int, int)} still queues one
-	 * column holding that single value.
+	 * bounded amount of memory and a constant number of comparisons per sample. {@link #setValue(int, int)} still
+	 * queues one column holding that single value.
 	 * <p>
 	 * This method can be called outside of the UI thread.
 	 *
