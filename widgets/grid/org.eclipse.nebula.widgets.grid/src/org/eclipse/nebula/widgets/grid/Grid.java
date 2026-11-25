@@ -3118,6 +3118,20 @@ public class Grid extends Canvas {
 		return bottomIndex;
 	}
 
+	/*
+	 * Whether the row at {@code index} shows, as items.get(index).isVisible() answers it, without
+	 * making an item for a flat virtual row nobody has read: such a row has no item and shows (only
+	 * tree children hide, and a tree keeps no sparse rows). The endpoint searches of the row ranges
+	 * below otherwise materialized the first and the last row at every scroll bar update.
+	 */
+	private boolean rowShown(final int index) {
+		if (usesSparseVirtualItems()) {
+			final GridItem item = sparseVirtualItems().getMaterialized(index);
+			return item == null || item.isVisible();
+		}
+		return items.get(index).isVisible();
+	}
+
 	/**
 	 * Returns a {@link RowRange} ranging from the grid item at startIndex to that
 	 * at endIndex.
@@ -3141,7 +3155,7 @@ public class Grid extends Canvas {
 			// search frist visible item
 			do {
 				startIndex++;
-			} while (startIndex < items.size() && !items.get(startIndex).isVisible());
+			} while (startIndex < items.size() && !rowShown(startIndex));
 			if (startIndex == items.size()) {
 				return null;
 			}
@@ -3151,7 +3165,7 @@ public class Grid extends Canvas {
 			endIndex = items.size();
 			do {
 				endIndex--;
-			} while (endIndex >= 0 && !items.get(endIndex).isVisible());
+			} while (endIndex >= 0 && !rowShown(endIndex));
 			if (endIndex == -1) {
 				return null;
 			}
@@ -3159,8 +3173,7 @@ public class Grid extends Canvas {
 
 		// fail fast
 		if (startIndex < 0 || endIndex < 0 || startIndex >= items.size() || endIndex >= items.size()
-				|| endIndex < startIndex || items.get(startIndex).isVisible() == false
-				|| items.get(endIndex).isVisible() == false) {
+				|| endIndex < startIndex || !rowShown(startIndex) || !rowShown(endIndex)) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		final RowRange range = new RowRange();
@@ -3230,7 +3243,7 @@ public class Grid extends Canvas {
 				// search frist visible item
 				do {
 					startIndex++;
-				} while (startIndex < items.size() && !items.get(startIndex).isVisible());
+				} while (startIndex < items.size() && !rowShown(startIndex));
 				if (startIndex == items.size()) {
 					return null;
 				}
@@ -3239,7 +3252,7 @@ public class Grid extends Canvas {
 				startIndex = items.size();
 				do {
 					startIndex--;
-				} while (startIndex >= 0 && !items.get(startIndex).isVisible());
+				} while (startIndex >= 0 && !rowShown(startIndex));
 				if (startIndex == -1) {
 					return null;
 				}
@@ -3247,7 +3260,7 @@ public class Grid extends Canvas {
 		}
 
 		// fail fast
-		if (startIndex < 0 || startIndex >= items.size() || items.get(startIndex).isVisible() == false) {
+		if (startIndex < 0 || startIndex >= items.size() || !rowShown(startIndex)) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 
@@ -13639,8 +13652,12 @@ public class Grid extends Canvas {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
 
-		final GridItem item = getItem(index);
-		item.clear(allChildren);
+		final GridItem item = usesSparseVirtualItems() ? sparseVirtualItems().getMaterialized(index) : getItem(index);
+		if (item != null) {
+			item.clear(allChildren);
+		} else {
+			clearReleasedRowData(index, index);
+		}
 		dropResidentPayloads();
 		redraw();
 	}
@@ -13687,12 +13704,49 @@ public class Grid extends Canvas {
 		if (!(0 <= start && start <= end && end < count)) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
-		for (int i = start; i <= end; i++) {
-			final GridItem item = items.get(i);
-			item.clear(allChildren);
+		if (usesSparseVirtualItems()) {
+			clearMaterializedRows(start, end, allChildren);
+		} else {
+			for (int i = start; i <= end; i++) {
+				final GridItem item = items.get(i);
+				item.clear(allChildren);
+			}
 		}
 		dropResidentPayloads();
 		redraw();
+	}
+
+	/*
+	 * Clears the rows [start, end] of a flat virtual Grid without making an item for a row that has
+	 * none: making an item only to reset it would retain an item per row (clearAll would
+	 * materialize every row). A row without an item has no item state or SetData flag of its own;
+	 * a row whose item RESIDENCY_EVICT_COLD released may still have cells in the row-addressed
+	 * visualizer, which are forgotten here by row. Its next read creates the item with default
+	 * attributes and asks SWT.SetData, as for a cleared item. Released warm item state is dropped
+	 * by the caller.
+	 */
+	private void clearMaterializedRows(final int start, final int end, final boolean allChildren) {
+		final GridVirtualItemList sparse = sparseVirtualItems();
+		for (int slot = sparse.firstSlotFrom(start); slot < sparse.materializedCount()
+				&& sparse.slotIndex(slot) <= end; slot++) {
+			sparse.slotItem(slot).clear(allChildren);
+		}
+		clearReleasedRowData(start, end);
+	}
+
+	/*
+	 * Forgets the cells the row-addressed visualizer keeps for rows in [start, end] that have no
+	 * item (released rows), in O(log n + stored rows in the range) plus a shift of the stored rows
+	 * after it, and without making items. Rows with an item were cleared through GridItem.clear
+	 * before (its clearRow also keeps the row-span index current). GridItem.clear forgets an item's
+	 * cells only in the default mode (UPSTREAM_FIXES); the original mode keeps them, as stock does,
+	 * so it is left unchanged.
+	 */
+	private void clearReleasedRowData(final int start, final int end) {
+		final GridRowAddressedDataVisualizer rows = GridViewport.UPSTREAM_FIXES ? rowAddressedDataVisualizer() : null;
+		if (rows != null) {
+			rows.clearRowData(this, start, end);
+		}
 	}
 
 	/**
@@ -13741,9 +13795,15 @@ public class Grid extends Canvas {
 				SWT.error(SWT.ERROR_INVALID_RANGE);
 			}
 		}
+		final boolean sparse = usesSparseVirtualItems();
 		for (final int indice : indices) {
-			final GridItem item = items.get(indice);
-			item.clear(allChildren);
+			// a flat virtual row without an item gets none (see clearMaterializedRows)
+			final GridItem item = sparse ? sparseVirtualItems().getMaterialized(indice) : items.get(indice);
+			if (item != null) {
+				item.clear(allChildren);
+			} else {
+				clearReleasedRowData(indice, indice);
+			}
 		}
 		dropResidentPayloads();
 		redraw();
