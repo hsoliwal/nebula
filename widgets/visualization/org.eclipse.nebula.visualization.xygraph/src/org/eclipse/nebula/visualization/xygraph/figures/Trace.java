@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.eclipse.draw2d.Figure;
 import org.eclipse.draw2d.Graphics;
+import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.Rectangle;
@@ -1751,7 +1752,16 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 */
 	private void repaintErrorBarExtent() {
 		if (xyGraph != null) {
-			xyGraph.repaint();
+			// The LightweightSystem root owns the complete native canvas. A
+			// graph-local damage region can clip antialiased error-bar edges
+			// differently from a whole-canvas redraw. Invalidate the root
+			// when attached while preserving local behavior when detached.
+			IFigure parent = xyGraph.getParent();
+			if (parent != null) {
+				parent.repaint();
+			} else {
+				xyGraph.repaint();
+			}
 		} else {
 			repaint();
 		}
