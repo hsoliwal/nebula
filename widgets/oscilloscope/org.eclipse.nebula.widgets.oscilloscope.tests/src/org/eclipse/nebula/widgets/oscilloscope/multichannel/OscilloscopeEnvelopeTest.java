@@ -31,10 +31,11 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.Test;
 
 /**
- * Envelope mode: (1) the scope draws, per column, the first/min/max/last of exactly the samples pushed for that
- * column; (2) that four-vertex column covers the same pixels as drawing every sample of the column at the same x
+ * Envelope mode: (1) the scope draws, per column, the five-vertex {@link #fold} of exactly the samples pushed for that
+ * column; (2) that five-vertex column covers the same pixels as drawing every sample of the column at the same x
  * (capture mode: offscreen {@code GC} on an {@code Image}, same GC settings as the scope's paint). Aliased lines of
- * width 1 must be identical; other widths and antialiasing report the differing pixel count.
+ * width 1 must be identical, also on a rasterizer that strokes miter joins (cairo on GTK); other widths and
+ * antialiasing report the differing pixel count.
  */
 public class OscilloscopeEnvelopeTest {
 
@@ -60,13 +61,7 @@ public class OscilloscopeEnvelopeTest {
 			for (int i = 0; i < spc; i++) {
 				s[i] = r.nextInt(120) - 60;
 			}
-			int min = s[0];
-			int max = s[0];
-			for (int v : s) {
-				min = Math.min(min, v);
-				max = Math.max(max, v);
-			}
-			folds.add(new int[] { s[0], min, max, s[spc - 1] });
+			folds.add(fold(s));
 			scope.pushSamples(0, s, 0, spc);
 		}
 		// one column per paint: after `columns` paints the tail ends with the last pushed column. On GTK, update()
@@ -84,9 +79,9 @@ public class OscilloscopeEnvelopeTest {
 		int base = scope.getBase(0);
 		List<int[]> drawn = new ArrayList<>();
 		for (int[] l : new int[][] { l1, l2 }) {
-			for (int o = 2; o + 8 <= l.length; o += 8) {
+			for (int o = 2; o + 10 <= l.length; o += 10) {
 				// drawn y = base - value (values are negated on the way into the tail)
-				drawn.add(new int[] { base - l[o + 1], base - l[o + 3], base - l[o + 5], base - l[o + 7] });
+				drawn.add(new int[] { base - l[o + 1], base - l[o + 3], base - l[o + 5], base - l[o + 7], base - l[o + 9] });
 			}
 		}
 		// the newest columns are at the end of the drawing; every non-degenerate drawn column is a pushed fold
@@ -94,7 +89,7 @@ public class OscilloscopeEnvelopeTest {
 		int fi = folds.size() - 1;
 		for (int d = drawn.size() - 1; d >= 0 && fi >= 0; d--) {
 			int[] g = drawn.get(d);
-			if (g[0] == 0 && g[1] == 0 && g[2] == 0 && g[3] == 0) {
+			if (g[0] == 0 && g[1] == 0 && g[2] == 0 && g[3] == 0 && g[4] == 0) {
 				continue;
 			}
 			int[] want = folds.get(fi--);
@@ -181,7 +176,7 @@ public class OscilloscopeEnvelopeTest {
 		return (int[]) f.get(data);
 	}
 
-	/** (2) four vertices per column vs every sample, same GC settings as the scope. */
+	/** (2) five vertices per column vs every sample, same GC settings as the scope. */
 	@Test
 	public void envelopeColumnsCoverTheSamePixelsAsAllSamples() {
 		Display display = Display.getDefault();
@@ -201,24 +196,15 @@ public class OscilloscopeEnvelopeTest {
 			env.add(prevLast);
 			for (int c = 0; c < cols; c++) {
 				int x = 10 + c;
-				int first = 0;
-				int min = Integer.MAX_VALUE;
-				int max = Integer.MIN_VALUE;
-				int last = 0;
+				int[] column = new int[spc];
 				for (int i = 0; i < spc; i++) {
 					phase += 0.003 * (1 + k % 5);
 					int y = 100 + (int) (Math.sin(phase) * 60 + Math.sin(phase * 31) * (k % 3) * 10) + r.nextInt(3);
-					if (i == 0) {
-						first = y;
-					}
-					min = Math.min(min, y);
-					max = Math.max(max, y);
-					last = y;
+					column[i] = y;
 					full.add(x);
 					full.add(y);
 				}
-				int[] v = { first, min, max, last };
-				for (int y : v) {
+				for (int y : fold(column)) {
 					env.add(x);
 					env.add(y);
 				}
@@ -237,6 +223,33 @@ public class OscilloscopeEnvelopeTest {
 		}
 		System.out.println("envelope pixel diffs (case:width[aa]=pixels): " + report); //$NON-NLS-1$
 		assertEquals(24, exactAliased1);
+	}
+
+	/**
+	 * The scope's five-vertex fold of one column, restated from its documentation: the first sample, the extreme the
+	 * samples first move towards, the other extreme, the extreme from which they reach the last sample, the last sample;
+	 * a vertex is repeated where two of these coincide, and all five are the first sample when no sample differs.
+	 */
+	static int[] fold(int[] s) {
+		int first = s[0], last = s[s.length - 1], min = first, max = first, depart = 0, arrive = 0;
+		for (int i = 1; i < s.length; i++) {
+			min = Math.min(min, s[i]);
+			max = Math.max(max, s[i]);
+			if (s[i] != s[i - 1]) {
+				int step = s[i] > s[i - 1] ? 1 : -1;
+				if (depart == 0) {
+					depart = step;
+				}
+				arrive = step;
+			}
+		}
+		if (depart == 0) {
+			return new int[] { first, first, first, first, first };
+		}
+		boolean towardsMax = depart > 0, fromMax = arrive < 0;
+		int towards = towardsMax ? max : min, onto = fromMax ? max : min;
+		int middle = towardsMax == fromMax ? (towardsMax ? min : max) : onto;
+		return new int[] { first, towards, middle, onto, last };
 	}
 
 	private static int[] toArray(List<Integer> l) {

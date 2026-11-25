@@ -96,14 +96,18 @@ public class Oscilloscope extends Canvas {
 		private int samplesPerColumn;
 		/** Guards stack + env together in envelope mode. */
 		private final Object envLock = new Object();
-		/** first/min/max of each queued column, in lock step with {@link #stack} (null when off). */
+		/** first/min/max/ends of each queued column, in lock step with {@link #stack} (null when off). */
 		private EnvelopeRing env;
-		/** first/min/max per tail entry, three ints per entry, in lock step with {@link #tail}. */
+		/** first/min/max/ends per tail entry, {@link EnvelopeRing#STRIDE} ints per entry, in lock step with {@link #tail}. */
 		private int[] tailEnv;
 		private int accFirst;
 		private int accMin;
 		private int accMax;
 		private int accCount;
+		/** The previous sample of the column being folded and the signs of its first and last non-zero step. */
+		private int accPrev;
+		private int accDepart;
+		private int accArrive;
 
 	}
 
@@ -484,7 +488,7 @@ public class Oscilloscope extends Canvas {
 			System.arraycopy(ch.tail, 1, ch.tail, 0, ch.tailSize);
 			int[] te = ch.tailEnv;
 			if (te != null) {
-				System.arraycopy(te, 3, te, 0, ch.tailSize * 3);
+				System.arraycopy(te, EnvelopeRing.STRIDE, te, 0, ch.tailSize * EnvelopeRing.STRIDE);
 			}
 		}
 	}
@@ -498,9 +502,10 @@ public class Oscilloscope extends Canvas {
 			if (ch.env == null || te == null) {
 				return;
 			}
-			ch.env.pop(te, t * 3);
+			ch.env.pop(te, t * EnvelopeRing.STRIDE);
 		}
-		for (int k = t * 3; k < t * 3 + 3; k++) {
+		// first, min and max are values; the fourth int (ends) holds directions and is not transformed
+		for (int k = t * EnvelopeRing.STRIDE; k < t * EnvelopeRing.STRIDE + 3; k++) {
 			te[k] = transform(c, ch.width, ch.height, -te[k]);
 		}
 	}
@@ -508,7 +513,7 @@ public class Oscilloscope extends Canvas {
 	/**
 	 * Fills the channel's two frame polylines: the part left of the cursor wrap ({@code l1}) and the rest
 	 * ({@code l2}), four ints per tail entry ({@code posx - 1, previous, posx, current}) exactly as before, or in
-	 * envelope mode a leading vertex plus four vertices per column ({@code first, min, max, last} at {@code posx}).
+	 * envelope mode a leading vertex plus five vertices per column at {@code posx} (see {@link #fillEnvelope}).
 	 */
 	private void buildLines(int c, Data ch) {
 		int t = ch.tailSize;
@@ -548,14 +553,22 @@ public class Oscilloscope extends Canvas {
 		if (!envelope) {
 			return columns * 4;
 		}
-		return columns == 0 ? 0 : 2 + columns * 8;
+		return columns == 0 ? 0 : 2 + columns * 10;
 	}
 
 	private static int[] sized(int[] a, int n) {
 		return a.length == n ? a : new int[n];
 	}
 
-	/** Envelope polyline of tail entries {@code [from, to)}: leading vertex, then first/min/max/last per column. */
+	/**
+	 * Envelope polyline of tail entries {@code [from, to)}: a leading vertex, then five vertices per column at its x:
+	 * the first value, the extreme the samples first move towards, the other extreme, the extreme the samples reach
+	 * the last value from, and the last value (a repeated vertex where two of these coincide, all five the same for a
+	 * column without a step). Keeping the direction in which the column's polyline leaves its first and reaches its
+	 * last sample makes the joins with the neighbouring columns' segments the same as when every sample is drawn, so a
+	 * stroking rasterizer with line joins (cairo on GTK) covers the same pixels as with all samples, not only one
+	 * without joins.
+	 */
 	private static void fillEnvelope(Data ch, int[] line, int from, int to, int base, boolean flat) {
 		if (from >= to) {
 			return;
@@ -573,26 +586,41 @@ public class Oscilloscope extends Canvas {
 			if (px < 0) {
 				px += ch.width;
 			}
-			int e = (i + 1) * 3;
+			int e = (i + 1) * EnvelopeRing.STRIDE;
+			int first = ch.tailEnv[e], min = ch.tailEnv[e + 1], max = ch.tailEnv[e + 2];
+			int ends = ch.tailEnv[e + 3];
+			int towards = first, middle = first, onto = first;
+			if (EnvelopeRing.depart(ends) != 0) {
+				// signs are of the pushed values; min and max keep their identity through the negating transform
+				boolean towardsMax = EnvelopeRing.depart(ends) > 0;
+				boolean fromMax = EnvelopeRing.arrive(ends) < 0;
+				towards = towardsMax ? max : min;
+				onto = fromMax ? max : min;
+				middle = towardsMax == fromMax ? (towardsMax ? min : max) : onto;
+			}
 			line[o] = px;
-			line[o + 1] = base + (flat ? 0 : ch.tailEnv[e]);
+			line[o + 1] = base + (flat ? 0 : first);
 			line[o + 2] = px;
-			line[o + 3] = base + (flat ? 0 : ch.tailEnv[e + 1]);
+			line[o + 3] = base + (flat ? 0 : towards);
 			line[o + 4] = px;
-			line[o + 5] = base + (flat ? 0 : ch.tailEnv[e + 2]);
+			line[o + 5] = base + (flat ? 0 : middle);
 			line[o + 6] = px;
-			line[o + 7] = base + (flat ? 0 : ch.tail[i + 1]);
-			o += 8;
+			line[o + 7] = base + (flat ? 0 : onto);
+			line[o + 8] = px;
+			line[o + 9] = base + (flat ? 0 : ch.tail[i + 1]);
+			o += 10;
 		}
 	}
 
 	/** New envelope tail aligned to the newest entries, like the tail copy; degenerate where none existed. */
 	private static int[] resizeTailEnv(int[] old, int[] tail) {
-		int[] e = new int[tail.length * 3];
+		int s = EnvelopeRing.STRIDE;
+		int[] e = new int[tail.length * s];
 		for (int i = 0; i < tail.length; i++) {
-			e[i * 3] = tail[i];
-			e[i * 3 + 1] = tail[i];
-			e[i * 3 + 2] = tail[i];
+			e[i * s] = tail[i];
+			e[i * s + 1] = tail[i];
+			e[i * s + 2] = tail[i];
+			e[i * s + 3] = EnvelopeRing.FLAT;
 		}
 		if (old != null) {
 			int keep = Math.min(old.length, e.length);
@@ -1176,7 +1204,7 @@ public class Oscilloscope extends Canvas {
 				} else {
 					synchronized (ch.envLock) {
 						ch.stack.push(value);
-						ch.env.push(value, value, value);
+						ch.env.push(value, value, value, EnvelopeRing.FLAT);
 					}
 				}
 			}
@@ -1186,11 +1214,17 @@ public class Oscilloscope extends Canvas {
 	/**
 	 * Turns envelope mode on ({@code samplesPerColumn > 0}) or off (0, the default) for a channel. In envelope mode
 	 * {@link #pushSamples(int, int[], int, int)} folds every {@code samplesPerColumn} samples into one column and the
-	 * scope draws that column's first, minimum, maximum and last value at one x position, which covers the same
-	 * pixels as drawing every sample at that x. Samples are not stored, only one packed envelope per queued column
+	 * scope draws that column's first value, its minimum and maximum in the order in which the samples leave the first
+	 * value and reach the last one, and its last value at one x position. This covers the same pixels as drawing
+	 * every sample at that x, also where the platform strokes line joins, whenever different sample values are drawn
+	 * on different pixel rows: always for absolute values, and for percentage values ({@link #setPercentage(int, boolean)}) while
+	 * the scope is at least 200 pixels tall. Below that height percentage scaling can draw two different samples on
+	 * the same row; the step directions the fold keeps are those of the pushed values, so the envelope can then differ
+	 * from drawing every sample by a few pixels at the ends of a column. Samples are not stored, only one packed
+	 * envelope per queued column
 	 * (the queue holds the widget's width in columns, like {@link #setValue(int, int)}), so any sample rate costs a
-	 * bounded amount of memory and one comparison pair per sample. {@link #setValue(int, int)} still queues one
-	 * column holding that single value.
+	 * bounded amount of memory and a constant number of comparisons per sample. {@link #setValue(int, int)} still
+	 * queues one column holding that single value.
 	 * <p>
 	 * This method can be called outside of the UI thread.
 	 *
@@ -1237,7 +1271,7 @@ public class Oscilloscope extends Canvas {
 		}
 		for (int v : values) {
 			stack.push(v);
-			ring.push(v, v, v);
+			ring.push(v, v, v, EnvelopeRing.FLAT);
 		}
 		return ring;
 	}
@@ -1303,14 +1337,26 @@ public class Oscilloscope extends Canvas {
 					ch.accFirst = v;
 					ch.accMin = v;
 					ch.accMax = v;
-				} else if (v < ch.accMin) {
-					ch.accMin = v;
-				} else if (v > ch.accMax) {
-					ch.accMax = v;
+					ch.accDepart = 0;
+					ch.accArrive = 0;
+				} else {
+					if (v < ch.accMin) {
+						ch.accMin = v;
+					} else if (v > ch.accMax) {
+						ch.accMax = v;
+					}
+					if (v != ch.accPrev) {
+						int step = v > ch.accPrev ? 1 : -1;
+						if (ch.accDepart == 0) {
+							ch.accDepart = step;
+						}
+						ch.accArrive = step;
+					}
 				}
+				ch.accPrev = v;
 				if (++ch.accCount == spc) {
 					ch.stack.push(v);
-					ch.env.push(ch.accFirst, ch.accMin, ch.accMax);
+					ch.env.push(ch.accFirst, ch.accMin, ch.accMax, EnvelopeRing.ends(ch.accDepart, ch.accArrive));
 					ch.accCount = 0;
 				}
 			}
