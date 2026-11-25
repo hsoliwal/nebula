@@ -123,22 +123,32 @@ jobs:
           from pathlib import Path
           from xml.etree import ElementTree as E
           root=Path(".m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports")
-          expected={"Test_org_eclipse_swt_widgets_Synchronizer":(24,0),
-                    "Test_ViewportImageLayers":(36,0),
-                    "Test_org_eclipse_swt_custom_LayeredViewport":(233,2)}
-          for name,(tests,skips) in expected.items():
-              file=root/("TEST-org.eclipse.swt.tests.junit."+name+".xml")
+          # These two methods are platform assumptions in the pinned SWT sources.
+          expected={"Test_org_eclipse_swt_widgets_Synchronizer":(24,set()),
+                    "Test_ViewportImageLayers":(36,set()),
+                    "Test_org_eclipse_swt_custom_LayeredViewport":(233,{
+                        "testNativeBorderReentrancyCoalescesViewportFrame",
+                        "test_nativeBorderRelief_cocoaNativeBezel"})}
+          for name,(tests,allowed_skips) in expected.items():
+              suite="org.eclipse.swt.tests.junit."+name
+              file=root/("TEST-"+suite+".xml")
               if not file.is_file():raise SystemExit("FAIL missing native JUnit "+name)
               report=E.parse(file).getroot()
+              if report.tag!="testsuite" or report.get("name")!=suite:raise SystemExit("FAIL native JUnit suite identity "+name)
               counters=tuple(int(report.get(k,"-1")) for k in ("tests","failures","errors","skipped"))
-              if counters!=(tests,0,0,skips):raise SystemExit("FAIL native JUnit "+name+" "+str(counters))
-              cases=report.findall(".//testcase")
-              if len(cases)!=tests:raise SystemExit("FAIL missing executed JUnit cases "+name)
+              if counters!=(tests,0,0,len(allowed_skips)):raise SystemExit("FAIL native JUnit "+name+" "+str(counters))
+              cases=report.findall("testcase")
+              if len(cases)!=tests or len(report.findall(".//testcase"))!=tests:raise SystemExit("FAIL missing executed JUnit cases "+name)
+              identities=[(case.get("classname"),case.get("name")) for case in cases]
+              if len(set(identities))!=tests or any(owner!=suite or not method or not method.strip() for owner,method in identities):raise SystemExit("FAIL native JUnit case identity "+name)
+              if report.find(".//failure") is not None or report.find(".//error") is not None:raise SystemExit("FAIL native JUnit case failure/error "+name)
+              skipped={case.get("name") for case in cases if case.find("skipped") is not None}
+              if skipped!=allowed_skips:raise SystemExit("FAIL unexpected native JUnit skipped methods "+name+" "+str(sorted(skipped)))
               reasons=[s.get("message") or s.text or "" for case in cases for s in case.findall("skipped")]
-              if len(reasons)!=skips or any(not reason.strip() for reason in reasons):raise SystemExit("FAIL invalid skip reason "+name)
+              if len(reasons)!=len(allowed_skips) or len(report.findall(".//skipped"))!=len(allowed_skips) or any(not reason.strip() for reason in reasons):raise SystemExit("FAIL invalid skip reason "+name)
           for file in root.glob("TEST-org.eclipse.swt.tests.junit.*.xml"):
               report=E.parse(file).getroot()
-              if int(report.get("failures","0")) or int(report.get("errors","0")):raise SystemExit("FAIL other SWT test "+file.name)
+              if int(report.get("failures","0")) or int(report.get("errors","0")) or report.find(".//failure") is not None or report.find(".//error") is not None:raise SystemExit("FAIL other SWT test "+file.name)
           print("SWT_CURRENT_CPU_UI_NATIVE_GTK3_PASS synchronizer=24 cpu=36 layered=231 gtkSkipped=2")
           PY
       - name: Retain original native JUnit XML and kernel evidence
