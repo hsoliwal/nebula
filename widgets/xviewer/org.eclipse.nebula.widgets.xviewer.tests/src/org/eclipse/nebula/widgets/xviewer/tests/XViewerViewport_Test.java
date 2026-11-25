@@ -161,7 +161,7 @@ public class XViewerViewport_Test {
       pump();
       // Native SWT can scroll the selected row into view. Restore the actual
       // visible anchor when testing a round trip, not a different fixed row.
-      TreeItem topBefore = tree.getTopItem();
+      TreeItem topBefore = visibleTopItem(tree);
       String before = state(viewer);
       String pixels = pixels(tree);
 
@@ -244,12 +244,33 @@ public class XViewerViewport_Test {
       StringBuilder s = new StringBuilder();
       s.append(((org.eclipse.jface.viewers.IStructuredSelection) viewer.getSelection()).toList());
       s.append('|').append(java.util.Arrays.asList(viewer.getExpandedElements()));
-      s.append('|').append(tree.getTopItem().getText(0));
+      s.append('|').append(visibleTopItem(tree).getText(0));
       s.append('|').append(viewer.getStatusLabel().getText());
       for (int i = 0; i < 8; i++) {
          s.append('|').append(tree.getItem(i).getText(0)).append(tree.getItem(i).getExpanded());
       }
       return s.toString();
+   }
+
+   /**
+    * The row actually shown at the top of the tree. SWT GTK's {@code Tree.getTopItem()} answers the selected row
+    * instead while the vertical adjustment still equals the value its last {@code setTopItem()} cached
+    * ({@code Tree._getCachedTopItem}): here, after {@code setTopItem(item 0)} on the unscrolled tree with row 4
+    * selected, it returned row 4 while row 0 was at the top. On GTK3 the rows live in the tree view's bin window,
+    * whose y = 0 is the first pixel row below the header, so the row there is hit-tested instead (GTK4 counts the
+    * header in the same coordinates).
+    */
+   private static TreeItem visibleTopItem(Tree tree) {
+      if (!"gtk".equals(SWT.getPlatform())) {
+         return tree.getTopItem();
+      }
+      int x = tree.getColumn(0).getWidth() * 3 / 4;
+      TreeItem item = tree.getItem(new org.eclipse.swt.graphics.Point(x, 1));
+      if (item == null && tree.getHeaderVisible()) {
+         item = tree.getItem(new org.eclipse.swt.graphics.Point(x, tree.getHeaderHeight() + 1));
+      }
+      assertTrue("no row at the top of the tree", item != null);
+      return item;
    }
 
    /** SHA-256 of the control's own rendering (Control.print), independent of window occlusion. */
