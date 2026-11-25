@@ -1,0 +1,165 @@
+# SPDX-License-Identifier: EPL-2.0
+name: SWT current-source full original AllTests GTK3
+on:
+  push:
+    branches: ['ci/swt-current-gtk3-alltests-20261125']
+  pull_request:
+    paths:
+      - '.github/workflows/swt-current-gtk3-alltests-20261125.yml'
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  exact-original-swt-gtk3:
+    if: github.repository == 'hsoliwal/nebula'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - name: Install SHA-512-pinned Maven 3.9.11 from original receiver
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=3.9.11
+          sum=bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978
+          archive="$RUNNER_TEMP/apache-maven-$version-bin.tar.gz"
+          success=0
+          for url in "https://archive.apache.org/dist/maven/maven-3/$version/binaries/apache-maven-$version-bin.tar.gz" "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$version/apache-maven-$version-bin.tar.gz"; do
+            if curl -fLsS --retry 6 --retry-delay 5 --retry-all-errors --connect-timeout 20 --max-time 160 "$url" -o "$archive" && printf '%s  %s\n' "$sum" "$archive" | sha512sum --check --status; then success=1; break; fi
+            rm -f "$archive"
+          done
+          test "$success" = 1
+          mkdir -p "$RUNNER_TEMP/maven-pinned"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/maven-pinned"
+          echo "$RUNNER_TEMP/maven-pinned/apache-maven-$version/bin" >> "$GITHUB_PATH"
+      - name: Checkout current immutable SWT source
+        uses: actions/checkout@v4
+        with:
+          repository: hsoliwal/eclipse.platform.swt
+          ref: 448e608f812d9a39a39b3054f0b085a4ae171338
+          path: .m3-swt
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout original Eclipse parent
+        uses: actions/checkout@v4
+        with:
+          repository: eclipse-platform/eclipse.platform.releng.aggregator
+          ref: 8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec
+          path: .m3-eclipse-releng
+          sparse-checkout: eclipse-platform-parent
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Verify exact original SWT and Eclipse parent identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .m3-swt rev-parse HEAD)" = "448e608f812d9a39a39b3054f0b085a4ae171338"
+          test "$(git hash-object .m3-swt/pom.xml)" = "341c07d199041c55d89a99fcc93560074e425716"
+          test "$(git -C .m3-eclipse-releng rev-parse HEAD)" = "8c8c8d8ccaa2dab6954ae083fdd14c31d258ccec"
+          parent=.m3-eclipse-releng/eclipse-platform-parent/pom.xml
+          test "$(git hash-object "$parent")" = "c0b221e4b62f119e8a28fc61e9a44c568933dfa0"
+          printf '%s  %s\n' 121b6c26d986874391d26d114377e3beda91723b0d675146bdd194dbfe01e264 "$parent" | sha256sum --check
+          printf '%s  %s\n' 51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768c8c9 ".m3-swt/bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/graphics/GC.java" | sha256sum --check
+          test ! -e eclipse-platform-parent
+          mkdir -p eclipse-platform-parent
+          cp "$parent" eclipse-platform-parent/pom.xml
+          python3 - <<'PY'
+          from xml.etree import ElementTree as E
+          p=E.parse(".m3-swt/pom.xml").getroot()
+          parent=E.parse("eclipse-platform-parent/pom.xml").getroot()
+          ns="{http://maven.apache.org/POM/4.0.0}"
+          for item in ("groupId","artifactId","version"):
+              assert p.find(ns+"parent/"+ns+item).text.strip()==parent.find(ns+item).text.strip()
+          print("SWT_CURRENT_SOURCE_PIN_PASS")
+          PY
+      - name: Prepare real GTK3 and original Maven retry helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libgtk-3-dev freeglut3-dev libwebkit2gtk-4.1-0 xvfb dbus-x11 openbox wmctrl
+          bash releng/swt-receiver/test-retry-transient-maven-503.sh
+      - name: Build original SWT 3.138 core and all eight fragments
+        shell: bash
+        run: |
+          set -euo pipefail
+          export M3_HTTP503_ATTEMPTS=5 M3_HTTP503_RETRY_DELAY_SECONDS=15
+          fragments=':org.eclipse.swt.cocoa.macosx.aarch64,:org.eclipse.swt.cocoa.macosx.x86_64,:org.eclipse.swt.gtk.linux.aarch64,:org.eclipse.swt.gtk.linux.ppc64le,:org.eclipse.swt.gtk.linux.riscv64,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.win32.win32.aarch64,:org.eclipse.swt.win32.win32.x86_64'
+          GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations bash releng/swt-receiver/retry-transient-maven-503.sh mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 -Dtycho.baseline.replace=none -DskipTests=true -Dmaven.test.skip=false -Dtycho-snapshot-repo.url=https://repo.maven.apache.org/maven2/ -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ -pl "$fragments" -am package
+      - name: Execute original SWT AllTests with source-built GTK3 natives
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SWT_GTK4=0 GDK_BACKEND=x11 GTK_VERSION=3.0 GTK_XCFLAGS=-Wno-deprecated-declarations
+          export M3_HTTP503_ATTEMPTS=5 M3_HTTP503_RETRY_DELAY_SECONDS=15
+          export NATIVE_DIR="$PWD/.m3-swt/binaries/org.eclipse.swt.gtk.linux.x86_64"
+          export HOST_PROJECTS=':eclipse.platform.swt,:org.eclipse.swt,:eclipse.platform.swt.binaries,:org.eclipse.swt.svg,:org.eclipse.swt.gtk.linux.x86_64,:org.eclipse.swt.tests'
+          export NATIVE_FLAGS="-Dswt.library.path=$NATIVE_DIR -Xlog:library=info:file=$RUNNER_TEMP/swt-current-native-%p.log"
+          cp_file=.m3-swt/tests/org.eclipse.swt.tests/target/m3-test-classpath.txt
+          rm -f "$cp_file"
+          bash releng/swt-receiver/retry-transient-maven-503.sh mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 -Dtycho.baseline.replace=none -DskipTests=true -Dmaven.test.skip=false -Dtycho-snapshot-repo.url=https://repo.maven.apache.org/maven2/ -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ -Dmdep.outputFile=target/m3-test-classpath.txt -pl "$HOST_PROJECTS" package org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath
+          python3 releng/swt-receiver/verify_test_classpath.py "$cp_file" "$NATIVE_DIR"
+          rm -rf .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports
+          dbus-run-session -- xvfb-run --auto-servernum -s '-screen 0 1280x800x24 -noreset' bash -ec '
+            openbox --sm-disable >"$RUNNER_TEMP/swt-current-openbox.log" 2>&1 &
+            wm_pid=$!
+            trap "kill $wm_pid 2>/dev/null || true" EXIT
+            for attempt in $(seq 1 100); do
+              if wmctrl -m >/dev/null 2>&1; then break; fi
+              sleep 0.1
+            done
+            wmctrl -m >/dev/null || exit 1
+            bash releng/swt-receiver/retry-transient-maven-503.sh mvn -B -U -f .m3-swt/pom.xml -Dnative=gtk.linux.x86_64 -Dtycho.baseline.replace=none -DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false -DskipNativeTests=false -DfailIfNoTests=false -Dsurefire.failIfNoSpecifiedTests=false -Dtycho-snapshot-repo.url=https://repo.maven.apache.org/maven2/ -Declipse-snapshots-repo.url=https://repo.maven.apache.org/maven2/ -Declipse-cbi-repo.url=https://repo.maven.apache.org/maven2/ "-Dos-jvm-flags=$NATIVE_FLAGS" -pl "$HOST_PROJECTS" verify
+          '
+      - name: Require original strict AllTests suite coverage after native Maven success
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .m3-swt/tools/release/check_junit_coverage.py --strict \
+            --reports-root .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports \
+            --json-out .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports/m3-current-alltests-coverage.json
+          echo SWT_CURRENT_GTK3_ALLTESTS_PASS
+      - name: Preserve original SWT failure census even when native Maven fails
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from xml.etree import ElementTree as E
+          root=Path(".m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports")
+          root.mkdir(parents=True,exist_ok=True)
+          results=[]
+          for path in sorted(root.glob("TEST-*.xml")):
+              try:
+                  xml=E.parse(path).getroot()
+                  count={k:int(xml.get(k,"-1")) for k in ("tests","failures","errors","skipped")}
+                  if any(v<0 for v in count.values()):raise ValueError("incomplete JUnit XML counters")
+                  failures=[{"test":c.get("name"),"class":c.get("classname"),"kind":part.tag,
+                             "message":part.get("message")}
+                            for c in xml.findall(".//testcase")
+                            for part in c if part.tag in ("failure","error")]
+                  results.append({"suite":xml.get("name"),"file":path.name,
+                                  **count,"failed_cases":failures})
+              except Exception as error:
+                  results.append({"file":path.name,"invalid_xml":str(error)})
+          receipt={"source_commit":"448e608f812d9a39a39b3054f0b085a4ae171338",
+                   "scope":"complete SWT GTK3 AllTests; no skipped failure",
+                   "suites":results,"suite_count":len(results)}
+          target=root/"m3-current-alltests-failures.json"
+          target.write_text(json.dumps(receipt,sort_keys=True,indent=2)+"\n")
+          print("SWT_CURRENT_ALLTESTS_CENSUS suites="+str(len(results)))
+          if not results:raise SystemExit("HOLD missing real SWT AllTests JUnit XML")
+          if any("invalid_xml" in row for row in results):
+              raise SystemExit("HOLD invalid SWT AllTests report")
+          PY
+      - name: Retain original native JUnit XML and kernel evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swt-current-original-alltests-gtk3-native
+          path: .m3-swt/tests/org.eclipse.swt.tests/target/surefire-reports/**
+          if-no-files-found: warn
