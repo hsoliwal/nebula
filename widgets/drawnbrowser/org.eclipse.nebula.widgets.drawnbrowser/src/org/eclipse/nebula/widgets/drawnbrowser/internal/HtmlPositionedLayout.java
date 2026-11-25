@@ -650,10 +650,11 @@ public final class HtmlPositionedLayout {
 			// sticky child of that panel stays within the panel's visible box rather than its unscrolled one.
 			long end = (long) y[parent] + height[parent] + parentMotion
 					+ panelDisplacement(e) - panelDisplacement(parent);
-			// A scrollport's own sticky child is bounded by the scrolled content too, as at the root viewport:
-			// a sticky taller than the visible box stays pinned while content remains below it.
-			if (scrollAncestor[e] == parent) end = Math.max(end, (long) panelBottom[parent]
-					+ doc.boxPadBottom[parent] + doc.boxBorder[parent] + parentMotion);
+			// A scrollport's own sticky child is bounded by the end of the content the panel can scroll to,
+			// which the largest offset brings to the visible padding edge. A sticky taller than the visible box
+			// therefore stays pinned while content remains below it, and no part of it stays clipped.
+			if (scrollAncestor[e] == parent) end = Math.max((long) panelBottom[parent],
+					(long) y[parent] + height[parent] - doc.boxBorder[parent] + panelScrollY[parent]) + parentMotion;
 			int first = doc.boxFirstBlock[e];
 			int gap = first < doc.boxEndBlock[e] && doc.blockBox[first] == e && doc.kind[first] != HtmlDocument.CELL
 					&& leadGap[e] == 0 ? HtmlLayout.BLOCK_GAP : 0;

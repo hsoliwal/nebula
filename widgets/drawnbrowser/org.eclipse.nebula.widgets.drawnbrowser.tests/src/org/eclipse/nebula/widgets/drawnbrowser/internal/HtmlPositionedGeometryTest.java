@@ -165,6 +165,30 @@ public class HtmlPositionedGeometryTest {
 	}
 
 	@Test
+	public void tallStickyInAPaddedBorderedPanelReachesTheVisibleContentEnd() {
+		Scene scene = new Scene("<section style='height:100px;overflow:hidden;border:2px solid black;padding-bottom:10px'>"
+				+ "<header style='position:sticky;top:0;height:150px'>h</header>"
+				+ "<p style='height:400px'>x</p></section><footer style='height:300px'>f</footer>", 240, 180);
+		int header = scene.document.blockBox[0], content = scene.document.blockBox[1];
+		int panel = scene.document.boxParent[header], border = scene.document.boxBorder[panel];
+		assertEquals(440, scene.layout.panelMaximumY(panel));
+		assertEquals(40, scene.layout.scrollPanel(panel, 40));
+		int pinned = scene.layout.boxY(header, 0);
+		for (int offset : new int[] { 120, 300, 400 }) {
+			scene.layout.scrollPanel(panel, offset);
+			assertEquals("pinned at offset " + offset, pinned, scene.layout.boxY(header, 0));
+			assertVisible(scene, 0, 180, 0);
+		}
+		// The largest offset brings the content end to the visible padding edge; the sticky's bottom follows,
+		// so neither the panel's border nor its padding keeps any of the sticky clipped.
+		assertEquals(40, scene.layout.scrollPanel(panel, Integer.MAX_VALUE));
+		int paddingEdge = scene.layout.boxY(panel, 0) + scene.layout.boxHeight(panel) - border;
+		assertEquals(paddingEdge, scene.layout.boxY(content, 0) + scene.layout.boxHeight(content));
+		assertEquals(paddingEdge, scene.layout.boxY(header, 0) + scene.layout.boxHeight(header));
+		assertVisible(scene, 0, 180, 0);
+	}
+
+	@Test
 	public void overflowClipBoxOwnTextDoesNotFeedTheEnclosingScrollport() {
 		for (String mode : new String[] { "clip", "visible" }) {
 			Scene scene = new Scene("<section style='height:50px;overflow:auto'><div style='height:30px;overflow:" + mode + "'>"
