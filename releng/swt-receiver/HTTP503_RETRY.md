@@ -14,12 +14,20 @@ condition that persists through every attempt. (The file name predates the
 | `terminal-vnc-contracts.yml`: SWT assembly, classpath guard, SWT AllTests (3) | pinned 3.9.11 | 5, 15 s | 15-22, 30-45, 60-90, 120-180 s (at most about 5.6 minutes) |
 | `terminal-vnc-contracts.yml`: Terminal tests (1) | pinned 3.9.11 | 3, 12 s | 12-18, 24-36 s (at most 54 s) |
 | `codeql.yml`: SWT build (1) | pinned 3.9.11 | defaults: 3, 10 s | 10-15, 20-30 s |
-| `maven.yaml`: "Build and bind the pinned SWT GTK3 distribution" (1) | the runner's preinstalled 3.9 or 3.10 (3.10.1 in runs 44992024856 and 45108815443) | defaults: 3, 10 s | 10-15, 20-30 s, or a logged Retry-After |
+| `maven.yaml`: "Build and bind the pinned SWT GTK3 distribution": SWT build, receiver-P2 `verify` (2) | the runner's preinstalled 3.9 or 3.10 (3.10.1 in runs 44992024856 and 45108815443) | defaults: 3, 10 s | 10-15, 20-30 s, or a logged Retry-After |
+| `maven.yaml`: DrawnBrowser reactor, "Build All Widgets" Nebula reactor (2) | pinned 3.9.11 | defaults: 3, 10 s | 10-15, 20-30 s |
 
-The `maven.yaml` site uses the runner's Maven on purpose. Commit 9f46414a
-stopped downloading Maven there after the archive download hit HTTP 429. The
-job sets up Maven 3.9.11 only after the SWT build, for Nebula's Tycho 4.0.12
-reactor (eaa4a05a). The wrapper therefore also reads Maven 3.10's output.
+The two `maven.yaml` call sites in the SWT step use the runner's Maven on
+purpose. Commit 9f46414a stopped downloading Maven there after the archive
+download hit HTTP 429. The job sets up Maven 3.9.11 only after the SWT build,
+for Nebula's Tycho 4.0.12 reactors (eaa4a05a), which the DrawnBrowser and
+"Build All Widgets" call sites use. The wrapper therefore also reads Maven
+3.10's output.
+
+The two reactor call sites re-run the whole reactor, tests included, on each
+retry; "Build All Widgets" took 13:02 min in run 45488864191. A product
+compilation or test failure is never retried, so this applies only to a
+transient failure.
 
 ## What is detected
 

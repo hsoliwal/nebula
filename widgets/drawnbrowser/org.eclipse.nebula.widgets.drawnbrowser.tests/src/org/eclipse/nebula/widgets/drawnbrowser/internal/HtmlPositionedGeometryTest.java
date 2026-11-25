@@ -142,6 +142,43 @@ public class HtmlPositionedGeometryTest {
 		assertVisible(wrapped, 0, 180, 0);
 	}
 
+	@Test
+	public void tallStickyChildOfAScrolledPanelStaysPinnedUntilTheContentEnds() {
+		Scene scene = new Scene("<section style='height:100px;overflow:hidden'>"
+				+ "<header style='position:sticky;top:0;height:150px'>h</header>"
+				+ "<p style='height:400px'>x</p></section><footer style='height:300px'>f</footer>", 240, 180);
+		int header = scene.document.blockBox[0], content = scene.document.blockBox[1];
+		int panel = scene.document.boxParent[header];
+		assertEquals(450, scene.layout.panelMaximumY(panel));
+		assertEquals(40, scene.layout.scrollPanel(panel, 40));
+		int pinned = scene.layout.boxY(header, 0);
+		for (int offset : new int[] { 120, 300, 400 }) {
+			scene.layout.scrollPanel(panel, offset);
+			assertEquals("taller than the panel, still pinned at offset " + offset, pinned, scene.layout.boxY(header, 0));
+			assertVisible(scene, 0, 180, 0);
+		}
+		// At the end of the scrolled content the sticky box's bottom meets the content's bottom.
+		assertEquals(50, scene.layout.scrollPanel(panel, Integer.MAX_VALUE));
+		assertEquals(scene.layout.boxY(content, 0) + scene.layout.boxHeight(content),
+				scene.layout.boxY(header, 0) + scene.layout.boxHeight(header));
+		assertVisible(scene, 0, 180, 0);
+	}
+
+	@Test
+	public void overflowClipBoxOwnTextDoesNotFeedTheEnclosingScrollport() {
+		for (String mode : new String[] { "clip", "visible" }) {
+			Scene scene = new Scene("<section style='height:50px;overflow:auto'><div style='height:30px;overflow:" + mode + "'>"
+					+ "own text</div></section>", 240, 180, 200);
+			int owner = scene.document.blockBox[0], scrollport = scene.document.boxParent[owner];
+			int expected = mode.equals("clip") ? 0 : 150;
+			assertEquals(mode, 200, scene.layout.blockHeight(0));
+			assertEquals(mode + ": text clipped by its own box adds no scroll range", expected,
+					scene.layout.panelMaximumY(scrollport));
+			assertEquals(mode, expected, scene.layout.scrollPanel(scrollport, 1000));
+			assertVisible(scene, 0, 180, 0);
+		}
+	}
+
 
 	@Test
 	public void staticSemanticPanelOwnsItsPaddingAndMarginsAroundItsChildrenOnce() {
