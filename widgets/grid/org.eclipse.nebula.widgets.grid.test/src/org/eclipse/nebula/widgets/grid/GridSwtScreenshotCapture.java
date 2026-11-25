@@ -32,8 +32,10 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TabFolder;
 import java.util.Objects;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.ScrollBar;
 
 /** SWT-native screenshot evidence helper for Grid visual regressions. */
 final class GridSwtScreenshotCapture {
@@ -261,6 +263,248 @@ final class GridSwtScreenshotCapture {
 		System.out.println("GRID_SCREEN_CAPTURE method=DISPLAY_COPY_AREA path=" + path
 				+ " sha256=" + result.sha256());
 		return data;
+	}
+
+	/** Immutable parent-relative GTK native scrollbar observation. */
+	static final class ScrollPaintBar {
+		final Rectangle track;
+		final Rectangle thumb;
+		/** Only proven native track/slider geometry may justify an exclusion. */
+		final boolean measuredExtent;
+
+		ScrollPaintBar(final Rectangle track, final Rectangle thumb) {
+			this(track, thumb, true);
+		}
+
+		/** GTK3 may allocate a visible overlay bar as 1x1 while its slider spans many pixels. */
+		static ScrollPaintBar unmeasuredGtk3Overlay(final Rectangle track, final Rectangle thumb) {
+			return new ScrollPaintBar(track, thumb, false);
+		}
+
+		private ScrollPaintBar(final Rectangle track, final Rectangle thumb, final boolean measuredExtent) {
+			this.track = copy(Objects.requireNonNull(track, "track"));
+			this.thumb = copy(Objects.requireNonNull(thumb, "thumb"));
+			this.measuredExtent = measuredExtent;
+			if (this.track.width <= 0 || this.track.height <= 0 || this.thumb.width <= 0
+					|| this.thumb.height <= 0) {
+				throw new AssertionError("nonpositive native GTK scrollbar allocation");
+			}
+			if (measuredExtent ? !contains(this.track, this.thumb)
+					: (this.track.width != 1 || this.track.height != 1
+							|| contains(this.track, this.thumb))) {
+				throw new AssertionError("unmeasured native GTK scrollbar is not a collapsed overlay allocation");
+			}
+		}
+	}
+
+	/**
+	 * One actual GC(Display) screenshot and the two native scrollbar samples that bracketed it.
+	 * Never infer an exclusion from colors, native platform guesses or a past screenshot.
+	 */
+	static final class ScrollPaintFrame {
+		final ImageData pixels;
+		final Rectangle client;
+		final boolean gtk3;
+		final boolean nativeOverlayMode;
+		final ScrollPaintBar verticalBefore;
+		final ScrollPaintBar verticalAfter;
+		final ScrollPaintBar horizontalBefore;
+		final ScrollPaintBar horizontalAfter;
+
+		ScrollPaintFrame(final ImageData pixels, final Rectangle client, final boolean gtk3,
+				final boolean nativeOverlayMode, final ScrollPaintBar verticalBefore, final ScrollPaintBar verticalAfter,
+				final ScrollPaintBar horizontalBefore, final ScrollPaintBar horizontalAfter) {
+			this.pixels = Objects.requireNonNull(pixels, "pixels");
+			this.client = copy(Objects.requireNonNull(client, "client"));
+			this.gtk3 = gtk3;
+			this.nativeOverlayMode = nativeOverlayMode;
+			this.verticalBefore = verticalBefore;
+			this.verticalAfter = verticalAfter;
+			this.horizontalBefore = horizontalBefore;
+			this.horizontalAfter = horizontalAfter;
+			if (this.client.x < 0 || this.client.y < 0 || this.client.width <= 0
+					|| this.client.height <= 0 || !contains(new Rectangle(0, 0, pixels.width, pixels.height), this.client)
+					|| (verticalBefore == null) != (verticalAfter == null)
+					|| (horizontalBefore == null) != (horizontalAfter == null)
+					|| !gtk3 && (nativeOverlayMode || verticalBefore != null || horizontalBefore != null)) {
+				throw new AssertionError("native ScrollPaint frame geometry or visibility drift");
+			}
+			// Validate BOTH samples; all clipping is supported by observed, parent-relative bars.
+			checkBars(verticalBefore, horizontalBefore);
+			checkBars(verticalAfter, horizontalAfter);
+			if ((verticalOverlayWidth(verticalBefore) > 0) != (verticalOverlayWidth(verticalAfter) > 0)
+					|| (horizontalOverlayHeight(horizontalBefore) > 0) != (horizontalOverlayHeight(horizontalAfter) > 0)
+					|| (verticalBefore != null && verticalBefore.measuredExtent != verticalAfter.measuredExtent)
+					|| (horizontalBefore != null && horizontalBefore.measuredExtent != horizontalAfter.measuredExtent)) {
+				throw new AssertionError("native GTK3 overlay/inset mode drift during screenshot");
+			}
+		}
+
+		private void checkBars(final ScrollPaintBar vertical, final ScrollPaintBar horizontal) {
+			final long right = (long) client.x + client.width;
+			final long bottom = (long) client.y + client.height;
+			final int verticalWidth = verticalOverlayWidth(vertical);
+			final int horizontalHeight = horizontalOverlayHeight(horizontal);
+			if (verticalWidth >= client.width || horizontalHeight >= client.height) {
+				throw new AssertionError("native scrollbar consumes entire client");
+			}
+			if (vertical != null && verticalWidth > 0) {
+				final Rectangle r = vertical.track;
+				if (r.y > client.y || (long) r.y + r.height < bottom - horizontalHeight
+						|| (long) r.y + r.height > bottom) {
+					throw new AssertionError("GTK3 vertical overlay track leaves an unowned content pixel");
+				}
+			}
+			if (horizontal != null && horizontalHeight > 0) {
+				final Rectangle r = horizontal.track;
+				if (r.x > client.x || (long) r.x + r.width < right - verticalWidth
+						|| (long) r.x + r.width > right) {
+					throw new AssertionError("GTK3 horizontal overlay track leaves an unowned content pixel");
+				}
+			}
+		}
+
+		/** An inset native bar owns no pixels in the Grid's client rectangle. */
+		private int verticalOverlayWidth(final ScrollPaintBar bar) {
+			// A collapsed GTK3 allocation is native evidence, not proof of painted width.
+			// Treat the entire client as content when the native extent is unmeasurable.
+			if (bar == null || !bar.measuredExtent) return 0;
+			final long right = (long) client.x + client.width;
+			final Rectangle r = bar.track;
+			if (r.width > 32) throw new AssertionError("unbounded GTK3 native vertical bar width");
+			if (r.x == right - r.width) {
+				if (!nativeOverlayMode) throw new AssertionError("SWT reports inset scrollbars over Grid content");
+				return r.width;
+			}
+			if (r.x >= right && (long) r.x <= right + 32) {
+				if (nativeOverlayMode) throw new AssertionError("SWT reports overlay scrollbars outside Grid content");
+				return 0;
+			}
+			throw new AssertionError("native vertical bar is neither edge overlay nor inset");
+		}
+
+		private int horizontalOverlayHeight(final ScrollPaintBar bar) {
+			if (bar == null || !bar.measuredExtent) return 0;
+			final long bottom = (long) client.y + client.height;
+			final Rectangle r = bar.track;
+			if (r.height > 32) throw new AssertionError("unbounded GTK3 native horizontal bar height");
+			if (r.y == bottom - r.height) {
+				if (!nativeOverlayMode) throw new AssertionError("SWT reports inset scrollbars over Grid content");
+				return r.height;
+			}
+			if (r.y >= bottom && (long) r.y <= bottom + 32) {
+				if (nativeOverlayMode) throw new AssertionError("SWT reports overlay scrollbars outside Grid content");
+				return 0;
+			}
+			throw new AssertionError("native horizontal bar is neither bottom overlay nor inset");
+		}
+
+		int rightStrip() {
+			return Math.max(verticalOverlayWidth(verticalBefore), verticalOverlayWidth(verticalAfter));
+		}
+
+		int bottomStrip() {
+			return Math.max(horizontalOverlayHeight(horizontalBefore), horizontalOverlayHeight(horizontalAfter));
+		}
+
+	}
+
+	private static Rectangle copy(final Rectangle rect) {
+		return new Rectangle(rect.x, rect.y, rect.width, rect.height);
+	}
+
+	private static boolean contains(final Rectangle outer, final Rectangle inner) {
+		return inner.x >= outer.x && inner.y >= outer.y
+				&& (long) inner.x + inner.width <= (long) outer.x + outer.width
+				&& (long) inner.y + inner.height <= (long) outer.y + outer.height;
+	}
+
+	private static ScrollPaintBar snapshotBar(final ScrollBar bar, final boolean gtk3,
+			final boolean nativeOverlayMode) {
+		if (!gtk3 || bar == null || !bar.getVisible()) return null;
+		final Rectangle track = bar.getThumbTrackBounds();
+		final Rectangle thumb = bar.getThumbBounds();
+		// Actual GTK3 may allocate a mapped overlay scrollbar as 1x1 while the
+		// slider range is larger. Never infer or mask a guessed visual strip.
+		if (nativeOverlayMode && track.width == 1 && track.height == 1
+				&& thumb.width > 0 && thumb.height > 0 && !contains(track, thumb)) {
+			return ScrollPaintBar.unmeasuredGtk3Overlay(track, thumb);
+		}
+		return new ScrollPaintBar(track, thumb);
+	}
+
+	/** Capture a pre/post native geometry envelope around an unchanged GC(Display) image copy. */
+	static ScrollPaintFrame captureScrollPaintFrame(final Grid grid, final Supplier<ImageData> screenCopy) {
+		Objects.requireNonNull(grid, "grid");
+		Objects.requireNonNull(screenCopy, "screenCopy");
+		final Rectangle client = copy(grid.getClientArea());
+		final Point size = grid.getSize();
+		final int border = grid.getBorderWidth();
+		final boolean gtk3 = "gtk".equals(SWT.getPlatform()) && !"1".equals(System.getenv("SWT_GTK4"));
+		final int modeBefore = grid.getScrollbarsMode();
+		if (modeBefore != SWT.NONE && modeBefore != SWT.SCROLLBAR_OVERLAY) {
+			throw new AssertionError("unsupported native scrollbar mode");
+		}
+		final boolean nativeOverlayMode = gtk3 && modeBefore == SWT.SCROLLBAR_OVERLAY;
+		final ScrollPaintBar v0 = snapshotBar(grid.getVerticalBar(), gtk3, nativeOverlayMode);
+		final ScrollPaintBar h0 = snapshotBar(grid.getHorizontalBar(), gtk3, nativeOverlayMode);
+		final ImageData pixels = screenCopy.get(); // The original actual-screen GC(Display) copy.
+		final ScrollPaintBar v1 = snapshotBar(grid.getVerticalBar(), gtk3, nativeOverlayMode);
+		final ScrollPaintBar h1 = snapshotBar(grid.getHorizontalBar(), gtk3, nativeOverlayMode);
+		final int modeAfter = grid.getScrollbarsMode();
+		if (modeAfter != modeBefore) {
+			throw new AssertionError("native scrollbar mode changed during display capture");
+		}
+		if (!client.equals(grid.getClientArea()) || !size.equals(grid.getSize())
+				|| border != grid.getBorderWidth() || pixels.width != size.x || pixels.height != size.y) {
+			throw new AssertionError("native Grid/scrollbar geometry moved while copying display pixels");
+		}
+		return new ScrollPaintFrame(pixels, client, gtk3,
+				nativeOverlayMode, v0, v1, h0, h1);
+	}
+
+	/** Common half-open Grid-content rectangle of two actual measured screen frames. */
+	static Rectangle scrollPaintContentClip(final ScrollPaintFrame first, final ScrollPaintFrame second) {
+		Objects.requireNonNull(first, "first");
+		Objects.requireNonNull(second, "second");
+		if (!first.client.equals(second.client) || first.pixels.width != second.pixels.width
+				|| first.pixels.height != second.pixels.height || first.gtk3 != second.gtk3
+				|| first.nativeOverlayMode != second.nativeOverlayMode
+				|| (first.verticalBefore == null) != (second.verticalBefore == null)
+				|| (first.horizontalBefore == null) != (second.horizontalBefore == null)
+				|| (first.rightStrip() > 0) != (second.rightStrip() > 0)
+				|| (first.bottomStrip() > 0) != (second.bottomStrip() > 0)) {
+			throw new AssertionError("native ScrollPaint frames have incomparable platform/geometry/visibility");
+		}
+		final int right = Math.max(first.rightStrip(), second.rightStrip());
+		final int bottom = Math.max(first.bottomStrip(), second.bottomStrip());
+		if ((first.verticalBefore != null && second.verticalBefore != null
+					&& first.verticalBefore.measuredExtent != second.verticalBefore.measuredExtent)
+				|| (first.horizontalBefore != null && second.horizontalBefore != null
+					&& first.horizontalBefore.measuredExtent != second.horizontalBefore.measuredExtent)) {
+			throw new AssertionError("unmeasured/native-measured ScrollPaint ownership drift");
+		}
+		if (first.client.width <= right || first.client.height <= bottom) {
+			throw new AssertionError("no stable Grid content pixels remain");
+		}
+		return new Rectangle(first.client.x, first.client.y,
+				first.client.width - right, first.client.height - bottom);
+	}
+
+	/** Compare every non-chrome content pixel; any changed body pixel remains fatal. */
+	static boolean sameScrollPaintedContent(final ScrollPaintFrame screen, final ImageData expected,
+			final ScrollPaintFrame otherScreen) {
+		Objects.requireNonNull(expected, "expected");
+		final Rectangle content = scrollPaintContentClip(screen, otherScreen);
+		if (screen.pixels.width != expected.width || screen.pixels.height != expected.height) {
+			throw new AssertionError("native screen and model paint dimensions differ");
+		}
+		for (int y = content.y; y < content.y + content.height; y++) {
+			for (int x = content.x; x < content.x + content.width; x++) {
+				if (screen.pixels.getPixel(x, y) != expected.getPixel(x, y)) return false;
+			}
+		}
+		return true;
 	}
 
 	/**

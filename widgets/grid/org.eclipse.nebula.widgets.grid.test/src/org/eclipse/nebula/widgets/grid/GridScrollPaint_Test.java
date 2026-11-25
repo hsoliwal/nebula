@@ -99,7 +99,7 @@ public class GridScrollPaint_Test {
 	 */
 	static void awaitShown(final Grid grid) {
 		final long deadline = System.currentTimeMillis() + 5000;
-		while (!sameClientArea(grid, screen(grid), print(grid))) {
+		while (!sameNativeContent(capture(grid), print(grid))) {
 			if (System.currentTimeMillis() > deadline) {
 				fail("the screen never showed the Grid's paint: another window covers the shell, or the desktop still animates it ("
 						+ GridViewportDifferential_Test.difference(screen(grid), print(grid)) + ")");
@@ -233,8 +233,19 @@ public class GridScrollPaint_Test {
 		return rows;
 	}
 
+	/** Native capture and its parent-relative scrollbar geometry, sampled at the same time. */
+	private static GridSwtScreenshotCapture.ScrollPaintFrame capture(final Grid grid) {
+		return GridSwtScreenshotCapture.captureScrollPaintFrame(grid, () -> screen(grid));
+	}
+
+	private static boolean sameNativeContent(final GridSwtScreenshotCapture.ScrollPaintFrame screen,
+			final ImageData painted) {
+		return GridSwtScreenshotCapture.sameScrollPaintedContent(screen, painted, screen);
+	}
+
 	/* the Grid's settled pixels before the current step */
 	private ImageData previous;
+	private GridSwtScreenshotCapture.ScrollPaintFrame previousFrame;
 	/* steps whose window showed the new rows right away, and steps that still showed the old rows */
 	private int immediate, deferred;
 
@@ -246,20 +257,23 @@ public class GridScrollPaint_Test {
 	 */
 	private void assertPaintedLikeSettled(final Grid grid, final String step) {
 		final int before = setData;
-		final ImageData now = screen(grid);
+		final GridSwtScreenshotCapture.ScrollPaintFrame nowFrame = capture(grid);
+		final ImageData now = nowFrame.pixels;
 		final int answered = setData - before;
 		final int blankNow = blankRows(grid, now);
 		settle();
-		final ImageData onScreen = screen(grid);
+		final GridSwtScreenshotCapture.ScrollPaintFrame settledFrame = capture(grid);
+		final ImageData onScreen = settledFrame.pixels;
 		final ImageData settled = print(grid);
-		if (!sameClientArea(grid, onScreen, settled)) {
+		if (!sameNativeContent(settledFrame, settled)) {
 			GridViewportDifferential_Test.save(onScreen, "scroll-screen");
 			GridViewportDifferential_Test.save(settled, "scroll-settled");
 			fail(step + ": the settled window differs from the Grid's paint ("
 					+ GridViewportDifferential_Test.difference(onScreen, settled) + ")");
 		}
-		final boolean isNew = sameClientArea(grid, now, settled);
-		final boolean isOld = previous != null && sameClientArea(grid, now, previous);
+		final boolean isNew = GridSwtScreenshotCapture.sameScrollPaintedContent(nowFrame, settled, settledFrame);
+		final boolean isOld = previous != null
+				&& GridSwtScreenshotCapture.sameScrollPaintedContent(nowFrame, previous, previousFrame);
 		if (!isNew && !isOld || blankNow > 0) {
 			GridViewportDifferential_Test.save(now, "scroll-now");
 			GridViewportDifferential_Test.save(settled, "scroll-settled");
@@ -271,6 +285,7 @@ public class GridScrollPaint_Test {
 		deferred += isNew ? 0 : 1;
 		assertEquals(step + ": blank rows after settling", 0, blankRows(grid, settled));
 		previous = settled;
+		previousFrame = settledFrame;
 	}
 
 	static boolean sameClientArea(final Grid grid, final ImageData a, final ImageData b) {
@@ -292,7 +307,8 @@ public class GridScrollPaint_Test {
 
 	private void scrollScript(final Grid grid) {
 		show(grid);
-		previous = screen(grid);
+		previousFrame = capture(grid);
+		previous = previousFrame.pixels;
 		final ScrollBar bar = grid.getVerticalBar();
 		final int[] tops = { 40, 41, 60, 400, 399, 1200, 7, 5000, 5013, 2 };
 		for (final int top : tops) {
@@ -482,9 +498,10 @@ public class GridScrollPaint_Test {
 	}
 
 	private static void assertScreenIsPaint(final Grid grid, final String step) {
-		final ImageData now = screen(grid);
+		final GridSwtScreenshotCapture.ScrollPaintFrame frame = capture(grid);
+		final ImageData now = frame.pixels;
 		final ImageData painted = print(grid);
-		if (!sameClientArea(grid, now, painted)) {
+		if (!sameNativeContent(frame, painted)) {
 			GridViewportDifferential_Test.save(now, "blit-now");
 			GridViewportDifferential_Test.save(painted, "blit-painted");
 			fail(step + ": the window differs from the Grid's paint ("
@@ -586,5 +603,298 @@ public class GridScrollPaint_Test {
 			settle();
 			assertScreenIsPaint(grid, "scroll bar " + value + " under a hover change, settled");
 		}
+	}
+
+	@Test
+	public void measuredNativeChromeNeverMasksGridContentOrWrongGeometry() {
+		final org.eclipse.swt.graphics.PaletteData palette =
+				new org.eclipse.swt.graphics.PaletteData(0xff0000, 0x00ff00, 0x0000ff);
+		final ImageData pixels = new ImageData(100, 80, 24, palette);
+		final ImageData painted = new ImageData(100, 80, 24, palette);
+		final GridSwtScreenshotCapture.ScrollPaintBar v = new GridSwtScreenshotCapture.ScrollPaintBar(
+				new Rectangle(94, 0, 6, 74), new Rectangle(94, 5, 6, 20));
+		final GridSwtScreenshotCapture.ScrollPaintBar h = new GridSwtScreenshotCapture.ScrollPaintBar(
+				new Rectangle(0, 74, 94, 6), new Rectangle(6, 74, 20, 6));
+		final GridSwtScreenshotCapture.ScrollPaintFrame frame =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(pixels,
+						new Rectangle(0, 0, 100, 80), true, true, v, v, h, h);
+		pixels.setPixel(99, 40, 0x123456); // measured native vertical track
+		pixels.setPixel(94, 40, 0x123456); // exact first masked right pixel
+		pixels.setPixel(40, 79, 0x123456); // measured native horizontal track
+		pixels.setPixel(40, 74, 0x123456); // exact first masked bottom pixel
+		assertTrue(GridSwtScreenshotCapture.sameScrollPaintedContent(frame, painted, frame));
+		pixels.setPixel(93, 40, 0xabcdef); // last interior pixel
+		assertTrue(!GridSwtScreenshotCapture.sameScrollPaintedContent(frame, painted, frame));
+		pixels.setPixel(93, 40, 0);
+		pixels.setPixel(40, 73, 0xabcdef); // last interior row
+		assertTrue(!GridSwtScreenshotCapture.sameScrollPaintedContent(frame, painted, frame));
+		pixels.setPixel(40, 73, 0);
+		final GridSwtScreenshotCapture.ScrollPaintFrame plain =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(pixels,
+						new Rectangle(0, 0, 100, 80), false, false, null, null, null, null);
+		assertTrue(!GridSwtScreenshotCapture.sameScrollPaintedContent(plain, painted, plain));
+		boolean refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(pixels,
+						new Rectangle(0, 0, 100, 80), true, true,
+						new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(93, 0, 6, 74),
+								new Rectangle(93, 5, 6, 20)), v, h, h);
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("undocked native scrollbar must be refused", refused);
+		refused = false;
+		try {
+			GridSwtScreenshotCapture.scrollPaintContentClip(frame, plain);
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("GTK3/native visibility drift must be refused", refused);
+	}
+	@Test
+	public void nativeChromeAnimatedWidthsHaveOneHalfOpenContentClip() {
+		final org.eclipse.swt.graphics.PaletteData palette =
+				new org.eclipse.swt.graphics.PaletteData(0xff0000, 0x00ff00, 0x0000ff);
+		final ImageData pixels = new ImageData(100, 80, 24, palette);
+		final ImageData painted = new ImageData(100, 80, 24, palette);
+		final Rectangle client = new Rectangle(0, 0, 100, 80);
+		final GridSwtScreenshotCapture.ScrollPaintBar verticalBefore =
+				new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(96, 0, 4, 74),
+						new Rectangle(96, 6, 4, 20));
+		final GridSwtScreenshotCapture.ScrollPaintBar verticalAfter =
+				new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(94, 0, 6, 74),
+						new Rectangle(94, 6, 6, 20));
+		final GridSwtScreenshotCapture.ScrollPaintBar horizontalBefore =
+				new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(0, 74, 96, 6),
+						new Rectangle(6, 74, 20, 6));
+		final GridSwtScreenshotCapture.ScrollPaintBar horizontalAfter =
+				new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(0, 74, 94, 6),
+						new Rectangle(6, 74, 20, 6));
+		final GridSwtScreenshotCapture.ScrollPaintFrame widened =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(pixels, client, true, true,
+						verticalBefore, verticalAfter, horizontalBefore, horizontalAfter);
+		final GridSwtScreenshotCapture.ScrollPaintFrame narrow =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(pixels, client, true, true,
+						verticalBefore, verticalBefore, horizontalBefore, horizontalBefore);
+		final Rectangle clip = GridSwtScreenshotCapture.scrollPaintContentClip(widened, narrow);
+		assertEquals("union must be measured once", new Rectangle(0, 0, 94, 74), clip);
+		pixels.setPixel(95, 0, 0x101010);
+		assertTrue(GridSwtScreenshotCapture.sameScrollPaintedContent(widened, painted, narrow));
+		pixels.setPixel(93, 73, 0x202020);
+		assertTrue(!GridSwtScreenshotCapture.sameScrollPaintedContent(widened, painted, narrow));
+		pixels.setPixel(93, 73, 0);
+		boolean refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(94, 0, 6, 74),
+						new Rectangle(93, 6, 6, 20));
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("native thumb outside track must fail", refused);
+		// This otherwise perfectly valid full-height 6px bar isolates the GTK3
+		// platform gate; a short track must not pass this test for another reason.
+		final GridSwtScreenshotCapture.ScrollPaintBar nonGtkValidBar =
+				new GridSwtScreenshotCapture.ScrollPaintBar(
+						new Rectangle(94, 0, 6, 80), new Rectangle(94, 6, 6, 20));
+		refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(pixels, client, false, false,
+						nonGtkValidBar, nonGtkValidBar, null, null);
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("only GTK3 may carry a chrome exclusion", refused);
+	}
+
+	@Test
+	public void insetScrollbarOwnsNoGridContentPixelsAndStyleDriftIsRefused() {
+		final org.eclipse.swt.graphics.PaletteData palette =
+				new org.eclipse.swt.graphics.PaletteData(0xff0000, 0x00ff00, 0x0000ff);
+		final ImageData pixels = new ImageData(100, 80, 24, palette);
+		final ImageData painted = new ImageData(100, 80, 24, palette);
+		final Rectangle client = new Rectangle(0, 0, 100, 80);
+		final GridSwtScreenshotCapture.ScrollPaintBar verticalInset =
+				new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(100, 0, 6, 80),
+						new Rectangle(100, 20, 6, 20));
+		final GridSwtScreenshotCapture.ScrollPaintBar horizontalInset =
+				new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(0, 80, 100, 6),
+						new Rectangle(10, 80, 30, 6));
+		final GridSwtScreenshotCapture.ScrollPaintFrame inset =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(pixels, client, true, false,
+						verticalInset, verticalInset, horizontalInset, horizontalInset);
+		assertEquals("inset scrollbar cannot take a content pixel", client,
+				GridSwtScreenshotCapture.scrollPaintContentClip(inset, inset));
+		pixels.setPixel(99, 20, 0x123456);
+		assertTrue(!GridSwtScreenshotCapture.sameScrollPaintedContent(inset, painted, inset));
+		pixels.setPixel(99, 20, 0);
+		pixels.setPixel(20, 79, 0x123456);
+		assertTrue(!GridSwtScreenshotCapture.sameScrollPaintedContent(inset, painted, inset));
+		pixels.setPixel(20, 79, 0);
+		final GridSwtScreenshotCapture.ScrollPaintBar verticalOverlay =
+				new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(94, 0, 6, 80),
+						new Rectangle(94, 20, 6, 20));
+		boolean refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(pixels, client, true, false,
+						verticalInset, verticalOverlay, null, null);
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("an inset-to-overlay transition within a capture is not stable", refused);
+		final GridSwtScreenshotCapture.ScrollPaintFrame over =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(pixels, client, true, true,
+						verticalOverlay, verticalOverlay, null, null);
+		refused = false;
+		try {
+			GridSwtScreenshotCapture.scrollPaintContentClip(inset, over);
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("an inset-to-overlay transition between captures is not comparable", refused);
+		refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(pixels, client, true, false,
+						new GridSwtScreenshotCapture.ScrollPaintBar(new Rectangle(99, 0, 6, 80),
+								new Rectangle(99, 20, 6, 20)),
+						verticalInset, null, null);
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("a partially intruding native track cannot be treated as an inset", refused);
+	}
+
+	/** Native GTK3 may report a mapped 1x1 overlay allocation and a larger slider. */
+	@Test
+	public void collapsedNativeGtkOverlayNeverAuthorizesAnUnmeasuredPixelExclusion() {
+		final org.eclipse.swt.graphics.PaletteData palette =
+				new org.eclipse.swt.graphics.PaletteData(0xff0000, 0x00ff00, 0x0000ff);
+		final ImageData nativePixels = new ImageData(100, 80, 24, palette);
+		final ImageData modelPaint = new ImageData(100, 80, 24, palette);
+		final Rectangle client = new Rectangle(0, 0, 100, 80);
+		final GridSwtScreenshotCapture.ScrollPaintBar unmeasuredVertical =
+				GridSwtScreenshotCapture.ScrollPaintBar.unmeasuredGtk3Overlay(
+						new Rectangle(94, 0, 1, 1), new Rectangle(94, 0, 1, 145));
+		final GridSwtScreenshotCapture.ScrollPaintBar unmeasuredHorizontal =
+				GridSwtScreenshotCapture.ScrollPaintBar.unmeasuredGtk3Overlay(
+						new Rectangle(0, 74, 1, 1), new Rectangle(0, 74, 147, 1));
+		final GridSwtScreenshotCapture.ScrollPaintFrame uncertain =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(nativePixels, client,
+						true, true, unmeasuredVertical, unmeasuredVertical,
+						unmeasuredHorizontal, unmeasuredHorizontal);
+		assertEquals("unmeasurable native painted extent cannot hide any content",
+				client, GridSwtScreenshotCapture.scrollPaintContentClip(uncertain, uncertain));
+		nativePixels.setPixel(99, 40, 0x102030);
+		assertTrue("rightmost body pixel must not be masked",
+				!GridSwtScreenshotCapture.sameScrollPaintedContent(uncertain, modelPaint, uncertain));
+		nativePixels.setPixel(99, 40, 0);
+		nativePixels.setPixel(40, 79, 0x102030);
+		assertTrue("bottommost body pixel must not be masked",
+				!GridSwtScreenshotCapture.sameScrollPaintedContent(uncertain, modelPaint, uncertain));
+		nativePixels.setPixel(40, 79, 0);
+		assertTrue(GridSwtScreenshotCapture.sameScrollPaintedContent(uncertain, modelPaint, uncertain));
+		final GridSwtScreenshotCapture.ScrollPaintBar measured =
+				new GridSwtScreenshotCapture.ScrollPaintBar(
+						new Rectangle(94, 0, 6, 80), new Rectangle(94, 6, 6, 20));
+		final GridSwtScreenshotCapture.ScrollPaintFrame qualified =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(nativePixels, client,
+						true, true, measured, measured, null, null);
+		boolean refused = false;
+		try {
+			GridSwtScreenshotCapture.scrollPaintContentClip(uncertain, qualified);
+		} catch (final AssertionError expected) {
+			refused = true;
+		}
+		assertTrue("unknown and measured native ownership cannot be mixed", refused);
+	}
+
+	@Test
+	public void swtScrollbarModeIsAuthoritativeForNativePixelExclusion() {
+		final org.eclipse.swt.graphics.PaletteData palette =
+				new org.eclipse.swt.graphics.PaletteData(0xff0000, 0x00ff00, 0x0000ff);
+		final ImageData actual = new ImageData(100, 80, 24, palette);
+		final ImageData expected = new ImageData(100, 80, 24, palette);
+		final Rectangle client = new Rectangle(0, 0, 100, 80);
+		final GridSwtScreenshotCapture.ScrollPaintBar overlay =
+				new GridSwtScreenshotCapture.ScrollPaintBar(
+						new Rectangle(94, 0, 6, 80), new Rectangle(94, 10, 6, 20));
+		final GridSwtScreenshotCapture.ScrollPaintBar inset =
+				new GridSwtScreenshotCapture.ScrollPaintBar(
+						new Rectangle(100, 0, 6, 80), new Rectangle(100, 10, 6, 20));
+		// Matching geometry is not permission to crop when SWT explicitly reports NONE.
+		boolean refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					true, false, overlay, overlay, null, null);
+		} catch (final AssertionError expectedRefusal) {
+			refused = true;
+		}
+		assertTrue("SWT.NONE cannot authorize an overlay mask", refused);
+		final GridSwtScreenshotCapture.ScrollPaintFrame over =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					true, true, overlay, overlay, null, null);
+		final GridSwtScreenshotCapture.ScrollPaintFrame inside =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					true, false, inset, inset, null, null);
+		actual.setPixel(99, 25, 0x123456);
+		assertTrue("measured overlay owns its right strip",
+				GridSwtScreenshotCapture.sameScrollPaintedContent(over, expected, over));
+		assertTrue("SWT.NONE retains the same pixel as Grid content",
+				!GridSwtScreenshotCapture.sameScrollPaintedContent(inside, expected, inside));
+		actual.setPixel(99, 25, 0);
+		refused = false;
+		try {
+			GridSwtScreenshotCapture.scrollPaintContentClip(over, inside);
+		} catch (final AssertionError expectedRefusal) {
+			refused = true;
+		}
+		assertTrue("incompatible native modes cannot be joined", refused);
+		refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					true, true, inset, inset, null, null);
+		} catch (final AssertionError expectedRefusal) {
+			refused = true;
+		}
+		assertTrue("SWT overlay mode cannot claim inset geometry", refused);
+		// GTK4/Win32/Cocoa must keep all pixels, regardless of their own overlay style.
+		final GridSwtScreenshotCapture.ScrollPaintFrame nonGtk =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					false, false, null, null, null, null);
+		actual.setPixel(99, 25, 0x654321);
+		assertTrue("other platforms compare all client pixels",
+				!GridSwtScreenshotCapture.sameScrollPaintedContent(nonGtk, expected, nonGtk));
+		actual.setPixel(99, 25, 0);
+		final GridSwtScreenshotCapture.ScrollPaintBar horizontalOverlay =
+				new GridSwtScreenshotCapture.ScrollPaintBar(
+						new Rectangle(0, 74, 100, 6), new Rectangle(10, 74, 20, 6));
+		refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					true, false, null, null, horizontalOverlay, horizontalOverlay);
+		} catch (final AssertionError expectedRefusal) {
+			refused = true;
+		}
+		assertTrue("SWT.NONE cannot authorize horizontal native masking", refused);
+		final GridSwtScreenshotCapture.ScrollPaintFrame noBarOverlay =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					true, true, null, null, null, null);
+		final GridSwtScreenshotCapture.ScrollPaintFrame noBarInset =
+				new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					true, false, null, null, null, null);
+		refused = false;
+		try {
+			GridSwtScreenshotCapture.scrollPaintContentClip(noBarOverlay, noBarInset);
+		} catch (final AssertionError expectedRefusal) {
+			refused = true;
+		}
+		assertTrue("mode comparison must reject drift even with no native bars", refused);
+		refused = false;
+		try {
+			new GridSwtScreenshotCapture.ScrollPaintFrame(actual, client,
+					false, true, null, null, null, null);
+		} catch (final AssertionError expectedRefusal) {
+			refused = true;
+		}
+		assertTrue("non-GTK3 must never claim GTK3 exclusion authority", refused);
 	}
 }
