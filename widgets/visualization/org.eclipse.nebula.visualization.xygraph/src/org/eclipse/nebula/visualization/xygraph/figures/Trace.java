@@ -1747,12 +1747,25 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 * @param errorBarEnabled
 	 *            the errorBarEnabled to set
 	 */
+    /**
+     * Error-bar caps may extend beyond the trace figure's own dirty bounds.
+     * Invalidate the owning graph, as line/point style setters already do.
+     * Unattached traces still use ordinary Figure repaint semantics.
+     */
+    private void repaintErrorBarChange() {
+        if (xyGraph != null) {
+            xyGraph.repaint();
+        } else {
+            repaint();
+        }
+    }
+
 	public void setErrorBarEnabled(boolean errorBarEnabled) {
 		if (this.errorBarEnabled == errorBarEnabled) {
 			return;
 		}
 		this.errorBarEnabled = errorBarEnabled;
-		repaint(); // the error bars show at once, as the other style setters do //FLLDCIM: MARK — every-widget XYGraph setter damage D
+		repaintErrorBarChange(); // include error-bar caps outside this trace's own dirty bounds
 	}
 
 	/**
@@ -1764,7 +1777,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		yErrorBarType = errorBarType;
-		repaint();
+		repaintErrorBarChange();
 	}
 
 	/**
@@ -1776,7 +1789,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		xErrorBarType = errorBarType;
-		repaint();
+		repaintErrorBarChange();
 	}
 
 	/**
@@ -1788,7 +1801,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		this.drawYErrorInArea = drawYErrorInArea;
-		repaint();
+		repaintErrorBarChange();
 	}
 
 	/**
@@ -1800,7 +1813,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 			return;
 		}
 		this.errorBarCapWidth = errorBarCapWidth;
-		repaint();
+		repaintErrorBarChange();
 	}
 
 	/**
@@ -1811,7 +1824,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	public void setErrorBarColor(final Color errorBarColor) {
 		this.errorBarColor = errorBarColor;
 		errorBarColorSetFlag = true;
-		repaint();
+		repaintErrorBarChange();
 	}
 
 	/**
