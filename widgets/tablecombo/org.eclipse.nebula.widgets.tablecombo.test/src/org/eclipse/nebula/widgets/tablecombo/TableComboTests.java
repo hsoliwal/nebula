@@ -134,10 +134,58 @@ public class TableComboTests {
 
 	}
 
+	/* PROBE ONLY: logs the native shell/focus sequence around the drop-down */
+	private static final int[] PROBE_TYPES = { SWT.Activate, SWT.Deactivate, SWT.FocusIn, SWT.FocusOut, SWT.Show, SWT.Hide };
+
+	private org.eclipse.swt.widgets.Listener probe(final String test) {
+		final long t0 = System.nanoTime();
+		final org.eclipse.swt.widgets.Listener l = e -> {
+			final Display d = Display.getCurrent();
+			System.out.println("PROBE " + test + " +" + (System.nanoTime() - t0) / 1_000_000 + "ms type=" + e.type + " widget="
+					+ e.widget + " shell=" + (e.widget instanceof org.eclipse.swt.widgets.Control ? System.identityHashCode(((org.eclipse.swt.widgets.Control) e.widget).getShell()) : -1)
+					+ " active=" + (d.getActiveShell() == null ? "null" : System.identityHashCode(d.getActiveShell()))
+					+ " focus=" + d.getFocusControl() + " cursor=" + d.getCursorLocation());
+			if (e.type == SWT.Hide && e.widget instanceof Shell) {
+				new Throwable("PROBE hide stack").printStackTrace(System.out);
+			}
+		};
+		for (final int type : PROBE_TYPES) {
+			Display.getDefault().addFilter(type, l);
+		}
+		System.out.println("PROBE " + test + " main shell=" + System.identityHashCode(shell) + " shells=" + Display.getDefault().getShells().length);
+		return l;
+	}
+
+	private static void unprobe(final org.eclipse.swt.widgets.Listener l) {
+		for (final int type : PROBE_TYPES) {
+			Display.getDefault().removeFilter(type, l);
+		}
+	}
+
 	@Test
 	public void testClosePopupAfterSelectionFalseKeepsPopupOpen() {
+		final org.eclipse.swt.widgets.Listener probe = probe("false");
+		try {
+			testClosePopupAfterSelectionFalseKeepsPopupOpen0();
+		} finally {
+			unprobe(probe);
+		}
+	}
+
+	@Test
+	public void testClosePopupAfterSelectionTrueClosesPopup() {
+		final org.eclipse.swt.widgets.Listener probe = probe("true");
+		try {
+			testClosePopupAfterSelectionTrueClosesPopup0();
+		} finally {
+			unprobe(probe);
+		}
+	}
+
+	private void testClosePopupAfterSelectionFalseKeepsPopupOpen0() {
 		createTableCombo(shell, 1, 5);
 		shell.open();
+		System.out.println("PROBE after open active=" + Display.getDefault().getActiveShell() + " focus=" + Display.getDefault().getFocusControl());
 
 		final SWTBot shellBot = new SWTBot(shell);
 		final TableCombo tableComboWidget = shellBot.widget(WidgetMatcherFactory.widgetOfType(TableCombo.class));
@@ -155,10 +203,10 @@ public class TableComboTests {
 				tableComboWidget.getTable().getShell().isVisible());
 	}
 
-	@Test
-	public void testClosePopupAfterSelectionTrueClosesPopup() {
+	private void testClosePopupAfterSelectionTrueClosesPopup0() {
 		createTableCombo(shell, 1, 5);
 		shell.open();
+		System.out.println("PROBE after open active=" + Display.getDefault().getActiveShell() + " focus=" + Display.getDefault().getFocusControl());
 
 		final SWTBot shellBot = new SWTBot(shell);
 		final TableCombo tableComboWidget = shellBot.widget(WidgetMatcherFactory.widgetOfType(TableCombo.class));

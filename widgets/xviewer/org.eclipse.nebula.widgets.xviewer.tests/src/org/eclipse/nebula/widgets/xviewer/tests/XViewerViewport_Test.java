@@ -164,6 +164,7 @@ public class XViewerViewport_Test {
       TreeItem topBefore = tree.getTopItem();
       String before = state(viewer);
       String pixels = pixels(tree);
+      org.eclipse.swt.graphics.ImageData probeBefore = probeImage(tree, "xviewer-before");
 
       tree.setTopItem(tree.getItem(19_999));
       tree.update();
@@ -171,8 +172,59 @@ public class XViewerViewport_Test {
       tree.setTopItem(topBefore);
       tree.update();
       pump();
+      org.eclipse.swt.graphics.ImageData probeAfter = probeImage(tree, "xviewer-after");
+      probeDiff("xviewer", probeBefore, probeAfter);
+      for (int wait = 0; wait < 6; wait++) {
+         long end = System.currentTimeMillis() + 500;
+         while (System.currentTimeMillis() < end) {
+            if (!display.readAndDispatch()) {
+               try { Thread.sleep(5); } catch (InterruptedException e) { break; }
+            }
+         }
+         probeDiff("xviewer-after+" + (wait + 1) * 500 + "ms", probeBefore, probeImage(tree, "xviewer-after-" + (wait + 1)));
+      }
+      System.out.println("PROBE xviewer env GTK_OVERLAY_SCROLLING=" + System.getenv("GTK_OVERLAY_SCROLLING") + " top=" + tree.getTopItem().getText(0) + " topBefore=" + topBefore.getText(0));
       assertEquals(before, state(viewer));
       assertEquals(pixels, pixels(tree));
+   }
+
+   /* PROBE ONLY */
+   static org.eclipse.swt.graphics.ImageData probeImage(org.eclipse.swt.widgets.Control control, String name) {
+      org.eclipse.swt.graphics.Point size = control.getSize();
+      Image image = new Image(control.getDisplay(), size.x, size.y);
+      org.eclipse.swt.graphics.GC gc = new org.eclipse.swt.graphics.GC(image);
+      try {
+         control.print(gc);
+         org.eclipse.swt.graphics.ImageData data = image.getImageData();
+         org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
+         loader.data = new org.eclipse.swt.graphics.ImageData[] {data};
+         String dir = System.getProperty("m3.test.pixels.dir", System.getProperty("java.io.tmpdir"));
+         new java.io.File(dir).mkdirs();
+         loader.save(dir + "/probe-" + name + ".png", SWT.IMAGE_PNG);
+         return data;
+      } finally {
+         gc.dispose();
+         image.dispose();
+      }
+   }
+
+   static void probeDiff(String name, org.eclipse.swt.graphics.ImageData a, org.eclipse.swt.graphics.ImageData b) {
+      int n = 0, minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, maxX = -1, maxY = -1;
+      StringBuilder first = new StringBuilder();
+      for (int y = 0; y < Math.min(a.height, b.height); y++) {
+         for (int x = 0; x < Math.min(a.width, b.width); x++) {
+            int pa = a.getPixel(x, y), pb = b.getPixel(x, y);
+            if (pa != pb) {
+               n++;
+               minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+               if (n <= 12) {
+                  first.append(" (").append(x).append(',').append(y).append(' ').append(Integer.toHexString(pa)).append("->").append(Integer.toHexString(pb)).append(')');
+               }
+            }
+         }
+      }
+      System.out.println("PROBE " + name + " size=" + a.width + "x" + a.height + "/" + b.width + "x" + b.height + " differing=" + n
+            + " bbox=[" + minX + "," + minY + ".." + maxX + "," + maxY + "]" + first);
    }
 
 

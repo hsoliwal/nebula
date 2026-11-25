@@ -171,6 +171,16 @@ public final class VncCanvasNativeTest {
                     }
                     Thread.sleep(50);
                 }
+                // PROBE ONLY
+                System.out.println("PROBE vnc shell=" + shell.getBounds() + " client=" + shell.getClientArea()
+                        + " canvas=" + canvas.getBounds() + " canvasClient=" + canvas.getClientArea()
+                        + " origin=" + canvas.toDisplay(0, 0) + " frame=" + (canvas.getFrame() == null ? "null"
+                        : canvas.getFrame().width() + "x" + canvas.getFrame().height() + " seq=" + canvas.getFrame().sequence())
+                        + " actual=" + Arrays.toString(actual) + " stable=" + stable + " visible=" + shell.isVisible()
+                        + " active=" + display.getActiveShell() + " shells=" + display.getShells().length
+                        + " monitor=" + display.getPrimaryMonitor().getBounds());
+                probeSaveScreen(display, shell.getBounds(), "vnc-shell-screen");
+                probeSavePrint(canvas, "vnc-canvas-print");
                 assertNull("RFB I/O failed", failure.get());
                 assertArrayEquals("Real SWT screen must show remote pixels",
                         EXPECTED, actual);
@@ -208,6 +218,40 @@ public final class VncCanvasNativeTest {
             releasePeer.countDown();
             peers.shutdownNow();
         }
+    }
+
+    /* PROBE ONLY */
+    private static void probeSaveScreen(Display display, org.eclipse.swt.graphics.Rectangle area, String name) {
+        Image shot = new Image(display, Math.max(1, area.width), Math.max(1, area.height));
+        GC screen = new GC(display);
+        try {
+            screen.copyArea(shot, area.x, area.y);
+        } finally {
+            screen.dispose();
+        }
+        probeSave(shot.getImageData(), name);
+        shot.dispose();
+    }
+
+    private static void probeSavePrint(org.eclipse.swt.widgets.Control control, String name) {
+        Point size = control.getSize();
+        Image shot = new Image(control.getDisplay(), Math.max(1, size.x), Math.max(1, size.y));
+        GC gc = new GC(shot);
+        try {
+            System.out.println("PROBE vnc print=" + control.print(gc));
+        } finally {
+            gc.dispose();
+        }
+        probeSave(shot.getImageData(), name);
+        shot.dispose();
+    }
+
+    private static void probeSave(ImageData data, String name) {
+        org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
+        loader.data = new ImageData[] {data};
+        String dir = System.getProperty("m3.test.pixels.dir", System.getProperty("java.io.tmpdir"));
+        new java.io.File(dir).mkdirs();
+        loader.save(dir + "/probe-" + name + ".png", SWT.IMAGE_PNG);
     }
 
     private static int[] captureFromScreen(Display display, VncCanvas canvas) {

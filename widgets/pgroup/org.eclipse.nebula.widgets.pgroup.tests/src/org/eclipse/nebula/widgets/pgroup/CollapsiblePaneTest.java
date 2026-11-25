@@ -241,6 +241,8 @@ public class CollapsiblePaneTest {
 		pane.setCollapsed(false);
 		TestSupport.flush(display);
 		bar.update();
+		// GTK posts the reveal's expose through its frame clock, after update() returns: observe that real Paint
+		TestSupport.awaitNativePaint(bar, paints, 1, "expanded StatusBar did not paint natively");
 		assertEquals("one paint pass on expand: " + paints, 1, paints.size());
 		assertEquals(org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.line(), 1, org.eclipse.nebula.widgets.opal.statusbar.internal.RepaintCounters.reveals);
 		assertEquals("row 9999", bar.getText(0));

@@ -247,6 +247,7 @@ jobs:
         mvn -version | tee "$RUNNER_TEMP/nebula-legacy-tycho-maven.txt"
         grep -Eq '^Apache Maven 3[.]9[.]11([[:space:]]|$)' "$RUNNER_TEMP/nebula-legacy-tycho-maven.txt"
     - name: Run the excluded DrawnBrowser reactor under pinned GTK3/X11
+      if: false # PROBE ONLY: not part of the widget-test probe
       shell: bash
       run: |
         set -euo pipefail
@@ -367,7 +368,8 @@ jobs:
           -Dnebula.grid.viewport.screenshots.screen=true \
           "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing SWT GC digest}" \
           "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing SWT platform}" \
-          "-Dm3.test.pixels.dir=${RUNNER_TEMP:?missing runner temp}/nebula-widget-pixels"
+          "-Dm3.test.pixels.dir=${RUNNER_TEMP:?missing runner temp}/nebula-widget-pixels" \
+          -am -pl widgets/opal/colorbutton/org.eclipse.nebula.widgets.opal.colorbutton.tests,widgets/oscilloscope/org.eclipse.nebula.widgets.oscilloscope.tests,widgets/pgroup/org.eclipse.nebula.widgets.pgroup.tests,widgets/progresscircle/org.eclipse.nebula.widgets.progresscircle.tests,widgets/pshelf/org.eclipse.nebula.widgets.pshelf.tests,widgets/tablecombo/org.eclipse.nebula.widgets.tablecombo.test,widgets/visualization/org.eclipse.nebula.visualization.xygraph.test,widgets/vnc/org.eclipse.nebula.widgets.vnc.tests,widgets/web/org.eclipse.nebula.widgets.web.tests,widgets/xviewer/org.eclipse.nebula.widgets.xviewer.tests,widgets/datechooser/org.eclipse.nebula.widgets.datechooser.tests
     # Index exact original Tycho/JUnit XML when the reactor reports native
     # failures. This cannot make a failed Build All Widgets step succeed.
     - name: Index native JUnit failures without changing the Maven verdict

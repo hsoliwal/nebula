@@ -23,6 +23,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.Resource;
 import org.eclipse.swt.graphics.Transform;
@@ -296,10 +297,22 @@ public class WebCanvasExactClip_Test {
     public void originallyUnclippedStateRemainsUnclipped() {
         try (Frame f = new Frame()) {
             f.gc.setClipping((Region) null);
-            assertFalse(f.gc.isClipped());
-            paint(f.gc);
-            assertFalse(f.gc.isClipped());
-            assertFalse(f.gc.isDisposed());
+            boolean clipped = f.gc.isClipped();
+            if (!"gtk".equals(SWT.getPlatform())) {
+                // SWT GTK's setClipping(null) re-applies the GC's initial clip rectangle (Eclipse bug 531667) and
+                // its isClipped() reports that clip; the other platforms report a reset GC as unclipped.
+                assertFalse(clipped);
+            }
+            assertEquals("a reset GC draws on the whole image", new Rectangle(0, 0, W, H), f.gc.getClipping());
+            Region before = deviceClip(f.gc);
+            try {
+                paint(f.gc);
+                assertEquals("paint keeps the caller's unclipped state", clipped, f.gc.isClipped());
+                exactClip(f.gc, before);
+                assertFalse(f.gc.isDisposed());
+            } finally {
+                before.dispose();
+            }
         }
     }
 
@@ -606,11 +619,28 @@ public class WebCanvasExactClip_Test {
         assertApplicationGraphics(baseline);
     }
 
+    /*
+     * Whether this SWT records GC operations with their own Region/Transform copies (the win32 GC replays its recorded
+     * operations for other zoom levels). SWT GTK and Cocoa have no such operation classes and keep no copies.
+     */
+    private static boolean recordsGCOperations() {
+        try {
+            Class.forName("org.eclipse.swt.graphics.GC$SetClippingRegionOperation", false, GC.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException absent) {
+            return false;
+        }
+    }
+
     private void callerRetiresRecordedCopies(GC gc, Set<Object> baseline) {
         assertFalse("Canvas must leave the borrowed Image GC live", gc.isDisposed());
         assertApplicationGraphics(baseline);
         Set<Object> copies = graphicsByOwner(true);
-        assertFalse("fixture must observe actual recorded GC copies", copies.isEmpty());
+        if (recordsGCOperations()) {
+            assertFalse("fixture must observe actual recorded GC copies", copies.isEmpty());
+        } else {
+            assertTrue("an SWT without GC operation recording keeps no GC copies: " + copies, copies.isEmpty());
+        }
         Set<Object> expected = Collections.newSetFromMap(new IdentityHashMap<>());
         expected.addAll(baseline);
         assertTrue("caller GC was tracked in the baseline", expected.remove(gc));

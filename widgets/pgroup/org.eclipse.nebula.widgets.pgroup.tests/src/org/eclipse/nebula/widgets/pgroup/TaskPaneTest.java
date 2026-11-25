@@ -125,12 +125,15 @@ public class TaskPaneTest {
 	@Test
 	public void titleBarClickTogglesAndRepaintsTheChevron() {
 		List<Rectangle> paints = TestSupport.recordPaints(panes[0].getTitleBar());
+		TestSupport.spin(display, 200); // the exposes of the shell's open land before the click is recorded
 		paints.clear();
 		Event down = new Event();
 		down.button = 1;
 		panes[0].getTitleBar().notifyListeners(SWT.MouseDown, down);
 		TestSupport.flush(display);
 		panes[0].getTitleBar().update();
+		// GTK posts the expose through its frame clock, after update() returns: observe the real Paint
+		TestSupport.awaitNativePaint(panes[0].getTitleBar(), paints, 1, "collapse did not repaint the chevron natively");
 		assertTrue(panes[0].isCollapsed());
 		if (viewport()) {
 			TestSupport.assertPaintsInside(paints, panes[0].getChevronBounds());
@@ -138,6 +141,7 @@ public class TaskPaneTest {
 		paints.clear();
 		panes[0].setTitle("Renamed");
 		panes[0].getTitleBar().update();
+		TestSupport.awaitNativePaint(panes[0].getTitleBar(), paints, 1, "title change did not repaint natively");
 		assertFalse(paints.isEmpty());
 		assertEquals("Renamed", panes[0].getTitle());
 		panes[0].setSpecial(true);

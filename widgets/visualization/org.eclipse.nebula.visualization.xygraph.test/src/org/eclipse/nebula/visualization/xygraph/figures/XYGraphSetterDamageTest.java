@@ -90,6 +90,7 @@ public class XYGraphSetterDamageTest {
 	}
 
 	private void step(String name, Runnable change) {
+		int[] previous = pixels();
 		change.run();
 		spin();
 		int[] shown = pixels();
@@ -98,7 +99,50 @@ public class XYGraphSetterDamageTest {
 		canvas.redraw();
 		canvas.update();
 		spin();
-		assertArrayEquals(name + ": the change shows without another repaint", pixels(), shown);
+		int[] full = pixels();
+		canvas.redraw();
+		canvas.update();
+		spin();
+		int[] full2 = pixels();
+		probeDiff(name + " previous-vs-shown", previous, shown);
+		probeDiff(name + " shown-vs-full", shown, full);
+		probeDiff(name + " full-vs-full2", full, full2);
+		probeDiff(name + " previous-vs-full", previous, full);
+		probeSave(name + "-previous", previous);
+		probeSave(name + "-shown", shown);
+		probeSave(name + "-full", full);
+		assertArrayEquals(name + ": the change shows without another repaint", full, shown);
+	}
+
+	/* PROBE ONLY */
+	private void probeDiff(String name, int[] a, int[] b) {
+		int w = canvas.getBounds().width;
+		int n = 0, minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, maxX = -1, maxY = -1;
+		StringBuilder first = new StringBuilder();
+		for (int i = 0; i < a.length; i++) {
+			if (a[i] != b[i]) {
+				int x = i % w, y = i / w;
+				n++;
+				minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+				if (n <= 16) {
+					first.append(" (").append(x).append(',').append(y).append(' ').append(Integer.toHexString(a[i])).append("->").append(Integer.toHexString(b[i])).append(')');
+				}
+			}
+		}
+		System.out.println("PROBE xygraph " + name + " differing=" + n + " bbox=[" + minX + "," + minY + ".." + maxX + "," + maxY + "]" + first);
+	}
+
+	private void probeSave(String name, int[] all) {
+		Rectangle size = canvas.getBounds();
+		ImageData data = new ImageData(size.width, size.height, 24, new org.eclipse.swt.graphics.PaletteData(0xff0000, 0xff00, 0xff));
+		for (int y = 0; y < size.height; y++) {
+			data.setPixels(0, y, size.width, all, y * size.width);
+		}
+		org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
+		loader.data = new ImageData[] { data };
+		String dir = System.getProperty("m3.test.pixels.dir", System.getProperty("java.io.tmpdir"));
+		new java.io.File(dir).mkdirs();
+		loader.save(dir + "/probe-xygraph-" + name + ".png", SWT.IMAGE_PNG);
 	}
 
 	private int[] pixels() {

@@ -69,10 +69,15 @@ public class OscilloscopeEnvelopeTest {
 			folds.add(new int[] { s[0], min, max, s[spc - 1] });
 			scope.pushSamples(0, s, 0, spc);
 		}
-		// one column per paint: after `columns` paints the tail ends with the last pushed column
+		// one column per paint: after `columns` paints the tail ends with the last pushed column. On GTK, update()
+		// returns before the expose arrives through the frame clock, so each frame waits for its real Paint.
+		int[] painted = new int[1];
+		scope.addListener(SWT.Paint, e -> painted[0]++);
 		for (int f = 0; f < columns; f++) {
+			int before = painted[0];
 			scope.redraw();
 			scope.update();
+			awaitNativePaint(display, painted, before + 1);
 		}
 		int[] l2 = lines(scope, "l2");
 		int[] l1 = lines(scope, "l1");
@@ -149,6 +154,24 @@ public class OscilloscopeEnvelopeTest {
 		}
 	}
 
+	/* runs the event loop until the scope has received the given number of actual native Paint events */
+	private static void awaitNativePaint(Display display, int[] painted, int count) {
+		long deadline = System.nanoTime() + 5_000_000_000L;
+		while (painted[0] < count) {
+			if (System.nanoTime() > deadline) {
+				throw new AssertionError("frame not painted natively: " + painted[0] + " of " + count); //$NON-NLS-1$ //$NON-NLS-2$
+			}
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(1L);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted awaiting native SWT.Paint", interrupted); //$NON-NLS-1$
+				}
+			}
+		}
+	}
+
 	private static int[] lines(Oscilloscope scope, String name) throws Exception {
 		Field chanF = Oscilloscope.class.getDeclaredField("chan"); //$NON-NLS-1$
 		chanF.setAccessible(true);
@@ -204,6 +227,9 @@ public class OscilloscopeEnvelopeTest {
 				for (int aa = 0; aa < 2; aa++) {
 					int diff = diff(display, toArray(full), toArray(env), width, aa == 1, cols + 40);
 					if (width == 1 && aa == 0) {
+						if (diff != 0) {
+							probeDump(display, toArray(full), toArray(env), cols + 40, k, spc);
+						}
 						assertEquals("aliased width 1, case " + k, 0, diff); //$NON-NLS-1$
 						exactAliased1++;
 					}
@@ -214,6 +240,46 @@ public class OscilloscopeEnvelopeTest {
 		}
 		System.out.println("envelope pixel diffs (case:width[aa]=pixels): " + report); //$NON-NLS-1$
 		assertEquals(24, exactAliased1);
+	}
+
+	/* PROBE ONLY */
+	private static void probeDump(Display display, int[] full, int[] env, int w, int k, int spc) {
+		int[] pa = render(display, full, 1, false, w);
+		int[] pb = render(display, env, 1, false, w);
+		StringBuilder s = new StringBuilder("PROBE envelope case " + k + " spc=" + spc + " platform=" + SWT.getPlatform());
+		for (int i = 0; i < pa.length; i++) {
+			if (pa[i] != pb[i]) {
+				int x = i % w, y = i / w;
+				s.append("\n  pixel (").append(x).append(',').append(y).append(") full=").append(Integer.toHexString(pa[i])).append(" env=").append(Integer.toHexString(pb[i]));
+				s.append("\n    env vertices near x:");
+				for (int v = 0; v + 1 < env.length; v += 2) {
+					if (Math.abs(env[v] - x) <= 1) {
+						s.append(' ').append(env[v]).append(',').append(env[v + 1]);
+					}
+				}
+				s.append("\n    full vertices near x (first/last 6 of each column):");
+				StringBuilder col = new StringBuilder();
+				int count = 0;
+				for (int v = 0; v + 1 < full.length; v += 2) {
+					if (Math.abs(full[v] - x) <= 1) {
+						count++;
+						if (count <= 6) {
+							col.append(' ').append(full[v]).append(',').append(full[v + 1]);
+						}
+					}
+				}
+				int seen = 0;
+				StringBuilder tail = new StringBuilder();
+				for (int v = full.length - 2; v >= 0 && seen < 6; v -= 2) {
+					if (Math.abs(full[v] - x) <= 1) {
+						seen++;
+						tail.insert(0, " " + full[v] + "," + full[v + 1]);
+					}
+				}
+				s.append(col).append(" ...").append(tail).append(" (").append(count).append(" vertices)");
+			}
+		}
+		System.out.println(s);
 	}
 
 	private static int[] toArray(List<Integer> l) {
