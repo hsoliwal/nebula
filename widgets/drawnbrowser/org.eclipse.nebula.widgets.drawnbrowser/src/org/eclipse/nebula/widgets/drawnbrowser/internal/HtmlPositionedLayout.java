@@ -20,7 +20,8 @@ import java.util.Arrays;
  * and sizes use the CSS left-to-right rules. Margins, padding and borders belong to their owning box; legacy block
  * gaps remain outside a styled leaf's border. The {@code overflow: hidden/clip} panel subset clips descendants to
  * the padding edge through containing-block ancestry. Hidden establishes an unscrolled local reference for sticky
- * descendants; clip retains the enclosing scroll reference. Nested programmatic hidden and wheel-driven auto/scroll offsets, scrollbar thumbs, overflow axes and
+ * descendants; clip retains the enclosing scroll reference. Nested vertical offsets use parent-owned box lanes
+ * (programmatic on hidden, auto and scroll; MouseWheel on auto and scroll); scrollbar thumbs, overflow axes and
  * overflow-clip-margin are not implemented. Percentages, inline positioning, floats and transforms remain
  * outside this subset. Positioned and decorated container documents resolve their geometry as
  * a whole; ordinary documents retain {@link HtmlLayout}'s lazy prefix layout. TextLayout residency remains bounded.
@@ -123,17 +124,17 @@ public final class HtmlPositionedLayout {
 			if (!fixed[e] && firstClip(e, true) < 0) totalHeight = Math.max(totalHeight, add(blockY[b], blockHeight[b]));
 		}
 		totalHeight = Math.max(0, totalHeight);
-		// Descendants feed only their nearest effective hidden scroll container. Nested
-		// scrollports contribute their own border box to their enclosing container.
+		// Each box and fragment feeds only its nearest clipping box, and only when that box is a
+		// scrollport. Nested scrollports contribute their own border box to their enclosing container;
+		// an overflow:clip box traps its descendants' overflow and contributes only its border box.
 		for (int e = 1; e < doc.boxCount; e++) {
-			int panel = scrollAncestor[e];
-			if (panel >= 0) panelBottom[panel] = Math.max(panelBottom[panel],
+			int panel = firstClip(e, false);
+			if (panel >= 0 && panelScrollport(panel)) panelBottom[panel] = Math.max(panelBottom[panel],
 					add(add(y[e], height[e]), after[e]));
 		}
 		for (int b = 0; b < doc.blockCount; b++) {
-			int owner = doc.blockBox[b];
-			int panel = panelScrollport(owner) ? owner : scrollAncestor[owner];
-			if (panel >= 0) {
+			int panel = firstClip(doc.blockBox[b], true);
+			if (panel >= 0 && panelScrollport(panel)) {
 				panelBottom[panel] = Math.max(panelBottom[panel], add(blockY[b], blockHeight[b]));
 			}
 		}
@@ -146,6 +147,8 @@ public final class HtmlPositionedLayout {
 			if (panelScrollY[e] != 0) activePanels++;
 		}
 		panelAccumulationDirty = true;
+		// Sticky limits read the panel offsets clamped above.
+		projectionValid = false;
 		indexIntervals();
 	}
 
@@ -643,7 +646,15 @@ public final class HtmlPositionedLayout {
 						&& doc.boxRole[parent] != HtmlDocument.FLEX_BOX && doc.boxRole[parent] != HtmlDocument.GRID_BOX) parent = doc.boxParent[parent];
 			}
 			int parentMotion = motionOwner[parent] >= 0 ? stickyShift[motionOwner[parent]] : fixed[parent] ? scroll : 0;
-			long end = (long) y[parent] + height[parent] + parentMotion;
+			// The containing box's displayed bottom. A scrolled panel keeps its own border box in place, so a
+			// sticky child of that panel stays within the panel's visible box rather than its unscrolled one.
+			long end = (long) y[parent] + height[parent] + parentMotion
+					+ panelDisplacement(e) - panelDisplacement(parent);
+			// A scrollport's own sticky child is bounded by the end of the content the panel can scroll to,
+			// which the largest offset brings to the visible padding edge. A sticky taller than the visible box
+			// therefore stays pinned while content remains below it, and no part of it stays clipped.
+			if (scrollAncestor[e] == parent) end = Math.max((long) panelBottom[parent],
+					(long) y[parent] + height[parent] - doc.boxBorder[parent] + panelScrollY[parent]) + parentMotion;
 			int first = doc.boxFirstBlock[e];
 			int gap = first < doc.boxEndBlock[e] && doc.blockBox[first] == e && doc.kind[first] != HtmlDocument.CELL
 					&& leadGap[e] == 0 ? HtmlLayout.BLOCK_GAP : 0;

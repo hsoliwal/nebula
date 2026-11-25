@@ -85,6 +85,124 @@ public class HtmlPositionedGeometryTest {
 		assertVisible(scene, 0, 180, 0);
 	}
 
+	@Test
+	public void overflowClipInsideAScrollportTrapsItsDescendantsOverflow() {
+		// A clip box contributes only its own border box to the enclosing scrollport, never its clipped content.
+		Scene trapped = new Scene("<section style='height:50px;overflow:auto'><div style='height:80px;overflow:clip'>"
+				+ "<p style='height:200px'>x</p></div></section>", 240, 180);
+		int child = trapped.document.blockBox[0];
+		int clip = trapped.document.boxParent[child], panel = trapped.document.boxParent[clip];
+		assertEquals("80px clip border box in a 50px scrollport", 30, trapped.layout.panelMaximumY(panel));
+		assertEquals(0, trapped.layout.panelMaximumY(clip));
+		int before = trapped.layout.boxY(child, 0);
+		assertEquals(30, trapped.layout.scrollPanel(panel, 1000));
+		assertEquals(before - 30, trapped.layout.boxY(child, 0));
+		assertVisible(trapped, 0, 180, 0);
+		for (String inner : new String[] { "clip", "visible" }) {
+			Scene scene = new Scene("<section style='height:50px;overflow:auto'><div style='height:30px;overflow:" + inner + "'>"
+					+ "<p style='height:200px'>x</p></div></section><footer style='height:20px'>f</footer>", 240, 180);
+			int paragraph = scene.document.blockBox[0];
+			int scrollport = scene.document.boxParent[scene.document.boxParent[paragraph]];
+			int expected = inner.equals("clip") ? 0 : 150;
+			assertEquals(inner, expected, scene.layout.panelMaximumY(scrollport));
+			int top = scene.layout.boxY(paragraph, 0);
+			assertEquals(inner, expected, scene.layout.scrollPanel(scrollport, 1000));
+			assertEquals(inner, top - expected, scene.layout.boxY(paragraph, 0));
+			assertVisible(scene, 0, 180, 0);
+		}
+	}
+
+	@Test
+	public void stickyChildOfAScrolledPanelStaysInsideThePanelsVisibleBox() {
+		Scene scene = new Scene("<section style='height:100px;overflow:hidden'>"
+				+ "<header style='position:sticky;top:0;height:20px'>h</header>"
+				+ "<p style='height:400px'>x</p></section><footer style='height:300px'>f</footer>", 240, 180);
+		int header = scene.document.blockBox[0], panel = scene.document.boxParent[header];
+		assertEquals(40, scene.layout.scrollPanel(panel, 40));
+		int pinnedBox = scene.layout.boxY(header, 0), pinnedText = scene.layout.blockY(0, 0);
+		for (int offset : new int[] { 120, 320 }) {
+			scene.layout.scrollPanel(panel, offset);
+			assertEquals(offset, scene.layout.panelScrollY(panel));
+			assertEquals("sticky header stays pinned at panel offset " + offset, pinnedBox, scene.layout.boxY(header, 0));
+			assertEquals(pinnedText, scene.layout.blockY(0, 0));
+			assertTrue("header text remains inside the panel's visible box",
+					scene.layout.blockY(0, 0) + scene.layout.blockHeight(0) > scene.layout.boxY(panel, 0));
+			assertVisible(scene, 0, 180, 0);
+		}
+		// A sticky whose containing block is an ordinary box inside the panel still leaves with that box.
+		Scene wrapped = new Scene("<section style='height:100px;overflow:hidden'><div>"
+				+ "<header style='position:sticky;top:0;height:20px'>h</header><p style='height:60px'>x</p></div>"
+				+ "<p style='height:400px'>y</p></section>", 240, 180);
+		int sticky = wrapped.document.blockBox[0], wrapper = wrapped.document.boxParent[sticky];
+		int outer = wrapped.document.boxParent[wrapper];
+		assertEquals(300, wrapped.layout.scrollPanel(outer, 300));
+		assertEquals("bottom-aligned with its scrolled containing block",
+				wrapped.layout.boxY(wrapper, 0) + wrapped.layout.boxHeight(wrapper),
+				wrapped.layout.boxY(sticky, 0) + wrapped.layout.boxHeight(sticky));
+		assertVisible(wrapped, 0, 180, 0);
+	}
+
+	@Test
+	public void tallStickyChildOfAScrolledPanelStaysPinnedUntilTheContentEnds() {
+		Scene scene = new Scene("<section style='height:100px;overflow:hidden'>"
+				+ "<header style='position:sticky;top:0;height:150px'>h</header>"
+				+ "<p style='height:400px'>x</p></section><footer style='height:300px'>f</footer>", 240, 180);
+		int header = scene.document.blockBox[0], content = scene.document.blockBox[1];
+		int panel = scene.document.boxParent[header];
+		assertEquals(450, scene.layout.panelMaximumY(panel));
+		assertEquals(40, scene.layout.scrollPanel(panel, 40));
+		int pinned = scene.layout.boxY(header, 0);
+		for (int offset : new int[] { 120, 300, 400 }) {
+			scene.layout.scrollPanel(panel, offset);
+			assertEquals("taller than the panel, still pinned at offset " + offset, pinned, scene.layout.boxY(header, 0));
+			assertVisible(scene, 0, 180, 0);
+		}
+		// At the end of the scrolled content the sticky box's bottom meets the content's bottom.
+		assertEquals(50, scene.layout.scrollPanel(panel, Integer.MAX_VALUE));
+		assertEquals(scene.layout.boxY(content, 0) + scene.layout.boxHeight(content),
+				scene.layout.boxY(header, 0) + scene.layout.boxHeight(header));
+		assertVisible(scene, 0, 180, 0);
+	}
+
+	@Test
+	public void tallStickyInAPaddedBorderedPanelReachesTheVisibleContentEnd() {
+		Scene scene = new Scene("<section style='height:100px;overflow:hidden;border:2px solid black;padding-bottom:10px'>"
+				+ "<header style='position:sticky;top:0;height:150px'>h</header>"
+				+ "<p style='height:400px'>x</p></section><footer style='height:300px'>f</footer>", 240, 180);
+		int header = scene.document.blockBox[0], content = scene.document.blockBox[1];
+		int panel = scene.document.boxParent[header], border = scene.document.boxBorder[panel];
+		assertEquals(440, scene.layout.panelMaximumY(panel));
+		assertEquals(40, scene.layout.scrollPanel(panel, 40));
+		int pinned = scene.layout.boxY(header, 0);
+		for (int offset : new int[] { 120, 300, 400 }) {
+			scene.layout.scrollPanel(panel, offset);
+			assertEquals("pinned at offset " + offset, pinned, scene.layout.boxY(header, 0));
+			assertVisible(scene, 0, 180, 0);
+		}
+		// The largest offset brings the content end to the visible padding edge; the sticky's bottom follows,
+		// so neither the panel's border nor its padding keeps any of the sticky clipped.
+		assertEquals(40, scene.layout.scrollPanel(panel, Integer.MAX_VALUE));
+		int paddingEdge = scene.layout.boxY(panel, 0) + scene.layout.boxHeight(panel) - border;
+		assertEquals(paddingEdge, scene.layout.boxY(content, 0) + scene.layout.boxHeight(content));
+		assertEquals(paddingEdge, scene.layout.boxY(header, 0) + scene.layout.boxHeight(header));
+		assertVisible(scene, 0, 180, 0);
+	}
+
+	@Test
+	public void overflowClipBoxOwnTextDoesNotFeedTheEnclosingScrollport() {
+		for (String mode : new String[] { "clip", "visible" }) {
+			Scene scene = new Scene("<section style='height:50px;overflow:auto'><div style='height:30px;overflow:" + mode + "'>"
+					+ "own text</div></section>", 240, 180, 200);
+			int owner = scene.document.blockBox[0], scrollport = scene.document.boxParent[owner];
+			int expected = mode.equals("clip") ? 0 : 150;
+			assertEquals(mode, 200, scene.layout.blockHeight(0));
+			assertEquals(mode + ": text clipped by its own box adds no scroll range", expected,
+					scene.layout.panelMaximumY(scrollport));
+			assertEquals(mode, expected, scene.layout.scrollPanel(scrollport, 1000));
+			assertVisible(scene, 0, 180, 0);
+		}
+	}
+
 
 	@Test
 	public void staticSemanticPanelOwnsItsPaddingAndMarginsAroundItsChildrenOnce() {
