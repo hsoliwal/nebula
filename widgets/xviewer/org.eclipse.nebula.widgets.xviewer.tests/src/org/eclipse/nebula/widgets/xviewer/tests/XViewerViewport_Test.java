@@ -161,11 +161,9 @@ public class XViewerViewport_Test {
       pump();
       // Native SWT can scroll the selected row into view. Restore the actual
       // visible anchor when testing a round trip, not a different fixed row.
-      TreeItem topBefore = tree.getTopItem();
+      TreeItem topBefore = visibleTopItem(tree);
       String before = state(viewer);
       String pixels = pixels(tree);
-      org.eclipse.swt.graphics.ImageData probeBefore = probeImage(tree, "xviewer-before");
-      probeTree("before", tree);
 
       tree.setTopItem(tree.getItem(19_999));
       tree.update();
@@ -173,72 +171,8 @@ public class XViewerViewport_Test {
       tree.setTopItem(topBefore);
       tree.update();
       pump();
-      org.eclipse.swt.graphics.ImageData probeAfter = probeImage(tree, "xviewer-after");
-      probeTree("after", tree);
-      probeDiff("xviewer", probeBefore, probeAfter);
-      for (int wait = 0; wait < 6; wait++) {
-         long end = System.currentTimeMillis() + 500;
-         while (System.currentTimeMillis() < end) {
-            if (!display.readAndDispatch()) {
-               try { Thread.sleep(5); } catch (InterruptedException e) { break; }
-            }
-         }
-         probeDiff("xviewer-after+" + (wait + 1) * 500 + "ms", probeBefore, probeImage(tree, "xviewer-after-" + (wait + 1)));
-      }
-      System.out.println("PROBE xviewer env GTK_OVERLAY_SCROLLING=" + System.getenv("GTK_OVERLAY_SCROLLING") + " top=" + tree.getTopItem().getText(0) + " topBefore=" + topBefore.getText(0));
       assertEquals(before, state(viewer));
       assertEquals(pixels, pixels(tree));
-   }
-
-   /* PROBE ONLY */
-   static void probeTree(String when, Tree tree) {
-      StringBuilder s = new StringBuilder("PROBE xviewer tree " + when + " focus=" + tree.isFocusControl() + " active="
-         + (tree.getDisplay().getActiveShell() == tree.getShell()) + " header=" + tree.getHeaderHeight() + " itemHeight="
-         + tree.getItemHeight() + " top=" + tree.getTopItem().getText(0) + " topBounds=" + tree.getTopItem().getBounds()
-         + " selection=");
-      for (TreeItem item : tree.getSelection()) {
-         s.append(item.getText(0)).append(item.getBounds()).append(' ');
-      }
-      s.append(" item4=").append(tree.getItem(4).getBounds()).append(" item0=").append(tree.getItem(0).getBounds());
-      System.out.println(s);
-   }
-
-   static org.eclipse.swt.graphics.ImageData probeImage(org.eclipse.swt.widgets.Control control, String name) {
-      org.eclipse.swt.graphics.Point size = control.getSize();
-      Image image = new Image(control.getDisplay(), size.x, size.y);
-      org.eclipse.swt.graphics.GC gc = new org.eclipse.swt.graphics.GC(image);
-      try {
-         control.print(gc);
-         org.eclipse.swt.graphics.ImageData data = image.getImageData();
-         org.eclipse.swt.graphics.ImageLoader loader = new org.eclipse.swt.graphics.ImageLoader();
-         loader.data = new org.eclipse.swt.graphics.ImageData[] {data};
-         String dir = "/tmp/m3-widget-pixels";
-         new java.io.File(dir).mkdirs();
-         loader.save(dir + "/probe-" + name + ".png", SWT.IMAGE_PNG);
-         return data;
-      } finally {
-         gc.dispose();
-         image.dispose();
-      }
-   }
-
-   static void probeDiff(String name, org.eclipse.swt.graphics.ImageData a, org.eclipse.swt.graphics.ImageData b) {
-      int n = 0, minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, maxX = -1, maxY = -1;
-      StringBuilder first = new StringBuilder();
-      for (int y = 0; y < Math.min(a.height, b.height); y++) {
-         for (int x = 0; x < Math.min(a.width, b.width); x++) {
-            int pa = a.getPixel(x, y), pb = b.getPixel(x, y);
-            if (pa != pb) {
-               n++;
-               minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
-               if (n <= 12) {
-                  first.append(" (").append(x).append(',').append(y).append(' ').append(Integer.toHexString(pa)).append("->").append(Integer.toHexString(pb)).append(')');
-               }
-            }
-         }
-      }
-      System.out.println("PROBE " + name + " size=" + a.width + "x" + a.height + "/" + b.width + "x" + b.height + " differing=" + n
-            + " bbox=[" + minX + "," + minY + ".." + maxX + "," + maxY + "]" + first);
    }
 
 
@@ -310,12 +244,33 @@ public class XViewerViewport_Test {
       StringBuilder s = new StringBuilder();
       s.append(((org.eclipse.jface.viewers.IStructuredSelection) viewer.getSelection()).toList());
       s.append('|').append(java.util.Arrays.asList(viewer.getExpandedElements()));
-      s.append('|').append(tree.getTopItem().getText(0));
+      s.append('|').append(visibleTopItem(tree).getText(0));
       s.append('|').append(viewer.getStatusLabel().getText());
       for (int i = 0; i < 8; i++) {
          s.append('|').append(tree.getItem(i).getText(0)).append(tree.getItem(i).getExpanded());
       }
       return s.toString();
+   }
+
+   /**
+    * The row actually shown at the top of the tree. SWT GTK's {@code Tree.getTopItem()} answers the selected row
+    * instead while the vertical adjustment still equals the value its last {@code setTopItem()} cached
+    * ({@code Tree._getCachedTopItem}): here, after {@code setTopItem(item 0)} on the unscrolled tree with row 4
+    * selected, it returned row 4 while row 0 was at the top. On GTK3 the rows live in the tree view's bin window,
+    * whose y = 0 is the first pixel row below the header, so the row there is hit-tested instead (GTK4 counts the
+    * header in the same coordinates).
+    */
+   private static TreeItem visibleTopItem(Tree tree) {
+      if (!"gtk".equals(SWT.getPlatform())) {
+         return tree.getTopItem();
+      }
+      int x = tree.getColumn(0).getWidth() * 3 / 4;
+      TreeItem item = tree.getItem(new org.eclipse.swt.graphics.Point(x, 1));
+      if (item == null && tree.getHeaderVisible()) {
+         item = tree.getItem(new org.eclipse.swt.graphics.Point(x, tree.getHeaderHeight() + 1));
+      }
+      assertTrue("no row at the top of the tree", item != null);
+      return item;
    }
 
    /** SHA-256 of the control's own rendering (Control.print), independent of window occlusion. */
