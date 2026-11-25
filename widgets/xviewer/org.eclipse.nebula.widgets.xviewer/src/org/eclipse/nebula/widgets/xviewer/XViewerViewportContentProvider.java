@@ -92,9 +92,11 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
          return;
       }
       Object child = children[index];
-      materializedCount++;
-      if (isRoot(parent)) {
-         markRoot(index);
+      // SWT.VIRTUAL may request an existing root again after scrolling.
+      // Count distinct resident root indices, not repeated SetData callbacks;
+      // still replace the row each time to preserve the native/JFace contract.
+      if (!isRoot(parent) || markRoot(index)) {
+         materializedCount++;
       }
       viewer.replace(parent, index, child);
       viewer.setHasChildren(child, hasVisibleChildren(child));
@@ -188,14 +190,18 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       return materializedRoots.length << 5;
    }
 
-   private void markRoot(int index) {
+   /** Returns true only for the first materialization of this root index. */
+   private boolean markRoot(int index) {
       int word = index >>> 5;
       if (word >= materializedRoots.length) {
          int[] grown = new int[Math.max(word + 1, materializedRoots.length * 2)];
          System.arraycopy(materializedRoots, 0, grown, 0, materializedRoots.length);
          materializedRoots = grown;
       }
-      materializedRoots[word] |= 1 << (index & 31);
+      int bit = 1 << (index & 31);
+      boolean fresh = (materializedRoots[word] & bit) == 0;
+      materializedRoots[word] |= bit;
+      return fresh;
    }
 
    private boolean isRoot(Object parent) {
