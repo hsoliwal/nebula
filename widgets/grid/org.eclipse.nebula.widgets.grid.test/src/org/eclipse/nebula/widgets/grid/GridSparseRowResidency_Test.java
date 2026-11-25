@@ -207,7 +207,7 @@ public class GridSparseRowResidency_Test {
 			assertEquals("one SetData for released row " + row, 1, setData - before);
 			// the default mode clears the cells (Grid.clear Javadoc); the original mode keeps them, as stock
 			assertEquals("background of row " + row, fixes ? defaultBackground : red, item.getBackground(0));
-			assertEquals("check of row " + row, !fixes, item.getChecked(0));
+			assertEquals("check of row " + row, Boolean.valueOf(!fixes), Boolean.valueOf(item.getChecked(0)));
 			assertEquals("column 1 of row " + row, fixes ? "" : "gen0", item.getText(1));
 		}
 	}
