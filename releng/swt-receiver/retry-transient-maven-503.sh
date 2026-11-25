@@ -141,6 +141,32 @@ transport_status() {
   done <<< "$artifacts"
 }
 
+
+# Tycho's target-definition failure can report one primary HTTP 429 from Maven
+# Central plus a *secondary* missing artifact from its optional eclipse-hosted
+# fallback. The secondary absence must not veto retry of the *same* Central
+# artifact. This exception is intentionally narrower than a generic missing
+# artifact bypass: exact target-definition syntax, Central 429, identical POM
+# coordinate, and one named eclipse-hosted fallback. Other 404/401/checksum and
+# compiler/test failures continue to fail closed.
+auxiliary_fallback_missing() {
+  local line primary auxiliary main_coord jar_coord hits
+  hits=$(grep -o 'Could not find artifact' <<< "$failure" | wc -l)
+  [[ "$hits" -eq 1 ]] || return 1
+  line=$(grep 'Could not find artifact' <<< "$failure")
+  [[ "$line" == *' (additional failures: '* ]] || return 1
+  primary=${line%%' (additional failures: '*}
+  auxiliary=${line#*' (additional failures: '}
+  [[ "$primary" == *'Failed to resolve target definition '* \
+     && "$primary" == *'from/to central (https://repo.maven.apache.org/maven2): HTTP Status: 429' ]] || return 1
+  main_coord=$(grep -Eo "Could not transfer artifact ${coordinate} from/to central" <<< "$primary" \
+    | sed -E 's/^Could not transfer artifact (.*) from\/to central$/\1/' || true)
+  [[ -n "$main_coord" && "$main_coord" == *':pom:'* ]] || return 1
+  jar_coord=${main_coord/:pom:/:jar:}
+  [[ "$primary" == *"Failed to read artifact descriptor for ${jar_coord}"* ]] || return 1
+  [[ "$auxiliary" == "${main_coord} from eclipse-hosted: Could not find artifact ${main_coord} in eclipse-hosted (https://repo.eclipse.org/content/repositories/eclipse/))" ]]
+}
+
 slept=0
 for (( attempt = 1; attempt <= attempts; attempt++ )); do
   if "$@" 2>&1 | tee "$log"; then
@@ -158,7 +184,7 @@ for (( attempt = 1; attempt <= attempts; attempt++ )); do
   # Authentication, a missing artifact or a corrupt download is not transient,
   # even when a rate-limit or gateway response is reported next to it.
   missing=$(grep 'Could not find artifact' <<< "$failure" | grep -Ev "$tycho_4012" || true)
-  if [[ -n "$missing" ]] || grep -Eqi "${code}(401|403|404)\\b|reason phrase: (Unauthorized|Forbidden|Not Found)\\b|Checksum validation failed|ChecksumFailureException|checksum (verification|validation) fail" <<< "$failure"; then
+  if { [[ -n "$missing" ]] && ! auxiliary_fallback_missing; } || grep -Eqi "${code}(401|403|404)\\b|reason phrase: (Unauthorized|Forbidden|Not Found)\\b|Checksum validation failed|ChecksumFailureException|checksum (verification|validation) fail" <<< "$failure"; then
     echo "M3: non-transient repository failure (authentication, missing artifact or checksum); no retry (exit $rc)" >&2
     exit "$rc"
   fi
