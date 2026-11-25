@@ -1356,11 +1356,17 @@ public class Oscilloscope extends Canvas {
 		return value;
 	}
 
+	/**
+	 * Releases what the scope owns when it is disposed. The background and the default channel foregrounds are the
+	 * Display's shared system colours and a foreground passed to {@link #setForeground(int, Color)} belongs to the
+	 * caller, so none of them is disposed here: disposing a shared system colour made every later
+	 * {@code getSystemColor(SWT.COLOR_BLACK)} a disposed colour for the whole Display. The scope's own default grid
+	 * colours are released by their dispose listener.
+	 *
+	 * @param e the dispose event
+	 */
 	protected void widgetDisposed(Event e) {
-		bg.dispose();
-		for (Data element : chan) {
-			element.fg.dispose();
-		}
+		// nothing owned to release here
 	}
 
 	/**
