@@ -235,6 +235,9 @@ public class GalleryItem extends Item {
 			// selected children beyond the new count: created ones stay selected as before, unread ones leave
 			parent.releaseRuns(this, count, true);
 			truncateRangeFlags(count);
+			for (int i = Math.max(count, 0); i < items.length; i++) {
+				parent.releaseRunsWithin(items[i]);
+			}
 		}
 		if (count == 0) {
 			// No items
@@ -379,6 +382,19 @@ public class GalleryItem extends Item {
 		}
 	}
 
+	/**
+	 * Sets the selection flag of a child of this item.
+	 * <p>
+	 * In a <code>SWT.VIRTUAL</code> gallery (viewport widget mode, the default), a range selection of children that
+	 * were never created sets their flags without creating them and without calling this method for them. When a
+	 * subclass overrides this method (or <code>isSelected</code>, <code>getItem(int)</code> or
+	 * <code>select(int, int)</code>, or the matching <code>Gallery</code> hooks), the range selection keeps calling it
+	 * for every child, as before.
+	 * </p>
+	 *
+	 * @param item
+	 *            the child to select
+	 */
 	protected void _addSelection(GalleryItem item) {
 		// Deselect all items is multi selection is disabled
 		if (!parent.multi) {
@@ -536,12 +552,27 @@ public class GalleryItem extends Item {
 		return false;
 	}
 
+	/**
+	 * Selects the children from <code>from</code> to <code>to</code> (inclusive) and their descendants.
+	 * <p>
+	 * In a <code>SWT.VIRTUAL</code> gallery (viewport widget mode, the default), the children that were never created
+	 * are selected by index: they are not created, no SWT.SetData is sent for them, and the protected hooks
+	 * <code>Gallery._addSelection</code> and {@link #_addSelection(GalleryItem)} are not called for them;
+	 * {@link Gallery#getSelection()} creates them when it hands them out. A gallery or item whose class overrides
+	 * one of those hooks keeps the original per-child path.
+	 * </p>
+	 *
+	 * @param from
+	 *            the first child index
+	 * @param to
+	 *            the last child index
+	 */
 	protected void select(int from, int to) {
         if (Gallery.DEBUG) {
             System.out.println("GalleryItem.select(  " + from + "," + to + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         }
 
-		if (Gallery.VIEWPORT && parent.virtual && from >= 0 && to < getItemCount()) {
+		if (Gallery.VIEWPORT && parent.virtual && from >= 0 && to < getItemCount() && parent.selectsRangeByIndex(this)) {
 			//FLLDCIM: VIEWPORT - VIRTUAL range selection: children not created yet are selected by index
 			parent.selectRange(this, from, to);
 			return;
@@ -805,6 +836,9 @@ public class GalleryItem extends Item {
 				// selected children that exist keep their identity in the selection, as before
 				parent.releaseRuns(this, 0, false);
 				rangeFlags = null;
+				for (GalleryItem child : items) {
+					parent.releaseRunsWithin(child);
+				}
 			}
 			items = new GalleryItem[items.length];
 		} else {
@@ -821,6 +855,10 @@ public class GalleryItem extends Item {
 
 	/**
 	 * Selects all of the items in the receiver.
+	 * <p>
+	 * In a <code>SWT.VIRTUAL</code> gallery (viewport widget mode, the default), see {@link #select(int, int)}: the
+	 * children that were never created are selected without being created.
+	 * </p>
 	 */
 	public void selectAll() {
 		checkWidget();

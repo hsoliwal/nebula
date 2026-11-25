@@ -338,13 +338,21 @@ public class GalleryVirtualSelectionTest {
 	/**
 	 * Seeded scripts run on a VIRTUAL gallery and on a gallery of created items with the same groups (whose selection
 	 * is the serial one): selectAll, deselectAll, a group's selectAll, setSelection, clicks, shift-clicks and
-	 * ctrl-clicks (on items and group titles), remove, insert and dispose items and groups, create items, getSelection.
-	 * The Selection events, the count and the selection (as group/item index paths, in order) must be the same after
-	 * every step.
+	 * ctrl-clicks (on items and group titles), remove, insert and dispose items and groups, remove groups and cut them
+	 * off with setItemCount, create items, getSelection. The Selection events, the count and the selection (as
+	 * group/item index paths, in order) must be the same after every step, and getSelection must never create an item
+	 * (send SetData) under a group the gallery no longer holds.
+	 * <p>
+	 * Once a group leaves the gallery (remove, setItemCount, dispose), the original keeps the items it had created for
+	 * its selected children in the selection, stale, and a shift-click whose anchor was in that group selects more of
+	 * them; a VIRTUAL gallery never creates the unread ones. When the counts first differ, the selections must still be
+	 * equal on their items that are in the gallery; from then on they are compared on those items, and the events
+	 * where both name such an item.
+	 * </p>
 	 */
 	@Test
 	public void virtualSelectionAnswersMatchTheSerialSelection() {
-		for (int seed = 0; seed < 8; seed++) {
+		for (int seed = 0; seed < 32; seed++) {
 			differential(seed);
 		}
 	}
@@ -362,16 +370,29 @@ public class GalleryVirtualSelectionTest {
 		shell.setLayout(new FillLayout());
 		Gallery serial = new Gallery(shell, style);
 		Gallery lazy = new Gallery(shell, style | SWT.VIRTUAL);
+		int[] detachedSetData = { 0 };
+		boolean[] reading = { false };
 		lazy.addListener(SWT.SetData, e -> {
 			GalleryItem item = (GalleryItem) e.item;
 			if (item.getParentItem() == null) {
 				item.setItemCount(sizes[e.index]);
+			} else if (reading[0] && lazy.indexOf(item.getParentItem()) < 0) {
+				detachedSetData[0]++;
 			}
 		});
-		StringBuilder serialEvents = new StringBuilder(), lazyEvents = new StringBuilder();
+		// getSelection on the VIRTUAL gallery, counting the SetData it sends under a group the gallery no longer holds
+		java.util.function.Function<Boolean, String> lazyPaths = attachedOnly -> {
+			reading[0] = true;
+			try {
+				return paths(lazy, attachedOnly.booleanValue());
+			} finally {
+				reading[0] = false;
+			}
+		};
+		List<String> serialEvents = new ArrayList<>(), lazyEvents = new ArrayList<>();
 		for (int type : new int[] { SWT.Selection, SWT.DefaultSelection }) {
-			serial.addListener(type, e -> serialEvents.append(e.type).append(':').append(path(serial, (GalleryItem) e.item)).append(' '));
-			lazy.addListener(type, e -> lazyEvents.append(e.type).append(':').append(path(lazy, (GalleryItem) e.item)).append(' '));
+			serial.addListener(type, e -> serialEvents.add(e.type + ":" + path(serial, (GalleryItem) e.item)));
+			lazy.addListener(type, e -> lazyEvents.add(e.type + ":" + path(lazy, (GalleryItem) e.item)));
 		}
 		for (int g = 0; g < groups; g++) {
 			GalleryItem group = new GalleryItem(serial, SWT.NONE);
@@ -386,9 +407,10 @@ public class GalleryVirtualSelectionTest {
 		}
 		shell.open();
 		List<String> log = new ArrayList<>();
+		boolean stale = false;
 		for (int step = 0; step < 300; step++) {
 			int a = random.nextInt(1 << 16);
-			int op = random.nextInt(12);
+			int op = random.nextInt(13);
 			int count = serial.getItemCount();
 			int g = count == 0 ? -1 : a % count;
 			int children = g < 0 ? 0 : serial.getItem(g).getItemCount();
@@ -449,10 +471,25 @@ public class GalleryVirtualSelectionTest {
 				operation = gallery -> mouse(gallery, x, y, mask);
 				break;
 			}
+			case 10:
+				if (count > 1 && step % 4 == 0) {
+					if (a % 2 == 0) {
+						log.add("remove group " + g);
+						operation = gallery -> gallery.remove(g);
+					} else {
+						int keep = 1 + a % (count - 1);
+						log.add("setItemCount " + keep);
+						operation = gallery -> gallery.setItemCount(keep);
+					}
+				}
+				break;
 			default:
 				log.add("getSelection");
-				assertEquals("seed " + seed + ": " + log, paths(serial), paths(lazy));
+				if (!stale) {
+					assertEquals("seed " + seed + ": " + log, paths(serial, false), lazyPaths.apply(Boolean.FALSE));
+				}
 			}
+			int serialEventsBefore = serialEvents.size(), lazyEventsBefore = lazyEvents.size();
 			if (operation != null) {
 				// the original throws on some steps (a shift-click whose anchor was removed, showing an item of a
 				// collapsed group): both must throw alike
@@ -463,31 +500,58 @@ public class GalleryVirtualSelectionTest {
 					log.add("threw " + threw);
 				}
 			}
-			assertEquals("seed " + seed + ": " + log, serialEvents.toString(), lazyEvents.toString());
-			assertEquals("seed " + seed + ": " + log, serial.getSelectionCount(), lazy.getSelectionCount());
+			assertEquals("getSelection SetData under a detached group, seed " + seed + ": " + log, 0, detachedSetData[0]);
+			if (!stale && serial.getSelectionCount() != lazy.getSelectionCount()) {
+				// only stale items (no longer in the gallery) may make the counts differ: checked just below
+				stale = true;
+			}
+			if (!stale) {
+				assertEquals("seed " + seed + ": " + log, serialEvents, lazyEvents);
+				continue;
+			}
+			assertEquals("seed " + seed + ": " + log, paths(serial, true), lazyPaths.apply(Boolean.TRUE));
+			List<String> s = serialEvents.subList(serialEventsBefore, serialEvents.size());
+			List<String> l = lazyEvents.subList(lazyEventsBefore, lazyEvents.size());
+			assertEquals("seed " + seed + ": " + log, s.size(), l.size());
+			for (int e = 0; e < s.size(); e++) {
+				// an event names the item selected last, which may be a stale item only the original kept
+				if (!s.get(e).endsWith(":stale") && !l.get(e).endsWith(":stale")) {
+					assertEquals("seed " + seed + ": " + log, s.get(e), l.get(e));
+				}
+			}
 		}
-		assertEquals("seed " + seed + ": " + log, paths(serial), paths(lazy));
+		assertEquals("seed " + seed + ": " + log, paths(serial, stale), lazyPaths.apply(Boolean.valueOf(stale)));
+		assertEquals("getSelection SetData under a detached group, seed " + seed + ": " + log, 0, detachedSetData[0]);
 		shell.dispose();
 	}
 
-	/* the selection as group/item index paths, in order */
-	static String paths(Gallery gallery) {
+	/* the selection as group/item index paths, in order; without the stale items (no longer in the gallery) if asked */
+	static String paths(Gallery gallery, boolean attachedOnly) {
 		StringBuilder out = new StringBuilder();
 		for (GalleryItem item : gallery.getSelection()) {
-			out.append(path(gallery, item)).append(' ');
+			String path = path(gallery, item);
+			if (!attachedOnly || !"stale".equals(path)) {
+				out.append(path).append(' ');
+			}
 		}
 		return out.toString();
 	}
 
+	/* the group/item index path of an item, "stale" for an item (or its group) disposed or no longer in the gallery */
 	static String path(Gallery gallery, GalleryItem item) {
 		if (item == null) {
 			return "-";
 		}
 		GalleryItem parent = item.getParentItem();
 		if (item.isDisposed() || parent != null && parent.isDisposed()) {
-			return "disposed";
+			return "stale";
 		}
-		return parent == null ? String.valueOf(gallery.indexOf(item)) : gallery.indexOf(parent) + "/" + parent.indexOf(item);
+		if (parent == null) {
+			int index = gallery.indexOf(item);
+			return index < 0 ? "stale" : String.valueOf(index);
+		}
+		int group = gallery.indexOf(parent), index = parent.indexOf(item);
+		return group < 0 || index < 0 ? "stale" : group + "/" + index;
 	}
 
 	/* the simple name of the exception the operation throws, or "" */
@@ -510,6 +574,166 @@ public class GalleryVirtualSelectionTest {
 			event.count = 1;
 			event.stateMask = stateMask;
 			gallery.notifyListeners(type, event);
+		}
+	}
+
+	/**
+	 * A group that leaves the gallery (remove, VIRTUAL clear, setItemCount) after a selectAll, in 2 groups of 50,000
+	 * items: the selection API never creates items, nor sends SetData, under that group (the original had created them
+	 * in selectAll; before the runs were released, getSelection sent SetData there for every unread child).
+	 */
+	@Test
+	public void groupsLeavingTheGallerySendNoSetDataUnderThem() {
+		for (int operation = 0; operation < 3; operation++) {
+			create(2, ITEMS / 2, SWT.MULTI);
+			int[] detached = { 0 };
+			gallery.addListener(SWT.SetData, e -> {
+				GalleryItem parent = ((GalleryItem) e.item).getParentItem();
+				if (parent != null && gallery.indexOf(parent) < 0) {
+					detached[0]++;
+				}
+			});
+			GalleryItem leaving = gallery.getItem(operation == 2 ? 1 : 0);
+			List<GalleryItem> existing = new ArrayList<>();
+			for (GalleryItem item : leaving.getItems()) {
+				if (item != null) {
+					existing.add(item);
+				}
+			}
+			gallery.selectAll();
+			String name = new String[] { "remove(0)", "clear(0)", "setItemCount(1)" }[operation];
+			if (operation == 0) {
+				gallery.remove(0);
+			} else if (operation == 1) {
+				gallery.clear(0);
+			} else {
+				gallery.setItemCount(1);
+			}
+			flush();
+			assertTrue(name, gallery.indexOf(leaving) < 0);
+			java.util.Set<GalleryItem> selection = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+			selection.addAll(java.util.Arrays.asList(gallery.getSelection()));
+			assertEquals(name + ": SetData under the detached group", 0, detached[0]);
+			// the items of the detached group that existed keep their entries, as in the original
+			for (GalleryItem item : existing) {
+				assertTrue(name + ": an existing item of the detached group is still selected", selection.contains(item));
+			}
+			Event enter = new Event();
+			enter.keyCode = SWT.CR;
+			gallery.notifyListeners(SWT.KeyDown, enter);
+			assertEquals(name + ": SetData under the detached group after Enter", 0, detached[0]);
+			shell.dispose();
+		}
+	}
+
+	/**
+	 * A group reselected after its own deselectAll (what collapsing it does), then disposed: no SetData for its
+	 * children, the children that existed are disposed, and no selected item is left alive under the disposed group.
+	 */
+	@Test
+	public void disposingAReselectedGroupCreatesNothingUnderIt() {
+		create(2, 40, SWT.MULTI);
+		GalleryItem group = gallery.getItem(1);
+		List<GalleryItem> existing = new ArrayList<>();
+		for (GalleryItem item : group.getItems()) {
+			if (item != null) {
+				existing.add(item);
+			}
+		}
+		assertTrue("the second group is partly in view: " + existing.size(), existing.size() > 0 && existing.size() < 40);
+		gallery.selectAll();
+		group.deselectAll();
+		group.selectAll();
+		int setData = itemSetData;
+		group.dispose();
+		assertEquals("SetData sent while disposing the group", 0, itemSetData - setData);
+		for (GalleryItem item : existing) {
+			assertTrue("a child that existed is disposed with its group", item.isDisposed());
+		}
+		for (GalleryItem item : gallery.getSelection()) {
+			GalleryItem parent = item.getParentItem();
+			assertFalse("a selected item alive under the disposed group", parent == group && !item.isDisposed());
+		}
+	}
+
+	/** A Gallery subclass that counts the selection hook. */
+	static class CountingGallery extends Gallery {
+		int added;
+
+		CountingGallery(org.eclipse.swt.widgets.Composite parent, int style) {
+			super(parent, style);
+		}
+
+		@Override
+		protected void _addSelection(GalleryItem item) {
+			added++;
+			super._addSelection(item);
+		}
+	}
+
+	/** A GalleryItem subclass, used as a group, that counts the selection hook for its children. */
+	static class CountingGroup extends GalleryItem {
+		int added;
+
+		CountingGroup(Gallery parent, int style) {
+			super(parent, style);
+		}
+
+		@Override
+		protected void _addSelection(GalleryItem item) {
+			added++;
+			super._addSelection(item);
+		}
+	}
+
+	/**
+	 * Subclasses that override the protected selection hooks keep the original per-item range selection: the hook is
+	 * called for every child, as before (each child created, with its SetData, as before).
+	 */
+	@Test
+	public void overriddenSelectionHooksAreCalledForEveryChild() {
+		shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+		shell.setBounds(40, 40, 640, 480);
+		shell.setLayout(new FillLayout());
+		CountingGallery counting = new CountingGallery(shell, SWT.V_SCROLL | SWT.MULTI | SWT.VIRTUAL);
+		int[] setData = { 0 };
+		counting.addListener(SWT.SetData, e -> {
+			GalleryItem item = (GalleryItem) e.item;
+			if (item.getParentItem() == null) {
+				item.setItemCount(1000);
+			} else {
+				setData[0]++;
+			}
+		});
+		counting.setItemCount(1);
+		counting.getItem(0).setExpanded(true);
+		shell.open();
+		flushDisplay();
+		counting.selectAll();
+		assertEquals("Gallery._addSelection calls: the group and each of its 1000 children", 1001, counting.added);
+		assertEquals(1001, counting.getSelectionCount());
+		assertEquals("every child created, as by the original range selection", 1000, setData[0]);
+		shell.dispose();
+
+		shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+		shell.setBounds(40, 40, 640, 480);
+		shell.setLayout(new FillLayout());
+		Gallery plain = new Gallery(shell, SWT.V_SCROLL | SWT.MULTI | SWT.VIRTUAL);
+		CountingGroup group = new CountingGroup(plain, SWT.NONE);
+		group.setItemCount(1000);
+		group.setExpanded(true);
+		shell.open();
+		flushDisplay();
+		group.added = 0;
+		group.selectAll();
+		assertEquals("GalleryItem._addSelection calls on the group: each of its 1000 children", 1000, group.added);
+		assertEquals(1000, plain.getSelectionCount());
+		shell.dispose();
+	}
+
+	void flushDisplay() {
+		while (display.readAndDispatch()) {
+			// dispatch everything queued
 		}
 	}
 
