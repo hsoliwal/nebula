@@ -190,26 +190,41 @@ public class GridSparseRowResidency_Test {
 			assertTrue("the decorated rows were released", item.isDisposed());
 		}
 
+		// each clear variant on its own released row, checked before any wider clear can reach it:
+		// a later clearAll would otherwise also forget the rows of the narrower variants
 		generation[0] = 1;
-		final int items = grid.virtualMaterializedItemCount();
+		final Color defaultBackground = grid.getItem(500).getBackground(0);
+		int items = grid.virtualMaterializedItemCount();
 		grid.clear(3, false);
+		assertReleasedRowCleared("clear(int)", 3, items, red, defaultBackground);
+		items = grid.virtualMaterializedItemCount();
 		grid.clear(new int[] { 5 }, false);
+		assertReleasedRowCleared("clear(int[])", 5, items, red, defaultBackground);
+		items = grid.virtualMaterializedItemCount();
 		grid.clear(6, 8, false);
+		assertReleasedRowCleared("clear(int, int)", 7, items, red, defaultBackground);
+		items = grid.virtualMaterializedItemCount();
 		grid.clearAll(true);
-		assertEquals("clear makes no item", items, grid.virtualMaterializedItemCount());
+		assertReleasedRowCleared("clearAll", 9, items, red, defaultBackground);
+	}
 
+	/*
+	 * The released row {@code row} after a clear: the clear made no item, the re-read asks SetData
+	 * once, and its cells are the defaults in the default mode (Grid.clear Javadoc) and the stock
+	 * values in the original mode, whose GridItem.clear keeps visualizer cells.
+	 */
+	private void assertReleasedRowCleared(final String variant, final int row, final int itemsBefore,
+			final Color red, final Color defaultBackground) {
+		assertEquals(variant + " makes no item", itemsBefore, grid.virtualMaterializedItemCount());
 		final boolean fixes = GridTestUtil.fixesUpstreamDefects();
-		final Color defaultBackground = grid.getItem(4).getBackground(0);
-		for (final int row : decorated) {
-			final int before = setData;
-			final GridItem item = grid.getItem(row);
-			assertEquals("g1r" + row, item.getText(0));
-			assertEquals("one SetData for released row " + row, 1, setData - before);
-			// the default mode clears the cells (Grid.clear Javadoc); the original mode keeps them, as stock
-			assertEquals("background of row " + row, fixes ? defaultBackground : red, item.getBackground(0));
-			assertEquals("check of row " + row, Boolean.valueOf(!fixes), Boolean.valueOf(item.getChecked(0)));
-			assertEquals("column 1 of row " + row, fixes ? "" : "gen0", item.getText(1));
-		}
+		final int before = setData;
+		final GridItem item = grid.getItem(row);
+		assertEquals(variant + ": text of row " + row, "g1r" + row, item.getText(0));
+		assertEquals(variant + ": SetData for row " + row, 1, setData - before);
+		assertEquals(variant + ": background of row " + row, fixes ? defaultBackground : red, item.getBackground(0));
+		assertEquals(variant + ": check of row " + row, Boolean.valueOf(!fixes), Boolean.valueOf(item.getChecked(0)));
+		assertEquals(variant + ": column 1 of row " + row, fixes ? "" : "gen0", item.getText(1));
+		assertEquals(variant + ": SetData after reading row " + row, 1, setData - before);
 	}
 
 	@Test

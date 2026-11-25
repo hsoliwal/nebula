@@ -13736,10 +13736,11 @@ public class Grid extends Canvas {
 
 	/*
 	 * Forgets the cells the row-addressed visualizer keeps for rows in [start, end] that have no
-	 * item (released rows), in O(log n + stored rows in the range) and without making items. Rows
-	 * with an item were cleared through GridItem.clear before (its clearRow also keeps the row-span
-	 * index current). GridItem.clear forgets an item's cells only in the default mode
-	 * (UPSTREAM_FIXES); the original mode keeps them, as stock does, so it is left unchanged.
+	 * item (released rows), in O(log n + stored rows in the range) plus a shift of the stored rows
+	 * after it, and without making items. Rows with an item were cleared through GridItem.clear
+	 * before (its clearRow also keeps the row-span index current). GridItem.clear forgets an item's
+	 * cells only in the default mode (UPSTREAM_FIXES); the original mode keeps them, as stock does,
+	 * so it is left unchanged.
 	 */
 	private void clearReleasedRowData(final int start, final int end) {
 		final GridRowAddressedDataVisualizer rows = GridViewport.UPSTREAM_FIXES ? rowAddressedDataVisualizer() : null;
