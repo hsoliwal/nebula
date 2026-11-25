@@ -96,6 +96,7 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       if (isRoot(parent)) {
          markRoot(index);
       }
+      viewer.viewportPrepareRow(children, index);
       viewer.replace(parent, index, child);
       viewer.setHasChildren(child, hasVisibleChildren(child));
    }
@@ -163,6 +164,13 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       }
       updateElement(parent, index);
       return true;
+   }
+
+   /**
+    * @return the filtered and sorted children of {@code parent} in display order, as the native tree is given them
+    */
+   Object[] displayChildren(Object parent) {
+      return children(parent);
    }
 
    /** Drops cached child orderings and the materialized-row bits. */

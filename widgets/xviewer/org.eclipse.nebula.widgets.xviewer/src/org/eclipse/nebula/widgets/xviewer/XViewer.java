@@ -15,11 +15,14 @@
 package org.eclipse.nebula.widgets.xviewer;
 
 import java.text.MessageFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,6 +128,19 @@ public class XViewer extends TreeViewer {
    private boolean statusLayoutDirty;
    /** A status update arrived while the status line was hidden; computed on its first paint or read. */
    private boolean statusTextDirty;
+   /**
+    * The tree was created with {@code SWT.VIRTUAL}: precomputed column values are kept only for a bounded window of
+    * rows ({@link XViewerPreComputedWindow}); a full-data operation computes the values it needs for that operation
+    * and drops them afterwards.
+    */
+   private final boolean boundedPreCompute;
+   /** Rows computed in one call when the native tree asks for a row whose precomputed value is not resident. */
+   static final int PRECOMPUTE_BLOCK = 64;
+   /** Nesting depth of full-data passes; the outermost pass restores the windows. */
+   private int preComputePassDepth;
+   /** Columns served by a transient full map during the current pass, and the windows they return to. */
+   private final List<XViewerColumn> passColumns = new ArrayList<>();
+   private final List<XViewerPreComputedWindow> passWindows = new ArrayList<>();
 
    public XViewer(Composite parent, int style, IXViewerFactory xViewerFactory) {
       this(parent, style, xViewerFactory, false, false);
@@ -155,6 +171,7 @@ public class XViewer extends TreeViewer {
 
    public XViewer(Tree tree, IXViewerFactory xViewerFactory, boolean filterRealTime, boolean searchRealTime) {
       super(tree);
+      this.boundedPreCompute = (tree.getStyle() & SWT.VIRTUAL) != 0;
       this.xViewerFactory = xViewerFactory;
       this.menuManager = new MenuManager();
       this.menuManager.setRemoveAllWhenShown(true);
@@ -391,16 +408,18 @@ public class XViewer extends TreeViewer {
       this.loading = true;
 
       if (!inputObjects.isEmpty()) {
+         // a viewport stages the full precompute for the load only; afterwards a bounded window stays resident
+         final Map<XViewerColumn, Map<Long, String>> staged = boundedPreCompute ? new IdentityHashMap<>() : null;
          if (forcePend) {
-            performPreCompute(inputObjects);
-            performLoad(inputObjects, xViewer);
+            performPreCompute(inputObjects, staged);
+            performLoad(inputObjects, xViewer, staged);
          } else {
             Job job = new Job("Refreshing Columns") {
 
                @Override
                protected IStatus run(IProgressMonitor monitor) {
                   ElapsedTime time = new ElapsedTime("performPreCompute");
-                  performPreCompute(inputObjects);
+                  performPreCompute(inputObjects, staged);
                   time.end(Units.SEC);
                   return Status.OK_STATUS;
                }
@@ -413,7 +432,7 @@ public class XViewer extends TreeViewer {
                public void done(IJobChangeEvent event) {
                   Display.getDefault().asyncExec(() -> {
                      ElapsedTime time = new ElapsedTime("performLoad");
-                     performLoad(input, xViewer);
+                     performLoad(input, xViewer, staged);
                      time.end(Units.SEC);
                   });
                }
@@ -423,20 +442,31 @@ public class XViewer extends TreeViewer {
       }
    }
 
-   private void performPreCompute(final List<Object> inputObjects) {
+   /**
+    * @param staged null to fill each column's own map (eager tree); otherwise receives one transient full map per
+    * column, used by the load and then dropped (viewport)
+    */
+   private void performPreCompute(final List<Object> inputObjects, Map<XViewerColumn, Map<Long, String>> staged) {
       List<XViewerColumn> currentVisibleTableColumns = getCustomizeMgr().getCurrentVisibleTableColumns();
       for (XViewerColumn column : currentVisibleTableColumns) {
          if (column instanceof IXViewerPreComputedColumn) {
             IXViewerPreComputedColumn preComputedColumn = (IXViewerPreComputedColumn) column;
-            if (column.getPreComputedValueMap() == null) {
-               column.setPreComputedValueMap(new HashMap<Long, String>(inputObjects.size()));
+            Map<Long, String> values;
+            if (staged != null) {
+               values = new HashMap<>(inputObjects.size());
+               staged.put(column, values);
             } else {
-               column.getPreComputedValueMap().clear();
+               if (column.getPreComputedValueMap() == null) {
+                  column.setPreComputedValueMap(new HashMap<Long, String>(inputObjects.size()));
+               } else {
+                  column.getPreComputedValueMap().clear();
+               }
+               values = column.getPreComputedValueMap();
             }
             if (!inputObjects.isEmpty()) {
                try {
                   Long startTime = isDebugLoading() ? (new Date()).getTime() : 0L;
-                  preComputedColumn.populateCachedValues(inputObjects, column.getPreComputedValueMap());
+                  preComputedColumn.populateCachedValues(inputObjects, values);
                   if (isDebugLoading()) {
                      Long elapsedTime = preComputeElapsedTime.get("PRE - " + column.getName());
                      if (elapsedTime == null) {
@@ -455,11 +485,249 @@ public class XViewer extends TreeViewer {
       }
    }
 
-   private void performLoad(final Object input, final XViewer xViewer) {
+   private void performLoad(final Object input, final XViewer xViewer, Map<XViewerColumn, Map<Long, String>> staged) {
       if (xViewer.getTree() != null && !xViewer.getTree().isDisposed()) {
-         xViewer.superInputChanged(input);
+         if (staged == null) {
+            xViewer.superInputChanged(input);
+         } else {
+            // the load sorts and filters with the staged values; the rows shown first keep theirs, the rest go
+            beginPreComputePass(null, staged);
+            try {
+               clearPreComputedWindows();
+               xViewer.superInputChanged(input);
+               seedPreComputedWindows(staged);
+            } finally {
+               endPreComputePass();
+            }
+         }
          loading = false;
          updateStatusLabel();
+      }
+   }
+
+   /**
+    * In a viewport XViewer, makes the column keep its precomputed values in a bounded {@link XViewerPreComputedWindow}
+    * instead of a map that grows with every row asked for. Called before each precomputed lookup; does nothing for an
+    * eager tree, for a column not attached to an XViewer and while a full-data pass serves the column.
+    */
+   static void boundPreComputedValues(XViewerColumn column) {
+      Object owner = column.getXViewer();
+      if (owner instanceof XViewer) {
+         ((XViewer) owner).preComputedWindow(column);
+      }
+   }
+
+   /**
+    * @return the column's resident window, installed if needed; null for an eager tree or while a full-data pass
+    * serves the column
+    */
+   private XViewerPreComputedWindow preComputedWindow(XViewerColumn column) {
+      if (!boundedPreCompute || passIndex(column) >= 0) {
+         return null;
+      }
+      Map<Long, String> values = column.getPreComputedValueMap();
+      if (values instanceof XViewerPreComputedWindow) {
+         return (XViewerPreComputedWindow) values;
+      }
+      XViewerPreComputedWindow window = new XViewerPreComputedWindow();
+      column.setPreComputedValueMap(window);
+      return window;
+   }
+
+   private int passIndex(XViewerColumn column) {
+      for (int i = 0; i < passColumns.size(); i++) {
+         if (passColumns.get(i) == column) {
+            return i;
+         }
+      }
+      return -1;
+   }
+
+   /**
+    * Starts a full-data pass (load, sort or filter over all children of a parent). Until the outermost
+    * {@link #endPreComputePass()}, each visible precomputed column reads and writes a transient full map: the staged
+    * load values when given, else values computed by one {@code populateCachedValues} call over {@code elements} when
+    * the pass first looks one up. The transient maps are dropped when the outermost pass ends, so no full map stays
+    * resident.
+    */
+   private void beginPreComputePass(Object[] elements, Map<XViewerColumn, Map<Long, String>> staged) {
+      preComputePassDepth++;
+      for (XViewerColumn column : getCustomizeMgr().getCurrentTableColumns()) {
+         if (column.isShow() && column instanceof IXViewerPreComputedColumn && passIndex(column) < 0) {
+            Map<Long, String> full = staged == null ? null : staged.get(column);
+            if (full == null && elements == null) {
+               continue;
+            }
+            XViewerPreComputedWindow window = preComputedWindow(column);
+            passColumns.add(column);
+            passWindows.add(window);
+            column.setPreComputedValueMap(
+               full != null ? full : new PassValues(column, (IXViewerPreComputedColumn) column, elements));
+         }
+      }
+   }
+
+   private void endPreComputePass() {
+      if (--preComputePassDepth > 0) {
+         return;
+      }
+      for (int i = 0; i < passColumns.size(); i++) {
+         passColumns.get(i).setPreComputedValueMap(passWindows.get(i));
+      }
+      passColumns.clear();
+      passWindows.clear();
+   }
+
+   /** A new input starts with empty windows, as the eager precompute clears each column's map. */
+   private void clearPreComputedWindows() {
+      for (XViewerPreComputedWindow window : passWindows) {
+         window.clear();
+      }
+      for (XViewerColumn column : getCustomizeMgr().getCurrentTableColumns()) {
+         if (column.isShow() && column instanceof IXViewerPreComputedColumn && passIndex(column) < 0) {
+            XViewerPreComputedWindow window = preComputedWindow(column);
+            if (window != null) {
+               window.clear();
+            }
+         }
+      }
+   }
+
+   /**
+    * Keeps the staged values of the first root rows, in display order, the rows a new input shows first; the full
+    * staged maps are dropped when the load pass ends.
+    */
+   private void seedPreComputedWindows(Map<XViewerColumn, Map<Long, String>> staged) {
+      if (viewport == null || getTree().isDisposed()) {
+         return;
+      }
+      Object[] rows = viewport.displayChildren(getInput());
+      int limit = Math.min(rows.length, XViewerPreComputedWindow.SLOTS / 2);
+      for (int i = 0; i < passColumns.size(); i++) {
+         XViewerColumn column = passColumns.get(i);
+         Map<Long, String> full = staged.get(column);
+         XViewerPreComputedWindow window = passWindows.get(i);
+         if (full == null || window == null) {
+            continue;
+         }
+         IXViewerPreComputedColumn preComputedColumn = (IXViewerPreComputedColumn) column;
+         try {
+            for (int row = 0; row < limit; row++) {
+               Long key = preComputedColumn.getKey(rows[row]);
+               if (full.containsKey(key)) {
+                  window.put(key, full.get(key));
+               }
+            }
+         } catch (RuntimeException ex) {
+            // a row the column has no key for is computed on request, as before
+         }
+      }
+   }
+
+   /**
+    * Called by the viewport bridge before the native tree's requested row is filled. When the row's precomputed value
+    * is not resident, computes it together with the following sibling rows that are not resident either, up to
+    * {@link #PRECOMPUTE_BLOCK} rows, in one {@code populateCachedValues} call into the bounded window. Best effort:
+    * the label request still computes the row itself, as before, if this did not.
+    */
+   void viewportPrepareRow(Object[] siblings, int index) {
+      if (!boundedPreCompute || preComputePassDepth > 0) {
+         return;
+      }
+      for (XViewerColumn column : getCustomizeMgr().getCurrentTableColumns()) {
+         if (!column.isShow() || !(column instanceof IXViewerPreComputedColumn)) {
+            continue;
+         }
+         IXViewerPreComputedColumn preComputedColumn = (IXViewerPreComputedColumn) column;
+         XViewerPreComputedWindow window = preComputedWindow(column);
+         try {
+            if (window == null || window.containsKey(preComputedColumn.getKey(siblings[index]))) {
+               continue;
+            }
+            int end = Math.min(siblings.length, index + PRECOMPUTE_BLOCK);
+            List<Object> block = new ArrayList<>(end - index);
+            block.add(siblings[index]);
+            for (int i = index + 1; i < end; i++) {
+               if (!window.containsKey(preComputedColumn.getKey(siblings[i]))) {
+                  block.add(siblings[i]);
+               }
+            }
+            preComputedColumn.populateCachedValues(block, window);
+         } catch (RuntimeException ex) {
+            // best effort: the label request computes the row as before and reports its failure in the cell
+         }
+      }
+   }
+
+   /**
+    * The values of one precomputed column for the elements of one full-data pass. The map is computed by a single
+    * {@code populateCachedValues} call over the elements when the pass first touches it, serves the rest of the pass
+    * and is dropped with it. Every access goes through {@link #filled()}, so no inherited method sees it unfilled.
+    */
+   private static final class PassValues extends AbstractMap<Long, String> {
+      private XViewerColumn column;
+      private IXViewerPreComputedColumn source;
+      private Object[] elements;
+      private Map<Long, String> values;
+
+      PassValues(XViewerColumn column, IXViewerPreComputedColumn source, Object[] elements) {
+         this.column = column;
+         this.source = source;
+         this.elements = elements;
+      }
+
+      private Map<Long, String> filled() {
+         if (values == null) {
+            values = new HashMap<>(Math.max(16, (int) (elements.length / 0.75f) + 1));
+            List<Object> objects = new ArrayList<>(Arrays.asList(elements));
+            IXViewerPreComputedColumn populator = source;
+            XViewerColumn owner = column;
+            source = null;
+            column = null;
+            elements = null;
+            try {
+               populator.populateCachedValues(objects, this);
+            } catch (Exception ex) {
+               XViewerLog.log(Activator.class, Level.SEVERE,
+                  String.format("Error performing pre-compute for column %s", owner), ex);
+            }
+         }
+         return values;
+      }
+
+      @Override
+      public String get(Object key) {
+         return filled().get(key);
+      }
+
+      @Override
+      public boolean containsKey(Object key) {
+         return filled().containsKey(key);
+      }
+
+      @Override
+      public String put(Long key, String value) {
+         return filled().put(key, value);
+      }
+
+      @Override
+      public String remove(Object key) {
+         return filled().remove(key);
+      }
+
+      @Override
+      public void clear() {
+         filled().clear();
+      }
+
+      @Override
+      public int size() {
+         return filled().size();
+      }
+
+      @Override
+      public Set<Map.Entry<Long, String>> entrySet() {
+         return filled().entrySet();
       }
    }
 
@@ -1068,22 +1336,34 @@ public class XViewer extends TreeViewer {
     * Filtered and sorted children exactly as {@code AbstractTreeViewer#getSortedChildren} orders them.
     */
    Object[] viewportSortedChildren(Object parent, Object[] raw) {
-      Object[] result = raw;
-      for (ViewerFilter filter : getFilters()) {
-         result = filter.filter(this, parent, result);
-      }
+      ViewerFilter[] filters = getFilters();
       ViewerComparator comparator = getComparator();
-      if (comparator != null) {
-         if (result == raw) {
-            result = result.clone();
+      // filters and comparators read every child's cells: precomputed values are computed for this pass only
+      boolean pass = boundedPreCompute && (filters.length > 0 || comparator != null);
+      if (pass) {
+         beginPreComputePass(raw, null);
+      }
+      try {
+         Object[] result = raw;
+         for (ViewerFilter filter : filters) {
+            result = filter.filter(this, parent, result);
          }
-         if (comparator instanceof TreePathViewerSorter) {
-            ((TreePathViewerSorter) comparator).sort(this, viewportPath(parent), result);
-         } else {
-            comparator.sort(this, result);
+         if (comparator != null) {
+            if (result == raw) {
+               result = result.clone();
+            }
+            if (comparator instanceof TreePathViewerSorter) {
+               ((TreePathViewerSorter) comparator).sort(this, viewportPath(parent), result);
+            } else {
+               comparator.sort(this, result);
+            }
+         }
+         return result;
+      } finally {
+         if (pass) {
+            endPreComputePass();
          }
       }
-      return result;
    }
 
    private TreePath viewportPath(Object element) {

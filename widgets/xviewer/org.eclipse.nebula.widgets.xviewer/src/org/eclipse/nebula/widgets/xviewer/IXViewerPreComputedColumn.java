@@ -14,7 +14,14 @@ import java.util.Map;
  * as normal.<br/>
  * <br/>
  * Important: XViewer.setInputXViewer(Object input) should be called instead of XViewer.setInput for precomputed columns
- * to work.
+ * to work.<br/>
+ * <br/>
+ * When the XViewer's tree was created with SWT.VIRTUAL (a viewport), the background call still receives every input
+ * object, but its map is used only to load the viewer and is then dropped: the column's preComputedValueMap keeps the
+ * values of a bounded window of rows (those shown, their overscan and recently used ones). A row whose value is not
+ * resident is computed again, in a call with that row and the following rows not resident, and a sort or filter pass
+ * computes the children it orders in one call, kept for that pass only. Such calls run on the UI thread, so
+ * populateCachedValues should give the same value for the same object each time it is called.
  *
  * @author Donald G. Dunne
  */
