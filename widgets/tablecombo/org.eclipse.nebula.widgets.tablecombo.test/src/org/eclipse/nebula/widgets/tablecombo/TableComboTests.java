@@ -19,11 +19,13 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swtbot.swt.finder.SWTBot;
 import org.eclipse.swtbot.swt.finder.matchers.WidgetMatcherFactory;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotTable;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,6 +37,13 @@ public class TableComboTests {
 	public final void setupTableComboTests() {
 		shell = new Shell(Display.getDefault());
 		shell.setLayout(new GridLayout());
+	}
+
+	@After
+	public final void disposeTableComboTestsShell() {
+		if (shell != null && !shell.isDisposed()) {
+			shell.dispose();
+		}
 	}
 
 	/**
@@ -143,6 +152,7 @@ public class TableComboTests {
 		final TableCombo tableComboWidget = shellBot.widget(WidgetMatcherFactory.widgetOfType(TableCombo.class));
 		final SWTBotTable tableBot = new SWTBotTable(tableComboWidget.getTable());
 		tableComboWidget.setClosePopupAfterSelection(false);
+		waitUntilGeometrySettled(tableComboWidget);
 
 		tableComboWidget.getArrowControl().notifyListeners(SWT.Selection, new org.eclipse.swt.widgets.Event());
 		waitUntilPopupVisible(tableComboWidget);
@@ -163,6 +173,7 @@ public class TableComboTests {
 		final SWTBot shellBot = new SWTBot(shell);
 		final TableCombo tableComboWidget = shellBot.widget(WidgetMatcherFactory.widgetOfType(TableCombo.class));
 		final SWTBotTable tableBot = new SWTBotTable(tableComboWidget.getTable());
+		waitUntilGeometrySettled(tableComboWidget);
 
 		tableComboWidget.getArrowControl().notifyListeners(SWT.Selection, new org.eclipse.swt.widgets.Event());
 		waitUntilPopupVisible(tableComboWidget);
@@ -174,6 +185,43 @@ public class TableComboTests {
 				tableComboWidget.getTable().getShell().isVisible());
 	}
 	
+	/*
+	 * A window manager may move or resize a newly mapped shell after shell.open() returned (openbox does on the Linux
+	 * CI: the shell's size allocation re-lays out the combo a few milliseconds later). TableCombo, like CCombo, closes its
+	 * drop-down when it is resized, so a drop-down opened before the shell's final geometry arrived was closed by that
+	 * resize, not by the selection under test. Open it only after the shell and the combo stopped moving and resizing
+	 * for a quiet interval.
+	 */
+	private void waitUntilGeometrySettled(final TableCombo combo) {
+		final long[] changed = { System.nanoTime() };
+		final Listener listener = e -> changed[0] = System.nanoTime();
+		shell.addListener(SWT.Move, listener);
+		shell.addListener(SWT.Resize, listener);
+		combo.addListener(SWT.Resize, listener);
+		try {
+			final long deadline = System.nanoTime() + 5_000_000_000L;
+			while (System.nanoTime() - changed[0] < 300_000_000L) {
+				assertTrue("the shell geometry did not settle", System.nanoTime() < deadline);
+				if (!Display.getCurrent().readAndDispatch()) {
+					try {
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						break;
+					}
+				}
+			}
+		} finally {
+			if (!shell.isDisposed()) {
+				shell.removeListener(SWT.Move, listener);
+				shell.removeListener(SWT.Resize, listener);
+			}
+			if (!combo.isDisposed()) {
+				combo.removeListener(SWT.Resize, listener);
+			}
+		}
+	}
+
 	private void waitUntilPopupVisible(final TableCombo tableComboWidget) {
 		for (int i = 0; i < 50; i++) {
 			consumeEvents();
