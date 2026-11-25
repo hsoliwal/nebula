@@ -154,6 +154,12 @@ public final class VncCanvasNativeTest {
                 }
             });
             try {
+                // The X pointer is shared by every test in the reactor (ColorButtonTest parks it near (217, 107),
+                // inside this shell). Left over the canvas, it makes GTK show the canvas's tooltip, the RFB desktop
+                // name, over the sampled top-right quadrant after the hover delay. Park it outside this shell, as
+                // ColorButtonTest does for its own comparison; the screen capture itself is unchanged.
+                org.eclipse.swt.graphics.Rectangle bounds = shell.getBounds();
+                display.setCursorLocation(bounds.x + bounds.width + 40, bounds.y + bounds.height + 40);
                 shell.open();
                 shell.forceActive();
                 canvas.connect("127.0.0.1", server.getLocalPort(), null, false);

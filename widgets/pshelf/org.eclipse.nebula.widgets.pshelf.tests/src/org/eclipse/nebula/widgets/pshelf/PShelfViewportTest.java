@@ -21,7 +21,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
@@ -48,6 +50,8 @@ public class PShelfViewportTest {
 
 	private Display display;
 	private final List<Shell> shells = new ArrayList<>();
+	/* every native Paint of each shelf since its creation */
+	private final Map<PShelf, List<Rectangle>> paintsOf = new IdentityHashMap<>();
 
 	@Before
 	public void setUp() {
@@ -65,6 +69,7 @@ public class PShelfViewportTest {
 		shells.add(shell);
 		shell.setBounds(x, 10, 220, 320);
 		PShelf shelf = new PShelf(shell, SWT.NONE);
+		paintsOf.put(shelf, recordPaints(shelf));
 		shelf.setBounds(0, 0, 200, 300);
 		for (int i = 0; i < ITEMS; i++) {
 			PShelfItem item = new PShelfItem(shelf, SWT.NONE);
@@ -77,11 +82,41 @@ public class PShelfViewportTest {
 		return shelf;
 	}
 
+	/*
+	 * Drains the queue, then waits until the shelf has received at least one actual native Paint since its creation
+	 * and no further Paint for a quiet interval. GTK delivers an expose through its frame clock, after
+	 * readAndDispatch() has drained the queue and after update() has returned; a drained queue alone does not mean
+	 * that the pixels on the screen are current. No Paint is synthesized and no redraw is requested here.
+	 */
 	private void settle(PShelf shelf) {
 		while (display.readAndDispatch()) {
 			// drain
 		}
 		shelf.update();
+		awaitNativePaints(shelf, paintsOf.get(shelf), 1, "shelf did not paint natively");
+	}
+
+	private void awaitNativePaints(PShelf shelf, List<Rectangle> paints, int minimum, String message) {
+		long started = System.nanoTime(), quietSince = started;
+		int observed = paints.size();
+		while (observed < minimum || System.nanoTime() - quietSince < 200_000_000L) {
+			if (System.nanoTime() - started > 5_000_000_000L) {
+				throw new AssertionError(message + ": observed " + paints.size() + " native Paint events, required " + minimum);
+			}
+			shelf.update();
+			if (!display.readAndDispatch()) {
+				try {
+					Thread.sleep(5L);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted awaiting native SWT.Paint", interrupted);
+				}
+			}
+			if (paints.size() != observed) {
+				observed = paints.size();
+				quietSince = System.nanoTime();
+			}
+		}
 	}
 
 	private static void move(PShelf shelf, int y) {
@@ -112,10 +147,12 @@ public class PShelfViewportTest {
 		return out;
 	}
 
-	/* the pixels after a stock full repaint of the same state */
+	/* the pixels after a stock full repaint of the same state, once its native Paint has landed */
 	private int[] fullRepaintPixels(PShelf shelf) {
+		List<Rectangle> paints = paintsOf.get(shelf);
+		int before = paints.size();
 		shelf.redraw();
-		settle(shelf);
+		awaitNativePaints(shelf, paints, before + 1, "full repaint did not paint natively");
 		return pixels(shelf);
 	}
 
@@ -135,8 +172,9 @@ public class PShelfViewportTest {
 			assertEquals("body parent " + i + " visible", b.getVisible(), a.getVisible());
 		}
 		assertSame(target, hidden.getSelection());
+		int hiddenPaints = paintsOf.get(hidden).size();
 		hidden.setVisible(true);
-		settle(hidden);
+		awaitNativePaints(hidden, paintsOf.get(hidden), hiddenPaints + 1, "shown shelf did not paint natively");
 		settle(shown);
 		assertArrayEquals("pixels after show", pixels(shown), pixels(hidden));
 	}
@@ -160,9 +198,9 @@ public class PShelfViewportTest {
 		int[] lane = shelf.m3Lane();
 		int height = shelf.m3ItemHeight();
 		move(shelf, lane[2] + height / 2);
-		settle(shelf);
+		awaitNativePaints(shelf, paints, 1, "hover did not repaint natively");
 		move(shelf, lane[3] + height / 2);
-		settle(shelf);
+		awaitNativePaints(shelf, paints, paints.size() + 1, "hover move did not repaint natively");
 		assertEquals("header damages", 2, shelf.viewport.headerDamages);
 		assertEquals("full redraws", fullRedraws, shelf.viewport.fullRedraws);
 		assertTrue("paints: " + paints, !paints.isEmpty());
@@ -179,7 +217,7 @@ public class PShelfViewportTest {
 		List<Rectangle> paints = recordPaints(shelf);
 		int culled = shelf.viewport.culled;
 		shelf.getItems()[2].setText("renamed");
-		settle(shelf);
+		awaitNativePaints(shelf, paints, 1, "setText did not repaint natively");
 		assertEquals("header damages", 1, shelf.viewport.headerDamages);
 		assertEquals("one paint of one header: " + paints, 1, paints.size());
 		assertTrue("header rect: " + paints, paints.get(0).height <= shelf.m3ItemHeight());

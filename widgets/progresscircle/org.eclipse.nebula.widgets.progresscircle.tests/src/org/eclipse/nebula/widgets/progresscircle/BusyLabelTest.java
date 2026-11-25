@@ -72,9 +72,13 @@ public class BusyLabelTest {
 		label.setBusy(true);
 		label.setDelay(100_000);
 		TestSupport.flush(display);
+		// the exposes of the open and of the busy toggles land before the frame delta is recorded
+		TestSupport.awaitNativePaint(label, paints, 1, "BusyLabel did not paint natively");
 		paints.clear();
 		label.setFrame(3);
 		label.update();
+		// GTK may post the frame's expose after update() returns: observe the real Paint, never a synthetic one
+		TestSupport.awaitNativePaint(label, paints, 1, "frame change did not repaint natively");
 		assertFalse(paints.isEmpty());
 		Rectangle icon = label.getIconBounds();
 		if (viewport()) {
@@ -85,19 +89,24 @@ public class BusyLabelTest {
 		paints.clear();
 		label.setFrame(3);
 		label.update();
+		TestSupport.spin(display, 100); // a delayed native expose would arrive here
 		assertTrue("same frame repaints nothing", paints.isEmpty());
 	}
 
 	@Test
 	public void textChangeRepaintsTheTextStripOnly() {
+		// the expose of the shell's open lands before the text delta is recorded
+		TestSupport.awaitNativePaint(label, paints, 1, "BusyLabel did not paint natively");
 		paints.clear();
 		label.setText("Loading 10^6 rows");
 		label.update();
+		TestSupport.awaitNativePaint(label, paints, 1, "text change did not repaint natively");
 		assertFalse(paints.isEmpty());
 		TestSupport.assertPaintsInside(paints, label.getTextBounds());
 		paints.clear();
 		label.setText("Loading 10^6 rows");
 		label.update();
+		TestSupport.spin(display, 100); // a delayed native expose would arrive here
 		assertTrue(paints.isEmpty());
 	}
 
@@ -118,19 +127,24 @@ public class BusyLabelTest {
 
 	@Test
 	public void framePixelsEqualADirectPaint() {
-		label.setBusy(true);
+		// the long delay is set before the timer starts, so no timer frame lands while the native paints are awaited
 		label.setDelay(100_000);
+		label.setBusy(true);
 		for (int f = 1; f <= 5; f++) {
 			label.setFrame(f);
 			label.update();
 		}
 		BusyLabel direct = new BusyLabel(shell, SWT.NONE);
+		List<Rectangle> directPaints = TestSupport.recordPaints(direct);
 		direct.setBounds(0, 40, 200, 30);
 		direct.setText("Loading");
-		direct.setBusy(true);
 		direct.setDelay(100_000);
+		direct.setBusy(true);
 		direct.setFrame(5);
 		TestSupport.flush(display);
+		// both labels' real native paints must have landed before their on-screen pixels are read
+		TestSupport.awaitNativePaint(label, paints, 1, "frame deltas did not paint natively");
+		TestSupport.awaitNativePaint(direct, directPaints, 1, "directly painted BusyLabel did not paint natively");
 		assertArrayEquals(TestSupport.pixels(direct).data, TestSupport.pixels(label).data);
 	}
 
@@ -187,12 +201,14 @@ public class BusyLabelTest {
 			label.setText("t" + i);
 		});
 		BusyLabel fresh = new BusyLabel(shell, SWT.NONE);
+		List<Rectangle> freshPaints = TestSupport.recordPaints(fresh);
 		fresh.setBounds(0, 40, 200, 30);
 		fresh.setText("t9999");
 		fresh.setDelay(100_000);
 		fresh.setBusy(true);
 		fresh.setFrame(7);
 		TestSupport.flush(display);
+		TestSupport.awaitNativePaint(fresh, freshPaints, 1, "reference BusyLabel did not paint natively");
 		assertArrayEquals(TestSupport.pixels(fresh).data, TestSupport.pixels(label).data);
 	}
 
