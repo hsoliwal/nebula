@@ -97,6 +97,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         materializedCount++;
         logicalSize++;
         modCount++;
+        grid.sparseRowInserted(index);
     }
 
     @Override
@@ -141,6 +142,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         materializedCount = 0;
         logicalSize = 0;
         modCount++;
+        grid.sparseRowsCleared();
     }
 
     int materializedCount() {
@@ -261,7 +263,8 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         }
 
         final List<GridItem> removed = new ArrayList<>();
-        if (count < logicalSize) {
+        final boolean shrinks = count < logicalSize;
+        if (shrinks) {
             final int keep = insertionPoint(count);
             for (int i = materializedCount - 1; i >= keep; i--) {
                 removed.add(values[i]);
@@ -271,6 +274,9 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         }
         logicalSize = count;
         modCount++;
+        if (shrinks) {
+            grid.sparseRowsTruncated(count);
+        }
         return removed;
     }
 
@@ -317,6 +323,7 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         }
         logicalSize--;
         modCount++;
+        grid.sparseRowRemoved(index);
     }
 
     private int identitySlot(final Object value) {
