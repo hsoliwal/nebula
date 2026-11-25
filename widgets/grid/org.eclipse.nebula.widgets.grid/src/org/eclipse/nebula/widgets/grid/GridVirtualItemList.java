@@ -155,6 +155,11 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         return slot >= 0 ? values[slot] : null;
     }
 
+    /** @return the first materialized slot whose view index is at least {@code index} */
+    int firstSlotFrom(final int index) {
+        return insertionPoint(index);
+    }
+
     /** @return view index bound to materialized slot {@code slot} */
     int slotIndex(final int slot) {
         return indices[slot];
@@ -287,7 +292,9 @@ final class GridVirtualItemList extends AbstractList<GridItem> {
         models[slot] = grid.viewModelRow(index);
         stamps[slot] = 0;
         materializedCount++;
-        modCount++;
+        // Not a structural modification: the size and every row's index stay as they were, the
+        // row only gets its item on first read. An iteration over the rows (Grid.selectAll's
+        // addAll, a for-each over the items) reads unread rows and must not fail on its own reads.
     }
 
     private void removeLogicalCoordinate(final int index, final int slot) {
