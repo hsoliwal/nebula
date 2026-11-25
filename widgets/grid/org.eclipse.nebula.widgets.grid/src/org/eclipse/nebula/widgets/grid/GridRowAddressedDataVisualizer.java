@@ -27,4 +27,9 @@ interface GridRowAddressedDataVisualizer {
 	void removeRows(Grid grid, int index, int count);
 	void truncateRows(Grid grid, int count);
 	void clearRows(Grid grid);
+	/**
+	 * Forgets the cell data of the rows [{@code first}, {@code last}] (the rows stay, no row moves), as
+	 * {@link DataVisualizer#clearRow(GridItem)} does for one item: for rows whose item was released.
+	 */
+	void clearRowData(Grid grid, int first, int last);
 }

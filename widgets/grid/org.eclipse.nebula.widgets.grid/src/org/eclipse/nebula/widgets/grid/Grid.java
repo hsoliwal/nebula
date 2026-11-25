@@ -13655,6 +13655,8 @@ public class Grid extends Canvas {
 		final GridItem item = usesSparseVirtualItems() ? sparseVirtualItems().getMaterialized(index) : getItem(index);
 		if (item != null) {
 			item.clear(allChildren);
+		} else {
+			clearReleasedRowData(index, index);
 		}
 		dropResidentPayloads();
 		redraw();
@@ -13715,17 +13717,34 @@ public class Grid extends Canvas {
 	}
 
 	/*
-	 * Clears the items of the rows [start, end] of a flat virtual Grid that have one. A row nobody
-	 * has read has no item, no data and no SetData of its own: making an item only to reset it
-	 * would retain an item per row (clearAll would materialize every row). Its next read creates
-	 * the item with default attributes and asks SWT.SetData, as for a cleared item. Released warm
-	 * payloads are dropped by the caller.
+	 * Clears the rows [start, end] of a flat virtual Grid without making an item for a row that has
+	 * none: making an item only to reset it would retain an item per row (clearAll would
+	 * materialize every row). A row without an item has no item state or SetData flag of its own;
+	 * a row whose item RESIDENCY_EVICT_COLD released may still have cells in the row-addressed
+	 * visualizer, which are forgotten here by row. Its next read creates the item with default
+	 * attributes and asks SWT.SetData, as for a cleared item. Released warm item state is dropped
+	 * by the caller.
 	 */
 	private void clearMaterializedRows(final int start, final int end, final boolean allChildren) {
 		final GridVirtualItemList sparse = sparseVirtualItems();
 		for (int slot = sparse.firstSlotFrom(start); slot < sparse.materializedCount()
 				&& sparse.slotIndex(slot) <= end; slot++) {
 			sparse.slotItem(slot).clear(allChildren);
+		}
+		clearReleasedRowData(start, end);
+	}
+
+	/*
+	 * Forgets the cells the row-addressed visualizer keeps for rows in [start, end] that have no
+	 * item (released rows), in O(log n + stored rows in the range) and without making items. Rows
+	 * with an item were cleared through GridItem.clear before (its clearRow also keeps the row-span
+	 * index current). GridItem.clear forgets an item's cells only in the default mode
+	 * (UPSTREAM_FIXES); the original mode keeps them, as stock does, so it is left unchanged.
+	 */
+	private void clearReleasedRowData(final int start, final int end) {
+		final GridRowAddressedDataVisualizer rows = GridViewport.UPSTREAM_FIXES ? rowAddressedDataVisualizer() : null;
+		if (rows != null) {
+			rows.clearRowData(this, start, end);
 		}
 	}
 
@@ -13777,10 +13796,12 @@ public class Grid extends Canvas {
 		}
 		final boolean sparse = usesSparseVirtualItems();
 		for (final int indice : indices) {
-			// a flat virtual row nobody has read has nothing to clear (see clearMaterializedRows)
+			// a flat virtual row without an item gets none (see clearMaterializedRows)
 			final GridItem item = sparse ? sparseVirtualItems().getMaterialized(indice) : items.get(indice);
 			if (item != null) {
 				item.clear(allChildren);
+			} else {
+				clearReleasedRowData(indice, indice);
 			}
 		}
 		dropResidentPayloads();

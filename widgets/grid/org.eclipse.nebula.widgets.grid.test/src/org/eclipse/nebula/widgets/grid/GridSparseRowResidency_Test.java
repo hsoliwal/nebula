@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.BitSet;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.After;
@@ -151,6 +152,64 @@ public class GridSparseRowResidency_Test {
 		final GridItem unread = grid.getItem(ROWS / 3 + 1);
 		assertEquals("r" + (ROWS / 3 + 1) + "c4", unread.getText(4));
 		assertEquals(2, setData - beforeRead);
+	}
+
+	@Test
+	public void clearForgetsTheCellsOfReleasedRows() {
+		final Color red = display.getSystemColor(SWT.COLOR_RED);
+		final int[] generation = { 0 };
+		grid = new Grid(shell, SWT.VIRTUAL | SWT.CHECK | SWT.MULTI | SWT.V_SCROLL);
+		grid.setBounds(0, 0, 400, 300);
+		for (int c = 0; c < 3; c++) {
+			new GridColumn(grid, SWT.NONE).setWidth(100);
+		}
+		grid.addListener(SWT.SetData, e -> {
+			setData++;
+			final GridItem item = (GridItem) e.item;
+			item.setText(0, "g" + generation[0] + "r" + e.index);
+			if (generation[0] == 0 && e.index % 2 == 1 && e.index < 10) {
+				item.setBackground(0, red);
+				item.setChecked(0, true);
+				item.setText(1, "gen0");
+			}
+		});
+		grid.setItemCount(1000);
+		grid.setItemResidency(Grid.RESIDENCY_EVICT_COLD, 5);
+		shell.setSize(440, 340);
+		shell.open();
+		paint();
+		final int[] decorated = { 3, 5, 7, 9 };
+		final GridItem[] released = new GridItem[decorated.length];
+		for (int i = 0; i < decorated.length; i++) {
+			released[i] = grid.getItem(decorated[i]);
+			assertTrue(red.equals(released[i].getBackground(0)) && released[i].getChecked(0));
+		}
+		grid.setTopIndex(500);
+		paint();
+		for (final GridItem item : released) {
+			assertTrue("the decorated rows were released", item.isDisposed());
+		}
+
+		generation[0] = 1;
+		final int items = grid.virtualMaterializedItemCount();
+		grid.clear(3, false);
+		grid.clear(new int[] { 5 }, false);
+		grid.clear(6, 8, false);
+		grid.clearAll(true);
+		assertEquals("clear makes no item", items, grid.virtualMaterializedItemCount());
+
+		final boolean fixes = GridTestUtil.fixesUpstreamDefects();
+		final Color defaultBackground = grid.getItem(4).getBackground(0);
+		for (final int row : decorated) {
+			final int before = setData;
+			final GridItem item = grid.getItem(row);
+			assertEquals("g1r" + row, item.getText(0));
+			assertEquals("one SetData for released row " + row, 1, setData - before);
+			// the default mode clears the cells (Grid.clear Javadoc); the original mode keeps them, as stock
+			assertEquals("background of row " + row, fixes ? defaultBackground : red, item.getBackground(0));
+			assertEquals("check of row " + row, !fixes, item.getChecked(0));
+			assertEquals("column 1 of row " + row, fixes ? "" : "gen0", item.getText(1));
+		}
 	}
 
 	@Test

@@ -239,6 +239,12 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 		forEachStore(store -> store.clearGrid(grid));
 	}
 
+	@Override
+	public void clearRowData(Grid grid, int first, int last) {
+		final RowIndex rows = indexes.get(grid);
+		if (rows != null && first <= last) rows.cleared(first, last, id -> forEachStore(store -> store.clear(grid, id)));
+	}
+
 	int storedRowCount(Grid grid) {
 		final RowIndex rows = indexes.get(grid);
 		return rows == null ? 0 : texts.count(grid, rows);
@@ -346,6 +352,23 @@ final class GridRowAddressedItemDataVisualizer extends GridItemDataVisualizer
 			System.arraycopy(ids, end, ids, at, size - end);
 			size -= end - at;
 			for (int j = at; j < size; j++) rows[j] -= count;
+		}
+
+		/**
+		 * Forgets the data of the rows [{@code first}, {@code last}] (the rows stay, no position moves):
+		 * O(log n) to find them plus the stored rows in the range and the shift of the ones after.
+		 */
+		void cleared(int first, int last, java.util.function.IntConsumer released) {
+			final int at = lowerBound(first);
+			final int end = last == Integer.MAX_VALUE ? size : lowerBound(last + 1);
+			if (at >= end) return;
+			for (int j = at; j < end; j++) {
+				released.accept(ids[j]);
+				release(ids[j]);
+			}
+			System.arraycopy(rows, end, rows, at, size - end);
+			System.arraycopy(ids, end, ids, at, size - end);
+			size -= end - at;
 		}
 
 		/** Forgets the data of the row at {@code row} (the row stays); returns its id or -1. */
