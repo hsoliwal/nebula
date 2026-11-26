@@ -69,7 +69,7 @@ public class GridBlitScrollVariable_Test {
 			}
 		}
 		open(grid);
-		assertTrue("rows of differing heights are indexed", grid.rowsIndexed());
+		assertEquals("row index mediation follows the selected Grid mode for differing heights", GridViewport.ENABLED, grid.rowsIndexed());
 		assertBlitEqualsRepaint(grid);
 	}
 
@@ -89,7 +89,7 @@ public class GridBlitScrollVariable_Test {
 			root.setExpanded(i % 3 == 0);
 		}
 		open(grid);
-		assertTrue("tree rows are indexed", grid.rowsIndexed());
+		assertEquals("row index mediation follows the selected Grid mode for tree rows", GridViewport.ENABLED, grid.rowsIndexed());
 		assertBlitEqualsRepaint(grid);
 	}
 
