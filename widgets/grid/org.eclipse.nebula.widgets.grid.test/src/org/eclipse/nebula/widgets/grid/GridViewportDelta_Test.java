@@ -226,10 +226,34 @@ public class GridViewportDelta_Test {
 		final ImageData now = GridScrollPaint_Test.screen(grid);
 		final ImageData painted = GridScrollPaint_Test.print(grid);
 		if (!GridScrollPaint_Test.sameClientArea(grid, now, painted)) {
+			// Keep the first native failure fatal. Diagnose whether an explicit
+			// SWT paint flush repairs stale screen pixels; never use that flush
+			// to make a previously failing native assertion pass.
 			GridViewportDifferential_Test.save(now, "viewportdelta-now");
 			GridViewportDifferential_Test.save(painted, "viewportdelta-painted");
-			throw new AssertionError(step + ": the window differs from the Grid's paint ("
+			final AssertionError original = new AssertionError(step
+					+ ": the window differs from the Grid's paint ("
 					+ GridViewportDifferential_Test.difference(painted, now) + ")");
+			try {
+				final int paintBefore = grid.paintPasses;
+				grid.update();
+				flush();
+				final int nativePaintsAfterUpdate = grid.paintPasses - paintBefore;
+				final ImageData updatedScreen = GridScrollPaint_Test.screen(grid);
+				final ImageData updatedPaint = GridScrollPaint_Test.print(grid);
+				GridViewportDifferential_Test.save(updatedScreen, "viewportdelta-after-update-screen");
+				GridViewportDifferential_Test.save(updatedPaint, "viewportdelta-after-update-painted");
+				final boolean repaired = GridScrollPaint_Test.sameClientArea(grid, updatedScreen, updatedPaint);
+				original.addSuppressed(new AssertionError("diagnostic only, Grid.update(): "
+						+ (repaired ? "pixels now match" : "pixels still differ")
+						+ "; additional native paint callbacks " + nativePaintsAfterUpdate
+						+ "; remaining difference "
+						+ GridViewportDifferential_Test.difference(updatedPaint, updatedScreen)));
+			} catch (final RuntimeException | AssertionError diagnosticFailure) {
+				// Preserve the original failing screenshot verdict when diagnosis fails.
+				original.addSuppressed(diagnosticFailure);
+			}
+			throw original;
 		}
 	}
 
