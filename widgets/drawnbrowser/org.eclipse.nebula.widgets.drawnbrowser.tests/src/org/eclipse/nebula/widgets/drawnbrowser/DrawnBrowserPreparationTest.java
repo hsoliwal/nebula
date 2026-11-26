@@ -114,8 +114,32 @@ public class DrawnBrowserPreparationTest {
 					.get(10, TimeUnit.SECONDS);
 			NullPointerException first = assertThrows(NullPointerException.class, page::document);
 			assertSame(first, assertThrows(NullPointerException.class, page::document));
-			assertEquals("org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlTokenizer",
-					first.getStackTrace()[0].getClassName());
+			assertTokenizerOriginWhenAvailable(first);
 		}
 	}
+	@Test
+	public void anEmptyFailureStackStillRetainsTheExactOriginalException() {
+		NullPointerException original = new NullPointerException();
+		original.setStackTrace(new StackTraceElement[0]);
+		DrawnBrowser.PreparedPage page = DrawnBrowser.PreparedPage.prepare(
+				"<p>prepared</p>", () -> { throw original; });
+		assertSame(original, assertThrows(NullPointerException.class, page::document));
+		assertSame(original, assertThrows(NullPointerException.class, page::document));
+		assertTokenizerOriginWhenAvailable(original);
+
+		NullPointerException unrelated = new NullPointerException();
+		unrelated.setStackTrace(new StackTraceElement[] {
+				new StackTraceElement("unrelated.Source", "run", "Source.java", 1) });
+		assertThrows(AssertionError.class, () -> assertTokenizerOriginWhenAvailable(unrelated));
+	}
+
+	/** The JVM may omit stack traces at frequently executed implicit throw sites. */
+	private static void assertTokenizerOriginWhenAvailable(NullPointerException failure) {
+		StackTraceElement[] trace = failure.getStackTrace();
+		if (trace.length != 0) {
+			assertEquals("org.eclipse.nebula.widgets.drawnbrowser.internal.HtmlTokenizer",
+					trace[0].getClassName());
+		}
+	}
+
 }
