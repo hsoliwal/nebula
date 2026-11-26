@@ -40,14 +40,19 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Set up Maven 3.9.11
-        uses: stCarolas/setup-maven@07fbbe97d97ef44336b7382563d66743297e442f
-        with:
-          maven-version: 3.9.11
       - name: Verify remote browser CPU decoder and frame geometry with real JUnit4
         shell: bash
         run: |
           set -euo pipefail
+          # Pure Java21/JUnit4 has no need for Tycho's pinned Maven download.
+          # A separate Maven-Central 3.9.11 tarball fetch returned HTTP 429.
+          # Require Maven already installed on the GitHub ubuntu-24.04 runner.
+          if ! command -v mvn >/dev/null 2>&1; then
+            echo 'HOSTED_MAVEN_MISSING: refusing to skip real JUnit4 tests' >&2
+            exit 1
+          fi
+          mvn -version | tee "$RUNNER_TEMP/nebula-cpu-junit-maven-version.txt"
+          grep -Eq '^Apache Maven 3[.](9|10)[.]' "$RUNNER_TEMP/nebula-cpu-junit-maven-version.txt"
           production=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser/src/org/eclipse/nebula/widgets/drawnbrowser/internal
           tests=widgets/drawnbrowser/org.eclipse.nebula.widgets.drawnbrowser.tests/src/org/eclipse/nebula/widgets/drawnbrowser/internal
           if [[ ! -f "$production/RemoteFrameDecode.java" ]]; then
