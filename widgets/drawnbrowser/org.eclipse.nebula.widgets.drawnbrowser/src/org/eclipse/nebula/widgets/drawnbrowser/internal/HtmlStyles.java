@@ -82,10 +82,12 @@ public final class HtmlStyles {
 	/** Two primitive words preserve a finite double shrink factor without reusing the positional presence mask. */
 	private static final int SHRINK_HIGH = 32, SHRINK_LOW = 33;
 	/** Number of primitive computed-style slots. Existing slots retain their indices. */
-	public static final int OVERFLOW = 34, SLOTS = 35;
+	public static final int OVERFLOW = 34, POINTER_EVENTS = 35, SLOTS = 36;
 	/** Parent-owned modes: hidden/auto/scroll are local scrollports; clip paints only. */
 	public static final int OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1, OVERFLOW_CLIP = 2,
 			OVERFLOW_AUTO = 3, OVERFLOW_SCROLL = 4;
+	/** Pointer targeting is inherited independently of painting and layout. */
+	public static final int POINTER_AUTO = 0, POINTER_NONE = 1;
 
 	/** Draw2D SchemeBorder-style highlight/shadow schemes, encoded as scalar CSS. */
 	public static final int BORDER_SOLID = 0, BORDER_INSET = 1, BORDER_OUTSET = 2,
@@ -379,6 +381,7 @@ public final class HtmlStyles {
 		style[COLOR] = parent[COLOR];
 		style[BITS] = parent[BITS];
 		style[ALIGN] = parent[ALIGN];
+		style[POINTER_EVENTS] = parent.length > POINTER_EVENTS ? parent[POINTER_EVENTS] : POINTER_AUTO;
 		style[POS_TOP] = AUTO;
 		style[POS_LEFT] = AUTO;
 		style[FLEX_BASIS] = -1;
@@ -484,6 +487,7 @@ public final class HtmlStyles {
 		delta[TRACKS] = -1;
 		delta[COLUMN_SPAN] = -1;
 		delta[OVERFLOW] = -1;
+		delta[POINTER_EVENTS] = -1;
 		return delta;
 	}
 
@@ -622,6 +626,10 @@ public final class HtmlStyles {
 					else if (value.equals("auto") || value.equals("overlay")) delta[OVERFLOW] = OVERFLOW_AUTO;
 					else if (value.equals("scroll")) delta[OVERFLOW] = OVERFLOW_SCROLL;
 				}
+				case "pointer-events" -> {
+					if (value.equals("none")) delta[POINTER_EVENTS] = POINTER_NONE;
+					else if (value.equals("auto")) delta[POINTER_EVENTS] = POINTER_AUTO;
+				}
 				case "display" -> delta[DISPLAY] = switch (value) {
 					case "none" -> DISPLAY_NONE;
 					case "flex", "inline-flex" -> DISPLAY_FLEX;
@@ -732,6 +740,7 @@ public final class HtmlStyles {
 		}
 		if (delta[SHRINK_PRESENT] != 0) putShrink(style, shrink(delta));
 		if (delta[OVERFLOW] >= 0) style[OVERFLOW] = delta[OVERFLOW];
+		if (delta[POINTER_EVENTS] >= 0) style[POINTER_EVENTS] = delta[POINTER_EVENTS];
 		if (delta[DISPLAY] >= 0) style[DISPLAY] = delta[DISPLAY];
 		if (delta[FLEX_GROW] >= 0) style[FLEX_GROW] = delta[FLEX_GROW];
 		if (delta[FLEX_BASIS] != NOT_SET) style[FLEX_BASIS] = delta[FLEX_BASIS];

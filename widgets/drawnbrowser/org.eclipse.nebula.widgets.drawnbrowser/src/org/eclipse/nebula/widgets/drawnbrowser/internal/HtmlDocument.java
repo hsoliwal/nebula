@@ -97,6 +97,8 @@ public final class HtmlDocument {
 	public int[] cellRowSpan = new int[16];
 	/** The nearest owning block box of each flat block. */
 	public int[] blockBox = new int[16];
+	/** Per-block pointer eligibility. */
+	public int[] blockPointerEvents = new int[16];
 
 	/**
 	 * Block-box tree in document preorder; box 0 is the document root. Children and siblings are linked by indices,
@@ -111,6 +113,8 @@ public final class HtmlDocument {
 			boxOverflow = new int[16], boxIndent = new int[16];
 	/** Z auto is distinct from explicit zero and from every signed integer z-index. */
 	public boolean[] boxZAuto = new boolean[16];
+	/** Per-box pointer targeting, independent of stacking and painting. */
+	public int[] boxPointerEvents = new int[16];
 	/** Per element box, the same non-inherited box model as the flat block lanes; table cells keep their table padding. */
 	public int[] boxMarginTop = new int[16], boxMarginRight = new int[16], boxMarginBottom = new int[16],
 			boxPadTop = new int[16], boxPadRight = new int[16], boxPadBottom = new int[16], boxPadLeft = new int[16],
@@ -147,6 +151,8 @@ public final class HtmlDocument {
 	public int[] runStart = new int[32], runEnd = new int[32], runStyle = new int[32], runLink = new int[32];
 	/** Per run, from CSS: text colour (ARGB, 0 the widget's). */
 	public int[] runColor = new int[32];
+	/** Per-run pointer eligibility for inline links. */
+	public int[] runPointerEvents = new int[32];
 
 	public int linkCount;
 	public String[] href = new String[8];
@@ -728,7 +734,7 @@ public final class HtmlDocument {
 			HtmlDocument d = doc;
 			int last = d.runTotal - 1;
 			if (d.runCount[open] > 0 && d.runEnd[last] == at && d.runStyle[last] == effective && d.runLink[last] == link
-					&& d.runColor[last] == color) {
+					&& d.runColor[last] == color && d.runPointerEvents[last] == frame[HtmlStyles.POINTER_EVENTS]) {
 				d.runEnd[last] = at + 1;
 				return;
 			}
@@ -739,12 +745,14 @@ public final class HtmlDocument {
 				d.runStyle = Arrays.copyOf(d.runStyle, capacity);
 				d.runLink = Arrays.copyOf(d.runLink, capacity);
 				d.runColor = Arrays.copyOf(d.runColor, capacity);
+				d.runPointerEvents = Arrays.copyOf(d.runPointerEvents, capacity);
 			}
 			d.runStart[d.runTotal] = at;
 			d.runEnd[d.runTotal] = at + 1;
 			d.runStyle[d.runTotal] = effective;
 			d.runLink[d.runTotal] = link;
 			d.runColor[d.runTotal] = color;
+			d.runPointerEvents[d.runTotal] = frame[HtmlStyles.POINTER_EVENTS];
 			if (d.runCount[open]++ == 0) d.firstRun[open] = d.runTotal;
 			d.runTotal++;
 		}
@@ -779,6 +787,7 @@ public final class HtmlDocument {
 				d.cellBasis = Arrays.copyOf(d.cellBasis, capacity);
 				d.cellShrink = Arrays.copyOf(d.cellShrink, capacity);
 				d.blockBox = Arrays.copyOf(d.blockBox, capacity);
+				d.blockPointerEvents = Arrays.copyOf(d.blockPointerEvents, capacity);
 				d.blockMarginTop = Arrays.copyOf(d.blockMarginTop, capacity);
 				d.blockMarginRight = Arrays.copyOf(d.blockMarginRight, capacity);
 				d.blockMarginBottom = Arrays.copyOf(d.blockMarginBottom, capacity);
@@ -810,6 +819,7 @@ public final class HtmlDocument {
 			d.runCount[open] = 0;
 			d.image[open] = -1;
 			d.blockBox[open] = frameBox[depth];
+			d.blockPointerEvents[open] = frames[depth][HtmlStyles.POINTER_EVENTS];
 			// an explicit block's own element is the top frame; an implicit paragraph only inherits the alignment
 			int[] frame = frames[depth];
 			boolean own = kind != IMAGE && depth > 0 && (blockTag(frameTags[depth])
@@ -1032,6 +1042,7 @@ public final class HtmlDocument {
 			d.boxZAuto[box] = frame[HtmlStyles.Z_AUTO] != 0;
 			d.boxBackground[box] = frame[HtmlStyles.BACKGROUND];
 			d.boxOverflow[box] = frame[HtmlStyles.OVERFLOW];
+			d.boxPointerEvents[box] = frame[HtmlStyles.POINTER_EVENTS];
 			boolean boxModel = d.boxRole[box] != CELL_BOX;
 			d.boxIndent[box] = boxModel ? frame[HtmlStyles.INDENT] : 0;
 			d.boxMarginTop[box] = boxModel ? frame[HtmlStyles.MARGIN_TOP] : 0;
@@ -1069,6 +1080,7 @@ public final class HtmlDocument {
 			d.boxZAuto = Arrays.copyOf(d.boxZAuto, capacity);
 			d.boxBackground = Arrays.copyOf(d.boxBackground, capacity);
 			d.boxOverflow = Arrays.copyOf(d.boxOverflow, capacity);
+			d.boxPointerEvents = Arrays.copyOf(d.boxPointerEvents, capacity);
 			d.boxIndent = Arrays.copyOf(d.boxIndent, capacity);
 			d.boxMarginTop = Arrays.copyOf(d.boxMarginTop, capacity);
 			d.boxMarginRight = Arrays.copyOf(d.boxMarginRight, capacity);
@@ -1191,7 +1203,8 @@ public final class HtmlDocument {
 			HtmlDocument d = doc;
 			if (controlContainerStyle) return true;
 			for (int box = 1; box < d.boxCount; box++) {
-				if (d.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE) return true;
+				if (d.boxOverflow[box] != HtmlStyles.OVERFLOW_VISIBLE
+						|| d.boxPointerEvents[box] != HtmlStyles.POINTER_AUTO) return true;
 				checkpoint.run();
 				if (d.boxWidth[box] != HtmlStyles.AUTO || d.boxHeight[box] != HtmlStyles.AUTO
 						|| d.boxRight[box] != HtmlStyles.AUTO || d.boxBottom[box] != HtmlStyles.AUTO) return true;
