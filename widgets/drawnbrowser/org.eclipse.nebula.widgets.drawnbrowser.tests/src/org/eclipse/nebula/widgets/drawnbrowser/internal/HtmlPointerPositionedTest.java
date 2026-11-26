@@ -7,6 +7,7 @@ package org.eclipse.nebula.widgets.drawnbrowser.internal;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.eclipse.swt.SWT;
@@ -80,6 +81,20 @@ public class HtmlPointerPositionedTest {
 		assertTrue(child >= 0);
 		assertEquals(child, scene.blockAt(scene.blockX(child) + 5,
 				scene.blockY(child, 0) + 5, 0));
+	}
+
+	@Test
+	public void inlinePointerNoneExcludesKnownPositionedLinkHit() {
+		scene("<p style='position:relative;left:40px;top:35px;width:180px'>"
+				+ "<a href='target' style='pointer-events:none'>link words</a></p>");
+		assertNull(layout.linkAt(43, 35 + HtmlLayout.BLOCK_GAP + 3));
+	}
+
+	@Test
+	public void inlinePointerAutoRetainsKnownPositionedLinkHit() {
+		scene("<p style='position:relative;left:40px;top:35px;width:180px'>"
+				+ "<a href='target' style='pointer-events:auto'>link words</a></p>");
+		assertEquals("target", layout.linkAt(43, 35 + HtmlLayout.BLOCK_GAP + 3));
 	}
 
 	private HtmlDocument document;
