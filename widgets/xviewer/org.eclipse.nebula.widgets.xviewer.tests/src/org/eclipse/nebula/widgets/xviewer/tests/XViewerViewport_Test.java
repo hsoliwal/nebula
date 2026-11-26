@@ -239,6 +239,33 @@ public class XViewerViewport_Test {
       assertSame(roots[3], rootPath.getSegment(0));
    }
 
+   /** Native SWT can emit duplicate SetData callbacks after a viewport round trip.
+    * Their JFace replace callback is still required, but they are not new residents. */
+   @Test
+   public void repeatedNativeRootRequestsCountOnlyDistinctRows() {
+      XViewer viewer = viewer(SWT.VIRTUAL, 64, 2);
+      Integer[] roots = Model.roots(64);
+      viewer.setInputXViewer(roots);
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      assertSame(roots[0], tree.getItem(0).getData());
+      XViewerViewportContentProvider bridge =
+            (XViewerViewportContentProvider) viewer.getContentProvider();
+      int count = viewer.getViewportMaterializedCount();
+      int rootCount = bridge.getMaterializedRootCount();
+      assertTrue("initial visible roots must materialize", count > 0);
+      assertEquals("initial requests describe distinct roots", count, rootCount);
+      for (int repeated = 0; repeated < 128; repeated++) {
+         bridge.updateElement(viewer.getInput(), 0);
+      }
+      assertEquals("repeat SetData callbacks must not inflate residency",
+            count, viewer.getViewportMaterializedCount());
+      assertEquals("packed bitset cardinality remains unchanged",
+            rootCount, bridge.getMaterializedRootCount());
+      assertSame("native row retains the caller element", roots[0], tree.getItem(0).getData());
+   }
+
    private static String state(XViewer viewer) {
       Tree tree = viewer.getTree();
       StringBuilder s = new StringBuilder();
