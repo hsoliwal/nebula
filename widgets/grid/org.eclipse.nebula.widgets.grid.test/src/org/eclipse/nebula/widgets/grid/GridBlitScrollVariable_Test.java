@@ -110,7 +110,7 @@ public class GridBlitScrollVariable_Test {
 		shell.setSize(560, 420);
 		shell.open();
 		shell.forceActive();
-		settle();
+		settle(grid);
 	}
 
 	private void assertBlitEqualsRepaint(final Grid grid) throws Exception {
@@ -120,11 +120,11 @@ public class GridBlitScrollVariable_Test {
 			bar.setSelection(bar.getSelection() + step);
 			bar.notifyListeners(SWT.Selection, new Event());
 			grid.update();
-			settle();
+			settle(grid);
 			final String blitted = screen(grid);
 			grid.redraw();
 			grid.update();
-			settle();
+			settle(grid);
 			assertEquals("after +" + step + " rows", screen(grid), blitted);
 		}
 		assertTrue("blit path used: " + (grid.blitScrollCount - before), grid.blitScrollCount > before);
@@ -154,21 +154,43 @@ public class GridBlitScrollVariable_Test {
 		}
 	}
 
-	private void settle() {
-        // GTK paints at frame boundaries; an empty event queue is not a settled frame.
-        long idleSince = System.nanoTime();
-        final long deadline = idleSince + 5_000_000_000L;
-        while (System.nanoTime() - idleSince < 200_000_000L) {
-            assertTrue("native paint queue did not settle", System.nanoTime() < deadline);
-            if (display.readAndDispatch()) {
-                idleSince = System.nanoTime();
-            } else {
-                try { Thread.sleep(5L); }
-                catch (InterruptedException failure) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("interrupted while settling native paint", failure);
-                }
-            }
-        }
-    }
+	/*
+	 * Unrelated SWT events (Workbench jobs, timers, other widgets) cannot
+	 * restart a Grid paint-quiescence deadline. Only this Grid's paint pass
+	 * makes its screenshot unsettled again.
+	 */
+	private static long paintIdleSince(final long previousIdle, final long now,
+			final int previousPasses, final int nextPasses) {
+		return nextPasses == previousPasses ? previousIdle : now;
+	}
+
+	private void settle(final Grid grid) {
+		// Control.update() flushes outstanding SWT.Paint, without creating damage.
+		grid.update();
+		final long start = System.nanoTime();
+		long idleSince = start;
+		int lastGridPaintPasses = grid.paintPasses;
+		while (System.nanoTime() - idleSince < 200_000_000L) {
+			assertTrue("Grid native paint queue did not settle", System.nanoTime() - start < 5_000_000_000L);
+			final boolean dispatched = display.readAndDispatch();
+			grid.update();
+			final int nowGridPaintPasses = grid.paintPasses;
+			idleSince = paintIdleSince(idleSince, System.nanoTime(), lastGridPaintPasses, nowGridPaintPasses);
+			lastGridPaintPasses = nowGridPaintPasses;
+			if (!dispatched) {
+				try {
+					Thread.sleep(5L);
+				} catch (final InterruptedException failure) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted while settling native paint", failure);
+				}
+			}
+		}
+	}
+
+	@Test
+	public void unrelatedDisplayEventsDoNotExtendGridPaintQuietDeadline() {
+		assertEquals("unrelated SWT events are not Grid paint", 100L, paintIdleSince(100L, 200L, 7, 7));
+		assertEquals("a real Grid paint resets the quiet clock", 200L, paintIdleSince(100L, 200L, 7, 8));
+	}
 }
