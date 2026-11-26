@@ -168,6 +168,33 @@ public class XYGraphSetterDamageTest {
 		saveFailureImage(name, "reference-full", firstFullImage);
 		saveFailureImage(name, "reference-no-paint", sameScreenImage);
 		saveFailureImage(name, "reference-full-repeat", secondFullImage);
+		compareRepeatedRedrawPhases(name, firstFull, secondFull);
+	}
+
+	/** Repeat the two reference operations after saving the original diagnostic. */
+	private void compareRepeatedRedrawPhases(String name, int[] firstRevalidating, int[] firstPlain) {
+		int beforeRevalidating = nativePaints;
+		graph.revalidate();
+		canvas.redraw();
+		awaitNativePaintAfter(beforeRevalidating, name + " repeated revalidating redraw did not paint");
+		int[] secondRevalidating = pixels();
+		ImageData secondRevalidatingImage = lastPixelCapture;
+
+		int beforePlain = nativePaints;
+		canvas.redraw();
+		awaitNativePaintAfter(beforePlain, name + " repeated plain redraw did not paint");
+		int[] secondPlain = pixels();
+		ImageData secondPlainImage = lastPixelCapture;
+
+		System.err.println("M3_XYGRAPH_NATIVE_REDRAW_PHASES"
+				+ " setter=" + name
+				+ " revalidatingPairDiff=" + differences(firstRevalidating, secondRevalidating)
+				+ " plainPairDiff=" + differences(firstPlain, secondPlain)
+				+ " repeatedPhaseDiff=" + differences(secondRevalidating, secondPlain)
+				+ " revalidatingPaints=" + (beforePlain - beforeRevalidating)
+				+ " plainPaints=" + (nativePaints - beforePlain));
+		saveFailureImage(name, "revalidating-redraw-repeat", secondRevalidatingImage);
+		saveFailureImage(name, "plain-redraw-repeat", secondPlainImage);
 	}
 
 	private static String pixelAt(int[] values, int at) {
