@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -121,18 +122,34 @@ public class GridBlitScrollVariable_Test {
 			bar.notifyListeners(SWT.Selection, new Event());
 			grid.update();
 			settle(grid);
-			final String blitted = screen(grid);
+			final ImageData blittedPixels = screenFrame(grid);
 			grid.redraw();
 			grid.update();
 			settle(grid);
-			assertEquals("after +" + step + " rows", screen(grid), blitted);
+			final ImageData repaintedPixels = screenFrame(grid);
+			final String expectedPixels = screenHash(repaintedPixels);
+			final String actualPixels = screenHash(blittedPixels);
+			if (!expectedPixels.equals(actualPixels)) {
+				final org.junit.ComparisonFailure mismatch = new org.junit.ComparisonFailure(
+						"after +" + step + " rows", expectedPixels, actualPixels);
+				try {
+					// Persist the *original* frames, not a later re-capture that
+					// might already have changed under native GTK event delivery.
+					GridViewportDifferential_Test.save(blittedPixels, "blit-variable-before-full-repaint");
+					GridViewportDifferential_Test.save(repaintedPixels, "blit-variable-after-full-repaint");
+				} catch (final RuntimeException | Error diagnosticFailure) {
+					mismatch.addSuppressed(diagnosticFailure);
+				}
+				throw mismatch;
+			}
+			assertEquals("after +" + step + " rows", expectedPixels, actualPixels);
 		}
 		assertTrue("blit path follows indexed row geometry: " + (grid.blitScrollCount - before),
 				GridViewport.ENABLED == (grid.blitScrollCount > before));
 	}
 
-	/** SHA-256 of the Grid's on-screen pixels (display copy). */
-	private String screen(final Grid grid) throws Exception {
+	/** On-screen Grid pixels, captured only once per comparison side. */
+	private ImageData screenFrame(final Grid grid) {
 		final Point size = grid.getSize();
 		final Image image = new Image(display, size.x, size.y);
 		try {
@@ -144,15 +161,20 @@ public class GridBlitScrollVariable_Test {
 			} finally {
 				gc.dispose();
 			}
-			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(image.getImageData().data);
-			final StringBuilder hex = new StringBuilder();
-			for (final byte b : digest) {
-				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
-			}
-			return hex.toString();
+			return image.getImageData();
 		} finally {
 			image.dispose();
 		}
+	}
+
+	/** SHA-256 over the exact ImageData bytes used by the previous screen(). */
+	private static String screenHash(final ImageData frame) throws Exception {
+		final byte[] digest = MessageDigest.getInstance("SHA-256").digest(frame.data);
+		final StringBuilder hex = new StringBuilder();
+		for (final byte b : digest) {
+			hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
+		}
+		return hex.toString();
 	}
 
 	/*
