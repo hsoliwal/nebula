@@ -257,9 +257,30 @@ public class GridViewportDelta_Test {
 		}
 	}
 
+	@Test
+	public void settledFlushDeliversOutstandingPaintWithoutChangingThePixelOracle() {
+		flush();
+		final int before = grid.paintPasses;
+		grid.redraw();
+		flush();
+		assertTrue("redraw must produce a native paint before settled comparison",
+				grid.paintPasses > before);
+		// This preserves the strict real-screen versus synthetic-paint comparison.
+		// A missing or incorrectly rendered native frame must still fail.
+		assertScreenIsPaint("explicit redraw after settled native flush");
+	}
+
 	private void flush() {
 		while (display.readAndDispatch()) {
 			// drain paints and timers
+		}
+		// SWT.redraw() queues native invalidation; Display.readAndDispatch() does
+		// not guarantee that deferred paint was delivered on GTK. Control.update()
+		// flushes pending paint without creating a new redraw request. Only the
+		// settled-frame tests need this synchronizing paint barrier.
+		grid.update();
+		while (display.readAndDispatch()) {
+			// process events posted by the completed native paint
 		}
 	}
 }
