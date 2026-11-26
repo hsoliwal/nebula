@@ -48,6 +48,8 @@ public class XYGraphSetterDamageTest {
 	private int nativePaints;
 	private long lastNativePaintNanos;
 	private ImageData lastPixelCapture;
+	/** Bounded audit of actual SWT.Paint event rectangles and graphics clipping. */
+	private final String[] lastNativeClips = new String[32];
 
 	@Before
 	public void setUp() {
@@ -71,6 +73,12 @@ public class XYGraphSetterDamageTest {
 		canvas.addPaintListener(event -> {
 			nativePaints++;
 			lastNativePaintNanos = System.nanoTime();
+			// Observe the actual GTK clip: a full redraw and a partial expose may
+			// rasterize the same antialiased geometry with different boundaries.
+			Rectangle clip = event.gc.getClipping();
+			lastNativeClips[(nativePaints - 1) % lastNativeClips.length] =
+					"#" + nativePaints + " expose=" + event.x + "," + event.y + ","
+					+ event.width + "x" + event.height + " gcClip=" + clip;
 		});
 		shell.open();
 		spin();
@@ -164,10 +172,46 @@ public class XYGraphSetterDamageTest {
 				+ " fullVsSecondFull=" + differences(firstFull, secondFull)
 				+ " autoVsSecondFull=" + differences(automatic, secondFull)
 				+ " nativePaints=" + nativePaints);
+		System.err.println("M3_XYGRAPH_NATIVE_DIFF_COORDS phase=auto-vs-full"
+				+ " values=" + differenceCoordinates(automatic, firstFull, width, 48));
+		System.err.println("M3_XYGRAPH_NATIVE_DIFF_COORDS phase=full-vs-second-full"
+				+ " values=" + differenceCoordinates(firstFull, secondFull, width, 48));
+		System.err.println("M3_XYGRAPH_NATIVE_PAINT_CLIPS " + lastPaintClips());
 		saveFailureImage(name, "automatic", automaticImage);
 		saveFailureImage(name, "reference-full", firstFullImage);
 		saveFailureImage(name, "reference-no-paint", sameScreenImage);
 		saveFailureImage(name, "reference-full-repeat", secondFullImage);
+	}
+
+	/** Preserve exact raw pixels for all differing coordinates, bounded in logs. */
+	private static String differenceCoordinates(int[] first, int[] second,
+			int width, int limit) {
+		StringBuilder out = new StringBuilder();
+		int emitted = 0;
+		for (int i = 0; i < Math.min(first.length, second.length); i++) {
+			if (first[i] == second[i]) continue;
+			if (emitted >= limit) {
+				out.append(" ... more");
+				break;
+			}
+			if (emitted++ > 0) out.append(' ');
+			out.append('(').append(i % width).append(',').append(i / width)
+					.append(':').append(pixelAt(first, i)).append("->")
+					.append(pixelAt(second, i)).append(')');
+		}
+		return out.toString();
+	}
+
+	private String lastPaintClips() {
+		StringBuilder result = new StringBuilder();
+		int first = Math.max(0, nativePaints - lastNativeClips.length);
+		for (int i = first; i < nativePaints; i++) {
+			String event = lastNativeClips[i % lastNativeClips.length];
+			if (event == null) continue;
+			if (!result.isEmpty()) result.append(" | ");
+			result.append(event);
+		}
+		return result.toString();
 	}
 
 	private static String pixelAt(int[] values, int at) {
@@ -198,14 +242,27 @@ public class XYGraphSetterDamageTest {
 	/** Save the exact native-screen ImageData already captured for the oracle. */
 	private static void saveFailureImage(String name, String phase, ImageData image) {
 		String dir = System.getProperty("m3.test.pixels.dir");
-		if (dir == null || dir.isBlank()) return;
+		if (dir == null || dir.isBlank()) {
+			// Tycho's test JVM does not necessarily forward Maven -Dproperties.
+			// GitHub Actions does forward its own RUNNER_TEMP environment.
+			String runnerTemp = System.getenv("RUNNER_TEMP");
+			if (runnerTemp != null && !runnerTemp.isBlank()) {
+				dir = Path.of(runnerTemp, "nebula-widget-pixels").toString();
+			}
+		}
+		if (dir == null || dir.isBlank()) {
+			System.err.println("M3_XYGRAPH_DIAGNOSTIC_PNG_UNAVAILABLE no-output-directory");
+			return;
+		}
 		try {
 			Path output = Path.of(dir);
 			Files.createDirectories(output);
 			ImageLoader loader = new ImageLoader();
 			loader.data = new ImageData[] { image };
-			loader.save(output.resolve("xygraph-native-" + name.replaceAll("[^A-Za-z0-9_-]", "_")
-					+ "-" + phase + ".png").toString(), SWT.IMAGE_PNG);
+			Path destination = output.resolve("xygraph-native-"
+					+ name.replaceAll("[^A-Za-z0-9_-]", "_") + "-" + phase + ".png");
+			loader.save(destination.toString(), SWT.IMAGE_PNG);
+			System.err.println("M3_XYGRAPH_NATIVE_PNG_SAVED " + destination);
 		} catch (IOException | RuntimeException failure) {
 			// The original strict native-pixel failure must remain authoritative.
 			System.err.println("M3_XYGRAPH_DIAGNOSTIC_PNG_UNAVAILABLE " + failure);
