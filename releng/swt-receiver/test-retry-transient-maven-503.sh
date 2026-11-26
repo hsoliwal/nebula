@@ -50,6 +50,23 @@ fi
 # whose cause is something else.
 missing='[ERROR] Failed to execute goal on project demo: Could not resolve dependencies for project org.example:demo:jar:1.0: Could not find artifact org.example:missing:jar:1.0 in central (https://repo.maven.apache.org/maven2) -> [Help 1]'
 case "$mode" in
+  # Real Tycho target-definition failure: central's primary 429 and a single
+  # eclipse-hosted fallback 404 for the *same* artifact.
+  m310target429transient) if (( count == 1 )); then cat "$M310_TYCHO_TARGET429"; exit 1; fi ;;
+  m310target429persistent) cat "$M310_TYCHO_TARGET429"; exit 1 ;;
+  m310target429different)
+    sed 's/Could not find artifact org\.mortbay\.jasper:mortbay-apache-el:pom:9\.0\.124/Could not find artifact org.other:missing:pom:9.0.124/' "$M310_TYCHO_TARGET429"
+    exit 1 ;;
+  m310target429extra)
+    cat "$M310_TYCHO_TARGET429"
+    echo '[ERROR] Could not find artifact org.other:missing:pom:1.0 in central (https://repo.maven.apache.org/maven2)'
+    exit 1 ;;
+  m310target429404)
+    sed 's/HTTP Status: 429 (additional failures:/HTTP Status: 404 (additional failures:/' "$M310_TYCHO_TARGET429"
+    exit 1 ;;
+  m310target429notTycho)
+    sed 's/Failed to resolve target definition/Failed to execute an unrelated task/' "$M310_TYCHO_TARGET429"
+    exit 1 ;;
   # Verbatim Maven 3.10.1 outputs (the runner's preinstalled Maven in maven.yaml).
   m310extension) if (( count == 1 )); then cat "$M310_EXTENSION"; exit 1; fi ;;
   m310extensionpersistent) cat "$M310_EXTENSION"; exit 1 ;;
@@ -120,6 +137,11 @@ export REAL429="$real429"
 # run 45108815443 (HTTP 503 on the [ERROR] line as "HTTP Status: 503", Retry-After 60).
 export M310_EXTENSION="$selfdir/tests/data/run-44992024856-maven-3.10.1-429-extension.log"
 export M310_PARENT="$selfdir/tests/data/run-45108815443-maven-3.10.1-503-parent.log"
+# Actual primary Central HTTP 429 with an optional eclipse-hosted fallback 404.
+export M310_TYCHO_TARGET429="$selfdir/tests/data/run-45610458196-maven-3.10.1-429-tycho-target.txt"
+grep -Fq 'Failed to resolve target definition' "$M310_TYCHO_TARGET429"
+grep -Fq 'HTTP Status: 429 (additional failures:' "$M310_TYCHO_TARGET429"
+grep -Fq 'Could not find artifact org.mortbay.jasper:mortbay-apache-el:pom:9.0.124 in eclipse-hosted' "$M310_TYCHO_TARGET429"
 grep -q 'due to status 429' "$M310_EXTENSION"
 grep -q 'HTTP Status: 503' "$M310_PARENT"
 wrapper() { bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$@"; }
@@ -163,6 +185,20 @@ fails "$tmp/t2" m310extensionpersistent; calls "$tmp/t2" 3
 # Its Retry-After of 60 s is recorded, not slept (checked below).
 M3_RETRY_SLEEP_RECORD="$tmp/ignored-waits" wrapper "$tmp/t3" m310parent >/dev/null 2>"$tmp/stderr"; calls "$tmp/t3" 2
 grep -q 'upstream HTTP 503 (attempt 1/3)' "$tmp/stderr"
+# Tycho's exact run-45610458196 target-definition primary Central 429 has a
+# single *secondary* eclipse-hosted 404 for that same POM. This is safe to retry,
+# but never suppress genuinely missing or unrelated primary artifacts.
+wrapper "$tmp/tycho429ok" m310target429transient >/dev/null 2>"$tmp/stderr"
+calls "$tmp/tycho429ok" 2
+grep -q 'upstream HTTP 429 (rate limited) (attempt 1/3); retrying original command' "$tmp/stderr"
+fails "$tmp/tycho429persistent" m310target429persistent
+calls "$tmp/tycho429persistent" 3
+grep -q 'upstream HTTP 429 (rate limited) persists after 3 attempts; failing closed' "$tmp/stderr"
+for mode in m310target429different m310target429extra m310target429404 m310target429notTycho; do
+  fails "$tmp/tycho429-$mode" "$mode"
+  calls "$tmp/tycho429-$mode" 1
+  grep -q 'non-transient repository failure' "$tmp/stderr"
+done
 # Only artifacts named by the resolution clause count, a warning that Maven's own retry
 # recovered does not, a non-transient status for the artifact wins, and the URL must be
 # that artifact's exact repository path.
@@ -216,4 +252,4 @@ for setting in M3_RETRY_MAX_TOTAL_SECONDS=abc M3_HTTP503_RETRY_DELAY_SECONDS=08 
   env "$setting" bash "$selfdir/retry-transient-maven-503.sh" "$tmp/fake" "$tmp/s" transient >/dev/null 2>&1 || rc=$?
   [[ $rc -eq 64 && ! -e "$tmp/s" ]] || { echo "$setting: expected refusal (64) before running, got $rc" >&2; exit 1; }
 done
-printf 'PASS: Maven 3.9 and 3.10 [ERROR]/[FATAL] HTTP 429/502/503/504, Maven 3.10 transport status for the failing artifact, Eclipse locks, Tycho 4.0.12 Central transient retry=2; [WARNING]-only codes, product, 401/403/404, missing-artifact and checksum failures run once; persistent failures=attempts; exponential backoff with jitter, cap, Retry-After and total budget; no leading-zero settings\n'
+printf 'PASS: Maven 3.9 and 3.10 [ERROR]/[FATAL] HTTP 429/502/503/504, Maven 3.10 transport status for the failing artifact, exact Tycho target-definition Central 429 with same-artifact auxiliary eclipse-hosted 404 (unrelated/foreign/missing/primary-404 refused), Eclipse locks, Tycho 4.0.12 Central transient retry=2; [WARNING]-only codes, product, 401/403/404, missing-artifact and checksum failures run once; persistent failures=attempts; exponential backoff with jitter, cap, Retry-After and total budget; no leading-zero settings\n'

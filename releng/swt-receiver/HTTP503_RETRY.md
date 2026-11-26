@@ -122,6 +122,45 @@ and `-U` forces the next attempt to contact the repository again. The wrapper
 does not bypass artifact resolution, skip any test, change native binaries or
 alter result reports.
 
+## 2026-11-25: Tycho primary Central HTTP 429 plus secondary eclipse-hosted absence
+
+[Java CI run 45610458196](https://github.com/hsoliwal/nebula/actions/runs/45610458196)
+failed while resolving the pinned SWT `eclipse-sdk-prereqs` target. Maven
+3.10.1 logged three `GET request ... due to status 429` warnings for
+`org.mortbay.jasper:mortbay-apache-el:pom:9.0.124` on **Maven Central**.
+Its terminal `[ERROR]` line explicitly identifies **HTTP Status: 429** as
+the primary failure, but also records a secondary
+`Could not find artifact ... in eclipse-hosted` for the *same POM*.
+The original wrapper treated every missing-artifact phrase as a fatal 404
+even when it was in this auxiliary mirror note and stopped without retrying.
+
+The narrowly admitted `auxiliary_fallback_missing` predicate suppresses
+**only the auxiliary-missing veto** when all these contracts match exactly:
+a single missing-artifact phrase, a `Failed to resolve target definition`
+failure, a Maven Central `HTTP Status: 429` as the primary transfer cause,
+a descriptor failure for the same `:jar:` coordinate as the primary
+`:pom:` transfer, and a single parenthesized `additional failures`
+entry matching that same POM at the exact historical eclipse-hosted URL.
+It does **not** bypass authentication errors, a primary 404/500,
+different/multiple missing artifacts, unexpected mirrors, missing source
+identity, checksum failure, or compilation/JUnit failures. Ordinary transient
+status classification, attempt bounds, jitter and total wait budget remain
+unchanged. The script still returns nonzero when the Central rate limit
+persists after the configured attempts.
+
+The exact captured source is
+`tests/data/run-45610458196-maven-3.10.1-429-tycho-target.txt`.
+`test-retry-transient-maven-503.sh` adds six reproducible cases: a
+successful retry after one primary 429, persistent 429 exhaustion, a
+different-coordinate fallback, an extra missing artifact, a primary 404
+and an unrelated task text. The negative cases must invoke the underlying
+command only once and must not convert a real failure into PASS.
+
+This is an admission/transport repair, not proof that a live external
+repository recovered, or that the SWT native build or full Nebula reactor
+passed. CI must execute the complete retry regression and then the actual
+SWT build. No Maven POM or source was changed or substituted.
+
 ## Tests
 
 Run `bash releng/swt-receiver/test-retry-transient-maven-503.sh`. It feeds the
