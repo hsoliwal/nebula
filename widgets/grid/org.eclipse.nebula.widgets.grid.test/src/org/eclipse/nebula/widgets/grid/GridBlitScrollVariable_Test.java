@@ -127,7 +127,8 @@ public class GridBlitScrollVariable_Test {
 			settle(grid);
 			assertEquals("after +" + step + " rows", screen(grid), blitted);
 		}
-		assertTrue("blit path used: " + (grid.blitScrollCount - before), grid.blitScrollCount > before);
+		assertEquals("blit path follows indexed row geometry: " + (grid.blitScrollCount - before),
+				GridViewport.ENABLED, grid.blitScrollCount > before);
 	}
 
 	/** SHA-256 of the Grid's on-screen pixels (display copy). */
