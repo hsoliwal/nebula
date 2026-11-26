@@ -69,7 +69,7 @@ public class GridBlitScrollVariable_Test {
 			}
 		}
 		open(grid);
-		assertEquals("row index mediation follows the selected Grid mode for differing heights", GridViewport.ENABLED, grid.rowsIndexed());
+		assertTrue("row index mediation follows the selected Grid mode for differing heights", GridViewport.ENABLED == grid.rowsIndexed());
 		assertBlitEqualsRepaint(grid);
 	}
 
@@ -89,7 +89,7 @@ public class GridBlitScrollVariable_Test {
 			root.setExpanded(i % 3 == 0);
 		}
 		open(grid);
-		assertEquals("row index mediation follows the selected Grid mode for tree rows", GridViewport.ENABLED, grid.rowsIndexed());
+		assertTrue("row index mediation follows the selected Grid mode for tree rows", GridViewport.ENABLED == grid.rowsIndexed());
 		assertBlitEqualsRepaint(grid);
 	}
 
@@ -127,8 +127,8 @@ public class GridBlitScrollVariable_Test {
 			settle(grid);
 			assertEquals("after +" + step + " rows", screen(grid), blitted);
 		}
-		assertEquals("blit path follows indexed row geometry: " + (grid.blitScrollCount - before),
-				GridViewport.ENABLED, grid.blitScrollCount > before);
+		assertTrue("blit path follows indexed row geometry: " + (grid.blitScrollCount - before),
+				GridViewport.ENABLED == (grid.blitScrollCount > before));
 	}
 
 	/** SHA-256 of the Grid's on-screen pixels (display copy). */
