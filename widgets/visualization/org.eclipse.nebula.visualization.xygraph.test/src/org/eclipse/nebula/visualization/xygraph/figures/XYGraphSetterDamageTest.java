@@ -13,6 +13,10 @@ package org.eclipse.nebula.visualization.xygraph.figures;
 
 import static org.junit.Assert.assertArrayEquals;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.eclipse.draw2d.LightweightSystem;
 import org.eclipse.nebula.visualization.xygraph.dataprovider.CircularBufferDataProvider;
 import org.eclipse.nebula.visualization.xygraph.dataprovider.Sample;
@@ -21,6 +25,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
@@ -42,6 +47,7 @@ public class XYGraphSetterDamageTest {
 	private Trace trace;
 	private int nativePaints;
 	private long lastNativePaintNanos;
+	private ImageData lastPixelCapture;
 
 	@Before
 	public void setUp() {
@@ -103,6 +109,7 @@ public class XYGraphSetterDamageTest {
 		// Require a real SWT Paint from the setter; never synthesize one.
 		awaitNativePaintAfter(before, name + " did not repaint automatically");
 		int[] shown = pixels();
+		ImageData automaticImage = lastPixelCapture;
 
 		int referenceBefore = nativePaints;
 		graph.revalidate();
@@ -110,7 +117,99 @@ public class XYGraphSetterDamageTest {
 		awaitNativePaintAfter(referenceBefore, name + " reference full redraw did not paint");
 		// No tolerances: an automatic repaint must have exactly the pixels
 		// produced by a subsequently requested complete redraw.
-		assertArrayEquals(name + ": the change shows without another repaint", pixels(), shown);
+		try {
+			assertArrayEquals(name + ": the change shows without another repaint", pixels(), shown);
+		} catch (AssertionError original) {
+			// The original strict pixel assertion has already failed. Capture
+			// native repeatability evidence without changing its verdict.
+			try {
+				diagnoseNativePixelFailure(name, shown, automaticImage, lastPixelCapture);
+			} catch (RuntimeException | Error diagnostic) {
+				if (diagnostic != original) original.addSuppressed(diagnostic);
+			}
+			throw original;
+		}
+	}
+
+	/**
+	 * Diagnostic-only after strict pixel failure. Distinguishes different
+	 * images captured without an intervening paint from non-idempotence under
+	 * a second explicit native full redraw. The original JUnit failure remains
+	 * mandatory and is rethrown after this method, without any pixel tolerance.
+	 */
+	private void diagnoseNativePixelFailure(String name, int[] automatic,
+			ImageData automaticImage, ImageData firstFullImage) {
+		int[] firstFull = imagePixels(firstFullImage);
+		int[] sameScreen = pixels();
+		ImageData sameScreenImage = lastPixelCapture;
+		int priorPaint = nativePaints;
+		canvas.redraw();
+		awaitNativePaintAfter(priorPaint, name + " diagnostic full redraw did not paint");
+		int[] secondFull = pixels();
+		ImageData secondFullImage = lastPixelCapture;
+
+		int first = firstDifference(automatic, firstFull);
+		int width = canvas.getBounds().width;
+		System.err.println("M3_XYGRAPH_NATIVE_PIXEL_DIAGNOSTIC"
+				+ " setter=" + name
+				+ " firstIndex=" + first
+				+ " x=" + (first < 0 ? -1 : first % width)
+				+ " y=" + (first < 0 ? -1 : first / width)
+				+ " autoPixel=" + pixelAt(automatic, first)
+				+ " fullPixel=" + pixelAt(firstFull, first)
+				+ " rereadPixel=" + pixelAt(sameScreen, first)
+				+ " secondFullPixel=" + pixelAt(secondFull, first)
+				+ " autoVsFull=" + differences(automatic, firstFull)
+				+ " fullVsSameScreen=" + differences(firstFull, sameScreen)
+				+ " fullVsSecondFull=" + differences(firstFull, secondFull)
+				+ " autoVsSecondFull=" + differences(automatic, secondFull)
+				+ " nativePaints=" + nativePaints);
+		saveFailureImage(name, "automatic", automaticImage);
+		saveFailureImage(name, "reference-full", firstFullImage);
+		saveFailureImage(name, "reference-no-paint", sameScreenImage);
+		saveFailureImage(name, "reference-full-repeat", secondFullImage);
+	}
+
+	private static String pixelAt(int[] values, int at) {
+		return at < 0 || at >= values.length ? "none"
+				: String.format("0x%08x", values[at]);
+	}
+
+	private static int[] imagePixels(ImageData image) {
+		int[] result = new int[image.width * image.height];
+		for (int y = 0; y < image.height; y++)
+			image.getPixels(0, y, image.width, result, y * image.width);
+		return result;
+	}
+
+	private static int firstDifference(int[] first, int[] second) {
+		for (int i = 0; i < Math.min(first.length, second.length); i++)
+			if (first[i] != second[i]) return i;
+		return first.length == second.length ? -1 : Math.min(first.length, second.length);
+	}
+
+	private static int differences(int[] first, int[] second) {
+		int count = Math.abs(first.length - second.length);
+		for (int i = 0; i < Math.min(first.length, second.length); i++)
+			if (first[i] != second[i]) count++;
+		return count;
+	}
+
+	/** Save the exact native-screen ImageData already captured for the oracle. */
+	private static void saveFailureImage(String name, String phase, ImageData image) {
+		String dir = System.getProperty("m3.test.pixels.dir");
+		if (dir == null || dir.isBlank()) return;
+		try {
+			Path output = Path.of(dir);
+			Files.createDirectories(output);
+			ImageLoader loader = new ImageLoader();
+			loader.data = new ImageData[] { image };
+			loader.save(output.resolve("xygraph-native-" + name.replaceAll("[^A-Za-z0-9_-]", "_")
+					+ "-" + phase + ".png").toString(), SWT.IMAGE_PNG);
+		} catch (IOException | RuntimeException failure) {
+			// The original strict native-pixel failure must remain authoritative.
+			System.err.println("M3_XYGRAPH_DIAGNOSTIC_PNG_UNAVAILABLE " + failure);
+		}
 	}
 
 	/** Waits for an actual native paint and a quiet GDK frame interval. */
@@ -147,6 +246,7 @@ public class XYGraphSetterDamageTest {
 		gc.dispose();
 		ImageData image = shot.getImageData();
 		shot.dispose();
+		lastPixelCapture = image;
 		int[] all = new int[size.width * size.height];
 		for (int y = 0; y < size.height; y++) {
 			image.getPixels(0, y, size.width, all, y * size.width);
