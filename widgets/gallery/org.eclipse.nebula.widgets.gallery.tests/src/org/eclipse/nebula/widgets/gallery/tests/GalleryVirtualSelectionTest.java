@@ -695,7 +695,7 @@ public class GalleryVirtualSelectionTest {
 
 	/**
 	 * The same with stale index hints: 64,000 selected groups put in another order with _setGalleryItems, then dropped.
-	 * The dropped groups are found by identity, not by index (0.7 to 2.4 s before, 13 to 131 ms here, master 0.02 to
+	 * The dropped groups are found by identity, not by index (0.6 to 2.4 s before, 13 to 131 ms here, master 0.02 to
 	 * 0.2 s).
 	 */
 	@Test

@@ -1223,6 +1223,9 @@ public class Gallery extends Canvas {
 
 	/** Viewport mode: true when an entry of the selection is a run (else no release has anything to do). */
 	private boolean hasRuns() {
+		if (selectionRuns == null) {
+			return false;
+		}
 		for (int k = 0; k < selectionCount; k++) {
 			if (isRun(k)) {
 				return true;
