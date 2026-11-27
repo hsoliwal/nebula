@@ -24,6 +24,13 @@ jobs:
     env:
       SWT_GTK4: '0'
       GDK_BACKEND: x11
+      # GTK3 overlay scrollbars are drawn by GTK over the Grid's client area and
+      # fade in and out after each scroll. The window-equals-the-Grid's-paint and
+      # blit-equals-repaint checks then compare GTK's indicator, not Grid pixels
+      # (GridBlitScrollVariable_Test differed only at the 5-pixel overlay thumb).
+      # Classic scrollbars sit outside the client area. Same choice as the
+      # XViewer tests (#693); Java CI keeps covering overlay mode.
+      GTK_OVERLAY_SCROLLING: '0'
       JAVA_TOOL_OPTIONS: -Dswt.widget.mode.Grid=${{ matrix.mode }} -Dgrid.differential.out=${{ github.workspace }}/grid-native-pixels-${{ matrix.mode }}
       MAVEN_OPTS: -Xmx2g
     steps:
