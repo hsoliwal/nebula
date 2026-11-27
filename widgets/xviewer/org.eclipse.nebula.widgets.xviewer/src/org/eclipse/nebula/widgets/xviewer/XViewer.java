@@ -79,6 +79,7 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
@@ -138,10 +139,18 @@ public class XViewer extends TreeViewer {
    static final int PRECOMPUTE_BLOCK = 64;
    /** First rows of a parent whose pass values are kept when a load, sort or filter pass ends. */
    static final int PRECOMPUTE_SEED = 256;
+   /** Fewest rows from the top row down whose pass values are kept when a root sort or filter pass ends. */
+   static final int PRECOMPUTE_BAND = 192;
    /** Resident precomputed values per column while bounded; the columns' own maps are left to the caller. */
    private final Map<XViewerColumn, XViewerPreComputedWindow> preComputeWindows = new IdentityHashMap<>();
    /** Nesting depth of full-data passes; the outermost pass drops the transient maps. */
    private int preComputePassDepth;
+   /** Upper bound of the rows the tree shows, for the font and client height it was computed for. */
+   private int rowBound = -1;
+   private Font rowBoundFont;
+   private int rowBoundHeight = -1;
+   /** Test hook: runs where a root or child order is being computed, before its pass begins. */
+   Runnable passProbe;
    /** Transient full maps serving each precomputed column during the current pass. */
    private final Map<XViewerColumn, Map<Long, String>> passValues = new IdentityHashMap<>();
 
@@ -507,7 +516,8 @@ public class XViewer extends TreeViewer {
                resetPreComputedValues();
                xViewer.superInputChanged(input);
                if (viewport != null && !getTree().isDisposed()) {
-                  seedPreComputedWindows(getInput(), viewport.displayChildren(getInput()));
+                  Object[] shown = viewport.displayChildren(getInput());
+                  seedPreComputedWindows(shown, shown, -1, 0);
                }
             } finally {
                endPreComputePass();
@@ -701,23 +711,30 @@ public class XViewer extends TreeViewer {
    }
 
    /**
-    * Keeps, in each column's window, the values the current pass computed for the rows of {@code parent} about to be
-    * shown: the first rows, and for the root the rows around the row now at the top of the tree. The painted text of
-    * those rows is then the value the pass sorted and filtered on. A column the pass did not read keeps its window.
+    * Keeps, in each column's window, the values the current pass computed for the rows about to be shown: the first
+    * {@code rows} and those from {@code top} down. The painted text of those rows is then the value the pass sorted and
+    * filtered on. Every row the pass read ({@code all}, including rows a filter left out) is first dropped from the
+    * window, so none keeps a value from before the pass; rows of other parents keep theirs, and a column the pass did
+    * not read keeps its window.
+    * <p>
+    * Reads no tree geometry itself: the caller passes the top row index and a font-metric bound of the visible rows.
+    * Reading the top row can still paint rows on GTK ({@code Tree.getTopItem()} recomputes the viewport geometry
+    * through {@code getItemHeight()} once the vertical adjustment has moved), and the viewport bridge defers such rows
+    * until the order is known.
+    * </p>
+    *
+    * @param all the rows the pass read
+    * @param rows the rows it returned, in display order
+    * @param top the index of the root row at the top of the tree, or -1 for none
+    * @param visible an upper bound of the rows the tree shows
     */
-   private void seedPreComputedWindows(Object parent, Object[] rows) {
-      if (passValues.isEmpty() || rows.length == 0) {
+   private void seedPreComputedWindows(Object[] all, Object[] rows, int top, int visible) {
+      if (passValues.isEmpty() || all.length == 0) {
          return;
       }
       int head = Math.min(rows.length, PRECOMPUTE_SEED);
-      int from = 0;
-      int to = 0;
-      Object input = getInput();
-      if (parent == input || parent != null && parent.equals(input)) {
-         int top = topRowIndex();
-         from = Math.max(head, top - PRECOMPUTE_BLOCK);
-         to = Math.min(rows.length, top + visibleRowCount() + PRECOMPUTE_BLOCK);
-      }
+      int from = top < 0 ? 0 : Math.max(head, top - PRECOMPUTE_BLOCK);
+      int to = top < 0 ? 0 : Math.min(rows.length, top + Math.max(PRECOMPUTE_BAND, visible + PRECOMPUTE_BLOCK));
       for (Map.Entry<XViewerColumn, Map<Long, String>> entry : passValues.entrySet()) {
          Map<Long, String> values = entry.getValue();
          if (values instanceof PassValues && !((PassValues) values).isFilled()) {
@@ -725,6 +742,15 @@ public class XViewer extends TreeViewer {
          }
          IXViewerPreComputedColumn preComputedColumn = (IXViewerPreComputedColumn) entry.getKey();
          XViewerPreComputedWindow window = preComputedWindow(entry.getKey());
+         // more than 512 kept rows (a tall tree) grow the window to twice their number, so they fit with room to spare
+         window.ensureCapacity(head + Math.max(0, to - from));
+         for (Object row : all) {
+            try {
+               window.remove(preComputedColumn.getKey(row));
+            } catch (RuntimeException ex) {
+               // a row without a key has no value to drop
+            }
+         }
          try {
             for (int row = 0; row < head; row++) {
                seed(preComputedColumn, values, window, rows[row]);
@@ -746,8 +772,32 @@ public class XViewer extends TreeViewer {
       }
    }
 
+   /**
+    * @return an upper bound of the rows the tree shows: the client height over the font height, plus two. A row is at
+    * least as tall as its font, so no more rows fit. Read from font metrics rather than {@code Tree.getItemHeight()},
+    * which on GTK paints rows; cached for the tree's font and client height.
+    */
+   int visibleRowBound() {
+      Tree tree = getTree();
+      Font font = tree.getFont();
+      int height = tree.getClientArea().height;
+      if (rowBound < 0 || font != rowBoundFont || height != rowBoundHeight) {
+         GC gc = new GC(tree);
+         try {
+            gc.setFont(font);
+            int fontHeight = Math.max(1, gc.getFontMetrics().getHeight());
+            rowBound = (height + fontHeight - 1) / fontHeight + 2;
+         } finally {
+            gc.dispose();
+         }
+         rowBoundFont = font;
+         rowBoundHeight = height;
+      }
+      return rowBound;
+   }
+
    /** @return the index of the root row at the top of the tree, 0 if unknown */
-   private int topRowIndex() {
+   int topRowIndex() {
       try {
          Tree tree = getTree();
          TreeItem top = tree.getTopItem();
@@ -758,11 +808,6 @@ public class XViewer extends TreeViewer {
       } catch (RuntimeException ex) {
          return 0;
       }
-   }
-
-   private int visibleRowCount() {
-      Tree tree = getTree();
-      return tree.getClientArea().height / Math.max(1, tree.getItemHeight()) + 1;
    }
 
    /**
@@ -1403,7 +1448,7 @@ public class XViewer extends TreeViewer {
             Object[] rows = itemData(items);
             runPreComputePass(rows, () -> {
                walk.run();
-               seedPreComputedWindows(null, rows);
+               seedPreComputedWindows(rows, rows, -1, 0);
             });
          } else {
             walk.run();
@@ -1516,6 +1561,15 @@ public class XViewer extends TreeViewer {
       // filters and comparators read every child's cells: with bounded precompute the values are computed for this
       // pass, and those of the rows about to be shown are kept so their text is what was sorted and filtered on
       boolean pass = boundsPreCompute() && (filters.length > 0 || comparator != null);
+      Object input = getInput();
+      // the top row index and a font-metric bound of the visible rows. On GTK getTopItem() can paint rows (it calls
+      // getItemHeight() once the vertical adjustment has moved); the bridge's re-entry guard defers those rows
+      boolean root = pass && shown && (parent == input || parent != null && parent.equals(input));
+      int top = root ? topRowIndex() : -1;
+      int visible = root ? visibleRowBound() : 0;
+      if (passProbe != null) {
+         passProbe.run();
+      }
       if (pass) {
          beginPreComputePass(raw, null);
       }
@@ -1536,7 +1590,7 @@ public class XViewer extends TreeViewer {
          }
          // only rows about to be shown keep their values; a probe of an unexpanded row's children keeps none
          if (pass && shown) {
-            seedPreComputedWindows(parent, result);
+            seedPreComputedWindows(raw, result, top, visible);
          }
          return result;
       } finally {

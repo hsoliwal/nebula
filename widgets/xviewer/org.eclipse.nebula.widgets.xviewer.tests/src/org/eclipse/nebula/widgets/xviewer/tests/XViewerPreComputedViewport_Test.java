@@ -353,15 +353,21 @@ public class XViewerPreComputedViewport_Test {
 
       clickHeader(viewer, PRE_ID);
       pump();
+      // load, then the sort; the sorter's own refresh before it reads no column, and keeping values must not fill one
+      assertEquals("full passes after the first sort", 2, counter.fullBatches); //$NON-NLS-1$
       assertPaintedSortKeys(tree, 0, counter);
 
       tree.setTopItem(tree.getItem(rows / 2));
       tree.update();
-      pump();
+      // GTK applies a programmatic scroll later: sort only once the tree has left row 0 and the top row holds
+      int before = settledTopIndex(tree, 0);
       clickHeader(viewer, PRE_ID);
-      pump();
-      int top = topIndex(tree);
-      System.out.println("XVIEWER_PRECOMPUTE counter top=" + top + " fullBatches=" + counter.fullBatches); //$NON-NLS-1$ //$NON-NLS-2$
+      int top = settledTopIndex(tree, -1);
+      System.out.println("XVIEWER_PRECOMPUTE counter requestedTop=" + rows / 2 + " topBeforeSort=" + before //$NON-NLS-1$ //$NON-NLS-2$
+         + " top=" + top + " fullBatches=" + counter.fullBatches); //$NON-NLS-1$ //$NON-NLS-2$
+      for (int pass = 0; pass < counter.fullStacks.size(); pass++) {
+         System.out.println("XVIEWER_PRECOMPUTE fullPass" + pass + " " + counter.fullStacks.get(pass)); //$NON-NLS-1$ //$NON-NLS-2$
+      }
       assertPaintedSortKeys(tree, top, counter);
    }
 
@@ -641,6 +647,274 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /**
+    * Bounded: values resident from before a sort pass must not survive it. Rows 1,000.. are resident from a scroll,
+    * then the data changes and a sort pass reads the new values; scrolling back to rows the pass did not keep must
+    * show the values the sort read, not the ones from before. Fails on master 3343da6 (the window kept them).
+    */
+   @Test
+   public void boundedPassReplacesValuesFromBeforeThePass() {
+      int rows = 3_000;
+      Generation data = new Generation(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, data, true, new GenerationColumn(data));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      tree.setTopItem(tree.getItem(1_000));
+      tree.update();
+      int far = settledTopIndex(tree, 0);
+      assertEquals(GenerationColumn.value(0, far), tree.getItem(far).getText(1));
+      tree.setTopItem(tree.getItem(0));
+      tree.update();
+      settledTopIndex(tree, far);
+      data.generation = 1;
+      clickHeader(viewer, PRE_ID);
+      settledTopIndex(tree, -1);
+      tree.setTopItem(tree.getItem(far));
+      tree.update();
+      int top = settledTopIndex(tree, 0);
+      for (int row = top; row < top + 12; row++) {
+         TreeItem item = tree.getItem(row);
+         String painted = item.getText(1);
+         String key = data.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+         assertEquals("row " + row + " shows the value it was sorted on", key, painted); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+   }
+
+   /**
+    * Bounded, hierarchical, with roots 0, 1 and 2 expanded: a sort orders the roots and then each expanded root's
+    * children. The children's passes must not drop the values the root pass kept, so the root rows show the values
+    * they were sorted on. Fails on df3e790 (each pass emptied the column's window).
+    */
+   @Test
+   public void boundedChildPassesKeepTheRootRowValues() {
+      int roots = 500;
+      Counter counter = new Counter(roots);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter), new Tree300(roots, 3));
+      viewer.setInputXViewer(Flat.roots(roots));
+      shell.open();
+      pump();
+      for (int root = 0; root < 3; root++) {
+         viewer.setExpandedState(Integer.valueOf(root), true);
+      }
+      pump();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      Tree tree = viewer.getTree();
+      for (int row = 0; row < 12; row++) {
+         TreeItem item = tree.getItem(row);
+         String painted = item.getText(1);
+         String key = counter.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+         assertEquals("root row " + row + " shows the value it was sorted on", key, painted); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+   }
+
+   /**
+    * Bounded, on a tall tree (small font, tall shell): after a sort every visible row, including those more than 192
+    * rows below the top row, shows the value it was sorted on. Fails on 69ae446 (a fixed 192-row band).
+    */
+   @Test
+   public void boundedTallTreePaintsTheSortKeysOfEveryVisibleRow() {
+      int rows = 5_000;
+      shell.setBounds(0, 0, 800, 4_000);
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      Tree tree = viewer.getTree();
+      org.eclipse.swt.graphics.Font small = new org.eclipse.swt.graphics.Font(display, "Sans", 1, SWT.NORMAL); //$NON-NLS-1$
+      try {
+         tree.setFont(small);
+         viewer.setInputXViewer(Flat.roots(rows));
+         shell.layout(true, true);
+         shell.open();
+         pump();
+         tree.setTopItem(tree.getItem(rows / 2));
+         tree.update();
+         settledTopIndex(tree, 0);
+         clickHeader(viewer, PRE_ID);
+         int top = settledTopIndex(tree, -1);
+         int visible = tree.getClientArea().height / Math.max(1, tree.getItemHeight());
+         System.out.println("XVIEWER_PRECOMPUTE tall visibleRows=" + visible + " top=" + top); //$NON-NLS-1$ //$NON-NLS-2$
+         for (int row = top; row < Math.min(rows, top + visible); row++) {
+            TreeItem item = tree.getItem(row);
+            String painted = item.getText(1);
+            String key = counter.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+            assertEquals("visible row " + row + " shows the value it was sorted on", key, painted); //$NON-NLS-1$ //$NON-NLS-2$
+         }
+      } finally {
+         tree.setFont(null);
+         small.dispose();
+      }
+   }
+
+   /**
+    * Bounded: rows a filter pass leaves out must not keep values from before it. Rows 0..9 are resident, the data
+    * changes, a filter that reads the column excludes rows 0..9, and removing it shows them with the current values.
+    * Fails on 69ae446 (only the rows a pass returned were dropped).
+    */
+   @Test
+   public void boundedFilteredOutRowsDropValuesFromBeforeThePass() {
+      int rows = 3_000;
+      Generation data = new Generation(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, data, true, new GenerationColumn(data));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      assertEquals(GenerationColumn.value(0, 0), tree.getItem(0).getText(1));
+      data.generation = 1;
+      viewer.getCustomizeMgr().setColumnFilterText(PRE_ID, "!v00000"); //$NON-NLS-1$
+      pump();
+      assertEquals(rows - 10, tree.getItemCount());
+      viewer.getCustomizeMgr().setColumnFilterText(PRE_ID, null);
+      pump();
+      assertEquals(rows, tree.getItemCount());
+      for (int row = 0; row < 10; row++) {
+         TreeItem item = tree.getItem(row);
+         String painted = item.getText(1);
+         assertEquals("row " + row, GenerationColumn.value(1, ((Integer) item.getData()).intValue()), painted); //$NON-NLS-1$
+      }
+   }
+
+   /**
+    * Bounded: a native callback that paints a row while the root order is being computed (as GTK's
+    * {@code getItemHeight} can) must not start a second, nested pass; the row is filled once the order is known and
+    * shows the value it was sorted on. Emulated with a test hook that reads row 0's text, which on Win32 sends
+    * SetData. Fails on e71edf7 (a nested pass).
+    */
+   @Test
+   public void boundedPaintDuringOrderingStartsNoNestedPass() throws Exception {
+      int rows = 2_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      boolean[] fired = new boolean[1];
+      Field probe = XViewer.class.getDeclaredField("passProbe"); //$NON-NLS-1$
+      probe.setAccessible(true);
+      probe.set(viewer, (Runnable) () -> {
+         if (!fired[0] && !viewer.getCustomizeMgr().getSortXCols().isEmpty()) {
+            fired[0] = true;
+            tree.getItem(0).getText(0);
+         }
+      });
+      clickHeader(viewer, PRE_ID);
+      pump();
+      assertTrue("the hook ran during the sort", fired[0]); //$NON-NLS-1$
+      assertEquals("full passes: load and one sort", 2, counter.fullBatches); //$NON-NLS-1$
+      assertPaintedSortKeys(tree, 0, counter);
+   }
+
+   /**
+    * Bounded: the geometry a pass reads (the top row index and the bound of visible rows) paints no row. Read right
+    * after every row was cleared, so any paint would send SetData. On GTK, {@code Tree.getItemHeight()} would.
+    */
+   @Test
+   public void boundedPassGeometrySendsNoSetData() throws Exception {
+      XViewer viewer = viewer(SWT.VIRTUAL, new Stats(), true);
+      viewer.setInputXViewer(Flat.roots(2_000));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      int[] setData = new int[1];
+      tree.addListener(SWT.SetData, event -> setData[0]++);
+      Method top = XViewer.class.getDeclaredMethod("topRowIndex"); //$NON-NLS-1$
+      Method bound = XViewer.class.getDeclaredMethod("visibleRowBound"); //$NON-NLS-1$
+      top.setAccessible(true);
+      bound.setAccessible(true);
+      tree.clearAll(true);
+      int visible = ((Integer) bound.invoke(viewer)).intValue();
+      top.invoke(viewer);
+      assertEquals("rows painted by the geometry reads", 0, setData[0]); //$NON-NLS-1$
+      int shown = tree.getClientArea().height / Math.max(1, tree.getItemHeight());
+      assertTrue("bound " + visible + " covers the " + shown + " rows shown", visible >= shown); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+   }
+
+   /**
+    * Bounded, scrolled to row 2,500, every row cleared, then a root ordering: on GTK reading the top row inside the
+    * pass paints rows (getTopItem() recomputes the viewport geometry through getItemHeight() after a scroll), which the
+    * bridge must defer. Exactly one full pass runs and the visible rows show the values they were sorted on. On
+    * Win32 getTopItem() paints nothing, so there this test only checks the ordinary path.
+    */
+   @Test
+   public void boundedScrolledOrderingDefersRowsPaintedByTheTopRowRead() {
+      int rows = 5_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      tree.setTopItem(tree.getItem(rows / 2));
+      tree.update();
+      settledTopIndex(tree, 0);
+      int passes = counter.fullBatches;
+      tree.clearAll(true);
+      viewer.refresh();
+      int top = settledTopIndex(tree, -1);
+      assertEquals("one full pass for the ordering", passes + 1, counter.fullBatches); //$NON-NLS-1$
+      assertPaintedSortKeys(tree, top, counter);
+   }
+
+   /**
+    * Bounded, sorted by a counter column and scrolled to row 2,500, with a List input mutated in place (its hash
+    * changes): after swapping two rows and refreshing, and after adding a row, the visible rows show the values they
+    * were sorted on. Fails on 55a0879 (the kept band came from a stale top row).
+    */
+   @Test
+   @SuppressWarnings("unchecked")
+   public void boundedMutatedListInputKeepsVisibleRowsOnTheirKeys() {
+      int rows = 5_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      viewer.setInputXViewer(new ArrayList<Object>(Arrays.asList((Object[]) Flat.roots(rows))));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      List<Object> input = (List<Object>) viewer.getInput();
+      tree.setTopItem(tree.getItem(rows / 2));
+      tree.update();
+      settledTopIndex(tree, 0);
+      java.util.Collections.swap(input, 0, 1);
+      viewer.refresh();
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
+      Integer added = Integer.valueOf(rows);
+      input.add(added);
+      viewer.add(input, added);
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
+   }
+
+   /** The same with an input object that has identity equality and hash, mutated in place. */
+   @Test
+   public void boundedMutatedIdentityInputKeepsVisibleRowsOnTheirKeys() {
+      int rows = 5_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      IdentityRoots input = new IdentityRoots(Flat.roots(rows));
+      viewer.setInput(input);
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      tree.setTopItem(tree.getItem(rows / 2));
+      tree.update();
+      settledTopIndex(tree, 0);
+      java.util.Collections.swap(input.rows, 0, 1);
+      viewer.refresh();
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
+      Integer added = Integer.valueOf(rows);
+      input.rows.add(added);
+      viewer.add(input, added);
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
+   }
+
    /** An invalid {@code nebula.xviewer.boundedPreCompute} value leaves bounding off and is logged. */
    @Test
    public void invalidBoundedPreComputePropertyIsOffAndLogged() throws Exception {
@@ -707,9 +981,51 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
-   private static int topIndex(Tree tree) {
-      TreeItem top = tree.getTopItem();
-      return top == null ? 0 : tree.indexOf(top);
+   /**
+    * Waits until the scroll has settled: {@code Tree.getTopItem()} answers the row drawn at the top (GTK answers the
+    * row of the last {@code setTopItem()} until it has applied that scroll), the drawn row is not {@code leftRow}, and
+    * it has held for five consecutive checks. Fails after 10 s.
+    *
+    * @param leftRow the row the tree must have scrolled away from, or -1
+    * @return the index of the row drawn at the top
+    */
+   private int settledTopIndex(Tree tree, int leftRow) {
+      int last = -2;
+      int stable = 0;
+      long deadline = System.currentTimeMillis() + 10_000;
+      while (System.currentTimeMillis() < deadline) {
+         pump();
+         int drawn = drawnTopIndex(tree);
+         TreeItem answeredItem = tree.getTopItem();
+         int answered = answeredItem == null ? -1 : tree.indexOf(answeredItem);
+         boolean settled = drawn >= 0 && drawn == answered && drawn != leftRow;
+         stable = settled && drawn == last ? stable + 1 : 0;
+         last = drawn;
+         if (stable >= 5) {
+            return drawn;
+         }
+         sleep(20);
+      }
+      throw new AssertionError("the top row did not settle: drawn " + last + ", getTopItem " //$NON-NLS-1$ //$NON-NLS-2$
+         + (tree.getTopItem() == null ? -1 : tree.indexOf(tree.getTopItem())) + ", left row " + leftRow); //$NON-NLS-1$
+   }
+
+   /**
+    * The row actually drawn at the top: on GTK {@code Tree.getTopItem()} can answer the row of the last
+    * {@code setTopItem()} instead (see XViewerViewport_Test#visibleTopItem), so the row there is hit-tested.
+    */
+   private static int drawnTopIndex(Tree tree) {
+      TreeItem top;
+      if ("gtk".equals(SWT.getPlatform())) { //$NON-NLS-1$
+         int x = tree.getColumn(0).getWidth() / 2;
+         top = tree.getItem(new org.eclipse.swt.graphics.Point(x, 1));
+         if (top == null && tree.getHeaderVisible()) {
+            top = tree.getItem(new org.eclipse.swt.graphics.Point(x, tree.getHeaderHeight() + 1));
+         }
+      } else {
+         top = tree.getTopItem();
+      }
+      return top == null ? -1 : tree.indexOf(top);
    }
 
    private void check(String phase, XViewer viewer, Stats stats, long nanos, List<String> violations) {
@@ -942,11 +1258,29 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /** The XViewer, JFace and SWT frames that led to a full populate call, innermost first. */
+   static String callers() {
+      StringBuilder frames = new StringBuilder();
+      int kept = 0;
+      for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
+         String type = frame.getClassName();
+         boolean inner = type.contains("LabelProvider") || type.contains("PassValues") || type.contains("Sorter") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            || type.contains("Comparator") || type.contains("_Test"); //$NON-NLS-1$ //$NON-NLS-2$
+         if (!inner && (type.startsWith("org.eclipse.nebula.widgets.xviewer.") || type.startsWith("org.eclipse.jface.") //$NON-NLS-1$ //$NON-NLS-2$
+            || type.startsWith("org.eclipse.swt.widgets.")) && kept++ < 32) { //$NON-NLS-1$
+            frames.append(type.substring(type.lastIndexOf('.') + 1)).append('.').append(frame.getMethodName())
+               .append(':').append(frame.getLineNumber()).append(" < "); //$NON-NLS-1$
+         }
+      }
+      return frames.toString();
+   }
+
    /** Values from a counter, as in the review harness: each computation of a row gives a new, larger value. */
    static final class Counter extends Stats {
       private final int rows;
       private int next;
       int fullBatches;
+      final List<String> fullStacks = new ArrayList<>();
       /** The values of the most recent call that covered every row: what a load or a sort pass ordered on. */
       final Map<Long, String> lastFull = new HashMap<>();
 
@@ -993,10 +1327,11 @@ public class XViewerPreComputedViewport_Test {
       @Override
       public void populateCachedValues(Collection<?> objects, Map<Long, String> preComputedValueMap) {
          counter.calls++;
-         boolean full = objects.size() == counter.rows;
+         boolean full = objects.size() >= counter.rows;
          if (full) {
             counter.fullBatches++;
             counter.lastFull.clear();
+            counter.fullStacks.add(callers());
          }
          for (Object obj : objects) {
             String value = counter.nextValue();
@@ -1014,6 +1349,73 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /** Data whose values change only when the test bumps {@link #generation}, as a database row changes. */
+   static final class Generation extends Stats {
+      private final int rows;
+      int generation;
+      /** The values of the most recent call that covered every row: what a load or a sort pass ordered on. */
+      final Map<Long, String> lastFull = new HashMap<>();
+
+      Generation(int rows) {
+         this.rows = rows;
+      }
+   }
+
+   static final class GenerationColumn extends XViewerColumn implements IXViewerPreComputedColumn {
+      private final Generation data;
+
+      GenerationColumn(Generation data) {
+         super(PRE_ID, "Generation", 120, XViewerAlign.Left, true, SortDataType.String, false, null); //$NON-NLS-1$
+         this.data = data;
+      }
+
+      static String value(int generation, int id) {
+         return "g" + generation + "-" + Pre.pad(id); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+
+      @Override
+      public GenerationColumn copy() {
+         GenerationColumn copy = new GenerationColumn(data);
+         super.copy(this, copy);
+         return copy;
+      }
+
+      @Override
+      public Long getKey(Object obj) {
+         return Long.valueOf(((Integer) obj).longValue());
+      }
+
+      @Override
+      public void populateCachedValues(Collection<?> objects, Map<Long, String> preComputedValueMap) {
+         data.calls++;
+         boolean full = objects.size() == data.rows;
+         if (full) {
+            data.lastFull.clear();
+         }
+         for (Object obj : objects) {
+            String value = value(data.generation, ((Integer) obj).intValue());
+            preComputedValueMap.put(getKey(obj), value);
+            if (full) {
+               data.lastFull.put(getKey(obj), value);
+            }
+         }
+      }
+
+      @Override
+      public String getText(Object obj, Long key, String cachedValue) {
+         return cachedValue;
+      }
+   }
+
+   /** An input with identity equality and hash whose rows change in place. */
+   static final class IdentityRoots {
+      final List<Object> rows;
+
+      IdentityRoots(Integer[] roots) {
+         rows = new ArrayList<>(Arrays.asList((Object[]) roots));
+      }
+   }
+
    /** A flat model of Integer rows. */
    static final class Flat implements ITreeContentProvider {
       static Integer[] roots(int count) {
@@ -1026,6 +1428,9 @@ public class XViewerPreComputedViewport_Test {
 
       @Override
       public Object[] getElements(Object input) {
+         if (input instanceof IdentityRoots) {
+            return ((IdentityRoots) input).rows.toArray();
+         }
          return input instanceof List ? ((List<?>) input).toArray() : (Object[]) input;
       }
 
@@ -1105,13 +1510,18 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
-   /** Integer roots 0..R-1, each with 300 children R + r*300 + j. */
+   /** Integer roots 0..R-1, each with K children R + r*K + j (300 unless given). */
    static final class Tree300 implements ITreeContentProvider {
-      private static final int KIDS = 300;
       private final int roots;
+      private final int kids;
 
       Tree300(int roots) {
+         this(roots, 300);
+      }
+
+      Tree300(int roots, int kids) {
          this.roots = roots;
+         this.kids = kids;
       }
 
       @Override
@@ -1128,17 +1538,17 @@ public class XViewerPreComputedViewport_Test {
          if (id >= roots) {
             return new Object[0];
          }
-         Object[] kids = new Object[KIDS];
-         for (int j = 0; j < KIDS; j++) {
-            kids[j] = Integer.valueOf(roots + id * KIDS + j);
+         Object[] children = new Object[kids];
+         for (int j = 0; j < kids; j++) {
+            children[j] = Integer.valueOf(roots + id * kids + j);
          }
-         return kids;
+         return children;
       }
 
       @Override
       public Object getParent(Object element) {
          int id = ((Integer) element).intValue();
-         return id < roots ? null : Integer.valueOf((id - roots) / KIDS);
+         return id < roots ? null : Integer.valueOf((id - roots) / kids);
       }
 
       @Override
