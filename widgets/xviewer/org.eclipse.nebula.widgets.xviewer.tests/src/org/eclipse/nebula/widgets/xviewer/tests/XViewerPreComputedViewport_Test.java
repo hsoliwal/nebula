@@ -16,11 +16,13 @@ package org.eclipse.nebula.widgets.xviewer.tests;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -28,15 +30,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.jface.viewers.ILabelProviderListener;
+import org.eclipse.jface.viewers.ILazyTreeContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.nebula.widgets.xviewer.IXViewerPreComputedColumn;
 import org.eclipse.nebula.widgets.xviewer.XViewer;
 import org.eclipse.nebula.widgets.xviewer.XViewerFactory;
 import org.eclipse.nebula.widgets.xviewer.XViewerLabelProvider;
+import org.eclipse.nebula.widgets.xviewer.XViewerTreeReport;
 import org.eclipse.nebula.widgets.xviewer.core.model.SortDataType;
 import org.eclipse.nebula.widgets.xviewer.core.model.XViewerAlign;
 import org.eclipse.nebula.widgets.xviewer.core.model.XViewerColumn;
@@ -51,19 +57,24 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.swt.widgets.TreeItem;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Precomputed columns of a viewport XViewer ({@code SWT.VIRTUAL} tree) over 100,000 input rows: the values computed
- * by {@link IXViewerPreComputedColumn#populateCachedValues} stay resident only for a bounded window of rows after
- * load, scrolling, sorting and filtering, while sort and filter results, painted text and the widget tree are those of
- * the eager path. Each phase prints an {@code XVIEWER_PRECOMPUTE} line, so the same test measures master and head.
+ * Precomputed columns of a viewport XViewer ({@code SWT.VIRTUAL} tree). By default the viewer keeps master's full
+ * precompute: one value per input row in the column's map, computed in a background job. With bounded precompute
+ * (opt-in, {@code XViewer.setBoundedPreCompute(true)} or {@code -Dswt.widget.mode.XViewer=viewport}) the values
+ * computed by {@link IXViewerPreComputedColumn#populateCachedValues} stay resident only for a bounded window of rows,
+ * while sort and filter results, painted text and the widget tree stay those of the default path. Bounded tests
+ * opt in through the setter or the system property, so this class also runs against master, where neither exists and
+ * the viewer keeps the full map; each phase prints an {@code XVIEWER_PRECOMPUTE} line, so the same test measures
+ * master and head.
  */
 public class XViewerPreComputedViewport_Test {
    private static final int ROWS = 100_000;
-   /** Precomputed values a viewport keeps per column, whatever the input size (the window). */
+   /** Precomputed values a bounded viewport keeps per column, whatever the input size (the window). */
    private static final int WINDOW = 1024;
    /** Visible rows of a 600 px tree plus native overscan, with headroom (as XViewerViewport_Test). */
    private static final int MATERIALIZED_BOUND = 256;
@@ -73,6 +84,7 @@ public class XViewerPreComputedViewport_Test {
    private static final int RETAINED_BOUND = WINDOW + 2 * MATERIALIZED_BOUND;
    private static final String PRE_ID = "tt.pre"; //$NON-NLS-1$
    private static final String FILTER = "v0123"; //$NON-NLS-1$
+   private static final String MODE = "swt.widget.mode.XViewer"; //$NON-NLS-1$
 
    private Display display;
    private Shell shell;
@@ -92,12 +104,13 @@ public class XViewerPreComputedViewport_Test {
 
    /**
     * Fails on master: there the column map holds a value for each of the 100,000 input rows from load on, and every
-    * value stays reachable.
+    * value stays reachable. Opts in through the setter.
     */
    @Test
    public void precomputedValuesStayBoundedAfterLoadScrollSortAndFilter() {
       Stats stats = new Stats();
-      XViewer viewer = viewer(SWT.VIRTUAL, stats);
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, false);
+      setBounded(viewer, true);
       Integer[] roots = Flat.roots(ROWS);
       List<String> violations = new ArrayList<>();
 
@@ -142,13 +155,13 @@ public class XViewerPreComputedViewport_Test {
 
    /**
     * Sorting and filtering by the precomputed column orders the 100,000 rows exactly by the column's values, and the
-    * painted cells show the values the rows were ordered by. Passes on master and head; the printed order digest is
-    * the same on both.
+    * painted cells show the values the rows were ordered by. Bounded through the system property; passes on master
+    * (full map) and head (bounded); the printed order digest is the same on both.
     */
    @Test
    public void sortAndFilterByPrecomputedColumnMatchColumnOrder() throws Exception {
       Stats stats = new Stats();
-      XViewer viewer = viewer(SWT.VIRTUAL, stats);
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
       Integer[] roots = Flat.roots(ROWS);
       viewer.setInputXViewer(roots);
       shell.open();
@@ -194,16 +207,15 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
-    * The eager tree keeps its original precompute (one value per input row) and the viewport shows the same rows in
-    * the same order with the same text after sorting and filtering by the precomputed column.
+    * The eager tree keeps its original precompute (one value per input row) even when bounding is asked for, and the
+    * bounded viewport shows the same rows in the same order with the same text after sorting and filtering by the
+    * precomputed column.
     */
    @Test
    public void eagerAndViewportAgreeOnPrecomputedSortAndFilter() {
       int rows = 2_000;
-      Stats eagerStats = new Stats();
-      Stats lazyStats = new Stats();
-      XViewer eager = viewer(SWT.NONE, eagerStats);
-      XViewer lazy = viewer(SWT.VIRTUAL, lazyStats);
+      XViewer eager = viewer(SWT.NONE, new Stats(), true);
+      XViewer lazy = viewer(SWT.VIRTUAL, new Stats(), true);
       for (XViewer v : new XViewer[] {eager, lazy}) {
          v.setInputXViewer(Flat.roots(rows));
       }
@@ -226,13 +238,14 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
-    * One scroll frame over 100,000 rows paints, labels and computes only the rows it shows (plus overscan and one
-    * block of following rows), and the viewer adds no child control or shell. Passes on master and head.
+    * One scroll frame over 100,000 rows of a bounded viewport paints, labels and computes only the rows it shows (plus
+    * overscan and one block of following rows), and the viewer adds no child control or shell. Passes on master and
+    * head.
     */
    @Test
    public void scrollFramePaintsVisibleCellsOnlyWithoutChildControls() {
       Stats stats = new Stats();
-      XViewer viewer = viewer(SWT.VIRTUAL, stats);
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
       Tree tree = viewer.getTree();
       Composite parent = tree.getParent();
       Control[] parentChildren = parent.getChildren();
@@ -276,18 +289,174 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
-    * The column map of a viewport is a bounded {@link Map}: it keeps at most the window, keeps what is used, maps each
-    * resident key to its own value, and supports null keys and values, removal and write-through entries like
-    * {@link java.util.HashMap}. Fails on master, where the map grows with every key.
+    * The default path is master's, even on a {@code SWT.VIRTUAL} tree: the background job (no forced pend) calls
+    * {@code populateCachedValues} once, off the UI thread, with every input object, into the column's own map, which
+    * keeps a value per row and its identity; a map set with {@code setPreComputedValueMap} is the one read. Passes on
+    * master and head alike.
     */
    @Test
-   public void viewportColumnMapIsABoundedMap() {
-      XViewer viewer = viewer(SWT.VIRTUAL, new Stats());
-      viewer.setInputXViewer(Flat.roots(10));
+   public void defaultBackgroundLoadKeepsMastersFullSnapshot() {
+      int rows = 2_000;
+      Stats stats = new Stats();
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, false);
+      viewer.setForcePend(false);
+      Thread ui = display.getThread();
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      Tree tree = viewer.getTree();
+      long deadline = System.currentTimeMillis() + 60_000;
+      while (tree.getItemCount() != rows && System.currentTimeMillis() < deadline) {
+         if (!display.readAndDispatch()) {
+            sleep(10);
+         }
+      }
+      pump();
+      assertEquals(rows, tree.getItemCount());
+      assertEquals("one background call", 1, stats.calls); //$NON-NLS-1$
+      assertEquals("with every input object", rows, stats.computed); //$NON-NLS-1$
+      assertNotSame("off the UI thread", ui, stats.lastThread); //$NON-NLS-1$
+      XViewerColumn pre = column(viewer, PRE_ID);
+      Map<Long, String> map = pre.getPreComputedValueMap();
+      assertEquals("a value per input row", rows, map.size()); //$NON-NLS-1$
+      for (int id = 0; id < rows; id++) {
+         assertEquals(Pre.value(id), map.get(Long.valueOf(id)));
+      }
+      assertEquals(Pre.value(0), tree.getItem(0).getText(1));
+      assertEquals(Pre.value(rows - 1), tree.getItem(rows - 1).getText(1));
+      assertEquals("rows were read from the map, not recomputed", 1, stats.calls); //$NON-NLS-1$
+      viewer.refresh();
+      pump();
+      assertSame("refresh keeps the column's map", map, pre.getPreComputedValueMap()); //$NON-NLS-1$
+
+      Map<Long, String> mine = new HashMap<>();
+      mine.put(Long.valueOf(0), "mine0"); //$NON-NLS-1$
+      pre.setPreComputedValueMap(mine);
+      viewer.refresh();
+      pump();
+      assertSame(mine, pre.getPreComputedValueMap());
+      assertEquals("mine0", tree.getItem(0).getText(1)); //$NON-NLS-1$
+   }
+
+   /**
+    * The reviewer's harness, bounded: 20,000 rows sorted by a column whose values come from a counter (a value
+    * changes each time it is computed). The painted rows must be the values the rows were sorted on, as on master,
+    * after a sort from the top and after a reverse sort while scrolled to the middle. Fails on the first bounded head
+    * (painted v004729.. while sorted on v000000..).
+    */
+   @Test
+   public void boundedSortPaintsTheSortKeys() {
+      int rows = 20_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      viewer.setInputXViewer(Flat.roots(rows));
       shell.open();
       pump();
-      Map<Long, String> map = column(viewer, PRE_ID).getPreComputedValueMap();
-      map.clear();
+      Tree tree = viewer.getTree();
+
+      clickHeader(viewer, PRE_ID);
+      pump();
+      assertPaintedSortKeys(tree, 0, counter);
+
+      tree.setTopItem(tree.getItem(rows / 2));
+      tree.update();
+      pump();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      int top = topIndex(tree);
+      System.out.println("XVIEWER_PRECOMPUTE counter top=" + top + " fullBatches=" + counter.fullBatches); //$NON-NLS-1$ //$NON-NLS-2$
+      assertPaintedSortKeys(tree, top, counter);
+   }
+
+   /**
+    * With bounding on, a map the caller sets with {@code setPreComputedValueMap} stays the column's map and its values
+    * are painted, as on master.
+    */
+   @Test
+   public void boundedKeepsCallerInstalledMap() {
+      int rows = 2_000;
+      XViewer viewer = viewer(SWT.VIRTUAL, new Stats(), true);
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      XViewerColumn pre = column(viewer, PRE_ID);
+      Map<Long, String> mine = new HashMap<>();
+      mine.put(Long.valueOf(0), "mine0"); //$NON-NLS-1$
+      pre.setPreComputedValueMap(mine);
+      viewer.refresh();
+      pump();
+      assertSame("the caller's map is kept", mine, pre.getPreComputedValueMap()); //$NON-NLS-1$
+      assertEquals("mine0", viewer.getTree().getItem(0).getText(1)); //$NON-NLS-1$
+      assertEquals(Pre.value(1), viewer.getTree().getItem(1).getText(1));
+   }
+
+   /**
+    * With bounding on, actions that read the cells of many rows (refresh of one column, the tree report) compute the
+    * rows in one batched call instead of one call per row, with correct values. 3,000 materialized rows exceed the
+    * window, so a row-by-row walk would evict each value before reading it again.
+    */
+   @Test
+   public void boundedItemWalksComputeOneBatch() throws Exception {
+      int rows = 3_000;
+      Stats stats = new Stats();
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      for (int row = 0; row < rows; row++) {
+         assertEquals(Pre.value(row), tree.getItem(row).getText(1));
+      }
+      int calls = stats.calls;
+      viewer.refreshColumn(PRE_ID);
+      System.out.println("XVIEWER_PRECOMPUTE walk=refreshColumn calls=" + (stats.calls - calls)); //$NON-NLS-1$
+      assertTrue("refreshColumn calls: " + (stats.calls - calls), stats.calls - calls <= 1); //$NON-NLS-1$
+      for (int row = 0; row < rows; row += 97) {
+         assertEquals(Pre.value(row), tree.getItem(row).getText(1));
+      }
+      calls = stats.calls;
+      String html = new XViewerTreeReport(viewer).getHtml();
+      System.out.println("XVIEWER_PRECOMPUTE walk=report calls=" + (stats.calls - calls)); //$NON-NLS-1$
+      assertTrue("report calls: " + (stats.calls - calls), stats.calls - calls <= 1); //$NON-NLS-1$
+      for (int row = 0; row < rows; row += 97) {
+         assertTrue(Pre.value(row), html.contains(Pre.value(row)));
+      }
+   }
+
+   /**
+    * With a caller-supplied lazy content provider bounding does not apply: the column keeps the full background map
+    * and shown rows are read from it, as on master.
+    */
+   @Test
+   public void boundedRequestWithLazyProviderKeepsFullMap() {
+      int rows = 2_000;
+      Stats stats = new Stats();
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
+      Integer[] roots = Flat.roots(rows);
+      viewer.setContentProvider(new LazyRoots(viewer, roots));
+      viewer.setInputXViewer(roots);
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      assertEquals(rows, tree.getItemCount());
+      assertEquals(Pre.value(0), tree.getItem(0).getText(1));
+      assertEquals(Pre.value(rows - 1), tree.getItem(rows - 1).getText(1));
+      assertEquals("one background call, no per-row recompute", 1, stats.calls); //$NON-NLS-1$
+      assertEquals(rows, column(viewer, PRE_ID).getPreComputedValueMap().size());
+   }
+
+   /**
+    * The bounded window is a {@link Map}: it keeps at most the window, keeps what is used, maps each resident key to
+    * its own value, and supports null keys and values, removal and write-through entries like
+    * {@link java.util.HashMap}. Fails on master, which has no such class.
+    */
+   @Test
+   public void boundedWindowIsABoundedMap() throws Exception {
+      Class<?> type = Class.forName("org.eclipse.nebula.widgets.xviewer.XViewerPreComputedWindow", true, //$NON-NLS-1$
+         XViewer.class.getClassLoader());
+      java.lang.reflect.Constructor<?> constructor = type.getDeclaredConstructor();
+      constructor.setAccessible(true);
+      @SuppressWarnings("unchecked")
+      Map<Long, String> map = (Map<Long, String>) constructor.newInstance();
       assertTrue(map.isEmpty());
       Long kept = Long.valueOf(-1);
       map.put(kept, "kept"); //$NON-NLS-1$
@@ -325,12 +494,33 @@ public class XViewerPreComputedViewport_Test {
       assertFalse(map.containsKey(null));
    }
 
+   private static void assertPaintedSortKeys(Tree tree, int top, Counter counter) {
+      String previous = null;
+      for (int row = top; row < top + 12 && row < tree.getItemCount(); row++) {
+         TreeItem item = tree.getItem(row);
+         String painted = item.getText(1);
+         String sortKey = counter.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+         assertEquals("row " + row + " shows the value it was sorted on", sortKey, painted); //$NON-NLS-1$ //$NON-NLS-2$
+         if (previous != null) {
+            int order = previous.compareTo(painted);
+            assertTrue("rows " + (row - 1) + ".." + row + " in sort order: " + previous + ", " + painted, //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+               order != 0 && Integer.signum(order) == counter.direction(tree));
+         }
+         previous = painted;
+      }
+   }
+
+   private static int topIndex(Tree tree) {
+      TreeItem top = tree.getTopItem();
+      return top == null ? 0 : tree.indexOf(top);
+   }
+
    private void check(String phase, XViewer viewer, Stats stats, long nanos, List<String> violations) {
-      int resident = column(viewer, PRE_ID).getPreComputedValueMap().size();
+      int resident = resident(viewer);
       int alive = stats.alive();
       Runtime runtime = Runtime.getRuntime();
       long usedHeap = runtime.totalMemory() - runtime.freeMemory();
-      System.out.println("XVIEWER_PRECOMPUTE phase=" + phase + " residentMapEntries=" + resident //$NON-NLS-1$ //$NON-NLS-2$
+      System.out.println("XVIEWER_PRECOMPUTE phase=" + phase + " residentValues=" + resident //$NON-NLS-1$ //$NON-NLS-2$
          + " reachableValues=" + alive + " populateCalls=" + stats.calls + " valuesComputed=" + stats.computed //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
          + " materializedRows=" + viewer.getViewportMaterializedCount() + " usedHeapAfterGcKiB=" //$NON-NLS-1$ //$NON-NLS-2$
          + usedHeap / 1024 + " millis=" + nanos / 1_000_000); //$NON-NLS-1$
@@ -339,6 +529,38 @@ public class XViewerPreComputedViewport_Test {
       }
       if (alive > RETAINED_BOUND) {
          violations.add(phase + ": " + alive + " precomputed values still reachable, bound is " + RETAINED_BOUND); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+   }
+
+   /**
+    * Precomputed values the viewer holds for the column: its own map plus, where the viewer keeps bounded windows (a
+    * private field on head, absent on master), their values.
+    */
+   private static int resident(XViewer viewer) {
+      int resident = column(viewer, PRE_ID).getPreComputedValueMap().size();
+      try {
+         Field field = XViewer.class.getDeclaredField("preComputeWindows"); //$NON-NLS-1$
+         field.setAccessible(true);
+         for (Object window : ((Map<?, ?>) field.get(viewer)).values()) {
+            resident += ((Map<?, ?>) window).size();
+         }
+      } catch (NoSuchFieldException ex) {
+         // master: the column's map is all there is
+      } catch (IllegalAccessException ex) {
+         throw new AssertionError(ex);
+      }
+      return resident;
+   }
+
+   /** Opts in through the setter; on master, which has none, the viewer keeps its full map. */
+   private static void setBounded(XViewer viewer, boolean bounded) {
+      try {
+         Method setter = XViewer.class.getMethod("setBoundedPreCompute", boolean.class); //$NON-NLS-1$
+         setter.invoke(viewer, Boolean.valueOf(bounded));
+      } catch (NoSuchMethodException ex) {
+         // master
+      } catch (ReflectiveOperationException ex) {
+         throw new AssertionError(ex);
       }
    }
 
@@ -352,7 +574,7 @@ public class XViewerPreComputedViewport_Test {
       throw new AssertionError("no column " + id); //$NON-NLS-1$
    }
 
-   /** The header click of the original column handler: sort by the column. */
+   /** The header click of the original column handler: sort by the column, again to reverse. */
    private static void clickHeader(XViewer viewer, String id) {
       for (TreeColumn treeColumn : viewer.getTree().getColumns()) {
          if (id.equals(((XViewerColumn) treeColumn.getData()).getId())) {
@@ -398,7 +620,23 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
-   private XViewer viewer(int style, Stats stats) {
+   private static void sleep(long millis) {
+      try {
+         Thread.sleep(millis);
+      } catch (InterruptedException ex) {
+         Thread.currentThread().interrupt();
+      }
+   }
+
+   private XViewer viewer(int style, Stats stats, boolean bounded) {
+      return viewer(style, stats, bounded, new Pre(stats));
+   }
+
+   /**
+    * @param bounded asks for bounded precompute through {@code swt.widget.mode.XViewer=viewport}, else explicitly for
+    * the default ({@code original}), so a run with the property set globally keeps the default where a test needs it
+    */
+   private XViewer viewer(int style, Stats stats, boolean bounded, XViewerColumn pre) {
       Composite parent = new Composite(shell, SWT.NONE);
       parent.setLayout(new GridLayout(1, false));
       parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -410,8 +648,19 @@ public class XViewerPreComputedViewport_Test {
             return false;
          }
       };
-      factory.registerColumns(name, new Pre(stats));
-      XViewer viewer = new XViewer(parent, style | SWT.MULTI | SWT.FULL_SELECTION, factory);
+      factory.registerColumns(name, pre);
+      String previous = System.getProperty(MODE);
+      System.setProperty(MODE, bounded ? "viewport" : "original"); //$NON-NLS-1$ //$NON-NLS-2$
+      XViewer viewer;
+      try {
+         viewer = new XViewer(parent, style | SWT.MULTI | SWT.FULL_SELECTION, factory);
+      } finally {
+         if (previous == null) {
+            System.clearProperty(MODE);
+         } else {
+            System.setProperty(MODE, previous);
+         }
+      }
       viewer.getTree().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
       viewer.setContentProvider(new Flat());
       viewer.setLabelProvider(new Labels(viewer, stats));
@@ -420,10 +669,11 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /** What the precomputed column computed, and which of those values are still reachable. */
-   static final class Stats {
+   static class Stats {
       int calls;
       int computed;
       int labels;
+      Thread lastThread;
       final List<WeakReference<String>> produced = new ArrayList<>();
 
       int alive() {
@@ -439,12 +689,7 @@ public class XViewerPreComputedViewport_Test {
             if (alive <= RETAINED_BOUND) {
                break;
             }
-            try {
-               Thread.sleep(20);
-            } catch (InterruptedException ex) {
-               Thread.currentThread().interrupt();
-               break;
-            }
+            sleep(20);
          }
          produced.removeIf(ref -> ref.get() == null);
          return alive;
@@ -464,7 +709,11 @@ public class XViewerPreComputedViewport_Test {
       }
 
       static String value(int id) {
-         String digits = Integer.toString((int) (id * 7919L % ROWS));
+         return pad(id * 7919L % ROWS);
+      }
+
+      static String pad(long number) {
+         String digits = Long.toString(number);
          StringBuilder value = new StringBuilder(7).append('v');
          for (int pad = digits.length(); pad < 6; pad++) {
             value.append('0');
@@ -487,11 +736,84 @@ public class XViewerPreComputedViewport_Test {
       @Override
       public void populateCachedValues(Collection<?> objects, Map<Long, String> preComputedValueMap) {
          stats.calls++;
+         stats.lastThread = Thread.currentThread();
          for (Object obj : objects) {
             String value = value(((Integer) obj).intValue());
             stats.computed++;
             stats.produced.add(new WeakReference<>(value));
             preComputedValueMap.put(getKey(obj), value);
+         }
+      }
+
+      @Override
+      public String getText(Object obj, Long key, String cachedValue) {
+         return cachedValue;
+      }
+   }
+
+   /** Values from a counter, as in the review harness: each computation of a row gives a new, larger value. */
+   static final class Counter extends Stats {
+      private final int rows;
+      private int next;
+      int fullBatches;
+      /** The values of the most recent call that covered every row: what a load or a sort pass ordered on. */
+      final Map<Long, String> lastFull = new HashMap<>();
+
+      Counter(int rows) {
+         this.rows = rows;
+      }
+
+      String nextValue() {
+         return Pre.pad(next++);
+      }
+
+      /** +1 if the column now sorts descending (the previous value compares greater), else -1. */
+      int direction(Tree tree) {
+         for (TreeColumn treeColumn : tree.getColumns()) {
+            XViewerColumn xCol = (XViewerColumn) treeColumn.getData();
+            if (PRE_ID.equals(xCol.getId())) {
+               return xCol.isSortForward() ? -1 : 1;
+            }
+         }
+         return -1;
+      }
+   }
+
+   static final class CounterColumn extends XViewerColumn implements IXViewerPreComputedColumn {
+      private final Counter counter;
+
+      CounterColumn(Counter counter) {
+         super(PRE_ID, "Counter", 120, XViewerAlign.Left, true, SortDataType.String, false, null); //$NON-NLS-1$
+         this.counter = counter;
+      }
+
+      @Override
+      public CounterColumn copy() {
+         CounterColumn copy = new CounterColumn(counter);
+         super.copy(this, copy);
+         return copy;
+      }
+
+      @Override
+      public Long getKey(Object obj) {
+         return Long.valueOf(((Integer) obj).longValue());
+      }
+
+      @Override
+      public void populateCachedValues(Collection<?> objects, Map<Long, String> preComputedValueMap) {
+         counter.calls++;
+         boolean full = objects.size() == counter.rows;
+         if (full) {
+            counter.fullBatches++;
+            counter.lastFull.clear();
+         }
+         for (Object obj : objects) {
+            String value = counter.nextValue();
+            counter.computed++;
+            preComputedValueMap.put(getKey(obj), value);
+            if (full) {
+               counter.lastFull.put(getKey(obj), value);
+            }
          }
       }
 
@@ -529,6 +851,66 @@ public class XViewerPreComputedViewport_Test {
       @Override
       public boolean hasChildren(Object element) {
          return false;
+      }
+   }
+
+   /**
+    * A caller-supplied lazy provider over flat roots, in input order; it also answers the plain tree protocol, which
+    * XViewer's status line reads.
+    */
+   static final class LazyRoots implements ILazyTreeContentProvider, ITreeContentProvider {
+      private final XViewer viewer;
+      private final Integer[] roots;
+
+      LazyRoots(XViewer viewer, Integer[] roots) {
+         this.viewer = viewer;
+         this.roots = roots;
+      }
+
+      @Override
+      public void updateElement(Object parent, int index) {
+         if (index >= 0 && index < roots.length && !(parent instanceof Integer)) {
+            viewer.replace(parent, index, roots[index]);
+            viewer.setChildCount(roots[index], 0);
+         }
+      }
+
+      @Override
+      public void updateChildCount(Object element, int currentChildCount) {
+         int count = element instanceof Integer ? 0 : roots.length;
+         if (count != currentChildCount) {
+            viewer.setChildCount(element, count);
+         }
+      }
+
+      @Override
+      public Object getParent(Object element) {
+         return element instanceof Integer ? viewer.getInput() : null;
+      }
+
+      @Override
+      public Object[] getElements(Object input) {
+         return roots;
+      }
+
+      @Override
+      public Object[] getChildren(Object parent) {
+         return parent instanceof Integer ? new Object[0] : roots;
+      }
+
+      @Override
+      public boolean hasChildren(Object element) {
+         return false;
+      }
+
+      @Override
+      public void inputChanged(Viewer changed, Object oldInput, Object newInput) {
+         // stateless
+      }
+
+      @Override
+      public void dispose() {
+         // stateless
       }
    }
 

@@ -119,8 +119,10 @@ public abstract class XViewerLabelProvider implements ITableLabelProvider, ITabl
    }
 
    public static String getPrecomputedText(Object element, XViewerColumn xViewerColumn, IXViewerPreComputedColumn preComputedColumn, boolean debugLoading) {
-      // a viewport XViewer keeps only a bounded window of precomputed values resident
-      XViewer.boundPreComputedValues(xViewerColumn);
+      Map<Long, String> bounded = XViewer.boundedPreComputedValues(xViewerColumn);
+      if (bounded != null) {
+         return getBoundedPrecomputedText(element, xViewerColumn, preComputedColumn, debugLoading, bounded);
+      }
       Long key = preComputedColumn.getKey(element);
       String cachedValue = xViewerColumn.getPreComputedValue(key);
       Long startTime = debugLoading ? (new Date()).getTime() : 0L;
@@ -134,6 +136,31 @@ public abstract class XViewerLabelProvider implements ITableLabelProvider, ITabl
          }
          if (result == null) {
             xViewerColumn.getPreComputedValueMap().put(key, "");
+         }
+      }
+      return result;
+   }
+
+   /**
+    * The same lookup as the default path, for an XViewer that bounds precomputed values: a value in the column's own
+    * map comes first, then the bounded or pass map, and a row computed here goes to that map.
+    */
+   private static String getBoundedPrecomputedText(Object element, XViewerColumn xViewerColumn, IXViewerPreComputedColumn preComputedColumn, boolean debugLoading, Map<Long, String> values) {
+      Long key = preComputedColumn.getKey(element);
+      String cachedValue = xViewerColumn.getPreComputedValue(key);
+      if (cachedValue == null) {
+         cachedValue = values.get(key);
+      }
+      Long startTime = debugLoading ? (new Date()).getTime() : 0L;
+      String result = preComputedColumn.getText(element, key, cachedValue);
+      if (result == null) {
+         preComputedColumn.populateCachedValues(Collections.singleton(element), values);
+         result = values.get(key);
+         if (debugLoading) {
+            xViewerColumn.addElapsedTime((new Date()).getTime() - startTime);
+         }
+         if (result == null) {
+            values.put(key, "");
          }
       }
       return result;

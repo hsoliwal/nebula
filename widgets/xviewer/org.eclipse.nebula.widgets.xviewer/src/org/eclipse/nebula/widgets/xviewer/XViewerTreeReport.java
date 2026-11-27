@@ -70,8 +70,27 @@ public class XViewerTreeReport extends XViewerHtmlReport {
       // Get column widths and column name and setup the columns
       IXViewerLabelProvider labelProv = (IXViewerLabelProvider) xViewer.getLabelProvider();
       ArrayList<String[]> list = new ArrayList<>();
-      for (TreeItem item : items) {
-         addRow(item, list, labelProv, showCols, 1);
+      if (xViewer.boundsPreCompute()) {
+         // one batched precompute per column for every row of the report, kept for the report only
+         List<Object> rows = new ArrayList<>();
+         collectRows(items, rows);
+         XViewerException[] failure = new XViewerException[1];
+         xViewer.runPreComputePass(rows, () -> {
+            try {
+               for (TreeItem item : items) {
+                  addRow(item, list, labelProv, showCols, 1);
+               }
+            } catch (XViewerException ex) {
+               failure[0] = ex;
+            }
+         });
+         if (failure[0] != null) {
+            throw failure[0];
+         }
+      } else {
+         for (TreeItem item : items) {
+            addRow(item, list, labelProv, showCols, 1);
+         }
       }
       for (String[] strs : list) {
          sb.append(HtmlUtil.addRowMultiColumnTable(strs));
@@ -79,6 +98,16 @@ public class XViewerTreeReport extends XViewerHtmlReport {
       sb.append(HtmlUtil.endMultiColumnTable());
       sb.append("</body></html>"); //$NON-NLS-1$
       return sb.toString();
+   }
+
+   /** The rows {@link #addRow} visits: each item and, under an expanded item, its children. */
+   private static void collectRows(TreeItem[] items, List<Object> rows) {
+      for (TreeItem item : items) {
+         rows.add(item.getData());
+         if (item.getExpanded()) {
+            collectRows(item.getItems(), rows);
+         }
+      }
    }
 
    private void addRow(TreeItem item, List<String[]> rowData, IXViewerLabelProvider labelProv, List<XViewerColumn> showCols, int level) throws XViewerException {

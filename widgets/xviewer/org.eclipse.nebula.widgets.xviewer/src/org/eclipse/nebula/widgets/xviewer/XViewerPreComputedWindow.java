@@ -22,17 +22,19 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
- * The resident values of one {@link IXViewerPreComputedColumn} while its {@link XViewer} is a viewport (the tree was
- * created with {@code SWT.VIRTUAL}). It is the column's {@code preComputedValueMap} there, so
- * {@link IXViewerPreComputedColumn#populateCachedValues} fills it as before, but it holds at most {@link #SLOTS}
- * values: the rows the native tree shows, their overscan and recently used rows. An older value is dropped when a
- * newer one needs its slot, and is computed again by the column if its row is asked for again.
+ * The resident values of one {@link IXViewerPreComputedColumn} while its {@link XViewer} bounds precomputed values (see
+ * {@link XViewer#setBoundedPreCompute(boolean)}). The viewer keeps it beside the column, whose own
+ * {@code preComputedValueMap} it leaves alone, and {@link IXViewerPreComputedColumn#populateCachedValues} fills it for
+ * the rows asked for. It holds at most {@link #SLOTS} values for non-null keys, plus one for the {@code null} key: the
+ * rows the native tree shows, their overscan and recently used rows. A value that leaves is computed again by the
+ * column if its row is asked for again.
  * <p>
  * The values live in parent-owned lanes (a {@code long[]} of keys, a {@code String[]} of values and an {@code int[]}
  * of use ticks), not in one entry object per row. A key is looked up in a window of {@link #PROBE} slots after its
- * hash slot; a new key takes the first free slot of that window or the least recently used one. A {@code null} value
- * is a resident value, as in {@link java.util.HashMap}; so is the {@code null} key. {@link #entrySet()} hands out
- * fresh entries that write through to the slot.
+ * hash slot; a new key takes the first free slot of that window, else the least recently used slot of that window,
+ * so a value can leave before all {@link #SLOTS} slots are in use. A {@code null} value is a resident value, as in
+ * {@link java.util.HashMap}; so is the {@code null} key. {@link #entrySet()} hands out fresh entries that write
+ * through to the slot.
  * </p>
  */
 final class XViewerPreComputedWindow extends AbstractMap<Long, String> {
