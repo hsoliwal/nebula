@@ -192,6 +192,55 @@ public class GridRowSelectionResidency_Test {
 	}
 
 	@Test
+	public void deselectingScatteredRowsCostsNoPassOverTheRuns() {
+		if (!byRow()) {
+			return; // the original mode's stock item list is not what this measures
+		}
+		final int rows = 400_000;
+		final int k = 200_000;
+		grid.setItemCount(rows);
+		final java.util.Random random = new java.util.Random(7);
+		final int[] order = new int[rows];
+		for (int i = 0; i < rows; i++) {
+			order[i] = i;
+		}
+		for (int i = rows - 1; i > 0; i--) {
+			final int j = random.nextInt(i + 1);
+			final int t = order[i];
+			order[i] = order[j];
+			order[j] = t;
+		}
+		final int[] picks = java.util.Arrays.copyOf(order, k);
+		grid.select(picks);
+		assertEquals(k, grid.getSelectionCount());
+		for (int i = k - 1; i > 0; i--) {
+			final int j = random.nextInt(i + 1);
+			final int t = picks[i];
+			picks[i] = picks[j];
+			picks[j] = t;
+		}
+		final long start = System.nanoTime();
+		grid.deselect(picks);
+		final long millis = (System.nanoTime() - start) / 1_000_000;
+		assertEquals(0, grid.getSelectionCount());
+		assertEquals(0, grid.getSelectionIndices().length);
+		// a deselection that scans and copies the selection runs per row took 17 s here (O(k^2));
+		// clearing the row lane is O(k log n)
+		assertTrue("deselecting " + k + " scattered rows took " + millis + " ms", millis < 4000);
+
+		grid.selectAll();
+		for (int row = 0; row < rows; row += 2) {
+			grid.deselect(row);
+		}
+		assertEquals(rows / 2, grid.getSelectionCount());
+		final int[] indices = grid.getSelectionIndices();
+		assertEquals(rows / 2, indices.length);
+		assertEquals(1, indices[0]);
+		assertEquals(rows - 1, indices[indices.length - 1]);
+		assertFalse(grid.isSelected(rows - 2));
+	}
+
+	@Test
 	public void getSelectionMakesTheItemsItReturns() {
 		grid.setSelection(HALF, HALF + 9);
 		final GridItem[] selection = grid.getSelection();

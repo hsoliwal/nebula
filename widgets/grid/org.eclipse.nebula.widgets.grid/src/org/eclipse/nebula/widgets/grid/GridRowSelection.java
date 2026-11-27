@@ -33,6 +33,9 @@ import org.eclipse.nebula.widgets.grid.model.RowSparseBits;
  * <li>the selection order is a list of row runs ({@code starts[i]..ends[i]}, ascending inside a
  * run) in the order they were selected: selectAll is one run, a range selection one run per
  * unselected gap, a ctrl+click one run of one row;</li>
+ * <li>a deselection clears the lane only, O(log n) whatever the order of the runs: a run may then
+ * hold deselected rows until the runs are compacted to the lane in one sweep, when their order is
+ * read or a row is appended, so deselecting k scattered rows costs O(k log n + runs);</li>
  * <li>rows move with the Grid's rows: an inserted row splits the run it lands in, a removed row
  * leaves its run (and the lane), a truncation drops the rows past the new count, so no entry ever
  * outlives its row;</li>
@@ -60,6 +63,11 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 	private int count;
 	/* whether the runs are also in ascending row order (each starts after the previous ends) */
 	private boolean ascending = true;
+	/*
+	 * whether a run may hold deselected rows (holes): a deselection only clears the lane, O(log n);
+	 * the runs are compacted to the lane in one sweep when their order is read or a row is appended
+	 */
+	private boolean holes;
 	/* rows selected before each run, rebuilt on demand */
 	private int[] prefix = new int[0];
 	private boolean prefixValid;
@@ -103,6 +111,7 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 			return;
 		}
 		final GridSelectionList list = new GridSelectionList();
+		compact();
 		for (int r = 0; r < runs; r++) {
 			for (int row = starts[r]; row <= ends[r]; row++) {
 				list.add(grid.sparseItem(row));
@@ -155,17 +164,7 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 		}
 		rows.set(row, false);
 		count--;
-		final int r = runOf(row);
-		if (starts[r] == ends[r]) {
-			removeRun(r);
-		} else if (row == starts[r]) {
-			starts[r]++;
-		} else if (row == ends[r]) {
-			ends[r]--;
-		} else {
-			insertRun(r + 1, row + 1, ends[r]);
-			ends[r] = row - 1;
-		}
+		holes = true;
 		changed();
 		return true;
 	}
@@ -182,7 +181,7 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 		}
 		rows.setRange(from, to + 1, false);
 		count -= removed;
-		cutRuns(from, to);
+		holes = true;
 		changed();
 	}
 
@@ -207,6 +206,7 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 
 	/** @return the selected rows in selection order, a new array */
 	int[] rowsInOrder() {
+		compact();
 		final int[] result = new int[count];
 		int i = 0;
 		for (int r = 0; r < runs; r++) {
@@ -325,6 +325,7 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 		if (row < 0 || !rows.get(row)) {
 			return -1;
 		}
+		compact();
 		final int r = runOf(row);
 		return prefix()[r] + row - starts[r];
 	}
@@ -421,6 +422,7 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 		if (explicit != null) {
 			return explicit.toArray(a);
 		}
+		compact();
 		final T[] result = a.length >= count ? a
 				: (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), count);
 		int i = 0;
@@ -452,6 +454,8 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 
 	/* appends the unselected rows [from, to] as the last part of the order */
 	private void append(final int from, final int to) {
+		// a row appended into a hole belongs after the runs, not inside its old run
+		compact();
 		rows.setRange(from, to + 1, true);
 		count += to - from + 1;
 		if (runs > 0 && ends[runs - 1] == from - 1) {
@@ -533,13 +537,50 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 		runs++;
 	}
 
-	private void removeRun(final int at) {
-		System.arraycopy(starts, at + 1, starts, at, runs - at - 1);
-		System.arraycopy(ends, at + 1, ends, at, runs - at - 1);
-		runs--;
+	/*
+	 * the runs reduced to the selected rows they hold, in order, in one sweep over the runs and the
+	 * lane (O(runs + resulting runs) lane steps); also settles whether they are ascending
+	 */
+	private void compact() {
+		if (!holes) {
+			return;
+		}
+		int[] newStarts = new int[Math.max(4, runs)];
+		int[] newEnds = new int[newStarts.length];
+		int n = 0;
+		boolean ascend = true;
+		for (int r = 0; r < runs; r++) {
+			final int limit = ends[r] + 1;
+			int position = starts[r];
+			while (position < limit) {
+				final int start = rows.next(position, limit);
+				if (start < 0) {
+					break;
+				}
+				final int end = rows.runEnd(start, limit);
+				if (n == newStarts.length) {
+					newStarts = Arrays.copyOf(newStarts, n * 2);
+					newEnds = Arrays.copyOf(newEnds, n * 2);
+				}
+				if (n > 0 && start <= newEnds[n - 1]) {
+					ascend = false;
+				}
+				newStarts[n] = start;
+				newEnds[n] = end - 1;
+				n++;
+				position = end;
+			}
+		}
+		starts = newStarts;
+		ends = newEnds;
+		runs = n;
+		ascending = ascend;
+		holes = false;
+		prefixValid = false;
 	}
 
 	private int[] prefix() {
+		compact();
 		if (!prefixValid) {
 			if (prefix.length < runs) {
 				prefix = new int[Math.max(runs, prefix.length * 2)];
@@ -566,6 +607,7 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 		runs = 0;
 		count = 0;
 		ascending = true;
+		holes = false;
 		changed();
 	}
 
@@ -589,12 +631,18 @@ final class GridRowSelection extends AbstractList<GridItem> implements RandomAcc
 			if (starts[r] > ends[r]) {
 				throw new IllegalStateException("empty run " + r);
 			}
-			if (ascending && r > 0 && starts[r] <= ends[r - 1]) {
+			if (ascending && !holes && r > 0 && starts[r] <= ends[r - 1]) {
 				throw new IllegalStateException("runs not ascending at " + r);
 			}
 			for (int row = starts[r]; row <= ends[r]; row++) {
-				if (seen.get(row) || !rows.get(row)) {
-					throw new IllegalStateException("row " + row + " twice or not in the lane");
+				if (!rows.get(row)) {
+					if (!holes) {
+						throw new IllegalStateException("row " + row + " of a run is not in the lane");
+					}
+					continue;
+				}
+				if (seen.get(row)) {
+					throw new IllegalStateException("row " + row + " in two runs");
 				}
 				seen.set(row, true);
 				total++;
