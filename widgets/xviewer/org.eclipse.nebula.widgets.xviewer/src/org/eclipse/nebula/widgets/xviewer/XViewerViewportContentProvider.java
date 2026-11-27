@@ -14,9 +14,11 @@
 package org.eclipse.nebula.widgets.xviewer;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import org.eclipse.jface.viewers.ILazyTreeContentProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
@@ -50,6 +52,8 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    private final ITreeContentProvider delegate;
    private final Map<Object, Object[]> sortedChildren = new LinkedHashMap<>(16, 0.75f, true);
    private int cachedReferences;
+   /** Parents whose cached children came from a bounded-precompute probe that kept no values for display. */
+   private final Set<Object> probedOnly = new HashSet<>();
    private int[] materializedRoots = new int[0];
    private int materializedCount;
 
@@ -176,6 +180,7 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    /** Drops cached child orderings and the materialized-row bits. */
    void invalidate() {
       sortedChildren.clear();
+      probedOnly.clear();
       cachedReferences = 0;
       materializedRoots = new int[0];
       materializedCount = 0;
@@ -219,9 +224,11 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    }
 
    private void evictColdest() {
-      Iterator<Object[]> eldest = sortedChildren.values().iterator();
+      Iterator<Map.Entry<Object, Object[]>> eldest = sortedChildren.entrySet().iterator();
       while (cachedReferences > CACHE_BUDGET && sortedChildren.size() > 1) {
-         cachedReferences -= eldest.next().length;
+         Map.Entry<Object, Object[]> entry = eldest.next();
+         cachedReferences -= entry.getValue().length;
+         probedOnly.remove(entry.getKey());
          eldest.remove();
       }
    }
@@ -239,10 +246,20 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
          return EMPTY;
       }
       Object[] cached = sortedChildren.get(parent);
+      if (cached != null && shown && probedOnly.remove(parent)) {
+         // the cached order came from a probe whose precomputed values were dropped: order again for display, so the
+         // rows shown keep the values they are sorted and filtered on
+         cachedReferences -= cached.length;
+         sortedChildren.remove(parent);
+         cached = null;
+      }
       if (cached == null) {
          Object[] raw = isRoot(parent) ? delegate.getElements(parent) : delegate.getChildren(parent);
          cached = viewer.viewportSortedChildren(parent, raw == null ? EMPTY : raw, shown);
          sortedChildren.put(parent, cached);
+         if (!shown && viewer.boundsPreCompute()) {
+            probedOnly.add(parent);
+         }
          cachedReferences += cached.length;
          evictColdest();
       }

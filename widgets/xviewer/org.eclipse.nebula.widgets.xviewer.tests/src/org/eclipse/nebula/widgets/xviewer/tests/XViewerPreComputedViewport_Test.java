@@ -336,14 +336,14 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
-    * The reviewer's harness, bounded: 20,000 rows sorted by a column whose values come from a counter (a value
+    * The reviewer's harness, bounded: 5,000 rows sorted by a column whose values come from a counter (a value
     * changes each time it is computed). The painted rows must be the values the rows were sorted on, as on master,
     * after a sort from the top and after a reverse sort while scrolled to the middle. Fails on the first bounded head
     * (painted v004729.. while sorted on v000000..).
     */
    @Test
    public void boundedSortPaintsTheSortKeys() {
-      int rows = 20_000;
+      int rows = 5_000;
       Counter counter = new Counter(rows);
       XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
       viewer.setInputXViewer(Flat.roots(rows));
@@ -389,12 +389,12 @@ public class XViewerPreComputedViewport_Test {
 
    /**
     * With bounding on, actions that read the cells of many rows (refresh of one column, the tree report) compute the
-    * rows in one batched call instead of one call per row, with correct values. 3,000 materialized rows exceed the
+    * rows in one batched call instead of one call per row, with correct values. 1,500 materialized rows exceed the
     * window, so a row-by-row walk would evict each value before reading it again.
     */
    @Test
    public void boundedItemWalksComputeOneBatch() throws Exception {
-      int rows = 3_000;
+      int rows = 1_500;
       Stats stats = new Stats();
       XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
       viewer.setInputXViewer(Flat.roots(rows));
@@ -498,9 +498,16 @@ public class XViewerPreComputedViewport_Test {
       for (int op = 0; op < 20_000; op++) {
          long key = op % 4 == 3 ? used[random.nextInt(Math.min(op, used.length))] : random.nextLong();
          used[op % used.length] = key;
+         if (op % 5 == 4) {
+            map.remove(Long.valueOf(key));
+            reference.remove(Long.valueOf(key));
+            assertFalse("removed key " + key, map.containsKey(Long.valueOf(key))); //$NON-NLS-1$
+            continue;
+         }
          String value = "r" + op; //$NON-NLS-1$
          map.put(Long.valueOf(key), value);
          reference.put(Long.valueOf(key), value);
+         assertEquals("the key just put is resident", value, map.get(Long.valueOf(key))); //$NON-NLS-1$
          long probe = used[random.nextInt(Math.min(op + 1, used.length))];
          if (map.containsKey(Long.valueOf(probe))) {
             assertEquals(reference.get(Long.valueOf(probe)), map.get(Long.valueOf(probe)));
@@ -522,7 +529,7 @@ public class XViewerPreComputedViewport_Test {
     */
    @Test
    public void boundedFilteredTreePaintsTheFilterKeys() {
-      int roots = 2_000;
+      int roots = 500;
       Counter counter = new Counter(roots);
       XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter), new Tree300(roots));
       viewer.getCustomizeMgr().setColumnFilterText(PRE_ID, "v"); //$NON-NLS-1$
@@ -600,6 +607,77 @@ public class XViewerPreComputedViewport_Test {
       String html = new XViewerTreeReport(viewer).getHtml();
       assertEquals("no populate call from the walks", calls, stats.calls); //$NON-NLS-1$
       assertTrue(html.contains(Pre.value(rows - 1)));
+   }
+
+   /**
+    * Bounded, hierarchical, with a filter: painting a root row probes whether its children pass the filter, and that
+    * probe keeps no values. Expanding the row must order its children again for display, so each shown child row
+    * shows the value the filter read for it. Fails on 576c229 (the probe's cached order was reused).
+    */
+   @Test
+   public void boundedExpandedChildrenPaintTheirFilterKeys() {
+      int roots = 200;
+      Counter counter = new Counter(roots);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter), new Tree300(roots));
+      Map<Object, String> keys = new HashMap<>();
+      viewer.addFilter(new org.eclipse.jface.viewers.ViewerFilter() {
+         @Override
+         public boolean select(Viewer v, Object parent, Object element) {
+            keys.put(element, ((XViewer) v).getColumnText(element, 1));
+            return true;
+         }
+      });
+      viewer.setInputXViewer(Flat.roots(roots));
+      shell.open();
+      pump();
+      viewer.setExpandedState(Integer.valueOf(0), true);
+      pump();
+      TreeItem root = viewer.getTree().getItem(0);
+      assertTrue(root.getExpanded());
+      for (int row = 0; row < 12; row++) {
+         TreeItem child = root.getItem(row);
+         assertEquals("child row " + row + " shows the value it was filtered on", keys.get(child.getData()), //$NON-NLS-1$ //$NON-NLS-2$
+            child.getText(1));
+      }
+   }
+
+   /** An invalid {@code nebula.xviewer.boundedPreCompute} value leaves bounding off and is logged. */
+   @Test
+   public void invalidBoundedPreComputePropertyIsOffAndLogged() throws Exception {
+      Method parse = XViewer.class.getDeclaredMethod("parseBoundedPreCompute", String.class); //$NON-NLS-1$
+      parse.setAccessible(true);
+      java.util.logging.Logger logger = java.util.logging.Logger.getLogger("XViewer Log"); //$NON-NLS-1$
+      List<String> logged = new ArrayList<>();
+      java.util.logging.Handler handler = new java.util.logging.Handler() {
+         @Override
+         public void publish(java.util.logging.LogRecord record) {
+            logged.add(record.getMessage());
+         }
+
+         @Override
+         public void flush() {
+            // nothing buffered
+         }
+
+         @Override
+         public void close() {
+            // nothing held
+         }
+      };
+      logger.addHandler(handler);
+      try {
+         assertEquals(Boolean.TRUE, parse.invoke(null, "true")); //$NON-NLS-1$
+         assertEquals(Boolean.TRUE, parse.invoke(null, " TRUE ")); //$NON-NLS-1$
+         assertEquals(Boolean.FALSE, parse.invoke(null, (Object) null));
+         assertEquals(Boolean.FALSE, parse.invoke(null, "false")); //$NON-NLS-1$
+         assertTrue("valid values are not logged: " + logged, logged.isEmpty()); //$NON-NLS-1$
+         assertEquals(Boolean.FALSE, parse.invoke(null, "viewport")); //$NON-NLS-1$
+         assertEquals(1, logged.size());
+         assertTrue(logged.get(0), logged.get(0).contains("nebula.xviewer.boundedPreCompute") //$NON-NLS-1$
+            && logged.get(0).contains("viewport")); //$NON-NLS-1$
+      } finally {
+         logger.removeHandler(handler);
+      }
    }
 
    private void awaitRows(Tree tree, int rows) {

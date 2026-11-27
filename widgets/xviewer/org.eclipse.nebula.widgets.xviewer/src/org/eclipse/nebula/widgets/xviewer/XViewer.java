@@ -538,7 +538,7 @@ public class XViewer extends TreeViewer {
     * A column whose values change between calls can then show a newer value for a row recomputed later. It has no
     * effect on an eager tree or with a caller-supplied lazy content provider, which keep the full map. The initial value
     * is on when the system property {@code nebula.xviewer.boundedPreCompute} is {@code true} (read once, when the
-    * first XViewer is created); any other value leaves it off. A change applies to loads after it.
+    * XViewer class is initialized); any other value leaves it off. A change applies to loads after it.
     *
     * @param bounded true to bound precomputed values to a window of rows
     * @since 1.1
@@ -604,9 +604,12 @@ public class XViewer extends TreeViewer {
       }
    }
 
-   /** @return true if {@value #BOUNDED_PRECOMPUTE_PROPERTY} is {@code true}; any other value but false is logged */
    private static boolean readBoundedPreComputeDefault() {
-      String value = System.getProperty(BOUNDED_PRECOMPUTE_PROPERTY);
+      return parseBoundedPreCompute(System.getProperty(BOUNDED_PRECOMPUTE_PROPERTY));
+   }
+
+   /** @return true for {@code true}; false for null or {@code false}; false, logged, for any other value */
+   static boolean parseBoundedPreCompute(String value) {
       if (value == null || "false".equalsIgnoreCase(value.trim())) { //$NON-NLS-1$
          return false;
       }
