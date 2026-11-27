@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import org.eclipse.jface.action.Action;
@@ -406,16 +407,34 @@ public class XViewerCustomMenu {
          return;
       }
       Set<String> values = new HashSet<>();
-      for (TreeItem item : items) {
+      forEachItem(items, item -> {
          for (int x = 0; x < xViewer.getTree().getColumnCount(); x++) {
             if (xViewer.getTree().getColumn(x).equals(treeCol)) {
                values.add(((IXViewerLabelProvider) xViewer.getLabelProvider()).getColumnText(item.getData(), x));
             }
          }
-      }
+      });
       String html = HtmlUtil.simplePage(HtmlUtil.textToHtml(CollectionsUtil.toString("\n", values))); //$NON-NLS-1$
       new HtmlDialog(XViewerText.get("dialog.unique.title"), XViewerText.get("dialog.unique.prompt", xCol.getName()), //$NON-NLS-1$ //$NON-NLS-2$
          html).open();
+   }
+
+   /**
+    * Runs {@code action} on each item as one pass of the viewer, so precomputed columns the viewer bounds compute the
+    * items' values in one call (see {@link XViewer#runPreComputePass(java.util.function.Supplier, Runnable)}).
+    */
+   private void forEachItem(TreeItem[] items, Consumer<TreeItem> action) {
+      xViewer.runPreComputePass(() -> {
+         List<Object> rows = new ArrayList<>(items.length);
+         for (TreeItem item : items) {
+            rows.add(item.getData());
+         }
+         return rows;
+      }, () -> {
+         for (TreeItem item : items) {
+            action.accept(item);
+         }
+      });
    }
 
    protected void handleSumColumn() {
@@ -436,13 +455,13 @@ public class XViewerCustomMenu {
          return;
       }
       List<String> values = new ArrayList<>();
-      for (TreeItem item : items) {
+      forEachItem(items, item -> {
          for (int x = 0; x < xViewer.getTree().getColumnCount(); x++) {
             if (xViewer.getTree().getColumn(x).equals(treeCol)) {
                values.add(((IXViewerLabelProvider) xViewer.getLabelProvider()).getColumnText(item.getData(), x));
             }
          }
-      }
+      });
       XViewerLib.popup(XViewerText.get("menu.sum.prompt"), xCol.sumValues(values)); //$NON-NLS-1$
    }
 
@@ -464,13 +483,13 @@ public class XViewerCustomMenu {
          return;
       }
       List<String> values = new ArrayList<>();
-      for (TreeItem item : items) {
+      forEachItem(items, item -> {
          for (int x = 0; x < xViewer.getTree().getColumnCount(); x++) {
             if (xViewer.getTree().getColumn(x).equals(treeCol)) {
                values.add(((IXViewerLabelProvider) xViewer.getLabelProvider()).getColumnText(item.getData(), x));
             }
          }
-      }
+      });
       XViewerLib.popup(XViewerText.get("menu.sum.prompt"), xCol.averageValues(values)); //$NON-NLS-1$
    }
 
@@ -712,14 +731,14 @@ public class XViewerCustomMenu {
       }
       TreeColumn treeCol = (TreeColumn) ld.getResult()[0];
       StringBuilder sb = new StringBuilder();
-      for (TreeItem item : items) {
+      forEachItem(items, item -> {
          for (int x = 0; x < xViewer.getTree().getColumnCount(); x++) {
             if (xViewer.getTree().getColumn(x).equals(treeCol)) {
                sb.append(labelProv.getColumnText(item.getData(), x));
                sb.append("\n"); //$NON-NLS-1$
             }
          }
-      }
+      });
       textTransferData.add(sb.toString());
 
       if (textTransferData.size() > 0) {
@@ -738,7 +757,7 @@ public class XViewerCustomMenu {
       IXViewerLabelProvider labelProv = (IXViewerLabelProvider) xViewer.getLabelProvider();
       if (items.length > 0) {
          StringBuilder sb = new StringBuilder();
-         for (TreeItem item : items) {
+         forEachItem(items, item -> {
             List<String> strs = new ArrayList<>();
             for (int x = 0; x < xViewer.getTree().getColumnCount(); x++) {
                if (xViewer.getTree().getColumn(x).getWidth() > 0) {
@@ -750,7 +769,7 @@ public class XViewerCustomMenu {
             }
             sb.append(CollectionsUtil.toString("\t", strs)); //$NON-NLS-1$
             sb.append("\n"); //$NON-NLS-1$
-         }
+         });
          textTransferData.add(sb.toString());
 
          if (textTransferData.size() > 0) {
