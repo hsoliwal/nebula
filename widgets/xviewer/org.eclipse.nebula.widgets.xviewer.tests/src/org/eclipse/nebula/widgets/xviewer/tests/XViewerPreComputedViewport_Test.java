@@ -357,12 +357,15 @@ public class XViewerPreComputedViewport_Test {
 
       tree.setTopItem(tree.getItem(rows / 2));
       tree.update();
-      // GTK can resolve a programmatic scroll after the events pending now: sort only once the drawn top row holds
-      int before = settledTopIndex(tree);
+      // GTK applies a programmatic scroll later: sort only once the tree has left row 0 and the top row holds
+      int before = settledTopIndex(tree, 0);
       clickHeader(viewer, PRE_ID);
-      int top = settledTopIndex(tree);
+      int top = settledTopIndex(tree, -1);
       System.out.println("XVIEWER_PRECOMPUTE counter requestedTop=" + rows / 2 + " topBeforeSort=" + before //$NON-NLS-1$ //$NON-NLS-2$
          + " top=" + top + " fullBatches=" + counter.fullBatches); //$NON-NLS-1$ //$NON-NLS-2$
+      for (int pass = 0; pass < counter.fullStacks.size(); pass++) {
+         System.out.println("XVIEWER_PRECOMPUTE fullPass" + pass + " " + counter.fullStacks.get(pass)); //$NON-NLS-1$ //$NON-NLS-2$
+      }
       assertPaintedSortKeys(tree, top, counter);
    }
 
@@ -642,6 +645,40 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /**
+    * Bounded: values resident from before a sort pass must not survive it. Rows 1,000.. are resident from a scroll,
+    * then the data changes and a sort pass reads the new values; scrolling back to rows the pass did not keep must
+    * show the values the sort read, not the ones from before. Fails on master 3343da6 (the window kept them).
+    */
+   @Test
+   public void boundedPassReplacesValuesFromBeforeThePass() {
+      int rows = 3_000;
+      Generation data = new Generation(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, data, true, new GenerationColumn(data));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      tree.setTopItem(tree.getItem(1_000));
+      tree.update();
+      int far = settledTopIndex(tree, 0);
+      assertEquals(GenerationColumn.value(0, far), tree.getItem(far).getText(1));
+      tree.setTopItem(tree.getItem(0));
+      tree.update();
+      settledTopIndex(tree, far);
+      data.generation = 1;
+      clickHeader(viewer, PRE_ID);
+      settledTopIndex(tree, -1);
+      tree.setTopItem(tree.getItem(far));
+      tree.update();
+      int top = settledTopIndex(tree, 0);
+      for (int row = top; row < top + 12; row++) {
+         TreeItem item = tree.getItem(row);
+         String key = data.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+         assertEquals("row " + row + " shows the value it was sorted on", key, item.getText(1)); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+   }
+
    /** An invalid {@code nebula.xviewer.boundedPreCompute} value leaves bounding off and is logged. */
    @Test
    public void invalidBoundedPreComputePropertyIsOffAndLogged() throws Exception {
@@ -709,21 +746,32 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
-    * @return the index of the row drawn at the top of the tree once it has held for several consecutive checks (at most
-    * 10 s), after pending events are dispatched
+    * Waits until the scroll has settled: {@code Tree.getTopItem()} answers the row drawn at the top (GTK answers the
+    * row of the last {@code setTopItem()} until it has applied that scroll), the drawn row is not {@code leftRow}, and
+    * it has held for five consecutive checks. Fails after 10 s.
+    *
+    * @param leftRow the row the tree must have scrolled away from, or -1
+    * @return the index of the row drawn at the top
     */
-   private int settledTopIndex(Tree tree) {
-      int last = -1;
+   private int settledTopIndex(Tree tree, int leftRow) {
+      int last = -2;
       int stable = 0;
       long deadline = System.currentTimeMillis() + 10_000;
-      while (stable < 5 && System.currentTimeMillis() < deadline) {
+      while (System.currentTimeMillis() < deadline) {
          pump();
-         int top = drawnTopIndex(tree);
-         stable = top == last ? stable + 1 : 0;
-         last = top;
+         int drawn = drawnTopIndex(tree);
+         TreeItem answeredItem = tree.getTopItem();
+         int answered = answeredItem == null ? -1 : tree.indexOf(answeredItem);
+         boolean settled = drawn >= 0 && drawn == answered && drawn != leftRow;
+         stable = settled && drawn == last ? stable + 1 : 0;
+         last = drawn;
+         if (stable >= 5) {
+            return drawn;
+         }
          sleep(20);
       }
-      return Math.max(0, last);
+      throw new AssertionError("the top row did not settle: drawn " + last + ", getTopItem " //$NON-NLS-1$ //$NON-NLS-2$
+         + (tree.getTopItem() == null ? -1 : tree.indexOf(tree.getTopItem())) + ", left row " + leftRow); //$NON-NLS-1$
    }
 
    /**
@@ -974,11 +1022,29 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /** The XViewer, JFace and SWT frames that led to a full populate call, innermost first. */
+   static String callers() {
+      StringBuilder frames = new StringBuilder();
+      int kept = 0;
+      for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
+         String type = frame.getClassName();
+         boolean inner = type.contains("LabelProvider") || type.contains("PassValues") || type.contains("Sorter") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            || type.contains("Comparator") || type.contains("_Test"); //$NON-NLS-1$ //$NON-NLS-2$
+         if (!inner && (type.startsWith("org.eclipse.nebula.widgets.xviewer.") || type.startsWith("org.eclipse.jface.") //$NON-NLS-1$ //$NON-NLS-2$
+            || type.startsWith("org.eclipse.swt.widgets.")) && kept++ < 32) { //$NON-NLS-1$
+            frames.append(type.substring(type.lastIndexOf('.') + 1)).append('.').append(frame.getMethodName())
+               .append(':').append(frame.getLineNumber()).append(" < "); //$NON-NLS-1$
+         }
+      }
+      return frames.toString();
+   }
+
    /** Values from a counter, as in the review harness: each computation of a row gives a new, larger value. */
    static final class Counter extends Stats {
       private final int rows;
       private int next;
       int fullBatches;
+      final List<String> fullStacks = new ArrayList<>();
       /** The values of the most recent call that covered every row: what a load or a sort pass ordered on. */
       final Map<Long, String> lastFull = new HashMap<>();
 
@@ -1029,6 +1095,7 @@ public class XViewerPreComputedViewport_Test {
          if (full) {
             counter.fullBatches++;
             counter.lastFull.clear();
+            counter.fullStacks.add(callers());
          }
          for (Object obj : objects) {
             String value = counter.nextValue();
@@ -1036,6 +1103,64 @@ public class XViewerPreComputedViewport_Test {
             preComputedValueMap.put(getKey(obj), value);
             if (full) {
                counter.lastFull.put(getKey(obj), value);
+            }
+         }
+      }
+
+      @Override
+      public String getText(Object obj, Long key, String cachedValue) {
+         return cachedValue;
+      }
+   }
+
+   /** Data whose values change only when the test bumps {@link #generation}, as a database row changes. */
+   static final class Generation extends Stats {
+      private final int rows;
+      int generation;
+      /** The values of the most recent call that covered every row: what a load or a sort pass ordered on. */
+      final Map<Long, String> lastFull = new HashMap<>();
+
+      Generation(int rows) {
+         this.rows = rows;
+      }
+   }
+
+   static final class GenerationColumn extends XViewerColumn implements IXViewerPreComputedColumn {
+      private final Generation data;
+
+      GenerationColumn(Generation data) {
+         super(PRE_ID, "Generation", 120, XViewerAlign.Left, true, SortDataType.String, false, null); //$NON-NLS-1$
+         this.data = data;
+      }
+
+      static String value(int generation, int id) {
+         return "g" + generation + "-" + Pre.pad(id); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+
+      @Override
+      public GenerationColumn copy() {
+         GenerationColumn copy = new GenerationColumn(data);
+         super.copy(this, copy);
+         return copy;
+      }
+
+      @Override
+      public Long getKey(Object obj) {
+         return Long.valueOf(((Integer) obj).longValue());
+      }
+
+      @Override
+      public void populateCachedValues(Collection<?> objects, Map<Long, String> preComputedValueMap) {
+         data.calls++;
+         boolean full = objects.size() == data.rows;
+         if (full) {
+            data.lastFull.clear();
+         }
+         for (Object obj : objects) {
+            String value = value(data.generation, ((Integer) obj).intValue());
+            preComputedValueMap.put(getKey(obj), value);
+            if (full) {
+               data.lastFull.put(getKey(obj), value);
             }
          }
       }
