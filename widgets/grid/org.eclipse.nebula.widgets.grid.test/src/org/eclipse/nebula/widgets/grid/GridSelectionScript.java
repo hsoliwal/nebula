@@ -260,8 +260,39 @@ final class GridSelectionScript {
 		final Event e = new Event();
 		e.keyCode = keyCode;
 		e.stateMask = masks[r.nextInt(masks.length)];
+		String pinned = "";
+		if (keyCode == SWT.PAGE_UP || keyCode == SWT.PAGE_DOWN) {
+			// Page Up/Down start from the top/bottom index, which follows the native scroll bar's
+			// asynchronous state: pin it from the script's random sequence first
+			final int top = pinTop(r);
+			if (top < 0) {
+				return "key " + keyCode + "/" + e.stateMask + " top not pinned";
+			}
+			pinned = " top " + top;
+		}
 		grid.notifyListeners(SWT.KeyDown, e);
-		return "key " + keyCode + "/" + e.stateMask;
+		return "key " + keyCode + "/" + e.stateMask + pinned;
+	}
+
+	/*
+	 * Scrolls to a top row drawn from the script's random sequence among those that need no clamp,
+	 * and paints and dispatches until the Grid answers that top index on three reads in a row
+	 * (bounded wait); returns the row, or -1 when it does not settle there.
+	 */
+	private int pinTop(final Random r) {
+		final int n = grid.getItemCount();
+		final int window = Math.max(1, grid.getVisibleGridHeight() / (grid.getItemHeight() + 1));
+		final int target = n > window ? r.nextInt(n - window + 1) : 0;
+		final long deadline = System.nanoTime() + 1_000_000_000L;
+		int stable = 0;
+		while (stable < 3 && System.nanoTime() < deadline) {
+			if (grid.getTopIndex() != target) {
+				grid.setTopIndex(target);
+			}
+			settle();
+			stable = grid.getTopIndex() == target ? stable + 1 : 0;
+		}
+		return stable >= 3 ? target : -1;
 	}
 
 	/*
@@ -278,10 +309,11 @@ final class GridSelectionScript {
 		final int[] masks = { 0, SWT.MOD2, SWT.MOD1, SWT.MOD1 | SWT.MOD2 };
 		final int stateMask = masks[r.nextInt(masks.length)];
 		final GridItem item = grid.getItem(row);
-		grid.showItem(item);
 		Point point = null;
 		final long deadline = System.nanoTime() + 2_000_000_000L;
 		do {
+			// shown again on every pass: a late native scroll can move the row out of view
+			grid.showItem(item);
 			settle();
 			final Rectangle bounds = item.getBounds(0);
 			final Point candidate = new Point(bounds.x + 4, bounds.y + bounds.height / 2);
