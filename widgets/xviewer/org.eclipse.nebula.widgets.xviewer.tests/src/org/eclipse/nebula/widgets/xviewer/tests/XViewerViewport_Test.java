@@ -158,7 +158,7 @@ public class XViewerViewport_Test {
       viewer.setExpandedState(Integer.valueOf(2), true);
       viewer.setSelection(new org.eclipse.jface.viewers.StructuredSelection(Integer.valueOf(4)));
       tree.setTopItem(tree.getItem(0));
-      pump();
+      settleScroll(tree);
       // Native SWT can scroll the selected row into view. Restore the actual
       // visible anchor when testing a round trip, not a different fixed row.
       TreeItem topBefore = visibleTopItem(tree);
@@ -166,13 +166,52 @@ public class XViewerViewport_Test {
       String pixels = pixels(tree);
 
       tree.setTopItem(tree.getItem(19_999));
+      int requested = tree.getVerticalBar().getSelection();
       tree.update();
-      pump();
+      settleScroll(tree);
+      int away = tree.getVerticalBar().getSelection();
       tree.setTopItem(topBefore);
       tree.update();
-      pump();
+      settleScroll(tree);
+      System.out.println("XVIEWER_VIEWPORT round trip: scroll bar " + requested + " when away was asked, " + away //$NON-NLS-1$ //$NON-NLS-2$
+         + " settled away, " + tree.getVerticalBar().getSelection() + " settled back"); //$NON-NLS-1$ //$NON-NLS-2$
       assertEquals(before, state(viewer));
       assertEquals(pixels, pixels(tree));
+   }
+
+   /**
+    * Pumps until the scroll has settled. SWT GTK3 scrolls {@code Tree.setTopItem()} through
+    * {@code gtk_tree_view_scroll_to_cell}, which (with GTK animations enabled) animates the vertical adjustment over
+    * 200 ms of frame-clock ticks ({@code gtk_adjustment_animate_to_value}) instead of setting it. {@link #pump()}
+    * returns at the first moment nothing is pending, which can fall between two animation frames, so a row read
+    * after it can be one the animation passes through: a CI run read row 17126 at the top after the round trip back
+    * to row 0. The scroll has settled when the vertical scroll bar's selection and the row shown at the top have held
+    * for five checks 20 ms apart, longer than a frame. Fails after 10 s.
+    */
+   private void settleScroll(Tree tree) {
+      int lastSelection = Integer.MIN_VALUE;
+      TreeItem lastTop = null;
+      int stable = 0;
+      long deadline = System.currentTimeMillis() + 10_000;
+      while (System.currentTimeMillis() < deadline) {
+         pump();
+         int selection = tree.getVerticalBar().getSelection();
+         TreeItem top = visibleTopItem(tree);
+         stable = selection == lastSelection && top == lastTop ? stable + 1 : 0;
+         lastSelection = selection;
+         lastTop = top;
+         if (stable >= 5) {
+            return;
+         }
+         try {
+            Thread.sleep(20);
+         } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            break;
+         }
+      }
+      throw new AssertionError("the scroll did not settle: scroll bar " + lastSelection + ", top row " //$NON-NLS-1$ //$NON-NLS-2$
+         + (lastTop == null ? null : lastTop.getText(0)));
    }
 
 
