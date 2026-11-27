@@ -65,7 +65,7 @@ public class GridRowDelta_Test {
 			root.setExpanded(r % 2 == 0);
 		}
 		shell.open();
-		flush();
+		GridTestUtil.awaitGridPaints(display, grid, 1);
 	}
 
 	@After
@@ -216,9 +216,12 @@ public class GridRowDelta_Test {
 		}
 	}
 
+	/*
+	 * Drains events until the Grid's paints stayed quiet for 200 ms. A plain readAndDispatch drain
+	 * returns before GTK3's frame-clock paint, so the body paint counts and the screen were read
+	 * before the paint (see GridTestUtil).
+	 */
 	private void flush() {
-		while (display.readAndDispatch()) {
-			// drain paints and timers
-		}
+		GridTestUtil.awaitGridPaints(display, grid, 0);
 	}
 }
