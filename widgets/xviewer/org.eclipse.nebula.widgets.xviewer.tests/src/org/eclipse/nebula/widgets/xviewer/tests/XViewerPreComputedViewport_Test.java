@@ -65,11 +65,11 @@ import org.junit.Test;
 /**
  * Precomputed columns of a viewport XViewer ({@code SWT.VIRTUAL} tree). By default the viewer keeps master's full
  * precompute: one value per input row in the column's map, computed in a background job. With bounded precompute
- * (opt-in, {@code XViewer.setBoundedPreCompute(true)} or {@code -Dswt.widget.mode.XViewer=viewport}) the values
+ * (opt-in, {@code XViewer.setBoundedPreCompute(true)} or {@code -Dnebula.xviewer.boundedPreCompute=true}) the values
  * computed by {@link IXViewerPreComputedColumn#populateCachedValues} stay resident only for a bounded window of rows,
- * while sort and filter results, painted text and the widget tree stay those of the default path. Bounded tests
- * opt in through the setter or the system property, so this class also runs against master, where neither exists and
- * the viewer keeps the full map; each phase prints an {@code XVIEWER_PRECOMPUTE} line, so the same test measures
+ * while sort and filter results, painted text and the widget tree stay those of the default path. Each viewer opts in
+ * or out through the setter, resolved reflectively, so this class also runs against master, where it does not exist
+ * and the viewer keeps the full map; each phase prints an {@code XVIEWER_PRECOMPUTE} line, so the same test measures
  * master and head.
  */
 public class XViewerPreComputedViewport_Test {
@@ -84,7 +84,6 @@ public class XViewerPreComputedViewport_Test {
    private static final int RETAINED_BOUND = WINDOW + 2 * MATERIALIZED_BOUND;
    private static final String PRE_ID = "tt.pre"; //$NON-NLS-1$
    private static final String FILTER = "v0123"; //$NON-NLS-1$
-   private static final String MODE = "swt.widget.mode.XViewer"; //$NON-NLS-1$
 
    private Display display;
    private Shell shell;
@@ -109,8 +108,7 @@ public class XViewerPreComputedViewport_Test {
    @Test
    public void precomputedValuesStayBoundedAfterLoadScrollSortAndFilter() {
       Stats stats = new Stats();
-      XViewer viewer = viewer(SWT.VIRTUAL, stats, false);
-      setBounded(viewer, true);
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
       Integer[] roots = Flat.roots(ROWS);
       List<String> violations = new ArrayList<>();
 
@@ -492,6 +490,127 @@ public class XViewerPreComputedViewport_Test {
       map.clear();
       assertEquals(0, map.size());
       assertFalse(map.containsKey(null));
+
+      // random 64-bit keys against a reference: a resident key always maps to its latest value
+      java.util.Random random = new java.util.Random(20261127L);
+      Map<Long, String> reference = new HashMap<>();
+      long[] used = new long[4096];
+      for (int op = 0; op < 20_000; op++) {
+         long key = op % 4 == 3 ? used[random.nextInt(Math.min(op, used.length))] : random.nextLong();
+         used[op % used.length] = key;
+         String value = "r" + op; //$NON-NLS-1$
+         map.put(Long.valueOf(key), value);
+         reference.put(Long.valueOf(key), value);
+         long probe = used[random.nextInt(Math.min(op + 1, used.length))];
+         if (map.containsKey(Long.valueOf(probe))) {
+            assertEquals(reference.get(Long.valueOf(probe)), map.get(Long.valueOf(probe)));
+         }
+      }
+      assertTrue("resident values: " + map.size(), map.size() <= WINDOW); //$NON-NLS-1$
+      int resident = 0;
+      for (Map.Entry<Long, String> entry : map.entrySet()) {
+         assertEquals(reference.get(entry.getKey()), entry.getValue());
+         resident++;
+      }
+      assertEquals(map.size(), resident);
+   }
+
+   /**
+    * Bounded, with a filter on a hierarchical model: painting a root row asks whether its 300 children pass the filter,
+    * a filter pass over them. Those probes must not push the visible root rows' values out of the window, so each
+    * visible root row shows the value it was filtered on. Fails on 1d2c823 (probe passes seeded the window).
+    */
+   @Test
+   public void boundedFilteredTreePaintsTheFilterKeys() {
+      int roots = 2_000;
+      Counter counter = new Counter(roots);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter), new Tree300(roots));
+      viewer.getCustomizeMgr().setColumnFilterText(PRE_ID, "v"); //$NON-NLS-1$
+      viewer.setInputXViewer(Flat.roots(roots));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      assertEquals(roots, tree.getItemCount());
+      for (int row = 0; row < 20; row++) {
+         TreeItem item = tree.getItem(row);
+         String key = counter.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+         assertEquals("root row " + row + " shows the value it was filtered on", key, item.getText(1)); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+   }
+
+   /**
+    * Bounded on the default background-job path (no forced pend): the staged values computed off the UI thread are
+    * handed to the load on the UI thread; the column's own map stays empty and only a window stays resident. Fails on
+    * master, which keeps the full map.
+    */
+   @Test
+   public void boundedBackgroundLoadHandsStagedValuesToTheUiThread() {
+      int rows = 2_000;
+      Stats stats = new Stats();
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
+      viewer.setForcePend(false);
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      awaitRows(viewer.getTree(), rows);
+      assertEquals("one background call", 1, stats.calls); //$NON-NLS-1$
+      assertNotSame("off the UI thread", display.getThread(), stats.lastThread); //$NON-NLS-1$
+      assertEquals(Pre.value(0), viewer.getTree().getItem(0).getText(1));
+      assertEquals(0, column(viewer, PRE_ID).getPreComputedValueMap().size());
+      int resident = resident(viewer);
+      assertTrue("resident values: " + resident, resident > 0 && resident <= WINDOW); //$NON-NLS-1$
+   }
+
+   /**
+    * Bounding turned off while a bounded background load runs: the load hands the staged values to the column's own
+    * map, as by default, instead of leaving it empty. Passes on master (no bounding at all).
+    */
+   @Test
+   public void boundingTurnedOffDuringBackgroundLoadKeepsFullMap() {
+      int rows = 2_000;
+      Stats stats = new Stats();
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
+      viewer.setForcePend(false);
+      viewer.setInputXViewer(Flat.roots(rows));
+      setBounded(viewer, false);
+      shell.open();
+      awaitRows(viewer.getTree(), rows);
+      assertEquals(rows, column(viewer, PRE_ID).getPreComputedValueMap().size());
+      assertEquals(Pre.value(rows - 1), viewer.getTree().getItem(rows - 1).getText(1));
+      assertEquals("rows read from the full map", 1, stats.calls); //$NON-NLS-1$
+   }
+
+   /**
+    * With bounding off (the default) the item walks behave as on master: refreshColumn and the tree report read the
+    * full map and make no populate call.
+    */
+   @Test
+   public void defaultItemWalksMakeNoPopulateCall() throws Exception {
+      int rows = 600;
+      Stats stats = new Stats();
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, false);
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      for (int row = 0; row < rows; row++) {
+         assertEquals(Pre.value(row), tree.getItem(row).getText(1));
+      }
+      int calls = stats.calls;
+      viewer.refreshColumn(PRE_ID);
+      String html = new XViewerTreeReport(viewer).getHtml();
+      assertEquals("no populate call from the walks", calls, stats.calls); //$NON-NLS-1$
+      assertTrue(html.contains(Pre.value(rows - 1)));
+   }
+
+   private void awaitRows(Tree tree, int rows) {
+      long deadline = System.currentTimeMillis() + 60_000;
+      while (tree.getItemCount() != rows && System.currentTimeMillis() < deadline) {
+         if (!display.readAndDispatch()) {
+            sleep(10);
+         }
+      }
+      pump();
+      assertEquals(rows, tree.getItemCount());
    }
 
    private static void assertPaintedSortKeys(Tree tree, int top, Counter counter) {
@@ -633,10 +752,14 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
-    * @param bounded asks for bounded precompute through {@code swt.widget.mode.XViewer=viewport}, else explicitly for
-    * the default ({@code original}), so a run with the property set globally keeps the default where a test needs it
+    * @param bounded sets bounded precompute on or off through the setter, so a run with
+    * {@code nebula.xviewer.boundedPreCompute=true} keeps the default where a test needs it
     */
    private XViewer viewer(int style, Stats stats, boolean bounded, XViewerColumn pre) {
+      return viewer(style, stats, bounded, pre, new Flat());
+   }
+
+   private XViewer viewer(int style, Stats stats, boolean bounded, XViewerColumn pre, ITreeContentProvider model) {
       Composite parent = new Composite(shell, SWT.NONE);
       parent.setLayout(new GridLayout(1, false));
       parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -649,20 +772,10 @@ public class XViewerPreComputedViewport_Test {
          }
       };
       factory.registerColumns(name, pre);
-      String previous = System.getProperty(MODE);
-      System.setProperty(MODE, bounded ? "viewport" : "original"); //$NON-NLS-1$ //$NON-NLS-2$
-      XViewer viewer;
-      try {
-         viewer = new XViewer(parent, style | SWT.MULTI | SWT.FULL_SELECTION, factory);
-      } finally {
-         if (previous == null) {
-            System.clearProperty(MODE);
-         } else {
-            System.setProperty(MODE, previous);
-         }
-      }
+      XViewer viewer = new XViewer(parent, style | SWT.MULTI | SWT.FULL_SELECTION, factory);
+      setBounded(viewer, bounded);
       viewer.getTree().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-      viewer.setContentProvider(new Flat());
+      viewer.setContentProvider(model);
       viewer.setLabelProvider(new Labels(viewer, stats));
       viewer.setForcePend(true);
       return viewer;
@@ -911,6 +1024,48 @@ public class XViewerPreComputedViewport_Test {
       @Override
       public void dispose() {
          // stateless
+      }
+   }
+
+   /** Integer roots 0..R-1, each with 300 children R + r*300 + j. */
+   static final class Tree300 implements ITreeContentProvider {
+      private static final int KIDS = 300;
+      private final int roots;
+
+      Tree300(int roots) {
+         this.roots = roots;
+      }
+
+      @Override
+      public Object[] getElements(Object input) {
+         return input instanceof List ? ((List<?>) input).toArray() : (Object[]) input;
+      }
+
+      @Override
+      public Object[] getChildren(Object parent) {
+         if (!(parent instanceof Integer)) {
+            return getElements(parent);
+         }
+         int id = ((Integer) parent).intValue();
+         if (id >= roots) {
+            return new Object[0];
+         }
+         Object[] kids = new Object[KIDS];
+         for (int j = 0; j < KIDS; j++) {
+            kids[j] = Integer.valueOf(roots + id * KIDS + j);
+         }
+         return kids;
+      }
+
+      @Override
+      public Object getParent(Object element) {
+         int id = ((Integer) element).intValue();
+         return id < roots ? null : Integer.valueOf((id - roots) / KIDS);
+      }
+
+      @Override
+      public boolean hasChildren(Object element) {
+         return ((Integer) element).intValue() < roots;
       }
    }
 

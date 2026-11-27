@@ -421,14 +421,16 @@ public class XViewerCustomMenu {
 
    /**
     * Runs {@code action} on each item as one pass of the viewer, so precomputed columns the viewer bounds compute the
-    * items' values in one call (see {@link XViewer#runPreComputePass(Collection, Runnable)}).
+    * items' values in one call (see {@link XViewer#runPreComputePass(java.util.function.Supplier, Runnable)}).
     */
    private void forEachItem(TreeItem[] items, Consumer<TreeItem> action) {
-      List<Object> rows = new ArrayList<>(items.length);
-      for (TreeItem item : items) {
-         rows.add(item.getData());
-      }
-      xViewer.runPreComputePass(rows, () -> {
+      xViewer.runPreComputePass(() -> {
+         List<Object> rows = new ArrayList<>(items.length);
+         for (TreeItem item : items) {
+            rows.add(item.getData());
+         }
+         return rows;
+      }, () -> {
          for (TreeItem item : items) {
             action.accept(item);
          }

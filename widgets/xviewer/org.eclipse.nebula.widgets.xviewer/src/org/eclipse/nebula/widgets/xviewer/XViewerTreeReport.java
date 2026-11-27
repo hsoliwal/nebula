@@ -72,10 +72,12 @@ public class XViewerTreeReport extends XViewerHtmlReport {
       ArrayList<String[]> list = new ArrayList<>();
       if (xViewer.boundsPreCompute()) {
          // one batched precompute per column for every row of the report, kept for the report only
-         List<Object> rows = new ArrayList<>();
-         collectRows(items, rows);
          XViewerException[] failure = new XViewerException[1];
-         xViewer.runPreComputePass(rows, () -> {
+         xViewer.runPreComputePass(() -> {
+            List<Object> rows = new ArrayList<>();
+            collectRows(items, rows);
+            return rows;
+         }, () -> {
             try {
                for (TreeItem item : items) {
                   addRow(item, list, labelProv, showCols, 1);

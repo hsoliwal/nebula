@@ -215,7 +215,7 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       if (viewer.getFilters().length == 0) {
          return delegate.hasChildren(element);
       }
-      return children(element).length > 0;
+      return children(element, false).length > 0;
    }
 
    private void evictColdest() {
@@ -227,13 +227,21 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    }
 
    private Object[] children(Object parent) {
+      return children(parent, true);
+   }
+
+   /**
+    * @param shown false when only asked whether the children exist (an unexpanded row), so their precomputed values
+    * are not kept for display
+    */
+   private Object[] children(Object parent, boolean shown) {
       if (parent == null) {
          return EMPTY;
       }
       Object[] cached = sortedChildren.get(parent);
       if (cached == null) {
          Object[] raw = isRoot(parent) ? delegate.getElements(parent) : delegate.getChildren(parent);
-         cached = viewer.viewportSortedChildren(parent, raw == null ? EMPTY : raw);
+         cached = viewer.viewportSortedChildren(parent, raw == null ? EMPTY : raw, shown);
          sortedChildren.put(parent, cached);
          cachedReferences += cached.length;
          evictColdest();

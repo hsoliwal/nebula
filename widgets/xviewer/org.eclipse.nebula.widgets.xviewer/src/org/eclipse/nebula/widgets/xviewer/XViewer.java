@@ -26,6 +26,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -128,8 +129,11 @@ public class XViewer extends TreeViewer {
    private boolean statusLayoutDirty;
    /** A status update arrived while the status line was hidden; computed on its first paint or read. */
    private boolean statusTextDirty;
+   /** System property giving the initial {@link #setBoundedPreCompute(boolean)} of new viewers; read once. */
+   private static final String BOUNDED_PRECOMPUTE_PROPERTY = "nebula.xviewer.boundedPreCompute"; //$NON-NLS-1$
+   private static final boolean BOUNDED_PRECOMPUTE_DEFAULT = readBoundedPreComputeDefault();
    /** Precomputed values are bounded to a window of rows when the viewer is a viewport; off by default. */
-   private boolean boundedPreCompute = "viewport".equalsIgnoreCase(readBoundedPreComputeMode()); //$NON-NLS-1$
+   private boolean boundedPreCompute = BOUNDED_PRECOMPUTE_DEFAULT;
    /** Rows computed in one call when the native tree asks for a row whose precomputed value is not resident. */
    static final int PRECOMPUTE_BLOCK = 64;
    /** First rows of a parent whose pass values are kept when a load, sort or filter pass ends. */
@@ -485,6 +489,15 @@ public class XViewer extends TreeViewer {
 
    private void performLoad(final Object input, final XViewer xViewer, Map<XViewerColumn, Map<Long, String>> staged) {
       if (xViewer.getTree() != null && !xViewer.getTree().isDisposed()) {
+         if (staged != null && !boundsPreCompute()) {
+            // bounding went off while the background load ran: the columns keep the full maps, as by default
+            for (Map.Entry<XViewerColumn, Map<Long, String>> entry : staged.entrySet()) {
+               Map<Long, String> values = entry.getKey().getPreComputedValueMap();
+               values.clear();
+               values.putAll(entry.getValue());
+            }
+            staged = null;
+         }
          if (staged == null) {
             xViewer.superInputChanged(input);
          } else {
@@ -524,8 +537,8 @@ public class XViewer extends TreeViewer {
     * </ul>
     * A column whose values change between calls can then show a newer value for a row recomputed later. It has no
     * effect on an eager tree or with a caller-supplied lazy content provider, which keep the full map. The initial value
-    * is on when the system property {@code swt.widget.mode.XViewer} (else {@code swt.widget.mode}) is
-    * {@code viewport} when the viewer is created. A change applies to loads after it.
+    * is on when the system property {@code nebula.xviewer.boundedPreCompute} is {@code true} (read once, when the
+    * first XViewer is created); any other value leaves it off. A change applies to loads after it.
     *
     * @param bounded true to bound precomputed values to a window of rows
     * @since 1.1
@@ -547,22 +560,30 @@ public class XViewer extends TreeViewer {
    }
 
    /**
-    * Runs {@code action}, which reads the cells of {@code elements} (for example a report, a copy or a sum over tree
-    * items), as one pass: with bounded precompute in effect, each precomputed column computes the values of all the
-    * elements in one {@code populateCachedValues} call when the action first reads one, serves the rest of the action
-    * from them and drops them afterwards. Otherwise it just runs the action.
+    * Runs {@code action}, which reads the cells of many rows (for example a report, a copy or a sum over tree items),
+    * as one pass. With bounded precompute in effect, {@code elements} is asked for the rows, and each precomputed
+    * column computes the values of all of them in one {@code populateCachedValues} call when the action first reads
+    * one, serves the rest of the action from them and drops them afterwards. Otherwise {@code elements} is not called
+    * and only the action runs.
+    * <p>
+    * Must be called on the UI thread. A call inside another pass (nested) keeps the outer pass's map for each column
+    * the outer pass already serves, so for those columns the given rows are ignored.
+    * </p>
     *
-    * @param elements the elements whose cells the action reads; null entries are skipped
+    * @param elements supplies the rows whose cells the action reads; null rows are skipped
     * @param action the action
+    * @throws NullPointerException with bounded precompute in effect, if {@code elements} or the collection it supplies
+    * is null
     * @since 1.1
     */
-   public void runPreComputePass(Collection<?> elements, Runnable action) {
+   public void runPreComputePass(Supplier<? extends Collection<?>> elements, Runnable action) {
       if (!boundsPreCompute()) {
          action.run();
          return;
       }
-      List<Object> present = new ArrayList<>(elements.size());
-      for (Object element : elements) {
+      Collection<?> rows = elements.get();
+      List<Object> present = new ArrayList<>(rows.size());
+      for (Object element : rows) {
          if (element != null) {
             present.add(element);
          }
@@ -583,10 +604,18 @@ public class XViewer extends TreeViewer {
       }
    }
 
-   private static String readBoundedPreComputeMode() {
-      String specific = System.getProperty("swt.widget.mode.XViewer"); //$NON-NLS-1$
-      String value = specific != null ? specific : System.getProperty("swt.widget.mode"); //$NON-NLS-1$
-      return value == null ? "" : value.trim(); //$NON-NLS-1$
+   /** @return true if {@value #BOUNDED_PRECOMPUTE_PROPERTY} is {@code true}; any other value but false is logged */
+   private static boolean readBoundedPreComputeDefault() {
+      String value = System.getProperty(BOUNDED_PRECOMPUTE_PROPERTY);
+      if (value == null || "false".equalsIgnoreCase(value.trim())) { //$NON-NLS-1$
+         return false;
+      }
+      if ("true".equalsIgnoreCase(value.trim())) { //$NON-NLS-1$
+         return true;
+      }
+      XViewerLog.log(Activator.class, Level.INFO,
+         String.format("ignoring %s value '%s'; bounded precompute stays off", BOUNDED_PRECOMPUTE_PROPERTY, value)); //$NON-NLS-1$
+      return false;
    }
 
    /** Bounding is in effect: it was asked for and the viewer is a viewport over a plain tree content provider. */
@@ -1340,9 +1369,7 @@ public class XViewer extends TreeViewer {
          XViewerLabelProvider labelProvider = (XViewerLabelProvider) baseLabelProvider;
 
          TreeItem[] items = viewport == null ? getTree().getItems() : materializedRootItems();
-         Object[] rows = itemData(items);
-         // with bounded precompute the walked rows are computed in one call, and the rows painted keep their values
-         runPreComputePass(rows, () -> {
+         Runnable walk = () -> {
             for (TreeItem item : items) {
 
                ViewerRow viewerRow = getViewerRowFromItem(item);
@@ -1364,8 +1391,17 @@ public class XViewer extends TreeViewer {
                   }
                }
             }
-            seedPreComputedWindows(null, rows);
-         });
+         };
+         if (boundsPreCompute()) {
+            // the walked rows are computed in one call, and the rows painted keep their values
+            Object[] rows = itemData(items);
+            runPreComputePass(rows, () -> {
+               walk.run();
+               seedPreComputedWindows(null, rows);
+            });
+         } else {
+            walk.run();
+         }
       }
    }
 
@@ -1468,7 +1504,7 @@ public class XViewer extends TreeViewer {
    /**
     * Filtered and sorted children exactly as {@code AbstractTreeViewer#getSortedChildren} orders them.
     */
-   Object[] viewportSortedChildren(Object parent, Object[] raw) {
+   Object[] viewportSortedChildren(Object parent, Object[] raw, boolean shown) {
       ViewerFilter[] filters = getFilters();
       ViewerComparator comparator = getComparator();
       // filters and comparators read every child's cells: with bounded precompute the values are computed for this
@@ -1492,7 +1528,8 @@ public class XViewer extends TreeViewer {
                comparator.sort(this, result);
             }
          }
-         if (pass) {
+         // only rows about to be shown keep their values; a probe of an unexpanded row's children keeps none
+         if (pass && shown) {
             seedPreComputedWindows(parent, result);
          }
          return result;
