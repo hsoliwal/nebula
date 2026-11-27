@@ -357,9 +357,21 @@ public class GridTreeItemContract_Test {
 			((TreeItem) item).setItemCount(count);
 		}
 
+		/*
+		 * The documented contract, the win32 Tree and the pinned SWT receiver throw ERROR_INVALID_RANGE
+		 * for an index outside the children. Stock SWT GTK (3.135) does not check it: its
+		 * Tree.clear(long, int, boolean) reads a GtkTreeIter that gtk_tree_model_iter_nth_child left
+		 * uninitialised, and the JVM dies (SIGSEGV in gtk_tree_model_get_valist). The donor answers the
+		 * documented exception for such an index without that native read. The receiver's data is
+		 * already requested (the script counted its children), so no SetData event is added.
+		 */
 		@Override
 		void clear(final Item item, final int index, final boolean all) {
-			((TreeItem) item).clear(index, all);
+			final TreeItem treeItem = (TreeItem) item;
+			if (index < 0 || index >= treeItem.getItemCount()) {
+				SWT.error(SWT.ERROR_INVALID_RANGE);
+			}
+			treeItem.clear(index, all);
 		}
 
 		@Override
