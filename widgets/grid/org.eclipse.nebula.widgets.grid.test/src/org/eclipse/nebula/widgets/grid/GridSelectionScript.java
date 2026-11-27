@@ -55,6 +55,12 @@ final class GridSelectionScript {
 	boolean cellOps;
 	/* whether a cell step may set a column span (spans turn the range loops back to items) */
 	boolean spans;
+	/*
+	 * cell steps take header gestures as well (the header and drag scripts): clicks on column, column
+	 * group and row headers, row-header and column-header drags (the Grid needs its row header shown,
+	 * and a column group for the column-header drags)
+	 */
+	boolean headerOps;
 
 	GridSelectionScript(final Grid grid) {
 		this.grid = grid;
@@ -302,6 +308,9 @@ final class GridSelectionScript {
 	}
 
 	private String cellStep(final Random r) {
+		if (headerOps && r.nextInt(3) == 0) {
+			return headerStep(r);
+		}
 		final int n = grid.getItemCount();
 		final int m = grid.getColumnCount();
 		final Point p = cell(r, n, m);
@@ -463,6 +472,120 @@ final class GridSelectionScript {
 		up.stateMask = down.stateMask | SWT.BUTTON1;
 		grid.notifyListeners(SWT.MouseUp, up);
 		return (drag ? "drag " : "click ") + col + "," + row + "/" + down.stateMask + moved;
+	}
+
+	/*
+	 * A header gesture the script picks from its own random sequence, with shift and ctrl: a click on a
+	 * column header or on a column group header, a click on a row header, a press on a row header
+	 * dragged to another shown row, past the last row, into the header or (after a scroll) to the top
+	 * row of another view, or a press on a column group header dragged to a column header.
+	 */
+	private String headerStep(final Random r) {
+		final int n = grid.getItemCount();
+		final int[] visible = new int[grid.getColumnCount()];
+		int v = 0;
+		for (int c = 0; c < visible.length; c++) {
+			if (grid.getColumn(c).getVisible()) {
+				visible[v++] = c;
+			}
+		}
+		if (n == 0 || v == 0) {
+			return "noop";
+		}
+		final int[] masks = { 0, SWT.MOD2, SWT.MOD1, SWT.MOD1 | SWT.MOD2 };
+		final int stateMask = masks[r.nextInt(masks.length)];
+		final int col = visible[r.nextInt(v)];
+		final int toCol = visible[r.nextInt(v)];
+		final int row = r.nextInt(n);
+		final int how = r.nextInt(4);
+		final int toRow = Math.max(0, Math.min(n - 1, row + r.nextInt(7) - 3));
+		final int scrollTo = r.nextInt(n);
+		switch (r.nextInt(6)) {
+		case 0:
+		case 1: {
+			final boolean group = r.nextBoolean();
+			final Point point = GridHeaderGestures.columnHeader(grid, col, group);
+			if (point == null) {
+				return (group ? "group header " : "header ") + col + " none";
+			}
+			GridHeaderGestures.click(grid, point, stateMask);
+			return (group ? "group header " : "header ") + col + "/" + stateMask;
+		}
+		case 2: {
+			final Point point = GridHeaderGestures.rowHeader(grid, row, true);
+			if (point == null) {
+				return "row header " + row + " not shown";
+			}
+			GridHeaderGestures.click(grid, point, stateMask);
+			return "row header " + row + "/" + stateMask;
+		}
+		case 3:
+		case 4:
+			return rowHeaderDrag(row, how, toRow, scrollTo, stateMask);
+		default: {
+			final Point press = GridHeaderGestures.columnHeader(grid, col, true);
+			if (press == null) {
+				return "column drag " + col + " no group";
+			}
+			GridHeaderGestures.press(grid, press, stateMask);
+			final Point to = GridHeaderGestures.columnHeader(grid, toCol, false);
+			if (to != null) {
+				GridHeaderGestures.drag(grid, to, stateMask);
+			}
+			GridHeaderGestures.release(grid, to != null ? to : press, stateMask);
+			return "column drag " + col + "/" + stateMask + " to " + (to != null ? String.valueOf(toCol) : "not shown");
+		}
+		}
+	}
+
+	/*
+	 * a press on row {@code row}'s header (the top row pinned just above it), dragged to: 0 row toRow
+	 * (shown with it), 1 below the Grid, 2 into the column header, 3 the top row of the view at
+	 * scrollTo (the Grid scrolled there while the button is down); then released
+	 */
+	private String rowHeaderDrag(final int row, final int how, final int toRow, final int scrollTo,
+			final int stateMask) {
+		final int n = grid.getItemCount();
+		final int window = Math.max(1, grid.getVisibleGridHeight() / (grid.getItemHeight() + 1));
+		final int top = Math.max(0, Math.min((how == 0 ? Math.min(row, toRow) : row) - 1, n - window));
+		if (pinTopAt(top) < 0) {
+			return "row drag " + row + " top not pinned";
+		}
+		final Point press = GridHeaderGestures.rowHeader(grid, row, false);
+		if (press == null) {
+			return "row drag " + row + " not shown";
+		}
+		GridHeaderGestures.press(grid, press, stateMask);
+		Point to = null;
+		String where;
+		switch (how) {
+		case 0:
+			to = GridHeaderGestures.rowHeader(grid, toRow, false);
+			where = "row " + toRow;
+			break;
+		case 1:
+			to = GridHeaderGestures.below(grid, press.x);
+			where = "below";
+			break;
+		case 2:
+			to = new Point(press.x, Math.max(1, grid.getHeaderHeight() / 2));
+			where = "header";
+			break;
+		default:
+			final int target = Math.max(0, Math.min(scrollTo, n - window));
+			where = "top " + target;
+			if (pinTopAt(target) >= 0) {
+				to = GridHeaderGestures.rowHeader(grid, target, false);
+			}
+			break;
+		}
+		if (to != null) {
+			GridHeaderGestures.drag(grid, to, stateMask);
+		} else {
+			where += " not shown";
+		}
+		GridHeaderGestures.release(grid, to != null ? to : press, stateMask);
+		return "row drag " + row + "/" + stateMask + " to " + where;
 	}
 
 	/* where the Grid hit-tests cell (col, row) once it is shown (scrolled to when asked), or null */

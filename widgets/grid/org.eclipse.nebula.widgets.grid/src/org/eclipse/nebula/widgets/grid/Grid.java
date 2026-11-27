@@ -7429,9 +7429,16 @@ public class Grid extends Canvas {
 				|| column != getColumn(new Point(e.x, e.y))) {
 			return;
 		}
-		final Vector<Point> cells = new Vector<>();
-		getCells(column, cells);
-		final Event selectionEvent = updateCellSelection(cells, e.stateMask, false, true);
+		final Event selectionEvent;
+		if (cellBlocks() != null) {
+			// the column's rows as one block: no item or point per row
+			selectionEvent = updateCellSelection(columnCellBlocks(new GridColumn[] { column }), e.stateMask, false,
+					true);
+		} else {
+			final Vector<Point> cells = new Vector<>();
+			getCells(column, cells);
+			selectionEvent = updateCellSelection(cells, e.stateMask, false, true);
+		}
 		cellColumnSelectedOnLastMouseDown = getCellSelectionCount() > 0;
 		GridItem newFocusItem = getItem(0);
 		while (newFocusItem != null && getSpanningColumn(newFocusItem, column) != null) {
@@ -8503,6 +8510,12 @@ public class Grid extends Canvas {
 	 */
 	private void addCellBlock(final GridCellSelectionLanes cells, final int from, final int to,
 			final int[] columnIndexes) {
+		addCellBlock(cells, from, to, false, columnIndexes);
+	}
+
+	/* addCellBlock for the rows taken from to up to from when downward (a range walked upwards) */
+	private void addCellBlock(final GridCellSelectionLanes cells, final int from, final int to,
+			final boolean downward, final int[] columnIndexes) {
 		final int[] enabled = new int[columnIndexes.length];
 		int n = 0;
 		for (final int x : columnIndexes) {
@@ -8516,11 +8529,135 @@ public class Grid extends Canvas {
 		if (selectionType == GridSelectionType.SINGLE) {
 			// the first cell when nothing is selected, then nothing
 			if (cells.isEmpty()) {
-				cells.add(new Point(enabled[0], from));
+				cells.add(new Point(enabled[0], downward ? to : from));
 			}
 			return;
 		}
-		cells.addBlock(from, to, n == enabled.length ? enabled : Arrays.copyOf(enabled, n));
+		final int[] enabledColumns = n == enabled.length ? enabled : Arrays.copyOf(enabled, n);
+		if (downward) {
+			cells.addBlockDown(from, to, enabledColumns);
+		} else {
+			cells.addBlock(from, to, enabledColumns);
+		}
+	}
+
+	/*
+	 * the cells getCells(column, cells) names for each of the columns in turn while the cells are kept
+	 * as blocks (no spans: every row of a flat virtual Grid is shown), without an item or a point
+	 */
+	private GridCellSelectionLanes.Cells columnCellBlocks(final GridColumn[] cols) {
+		final GridCellSelectionLanes.Cells cells = new GridCellSelectionLanes.Cells();
+		if (items.size() > 0) {
+			for (final GridColumn column : cols) {
+				cells.add(0, items.size() - 1, false, new int[] { column.index });
+			}
+		}
+		return cells;
+	}
+
+	/*
+	 * the cells getCells(fromItem, toItem, cells) names while the cells are kept as blocks: the rows
+	 * from toItem's to fromItem's (upwards when fromItem is above it), each by the visible columns in
+	 * display order, without an item or a point; null when an item has no row (the stock walk then
+	 * runs, and fails, as it did)
+	 */
+	private GridCellSelectionLanes.Cells rowRangeCellBlocks(final GridItem fromItem, final GridItem toItem) {
+		if (fromItem == null || toItem == null || fromItem.isDisposed() || toItem.isDisposed()) {
+			return null;
+		}
+		final int from = fromItem.getRowIndex();
+		final int to = toItem.getRowIndex();
+		if (from < 0 || to < 0 || from >= items.size() || to >= items.size()) {
+			return null;
+		}
+		final GridCellSelectionLanes.Cells cells = new GridCellSelectionLanes.Cells();
+		cells.add(Math.min(from, to), Math.max(from, to), from < to, visibleCellColumns());
+		return cells;
+	}
+
+	/*
+	 * the columns the column drag's loop walks, from the hovered column to the focus column (back when
+	 * decreasing), or null when the walk runs off the columns (the stock loop then fails as it did)
+	 */
+	private GridColumn[] columnDragWalk(final GridColumn intentCol, final boolean decreasing) {
+		final List<GridColumn> walked = new ArrayList<>();
+		GridColumn iterCol = intentCol;
+		while (iterCol != null) {
+			walked.add(iterCol);
+			if (iterCol == focusColumn) {
+				return walked.toArray(new GridColumn[0]);
+			}
+			iterCol = decreasing ? getPreviousVisibleColumn(iterCol) : getNextVisibleColumn(iterCol);
+		}
+		return null;
+	}
+
+	/*
+	 * updateCellSelection(cells, ...) for the cells a gesture names as blocks while the selection keeps
+	 * blocks (cellBlocks() is not null): the stock steps and answers (the anchors, the equality and
+	 * containment checks, the snapshot of a ctrl+drag, first-occurrence removal, the column checks,
+	 * SINGLE, the order of the cells and the event) without an item, a point or a pass per cell
+	 */
+	private Event updateCellSelection(final GridCellSelectionLanes.Cells newCells, final int stateMask,
+			final boolean dragging, final boolean reverseDuplicateSelections) {
+		if ((stateMask & SWT.MOD2) == SWT.MOD2) {
+			// shift selection takes the first cell only, ignoring others: the stock path of one cell
+			final Vector<Point> firstCell = new Vector<>();
+			final Point cell = newCells.firstCell();
+			if (cell != null) {
+				firstCell.add(cell);
+			}
+			return updateCellSelection(firstCell, stateMask, dragging, reverseDuplicateSelections);
+		}
+		shiftSelectionAnchorColumn = null;
+		shiftSelectionAnchorItem = null;
+
+		final GridCellSelectionLanes cells = (GridCellSelectionLanes) selectedCells;
+		if ((stateMask & SWT.MOD1) != SWT.MOD1) {
+			if (cells.sameCells(newCells)) {
+				return null;
+			}
+			selectedCells.clear();
+			addCells(newCells);
+		} else {
+			final boolean reverse = reverseDuplicateSelections && cells.containsCells(newCells);
+			if (dragging) {
+				selectedCells.clear();
+				addCellstThatDoNotAlreadyExist(selectedCells, selectedCellsBeforeRangeSelect);
+			}
+			if (reverse) {
+				cells.removeCells(newCells);
+			} else {
+				addCells(newCells);
+			}
+		}
+
+		updateColumnSelection();
+
+		final Event e = new Event();
+		if (dragging) {
+			e.detail = SWT.DRAG;
+			followupCellSelectionEventOwed = true;
+		}
+
+		final Rectangle clientArea = getClientArea();
+		redraw(clientArea.x, clientArea.y, clientArea.width, clientArea.height, false);
+
+		return e;
+	}
+
+	/* addToCellSelection of each of the cells, in order: block by block while the list keeps blocks */
+	private void addCells(final GridCellSelectionLanes.Cells newCells) {
+		final GridCellSelectionLanes blocks = cellBlocks();
+		if (blocks == null) {
+			for (final Point cell : newCells.points()) {
+				addToCellSelection(cell);
+			}
+			return;
+		}
+		for (int b = 0; b < newCells.blocks; b++) {
+			addCellBlock(blocks, newCells.first[b], newCells.last[b], newCells.down[b], newCells.cols[b]);
+		}
 	}
 
 	/* the columns of a row's cells without spans (getCells(item)): the visible ones, in display order */
@@ -8910,20 +9047,28 @@ public class Grid extends Canvas {
 								ctrl = (e.stateMask & SWT.MOD1) != 0;
 							}
 
-							final Vector<Point> cells = new Vector<>();
-
-							if (shift) {
-								getCells(item, focusItem, cells);
-							} else {
-								getCells(item, cells);
-							}
-
 							int newStateMask = SWT.NONE;
 							if (ctrl) {
 								newStateMask = SWT.MOD1;
 							}
 
-							selectionEvent = updateCellSelection(cells, newStateMask, shift, ctrl);
+							// the rows from the focus row to this one (or this row) as one block: no item
+							// or point per row
+							final GridCellSelectionLanes.Cells rows = cellBlocks() == null ? null
+									: rowRangeCellBlocks(item, shift ? focusItem : item);
+							if (rows != null) {
+								selectionEvent = updateCellSelection(rows, newStateMask, shift, ctrl);
+							} else {
+								final Vector<Point> cells = new Vector<>();
+
+								if (shift) {
+									getCells(item, focusItem, cells);
+								} else {
+									getCells(item, cells);
+								}
+
+								selectionEvent = updateCellSelection(cells, newStateMask, shift, ctrl);
+							}
 							cellRowSelectedOnLastMouseDown = getCellSelectionCount() > 0;
 
 							if (!shift) {
@@ -8989,16 +9134,23 @@ public class Grid extends Canvas {
 				return;
 			}
 
-			final Vector<Point> cells = new Vector<>();
-
 			final GridColumnGroup group = col.getColumnGroup();
-			if (group != null && e.y < groupHeaderHeight()) {
-				getCells(group, cells);
+			if (cellBlocks() != null) {
+				// each column's rows as one block: no item or point per row
+				final GridColumn[] named = group != null && e.y < groupHeaderHeight() ? group.getColumns()
+						: new GridColumn[] { col };
+				selectionEvent = updateCellSelection(columnCellBlocks(named), e.stateMask, false, true);
 			} else {
-				getCells(col, cells);
-			}
+				final Vector<Point> cells = new Vector<>();
 
-			selectionEvent = updateCellSelection(cells, e.stateMask, false, true);
+				if (group != null && e.y < groupHeaderHeight()) {
+					getCells(group, cells);
+				} else {
+					getCells(col, cells);
+				}
+
+				selectionEvent = updateCellSelection(cells, e.stateMask, false, true);
+			}
 			cellColumnSelectedOnLastMouseDown = getCellSelectionCount() > 0;
 
 			GridItem newFocusItem = getItem(0);
@@ -9279,12 +9431,20 @@ public class Grid extends Canvas {
 						}
 					}
 
-					final Vector<Point> cells = new Vector<>();
+					// the rows from the focus row to the hovered one as one block: no item or point per row
+					final GridCellSelectionLanes.Cells rows = cellBlocks() == null ? null
+							: rowRangeCellBlocks(intentItem, focusItem);
+					if (rows != null) {
+						showItem(intentItem);
+						selectionEvent = updateCellSelection(rows, ctrlFlag, true, false);
+					} else {
+						final Vector<Point> cells = new Vector<>();
 
-					getCells(intentItem, focusItem, cells);
+						getCells(intentItem, focusItem, cells);
 
-					showItem(intentItem);
-					selectionEvent = updateCellSelection(cells, ctrlFlag, true, false);
+						showItem(intentItem);
+						selectionEvent = updateCellSelection(cells, ctrlFlag, true, false);
+					}
 				}
 				if (cellColumnDragSelectionOccuring && handleCellHover(e.x, e.y)) {
 					final GridColumn intentCol = hoveringColumn;
@@ -9308,22 +9468,28 @@ public class Grid extends Canvas {
 					final boolean decreasing = displayPosition(iterCol) > displayOrderedColumns
 							.indexOf(focusColumn);
 
-					do {
-						getCells(iterCol, newSelected);
+					// the walked columns' rows as one block each: no item or point per row
+					final GridColumn[] walked = cellBlocks() == null ? null : columnDragWalk(intentCol, decreasing);
+					if (walked != null) {
+						selectionEvent = updateCellSelection(columnCellBlocks(walked), ctrlFlag, true, false);
+					} else {
+						do {
+							getCells(iterCol, newSelected);
 
-						if (iterCol == focusColumn) {
-							break;
-						}
+							if (iterCol == focusColumn) {
+								break;
+							}
 
-						if (decreasing) {
-							iterCol = getPreviousVisibleColumn(iterCol);
-						} else {
-							iterCol = getNextVisibleColumn(iterCol);
-						}
+							if (decreasing) {
+								iterCol = getPreviousVisibleColumn(iterCol);
+							} else {
+								iterCol = getNextVisibleColumn(iterCol);
+							}
 
-					} while (true);
+						} while (true);
 
-					selectionEvent = updateCellSelection(newSelected, ctrlFlag, true, false);
+						selectionEvent = updateCellSelection(newSelected, ctrlFlag, true, false);
+					}
 				}
 
 			}
