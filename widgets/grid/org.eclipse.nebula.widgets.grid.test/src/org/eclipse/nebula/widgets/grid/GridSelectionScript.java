@@ -264,19 +264,39 @@ final class GridSelectionScript {
 		return "key " + keyCode + "/" + e.stateMask;
 	}
 
+	/*
+	 * A click on a row the script picks from its own random sequence (never from the top index,
+	 * which follows the native scroll bar's asynchronous state): the row is shown, the Grid's
+	 * geometry settles, and the click goes where the Grid hit-tests that row.
+	 */
 	private String click(final Random r) {
 		final int n = grid.getItemCount();
 		if (n == 0) {
 			return "noop";
 		}
-		final int row = Math.min(n - 1, grid.getTopIndex() + r.nextInt(8));
-		final Rectangle bounds = grid.getItem(row).getBounds(0);
+		final int row = r.nextInt(n);
 		final int[] masks = { 0, SWT.MOD2, SWT.MOD1, SWT.MOD1 | SWT.MOD2 };
+		final int stateMask = masks[r.nextInt(masks.length)];
+		final GridItem item = grid.getItem(row);
+		grid.showItem(item);
+		Point point = null;
+		final long deadline = System.nanoTime() + 2_000_000_000L;
+		do {
+			settle();
+			final Rectangle bounds = item.getBounds(0);
+			final Point candidate = new Point(bounds.x + 4, bounds.y + bounds.height / 2);
+			if (grid.getItem(candidate) == item) {
+				point = candidate;
+			}
+		} while (point == null && System.nanoTime() < deadline);
+		if (point == null) {
+			return "click " + row + " not shown";
+		}
 		final Event down = new Event();
 		down.button = 1;
-		down.x = bounds.x + 4;
-		down.y = bounds.y + bounds.height / 2;
-		down.stateMask = masks[r.nextInt(masks.length)];
+		down.x = point.x;
+		down.y = point.y;
+		down.stateMask = stateMask;
 		grid.notifyListeners(SWT.MouseDown, down);
 		final Event up = new Event();
 		up.button = 1;
@@ -287,15 +307,20 @@ final class GridSelectionScript {
 		return "click " + row + "/" + down.stateMask;
 	}
 
-	private void observe(final long seed, final int k, final String op) {
-		// paint as the event loop would: the scroll bars catch up with deferred row changes (a
-		// removed row without an item defers them to the paint, one with an item updates at once)
+	/* paint and dispatch as the event loop would */
+	private void settle() {
 		if (!grid.isDisposed() && !Boolean.getBoolean("grid.selection.script.unpainted")) {
 			grid.update();
 			while (grid.getDisplay().readAndDispatch()) {
 				// drain
 			}
 		}
+	}
+
+	private void observe(final long seed, final int k, final String op) {
+		// paint as the event loop would: the scroll bars catch up with deferred row changes (a
+		// removed row without an item defers them to the paint, one with an item updates at once)
+		settle();
 		final StringBuilder b = new StringBuilder();
 		b.append(k).append(' ').append(op).append(" | n=").append(grid.getItemCount());
 		probe(b, " count=", () -> Integer.valueOf(grid.getSelectionCount()));
