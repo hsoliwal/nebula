@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.locks.LockSupport;
 
 import org.eclipse.nebula.widgets.grid.model.RowPermutation;
 import org.eclipse.swt.SWT;
@@ -75,6 +76,7 @@ final class GridSelectionScript {
 	}
 
 	void run(final long seed, final int steps) {
+		takeFocus();
 		for (int k = 0; k < steps; k++) {
 			final Random r = new Random(seed * 7919 + k);
 			String op;
@@ -86,6 +88,33 @@ final class GridSelectionScript {
 			afterStep.run();
 			observe(seed, k, op);
 		}
+	}
+
+	/*
+	 * The first FocusIn makes row 0 the focus row of a Grid that has none (Grid.onFocusIn, as in the
+	 * earlier releases). Under X11 it comes when the window manager activates the newly opened shell,
+	 * at a time the X server picks: one Grid could take it before the first observation and the other
+	 * after it (a CI run traced focus=-1 for one Grid and focus=0 for the other at step 0, after a
+	 * deselect). The shell is asked again to become active, the Grid is given the focus and the events
+	 * are dispatched until it has it (bounded wait), so that every Grid takes that FocusIn before the
+	 * first step.
+	 */
+	private void takeFocus() {
+		if (grid.isDisposed()) {
+			return;
+		}
+		grid.getShell().forceActive();
+		grid.setFocus();
+		final long deadline = System.nanoTime() + 2_000_000_000L;
+		while (!grid.isFocusControl() && System.nanoTime() < deadline) {
+			if (!grid.getDisplay().readAndDispatch()) {
+				LockSupport.parkNanos(5_000_000L);
+			}
+		}
+		if (!grid.isFocusControl()) {
+			System.out.println("GRID_SELECTION_SCRIPT the Grid did not take the focus within 2 s");
+		}
+		settle();
 	}
 
 	private int row(final Random r, final int n) {
