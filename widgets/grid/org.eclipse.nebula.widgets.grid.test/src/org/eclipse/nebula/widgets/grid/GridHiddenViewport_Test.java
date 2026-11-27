@@ -31,6 +31,7 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.junit.After;
@@ -165,17 +166,23 @@ public class GridHiddenViewport_Test {
 		flush(grid, 0);
 		final int nativeWhileHidden = grid.nativeOps - nativeBefore;
 		final int paintsWhileHidden = grid.paintPasses - paintsBefore;
+		// diagnostic only: the clip of each paint the show brings, named in the log and the message
+		final StringBuilder clipsOnShow = new StringBuilder();
+		final Listener clipRecorder = e -> clipsOnShow.append(clipsOnShow.length() == 0 ? "" : ", ").append(e.x).append(',')
+				.append(e.y).append(' ').append(e.width).append('x').append(e.height);
+		grid.addListener(SWT.Paint, clipRecorder);
 		show.accept(grid);
 		flush(grid, paintsBefore + paintsWhileHidden + 1);
+		grid.removeListener(SWT.Paint, clipRecorder);
 		final int paintsOnShow = grid.paintPasses - paintsBefore - paintsWhileHidden;
 		LOG.info("GridHiddenViewport_Test: " + how + " (" + (GridViewport.ENABLED ? "viewport" : "original") + "): " + DELTAS
 				+ " deltas in " + micros + " us; while hidden native ops " + nativeWhileHidden + ", paints " + paintsWhileHidden
-				+ ", coalesced " + grid.hiddenDeltas + "; on show paint passes " + paintsOnShow + ", window patches "
-				+ (grid.hiddenPatches - patchesBefore));
+				+ ", coalesced " + grid.hiddenDeltas + "; on show paint passes " + paintsOnShow + " (clips " + clipsOnShow
+				+ "), window patches " + (grid.hiddenPatches - patchesBefore));
 		if (GridViewport.ENABLED) {
 			assertEquals(how + ": native ops while hidden", 0, nativeWhileHidden);
 			assertEquals(how + ": paints while hidden", 0, paintsWhileHidden);
-			assertEquals(how + ": paint passes on show", 1, paintsOnShow);
+			assertEquals(how + ": paint passes on show (clips " + clipsOnShow + ")", 1, paintsOnShow);
 			assertEquals(how + ": window patches on show", 1, grid.hiddenPatches - patchesBefore);
 		} else {
 			assertEquals(how + ": paints while hidden", 0, paintsWhileHidden);
