@@ -319,7 +319,8 @@ public final class HtmlLayout {
 		int offset = layout.getOffset(lx, ly, trailing) + doc.textStart[b];
 		for (int k = 0; k < doc.runCount[b]; k++) {
 			int r = doc.firstRun[b] + k;
-			if (doc.runLink[r] >= 0 && offset >= doc.runStart[r] && offset < doc.runEnd[r]) return doc.href[doc.runLink[r]];
+			if (doc.runLink[r] >= 0 && doc.runPointerEvents[r] == HtmlStyles.POINTER_AUTO
+					&& offset >= doc.runStart[r] && offset < doc.runEnd[r]) return doc.href[doc.runLink[r]];
 		}
 		return null;
 	}
@@ -408,7 +409,8 @@ public final class HtmlLayout {
 		int offset = layout.getOffset(lx, ly, trailing) + doc.textStart[b];
 		for (int k = 0; k < doc.runCount[b]; k++) {
 			int r = doc.firstRun[b] + k;
-			if (doc.runLink[r] >= 0 && offset >= doc.runStart[r] && offset < doc.runEnd[r]) return doc.href[doc.runLink[r]];
+			if (doc.runLink[r] >= 0 && doc.runPointerEvents[r] == HtmlStyles.POINTER_AUTO
+					&& offset >= doc.runStart[r] && offset < doc.runEnd[r]) return doc.href[doc.runLink[r]];
 		}
 		return null;
 	}

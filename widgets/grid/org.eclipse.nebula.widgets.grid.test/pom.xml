@@ -74,6 +74,8 @@
 						<include>**/GridCellSelectionList_Test.java</include>
 						<include>**/GridSelectionList_Test.java</include>
 						<include>**/GridSelectionOccurrence_Test.java</include>
+						<include>**/GridRowSelectionResidency_Test.java</include>
+						<include>**/GridRowSelectionDifferential_Test.java</include>
 						<include>**/GridVirtualHeights_Test.java</include>
 						<include>**/model/HeapGrowth_Test.java</include>
 						<include>**/model/RowBitLanes_Test.java</include>

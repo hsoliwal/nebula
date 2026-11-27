@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -69,7 +70,7 @@ public class GridBlitScrollVariable_Test {
 			}
 		}
 		open(grid);
-		assertTrue("rows of differing heights are indexed", grid.rowsIndexed());
+		assertTrue("row index mediation follows the selected Grid mode for differing heights", GridViewport.ENABLED == grid.rowsIndexed());
 		assertBlitEqualsRepaint(grid);
 	}
 
@@ -89,7 +90,7 @@ public class GridBlitScrollVariable_Test {
 			root.setExpanded(i % 3 == 0);
 		}
 		open(grid);
-		assertTrue("tree rows are indexed", grid.rowsIndexed());
+		assertTrue("row index mediation follows the selected Grid mode for tree rows", GridViewport.ENABLED == grid.rowsIndexed());
 		assertBlitEqualsRepaint(grid);
 	}
 
@@ -110,7 +111,7 @@ public class GridBlitScrollVariable_Test {
 		shell.setSize(560, 420);
 		shell.open();
 		shell.forceActive();
-		settle();
+		settle(grid);
 	}
 
 	private void assertBlitEqualsRepaint(final Grid grid) throws Exception {
@@ -120,18 +121,35 @@ public class GridBlitScrollVariable_Test {
 			bar.setSelection(bar.getSelection() + step);
 			bar.notifyListeners(SWT.Selection, new Event());
 			grid.update();
-			settle();
-			final String blitted = screen(grid);
+			settle(grid);
+			final ImageData blittedPixels = screenFrame(grid);
 			grid.redraw();
 			grid.update();
-			settle();
-			assertEquals("after +" + step + " rows", screen(grid), blitted);
+			settle(grid);
+			final ImageData repaintedPixels = screenFrame(grid);
+			final String expectedPixels = screenHash(repaintedPixels);
+			final String actualPixels = screenHash(blittedPixels);
+			if (!expectedPixels.equals(actualPixels)) {
+				final org.junit.ComparisonFailure mismatch = new org.junit.ComparisonFailure(
+						"after +" + step + " rows", expectedPixels, actualPixels);
+				try {
+					// Persist the *original* frames, not a later re-capture that
+					// might already have changed under native GTK event delivery.
+					GridViewportDifferential_Test.save(blittedPixels, "blit-variable-before-full-repaint");
+					GridViewportDifferential_Test.save(repaintedPixels, "blit-variable-after-full-repaint");
+				} catch (final RuntimeException | Error diagnosticFailure) {
+					mismatch.addSuppressed(diagnosticFailure);
+				}
+				throw mismatch;
+			}
+			assertEquals("after +" + step + " rows", expectedPixels, actualPixels);
 		}
-		assertTrue("blit path used: " + (grid.blitScrollCount - before), grid.blitScrollCount > before);
+		assertTrue("blit path follows indexed row geometry: " + (grid.blitScrollCount - before),
+				GridViewport.ENABLED == (grid.blitScrollCount > before));
 	}
 
-	/** SHA-256 of the Grid's on-screen pixels (display copy). */
-	private String screen(final Grid grid) throws Exception {
+	/** On-screen Grid pixels, captured only once per comparison side. */
+	private ImageData screenFrame(final Grid grid) {
 		final Point size = grid.getSize();
 		final Image image = new Image(display, size.x, size.y);
 		try {
@@ -143,32 +161,59 @@ public class GridBlitScrollVariable_Test {
 			} finally {
 				gc.dispose();
 			}
-			final byte[] digest = MessageDigest.getInstance("SHA-256").digest(image.getImageData().data);
-			final StringBuilder hex = new StringBuilder();
-			for (final byte b : digest) {
-				hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
-			}
-			return hex.toString();
+			return image.getImageData();
 		} finally {
 			image.dispose();
 		}
 	}
 
-	private void settle() {
-        // GTK paints at frame boundaries; an empty event queue is not a settled frame.
-        long idleSince = System.nanoTime();
-        final long deadline = idleSince + 5_000_000_000L;
-        while (System.nanoTime() - idleSince < 200_000_000L) {
-            assertTrue("native paint queue did not settle", System.nanoTime() < deadline);
-            if (display.readAndDispatch()) {
-                idleSince = System.nanoTime();
-            } else {
-                try { Thread.sleep(5L); }
-                catch (InterruptedException failure) {
-                    Thread.currentThread().interrupt();
-                    throw new AssertionError("interrupted while settling native paint", failure);
-                }
-            }
-        }
-    }
+	/** SHA-256 over the exact ImageData bytes used by the previous screen(). */
+	private static String screenHash(final ImageData frame) throws Exception {
+		final byte[] digest = MessageDigest.getInstance("SHA-256").digest(frame.data);
+		final StringBuilder hex = new StringBuilder();
+		for (final byte b : digest) {
+			hex.append(String.format("%02x", java.lang.Integer.valueOf(b & 0xff)));
+		}
+		return hex.toString();
+	}
+
+	/*
+	 * Unrelated SWT events (Workbench jobs, timers, other widgets) cannot
+	 * restart a Grid paint-quiescence deadline. Only this Grid's paint pass
+	 * makes its screenshot unsettled again.
+	 */
+	private static long paintIdleSince(final long previousIdle, final long now,
+			final int previousPasses, final int nextPasses) {
+		return nextPasses == previousPasses ? previousIdle : now;
+	}
+
+	private void settle(final Grid grid) {
+		// Control.update() flushes outstanding SWT.Paint, without creating damage.
+		grid.update();
+		final long start = System.nanoTime();
+		long idleSince = start;
+		int lastGridPaintPasses = grid.paintPasses;
+		while (System.nanoTime() - idleSince < 200_000_000L) {
+			assertTrue("Grid native paint queue did not settle", System.nanoTime() - start < 5_000_000_000L);
+			final boolean dispatched = display.readAndDispatch();
+			grid.update();
+			final int nowGridPaintPasses = grid.paintPasses;
+			idleSince = paintIdleSince(idleSince, System.nanoTime(), lastGridPaintPasses, nowGridPaintPasses);
+			lastGridPaintPasses = nowGridPaintPasses;
+			if (!dispatched) {
+				try {
+					Thread.sleep(5L);
+				} catch (final InterruptedException failure) {
+					Thread.currentThread().interrupt();
+					throw new AssertionError("interrupted while settling native paint", failure);
+				}
+			}
+		}
+	}
+
+	@Test
+	public void unrelatedDisplayEventsDoNotExtendGridPaintQuietDeadline() {
+		assertEquals("unrelated SWT events are not Grid paint", 100L, paintIdleSince(100L, 200L, 7, 7));
+		assertEquals("a real Grid paint resets the quiet clock", 200L, paintIdleSince(100L, 200L, 7, 8));
+	}
 }

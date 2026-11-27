@@ -337,7 +337,16 @@ public class Grid extends Canvas {
 	 * List of selected items.
 	 */
 	/* the viewport mode marks each selected item's position: O(1) contains, add and remove */
-	private final List<GridItem> selectedItems = GridViewport.ENABLED ? new GridSelectionList() : new ArrayList<>();
+	private final List<GridItem> selectedItems = !GridViewport.ENABLED ? new ArrayList<>()
+			// a flat virtual Grid keeps its selection by row: selecting rows makes no item
+			: (getStyle() & SWT.VIRTUAL) != 0 && rowSelectionByRow ? new GridRowSelection(this)
+					: new GridSelectionList();
+
+	/**
+	 * Test switch, read when a Grid is made: false keeps a virtual Grid's selection as the item list
+	 * of the earlier releases (the oracle of the row selection's differential test).
+	 */
+	static boolean rowSelectionByRow = true;
 
 	/**
 	 * Reference to the item in focus.
@@ -1345,6 +1354,13 @@ public class Grid extends Canvas {
 			return;
 		}
 
+		final GridRowSelection lanes = cellSelectionEnabled ? null : rowLanes();
+		if (lanes != null) {
+			lanes.deselectRow(index);
+			redraw();
+			return;
+		}
+
 		final GridItem item = items.get(index);
 
 		if (!cellSelectionEnabled) {
@@ -1379,7 +1395,12 @@ public class Grid extends Canvas {
 		checkWidget();
 
 		if (!cellSelectionEnabled) {
-			GridSelectionAtom.deselectRange(items, selectedItems, start, end);
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				lanes.deselectRows(start, Math.min(end, items.size() - 1));
+			} else {
+				GridSelectionAtom.deselectRange(items, selectedItems, start, end);
+			}
 		} else {
 			for (int i = start; i <= end; i++) {
 				if (i < 0) {
@@ -1424,7 +1445,16 @@ public class Grid extends Canvas {
 		}
 
 		if (!cellSelectionEnabled) {
-			GridSelectionAtom.deselectIndices(items, selectedItems, indices);
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				for (final int index : indices) {
+					if (index >= 0 && index < items.size()) {
+						lanes.deselectRow(index);
+					}
+				}
+			} else {
+				GridSelectionAtom.deselectIndices(items, selectedItems, indices);
+			}
 		} else {
 			for (final int index : indices) {
 				if (index >= 0 && index < items.size()) {
@@ -2949,6 +2979,10 @@ public class Grid extends Canvas {
 			if (selectedItems.size() == 0) {
 				return -1;
 			}
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				return lanes.rowAt(0);
+			}
 
 			return selectedItems.get(0).getRowIndex();
 		} else {
@@ -2987,6 +3021,10 @@ public class Grid extends Canvas {
 		if (!cellSelectionEnabled) {
 			if (items instanceof GridRowTree) {
 				return ((GridRowTree) items).rowsOf(selectedItems);
+			}
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				return lanes.rowsInOrder();
 			}
 			final int[] indices = new int[selectedItems.size()];
 			int i = 0;
@@ -3588,7 +3626,8 @@ public class Grid extends Canvas {
 		}
 
 		if (!cellSelectionEnabled) {
-			return isSelected(items.get(index));
+			final GridRowSelection lanes = rowLanes();
+			return lanes != null ? lanes.isRowSelected(index) : isSelected(items.get(index));
 		} else {
 			for (final Point cell : selectedCells) {
 				if (cell.y == index) {
@@ -3700,6 +3739,8 @@ public class Grid extends Canvas {
 			if (item != null) {
 				item.dispose();
 			} else {
+				final GridRowSelection lanes = rowLanes();
+				final boolean selectedRow = lanes != null && lanes.isRowSelected(index);
 				sparse.remove(index);
 				if (usesIndexedRowSpans()) rowSpanIndex.rowsChanged();
 				removeDataRow(index);
@@ -3707,6 +3748,15 @@ public class Grid extends Canvas {
 				scrollValuesObsolete = true;
 				topIndex = -1;
 				bottomIndex = -1;
+				if (selectedRow) {
+					// a selected row always had an item before rows kept the selection, and its
+					// removal went through removeItem: keep that removal's effects
+					dropResidentPayloads();
+					if (!disposing) {
+						updateColumnSelection();
+					}
+					scrollbarsAfterDelta();
+				}
 			}
 		} else {
 			items.get(index).dispose();
@@ -3938,6 +3988,19 @@ public class Grid extends Canvas {
 			return;
 		}
 
+		final GridRowSelection lanes = cellSelectionEnabled ? null : rowLanes();
+		if (lanes != null) {
+			if (selectionType == GridSelectionType.MULTI && lanes.isRowSelected(index)) {
+				return;
+			}
+			if (selectionType == GridSelectionType.SINGLE) {
+				selectedItems.clear();
+			}
+			lanes.selectRow(index);
+			redraw();
+			return;
+		}
+
 		final GridItem item = items.get(index);
 
 		if (!cellSelectionEnabled) {
@@ -4000,7 +4063,12 @@ public class Grid extends Canvas {
 		}
 
 		if (!cellSelectionEnabled) {
-			GridSelectionAtom.selectRange(items, selectedItems, start, end);
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				lanes.selectRows(Math.max(0, start), Math.min(end, items.size() - 1));
+			} else {
+				GridSelectionAtom.selectRange(items, selectedItems, start, end);
+			}
 		} else {
 			for (int i = start; i <= end; i++) {
 				if (i < 0) {
@@ -4066,7 +4134,16 @@ public class Grid extends Canvas {
 		}
 
 		if (!cellSelectionEnabled) {
-			GridSelectionAtom.selectIndices(items, selectedItems, indices);
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				for (final int index : indices) {
+					if (index >= 0 && index < items.size()) {
+						lanes.selectRow(index);
+					}
+				}
+			} else {
+				GridSelectionAtom.selectIndices(items, selectedItems, indices);
+			}
 		} else {
 			for (final int index : indices) {
 				if (index >= 0 && index < items.size()) {
@@ -4109,7 +4186,13 @@ public class Grid extends Canvas {
 		}
 
 		selectedItems.clear();
-		selectedItems.addAll(items);
+		final GridRowSelection lanes = rowLanes();
+		if (lanes != null) {
+			// one run of rows: no item per selected row
+			lanes.selectAll(items.size());
+		} else {
+			selectedItems.addAll(items);
+		}
 		redraw();
 	}
 
@@ -4491,7 +4574,12 @@ public class Grid extends Canvas {
 		if (index >= 0 && index < items.size()) {
 			if (!cellSelectionEnabled) {
 				selectedItems.clear();
-				selectedItems.add(items.get(index));
+				final GridRowSelection lanes = rowLanes();
+				if (lanes != null) {
+					lanes.selectRow(index);
+				} else {
+					selectedItems.add(items.get(index));
+				}
 				redraw();
 			} else {
 				selectedCells.clear();
@@ -4537,6 +4625,12 @@ public class Grid extends Canvas {
 
 		if (!cellSelectionEnabled) {
 			selectedItems.clear();
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				lanes.selectRows(Math.max(0, start), Math.min(end, items.size() - 1));
+				redraw();
+				return;
+			}
 		} else {
 			selectedCells.clear();
 		}
@@ -4625,6 +4719,17 @@ public class Grid extends Canvas {
 
 		if (!cellSelectionEnabled) {
 			selectedItems.clear();
+			final GridRowSelection lanes = rowLanes();
+			if (lanes != null) {
+				for (final int j : indices) {
+					// out of range and duplicate indices are ignored, as in the item path below
+					if (j >= 0 && j < items.size()) {
+						lanes.selectRow(j);
+					}
+				}
+				redraw();
+				return;
+			}
 		} else {
 			selectedCells.clear();
 		}
@@ -8038,9 +8143,15 @@ public class Grid extends Canvas {
 					min = itemIndex;
 				}
 
-				for (int i = min; i <= max; i++) {
-					if (!selectedItems.contains(items.get(i)) && items.get(i).isVisible()) {
-						selectedItems.add(items.get(i));
+				final GridRowSelection lanes = rowLanes();
+				if (lanes != null) {
+					// flat rows are all visible: the unselected rows of the range, ascending
+					lanes.selectRows(min, max);
+				} else {
+					for (int i = min; i <= max; i++) {
+						if (!selectedItems.contains(items.get(i)) && items.get(i).isVisible()) {
+							selectedItems.add(items.get(i));
+						}
 					}
 				}
 				final Rectangle clientArea = getClientArea();
@@ -10523,6 +10634,63 @@ public class Grid extends Canvas {
 		return (GridVirtualItemList) items;
 	}
 
+	/**
+	 * @return whether the selection can be kept by row: a flat virtual Grid without a row view
+	 *         (its rows are the logical rows of the sparse list)
+	 */
+	boolean rowSelectionLanes() {
+		return usesSparseVirtualItems() && rowView == null;
+	}
+
+	/* the selection while it is kept by row, else null (it may turn into an item list here) */
+	private GridRowSelection rowLanes() {
+		return selectedItems instanceof GridRowSelection && ((GridRowSelection) selectedItems).lanes()
+				? (GridRowSelection) selectedItems
+				: null;
+	}
+
+	/** @return the item of row {@code row} of the flat virtual Grid, made if it has none */
+	GridItem sparseItem(final int row) {
+		return items.get(row);
+	}
+
+	/** @return the item of row {@code row} of the flat virtual Grid, or null when it has none */
+	GridItem sparseMaterialized(final int row) {
+		return items instanceof GridVirtualItemList ? ((GridVirtualItemList) items).getMaterialized(row) : null;
+	}
+
+	/* the sparse row list moved its rows: a selection kept by row moves with them */
+	void sparseRowInserted(final int row) {
+		if (selectedItems instanceof GridRowSelection) {
+			((GridRowSelection) selectedItems).rowInserted(row);
+		}
+	}
+
+	void sparseRowRemoved(final int row) {
+		if (selectedItems instanceof GridRowSelection) {
+			((GridRowSelection) selectedItems).rowRemoved(row);
+		}
+	}
+
+	void sparseRowsTruncated(final int count) {
+		if (selectedItems instanceof GridRowSelection) {
+			((GridRowSelection) selectedItems).rowsTruncated(count);
+		}
+	}
+
+	/** Tests: checks the row selection's lane against its runs (a no-op for an item list). */
+	void checkRowSelection() {
+		if (selectedItems instanceof GridRowSelection) {
+			((GridRowSelection) selectedItems).checkInvariants();
+		}
+	}
+
+	void sparseRowsCleared() {
+		if (selectedItems instanceof GridRowSelection) {
+			((GridRowSelection) selectedItems).rowsCleared();
+		}
+	}
+
 	private GridRowAddressedDataVisualizer rowAddressedDataVisualizer() {
 		return dataVisualizer instanceof GridRowAddressedDataVisualizer
 				? (GridRowAddressedDataVisualizer)dataVisualizer
@@ -10734,6 +10902,10 @@ public class Grid extends Canvas {
 			return;
 		}
 		final GridVirtualItemList sparse = (GridVirtualItemList) items;
+		if (selectedItems instanceof GridRowSelection) {
+			// rows are no item positions in a tree: the selected rows become their items first
+			((GridRowSelection) selectedItems).degrade();
+		}
 		sparse.materializeAll();
 		rootItems.clear();
 		for (int i = 0; i < sparse.size(); i++) {
@@ -10909,6 +11081,9 @@ public class Grid extends Canvas {
 		boolean selectionModified = false;
 
 		final int index = item.getRowIndex();
+		// a row selection drops the row when the row goes (below): ask before
+		final GridRowSelection lanes = rowLanes();
+		final boolean laneSelected = lanes != null && lanes.contains(item);
 
 		items.remove(item);
 		if (viewport != null) {
@@ -10933,7 +11108,7 @@ public class Grid extends Canvas {
 			}
 		}
 
-		if (selectedItems.remove(item)) {
+		if (lanes != null ? laneSelected : selectedItems.remove(item)) {
 			selectionModified = true;
 		}
 
@@ -12935,7 +13110,10 @@ public class Grid extends Canvas {
 
 	private void applyRowViewNow(final int count, final RowView view, final boolean identity) {
 		final GridVirtualItemList sparse = sparseVirtualItems();
-		final int[] selectedModels = slotModels(selectedItems, sparse);
+		final int[] selectedModels = selectedItems instanceof GridRowSelection
+				&& ((GridRowSelection) selectedItems).keepsRows()
+						? rowModels(((GridRowSelection) selectedItems).rowsInOrder(), sparse)
+						: slotModels(selectedItems, sparse);
 		final int focusModel = focusItem == null ? -1 : slotModel(focusItem, sparse);
 		final int[] cellModels = new int[selectedCells.size()];
 		for (int i = 0; i < cellModels.length; i++) {
@@ -12957,9 +13135,13 @@ public class Grid extends Canvas {
 			sparse.slotItem(slot).clear(false);
 			sparse.setSlotModel(slot, viewModelRow(sparse.slotIndex(slot)));
 		}
+		// without a row view the selection keeps rows again; under one it is a list of items
+		final GridRowSelection rowSelection = rowLanes();
 		for (final int model : selectedModels) {
 			final int v = viewOfModel(model, view, identity);
-			if (v >= 0 && !selectedItems.contains(items.get(v))) {
+			if (v >= 0 && rowSelection != null) {
+				rowSelection.selectRow(v);
+			} else if (v >= 0 && !selectedItems.contains(items.get(v))) {
 				selectedItems.add(items.get(v));
 			}
 		}
@@ -13003,6 +13185,21 @@ public class Grid extends Canvas {
 			return -1;
 		}
 		return identity ? model : view.viewIndex(model);
+	}
+
+	/*
+	 * The model rows of rows a selection kept by row holds. It had no row view before this one, so a
+	 * row without an item is its own model row; a row with an item answers what its slot knows, as
+	 * the item list did (an inserted item's slot knows no model row, so it is not carried over).
+	 */
+	private static int[] rowModels(final int[] rows, final GridVirtualItemList sparse) {
+		for (int i = 0; i < rows.length; i++) {
+			final GridItem item = sparse.getMaterialized(rows[i]);
+			if (item != null) {
+				rows[i] = slotModel(item, sparse);
+			}
+		}
+		return rows;
 	}
 
 	private static int[] slotModels(final List<GridItem> list, final GridVirtualItemList sparse) {
@@ -13272,18 +13469,20 @@ public class Grid extends Canvas {
 			@Override
 			public void getSelection(final AccessibleControlEvent e) {
 				e.childID = ACC.CHILDID_NONE;
+				final GridRowSelection lanes = rowLanes();
 				if (selectedItems.size() == 1) {
 					// Single selection
-					e.childID = selectedItems.get(0).getRowIndex();
+					e.childID = lanes != null ? lanes.rowAt(0) : selectedItems.get(0).getRowIndex();
 				} else if (selectedItems.size() > 1) {
 					// multiple selection
 					e.childID = ACC.CHILDID_MULTIPLE;
 					final int length = selectedItems.size();
 					final Object[] children = new Object[length];
+					// a row selection answers its rows without making an item per row
+					final int[] rows = lanes != null ? lanes.rowsInOrder() : null;
 
 					for (int i = 0; i < length; i++) {
-						final GridItem item = selectedItems.get(i);
-						children[i] = Integer.valueOf(item.getRowIndex());
+						children[i] = Integer.valueOf(rows != null ? rows[i] : selectedItems.get(i).getRowIndex());
 					}
 					e.children = children;
 				}
@@ -13350,7 +13549,9 @@ public class Grid extends Canvas {
 
 		addListener(SWT.Selection, event -> {
 			if (selectedItems.size() > 0) {
-				accessible.setFocus(selectedItems.get(selectedItems.size() - 1).getRowIndex());
+				final GridRowSelection lanes = rowLanes();
+				accessible.setFocus(lanes != null ? lanes.rowAt(selectedItems.size() - 1)
+						: selectedItems.get(selectedItems.size() - 1).getRowIndex());
 			}
 		});
 

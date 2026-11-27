@@ -97,6 +97,8 @@ public class XYGraphSetterDamageTest {
 		canvas.addPaintListener(event -> {
 			nativePaints++;
 			lastNativePaintNanos = System.nanoTime();
+			// Observe the actual GTK clip: a full redraw and a partial expose may
+			// rasterize the same antialiased geometry with different boundaries.
 			// This listener runs after Draw2D; its SWT bounds are not the entry
 			// native clip or a complete native clip region.
 			Rectangle clip = event.gc.getClipping();
@@ -377,6 +379,7 @@ public class XYGraphSetterDamageTest {
 		}
 		return result.toString();
 	}
+
 
 	private static String pixelAt(int[] values, int at) {
 		return at < 0 || at >= values.length ? "none"
