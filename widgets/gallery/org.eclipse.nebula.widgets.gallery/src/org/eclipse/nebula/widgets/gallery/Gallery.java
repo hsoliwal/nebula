@@ -1209,7 +1209,7 @@ public class Gallery extends Canvas {
 	 * index hints of the items.
 	 */
 	void releaseRunsOf(GalleryItem[] array, int from, int to) {
-		if (selectionRuns == null || array == null || from >= to) {
+		if (!hasRuns() || array == null || from >= to) {
 			return;
 		}
 		java.util.Set<GalleryItem> dropped = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -1219,6 +1219,16 @@ public class Gallery extends Canvas {
 			}
 		}
 		releaseRunsWhere(dropped::contains);
+	}
+
+	/** Viewport mode: true when an entry of the selection is a run (else no release has anything to do). */
+	private boolean hasRuns() {
+		for (int k = 0; k < selectionCount; k++) {
+			if (isRun(k)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Viewport mode: true when owner, or one of its ancestors, is an item the predicate names. */
@@ -3279,7 +3289,7 @@ public class Gallery extends Canvas {
 
 	public void _setGalleryItems(GalleryItem[] items) {
 		monotoneGroupGeometry = false;
-		if (VIEWPORT && selectionRuns != null && this.items != null) {
+		if (VIEWPORT && this.items != null && hasRuns()) {
 			// the groups that leave release the runs they own
 			java.util.Set<GalleryItem> kept = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 			if (items != null) {
