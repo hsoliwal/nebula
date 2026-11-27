@@ -246,7 +246,7 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
          return EMPTY;
       }
       Object[] cached = sortedChildren.get(parent);
-      if (cached != null && shown && probedOnly.remove(parent)) {
+      if (cached != null && shown && !probedOnly.isEmpty() && probedOnly.remove(parent)) {
          // the cached order came from a probe whose precomputed values were dropped: order again for display, so the
          // rows shown keep the values they are sorted and filtered on
          cachedReferences -= cached.length;

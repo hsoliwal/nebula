@@ -339,7 +339,7 @@ public class XViewerPreComputedViewport_Test {
     * The reviewer's harness, bounded: 5,000 rows sorted by a column whose values come from a counter (a value
     * changes each time it is computed). The painted rows must be the values the rows were sorted on, as on master,
     * after a sort from the top and after a reverse sort while scrolled to the middle. Fails on the first bounded head
-    * (painted v004729.. while sorted on v000000..).
+    * c1987b7, where the painted values were not the values sorted on.
     */
    @Test
    public void boundedSortPaintsTheSortKeys() {

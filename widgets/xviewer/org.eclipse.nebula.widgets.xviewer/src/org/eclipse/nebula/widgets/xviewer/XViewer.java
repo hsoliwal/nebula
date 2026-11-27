@@ -608,7 +608,10 @@ public class XViewer extends TreeViewer {
       return parseBoundedPreCompute(System.getProperty(BOUNDED_PRECOMPUTE_PROPERTY));
    }
 
-   /** @return true for {@code true}; false for null or {@code false}; false, logged, for any other value */
+   /**
+    * @return true for {@code true}; false for null or {@code false}; false, logged, for any other value. The values are
+    * matched ignoring case and surrounding blanks.
+    */
    static boolean parseBoundedPreCompute(String value) {
       if (value == null || "false".equalsIgnoreCase(value.trim())) { //$NON-NLS-1$
          return false;
