@@ -79,7 +79,7 @@ public class GridViewportDelta_Test {
 		}
 		grid.setSelection(new int[] { 1, 3, 4, 8 });
 		shell.open();
-		flush();
+		GridTestUtil.awaitGridPaints(display, grid, 1);
 	}
 
 	@After
@@ -278,9 +278,12 @@ public class GridViewportDelta_Test {
 		}
 	}
 
+	/*
+	 * Drains events until the Grid's paints stayed quiet for 200 ms. A plain readAndDispatch drain
+	 * returns before GTK3's frame-clock paint, and the screen then still shows the previous step
+	 * (see GridTestUtil).
+	 */
 	private void flush() {
-		while (display.readAndDispatch()) {
-			// drain paints and timers
-		}
+		GridTestUtil.awaitGridPaints(display, grid, 0);
 	}
 }
