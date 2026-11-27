@@ -353,6 +353,8 @@ public class XViewerPreComputedViewport_Test {
 
       clickHeader(viewer, PRE_ID);
       pump();
+      // load, then the sort; the sorter's own refresh before it reads no column, and keeping values must not fill one
+      assertEquals("full passes after the first sort", 2, counter.fullBatches); //$NON-NLS-1$
       assertPaintedSortKeys(tree, 0, counter);
 
       tree.setTopItem(tree.getItem(rows / 2));
@@ -674,8 +676,37 @@ public class XViewerPreComputedViewport_Test {
       int top = settledTopIndex(tree, 0);
       for (int row = top; row < top + 12; row++) {
          TreeItem item = tree.getItem(row);
+         String painted = item.getText(1);
          String key = data.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
-         assertEquals("row " + row + " shows the value it was sorted on", key, item.getText(1)); //$NON-NLS-1$ //$NON-NLS-2$
+         assertEquals("row " + row + " shows the value it was sorted on", key, painted); //$NON-NLS-1$ //$NON-NLS-2$
+      }
+   }
+
+   /**
+    * Bounded, hierarchical, with roots 0, 1 and 2 expanded: a sort orders the roots and then each expanded root's
+    * children. The children's passes must not drop the values the root pass kept, so the root rows show the values
+    * they were sorted on. Fails on df3e790 (each pass emptied the column's window).
+    */
+   @Test
+   public void boundedChildPassesKeepTheRootRowValues() {
+      int roots = 500;
+      Counter counter = new Counter(roots);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter), new Tree300(roots, 3));
+      viewer.setInputXViewer(Flat.roots(roots));
+      shell.open();
+      pump();
+      for (int root = 0; root < 3; root++) {
+         viewer.setExpandedState(Integer.valueOf(root), true);
+      }
+      pump();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      Tree tree = viewer.getTree();
+      for (int row = 0; row < 12; row++) {
+         TreeItem item = tree.getItem(row);
+         String painted = item.getText(1);
+         String key = counter.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+         assertEquals("root row " + row + " shows the value it was sorted on", key, painted); //$NON-NLS-1$ //$NON-NLS-2$
       }
    }
 
@@ -1262,13 +1293,18 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
-   /** Integer roots 0..R-1, each with 300 children R + r*300 + j. */
+   /** Integer roots 0..R-1, each with K children R + r*K + j (300 unless given). */
    static final class Tree300 implements ITreeContentProvider {
-      private static final int KIDS = 300;
       private final int roots;
+      private final int kids;
 
       Tree300(int roots) {
+         this(roots, 300);
+      }
+
+      Tree300(int roots, int kids) {
          this.roots = roots;
+         this.kids = kids;
       }
 
       @Override
@@ -1285,17 +1321,17 @@ public class XViewerPreComputedViewport_Test {
          if (id >= roots) {
             return new Object[0];
          }
-         Object[] kids = new Object[KIDS];
-         for (int j = 0; j < KIDS; j++) {
-            kids[j] = Integer.valueOf(roots + id * KIDS + j);
+         Object[] children = new Object[kids];
+         for (int j = 0; j < kids; j++) {
+            children[j] = Integer.valueOf(roots + id * kids + j);
          }
-         return kids;
+         return children;
       }
 
       @Override
       public Object getParent(Object element) {
          int id = ((Integer) element).intValue();
-         return id < roots ? null : Integer.valueOf((id - roots) / KIDS);
+         return id < roots ? null : Integer.valueOf((id - roots) / kids);
       }
 
       @Override
