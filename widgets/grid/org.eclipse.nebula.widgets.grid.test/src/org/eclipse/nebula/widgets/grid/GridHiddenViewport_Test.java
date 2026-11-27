@@ -149,22 +149,24 @@ public class GridHiddenViewport_Test {
 	private void gate(final String how, final Grid grid, final Consumer<Grid> hide, final Consumer<Grid> show,
 			final java.util.function.BiConsumer<Grid, Random> deltas) {
 		shell.open();
-		flush();
+		flush(grid, 1);
+		final int paintsBeforeScroll = grid.paintPasses;
 		grid.setTopIndex(400);
-		flush();
+		flush(grid, paintsBeforeScroll + 1);
 		hide.accept(grid);
-		flush();
+		flush(grid, 0);
 		final int nativeBefore = grid.nativeOps;
 		final int paintsBefore = grid.paintPasses;
 		final int patchesBefore = grid.hiddenPatches;
 		final long started = System.nanoTime();
 		deltas.accept(grid, new Random(0x41DL));
 		final long micros = (System.nanoTime() - started) / 1_000;
-		flush();
+		// no paint is expected: the quiet interval gives any paint while hidden the time to show up
+		flush(grid, 0);
 		final int nativeWhileHidden = grid.nativeOps - nativeBefore;
 		final int paintsWhileHidden = grid.paintPasses - paintsBefore;
 		show.accept(grid);
-		flush();
+		flush(grid, paintsBefore + paintsWhileHidden + 1);
 		final int paintsOnShow = grid.paintPasses - paintsBefore - paintsWhileHidden;
 		LOG.info("GridHiddenViewport_Test: " + how + " (" + (GridViewport.ENABLED ? "viewport" : "original") + "): " + DELTAS
 				+ " deltas in " + micros + " us; while hidden native ops " + nativeWhileHidden + ", paints " + paintsWhileHidden
@@ -283,9 +285,10 @@ public class GridHiddenViewport_Test {
 			}
 		}
 		referenceShell.open();
-		flush();
+		flush(reference, 1);
+		final int referencePaints = reference.paintPasses;
 		reference.setTopIndex(grid.getTopIndex());
-		flush();
+		flush(reference, referencePaints + 1);
 		assertEquals(how + ": top row", grid.getTopIndex(), reference.getTopIndex());
 		assertEquals(how + ": bottom row", grid.getBottomIndex(), reference.getBottomIndex());
 		for (int row = grid.getTopIndex(); row <= grid.getBottomIndex(); row++) {
@@ -314,9 +317,11 @@ public class GridHiddenViewport_Test {
 		}
 	}
 
-	private void flush() {
-		while (display.readAndDispatch()) {
-			// drain paints and timers
-		}
+	/*
+	 * Drains events until the Grid painted minimumPaintPasses times in total and then stayed quiet.
+	 * A plain readAndDispatch drain returns before GTK3's frame-clock paint (see GridTestUtil).
+	 */
+	private void flush(final Grid grid, final int minimumPaintPasses) {
+		GridTestUtil.awaitGridPaints(display, grid, minimumPaintPasses);
 	}
 }
