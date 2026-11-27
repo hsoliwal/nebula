@@ -138,7 +138,7 @@ public class XViewer extends TreeViewer {
    static final int PRECOMPUTE_BLOCK = 64;
    /** First rows of a parent whose pass values are kept when a load, sort or filter pass ends. */
    static final int PRECOMPUTE_SEED = 256;
-   /** Rows from the top row down whose pass values are kept when a root sort or filter pass ends. */
+   /** Fewest rows from the top row down whose pass values are kept when a root sort or filter pass ends. */
    static final int PRECOMPUTE_BAND = 192;
    /** Resident precomputed values per column while bounded; the columns' own maps are left to the caller. */
    private final Map<XViewerColumn, XViewerPreComputedWindow> preComputeWindows = new IdentityHashMap<>();
@@ -509,7 +509,8 @@ public class XViewer extends TreeViewer {
                resetPreComputedValues();
                xViewer.superInputChanged(input);
                if (viewport != null && !getTree().isDisposed()) {
-                  seedPreComputedWindows(viewport.displayChildren(getInput()), -1);
+                  Object[] shown = viewport.displayChildren(getInput());
+                  seedPreComputedWindows(shown, shown, -1, 0);
                }
             } finally {
                endPreComputePass();
@@ -703,24 +704,28 @@ public class XViewer extends TreeViewer {
    }
 
    /**
-    * Keeps, in each column's window, the values the current pass computed for the rows of {@code parent} about to be
-    * shown: the first rows and the rows around {@code top}. The painted text of those rows is then the value the pass
-    * sorted and filtered on. The pass's rows are first dropped from the window, so none keeps a value from before the
-    * pass; rows of other parents keep theirs, and a column the pass did not read keeps its window.
+    * Keeps, in each column's window, the values the current pass computed for the rows about to be shown: the first
+    * {@code rows} and those from {@code top} down. The painted text of those rows is then the value the pass sorted and
+    * filtered on. Every row the pass read ({@code all}, including rows a filter left out) is first dropped from the
+    * window, so none keeps a value from before the pass; rows of other parents keep theirs, and a column the pass did
+    * not read keeps its window.
     * <p>
     * Reads no tree geometry: on GTK, {@code Tree.getItemHeight()} can paint rows, whose label requests would fill an
-    * unread pass map with a full {@code populateCachedValues} call.
+    * unread pass map with a full {@code populateCachedValues} call. The caller reads it before the pass.
     * </p>
     *
+    * @param all the rows the pass read
+    * @param rows the rows it returned, in display order
     * @param top the index of the root row at the top of the tree, read before the pass began, or -1 for none
+    * @param visible the rows the tree shows, read before the pass began
     */
-   private void seedPreComputedWindows(Object[] rows, int top) {
-      if (passValues.isEmpty() || rows.length == 0) {
+   private void seedPreComputedWindows(Object[] all, Object[] rows, int top, int visible) {
+      if (passValues.isEmpty() || all.length == 0) {
          return;
       }
       int head = Math.min(rows.length, PRECOMPUTE_SEED);
       int from = top < 0 ? 0 : Math.max(head, top - PRECOMPUTE_BLOCK);
-      int to = top < 0 ? 0 : Math.min(rows.length, top + PRECOMPUTE_BAND);
+      int to = top < 0 ? 0 : Math.min(rows.length, top + Math.max(PRECOMPUTE_BAND, visible + PRECOMPUTE_BLOCK));
       for (Map.Entry<XViewerColumn, Map<Long, String>> entry : passValues.entrySet()) {
          Map<Long, String> values = entry.getValue();
          if (values instanceof PassValues && !((PassValues) values).isFilled()) {
@@ -728,10 +733,14 @@ public class XViewer extends TreeViewer {
          }
          IXViewerPreComputedColumn preComputedColumn = (IXViewerPreComputedColumn) entry.getKey();
          XViewerPreComputedWindow window = preComputedWindow(entry.getKey());
-         try {
-            for (Object row : rows) {
+         for (Object row : all) {
+            try {
                window.remove(preComputedColumn.getKey(row));
+            } catch (RuntimeException ex) {
+               // a row without a key has no value to drop
             }
+         }
+         try {
             for (int row = 0; row < head; row++) {
                seed(preComputedColumn, values, window, rows[row]);
             }
@@ -752,6 +761,12 @@ public class XViewer extends TreeViewer {
       }
    }
 
+   /** @return the rows the tree's client area can show */
+   private int visibleRowCount() {
+      Tree tree = getTree();
+      return tree.getClientArea().height / Math.max(1, tree.getItemHeight()) + 1;
+   }
+
    /** @return the index of the root row at the top of the tree, 0 if unknown */
    private int topRowIndex() {
       try {
@@ -765,7 +780,6 @@ public class XViewer extends TreeViewer {
          return 0;
       }
    }
-
 
    /**
     * Called by the viewport bridge before the native tree's requested row is filled. With bounded precompute in
@@ -1405,7 +1419,7 @@ public class XViewer extends TreeViewer {
             Object[] rows = itemData(items);
             runPreComputePass(rows, () -> {
                walk.run();
-               seedPreComputedWindows(rows, -1);
+               seedPreComputedWindows(rows, rows, -1, 0);
             });
          } else {
             walk.run();
@@ -1520,7 +1534,9 @@ public class XViewer extends TreeViewer {
       boolean pass = boundsPreCompute() && (filters.length > 0 || comparator != null);
       Object input = getInput();
       // read before the pass: a row the native tree paints meanwhile must not fill an unread pass map
-      int top = pass && shown && (parent == input || parent != null && parent.equals(input)) ? topRowIndex() : -1;
+      boolean root = pass && shown && (parent == input || parent != null && parent.equals(input));
+      int top = root ? topRowIndex() : -1;
+      int visible = root ? visibleRowCount() : 0;
       if (pass) {
          beginPreComputePass(raw, null);
       }
@@ -1541,7 +1557,7 @@ public class XViewer extends TreeViewer {
          }
          // only rows about to be shown keep their values; a probe of an unexpanded row's children keeps none
          if (pass && shown) {
-            seedPreComputedWindows(result, top);
+            seedPreComputedWindows(raw, result, top, visible);
          }
          return result;
       } finally {

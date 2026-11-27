@@ -710,6 +710,72 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /**
+    * Bounded, on a tall tree (small font, tall shell): after a sort every visible row, including those more than 192
+    * rows below the top row, shows the value it was sorted on. Fails on 69ae446 (a fixed 192-row band).
+    */
+   @Test
+   public void boundedTallTreePaintsTheSortKeysOfEveryVisibleRow() {
+      int rows = 5_000;
+      shell.setBounds(0, 0, 800, 4_000);
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      Tree tree = viewer.getTree();
+      org.eclipse.swt.graphics.Font small = new org.eclipse.swt.graphics.Font(display, "Sans", 1, SWT.NORMAL); //$NON-NLS-1$
+      try {
+         tree.setFont(small);
+         viewer.setInputXViewer(Flat.roots(rows));
+         shell.layout(true, true);
+         shell.open();
+         pump();
+         tree.setTopItem(tree.getItem(rows / 2));
+         tree.update();
+         settledTopIndex(tree, 0);
+         clickHeader(viewer, PRE_ID);
+         int top = settledTopIndex(tree, -1);
+         int visible = tree.getClientArea().height / Math.max(1, tree.getItemHeight());
+         System.out.println("XVIEWER_PRECOMPUTE tall visibleRows=" + visible + " top=" + top); //$NON-NLS-1$ //$NON-NLS-2$
+         for (int row = top; row < Math.min(rows, top + visible); row++) {
+            TreeItem item = tree.getItem(row);
+            String painted = item.getText(1);
+            String key = counter.lastFull.get(Long.valueOf(((Integer) item.getData()).longValue()));
+            assertEquals("visible row " + row + " shows the value it was sorted on", key, painted); //$NON-NLS-1$ //$NON-NLS-2$
+         }
+      } finally {
+         tree.setFont(null);
+         small.dispose();
+      }
+   }
+
+   /**
+    * Bounded: rows a filter pass leaves out must not keep values from before it. Rows 0..9 are resident, the data
+    * changes, a filter that reads the column excludes rows 0..9, and removing it shows them with the current values.
+    * Fails on 69ae446 (only the rows a pass returned were dropped).
+    */
+   @Test
+   public void boundedFilteredOutRowsDropValuesFromBeforeThePass() {
+      int rows = 3_000;
+      Generation data = new Generation(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, data, true, new GenerationColumn(data));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      assertEquals(GenerationColumn.value(0, 0), tree.getItem(0).getText(1));
+      data.generation = 1;
+      viewer.getCustomizeMgr().setColumnFilterText(PRE_ID, "!v00000"); //$NON-NLS-1$
+      pump();
+      assertEquals(rows - 10, tree.getItemCount());
+      viewer.getCustomizeMgr().setColumnFilterText(PRE_ID, null);
+      pump();
+      assertEquals(rows, tree.getItemCount());
+      for (int row = 0; row < 10; row++) {
+         TreeItem item = tree.getItem(row);
+         String painted = item.getText(1);
+         assertEquals("row " + row, GenerationColumn.value(1, ((Integer) item.getData()).intValue()), painted); //$NON-NLS-1$
+      }
+   }
+
    /** An invalid {@code nebula.xviewer.boundedPreCompute} value leaves bounding off and is logged. */
    @Test
    public void invalidBoundedPreComputePropertyIsOffAndLogged() throws Exception {
