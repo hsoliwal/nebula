@@ -10,9 +10,9 @@ import sys
 import xml.etree.ElementTree as ET
 import zipfile
 
-PIN = '16b74941166fed0a20b026cb80bc32914ecb5d95'
+PIN = 'b2bb8e8245fc438c323cfcb4f40df68f9971fe1d'
 GC_SOURCE = 'bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/graphics/GC.java'
-GC_SHA256 = '51ccf2acd0c803258f1c9cee09f42f6806bd05eddae8cd176e9178414768c8c9'
+GC_SHA256 = 'c1eb9ec833f5ecfe52c3f0535b88f337d448d0bb9272171c5885d8b1bae6ca46'
 GC_CLASS = 'org/eclipse/swt/graphics/GC.class'
 CANVAS_SOURCE = 'bundles/org.eclipse.swt/Eclipse SWT/gtk/org/eclipse/swt/widgets/Canvas.java'
 CANVAS_GIT_BLOB = 'e53a8bf0273b88093b3ea5c049bd9bf595432280'

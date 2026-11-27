@@ -227,6 +227,57 @@ public class XYGraphSetterDamageTest {
 		saveFailureImage(name, "reference-no-paint", sameScreenImage);
 		saveFailureImage(name, "reference-full-repeat", secondFullImage);
 		reportPaintStates();
+		// Only after the original exact pixel assertion has already failed:
+		// separate damage-only paint effects from the earlier revalidate+redraw.
+		controlledPartialRedrawAfterFailure(name, secondFull);
+	}
+
+	/**
+	 * Controlled native follow-up after the original strict failure. Keep the
+	 * graph and all setter values unchanged, redraw only the observed partial
+	 * rectangle, capture, and redraw the full canvas again without revalidate().
+	 * No synthetic Paint, tolerance, or new release assertion is introduced.
+	 */
+	private void controlledPartialRedrawAfterFailure(String name, int[] lastFull) {
+		Rectangle client = canvas.getClientArea();
+		if (client.width < 1 || client.height <= 9) {
+			System.err.println("M3_XYGRAPH_CONTROLLED_DAMAGE_UNAVAILABLE client=" + client);
+			return;
+		}
+		int top = 9;
+		int partialHeight = Math.min(342, client.height - top);
+		capturePhase = name + "/controlled-partial-no-revalidate";
+		int beforePartial = nativePaints;
+		canvas.redraw(client.x, client.y + top, client.width, partialHeight, false);
+		awaitNativePaintAfter(beforePartial, name + " controlled partial did not paint");
+		int[] partial = pixels();
+		ImageData partialImage = lastPixelCapture;
+		String partialCapture = lastPixelCaptureState;
+		int afterPartial = nativePaints;
+
+		capturePhase = name + "/controlled-full-no-revalidate";
+		int beforeFull = nativePaints;
+		canvas.redraw();
+		awaitNativePaintAfter(beforeFull, name + " controlled full did not paint");
+		int[] full = pixels();
+		ImageData fullImage = lastPixelCapture;
+		String fullCapture = lastPixelCaptureState;
+		System.err.println("M3_XYGRAPH_CONTROLLED_DAMAGE"
+				+ " setter=" + name
+				+ " partial=" + client.x + "," + (client.y + top)
+				+ "," + client.width + "x" + partialHeight
+				+ " baselineVsPartial=" + differences(lastFull, partial)
+				+ " partialVsFull=" + differences(partial, full)
+				+ " baselineVsFull=" + differences(lastFull, full)
+				+ " afterPartialPaints=" + afterPartial
+				+ " afterFullPaints=" + nativePaints);
+		System.err.println("M3_XYGRAPH_CONTROLLED_DIFF_COORDS partial-vs-full="
+				+ differenceCoordinates(partial, full, client.width, 48));
+		System.err.println("M3_XYGRAPH_CONTROLLED_CAPTURE_STATE " + partialCapture);
+		System.err.println("M3_XYGRAPH_CONTROLLED_CAPTURE_STATE " + fullCapture);
+		System.err.println("M3_XYGRAPH_CONTROLLED_PAINT_CLIPS " + lastPaintClips());
+		saveFailureImage(name, "controlled-partial", partialImage);
+		saveFailureImage(name, "controlled-full", fullImage);
 	}
 
 	/** Copy entry clip without setting GC state; query membership after all captures. */
