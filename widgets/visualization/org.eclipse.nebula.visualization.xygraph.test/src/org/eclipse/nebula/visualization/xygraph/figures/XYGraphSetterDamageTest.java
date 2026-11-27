@@ -16,17 +16,21 @@ import static org.junit.Assert.assertArrayEquals;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 import org.eclipse.draw2d.LightweightSystem;
 import org.eclipse.nebula.visualization.xygraph.dataprovider.CircularBufferDataProvider;
 import org.eclipse.nebula.visualization.xygraph.dataprovider.Sample;
 import org.eclipse.nebula.visualization.xygraph.figures.Trace.ErrorBarType;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.LineAttributes;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -50,6 +54,12 @@ public class XYGraphSetterDamageTest {
 	private ImageData lastPixelCapture;
 	/** Bounded audit of actual SWT.Paint event rectangles and graphics clipping. */
 	private final String[] lastNativeClips = new String[32];
+	/** Entry/after observations and capture boundaries; never an inferred stroke state. */
+	private final String[] nativeStateLedger = new String[128];
+	private int nativeStateRecords;
+	private int nativePaintEntries;
+	private int pixelCaptures;
+	private String capturePhase = "initial";
 
 	@Before
 	public void setUp() {
@@ -69,16 +79,22 @@ public class XYGraphSetterDamageTest {
 		graph.addTrace(trace);
 		graph.getPrimaryXAxis().setRange(-1, 21);
 		graph.getPrimaryYAxis().setRange(-16, 16);
+		// Register before Draw2D so this observes the incoming paint GC.
+		canvas.addPaintListener(event -> {
+			nativePaintEntries++;
+			recordPaintState("entry", event);
+		});
 		new LightweightSystem(canvas).setContents(graph);
 		canvas.addPaintListener(event -> {
 			nativePaints++;
 			lastNativePaintNanos = System.nanoTime();
-			// Observe the actual GTK clip: a full redraw and a partial expose may
-			// rasterize the same antialiased geometry with different boundaries.
+			// This listener runs after Draw2D; its SWT bounds are not the entry
+			// native clip or a complete native clip region.
 			Rectangle clip = event.gc.getClipping();
 			lastNativeClips[(nativePaints - 1) % lastNativeClips.length] =
 					"#" + nativePaints + " expose=" + event.x + "," + event.y + ","
 					+ event.width + "x" + event.height + " gcClip=" + clip;
+			recordPaintState("after", event);
 		});
 		shell.open();
 		spin();
@@ -112,6 +128,7 @@ public class XYGraphSetterDamageTest {
 	}
 
 	private void step(String name, Runnable change) {
+		capturePhase = name + "/automatic";
 		int before = nativePaints;
 		change.run();
 		// Require a real SWT Paint from the setter; never synthesize one.
@@ -119,6 +136,7 @@ public class XYGraphSetterDamageTest {
 		int[] shown = pixels();
 		ImageData automaticImage = lastPixelCapture;
 
+		capturePhase = name + "/reference-full";
 		int referenceBefore = nativePaints;
 		graph.revalidate();
 		canvas.redraw();
@@ -148,8 +166,10 @@ public class XYGraphSetterDamageTest {
 	private void diagnoseNativePixelFailure(String name, int[] automatic,
 			ImageData automaticImage, ImageData firstFullImage) {
 		int[] firstFull = imagePixels(firstFullImage);
+		capturePhase = name + "/reference-no-paint";
 		int[] sameScreen = pixels();
 		ImageData sameScreenImage = lastPixelCapture;
+		capturePhase = name + "/reference-full-repeat";
 		int priorPaint = nativePaints;
 		canvas.redraw();
 		awaitNativePaintAfter(priorPaint, name + " diagnostic full redraw did not paint");
@@ -177,6 +197,7 @@ public class XYGraphSetterDamageTest {
 		System.err.println("M3_XYGRAPH_NATIVE_DIFF_COORDS phase=full-vs-second-full"
 				+ " values=" + differenceCoordinates(firstFull, secondFull, width, 48));
 		System.err.println("M3_XYGRAPH_NATIVE_PAINT_CLIPS " + lastPaintClips());
+		System.err.println("M3_XYGRAPH_NATIVE_CAPTURE_PAINT_STATE " + lastNativeState());
 		saveFailureImage(name, "automatic", automaticImage);
 		saveFailureImage(name, "reference-full", firstFullImage);
 		saveFailureImage(name, "reference-no-paint", sameScreenImage);
@@ -296,6 +317,9 @@ public class XYGraphSetterDamageTest {
 	}
 
 	private int[] pixels() {
+		int capture = ++pixelCaptures;
+		recordNativeState("capture=" + capture + " boundary=before phase=" + capturePhase
+				+ " entries=" + nativePaintEntries + " completed=" + nativePaints);
 		Rectangle size = canvas.getBounds();
 		Image shot = new Image(display, size.width, size.height);
 		GC gc = new GC(canvas);
@@ -308,7 +332,137 @@ public class XYGraphSetterDamageTest {
 		for (int y = 0; y < size.height; y++) {
 			image.getPixels(0, y, size.width, all, y * size.width);
 		}
+		recordNativeState("capture=" + capture + " boundary=after phase=" + capturePhase
+				+ " entries=" + nativePaintEntries + " completed=" + nativePaints
+				+ " image=" + image.width + "x" + image.height);
 		return all;
+	}
+
+	/** Observe only a live event GC; retain no borrowed native handle. */
+	private void recordPaintState(String stage, PaintEvent event) {
+		String prefix = "paint=" + nativePaintEntries + " stage=" + stage
+				+ " phase=" + capturePhase + " completed=" + nativePaints
+				+ " expose=" + event.x + "," + event.y + "," + event.width + "x" + event.height;
+		try {
+			GC gc = event.gc;
+			LineAttributes line = gc.getLineAttributes();
+			float[] clientMatrix = new float[6];
+			Transform transform = new Transform(display);
+			try {
+				gc.getTransform(transform);
+				transform.getElements(clientMatrix);
+			} finally {
+				transform.dispose();
+			}
+			recordNativeState(prefix + " swtClipBounds=" + gc.getClipping()
+					+ " swtClientMatrix=" + Arrays.toString(clientMatrix)
+					+ " swtRequestedForegroundRGB=" + gc.getForeground().getRGB()
+					+ " swtAlpha=" + gc.getAlpha() + " swtAA=" + gc.getAntialias()
+					+ " swtRequestedLine=[width=" + line.width + ",cap=" + line.cap
+					+ ",join=" + line.join + ",style=" + line.style
+					+ ",dash=" + Arrays.toString(line.dash) + ",offset=" + line.dashOffset
+					+ ",miter=" + line.miterLimit + "] " + gtkNativeState(gc));
+		} catch (RuntimeException | LinkageError unavailable) {
+			recordNativeState(prefix + " gcState=UNAVAILABLE:" + unavailable.getClass().getName());
+		}
+	}
+
+	/** Public internal queries are resolved only on GTK, retaining other-platform compilation. */
+	private static String gtkNativeState(GC gc) {
+		if (!"gtk".equals(SWT.getPlatform())) return "cairoState=UNAVAILABLE:non-GTK";
+		String unavailable = " cairoDeviceOffset=UNAVAILABLE:no-binding"
+				+ " cairoActiveGroupTarget=UNAVAILABLE:no-binding"
+				+ " cairoClipRegion=UNAVAILABLE:no-binding"
+				+ " cairoAppliedLineAndAlpha=UNAVAILABLE:no-binding"
+				+ " nativeStrokePoints=UNAVAILABLE:outside-stroke-owner";
+		try {
+			Object data = GC.class.getMethod("getGCData").invoke(gc);
+			long context = data.getClass().getField("cairo").getLong(data);
+			if (context == 0) return "cairoState=UNAVAILABLE:zero-context" + unavailable;
+			ClassLoader loader = GC.class.getClassLoader();
+			Class<?> cairo = Class.forName("org.eclipse.swt.internal.cairo.Cairo", false, loader);
+			double[] matrix = new double[6];
+			Arrays.fill(matrix, Double.NaN);
+			cairo.getMethod("cairo_get_matrix", long.class, double[].class)
+					.invoke(null, context, matrix);
+			return "cairoVersion=" + cairo.getMethod("cairo_version").invoke(null)
+					+ " cairoMatrix=" + Arrays.toString(matrix)
+					+ " cairoAA=" + nativeQuery(cairo, "cairo_get_antialias", context)
+					+ originalTargetState(cairo, context) + nativeClipBounds(loader, context)
+					+ unavailable;
+		} catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+			return "cairoState=UNAVAILABLE:" + failure.getClass().getName() + unavailable;
+		}
+	}
+
+	/** cairo_get_target reports the original target, not a possibly active group target. */
+	private static String originalTargetState(Class<?> cairo, long context) {
+		try {
+			long target = ((Long) nativeQuery(cairo, "cairo_get_target", context)).longValue();
+			if (target == 0) return " cairoOriginalTarget=UNAVAILABLE:zero-target";
+			int type = ((Integer) nativeQuery(cairo, "cairo_surface_get_type", target)).intValue();
+			String extent = "UNAVAILABLE:surface-type-" + type;
+			// These type-specific queries are valid only for their observed backend.
+			if (type == 0 || type == 3) {
+				String backend = type == 0 ? "image" : "xlib";
+				int width = ((Integer) nativeQuery(cairo, "cairo_" + backend
+						+ "_surface_get_width", target)).intValue();
+				int height = ((Integer) nativeQuery(cairo, "cairo_" + backend
+						+ "_surface_get_height", target)).intValue();
+				extent = width > 0 && height > 0 ? width + "x" + height : "UNAVAILABLE:zero-or-missing-symbol";
+			}
+			double[] xScale = { Double.NaN };
+			double[] yScale = { Double.NaN };
+			cairo.getMethod("cairo_surface_get_device_scale", long.class, double[].class, double[].class)
+					.invoke(null, target, xScale, yScale);
+			String scale = Double.isNaN(xScale[0]) || Double.isNaN(yScale[0])
+					? "UNAVAILABLE:query-did-not-return" : xScale[0] + "," + yScale[0];
+			return " cairoOriginalTargetType=" + type
+					+ " cairoOriginalTargetContent=" + nativeQuery(cairo, "cairo_surface_get_content", target)
+					+ " cairoOriginalTargetExtent=" + extent + " cairoOriginalTargetScale=" + scale;
+		} catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+			return " cairoOriginalTarget=UNAVAILABLE:" + failure.getClass().getName();
+		}
+	}
+
+	/** Rounded native bounds only: false means empty or an unavailable dynamic symbol. */
+	private static String nativeClipBounds(ClassLoader loader, long context) {
+		try {
+			Class<?> gtk = Class.forName("org.eclipse.swt.internal.gtk.GTK", false, loader);
+			if (gtk.getField("GTK4").getBoolean(null)) return " cairoClipBounds=UNAVAILABLE:GTK4";
+			Class<?> gdk = Class.forName("org.eclipse.swt.internal.gtk.GDK", false, loader);
+			Class<?> rectangle = Class.forName("org.eclipse.swt.internal.gtk.GdkRectangle", false, loader);
+			Object bounds = rectangle.getConstructor().newInstance();
+			boolean available = ((Boolean) gdk.getMethod("gdk_cairo_get_clip_rectangle", long.class, rectangle)
+					.invoke(null, context, bounds)).booleanValue();
+			if (!available) return " cairoClipBounds=UNAVAILABLE:empty-or-missing-symbol";
+			return " cairoClipBounds=" + rectangle.getField("x").getInt(bounds) + ","
+					+ rectangle.getField("y").getInt(bounds) + ","
+					+ rectangle.getField("width").getInt(bounds) + "x"
+					+ rectangle.getField("height").getInt(bounds);
+		} catch (ReflectiveOperationException | RuntimeException | LinkageError failure) {
+			return " cairoClipBounds=UNAVAILABLE:" + failure.getClass().getName();
+		}
+	}
+
+	private static Object nativeQuery(Class<?> owner, String method, long handle)
+			throws ReflectiveOperationException {
+		return owner.getMethod(method, long.class).invoke(null, handle);
+	}
+
+	private void recordNativeState(String observation) {
+		nativeStateLedger[nativeStateRecords++ % nativeStateLedger.length] = observation;
+	}
+
+	private String lastNativeState() {
+		StringBuilder out = new StringBuilder("records=" + nativeStateRecords
+				+ " retained=" + Math.min(nativeStateRecords, nativeStateLedger.length)
+				+ " dropped=" + Math.max(0, nativeStateRecords - nativeStateLedger.length));
+		for (int i = Math.max(0, nativeStateRecords - nativeStateLedger.length); i < nativeStateRecords; i++) {
+			if (!out.isEmpty()) out.append(" | ");
+			out.append(nativeStateLedger[i % nativeStateLedger.length]);
+		}
+		return out.toString();
 	}
 
 	private void spin() {
