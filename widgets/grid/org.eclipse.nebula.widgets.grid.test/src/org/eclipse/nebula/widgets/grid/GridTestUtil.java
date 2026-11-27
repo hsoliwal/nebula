@@ -109,6 +109,50 @@ public class GridTestUtil {
     }
   }
 
+  /**
+   * Pumps events until the Grid has handled at least {@code minimumPaintPasses} paint events in
+   * total ({@link Grid#paintPasses}) and then none for 200 ms. It waits at most two seconds for the
+   * minimum and five seconds in all, requests no paint and never fails: the caller's own
+   * assertions judge what was painted.
+   * <p>
+   * A plain {@code while (display.readAndDispatch())} drain is not enough on GTK3. win32 paints
+   * inside {@code Control.update()} and delivers WM_PAINT before its queue runs empty. SWT GTK3's
+   * {@code Control.update()} only flushes the queued X11 Expose events (it no longer calls
+   * {@code gdk_window_process_updates}), and GTK paints from its frame clock once the queue is
+   * empty, after {@code readAndDispatch()} has returned false. The Grid computes its scroll bar
+   * values in that paint, so they are only current after it.
+   * </p>
+   */
+  public static void awaitGridPaints( Display display, Grid grid, int minimumPaintPasses ) {
+    long start = System.nanoTime();
+    long quietSince = start;
+    int seen = grid.paintPasses;
+    for( ;; ) {
+      long now = System.nanoTime();
+      if( now - start >= 5_000_000_000L ) {
+        return;
+      }
+      if( seen < minimumPaintPasses ? now - start >= 2_000_000_000L : now - quietSince >= 200_000_000L ) {
+        return;
+      }
+      if( !display.readAndDispatch() ) {
+        try {
+          Thread.sleep( 5 );
+        } catch( InterruptedException interrupted ) {
+          Thread.currentThread().interrupt();
+          return;
+        }
+      }
+      if( grid.isDisposed() ) {
+        return;
+      }
+      if( grid.paintPasses != seen ) {
+        seen = grid.paintPasses;
+        quietSince = System.nanoTime();
+      }
+    }
+  }
+
   public static Image loadImage( Display display, String name ) {
     Image result = null;
     InputStream stream = Fixture.class.getClassLoader().getResourceAsStream( name );

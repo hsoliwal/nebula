@@ -2877,10 +2877,11 @@ public class Grid_Test {
   // Helping methods
   /* Nebula sizes its scroll bars when it paints */
   private void doRedraw() {
+    int paints = grid.paintPasses;
     grid.redraw();
     grid.update();
-    while( display.readAndDispatch() ) {
-    }
+    // the scroll bars are computed in the paint, which GTK3 delivers after the queue drained
+    GridTestUtil.awaitGridPaints( display, grid, paints + 1 );
   }
 
   //////////////////

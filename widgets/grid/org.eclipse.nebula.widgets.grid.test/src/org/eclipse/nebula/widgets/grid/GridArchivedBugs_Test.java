@@ -327,10 +327,10 @@ public class GridArchivedBugs_Test {
 	}
 
 	private void flush(final Grid grid) {
+		final int paints = grid.paintPasses;
 		grid.redraw();
 		grid.update();
-		while (display.readAndDispatch()) {
-			// drain
-		}
+		// GTK3 paints from its frame clock after the queue drained (see GridTestUtil)
+		GridTestUtil.awaitGridPaints(display, grid, paints + 1);
 	}
 }
