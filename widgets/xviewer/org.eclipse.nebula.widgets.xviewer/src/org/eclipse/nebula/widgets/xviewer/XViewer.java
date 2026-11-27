@@ -710,14 +710,10 @@ public class XViewer extends TreeViewer {
          return;
       }
       int head = Math.min(rows.length, PRECOMPUTE_SEED);
-      int from = 0;
-      int to = 0;
       Object input = getInput();
-      if (parent == input || parent != null && parent.equals(input)) {
-         int top = topRowIndex();
-         from = Math.max(head, top - PRECOMPUTE_BLOCK);
-         to = Math.min(rows.length, top + visibleRowCount() + PRECOMPUTE_BLOCK);
-      }
+      boolean root = parent == input || parent != null && parent.equals(input);
+      int[] tops = root ? topRowIndexes() : new int[0];
+      int visible = root ? visibleRowCount() : 0;
       for (Map.Entry<XViewerColumn, Map<Long, String>> entry : passValues.entrySet()) {
          Map<Long, String> values = entry.getValue();
          if (values instanceof PassValues && !((PassValues) values).isFilled()) {
@@ -729,8 +725,11 @@ public class XViewer extends TreeViewer {
             for (int row = 0; row < head; row++) {
                seed(preComputedColumn, values, window, rows[row]);
             }
-            for (int row = from; row < to; row++) {
-               seed(preComputedColumn, values, window, rows[row]);
+            for (int top : tops) {
+               int to = Math.min(rows.length, top + visible + PRECOMPUTE_BLOCK);
+               for (int row = Math.max(head, top - PRECOMPUTE_BLOCK); row < to; row++) {
+                  seed(preComputedColumn, values, window, rows[row]);
+               }
             }
          } catch (RuntimeException ex) {
             // a row the column has no key for is computed when it is asked for, as before
@@ -746,18 +745,43 @@ public class XViewer extends TreeViewer {
       }
    }
 
-   /** @return the index of the root row at the top of the tree, 0 if unknown */
-   private int topRowIndex() {
-      try {
-         Tree tree = getTree();
-         TreeItem top = tree.getTopItem();
-         if (top == null || top.getParentItem() != null) {
-            return 0;
-         }
-         return Math.max(0, tree.indexOf(top));
-      } catch (RuntimeException ex) {
-         return 0;
+   /**
+    * @return the indexes of the root rows that may be at the top of the tree: the row {@link Tree#getTopItem()}
+    * answers and, on GTK, the row drawn at the top of the rows area. GTK answers the row of the last
+    * {@code setTopItem} while its vertical adjustment still has the value that call cached, even when the tree draws
+    * another row there (for example while it is still resolving that scroll).
+    */
+   private int[] topRowIndexes() {
+      Tree tree = getTree();
+      int answered = rootIndex(tree, () -> tree.getTopItem());
+      if (!"gtk".equals(SWT.getPlatform())) { //$NON-NLS-1$
+         return new int[] {Math.max(0, answered)};
       }
+      int drawn = rootIndex(tree, () -> drawnTopItem(tree));
+      if (drawn < 0 || drawn == answered) {
+         return new int[] {Math.max(0, answered)};
+      }
+      return answered < 0 ? new int[] {drawn} : new int[] {answered, drawn};
+   }
+
+   /** @return the root row index of the item, or -1 if none, not a root row or unknown */
+   private static int rootIndex(Tree tree, java.util.function.Supplier<TreeItem> item) {
+      try {
+         TreeItem top = item.get();
+         return top == null || top.getParentItem() != null ? -1 : tree.indexOf(top);
+      } catch (RuntimeException ex) {
+         return -1;
+      }
+   }
+
+   /** GTK3 rows start at y = 0 below the header; GTK4 counts the header in the same coordinates. */
+   private static TreeItem drawnTopItem(Tree tree) {
+      int x = tree.getColumnCount() > 0 ? Math.max(1, tree.getColumn(0).getWidth() / 2) : 1;
+      TreeItem item = tree.getItem(new Point(x, 1));
+      if (item == null && tree.getHeaderVisible()) {
+         item = tree.getItem(new Point(x, tree.getHeaderHeight() + 1));
+      }
+      return item;
    }
 
    private int visibleRowCount() {

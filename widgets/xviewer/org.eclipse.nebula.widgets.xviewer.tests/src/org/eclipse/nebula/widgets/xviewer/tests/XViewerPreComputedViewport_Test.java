@@ -357,11 +357,12 @@ public class XViewerPreComputedViewport_Test {
 
       tree.setTopItem(tree.getItem(rows / 2));
       tree.update();
-      pump();
+      // GTK can resolve a programmatic scroll after the events pending now: sort only once the drawn top row holds
+      int before = settledTopIndex(tree);
       clickHeader(viewer, PRE_ID);
-      pump();
-      int top = topIndex(tree);
-      System.out.println("XVIEWER_PRECOMPUTE counter top=" + top + " fullBatches=" + counter.fullBatches); //$NON-NLS-1$ //$NON-NLS-2$
+      int top = settledTopIndex(tree);
+      System.out.println("XVIEWER_PRECOMPUTE counter requestedTop=" + rows / 2 + " topBeforeSort=" + before //$NON-NLS-1$ //$NON-NLS-2$
+         + " top=" + top + " fullBatches=" + counter.fullBatches); //$NON-NLS-1$ //$NON-NLS-2$
       assertPaintedSortKeys(tree, top, counter);
    }
 
@@ -707,9 +708,40 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
-   private static int topIndex(Tree tree) {
-      TreeItem top = tree.getTopItem();
-      return top == null ? 0 : tree.indexOf(top);
+   /**
+    * @return the index of the row drawn at the top of the tree once it has held for several consecutive checks (at most
+    * 10 s), after pending events are dispatched
+    */
+   private int settledTopIndex(Tree tree) {
+      int last = -1;
+      int stable = 0;
+      long deadline = System.currentTimeMillis() + 10_000;
+      while (stable < 5 && System.currentTimeMillis() < deadline) {
+         pump();
+         int top = drawnTopIndex(tree);
+         stable = top == last ? stable + 1 : 0;
+         last = top;
+         sleep(20);
+      }
+      return Math.max(0, last);
+   }
+
+   /**
+    * The row actually drawn at the top: on GTK {@code Tree.getTopItem()} can answer the row of the last
+    * {@code setTopItem()} instead (see XViewerViewport_Test#visibleTopItem), so the row there is hit-tested.
+    */
+   private static int drawnTopIndex(Tree tree) {
+      TreeItem top;
+      if ("gtk".equals(SWT.getPlatform())) { //$NON-NLS-1$
+         int x = tree.getColumn(0).getWidth() / 2;
+         top = tree.getItem(new org.eclipse.swt.graphics.Point(x, 1));
+         if (top == null && tree.getHeaderVisible()) {
+            top = tree.getItem(new org.eclipse.swt.graphics.Point(x, tree.getHeaderHeight() + 1));
+         }
+      } else {
+         top = tree.getTopItem();
+      }
+      return top == null ? -1 : tree.indexOf(top);
    }
 
    private void check(String phase, XViewer viewer, Stats stats, long nanos, List<String> violations) {
