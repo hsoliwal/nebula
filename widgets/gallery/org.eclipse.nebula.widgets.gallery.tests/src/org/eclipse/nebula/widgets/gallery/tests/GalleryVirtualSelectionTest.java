@@ -693,6 +693,39 @@ public class GalleryVirtualSelectionTest {
 		assertTrue("the slowest drop of 16,000 or 8,000 selected groups took " + worst + " ms", worst < 400);
 	}
 
+	/**
+	 * The same with stale index hints: 64,000 selected groups put in another order with _setGalleryItems, then dropped.
+	 * The dropped groups are found by identity, not by index (about 2 s before, 0.1 s here, master 0.02 to 0.2 s).
+	 */
+	@Test
+	public void droppingShuffledGroupsIsLinear() {
+		int groups = 64_000;
+		shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+		shell.setBounds(40, 40, 640, 480);
+		shell.setLayout(new FillLayout());
+		gallery = new Gallery(shell, SWT.V_SCROLL | SWT.MULTI | SWT.VIRTUAL);
+		gallery.addListener(SWT.SetData, e -> {
+			GalleryItem item = (GalleryItem) e.item;
+			if (item.getParentItem() == null) {
+				item.setItemCount(2);
+			}
+		});
+		long worst = 0;
+		for (int operation = 0; operation < 2; operation++) {
+			gallery.setItemCount(groups);
+			gallery.selectAll();
+			List<GalleryItem> shuffled = new ArrayList<>(java.util.Arrays.asList(gallery.getItems()));
+			java.util.Collections.shuffle(shuffled, new Random(operation));
+			gallery._setGalleryItems(shuffled.toArray(new GalleryItem[0]));
+			long start = System.nanoTime();
+			gallery.setItemCount(operation == 0 ? 0 : groups / 2);
+			worst = Math.max(worst, (System.nanoTime() - start) / 1_000_000);
+			gallery.deselectAll();
+			gallery.setItemCount(0);
+		}
+		assertTrue("the slowest drop of 64,000 or 32,000 shuffled selected groups took " + worst + " ms", worst < 800);
+	}
+
 	/** A Gallery subclass that counts the selection hook. */
 	static class CountingGallery extends Gallery {
 		int added;

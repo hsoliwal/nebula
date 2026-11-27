@@ -260,8 +260,7 @@ public class Gallery extends Canvas {
 
 		if (VIEWPORT && items != null && count < items.length) {
 			//FLLDCIM: VIEWPORT - groups dropped by the shrink release the runs they own (no SetData under a detached group)
-			int keep = Math.max(count, 0);
-			releaseRunsWhere(item -> item.getParentItem() == null && _indexOf(item) >= keep);
+			releaseRunsOf(items, Math.max(count, 0), items.length);
 		}
 
 		if (count == 0) {
@@ -1158,7 +1157,9 @@ public class Gallery extends Canvas {
 	 * Viewport mode: one sweep over the selection entries that releases every run owned by an item that leaves, or by
 	 * a descendant of one (an owner whose ancestor chain reaches an item the predicate names). Created children keep
 	 * their entries in place, unread names leave. Linear in the entries and the released runs, however many items
-	 * leave at once (setItemCount, _setGalleryItems, a parent's clearAll).
+	 * leave at once (setItemCount, _setGalleryItems, a parent's clearAll), as long as the predicate is O(1): the bulk
+	 * paths pass membership in an identity set of the dropped items, never an index lookup (a stale index hint would
+	 * make that a scan).
 	 */
 	void releaseRunsWhere(java.util.function.Predicate<GalleryItem> leaves) {
 		if (selectionRuns == null) {
@@ -1200,6 +1201,24 @@ public class Gallery extends Canvas {
 			}
 		}
 		Arrays.fill(selection, selectionCount, selection.length, null);
+	}
+
+	/**
+	 * Viewport mode: the items array[from..to) leave the gallery's items (a shrink): one sweep releases the runs they
+	 * and their descendants own. Membership is an identity set built once, so the sweep stays linear whatever the
+	 * index hints of the items.
+	 */
+	void releaseRunsOf(GalleryItem[] array, int from, int to) {
+		if (selectionRuns == null || array == null || from >= to) {
+			return;
+		}
+		java.util.Set<GalleryItem> dropped = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+		for (int i = from; i < to; i++) {
+			if (array[i] != null) {
+				dropped.add(array[i]);
+			}
+		}
+		releaseRunsWhere(dropped::contains);
 	}
 
 	/** Viewport mode: true when owner, or one of its ancestors, is an item the predicate names. */
@@ -3266,7 +3285,13 @@ public class Gallery extends Canvas {
 			if (items != null) {
 				kept.addAll(Arrays.asList(items));
 			}
-			releaseRunsWhere(item -> item.getParentItem() == null && !kept.contains(item) && _indexOf(item) >= 0);
+			java.util.Set<GalleryItem> dropped = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+			for (GalleryItem old : this.items) {
+				if (old != null && !kept.contains(old)) {
+					dropped.add(old);
+				}
+			}
+			releaseRunsWhere(dropped::contains);
 		}
 		this.items = items;
 	}

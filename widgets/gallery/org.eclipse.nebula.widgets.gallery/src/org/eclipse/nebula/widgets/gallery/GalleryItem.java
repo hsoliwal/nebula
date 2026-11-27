@@ -235,8 +235,7 @@ public class GalleryItem extends Item {
 			// selected children beyond the new count: created ones stay selected as before, unread ones leave
 			parent.releaseRuns(this, count, true);
 			truncateRangeFlags(count);
-			int keep = Math.max(count, 0);
-			parent.releaseRunsWhere(item -> item.getParentItem() == this && parent._indexOf(this, item) >= keep);
+			parent.releaseRunsOf(items, Math.max(count, 0), items.length);
 		}
 		if (count == 0) {
 			// No items
