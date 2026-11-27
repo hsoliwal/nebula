@@ -16,7 +16,10 @@ import static org.junit.Assert.assertArrayEquals;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HexFormat;
 
 import org.eclipse.draw2d.LightweightSystem;
 import org.eclipse.nebula.visualization.xygraph.dataprovider.CircularBufferDataProvider;
@@ -30,6 +33,7 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.LineAttributes;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
@@ -60,6 +64,14 @@ public class XYGraphSetterDamageTest {
 	private int nativePaintEntries;
 	private int pixelCaptures;
 	private String capturePhase = "initial";
+	/** Owned clip copies share the existing entry counter and capture phase. */
+	private final String[] nativePaintStates = new String[lastNativeClips.length];
+	private final GC[] pendingPaintContexts = new GC[lastNativeClips.length];
+	private final Region[] entryClipRegions = new Region[lastNativeClips.length];
+	private final Region[] exitClipRegions = new Region[lastNativeClips.length];
+	private final Rectangle[] paintClipDomains = new Rectangle[lastNativeClips.length];
+	private String lastPixelCaptureState = "not-captured";
+	private String unpairedPaintExit;
 
 	@Before
 	public void setUp() {
@@ -80,10 +92,7 @@ public class XYGraphSetterDamageTest {
 		graph.getPrimaryXAxis().setRange(-1, 21);
 		graph.getPrimaryYAxis().setRange(-16, 16);
 		// Register before Draw2D so this observes the incoming paint GC.
-		canvas.addPaintListener(event -> {
-			nativePaintEntries++;
-			recordPaintState("entry", event);
-		});
+		canvas.addPaintListener(this::observePaintEntry);
 		new LightweightSystem(canvas).setContents(graph);
 		canvas.addPaintListener(event -> {
 			nativePaints++;
@@ -94,7 +103,7 @@ public class XYGraphSetterDamageTest {
 			lastNativeClips[(nativePaints - 1) % lastNativeClips.length] =
 					"#" + nativePaints + " expose=" + event.x + "," + event.y + ","
 					+ event.width + "x" + event.height + " gcClip=" + clip;
-			recordPaintState("after", event);
+			observePaintExit(event);
 		});
 		shell.open();
 		spin();
@@ -104,7 +113,11 @@ public class XYGraphSetterDamageTest {
 
 	@After
 	public void tearDown() {
-		shell.dispose();
+		try {
+			shell.dispose();
+		} finally {
+			releasePaintRegions();
+		}
 	}
 
 	@Test
@@ -135,6 +148,7 @@ public class XYGraphSetterDamageTest {
 		awaitNativePaintAfter(before, name + " did not repaint automatically");
 		int[] shown = pixels();
 		ImageData automaticImage = lastPixelCapture;
+		String automaticCapture = lastPixelCaptureState;
 
 		capturePhase = name + "/reference-full";
 		int referenceBefore = nativePaints;
@@ -149,7 +163,8 @@ public class XYGraphSetterDamageTest {
 			// The original strict pixel assertion has already failed. Capture
 			// native repeatability evidence without changing its verdict.
 			try {
-				diagnoseNativePixelFailure(name, shown, automaticImage, lastPixelCapture);
+				diagnoseNativePixelFailure(name, shown, automaticImage, lastPixelCapture,
+						automaticCapture, lastPixelCaptureState);
 			} catch (RuntimeException | Error diagnostic) {
 				if (diagnostic != original) original.addSuppressed(diagnostic);
 			}
@@ -164,17 +179,20 @@ public class XYGraphSetterDamageTest {
 	 * mandatory and is rethrown after this method, without any pixel tolerance.
 	 */
 	private void diagnoseNativePixelFailure(String name, int[] automatic,
-			ImageData automaticImage, ImageData firstFullImage) {
+			ImageData automaticImage, ImageData firstFullImage,
+			String automaticCapture, String firstFullCapture) {
 		int[] firstFull = imagePixels(firstFullImage);
 		capturePhase = name + "/reference-no-paint";
 		int[] sameScreen = pixels();
 		ImageData sameScreenImage = lastPixelCapture;
+		String sameScreenCapture = lastPixelCaptureState;
 		capturePhase = name + "/reference-full-repeat";
 		int priorPaint = nativePaints;
 		canvas.redraw();
 		awaitNativePaintAfter(priorPaint, name + " diagnostic full redraw did not paint");
 		int[] secondFull = pixels();
 		ImageData secondFullImage = lastPixelCapture;
+		String secondFullCapture = lastPixelCaptureState;
 
 		int first = firstDifference(automatic, firstFull);
 		int width = canvas.getBounds().width;
@@ -198,10 +216,135 @@ public class XYGraphSetterDamageTest {
 				+ " values=" + differenceCoordinates(firstFull, secondFull, width, 48));
 		System.err.println("M3_XYGRAPH_NATIVE_PAINT_CLIPS " + lastPaintClips());
 		System.err.println("M3_XYGRAPH_NATIVE_CAPTURE_PAINT_STATE " + lastNativeState());
+		System.err.println("M3_XYGRAPH_NATIVE_CAPTURE_STATE " + automaticCapture);
+		System.err.println("M3_XYGRAPH_NATIVE_CAPTURE_STATE " + firstFullCapture);
+		System.err.println("M3_XYGRAPH_NATIVE_CAPTURE_STATE " + sameScreenCapture);
+		System.err.println("M3_XYGRAPH_NATIVE_CAPTURE_STATE " + secondFullCapture);
 		saveFailureImage(name, "automatic", automaticImage);
 		saveFailureImage(name, "reference-full", firstFullImage);
 		saveFailureImage(name, "reference-no-paint", sameScreenImage);
 		saveFailureImage(name, "reference-full-repeat", secondFullImage);
+		reportPaintStates();
+	}
+
+	/** Copy entry clip without setting GC state; query membership after all captures. */
+	private void observePaintEntry(PaintEvent event) {
+		long observed = System.nanoTime();
+		int slot = nativePaintEntries++ % nativePaintStates.length;
+		pendingPaintContexts[slot] = event.gc;
+		nativePaintStates[slot] = "paint=" + nativePaintEntries + " phase=" + capturePhase
+				+ " entryNanos=" + observed + " completedBefore=" + nativePaints
+				+ " expose=" + event.x + "," + event.y + "," + event.width + "x" + event.height;
+		try {
+			releaseRegion(entryClipRegions, slot);
+			releaseRegion(exitClipRegions, slot);
+			paintClipDomains[slot] = canvas.getClientArea();
+			entryClipRegions[slot] = new Region(display);
+			event.gc.getClipping(entryClipRegions[slot]);
+			nativePaintStates[slot] += " entryGcClip=" + event.gc.getClipping()
+					+ " domain=" + paintClipDomains[slot];
+		} catch (RuntimeException | Error unavailable) {
+			releaseRegion(entryClipRegions, slot);
+			nativePaintStates[slot] += " entryUnavailable=" + unavailable.getClass().getName();
+		}
+		recordPaintState("entry", event, nativePaintEntries, observed);
+	}
+
+	/** Match by active GC identity so bounded nested paints retain their entry. */
+	private void observePaintExit(PaintEvent event) {
+		long observed = System.nanoTime();
+		for (int offset = 0; offset < Math.min(nativePaintEntries, nativePaintStates.length); offset++) {
+			int slot = (nativePaintEntries - 1 - offset) % nativePaintStates.length;
+			if (pendingPaintContexts[slot] != event.gc) continue;
+			pendingPaintContexts[slot] = null;
+			nativePaintStates[slot] += " exitPhase=" + capturePhase + " exitNanos=" + observed
+					+ " completedAfter=" + nativePaints;
+			try {
+				exitClipRegions[slot] = new Region(display);
+				event.gc.getClipping(exitClipRegions[slot]);
+				nativePaintStates[slot] += " exitGcClip=" + event.gc.getClipping();
+			} catch (RuntimeException | Error unavailable) {
+				releaseRegion(exitClipRegions, slot);
+				nativePaintStates[slot] += " exitUnavailable=" + unavailable.getClass().getName();
+			}
+			recordPaintState("after", event, nativePaintEntries - offset, observed);
+			return;
+		}
+		unpairedPaintExit = "phase=" + capturePhase + " exitNanos=" + observed
+				+ " completedAfter=" + nativePaints + " reason=no-retained-entry";
+		recordPaintState("after", event, -1, observed);
+	}
+
+	/** Failure-only publication of frozen copies, never of the disposed event GC. */
+	private void reportPaintStates() {
+		int first = Math.max(0, nativePaintEntries - nativePaintStates.length);
+		for (int sequence = first; sequence < nativePaintEntries; sequence++) {
+			int slot = sequence % nativePaintStates.length;
+			System.err.println("M3_XYGRAPH_NATIVE_PAINT_STATE " + nativePaintStates[slot]
+					+ " entryRegion=" + clipRegionWitness(entryClipRegions[slot], paintClipDomains[slot])
+					+ " exitRegion=" + clipRegionWitness(exitClipRegions[slot], paintClipDomains[slot]));
+		}
+		if (unpairedPaintExit != null) {
+			System.err.println("M3_XYGRAPH_NATIVE_PAINT_UNPAIRED " + unpairedPaintExit);
+		}
+	}
+
+	/** Exact integer-point membership within the recorded bounded canvas domain. */
+	private static String clipRegionWitness(Region region, Rectangle domain) {
+		if (region == null || region.isDisposed() || domain == null) return "unavailable";
+		if (domain.width < 0 || domain.height < 0
+				|| domain.width > 1_000_000 || domain.height > 1_000_000
+				|| (long) domain.width * domain.height > 1_000_000L) return "unavailable:domain-budget";
+		MessageDigest digest;
+		try {
+			digest = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException unavailable) {
+			return "unavailable:SHA-256";
+		}
+		byte[] row = new byte[domain.width];
+		StringBuilder runs = new StringBuilder();
+		int totalRuns = 0;
+		int included = 0;
+		for (int y = 0; y < domain.height && domain.width > 0; y++) {
+			int start = -1;
+			for (int x = 0; x <= domain.width; x++) {
+				boolean contains = x < domain.width && region.contains(domain.x + x, domain.y + y);
+				if (x < domain.width) row[x] = (byte) (contains ? 1 : 0);
+				if (contains) {
+					included++;
+					if (start < 0) start = x;
+				} else if (start >= 0) {
+					if (totalRuns < 48) {
+						if (totalRuns > 0) runs.append(';');
+						runs.append(domain.y + y).append(':').append(domain.x + start)
+								.append('+').append(x - start);
+					}
+					totalRuns++;
+					start = -1;
+				}
+			}
+			digest.update(row);
+		}
+		return "{bounds=" + region.getBounds() + ",domain=" + domain + ",included=" + included
+				+ ",sha256=" + HexFormat.of().formatHex(digest.digest()) + ",totalRuns=" + totalRuns
+				+ ",firstRuns=" + runs + (totalRuns > 48 ? ";truncated" : "") + "}";
+	}
+
+	private static void releaseRegion(Region[] regions, int slot) {
+		Region region = regions[slot];
+		regions[slot] = null;
+		if (region != null) region.dispose();
+	}
+
+	private void releasePaintRegions() {
+		for (int slot = 0; slot < entryClipRegions.length; slot++) {
+			try {
+				releaseRegion(entryClipRegions, slot);
+			} finally {
+				releaseRegion(exitClipRegions, slot);
+				pendingPaintContexts[slot] = null;
+			}
+		}
 	}
 
 	/** Preserve exact raw pixels for all differing coordinates, bounded in logs. */
@@ -317,9 +460,12 @@ public class XYGraphSetterDamageTest {
 	}
 
 	private int[] pixels() {
+		long captureStarted = System.nanoTime();
+		int completedBefore = nativePaints;
 		int capture = ++pixelCaptures;
 		recordNativeState("capture=" + capture + " boundary=before phase=" + capturePhase
-				+ " entries=" + nativePaintEntries + " completed=" + nativePaints);
+				+ " entries=" + nativePaintEntries + " completed=" + nativePaints
+				+ " nanos=" + captureStarted);
 		Rectangle size = canvas.getBounds();
 		Image shot = new Image(display, size.width, size.height);
 		GC gc = new GC(canvas);
@@ -332,17 +478,24 @@ public class XYGraphSetterDamageTest {
 		for (int y = 0; y < size.height; y++) {
 			image.getPixels(0, y, size.width, all, y * size.width);
 		}
+		long captureEnded = System.nanoTime();
 		recordNativeState("capture=" + capture + " boundary=after phase=" + capturePhase
 				+ " entries=" + nativePaintEntries + " completed=" + nativePaints
-				+ " image=" + image.width + "x" + image.height);
+				+ " image=" + image.width + "x" + image.height + " nanos=" + captureEnded);
+		lastPixelCaptureState = "capture=" + capture + " phase=" + capturePhase
+				+ " startNanos=" + captureStarted + " endNanos=" + captureEnded
+				+ " completedBefore=" + completedBefore + " completedAfter=" + nativePaints
+				+ " entered=" + nativePaintEntries;
 		return all;
 	}
 
 	/** Observe only a live event GC; retain no borrowed native handle. */
-	private void recordPaintState(String stage, PaintEvent event) {
-		String prefix = "paint=" + nativePaintEntries + " stage=" + stage
+	private void recordPaintState(String stage, PaintEvent event, int paint, long observed) {
+		String prefix = "paint=" + paint + " stage=" + stage
 				+ " phase=" + capturePhase + " completed=" + nativePaints
-				+ " expose=" + event.x + "," + event.y + "," + event.width + "x" + event.height;
+				+ " expose=" + event.x + "," + event.y + "," + event.width + "x" + event.height
+				+ " nanos=" + observed + " entries=" + nativePaintEntries
+				+ (paint < 0 ? " pairing=UNAVAILABLE:no-retained-entry" : "");
 		try {
 			GC gc = event.gc;
 			LineAttributes line = gc.getLineAttributes();
