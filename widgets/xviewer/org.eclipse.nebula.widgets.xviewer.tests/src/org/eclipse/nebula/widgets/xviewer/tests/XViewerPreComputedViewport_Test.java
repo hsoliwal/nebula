@@ -808,42 +808,83 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
-    * Bounded: repeated add calls must not order the root just to drop the order again. A test hook paints row 0 where
-    * the viewport geometry is read (as GTK's {@code getItemHeight} can); after the first add has dropped the order,
-    * later adds read no geometry, so no full pass runs until the tree paints. Fails on 8792258 (four wasted passes
-    * for five adds).
+    * Bounded: the geometry a pass reads (the top row index and the bound of visible rows) paints no row. Read right
+    * after every row was cleared, so any paint would send SetData. On GTK, {@code Tree.getItemHeight()} would.
+    */
+   @Test
+   public void boundedPassGeometrySendsNoSetData() throws Exception {
+      XViewer viewer = viewer(SWT.VIRTUAL, new Stats(), true);
+      viewer.setInputXViewer(Flat.roots(2_000));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      int[] setData = new int[1];
+      tree.addListener(SWT.SetData, event -> setData[0]++);
+      Method top = XViewer.class.getDeclaredMethod("topRowIndex"); //$NON-NLS-1$
+      Method bound = XViewer.class.getDeclaredMethod("visibleRowBound"); //$NON-NLS-1$
+      top.setAccessible(true);
+      bound.setAccessible(true);
+      tree.clearAll(true);
+      int visible = ((Integer) bound.invoke(viewer)).intValue();
+      top.invoke(viewer);
+      assertEquals("rows painted by the geometry reads", 0, setData[0]); //$NON-NLS-1$
+      int shown = tree.getClientArea().height / Math.max(1, tree.getItemHeight());
+      assertTrue("bound " + visible + " covers the " + shown + " rows shown", visible >= shown); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+   }
+
+   /**
+    * Bounded, sorted by a counter column and scrolled to row 2,500, with a List input mutated in place (its hash
+    * changes): after swapping two rows and refreshing, and after adding a row, the visible rows show the values they
+    * were sorted on. Fails on 55a0879 (the kept band came from a stale top row).
     */
    @Test
    @SuppressWarnings("unchecked")
-   public void boundedRepeatedAddsStartNoWastedPasses() throws Exception {
-      int rows = 1_000;
-      Stats stats = new Stats();
-      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
+   public void boundedMutatedListInputKeepsVisibleRowsOnTheirKeys() {
+      int rows = 5_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
       viewer.setInputXViewer(new ArrayList<Object>(Arrays.asList((Object[]) Flat.roots(rows))));
       shell.open();
       pump();
       Tree tree = viewer.getTree();
       clickHeader(viewer, PRE_ID);
       pump();
-      Field probe = XViewer.class.getDeclaredField("geometryProbe"); //$NON-NLS-1$
-      probe.setAccessible(true);
-      probe.set(viewer, (Runnable) () -> tree.getItem(0).getText(0));
-      int computed = stats.computed;
       List<Object> input = (List<Object>) viewer.getInput();
-      for (int add = 0; add < 5; add++) {
-         Integer element = Integer.valueOf(rows + add);
-         input.add(element);
-         viewer.add(input, element);
-      }
-      int duringAdds = stats.computed - computed;
-      System.out.println("XVIEWER_PRECOMPUTE adds computed=" + duringAdds); //$NON-NLS-1$
-      assertTrue("values computed during five adds: " + duringAdds, duringAdds < rows); //$NON-NLS-1$
-      probe.set(viewer, null);
+      tree.setTopItem(tree.getItem(rows / 2));
+      tree.update();
+      settledTopIndex(tree, 0);
+      java.util.Collections.swap(input, 0, 1);
+      viewer.refresh();
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
+      Integer added = Integer.valueOf(rows);
+      input.add(added);
+      viewer.add(input, added);
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
+   }
+
+   /** The same with an input object that has identity equality and hash, mutated in place. */
+   @Test
+   public void boundedMutatedIdentityInputKeepsVisibleRowsOnTheirKeys() {
+      int rows = 5_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      IdentityRoots input = new IdentityRoots(Flat.roots(rows));
+      viewer.setInput(input);
+      shell.open();
       pump();
-      assertEquals(rows + 5, tree.getItemCount());
-      TreeItem first = tree.getItem(0);
-      String painted = first.getText(1);
-      assertEquals(Pre.value(((Integer) first.getData()).intValue()), painted);
+      Tree tree = viewer.getTree();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      tree.setTopItem(tree.getItem(rows / 2));
+      tree.update();
+      settledTopIndex(tree, 0);
+      java.util.Collections.swap(input.rows, 0, 1);
+      viewer.refresh();
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
+      Integer added = Integer.valueOf(rows);
+      input.rows.add(added);
+      viewer.add(input, added);
+      assertPaintedSortKeys(tree, settledTopIndex(tree, -1), counter);
    }
 
    /** An invalid {@code nebula.xviewer.boundedPreCompute} value leaves bounding off and is logged. */
@@ -1258,7 +1299,7 @@ public class XViewerPreComputedViewport_Test {
       @Override
       public void populateCachedValues(Collection<?> objects, Map<Long, String> preComputedValueMap) {
          counter.calls++;
-         boolean full = objects.size() == counter.rows;
+         boolean full = objects.size() >= counter.rows;
          if (full) {
             counter.fullBatches++;
             counter.lastFull.clear();
@@ -1338,6 +1379,15 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /** An input with identity equality and hash whose rows change in place. */
+   static final class IdentityRoots {
+      final List<Object> rows;
+
+      IdentityRoots(Integer[] roots) {
+         rows = new ArrayList<>(Arrays.asList((Object[]) roots));
+      }
+   }
+
    /** A flat model of Integer rows. */
    static final class Flat implements ITreeContentProvider {
       static Integer[] roots(int count) {
@@ -1350,6 +1400,9 @@ public class XViewerPreComputedViewport_Test {
 
       @Override
       public Object[] getElements(Object input) {
+         if (input instanceof IdentityRoots) {
+            return ((IdentityRoots) input).rows.toArray();
+         }
          return input instanceof List ? ((List<?>) input).toArray() : (Object[]) input;
       }
 

@@ -79,6 +79,7 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
@@ -144,13 +145,12 @@ public class XViewer extends TreeViewer {
    private final Map<XViewerColumn, XViewerPreComputedWindow> preComputeWindows = new IdentityHashMap<>();
    /** Nesting depth of full-data passes; the outermost pass drops the transient maps. */
    private int preComputePassDepth;
-   /** Top row and visible rows read before the current structural refresh, for its root pass. */
-   private int viewportTop = -1;
-   private int viewportVisible;
+   /** Upper bound of the rows the tree shows, for the font and client height it was computed for. */
+   private int rowBound = -1;
+   private Font rowBoundFont;
+   private int rowBoundHeight = -1;
    /** Test hook: runs where a root or child order is being computed, before its pass begins. */
    Runnable passProbe;
-   /** Test hook: runs where the viewport geometry is read, as a native paint there would. */
-   Runnable geometryProbe;
    /** Transient full maps serving each precomputed column during the current pass. */
    private final Map<XViewerColumn, Map<Long, String>> passValues = new IdentityHashMap<>();
 
@@ -717,14 +717,14 @@ public class XViewer extends TreeViewer {
     * window, so none keeps a value from before the pass; rows of other parents keep theirs, and a column the pass did
     * not read keeps its window.
     * <p>
-    * Reads no tree geometry: on GTK, {@code Tree.getItemHeight()} and {@code getTopItem()} can paint rows, which would
-    * re-enter the content provider while the parent is being ordered. They are read before the refresh begins.
+    * Reads no tree geometry: the caller passes the top row index and a font-metric bound of the visible rows, neither
+    * of which paints rows (on GTK {@code Tree.getItemHeight()} can, re-entering the content provider).
     * </p>
     *
     * @param all the rows the pass read
     * @param rows the rows it returned, in display order
-    * @param top the index of the root row at the top of the tree, read before the refresh began, or -1 for none
-    * @param visible the rows the tree shows, read before the refresh began
+    * @param top the index of the root row at the top of the tree, or -1 for none
+    * @param visible an upper bound of the rows the tree shows
     */
    private void seedPreComputedWindows(Object[] all, Object[] rows, int top, int visible) {
       if (passValues.isEmpty() || all.length == 0) {
@@ -771,30 +771,32 @@ public class XViewer extends TreeViewer {
    }
 
    /**
-    * With bounded precompute in effect, reads the top row and the visible row count for the passes of the coming
-    * structural refresh. Called before the viewport bridge drops its cached orders, when no content-provider call is
-    * on the stack: on GTK these reads can paint rows, which the bridge serves from its cached root order. When it has
-    * none (an earlier add, insert or remove already dropped it), the last values are kept: reading would order the
-    * root just to drop that order again.
+    * @return an upper bound of the rows the tree shows: the client height over the font height, plus two. A row is at
+    * least as tall as its font, so no more rows fit. Read from font metrics, never from {@code Tree.getItemHeight()},
+    * which on GTK can paint rows (and so re-enter the content provider) while a parent is being ordered. Cached for
+    * the tree's font and client height.
     */
-   private void readViewportGeometry() {
-      if (boundsPreCompute() && !getTree().isDisposed() && viewport.hasOrder(getInput())) {
-         if (geometryProbe != null) {
-            geometryProbe.run();
-         }
-         viewportTop = topRowIndex();
-         viewportVisible = visibleRowCount();
-      }
-   }
-
-   /** @return the rows the tree's client area can show */
-   private int visibleRowCount() {
+   int visibleRowBound() {
       Tree tree = getTree();
-      return tree.getClientArea().height / Math.max(1, tree.getItemHeight()) + 1;
+      Font font = tree.getFont();
+      int height = tree.getClientArea().height;
+      if (rowBound < 0 || font != rowBoundFont || height != rowBoundHeight) {
+         GC gc = new GC(tree);
+         try {
+            gc.setFont(font);
+            int fontHeight = Math.max(1, gc.getFontMetrics().getHeight());
+            rowBound = (height + fontHeight - 1) / fontHeight + 2;
+         } finally {
+            gc.dispose();
+         }
+         rowBoundFont = font;
+         rowBoundHeight = height;
+      }
+      return rowBound;
    }
 
    /** @return the index of the root row at the top of the tree, 0 if unknown */
-   private int topRowIndex() {
+   int topRowIndex() {
       try {
          Tree tree = getTree();
          TreeItem top = tree.getTopItem();
@@ -1559,11 +1561,10 @@ public class XViewer extends TreeViewer {
       // pass, and those of the rows about to be shown are kept so their text is what was sorted and filtered on
       boolean pass = boundsPreCompute() && (filters.length > 0 || comparator != null);
       Object input = getInput();
-      // geometry was read before the refresh began (readViewportGeometry): reading it here could paint rows and
-      // re-enter the content provider while this parent is being ordered
+      // the top row index and a font-metric bound of the visible rows; neither paints rows (no getItemHeight)
       boolean root = pass && shown && (parent == input || parent != null && parent.equals(input));
-      int top = root ? viewportTop : -1;
-      int visible = root ? viewportVisible : 0;
+      int top = root ? topRowIndex() : -1;
+      int visible = root ? visibleRowBound() : 0;
       if (passProbe != null) {
          passProbe.run();
       }
@@ -1616,7 +1617,6 @@ public class XViewer extends TreeViewer {
    @Override
    protected void internalRefresh(Object element, boolean updateLabels) {
       if (viewport != null) {
-         readViewportGeometry();
          viewport.invalidate();
       }
       super.internalRefresh(element, updateLabels);
@@ -1625,7 +1625,6 @@ public class XViewer extends TreeViewer {
    @Override
    public void add(Object parentElementOrTreePath, Object... childElements) {
       if (viewport != null) {
-         readViewportGeometry();
          viewport.invalidate();
       }
       super.add(parentElementOrTreePath, childElements);
@@ -1634,7 +1633,6 @@ public class XViewer extends TreeViewer {
    @Override
    public void insert(Object parentElementOrTreePath, Object element, int position) {
       if (viewport != null) {
-         readViewportGeometry();
          viewport.invalidate();
       }
       super.insert(parentElementOrTreePath, element, position);
@@ -1643,7 +1641,6 @@ public class XViewer extends TreeViewer {
    @Override
    public void remove(Object... elementsOrTreePaths) {
       if (viewport != null) {
-         readViewportGeometry();
          viewport.invalidate();
       }
       super.remove(elementsOrTreePaths);
