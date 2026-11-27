@@ -305,6 +305,7 @@ public class GridCellSelectionDifferential_Test {
 		final long deadline = System.nanoTime() + 5_000_000_000L;
 		while (System.nanoTime() < deadline) {
 			grid.showItem(item);
+			grid.showColumn(grid.getColumn(col));
 			grid.update();
 			while (grid.getDisplay().readAndDispatch()) {
 				// drain
@@ -395,5 +396,91 @@ public class GridCellSelectionDifferential_Test {
 		assertArrayEquals(toggled, Arrays.copyOfRange(cells, 300_000 - toggled.length, 300_000));
 		grid.checkCellSelection();
 		assertTrue("8,000 toggles took " + millis + " ms", millis < 3_000);
+	}
+
+	private Grid grid(final boolean blocks, final int columns, final int rows) {
+		final Grid grid = grid(blocks, SWT.MULTI);
+		for (int c = 3; c < columns; c++) {
+			new GridColumn(grid, SWT.NONE).setWidth(100);
+		}
+		grid.setItemCount(rows);
+		shell.open();
+		return grid;
+	}
+
+	/*
+	 * the earlier snapshot's entries are points: after a column removal an entry the list no longer
+	 * holds and a shared entry that moved onto its cell are two entries of one cell, and a second
+	 * removal to their left moves only the shared one. The blocks track the shared entries one by
+	 * one once cells have moved, and give the point list's answers for any number of removals.
+	 */
+	@Test
+	public void snapshotEntriesMoveOnlyWhileTheListHoldsThem() {
+		if (!GridTestUtil.fixesUpstreamDefects()) {
+			return; // the original mode keeps the stock point list on both sides
+		}
+		final List<String> answers = new ArrayList<>();
+		for (final boolean blocks : new boolean[] { false, true }) {
+			final Grid grid = grid(blocks, 5, 50);
+			grid.selectCell(new Point(2, 5));
+			grid.selectCell(new Point(3, 5));
+			press(grid, 4, 1, SWT.MOD1, -1, -1);
+			grid.getColumn(2).dispose();
+			grid.getColumn(0).dispose();
+			press(grid, 2, 3, SWT.MOD1 | SWT.MOD2, -1, -1);
+			answers.add(Arrays.toString(grid.getCellSelection()));
+			if (blocks) {
+				grid.checkCellSelection();
+			}
+			shell.dispose();
+		}
+		assertEquals(answers.get(0), answers.get(1));
+		assertEquals("[Point {2, 5}, Point {1, 5}, Point {2, 1}, Point {2, 2}, Point {2, 3}]", answers.get(1));
+	}
+
+	/*
+	 * seeded scripts of cell selections, ctrl+presses that take a shared snapshot or drag on, column
+	 * removals and ctrl+shift clicks that rebuild from the snapshot: the blocks give the point
+	 * list's cells after every step
+	 */
+	@Test
+	public void snapshotScriptsWithColumnRemovalsMatchThePointList() {
+		if (!GridTestUtil.fixesUpstreamDefects()) {
+			return; // the original mode keeps the stock point list on both sides
+		}
+		for (long seed = 1; seed <= 24; seed++) {
+			final List<List<String>> traces = new ArrayList<>();
+			for (final boolean blocks : new boolean[] { false, true }) {
+				final java.util.Random r = new java.util.Random(seed);
+				final Grid grid = grid(blocks, 6, 30);
+				final List<String> trace = new ArrayList<>();
+				for (int step = 0; step < 24; step++) {
+					final int m = grid.getColumnCount();
+					final int col = r.nextInt(m);
+					final int row = r.nextInt(30);
+					final int op = r.nextInt(7);
+					if (op <= 1) {
+						grid.selectCell(new Point(col, row));
+					} else if (op == 2) {
+						grid.deselectCell(new Point(col, row));
+					} else if (op == 3) {
+						// a shared snapshot (a drag within the cell) or a drag on (copies)
+						final boolean on = r.nextBoolean();
+						press(grid, col, row, SWT.MOD1, on ? r.nextInt(m) : -1, on ? r.nextInt(30) : -1);
+					} else if (op == 4 && m > 2) {
+						grid.getColumn(col).dispose();
+					} else {
+						press(grid, col, row, SWT.MOD1 | SWT.MOD2, -1, -1);
+					}
+					trace.add(step + " " + op + " " + Arrays.toString(grid.getCellSelection()));
+					if (blocks) {
+						grid.checkCellSelection();
+					}
+				}
+				traces.add(trace);
+				shell.dispose();
+			}
+			assertEquals("seed " + seed, traces.get(0), traces.get(1));
+		}
 	}
 }

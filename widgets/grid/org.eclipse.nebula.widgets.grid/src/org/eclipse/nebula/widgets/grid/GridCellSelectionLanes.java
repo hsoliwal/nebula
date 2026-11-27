@@ -84,8 +84,16 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	private GridCellSelectionList explicit;
 	/* the snapshot whose cells are this list's own (an addAll of this list), or null */
 	private GridCellSelectionLanes sharer;
-	/* in a snapshot: the cells the list still holds since the snapshot (per column), or null */
+	/*
+	 * in a snapshot: the cells the list still holds since the snapshot (per column, while no cell has
+	 * moved: the snapshot's cells are distinct), or null
+	 */
 	private RowSparseBits[] linked;
+	/*
+	 * in a snapshot whose cells moved (a point list since): its entries the list still holds, by cell
+	 * (the list holds each cell once), so that only those entries move again; or null
+	 */
+	private java.util.Map<Long, Point> linkedPoints;
 
 	GridCellSelectionLanes(final Grid grid) {
 		this.grid = grid;
@@ -384,13 +392,28 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		}
 	}
 
+	private static long cellKey(final int x, final int y) {
+		return (long) x << 32 | y & 0xFFFFFFFFL;
+	}
+
 	private void unlink(final int col, final int from, final int to) {
+		if (linkedPoints != null) {
+			if (from == to) {
+				linkedPoints.remove(Long.valueOf(cellKey(col, from)));
+			} else {
+				linkedPoints.values().removeIf(p -> p.x == col && p.y >= from && p.y <= to);
+			}
+			return;
+		}
 		if (linked != null && col >= 0 && col < linked.length && linked[col] != null) {
 			linked[col].setRange(Math.max(0, from), to + 1, false);
 		}
 	}
 
 	private void unlinkRows(final int rowCount) {
+		if (linkedPoints != null) {
+			linkedPoints.values().removeIf(p -> p.y >= rowCount);
+		}
 		if (linked != null) {
 			for (final RowSparseBits lane : linked) {
 				if (lane != null) {
@@ -401,30 +424,50 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	}
 
 	/*
-	 * the list moved its cells right of a removed column one column left in place: the cells of this
-	 * snapshot it still holds move with them, the others stay (only a point list holds both)
+	 * the list moved its cells right of a removed column one column left in place: the entries of this
+	 * snapshot it still holds move with them, the others stay (only a point list holds both, and from
+	 * then on the shared entries are tracked one by one, as the earlier list's shared points were)
 	 */
 	private void shiftLinked(final int index) {
-		if (linked == null) {
-			return;
+		if (linkedPoints == null) {
+			if (linked == null) {
+				return;
+			}
+			boolean moves = false;
+			for (int x = Math.max(0, index + 1); x < linked.length; x++) {
+				moves |= linked[x] != null && !linked[x].isEmpty();
+			}
+			if (!moves) {
+				return;
+			}
+			degrade();
+			linkedPoints = new java.util.HashMap<>();
+			for (int i = 0; i < explicit.size(); i++) {
+				final Point cell = explicit.get(i);
+				if (cell.x >= 0 && cell.x < linked.length && linked[cell.x] != null && cell.y >= 0
+						&& linked[cell.x].get(cell.y)) {
+					linkedPoints.put(Long.valueOf(cellKey(cell.x, cell.y)), cell);
+				}
+			}
+			linked = null;
 		}
-		boolean moves = false;
-		for (int x = Math.max(0, index + 1); x < linked.length; x++) {
-			moves |= linked[x] != null && !linked[x].isEmpty();
-		}
-		if (!moves) {
-			return;
-		}
-		degrade();
-		for (int i = 0; i < explicit.size(); i++) {
-			final Point cell = explicit.get(i);
-			if (cell.x > index && cell.x < linked.length && linked[cell.x] != null && linked[cell.x].get(cell.y)) {
-				cell.x--;
+		final List<Point> moving = new ArrayList<>();
+		for (final Point cell : linkedPoints.values()) {
+			if (cell.x > index) {
+				moving.add(cell);
 			}
 		}
+		if (moving.isEmpty()) {
+			return;
+		}
+		for (final Point cell : moving) {
+			linkedPoints.remove(Long.valueOf(cellKey(cell.x, cell.y)));
+		}
+		for (final Point cell : moving) {
+			cell.x--;
+			linkedPoints.put(Long.valueOf(cellKey(cell.x, cell.y)), cell);
+		}
 		explicit.reindex();
-		System.arraycopy(linked, index + 1, linked, index, linked.length - index - 1);
-		linked[linked.length - 1] = null;
 		modCount++;
 	}
 
@@ -580,6 +623,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		}
 		if (c instanceof GridCellSelectionLanes) {
 			linked = cellLanes();
+			linkedPoints = null;
 			((GridCellSelectionLanes) c).sharer = this;
 		}
 		return changed;
@@ -690,8 +734,10 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	@Override
 	public void clear() {
 		linked = null;
+		linkedPoints = null;
 		if (sharer != null) {
 			sharer.linked = null;
+			sharer.linkedPoints = null;
 		}
 		if (explicit != null) {
 			explicit.clear();
@@ -983,11 +1029,6 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		}
 		compact();
 		return blocks;
-	}
-
-	/** Test view: the number of blocks as they are (no compaction), or -1 for a point list. */
-	int rawBlockCount() {
-		return explicit != null ? -1 : blocks;
 	}
 
 	/** Checks the count against the lanes, then the compacted blocks against the lanes (tests). */
