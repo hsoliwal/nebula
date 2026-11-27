@@ -27,30 +27,34 @@ import org.eclipse.swt.graphics.Point;
 
 /**
  * The selected cells of a flat {@code SWT.VIRTUAL} Grid in the default (viewport) mode, kept as
- * blocks of rows by columns instead of a {@code Point} per cell: the Grid's cell list, with the
- * list semantics of {@code GridCellSelectionList} (selection order, first-occurrence removal,
- * copied points) for every caller.
+ * blocks of rows by columns instead of a {@code Point} per cell: the Grid's cell list, in selection
+ * order with first-occurrence removal, as the earlier point list.
  * <ul>
  * <li>membership is one {@link RowSparseBits} lane of rows per column index: {@code contains}, the
  * paint-time check, is O(log n) and makes no Point;</li>
- * <li>the order is a list of blocks in selection order; block {@code b} holds the cells
+ * <li>the order is a list of blocks in selection order; block {@code b} covers the cells
  * {@code (cols[b][j], row)} for {@code row} from {@code first[b]} to {@code last[b]}, row by row,
  * columns in {@code cols[b]} order (the order of the stock range loops). selectAllCells or a shift
  * range is one block, a ctrl+click a block of one cell, and cells appended next to the last block
  * in its order extend it;</li>
- * <li>a removal only clears the lane, O(log n); the blocks are compacted to the lanes in one sweep
- * when their order is read or a cell is appended, so a cell selected again goes after the others;</li>
+ * <li>a selected cell belongs to the last block that covers it: a removal only clears the lane and a
+ * cell selected again is appended as a new block, both O(log n); the blocks are compacted to the
+ * cells they own when their order is read, or when appends have doubled them since the last
+ * compaction (amortized), so toggling cells costs no pass over the blocks;</li>
  * <li>cells keep their row when rows are inserted or removed, as the list's points do; a removed
  * column drops its cells and the cells right of it move one column left, as the Grid's in-place
  * shift of the points does; a truncation drops the rows past the new count;</li>
  * <li>a {@code Point} is made only when a caller asks for points ({@code get}, iteration,
  * {@code toArray}); no item is made.</li>
  * </ul>
+ * The earlier range-select snapshot was an {@code ArrayList} that held the list's own points, so the
+ * in-place column shift moved the snapshot's cells that were still selected too: a snapshot made by
+ * {@code addAll} of this list keeps which of its cells the list still holds and moves them likewise.
  * What blocks cannot express (the same cell twice, an insertion or replacement inside the list) or
  * a Grid that is no longer flat and virtual without a row view turns the list into a
  * {@code GridCellSelectionList} of the same points, in order; it keeps blocks again once it is
  * cleared while the Grid is flat. Catalogue: ALG-GRID-CELL-BLOCKS (row-range by column-set blocks
- * over per-column row lanes).
+ * over per-column row lanes, last-cover ownership).
  */
 final class GridCellSelectionLanes extends AbstractList<Point> implements RandomAccess {
 
@@ -64,14 +68,24 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	private int[] last = new int[4];
 	private int[][] cols = new int[4][];
 	private int blocks;
-	private int count;
-	/* whether a block may hold deselected cells (holes): they are compacted away on demand */
-	private boolean holes;
+	/* the selected cells (rows by columns may exceed an int) */
+	private long count;
+	/*
+	 * whether a block may cover cells it does not own (deselected, or selected again by a later
+	 * block): compaction reduces the blocks to the cells they own
+	 */
+	private boolean dirty;
+	/* the blocks after the last compaction (appends compact again once they have doubled) */
+	private int compacted;
 	/* the cells before each block, rebuilt on demand */
-	private int[] prefix = new int[0];
+	private long[] prefix = new long[0];
 	private boolean prefixValid;
 	/* the point list this selection turned into, or null while it keeps blocks */
 	private GridCellSelectionList explicit;
+	/* the snapshot whose cells are this list's own (an addAll of this list), or null */
+	private GridCellSelectionLanes sharer;
+	/* in a snapshot: the cells the list still holds since the snapshot (per column), or null */
+	private RowSparseBits[] linked;
 
 	GridCellSelectionLanes(final Grid grid) {
 		this.grid = grid;
@@ -127,7 +141,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	 * range loop of {@code addToCellSelection} calls, without its checks. Blocks only.
 	 */
 	void addBlock(final int from, final int to, final int[] columns) {
-		compact();
+		mayCompact();
 		int row = from;
 		while (row <= to) {
 			int busy = to + 1;
@@ -160,6 +174,9 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	 * @return whether a cell was selected
 	 */
 	boolean removeBlock(final int from, final int to, final int[] columns) {
+		for (final int col : columns) {
+			unshare(col, from, to);
+		}
 		if (explicit != null) {
 			boolean removed = false;
 			for (int row = Math.max(0, from); row <= to; row++) {
@@ -170,7 +187,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			modCount++;
 			return removed;
 		}
-		int removed = 0;
+		long removed = 0;
 		for (final int col : columns) {
 			final RowSparseBits lane = col >= 0 && col < lanes.length ? lanes[col] : null;
 			final int n = lane == null ? 0 : lane.count(Math.max(0, from), to + 1);
@@ -183,7 +200,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			return false;
 		}
 		count -= removed;
-		holes = true;
+		dirty = true;
 		changed();
 		return true;
 	}
@@ -226,7 +243,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	int[] rowsInOrder() {
 		compact();
 		final RowSparseBits seen = new RowSparseBits();
-		int[] rows = new int[Math.min(count, 1024)];
+		int[] rows = new int[(int) Math.min(count, 1024)];
 		int n = 0;
 		for (int b = 0; b < blocks; b++) {
 			final int limit = last[b] + 1;
@@ -260,11 +277,15 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 
 	/**
 	 * Column {@code index} was removed: its cells go and the cells right of it move one column left
-	 * (the Grid's in-place shift of the points).
+	 * (the Grid's in-place shift of the points), in a snapshot sharing them too.
 	 *
 	 * @return whether a cell went or moved
 	 */
 	boolean columnRemoved(final int index) {
+		if (sharer != null) {
+			sharer.unlink(index, 0, LIMIT - 1);
+			sharer.shiftLinked(index);
+		}
 		if (explicit != null) {
 			boolean modified = explicit.removeIf(cell -> cell.x == index);
 			for (int i = 0; i < explicit.size(); i++) {
@@ -315,6 +336,10 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 
 	/** The rows at and after {@code rowCount} were removed: their cells go. */
 	void rowsTruncated(final int rowCount) {
+		unlinkRows(rowCount);
+		if (sharer != null) {
+			sharer.unlinkRows(rowCount);
+		}
 		if (explicit != null) {
 			explicit.removeIf(cell -> cell.y >= rowCount);
 			modCount++;
@@ -340,7 +365,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		changed();
 	}
 
-	/** Makes this list hold the cells of {@code source} (which keeps blocks), in order. */
+	/** Makes this list hold copies of the cells of {@code source} (which keeps blocks), in order. */
 	void copyFrom(final GridCellSelectionLanes source) {
 		explicit = null;
 		reset();
@@ -350,11 +375,101 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		}
 	}
 
+	// ------------------------------------------------------------- the snapshot's shared cells
+
+	/* the list let cells go: the snapshot's copies of them are no longer its points */
+	private void unshare(final int col, final int from, final int to) {
+		if (sharer != null) {
+			sharer.unlink(col, from, to);
+		}
+	}
+
+	private void unlink(final int col, final int from, final int to) {
+		if (linked != null && col >= 0 && col < linked.length && linked[col] != null) {
+			linked[col].setRange(Math.max(0, from), to + 1, false);
+		}
+	}
+
+	private void unlinkRows(final int rowCount) {
+		if (linked != null) {
+			for (final RowSparseBits lane : linked) {
+				if (lane != null) {
+					lane.setRange(Math.max(0, rowCount), LIMIT, false);
+				}
+			}
+		}
+	}
+
+	/*
+	 * the list moved its cells right of a removed column one column left in place: the cells of this
+	 * snapshot it still holds move with them, the others stay (only a point list holds both)
+	 */
+	private void shiftLinked(final int index) {
+		if (linked == null) {
+			return;
+		}
+		boolean moves = false;
+		for (int x = Math.max(0, index + 1); x < linked.length; x++) {
+			moves |= linked[x] != null && !linked[x].isEmpty();
+		}
+		if (!moves) {
+			return;
+		}
+		degrade();
+		for (int i = 0; i < explicit.size(); i++) {
+			final Point cell = explicit.get(i);
+			if (cell.x > index && cell.x < linked.length && linked[cell.x] != null && linked[cell.x].get(cell.y)) {
+				cell.x--;
+			}
+		}
+		explicit.reindex();
+		System.arraycopy(linked, index + 1, linked, index, linked.length - index - 1);
+		linked[linked.length - 1] = null;
+		modCount++;
+	}
+
+	/* a copy of this list's cells as lanes */
+	private RowSparseBits[] cellLanes() {
+		RowSparseBits[] copy = new RowSparseBits[lanes.length];
+		if (explicit != null) {
+			for (int i = 0; i < explicit.size(); i++) {
+				final Point cell = explicit.get(i);
+				if (cell.x >= 0 && cell.y >= 0) {
+					if (cell.x >= copy.length) {
+						copy = Arrays.copyOf(copy, cell.x + 1);
+					}
+					if (copy[cell.x] == null) {
+						copy[cell.x] = new RowSparseBits();
+					}
+					copy[cell.x].set(cell.y, true);
+				}
+			}
+			return copy;
+		}
+		for (int x = 0; x < lanes.length; x++) {
+			final RowSparseBits lane = lanes[x];
+			int position = 0;
+			while (lane != null && position < LIMIT) {
+				final int start = lane.next(position, LIMIT);
+				if (start < 0) {
+					break;
+				}
+				final int end = lane.runEnd(start, LIMIT);
+				if (copy[x] == null) {
+					copy[x] = new RowSparseBits();
+				}
+				copy[x].setRange(start, end, true);
+				position = end;
+			}
+		}
+		return copy;
+	}
+
 	// ---------------------------------------------------------------------------- the list
 
 	@Override
 	public int size() {
-		return explicit != null ? explicit.size() : count;
+		return explicit != null ? explicit.size() : (int) Math.min(count, Integer.MAX_VALUE);
 	}
 
 	@Override
@@ -365,7 +480,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		if (index < 0 || index >= count) {
 			throw new IndexOutOfBoundsException("index " + index + ", size " + count);
 		}
-		final int[] before = prefix();
+		final long[] before = prefix();
 		int low = 0;
 		int high = blocks - 1;
 		while (low < high) {
@@ -376,9 +491,9 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 				high = mid - 1;
 			}
 		}
-		final int offset = index - before[low];
+		final long offset = index - before[low];
 		final int width = cols[low].length;
-		return new Point(cols[low][offset % width], first[low] + offset / width);
+		return new Point(cols[low][(int) (offset % width)], (int) (first[low] + offset / width));
 	}
 
 	@Override
@@ -402,12 +517,13 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			return -1;
 		}
 		final Point p = (Point) o;
-		final int[] before = prefix();
+		final long[] before = prefix();
 		for (int b = 0; b < blocks; b++) {
 			if (first[b] <= p.y && p.y <= last[b]) {
 				for (int j = 0; j < cols[b].length; j++) {
 					if (cols[b][j] == p.x) {
-						return before[b] + (p.y - first[b]) * cols[b].length + j;
+						return (int) Math.min(before[b] + (long) (p.y - first[b]) * cols[b].length + j,
+								Integer.MAX_VALUE);
 					}
 				}
 			}
@@ -423,7 +539,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	@Override
 	public boolean add(final Point p) {
 		if (p != null && p.x >= 0 && p.y >= 0 && !contains(p) && lanes()) {
-			compact();
+			mayCompact();
 			append(p.y, p.y, new int[] { p.x });
 			return true;
 		}
@@ -444,16 +560,27 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		explicit.add(index, p);
 	}
 
+	/*
+	 * the range-select snapshot: an addAll of the cell list holds the list's own cells, as the
+	 * earlier ArrayList held its points, until the list lets them go
+	 */
 	@Override
 	public boolean addAll(final Collection<? extends Point> c) {
+		final boolean changed;
 		if (c instanceof GridCellSelectionLanes && ((GridCellSelectionLanes) c).keepsBlocks() && isEmpty()
 				&& lanes()) {
 			copyFrom((GridCellSelectionLanes) c);
-			return !isEmpty();
+			changed = !isEmpty();
+		} else {
+			boolean added = false;
+			for (final Point p : new ArrayList<>(c)) {
+				added |= add(p);
+			}
+			changed = added;
 		}
-		boolean changed = false;
-		for (final Point p : new ArrayList<>(c)) {
-			changed |= add(p);
+		if (c instanceof GridCellSelectionLanes) {
+			linked = cellLanes();
+			((GridCellSelectionLanes) c).sharer = this;
 		}
 		return changed;
 	}
@@ -462,22 +589,32 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	public Point set(final int index, final Point p) {
 		degrade();
 		modCount++;
-		return explicit.set(index, p);
+		final Point old = explicit.set(index, p);
+		if (old != null) {
+			unshare(old.x, old.y, old.y);
+		}
+		return old;
 	}
 
 	@Override
 	public boolean remove(final Object o) {
 		if (explicit != null) {
 			modCount++;
-			return explicit.remove(o);
+			final boolean removed = explicit.remove(o);
+			if (removed) {
+				final Point p = (Point) o;
+				unshare(p.x, p.y, p.y);
+			}
+			return removed;
 		}
 		if (!contains(o)) {
 			return false;
 		}
 		final Point p = (Point) o;
 		lanes[p.x].set(p.y, false);
+		unshare(p.x, p.y, p.y);
 		count--;
-		holes = true;
+		dirty = true;
 		changed();
 		return true;
 	}
@@ -486,7 +623,9 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	public Point remove(final int index) {
 		if (explicit != null) {
 			modCount++;
-			return explicit.remove(index);
+			final Point p = explicit.remove(index);
+			unshare(p.x, p.y, p.y);
+			return p;
 		}
 		final Point p = get(index);
 		remove(p);
@@ -497,6 +636,11 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	public boolean removeAll(final Collection<?> c) {
 		if (explicit != null) {
 			modCount++;
+			for (final Object o : c) {
+				if (o instanceof Point) {
+					unshare(((Point) o).x, ((Point) o).y, ((Point) o).y);
+				}
+			}
 			return explicit.removeAll(c);
 		}
 		boolean changed = false;
@@ -510,20 +654,32 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	public boolean retainAll(final Collection<?> c) {
 		degrade();
 		modCount++;
+		final List<Point> gone = new ArrayList<>();
+		for (int i = 0; i < explicit.size(); i++) {
+			if (!c.contains(explicit.get(i))) {
+				gone.add(explicit.get(i));
+			}
+		}
+		for (final Point p : gone) {
+			unshare(p.x, p.y, p.y);
+		}
 		return explicit.retainAll(c);
 	}
 
 	@Override
 	public boolean removeIf(final Predicate<? super Point> filter) {
-		if (explicit != null) {
-			modCount++;
-			return explicit.removeIf(filter);
-		}
 		final List<Point> matches = new ArrayList<>();
 		for (final Point p : toArray(new Point[0])) {
 			if (filter.test(p)) {
 				matches.add(p);
 			}
+		}
+		if (explicit != null) {
+			modCount++;
+			for (final Point p : matches) {
+				unshare(p.x, p.y, p.y);
+			}
+			return explicit.removeIf(filter);
 		}
 		for (final Point p : matches) {
 			remove(p);
@@ -533,6 +689,10 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 
 	@Override
 	public void clear() {
+		linked = null;
+		if (sharer != null) {
+			sharer.linked = null;
+		}
 		if (explicit != null) {
 			explicit.clear();
 			modCount++;
@@ -555,8 +715,12 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			return explicit.toArray(a);
 		}
 		compact();
-		final T[] result = a.length >= count ? a
-				: (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), count);
+		if (count > Integer.MAX_VALUE - 8) {
+			throw new OutOfMemoryError("cells: " + count);
+		}
+		final int n = (int) count;
+		final T[] result = a.length >= n ? a
+				: (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), n);
 		int i = 0;
 		for (int b = 0; b < blocks; b++) {
 			for (int row = first[b]; row <= last[b]; row++) {
@@ -565,8 +729,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 				}
 			}
 		}
-		if (result.length > count) {
-			result[count] = null;
+		if (result.length > n) {
+			result[n] = null;
 		}
 		return result;
 	}
@@ -583,7 +747,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		return lanes[col];
 	}
 
-	/* appends cells none of which is selected (no holes: the caller compacted) */
+	/* appends cells none of which is selected; they belong to the new last block */
 	private void append(final int from, final int to, final int[] columns) {
 		if (from > to || columns.length == 0) {
 			return;
@@ -591,14 +755,21 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		for (final int col : columns) {
 			lane(col).setRange(from, to + 1, true);
 		}
-		count += (to - from + 1) * columns.length;
+		count += (long) (to - from + 1) * columns.length;
 		push(from, to, columns);
 		changed();
 	}
 
+	/* appends compact the blocks once they have doubled since the last compaction (amortized) */
+	private void mayCompact() {
+		if (dirty && blocks > 2 * compacted + 64) {
+			compact();
+		}
+	}
+
 	/*
 	 * adds a block after the others; the last block absorbs it when the two read as one in order:
-	 * the next rows by the same columns, or more columns of the last block's last row
+	 * the next rows by the same columns, or other columns of the last block's last row
 	 */
 	private void push(final int from, final int to, final int[] columns) {
 		final int b = blocks - 1;
@@ -606,7 +777,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			last[b] = to;
 			return;
 		}
-		if (b >= 0 && from == to && last[b] == from) {
+		if (b >= 0 && from == to && last[b] == from && disjoint(cols[b], columns)) {
 			final int[] wider = Arrays.copyOf(cols[b], cols[b].length + columns.length);
 			System.arraycopy(columns, 0, wider, cols[b].length, columns.length);
 			if (first[b] < last[b]) {
@@ -626,6 +797,17 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		pushNew(from, to, columns);
 	}
 
+	private static boolean disjoint(final int[] a, final int[] b) {
+		for (final int x : a) {
+			for (final int y : b) {
+				if (x == y) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	private void pushNew(final int from, final int to, final int[] columns) {
 		if (blocks == first.length) {
 			first = Arrays.copyOf(first, blocks * 2);
@@ -639,74 +821,118 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	}
 
 	/*
-	 * the blocks reduced to the selected cells they hold, in order: each block splits where the set
-	 * of its columns still selected changes (per column, O(lane runs in the block) lane steps)
+	 * the blocks reduced to the cells they own, in order: a selected cell belongs to the last block
+	 * that covers it. From the last block back, each block keeps its selected cells that no later
+	 * block covers and splits where that set of columns changes (per column, O(lane runs and later
+	 * coverage runs in the block) steps)
 	 */
 	private void compact() {
-		if (!holes) {
+		if (!dirty) {
 			return;
 		}
-		final int[] oldFirst = first;
-		final int[] oldLast = last;
-		final int[][] oldCols = cols;
 		final int oldBlocks = blocks;
-		first = new int[Math.max(4, oldBlocks)];
-		last = new int[first.length];
-		cols = new int[first.length][];
-		blocks = 0;
-		final int[] kept = new int[8];
+		final RowSparseBits[] taken = new RowSparseBits[lanes.length];
+		int[] pf = new int[Math.max(8, oldBlocks)];
+		int[] pl = new int[pf.length];
+		int[][] pc = new int[pf.length][];
+		int pieces = 0;
+		final int[] begin = new int[oldBlocks + 1];
+		final int[] keep = new int[8];
 		int[] shared = null;
-		for (int b = 0; b < oldBlocks; b++) {
-			final int[] columns = oldCols[b];
-			final int[] bounds = boundaries(oldFirst[b], oldLast[b] + 1, columns);
+		for (int b = oldBlocks - 1; b >= 0; b--) {
+			final int from = first[b];
+			final int limit = last[b] + 1;
+			final int[] columns = cols[b];
+			begin[b] = pieces;
+			final int[] bounds = boundaries(from, limit, columns, taken);
+			final int[] kept = columns.length <= keep.length ? keep : new int[columns.length];
 			for (int s = 0; s + 1 < bounds.length; s++) {
 				final int row = bounds[s];
 				int n = 0;
-				final int[] keep = columns.length <= kept.length ? kept : new int[columns.length];
 				for (final int col : columns) {
-					if (col < lanes.length && lanes[col] != null && lanes[col].get(row)) {
-						keep[n++] = col;
+					if (owned(col, row, taken)) {
+						kept[n++] = col;
 					}
 				}
 				if (n == 0) {
 					continue;
 				}
-				// segments that keep the same columns share one array
-				int[] segment = columns;
+				// pieces that keep the same columns share one array
+				int[] piece = columns;
 				if (n < columns.length) {
-					if (shared == null || shared.length != n || !Arrays.equals(shared, 0, n, keep, 0, n)) {
-						shared = Arrays.copyOf(keep, n);
+					if (shared == null || shared.length != n || !Arrays.equals(shared, 0, n, kept, 0, n)) {
+						shared = Arrays.copyOf(kept, n);
 					}
-					segment = shared;
+					piece = shared;
 				}
-				push(row, bounds[s + 1] - 1, segment);
+				if (pieces == pf.length) {
+					pf = Arrays.copyOf(pf, pieces * 2);
+					pl = Arrays.copyOf(pl, pieces * 2);
+					pc = Arrays.copyOf(pc, pieces * 2);
+				}
+				pf[pieces] = row;
+				pl[pieces] = bounds[s + 1] - 1;
+				pc[pieces] = piece;
+				pieces++;
+			}
+			for (final int col : columns) {
+				if (col < taken.length) {
+					if (taken[col] == null) {
+						taken[col] = new RowSparseBits();
+					}
+					taken[col].setRange(from, limit, true);
+				}
 			}
 		}
-		holes = false;
+		begin[oldBlocks] = pieces;
+		// block b's pieces are [begin[b], begin[b - 1]) (built from the last block back)
+		first = new int[Math.max(4, pieces)];
+		last = new int[first.length];
+		cols = new int[first.length][];
+		blocks = 0;
+		for (int b = 0; b < oldBlocks; b++) {
+			final int end = b == 0 ? pieces : begin[b - 1];
+			for (int p = begin[b]; p < end; p++) {
+				push(pf[p], pl[p], pc[p]);
+			}
+		}
+		dirty = false;
+		compacted = blocks;
 		prefixValid = false;
 	}
 
-	/* from, limit and the rows between where a column's selection starts or ends: ascending, distinct */
-	private int[] boundaries(final int from, final int limit, final int[] columns) {
+	private boolean owned(final int col, final int row, final RowSparseBits[] taken) {
+		return col < lanes.length && lanes[col] != null && lanes[col].get(row)
+				&& (col >= taken.length || taken[col] == null || !taken[col].get(row));
+	}
+
+	/*
+	 * from, limit and the rows between where a column's selection or a later block's coverage starts
+	 * or ends: ascending, distinct
+	 */
+	private int[] boundaries(final int from, final int limit, final int[] columns, final RowSparseBits[] taken) {
 		int[] bounds = new int[8];
 		int n = 0;
 		bounds[n++] = from;
 		bounds[n++] = limit;
 		for (final int col : columns) {
-			final RowSparseBits lane = col < lanes.length ? lanes[col] : null;
-			int position = from;
-			while (lane != null && position < limit) {
-				final int start = lane.next(position, limit);
-				if (start < 0) {
-					break;
+			for (int k = 0; k < 2; k++) {
+				final RowSparseBits lane = k == 0 ? col < lanes.length ? lanes[col] : null
+						: col < taken.length ? taken[col] : null;
+				int position = from;
+				while (lane != null && position < limit) {
+					final int start = lane.next(position, limit);
+					if (start < 0) {
+						break;
+					}
+					final int end = lane.runEnd(start, limit);
+					if (n + 2 > bounds.length) {
+						bounds = Arrays.copyOf(bounds, bounds.length * 2);
+					}
+					bounds[n++] = start;
+					bounds[n++] = end;
+					position = end;
 				}
-				final int end = lane.runEnd(start, limit);
-				if (n + 2 > bounds.length) {
-					bounds = Arrays.copyOf(bounds, bounds.length * 2);
-				}
-				bounds[n++] = start;
-				bounds[n++] = end;
-				position = end;
 			}
 		}
 		Arrays.sort(bounds, 0, n);
@@ -719,16 +945,16 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		return Arrays.copyOf(bounds, distinct);
 	}
 
-	private int[] prefix() {
+	private long[] prefix() {
 		compact();
 		if (!prefixValid) {
 			if (prefix.length < blocks) {
-				prefix = new int[Math.max(blocks, prefix.length * 2)];
+				prefix = new long[Math.max(blocks, prefix.length * 2)];
 			}
-			int before = 0;
+			long before = 0;
 			for (int b = 0; b < blocks; b++) {
 				prefix[b] = before;
-				before += (last[b] - first[b] + 1) * cols[b].length;
+				before += (long) (last[b] - first[b] + 1) * cols[b].length;
 			}
 			prefixValid = true;
 		}
@@ -745,7 +971,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		Arrays.fill(cols, 0, blocks, null);
 		blocks = 0;
 		count = 0;
-		holes = false;
+		dirty = false;
+		compacted = 0;
 		changed();
 	}
 
@@ -758,12 +985,25 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		return blocks;
 	}
 
-	/** Checks the blocks against the lanes (tests). */
+	/** Test view: the number of blocks as they are (no compaction), or -1 for a point list. */
+	int rawBlockCount() {
+		return explicit != null ? -1 : blocks;
+	}
+
+	/** Checks the count against the lanes, then the compacted blocks against the lanes (tests). */
 	void checkInvariants() {
 		if (explicit != null) {
 			return;
 		}
-		int total = 0;
+		long inLanes = 0;
+		for (final RowSparseBits lane : lanes) {
+			inLanes += lane == null ? 0 : lane.count(0, LIMIT);
+		}
+		if (inLanes != count) {
+			throw new IllegalStateException("count " + count + ", lanes " + inLanes);
+		}
+		compact();
+		long total = 0;
 		RowSparseBits[] seen = new RowSparseBits[lanes.length];
 		for (int b = 0; b < blocks; b++) {
 			if (first[b] > last[b] || cols[b].length == 0) {
@@ -771,12 +1011,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			}
 			for (int row = first[b]; row <= last[b]; row++) {
 				for (final int col : cols[b]) {
-					final boolean selected = col < lanes.length && lanes[col] != null && lanes[col].get(row);
-					if (!selected) {
-						if (!holes) {
-							throw new IllegalStateException("cell " + col + "," + row + " of a block is not selected");
-						}
-						continue;
+					if (col >= lanes.length || lanes[col] == null || !lanes[col].get(row)) {
+						throw new IllegalStateException("cell " + col + "," + row + " of a block is not selected");
 					}
 					if (col >= seen.length) {
 						seen = Arrays.copyOf(seen, col + 1);
@@ -792,12 +1028,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 				}
 			}
 		}
-		int inLanes = 0;
-		for (final RowSparseBits lane : lanes) {
-			inLanes += lane == null ? 0 : lane.count(0, LIMIT);
-		}
-		if (total != count || inLanes != count) {
-			throw new IllegalStateException("count " + count + ", blocks " + total + ", lanes " + inLanes);
+		if (total != count) {
+			throw new IllegalStateException("count " + count + ", blocks " + total);
 		}
 	}
 }
