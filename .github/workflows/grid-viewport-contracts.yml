@@ -86,9 +86,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # nebula-parent gives each test JVM -Xmx512m and appends ${tests.vmargs}
+          # after it; the last -Xmx wins. The full profile adds GridViewport_Test's
+          # 1,000,000 explicit GridItems (about 480 MB live on their own) to the legacy
+          # classes whose shells stay open until the JVM ends. In 512 MB the viewport
+          # JVM ran out of heap there and its OSGi runtime exited.
           dbus-run-session -- xvfb-run -a -s '-screen 0 1200x800x24 -noreset' \
             mvn -B -ntp -f widgets/grid/pom.xml -Pfull-grid-contracts \
               -pl org.eclipse.nebula.widgets.grid.test -am \
+              -Dtests.vmargs=-Xmx2g \
               -DfailIfNoTests=true verify
       - name: Reject absent, failed or skipped Grid viewport and sticky TreeGrid JUnit
         shell: bash
@@ -141,4 +147,6 @@ jobs:
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/**/*surefire*.xml
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/surefire-reports/*.xml
             widgets/grid/org.eclipse.nebula.widgets.grid.test/target/**/*.log
+            widgets/grid/org.eclipse.nebula.widgets.grid.test/hs_err_pid*.log
+            widgets/grid/org.eclipse.nebula.widgets.grid.test/replay_pid*.log
             ${{ github.workspace }}/grid-native-pixels-${{ matrix.mode }}/*.png
