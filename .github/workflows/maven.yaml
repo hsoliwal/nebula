@@ -477,6 +477,90 @@ jobs:
         
         assert verify(Path(".")) == 2
         M3_NATIVE_SCREEN_JUNIT
+    # Independently execute the original native XYGraph pixel oracle after
+    # original full widgets. Prior failures do not turn this into a passing CI.
+    - name: Independently execute native XYGraph setter pixel oracle
+      if: ${{ !cancelled() }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        grep -Fx -- '-Dtycho-version=4.0.12' .mvn/maven.config
+        test -f releng/swt-receiver/swt-receiver-p2/target/binding/expected.json
+        mvn -version | tee "$RUNNER_TEMP/xygraph-maven-version.txt"
+        grep -Eq '^Apache Maven 3[.]9[.]11([[:space:]]|$)' "$RUNNER_TEMP/xygraph-maven-version.txt"
+        # Source reports from the original all-widget run remain independently
+        # inspectable even if this targeted invocation rewrites its JUnit XML.
+        original=widgets/visualization/org.eclipse.nebula.visualization.xygraph.test/target/surefire-reports
+        if [[ -d "$original" ]]; then
+          mkdir -p "$RUNNER_TEMP/xygraph-reports-before-isolated"
+          cp -a "$original/." "$RUNNER_TEMP/xygraph-reports-before-isolated/"
+        fi
+        # A prior full-reactor report is not proof of a fresh isolated run.
+        # Remove only this test receipt after preserving originals above.
+        rm -f "$original/TEST-org.eclipse.nebula.visualization.xygraph.figures.XYGraphSetterDamageTest.xml"
+        sudo apt-get install -y xvfb x11-xserver-utils openbox wmctrl
+        xvfb-run --auto-servernum -s '-screen 0 1280x800x24 -noreset' bash -c '
+          set -euo pipefail
+          openbox --sm-disable >"${RUNNER_TEMP:-/tmp}/xygraph-openbox.log" 2>&1 &
+          wm_pid=$!
+          trap "kill $wm_pid 2>/dev/null || true" EXIT
+          for attempt in $(seq 1 100); do
+            if wmctrl -m >/dev/null 2>&1; then break; fi
+            kill -0 "$wm_pid" 2>/dev/null || exit 1
+            sleep 0.1
+          done
+          wmctrl -m
+          "$@"
+        ' xygraph-native bash releng/swt-receiver/retry-transient-maven-503.sh \
+          mvn -V -B -U --fail-at-end verify \
+          -pl :org.eclipse.nebula.visualization.xygraph.test -am \
+          -Dtest=XYGraphSetterDamageTest \
+          -Dsurefire.failIfNoSpecifiedTests=false \
+          -Dtycho.localArtifacts=ignore \
+          -DskipTests=false -Dmaven.test.skip=false -Dmaven.test.failure.ignore=false \
+          -Dtests.vmargs=-Xcheck:jni \
+          "-Dnebula.swt.gc.sha256=${M3_SWT_GC_SHA256:?missing pinned SWT digest}" \
+          "-Dtarget-platform-platform=${M3_SWT_PLATFORM:?missing pinned platform}" \
+          "-Dm3.test.pixels.dir=${RUNNER_TEMP:?}/nebula-widget-pixels"
+    - name: Require isolated real XYGraph JUnit4 methods with strict pixels
+      if: ${{ !cancelled() }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        python3 - <<'PY'
+        from pathlib import Path
+        import xml.etree.ElementTree as ET
+        root = Path('widgets/visualization/org.eclipse.nebula.visualization.xygraph.test/target/surefire-reports')
+        file = root / 'TEST-org.eclipse.nebula.visualization.xygraph.figures.XYGraphSetterDamageTest.xml'
+        if not file.is_file() or file.stat().st_size > 40_000_000:
+            raise SystemExit('HOLD: required native XYGraph JUnit XML missing/oversized')
+        content = file.read_bytes()
+        if b'<!DOCTYPE' in content.upper() or b'<!ENTITY' in content.upper():
+            raise SystemExit('HOLD: untrusted XML declaration in native JUnit receipt')
+        suite = ET.fromstring(content)
+        if suite.tag != 'testsuite':
+            raise SystemExit('HOLD: expected an original JUnit testsuite')
+        counts = {key: int(suite.attrib.get(key, '0')) for key in
+                  ('tests', 'failures', 'errors', 'skipped')}
+        required = {'theErrorBarSettersShowAtOnce', 'theLegendSettersShowAtOnce'}
+        cases = list(suite.iter('testcase'))
+        methods = {c.attrib.get('name') for c in cases}
+        if counts != {'tests': 2, 'failures': 0, 'errors': 0, 'skipped': 0} or methods != required:
+            raise SystemExit(f'XYGRAPH_NATIVE_ORACLE_FAIL counts={counts} methods={sorted(methods)}')
+        print('XYGRAPH_NATIVE_SETTER_PIXEL_PASS tests=2 failure=0 error=0 skip=0')
+        PY
+    - name: Preserve isolated XYGraph clips, pixel PNGs and original reactor reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: xygraph-isolated-native-evidence
+        if-no-files-found: warn
+        path: |
+          ${{ runner.temp }}/xygraph-reports-before-isolated/
+          widgets/visualization/org.eclipse.nebula.visualization.xygraph.test/target/surefire-reports/
+          ${{ runner.temp }}/nebula-widget-pixels/xygraph-native-*.png
+          ${{ runner.temp }}/xygraph-maven-version.txt
+          ${{ runner.temp }}/xygraph-openbox.log
     - name: Qualify Grid native screen pixels with OpenCV
       if: ${{ !cancelled() }}
       run: |
