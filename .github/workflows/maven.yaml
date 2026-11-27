@@ -489,6 +489,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/xygraph-reports-before-isolated"
           cp -a "$original/." "$RUNNER_TEMP/xygraph-reports-before-isolated/"
         fi
+        # A prior full-reactor report is not proof of a fresh isolated run.
+        # Remove only this test receipt after preserving originals above.
+        rm -f "$original/TEST-org.eclipse.nebula.visualization.xygraph.figures.XYGraphSetterDamageTest.xml"
         sudo apt-get install -y xvfb x11-xserver-utils openbox wmctrl
         xvfb-run --auto-servernum -s '-screen 0 1280x800x24 -noreset' bash -c '
           set -euo pipefail
