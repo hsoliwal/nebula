@@ -22,6 +22,7 @@ import static org.junit.Assume.assumeTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.locks.LockSupport;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
@@ -195,8 +196,11 @@ public class GridColumnMetricsViewport_Test {
 		assumeTrue("the original mode keeps stock's setColumnOrder", GridTestUtil.fixesUpstreamDefects());
 		final Display display = shell.getDisplay();
 		shell.setBounds(10, 10, 420, 260);
-		// the focus stays here, so the Grid paints no focus change of its own
-		new Text(shell, SWT.SINGLE).setBounds(5, 220, 60, 22);
+		final Text text = new Text(shell, SWT.SINGLE);
+		text.setBounds(5, 220, 60, 22);
+		// first in the tab order, so Shell.open() gives the focus to the Text and not to the Grid,
+		// which repaints on every FocusIn and FocusOut
+		text.moveAbove(null);
 		grid.setBounds(5, 5, 400, 200);
 		grid.setHeaderVisible(true);
 		for (int c = 0; c < 4; c++) {
@@ -208,17 +212,47 @@ public class GridColumnMetricsViewport_Test {
 				item.setText(c, r + ":" + c);
 			}
 		}
+		/*
+		 * Under X11 the real focus events come when the window manager activates the shell, at a time
+		 * the X server picks, possibly after the first paint (#736). isFocusControl() cannot tell:
+		 * SWT GTK answers the window's focus widget before the window has the X focus. So the focus
+		 * events are counted from before the open, the Text is given the focus, and the events are
+		 * dispatched until it has had its real FocusIn (bounded, logged if it does not come). The
+		 * first paint and the paint of any earlier Grid focus change then settle, and a Grid focus
+		 * change inside a measured interval fails the test instead of passing or failing its count.
+		 */
+		final int[] gridFocusChanges = new int[1];
+		final boolean[] textFocused = new boolean[1];
+		grid.addListener(SWT.FocusIn, e -> gridFocusChanges[0]++);
+		grid.addListener(SWT.FocusOut, e -> gridFocusChanges[0]++);
+		text.addListener(SWT.FocusIn, e -> textFocused[0] = true);
+		text.addListener(SWT.FocusOut, e -> textFocused[0] = false);
 		shell.open();
+		text.forceFocus();
+		final long deadline = System.nanoTime() + 5_000_000_000L;
+		while (!textFocused[0] && System.nanoTime() < deadline) {
+			if (!display.readAndDispatch()) {
+				LockSupport.parkNanos(5_000_000L);
+			}
+		}
+		if (!textFocused[0]) {
+			System.out.println("GRID_COLUMN_ORDER_REPAINT the Text had no FocusIn within 5 s");
+		}
 		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, 1, "first Grid paint");
+		final int focusChanges = gridFocusChanges[0];
 		final int before = grid.paintPasses;
 		grid.setColumnOrder(new int[] { 1, 2, 3, 0 });
 		assertArrayEquals(new int[] { 1, 2, 3, 0 }, grid.getColumnOrder());
 		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, before + 1,
 				"setColumnOrder left the window on the old column order");
+		assertEquals("the Grid's focus changed while the new order's paints were counted", focusChanges,
+				gridFocusChanges[0]);
 		final int settled = grid.paintPasses;
 		grid.setColumnOrder(new int[] { 1, 2, 3, 0 });
 		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, settled,
 				"Grid paints after the same column order");
+		assertEquals("the Grid's focus changed while the same order's paints were counted", focusChanges,
+				gridFocusChanges[0]);
 		assertEquals("the same order paints nothing", settled, grid.paintPasses);
 	}
 
