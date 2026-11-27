@@ -144,6 +144,11 @@ public class XViewer extends TreeViewer {
    private final Map<XViewerColumn, XViewerPreComputedWindow> preComputeWindows = new IdentityHashMap<>();
    /** Nesting depth of full-data passes; the outermost pass drops the transient maps. */
    private int preComputePassDepth;
+   /** Top row and visible rows read before the current structural refresh, for its root pass. */
+   private int viewportTop = -1;
+   private int viewportVisible;
+   /** Test hook: runs where a root or child order is being computed, before its pass begins. */
+   Runnable passProbe;
    /** Transient full maps serving each precomputed column during the current pass. */
    private final Map<XViewerColumn, Map<Long, String>> passValues = new IdentityHashMap<>();
 
@@ -710,14 +715,14 @@ public class XViewer extends TreeViewer {
     * window, so none keeps a value from before the pass; rows of other parents keep theirs, and a column the pass did
     * not read keeps its window.
     * <p>
-    * Reads no tree geometry: on GTK, {@code Tree.getItemHeight()} can paint rows, whose label requests would fill an
-    * unread pass map with a full {@code populateCachedValues} call. The caller reads it before the pass.
+    * Reads no tree geometry: on GTK, {@code Tree.getItemHeight()} and {@code getTopItem()} can paint rows, which would
+    * re-enter the content provider while the parent is being ordered. They are read before the refresh begins.
     * </p>
     *
     * @param all the rows the pass read
     * @param rows the rows it returned, in display order
-    * @param top the index of the root row at the top of the tree, read before the pass began, or -1 for none
-    * @param visible the rows the tree shows, read before the pass began
+    * @param top the index of the root row at the top of the tree, read before the refresh began, or -1 for none
+    * @param visible the rows the tree shows, read before the refresh began
     */
    private void seedPreComputedWindows(Object[] all, Object[] rows, int top, int visible) {
       if (passValues.isEmpty() || all.length == 0) {
@@ -733,6 +738,8 @@ public class XViewer extends TreeViewer {
          }
          IXViewerPreComputedColumn preComputedColumn = (IXViewerPreComputedColumn) entry.getKey();
          XViewerPreComputedWindow window = preComputedWindow(entry.getKey());
+         // a tall tree keeps more rows than the default window: grow it so they all fit with room to spare
+         window.ensureCapacity(head + Math.max(0, to - from));
          for (Object row : all) {
             try {
                window.remove(preComputedColumn.getKey(row));
@@ -758,6 +765,18 @@ public class XViewer extends TreeViewer {
       Long key = column.getKey(row);
       if (values.containsKey(key)) {
          window.put(key, values.get(key));
+      }
+   }
+
+   /**
+    * With bounded precompute in effect, reads the top row and the visible row count for the passes of the coming
+    * structural refresh. Called before the viewport bridge drops its cached orders, when no content-provider call is
+    * on the stack: on GTK these reads can paint rows, which the bridge then serves from its still valid orders.
+    */
+   private void readViewportGeometry() {
+      if (boundsPreCompute() && !getTree().isDisposed()) {
+         viewportTop = topRowIndex();
+         viewportVisible = visibleRowCount();
       }
    }
 
@@ -1533,10 +1552,14 @@ public class XViewer extends TreeViewer {
       // pass, and those of the rows about to be shown are kept so their text is what was sorted and filtered on
       boolean pass = boundsPreCompute() && (filters.length > 0 || comparator != null);
       Object input = getInput();
-      // read before the pass: a row the native tree paints meanwhile must not fill an unread pass map
+      // geometry was read before the refresh began (readViewportGeometry): reading it here could paint rows and
+      // re-enter the content provider while this parent is being ordered
       boolean root = pass && shown && (parent == input || parent != null && parent.equals(input));
-      int top = root ? topRowIndex() : -1;
-      int visible = root ? visibleRowCount() : 0;
+      int top = root ? viewportTop : -1;
+      int visible = root ? viewportVisible : 0;
+      if (passProbe != null) {
+         passProbe.run();
+      }
       if (pass) {
          beginPreComputePass(raw, null);
       }
@@ -1586,6 +1609,7 @@ public class XViewer extends TreeViewer {
    @Override
    protected void internalRefresh(Object element, boolean updateLabels) {
       if (viewport != null) {
+         readViewportGeometry();
          viewport.invalidate();
       }
       super.internalRefresh(element, updateLabels);
@@ -1594,6 +1618,7 @@ public class XViewer extends TreeViewer {
    @Override
    public void add(Object parentElementOrTreePath, Object... childElements) {
       if (viewport != null) {
+         readViewportGeometry();
          viewport.invalidate();
       }
       super.add(parentElementOrTreePath, childElements);
@@ -1602,6 +1627,7 @@ public class XViewer extends TreeViewer {
    @Override
    public void insert(Object parentElementOrTreePath, Object element, int position) {
       if (viewport != null) {
+         readViewportGeometry();
          viewport.invalidate();
       }
       super.insert(parentElementOrTreePath, element, position);
@@ -1610,6 +1636,7 @@ public class XViewer extends TreeViewer {
    @Override
    public void remove(Object... elementsOrTreePaths) {
       if (viewport != null) {
+         readViewportGeometry();
          viewport.invalidate();
       }
       super.remove(elementsOrTreePaths);

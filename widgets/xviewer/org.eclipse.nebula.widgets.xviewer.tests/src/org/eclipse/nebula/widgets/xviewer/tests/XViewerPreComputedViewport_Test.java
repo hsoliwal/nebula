@@ -776,6 +776,37 @@ public class XViewerPreComputedViewport_Test {
       }
    }
 
+   /**
+    * Bounded: a native callback that paints a row while the root order is being computed (as GTK's
+    * {@code getItemHeight} can) must not start a second, nested pass; the row is filled once the order is known and
+    * shows the value it was sorted on. Emulated with a test hook that reads row 0's text, which on Win32 sends
+    * SetData. Fails on e71edf7 (a nested pass).
+    */
+   @Test
+   public void boundedPaintDuringOrderingStartsNoNestedPass() throws Exception {
+      int rows = 2_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      boolean[] fired = new boolean[1];
+      Field probe = XViewer.class.getDeclaredField("passProbe"); //$NON-NLS-1$
+      probe.setAccessible(true);
+      probe.set(viewer, (Runnable) () -> {
+         if (!fired[0] && !viewer.getCustomizeMgr().getSortXCols().isEmpty()) {
+            fired[0] = true;
+            tree.getItem(0).getText(0);
+         }
+      });
+      clickHeader(viewer, PRE_ID);
+      pump();
+      assertTrue("the hook ran during the sort", fired[0]); //$NON-NLS-1$
+      assertEquals("full passes: load and one sort", 2, counter.fullBatches); //$NON-NLS-1$
+      assertPaintedSortKeys(tree, 0, counter);
+   }
+
    /** An invalid {@code nebula.xviewer.boundedPreCompute} value leaves bounding off and is logged. */
    @Test
    public void invalidBoundedPreComputePropertyIsOffAndLogged() throws Exception {

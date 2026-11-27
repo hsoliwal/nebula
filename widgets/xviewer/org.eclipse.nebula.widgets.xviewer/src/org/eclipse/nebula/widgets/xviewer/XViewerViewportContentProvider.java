@@ -13,10 +13,12 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.xviewer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.eclipse.jface.viewers.ILazyTreeContentProvider;
@@ -54,6 +56,11 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    private int cachedReferences;
    /** Parents whose cached children came from a bounded-precompute probe that kept no values for display. */
    private final Set<Object> probedOnly = new HashSet<>();
+   /** Parents whose children are being ordered now; a native callback may ask for one of their rows meanwhile. */
+   private final List<Object> ordering = new ArrayList<>();
+   /** Rows asked for while their parent was being ordered, filled once the order is known. */
+   private final List<Object> deferredParents = new ArrayList<>();
+   private final List<Integer> deferredIndexes = new ArrayList<>();
    private int[] materializedRoots = new int[0];
    private int materializedCount;
 
@@ -92,6 +99,12 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    @Override
    public void updateElement(Object parent, int index) {
       Object[] children = children(parent);
+      if (children == null) {
+         // asked for by a native callback while this parent is being ordered: filled once the order is known
+         deferredParents.add(parent);
+         deferredIndexes.add(Integer.valueOf(index));
+         return;
+      }
       if (index < 0 || index >= children.length) {
          return;
       }
@@ -109,7 +122,11 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
 
    @Override
    public void updateChildCount(Object element, int currentChildCount) {
-      int count = children(element).length;
+      Object[] children = children(element);
+      if (children == null) {
+         return; // re-entered while this element's children are being ordered; that call sets the count
+      }
+      int count = children.length;
       if (count != currentChildCount) {
          viewer.setChildCount(element, count);
       }
@@ -161,6 +178,9 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
          return false;
       }
       Object[] siblings = children(parent);
+      if (siblings == null) {
+         return false;
+      }
       int index = Arrays.asList(siblings).indexOf(element);
       if (index < 0 || isRoot(parent) && index >= viewer.getTree().getItemCount()) {
          return false;
@@ -176,13 +196,16 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
     * @return the filtered and sorted children of {@code parent} in display order, as the native tree is given them
     */
    Object[] displayChildren(Object parent) {
-      return children(parent);
+      Object[] children = children(parent);
+      return children == null ? EMPTY : children;
    }
 
    /** Drops cached child orderings and the materialized-row bits. */
    void invalidate() {
       sortedChildren.clear();
       probedOnly.clear();
+      deferredParents.clear();
+      deferredIndexes.clear();
       cachedReferences = 0;
       materializedRoots = new int[0];
       materializedCount = 0;
@@ -226,7 +249,21 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       if (viewer.getFilters().length == 0) {
          return delegate.hasChildren(element);
       }
-      return children(element, false).length > 0;
+      Object[] children = children(element, false);
+      return children == null ? delegate.hasChildren(element) : children.length > 0;
+   }
+
+   /** Fills the rows of {@code parent} a native callback asked for while it was being ordered. */
+   private void fillDeferred(Object parent) {
+      for (int i = 0; i < deferredParents.size(); i++) {
+         Object waiting = deferredParents.get(i);
+         if (waiting == parent || waiting != null && waiting.equals(parent)) {
+            deferredParents.remove(i);
+            int index = deferredIndexes.remove(i).intValue();
+            i--;
+            updateElement(parent, index);
+         }
+      }
    }
 
    private void evictColdest() {
@@ -246,6 +283,7 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
    /**
     * @param shown false when only asked whether the children exist (an unexpanded row), so their precomputed values
     * are not kept for display
+    * @return the ordered children, or null when re-entered (from a native callback) while they are being ordered
     */
    private Object[] children(Object parent, boolean shown) {
       if (parent == null) {
@@ -260,14 +298,23 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
          cached = null;
       }
       if (cached == null) {
-         Object[] raw = isRoot(parent) ? delegate.getElements(parent) : delegate.getChildren(parent);
-         cached = viewer.viewportSortedChildren(parent, raw == null ? EMPTY : raw, shown);
+         if (ordering.contains(parent)) {
+            return null;
+         }
+         ordering.add(parent);
+         try {
+            Object[] raw = isRoot(parent) ? delegate.getElements(parent) : delegate.getChildren(parent);
+            cached = viewer.viewportSortedChildren(parent, raw == null ? EMPTY : raw, shown);
+         } finally {
+            ordering.remove(ordering.size() - 1);
+         }
          sortedChildren.put(parent, cached);
          if (!shown && viewer.boundsPreCompute()) {
             probedOnly.add(parent);
          }
          cachedReferences += cached.length;
          evictColdest();
+         fillDeferred(parent);
       }
       return cached;
    }

@@ -25,9 +25,10 @@ import java.util.Set;
  * The resident values of one {@link IXViewerPreComputedColumn} while its {@link XViewer} bounds precomputed values (see
  * {@link XViewer#setBoundedPreCompute(boolean)}). The viewer keeps it beside the column, whose own
  * {@code preComputedValueMap} it leaves alone, and {@link IXViewerPreComputedColumn#populateCachedValues} fills it for
- * the rows asked for. It holds at most {@link #SLOTS} values for non-null keys, plus one for the {@code null} key: the
- * rows the native tree shows, their overscan and recently used rows. A value that leaves is computed again by the
- * column if its row is asked for again.
+ * the rows asked for. It holds at most {@link #SLOTS} values for non-null keys by default, plus one for the
+ * {@code null} key: the rows the native tree shows, their overscan and recently used rows. When a pass keeps more rows
+ * than fit (a tall tree), {@link #ensureCapacity(int)} grows it to twice those rows; its size follows the viewport,
+ * never the data. A value that leaves is computed again by the column if its row is asked for again.
  * <p>
  * The values live in parent-owned lanes (a {@code long[]} of keys, a {@code String[]} of values and an {@code int[]}
  * of use ticks), not in one entry object per row. A key is looked up in a window of {@link #PROBE} slots after its
@@ -44,24 +45,60 @@ final class XViewerPreComputedWindow extends AbstractMap<Long, String> {
    private static final int MASK = SLOTS - 1;
    private static final int PROBE = 8;
 
-   private final long[] keys = new long[SLOTS];
-   private final String[] values = new String[SLOTS];
+   private long[] keys = new long[SLOTS];
+   private String[] values = new String[SLOTS];
    /** Last use of each slot; 0 marks a free slot. */
-   private final int[] ticks = new int[SLOTS];
+   private int[] ticks = new int[SLOTS];
+   private int mask = MASK;
+   private int shift = SHIFT;
    private int tick;
    private int size;
    private boolean hasNullKey;
    private String nullKeyValue;
    private int modCount;
 
-   private static int home(long key) {
-      return (int) ((key * 0x9E3779B97F4A7C15L) >>> SHIFT);
+   private int home(long key) {
+      return (int) ((key * 0x9E3779B97F4A7C15L) >>> shift);
+   }
+
+   /**
+    * Grows the lanes to a power of two of at least twice {@code count} slots, keeping the resident values and their
+    * order of use; never shrinks.
+    */
+   void ensureCapacity(int count) {
+      int target = Math.max(SLOTS, 2 * count);
+      int slots = Integer.highestOneBit(target - 1) << 1;
+      if (slots <= ticks.length) {
+         return;
+      }
+      long[] oldKeys = keys;
+      String[] oldValues = values;
+      int[] oldTicks = ticks;
+      Integer[] order = new Integer[oldTicks.length];
+      int resident = 0;
+      for (int slot = 0; slot < oldTicks.length; slot++) {
+         if (oldTicks[slot] != 0) {
+            order[resident++] = Integer.valueOf(slot);
+         }
+      }
+      Arrays.sort(order, 0, resident, (a, b) -> Integer.compare(oldTicks[a.intValue()], oldTicks[b.intValue()]));
+      keys = new long[slots];
+      values = new String[slots];
+      ticks = new int[slots];
+      mask = slots - 1;
+      shift = Long.SIZE - Integer.numberOfTrailingZeros(slots);
+      size = 0;
+      for (int i = 0; i < resident; i++) {
+         int slot = order[i].intValue();
+         put(Long.valueOf(oldKeys[slot]), oldValues[slot]);
+      }
+      modCount++;
    }
 
    private int slotOf(long key) {
       int home = home(key);
       for (int i = 0; i < PROBE; i++) {
-         int slot = home + i & MASK;
+         int slot = home + i & mask;
          if (ticks[slot] != 0 && keys[slot] == key) {
             return slot;
          }
@@ -72,7 +109,7 @@ final class XViewerPreComputedWindow extends AbstractMap<Long, String> {
    private int nextTick() {
       if (tick == Integer.MAX_VALUE) {
          // restart the clock after 2^31 uses: every resident value becomes equally old
-         for (int slot = 0; slot < SLOTS; slot++) {
+         for (int slot = 0; slot < ticks.length; slot++) {
             if (ticks[slot] != 0) {
                ticks[slot] = 1;
             }
@@ -132,7 +169,7 @@ final class XViewerPreComputedWindow extends AbstractMap<Long, String> {
       int free = -1;
       int victim = -1;
       for (int i = 0; i < PROBE; i++) {
-         int slot = home + i & MASK;
+         int slot = home + i & mask;
          if (ticks[slot] == 0) {
             if (free < 0) {
                free = slot;
@@ -227,7 +264,7 @@ final class XViewerPreComputedWindow extends AbstractMap<Long, String> {
 
       private int advance(int from) {
          int slot = from;
-         while (slot < SLOTS && ticks[slot] == 0) {
+         while (slot < ticks.length && ticks[slot] == 0) {
             slot++;
          }
          return slot;
@@ -235,7 +272,7 @@ final class XViewerPreComputedWindow extends AbstractMap<Long, String> {
 
       @Override
       public boolean hasNext() {
-         return next < SLOTS;
+         return next < ticks.length;
       }
 
       @Override
