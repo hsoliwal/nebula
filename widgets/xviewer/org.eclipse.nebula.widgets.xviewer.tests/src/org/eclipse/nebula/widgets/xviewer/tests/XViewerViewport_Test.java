@@ -19,7 +19,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
@@ -78,6 +80,13 @@ public class XViewerViewport_Test {
       assertTrue(viewer.isViewport());
       assertTrue(viewer.getContentProvider() instanceof XViewerViewportContentProvider);
       assertTrue(((XViewerViewportContentProvider) viewer.getContentProvider()).getDelegate() instanceof Model);
+      // the root rows the native tree asks for, seen after the viewer's own SetData listener has filled them
+      Set<Integer> requestedRoots = new HashSet<>();
+      viewer.getTree().addListener(SWT.SetData, event -> {
+         if (((TreeItem) event.item).getParentItem() == null) {
+            requestedRoots.add(Integer.valueOf(event.index));
+         }
+      });
       Integer[] roots = Model.roots(ROOTS);
       viewer.setInputXViewer(roots);
       shell.open();
@@ -98,13 +107,31 @@ public class XViewerViewport_Test {
       assertSame("item data is the caller's element", roots[ROOTS - 1], tree.getItem(ROOTS - 1).getData());
       assertEquals("one request per root row", scrolled, bridge.getMaterializedRootCount());
 
+      // SWT GTK3 animates setTopItem (see settleScroll): the frames of a round trip show, and so materialize, rows
+      // between the two ends, a page per painted frame, how many depends on when the frames run. The rows resident
+      // before the round trip must not count again; every row first shown on the way counts once.
+      settleScroll(tree);
+      int resident = viewer.getViewportMaterializedCount();
+      Set<Integer> residentRoots = new HashSet<>(requestedRoots);
+      assertEquals("each resident root row was asked for by the native tree", resident, residentRoots.size()); //$NON-NLS-1$
+      requestedRoots.clear();
       tree.setTopItem(tree.getItem(0));
       tree.update();
-      pump();
+      settleScroll(tree);
       tree.setTopItem(tree.getItem(ROOTS - 1));
       tree.update();
-      pump();
-      assertEquals("resident rows are not requested again", scrolled, viewer.getViewportMaterializedCount());
+      settleScroll(tree);
+      Set<Integer> shownOnTheWay = new HashSet<>(requestedRoots);
+      shownOnTheWay.removeAll(residentRoots);
+      requestedRoots.retainAll(residentRoots);
+      System.out.println("XVIEWER_VIEWPORT million round trip: " + resident + " resident rows, " //$NON-NLS-1$ //$NON-NLS-2$
+         + shownOnTheWay.size() + " rows first shown on the way, " + requestedRoots.size() //$NON-NLS-1$
+         + " resident rows asked for again"); //$NON-NLS-1$
+      assertEquals("resident rows are not requested again", resident + shownOnTheWay.size(), //$NON-NLS-1$
+         viewer.getViewportMaterializedCount());
+      assertEquals("one request per root row", viewer.getViewportMaterializedCount(), //$NON-NLS-1$
+         bridge.getMaterializedRootCount());
+      int roundTrip = viewer.getViewportMaterializedCount();
       assertSame(roots[0], tree.getItem(0).getData());
 
       Integer root = Integer.valueOf(ROOTS - 1);
@@ -117,7 +144,7 @@ public class XViewerViewport_Test {
       String shown = MessageFormat.format("{0}", Integer.valueOf(ROOTS + KIDS));
       String status = viewer.getStatusLabel().getText();
       assertTrue(status, status.contains(shown));
-      assertTrue(viewer.getViewportMaterializedCount() - scrolled <= MATERIALIZED_BOUND);
+      assertTrue(viewer.getViewportMaterializedCount() - roundTrip <= MATERIALIZED_BOUND);
    }
 
    @Test
