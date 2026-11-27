@@ -260,9 +260,8 @@ public class Gallery extends Canvas {
 
 		if (VIEWPORT && items != null && count < items.length) {
 			//FLLDCIM: VIEWPORT - groups dropped by the shrink release the runs they own (no SetData under a detached group)
-			for (int i = Math.max(count, 0); i < items.length; i++) {
-				releaseRunsWithin(items[i]);
-			}
+			int keep = Math.max(count, 0);
+			releaseRunsWhere(item -> item.getParentItem() == null && _indexOf(item) >= keep);
 		}
 
 		if (count == 0) {
@@ -1152,23 +1151,65 @@ public class Gallery extends Canvas {
 		if (selectionRuns == null || item == null || item.items == null) {
 			return;
 		}
-		for (GalleryItem owner = runOwnerWithin(item); owner != null; owner = runOwnerWithin(item)) {
-			releaseRuns(owner, 0, true);
-		}
+		releaseRunsWhere(owner -> owner == item);
 	}
 
-	/** Viewport mode: the owner of a run that is item or one of its descendants, or null. */
-	private GalleryItem runOwnerWithin(GalleryItem item) {
-		for (int k = 0; k < selectionCount; k++) {
-			if (isRun(k)) {
-				for (GalleryItem owner = selection[k]; owner != null; owner = owner.getParentItem()) {
-					if (owner == item) {
-						return selection[k];
-					}
+	/**
+	 * Viewport mode: one sweep over the selection entries that releases every run owned by an item that leaves, or by
+	 * a descendant of one (an owner whose ancestor chain reaches an item the predicate names). Created children keep
+	 * their entries in place, unread names leave. Linear in the entries and the released runs, however many items
+	 * leave at once (setItemCount, _setGalleryItems, a parent's clearAll).
+	 */
+	void releaseRunsWhere(java.util.function.Predicate<GalleryItem> leaves) {
+		if (selectionRuns == null) {
+			return;
+		}
+		int k = 0;
+		while (k < selectionCount && !(isRun(k) && within(selection[k], leaves))) {
+			k++;
+		}
+		if (k == selectionCount) {
+			return;
+		}
+		GalleryItem[] entries = selection;
+		int[] runs = selectionRuns;
+		int count = selectionCount;
+		selection = Arrays.copyOf(entries, Math.max(8, entries.length));
+		selectionRuns = Arrays.copyOf(runs, 2 * selection.length);
+		selectionCount = k;
+		for (; k < count; k++) {
+			if (runs[2 * k] < 0 || !within(entries[k], leaves)) {
+				growEntries();
+				selection[selectionCount] = entries[k];
+				selectionRuns[2 * selectionCount] = runs[2 * k];
+				selectionRuns[2 * selectionCount + 1] = runs[2 * k + 1];
+				selectionCount++;
+				continue;
+			}
+			GalleryItem[] slots = entries[k].items;
+			for (int i = runs[2 * k]; i <= runs[2 * k + 1]; i++) {
+				GalleryItem slot = slots != null && i < slots.length ? slots[i] : null;
+				if (slot == null) {
+					selectionSize--;
+				} else {
+					growEntries();
+					selection[selectionCount] = slot;
+					selectionRuns[2 * selectionCount] = -1;
+					selectionCount++;
 				}
 			}
 		}
-		return null;
+		Arrays.fill(selection, selectionCount, selection.length, null);
+	}
+
+	/** Viewport mode: true when owner, or one of its ancestors, is an item the predicate names. */
+	private static boolean within(GalleryItem owner, java.util.function.Predicate<GalleryItem> leaves) {
+		for (GalleryItem item = owner; item != null; item = item.getParentItem()) {
+			if (leaves.test(item)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -3225,11 +3266,7 @@ public class Gallery extends Canvas {
 			if (items != null) {
 				kept.addAll(Arrays.asList(items));
 			}
-			for (GalleryItem old : this.items) {
-				if (old != null && !kept.contains(old)) {
-					releaseRunsWithin(old);
-				}
-			}
+			releaseRunsWhere(item -> item.getParentItem() == null && !kept.contains(item) && _indexOf(item) >= 0);
 		}
 		this.items = items;
 	}

@@ -235,9 +235,8 @@ public class GalleryItem extends Item {
 			// selected children beyond the new count: created ones stay selected as before, unread ones leave
 			parent.releaseRuns(this, count, true);
 			truncateRangeFlags(count);
-			for (int i = Math.max(count, 0); i < items.length; i++) {
-				parent.releaseRunsWithin(items[i]);
-			}
+			int keep = Math.max(count, 0);
+			parent.releaseRunsWhere(item -> item.getParentItem() == this && parent._indexOf(this, item) >= keep);
 		}
 		if (count == 0) {
 			// No items
@@ -836,9 +835,7 @@ public class GalleryItem extends Item {
 				// selected children that exist keep their identity in the selection, as before
 				parent.releaseRuns(this, 0, false);
 				rangeFlags = null;
-				for (GalleryItem child : items) {
-					parent.releaseRunsWithin(child);
-				}
+				parent.releaseRunsWhere(item -> item.getParentItem() == this);
 			}
 			items = new GalleryItem[items.length];
 		} else {

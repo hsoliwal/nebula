@@ -656,6 +656,43 @@ public class GalleryVirtualSelectionTest {
 		}
 	}
 
+	/**
+	 * Dropping many selected groups at once (setItemCount, _setGalleryItems, as a viewer refresh does) releases their
+	 * runs in one sweep: linear, not one pass over the selection per dropped group (about 2 s for 16,000 groups before).
+	 */
+	@Test
+	public void droppingManySelectedGroupsIsLinear() {
+		int groups = 16_000;
+		shell = new Shell(display, SWT.NO_TRIM | SWT.ON_TOP);
+		shell.setBounds(40, 40, 640, 480);
+		shell.setLayout(new FillLayout());
+		gallery = new Gallery(shell, SWT.V_SCROLL | SWT.MULTI | SWT.VIRTUAL);
+		gallery.addListener(SWT.SetData, e -> {
+			GalleryItem item = (GalleryItem) e.item;
+			if (item.getParentItem() == null) {
+				item.setItemCount(5);
+			}
+		});
+		gallery.setItemCount(groups);
+		long worst = 0;
+		for (int operation = 0; operation < 3; operation++) {
+			gallery.setItemCount(groups);
+			gallery.selectAll();
+			assertEquals(groups * 6, gallery.getSelectionCount());
+			long start = System.nanoTime();
+			if (operation == 0) {
+				gallery.setItemCount(0);
+			} else if (operation == 1) {
+				gallery.setItemCount(groups / 2);
+			} else {
+				gallery._setGalleryItems(java.util.Arrays.copyOf(gallery.getItems(), groups / 2));
+			}
+			worst = Math.max(worst, (System.nanoTime() - start) / 1_000_000);
+			gallery.deselectAll();
+		}
+		assertTrue("the slowest drop of 16,000 or 8,000 selected groups took " + worst + " ms", worst < 400);
+	}
+
 	/** A Gallery subclass that counts the selection hook. */
 	static class CountingGallery extends Gallery {
 		int added;
