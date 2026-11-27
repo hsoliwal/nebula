@@ -62,9 +62,13 @@ final class GridSelectionScript {
 	 * and a column group for the column-header drags)
 	 */
 	boolean headerOps;
+	/* whether the Grid has had a FocusIn (see takeFocus) */
+	private boolean focusedIn;
 
 	GridSelectionScript(final Grid grid) {
 		this.grid = grid;
+		// added after the Grid's own FocusIn listener, so Grid.onFocusIn has run when this is set
+		grid.addListener(SWT.FocusIn, e -> focusedIn = true);
 		grid.addListener(SWT.Selection, e -> events.add(describe("S", e)));
 		grid.addListener(SWT.DefaultSelection, e -> events.add(describe("D", e)));
 		grid.addListener(SWT.SetData, e -> ((GridItem) e.item).setText(0, "r" + e.index));
@@ -95,24 +99,25 @@ final class GridSelectionScript {
 	 * earlier releases). Under X11 it comes when the window manager activates the newly opened shell,
 	 * at a time the X server picks: one Grid could take it before the first observation and the other
 	 * after it (a CI run traced focus=-1 for one Grid and focus=0 for the other at step 0, after a
-	 * deselect). The shell is asked again to become active, the Grid is given the focus and the events
-	 * are dispatched until it has it (bounded wait), so that every Grid takes that FocusIn before the
-	 * first step.
+	 * deselect). The Grid is given the focus and the events are dispatched until the Grid has had its
+	 * FocusIn (bounded wait, logged if it does not come), so that every Grid takes it before the first
+	 * step. isFocusControl() cannot tell: SWT GTK marks the shell active as soon as open() asks for the
+	 * activation, and then answers the window's focus widget as the focus control while the window
+	 * has not received the focus yet. On win32 the FocusIn comes inside open().
 	 */
 	private void takeFocus() {
 		if (grid.isDisposed()) {
 			return;
 		}
-		grid.getShell().forceActive();
 		grid.setFocus();
 		final long deadline = System.nanoTime() + 2_000_000_000L;
-		while (!grid.isFocusControl() && System.nanoTime() < deadline) {
+		while (!focusedIn && !grid.isDisposed() && System.nanoTime() < deadline) {
 			if (!grid.getDisplay().readAndDispatch()) {
 				LockSupport.parkNanos(5_000_000L);
 			}
 		}
-		if (!grid.isFocusControl()) {
-			System.out.println("GRID_SELECTION_SCRIPT the Grid did not take the focus within 2 s");
+		if (!focusedIn) {
+			System.out.println("GRID_SELECTION_SCRIPT the Grid had no FocusIn within 2 s");
 		}
 		settle();
 	}
