@@ -1864,6 +1864,10 @@ public class Grid extends Canvas {
 		}
 
 		final GridColumn[] cols = getColumns();
+		boolean moved = false;
+		for (int i = 0; i < order.length && !moved; i++) {
+			moved = displayOrderedColumns.get(i) != cols[order[i]];
+		}
 
 		displayOrderedColumns.clear();
 
@@ -1871,6 +1875,12 @@ public class Grid extends Canvas {
 			displayOrderedColumns.add(cols[element]);
 		}
 		columnOrderChanged();
+		if (moved && GridViewport.UPSTREAM_FIXES) {
+			// stock never invalidates here, so the window keeps the old column order until some
+			// other paint (a header drag redraws); the moved columns repaint now. The same order
+			// again paints nothing. A hidden Grid marks itself dirty instead (redraw()).
+			redraw();
+		}
 	}
 
 	/**
