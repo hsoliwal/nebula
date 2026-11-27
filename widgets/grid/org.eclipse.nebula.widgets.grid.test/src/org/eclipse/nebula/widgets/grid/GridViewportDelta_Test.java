@@ -223,8 +223,19 @@ public class GridViewportDelta_Test {
 
 	private void assertScreenIsPaint(final String step) {
 		flush();
+		// Read-only phase counters determine whether screen capture or synthetic
+		// paint itself scheduled extra native operations or scrollbar changes.
+		final int paintsBeforeScreen = grid.paintPasses;
+		final int nativeBeforeScreen = grid.nativeOps;
+		final int togglesBeforeScreen = grid.scrollbarToggles;
 		final ImageData now = GridScrollPaint_Test.screen(grid);
+		final int paintsAfterScreen = grid.paintPasses;
+		final int nativeAfterScreen = grid.nativeOps;
+		final int togglesAfterScreen = grid.scrollbarToggles;
 		final ImageData painted = GridScrollPaint_Test.print(grid);
+		final int paintsAfterSynthetic = grid.paintPasses;
+		final int nativeAfterSynthetic = grid.nativeOps;
+		final int togglesAfterSynthetic = grid.scrollbarToggles;
 		if (!GridScrollPaint_Test.sameClientArea(grid, now, painted)) {
 			// Keep the first native failure fatal. Diagnose whether an explicit
 			// SWT paint flush repairs stale screen pixels; never use that flush
@@ -234,6 +245,16 @@ public class GridViewportDelta_Test {
 			final AssertionError original = new AssertionError(step
 					+ ": the window differs from the Grid's paint ("
 					+ GridViewportDifferential_Test.difference(painted, now) + ")");
+			original.addSuppressed(new AssertionError("capture phase counters:"
+					+ " paint before=" + paintsBeforeScreen
+					+ " after native screen=" + paintsAfterScreen
+					+ " after synthetic paint=" + paintsAfterSynthetic
+					+ "; native ops before=" + nativeBeforeScreen
+					+ " after native screen=" + nativeAfterScreen
+					+ " after synthetic paint=" + nativeAfterSynthetic
+					+ "; scrollbar toggles before=" + togglesBeforeScreen
+					+ " after native screen=" + togglesAfterScreen
+					+ " after synthetic paint=" + togglesAfterSynthetic));
 			try {
 				final int paintBefore = grid.paintPasses;
 				grid.update();
