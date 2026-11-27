@@ -34,9 +34,11 @@ import org.eclipse.swt.graphics.Point;
  * paint-time check, is O(log n) and makes no Point;</li>
  * <li>the order is a list of blocks in selection order; block {@code b} covers the cells
  * {@code (cols[b][j], row)} for {@code row} from {@code first[b]} to {@code last[b]}, row by row,
- * columns in {@code cols[b]} order (the order of the stock range loops). selectAllCells or a shift
- * range is one block, a ctrl+click a block of one cell, and cells appended next to the last block
- * in its order extend it;</li>
+ * columns in {@code cols[b]} order (the order of the stock range loops), or from {@code last[b]}
+ * down to {@code first[b]} when {@code down[b]} (a range the stock loops walk upwards: a row-header
+ * drag or shift+click above its anchor). selectAllCells, a shift range, a column or a row-header
+ * drag is one block, a ctrl+click a block of one cell, and cells appended next to the last block in
+ * its order extend it;</li>
  * <li>a selected cell belongs to the last block that covers it: a removal only clears the lane and a
  * cell selected again is appended as a new block, both O(log n); the blocks are compacted to the
  * cells they own when their order is read, or when appends have doubled them since the last
@@ -59,6 +61,7 @@ import org.eclipse.swt.graphics.Point;
 final class GridCellSelectionLanes extends AbstractList<Point> implements RandomAccess {
 
 	private static final int LIMIT = Integer.MAX_VALUE - 1;
+	private static final RowSparseBits[] NO_LANES = new RowSparseBits[0];
 
 	private final Grid grid;
 	/* the rows selected per column index; null for a column without a selected cell */
@@ -66,6 +69,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	/* the blocks, in selection order; a column array is never changed once it is in a block */
 	private int[] first = new int[4];
 	private int[] last = new int[4];
+	/* whether block b's rows run from last[b] down to first[b]; never for a block of one row */
+	private boolean[] down = new boolean[4];
 	private int[][] cols = new int[4][];
 	private int blocks;
 	/* the selected cells (rows by columns may exceed an int) */
@@ -133,7 +138,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		final GridCellSelectionList list = new GridCellSelectionList();
 		compact();
 		for (int b = 0; b < blocks; b++) {
-			for (int row = first[b]; row <= last[b]; row++) {
+			for (int k = 0; k <= last[b] - first[b]; k++) {
+				final int row = rowAt(b, k);
 				for (final int col : cols[b]) {
 					list.add(new Point(col, row));
 				}
@@ -141,6 +147,11 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		}
 		reset();
 		explicit = list;
+	}
+
+	/* the k-th row of block b in its order */
+	private int rowAt(final int b, final int k) {
+		return down[b] ? last[b] - k : first[b] + k;
 	}
 
 	/**
@@ -173,6 +184,35 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 				}
 			}
 			row++;
+		}
+	}
+
+	/**
+	 * {@link #addBlock} for the rows taken from {@code to} up to {@code from}: the stock loop of a range
+	 * walked upwards (a row-header drag or shift+click above its anchor), row by row from the bottom,
+	 * columns in the given order. Blocks only.
+	 */
+	void addBlockDown(final int from, final int to, final int[] columns) {
+		if (from >= to) {
+			addBlock(from, to, columns);
+			return;
+		}
+		mayCompact();
+		// between two of these rows each column is selected in every row or in none of them
+		final int[] bounds = boundaries(from, to + 1, columns, NO_LANES);
+		for (int s = bounds.length - 2; s >= 0; s--) {
+			final int start = bounds[s];
+			final int[] free = new int[columns.length];
+			int n = 0;
+			for (final int col : columns) {
+				if (col >= lanes.length || lanes[col] == null || !lanes[col].get(start)) {
+					free[n++] = col;
+				}
+			}
+			if (n > 0) {
+				// the stock loop's cells of these rows, bottom row first: the columns not selected there
+				append(start, bounds[s + 1] - 1, true, n == columns.length ? columns : Arrays.copyOf(free, n));
+			}
 		}
 	}
 
@@ -255,6 +295,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		int n = 0;
 		for (int b = 0; b < blocks; b++) {
 			final int limit = last[b] + 1;
+			final int start = n;
 			int position = first[b];
 			while (position < limit) {
 				final int taken = seen.next(position, limit);
@@ -269,6 +310,14 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 					break;
 				}
 				position = seen.runEnd(taken, limit);
+			}
+			if (down[b]) {
+				// the block's new rows, bottom row first
+				for (int i = start, j = n - 1; i < j; i++, j--) {
+					final int t = rows[i];
+					rows[i] = rows[j];
+					rows[j] = t;
+				}
 			}
 			seen.setRange(first[b], limit, true);
 		}
@@ -320,10 +369,12 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		}
 		final int[] oldFirst = first;
 		final int[] oldLast = last;
+		final boolean[] oldDown = down;
 		final int[][] oldCols = cols;
 		final int oldBlocks = blocks;
 		first = new int[Math.max(4, oldBlocks)];
 		last = new int[first.length];
+		down = new boolean[first.length];
 		cols = new int[first.length][];
 		blocks = 0;
 		for (int b = 0; b < oldBlocks; b++) {
@@ -335,7 +386,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 				}
 			}
 			if (n > 0) {
-				push(oldFirst[b], oldLast[b], n == kept.length ? kept : Arrays.copyOf(kept, n));
+				push(oldFirst[b], oldLast[b], oldDown[b], n == kept.length ? kept : Arrays.copyOf(kept, n));
 			}
 		}
 		changed();
@@ -364,6 +415,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			if (first[b] < rowCount) {
 				first[to] = first[b];
 				last[to] = Math.min(last[b], rowCount - 1);
+				// a block walked upwards loses its first rows: the rest still runs upwards
+				down[to] = down[b] && first[to] < last[to];
 				cols[to] = cols[b];
 				to++;
 			}
@@ -379,7 +432,169 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		reset();
 		source.compact();
 		for (int b = 0; b < source.blocks; b++) {
-			append(source.first[b], source.last[b], source.cols[b]);
+			append(source.first[b], source.last[b], source.down[b], source.cols[b]);
+		}
+	}
+
+	// ------------------------------------------------------------- cells named by a gesture
+
+	/**
+	 * Cells a gesture names before they are selected, as blocks in the order the stock loops name
+	 * them: a column's cells (its rows), or the rows between a row-header drag's anchor and the
+	 * hovered row by the visible columns. Caller owned: a few blocks, no lane, no point, no item.
+	 */
+	static final class Cells {
+		int blocks;
+		int[] first = new int[2];
+		int[] last = new int[2];
+		boolean[] down = new boolean[2];
+		int[][] cols = new int[2][];
+
+		/*
+		 * the cells (columns[j], row) for row from from to to (to down to from when downward), row by
+		 * row; columns are distinct and are not changed afterwards
+		 */
+		void add(final int from, final int to, final boolean downward, final int[] columns) {
+			if (blocks == first.length) {
+				first = Arrays.copyOf(first, blocks * 2);
+				last = Arrays.copyOf(last, blocks * 2);
+				down = Arrays.copyOf(down, blocks * 2);
+				cols = Arrays.copyOf(cols, blocks * 2);
+			}
+			first[blocks] = from;
+			last[blocks] = to;
+			down[blocks] = downward && from < to;
+			cols[blocks] = columns;
+			blocks++;
+		}
+
+		private boolean empty(final int b) {
+			return first[b] > last[b] || cols[b].length == 0;
+		}
+
+		/** @return the number of cells */
+		long count() {
+			long n = 0;
+			for (int b = 0; b < blocks; b++) {
+				if (!empty(b)) {
+					n += (long) (last[b] - first[b] + 1) * cols[b].length;
+				}
+			}
+			return n;
+		}
+
+		/** @return the first cell, or null when there is none */
+		Point firstCell() {
+			for (int b = 0; b < blocks; b++) {
+				if (!empty(b)) {
+					return new Point(cols[b][0], down[b] ? last[b] : first[b]);
+				}
+			}
+			return null;
+		}
+
+		/** @return a point per cell, in order (for a list that does not keep blocks) */
+		List<Point> points() {
+			final List<Point> points = new ArrayList<>();
+			for (int b = 0; b < blocks; b++) {
+				for (int k = 0; !empty(b) && k <= last[b] - first[b]; k++) {
+					final int row = down[b] ? last[b] - k : first[b] + k;
+					for (final int col : cols[b]) {
+						points.add(new Point(col, row));
+					}
+				}
+			}
+			return points;
+		}
+	}
+
+	/**
+	 * @return whether this list holds exactly the given cells in their order (the stock
+	 *         {@code cells.equals(list)}), in O(blocks) steps where the blocks line up, without a point
+	 */
+	boolean sameCells(final Cells cells) {
+		if (explicit != null) {
+			return explicit.equals(cells.points());
+		}
+		if (cells.count() != count) {
+			return false;
+		}
+		compact();
+		// a cursor on each side: block, row within it, column within the row
+		int a = 0;
+		int ka = 0;
+		int ja = 0;
+		int c = 0;
+		int kc = 0;
+		int jc = 0;
+		while (true) {
+			while (a < blocks && ka > last[a] - first[a]) {
+				a++;
+				ka = 0;
+			}
+			while (c < cells.blocks && (cells.empty(c) || kc > cells.last[c] - cells.first[c])) {
+				c++;
+				kc = 0;
+			}
+			if (a == blocks || c == cells.blocks) {
+				return a == blocks && c == cells.blocks;
+			}
+			final int rowA = rowAt(a, ka);
+			final int rowC = cells.down[c] ? cells.last[c] - kc : cells.first[c] + kc;
+			if (ja == 0 && jc == 0 && Arrays.equals(cols[a], cells.cols[c])) {
+				// whole rows by the same columns: the rows run alike while both go the same way
+				if (rowA != rowC) {
+					return false;
+				}
+				final int restA = last[a] - first[a] - ka;
+				final int restC = cells.last[c] - cells.first[c] - kc;
+				final int k = down[a] == cells.down[c] ? 1 + Math.min(restA, restC) : 1;
+				ka += k;
+				kc += k;
+				continue;
+			}
+			if (cols[a][ja] != cells.cols[c][jc] || rowA != rowC) {
+				return false;
+			}
+			if (++ja == cols[a].length) {
+				ja = 0;
+				ka++;
+			}
+			if (++jc == cells.cols[c].length) {
+				jc = 0;
+				kc++;
+			}
+		}
+	}
+
+	/** @return whether every given cell is selected (the stock {@code list.containsAll(cells)}) */
+	boolean containsCells(final Cells cells) {
+		for (int b = 0; b < cells.blocks; b++) {
+			if (cells.empty(b)) {
+				continue;
+			}
+			for (final int col : cells.cols[b]) {
+				if (explicit != null) {
+					for (int row = cells.first[b]; row <= cells.last[b]; row++) {
+						if (!explicit.contains(new Point(col, row))) {
+							return false;
+						}
+					}
+				} else if (col < 0 || col >= lanes.length || lanes[col] == null
+						|| lanes[col].count(cells.first[b], cells.last[b] + 1) != cells.last[b] - cells.first[b] + 1) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	/** Deselects the given cells (the stock {@code list.removeAll(cells)}: this list holds each once). */
+	void removeCells(final Cells cells) {
+		for (int b = 0; b < cells.blocks; b++) {
+			if (!cells.empty(b)) {
+				removeBlock(cells.first[b], cells.last[b], cells.cols[b]);
+			}
 		}
 	}
 
@@ -536,7 +751,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		}
 		final long offset = index - before[low];
 		final int width = cols[low].length;
-		return new Point(cols[low][(int) (offset % width)], (int) (first[low] + offset / width));
+		return new Point(cols[low][(int) (offset % width)], rowAt(low, (int) (offset / width)));
 	}
 
 	@Override
@@ -565,8 +780,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			if (first[b] <= p.y && p.y <= last[b]) {
 				for (int j = 0; j < cols[b].length; j++) {
 					if (cols[b][j] == p.x) {
-						return (int) Math.min(before[b] + (long) (p.y - first[b]) * cols[b].length + j,
-								Integer.MAX_VALUE);
+						final long k = down[b] ? last[b] - p.y : p.y - first[b];
+						return (int) Math.min(before[b] + k * cols[b].length + j, Integer.MAX_VALUE);
 					}
 				}
 			}
@@ -769,7 +984,8 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 				: (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), n);
 		int i = 0;
 		for (int b = 0; b < blocks; b++) {
-			for (int row = first[b]; row <= last[b]; row++) {
+			for (int k = 0; k <= last[b] - first[b]; k++) {
+				final int row = rowAt(b, k);
 				for (final int col : cols[b]) {
 					result[i++] = (T) new Point(col, row);
 				}
@@ -795,6 +1011,11 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 
 	/* appends cells none of which is selected; they belong to the new last block */
 	private void append(final int from, final int to, final int[] columns) {
+		append(from, to, false, columns);
+	}
+
+	/* append for the rows from to down to from when downward */
+	private void append(final int from, final int to, final boolean downward, final int[] columns) {
 		if (from > to || columns.length == 0) {
 			return;
 		}
@@ -802,7 +1023,7 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			lane(col).setRange(from, to + 1, true);
 		}
 		count += (long) (to - from + 1) * columns.length;
-		push(from, to, columns);
+		push(from, to, downward, columns);
 		changed();
 	}
 
@@ -814,33 +1035,61 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 	}
 
 	/*
-	 * adds a block after the others; the last block absorbs it when the two read as one in order:
-	 * the next rows by the same columns, or other columns of the last block's last row
+	 * adds a block after the others (its rows from to down to from when downward); the last block
+	 * absorbs it when the two read as one in order: the next rows by the same columns in the same
+	 * direction, or other columns of the last block's last row
 	 */
-	private void push(final int from, final int to, final int[] columns) {
+	private void push(final int from, final int to, final boolean downward, final int[] columns) {
+		final boolean desc = downward && from < to;
 		final int b = blocks - 1;
-		if (b >= 0 && last[b] + 1 == from && Arrays.equals(cols[b], columns)) {
-			last[b] = to;
+		if (b >= 0 && extend(b, from, to, desc, columns)) {
 			return;
 		}
-		if (b >= 0 && from == to && last[b] == from && disjoint(cols[b], columns)) {
+		if (b >= 0 && from == to && (down[b] ? first[b] : last[b]) == from && disjoint(cols[b], columns)) {
 			final int[] wider = Arrays.copyOf(cols[b], cols[b].length + columns.length);
 			System.arraycopy(columns, 0, wider, cols[b].length, columns.length);
 			if (first[b] < last[b]) {
-				last[b]--;
-				pushNew(from, from, wider);
+				// the last row in order leaves the block
+				if (down[b]) {
+					first[b]++;
+				} else {
+					last[b]--;
+				}
+				down[b] &= first[b] < last[b];
+				pushNew(from, from, false, wider);
 			} else {
 				cols[b] = wider;
 			}
 			final int c = blocks - 1;
-			if (c > 0 && last[c - 1] + 1 == first[c] && Arrays.equals(cols[c - 1], cols[c])) {
-				last[c - 1] = last[c];
+			if (c > 0 && extend(c - 1, first[c], last[c], down[c], cols[c])) {
 				cols[c] = null;
 				blocks--;
 			}
 			return;
 		}
-		pushNew(from, to, columns);
+		pushNew(from, to, desc, columns);
+	}
+
+	/*
+	 * whether block b reads on into the rows [from, to] (from to down to from when desc) by the same
+	 * columns: then it takes them. A block of one row goes either way.
+	 */
+	private boolean extend(final int b, final int from, final int to, final boolean desc, final int[] columns) {
+		if (!Arrays.equals(cols[b], columns)) {
+			return false;
+		}
+		final boolean single = first[b] == last[b];
+		if ((single || !down[b]) && !desc && last[b] + 1 == from) {
+			last[b] = to;
+			down[b] = false;
+			return true;
+		}
+		if ((single || down[b]) && (desc || from == to) && first[b] - 1 == to) {
+			first[b] = from;
+			down[b] = true;
+			return true;
+		}
+		return false;
 	}
 
 	private static boolean disjoint(final int[] a, final int[] b) {
@@ -854,14 +1103,16 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		return true;
 	}
 
-	private void pushNew(final int from, final int to, final int[] columns) {
+	private void pushNew(final int from, final int to, final boolean desc, final int[] columns) {
 		if (blocks == first.length) {
 			first = Arrays.copyOf(first, blocks * 2);
 			last = Arrays.copyOf(last, blocks * 2);
+			down = Arrays.copyOf(down, blocks * 2);
 			cols = Arrays.copyOf(cols, blocks * 2);
 		}
 		first[blocks] = from;
 		last[blocks] = to;
+		down[blocks] = desc && from < to;
 		cols[blocks] = columns;
 		blocks++;
 	}
@@ -931,15 +1182,24 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 			}
 		}
 		begin[oldBlocks] = pieces;
-		// block b's pieces are [begin[b], begin[b - 1]) (built from the last block back)
+		// block b's pieces are [begin[b], begin[b - 1]) (built from the last block back), rows ascending
+		final boolean[] oldDown = down;
 		first = new int[Math.max(4, pieces)];
 		last = new int[first.length];
+		down = new boolean[first.length];
 		cols = new int[first.length][];
 		blocks = 0;
 		for (int b = 0; b < oldBlocks; b++) {
 			final int end = b == 0 ? pieces : begin[b - 1];
-			for (int p = begin[b]; p < end; p++) {
-				push(pf[p], pl[p], pc[p]);
+			if (oldDown[b]) {
+				// a block walked upwards keeps its pieces bottom first
+				for (int p = end - 1; p >= begin[b]; p--) {
+					push(pf[p], pl[p], true, pc[p]);
+				}
+			} else {
+				for (int p = begin[b]; p < end; p++) {
+					push(pf[p], pl[p], false, pc[p]);
+				}
 			}
 		}
 		dirty = false;
@@ -1049,6 +1309,9 @@ final class GridCellSelectionLanes extends AbstractList<Point> implements Random
 		for (int b = 0; b < blocks; b++) {
 			if (first[b] > last[b] || cols[b].length == 0) {
 				throw new IllegalStateException("empty block " + b);
+			}
+			if (down[b] && first[b] == last[b]) {
+				throw new IllegalStateException("one-row block " + b + " runs upwards");
 			}
 			for (int row = first[b]; row <= last[b]; row++) {
 				for (final int col : cols[b]) {

@@ -78,6 +78,8 @@
 						<include>**/GridRowSelectionDifferential_Test.java</include>
 						<include>**/GridCellSelectionResidency_Test.java</include>
 						<include>**/GridCellSelectionDifferential_Test.java</include>
+						<include>**/GridHeaderDragSelectionResidency_Test.java</include>
+						<include>**/GridHeaderDragSelectionDifferential_Test.java</include>
 						<include>**/GridVirtualHeights_Test.java</include>
 						<include>**/model/HeapGrowth_Test.java</include>
 						<include>**/model/RowBitLanes_Test.java</include>
