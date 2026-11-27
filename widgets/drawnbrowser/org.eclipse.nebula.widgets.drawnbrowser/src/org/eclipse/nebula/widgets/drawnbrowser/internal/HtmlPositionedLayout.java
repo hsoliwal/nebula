@@ -847,6 +847,7 @@ public final class HtmlPositionedLayout {
 			int s = visible[v];
 			int i = order.index(s);
 			if (order.isBackground(s)) {
+				if (doc.boxPointerEvents[i] == HtmlStyles.POINTER_NONE) continue;
 				// A structural row must not mask a cell that spans into it from an earlier row.
 				if (doc.boxRole[i] == HtmlDocument.ROW_BOX && doc.boxBackground[i] == 0 && doc.boxBorder[i] == 0) continue;
 				if (i != 0 && contains(px, py, x[i], boxY(i, scroll), width[i], height[i])
@@ -855,6 +856,7 @@ public final class HtmlPositionedLayout {
 					return b < doc.boxEndBlock[i] && doc.blockBox[b] == i ? b : -1;
 				}
 			} else {
+				if (doc.blockPointerEvents[i] == HtmlStyles.POINTER_NONE) continue;
 				if (contains(px, py, blockX[i], blockY(i, scroll), blockWidth[i], blockHeight[i])
 						&& withinClip(doc.blockBox[i], true, px, py, scroll)) return i;
 			}
@@ -868,7 +870,7 @@ public final class HtmlPositionedLayout {
 		int found = -1;
 		int[] bounds = new int[4];
 		for (int s = order.size() - 1; s >= 0; s--) {
-			if (order.isBackground(s)) continue;
+			if (order.isBackground(s) || doc.blockPointerEvents[order.index(s)] == HtmlStyles.POINTER_NONE) continue;
 			int b = order.index(s), top = blockY(b, scroll);
 			long dx, dy;
 			if (hasClip(doc.blockBox[b], true)) {
