@@ -47,6 +47,14 @@ final class GridSelectionScript {
 	 * row permutation is only scripted before them (see the row selection's PR notes)
 	 */
 	private boolean structural;
+	/*
+	 * cell steps as well (the cell selection scripts): cells, columns, cell clicks and drags; the
+	 * rows a step removes or permutes are read first, so both Grids have their items (an earlier
+	 * build made them in its range loops; see the cell selection's PR notes)
+	 */
+	boolean cellOps;
+	/* whether a cell step may set a column span (spans turn the range loops back to items) */
+	boolean spans;
 
 	GridSelectionScript(final Grid grid) {
 		this.grid = grid;
@@ -88,6 +96,9 @@ final class GridSelectionScript {
 	}
 
 	private String step(final Random r) {
+		if (cellOps && r.nextInt(3) != 0) {
+			return cellStep(r);
+		}
 		final int n = grid.getItemCount();
 		final int op = r.nextInt(31);
 		if (op >= 12 && op <= 17 || op >= 28) {
@@ -155,13 +166,16 @@ final class GridSelectionScript {
 			if (n == 0) {
 				return "noop";
 			}
+			read(a, a);
 			grid.remove(a);
 			return "remove " + a;
 		case 14:
 			if (n == 0) {
 				return "noop";
 			}
-			grid.remove(a, Math.min(n - 1, a + r.nextInt(5)));
+			final int last = Math.min(n - 1, a + r.nextInt(5));
+			read(a, last);
+			grid.remove(a, last);
 			return "remove " + a + "..";
 		case 15: {
 			final int[] ix = indices(r, n);
@@ -170,6 +184,9 @@ final class GridSelectionScript {
 			}
 			if (n == 0 || ix.length == 0) {
 				return "noop";
+			}
+			for (final int i : ix) {
+				read(i, i);
 			}
 			grid.remove(ix);
 			return "remove " + Arrays.toString(ix);
@@ -232,6 +249,11 @@ final class GridSelectionScript {
 					}
 					permutation.sortByIntKeys(keys, false);
 				}
+				if (cellOps) {
+					for (final Point cell : grid.getCellSelection()) {
+						read(cell.y, cell.y);
+					}
+				}
 				grid.setRowPermutation(permutation);
 				return "permutation " + permuted;
 			}
@@ -244,6 +266,7 @@ final class GridSelectionScript {
 			if (n == 0) {
 				return "noop";
 			}
+			read(a, b);
 			grid.remove(a, b);
 			return "remove " + a + ".." + b;
 		default:
@@ -253,6 +276,227 @@ final class GridSelectionScript {
 			}
 			return "noop";
 		}
+	}
+
+	/* cell steps read the rows a removal takes first: both Grids then have their items */
+	private void read(final int from, final int to) {
+		if (cellOps) {
+			for (int row = Math.max(0, from); row <= to && row < grid.getItemCount(); row++) {
+				grid.getItem(row);
+			}
+		}
+	}
+
+	private Point cell(final Random r, final int n, final int m) {
+		// now and then a cell out of range on purpose
+		return new Point(r.nextInt(12) == 0 ? m : row(r, m), r.nextInt(12) == 0 ? n : row(r, n));
+	}
+
+	private Point[] cells(final Random r, final int n, final int m) {
+		final Point[] result = new Point[r.nextInt(6)];
+		for (int i = 0; i < result.length; i++) {
+			// repeated cells on purpose
+			result[i] = i > 0 && r.nextInt(4) == 0 ? new Point(result[i - 1].x, result[i - 1].y) : cell(r, n, m);
+		}
+		return result;
+	}
+
+	private String cellStep(final Random r) {
+		final int n = grid.getItemCount();
+		final int m = grid.getColumnCount();
+		final Point p = cell(r, n, m);
+		switch (r.nextInt(19)) {
+		case 0:
+			grid.selectCell(p);
+			return "selectCell " + p;
+		case 1:
+			grid.deselectCell(p);
+			return "deselectCell " + p;
+		case 2: {
+			final Point[] ps = cells(r, n, m);
+			grid.selectCells(ps);
+			return "selectCells " + Arrays.toString(ps);
+		}
+		case 3: {
+			final Point[] ps = cells(r, n, m);
+			grid.deselectCells(ps);
+			return "deselectCells " + Arrays.toString(ps);
+		}
+		case 4:
+			grid.setCellSelection(p);
+			return "setCellSelection " + p;
+		case 5: {
+			final Point[] ps = cells(r, n, m);
+			grid.setCellSelection(ps);
+			return "setCellSelection " + Arrays.toString(ps);
+		}
+		case 6:
+			grid.selectAllCells();
+			return "selectAllCells";
+		case 7:
+			grid.deselectAllCells();
+			return "deselectAllCells";
+		case 8:
+			if (m == 0) {
+				return "noop";
+			}
+			grid.selectColumn(p.x % m);
+			return "selectColumn " + p.x % m;
+		case 9:
+		case 10:
+		case 11:
+			return clickCell(r, false);
+		case 12: {
+			final int[] keys = { SWT.ARROW_LEFT, SWT.ARROW_RIGHT, SWT.ARROW_UP, SWT.ARROW_DOWN, SWT.HOME, SWT.END };
+			return key(keys[r.nextInt(keys.length)], r);
+		}
+		case 13:
+			return clickCell(r, true);
+		case 14:
+			if (m <= 1) {
+				return "noop";
+			}
+			grid.getColumn(p.x % m).dispose();
+			return "disposeColumn " + p.x % m;
+		case 15: {
+			if (m >= 6) {
+				return "noop";
+			}
+			final int at = r.nextInt(m + 1);
+			new GridColumn(grid, SWT.NONE, at).setWidth(50 + 10 * r.nextInt(4));
+			return "newColumn " + at;
+		}
+		case 16: {
+			final int[] order = grid.getColumnOrder();
+			for (int i = order.length - 1; i > 0; i--) {
+				final int j = r.nextInt(i + 1);
+				final int t = order[i];
+				order[i] = order[j];
+				order[j] = t;
+			}
+			grid.setColumnOrder(order);
+			return "columnOrder " + Arrays.toString(order);
+		}
+		case 17: {
+			if (m == 0) {
+				return "noop";
+			}
+			final GridColumn column = grid.getColumn(p.x % m);
+			if (r.nextBoolean()) {
+				column.setVisible(!column.getVisible());
+				return "visible " + p.x % m + " " + column.getVisible();
+			}
+			column.setCellSelectionEnabled(!column.getCellSelectionEnabled());
+			return "cellSelectable " + p.x % m + " " + column.getCellSelectionEnabled();
+		}
+		default:
+			if (spans && n > 0 && m > 1 && r.nextInt(3) == 0) {
+				final int row = row(r, n);
+				final int column = r.nextInt(m);
+				grid.getItem(row).setColumnSpan(column, 1);
+				return "span " + column + "," + row;
+			}
+			return "noop";
+		}
+	}
+
+	/*
+	 * A click on a cell the script picks from its own random sequence (a visible column; the row and
+	 * the column are shown and the click goes where the Grid hit-tests the cell), or a drag from that
+	 * cell to a cell at most three rows away in the same view (the top row is pinned so that both are
+	 * shown, never read from the Grid's scroll state).
+	 */
+	private String clickCell(final Random r, final boolean drag) {
+		final int n = grid.getItemCount();
+		final int[] visible = new int[grid.getColumnCount()];
+		int v = 0;
+		for (int c = 0; c < visible.length; c++) {
+			if (grid.getColumn(c).getVisible()) {
+				visible[v++] = c;
+			}
+		}
+		if (n == 0 || v == 0) {
+			return "noop";
+		}
+		final int row = r.nextInt(n);
+		final int col = visible[r.nextInt(v)];
+		final int[] masks = { 0, SWT.MOD2, SWT.MOD1, SWT.MOD1 | SWT.MOD2 };
+		final int stateMask = masks[r.nextInt(masks.length)];
+		final int toRow = Math.max(0, Math.min(n - 1, row + r.nextInt(7) - 3));
+		final int toCol = visible[r.nextInt(v)];
+		if (drag) {
+			final int window = Math.max(1, grid.getVisibleGridHeight() / (grid.getItemHeight() + 1));
+			final int target = Math.max(0, Math.min(Math.min(row, toRow) - 1, n - window));
+			if (pinTopAt(target) < 0) {
+				return "drag " + row + " top not pinned";
+			}
+			grid.showColumn(grid.getColumn(col));
+		}
+		final Point point = shown(row, col, !drag);
+		if (point == null) {
+			return (drag ? "drag " : "click ") + col + "," + row + " not shown";
+		}
+		final Event down = new Event();
+		down.button = 1;
+		down.x = point.x;
+		down.y = point.y;
+		down.stateMask = stateMask;
+		grid.notifyListeners(SWT.MouseDown, down);
+		String moved = "";
+		if (drag) {
+			final Point to = shown(toRow, toCol, false);
+			if (to != null) {
+				final Event move = new Event();
+				move.x = to.x;
+				move.y = to.y;
+				move.stateMask = stateMask | SWT.BUTTON1;
+				grid.notifyListeners(SWT.MouseMove, move);
+				moved = " to " + toCol + "," + toRow;
+			} else {
+				moved = " to not shown";
+			}
+		}
+		final Event up = new Event();
+		up.button = 1;
+		up.x = down.x;
+		up.y = down.y;
+		up.stateMask = down.stateMask | SWT.BUTTON1;
+		grid.notifyListeners(SWT.MouseUp, up);
+		return (drag ? "drag " : "click ") + col + "," + row + "/" + down.stateMask + moved;
+	}
+
+	/* where the Grid hit-tests cell (col, row) once it is shown (scrolled to when asked), or null */
+	private Point shown(final int row, final int col, final boolean scroll) {
+		final GridItem item = grid.getItem(row);
+		final long deadline = System.nanoTime() + 1_000_000_000L;
+		do {
+			if (scroll) {
+				grid.showItem(item);
+				grid.showColumn(grid.getColumn(col));
+			}
+			settle();
+			final Rectangle bounds = item.getBounds(col);
+			final Point candidate = new Point(bounds.x + Math.min(4, bounds.width / 2), bounds.y + bounds.height / 2);
+			final Point hit = bounds.width > 0 ? grid.getCell(candidate) : null;
+			if (hit != null && hit.x == col && hit.y == row) {
+				return candidate;
+			}
+		} while (System.nanoTime() < deadline);
+		return null;
+	}
+
+	/* scrolls to top row target and waits until the Grid answers it three times in a row; -1 if not */
+	private int pinTopAt(final int target) {
+		final long deadline = System.nanoTime() + 1_000_000_000L;
+		int stable = 0;
+		while (stable < 3 && System.nanoTime() < deadline) {
+			if (grid.getTopIndex() != target) {
+				grid.setTopIndex(target);
+			}
+			settle();
+			stable = grid.getTopIndex() == target ? stable + 1 : 0;
+		}
+		return stable >= 3 ? target : -1;
 	}
 
 	private String key(final int keyCode, final Random r) {
@@ -366,6 +610,9 @@ final class GridSelectionScript {
 		events.clear();
 		if (grid.getCellSelectionEnabled()) {
 			probe(b, " cells=", () -> grid.getCellSelectionCount() + Arrays.toString(grid.getCellSelection()));
+			if (cellOps) {
+				probe(b, " focusCell=", () -> String.valueOf(grid.getFocusCell()));
+			}
 		}
 		if (k % 7 == 6) {
 			probe(b, " selection=", () -> {
