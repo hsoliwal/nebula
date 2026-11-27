@@ -833,6 +833,34 @@ public class XViewerPreComputedViewport_Test {
    }
 
    /**
+    * Bounded, scrolled to row 2,500, every row cleared, then a root ordering: on GTK reading the top row inside the
+    * pass paints rows (getTopItem() recomputes the viewport geometry through getItemHeight() after a scroll), which the
+    * bridge must defer. Exactly one full pass runs and the visible rows show the values they were sorted on. On
+    * Win32 getTopItem() paints nothing, so there this test only checks the ordinary path.
+    */
+   @Test
+   public void boundedScrolledOrderingDefersRowsPaintedByTheTopRowRead() {
+      int rows = 5_000;
+      Counter counter = new Counter(rows);
+      XViewer viewer = viewer(SWT.VIRTUAL, counter, true, new CounterColumn(counter));
+      viewer.setInputXViewer(Flat.roots(rows));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      tree.setTopItem(tree.getItem(rows / 2));
+      tree.update();
+      settledTopIndex(tree, 0);
+      int passes = counter.fullBatches;
+      tree.clearAll(true);
+      viewer.refresh();
+      int top = settledTopIndex(tree, -1);
+      assertEquals("one full pass for the ordering", passes + 1, counter.fullBatches); //$NON-NLS-1$
+      assertPaintedSortKeys(tree, top, counter);
+   }
+
+   /**
     * Bounded, sorted by a counter column and scrolled to row 2,500, with a List input mutated in place (its hash
     * changes): after swapping two rows and refreshing, and after adding a row, the visible rows show the values they
     * were sorted on. Fails on 55a0879 (the kept band came from a stale top row).

@@ -717,8 +717,10 @@ public class XViewer extends TreeViewer {
     * window, so none keeps a value from before the pass; rows of other parents keep theirs, and a column the pass did
     * not read keeps its window.
     * <p>
-    * Reads no tree geometry: the caller passes the top row index and a font-metric bound of the visible rows, neither
-    * of which paints rows (on GTK {@code Tree.getItemHeight()} can, re-entering the content provider).
+    * Reads no tree geometry itself: the caller passes the top row index and a font-metric bound of the visible rows.
+    * Reading the top row can still paint rows on GTK ({@code Tree.getTopItem()} recomputes the viewport geometry
+    * through {@code getItemHeight()} once the vertical adjustment has moved), and the viewport bridge defers such rows
+    * until the order is known.
     * </p>
     *
     * @param all the rows the pass read
@@ -772,9 +774,8 @@ public class XViewer extends TreeViewer {
 
    /**
     * @return an upper bound of the rows the tree shows: the client height over the font height, plus two. A row is at
-    * least as tall as its font, so no more rows fit. Read from font metrics, never from {@code Tree.getItemHeight()},
-    * which on GTK can paint rows (and so re-enter the content provider) while a parent is being ordered. Cached for
-    * the tree's font and client height.
+    * least as tall as its font, so no more rows fit. Read from font metrics rather than {@code Tree.getItemHeight()},
+    * which on GTK paints rows; cached for the tree's font and client height.
     */
    int visibleRowBound() {
       Tree tree = getTree();
@@ -1561,7 +1562,8 @@ public class XViewer extends TreeViewer {
       // pass, and those of the rows about to be shown are kept so their text is what was sorted and filtered on
       boolean pass = boundsPreCompute() && (filters.length > 0 || comparator != null);
       Object input = getInput();
-      // the top row index and a font-metric bound of the visible rows; neither paints rows (no getItemHeight)
+      // the top row index and a font-metric bound of the visible rows. On GTK getTopItem() can paint rows (it calls
+      // getItemHeight() once the vertical adjustment has moved); the bridge's re-entry guard defers those rows
       boolean root = pass && shown && (parent == input || parent != null && parent.equals(input));
       int top = root ? topRowIndex() : -1;
       int visible = root ? visibleRowBound() : 0;
