@@ -253,6 +253,21 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
       return children == null ? delegate.hasChildren(element) : children.length > 0;
    }
 
+   /** @return true if the order of {@code parent}'s children is cached */
+   boolean hasOrder(Object parent) {
+      return parent != null && sortedChildren.containsKey(parent);
+   }
+
+   private void dropDeferred(Object parent) {
+      for (int i = deferredParents.size() - 1; i >= 0; i--) {
+         Object waiting = deferredParents.get(i);
+         if (waiting == parent || waiting != null && waiting.equals(parent)) {
+            deferredParents.remove(i);
+            deferredIndexes.remove(i);
+         }
+      }
+   }
+
    /** Fills the rows of {@code parent} a native callback asked for while it was being ordered. */
    private void fillDeferred(Object parent) {
       for (int i = 0; i < deferredParents.size(); i++) {
@@ -305,6 +320,10 @@ public final class XViewerViewportContentProvider implements ILazyTreeContentPro
          try {
             Object[] raw = isRoot(parent) ? delegate.getElements(parent) : delegate.getChildren(parent);
             cached = viewer.viewportSortedChildren(parent, raw == null ? EMPTY : raw, shown);
+         } catch (RuntimeException | Error ex) {
+            // the rows asked for meanwhile stay unfilled until the next ordering of this parent or refresh
+            dropDeferred(parent);
+            throw ex;
          } finally {
             ordering.remove(ordering.size() - 1);
          }

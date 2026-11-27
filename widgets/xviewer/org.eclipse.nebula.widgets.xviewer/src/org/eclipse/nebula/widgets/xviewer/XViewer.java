@@ -149,6 +149,8 @@ public class XViewer extends TreeViewer {
    private int viewportVisible;
    /** Test hook: runs where a root or child order is being computed, before its pass begins. */
    Runnable passProbe;
+   /** Test hook: runs where the viewport geometry is read, as a native paint there would. */
+   Runnable geometryProbe;
    /** Transient full maps serving each precomputed column during the current pass. */
    private final Map<XViewerColumn, Map<Long, String>> passValues = new IdentityHashMap<>();
 
@@ -738,7 +740,7 @@ public class XViewer extends TreeViewer {
          }
          IXViewerPreComputedColumn preComputedColumn = (IXViewerPreComputedColumn) entry.getKey();
          XViewerPreComputedWindow window = preComputedWindow(entry.getKey());
-         // a tall tree keeps more rows than the default window: grow it so they all fit with room to spare
+         // more than 512 kept rows (a tall tree) grow the window to twice their number, so they fit with room to spare
          window.ensureCapacity(head + Math.max(0, to - from));
          for (Object row : all) {
             try {
@@ -771,10 +773,15 @@ public class XViewer extends TreeViewer {
    /**
     * With bounded precompute in effect, reads the top row and the visible row count for the passes of the coming
     * structural refresh. Called before the viewport bridge drops its cached orders, when no content-provider call is
-    * on the stack: on GTK these reads can paint rows, which the bridge then serves from its still valid orders.
+    * on the stack: on GTK these reads can paint rows, which the bridge serves from its cached root order. When it has
+    * none (an earlier add, insert or remove already dropped it), the last values are kept: reading would order the
+    * root just to drop that order again.
     */
    private void readViewportGeometry() {
-      if (boundsPreCompute() && !getTree().isDisposed()) {
+      if (boundsPreCompute() && !getTree().isDisposed() && viewport.hasOrder(getInput())) {
+         if (geometryProbe != null) {
+            geometryProbe.run();
+         }
          viewportTop = topRowIndex();
          viewportVisible = visibleRowCount();
       }

@@ -807,6 +807,45 @@ public class XViewerPreComputedViewport_Test {
       assertPaintedSortKeys(tree, 0, counter);
    }
 
+   /**
+    * Bounded: repeated add calls must not order the root just to drop the order again. A test hook paints row 0 where
+    * the viewport geometry is read (as GTK's {@code getItemHeight} can); after the first add has dropped the order,
+    * later adds read no geometry, so no full pass runs until the tree paints. Fails on 8792258 (four wasted passes
+    * for five adds).
+    */
+   @Test
+   @SuppressWarnings("unchecked")
+   public void boundedRepeatedAddsStartNoWastedPasses() throws Exception {
+      int rows = 1_000;
+      Stats stats = new Stats();
+      XViewer viewer = viewer(SWT.VIRTUAL, stats, true);
+      viewer.setInputXViewer(new ArrayList<Object>(Arrays.asList((Object[]) Flat.roots(rows))));
+      shell.open();
+      pump();
+      Tree tree = viewer.getTree();
+      clickHeader(viewer, PRE_ID);
+      pump();
+      Field probe = XViewer.class.getDeclaredField("geometryProbe"); //$NON-NLS-1$
+      probe.setAccessible(true);
+      probe.set(viewer, (Runnable) () -> tree.getItem(0).getText(0));
+      int computed = stats.computed;
+      List<Object> input = (List<Object>) viewer.getInput();
+      for (int add = 0; add < 5; add++) {
+         Integer element = Integer.valueOf(rows + add);
+         input.add(element);
+         viewer.add(input, element);
+      }
+      int duringAdds = stats.computed - computed;
+      System.out.println("XVIEWER_PRECOMPUTE adds computed=" + duringAdds); //$NON-NLS-1$
+      assertTrue("values computed during five adds: " + duringAdds, duringAdds < rows); //$NON-NLS-1$
+      probe.set(viewer, null);
+      pump();
+      assertEquals(rows + 5, tree.getItemCount());
+      TreeItem first = tree.getItem(0);
+      String painted = first.getText(1);
+      assertEquals(Pre.value(((Integer) first.getData()).intValue()), painted);
+   }
+
    /** An invalid {@code nebula.xviewer.boundedPreCompute} value leaves bounding off and is logged. */
    @Test
    public void invalidBoundedPreComputePropertyIsOffAndLogged() throws Exception {

@@ -26,9 +26,9 @@ import java.util.Set;
  * {@link XViewer#setBoundedPreCompute(boolean)}). The viewer keeps it beside the column, whose own
  * {@code preComputedValueMap} it leaves alone, and {@link IXViewerPreComputedColumn#populateCachedValues} fills it for
  * the rows asked for. It holds at most {@link #SLOTS} values for non-null keys by default, plus one for the
- * {@code null} key: the rows the native tree shows, their overscan and recently used rows. When a pass keeps more rows
- * than fit (a tall tree), {@link #ensureCapacity(int)} grows it to twice those rows; its size follows the viewport,
- * never the data. A value that leaves is computed again by the column if its row is asked for again.
+ * {@code null} key: the rows the native tree shows, their overscan and recently used rows. When a pass keeps more than
+ * half that many rows (a tall tree), {@link #ensureCapacity(int)} grows it to twice those rows; its size follows the
+ * viewport, never the data. A value that leaves is computed again by the column if its row is asked for again.
  * <p>
  * The values live in parent-owned lanes (a {@code long[]} of keys, a {@code String[]} of values and an {@code int[]}
  * of use ticks), not in one entry object per row. A key is looked up in a window of {@link #PROBE} slots after its
