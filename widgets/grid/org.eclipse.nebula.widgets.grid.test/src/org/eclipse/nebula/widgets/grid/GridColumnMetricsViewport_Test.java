@@ -17,6 +17,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,7 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -180,6 +182,44 @@ public class GridColumnMetricsViewport_Test {
 		a[0] = null;
 		assertSame(first, b[0]);
 		assertSame(first, metrics.visibleColumns(0, 0, 10, true)[0]);
+	}
+
+	/*
+	 * A new display order repaints the moved columns. Stock Nebula only changed the order, so the
+	 * window kept the old one until some other paint (GridViewportDelta_Test, "rotate order", GTK3:
+	 * no native paint followed). The same order again requests no paint. The original mode keeps
+	 * stock's behaviour.
+	 */
+	@Test
+	public void aNewColumnOrderRepaintsAndTheSameOrderDoesNot() {
+		assumeTrue("the original mode keeps stock's setColumnOrder", GridTestUtil.fixesUpstreamDefects());
+		final Display display = shell.getDisplay();
+		shell.setBounds(10, 10, 420, 260);
+		// the focus stays here, so the Grid paints no focus change of its own
+		new Text(shell, SWT.SINGLE).setBounds(5, 220, 60, 22);
+		grid.setBounds(5, 5, 400, 200);
+		grid.setHeaderVisible(true);
+		for (int c = 0; c < 4; c++) {
+			column(80, false, true).setText("c" + c);
+		}
+		for (int r = 0; r < 5; r++) {
+			final GridItem item = new GridItem(grid, SWT.NONE);
+			for (int c = 0; c < 4; c++) {
+				item.setText(c, r + ":" + c);
+			}
+		}
+		shell.open();
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, 1, "first Grid paint");
+		final int before = grid.paintPasses;
+		grid.setColumnOrder(new int[] { 1, 2, 3, 0 });
+		assertArrayEquals(new int[] { 1, 2, 3, 0 }, grid.getColumnOrder());
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, before + 1,
+				"setColumnOrder left the window on the old column order");
+		final int settled = grid.paintPasses;
+		grid.setColumnOrder(new int[] { 1, 2, 3, 0 });
+		GridSwtScreenshotCapture.awaitStableCounter(display, () -> grid.paintPasses, settled,
+				"Grid paints after the same column order");
+		assertEquals("the same order paints nothing", settled, grid.paintPasses);
 	}
 
 	private GridColumn column(final int width, final boolean fixed, final boolean visible) {
