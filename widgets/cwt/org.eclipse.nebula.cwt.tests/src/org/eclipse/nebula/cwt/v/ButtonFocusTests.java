@@ -14,6 +14,8 @@
 
 package org.eclipse.nebula.cwt.v;
 
+import java.util.function.Supplier;
+
 import org.eclipse.nebula.cwt.test.AbstractVTestCase;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -107,26 +109,37 @@ public class ButtonFocusTests extends AbstractVTestCase {
 		move(5, 5);
 	}
 	
-	/* the same check as assertTrue(hasFocus(expected)), reporting where the focus is instead */
+	/*
+	 * The same check as assertTrue(hasFocus(expected)); a failure reports where the focus is. The test
+	 * runs on its own thread, so the widgets are read on the UI thread, and only to describe a failure.
+	 */
 	private void assertFocus(Button expected) {
-		boolean focused = hasFocus(expected);
-		assertTrue("focus on " + expected.getText() + ", but " + describeFocus(), focused);
+		if (!hasFocus(expected)) {
+			fail("focus on " + onUiThread(() -> expected.getText()) + ", but " + describeFocus());
+		}
 	}
 
 	private void assertFocus(VButton expected) {
-		boolean focused = hasFocus(expected);
-		assertTrue("focus on " + expected.getText() + ", but " + describeFocus(), focused);
+		if (!hasFocus(expected)) {
+			fail("focus on " + onUiThread(() -> expected.getText()) + ", but " + describeFocus());
+		}
 	}
 
 	private String describeFocus() {
-		Control control = getFocusControl();
-		VControl vcontrol = VTracker.getFocusControl();
-		return "the display's focus control is " + name(control) + " and the virtual focus control is "
-				+ (vcontrol instanceof VButton ? ((VButton) vcontrol).getText() : String.valueOf(vcontrol));
+		return onUiThread(() -> {
+			Control control = getDisplay().getFocusControl();
+			VControl vcontrol = VTracker.getFocusControl();
+			return "the display's focus control is "
+					+ (control instanceof Button ? ((Button) control).getText() : String.valueOf(control))
+					+ " and the virtual focus control is "
+					+ (vcontrol instanceof VButton ? ((VButton) vcontrol).getText() : String.valueOf(vcontrol));
+		});
 	}
 
-	private static String name(Control control) {
-		return control instanceof Button ? ((Button) control).getText() : String.valueOf(control);
+	private String onUiThread(Supplier<String> text) {
+		String[] result = new String[1];
+		syncExec(() -> result[0] = text.get());
+		return result[0];
 	}
 
 	public void testMouse_1() {
