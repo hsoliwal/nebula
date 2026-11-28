@@ -578,13 +578,14 @@ public class GalleryVirtualSelectionTest {
 	}
 
 	/**
-	 * A group that leaves the gallery (remove, VIRTUAL clear, setItemCount) after a selectAll, in 2 groups of 50,000
-	 * items: the selection API never creates items, nor sends SetData, under that group (the original had created them
-	 * in selectAll; before the runs were released, getSelection sent SetData there for every unread child).
+	 * A group that leaves the gallery (remove, setItemCount; also after a VIRTUAL clear, which keeps the group and
+	 * its items until then) after a selectAll, in 2 groups of 50,000 items: the selection API (getSelection, the item
+	 * Enter and a deselection name) never creates items, nor sends SetData, under that group (the original had created
+	 * them in selectAll; before the runs were released, getSelection sent SetData there for every unread child).
 	 */
 	@Test
 	public void groupsLeavingTheGallerySendNoSetDataUnderThem() {
-		for (int operation = 0; operation < 3; operation++) {
+		for (int operation = 0; operation < 4; operation++) {
 			create(2, ITEMS / 2, SWT.MULTI);
 			int[] detached = { 0 };
 			gallery.addListener(SWT.SetData, e -> {
@@ -593,7 +594,11 @@ public class GalleryVirtualSelectionTest {
 					detached[0]++;
 				}
 			});
-			GalleryItem leaving = gallery.getItem(operation == 2 ? 1 : 0);
+			GalleryItem leaving = gallery.getItem(operation >= 2 ? 1 : 0);
+			for (int i = 0; i < 4; i++) {
+				// children that exist, also in a group out of view
+				leaving.getItem(i);
+			}
 			List<GalleryItem> existing = new ArrayList<>();
 			for (GalleryItem item : leaving.getItems()) {
 				if (item != null) {
@@ -601,11 +606,14 @@ public class GalleryVirtualSelectionTest {
 				}
 			}
 			gallery.selectAll();
-			String name = new String[] { "remove(0)", "clear(0)", "setItemCount(1)" }[operation];
-			if (operation == 0) {
+			String name = new String[] { "remove(0)", "clear(0), remove(0)", "setItemCount(1)",
+					"clear(1), setItemCount(1)" }[operation];
+			if (operation == 1 || operation == 3) {
+				// the cleared items that existed are selected item entries when the group leaves
+				gallery.clear(operation == 1 ? 0 : 1);
+			}
+			if (operation < 2) {
 				gallery.remove(0);
-			} else if (operation == 1) {
-				gallery.clear(0);
 			} else {
 				gallery.setItemCount(1);
 			}
@@ -622,6 +630,9 @@ public class GalleryVirtualSelectionTest {
 			enter.keyCode = SWT.CR;
 			gallery.notifyListeners(SWT.KeyDown, enter);
 			assertEquals(name + ": SetData under the detached group after Enter", 0, detached[0]);
+			// a deselection names the item selected last (after a clear and setItemCount, a cleared detached item)
+			click(gallery.getItem(0).getItem(0), SWT.MOD1);
+			assertEquals(name + ": SetData under the detached group after a deselection", 0, detached[0]);
 			shell.dispose();
 		}
 	}
