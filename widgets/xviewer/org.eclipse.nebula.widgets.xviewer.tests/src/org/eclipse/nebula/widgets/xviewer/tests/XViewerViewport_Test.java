@@ -59,6 +59,11 @@ public class XViewerViewport_Test {
    private static final int MATERIALIZED_BOUND = 256;
    /** Rows above and below the shown rows a native row request may still be for (rounding of the scroll bar). */
    private static final int WINDOW_SLACK = 2;
+   /**
+    * Scroll positions a GTK round trip may paint between its two ends: about 13 frame-clock frames per 200 ms
+    * animated leg, two legs, with headroom.
+    */
+   private static final int MAX_ANIMATION_FRAMES = 30;
 
    private Display display;
    private Shell shell;
@@ -86,7 +91,7 @@ public class XViewerViewport_Test {
       // scrolling, each must be a row the tree shows at that moment, and the scroll positions they are shown at count
       Set<Integer> requestedRoots = new HashSet<>();
       List<String> outsideWindow = new ArrayList<>();
-      Set<Integer> shownTops = new HashSet<>();
+      Set<Integer> requestTops = new HashSet<>();
       boolean[] scrolling = {false};
       viewer.getTree().addListener(SWT.SetData, event -> {
          if (((TreeItem) event.item).getParentItem() != null) {
@@ -95,12 +100,22 @@ public class XViewerViewport_Test {
          requestedRoots.add(Integer.valueOf(event.index));
          if (scrolling[0]) {
             int[] window = shownWindow((Tree) event.widget);
-            shownTops.add(Integer.valueOf(window[0]));
+            requestTops.add(Integer.valueOf(window[0]));
             if (event.index < window[0] - WINDOW_SLACK || event.index > window[0] + window[1] + WINDOW_SLACK) {
                outsideWindow.add(event.index + " (top " + window[0] + ", page " + window[1] + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
             }
          }
       });
+      // on GTK, the scroll positions the tree actually painted at, recorded by paints, not by row requests
+      boolean gtk = "gtk".equals(SWT.getPlatform()); //$NON-NLS-1$
+      Set<Integer> paintedTops = new HashSet<>();
+      if (gtk) {
+         viewer.getTree().addListener(SWT.Paint, event -> {
+            if (scrolling[0]) {
+               paintedTops.add(Integer.valueOf(shownWindow((Tree) event.widget)[0]));
+            }
+         });
+      }
       Integer[] roots = Model.roots(ROOTS);
       viewer.setInputXViewer(roots);
       shell.open();
@@ -135,11 +150,14 @@ public class XViewerViewport_Test {
       int resident = viewer.getViewportMaterializedCount();
       Set<Integer> residentRoots = new HashSet<>(requestedRoots);
       assertEquals("each resident root row was asked for by the native tree", resident, residentRoots.size()); //$NON-NLS-1$
+      int endTop = shownWindow(tree)[0];
 
-      // the round trip: no resident row is asked for again, every row asked for is on screen then, and every row
-      // first shown on the way is counted once
+      // the round trip: no resident row is asked for again, every row asked for is on screen then and (on GTK) at a
+      // scroll position the tree painted, the painted positions between the ends are no more than animation frames,
+      // and every row first shown on the way is counted once; without an animation no row is shown on the way
       requestedRoots.clear();
-      shownTops.clear();
+      requestTops.clear();
+      paintedTops.clear();
       scrolling[0] = true;
       tree.setTopItem(tree.getItem(0));
       tree.update();
@@ -152,17 +170,29 @@ public class XViewerViewport_Test {
       shownOnTheWay.removeAll(residentRoots);
       Set<Integer> askedAgain = new HashSet<>(requestedRoots);
       askedAgain.retainAll(residentRoots);
+      Set<Integer> unpaintedTops = new HashSet<>(requestTops);
+      unpaintedTops.removeAll(paintedTops);
+      Set<Integer> paintedBetween = new HashSet<>(paintedTops);
+      paintedBetween.remove(Integer.valueOf(0));
+      paintedBetween.remove(Integer.valueOf(endTop));
       int page = shownWindow(tree)[1];
       System.out.println("XVIEWER_VIEWPORT million round trip: " + resident + " resident rows, " //$NON-NLS-1$ //$NON-NLS-2$
-         + shownOnTheWay.size() + " rows first shown on the way at " + shownTops.size() + " scroll positions, " //$NON-NLS-1$ //$NON-NLS-2$
+         + shownOnTheWay.size() + " rows first shown on the way at " + requestTops.size() + " scroll positions, " //$NON-NLS-1$ //$NON-NLS-2$
          + askedAgain.size() + " resident rows asked for again, " + outsideWindow.size() //$NON-NLS-1$
-         + " rows asked for off screen, page " + page); //$NON-NLS-1$
+         + " rows asked for off screen, page " + page //$NON-NLS-1$
+         + (gtk ? ", " + paintedBetween.size() + " painted positions between the ends" : "")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
       assertTrue("rows asked for outside the shown rows during the round trip: " + outsideWindow, //$NON-NLS-1$
          outsideWindow.isEmpty());
       assertTrue("resident rows are not requested again: " + askedAgain, askedAgain.isEmpty()); //$NON-NLS-1$
-      assertTrue("rows first shown on the way: " + shownOnTheWay.size() + " at " + shownTops.size() //$NON-NLS-1$ //$NON-NLS-2$
-         + " scroll positions of a " + page + "-row page", //$NON-NLS-1$ //$NON-NLS-2$
-         shownOnTheWay.size() <= shownTops.size() * (page + 2 * WINDOW_SLACK + 1));
+      if (gtk) {
+         assertTrue("rows asked for at scroll positions the tree did not paint: " + unpaintedTops //$NON-NLS-1$
+            + ", painted " + paintedTops, unpaintedTops.isEmpty()); //$NON-NLS-1$
+         assertTrue("more painted scroll positions between the ends than a round trip has animation frames: " //$NON-NLS-1$
+            + paintedBetween.size(), paintedBetween.size() <= MAX_ANIMATION_FRAMES);
+      } else {
+         assertTrue("a round trip without a scroll animation shows no row between its ends: " + shownOnTheWay.size(), //$NON-NLS-1$
+            shownOnTheWay.isEmpty());
+      }
       assertEquals("each row first shown on the way is counted once", resident + shownOnTheWay.size(), //$NON-NLS-1$
          viewer.getViewportMaterializedCount());
       assertEquals("one request per root row", viewer.getViewportMaterializedCount(), //$NON-NLS-1$
@@ -404,11 +434,13 @@ public class XViewerViewport_Test {
 
    /**
     * The root rows the tree shows now, read from its vertical scroll bar so that it holds whether the bar counts rows
-    * (win32) or pixels (GTK): {top row, rows in a page rounded up}. For a tree of root rows of one height.
+    * (win32) or pixels (GTK): {top row, rows in a page rounded up}. For the million-node tree while it shows its
+    * {@link #ROOTS} root rows only (all of one height); the count is not read from the tree, which on win32 walks the
+    * rows.
     */
    private static int[] shownWindow(Tree tree) {
       org.eclipse.swt.widgets.ScrollBar bar = tree.getVerticalBar();
-      long rows = tree.getItemCount();
+      long rows = ROOTS;
       long max = Math.max(1, bar.getMaximum());
       return new int[] {(int) (bar.getSelection() * rows / max), (int) ((bar.getThumb() * rows + max - 1) / max)};
    }
