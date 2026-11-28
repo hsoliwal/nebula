@@ -141,13 +141,23 @@ public class XViewerViewport_Test {
       assertEquals("n" + (ROOTS - 1), tree.getItem(ROOTS - 1).getText(0));
       assertSame("item data is the caller's element", roots[ROOTS - 1], tree.getItem(ROOTS - 1).getData());
       assertEquals("one request per root row", scrolled, bridge.getMaterializedRootCount());
-      // the frames of the scroll to the end that are still to come
+      // the frames of the scroll to the end that are still to come; without an animation there are none, so nothing
+      // more is materialized, and on GTK every row asked for while scrolling to the end comes at a painted position
+      int beforeSettle = viewer.getViewportMaterializedCount();
       scrolling[0] = true;
       settleScroll(tree, () -> endSelection(tree), 1);
       scrolling[0] = false;
       assertTrue("rows asked for outside the shown rows while scrolling to the end: " + outsideWindow, //$NON-NLS-1$
          outsideWindow.isEmpty());
       int resident = viewer.getViewportMaterializedCount();
+      if (gtk) {
+         Set<Integer> unpaintedFirst = new HashSet<>(requestTops);
+         unpaintedFirst.removeAll(paintedTops);
+         assertTrue("rows asked for while scrolling to the end at scroll positions the tree did not paint: " //$NON-NLS-1$
+            + unpaintedFirst + ", painted " + paintedTops, unpaintedFirst.isEmpty()); //$NON-NLS-1$
+      } else {
+         assertEquals("rows materialized once the scroll to the end had been shown", beforeSettle, resident); //$NON-NLS-1$
+      }
       Set<Integer> residentRoots = new HashSet<>(requestedRoots);
       assertEquals("each resident root row was asked for by the native tree", resident, residentRoots.size()); //$NON-NLS-1$
       int endTop = shownWindow(tree)[0];
