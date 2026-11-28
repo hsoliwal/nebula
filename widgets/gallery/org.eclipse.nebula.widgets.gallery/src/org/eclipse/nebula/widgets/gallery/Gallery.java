@@ -117,6 +117,13 @@ public class Gallery extends Canvas {
 	 */
 	private boolean layingOut;
 
+	/**
+	 * Viewport mode: a layout pass created placeholders without their own layouts. The original's nested layouts also
+	 * updated the scroll bar and redrew; the outermost layout does that once when it is done (see
+	 * updateStructuralValues), for the callers that do not (the protected updateStructuralValues, setVertical).
+	 */
+	private boolean placeholdersCreated;
+
 	private GalleryItem[] selection = null;
 
 	/** Viewport mode: the number of selection entries at the front of {@link #selection}, which grows amortized. */
@@ -1948,6 +1955,7 @@ public class Gallery extends Canvas {
 						if (VIEWPORT && layingOut) {
 							//FLLDCIM: VIEWPORT - virtual groups: the layout pass that creates a placeholder lays it out
 							galleryItem.expandPlaceholder();
+							placeholdersCreated = true;
 						} else {
 							galleryItem.setExpanded(true);
 						}
@@ -2076,6 +2084,12 @@ public class Gallery extends Canvas {
 			System.out.println("Content Size : " + gWidth + " " + gHeight); //$NON-NLS-1$//$NON-NLS-2$
 		}
 
+		if (placeholdersCreated && !layingOut) {
+			//FLLDCIM: VIEWPORT - virtual groups: one scroll bar update and redraw for the placeholders a pass created
+			placeholdersCreated = false;
+			updateScrollBarsProperties();
+			redraw();
+		}
 	}
 
 	/**

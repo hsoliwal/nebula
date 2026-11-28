@@ -83,6 +83,11 @@ public class GalleryVirtualGroupsTest {
 			layouts++;
 			super.layout(gc, group);
 		}
+
+		/** The protected layout request of a renderer, which updates neither the scroll bar nor the paint. */
+		void relayout() {
+			updateStructuralValues(false);
+		}
 	}
 
 	@Before
@@ -181,6 +186,29 @@ public class GalleryVirtualGroupsTest {
 		scrollTo(Integer.MAX_VALUE);
 		assertTrue("groups requested: " + groupSetData, groupSetData <= 16);
 		assertTrue("children requested: " + itemSetData, itemSetData <= 4 * cellBound());
+	}
+
+	/**
+	 * Placeholders created by a layout whose caller updates neither the scroll bar nor the paint (here the renderer's
+	 * protected updateStructuralValues, after _setGalleryItems left 300 empty slots): the scroll bar shows their extent
+	 * and a paint follows, which initializes the groups in view, as the original's nested layouts did.
+	 */
+	@Test
+	public void placeholdersCreatedByARendererLayoutUpdateTheScrollBarAndPaint() {
+		create(100);
+		open();
+		int before = paints;
+		gallery._setGalleryItems(new GalleryItem[300]);
+		renderer.relayout();
+		for (GalleryItem group : gallery.getItems()) {
+			assertTrue("a placeholder in every slot", group != null);
+		}
+		ScrollBar bar = gallery.getVerticalBar();
+		assertTrue("the scroll bar shows the placeholders' extent: visible " + bar.getVisible() + ", maximum "
+				+ bar.getMaximum(), bar.getVisible() && bar.getMaximum() > gallery.getClientArea().height);
+		settle(0);
+		assertTrue("a paint follows", paints > before);
+		assertTrue("the paint initializes the groups in view: " + groupSetData, groupSetData > 0 && groupSetData <= 8);
 	}
 
 	/**
