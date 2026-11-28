@@ -51,7 +51,7 @@ import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
  * has the same extent (a subtree's extent is its visible rows times that extent) and the owner
  * lane until the first row without an item. A Grid of n uniform rows thus keeps 21 bytes per slot
  * instead of 50. The weight and sum lanes are given up again when the Grid gives every row one
- * height ({@link #setVisibleExtent(int)}).
+ * height ({@code setVisibleExtent}).
  * </p>
  */
 final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
