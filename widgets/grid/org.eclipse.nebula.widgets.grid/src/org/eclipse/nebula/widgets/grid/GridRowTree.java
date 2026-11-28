@@ -43,14 +43,29 @@ import org.eclipse.nebula.widgets.grid.model.HeapGrowth;
  * through the Grid ({@code setFacades(java.util.function.IntFunction)}), {@code materialized()}
  * walks only the items made so far.
  * </p>
+ * <p>
+ * Density: every slot keeps five 4-byte lanes (left, right, up, size, item) and one byte (AVL
+ * height, the batch's dirty mark and whether the row is shown). The other lanes are made only when
+ * a row needs them, and their answers are derived until then: the visible lane while every row is
+ * shown (a subtree's visible rows are its size), the weight and sum lanes while every shown row
+ * has the same extent (a subtree's extent is its visible rows times that extent) and the owner
+ * lane until the first row without an item. A Grid of n uniform rows thus keeps 21 bytes per slot
+ * instead of 50. The weight and sum lanes are given up again when the Grid gives every row one
+ * height ({@link #setVisibleExtent(int)}).
+ * </p>
  */
 final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	private static final int NONE = -1;
-	/* bytes per slot over the lanes: left, right, up, size, visible, weight (int), sum (long), height, dirty (byte), item, owner */
-	private static final int SLOT_BYTES = 50;
+	/* bytes per slot of the lanes every tree keeps: left, right, up, size (int), item (ref), height (byte) */
+	private static final int SLOT_BYTES = 21;
 
-	/* the parent item of each row without an item (null for a row with one) */
-	private GridItem[] owners = new GridItem[0];
+	/* the height byte: AVL height (bits 0..5, at most 45 for 2^31 slots), dirty mark, shown */
+	private static final int HEIGHT = 0x3F;
+	private static final int DIRTY = 0x40;
+	private static final int SHOWN = 0x80;
+
+	/* the parent item of each row without an item (null for a row with one); null until the first such row */
+	private GridItem[] owners;
 	private int unread;
 	private java.util.function.IntFunction<GridItem> facades;
 
@@ -60,9 +75,15 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	private int[] up = new int[0];
 	private byte[] heights = new byte[0];
 	private int[] sizes = new int[0];
-	private int[] visibles = new int[0];
-	private int[] weights = new int[0];
-	private long[] sums = new long[0];
+	/* the visible rows of each subtree; null while every row is shown (they equal the sizes) */
+	private int[] visibles;
+	/* the extent of each slot and of each subtree; null while every shown row's extent is uniform */
+	private int[] weights;
+	private long[] sums;
+	/* the extent of every shown row while weights is null */
+	private int uniform;
+	/* the rows of the tree that are shown (extent above 0), whatever the batch state */
+	private int shown;
 	private GridItem[] items = new GridItem[0];
 	private int[] free = new int[0];
 	private int freeCount;
@@ -104,12 +125,21 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		if (index < 0 || index > size()) {
 			throw new IndexOutOfBoundsException("index " + index + ", size " + size());
 		}
+		if (count > 0) {
+			admit(NONE, weight);
+		}
 		ensureCapacity(nextSlot + count - Math.min(count, freeCount));
+		if (owners == null && count > 0) {
+			owners = new GridItem[items.length];
+		}
 		final int[] slots = new int[count];
 		for (int i = 0; i < count; i++) {
 			final int slot = allocate();
 			owners[slot] = owner;
-			weights[slot] = weight;
+			putWeight(slot, weight);
+			if (weight > 0) {
+				shown++;
+			}
 			root = insertAt(root, index + i, slot);
 			up[root] = NONE;
 			slots[i] = slot;
@@ -122,14 +152,16 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	/** Gives a row without an item the item just made for it. */
 	void bind(final int slot, final GridItem item) {
 		items[slot] = item;
-		owners[slot] = null;
+		if (owners != null) {
+			owners[slot] = null;
+		}
 		unread--;
 		item.enteredRowTree(slot);
 	}
 
 	/** @return the parent item of a row without an item, else {@code null} */
 	GridItem ownerOf(final int slot) {
-		return owners[slot];
+		return owners == null ? null : owners[slot];
 	}
 
 	/** @return whether some rows have no item yet */
@@ -155,7 +187,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 
 	/** @return the extent of a slot (0: hidden) */
 	int weightOf(final int slot) {
-		return weights[slot];
+		return weight(slot);
 	}
 
 	/** Sets the extent of a slot, O(log n). */
@@ -171,9 +203,14 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		if (root != NONE) {
 			up[root] = NONE;
 		}
-		owners[slot] = null;
+		if (isShown(slot)) {
+			shown--;
+		}
 		unread--;
 		release(slot);
+		if (root == NONE) {
+			forgetLanes();
+		}
 		modCount++;
 	}
 
@@ -184,7 +221,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 			return;
 		}
 		for (int slot = first(root); slot != NONE; slot = successor(slot)) {
-			if (items[slot] == null && weights[slot] > 0) {
+			if (items[slot] == null && weight(slot) > 0) {
 				reweigh(slot, visibleWeight);
 			}
 		}
@@ -226,9 +263,14 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		if (index < 0 || index > size()) {
 			throw new IndexOutOfBoundsException("index " + index + ", size " + size());
 		}
+		final int weight = extentOf(item);
+		admit(NONE, weight);
 		final int slot = allocate();
 		items[slot] = item;
-		weights[slot] = extentOf(item);
+		putWeight(slot, weight);
+		if (weight > 0) {
+			shown++;
+		}
 		root = insertAt(root, index, slot);
 		up[root] = NONE;
 		item.enteredRowTree(slot);
@@ -245,7 +287,13 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		if (root != NONE) {
 			up[root] = NONE;
 		}
+		if (isShown(slot)) {
+			shown--;
+		}
 		release(slot);
+		if (root == NONE) {
+			forgetLanes();
+		}
 		item.leftRowTree(index);
 		modCount++;
 		return item;
@@ -303,11 +351,21 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 		}
 		root = NONE;
 		Arrays.fill(items, 0, nextSlot, null);
-		Arrays.fill(owners, 0, nextSlot, null);
+		forgetLanes();
 		unread = 0;
 		nextSlot = 0;
 		freeCount = 0;
 		modCount++;
+	}
+
+	/* no row is left: every lane made on demand goes, the answers are derived again */
+	private void forgetLanes() {
+		owners = null;
+		visibles = null;
+		weights = null;
+		sums = null;
+		uniform = 0;
+		shown = 0;
 	}
 
 	@Override
@@ -334,6 +392,40 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 				return item;
 			}
 		};
+	}
+
+	@Override
+	public Object[] toArray() {
+		return toArray(new Object[size()]);
+	}
+
+	/*
+	 * The rows in order, each placed by its subtree size in one descent per subtree (no iterator,
+	 * no climb to a successor): Grid.getItems() and, while the Grid has no child items, its root
+	 * items. A row without an item gets one, as the iterator gives it.
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T> T[] toArray(final T[] a) {
+		final int size = size();
+		final T[] out = a.length >= size ? a
+				: (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), size);
+		fill(root, out, 0);
+		if (out.length > size) {
+			out[size] = null;
+		}
+		return out;
+	}
+
+	private void fill(final int subtree, final Object[] out, final int from) {
+		int node = subtree;
+		int offset = from;
+		while (node != NONE) {
+			fill(left[node], out, offset);
+			offset += size(left[node]);
+			out[offset++] = itemOf(node);
+			node = right[node];
+		}
 	}
 
 	/**
@@ -388,7 +480,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 
 	@Override
 	public int extentAt(final int position) {
-		return weights[slotAt(position)];
+		return weight(slotAt(position));
 	}
 
 	@Override
@@ -402,7 +494,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 			if (k <= before) {
 				node = left[node];
 			} else {
-				rank += visible(left[node]) + (weights[node] > 0 ? 1 : 0);
+				rank += visible(left[node]) + (isShown(node) ? 1 : 0);
 				k -= before + 1;
 				node = right[node];
 			}
@@ -421,7 +513,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 			if (k <= before) {
 				node = left[node];
 			} else {
-				extent += sum(left[node]) + weights[node];
+				extent += sum(left[node]) + weight(node);
 				k -= before + 1;
 				node = right[node];
 			}
@@ -441,7 +533,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 				node = left[node];
 				continue;
 			}
-			final int own = weights[node] > 0 ? 1 : 0;
+			final int own = isShown(node) ? 1 : 0;
 			if (remaining < before + own) {
 				return position + size(left[node]);
 			}
@@ -472,11 +564,11 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 				node = left[node];
 				continue;
 			}
-			final int own = weights[node] > 0 ? 1 : 0;
+			final int own = isShown(node) ? 1 : 0;
 			if (remaining < before + own) {
 				return extent + sum(left[node]);
 			}
-			extent += sum(left[node]) + weights[node];
+			extent += sum(left[node]) + weight(node);
 			remaining -= before + own;
 			node = right[node];
 		}
@@ -499,11 +591,11 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 			}
 			extent += sum(left[node]);
 			rank += visible(left[node]);
-			if (extent + weights[node] > offset) {
+			if (extent + weight(node) > offset) {
 				return rank;
 			}
-			extent += weights[node];
-			rank += weights[node] > 0 ? 1 : 0;
+			extent += weight(node);
+			rank += isShown(node) ? 1 : 0;
 			node = right[node];
 		}
 		return rank;
@@ -533,7 +625,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 			if (fromLeft != -1) {
 				return fromLeft;
 			}
-			if (weights[node] > 0) {
+			if (isShown(node)) {
 				return index;
 			}
 		}
@@ -550,7 +642,7 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 			if (fromRight != -1) {
 				return fromRight;
 			}
-			if (weights[node] > 0) {
+			if (isShown(node)) {
 				return index;
 			}
 		}
@@ -598,29 +690,108 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	}
 
 	private void reweigh(final int slot, final int weight) {
-		final long delta = (long) weight - weights[slot];
-		final int visibleDelta = (weight > 0 ? 1 : 0) - (weights[slot] > 0 ? 1 : 0);
+		final int old = weight(slot);
+		final long delta = (long) weight - old;
+		final int visibleDelta = (weight > 0 ? 1 : 0) - (old > 0 ? 1 : 0);
 		if (delta == 0 && visibleDelta == 0) {
 			return;
 		}
-		weights[slot] = weight;
+		admit(slot, weight);
+		putWeight(slot, weight);
+		shown += visibleDelta;
+		if (visibles == null && sums == null) {
+			// both aggregates are derived from the sizes: nothing to carry up
+			return;
+		}
 		if (batchDepth > 0) {
 			// marks the path to the root up to the first marked node: k changes in a subtree mark
 			// O(k + log n) nodes, fixed once by settle()
-			for (int node = slot; node != NONE && dirty[node] == 0; node = up[node]) {
-				dirty[node] = 1;
+			for (int node = slot; node != NONE && (heights[node] & DIRTY) == 0; node = up[node]) {
+				heights[node] |= DIRTY;
 			}
 			anyDirty = true;
 			return;
 		}
 		for (int node = slot; node != NONE; node = up[node]) {
-			sums[node] += delta;
-			visibles[node] += visibleDelta;
+			if (sums != null) {
+				sums[node] += delta;
+			}
+			if (visibles != null) {
+				visibles[node] += visibleDelta;
+			}
 		}
 	}
 
+	/* whether a slot's row is shown (its extent is above 0) */
+	private boolean isShown(final int slot) {
+		return (heights[slot] & SHOWN) != 0;
+	}
+
+	/* the extent of a slot: its lane, or the uniform extent of a shown row */
+	private int weight(final int slot) {
+		if (weights != null) {
+			return weights[slot];
+		}
+		return isShown(slot) ? uniform : 0;
+	}
+
+	/* records the extent of a slot (the aggregates are the caller's) */
+	private void putWeight(final int slot, final int weight) {
+		if (weights != null) {
+			weights[slot] = weight;
+		}
+		heights[slot] = (byte) (weight > 0 ? heights[slot] | SHOWN : heights[slot] & ~SHOWN);
+	}
+
+	/*
+	 * Makes the lanes able to hold the extent weight at slot (NONE: a row not in the tree yet),
+	 * before it is recorded: the visible lane for the first hidden row, the weight and sum lanes for
+	 * the first shown row whose extent differs from the uniform one while another row is shown.
+	 * When no other row is shown the uniform extent simply becomes weight. Each lane is made once,
+	 * O(n), from the answers that were derived until then.
+	 */
+	private void admit(final int slot, final int weight) {
+		if (weight > 0) {
+			if (weights == null && weight != uniform) {
+				final int others = shown - (slot != NONE && isShown(slot) ? 1 : 0);
+				if (others == 0) {
+					uniform = weight;
+				} else {
+					makeWeights();
+				}
+			}
+			return;
+		}
+		if (visibles == null) {
+			makeVisibles();
+		}
+		if (weight != 0 && weights == null) {
+			makeWeights();
+		}
+	}
+
+	/* every row was shown: the visible rows of each subtree are its size */
+	private void makeVisibles() {
+		final int[] lane = new int[items.length];
+		System.arraycopy(sizes, 0, lane, 0, nextSlot);
+		visibles = lane;
+	}
+
+	/* every shown row had the uniform extent: each subtree's extent is its visible rows times it */
+	private void makeWeights() {
+		final int[] weightLane = new int[items.length];
+		final long[] sumLane = new long[items.length];
+		for (int slot = 0; slot < nextSlot; slot++) {
+			if (isShown(slot)) {
+				weightLane[slot] = uniform;
+			}
+			sumLane[slot] = (long) visible(slot) * uniform;
+		}
+		weights = weightLane;
+		sums = sumLane;
+	}
+
 	/* batched reweighs (expand, collapse, a uniform height): weights set at once, aggregates fixed once */
-	private byte[] dirty = new byte[0];
 	private int batchDepth;
 	private boolean anyDirty;
 
@@ -645,26 +816,53 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	}
 
 	private void fix(final int node) {
-		if (node == NONE || dirty[node] == 0) {
+		if (node == NONE || (heights[node] & DIRTY) == 0) {
 			return;
 		}
 		fix(left[node]);
 		fix(right[node]);
 		refresh(node);
-		dirty[node] = 0;
+		heights[node] &= ~DIRTY;
 	}
 
 	/**
 	 * Gives every visible row the extent {@code extent} (the Grid's item height changed for all
-	 * rows) in one pass over the slots and one over the tree: O(n), with no call per item.
+	 * rows) in one pass over the slots and one over the tree: O(n), with no call per item. Every
+	 * shown row then has the same extent, so the weight and sum lanes are given up (derived again).
 	 *
 	 * @param extent the new extent of a visible row (height plus line)
 	 */
 	void setVisibleExtent(final int extent) {
 		settle();
+		if (extent > 0) {
+			if (weights == null) {
+				uniform = extent;
+				return;
+			}
+			boolean uniformAfter = true;
+			for (int slot = 0; slot < nextSlot && uniformAfter; slot++) {
+				// a hidden row with a negative extent keeps it: only then are the lanes still needed
+				uniformAfter = weights[slot] >= 0;
+			}
+			if (uniformAfter) {
+				weights = null;
+				sums = null;
+				uniform = extent;
+				return;
+			}
+		} else {
+			// every shown row becomes hidden with this extent: the lanes that answer it
+			if (visibles == null) {
+				makeVisibles();
+			}
+			if (weights == null) {
+				makeWeights();
+			}
+			shown = 0;
+		}
 		for (int slot = 0; slot < nextSlot; slot++) {
 			if (weights[slot] > 0) {
-				weights[slot] = extent;
+				putWeight(slot, extent);
 			}
 		}
 		refreshAll(root);
@@ -822,67 +1020,102 @@ final class GridRowTree extends AbstractList<GridItem> implements GridRowIndex {
 	private void refresh(final int node) {
 		final int l = left[node], r = right[node];
 		sizes[node] = 1 + size(l) + size(r);
-		visibles[node] = (weights[node] > 0 ? 1 : 0) + visible(l) + visible(r);
-		sums[node] = weights[node] + sum(l) + sum(r);
-		heights[node] = (byte) (1 + Math.max(height(l), height(r)));
+		if (visibles != null) {
+			visibles[node] = (isShown(node) ? 1 : 0) + visible(l) + visible(r);
+		}
+		if (sums != null) {
+			sums[node] = weights[node] + sum(l) + sum(r);
+		}
+		heights[node] = (byte) ((heights[node] & (DIRTY | SHOWN)) | (1 + Math.max(height(l), height(r))));
 	}
 
 	private int height(final int node) {
-		return node == NONE ? 0 : heights[node];
+		return node == NONE ? 0 : heights[node] & HEIGHT;
 	}
 
 	private int size(final int node) {
 		return node == NONE ? 0 : sizes[node];
 	}
 
+	/* the visible rows of a subtree: all of it while every row is shown */
 	private int visible(final int node) {
-		return node == NONE ? 0 : visibles[node];
+		if (node == NONE) {
+			return 0;
+		}
+		return visibles != null ? visibles[node] : sizes[node];
 	}
 
+	/* the extent of a subtree: its visible rows times the uniform extent while all shown rows have it */
 	private long sum(final int node) {
-		return node == NONE ? 0 : sums[node];
+		if (node == NONE) {
+			return 0;
+		}
+		return sums != null ? sums[node] : (long) visible(node) * uniform;
 	}
 
 	private int allocate() {
+		final int slot;
 		if (freeCount > 0) {
-			return free[--freeCount];
+			slot = free[--freeCount];
+		} else {
+			ensureCapacity(nextSlot + 1);
+			slot = nextSlot++;
 		}
-		ensureCapacity(nextSlot + 1);
-		return nextSlot++;
+		heights[slot] = 0;
+		return slot;
 	}
 
 	private void release(final int slot) {
 		items[slot] = null;
-		owners[slot] = null;
-		weights[slot] = 0;
+		if (owners != null) {
+			owners[slot] = null;
+		}
+		if (weights != null) {
+			weights[slot] = 0;
+		}
+		heights[slot] = 0;
 		if (freeCount == free.length) {
 			free = Arrays.copyOf(free, Math.max(8, free.length * 2));
 		}
 		free[freeCount++] = slot;
 	}
 
+	/* bytes per slot over the lanes this tree keeps now (for the heap-aware growth) */
+	private int slotBytes() {
+		return SLOT_BYTES + (owners != null ? 4 : 0) + (visibles != null ? 4 : 0) + (weights != null ? 12 : 0);
+	}
+
+	/**
+	 * @return the bytes per slot of the lanes this tree keeps: 21 for rows that are all shown with
+	 *         one extent, up to 41 (tests; see the class comment)
+	 */
+	int laneBytesPerSlot() {
+		return slotBytes();
+	}
+
 	private void ensureCapacity(final int slots) {
 		if (slots <= items.length) {
 			return;
 		}
-		final int capacity = HeapGrowth.capacity(items.length, slots, SLOT_BYTES);
+		// a quarter more at most: a slot is 21 to 41 bytes over all lanes, and doubling them left up
+		// to a whole spare slot per row (the stock ArrayList adds a half of 4-byte references)
+		final int quarter = Math.max(16, items.length + (items.length >> 2));
+		final int capacity = Math.min(HeapGrowth.capacity(items.length, slots, slotBytes()), Math.max(slots, quarter));
 		// stage every lane before publishing, so a failed allocation leaves the tree unchanged
 		final int[] nextLeft = Arrays.copyOf(left, capacity);
 		final int[] nextRight = Arrays.copyOf(right, capacity);
 		final int[] nextUp = Arrays.copyOf(up, capacity);
 		final byte[] nextHeights = Arrays.copyOf(heights, capacity);
-		final byte[] nextDirty = Arrays.copyOf(dirty, capacity);
 		final int[] nextSizes = Arrays.copyOf(sizes, capacity);
-		final int[] nextVisibles = Arrays.copyOf(visibles, capacity);
-		final int[] nextWeights = Arrays.copyOf(weights, capacity);
-		final long[] nextSums = Arrays.copyOf(sums, capacity);
+		final int[] nextVisibles = visibles == null ? null : Arrays.copyOf(visibles, capacity);
+		final int[] nextWeights = weights == null ? null : Arrays.copyOf(weights, capacity);
+		final long[] nextSums = sums == null ? null : Arrays.copyOf(sums, capacity);
 		final GridItem[] nextItems = Arrays.copyOf(items, capacity);
-		final GridItem[] nextOwners = Arrays.copyOf(owners, capacity);
+		final GridItem[] nextOwners = owners == null ? null : Arrays.copyOf(owners, capacity);
 		left = nextLeft;
 		right = nextRight;
 		up = nextUp;
 		heights = nextHeights;
-		dirty = nextDirty;
 		sizes = nextSizes;
 		visibles = nextVisibles;
 		weights = nextWeights;
