@@ -93,7 +93,9 @@ public class GalleryItem extends Item {
 	 * Viewport mode, SWT.VIRTUAL: a clear (<code>Gallery.clear</code>, <code>Gallery.clearAll</code>,
 	 * {@link #clearAll()}) reset the attributes of this item, and the gallery sends SWT.SetData for it again the next
 	 * time it requests the item (layout, paint, <code>getItem</code>), as Table and Tree do with a cleared item. The
-	 * item stays in place, with its children, its expanded state, its selection and its data.
+	 * item stays in place, with its children, its expanded state, its selection and its data. A setter that sets an
+	 * attribute (text, image, font, colours) before that request populates the item, as in Table and Tree: no SetData
+	 * then overwrites the caller's value.
 	 */
 	boolean cleared;
 
@@ -308,6 +310,7 @@ public class GalleryItem extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		super.setImage(image);
+		cleared = false;
 		parent.redraw(this);
 	}
 
@@ -637,6 +640,7 @@ public class GalleryItem extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		this.font = font;
+		cleared = false;
 		this.parent.redraw(this);
 	}
 
@@ -721,6 +725,7 @@ public class GalleryItem extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		this.foreground = foreground;
+		cleared = false;
 		this.parent.redraw(this);
 	}
 
@@ -806,6 +811,7 @@ public class GalleryItem extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		this.background = background;
+		cleared = false;
 		this.parent.redraw(this);
 	}
 
@@ -985,6 +991,7 @@ public class GalleryItem extends Item {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
 		text[index] = string;
+		cleared = false;
 		parent.redraw(this);
 	}
 

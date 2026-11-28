@@ -398,6 +398,87 @@ public class GalleryVirtualClearTest {
 				first.getText().startsWith("item 0 #"));
 	}
 
+	/**
+	 * A cleared item whose group then leaves the gallery (remove, setItemCount) is handed out by the selection as it is:
+	 * no SetData under a group the gallery no longer holds, by getSelection, Enter or a deselection (the original,
+	 * whose clear had already detached the group, sent none either).
+	 */
+	@Test
+	public void aClearedGroupThatLeavesSendsNoSetDataUnderIt() {
+		for (int operation = 0; operation < 2; operation++) {
+			create(3, 6, SWT.MULTI, false);
+			GalleryItem group = gallery.getItem(2);
+			GalleryItem kept = gallery.getItem(0).getItem(1);
+			// selected first and last: the items Enter and a deselection name
+			GalleryItem[] selected = { group.getItem(3), kept, group.getItem(4) };
+			gallery.setSelection(selected);
+			int[] detached = { 0 };
+			gallery.addListener(SWT.SetData, e -> {
+				GalleryItem parent = ((GalleryItem) e.item).getParentItem();
+				if (parent != null && gallery.indexOf(parent) < 0) {
+					detached[0]++;
+				}
+			});
+			gallery.clear(2);
+			String name = operation == 0 ? "clear(2), remove(2)" : "clear(2), setItemCount(2)";
+			if (operation == 0) {
+				gallery.remove(2);
+			} else {
+				gallery.setItemCount(2);
+			}
+			flush();
+			assertTrue(name, gallery.indexOf(group) < 0);
+			GalleryItem[] selection = gallery.getSelection();
+			assertEquals(name, 3, selection.length);
+			for (int i = 0; i < 3; i++) {
+				assertSame(name, selected[i], selection[i]);
+			}
+			assertEquals(name + ": SetData under the detached group by getSelection", 0, detached[0]);
+
+			Object[] named = { null };
+			gallery.addListener(SWT.DefaultSelection, e -> named[0] = e.item);
+			Event enter = new Event();
+			enter.keyCode = SWT.CR;
+			gallery.notifyListeners(SWT.KeyDown, enter);
+			assertSame(name + ": Enter names the first selected item", selected[0], named[0]);
+			assertEquals(name + ": SetData under the detached group by Enter", 0, detached[0]);
+
+			int events = selectionEvents.size();
+			click(kept, SWT.MOD1);
+			assertEquals(events + 1, selectionEvents.size());
+			assertSame(name + ": a deselection names the item selected last", selected[2], selectionEvents.get(events));
+			assertEquals(name + ": SetData under the detached group by a deselection", 0, detached[0]);
+			shell.dispose();
+		}
+	}
+
+	/**
+	 * A setter on a cleared item populates it, as in Table and Tree: the caller's value is not overwritten by a SetData
+	 * when the item is next requested. The other cleared items are requested again.
+	 */
+	@Test
+	public void aSetterPopulatesAClearedItem() {
+		create(3, 6, SWT.MULTI, false);
+		GalleryItem group = gallery.getItem(1);
+		GalleryItem[] children = new GalleryItem[6];
+		for (int i = 0; i < 6; i++) {
+			children[i] = group.getItem(i);
+		}
+		group.clearAll();
+		children[0].setText("mine");
+		int from = requested.size();
+		gallery.redraw();
+		flush();
+		assertEquals("mine", children[0].getText());
+		assertSame(children[0], group.getItem(0));
+		assertEquals("mine", children[0].getText());
+		assertFalse("no SetData for the item the caller populated", requested.subList(from, requested.size()).contains(children[0]));
+		assertEquals("the other cleared children requested again", 5, requested.size() - from);
+		for (int i = 1; i < 6; i++) {
+			assertTrue(children[i].getText().startsWith("item " + i + " #"));
+		}
+	}
+
 	void assertSelection(GalleryItem[] expected) {
 		GalleryItem[] actual = gallery.getSelection();
 		assertEquals(expected.length, gallery.getSelectionCount());

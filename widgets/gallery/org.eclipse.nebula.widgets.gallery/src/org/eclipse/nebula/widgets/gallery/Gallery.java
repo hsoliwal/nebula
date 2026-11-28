@@ -984,11 +984,13 @@ public class Gallery extends Canvas {
 	/*
 	 * Viewport mode, SWT.VIRTUAL: a cleared item (clear, clearAll) that the selection hands out (getSelection, the item
 	 * a Selection or DefaultSelection event names) is requested again first, as getItem would request it: the
-	 * original had handed out an item created, with its SetData, for the cleared slot.
+	 * original had handed out an item created, with its SetData, for the cleared slot. Only while the gallery still
+	 * holds the item and its parents: a cleared item whose group left (remove, setItemCount) is handed out as it is,
+	 * so no SetData is ever sent under an item the gallery no longer holds (see releaseRunsWithin).
 	 */
 	//FLLDCIM: VIEWPORT - VIRTUAL clear: the selection hands out a cleared item requested again
 	private GalleryItem refreshed(GalleryItem item) {
-		if (item != null && item.cleared) {
+		if (item != null && item.cleared && holds(item)) {
 			GalleryItem parent = item.getParentItem();
 			int index = parent == null ? _indexOf(item) : _indexOf(parent, item);
 			if (index >= 0) {
@@ -2698,8 +2700,9 @@ public class Gallery extends Canvas {
 	 * In a virtual Gallery the item and all its children are cleared and requested again (SWT.SetData) at their first
 	 * use. In viewport widget mode (the default) the item and the children that exist stay, as in Table and Tree:
 	 * their attributes are reset and the SetData event names the same item, so a caller holding one still holds the
-	 * item at its index; its expanded state, item count, selection and data stay. In the original widget mode the
-	 * item is replaced by a new one.
+	 * item at its index; its expanded state, item count, selection and data stay. A setter (text, image, font,
+	 * colours) called on a cleared item before it is requested populates it, as in Table and Tree. In the original
+	 * widget mode the item is replaced by a new one.
 	 * </p>
 	 * 
 	 * @param index
