@@ -18,7 +18,7 @@ package org.eclipse.nebula.widgets.grid.model;
  * Filter test on one model row. Called once per model row by
  * {@link RowPermutation#setFilter(RowPredicate)}; the answers are stored as one bit per row.
  *
- * @since 1.2
+ * @since 1.3
  */
 @FunctionalInterface
 public interface RowPredicate {

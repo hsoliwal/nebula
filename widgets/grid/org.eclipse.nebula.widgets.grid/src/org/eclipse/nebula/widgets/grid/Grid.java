@@ -755,7 +755,7 @@ public class Grid extends Canvas {
 	 * {@code Widget.getData()}) least recently painted first, keeping their payload by model row
 	 * and restoring it without another {@code SWT.SetData}. Item identity is then not stable.
 	 *
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public static final int RESIDENCY_EVICT_COLD = 1;
 
@@ -6474,7 +6474,7 @@ public class Grid extends Canvas {
 	 * This setting does not affect flat Grids or the separate pinned-row API.
 	 *
 	 * @param enabled true to show ancestors above the scrolling rows
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void setStickyAncestorRows(final boolean enabled) {
 		checkWidget();
@@ -6762,7 +6762,7 @@ public class Grid extends Canvas {
 	 *                                     called from the thread that created the
 	 *                                     receiver</li>
 	 *                                     </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	/**
 	 * Chooses how materialized items of a flat {@code SWT.VIRTUAL} Grid stay resident. With
@@ -6788,7 +6788,7 @@ public class Grid extends Canvas {
 	 *                                     called from the thread that created the
 	 *                                     receiver</li>
 	 *                                     </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void setItemResidency(final int flags, final int capacity) {
 		checkWidget();
@@ -6801,7 +6801,7 @@ public class Grid extends Canvas {
 
 	/**
 	 * @return the residency flags set by {@link #setItemResidency(int, int)}
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public int getItemResidency() {
 		checkWidget();
@@ -6936,7 +6936,7 @@ public class Grid extends Canvas {
 	 *            <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
 	 *            <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
 	 *            </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	/**
 	 * Populates up to {@code rows} rows below and then above the viewport while the event loop is
@@ -6959,7 +6959,7 @@ public class Grid extends Canvas {
 	 *                                     called from the thread that created the
 	 *                                     receiver</li>
 	 *                                     </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void setPrefetchRows(final int rows) {
 		checkWidget();
@@ -6974,7 +6974,7 @@ public class Grid extends Canvas {
 
 	/**
 	 * @return rows populated ahead of the viewport, see {@link #setPrefetchRows(int)}
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public int getPrefetchRows() {
 		checkWidget();
@@ -7086,7 +7086,7 @@ public class Grid extends Canvas {
 	 *             <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread
 	 *             that created the receiver</li>
 	 *             </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void setPinnedRowCount(final int top, final int bottom) {
 		checkWidget();
@@ -7111,7 +7111,7 @@ public class Grid extends Canvas {
 	 *                                         called from the thread that created the
 	 *                                         receiver</li>
 	 *                                         </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public int getPinnedTopRowCount() {
 		checkWidget();
@@ -7128,7 +7128,7 @@ public class Grid extends Canvas {
 	 *                                         called from the thread that created the
 	 *                                         receiver</li>
 	 *                                         </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public int getPinnedBottomRowCount() {
 		checkWidget();
@@ -13117,7 +13117,7 @@ public class Grid extends Canvas {
 	 *                                     receiver</li>
 	 *                                     </ul>
 	 * @see #refreshRowPermutation()
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void setRowPermutation(final RowPermutation permutation) {
 		checkWidget();
@@ -13167,7 +13167,7 @@ public class Grid extends Canvas {
 	 *                                     called from the thread that created the
 	 *                                     receiver</li>
 	 *                                     </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void setRowGrouping(final RowGrouping grouping) {
 		checkWidget();
@@ -13200,7 +13200,7 @@ public class Grid extends Canvas {
 	 *                                         called from the thread that created the
 	 *                                         receiver</li>
 	 *                                         </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public RowGrouping getRowGrouping() {
 		checkWidget();
@@ -13217,7 +13217,7 @@ public class Grid extends Canvas {
 	 *                                         called from the thread that created the
 	 *                                         receiver</li>
 	 *                                         </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public RowPermutation getRowPermutation() {
 		checkWidget();
@@ -13240,7 +13240,7 @@ public class Grid extends Canvas {
 	 *                                         called from the thread that created the
 	 *                                         receiver</li>
 	 *                                         </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void refreshRowPermutation() {
 		checkWidget();
@@ -13318,7 +13318,7 @@ public class Grid extends Canvas {
 	 *                                     called from the thread that created the
 	 *                                     receiver</li>
 	 *                                     </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public void setCheckedAll(final int column, final boolean checked, final boolean passingFilterOnly) {
 		checkWidget();
@@ -13352,7 +13352,7 @@ public class Grid extends Canvas {
 	 *                                     called from the thread that created the
 	 *                                     receiver</li>
 	 *                                     </ul>
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public int getCheckedCount(final int column, final boolean passingFilterOnly) {
 		checkWidget();

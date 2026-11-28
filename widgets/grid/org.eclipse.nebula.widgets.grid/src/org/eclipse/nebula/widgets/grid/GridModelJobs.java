@@ -35,7 +35,7 @@ import org.eclipse.swt.SWTException;
  * large ones run on a worker over an immutable snapshot and are applied on the UI thread. Only
  * paint touches the GC; sort, filter, grouping and pinning math never do.
  *
- * @since 1.2
+ * @since 1.3
  */
 public final class GridModelJobs {
 
@@ -312,7 +312,7 @@ public final class GridModelJobs {
 	 * any SWT widgets. Results are installed solely through Display.asyncExec.
 	 * This method is additive; original sortByIntKeys behavior is unchanged.</p>
 	 *
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public static CompletableFuture<Boolean> sortByIntKeysCpuLatest(
 			final Grid grid, final int[] keys, final boolean descending,

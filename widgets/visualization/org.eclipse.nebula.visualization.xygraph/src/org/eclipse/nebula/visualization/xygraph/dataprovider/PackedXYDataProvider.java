@@ -33,7 +33,7 @@ import org.eclipse.swt.SWT;
  * Writers are serialized by this object's monitor; readers never block. Listeners are notified on the calling thread,
  * as {@link CircularBufferDataProvider} does.
  *
- * @since 3.2
+ * @since 3.3
  */
 public class PackedXYDataProvider extends AbstractDataProvider {
 

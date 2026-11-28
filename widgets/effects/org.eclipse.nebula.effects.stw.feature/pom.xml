@@ -23,6 +23,7 @@ Contributors:
 	</parent>
 
 	<artifactId>org.eclipse.nebula.effects.stw.feature</artifactId>
+	<version>1.0.1-SNAPSHOT</version>
 	<packaging>eclipse-feature</packaging>
 
 	<name>Nebula State Transition Feature</name>

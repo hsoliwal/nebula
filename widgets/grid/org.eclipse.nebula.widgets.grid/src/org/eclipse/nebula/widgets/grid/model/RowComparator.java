@@ -21,7 +21,7 @@ package org.eclipse.nebula.widgets.grid.model;
  * <p>{@link RowPermutation} breaks ties by the model row itself, so the comparator does not
  * need to be total: equal rows keep their model order (the result equals a stable sort).</p>
  *
- * @since 1.2
+ * @since 1.3
  */
 @FunctionalInterface
 public interface RowComparator {

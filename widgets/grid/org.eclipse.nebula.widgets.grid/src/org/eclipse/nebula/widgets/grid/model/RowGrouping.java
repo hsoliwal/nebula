@@ -31,7 +31,7 @@ import java.util.Arrays;
  * <p>The grouping rebuilds itself lazily when the source permutation's version changes. Pure
  * Java, GWT-safe (no {@code int} multiplication in hashing, no overflow reliance).</p>
  *
- * @since 1.2
+ * @since 1.3
  */
 public final class RowGrouping implements RowView {
 

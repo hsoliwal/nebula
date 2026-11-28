@@ -27,7 +27,7 @@ import java.util.Arrays;
  *
  * <p>Pure Java, GWT-safe ({@code int} state, {@code long} only for the filter words).</p>
  *
- * @since 1.2
+ * @since 1.3
  */
 public final class RowSelection {
 

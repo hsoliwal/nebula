@@ -40,7 +40,7 @@ import java.util.function.BooleanSupplier;
  *
  * <p>Not thread safe; use it from the thread that owns the widget it is installed on.</p>
  *
- * @since 1.2
+ * @since 1.3
  */
 public final class RowPermutation implements RowView {
 
@@ -353,7 +353,7 @@ public final class RowPermutation implements RowView {
 	 *
 	 * @param cancelled a non-blocking cancellation signal checked at bounded intervals
 	 * @throws CancellationException if the request is obsolete
-	 * @since 1.2
+	 * @since 1.3
 	 */
 	public static int[] sortedOrder(final int[] keys, final int modelCount,
 			final boolean descending, final BooleanSupplier cancelled) {

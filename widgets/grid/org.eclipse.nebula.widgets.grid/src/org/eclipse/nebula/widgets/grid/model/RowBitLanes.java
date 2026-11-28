@@ -26,7 +26,7 @@ import java.util.Arrays;
  *
  * <p>Pure Java, GWT-safe (no {@code int} overflow reliance; {@code long} is emulated by GWT).</p>
  *
- * @since 1.2
+ * @since 1.3
  */
 public final class RowBitLanes {
 

@@ -1104,7 +1104,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 	 *
 	 * @param enabled
 	 *            false to always paint sample by sample
-	 * @since 3.2
+	 * @since 3.3
 	 */
 	public void setDecimationEnabled(boolean enabled) {
 		if (decimationEnabled != enabled) {
@@ -1116,7 +1116,7 @@ public class Trace extends Figure implements IDataProviderListener, IAxisListene
 
 	/**
 	 * @return whether packed data is drawn from the decimated polyline
-	 * @since 3.2
+	 * @since 3.3
 	 */
 	public boolean isDecimationEnabled() {
 		return decimationEnabled;

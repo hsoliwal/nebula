@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.nebula.incubation.feature"
       label="Nebula All Incubation Widgets SDK"
-      version="1.0.0.qualifier"
+      version="1.1.0.qualifier"
       provider-name="Eclipse Nebula">
 
    <description url="http://eclipse.org/nebula/">
