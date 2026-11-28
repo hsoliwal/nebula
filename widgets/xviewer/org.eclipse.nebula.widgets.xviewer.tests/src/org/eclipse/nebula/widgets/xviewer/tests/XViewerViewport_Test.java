@@ -57,6 +57,8 @@ public class XViewerViewport_Test {
    private static final int KIDS = 9;
    /** Visible rows of a 600 px tree plus native overscan, with headroom. */
    private static final int MATERIALIZED_BOUND = 256;
+   /** Rows above and below the shown rows a native row request may still be for (rounding of the scroll bar). */
+   private static final int WINDOW_SLACK = 2;
 
    private Display display;
    private Shell shell;
@@ -80,11 +82,23 @@ public class XViewerViewport_Test {
       assertTrue(viewer.isViewport());
       assertTrue(viewer.getContentProvider() instanceof XViewerViewportContentProvider);
       assertTrue(((XViewerViewportContentProvider) viewer.getContentProvider()).getDelegate() instanceof Model);
-      // the root rows the native tree asks for, seen after the viewer's own SetData listener has filled them
+      // the root rows the native tree asks for, seen after the viewer's own SetData listener has filled them; while
+      // scrolling, each must be a row the tree shows at that moment, and the scroll positions they are shown at count
       Set<Integer> requestedRoots = new HashSet<>();
+      List<String> outsideWindow = new ArrayList<>();
+      Set<Integer> shownTops = new HashSet<>();
+      boolean[] scrolling = {false};
       viewer.getTree().addListener(SWT.SetData, event -> {
-         if (((TreeItem) event.item).getParentItem() == null) {
-            requestedRoots.add(Integer.valueOf(event.index));
+         if (((TreeItem) event.item).getParentItem() != null) {
+            return;
+         }
+         requestedRoots.add(Integer.valueOf(event.index));
+         if (scrolling[0]) {
+            int[] window = shownWindow((Tree) event.widget);
+            shownTops.add(Integer.valueOf(window[0]));
+            if (event.index < window[0] - WINDOW_SLACK || event.index > window[0] + window[1] + WINDOW_SLACK) {
+               outsideWindow.add(event.index + " (top " + window[0] + ", page " + window[1] + ")"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            }
          }
       });
       Integer[] roots = Model.roots(ROOTS);
@@ -98,36 +112,58 @@ public class XViewerViewport_Test {
       assertTrue("materialized after first paint: " + first, first > 0 && first <= MATERIALIZED_BOUND);
       assertEquals("one request per root row", first, bridge.getMaterializedRootCount());
 
+      // SWT GTK3 animates setTopItem (see settleScroll): a frame painted while the animation runs shows, and so
+      // materializes, a page of rows between the two ends. Such rows are legitimate only if they are on screen when
+      // the native tree asks for them; no other row may be materialized while scrolling.
+      scrolling[0] = true;
       tree.setTopItem(tree.getItem(ROOTS - 1));
       tree.update();
       pump();
+      scrolling[0] = false;
       int scrolled = viewer.getViewportMaterializedCount();
       assertTrue("materialized after scroll to end: " + scrolled, scrolled - first <= MATERIALIZED_BOUND);
+      // API reads, not native requests: not checked against the shown rows
       assertEquals("n" + (ROOTS - 1), tree.getItem(ROOTS - 1).getText(0));
       assertSame("item data is the caller's element", roots[ROOTS - 1], tree.getItem(ROOTS - 1).getData());
       assertEquals("one request per root row", scrolled, bridge.getMaterializedRootCount());
-
-      // SWT GTK3 animates setTopItem (see settleScroll): the frames of a round trip show, and so materialize, rows
-      // between the two ends, a page per painted frame, how many depends on when the frames run. The rows resident
-      // before the round trip must not count again; every row first shown on the way counts once.
+      // the frames of the scroll to the end that are still to come
+      scrolling[0] = true;
       settleScroll(tree);
+      scrolling[0] = false;
+      assertTrue("rows asked for outside the shown rows while scrolling to the end: " + outsideWindow, //$NON-NLS-1$
+         outsideWindow.isEmpty());
       int resident = viewer.getViewportMaterializedCount();
       Set<Integer> residentRoots = new HashSet<>(requestedRoots);
       assertEquals("each resident root row was asked for by the native tree", resident, residentRoots.size()); //$NON-NLS-1$
+
+      // the round trip: no resident row is asked for again, every row asked for is on screen then, and every row
+      // first shown on the way is counted once
       requestedRoots.clear();
+      shownTops.clear();
+      scrolling[0] = true;
       tree.setTopItem(tree.getItem(0));
       tree.update();
       settleScroll(tree);
       tree.setTopItem(tree.getItem(ROOTS - 1));
       tree.update();
       settleScroll(tree);
+      scrolling[0] = false;
       Set<Integer> shownOnTheWay = new HashSet<>(requestedRoots);
       shownOnTheWay.removeAll(residentRoots);
-      requestedRoots.retainAll(residentRoots);
+      Set<Integer> askedAgain = new HashSet<>(requestedRoots);
+      askedAgain.retainAll(residentRoots);
+      int page = shownWindow(tree)[1];
       System.out.println("XVIEWER_VIEWPORT million round trip: " + resident + " resident rows, " //$NON-NLS-1$ //$NON-NLS-2$
-         + shownOnTheWay.size() + " rows first shown on the way, " + requestedRoots.size() //$NON-NLS-1$
-         + " resident rows asked for again"); //$NON-NLS-1$
-      assertEquals("resident rows are not requested again", resident + shownOnTheWay.size(), //$NON-NLS-1$
+         + shownOnTheWay.size() + " rows first shown on the way at " + shownTops.size() + " scroll positions, " //$NON-NLS-1$ //$NON-NLS-2$
+         + askedAgain.size() + " resident rows asked for again, " + outsideWindow.size() //$NON-NLS-1$
+         + " rows asked for off screen, page " + page); //$NON-NLS-1$
+      assertTrue("rows asked for outside the shown rows during the round trip: " + outsideWindow, //$NON-NLS-1$
+         outsideWindow.isEmpty());
+      assertTrue("resident rows are not requested again: " + askedAgain, askedAgain.isEmpty()); //$NON-NLS-1$
+      assertTrue("rows first shown on the way: " + shownOnTheWay.size() + " at " + shownTops.size() //$NON-NLS-1$ //$NON-NLS-2$
+         + " scroll positions of a " + page + "-row page", //$NON-NLS-1$ //$NON-NLS-2$
+         shownOnTheWay.size() <= shownTops.size() * (page + 2 * WINDOW_SLACK + 1));
+      assertEquals("each row first shown on the way is counted once", resident + shownOnTheWay.size(), //$NON-NLS-1$
          viewer.getViewportMaterializedCount());
       assertEquals("one request per root row", viewer.getViewportMaterializedCount(), //$NON-NLS-1$
          bridge.getMaterializedRootCount());
@@ -364,6 +400,17 @@ public class XViewerViewport_Test {
       }
       assertTrue("no row at the top of the tree", item != null);
       return item;
+   }
+
+   /**
+    * The root rows the tree shows now, read from its vertical scroll bar so that it holds whether the bar counts rows
+    * (win32) or pixels (GTK): {top row, rows in a page rounded up}. For a tree of root rows of one height.
+    */
+   private static int[] shownWindow(Tree tree) {
+      org.eclipse.swt.widgets.ScrollBar bar = tree.getVerticalBar();
+      long rows = tree.getItemCount();
+      long max = Math.max(1, bar.getMaximum());
+      return new int[] {(int) (bar.getSelection() * rows / max), (int) ((bar.getThumb() * rows + max - 1) / max)};
    }
 
    /** SHA-256 of the control's own rendering (Control.print), independent of window occlusion. */
