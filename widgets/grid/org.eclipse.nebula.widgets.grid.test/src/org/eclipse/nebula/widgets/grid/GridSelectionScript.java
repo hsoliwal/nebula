@@ -25,6 +25,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ScrollBar;
 
 /**
@@ -71,7 +72,13 @@ final class GridSelectionScript {
 	private int focusChanges;
 	/* the step that had the first of them */
 	private int focusChangedAt = -1;
+	/* the Activate and Deactivate events the Grid's shell had while the steps ran */
+	private int activationChanges;
+	/* whether the Grid had its FocusIn before the first step (see takeFocus) */
+	private boolean focusedBeforeSteps;
 	private int stepIndex;
+	/* the runs trace(...) ran again since takeReruns() was last called */
+	private static int reruns;
 	/* the Grid's paint events (see settleGeometry) */
 	private int paints;
 
@@ -83,6 +90,13 @@ final class GridSelectionScript {
 			focusChanged();
 		});
 		grid.addListener(SWT.FocusOut, e -> focusChanged());
+		final Listener activation = e -> {
+			if (running) {
+				activationChanges++;
+			}
+		};
+		grid.getShell().addListener(SWT.Activate, activation);
+		grid.getShell().addListener(SWT.Deactivate, activation);
 		// added after the Grid's own paint listener: the Grid has painted when this counts
 		grid.addListener(SWT.Paint, e -> paints++);
 		grid.addListener(SWT.Selection, e -> events.add(describe("S", e)));
@@ -97,6 +111,7 @@ final class GridSelectionScript {
 
 	void run(final long seed, final int steps) {
 		takeFocus();
+		focusedBeforeSteps = focusedIn;
 		running = true;
 		try {
 			for (int k = 0; k < steps; k++) {
@@ -125,15 +140,23 @@ final class GridSelectionScript {
 	}
 
 	/*
-	 * Whether the Grid's focus changed while the steps ran. No step moves the focus, so a FocusOut
-	 * means another window took the activation (on an interactive desktop: the user switched windows),
-	 * and a FocusIn comes back with it, or late from the window manager after takeFocus gave up. Such
-	 * a run is not the response to the script alone: Grid.onFocusIn makes row 0 the focus row of a
-	 * Grid without one (its focus row removed), so the next shift click selects from row 0, and a
-	 * click on a Grid without the focus brings a FocusIn of its own (Grid.onMouseDown forces the focus).
+	 * Whether something outside the script changed the Grid's focus while the steps ran: another
+	 * window took its shell's activation (on an interactive desktop: the user switched windows), or the
+	 * first FocusIn came late, after takeFocus gave up. Such a run is not the response to the script
+	 * alone: Grid.onFocusIn makes row 0 the focus row of a Grid without one (its focus row removed),
+	 * so the next shift click selects from row 0, and a click on a Grid without the focus brings a
+	 * FocusIn of its own (Grid.onMouseDown forces the focus). A focus change while the shell kept the
+	 * activation, after the first FocusIn, is the Grid's own doing (see trace).
 	 */
 	boolean interrupted() {
-		return focusChanges > 0;
+		return focusChanges > 0 && (activationChanges > 0 || !focusedBeforeSteps);
+	}
+
+	/* the runs trace(...) ran again since the last call; a comparison allows at most one */
+	static int takeReruns() {
+		final int result = reruns;
+		reruns = 0;
+		return result;
 	}
 
 	/* opens a new Grid with its script, ready to run (the shell open) */
@@ -142,21 +165,32 @@ final class GridSelectionScript {
 	}
 
 	/*
-	 * The trace of a script run on the Grid that setup opens; the shell is disposed. A run whose Grid's
-	 * focus changed while the steps ran (see interrupted) is run again on a new Grid, at most three
-	 * times in all; the last run's trace is returned in any case (and the comparison judges it).
+	 * The trace of a script run on the Grid that setup opens; the shell is disposed. No step moves the
+	 * focus: a run whose Grid's focus changed while its shell kept the activation fails (the Grid moved
+	 * the focus by itself), and a run that something outside the script interrupted (see interrupted)
+	 * is run once more on a new Grid, logged with its counts (see takeReruns); an interrupted rerun fails.
 	 */
 	static List<String> trace(final Setup setup, final long seed, final int steps) {
 		for (int attempt = 1;; attempt++) {
 			final GridSelectionScript script = setup.open();
 			script.run(seed, steps);
-			final boolean interrupted = script.interrupted();
 			script.grid.getShell().dispose();
-			if (!interrupted || attempt == 3) {
+			if (script.focusChanges == 0) {
 				return script.trace;
 			}
-			System.out.println("GRID_SELECTION_SCRIPT seed " + seed + ": the Grid's focus changed at step "
-					+ script.focusChangedAt + " (another window took the activation); run again");
+			final String counts = "focus changes " + script.focusChanges + " from step " + script.focusChangedAt
+					+ ", shell activation changes " + script.activationChanges + ", first FocusIn before step 0 "
+					+ script.focusedBeforeSteps;
+			if (!script.interrupted()) {
+				throw new AssertionError("seed " + seed + ": no step moves the focus, but the Grid's focus changed"
+						+ " while its shell kept the activation (" + counts + "): the Grid moved the focus by itself");
+			}
+			if (attempt == 2) {
+				throw new AssertionError("seed " + seed + ": the run was interrupted again (" + counts + ")");
+			}
+			reruns++;
+			System.out.println("GRID_SELECTION_SCRIPT seed " + seed + ": another window took the activation or the"
+					+ " first FocusIn came late (" + counts + "); run again");
 		}
 	}
 
@@ -857,6 +891,9 @@ final class GridSelectionScript {
 					LockSupport.parkNanos(1_000_000L);
 				}
 			}
+			if (paints == painted && !grid.isDisposed()) {
+				System.out.println("GRID_SELECTION_SCRIPT step " + stepIndex + ": no paint within 500 ms of a redraw");
+			}
 			settle();
 			if (grid.isDisposed()) {
 				return;
@@ -867,6 +904,7 @@ final class GridSelectionScript {
 			}
 			before = after;
 		}
+		System.out.println("GRID_SELECTION_SCRIPT step " + stepIndex + ": the geometry did not settle in 8 paints: " + before);
 	}
 
 	private String geometry() {

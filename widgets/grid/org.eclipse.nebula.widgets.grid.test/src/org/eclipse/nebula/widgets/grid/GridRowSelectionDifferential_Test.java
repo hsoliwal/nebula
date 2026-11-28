@@ -15,6 +15,7 @@
 package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
@@ -69,6 +70,7 @@ public class GridRowSelectionDifferential_Test {
 	}
 
 	private void compare(final int style, final boolean cells, final int seeds) {
+		GridSelectionScript.takeReruns();
 		for (long seed = 1; seed <= seeds; seed++) {
 			final List<String> oracle = trace(false, style, cells, seed);
 			final List<String> rows = trace(true, style, cells, seed);
@@ -76,6 +78,8 @@ public class GridRowSelectionDifferential_Test {
 				assertEquals("seed " + seed + " step " + i, oracle.get(i), rows.get(i));
 			}
 		}
+		final int reruns = GridSelectionScript.takeReruns();
+		assertTrue("interrupted script runs run again: " + reruns + " (at most one)", reruns <= 1);
 	}
 
 	@Test

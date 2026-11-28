@@ -286,6 +286,7 @@ public class GridHeaderDragSelectionDifferential_Test {
 	private void compareScripts(final int style, final boolean spans, final int seeds) {
 		// the original mode keeps the stock point list on both sides: a seed suffices
 		final int runs = GridTestUtil.fixesUpstreamDefects() ? seeds : 1;
+		GridSelectionScript.takeReruns();
 		for (long seed = 1; seed <= runs; seed++) {
 			final List<String> oracle = script(false, style, spans, seed);
 			final List<String> cells = script(true, style, spans, seed);
@@ -293,6 +294,8 @@ public class GridHeaderDragSelectionDifferential_Test {
 				assertEquals("seed " + seed + " step " + i, oracle.get(i), cells.get(i));
 			}
 		}
+		final int reruns = GridSelectionScript.takeReruns();
+		assertTrue("interrupted script runs run again: " + reruns + " (at most one)", reruns <= 1);
 	}
 
 	@Test
