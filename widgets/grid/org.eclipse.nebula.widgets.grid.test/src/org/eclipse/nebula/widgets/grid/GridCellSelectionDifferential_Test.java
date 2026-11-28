@@ -125,54 +125,72 @@ public class GridCellSelectionDifferential_Test {
 	@Test
 	public void scriptRunInterruptedByAnotherWindowIsRunAgain() {
 		GridSelectionScript.takeReruns();
-		final List<String> clean = stolenTrace(false, -1);
-		final List<String> stolen = stolenTrace(true, 141);
+		final List<String> clean = stolenTrace(false, -1, new boolean[1]);
+		final boolean[] deactivated = { false };
+		final List<String> stolen = stolenTrace(true, 141, deactivated);
 		assertEquals(clean, stolen);
 		final int reruns = GridSelectionScript.takeReruns();
 		System.out.println("GRID_SELECTION_SCRIPT activation steal: runs run again " + reruns);
-		assertTrue("runs run again " + reruns, reruns <= 1);
+		if (deactivated[0]) {
+			// the other shell took the activation: the run was interrupted and must have run again
+			assertEquals("runs run again", 1, reruns);
+		} else {
+			// a focus-stealing guard kept the activation (logged as "Deactivate false"): no rerun is owed
+			assertTrue("runs run again " + reruns, reruns <= 1);
+		}
 	}
 
-	/* seed 10's first 150 steps; another shell takes the activation before step stealAt of the first run */
-	private List<String> stolenTrace(final boolean blocks, final int stealAt) {
+	/*
+	 * seed 10's first 150 steps; another shell takes the activation before step stealAt of the first
+	 * run, and deactivated[0] tells whether the Grid's shell had its Deactivate then
+	 */
+	private List<String> stolenTrace(final boolean blocks, final int stealAt, final boolean[] deactivated) {
 		final int[] opened = { 0 };
-		return GridSelectionScript.trace(() -> {
-			final Grid grid = grid(blocks, SWT.MULTI);
-			final GridSelectionScript script = new GridSelectionScript(grid);
-			script.cellOps = true;
-			final boolean steal = ++opened[0] == 1 && stealAt >= 0;
-			final int[] done = { 0 };
-			final Shell[] other = { null };
-			final boolean[] deactivated = { false };
-			grid.getShell().addListener(SWT.Deactivate, e -> deactivated[0] = true);
-			script.afterStep = () -> {
-				if (blocks) {
-					grid.checkCellSelection();
-				}
-				done[0]++;
-				if (other[0] != null) {
-					other[0].dispose();
-					other[0] = null;
-				}
-				if (steal && done[0] == stealAt) {
-					other[0] = new Shell(grid.getDisplay());
-					other[0].setBounds(500, 0, 120, 80);
-					other[0].open();
-					other[0].forceActive();
-					final long deadline = System.nanoTime() + 2_000_000_000L;
-					while (!deactivated[0] && System.nanoTime() < deadline) {
-						if (!grid.getDisplay().readAndDispatch()) {
-							java.util.concurrent.locks.LockSupport.parkNanos(5_000_000L);
-						}
+		final Shell[] other = { null };
+		try {
+			return GridSelectionScript.trace(() -> {
+				final Grid grid = grid(blocks, SWT.MULTI);
+				final GridSelectionScript script = new GridSelectionScript(grid);
+				script.cellOps = true;
+				final boolean steal = ++opened[0] == 1 && stealAt >= 0;
+				final int[] done = { 0 };
+				final boolean[] shellDeactivated = { false };
+				grid.getShell().addListener(SWT.Deactivate, e -> shellDeactivated[0] = true);
+				script.afterStep = () -> {
+					// the other shell goes first: a failing check below must not leave it open
+					if (other[0] != null) {
+						other[0].dispose();
+						other[0] = null;
 					}
-					System.out.println("GRID_SELECTION_SCRIPT activation steal before step " + stealAt
-							+ ": the Grid's shell had its Deactivate " + deactivated[0]);
-				}
-			};
-			grid.setItemCount(300);
-			shell.open();
-			return script;
-		}, 10, 150);
+					if (blocks) {
+						grid.checkCellSelection();
+					}
+					done[0]++;
+					if (steal && done[0] == stealAt) {
+						other[0] = new Shell(grid.getDisplay());
+						other[0].setBounds(500, 0, 120, 80);
+						other[0].open();
+						other[0].forceActive();
+						final long deadline = System.nanoTime() + 2_000_000_000L;
+						while (!shellDeactivated[0] && System.nanoTime() < deadline) {
+							if (!grid.getDisplay().readAndDispatch()) {
+								java.util.concurrent.locks.LockSupport.parkNanos(5_000_000L);
+							}
+						}
+						deactivated[0] = shellDeactivated[0];
+						System.out.println("GRID_SELECTION_SCRIPT activation steal before step " + stealAt
+								+ ": the Grid's shell had its Deactivate " + shellDeactivated[0]);
+					}
+				};
+				grid.setItemCount(300);
+				shell.open();
+				return script;
+			}, 10, 150);
+		} finally {
+			if (other[0] != null && !other[0].isDisposed()) {
+				other[0].dispose();
+			}
+		}
 	}
 
 	/* the cells and rows a Grid answers, as text */
