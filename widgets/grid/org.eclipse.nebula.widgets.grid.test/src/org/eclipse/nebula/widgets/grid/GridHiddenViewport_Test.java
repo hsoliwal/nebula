@@ -75,9 +75,17 @@ import org.junit.Test;
  * <p>
  * Any other extra pass still fails: native work after the show, a patch in a second pass, a clip
  * outside the strip, or a strip expose that the parent did not paint. The message names every
- * pass. The {@code unselectedTabCounts...} tests inject each kind of extra work after the show and
- * require that the count fails.
+ * pass. Two sets of tests check this:
  * </p>
+ * <ul>
+ * <li>The {@code unselectedTabCounts...} tests inject extra work after the show on a real
+ * CTabFolder and require that the count fails. Some of them first repaint the folder's tab area,
+ * so that (c) holds. One fails only (b). Where the strip is not empty (GTK3), one fails only (a)
+ * and one fails only (c).</li>
+ * <li>The {@code showPasses...} tests drive the classification with synthetic paint events and
+ * the Grid's counters moved by hand, on every platform. Each case fails exactly one condition,
+ * including a patch applied in a second pass, and one case meets all three.</li>
+ * </ul>
  * <p>
  * <b>Platform note, GTK3: parent-originated exposes.</b> {@code CTabFolder.setSelection} defers
  * its tab-strip redraw: {@code showItem} calls {@code updateFolder(REDRAW_TABS)}, which runs
@@ -140,17 +148,27 @@ public class GridHiddenViewport_Test {
 
 	/*
 	 * The parent allowance admits a parent's own expose and nothing else. Each test below injects
-	 * extra work after the show has settled. The Grid pass count must fail on it.
+	 * extra work after the show has settled. The Grid pass count must fail on it. A test "with a tab
+	 * paint" first repaints the folder's tab area in the same turn (it ends at the client area, so it
+	 * exposes no part of the Grid) and requires that the injected pass followed that paint. So
+	 * condition (c) holds there, and only the other conditions can reject the pass. The showPasses...
+	 * tests below check each condition alone with synthetic events, on every platform.
 	 */
 
 	@Test
 	public void unselectedTabCountsAWholeGridRedrawAfterTheShow() {
-		assertGridPassCountFails("a whole Grid redraw", (tab, row) -> tab.grid.redraw());
+		assertGridPassCountFails("a whole Grid redraw", false, (tab, row) -> tab.grid.redraw());
+	}
+
+	@Test
+	public void unselectedTabCountsAWholeGridRedrawWithATabPaint() {
+		// (c) holds: a Grid-originated whole repaint in the frame of a folder tab paint is still counted, by (a) and (b)
+		assertGridPassCountFails("a whole Grid redraw with a tab paint", true, (tab, row) -> tab.grid.redraw());
 	}
 
 	@Test
 	public void unselectedTabCountsAGridRowRedrawOutsideTheStrip() {
-		assertGridPassCountFails("a Grid redraw of a row outside the strip", (tab, row) -> {
+		assertGridPassCountFails("a Grid redraw of a row outside the strip", false, (tab, row) -> {
 			final Rectangle client = tab.grid.getClientArea();
 			tab.grid.redraw(0, client.height / 2, client.width, tab.grid.getItemHeight(), false);
 		});
@@ -158,14 +176,15 @@ public class GridHiddenViewport_Test {
 
 	@Test
 	public void unselectedTabCountsAGridRedrawInsideTheStrip() {
-		// native work: a Grid pass even where the clip lies within the strip
-		assertGridPassCountFails("a Grid redraw of the strip", (tab, row) -> tab.grid.redraw(row.x, row.y, row.width, row.height, false));
+		// (b) and (c) hold where the strip is not empty (GTK3): only the Grid's native work (a) rejects the pass
+		assertGridPassCountFails("a Grid redraw of the strip with a tab paint", true,
+				(tab, row) -> tab.grid.redraw(row.x, row.y, row.width, row.height, false));
 	}
 
 	@Test
 	public void unselectedTabCountsAParentExposeOutsideTheStrip() {
-		// no native work of the Grid, but the clip lies outside the strip
-		assertGridPassCountFails("a page redraw of a Grid row outside the strip", (tab, row) -> {
+		// (a) and (c) hold: no native work of the Grid, a tab paint; only the clip outside the strip (b) rejects the pass
+		assertGridPassCountFails("a page redraw of a Grid row outside the strip with a tab paint", true, (tab, row) -> {
 			final Rectangle client = tab.grid.getClientArea();
 			final Rectangle outside = display.map(tab.grid, tab.page,
 					new Rectangle(0, client.height / 2, client.width, tab.grid.getItemHeight()));
@@ -175,8 +194,8 @@ public class GridHiddenViewport_Test {
 
 	@Test
 	public void unselectedTabCountsAStripExposeTheFolderDidNotPaint() {
-		// no native work of the Grid, the clip lies within the strip, but the folder did not paint its tab strip
-		assertGridPassCountFails("a page redraw of the strip", (tab, row) -> {
+		// (a) and, where the strip is not empty (GTK3), (b) hold; only the missing folder tab paint (c) rejects the pass
+		assertGridPassCountFails("a page redraw of the strip", false, (tab, row) -> {
 			final Rectangle inPage = display.map(tab.grid, tab.page, row);
 			tab.page.redraw(inPage.x, inPage.y, inPage.width, inPage.height, true);
 		});
@@ -231,8 +250,13 @@ public class GridHiddenViewport_Test {
 		void inject(TabCase tab, Rectangle row);
 	}
 
-	/* the injection after the show must fail the Grid pass count (a viewport-mode contract) */
-	private void assertGridPassCountFails(final String what, final Injection injection) {
+	/*
+	 * The injection after the show must fail the Grid pass count (a viewport-mode contract). With
+	 * withTabPaint the folder first repaints its tab area, which ends at the client area and so
+	 * exposes no part of the Grid. update() delivers that paint before the injection, on every
+	 * platform. The injected pass must then have followed a folder tab paint: condition (c) holds.
+	 */
+	private void assertGridPassCountFails(final String what, final boolean withTabPaint, final Injection injection) {
 		assumeTrue("the exact paint pass count is a viewport-mode contract", GridViewport.ENABLED);
 		final TabCase tab = new TabCase();
 		final String how = "unselected tab, then " + what;
@@ -240,6 +264,10 @@ public class GridHiddenViewport_Test {
 			tab.gate(how, g -> {
 				final Rectangle strip = tab.expose.strip(g);
 				final Rectangle row = strip.isEmpty() ? new Rectangle(0, 0, g.getClientArea().width, 1) : strip;
+				if (withTabPaint) {
+					tab.folder.redraw(0, 0, tab.folder.getSize().x, tab.folder.getClientArea().y, false);
+					tab.folder.update();
+				}
 				injection.inject(tab, row);
 				// the injected expose paints the Grid on every platform: wait for that pass
 				flush(g, g.paintPasses + 1);
@@ -248,10 +276,130 @@ public class GridHiddenViewport_Test {
 			final String message = String.valueOf(expected.getMessage());
 			assertTrue(how + ": failed on another check than the Grid pass count: " + message,
 					message.contains("Grid paint passes on show"));
+			if (withTabPaint) {
+				assertTrue(how + ": the injected pass did not follow a folder tab paint, so condition (c) did not hold: " + message,
+						passesOnShow.lastParentPaints >= 1);
+			}
 			LOG.info("GridHiddenViewport_Test: " + how + ": the Grid pass count failed as required: " + message);
 			return;
 		}
 		fail(how + ": the Grid pass count accepted the extra work");
+	}
+
+	/*
+	 * ShowPasses on its own, on every platform: synthetic paint events, and the Grid's native work and
+	 * patch counters moved by hand. The parent's strip is 0,0 100x1, and a parent paint above y = 10
+	 * covers the parent's own area. Each case first gives the Grid its own pass, which applies the
+	 * patch. One case meets all three conditions; each other case fails exactly one of them.
+	 */
+
+	@Test
+	public void showPassesExcludeAPassThatMeetsAllThreeConditions() {
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		final ShowPasses passes = syntheticShow(grid);
+		passes.parentPainted(syntheticPaint(0, 0, 200, 10));
+		passes.handleEvent(syntheticPaint(0, 0, 100, 1));
+		assertSyntheticPasses("all three conditions", passes, 1, 1);
+	}
+
+	@Test
+	public void showPassesCountAPassAfterNativeWork() {
+		// fails (a) only: native work of the Grid since its previous pass
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		final ShowPasses passes = syntheticShow(grid);
+		passes.parentPainted(syntheticPaint(0, 0, 200, 10));
+		grid.nativeOps++;
+		passes.handleEvent(syntheticPaint(0, 0, 100, 1));
+		assertSyntheticPasses("native work before the pass", passes, 2, 0);
+	}
+
+	@Test
+	public void showPassesCountAPassThatAppliesAPatch() {
+		// fails (a) only: a window patch applied in a second pass
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		final ShowPasses passes = syntheticShow(grid);
+		passes.parentPainted(syntheticPaint(0, 0, 200, 10));
+		grid.hiddenPatches++;
+		passes.handleEvent(syntheticPaint(0, 0, 100, 1));
+		assertSyntheticPasses("a patch in the second pass", passes, 2, 0);
+	}
+
+	@Test
+	public void showPassesCountAPassReachingOutsideTheStrip() {
+		// fails (b) only: the clip covers the strip and one row more
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		final ShowPasses passes = syntheticShow(grid);
+		passes.parentPainted(syntheticPaint(0, 0, 200, 10));
+		passes.handleEvent(syntheticPaint(0, 0, 100, 2));
+		assertSyntheticPasses("a clip reaching outside the strip", passes, 2, 0);
+	}
+
+	@Test
+	public void showPassesCountAPassWithoutAParentPaint() {
+		// fails (c) only: the parent painted only inside the Grid's area, not its own
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		final ShowPasses passes = syntheticShow(grid);
+		passes.parentPainted(syntheticPaint(0, 20, 100, 1));
+		passes.handleEvent(syntheticPaint(0, 0, 100, 1));
+		assertSyntheticPasses("no parent paint of its own area", passes, 2, 0);
+	}
+
+	@Test
+	public void showPassesAllowOneParentPassPerParentPaint() {
+		// two strip passes after one parent paint: the second fails (c)
+		final Grid grid = new Grid(shell, SWT.V_SCROLL | SWT.H_SCROLL);
+		final ShowPasses passes = syntheticShow(grid);
+		passes.parentPainted(syntheticPaint(0, 0, 200, 10));
+		passes.handleEvent(syntheticPaint(0, 0, 100, 1));
+		passes.handleEvent(syntheticPaint(0, 0, 100, 1));
+		assertSyntheticPasses("two strip passes after one parent paint", passes, 2, 1);
+	}
+
+	/* a show of the Grid with a synthetic parent expose; the Grid's own first pass has applied the patch */
+	private ShowPasses syntheticShow(final Grid grid) {
+		final Composite parent = new Composite(shell, SWT.NONE);
+		final ParentExpose expose = new ParentExpose() {
+			@Override
+			public Control parent() {
+				return parent;
+			}
+
+			@Override
+			public Rectangle strip(final Grid g) {
+				return new Rectangle(0, 0, 100, 1);
+			}
+
+			@Override
+			public boolean ownPaint(final Event paint) {
+				return paint.y < 10;
+			}
+
+			@Override
+			public String toString() {
+				return "synthetic parent, own area above y = 10";
+			}
+		};
+		final ShowPasses passes = new ShowPasses(grid, expose);
+		passes.start();
+		grid.nativeOps++;
+		grid.hiddenPatches++;
+		passes.handleEvent(syntheticPaint(0, 0, 200, 100));
+		assertSyntheticPasses("the Grid's own pass", passes, 1, 0);
+		return passes;
+	}
+
+	private static Event syntheticPaint(final int x, final int y, final int width, final int height) {
+		final Event paint = new Event();
+		paint.x = x;
+		paint.y = y;
+		paint.width = width;
+		paint.height = height;
+		return paint;
+	}
+
+	private static void assertSyntheticPasses(final String what, final ShowPasses passes, final int gridPasses, final int parentPasses) {
+		assertEquals(what + ": Grid passes (" + passes + ")", gridPasses, passes.gridPasses);
+		assertEquals(what + ": parent passes (" + passes + ")", parentPasses, passes.parentPasses);
 	}
 
 	@Test
@@ -307,6 +455,9 @@ public class GridHiddenViewport_Test {
 	/* the text generation the virtual deltas change (every clear asks for the new texts) */
 	private int generation;
 
+	/* the paint passes of the latest gate's show */
+	private ShowPasses passesOnShow;
+
 	private void gate(final String how, final Grid grid, final Consumer<Grid> hide, final Consumer<Grid> show,
 			final java.util.function.BiConsumer<Grid, Random> deltas) {
 		gate(how, grid, hide, show, deltas, null, null);
@@ -337,6 +488,7 @@ public class GridHiddenViewport_Test {
 		final int paintsWhileHidden = grid.paintPasses - paintsBefore;
 		// each paint the show brings: its clip, and whether it is the Grid's own pass or a parent's expose
 		final ShowPasses passes = new ShowPasses(grid, expose);
+		passesOnShow = passes;
 		passes.start();
 		show.accept(grid);
 		flush(grid, paintsBefore + paintsWhileHidden + 1);
@@ -598,15 +750,20 @@ public class GridHiddenViewport_Test {
 		int gridPasses;
 		/* passes wholly contained in a parent's own invalidation */
 		int parentPasses;
+		/* the parent paints the latest pass followed */
+		int lastParentPaints;
 
 		ShowPasses(final Grid grid, final ParentExpose expose) {
 			this.grid = grid;
 			this.expose = expose;
-			parentPaint = e -> {
-				if (expose.ownPaint(e)) {
-					parentPaints++;
-				}
-			};
+			parentPaint = this::parentPainted;
+		}
+
+		/* a paint event of the parent */
+		void parentPainted(final Event e) {
+			if (expose.ownPaint(e)) {
+				parentPaints++;
+			}
 		}
 
 		void start() {
@@ -634,7 +791,14 @@ public class GridHiddenViewport_Test {
 			if (expose != null) {
 				strip = expose.strip(grid);
 			}
-			final boolean parent = opsSince == 0 && patchesSince == 0 && parentPaintsSince > 0 && within(clip, strip);
+			// (a) no native work of the Grid since its previous pass, and no patch applied in this pass
+			final boolean noGridWork = opsSince == 0 && patchesSince == 0;
+			// (b) the clip lies within the parent's strip
+			final boolean inStrip = within(clip, strip);
+			// (c) the parent painted its own area since the Grid's previous pass
+			final boolean afterParentPaint = parentPaintsSince > 0;
+			final boolean parent = noGridWork && inStrip && afterParentPaint;
+			lastParentPaints = parentPaintsSince;
 			if (parent) {
 				parentPasses++;
 			} else {
@@ -661,8 +825,8 @@ public class GridHiddenViewport_Test {
 				return "Grid " + gridPasses + ", parent " + parentPasses + ": " + passes + "; no parent expose";
 			}
 			return "Grid " + gridPasses + ", parent " + parentPasses + ": " + passes + "; strip "
-					+ (!PARENT_REDRAW_REACHES_CHILDREN ? "empty, a parent's redraw does not reach child controls here"
-							: strip.isEmpty() ? "empty" : text(strip))
+					+ (!strip.isEmpty() ? text(strip)
+							: PARENT_REDRAW_REACHES_CHILDREN ? "empty" : "empty, a parent's redraw does not reach child controls here")
 					+ " (" + expose + ")";
 		}
 	}
