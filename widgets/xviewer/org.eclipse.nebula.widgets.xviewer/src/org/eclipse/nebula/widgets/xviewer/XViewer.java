@@ -551,7 +551,7 @@ public class XViewer extends TreeViewer {
     * XViewer class is initialized); any other value leaves it off. A change applies to loads after it.
     *
     * @param bounded true to bound precomputed values to a window of rows
-    * @since 1.1
+    * @since 1.2
     */
    public void setBoundedPreCompute(boolean bounded) {
       boundedPreCompute = bounded;
@@ -563,7 +563,7 @@ public class XViewer extends TreeViewer {
    /**
     * @return true if precomputed values are bounded to a window of rows when the viewer is a viewport, see
     * {@link #setBoundedPreCompute(boolean)}
-    * @since 1.1
+    * @since 1.2
     */
    public boolean isBoundedPreCompute() {
       return boundedPreCompute;
@@ -584,7 +584,7 @@ public class XViewer extends TreeViewer {
     * @param action the action
     * @throws NullPointerException with bounded precompute in effect, if {@code elements} or the collection it supplies
     * is null
-    * @since 1.1
+    * @since 1.2
     */
    public void runPreComputePass(Supplier<? extends Collection<?>> elements, Runnable action) {
       if (!boundsPreCompute()) {
@@ -1536,7 +1536,7 @@ public class XViewer extends TreeViewer {
 
    /**
     * @return true if the tree was created with {@code SWT.VIRTUAL}, so the viewer works as a viewport over the model
-    * @since 1.1
+    * @since 1.2
     */
    public boolean isViewport() {
       Tree tree = getTree();
@@ -1546,7 +1546,7 @@ public class XViewer extends TreeViewer {
    /**
     * @return rows materialized by the viewport bridge since the last structural refresh, or -1 when the viewer is not a
     * viewport over a plain tree content provider
-    * @since 1.1
+    * @since 1.2
     */
    public int getViewportMaterializedCount() {
       return viewport == null ? -1 : viewport.getMaterializedCount();

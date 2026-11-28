@@ -23,7 +23,7 @@ Contributors:
 	</parent>
 
 	<artifactId>org.eclipse.nebula.widgets.oscilloscope.example</artifactId>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.2-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 </project>

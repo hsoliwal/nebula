@@ -24,7 +24,7 @@ Contributors:
 
 	<artifactId>org.eclipse.nebula.widgets.opal.starrating.feature</artifactId>
 	<packaging>eclipse-feature</packaging>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.1-SNAPSHOT</version>
 
 	<name>Star Rating Feature</name>
 

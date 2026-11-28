@@ -1236,7 +1236,7 @@ public class Oscilloscope extends Canvas {
 	 * @exception IllegalArgumentException <ul>
 	 *    <li>ERROR_INVALID_ARGUMENT - if samplesPerColumn is negative</li>
 	 * </ul>
-	 * @since 1.5
+	 * @since 1.6
 	 */
 	public synchronized void setSamplesPerColumn(int channel, int samplesPerColumn) {
 		if (samplesPerColumn < 0) {
@@ -1284,7 +1284,7 @@ public class Oscilloscope extends Canvas {
 	 *            the channel
 	 * @return the samples per column, 0 when envelope mode is off
 	 * @see #setSamplesPerColumn(int, int)
-	 * @since 1.5
+	 * @since 1.6
 	 */
 	public int getSamplesPerColumn(int channel) {
 		return chan[channel].samplesPerColumn;
@@ -1310,7 +1310,7 @@ public class Oscilloscope extends Canvas {
 	 *    <li>ERROR_NULL_ARGUMENT - if samples is null</li>
 	 *    <li>ERROR_INVALID_RANGE - if offset or count lie outside the array</li>
 	 * </ul>
-	 * @since 1.5
+	 * @since 1.6
 	 */
 	public synchronized void pushSamples(int channel, int[] samples, int offset, int count) {
 		if (samples == null) {

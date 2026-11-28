@@ -42,7 +42,7 @@ import org.eclipse.jface.viewers.Viewer;
  * the next request. Model elements are the caller's objects and are never copied or wrapped.
  * </p>
  *
- * @since 1.1
+ * @since 1.2
  */
 public final class XViewerViewportContentProvider implements ILazyTreeContentProvider, ITreeContentProvider {
    // only rows the native virtual tree requests are materialized

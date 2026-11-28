@@ -19,7 +19,7 @@ package org.eclipse.nebula.widgets.grid.model;
  * Implemented by {@link RowPermutation} (sort, filter) and {@link RowGrouping} (group headers
  * over a permutation).
  *
- * @since 1.2
+ * @since 1.3
  */
 public interface RowView {
 

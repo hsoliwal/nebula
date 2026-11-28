@@ -23,6 +23,7 @@ Contributors:
 	</parent>
 
 	<artifactId>org.eclipse.nebula.widgets.pagination</artifactId>
+	<version>1.0.1-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
 </project>

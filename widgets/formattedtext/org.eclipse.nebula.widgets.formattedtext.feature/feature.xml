@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.nebula.widgets.formattedtext.feature"
       label="Nebula Formatted Text Widget"
-      version="1.0.0.qualifier"
+      version="1.0.1.qualifier"
       provider-name="Eclipse Nebula">
 
    <description>

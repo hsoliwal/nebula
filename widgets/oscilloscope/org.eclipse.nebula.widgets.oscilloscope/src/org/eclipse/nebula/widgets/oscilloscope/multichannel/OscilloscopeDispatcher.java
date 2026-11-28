@@ -802,7 +802,7 @@ public class OscilloscopeDispatcher {
 	 * ancestor or minimized shell). A parked loop runs no timer and no hook; the next paint of the scope resumes it.
 	 *
 	 * @return true while the loop is parked
-	 * @since 1.5
+	 * @since 1.6
 	 */
 	public boolean isParked() {
 		return parkedLoop != null;
