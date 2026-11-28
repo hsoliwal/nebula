@@ -120,7 +120,10 @@ public class CompositeTableTest extends TestCase {
     }
 
     public void testClearSelection() {
-	// shell.open() will set the selection to the first row
+	// shell.open() will set the selection to the first row: the shell gives the focus to the first
+	// row, whose focus event selects it. On GTK that focus event arrives with the window's
+	// activation, after shell.open() has returned, so wait for the focus before reading the selection.
+	waitForFocusInTable();
 	assertEquals(new Point(-1, 0), table.getSelection());
 
 	table.clearSelection();
@@ -136,6 +139,31 @@ public class CompositeTableTest extends TestCase {
 	while (display.readAndDispatch()) {
 	    // next
 	}
+    }
+
+    /* dispatches events until the display's focus control is the table or inside it (target state), at most 5 s */
+    private void waitForFocusInTable() {
+	long deadline = System.currentTimeMillis() + 5000;
+	while (!isFocusInTable() && System.currentTimeMillis() < deadline) {
+	    if (!display.readAndDispatch()) {
+		try {
+		    Thread.sleep(5);
+		} catch (InterruptedException e) {
+		    Thread.currentThread().interrupt();
+		    break;
+		}
+	    }
+	}
+	assertTrue("shell.open() gives the focus to the table: " + display.getFocusControl(), isFocusInTable());
+    }
+
+    private boolean isFocusInTable() {
+	for (Control control = display.getFocusControl(); control != null; control = control.getParent()) {
+	    if (control == table) {
+		return true;
+	    }
+	}
+	return false;
     }
 
 }

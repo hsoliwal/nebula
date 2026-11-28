@@ -93,9 +93,11 @@ public class CompositeTableKeyFilterTest extends TestCase {
 
 	public void testTheFilterLeavesTheDisplayWithTheTable() throws Exception {
 		Listener filter = keyDownFilter(first);
+		Listener stock = stockKeyDownFilter(first);
 		assertTrue("a table with its slider shown filters KeyDown", filtered(filter));
 		holder.dispose(); // the parent disposes the table: InternalCompositeTable.dispose() is not called
 		assertFalse("a disposed table keeps no display filter", filtered(filter));
+		assertFalse("a disposed table keeps no display filter", filtered(stock));
 		keyDownInRowOf(second); // must not reach the disposed table
 	}
 
@@ -107,12 +109,32 @@ public class CompositeTableKeyFilterTest extends TestCase {
 		row.notifyListeners(SWT.KeyDown, event);
 	}
 
+	/*
+	 * The KeyDown filter the table keeps on the Display. With the viewport (the default widget mode) the viewport owns
+	 * the registration: CompositeTableViewport.keyFilterChanged takes the stock filter off the Display and installs its
+	 * own keyFilter, which hands key presses to the stock filter while the table is shown. Without the viewport
+	 * (swt.widget.mode.CompositeTable=original) the stock filter is on the Display itself.
+	 */
 	private static Listener keyDownFilter(CompositeTable table) throws ReflectiveOperationException {
-		Field pane = CompositeTable.class.getDeclaredField("contentPane");
-		pane.setAccessible(true);
+		CompositeTableViewport viewport = contentPane(table).viewport;
+		if (viewport == null) {
+			return stockKeyDownFilter(table);
+		}
+		Field filter = CompositeTableViewport.class.getDeclaredField("keyFilter");
+		filter.setAccessible(true);
+		return (Listener) filter.get(viewport);
+	}
+
+	private static Listener stockKeyDownFilter(CompositeTable table) throws ReflectiveOperationException {
 		Field filter = InternalCompositeTable.class.getDeclaredField("displayKeyDownFilter");
 		filter.setAccessible(true);
-		return (Listener) filter.get(pane.get(table));
+		return (Listener) filter.get(contentPane(table));
+	}
+
+	private static InternalCompositeTable contentPane(CompositeTable table) throws ReflectiveOperationException {
+		Field pane = CompositeTable.class.getDeclaredField("contentPane");
+		pane.setAccessible(true);
+		return (InternalCompositeTable) pane.get(table);
 	}
 
 	/* whether the display's filter table holds the listener (Display.filterTable, EventTable.listeners) */
