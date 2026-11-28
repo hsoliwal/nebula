@@ -6183,6 +6183,8 @@ public class Grid extends Canvas {
 	 * @param event paint event
 	 */
 	private void onPaint(final PaintEvent event) {
+		// this paint consumes what was owed; an invalidation made while it runs is owed again
+		wholeClientOwed = false;
 		paintPasses++;
 		// brief rule 24, hidden viewports: a paint means visible; deltas made while hidden are applied
 		// here as one window patch (scroll values, window), then this one pass paints them
@@ -10072,6 +10074,16 @@ public class Grid extends Canvas {
 	int nativeOps;
 	/** Paint events the Grid handled. */
 	int paintPasses;
+	/** Whole-client invalidations of model deltas merged into one already owed (for tests). */
+	int mergedInvalidations;
+	/*
+	 * Viewport mode: the whole client area was invalidated and no paint has run since. The next
+	 * paint repaints the whole client from the model as it is then, so the whole-client
+	 * invalidation of a later model delta adds nothing (see invalidateWholeClient). Every paint,
+	 * blit, hidden delta and setRedraw clears it: a stale mark costs one extra invalidation, never
+	 * a lost one.
+	 */
+	private boolean wholeClientOwed;
 
 	/**
 	 * @return whether the viewport is hidden; once found hidden it stays so (a flag check, no
@@ -10145,6 +10157,7 @@ public class Grid extends Canvas {
 	private void markHiddenDirty() {
 		hiddenDeltas++;
 		hiddenDirty = true;
+		wholeClientOwed = false;
 	}
 
 	/* the first paint after hidden deltas: one window patch against the current model */
@@ -10197,10 +10210,37 @@ public class Grid extends Canvas {
 		if (frozenPlanes == 0) {
 			nativeOps++;
 			super.redraw();
+			wholeClientOwed = viewport != null;
 			return;
 		}
 		pendingPlanes |= frozenPlanes & (PLANE_BODY | PLANE_CHROME);
 		invalidatePlanes(~frozenPlanes & (PLANE_BODY | PLANE_CHROME));
+	}
+
+	/**
+	 * Invalidates the whole client area for a model delta of the Grid's own: an added item, or a
+	 * row whose data or extents changed while the scroll values wait for the next paint. In the
+	 * viewport mode, a delta made while the whole client is already invalid and unpainted adds
+	 * nothing and issues no native call, so adding items to a shown Grid costs one invalidation
+	 * until its next paint instead of one per item. The original mode redraws every time, as
+	 * stock; a caller's {@link #redraw()} always reaches the platform.
+	 */
+	private void invalidateWholeClient() {
+		if (wholeClientOwed && frozenPlanes == 0 && !viewportHidden()) {
+			mergedInvalidations++;
+			return;
+		}
+		redraw();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setRedraw(final boolean redraw) {
+		super.setRedraw(redraw);
+		// what turning drawing off and on invalidates is the platform's: the next delta asks again
+		wholeClientOwed = false;
 	}
 
 	/**
@@ -10388,6 +10428,8 @@ public class Grid extends Canvas {
 	 * @return whether the blit served the scroll
 	 */
 	private boolean blitBodyHorizontally(final Rectangle area) {
+		// a blit moves pixels and the damage the platform holds: what was owed is asked for again
+		wholeClientOwed = false;
 		final int oldOffset = paintedHScroll;
 		// the viewport mode only: stock's paint under a frozen column is not the same pixels moved
 		// (GridScrollPaint_Test, original mode: 18,666 pixels differ after a blit to 200)
@@ -10456,6 +10498,8 @@ public class Grid extends Canvas {
 	 * the caller repaints the whole body.
 	 */
 	private boolean blitBody(final int oldTop, final Rectangle body) {
+		// a blit moves pixels and the damage the platform holds: what was owed is asked for again
+		wholeClientOwed = false;
 		if (!blitScroll || oldTop < 0 || !isVisible() || !blitSafe()) {
 			return false;
 		}
@@ -11491,7 +11535,7 @@ public class Grid extends Canvas {
 
 		currentVisibleItems++;
 
-		redraw();
+		invalidateWholeClient();
 
 		return row;
 	}
@@ -13381,7 +13425,7 @@ public class Grid extends Canvas {
 			return;
 		}
 		if (!redrawRow(item)) {
-			redraw();
+			invalidateWholeClient();
 		}
 	}
 
@@ -13440,7 +13484,9 @@ public class Grid extends Canvas {
 	 * repainted; off screen or hidden, nothing is, since the painted rows and the scroll extents
 	 * do not change. Only in the viewport mode with the window known, and when a row can paint
 	 * nothing outside its rectangle (no spans, pinned planes or auto height) and no body paint is
-	 * frozen.
+	 * frozen. While an earlier delta (an added item) leaves the scroll values to the next paint,
+	 * the window is not known without settling the native scroll bars, so the row is left to the
+	 * whole-client invalidation that delta owes, as stock repaints it.
 	 *
 	 * @param item the item whose row changed
 	 * @return whether the change was handled ({@code false}: the caller repaints the Grid)
@@ -13453,6 +13499,10 @@ public class Grid extends Canvas {
 		}
 		if (!rowDeltaPossible(item) || autoHeight) {
 			return false;
+		}
+		if (scrollValuesObsolete) {
+			invalidateWholeClient();
+			return true;
 		}
 		final int row = item.getRowIndex();
 		if (row < 0) {
@@ -13492,7 +13542,9 @@ public class Grid extends Canvas {
 	 * bars are brought up to date at once (as the paint stock asks for would). If that moves what
 	 * is on screen (top row, a scroll bar shown or hidden, the client area), the Grid repaints as
 	 * stock; otherwise a row on screen repaints from its top down, and a row off screen or hidden
-	 * repaints nothing.
+	 * repaints nothing. While an earlier delta (an added item) already leaves the scroll values to
+	 * the next paint, the new extents join them there: the bottom row is measured again and the
+	 * whole client repaints, as stock does, instead of settling the native scroll bars now.
 	 *
 	 * @param item the item whose height changed
 	 * @return whether the change was handled ({@code false}: the caller repaints as stock)
@@ -13512,6 +13564,11 @@ public class Grid extends Canvas {
 		final int row = item.getRowIndex();
 		if (row < 0) {
 			return false;
+		}
+		if (scrollValuesObsolete) {
+			bottomIndex = -1;
+			invalidateWholeClient();
+			return true;
 		}
 		// what stock had cached stays cached; what it had not is measured again later, as stock does
 		final boolean topCached = topIndex >= 0;
