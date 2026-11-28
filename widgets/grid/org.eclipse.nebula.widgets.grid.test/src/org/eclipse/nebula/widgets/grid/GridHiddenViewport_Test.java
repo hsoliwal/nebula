@@ -16,6 +16,8 @@ package org.eclipse.nebula.widgets.grid;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -28,9 +30,13 @@ import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
@@ -48,15 +54,65 @@ import org.junit.Test;
  * collapse, row heights; for a VIRTUAL Grid item counts and clears);</li>
  * <li>while hidden: no native work ({@link Grid#nativeOps}: invalidations, scroll bar updates,
  * measuring GCs), no paint, and for the VIRTUAL Grid no SetData request;</li>
- * <li>shown: exactly one paint pass, the window equals the Grid's paint, and the rows on screen
- * equal those of a Grid built with the same model that was never hidden (the differential proves
- * such a Grid equal to stock).</li>
+ * <li>shown: exactly one paint pass of the Grid's own and one window patch, the window equals the
+ * Grid's paint, and the rows on screen equal those of a Grid built with the same model that was
+ * never hidden (the differential proves such a Grid equal to stock).</li>
  * </ul>
  * In the original mode the same scripts run and the native work stock does while hidden is logged.
+ * <p>
+ * The pass count measures the Grid's own work. Every pass on show counts as a Grid pass, except a
+ * pass that is wholly contained in a parent's own invalidation. Such a parent-originated pass must
+ * meet all three conditions:
+ * </p>
+ * <ol>
+ * <li>The Grid issued no native work since its previous pass, and the pass applied no window
+ * patch.</li>
+ * <li>Its clip lies within the strip of the Grid's client area that the parent's own redraw covers
+ * on this platform. The strip is computed from the parent's geometry.</li>
+ * <li>The parent painted its own area outside the Grid since the Grid's previous pass. So there is
+ * at most one such pass per parent redraw.</li>
+ * </ol>
+ * <p>
+ * Any other extra pass still fails: native work after the show, a patch in a second pass, a clip
+ * outside the strip, or a strip expose that the parent did not paint. The message names every
+ * pass. The {@code unselectedTabCounts...} tests inject each kind of extra work after the show and
+ * require that the count fails.
+ * </p>
+ * <p>
+ * <b>Platform note, GTK3: parent-originated exposes.</b> {@code CTabFolder.setSelection} defers
+ * its tab-strip redraw: {@code showItem} calls {@code updateFolder(REDRAW_TABS)}, which runs
+ * {@code redrawTabs()} from {@code asyncExec}. {@code redrawTabs()} invalidates
+ * {@code redraw(0, 0, size.x, -trim.y - marginHeight + 1, false)} (stock SWT 3.135
+ * {@code CTabFolder.java:2268}). That rectangle is one row deeper than the tab strip, so its last
+ * row is the first row of the client area, where the selected page and its Grid lie.
+ * </p>
+ * <ul>
+ * <li>On win32 a redraw with {@code all == false} keeps child windows out: SWT sets
+ * {@code RDW_ALLCHILDREN} only for {@code all}. The strip is empty there, and the Grid paints once.</li>
+ * <li>On GTK3 SWT's child {@code GdkWindow}s are client-side. {@code Control.redrawWidget} passes
+ * the rectangle to {@code gdk_window_invalidate_rect} (stock {@code Control.java:4721-4740}). GDK
+ * adds it to the native parent's update area, and GTK renders every widget that intersects that
+ * area, children included.</li>
+ * </ul>
+ * <p>
+ * So on GTK3 the Grid gets a second paint pass of one row ({@code 0,0 Wx1}). It issues no native
+ * work and applies no patch in that pass. It cannot skip the pass: GTK3 starts the invalidated
+ * region blank, and the row must be painted again. A plain {@code Canvas} in the same page gets the
+ * same second paint, and a page shown without {@code CTabFolder.setSelection} paints once. The
+ * contract counts only Grid-originated work, so this pass is the parent's, not the Grid's. On
+ * other platforms (cocoa and GTK4 are not measured) the strip is empty, and any extra pass fails.
+ * </p>
  */
 public class GridHiddenViewport_Test {
 	private static final Logger LOG = Logger.getLogger("org.eclipse.nebula.widgets.grid");
 	private static final int DELTAS = 10_000;
+	/*
+	 * Whether a parent's redraw with all == false reaches child controls (see the class comment):
+	 * GTK3, whose child GdkWindows are client-side. Not win32. Cocoa and GTK4 are not measured, and
+	 * there the strip stays empty, so the count stays exact.
+	 */
+	private static final boolean PARENT_REDRAW_REACHES_CHILDREN = "gtk".equals(SWT.getPlatform())
+			&& !"1".equals(System.getenv("SWT_GTK4"));
 
 	private Display display;
 	private Shell shell;
@@ -79,19 +135,123 @@ public class GridHiddenViewport_Test {
 
 	@Test
 	public void unselectedTab() {
-		shell.setLayout(new FillLayout());
-		final CTabFolder folder = new CTabFolder(shell, SWT.NONE);
-		final CTabItem gridTab = new CTabItem(folder, SWT.NONE);
-		gridTab.setText("grid");
-		final Composite page = new Composite(folder, SWT.NONE);
-		page.setLayout(new FillLayout());
-		gridTab.setControl(page);
-		final CTabItem otherTab = new CTabItem(folder, SWT.NONE);
-		otherTab.setText("other");
-		otherTab.setControl(new Text(folder, SWT.MULTI));
-		folder.setSelection(gridTab);
-		final Grid grid = treeGrid(page, SWT.NONE);
-		gate("unselected tab", grid, g -> folder.setSelection(otherTab), g -> folder.setSelection(gridTab), this::treeDeltas);
+		new TabCase().gate("unselected tab", null);
+	}
+
+	/*
+	 * The parent allowance admits a parent's own expose and nothing else. Each test below injects
+	 * extra work after the show has settled. The Grid pass count must fail on it.
+	 */
+
+	@Test
+	public void unselectedTabCountsAWholeGridRedrawAfterTheShow() {
+		assertGridPassCountFails("a whole Grid redraw", (tab, row) -> tab.grid.redraw());
+	}
+
+	@Test
+	public void unselectedTabCountsAGridRowRedrawOutsideTheStrip() {
+		assertGridPassCountFails("a Grid redraw of a row outside the strip", (tab, row) -> {
+			final Rectangle client = tab.grid.getClientArea();
+			tab.grid.redraw(0, client.height / 2, client.width, tab.grid.getItemHeight(), false);
+		});
+	}
+
+	@Test
+	public void unselectedTabCountsAGridRedrawInsideTheStrip() {
+		// native work: a Grid pass even where the clip lies within the strip
+		assertGridPassCountFails("a Grid redraw of the strip", (tab, row) -> tab.grid.redraw(row.x, row.y, row.width, row.height, false));
+	}
+
+	@Test
+	public void unselectedTabCountsAParentExposeOutsideTheStrip() {
+		// no native work of the Grid, but the clip lies outside the strip
+		assertGridPassCountFails("a page redraw of a Grid row outside the strip", (tab, row) -> {
+			final Rectangle client = tab.grid.getClientArea();
+			final Rectangle outside = display.map(tab.grid, tab.page,
+					new Rectangle(0, client.height / 2, client.width, tab.grid.getItemHeight()));
+			tab.page.redraw(outside.x, outside.y, outside.width, outside.height, true);
+		});
+	}
+
+	@Test
+	public void unselectedTabCountsAStripExposeTheFolderDidNotPaint() {
+		// no native work of the Grid, the clip lies within the strip, but the folder did not paint its tab strip
+		assertGridPassCountFails("a page redraw of the strip", (tab, row) -> {
+			final Rectangle inPage = display.map(tab.grid, tab.page, row);
+			tab.page.redraw(inPage.x, inPage.y, inPage.width, inPage.height, true);
+		});
+	}
+
+	/* the allowance is one pass per parent redraw, not one pass in all */
+	@Test
+	public void unselectedTabAllowsOneParentPassPerTabStripRedraw() {
+		final TabCase tab = new TabCase();
+		tab.gate("unselected tab, then two tab-strip redraws", g -> {
+			// CTabItem.setText defers redrawTabs() as setSelection does: updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS)
+			tab.otherTab.setText("other 1");
+			flush(g, g.paintPasses);
+			tab.otherTab.setText("other 2");
+			flush(g, g.paintPasses);
+		});
+	}
+
+	/* a Grid in the page of a CTabFolder; the gate hides it behind the other tab and shows it with setSelection */
+	private final class TabCase {
+		final CTabFolder folder;
+		final CTabItem gridTab;
+		final CTabItem otherTab;
+		final Composite page;
+		final Grid grid;
+		final TabStripExpose expose;
+
+		TabCase() {
+			shell.setLayout(new FillLayout());
+			folder = new CTabFolder(shell, SWT.NONE);
+			gridTab = new CTabItem(folder, SWT.NONE);
+			gridTab.setText("grid");
+			page = new Composite(folder, SWT.NONE);
+			page.setLayout(new FillLayout());
+			gridTab.setControl(page);
+			otherTab = new CTabItem(folder, SWT.NONE);
+			otherTab.setText("other");
+			otherTab.setControl(new Text(folder, SWT.MULTI));
+			folder.setSelection(gridTab);
+			grid = treeGrid(page, SWT.NONE);
+			expose = new TabStripExpose(folder);
+		}
+
+		void gate(final String how, final Consumer<Grid> afterShow) {
+			GridHiddenViewport_Test.this.gate(how, grid, g -> folder.setSelection(otherTab), g -> folder.setSelection(gridTab),
+					GridHiddenViewport_Test.this::treeDeltas, expose, afterShow);
+		}
+	}
+
+	/* extra work after the show; row is the strip, or where the strip is empty the Grid's first client row */
+	private interface Injection {
+		void inject(TabCase tab, Rectangle row);
+	}
+
+	/* the injection after the show must fail the Grid pass count (a viewport-mode contract) */
+	private void assertGridPassCountFails(final String what, final Injection injection) {
+		assumeTrue("the exact paint pass count is a viewport-mode contract", GridViewport.ENABLED);
+		final TabCase tab = new TabCase();
+		final String how = "unselected tab, then " + what;
+		try {
+			tab.gate(how, g -> {
+				final Rectangle strip = tab.expose.strip(g);
+				final Rectangle row = strip.isEmpty() ? new Rectangle(0, 0, g.getClientArea().width, 1) : strip;
+				injection.inject(tab, row);
+				// the injected expose paints the Grid on every platform: wait for that pass
+				flush(g, g.paintPasses + 1);
+			});
+		} catch (final AssertionError expected) {
+			final String message = String.valueOf(expected.getMessage());
+			assertTrue(how + ": failed on another check than the Grid pass count: " + message,
+					message.contains("Grid paint passes on show"));
+			LOG.info("GridHiddenViewport_Test: " + how + ": the Grid pass count failed as required: " + message);
+			return;
+		}
+		fail(how + ": the Grid pass count accepted the extra work");
 	}
 
 	@Test
@@ -149,6 +309,15 @@ public class GridHiddenViewport_Test {
 
 	private void gate(final String how, final Grid grid, final Consumer<Grid> hide, final Consumer<Grid> show,
 			final java.util.function.BiConsumer<Grid, Random> deltas) {
+		gate(how, grid, hide, show, deltas, null, null);
+	}
+
+	/*
+	 * expose: a parent whose own redraw reaches into the Grid, or null; afterShow: extra work once the
+	 * show's paints have settled, counted with them, or null
+	 */
+	private void gate(final String how, final Grid grid, final Consumer<Grid> hide, final Consumer<Grid> show,
+			final java.util.function.BiConsumer<Grid, Random> deltas, final ParentExpose expose, final Consumer<Grid> afterShow) {
 		shell.open();
 		flush(grid, 1);
 		final int paintsBeforeScroll = grid.paintPasses;
@@ -166,23 +335,24 @@ public class GridHiddenViewport_Test {
 		flush(grid, 0);
 		final int nativeWhileHidden = grid.nativeOps - nativeBefore;
 		final int paintsWhileHidden = grid.paintPasses - paintsBefore;
-		// diagnostic only: the clip of each paint the show brings, named in the log and the message
-		final StringBuilder clipsOnShow = new StringBuilder();
-		final Listener clipRecorder = e -> clipsOnShow.append(clipsOnShow.length() == 0 ? "" : ", ").append(e.x).append(',')
-				.append(e.y).append(' ').append(e.width).append('x').append(e.height);
-		grid.addListener(SWT.Paint, clipRecorder);
+		// each paint the show brings: its clip, and whether it is the Grid's own pass or a parent's expose
+		final ShowPasses passes = new ShowPasses(grid, expose);
+		passes.start();
 		show.accept(grid);
 		flush(grid, paintsBefore + paintsWhileHidden + 1);
-		grid.removeListener(SWT.Paint, clipRecorder);
+		if (afterShow != null) {
+			afterShow.accept(grid);
+		}
+		passes.stop();
 		final int paintsOnShow = grid.paintPasses - paintsBefore - paintsWhileHidden;
 		LOG.info("GridHiddenViewport_Test: " + how + " (" + (GridViewport.ENABLED ? "viewport" : "original") + "): " + DELTAS
 				+ " deltas in " + micros + " us; while hidden native ops " + nativeWhileHidden + ", paints " + paintsWhileHidden
-				+ ", coalesced " + grid.hiddenDeltas + "; on show paint passes " + paintsOnShow + " (clips " + clipsOnShow
+				+ ", coalesced " + grid.hiddenDeltas + "; on show paint passes " + paintsOnShow + " (" + passes
 				+ "), window patches " + (grid.hiddenPatches - patchesBefore));
 		if (GridViewport.ENABLED) {
 			assertEquals(how + ": native ops while hidden", 0, nativeWhileHidden);
 			assertEquals(how + ": paints while hidden", 0, paintsWhileHidden);
-			assertEquals(how + ": paint passes on show (clips " + clipsOnShow + ")", 1, paintsOnShow);
+			assertEquals(how + ": Grid paint passes on show (" + passes + ")", 1, passes.gridPasses);
 			assertEquals(how + ": window patches on show", 1, grid.hiddenPatches - patchesBefore);
 		} else {
 			assertEquals(how + ": paints while hidden", 0, paintsWhileHidden);
@@ -322,6 +492,183 @@ public class GridHiddenViewport_Test {
 			throw new AssertionError(how + ": the window after the show differs from the Grid's paint ("
 					+ GridViewportDifferential_Test.difference(painted, now) + ")");
 		}
+	}
+
+	/* a parent whose own redraw can reach into the Grid (see the class comment) */
+	private interface ParentExpose {
+		/** @return the parent */
+		Control parent();
+
+		/**
+		 * @param grid the Grid
+		 * @return the strip of the Grid's client area that the parent's own redraw covers, in Grid
+		 *         coordinates; empty where that redraw does not reach child controls
+		 */
+		Rectangle strip(Grid grid);
+
+		/**
+		 * @param paint a paint event of the parent
+		 * @return true when the paint covers the parent's own area outside the Grid, which only the
+		 *         parent's own redraw paints
+		 */
+		boolean ownPaint(Event paint);
+	}
+
+	/*
+	 * The tab strip of a CTabFolder. redrawTabs() (stock SWT 3.135 CTabFolder.java:2261-2270)
+	 * invalidates its tab strip and one row more, which is the first row of the client area:
+	 * redraw(0, 0, size.x, -trim.y - marginHeight + 1, false) for tabs on top, and the mirror
+	 * rectangle for tabs at the bottom. Its trim is the renderer's body trim. computeTrim(0, 0, 0, 0)
+	 * returns that trim plus the height of wrapped top-right controls, and this folder has none. So
+	 * the strip follows the folder's renderer, tab height and margins, not a fixed row.
+	 */
+	private static final class TabStripExpose implements ParentExpose {
+		private final CTabFolder folder;
+
+		TabStripExpose(final CTabFolder folder) {
+			this.folder = folder;
+		}
+
+		@Override
+		public Control parent() {
+			return folder;
+		}
+
+		/* the rectangle redrawTabs() invalidates, in folder coordinates */
+		Rectangle redrawTabsArea() {
+			final Point size = folder.getSize();
+			final Rectangle trim = folder.computeTrim(0, 0, 0, 0);
+			if (folder.getTabPosition() == SWT.BOTTOM) {
+				final int h = trim.height + trim.y - folder.marginHeight;
+				return new Rectangle(0, size.y - h - 1, size.x, h + 1);
+			}
+			return new Rectangle(0, 0, size.x, -trim.y - folder.marginHeight + 1);
+		}
+
+		/* the folder's area between its edge and its client area on the tab side, in folder coordinates */
+		Rectangle tabArea() {
+			final Point size = folder.getSize();
+			final Rectangle client = folder.getClientArea();
+			if (folder.getTabPosition() == SWT.BOTTOM) {
+				final int bottom = client.y + client.height;
+				return new Rectangle(0, bottom, size.x, size.y - bottom);
+			}
+			return new Rectangle(0, 0, size.x, client.y);
+		}
+
+		@Override
+		public Rectangle strip(final Grid grid) {
+			if (!PARENT_REDRAW_REACHES_CHILDREN) {
+				return new Rectangle(0, 0, 0, 0);
+			}
+			return folder.getDisplay().map(folder, grid, redrawTabsArea()).intersection(grid.getClientArea());
+		}
+
+		@Override
+		public boolean ownPaint(final Event paint) {
+			return new Rectangle(paint.x, paint.y, paint.width, paint.height).intersects(tabArea());
+		}
+
+		@Override
+		public String toString() {
+			final Rectangle client = folder.getClientArea();
+			return "redrawTabs " + text(redrawTabsArea()) + " of folder " + folder.getSize().x + "x" + folder.getSize().y
+					+ ", client area " + text(client) + ", tab height " + folder.getTabHeight();
+		}
+	}
+
+	/*
+	 * The paint passes a show brings. Each pass is the Grid's own unless it is wholly contained in a
+	 * parent's own invalidation: no native work of the Grid since its previous pass and no patch
+	 * applied, a clip within the parent's strip, and a paint of the parent's own area since the
+	 * Grid's previous pass (one such pass per parent redraw). This listener is added after the Grid's
+	 * own paint listener, so a pass's patch and its native work are counted when it runs.
+	 */
+	private static final class ShowPasses implements Listener {
+		private final Grid grid;
+		private final ParentExpose expose;
+		private final Listener parentPaint;
+		private final StringBuilder passes = new StringBuilder();
+		private int ops;
+		private int patches;
+		private int parentPaints;
+		private int parentPaintsSeen;
+		private Rectangle strip = new Rectangle(0, 0, 0, 0);
+		/* passes that count as the Grid's own work */
+		int gridPasses;
+		/* passes wholly contained in a parent's own invalidation */
+		int parentPasses;
+
+		ShowPasses(final Grid grid, final ParentExpose expose) {
+			this.grid = grid;
+			this.expose = expose;
+			parentPaint = e -> {
+				if (expose.ownPaint(e)) {
+					parentPaints++;
+				}
+			};
+		}
+
+		void start() {
+			ops = grid.nativeOps;
+			patches = grid.hiddenPatches;
+			grid.addListener(SWT.Paint, this);
+			if (expose != null) {
+				expose.parent().addListener(SWT.Paint, parentPaint);
+			}
+		}
+
+		void stop() {
+			grid.removeListener(SWT.Paint, this);
+			if (expose != null) {
+				expose.parent().removeListener(SWT.Paint, parentPaint);
+			}
+		}
+
+		@Override
+		public void handleEvent(final Event e) {
+			final Rectangle clip = new Rectangle(e.x, e.y, e.width, e.height);
+			final int opsSince = grid.nativeOps - ops;
+			final int patchesSince = grid.hiddenPatches - patches;
+			final int parentPaintsSince = parentPaints - parentPaintsSeen;
+			if (expose != null) {
+				strip = expose.strip(grid);
+			}
+			final boolean parent = opsSince == 0 && patchesSince == 0 && parentPaintsSince > 0 && within(clip, strip);
+			if (parent) {
+				parentPasses++;
+			} else {
+				gridPasses++;
+			}
+			final Rectangle client = grid.getClientArea();
+			passes.append(passes.length() == 0 ? "" : "; ").append(text(clip)).append(parent ? " parent" : " grid")
+					.append(" [native ops ").append(opsSince).append(", patches ").append(patchesSince)
+					.append(", parent paints ").append(parentPaintsSince).append(", client ").append(client.width).append('x')
+					.append(client.height).append(']');
+			ops = grid.nativeOps;
+			patches = grid.hiddenPatches;
+			parentPaintsSeen = parentPaints;
+		}
+
+		private static boolean within(final Rectangle clip, final Rectangle area) {
+			return !area.isEmpty() && clip.x >= area.x && clip.y >= area.y && clip.x + clip.width <= area.x + area.width
+					&& clip.y + clip.height <= area.y + area.height;
+		}
+
+		@Override
+		public String toString() {
+			if (expose == null) {
+				return "Grid " + gridPasses + ", parent " + parentPasses + ": " + passes + "; no parent expose";
+			}
+			return "Grid " + gridPasses + ", parent " + parentPasses + ": " + passes + "; strip "
+					+ (!PARENT_REDRAW_REACHES_CHILDREN ? "empty, a parent's redraw does not reach child controls here"
+							: strip.isEmpty() ? "empty" : text(strip))
+					+ " (" + expose + ")";
+		}
+	}
+
+	private static String text(final Rectangle r) {
+		return r.x + "," + r.y + " " + r.width + "x" + r.height;
 	}
 
 	/*
