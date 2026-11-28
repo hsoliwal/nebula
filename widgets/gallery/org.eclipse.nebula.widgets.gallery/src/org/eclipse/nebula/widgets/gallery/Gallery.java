@@ -968,7 +968,7 @@ public class Gallery extends Canvas {
 				return null;
 			}
 			int k = selectionCount - 1;
-			return isRun(k) ? _getItem(selection[k], selectionRuns[2 * k + 1]) : selection[k];
+			return isRun(k) ? _getItem(selection[k], selectionRuns[2 * k + 1]) : refreshed(selection[k]);
 		}
 		return selection == null || selection.length == 0 ? null : selection[selection.length - 1];
 	}
@@ -978,7 +978,24 @@ public class Gallery extends Canvas {
 		if (selectionCount == 0) {
 			return null;
 		}
-		return isRun(0) ? _getItem(selection[0], selectionRuns[0]) : selection[0];
+		return isRun(0) ? _getItem(selection[0], selectionRuns[0]) : refreshed(selection[0]);
+	}
+
+	/*
+	 * Viewport mode, SWT.VIRTUAL: a cleared item (clear, clearAll) that the selection hands out (getSelection, the item
+	 * a Selection or DefaultSelection event names) is requested again first, as getItem would request it: the
+	 * original had handed out an item created, with its SetData, for the cleared slot.
+	 */
+	//FLLDCIM: VIEWPORT - VIRTUAL clear: the selection hands out a cleared item requested again
+	private GalleryItem refreshed(GalleryItem item) {
+		if (item != null && item.cleared) {
+			GalleryItem parent = item.getParentItem();
+			int index = parent == null ? _indexOf(item) : _indexOf(parent, item);
+			if (index >= 0) {
+				refreshCleared(parent, index, true);
+			}
+		}
+		return item;
 	}
 
 	/*
@@ -1117,10 +1134,9 @@ public class Gallery extends Canvas {
 	}
 
 	/**
-	 * Viewport mode: the children of parent from start on are about to leave its items array (setItemCount shrinks it,
-	 * a VIRTUAL clearAll replaces it). An item that exists keeps its place in the selection as an item entry, as the
-	 * original selection keeps the item; a child that was never created leaves the selection when dropUnread, and is
-	 * otherwise still named by index.
+	 * Viewport mode: the children of parent from start on are about to leave its items array (setItemCount shrinks it).
+	 * An item that exists keeps its place in the selection as an item entry, as the original selection keeps the item;
+	 * a child that was never created leaves the selection when dropUnread, and is otherwise still named by index.
 	 */
 	void releaseRuns(GalleryItem parent, int start, boolean dropUnread) {
 		if (selectionRuns == null) {
@@ -1142,10 +1158,10 @@ public class Gallery extends Canvas {
 	}
 
 	/**
-	 * Viewport mode: item leaves the gallery's items, with its descendants (a group removed, cleared, disposed or cut
-	 * off by setItemCount; a child removed). The runs that it or a descendant owns are released: the created children
-	 * keep their entries, as the original keeps its items, and the unread names leave the selection. So no item is
-	 * ever created, and no SetData sent, under an item the gallery no longer holds.
+	 * Viewport mode: item leaves the gallery's items, with its descendants (a group removed, disposed or cut off by
+	 * setItemCount; a child removed; a VIRTUAL clear keeps its items). The runs that it or a descendant owns are
+	 * released: the created children keep their entries, as the original keeps its items, and the unread names leave
+	 * the selection. So no item is ever created, and no SetData sent, under an item the gallery no longer holds.
 	 */
 	void releaseRunsWithin(GalleryItem item) {
 		if (selectionRuns == null || item == null || item.items == null) {
@@ -1158,7 +1174,7 @@ public class Gallery extends Canvas {
 	 * Viewport mode: one sweep over the selection entries that releases every run owned by an item that leaves, or by
 	 * a descendant of one (an owner whose ancestor chain reaches an item the predicate names). Created children keep
 	 * their entries in place, unread names leave. Linear in the entries and the released runs, however many items
-	 * leave at once (setItemCount, _setGalleryItems, a parent's clearAll), as long as the predicate is O(1): the bulk
+	 * leave at once (setItemCount, _setGalleryItems), as long as the predicate is O(1): the bulk
 	 * paths pass membership in an identity set of the dropped items, never an index lookup (a stale index hint would
 	 * make that a scan).
 	 */
@@ -3028,7 +3044,8 @@ public class Gallery extends Canvas {
 	 * <p>
 	 * In a <code>SWT.VIRTUAL</code> gallery (viewport widget mode, the default), items that a range selection
 	 * (<code>selectAll</code>, shift-click, a group title click) selected before they were ever created are created
-	 * here, each with its SWT.SetData event, as {@link #getItem(int)} creates them.
+	 * here, each with its SWT.SetData event, as {@link #getItem(int)} creates them. A selected item that a clear
+	 * reset (see {@link #clear(int, boolean)}) is requested again here with SWT.SetData, as {@link #getItem(int)} does.
 	 * </p>
 	 *
 	 * @return the selected items
@@ -3040,7 +3057,12 @@ public class Gallery extends Canvas {
 				return new GalleryItem[0];
 			}
 			if (selectionRuns == null) {
-				return Arrays.copyOf(selection, selectionCount);
+				GalleryItem[] result = Arrays.copyOf(selection, selectionCount);
+				for (GalleryItem item : result) {
+					// a cleared item is requested again (SetData may change the selection: the copy is what is answered)
+					refreshed(item);
+				}
+				return result;
 			}
 			// A snapshot of the entries: creating an unread item sends SetData, whose listener may change the selection.
 			int count = selectionCount;
@@ -3050,7 +3072,7 @@ public class Gallery extends Canvas {
 			int n = 0;
 			for (int k = 0; k < count; k++) {
 				if (runs[2 * k] < 0) {
-					result[n++] = owners[k];
+					result[n++] = refreshed(owners[k]);
 					continue;
 				}
 				for (int i = runs[2 * k]; i <= runs[2 * k + 1]; i++) {

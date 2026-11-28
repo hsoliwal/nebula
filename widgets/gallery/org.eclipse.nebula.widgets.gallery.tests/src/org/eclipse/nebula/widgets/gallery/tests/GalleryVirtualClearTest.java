@@ -350,6 +350,54 @@ public class GalleryVirtualClearTest {
 		assertEquals("Selection events sent by clearAll", events, selectionEvents.size());
 	}
 
+	/**
+	 * A cleared item the selection hands out (getSelection, the item of a DefaultSelection or Selection event) is
+	 * requested again first, as getItem would request it: it never comes out of the selection with its cleared
+	 * attributes (the original handed out an item created for the cleared slot, with its SetData).
+	 */
+	@Test
+	public void theSelectionHandsOutClearedItemsRequestedAgain() {
+		create(3, 6, SWT.MULTI, false);
+		GalleryItem group = gallery.getItem(1);
+		GalleryItem first = group.getItem(0);
+		group.clearAll();
+		gallery.selectAll();
+		int from = requested.size();
+		GalleryItem[] selection = gallery.getSelection();
+		assertEquals(3 + 18, selection.length);
+		for (GalleryItem item : selection) {
+			assertFalse("a selected item handed out with its cleared text", item.getText().isEmpty());
+		}
+		assertEquals("the cleared children requested again by getSelection", 6, requested.size() - from);
+		assertSame(first, selection[1 + 6 + 1]);
+		from = requested.size();
+		assertEquals(selection.length, gallery.getSelection().length);
+		assertEquals("a second getSelection requests nothing", 0, requested.size() - from);
+
+		// the item a DefaultSelection (Enter) event names
+		gallery.setSelection(new GalleryItem[] { first });
+		group.clearAll();
+		String[] named = { null };
+		gallery.addListener(SWT.DefaultSelection, e -> named[0] = ((GalleryItem) e.item).getText());
+		Event enter = new Event();
+		enter.keyCode = SWT.CR;
+		gallery.notifyListeners(SWT.KeyDown, enter);
+		assertTrue("the Enter item is requested again: " + named[0], named[0] != null && named[0].startsWith("item 0 #"));
+
+		// the item a Selection event names when an item is deselected: the item selected last
+		gallery.redraw();
+		flush();
+		GalleryItem second = group.getItem(1);
+		click(second, SWT.MOD1);
+		group.clearAll();
+		int events = selectionEvents.size();
+		click(second, SWT.MOD1);
+		assertEquals(events + 1, selectionEvents.size());
+		assertSame("deselecting names the item selected last", first, selectionEvents.get(events));
+		assertTrue("the item a deselection names is requested again: " + first.getText(),
+				first.getText().startsWith("item 0 #"));
+	}
+
 	void assertSelection(GalleryItem[] expected) {
 		GalleryItem[] actual = gallery.getSelection();
 		assertEquals(expected.length, gallery.getSelectionCount());
@@ -555,6 +603,9 @@ public class GalleryVirtualClearTest {
 			assertEquals(where, serialEvents, lazyEvents);
 			assertEquals(where, serial.getSelectionCount(), lazy.getSelectionCount());
 			assertEquals(where, GalleryVirtualSelectionTest.paths(serial, false), GalleryVirtualSelectionTest.paths(lazy, false));
+			for (GalleryItem item : lazy.getSelection()) {
+				assertFalse(where + " a selected item handed out with its cleared text", item.getText().isEmpty());
+			}
 			for (int k = 0; k < groups; k++) {
 				assertEquals(where + " expanded " + k, serial.getItem(k).isExpanded(), lazy.getItem(k).isExpanded());
 				assertEquals(where + " count " + k, serial.getItem(k).getItemCount(), lazy.getItem(k).getItemCount());
