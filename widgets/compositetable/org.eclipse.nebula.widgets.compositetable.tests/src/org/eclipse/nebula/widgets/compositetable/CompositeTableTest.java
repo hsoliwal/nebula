@@ -13,6 +13,8 @@
  ******************************************************************************/
 package org.eclipse.nebula.widgets.compositetable;
 
+import java.util.Arrays;
+
 import junit.framework.TestCase;
 
 import org.eclipse.nebula.widgets.compositetable.CompositeTable;
@@ -125,7 +127,14 @@ public class CompositeTableTest extends TestCase {
 	// activation, after shell.open() has returned (GTK already reports the focus widget before), so
 	// wait for the selection that event sets before checking it.
 	waitForOpeningSelection();
-	assertEquals(new Point(-1, 0), table.getSelection());
+	// The selection is (column, row) of the focused control. Which control of the first row the
+	// shell focuses is SWT's: win32 focuses the row composite (column -1, it hooks keys), GTK its
+	// first column's Text (column 0).
+	Control row = table.getRowControls()[0];
+	Control focus = display.getFocusControl();
+	int column = focus == row ? -1 : Arrays.asList(((Composite) row).getTabList()).indexOf(focus);
+	assertTrue("the opening focus is the first row or one of its columns: " + focus, focus == row || column >= 0);
+	assertEquals(new Point(column, 0), table.getSelection());
 
 	table.clearSelection();
 	readAndDispatch();
