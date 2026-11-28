@@ -11,6 +11,7 @@
  * Contributors:
  * 	 IBM Corporation - SWT's CCombo was relied upon _heavily_ for example and reference
  *    Jeremy Dowdall <jeremyd@aspencloud.com> - initial API and implementation
+ *    Hitesh Soliwal (Synexia) - the drop button closes a popup that got no Deactivate
  *****************************************************************************/
 
 package org.eclipse.nebula.cwt.base;
@@ -485,6 +486,14 @@ public abstract class BaseCombo extends Canvas {
 			public void handleEvent(Event event) {
 				if(buttonActive) {
 					setOpen(!isOpen());
+				} else if(isOpen()) {
+					/*
+					 * setOpen clears buttonActive: the click that deactivates the popup shell has
+					 * closed it already and must not open it again (bug 198240). When no Deactivate
+					 * came - the popup was not the active shell (its content took no focus) or the
+					 * click changed no activation - the popup is still open: the click closes it.
+					 */
+					setOpen(false);
 				}
 			}
 		});
