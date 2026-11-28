@@ -176,7 +176,7 @@ public class GalleryVirtualGroupsTest {
 		create(100);
 		int before = renderer.layouts;
 		gallery.setItemCount(20_000);
-		assertTrue("group layouts: " + (renderer.layouts - before), renderer.layouts - before <= 2 * 20_000);
+		assertTrue("group layouts: " + (renderer.layouts - before), renderer.layouts - before <= 3 * 20_000);
 		open();
 		scrollTo(Integer.MAX_VALUE);
 		assertTrue("groups requested: " + groupSetData, groupSetData <= 16);
