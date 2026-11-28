@@ -71,23 +71,24 @@ public class GridCellSelectionDifferential_Test {
 	}
 
 	private List<String> trace(final boolean blocks, final int style, final boolean spans, final long seed) {
-		final Grid grid = grid(blocks, style);
-		final GridSelectionScript script = new GridSelectionScript(grid);
-		script.cellOps = true;
-		script.spans = spans;
-		if (blocks) {
-			script.afterStep = grid::checkCellSelection;
-		}
-		grid.setItemCount(300);
-		shell.open();
-		script.run(seed, STEPS);
-		shell.dispose();
-		return script.trace;
+		return GridSelectionScript.trace(() -> {
+			final Grid grid = grid(blocks, style);
+			final GridSelectionScript script = new GridSelectionScript(grid);
+			script.cellOps = true;
+			script.spans = spans;
+			if (blocks) {
+				script.afterStep = grid::checkCellSelection;
+			}
+			grid.setItemCount(300);
+			shell.open();
+			return script;
+		}, seed, STEPS);
 	}
 
 	private void compare(final int style, final boolean spans, final int seeds) {
 		// the original mode keeps the stock point list on both sides: a couple of seeds suffice
 		final int runs = GridTestUtil.fixesUpstreamDefects() ? seeds : Math.min(seeds, 2);
+		GridSelectionScript.takeReruns();
 		for (long seed = 1; seed <= runs; seed++) {
 			final List<String> oracle = trace(false, style, spans, seed);
 			final List<String> cells = trace(true, style, spans, seed);
@@ -95,6 +96,8 @@ public class GridCellSelectionDifferential_Test {
 				assertEquals("seed " + seed + " step " + i, oracle.get(i), cells.get(i));
 			}
 		}
+		final int reruns = GridSelectionScript.takeReruns();
+		assertTrue("interrupted script runs run again: " + reruns + " (at most one)", reruns <= 1);
 	}
 
 	@Test
@@ -110,6 +113,66 @@ public class GridCellSelectionDifferential_Test {
 	@Test
 	public void cellScriptsWithColumnSpansMatchThePointList() {
 		compare(SWT.MULTI, true, 4);
+	}
+
+	/*
+	 * Another window takes the activation in the middle of a script run, before seed 10's step 141 (a
+	 * ctrl+shift click on a Grid without a focus row, where the FocusIn of the click's forced focus made
+	 * row 0 the focus row and selected from there): the run is interrupted (logged with its focus and
+	 * shell activation counts) and run once more, and the traces match. A Grid that moves the focus by
+	 * itself, its shell active all along, fails instead (see GridSelectionScript.trace).
+	 */
+	@Test
+	public void scriptRunInterruptedByAnotherWindowIsRunAgain() {
+		GridSelectionScript.takeReruns();
+		final List<String> clean = stolenTrace(false, -1);
+		final List<String> stolen = stolenTrace(true, 141);
+		assertEquals(clean, stolen);
+		final int reruns = GridSelectionScript.takeReruns();
+		System.out.println("GRID_SELECTION_SCRIPT activation steal: runs run again " + reruns);
+		assertTrue("runs run again " + reruns, reruns <= 1);
+	}
+
+	/* seed 10's first 150 steps; another shell takes the activation before step stealAt of the first run */
+	private List<String> stolenTrace(final boolean blocks, final int stealAt) {
+		final int[] opened = { 0 };
+		return GridSelectionScript.trace(() -> {
+			final Grid grid = grid(blocks, SWT.MULTI);
+			final GridSelectionScript script = new GridSelectionScript(grid);
+			script.cellOps = true;
+			final boolean steal = ++opened[0] == 1 && stealAt >= 0;
+			final int[] done = { 0 };
+			final Shell[] other = { null };
+			final boolean[] deactivated = { false };
+			grid.getShell().addListener(SWT.Deactivate, e -> deactivated[0] = true);
+			script.afterStep = () -> {
+				if (blocks) {
+					grid.checkCellSelection();
+				}
+				done[0]++;
+				if (other[0] != null) {
+					other[0].dispose();
+					other[0] = null;
+				}
+				if (steal && done[0] == stealAt) {
+					other[0] = new Shell(grid.getDisplay());
+					other[0].setBounds(500, 0, 120, 80);
+					other[0].open();
+					other[0].forceActive();
+					final long deadline = System.nanoTime() + 2_000_000_000L;
+					while (!deactivated[0] && System.nanoTime() < deadline) {
+						if (!grid.getDisplay().readAndDispatch()) {
+							java.util.concurrent.locks.LockSupport.parkNanos(5_000_000L);
+						}
+					}
+					System.out.println("GRID_SELECTION_SCRIPT activation steal before step " + stealAt
+							+ ": the Grid's shell had its Deactivate " + deactivated[0]);
+				}
+			};
+			grid.setItemCount(300);
+			shell.open();
+			return script;
+		}, 10, 150);
 	}
 
 	/* the cells and rows a Grid answers, as text */
