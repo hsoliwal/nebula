@@ -111,6 +111,12 @@ public class Gallery extends Canvas {
 	/** Layout-derived eligibility for an O(log N) first-visible lookup; never used for SWT.VIRTUAL. */
 	private boolean monotoneGroupGeometry;
 
+	/**
+	 * Viewport mode: true while calculateSize runs. A virtual-groups placeholder created by that pass is expanded
+	 * without a layout of its own (the pass lays it out next), instead of one re-entrant layout per placeholder.
+	 */
+	private boolean layingOut;
+
 	private GalleryItem[] selection = null;
 
 	/** Viewport mode: the number of selection entries at the front of {@link #selection}, which grows amortized. */
@@ -1918,6 +1924,13 @@ public class Gallery extends Canvas {
 				// Parent is the Gallery widget
 				galleryItem = items[i];
 
+				if (VIEWPORT && virtualGroups && create && galleryItem != null && galleryItem.isUltraLazyDummy()) {
+					//FLLDCIM: VIEWPORT - virtual groups: the placeholder becomes the group (no replacement item)
+					initializePlaceholder(galleryItem);
+					setData(galleryItem, i);
+					return;
+				}
+
 				if (galleryItem == null || (virtualGroups
 						&& galleryItem.isUltraLazyDummy() && create)) {
 
@@ -1932,7 +1945,12 @@ public class Gallery extends Canvas {
 					if (virtualGroups && !create) {
 						galleryItem.setItemCount(virtualGroupDefaultItemCount);
 						galleryItem.setUltraLazyDummy(true);
-						galleryItem.setExpanded(true);
+						if (VIEWPORT && layingOut) {
+							//FLLDCIM: VIEWPORT - virtual groups: the layout pass that creates a placeholder lays it out
+							galleryItem.expandPlaceholder();
+						} else {
+							galleryItem.setExpanded(true);
+						}
 					} else {
 						setData(galleryItem, i);
 					}
@@ -1969,6 +1987,22 @@ public class Gallery extends Canvas {
 		e.type = SWT.SetData;
 		e.index = index;
 		this.notifyListeners(SWT.SetData, e);
+	}
+
+	/*
+	 * VIEWPORT, virtual groups: a placeholder group is initialized in place. The original replaced it with a new
+	 * GalleryItem, so a caller holding the placeholder (getItems, _getItem(int, false), the selection) was left with a
+	 * detached item. The placeholder takes the state of that new item (no children, collapsed, default attributes),
+	 * keeps its place and geometry until its layout, and the runs a selection gave its placeholder children leave, as
+	 * those children did. Only a placeholder whose children were selected (selection flags) can own runs, so the
+	 * usual initialization (a paint, selectAll over every group) does not scan the selection.
+	 */
+	//FLLDCIM: VIEWPORT - virtual groups: the placeholder object becomes the group
+	private void initializePlaceholder(GalleryItem placeholder) {
+		if (placeholder.selectionFlags != null) {
+			releaseRunsWithin(placeholder);
+		}
+		placeholder.resetPlaceholder();
 	}
 
 	/**
@@ -2052,7 +2086,13 @@ public class Gallery extends Canvas {
 	 */
 	private int calculateSize(GalleryItem onlyUpdateGroup) {
 		if (VIEWPORT) {
-			return calculateSizeOnce(onlyUpdateGroup);
+			boolean outerPass = layingOut;
+			layingOut = true;
+			try {
+				return calculateSizeOnce(onlyUpdateGroup);
+			} finally {
+				layingOut = outerPass;
+			}
 		}
 		monotoneGroupGeometry = false;
 
@@ -2157,13 +2197,16 @@ public class Gallery extends Canvas {
 
 		for (int i = 0; i < mainItemCount; i++) {
 			GalleryItem item = null;
+			boolean placeholder = false;
 			if (virtualGroups) {
+				// a placeholder this pass creates is laid out by this pass, whichever group changed
+				placeholder = items[i] == null;
 				item = this._getItem(i, false);
 			} else {
 				item = this._getItem(i);
 			}
 
-			if (onlyUpdateGroup != null && !onlyUpdateGroup.equals(item)) {
+			if (onlyUpdateGroup != null && !onlyUpdateGroup.equals(item) && !placeholder) {
 				// Item has not changed : no layout.
 				if (vertical) {
 					item.y = currentHeight;
@@ -3352,6 +3395,13 @@ public class Gallery extends Canvas {
 	 * the widget such as SAT Smooth Scrolling. In that case, you can enable the
 	 * compatibility mode which is little less lazy that the default virtual
 	 * groups, but still better than the standard virtual mode
+	 * </p>
+	 * <p>
+	 * In viewport widget mode (the default), the layout lays out each placeholder
+	 * group once (not once per placeholder created, which also nested one layout
+	 * in another), and a placeholder that is initialized becomes the group: the
+	 * SWT.SetData event names the same GalleryItem that {@link #getItems()}
+	 * returned, at the same index.
 	 * </p>
 	 * 
 	 * @see #setVirtualGroupDefaultItemCount(int)
