@@ -14,6 +14,7 @@
  *    Hitesh Soliwal (Synexia) - viewport mode: scroll bar values set only when they change, one client area per layout
  *    Hitesh Soliwal (Synexia) - viewport mode: selection lane with amortized growth (docs/m3/custom-widgets/gallery)
  *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL range selection as index runs, O(1) verified index hint
+ *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL clear keeps the items and requests their attributes again
  *******************************************************************************/
 
 package org.eclipse.nebula.widgets.gallery;
@@ -1845,7 +1846,8 @@ public class Gallery extends Canvas {
 			// Ultra virtual : when a group is about to be drawn, initialize it
 			// and update gallery layout according to the new size
 			item = _getItem(index, false);
-			if (item.isUltraLazyDummy()) {
+			// a cleared group (VIRTUAL clear, viewport mode) is initialized again like a placeholder
+			if (item.isUltraLazyDummy() || item.cleared) {
 				boolean updateLocation = (vertical && item.y < translate)
 						|| (!vertical && item.x < translate);
 				int oldSize = item.height;
@@ -1912,6 +1914,9 @@ public class Gallery extends Canvas {
 	 */
 	private void updateItem(GalleryItem parentItem, int i, boolean create) {
 		if (virtual) {
+			if (VIEWPORT && refreshCleared(parentItem, i, create)) {
+				return;
+			}
 
 			GalleryItem galleryItem;
 			if (parentItem == null) {
@@ -1954,6 +1959,23 @@ public class Gallery extends Canvas {
 			}
 		}
 
+	}
+
+	/*
+	 * VIEWPORT, SWT.VIRTUAL: a cleared item (clear, clearAll) is requested again with SWT.SetData where the original,
+	 * which had replaced it, created its replacement: on the first request for its slot. The item and its index stay,
+	 * so the event names the item the caller already holds. With virtual groups a cleared group waits, like a
+	 * placeholder, for a request that creates (its paint), not for layout.
+	 */
+	//FLLDCIM: VIEWPORT - VIRTUAL clear: the same item is requested again, never replaced
+	private boolean refreshCleared(GalleryItem parentItem, int i, boolean create) {
+		GalleryItem item = parentItem == null ? items[i] : parentItem.items[i];
+		if (item == null || !item.cleared || (parentItem == null && virtualGroups && !create)) {
+			return false;
+		}
+		item.cleared = false;
+		setData(item, i);
+		return true;
 	}
 
 	/**
@@ -2587,10 +2609,16 @@ public class Gallery extends Canvas {
 	 * 
 	 * If the Gallery is virtual, the item count is not reseted and all items
 	 * will be created again at their first use.<br/>
+	 * <p>
+	 * In viewport widget mode (the default), a virtual Gallery keeps its items instead, as Table and Tree do: every
+	 * item that exists, groups and children, has its attributes reset and is requested again (SWT.SetData, naming
+	 * the same item) at its first use, so a caller holding an item still holds the item at its index. The items
+	 * that were never created stay uncreated. The selection is cleared, as before.
+	 * </p>
 	 * 
 	 * @param all
 	 *            If true, all children will be cleared. Only groups are cleared
-	 *            otherwise.
+	 *            otherwise. A virtual Gallery always clears the children.
 	 */
 	public void clearAll(boolean all) {
 		checkWidget();
@@ -2600,7 +2628,16 @@ public class Gallery extends Canvas {
         }
 
 		if (virtual) {
-			items = new GalleryItem[items.length];
+			if (VIEWPORT) {
+				//FLLDCIM: VIEWPORT - VIRTUAL clear keeps the items: reset and requested again, never replaced
+				for (GalleryItem item : items) {
+					if (item != null) {
+						item.clearKeepingItems();
+					}
+				}
+			} else {
+				items = new GalleryItem[items.length];
+			}
 		} else {
 			for (int i = 0; i < items.length; i++) {
 				if (items[i] != null) {
@@ -2641,6 +2678,13 @@ public class Gallery extends Canvas {
 
 	/**
 	 * Clear one item and all its children if 'all' is true
+	 * <p>
+	 * In a virtual Gallery the item and all its children are cleared and requested again (SWT.SetData) at their first
+	 * use. In viewport widget mode (the default) the item and the children that exist stay, as in Table and Tree:
+	 * their attributes are reset and the SetData event names the same item, so a caller holding one still holds the
+	 * item at its index; its expanded state, item count, selection and data stay. In the original widget mode the
+	 * item is replaced by a new one.
+	 * </p>
 	 * 
 	 * @param index
 	 * @param all
@@ -2655,11 +2699,12 @@ public class Gallery extends Canvas {
 
 		if (virtual) {
 			if (VIEWPORT) {
-				//FLLDCIM: VIEWPORT - the dropped group releases the runs it owns (no SetData under a detached group)
-				releaseRunsWithin(items[index]);
+				//FLLDCIM: VIEWPORT - VIRTUAL clear keeps the group and its children: reset and requested again
+				items[index].clearKeepingItems();
+			} else {
+				// Clear item
+				items[index] = null;
 			}
-			// Clear item
-			items[index] = null;
 
 			// In virtual mode, clearing an item can change its content, so
 			// force content update

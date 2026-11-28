@@ -578,13 +578,14 @@ public class GalleryVirtualSelectionTest {
 	}
 
 	/**
-	 * A group that leaves the gallery (remove, VIRTUAL clear, setItemCount) after a selectAll, in 2 groups of 50,000
-	 * items: the selection API never creates items, nor sends SetData, under that group (the original had created them
-	 * in selectAll; before the runs were released, getSelection sent SetData there for every unread child).
+	 * A group that leaves the gallery (remove, setItemCount) after a selectAll, in 2 groups of 50,000 items: the
+	 * selection API never creates items, nor sends SetData, under that group (the original had created them in
+	 * selectAll; before the runs were released, getSelection sent SetData there for every unread child). A VIRTUAL
+	 * clear keeps the group in the gallery (GalleryVirtualClearTest).
 	 */
 	@Test
 	public void groupsLeavingTheGallerySendNoSetDataUnderThem() {
-		for (int operation = 0; operation < 3; operation++) {
+		for (int operation : new int[] { 0, 2 }) {
 			create(2, ITEMS / 2, SWT.MULTI);
 			int[] detached = { 0 };
 			gallery.addListener(SWT.SetData, e -> {
@@ -601,11 +602,9 @@ public class GalleryVirtualSelectionTest {
 				}
 			}
 			gallery.selectAll();
-			String name = new String[] { "remove(0)", "clear(0)", "setItemCount(1)" }[operation];
+			String name = operation == 0 ? "remove(0)" : "setItemCount(1)";
 			if (operation == 0) {
 				gallery.remove(0);
-			} else if (operation == 1) {
-				gallery.clear(0);
 			} else {
 				gallery.setItemCount(1);
 			}

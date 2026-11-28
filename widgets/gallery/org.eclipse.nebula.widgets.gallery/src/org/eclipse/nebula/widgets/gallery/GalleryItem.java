@@ -11,6 +11,7 @@
  * Contributors :
  *    Nicolas Richeton (nicolas.richeton@gmail.com) - initial API and implementation
  *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL range selection by index, verified index hint
+ *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL clear keeps the items and requests their attributes again
  *******************************************************************************/
 package org.eclipse.nebula.widgets.gallery;
 
@@ -87,6 +88,14 @@ public class GalleryItem extends Item {
 	 * index after checking that the slot still holds this item, and searches otherwise.
 	 */
 	int indexHint = -1;
+
+	/**
+	 * Viewport mode, SWT.VIRTUAL: a clear (<code>Gallery.clear</code>, <code>Gallery.clearAll</code>,
+	 * {@link #clearAll()}) reset the attributes of this item, and the gallery sends SWT.SetData for it again the next
+	 * time it requests the item (layout, paint, <code>getItem</code>), as Table and Tree do with a cleared item. The
+	 * item stays in place, with its children, its expanded state, its selection and its data.
+	 */
+	boolean cleared;
 
 	/**
 	 * True if the Gallery was created wih SWT.VIRTUAL
@@ -805,6 +814,14 @@ public class GalleryItem extends Item {
 	 */
 	public void clear() {
 		checkWidget();
+		clearAttributes();
+
+		// Force redraw
+		this.parent.redraw(this);
+	}
+
+	/** Resets the attributes {@link #clear()} resets, without a redraw. */
+	private void clearAttributes() {
 		// Clear all attributes
 		text[0] = EMPTY_STRING;
 		text[1] = EMPTY_STRING;
@@ -813,15 +830,46 @@ public class GalleryItem extends Item {
 		this.font = null;
 		background = null;
 		foreground = null;
+	}
 
-		// Force redraw
-		this.parent.redraw(this);
+	/**
+	 * Viewport mode, SWT.VIRTUAL: clears this item and the descendants that exist, as the original replaced them with
+	 * items requested again: their attributes are reset and each sends SWT.SetData again when the gallery next
+	 * requests it. No item is created and none is replaced, so a caller holding one still holds the item at its
+	 * index. A placeholder group of virtual groups (never sent SetData) is left as it is: it is still initialized when
+	 * drawn.
+	 */
+	void clearKeepingItems() {
+		if (!ultraLazyDummy) {
+			clearAttributes();
+			cleared = true;
+		}
+		if (items != null) {
+			for (GalleryItem child : items) {
+				if (child != null) {
+					child.clearKeepingItems();
+				}
+			}
+		}
 	}
 
 	public void clearAll() {
 		clearAll(false);
 	}
 
+	/**
+	 * Clears the children of this item (and their descendants when <code>all</code> is true).
+	 * <p>
+	 * In a <code>SWT.VIRTUAL</code> gallery the children and their descendants are cleared whatever
+	 * <code>all</code> is, and their attributes are requested again (SWT.SetData) when they are next requested
+	 * (painted or returned by {@link #getItem(int)}). In viewport widget mode (the default) the children that exist
+	 * stay: a caller holding one still holds the item at its index, and its selection stays. In the original widget
+	 * mode they are replaced by new items.
+	 * </p>
+	 *
+	 * @param all
+	 *            true to clear the descendants too (always the case in a <code>SWT.VIRTUAL</code> gallery)
+	 */
 	public void clearAll(boolean all) {
 		checkWidget();
 
@@ -831,10 +879,13 @@ public class GalleryItem extends Item {
 
 		if (virtualGallery) {
 			if (Gallery.VIEWPORT) {
-				// selected children that exist keep their identity in the selection, as before
-				parent.releaseRuns(this, 0, false);
-				rangeFlags = null;
-				parent.releaseRunsWhere(item -> item.getParentItem() == this);
+				//FLLDCIM: VIEWPORT - VIRTUAL clear keeps the children: reset and requested again, never replaced
+				for (GalleryItem child : items) {
+					if (child != null) {
+						child.clearKeepingItems();
+					}
+				}
+				return;
 			}
 			items = new GalleryItem[items.length];
 		} else {
