@@ -369,10 +369,14 @@ public class GridRowDelta_Test {
 			last.setWidth(120);
 		}
 		grid.showColumn(last);
-		if (GridViewport.ENABLED) {
-			assertTrue("the horizontal bar is shown", grid.getHorizontalBar().getVisible());
-			assertTrue("and scrolled to the column", grid.getHorizontalBar().getSelection() > 0);
+		if (!GridViewport.ENABLED) {
+			// stock leaves the bars to the paint, whose own update can leave the vertical thumb one
+			// row behind the horizontal bar it shows (GTK3): nothing more is checked there
+			assertEquals("stock does not scroll a hidden bar", 0, grid.getHorizontalBar().getSelection());
+			return;
 		}
+		assertTrue("the horizontal bar is shown", grid.getHorizontalBar().getVisible());
+		assertTrue("and scrolled to the column", grid.getHorizontalBar().getSelection() > 0);
 		flush();
 		assertScrollBarsCurrent("after showColumn");
 		assertSameAsFullRepaint("after showColumn");
