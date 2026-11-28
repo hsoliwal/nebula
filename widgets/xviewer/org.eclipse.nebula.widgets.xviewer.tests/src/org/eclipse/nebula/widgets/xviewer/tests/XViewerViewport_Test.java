@@ -143,7 +143,7 @@ public class XViewerViewport_Test {
       assertEquals("one request per root row", scrolled, bridge.getMaterializedRootCount());
       // the frames of the scroll to the end that are still to come
       scrolling[0] = true;
-      settleScroll(tree);
+      settleScroll(tree, () -> endSelection(tree), 1);
       scrolling[0] = false;
       assertTrue("rows asked for outside the shown rows while scrolling to the end: " + outsideWindow, //$NON-NLS-1$
          outsideWindow.isEmpty());
@@ -161,10 +161,10 @@ public class XViewerViewport_Test {
       scrolling[0] = true;
       tree.setTopItem(tree.getItem(0));
       tree.update();
-      settleScroll(tree);
+      settleScroll(tree, () -> 0, 0);
       tree.setTopItem(tree.getItem(ROOTS - 1));
       tree.update();
-      settleScroll(tree);
+      settleScroll(tree, () -> endSelection(tree), 1);
       scrolling[0] = false;
       Set<Integer> shownOnTheWay = new HashSet<>(requestedRoots);
       shownOnTheWay.removeAll(residentRoots);
@@ -251,21 +251,22 @@ public class XViewerViewport_Test {
       viewer.setExpandedState(Integer.valueOf(2), true);
       viewer.setSelection(new org.eclipse.jface.viewers.StructuredSelection(Integer.valueOf(4)));
       tree.setTopItem(tree.getItem(0));
-      settleScroll(tree);
+      settleScroll(tree, () -> 0, 0);
       // Native SWT can scroll the selected row into view. Restore the actual
       // visible anchor when testing a round trip, not a different fixed row.
       TreeItem topBefore = visibleTopItem(tree);
+      int selectionBefore = tree.getVerticalBar().getSelection();
       String before = state(viewer);
       String pixels = pixels(tree);
 
       tree.setTopItem(tree.getItem(19_999));
       int requested = tree.getVerticalBar().getSelection();
       tree.update();
-      settleScroll(tree);
+      settleScroll(tree, () -> endSelection(tree), 1);
       int away = tree.getVerticalBar().getSelection();
       tree.setTopItem(topBefore);
       tree.update();
-      settleScroll(tree);
+      settleScroll(tree, () -> selectionBefore, 0);
       System.out.println("XVIEWER_VIEWPORT round trip: scroll bar " + requested + " when away was asked, " + away //$NON-NLS-1$ //$NON-NLS-2$
          + " settled away, " + tree.getVerticalBar().getSelection() + " settled back"); //$NON-NLS-1$ //$NON-NLS-2$
       assertEquals(before, state(viewer));
@@ -273,27 +274,31 @@ public class XViewerViewport_Test {
    }
 
    /**
-    * Pumps until the scroll has settled. SWT GTK3 scrolls {@code Tree.setTopItem()} through
-    * {@code gtk_tree_view_scroll_to_cell}, which (with GTK animations enabled) animates the vertical adjustment over
-    * 200 ms of frame-clock ticks ({@code gtk_adjustment_animate_to_value}) instead of setting it. {@link #pump()}
-    * returns at the first moment nothing is pending, which can fall between two animation frames, so a row read
-    * after it can be one the animation passes through: a CI run read row 17126 at the top after the round trip back
-    * to row 0. The scroll has settled when the vertical scroll bar's selection and the row shown at the top have held
-    * for five checks 20 ms apart, longer than a frame. Fails after 10 s.
+    * Pumps until the scroll has reached the position it was asked for. SWT GTK3 scrolls {@code Tree.setTopItem()}
+    * through {@code gtk_tree_view_scroll_to_cell}, which (with GTK animations enabled) animates the vertical adjustment
+    * over 200 ms of frame-clock ticks ({@code gtk_adjustment_animate_to_value}) instead of setting it. {@link #pump()}
+    * returns at the first moment nothing is pending, which can fall between two animation frames: a CI run read row
+    * 17126 at the top after the round trip back to row 0. Waiting until the position held still was not enough
+    * either: on a loaded runner the animation stalled for longer than that, and a run settled away at 369644 on the
+    * way to 459561 and back at 137191 instead of 0, reading row 5961 at the top. So the vertical scroll bar's
+    * selection must reach {@code target} (within {@code tolerance}) and stay there for three checks 20 ms apart.
+    * {@code Tree.getTopItem()} cannot tell: on GTK it answers the item of the last {@code setTopItem()} while the
+    * adjustment still has the value it had at that call. Fails after 10 s.
+    *
+    * @param target the selection of the requested position (read again at each check)
+    * @param tolerance how far the selection may be from it (rounding of the bar's pixel values on GTK)
     */
-   private void settleScroll(Tree tree) {
-      int lastSelection = Integer.MIN_VALUE;
-      TreeItem lastTop = null;
-      int stable = 0;
+   private void settleScroll(Tree tree, java.util.function.IntSupplier target, int tolerance) {
+      int selection = Integer.MIN_VALUE;
+      int wanted = target.getAsInt();
+      int held = 0;
       long deadline = System.currentTimeMillis() + 10_000;
       while (System.currentTimeMillis() < deadline) {
          pump();
-         int selection = tree.getVerticalBar().getSelection();
-         TreeItem top = visibleTopItem(tree);
-         stable = selection == lastSelection && top == lastTop ? stable + 1 : 0;
-         lastSelection = selection;
-         lastTop = top;
-         if (stable >= 5) {
+         selection = tree.getVerticalBar().getSelection();
+         wanted = target.getAsInt();
+         held = Math.abs(selection - wanted) <= tolerance ? held + 1 : 0;
+         if (held >= 3) {
             return;
          }
          try {
@@ -303,8 +308,14 @@ public class XViewerViewport_Test {
             break;
          }
       }
-      throw new AssertionError("the scroll did not settle: scroll bar " + lastSelection + ", top row " //$NON-NLS-1$ //$NON-NLS-2$
-         + (lastTop == null ? null : lastTop.getText(0)));
+      throw new AssertionError("the scroll did not reach scroll bar " + wanted + " in 10 s: scroll bar " + selection //$NON-NLS-1$ //$NON-NLS-2$
+         + ", top row " + visibleTopItem(tree).getText(0)); //$NON-NLS-1$
+   }
+
+   /** @return the vertical scroll bar's selection at the last scroll position (the end of the tree) */
+   private static int endSelection(Tree tree) {
+      org.eclipse.swt.widgets.ScrollBar bar = tree.getVerticalBar();
+      return bar.getMaximum() - bar.getThumb();
    }
 
 
