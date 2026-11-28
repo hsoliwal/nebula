@@ -296,8 +296,30 @@ public abstract class AbstractVTestCase extends TestCase {
 		Event event = new Event();
 		event.type = SWT.KeyDown;
 		event.character = character;
+		event.keyCode = keyCodeOf(character);
 		display.post(event);
 		pause(delay);
+	}
+
+	/*
+	 * SWT also names these characters as key codes. Display.post on win32 maps such a character to
+	 * its virtual key itself; on GTK it takes the keyval from the key code and otherwise uses the
+	 * character as the keyval, which for a control character is not the key's keysym (TAB is 0x09,
+	 * GDK_Tab is 0xff09), so the posted key is no Tab, Return, ... and causes no traversal. Posting
+	 * the key code as well sends the same key on every platform. LF has no key of its own (win32
+	 * post refuses it), so it keeps the character only.
+	 */
+	private static int keyCodeOf(char character) {
+		switch (character) {
+		case SWT.BS:
+		case SWT.TAB:
+		case SWT.CR:
+		case SWT.ESC:
+		case SWT.DEL:
+			return character;
+		default:
+			return 0;
+		}
 	}
 
 	public void keyDown(int keyCode) {
@@ -345,6 +367,7 @@ public abstract class AbstractVTestCase extends TestCase {
 		Event event = new Event();
 		event.type = SWT.KeyUp;
 		event.character = character;
+		event.keyCode = keyCodeOf(character);
 		display.post(event);
 		pause(delay);
 	}
