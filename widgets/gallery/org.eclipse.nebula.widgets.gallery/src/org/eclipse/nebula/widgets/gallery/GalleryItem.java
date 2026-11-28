@@ -132,6 +132,35 @@ public class GalleryItem extends Item {
 		this.ultraLazyDummy = ultraLazyDummy;
 	}
 
+	/**
+	 * Viewport mode, virtual groups: expands a placeholder group created by a layout pass, which lays it out next,
+	 * without the layout of its own that <code>setExpanded(true)</code> starts (one per placeholder, re-entrant).
+	 */
+	void expandPlaceholder() {
+		expanded = true;
+	}
+
+	/**
+	 * Viewport mode, virtual groups: this placeholder becomes the group in place, in the state of the new item the
+	 * original created instead (no children, collapsed, default attributes). Its place, geometry (until its layout)
+	 * and data stay.
+	 */
+	void resetPlaceholder() {
+		ultraLazyDummy = false;
+		expanded = false;
+		items = null;
+		selectionFlags = null;
+		rangeFlags = null;
+		lastIndexOf = 0;
+		text[0] = EMPTY_STRING;
+		text[1] = EMPTY_STRING;
+		text[2] = EMPTY_STRING;
+		super.setImage(null);
+		font = null;
+		foreground = null;
+		background = null;
+	}
+
 	public Gallery getParent() {
 		return parent;
 	}

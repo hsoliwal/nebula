@@ -43,6 +43,26 @@ import org.junit.Test;
  * <li>in the viewport mode a resize that keeps the rows and columns in place repaints only the
  * bands at the moved edges; the test logs the painted share of the client area.</li>
  * </ul>
+ * <p>
+ * <b>Platform note, GTK3: the edge-band area saving is win32-only.</b> The reasons:
+ * </p>
+ * <ul>
+ * <li>On GTK3 SWT moves and resizes each child window with {@code gdk_window_move_resize}.</li>
+ * <li>GTK 3.24's {@code gdk_window_move_resize_internal} invalidates the union of the old and the
+ * new rectangle in the parent, children included ({@code gdkwindow.c:6050-6150}). GTK3 has no
+ * static gravity that would keep the old pixels.</li>
+ * <li>SWT honours {@code NO_REDRAW_RESIZE} only as
+ * {@code gtk_widget_set_redraw_on_allocate(handle, false)} (stock SWT 3.135
+ * {@code Composite.java:429-431}). That call does not reach this invalidation.</li>
+ * </ul>
+ * <p>
+ * So on GTK3 every resize step repaints the whole client area, also for a plain {@code Canvas}
+ * with {@code NO_REDRAW_RESIZE}, and also when the control shrinks. The logged painted share is
+ * then 100%. The Grid still plans the edge bands, so the edge-band count check holds on both
+ * platforms. The window still equals the Grid's paint, and that paint stays bounded to the rows and
+ * columns in the visible window. Only the pixels that win32 keeps across a resize are not kept on
+ * GTK3.
+ * </p>
  */
 public class GridViewportDelta_Test {
 	private static final Logger LOG = Logger.getLogger("org.eclipse.nebula.widgets.grid");
