@@ -4942,6 +4942,9 @@ public class Grid extends Canvas {
 			return;
 		}
 
+		// viewport mode: added items leave the scroll bars to the next paint; position against
+		// settled bars (one settle for this call, none when nothing is owed)
+		settleScrollbarsForRowQuery();
 		if (!vScroll.getVisible()) {
 			return;
 		}
@@ -5055,6 +5058,8 @@ public class Grid extends Canvas {
 			}
 		}
 
+		// viewport mode: scroll against settled bars when a delta left them to the next paint
+		settleScrollbarsForRowQuery();
 		if (!hScroll.getVisible()) {
 			return;
 		}
@@ -8947,6 +8952,9 @@ public class Grid extends Canvas {
 	 * @param e event
 	 */
 	private void onMouseWheel(final Event e) {
+		// viewport mode: input can arrive before the paint that added items owe; the wheel scrolls
+		// the settled bars
+		settleScrollbarsForRowQuery();
 		if (vScroll.getVisible()) {
 			vScroll.handleMouseWheel(e);
 			if (getVerticalBar() == null) {

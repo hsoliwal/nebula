@@ -23,6 +23,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Shell;
@@ -322,6 +323,82 @@ public class GridRowDelta_Test {
 			assertEquals("row deltas painted", 1, grid.rowDeltaPaints - paintsBefore);
 			assertEquals("row deltas skipped", 1, grid.rowDeltaSkips - skipsBefore);
 		}
+	}
+
+	@Test
+	public void setTopIndexRightAfterAddsWithSettersScrollsAgainstSettledBars() {
+		// the viewport mode settles the scroll bars the adds left to the next paint once, in the
+		// call, and scrolls; the original mode leaves them to the paint and ignores the call while
+		// its vertical bar is hidden, as stock
+		grid.disposeAllItems();
+		for (int i = 0; i < 3; i++) {
+			new GridItem(grid, SWT.NONE).setText(0, "before " + i);
+		}
+		flush();
+		assertTrue("no vertical bar for three rows", !grid.getVerticalBar().getVisible());
+		final Color yellow = display.getSystemColor(SWT.COLOR_YELLOW);
+		final int before = grid.nativeOps;
+		for (int i = 0; i < 200; i++) {
+			final GridItem item = new GridItem(grid, SWT.NONE);
+			item.setText(0, "added " + i);
+			item.setBackground(1, yellow);
+			item.setChecked(true);
+		}
+		if (GridViewport.ENABLED) {
+			assertTrue("native work of the adds: " + (grid.nativeOps - before), grid.nativeOps - before <= 2);
+		}
+		grid.setTopIndex(100);
+		final int expected = GridViewport.ENABLED ? 100 : 0;
+		assertEquals("top row right after setTopIndex(100)", expected, grid.getTopIndex());
+		flush();
+		assertEquals("top row after the paint", expected, grid.getTopIndex());
+		assertScrollBarsCurrent("after setTopIndex(100)");
+		assertSameAsFullRepaint("after setTopIndex(100)");
+	}
+
+	@Test
+	public void showColumnRightAfterAddedColumnsScrollsAgainstSettledBars() {
+		// added columns leave the horizontal bar to the next paint; the viewport mode settles it in
+		// showColumn and scrolls the column into view, the original mode leaves it to the paint
+		flush();
+		assertTrue("no horizontal bar for three columns", !grid.getHorizontalBar().getVisible());
+		GridColumn last = null;
+		for (int c = 0; c < 6; c++) {
+			last = new GridColumn(grid, SWT.NONE);
+			last.setText("added " + c);
+			last.setWidth(120);
+		}
+		grid.showColumn(last);
+		if (GridViewport.ENABLED) {
+			assertTrue("the horizontal bar is shown", grid.getHorizontalBar().getVisible());
+			assertTrue("and scrolled to the column", grid.getHorizontalBar().getSelection() > 0);
+		}
+		flush();
+		assertScrollBarsCurrent("after showColumn");
+		assertSameAsFullRepaint("after showColumn");
+	}
+
+	@Test
+	public void aWheelRightAfterAddsFindsTheScrollBarsSettled() {
+		// input can arrive before the paint the adds owe: in the viewport mode the wheel finds the
+		// vertical bar settled (shown), so the platform can scroll it
+		grid.disposeAllItems();
+		for (int i = 0; i < 3; i++) {
+			new GridItem(grid, SWT.NONE).setText(0, "before " + i);
+		}
+		flush();
+		for (int i = 0; i < 200; i++) {
+			new GridItem(grid, SWT.NONE).setText(0, "added " + i);
+		}
+		final Event wheel = new Event();
+		wheel.count = -3;
+		grid.notifyListeners(SWT.MouseWheel, wheel);
+		if (GridViewport.ENABLED) {
+			assertTrue("the vertical bar is settled for the wheel", grid.getVerticalBar().getVisible());
+		}
+		flush();
+		assertScrollBarsCurrent("after a wheel");
+		assertSameAsFullRepaint("after a wheel");
 	}
 
 	/*
