@@ -32,6 +32,7 @@ import org.eclipse.nebula.widgets.gallery.DefaultGalleryItemRenderer;
 import org.eclipse.nebula.widgets.gallery.Gallery;
 import org.eclipse.nebula.widgets.gallery.GalleryItem;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
@@ -477,6 +478,69 @@ public class GalleryVirtualClearTest {
 		for (int i = 1; i < 6; i++) {
 			assertTrue(children[i].getText().startsWith("item " + i + " #"));
 		}
+	}
+
+	/**
+	 * A setter that leaves the value of a cleared item as it is (setForeground(null), setBackground(null),
+	 * setFont(null), setText("") right after the clear) leaves it cleared: it is requested again and fills in, as a
+	 * Table item does. A setter that changes a value (setForeground(red)) populates it: no SetData, as in Table.
+	 */
+	@Test
+	public void aSetterThatChangesNothingLeavesTheItemCleared() {
+		create(3, 6, SWT.MULTI, false);
+		GalleryItem group = gallery.getItem(1);
+		GalleryItem[] children = new GalleryItem[6];
+		for (int i = 0; i < 6; i++) {
+			children[i] = group.getItem(i);
+		}
+		group.clearAll();
+		children[0].setForeground(null);
+		children[1].setBackground(null);
+		children[2].setFont(null);
+		children[3].setText("");
+		Color red = display.getSystemColor(SWT.COLOR_RED);
+		children[4].setForeground(red);
+		int from = requested.size();
+		gallery.redraw();
+		flush();
+		List<GalleryItem> again = requested.subList(from, requested.size());
+		for (int i : new int[] { 0, 1, 2, 3, 5 }) {
+			assertTrue("child " + i + " requested again", again.contains(children[i]));
+			assertTrue("child " + i + " filled in: " + children[i].getText(), children[i].getText().startsWith("item " + i + " #"));
+		}
+		assertFalse("the child a setter changed is not requested", again.contains(children[4]));
+		assertEquals(5, again.size());
+		assertEquals("", children[4].getText());
+		assertSame(red, children[4].getForeground(true));
+	}
+
+	/**
+	 * A keyboard step from an anchor whose group was cleared and then left the gallery reaches its cleared neighbours
+	 * as they are: no SetData under a group the gallery no longer holds (the original, whose clear had detached the
+	 * group with its items, sent none either).
+	 */
+	@Test
+	public void aKeyStepFromAnAnchorWhoseGroupLeftSendsNoSetDataUnderIt() {
+		create(3, 6, SWT.MULTI, false);
+		GalleryItem group = gallery.getItem(2);
+		click(group.getItem(2), SWT.NONE);
+		gallery.clear(2);
+		gallery.remove(2);
+		flush();
+		int[] detached = { 0 };
+		gallery.addListener(SWT.SetData, e -> {
+			GalleryItem parent = ((GalleryItem) e.item).getParentItem();
+			if (parent != null && gallery.indexOf(parent) < 0) {
+				detached[0]++;
+			}
+		});
+		for (int key : new int[] { SWT.ARROW_RIGHT, SWT.ARROW_LEFT, SWT.ARROW_LEFT }) {
+			Event event = new Event();
+			event.keyCode = key;
+			gallery.notifyListeners(SWT.KeyDown, event);
+		}
+		flush();
+		assertEquals("SetData under the detached group by the key steps", 0, detached[0]);
 	}
 
 	void assertSelection(GalleryItem[] expected) {

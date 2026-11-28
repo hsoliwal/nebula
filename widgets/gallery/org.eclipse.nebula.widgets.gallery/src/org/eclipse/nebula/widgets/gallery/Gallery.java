@@ -2017,6 +2017,11 @@ public class Gallery extends Canvas {
 		if (item == null || !item.cleared || (parentItem == null && virtualGroups && !create)) {
 			return false;
 		}
+		if (parentItem != null && !holds(parentItem)) {
+			// under a group the gallery no longer holds (a keyboard step from a detached anchor, getItem on a removed
+			// group): the cleared item is answered as it is, never requested
+			return false;
+		}
 		item.cleared = false;
 		setData(item, i);
 		return true;
@@ -2758,8 +2763,8 @@ public class Gallery extends Canvas {
 	 * use. In viewport widget mode (the default) the item and the children that exist stay, as in Table and Tree:
 	 * their attributes are reset and the SetData event names the same item, so a caller holding one still holds the
 	 * item at its index; its expanded state, item count, selection and data stay. A setter (text, image, font,
-	 * colours) called on a cleared item before it is requested populates it, as in Table and Tree. In the original
-	 * widget mode the item is replaced by a new one.
+	 * colours) that changes a value of a cleared item before it is requested populates it, as in Table and Tree. In
+	 * the original widget mode the item is replaced by a new one.
 	 * </p>
 	 * 
 	 * @param index

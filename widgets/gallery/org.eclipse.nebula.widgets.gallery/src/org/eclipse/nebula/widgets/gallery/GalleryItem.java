@@ -93,9 +93,9 @@ public class GalleryItem extends Item {
 	 * Viewport mode, SWT.VIRTUAL: a clear (<code>Gallery.clear</code>, <code>Gallery.clearAll</code>,
 	 * {@link #clearAll()}) reset the attributes of this item, and the gallery sends SWT.SetData for it again the next
 	 * time it requests the item (layout, paint, <code>getItem</code>), as Table and Tree do with a cleared item. The
-	 * item stays in place, with its children, its expanded state, its selection and its data. A setter that sets an
+	 * item stays in place, with its children, its expanded state, its selection and its data. A setter that changes an
 	 * attribute (text, image, font, colours) before that request populates the item, as in Table and Tree: no SetData
-	 * then overwrites the caller's value.
+	 * then overwrites the caller's value. A setter that leaves the value as it is leaves the item cleared.
 	 */
 	boolean cleared;
 
@@ -668,8 +668,8 @@ public class GalleryItem extends Item {
 		if (font != null && font.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
+		populateIfChanged(this.font, font);
 		this.font = font;
-		cleared = false;
 		this.parent.redraw(this);
 	}
 
@@ -753,8 +753,8 @@ public class GalleryItem extends Item {
 		if (foreground != null && foreground.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
+		populateIfChanged(this.foreground, foreground);
 		this.foreground = foreground;
-		cleared = false;
 		this.parent.redraw(this);
 	}
 
@@ -839,8 +839,8 @@ public class GalleryItem extends Item {
 		if (background != null && background.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
+		populateIfChanged(this.background, background);
 		this.background = background;
-		cleared = false;
 		this.parent.redraw(this);
 	}
 
@@ -1019,9 +1019,20 @@ public class GalleryItem extends Item {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+		populateIfChanged(text[index], string);
 		text[index] = string;
-		cleared = false;
 		parent.redraw(this);
+	}
+
+	/**
+	 * A setter that changes an attribute of a cleared item populates it (no SetData then overwrites the value), as in
+	 * Table and Tree; a setter that leaves the value as it is (for example <code>setText("")</code> or
+	 * <code>setFont(null)</code> right after a clear) leaves the item cleared, so it is still requested again.
+	 */
+	private void populateIfChanged(Object oldValue, Object newValue) {
+		if (cleared && !java.util.Objects.equals(oldValue, newValue)) {
+			cleared = false;
+		}
 	}
 
 	public String getText() {
