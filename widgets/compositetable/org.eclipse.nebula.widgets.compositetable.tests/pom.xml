@@ -26,9 +26,4 @@ Contributors:
 	<artifactId>org.eclipse.nebula.widgets.compositetable.tests</artifactId>
 	<packaging>eclipse-test-plugin</packaging>
 
-	<properties>
-		<!-- Currently, test fails see https://github.com/EclipseNebula/nebula/issues/396 -->
-		<skipTests>true</skipTests>
-	</properties>
-
 </project>

@@ -14,11 +14,14 @@
 
 package org.eclipse.nebula.cwt.v;
 
+import java.util.function.Supplier;
+
 import org.eclipse.nebula.cwt.test.AbstractVTestCase;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 
 
@@ -106,102 +109,137 @@ public class ButtonFocusTests extends AbstractVTestCase {
 		move(5, 5);
 	}
 	
+	/*
+	 * The same check as assertTrue(hasFocus(expected)); a failure reports where the focus is. The test
+	 * runs on its own thread, so the widgets are read on the UI thread, and only to describe a failure.
+	 */
+	private void assertFocus(Button expected) {
+		if (!hasFocus(expected)) {
+			fail("focus on " + onUiThread(() -> expected.getText()) + ", but " + describeFocus());
+		}
+	}
+
+	private void assertFocus(VButton expected) {
+		if (!hasFocus(expected)) {
+			fail("focus on " + onUiThread(() -> expected.getText()) + ", but " + describeFocus());
+		}
+	}
+
+	private String describeFocus() {
+		return onUiThread(() -> {
+			Control control = getDisplay().getFocusControl();
+			VControl vcontrol = VTracker.getFocusControl();
+			return "the display's focus control is "
+					+ (control instanceof Button ? ((Button) control).getText() : String.valueOf(control))
+					+ " and the virtual focus control is "
+					+ (vcontrol instanceof VButton ? ((VButton) vcontrol).getText() : String.valueOf(vcontrol));
+		});
+	}
+
+	private String onUiThread(Supplier<String> text) {
+		String[] result = new String[1];
+		syncExec(() -> result[0] = text.get());
+		return result[0];
+	}
+
 	public void testMouse_1() {
-		assertTrue(hasFocus(button1));
+		assertFocus(button1);
 
 		click(vbutton1);
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 
 		click(button2);
-		assertTrue(hasFocus(button2));
+		assertFocus(button2);
 
 		click(vbutton2);
-		assertTrue(hasFocus(vbutton2));
+		assertFocus(vbutton2);
 		
 		click(button1);
-		assertTrue(hasFocus(button1));
+		assertFocus(button1);
 	}
 	
 	public void testMouse_3() {
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 
 		click(vbutton2);
-		assertTrue(hasFocus(vbutton2));
+		assertFocus(vbutton2);
 		assertFalse(hasFocus(vbutton1));
 
 		click(vbutton1);
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 		assertFalse(hasFocus(vbutton2));
 	}
 	
 	public void testTabKeyForward_1() {
-		assertTrue(hasFocus(button1));
+		assertFocus(button1);
 
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 
 		keyPress('\t');
-		assertTrue(hasFocus(button2));
+		assertFocus(button2);
 
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton2));
+		assertFocus(vbutton2);
 		
 		keyPress('\t');
-		assertTrue(hasFocus(button1));
+		assertFocus(button1);
 	}
 
 	public void testTabKeyReverse_1() {
-		assertTrue(hasFocus(button1));
+		assertFocus(button1);
 
 		keyDown(SWT.SHIFT);
 		
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton2));
+		assertFocus(vbutton2);
 
 		keyPress('\t');
-		assertTrue(hasFocus(button2));
+		assertFocus(button2);
 
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 		
 		keyPress('\t');
-		assertTrue(hasFocus(button1));
+		assertFocus(button1);
 
 		keyUp(SWT.SHIFT);
 	}
 
 	public void testTabKeyForward_2() {
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 
 		keyPress('\t');
-		assertTrue(hasFocus(button1));
+		assertFocus(button1);
 
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton2));
+		assertFocus(vbutton2);
 
 		keyPress('\t');
-		assertTrue(hasFocus(button2));
+		assertFocus(button2);
 		
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 	}
 
 	public void testTabKeyReverse_2() {
-		assertTrue(hasFocus(vbutton1));
+		// setUp2's tab order is vbutton1, button1, vbutton2, button2: Shift+Tab walks it backwards,
+		// as testTabKeyReverse_1 does for setUp1 (this case repeated testTabKeyForward_2's order)
+		assertFocus(vbutton1);
 
 		keyDown(SWT.SHIFT);
 		
 		keyPress('\t');
-		assertTrue(hasFocus(button1));
+		assertFocus(button2);
 
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton2));
+		assertFocus(vbutton2);
 
 		keyPress('\t');
-		assertTrue(hasFocus(button2));
+		assertFocus(button1);
 		
 		keyPress('\t');
-		assertTrue(hasFocus(vbutton1));
+		assertFocus(vbutton1);
 
 		keyUp(SWT.SHIFT);
 	}

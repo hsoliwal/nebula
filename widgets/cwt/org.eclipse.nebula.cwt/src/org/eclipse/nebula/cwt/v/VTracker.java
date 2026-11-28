@@ -11,6 +11,7 @@
 * Contributors:
 *    Jeremy Dowdall <jeremyd@aspencloud.com> - initial API and implementation
 *    Thorsten Hake <mail@thorsten-hake.com> - Fix for https://bugs.eclipse.org/bugs/show_bug.cgi?id=419447
+*    Hitesh Soliwal (Synexia) - tab traversal from a native control into a panel host that SWT skips
 *****************************************************************************/
 
 package org.eclipse.nebula.cwt.v;
@@ -231,6 +232,8 @@ public class VTracker implements DisposeListener {
 								setFocusToPrev(comp);
 							}
 						}
+					} else if(event.doit && event.widget instanceof Control) {
+						traverseIntoPanel((Control) event.widget, event);
 					}
 				}
 				break;
@@ -313,6 +316,73 @@ public class VTracker implements DisposeListener {
 				activeControl = null;
 			}
 		}
+	}
+
+	/**
+	 * Tab traversal from a native control into an adjacent top-level panel host.
+	 * <p>
+	 * SWT gives a Canvas the focus on keyboard traversal only when it hooks key events
+	 * (Composite.setTabGroupFocus), and the virtual controls of a top-level panel attach their key
+	 * listeners to its composite only while they have the focus. So a host such as {@link VCanvas},
+	 * with no native children and no key listener of its own, is skipped by SWT's traversal and its
+	 * virtual controls cannot be reached with the keyboard from a native control. When the tab-order
+	 * neighbour of the native control is such a host with a focusable virtual control, give that
+	 * control the focus and end the traversal here (TRAVERSE_NONE, doit), so that the focus moves
+	 * once. Hosts that SWT already traverses (native children, key listeners, NO_FOCUS, hidden or
+	 * disabled) and neighbours outside the parent (other than the wrap in a shell) are left to SWT.
+	 * </p>
+	 *
+	 * @param from the native control the traversal starts on
+	 * @param event the Traverse event, TRAVERSE_TAB_NEXT or TRAVERSE_TAB_PREVIOUS with doit set
+	 * @return true if the focus moved into a panel host
+	 */
+	private boolean traverseIntoPanel(Control from, Event event) {
+		Composite parent = from.getParent();
+		if(panels == null || parent == null) {
+			return false;
+		}
+		Control[] tabList = parent.getTabList();
+		int index = -1;
+		for(int i = 0; i < tabList.length; i++) {
+			if(tabList[i] == from) {
+				index = i;
+				break;
+			}
+		}
+		if(index < 0) {
+			return false;
+		}
+		int target = (SWT.TRAVERSE_TAB_NEXT == event.detail) ? index + 1 : index - 1;
+		if(target < 0 || target >= tabList.length) {
+			if(!(parent instanceof Shell)) {
+				return false; // SWT continues in the parent's tab order
+			}
+			target = (target < 0) ? tabList.length - 1 : 0; // a shell's tab order wraps
+		}
+		Control host = tabList[target];
+		if(host == from || !isSkippedPanelHost(host)) {
+			return false;
+		}
+		VPanel panel = panels.get(host);
+		if(getNewFocus(panel) == null || !setFocusControl(panel)) {
+			return false;
+		}
+		event.detail = SWT.TRAVERSE_NONE;
+		event.doit = true;
+		return true;
+	}
+
+	/* a top-level panel host that SWT's own traversal does not give the focus (see traverseIntoPanel) */
+	private boolean isSkippedPanelHost(Control control) {
+		return control instanceof Composite
+				&& panels.containsKey(control)
+				&& !control.isDisposed()
+				&& control.isVisible()
+				&& control.isEnabled()
+				&& (control.getStyle() & SWT.NO_FOCUS) == 0
+				&& !control.isListening(SWT.KeyDown)
+				&& !control.isListening(SWT.KeyUp)
+				&& ((Composite) control).getChildren().length == 0;
 	}
 
 	private VControl getNewFocus(VPanel panel) {

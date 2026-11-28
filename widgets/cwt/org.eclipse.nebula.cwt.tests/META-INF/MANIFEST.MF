@@ -6,8 +6,8 @@ Bundle-Name: %pluginName
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-11
+Fragment-Host: org.eclipse.nebula.cwt;bundle-version="0.9.0"
 Require-Bundle: org.eclipse.swt,
- org.eclipse.nebula.cwt;bundle-version="0.9.0";visibility:=reexport,
- org.junit;bundle-version="3.8.2";visibility:=reexport
+ org.junit;bundle-version="3.8.2"
 Export-Package: org.eclipse.nebula.cwt.test
 Automatic-Module-Name: org.eclipse.nebula.cwt.tests

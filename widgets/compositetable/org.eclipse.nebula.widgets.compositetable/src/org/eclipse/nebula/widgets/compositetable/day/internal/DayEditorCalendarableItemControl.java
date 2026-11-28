@@ -196,16 +196,27 @@ public class DayEditorCalendarableItemControl extends Canvas implements ICalenda
 	 */
 	public void setClipping(int clipping) {
 		if (this.clipping != clipping) {
+			int changed = this.clipping ^ clipping;
 			this.clipping = clipping;
-			damageArrows();
+			damageArrows(changed);
 		}
 	}
 
-	/* the arrows live in the top and bottom MARGIN strips: repaint those, not the box //FLLDCIM: MARK — every-widget compositetable day event box D */
-	private void damageArrows() {
+	/*
+	 * The arrows live in the top and bottom MARGIN strips: repaint those, not the box //FLLDCIM: MARK — every-widget compositetable day event box D
+	 * The top strip is drawn from the SWT.TOP bits of clipping and continued only, the bottom strip from their
+	 * SWT.BOTTOM bits only (paintListener), so repaint just the strip whose edge changed. Damaging both strips for a
+	 * one-edge change also repaints the margin and label between them where the platform merges the two rectangles
+	 * into one paint (SWT on GTK paints the bounding rectangle of the damage).
+	 */
+	private void damageArrows(int changedEdges) {
 		Rectangle area = getClientArea();
-		redraw(0, 0, area.width, MARGIN, false);
-		redraw(0, Math.max(0, area.height - MARGIN), area.width, MARGIN, false);
+		if ((changedEdges & SWT.TOP) != 0) {
+			redraw(0, 0, area.width, MARGIN, false);
+		}
+		if ((changedEdges & SWT.BOTTOM) != 0) {
+			redraw(0, Math.max(0, area.height - MARGIN), area.width, MARGIN, false);
+		}
 	}
 	
 	/* (non-Javadoc)
@@ -222,8 +233,9 @@ public class DayEditorCalendarableItemControl extends Canvas implements ICalenda
 	 */
 	public void setContinued(int continued) {
 		if (this.continued != continued) {
+			int changed = this.continued ^ continued;
 			this.continued = continued;
-			damageArrows(); // the arrows show it: repaint them (no repaint before, so they went stale)
+			damageArrows(changed); // the arrows show it: repaint them (no repaint before, so they went stale)
 		}
 	}
 	

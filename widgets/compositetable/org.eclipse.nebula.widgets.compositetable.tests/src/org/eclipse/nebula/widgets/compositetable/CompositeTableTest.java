@@ -13,6 +13,8 @@
  ******************************************************************************/
 package org.eclipse.nebula.widgets.compositetable;
 
+import java.util.Arrays;
+
 import junit.framework.TestCase;
 
 import org.eclipse.nebula.widgets.compositetable.CompositeTable;
@@ -120,8 +122,19 @@ public class CompositeTableTest extends TestCase {
     }
 
     public void testClearSelection() {
-	// shell.open() will set the selection to the first row
-	assertEquals(new Point(-1, 0), table.getSelection());
+	// shell.open() will set the selection to the first row: the shell gives the focus to the first
+	// row, whose focus event selects it. On GTK that focus event arrives with the window's
+	// activation, after shell.open() has returned (GTK already reports the focus widget before), so
+	// wait for the selection that event sets before checking it.
+	waitForOpeningSelection();
+	// The selection is (column, row) of the focused control. Which control of the first row the
+	// shell focuses is SWT's: win32 focuses the row composite (column -1, it hooks keys), GTK its
+	// first column's Text (column 0).
+	Control row = table.getRowControls()[0];
+	Control focus = display.getFocusControl();
+	int column = focus == row ? -1 : Arrays.asList(((Composite) row).getTabList()).indexOf(focus);
+	assertTrue("the opening focus is the first row or one of its columns: " + focus, focus == row || column >= 0);
+	assertEquals(new Point(column, 0), table.getSelection());
 
 	table.clearSelection();
 	readAndDispatch();
@@ -136,6 +149,32 @@ public class CompositeTableTest extends TestCase {
 	while (display.readAndDispatch()) {
 	    // next
 	}
+    }
+
+    /* dispatches events until the opening focus event selected a row (target state), at most 5 s */
+    private void waitForOpeningSelection() {
+	long deadline = System.currentTimeMillis() + 5000;
+	while (table.getSelection() == null && System.currentTimeMillis() < deadline) {
+	    if (!display.readAndDispatch()) {
+		try {
+		    Thread.sleep(5);
+		} catch (InterruptedException e) {
+		    Thread.currentThread().interrupt();
+		    break;
+		}
+	    }
+	}
+	assertNotNull("shell.open() gives the focus to a row of the table; the focus control is "
+		+ display.getFocusControl() + " (in the table: " + isFocusInTable() + ")", table.getSelection());
+    }
+
+    private boolean isFocusInTable() {
+	for (Control control = display.getFocusControl(); control != null; control = control.getParent()) {
+	    if (control == table) {
+		return true;
+	    }
+	}
+	return false;
     }
 
 }

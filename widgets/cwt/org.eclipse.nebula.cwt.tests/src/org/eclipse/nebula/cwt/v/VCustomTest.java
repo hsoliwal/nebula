@@ -50,6 +50,13 @@ public class VCustomTest extends AbstractVTestCase {
 			preferred.x = 1;
 			assertEquals(90, custom.getPreferredSize().x);
 
+			// VControl.paintControl clips the content area to the parent panel's bounds, and a
+			// canvas created after the shell opened has not been laid out (its panel is 0 x 0, so
+			// the 20 x 20 control minus its 5 px margins has no content area). Lay the canvas out,
+			// as a paint of a shown canvas finds it, before painting the control.
+			canvas.setSize(40, 40);
+			canvas.layout(true);
+			assertEquals(40, panel.getBounds().width);
 			custom.setBounds(0, 0, 20, 20);
 			Image image = new Image(getDisplay(), 20, 20);
 			GC gc = new GC(image);
