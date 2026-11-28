@@ -11,6 +11,7 @@
  * Contributors :
  *    Nicolas Richeton (nicolas.richeton@gmail.com) - initial API and implementation
  *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL range selection by index, verified index hint
+ *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL clear keeps the items and requests their attributes again
  *******************************************************************************/
 package org.eclipse.nebula.widgets.gallery;
 
@@ -89,6 +90,16 @@ public class GalleryItem extends Item {
 	int indexHint = -1;
 
 	/**
+	 * Viewport mode, SWT.VIRTUAL: a clear (<code>Gallery.clear</code>, <code>Gallery.clearAll</code>,
+	 * {@link #clearAll()}) reset the attributes of this item, and the gallery sends SWT.SetData for it again the next
+	 * time it requests the item (layout, paint, <code>getItem</code>), as Table and Tree do with a cleared item. The
+	 * item stays in place, with its children, its expanded state, its selection and its data. A setter that changes an
+	 * attribute (text, image, font, colours) before that request populates the item, as in Table and Tree: no SetData
+	 * then overwrites the caller's value. A setter that leaves the value as it is leaves the item cleared.
+	 */
+	boolean cleared;
+
+	/**
 	 * True if the Gallery was created wih SWT.VIRTUAL
 	 */
 	private boolean virtualGallery;
@@ -119,6 +130,35 @@ public class GalleryItem extends Item {
 
 	protected void setUltraLazyDummy(boolean ultraLazyDummy) {
 		this.ultraLazyDummy = ultraLazyDummy;
+	}
+
+	/**
+	 * Viewport mode, virtual groups: expands a placeholder group created by a layout pass, which lays it out next,
+	 * without the layout of its own that <code>setExpanded(true)</code> starts (one per placeholder, re-entrant).
+	 */
+	void expandPlaceholder() {
+		expanded = true;
+	}
+
+	/**
+	 * Viewport mode, virtual groups: this placeholder becomes the group in place, in the state of the new item the
+	 * original created instead (no children, collapsed, default attributes). Its place, geometry (until its layout)
+	 * and data stay.
+	 */
+	void resetPlaceholder() {
+		ultraLazyDummy = false;
+		expanded = false;
+		items = null;
+		selectionFlags = null;
+		rangeFlags = null;
+		lastIndexOf = 0;
+		text[0] = EMPTY_STRING;
+		text[1] = EMPTY_STRING;
+		text[2] = EMPTY_STRING;
+		super.setImage(null);
+		font = null;
+		foreground = null;
+		background = null;
 	}
 
 	public Gallery getParent() {
@@ -299,6 +339,7 @@ public class GalleryItem extends Item {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		super.setImage(image);
+		cleared = false;
 		parent.redraw(this);
 	}
 
@@ -627,6 +668,7 @@ public class GalleryItem extends Item {
 		if (font != null && font.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
+		populateIfChanged(this.font, font);
 		this.font = font;
 		this.parent.redraw(this);
 	}
@@ -711,6 +753,7 @@ public class GalleryItem extends Item {
 		if (foreground != null && foreground.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
+		populateIfChanged(this.foreground, foreground);
 		this.foreground = foreground;
 		this.parent.redraw(this);
 	}
@@ -796,6 +839,7 @@ public class GalleryItem extends Item {
 		if (background != null && background.isDisposed()) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
+		populateIfChanged(this.background, background);
 		this.background = background;
 		this.parent.redraw(this);
 	}
@@ -805,6 +849,14 @@ public class GalleryItem extends Item {
 	 */
 	public void clear() {
 		checkWidget();
+		clearAttributes();
+
+		// Force redraw
+		this.parent.redraw(this);
+	}
+
+	/** Resets the attributes {@link #clear()} resets, without a redraw. */
+	private void clearAttributes() {
 		// Clear all attributes
 		text[0] = EMPTY_STRING;
 		text[1] = EMPTY_STRING;
@@ -813,15 +865,46 @@ public class GalleryItem extends Item {
 		this.font = null;
 		background = null;
 		foreground = null;
+	}
 
-		// Force redraw
-		this.parent.redraw(this);
+	/**
+	 * Viewport mode, SWT.VIRTUAL: clears this item and the descendants that exist, as the original replaced them with
+	 * items requested again: their attributes are reset and each sends SWT.SetData again when the gallery next
+	 * requests it. No item is created and none is replaced, so a caller holding one still holds the item at its
+	 * index. A placeholder group of virtual groups (never sent SetData) is left as it is: it is still initialized when
+	 * drawn.
+	 */
+	void clearKeepingItems() {
+		if (!ultraLazyDummy) {
+			clearAttributes();
+			cleared = true;
+		}
+		if (items != null) {
+			for (GalleryItem child : items) {
+				if (child != null) {
+					child.clearKeepingItems();
+				}
+			}
+		}
 	}
 
 	public void clearAll() {
 		clearAll(false);
 	}
 
+	/**
+	 * Clears the children of this item (and their descendants when <code>all</code> is true).
+	 * <p>
+	 * In a <code>SWT.VIRTUAL</code> gallery the children and their descendants are cleared whatever
+	 * <code>all</code> is, and their attributes are requested again (SWT.SetData) when they are next requested
+	 * (painted or returned by {@link #getItem(int)}). In viewport widget mode (the default) the children that exist
+	 * stay: a caller holding one still holds the item at its index, and its selection stays. In the original widget
+	 * mode they are replaced by new items.
+	 * </p>
+	 *
+	 * @param all
+	 *            true to clear the descendants too (always the case in a <code>SWT.VIRTUAL</code> gallery)
+	 */
 	public void clearAll(boolean all) {
 		checkWidget();
 
@@ -831,10 +914,13 @@ public class GalleryItem extends Item {
 
 		if (virtualGallery) {
 			if (Gallery.VIEWPORT) {
-				// selected children that exist keep their identity in the selection, as before
-				parent.releaseRuns(this, 0, false);
-				rangeFlags = null;
-				parent.releaseRunsWhere(item -> item.getParentItem() == this);
+				//FLLDCIM: VIEWPORT - VIRTUAL clear keeps the children: reset and requested again, never replaced
+				for (GalleryItem child : items) {
+					if (child != null) {
+						child.clearKeepingItems();
+					}
+				}
+				return;
 			}
 			items = new GalleryItem[items.length];
 		} else {
@@ -933,8 +1019,20 @@ public class GalleryItem extends Item {
         if (string == null) {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         }
+		populateIfChanged(text[index], string);
 		text[index] = string;
 		parent.redraw(this);
+	}
+
+	/**
+	 * A setter that changes an attribute of a cleared item populates it (no SetData then overwrites the value), as in
+	 * Table and Tree; a setter that leaves the value as it is (for example <code>setText("")</code> or
+	 * <code>setFont(null)</code> right after a clear) leaves the item cleared, so it is still requested again.
+	 */
+	private void populateIfChanged(Object oldValue, Object newValue) {
+		if (cleared && !java.util.Objects.equals(oldValue, newValue)) {
+			cleared = false;
+		}
 	}
 
 	public String getText() {

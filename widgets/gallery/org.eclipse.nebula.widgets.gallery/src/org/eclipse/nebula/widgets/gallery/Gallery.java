@@ -14,6 +14,7 @@
  *    Hitesh Soliwal (Synexia) - viewport mode: scroll bar values set only when they change, one client area per layout
  *    Hitesh Soliwal (Synexia) - viewport mode: selection lane with amortized growth (docs/m3/custom-widgets/gallery)
  *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL range selection as index runs, O(1) verified index hint
+ *    Hitesh Soliwal (Synexia) - viewport mode: VIRTUAL clear keeps the items and requests their attributes again
  *******************************************************************************/
 
 package org.eclipse.nebula.widgets.gallery;
@@ -110,6 +111,19 @@ public class Gallery extends Canvas {
 
 	/** Layout-derived eligibility for an O(log N) first-visible lookup; never used for SWT.VIRTUAL. */
 	private boolean monotoneGroupGeometry;
+
+	/**
+	 * Viewport mode: true while calculateSize runs. A virtual-groups placeholder created by that pass is expanded
+	 * without a layout of its own (the pass lays it out next), instead of one re-entrant layout per placeholder.
+	 */
+	private boolean layingOut;
+
+	/**
+	 * Viewport mode: a layout pass created placeholders without their own layouts. The original's nested layouts also
+	 * updated the scroll bar and redrew; the outermost layout does that once when it is done (see
+	 * updateStructuralValues), for the callers that do not (the protected updateStructuralValues, setVertical).
+	 */
+	private boolean placeholdersCreated;
 
 	private GalleryItem[] selection = null;
 
@@ -967,7 +981,7 @@ public class Gallery extends Canvas {
 				return null;
 			}
 			int k = selectionCount - 1;
-			return isRun(k) ? _getItem(selection[k], selectionRuns[2 * k + 1]) : selection[k];
+			return isRun(k) ? _getItem(selection[k], selectionRuns[2 * k + 1]) : refreshed(selection[k]);
 		}
 		return selection == null || selection.length == 0 ? null : selection[selection.length - 1];
 	}
@@ -977,7 +991,26 @@ public class Gallery extends Canvas {
 		if (selectionCount == 0) {
 			return null;
 		}
-		return isRun(0) ? _getItem(selection[0], selectionRuns[0]) : selection[0];
+		return isRun(0) ? _getItem(selection[0], selectionRuns[0]) : refreshed(selection[0]);
+	}
+
+	/*
+	 * Viewport mode, SWT.VIRTUAL: a cleared item (clear, clearAll) that the selection hands out (getSelection, the item
+	 * a Selection or DefaultSelection event names) is requested again first, as getItem would request it: the
+	 * original had handed out an item created, with its SetData, for the cleared slot. Only while the gallery still
+	 * holds the item and its parents: a cleared item whose group left (remove, setItemCount) is handed out as it is,
+	 * so no SetData is ever sent under an item the gallery no longer holds (see releaseRunsWithin).
+	 */
+	//FLLDCIM: VIEWPORT - VIRTUAL clear: the selection hands out a cleared item requested again
+	private GalleryItem refreshed(GalleryItem item) {
+		if (item != null && item.cleared && holds(item)) {
+			GalleryItem parent = item.getParentItem();
+			int index = parent == null ? _indexOf(item) : _indexOf(parent, item);
+			if (index >= 0) {
+				refreshCleared(parent, index, true);
+			}
+		}
+		return item;
 	}
 
 	/*
@@ -1116,10 +1149,9 @@ public class Gallery extends Canvas {
 	}
 
 	/**
-	 * Viewport mode: the children of parent from start on are about to leave its items array (setItemCount shrinks it,
-	 * a VIRTUAL clearAll replaces it). An item that exists keeps its place in the selection as an item entry, as the
-	 * original selection keeps the item; a child that was never created leaves the selection when dropUnread, and is
-	 * otherwise still named by index.
+	 * Viewport mode: the children of parent from start on are about to leave its items array (setItemCount shrinks it).
+	 * An item that exists keeps its place in the selection as an item entry, as the original selection keeps the item;
+	 * a child that was never created leaves the selection when dropUnread, and is otherwise still named by index.
 	 */
 	void releaseRuns(GalleryItem parent, int start, boolean dropUnread) {
 		if (selectionRuns == null) {
@@ -1141,10 +1173,10 @@ public class Gallery extends Canvas {
 	}
 
 	/**
-	 * Viewport mode: item leaves the gallery's items, with its descendants (a group removed, cleared, disposed or cut
-	 * off by setItemCount; a child removed). The runs that it or a descendant owns are released: the created children
-	 * keep their entries, as the original keeps its items, and the unread names leave the selection. So no item is
-	 * ever created, and no SetData sent, under an item the gallery no longer holds.
+	 * Viewport mode: item leaves the gallery's items, with its descendants (a group removed, disposed or cut off by
+	 * setItemCount; a child removed; a VIRTUAL clear keeps its items). The runs that it or a descendant owns are
+	 * released: the created children keep their entries, as the original keeps its items, and the unread names leave
+	 * the selection. So no item is ever created, and no SetData sent, under an item the gallery no longer holds.
 	 */
 	void releaseRunsWithin(GalleryItem item) {
 		if (selectionRuns == null || item == null || item.items == null) {
@@ -1157,7 +1189,7 @@ public class Gallery extends Canvas {
 	 * Viewport mode: one sweep over the selection entries that releases every run owned by an item that leaves, or by
 	 * a descendant of one (an owner whose ancestor chain reaches an item the predicate names). Created children keep
 	 * their entries in place, unread names leave. Linear in the entries and the released runs, however many items
-	 * leave at once (setItemCount, _setGalleryItems, a parent's clearAll), as long as the predicate is O(1): the bulk
+	 * leave at once (setItemCount, _setGalleryItems), as long as the predicate is O(1): the bulk
 	 * paths pass membership in an identity set of the dropped items, never an index lookup (a stale index hint would
 	 * make that a scan).
 	 */
@@ -1845,7 +1877,8 @@ public class Gallery extends Canvas {
 			// Ultra virtual : when a group is about to be drawn, initialize it
 			// and update gallery layout according to the new size
 			item = _getItem(index, false);
-			if (item.isUltraLazyDummy()) {
+			// a cleared group (VIRTUAL clear, viewport mode) is initialized again like a placeholder
+			if (item.isUltraLazyDummy() || item.cleared) {
 				boolean updateLocation = (vertical && item.y < translate)
 						|| (!vertical && item.x < translate);
 				int oldSize = item.height;
@@ -1912,11 +1945,21 @@ public class Gallery extends Canvas {
 	 */
 	private void updateItem(GalleryItem parentItem, int i, boolean create) {
 		if (virtual) {
+			if (VIEWPORT && refreshCleared(parentItem, i, create)) {
+				return;
+			}
 
 			GalleryItem galleryItem;
 			if (parentItem == null) {
 				// Parent is the Gallery widget
 				galleryItem = items[i];
+
+				if (VIEWPORT && virtualGroups && create && galleryItem != null && galleryItem.isUltraLazyDummy()) {
+					//FLLDCIM: VIEWPORT - virtual groups: the placeholder becomes the group (no replacement item)
+					initializePlaceholder(galleryItem);
+					setData(galleryItem, i);
+					return;
+				}
 
 				if (galleryItem == null || (virtualGroups
 						&& galleryItem.isUltraLazyDummy() && create)) {
@@ -1932,7 +1975,13 @@ public class Gallery extends Canvas {
 					if (virtualGroups && !create) {
 						galleryItem.setItemCount(virtualGroupDefaultItemCount);
 						galleryItem.setUltraLazyDummy(true);
-						galleryItem.setExpanded(true);
+						if (VIEWPORT && layingOut) {
+							//FLLDCIM: VIEWPORT - virtual groups: the layout pass that creates a placeholder lays it out
+							galleryItem.expandPlaceholder();
+							placeholdersCreated = true;
+						} else {
+							galleryItem.setExpanded(true);
+						}
 					} else {
 						setData(galleryItem, i);
 					}
@@ -1956,6 +2005,28 @@ public class Gallery extends Canvas {
 
 	}
 
+	/*
+	 * VIEWPORT, SWT.VIRTUAL: a cleared item (clear, clearAll) is requested again with SWT.SetData where the original,
+	 * which had replaced it, created its replacement: on the first request for its slot. The item and its index stay,
+	 * so the event names the item the caller already holds. With virtual groups a cleared group waits, like a
+	 * placeholder, for a request that creates (its paint), not for layout.
+	 */
+	//FLLDCIM: VIEWPORT - VIRTUAL clear: the same item is requested again, never replaced
+	private boolean refreshCleared(GalleryItem parentItem, int i, boolean create) {
+		GalleryItem item = parentItem == null ? items[i] : parentItem.items[i];
+		if (item == null || !item.cleared || (parentItem == null && virtualGroups && !create)) {
+			return false;
+		}
+		if (parentItem != null && !holds(parentItem)) {
+			// under a group the gallery no longer holds (a keyboard step from a detached anchor, getItem on a removed
+			// group): the cleared item is answered as it is, never requested
+			return false;
+		}
+		item.cleared = false;
+		setData(item, i);
+		return true;
+	}
+
 	/**
 	 * Sends SWT.SetData event. Used if SWT.VIRTUAL
 	 * 
@@ -1969,6 +2040,22 @@ public class Gallery extends Canvas {
 		e.type = SWT.SetData;
 		e.index = index;
 		this.notifyListeners(SWT.SetData, e);
+	}
+
+	/*
+	 * VIEWPORT, virtual groups: a placeholder group is initialized in place. The original replaced it with a new
+	 * GalleryItem, so a caller holding the placeholder (getItems, _getItem(int, false), the selection) was left with a
+	 * detached item. The placeholder takes the state of that new item (no children, collapsed, default attributes),
+	 * keeps its place and geometry until its layout, and the runs a selection gave its placeholder children leave, as
+	 * those children did. Only a placeholder whose children were selected (selection flags) can own runs, so the
+	 * usual initialization (a paint, selectAll over every group) does not scan the selection.
+	 */
+	//FLLDCIM: VIEWPORT - virtual groups: the placeholder object becomes the group
+	private void initializePlaceholder(GalleryItem placeholder) {
+		if (placeholder.selectionFlags != null) {
+			releaseRunsWithin(placeholder);
+		}
+		placeholder.resetPlaceholder();
 	}
 
 	/**
@@ -2042,6 +2129,12 @@ public class Gallery extends Canvas {
 			System.out.println("Content Size : " + gWidth + " " + gHeight); //$NON-NLS-1$//$NON-NLS-2$
 		}
 
+		if (placeholdersCreated && !layingOut) {
+			//FLLDCIM: VIEWPORT - virtual groups: one scroll bar update and redraw for the placeholders a pass created
+			placeholdersCreated = false;
+			updateScrollBarsProperties();
+			redraw();
+		}
 	}
 
 	/**
@@ -2052,7 +2145,13 @@ public class Gallery extends Canvas {
 	 */
 	private int calculateSize(GalleryItem onlyUpdateGroup) {
 		if (VIEWPORT) {
-			return calculateSizeOnce(onlyUpdateGroup);
+			boolean outerPass = layingOut;
+			layingOut = true;
+			try {
+				return calculateSizeOnce(onlyUpdateGroup);
+			} finally {
+				layingOut = outerPass;
+			}
 		}
 		monotoneGroupGeometry = false;
 
@@ -2157,13 +2256,16 @@ public class Gallery extends Canvas {
 
 		for (int i = 0; i < mainItemCount; i++) {
 			GalleryItem item = null;
+			boolean placeholder = false;
 			if (virtualGroups) {
+				// a placeholder this pass creates is laid out by this pass, whichever group changed
+				placeholder = items[i] == null;
 				item = this._getItem(i, false);
 			} else {
 				item = this._getItem(i);
 			}
 
-			if (onlyUpdateGroup != null && !onlyUpdateGroup.equals(item)) {
+			if (onlyUpdateGroup != null && !onlyUpdateGroup.equals(item) && !placeholder) {
 				// Item has not changed : no layout.
 				if (vertical) {
 					item.y = currentHeight;
@@ -2587,10 +2689,16 @@ public class Gallery extends Canvas {
 	 * 
 	 * If the Gallery is virtual, the item count is not reseted and all items
 	 * will be created again at their first use.<br/>
+	 * <p>
+	 * In viewport widget mode (the default), a virtual Gallery keeps its items instead, as Table and Tree do: every
+	 * item that exists, groups and children, has its attributes reset and is requested again (SWT.SetData, naming
+	 * the same item) at its first use, so a caller holding an item still holds the item at its index. The items
+	 * that were never created stay uncreated. The selection is cleared, as before.
+	 * </p>
 	 * 
 	 * @param all
 	 *            If true, all children will be cleared. Only groups are cleared
-	 *            otherwise.
+	 *            otherwise. A virtual Gallery always clears the children.
 	 */
 	public void clearAll(boolean all) {
 		checkWidget();
@@ -2600,7 +2708,16 @@ public class Gallery extends Canvas {
         }
 
 		if (virtual) {
-			items = new GalleryItem[items.length];
+			if (VIEWPORT) {
+				//FLLDCIM: VIEWPORT - VIRTUAL clear keeps the items: reset and requested again, never replaced
+				for (GalleryItem item : items) {
+					if (item != null) {
+						item.clearKeepingItems();
+					}
+				}
+			} else {
+				items = new GalleryItem[items.length];
+			}
 		} else {
 			for (int i = 0; i < items.length; i++) {
 				if (items[i] != null) {
@@ -2641,6 +2758,14 @@ public class Gallery extends Canvas {
 
 	/**
 	 * Clear one item and all its children if 'all' is true
+	 * <p>
+	 * In a virtual Gallery the item and all its children are cleared and requested again (SWT.SetData) at their first
+	 * use. In viewport widget mode (the default) the item and the children that exist stay, as in Table and Tree:
+	 * their attributes are reset and the SetData event names the same item, so a caller holding one still holds the
+	 * item at its index; its expanded state, item count, selection and data stay. A setter (text, image, font,
+	 * colours) that changes a value of a cleared item before it is requested populates it, as in Table and Tree. In
+	 * the original widget mode the item is replaced by a new one.
+	 * </p>
 	 * 
 	 * @param index
 	 * @param all
@@ -2655,11 +2780,12 @@ public class Gallery extends Canvas {
 
 		if (virtual) {
 			if (VIEWPORT) {
-				//FLLDCIM: VIEWPORT - the dropped group releases the runs it owns (no SetData under a detached group)
-				releaseRunsWithin(items[index]);
+				//FLLDCIM: VIEWPORT - VIRTUAL clear keeps the group and its children: reset and requested again
+				items[index].clearKeepingItems();
+			} else {
+				// Clear item
+				items[index] = null;
 			}
-			// Clear item
-			items[index] = null;
 
 			// In virtual mode, clearing an item can change its content, so
 			// force content update
@@ -2983,7 +3109,8 @@ public class Gallery extends Canvas {
 	 * <p>
 	 * In a <code>SWT.VIRTUAL</code> gallery (viewport widget mode, the default), items that a range selection
 	 * (<code>selectAll</code>, shift-click, a group title click) selected before they were ever created are created
-	 * here, each with its SWT.SetData event, as {@link #getItem(int)} creates them.
+	 * here, each with its SWT.SetData event, as {@link #getItem(int)} creates them. A selected item that a clear
+	 * reset (see {@link #clear(int, boolean)}) is requested again here with SWT.SetData, as {@link #getItem(int)} does.
 	 * </p>
 	 *
 	 * @return the selected items
@@ -2995,7 +3122,12 @@ public class Gallery extends Canvas {
 				return new GalleryItem[0];
 			}
 			if (selectionRuns == null) {
-				return Arrays.copyOf(selection, selectionCount);
+				GalleryItem[] result = Arrays.copyOf(selection, selectionCount);
+				for (GalleryItem item : result) {
+					// a cleared item is requested again (SetData may change the selection: the copy is what is answered)
+					refreshed(item);
+				}
+				return result;
 			}
 			// A snapshot of the entries: creating an unread item sends SetData, whose listener may change the selection.
 			int count = selectionCount;
@@ -3005,7 +3137,7 @@ public class Gallery extends Canvas {
 			int n = 0;
 			for (int k = 0; k < count; k++) {
 				if (runs[2 * k] < 0) {
-					result[n++] = owners[k];
+					result[n++] = refreshed(owners[k]);
 					continue;
 				}
 				for (int i = runs[2 * k]; i <= runs[2 * k + 1]; i++) {
@@ -3352,6 +3484,13 @@ public class Gallery extends Canvas {
 	 * the widget such as SAT Smooth Scrolling. In that case, you can enable the
 	 * compatibility mode which is little less lazy that the default virtual
 	 * groups, but still better than the standard virtual mode
+	 * </p>
+	 * <p>
+	 * In viewport widget mode (the default), the layout lays out each placeholder
+	 * group once (not once per placeholder created, which also nested one layout
+	 * in another), and a placeholder that is initialized becomes the group: the
+	 * SWT.SetData event names the same GalleryItem that {@link #getItems()}
+	 * returned, at the same index.
 	 * </p>
 	 * 
 	 * @see #setVirtualGroupDefaultItemCount(int)
