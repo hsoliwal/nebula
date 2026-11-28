@@ -69,6 +69,9 @@
 						<include>**/GridRowPermutation_Test.java</include>
 						<include>**/GridRowTreeRankExtent_Test.java</include>
 						<include>**/GridRowTreeVisibleNeighbor_Test.java</include>
+						<include>**/GridRowTreeLanes_Test.java</include>
+						<include>**/GridFlatRoots_Test.java</include>
+						<include>**/GridItemDensity_Test.java</include>
 						<include>**/GridScrollbarSettle_Test.java</include>
 						<include>**/GridSetDataRedraw_Test.java</include>
 						<include>**/GridCellSelectionList_Test.java</include>

@@ -17,6 +17,8 @@
  *******************************************************************************/
 package org.eclipse.nebula.widgets.grid;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,7 +136,57 @@ public class GridItem extends Item {
 	/* this item's position in the Grid's selection (GridSelectionList), or -1 */
 	private int selectionPosition = -1;
 
-	private final Object ROW_LOCK = new Object();
+	/*
+	 * Stock's lock for the kept row, one object per item. The viewport mode makes none (N items must
+	 * not mean N lock objects): it reads and writes the row with volatile access through ROW, which
+	 * gives a reader on another thread the same latest row and keeps the increments atomic.
+	 */
+	private final Object ROW_LOCK = GridViewport.ENABLED ? null : new Object();
+
+	private static final VarHandle ROW;
+
+	static {
+		try {
+			ROW = MethodHandles.lookup().findVarHandle(GridItem.class, "row", int.class);
+		} catch (final ReflectiveOperationException e) {
+			throw new ExceptionInInitializerError(e);
+		}
+	}
+
+	/* the kept row (NO_ROW: none) */
+	private int keptRow() {
+		final Object lock = ROW_LOCK;
+		if (lock == null) {
+			return (int) ROW.getVolatile(this);
+		}
+		synchronized (lock) {
+			return row;
+		}
+	}
+
+	/* keeps a row (NO_ROW: none) */
+	private void keepRow(final int value) {
+		final Object lock = ROW_LOCK;
+		if (lock == null) {
+			ROW.setVolatile(this, value);
+			return;
+		}
+		synchronized (lock) {
+			row = value;
+		}
+	}
+
+	/* moves the kept row by delta */
+	private void moveRow(final int delta) {
+		final Object lock = ROW_LOCK;
+		if (lock == null) {
+			ROW.getAndAdd(this, delta);
+			return;
+		}
+		synchronized (lock) {
+			row += delta;
+		}
+	}
 
 	/* the row state, read and written in the Grid's lanes */
 
@@ -292,10 +344,9 @@ public class GridItem extends Item {
 		if (rowTreeSlot >= 0) {
 			return parent.rowInTree(this);
 		}
-		synchronized (ROW_LOCK) {
-            if (row != NO_ROW) {
-                return row;
-            }
+		final int kept = keptRow();
+		if (kept != NO_ROW) {
+			return kept;
 		}
 		return parent.indexOf(this);
 	}
@@ -307,9 +358,7 @@ public class GridItem extends Item {
 		if (rowTreeSlot >= 0) {
 			return parent.rowInTree(this);
 		}
-		synchronized (ROW_LOCK) {
-			return row;
-		}
+		return keptRow();
 	}
 
 	/** @return this item's position in the Grid's selection list, or -1 */
@@ -335,21 +384,15 @@ public class GridItem extends Item {
 	/** The Grid's row tree let this item go from {@code lastRow}, which it keeps as stock does. */
 	void leftRowTree(final int lastRow) {
 		rowTreeSlot = -1;
-		synchronized (ROW_LOCK) {
-			row = lastRow;
-		}
+		keepRow(lastRow);
 	}
 
 	void increaseRow() {
-		synchronized (ROW_LOCK) {
-			row++;
-		}
+		moveRow(1);
 	}
 
 	void decreaseRow() {
-		synchronized (ROW_LOCK) {
-			row--;
-		}
+		moveRow(-1);
 	}
 
 	/**
@@ -2801,8 +2844,6 @@ public class GridItem extends Item {
 	}
 
 	private void noRow() {
-		synchronized (ROW_LOCK) {
-			row = NO_ROW;
-		}
+		keepRow(NO_ROW);
 	}
 }

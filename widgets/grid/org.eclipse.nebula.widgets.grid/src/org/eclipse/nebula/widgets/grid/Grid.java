@@ -2830,7 +2830,7 @@ public class Grid extends Canvas {
 	 */
 	public int getRootItemCount() {
 		checkWidget();
-		return usesSparseVirtualItems() ? items.size() : rootItems.size();
+		return usesSparseVirtualItems() ? items.size() : roots().size();
 	}
 
 	/**
@@ -2856,7 +2856,8 @@ public class Grid extends Canvas {
 		if (usesSparseVirtualItems()) {
 			return getItems();
 		}
-		return rootItems.toArray(new GridItem[rootItems.size()]);
+		final List<GridItem> roots = roots();
+		return roots.toArray(new GridItem[roots.size()]);
 	}
 
 	/**
@@ -2870,10 +2871,11 @@ public class Grid extends Canvas {
 		if (usesSparseVirtualItems()) {
 			return getItem(index);
 		}
-		if (index < 0 || index >= rootItems.size()) {
+		final List<GridItem> roots = roots();
+		if (index < 0 || index >= roots.size()) {
 			SWT.error(SWT.ERROR_INVALID_RANGE);
 		}
-		return rootItems.get(index);
+		return roots.get(index);
 	}
 
 	/**
@@ -11355,8 +11357,22 @@ public class Grid extends Canvas {
 		}
 	}
 
+	/*
+	 * Whether the root items are the items themselves: a Grid without child items in the viewport
+	 * mode keeps no second list of them (rootItems stays empty, N items do not cost N more slots and
+	 * removing one is no linear search). The first child item copies the items into rootItems.
+	 */
+	private boolean rootsAreItems() {
+		return !isTree && items instanceof GridRowTree;
+	}
+
+	/* the root items, in order */
+	private List<GridItem> roots() {
+		return rootsAreItems() ? items : rootItems;
+	}
+
 	void newRootItem(final GridItem item, final int index) {
-		if (usesSparseVirtualItems()) {
+		if (usesSparseVirtualItems() || rootsAreItems()) {
 			return;
 		}
 		if (index == -1 || index >= rootItems.size()) {
@@ -11367,7 +11383,7 @@ public class Grid extends Canvas {
 	}
 
 	void removeRootItem(final GridItem item) {
-		if (usesSparseVirtualItems()) {
+		if (usesSparseVirtualItems() || rootsAreItems()) {
 			return;
 		}
 		rootItems.remove(item);
@@ -11388,6 +11404,9 @@ public class Grid extends Canvas {
 		if (!isTree && item.getParentItem() != null) {
 			if (items instanceof GridVirtualItemList) {
 				materializeVirtualTableForTree();
+			} else if (rootsAreItems()) {
+				// every item so far is a root: they become the tree's list of root items
+				rootItems.addAll(items);
 			}
 			isTree = true;
 		}
@@ -11400,10 +11419,10 @@ public class Grid extends Canvas {
 				if (index >= items.size()) {
 					index = -1;
 				}
-			} else if (index >= rootItems.size()) {
+			} else if (index >= roots().size()) {
 				index = -1;
 			} else {
-				index = rootItems.get(index).getRowIndex();
+				index = roots().get(index).getRowIndex();
 			}
 		} else if (!root) {
 			// the rows of the right-most descendant and of a sibling, without making the item of a
@@ -11413,6 +11432,14 @@ public class Grid extends Canvas {
 			} else {
 				index = item.getParentItem().childRowAt(index);
 			}
+		}
+
+		if (items instanceof GridRowTree && !(items.isEmpty() && !userModifiedItemHeight)
+				&& !(isRowHeaderVisible() && isAutoWidth())) {
+			// the height the item gets below anyway, given before the row tree records the row's
+			// extent: rows of one height then keep one extent (no weight and sum lanes, see
+			// GridRowTree) instead of passing through the initial height 1 first
+			item.initializeHeight(itemHeight);
 		}
 
 		if (index == -1) {
@@ -12984,7 +13011,9 @@ public class Grid extends Canvas {
 				if (!GridViewport.UPSTREAM_FIXES) {
 					rootItems.remove(i);
 				} else if (removed.getParentItem() == null) {
-					rootItems.remove(removed);
+					if (!rootsAreItems()) {
+						rootItems.remove(removed);
+					}
 				} else {
 					removed.getParentItem().detachChild(removed);
 				}
