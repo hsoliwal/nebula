@@ -46,26 +46,26 @@ public class GridRowSelectionDifferential_Test {
 	}
 
 	private List<String> trace(final boolean byRow, final int style, final boolean cells, final long seed) {
-		Grid.rowSelectionByRow = byRow;
-		shell = new Shell(Display.getDefault());
-		shell.setSize(420, 360);
-		final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL | style);
-		Grid.rowSelectionByRow = true;
-		grid.setBounds(0, 0, 400, 300);
-		grid.setHeaderVisible(true);
-		for (int c = 0; c < 3; c++) {
-			new GridColumn(grid, SWT.NONE).setWidth(100);
-		}
-		grid.setCellSelectionEnabled(cells);
-		final GridSelectionScript script = new GridSelectionScript(grid);
-		if (byRow) {
-			script.afterStep = grid::checkRowSelection;
-		}
-		grid.setItemCount(300);
-		shell.open();
-		script.run(seed, STEPS);
-		shell.dispose();
-		return script.trace;
+		return GridSelectionScript.trace(() -> {
+			Grid.rowSelectionByRow = byRow;
+			shell = new Shell(Display.getDefault());
+			shell.setSize(420, 360);
+			final Grid grid = new Grid(shell, SWT.VIRTUAL | SWT.V_SCROLL | SWT.H_SCROLL | style);
+			Grid.rowSelectionByRow = true;
+			grid.setBounds(0, 0, 400, 300);
+			grid.setHeaderVisible(true);
+			for (int c = 0; c < 3; c++) {
+				new GridColumn(grid, SWT.NONE).setWidth(100);
+			}
+			grid.setCellSelectionEnabled(cells);
+			final GridSelectionScript script = new GridSelectionScript(grid);
+			if (byRow) {
+				script.afterStep = grid::checkRowSelection;
+			}
+			grid.setItemCount(300);
+			shell.open();
+			return script;
+		}, seed, STEPS);
 	}
 
 	private void compare(final int style, final boolean cells, final int seeds) {

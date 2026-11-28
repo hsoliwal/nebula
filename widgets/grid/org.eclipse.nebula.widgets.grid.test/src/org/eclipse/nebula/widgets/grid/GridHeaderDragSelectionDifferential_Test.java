@@ -268,19 +268,19 @@ public class GridHeaderDragSelectionDifferential_Test {
 	}
 
 	private List<String> script(final boolean blocks, final int style, final boolean spans, final long seed) {
-		final Grid grid = grid(blocks, true, style);
-		final GridSelectionScript script = new GridSelectionScript(grid);
-		script.cellOps = true;
-		script.headerOps = true;
-		script.spans = spans;
-		if (blocks) {
-			script.afterStep = grid::checkCellSelection;
-		}
-		grid.setItemCount(300);
-		shell.open();
-		script.run(seed, STEPS);
-		shell.dispose();
-		return script.trace;
+		return GridSelectionScript.trace(() -> {
+			final Grid grid = grid(blocks, true, style);
+			final GridSelectionScript script = new GridSelectionScript(grid);
+			script.cellOps = true;
+			script.headerOps = true;
+			script.spans = spans;
+			if (blocks) {
+				script.afterStep = grid::checkCellSelection;
+			}
+			grid.setItemCount(300);
+			shell.open();
+			return script;
+		}, seed, STEPS);
 	}
 
 	private void compareScripts(final int style, final boolean spans, final int seeds) {

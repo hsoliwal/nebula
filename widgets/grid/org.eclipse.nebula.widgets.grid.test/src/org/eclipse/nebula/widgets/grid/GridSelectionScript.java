@@ -25,6 +25,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.ScrollBar;
 
 /**
  * A seeded selection script for a {@code SWT.VIRTUAL} Grid and the trace it leaves: after every step
@@ -64,11 +65,26 @@ final class GridSelectionScript {
 	boolean headerOps;
 	/* whether the Grid has had a FocusIn (see takeFocus) */
 	private boolean focusedIn;
+	/* whether the steps are running (after takeFocus) */
+	private boolean running;
+	/* the FocusIn and FocusOut events the Grid had while the steps ran (see interrupted) */
+	private int focusChanges;
+	/* the step that had the first of them */
+	private int focusChangedAt = -1;
+	private int stepIndex;
+	/* the Grid's paint events (see settleGeometry) */
+	private int paints;
 
 	GridSelectionScript(final Grid grid) {
 		this.grid = grid;
 		// added after the Grid's own FocusIn listener, so Grid.onFocusIn has run when this is set
-		grid.addListener(SWT.FocusIn, e -> focusedIn = true);
+		grid.addListener(SWT.FocusIn, e -> {
+			focusedIn = true;
+			focusChanged();
+		});
+		grid.addListener(SWT.FocusOut, e -> focusChanged());
+		// added after the Grid's own paint listener: the Grid has painted when this counts
+		grid.addListener(SWT.Paint, e -> paints++);
 		grid.addListener(SWT.Selection, e -> events.add(describe("S", e)));
 		grid.addListener(SWT.DefaultSelection, e -> events.add(describe("D", e)));
 		grid.addListener(SWT.SetData, e -> ((GridItem) e.item).setText(0, "r" + e.index));
@@ -81,16 +97,66 @@ final class GridSelectionScript {
 
 	void run(final long seed, final int steps) {
 		takeFocus();
-		for (int k = 0; k < steps; k++) {
-			final Random r = new Random(seed * 7919 + k);
-			String op;
-			try {
-				op = step(r);
-			} catch (final RuntimeException failure) {
-				op = "EXC " + failure.getClass().getSimpleName();
+		running = true;
+		try {
+			for (int k = 0; k < steps; k++) {
+				stepIndex = k;
+				final Random r = new Random(seed * 7919 + k);
+				String op;
+				try {
+					op = step(r);
+				} catch (final RuntimeException failure) {
+					op = "EXC " + failure.getClass().getSimpleName();
+				}
+				afterStep.run();
+				observe(seed, k, op);
 			}
-			afterStep.run();
-			observe(seed, k, op);
+		} finally {
+			running = false;
+		}
+	}
+
+	private void focusChanged() {
+		if (running) {
+			if (focusChanges++ == 0) {
+				focusChangedAt = stepIndex;
+			}
+		}
+	}
+
+	/*
+	 * Whether the Grid's focus changed while the steps ran. No step moves the focus, so a FocusOut
+	 * means another window took the activation (on an interactive desktop: the user switched windows),
+	 * and a FocusIn comes back with it, or late from the window manager after takeFocus gave up. Such
+	 * a run is not the response to the script alone: Grid.onFocusIn makes row 0 the focus row of a
+	 * Grid without one (its focus row removed), so the next shift click selects from row 0, and a
+	 * click on a Grid without the focus brings a FocusIn of its own (Grid.onMouseDown forces the focus).
+	 */
+	boolean interrupted() {
+		return focusChanges > 0;
+	}
+
+	/* opens a new Grid with its script, ready to run (the shell open) */
+	interface Setup {
+		GridSelectionScript open();
+	}
+
+	/*
+	 * The trace of a script run on the Grid that setup opens; the shell is disposed. A run whose Grid's
+	 * focus changed while the steps ran (see interrupted) is run again on a new Grid, at most three
+	 * times in all; the last run's trace is returned in any case (and the comparison judges it).
+	 */
+	static List<String> trace(final Setup setup, final long seed, final int steps) {
+		for (int attempt = 1;; attempt++) {
+			final GridSelectionScript script = setup.open();
+			script.run(seed, steps);
+			final boolean interrupted = script.interrupted();
+			script.grid.getShell().dispose();
+			if (!interrupted || attempt == 3) {
+				return script.trace;
+			}
+			System.out.println("GRID_SELECTION_SCRIPT seed " + seed + ": the Grid's focus changed at step "
+					+ script.focusChangedAt + " (another window took the activation); run again");
 		}
 	}
 
@@ -468,6 +534,7 @@ final class GridSelectionScript {
 		final int toRow = Math.max(0, Math.min(n - 1, row + r.nextInt(7) - 3));
 		final int toCol = visible[r.nextInt(v)];
 		if (drag) {
+			settleGeometry();
 			final int window = Math.max(1, grid.getVisibleGridHeight() / (grid.getItemHeight() + 1));
 			final int target = Math.max(0, Math.min(Math.min(row, toRow) - 1, n - window));
 			if (pinTopAt(target) < 0) {
@@ -580,6 +647,7 @@ final class GridSelectionScript {
 	private String rowHeaderDrag(final int row, final int how, final int toRow, final int scrollTo,
 			final int stateMask) {
 		final int n = grid.getItemCount();
+		settleGeometry();
 		final int window = Math.max(1, grid.getVisibleGridHeight() / (grid.getItemHeight() + 1));
 		final int top = Math.max(0, Math.min((how == 0 ? Math.min(row, toRow) : row) - 1, n - window));
 		if (pinTopAt(top) < 0) {
@@ -622,16 +690,25 @@ final class GridSelectionScript {
 		return "row drag " + row + "/" + stateMask + " to " + where;
 	}
 
-	/* where the Grid hit-tests cell (col, row) once it is shown (scrolled to when asked), or null */
+	/*
+	 * where the Grid hit-tests cell (col, row) once it is shown (scrolled to when asked), or null; a
+	 * pass after the first settles the geometry with a paint (see settleGeometry)
+	 */
 	private Point shown(final int row, final int col, final boolean scroll) {
 		final GridItem item = grid.getItem(row);
 		final long deadline = System.nanoTime() + 1_000_000_000L;
+		boolean again = false;
 		do {
 			if (scroll) {
 				grid.showItem(item);
 				grid.showColumn(grid.getColumn(col));
 			}
-			settle();
+			if (again) {
+				settleGeometry();
+			} else {
+				settle();
+			}
+			again = true;
 			final Rectangle bounds = item.getBounds(col);
 			final Point candidate = new Point(bounds.x + Math.min(4, bounds.width / 2), bounds.y + bounds.height / 2);
 			final Point hit = bounds.width > 0 ? grid.getCell(candidate) : null;
@@ -642,7 +719,10 @@ final class GridSelectionScript {
 		return null;
 	}
 
-	/* scrolls to top row target and waits until the Grid answers it three times in a row; -1 if not */
+	/*
+	 * scrolls to top row target and waits until the Grid answers it three times in a row, each read
+	 * after a paint that leaves the geometry as it was (see settleGeometry); -1 if not
+	 */
 	private int pinTopAt(final int target) {
 		final long deadline = System.nanoTime() + 1_000_000_000L;
 		int stable = 0;
@@ -650,7 +730,7 @@ final class GridSelectionScript {
 			if (grid.getTopIndex() != target) {
 				grid.setTopIndex(target);
 			}
-			settle();
+			settleGeometry();
 			stable = grid.getTopIndex() == target ? stable + 1 : 0;
 		}
 		return stable >= 3 ? target : -1;
@@ -676,24 +756,17 @@ final class GridSelectionScript {
 	}
 
 	/*
-	 * Scrolls to a top row drawn from the script's random sequence among those that need no clamp,
-	 * and paints and dispatches until the Grid answers that top index on three reads in a row
-	 * (bounded wait); returns the row, or -1 when it does not settle there.
+	 * Scrolls to a top row drawn from the script's random sequence among those that need no clamp
+	 * (see pinTopAt); returns the row, or -1 when it does not settle there. The draw's bound counts
+	 * the rows a view shows, so the geometry settles first (see settleGeometry): a GTK3 CI run read
+	 * one row more or fewer on one Grid than on the other and drew top 40 on one and 86 on the other
+	 * from the same random sequence (seed 6, step 284, a shift+Page Up).
 	 */
 	private int pinTop(final Random r) {
 		final int n = grid.getItemCount();
+		settleGeometry();
 		final int window = Math.max(1, grid.getVisibleGridHeight() / (grid.getItemHeight() + 1));
-		final int target = n > window ? r.nextInt(n - window + 1) : 0;
-		final long deadline = System.nanoTime() + 1_000_000_000L;
-		int stable = 0;
-		while (stable < 3 && System.nanoTime() < deadline) {
-			if (grid.getTopIndex() != target) {
-				grid.setTopIndex(target);
-			}
-			settle();
-			stable = grid.getTopIndex() == target ? stable + 1 : 0;
-		}
-		return stable >= 3 ? target : -1;
+		return pinTopAt(n > window ? r.nextInt(n - window + 1) : 0);
 	}
 
 	/*
@@ -712,10 +785,17 @@ final class GridSelectionScript {
 		final GridItem item = grid.getItem(row);
 		Point point = null;
 		final long deadline = System.nanoTime() + 2_000_000_000L;
+		boolean again = false;
 		do {
-			// shown again on every pass: a late native scroll can move the row out of view
+			// shown again on every pass: a late native scroll can move the row out of view; a pass
+			// after the first settles the geometry with a paint (see settleGeometry)
 			grid.showItem(item);
-			settle();
+			if (again) {
+				settleGeometry();
+			} else {
+				settle();
+			}
+			again = true;
 			final Rectangle bounds = item.getBounds(0);
 			final Point candidate = new Point(bounds.x + 4, bounds.y + bounds.height / 2);
 			if (grid.getItem(candidate) == item) {
@@ -748,6 +828,54 @@ final class GridSelectionScript {
 				// drain
 			}
 		}
+	}
+
+	/*
+	 * Paints and dispatches until a paint of the Grid leaves its geometry as it found it (the client
+	 * area, the scroll bars shown, the header and row heights, the top row), before a step reads that
+	 * geometry. A drain is not enough on GTK3 under X11: getClientArea() answers the last GTK
+	 * allocation (SWT forces a size allocation there only on Wayland), so a scroll bar the Grid shows
+	 * or hides changes the client area only when GTK lays out, from its frame clock once the queue is
+	 * empty (see GridTestUtil.awaitGridPaints), and the frame clock runs when it runs: a read right
+	 * after a drain answered one Grid's client area from before such a change and the other's from
+	 * after it. win32 resizes the client area at once and paints inside update(). Each pass redraws
+	 * the Grid and waits (bounded) for its paint, which comes after the layout; at most eight passes.
+	 * The outcome depends on the geometry the passes leave, not on how long they take.
+	 */
+	private void settleGeometry() {
+		if (grid.isDisposed() || Boolean.getBoolean("grid.selection.script.unpainted")) {
+			return;
+		}
+		String before = geometry();
+		for (int pass = 0; pass < 8 && !grid.isDisposed(); pass++) {
+			final int painted = paints;
+			grid.redraw();
+			grid.update();
+			final long deadline = System.nanoTime() + 500_000_000L;
+			while (paints == painted && !grid.isDisposed() && System.nanoTime() < deadline) {
+				if (!grid.getDisplay().readAndDispatch()) {
+					LockSupport.parkNanos(1_000_000L);
+				}
+			}
+			settle();
+			if (grid.isDisposed()) {
+				return;
+			}
+			final String after = geometry();
+			if (after.equals(before)) {
+				return;
+			}
+			before = after;
+		}
+	}
+
+	private String geometry() {
+		final Rectangle area = grid.getClientArea();
+		final ScrollBar horizontal = grid.getHorizontalBar();
+		final ScrollBar vertical = grid.getVerticalBar();
+		return area + " " + (horizontal != null && horizontal.getVisible()) + " "
+				+ (vertical != null && vertical.getVisible()) + " " + grid.getHeaderHeight() + " "
+				+ grid.getItemHeight() + " " + grid.getTopIndex();
 	}
 
 	private void observe(final long seed, final int k, final String op) {
